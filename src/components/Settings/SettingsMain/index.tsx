@@ -64,6 +64,9 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   validationApplicationUrlTrailingSlash: 'URL must not end in a trailing slash',
   partialRequestsEnabled: 'Allow Partial Series Requests',
   enableSpecialEpisodes: 'Allow Special Episodes Requests',
+  removeUnmonitoredEnabled: 'Remove Unmonitored Media',
+  removeUnmonitoredExplanation:
+    'Remove Movies from Jellyseerr that are not available and have been un-monitored since',
   locale: 'Display Language',
   youtubeUrl: 'YouTube URL',
   youtubeUrlTip:
@@ -175,6 +178,7 @@ const SettingsMain = () => {
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
+            removeUnmonitoredEnabled: data?.removeUnmonitoredEnabled,
           }}
           enableReinitialize
           validationSchema={MainSettingsSchema}
@@ -195,6 +199,7 @@ const SettingsMain = () => {
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
+                removeUnmonitoredEnabled: values.removeUnmonitoredEnabled,
               });
               mutate('/api/v1/settings/public');
               mutate('/api/v1/status');
@@ -530,6 +535,35 @@ const SettingsMain = () => {
                         setFieldValue(
                           'enableSpecialEpisodes',
                           !values.enableSpecialEpisodes
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="removeUnmonitoredEnabled"
+                    className="checkbox-label"
+                  >
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.removeUnmonitoredEnabled)}
+                    </span>
+                    <SettingsBadge badgeType="experimental" />
+                    <span className="label-tip">
+                      {intl.formatMessage(
+                        messages.removeUnmonitoredExplanation
+                      )}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="removeUnmonitoredEnabled"
+                      name="removeUnmonitoredEnabled"
+                      onChange={() => {
+                        setFieldValue(
+                          'removeUnmonitoredEnabled',
+                          !values.removeUnmonitoredEnabled
                         );
                       }}
                     />
