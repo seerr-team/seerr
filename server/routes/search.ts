@@ -1,7 +1,14 @@
+import MusicBrainz from '@server/api/musicbrainz';
+import type {
+  MbAlbumResult,
+  MbArtistResult,
+} from '@server/api/musicbrainz/interfaces';
 import TheMovieDb from '@server/api/themoviedb';
-import type { TmdbSearchMultiResponse } from '@server/api/themoviedb/interfaces';
 import Media from '@server/entity/Media';
-import { findSearchProvider } from '@server/lib/search';
+import {
+  findSearchProvider,
+  type CombinedSearchResponse,
+} from '@server/lib/search';
 import logger from '@server/logger';
 import { mapSearchResults } from '@server/models/Search';
 import { Router } from 'express';
@@ -11,7 +18,8 @@ const searchRoutes = Router();
 searchRoutes.get('/', async (req, res, next) => {
   const queryString = req.query.query as string;
   const searchProvider = findSearchProvider(queryString.toLowerCase());
-  let results: TmdbSearchMultiResponse;
+  let results: CombinedSearchResponse;
+  let combinedResults: CombinedSearchResponse['results'] = [];
 
   try {
     if (searchProvider) {
@@ -25,24 +33,56 @@ searchRoutes.get('/', async (req, res, next) => {
       });
     } else {
       const tmdb = new TheMovieDb();
-
-      results = await tmdb.searchMulti({
+      const tmdbResults = await tmdb.searchMulti({
         query: queryString,
         page: Number(req.query.page),
-        language: (req.query.language as string) ?? req.locale,
       });
+
+      combinedResults = [...tmdbResults.results];
+
+      const musicbrainz = new MusicBrainz();
+      const mbResults = await musicbrainz.searchMulti({ query: queryString });
+
+      if (mbResults.length > 0) {
+        const mbMappedResults = mbResults.map((result) => {
+          if (result.artist) {
+            return {
+              ...result.artist,
+              media_type: 'artist',
+            } as MbArtistResult;
+          }
+          if (result.album) {
+            return {
+              ...result.album,
+              media_type: 'album',
+            } as MbAlbumResult;
+          }
+          throw new Error('Invalid search result type');
+        });
+
+        combinedResults = [...combinedResults, ...mbMappedResults];
+      }
+
+      results = {
+        page: tmdbResults.page,
+        total_pages: tmdbResults.total_pages,
+        total_results: tmdbResults.total_results + mbResults.length,
+        results: combinedResults,
+      };
     }
 
     const media = await Media.getRelatedMedia(
       req.user,
-      results.results.map((result) => result.id)
+      results.results.map((result) => ('id' in result ? result.id : 0))
     );
+
+    const mappedResults = await mapSearchResults(results.results, media);
 
     return res.status(200).json({
       page: results.page,
       totalPages: results.total_pages,
       totalResults: results.total_results,
-      results: mapSearchResults(results.results, media),
+      results: mappedResults,
     });
   } catch (e) {
     logger.debug('Something went wrong retrieving search results', {

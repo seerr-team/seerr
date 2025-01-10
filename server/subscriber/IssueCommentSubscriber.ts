@@ -1,3 +1,4 @@
+import LidarrAPI from '@server/api/servarr/lidarr';
 import TheMovieDb from '@server/api/themoviedb';
 import { IssueType, IssueTypeName } from '@server/constants/issue';
 import { MediaType } from '@server/constants/media';
@@ -7,6 +8,7 @@ import Media from '@server/entity/Media';
 import { User } from '@server/entity/User';
 import notificationManager, { Notification } from '@server/lib/notifications';
 import { Permission } from '@server/lib/permissions';
+import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { sortBy } from 'lodash';
 import type { EntitySubscriberInterface, InsertEvent } from 'typeorm';
@@ -21,8 +23,8 @@ export class IssueCommentSubscriber
   }
 
   private async sendIssueCommentNotification(entity: IssueComment) {
-    let title: string;
-    let image: string;
+    let title = '';
+    let image = '';
     const tmdb = new TheMovieDb();
 
     try {
@@ -48,13 +50,33 @@ export class IssueCommentSubscriber
           movie.release_date ? ` (${movie.release_date.slice(0, 4)})` : ''
         }`;
         image = `https://image.tmdb.org/t/p/w600_and_h900_bestv2${movie.poster_path}`;
-      } else {
+      } else if (media.mediaType === MediaType.TV) {
         const tvshow = await tmdb.getTvShow({ tvId: media.tmdbId });
 
         title = `${tvshow.name}${
           tvshow.first_air_date ? ` (${tvshow.first_air_date.slice(0, 4)})` : ''
         }`;
         image = `https://image.tmdb.org/t/p/w600_and_h900_bestv2${tvshow.poster_path}`;
+      } else if (media.mediaType === MediaType.MUSIC) {
+        const settings = getSettings();
+        if (!settings.lidarr[0]) {
+          throw new Error('No Lidarr server configured');
+        }
+
+        const lidarr = new LidarrAPI({
+          apiKey: settings.lidarr[0].apiKey,
+          url: LidarrAPI.buildUrl(settings.lidarr[0], '/api/v1'),
+        });
+
+        if (!media.mbId) {
+          throw new Error('MusicBrainz ID is undefined');
+        }
+
+        const album = await lidarr.getAlbumByMusicBrainzId(media.mbId);
+        const artist = await lidarr.getArtist({ id: album.artistId });
+
+        title = `${artist.artistName} - ${album.title}`;
+        image = album.images?.[0]?.url ?? '';
       }
 
       const [firstComment] = sortBy(issue.comments, 'id');

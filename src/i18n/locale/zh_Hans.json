@@ -83,7 +83,7 @@
   "components.Settings.sonarrsettings": "Sonarr 设置",
   "components.Settings.settingUpPlexDescription": "你可以手动输入你的 Plex 服务器资料，或从 <RegisterPlexTVLink>plex.tv</RegisterPlexTVLink> 返回的设置做选择以及自动配置。请点下拉式选单右边的按钮获取服务器列表。",
   "components.Settings.services": "服务器",
-  "components.Settings.serviceSettingsDescription": "关于 {serverType} 服务器的设置。{serverType} 服务器数没有最大值限制，但你只能指定兩个服务器为默认（一个非 4K、一个 4K）。",
+  "components.Settings.videoServiceSettingsDescription": "关于 {serverType} 服务器的设置。{serverType} 服务器数没有最大值限制，但你只能指定兩个服务器为默认（一个非 4K、一个 4K）。",
   "components.Settings.serverpresetRefreshing": "载入中…",
   "components.Settings.serverpresetManualMessage": "手动设定",
   "components.Settings.serverpresetLoad": "请点右边的按钮",

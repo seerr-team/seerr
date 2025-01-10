@@ -378,7 +378,7 @@
   "components.Settings.serverSecure": "sigurno",
   "components.Settings.serverpreset": "Poslužitelj",
   "components.Settings.serverpresetRefreshing": "Dohvaćanje poslužitelja …",
-  "components.Settings.serviceSettingsDescription": "Dolje donfiguriraj svoje {serverType} poslužitelje. Možeš povezati više {serverType} poslužitelja, ali samo dva od njih mogu biti označena kao zadana (jedan ne-4K i jedan 4K). Administratori mogu promijeniti poslužitelj koji se koristi za obradu novih zahtjeva prije odobrenja.",
+  "components.Settings.videoServiceSettingsDescription": "Dolje donfiguriraj svoje {serverType} poslužitelje. Možeš povezati više {serverType} poslužitelja, ali samo dva od njih mogu biti označena kao zadana (jedan ne-4K i jedan 4K). Administratori mogu promijeniti poslužitelj koji se koristi za obradu novih zahtjeva prije odobrenja.",
   "components.Settings.serverpresetLoad": "Pritisni gumb za učitavanje dostupnih polsužitelja",
   "components.Settings.serverpresetManualMessage": "Ručna konfiguracija",
   "components.Settings.services": "Usluge",

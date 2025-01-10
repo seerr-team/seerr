@@ -669,7 +669,7 @@
   "components.UserProfile.UserSettings.UserPasswordChange.noPasswordSet": "Esse usuário ainda não possui uma senha definida. Defina uma senha abaixo para habilitar autenticação como \"usuário local.\"",
   "components.UserProfile.UserSettings.UserNotificationSettings.validationPgpPublicKey": "Você deve prover uma chave pública PGP válida",
   "components.UserProfile.UserSettings.UserNotificationSettings.pgpPublicKeyTip": "Criptografa mensagens de e-mail usando <OpenPgpLink>OpenPGP</OpenPgpLink>",
-  "components.Settings.serviceSettingsDescription": "Configure seu(s) servidor(es) {serverType} abaixo. Você pode se conectar à múltiplos servidores {serverType}, mas apenas dois podem ser marcados como padrão (um não 4K e outro 4K). Administradores podem sobrescrever o servidor usado antes de aprovar as novas solicitações.",
+  "components.Settings.videoServiceSettingsDescription": "Configure seu(s) servidor(es) {serverType} abaixo. Você pode se conectar à múltiplos servidores {serverType}, mas apenas dois podem ser marcados como padrão (um não 4K e outro 4K). Administradores podem sobrescrever o servidor usado antes de aprovar as novas solicitações.",
   "components.Settings.noDefaultServer": "Ao menos um servidor {serverType} deve ser marcado como padrão para que as solicitações de {mediaType} sejam processadas.",
   "components.UserProfile.UserSettings.UserNotificationSettings.telegramsettingssaved": "Configurações de notificação via Telegram salvas com sucesso!",
   "components.UserProfile.UserSettings.UserNotificationSettings.telegramsettingsfailed": "Falha ao salvar configurações de notificação via Telegram.",

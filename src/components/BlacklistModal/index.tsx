@@ -3,14 +3,16 @@ import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import type { MovieDetails } from '@server/models/Movie';
+import type { MusicDetails } from '@server/models/Music';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 interface BlacklistModalProps {
-  tmdbId: number;
-  type: 'movie' | 'tv' | 'collection';
+  tmdbId?: number;
+  mbId?: string;
+  type: 'movie' | 'tv' | 'collection' | 'music';
   show: boolean;
   onComplete?: () => void;
   onCancel?: () => void;
@@ -22,14 +24,24 @@ const messages = defineMessages('component.BlacklistModal', {
 });
 
 const isMovie = (
-  movie: MovieDetails | TvDetails | null
-): movie is MovieDetails => {
-  if (!movie) return false;
-  return (movie as MovieDetails).title !== undefined;
+  media: MovieDetails | TvDetails | MusicDetails | null
+): media is MovieDetails => {
+  if (!media) return false;
+  return (
+    (media as MovieDetails).title !== undefined && !('artistName' in media)
+  );
+};
+
+const isMusic = (
+  media: MovieDetails | TvDetails | MusicDetails | null
+): media is MusicDetails => {
+  if (!media) return false;
+  return (media as MusicDetails).artistId !== undefined;
 };
 
 const BlacklistModal = ({
   tmdbId,
+  mbId,
   type,
   show,
   onComplete,
@@ -37,7 +49,9 @@ const BlacklistModal = ({
   isUpdating,
 }: BlacklistModalProps) => {
   const intl = useIntl();
-  const [data, setData] = useState<TvDetails | MovieDetails | null>(null);
+  const [data, setData] = useState<
+    MovieDetails | TvDetails | MusicDetails | null
+  >(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -45,13 +59,36 @@ const BlacklistModal = ({
       if (!show) return;
       try {
         setError(null);
-        const response = await axios.get(`/api/v1/${type}/${tmdbId}`);
+        const response = await axios.get(`/api/v1/${type}/${type === 'music' ? mbId : tmdbId}`);
         setData(response.data);
       } catch (err) {
         setError(err);
       }
     })();
-  }, [show, tmdbId, type]);
+  }, [show, tmdbId, mbId, type]);
+
+  const getTitle = () => {
+    if (isMusic(data)) {
+      return `${data.artist.artistName} - ${data.title}`;
+    }
+    return isMovie(data) ? data.title : data?.name;
+  };
+
+  const getMediaType = () => {
+    if (isMusic(data)) {
+      return intl.formatMessage(globalMessages.music);
+    }
+    return isMovie(data)
+      ? intl.formatMessage(globalMessages.movie)
+      : intl.formatMessage(globalMessages.tvshow);
+  };
+
+  const getBackdrop = () => {
+    if (isMusic(data)) {
+      return data.artist.images?.find((img) => img.CoverType === 'Fanart')?.Url;
+    }
+    return `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`;
+  };
 
   return (
     <Transition
@@ -67,12 +104,10 @@ const BlacklistModal = ({
       <Modal
         loading={!data && !error}
         backgroundClickable
-        title={`${intl.formatMessage(globalMessages.blacklist)} ${
-          isMovie(data)
-            ? intl.formatMessage(globalMessages.movie)
-            : intl.formatMessage(globalMessages.tvshow)
-        }`}
-        subTitle={`${isMovie(data) ? data.title : data?.name}`}
+        title={`${intl.formatMessage(
+          globalMessages.blacklist
+        )} ${getMediaType()}`}
+        subTitle={getTitle()}
         onCancel={onCancel}
         onOk={onComplete}
         okText={
@@ -82,7 +117,7 @@ const BlacklistModal = ({
         }
         okButtonType="danger"
         okDisabled={isUpdating}
-        backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
+        backdrop={getBackdrop()}
       />
     </Transition>
   );

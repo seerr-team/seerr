@@ -1,3 +1,4 @@
+import LidarrAPI from '@server/api/servarr/lidarr';
 import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import {
@@ -213,6 +214,21 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
         })
       );
 
+      // get all quality profiles for every configured lidarr server
+      const lidarrServers = await Promise.all(
+        settings.lidarr.map(async (lidarrSetting) => {
+          const lidarr = new LidarrAPI({
+            apiKey: lidarrSetting.apiKey,
+            url: LidarrAPI.buildUrl(lidarrSetting, '/api/v1'),
+          });
+
+          return {
+            id: lidarrSetting.id,
+            profiles: await lidarr.getProfiles().catch(() => undefined),
+          };
+        })
+      );
+
       // add profile names to the media requests, with undefined if not found
       let mappedRequests = requests.map((r) => {
         switch (r.type) {
@@ -230,6 +246,14 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
             return {
               ...r,
               profileName: sonarrServers
+                .find((serverr) => serverr.id === r.serverId)
+                ?.profiles?.find((profile) => profile.id === r.profileId)?.name,
+            };
+          }
+          case MediaType.MUSIC: {
+            return {
+              ...r,
+              profileName: lidarrServers
                 .find((serverr) => serverr.id === r.serverId)
                 ?.profiles?.find((profile) => profile.id === r.profileId)?.name,
             };

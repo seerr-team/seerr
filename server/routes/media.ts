@@ -1,3 +1,4 @@
+import LidarrAPI from '@server/api/servarr/lidarr';
 import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import TautulliAPI from '@server/api/tautulli';
@@ -199,43 +200,52 @@ mediaRoutes.delete(
       });
 
       const is4k = String(req.query.is4k) === 'true';
-      const isMovie = media.mediaType === MediaType.MOVIE;
 
       let serviceSettings;
-      if (isMovie) {
+      if (media.mediaType === MediaType.MOVIE) {
         serviceSettings = settings.radarr.find(
           (radarr) => radarr.isDefault && radarr.is4k === is4k
         );
-      } else {
+      } else if(media.mediaType === MediaType.TV) {
         serviceSettings = settings.sonarr.find(
           (sonarr) => sonarr.isDefault && sonarr.is4k === is4k
         );
+      } else {
+        serviceSettings = settings.lidarr.find(
+          (lidarr) => lidarr.isDefault);
       }
 
-      const specificServiceId = is4k ? media.serviceId4k : media.serviceId;
-      if (
-        specificServiceId &&
-        specificServiceId >= 0 &&
-        serviceSettings?.id !== specificServiceId
-      ) {
-        if (isMovie) {
-          serviceSettings = settings.radarr.find(
-            (radarr) => radarr.id === specificServiceId
-          );
-        } else {
-          serviceSettings = settings.sonarr.find(
-            (sonarr) => sonarr.id === specificServiceId
-          );
+     
+        const specificServiceId = is4k ? media.serviceId4k : media.serviceId;
+        if (
+          specificServiceId &&
+          specificServiceId >= 0 &&
+          serviceSettings?.id !== specificServiceId
+        ) {
+          if (media.mediaType === MediaType.MOVIE) {
+            serviceSettings = settings.radarr.find(
+              (radarr) => radarr.id === specificServiceId
+            );
+          } else if (media.mediaType === MediaType.TV) {
+            serviceSettings = settings.sonarr.find(
+              (sonarr) => sonarr.id === specificServiceId
+            );
+          } else {
+            serviceSettings = settings.lidarr.find(
+              (lidarr) => lidarr.id === media.serviceId
+          )
+          }
         }
-      }
-
-      if (!serviceSettings) {
+      
+        if (!serviceSettings) {
         logger.warn(
           `There is no default ${
-            is4k ? '4K ' : '' + isMovie ? 'Radarr' : 'Sonarr'
-          }/ server configured. Did you set any of your ${
-            is4k ? '4K ' : '' + isMovie ? 'Radarr' : 'Sonarr'
-          } servers as default?`,
+            media.mediaType === MediaType.MOVIE
+              ? 'Radarr'
+              : media.mediaType === MediaType.TV
+              ? 'Sonarr'
+              : 'Lidarr'
+          } server configured.`,
           {
             label: 'Media Request',
             mediaId: media.id,
@@ -245,31 +255,43 @@ mediaRoutes.delete(
       }
 
       let service;
-      if (isMovie) {
+      if (media.mediaType === MediaType.MOVIE) {
         service = new RadarrAPI({
-          apiKey: serviceSettings?.apiKey,
+          apiKey: serviceSettings.apiKey,
           url: RadarrAPI.buildUrl(serviceSettings, '/api/v3'),
         });
-      } else {
+        
+        await (service as RadarrAPI).removeMovie(media.tmdbId);
+      } else if (media.mediaType === MediaType.TV) {
         service = new SonarrAPI({
           apiKey: serviceSettings?.apiKey,
           url: SonarrAPI.buildUrl(serviceSettings, '/api/v3'),
         });
-      }
 
-      if (isMovie) {
-        await (service as RadarrAPI).removeMovie(media.tmdbId);
-      } else {
         const tmdb = new TheMovieDb();
         const series = await tmdb.getTvShow({ tvId: media.tmdbId });
         const tvdbId = series.external_ids.tvdb_id ?? media.tvdbId;
+
         if (!tvdbId) {
           throw new Error('TVDB ID not found');
         }
         await (service as SonarrAPI).removeSeries(tvdbId);
+      } else if (media.mediaType == MediaType.MUSIC)
+      {
+        service = new LidarrAPI({
+          apiKey: serviceSettings.apiKey,
+          url: LidarrAPI.buildUrl(serviceSettings, '/api/v1'),
+        });
+
+        await service.removeAlbum(
+          media.externalServiceId
+            ? parseInt(media.externalServiceId.toString())
+            : 0
+        );
       }
 
       return res.status(204).send();
+
     } catch (e) {
       logger.error('Something went wrong fetching media in delete request', {
         label: 'Media',

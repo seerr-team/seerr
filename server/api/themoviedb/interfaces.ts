@@ -469,3 +469,15 @@ export interface TmdbWatchProviderRegion {
   english_name: string;
   native_name: string;
 }
+
+export interface TmdbPersonSearchResponse extends TmdbPaginatedResponse {
+  results: TmdbPersonSearchResult[];
+}
+
+export interface TmdbPersonSearchResult
+  extends Omit<TmdbPersonResult, 'known_for'> {
+  gender: number;
+  known_for_department: string;
+  original_name: string;
+  known_for: (TmdbMovieResult | TmdbTvResult)[];
+}

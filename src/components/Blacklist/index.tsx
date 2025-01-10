@@ -24,6 +24,7 @@ import type {
   BlacklistResultsResponse,
 } from '@server/interfaces/api/blacklistInterfaces';
 import type { MovieDetails } from '@server/models/Movie';
+import type { MusicDetails } from '@server/models/Music';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
 import Link from 'next/link';
@@ -57,6 +58,12 @@ enum Filter {
 
 const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
   return (movie as MovieDetails).title !== undefined;
+};
+
+const isMusic = (
+  media: MovieDetails | TvDetails | MusicDetails
+): media is MusicDetails => {
+  return (media as MusicDetails).artistId !== undefined;
 };
 
 const Blacklist = () => {
@@ -277,12 +284,15 @@ const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
   const { hasPermission } = useUser();
 
   const url =
-    item.mediaType === 'movie'
+    item.mediaType === 'music'
+      ? `/api/v1/music/${item.mbId}`
+      : item.mediaType === 'movie'
       ? `/api/v1/movie/${item.tmdbId}`
       : `/api/v1/tv/${item.tmdbId}`;
-  const { data: title, error } = useSWR<MovieDetails | TvDetails>(
-    inView ? url : null
-  );
+
+  const { data: title, error } = useSWR<
+    MovieDetails | TvDetails | MusicDetails
+  >(inView ? url : null);
 
   if (!title && !error) {
     return (
@@ -293,11 +303,15 @@ const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
     );
   }
 
-  const removeFromBlacklist = async (tmdbId: number, title?: string) => {
+  const removeFromBlacklist = async (
+    tmdbId?: number,
+    mbId?: string,
+    title?: string
+  ) => {
     setIsUpdating(true);
 
     try {
-      await axios.delete(`/api/v1/blacklist/${tmdbId}`);
+      await axios.delete(`/api/v1/blacklist/${mbId ?? tmdbId}`);
 
       addToast(
         <span>
@@ -321,11 +335,24 @@ const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
 
   return (
     <div className="relative flex w-full flex-col justify-between overflow-hidden rounded-xl bg-gray-800 py-4 text-gray-400 shadow-md ring-1 ring-gray-700 xl:h-28 xl:flex-row">
-      {title && title.backdropPath && (
+      {title && (
         <div className="absolute inset-0 z-0 w-full bg-cover bg-center xl:w-2/3">
           <CachedImage
-            type="tmdb"
-            src={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`}
+            type={isMusic(title) ? 'music' : 'tmdb'}
+            src={
+              isMusic(title)
+                ? title.artist.images?.find((img) => img.CoverType === 'Fanart')
+                    ?.Url ||
+                  title.artist.images?.find((img) => img.CoverType === 'Poster')
+                    ?.Url ||
+                  title.images?.find(
+                    (img) => img.CoverType.toLowerCase() === 'cover'
+                  )?.Url ||
+                  ''
+                : `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${
+                    title.backdropPath ?? ''
+                  }`
+            }
             alt=""
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             fill
@@ -343,43 +370,58 @@ const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
         <div className="relative z-10 flex w-full items-center overflow-hidden pl-4 pr-4 sm:pr-0 xl:w-7/12 2xl:w-2/3">
           <Link
             href={
-              item.mediaType === 'movie'
+              item.mediaType === 'music'
+                ? `/music/${item.mbId}`
+                : item.mediaType === 'movie'
                 ? `/movie/${item.tmdbId}`
                 : `/tv/${item.tmdbId}`
             }
             className="relative h-auto w-12 flex-shrink-0 scale-100 transform-gpu overflow-hidden rounded-md transition duration-300 hover:scale-105"
           >
             <CachedImage
-              type="tmdb"
+              type={title && isMusic(title) ? 'music' : 'tmdb'}
               src={
-                title?.posterPath
-                  ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
+                title
+                  ? isMusic(title)
+                    ? title.images?.find((image) => image.CoverType === 'Cover')
+                        ?.Url ?? '/images/seerr_poster_not_found.png'
+                    : title.posterPath
+                    ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
+                    : '/images/seerr_poster_not_found.png'
                   : '/images/seerr_poster_not_found.png'
               }
               alt=""
               sizes="100vw"
               style={{ width: '100%', height: 'auto', objectFit: 'cover' }}
               width={600}
-              height={900}
+              height={title && isMusic(title) ? 600 : 900}
             />
           </Link>
           <div className="flex flex-col justify-center overflow-hidden pl-2 xl:pl-4">
             <div className="pt-0.5 text-xs font-medium text-white sm:pt-1">
               {title &&
-                (isMovie(title)
-                  ? title.releaseDate
-                  : title.firstAirDate
-                )?.slice(0, 4)}
+                (isMusic(title)
+                  ? title.releaseDate?.slice(0, 4)
+                  : isMovie(title)
+                  ? title.releaseDate?.slice(0, 4)
+                  : title.firstAirDate?.slice(0, 4))}
             </div>
             <Link
               href={
-                item.mediaType === 'movie'
+                item.mediaType === 'music'
+                  ? `/music/${item.mbId}`
+                  : item.mediaType === 'movie'
                   ? `/movie/${item.tmdbId}`
                   : `/tv/${item.tmdbId}`
               }
             >
               <span className="mr-2 min-w-0 truncate text-lg font-bold text-white hover:underline xl:text-xl">
-                {title && (isMovie(title) ? title.title : title.name)}
+                {title &&
+                  (isMusic(title)
+                    ? `${title.artist.artistName} - ${title.title}`
+                    : isMovie(title)
+                    ? title.title
+                    : title.name)}
               </span>
             </Link>
           </div>
@@ -446,10 +488,16 @@ const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
                   {intl.formatMessage(globalMessages.movie)}
                 </div>
               </div>
-            ) : (
+            ) : item.mediaType === 'tv' ? (
               <div className="pointer-events-none z-40 self-start rounded-full border border-purple-600 bg-purple-600 bg-opacity-80 shadow-md">
                 <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium uppercase tracking-wider text-white sm:h-5">
                   {intl.formatMessage(globalMessages.tvshow)}
+                </div>
+              </div>
+            ) : (
+              <div className="pointer-events-none z-40 self-start rounded-full border border-green-600 bg-green-600 bg-opacity-80 shadow-md">
+                <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium uppercase tracking-wider text-white sm:h-5">
+                  {intl.formatMessage(globalMessages.music)}
                 </div>
               </div>
             )}
@@ -462,7 +510,13 @@ const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
             onClick={() =>
               removeFromBlacklist(
                 item.tmdbId,
-                title && (isMovie(title) ? title.title : title.name)
+                item.mbId,
+                title &&
+                  (isMusic(title)
+                    ? `${title.artist.artistName} - ${title.title}`
+                    : isMovie(title)
+                    ? title.title
+                    : title.name)
               )
             }
             confirmText={intl.formatMessage(

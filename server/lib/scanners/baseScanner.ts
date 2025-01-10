@@ -28,6 +28,7 @@ export interface MediaIds {
   imdbId?: string;
   tvdbId?: number;
   isHama?: boolean;
+  mbId?: string;
 }
 
 interface ProcessOptions {
@@ -79,11 +80,24 @@ class BaseScanner<T> {
     this.updateRate = updateRate ?? UPDATE_RATE;
   }
 
-  private async getExisting(tmdbId: number, mediaType: MediaType) {
+  private async getExisting(
+    id: number | string,
+    mediaType: MediaType
+  ): Promise<Media | null> {
     const mediaRepository = getRepository(Media);
 
+    const query: Record<string, any> = {
+      mediaType,
+    };
+
+    if (mediaType === MediaType.MUSIC) {
+      query.mbId = id.toString();
+    } else {
+      query.tmdbId = Number(id);
+    }
+
     const existing = await mediaRepository.findOne({
-      where: { tmdbId: tmdbId, mediaType },
+      where: query,
     });
 
     return existing;
@@ -522,6 +536,61 @@ class BaseScanner<T> {
         });
         await mediaRepository.save(newMedia);
         this.log(`Saved ${title}`);
+      }
+    });
+  }
+
+  protected async processMusic(
+    mbId: string,
+    {
+      serviceId,
+      externalServiceId,
+      externalServiceSlug,
+      mediaAddedAt,
+      processing = false,
+      title = 'Unknown Title',
+    }: ProcessOptions = {}
+  ): Promise<void> {
+    const mediaRepository = getRepository(Media);
+
+    await this.asyncLock.dispatch(mbId, async () => {
+      const existing = await mediaRepository.findOne({
+        where: { mbId, mediaType: MediaType.MUSIC },
+      });
+
+      if (!existing) {
+        const newMedia = new Media();
+        newMedia.mbId = mbId;
+        newMedia.status = processing
+          ? MediaStatus.PROCESSING
+          : MediaStatus.AVAILABLE;
+        newMedia.mediaType = MediaType.MUSIC;
+
+        if (mediaAddedAt) {
+          newMedia.mediaAddedAt = mediaAddedAt;
+        }
+
+        if (serviceId) {
+          newMedia.serviceId = serviceId;
+        }
+
+        if (externalServiceId) {
+          newMedia.externalServiceId = externalServiceId;
+        }
+
+        if (externalServiceSlug) {
+          newMedia.externalServiceSlug = externalServiceSlug;
+        }
+
+        try {
+          await mediaRepository.save(newMedia);
+          this.log(`Saved new media: ${title}`);
+        } catch (err) {
+          this.log('Failed to save new media', 'error', {
+            title,
+            error: err.message,
+          });
+        }
       }
     });
   }

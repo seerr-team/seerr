@@ -40,6 +40,7 @@ import path from 'path';
 import semver from 'semver';
 import { URL } from 'url';
 import metadataRoutes from './metadata';
+import lidarrRoutes from './lidarr';
 import notificationRoutes from './notifications';
 import radarrRoutes from './radarr';
 import sonarrRoutes from './sonarr';
@@ -49,6 +50,7 @@ const settingsRoutes = Router();
 settingsRoutes.use('/notifications', notificationRoutes);
 settingsRoutes.use('/radarr', radarrRoutes);
 settingsRoutes.use('/sonarr', sonarrRoutes);
+settingsRoutes.use('/lidarr', lidarrRoutes);
 settingsRoutes.use('/discover', discoverSettingRoutes);
 settingsRoutes.use('/metadatas', metadataRoutes);
 
@@ -758,6 +760,9 @@ settingsRoutes.get('/cache', async (_req, res) => {
 
   const tmdbImageCache = await ImageProxy.getImageStats('tmdb');
   const avatarImageCache = await ImageProxy.getImageStats('avatar');
+  const caaImageCache = await ImageProxy.getImageStats('caa');
+  const lidarrImageCache = await ImageProxy.getImageStats('lidarr');
+  const fanartImageCache = await ImageProxy.getImageStats('fanart');
 
   const stats: DnsStats | undefined = dnsCache?.getStats();
   const entries: DnsEntries | undefined = dnsCache?.getCacheEntries();
@@ -767,6 +772,9 @@ settingsRoutes.get('/cache', async (_req, res) => {
     imageCache: {
       tmdb: tmdbImageCache,
       avatar: avatarImageCache,
+      caa: caaImageCache,
+      lidarr: lidarrImageCache,
+      fanart: fanartImageCache,
     },
     dnsCache: {
       stats,

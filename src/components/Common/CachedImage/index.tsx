@@ -6,7 +6,7 @@ const imageLoader: ImageLoader = ({ src }) => src;
 
 export type CachedImageProps = ImageProps & {
   src: string;
-  type: 'tmdb' | 'avatar' | 'tvdb';
+  type: 'tmdb' | 'avatar' | 'tvdb' | 'music';
 };
 
 /**
@@ -35,6 +35,15 @@ const CachedImage = ({ src, type, ...props }: CachedImageProps) => {
   } else if (type === 'avatar') {
     // jellyfin avatar (if any)
     imageUrl = src;
+  } else if (type === 'music') {
+    // Handle CAA, Fanart and Lidarr images
+    imageUrl = /^https?:\/\/coverartarchive\.org\//.test(src)
+      ? src.replace(/^https?:\/\/coverartarchive\.org\//, '/caaproxy/')
+      : /^https?:\/\/assets\.fanart\.tv\//.test(src)
+      ? src.replace(/^https?:\/\/assets\.fanart\.tv\//, '/fanartproxy/')
+      : currentSettings.cacheImages
+      ? src.replace(/^https:\/\/imagecache\.lidarr\.audio\//, '/lidarrproxy/')
+      : src;
   } else {
     return null;
   }

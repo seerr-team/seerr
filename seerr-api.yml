@@ -26,6 +26,8 @@ tags:
     description: Endpoints related to retrieving movies and their details.
   - name: tv
     description: Endpoints related to retrieving TV series and their details.
+  - name: music
+    description: Endpoints related to retrieving music and details about artists,...
   - name: other
     description: Endpoints related to other TMDB data
   - name: person
@@ -35,7 +37,7 @@ tags:
   - name: collection
     description: Endpoints related to retrieving collection details.
   - name: service
-    description: Endpoints related to getting service (Radarr/Sonarr) details.
+    description: Endpoints related to getting service (Radarr/Sonarr/Lidarr) details.
   - name: watchlist
     description: Collection of media to watch later
   - name: blacklist
@@ -695,6 +697,61 @@ components:
         - is4k
         - enableSeasonFolders
         - isDefault
+    LidarrSettings:
+      type: object
+      properties:
+        id:
+          type: number
+          example: 0
+          readOnly: true
+        name:
+          type: string
+          example: 'Lidarr Main'
+        hostname:
+          type: string
+          example: '127.0.0.1'
+        port:
+          type: number
+          example: 8989
+        apiKey:
+          type: string
+          example: 'exampleapikey'
+        useSsl:
+          type: boolean
+          example: false
+        baseUrl:
+          type: string
+        activeProfileId:
+          type: number
+          example: 1
+        activeProfileName:
+          type: string
+          example: 128kps
+        activeDirectory:
+          type: string
+          example: '/music/'
+        isDefault:
+          type: boolean
+          example: false
+        externalUrl:
+          type: string
+          example: http://lidarr.example.com
+        syncEnabled:
+          type: boolean
+          example: false
+        preventSearch:
+          type: boolean
+          example: false
+      required:
+        - name
+        - hostname
+        - port
+        - apiKey
+        - useSsl
+        - activeProfileId
+        - activeProfileName
+        - activeDirectory
+        - isDefault
     ServarrTag:
       type: object
       properties:
@@ -822,6 +879,92 @@ components:
             oneOf:
               - $ref: '#/components/schemas/MovieResult'
               - $ref: '#/components/schemas/TvResult'
+    MusicResult:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 87f17f8a-c0e2-406c-a149-8c8e311bf330
+        mediaType:
+          type: string
+        posterPath:
+          type: string
+        title:
+          type: string
+          example: Album Name
+        releaseDate:
+          type: string
+          example: 19923-12-03
+        mediaInfo:
+          $ref: '#/components/schemas/MediaInfo'
+    ArtistResult:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 87f17f8a-c0e2-406c-a149-8c8e311bf330
+        mediaType:
+          type: string
+          example: artist
+        posterPath:
+          type: string
+        title:
+          type: string
+          example: Album Name
+        mediaInfo:
+          $ref: '#/components/schemas/MediaInfo'
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+            - mbArtistType
+        releases:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlbumResult'
+        gender:
+          type: string
+        area:
+          type: string
+        beginDate:
+          type: string
+        endDate:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+    AlbumResult:
+      type: object
+      properties:
+        id:
+          type: string
+        mediaType:
+          type: string
+          enum: ['release-group']
+        type:
+          type: string
+          enum: ['Album', 'Single', 'EP', 'Broadcast', 'Other']
+        posterPath:
+          type: string
+          nullable: true
+        title:
+          type: string
+        releases:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlbumResult'
+        artist:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArtistResult'
+        tags:
+          type: array
+          items:
+            type: string
+        mediaInfo:
+          $ref: '#/components/schemas/MediaInfo'
     Genre:
       type: object
       properties:
@@ -1296,6 +1439,8 @@ components:
           type: string
           example: '2020-09-12T10:00:27.000Z'
           readOnly: true
+        secondaryType:
+          type: string
     Cast:
       type: object
       properties:
@@ -2947,6 +3092,150 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SonarrSettings'
+  /settings/lidarr:
+    get:
+      summary: Get Lidarr settings
+      description: Returns all Lidarr settings in a JSON array.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: 'Values were returned'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LidarrSettings'
+    post:
+      summary: Create Lidarr instance
+      description: Creates a new Lidarr instance from the request body.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LidarrSettings'
+      responses:
+        '201':
+          description: 'New Lidarr instance created'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LidarrSettings'
+  /settings/lidarr/test:
+    post:
+      summary: Test Lidarr configuration
+      description: Tests if the Lidarr configuration is valid. Returns profiles and root folders on success.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                hostname:
+                  type: string
+                  example: '127.0.0.1'
+                port:
+                  type: number
+                  example: 7878
+                apiKey:
+                  type: string
+                  example: yourapikey
+                useSsl:
+                  type: boolean
+                  example: false
+                baseUrl:
+                  type: string
+              required:
+                - hostname
+                - port
+                - apiKey
+                - useSsl
+      responses:
+        '200':
+          description: Succesfully connected to Lidarr instance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profiles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceProfile'
+  /settings/lidarr/{mbId}:
+    put:
+      summary: Update Lidarr instance
+      description: Updates an existing Lidarr instance with the provided values.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: mbId
+          required: true
+          schema:
+            type: integer
+          description: Lidarr instance ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LidarrSettings'
+      responses:
+        '200':
+          description: 'Lidarr instance updated'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LidarrSettings'
+    delete:
+      summary: Delete Lidarr instance
+      description: Deletes an existing Lidarr instance based on the mbId parameter.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: mbId
+          required: true
+          schema:
+            type: integer
+          description: Lidarr instance ID
+      responses:
+        '200':
+          description: 'Lidarr instance updated'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LidarrSettings'
+  /settings/lidarr/{mbId}/profiles:
+    get:
+      summary: Get available Lidarr profiles
+      description: Returns a list of profiles available on the Lidarr server instance in a JSON array.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: mbId
+          required: true
+          schema:
+            type: integer
+          description: Lidarr instance ID
+      responses:
+        '200':
+          description: Returned list of profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceProfile'
   /settings/public:
     get:
       summary: Get public settings
@@ -5108,6 +5397,11 @@ paths:
             type: number
             example: 1
             default: 1
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [movie, tv, music]
       responses:
         '200':
           description: Results
@@ -5128,7 +5422,9 @@ paths:
                   results:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Keyword'
+                      oneOf:
+                        - $ref: '#/components/schemas/Keyword'
+                        - type: string
   /search/company:
     get:
       summary: Search for companies
@@ -5977,6 +6273,59 @@ paths:
                     name:
                       type: string
                       example: Genre Name
+  /discover/music:
+    get:
+      summary: Discover trending music albums
+      description: Returns a list of trending albums from ListenBrainz in a JSON object
+      tags:
+        - search
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: range
+          schema:
+            type: string
+            enum: [week, month, year, all]
+            default: week
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum:
+              - listen_count.desc
+              - listen_count.asc
+              - release_date.desc
+              - release_date.asc
+              - title.asc
+              - title.desc
+            default: listen_count.desc
+            example: listen_count.desc
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AlbumResult'
   /discover/watchlist:
     get:
       summary: Get the Plex watchlist.
@@ -6109,43 +6458,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                mediaType:
-                  type: string
-                  enum: [movie, tv]
-                  example: movie
-                mediaId:
-                  type: number
-                  example: 123
-                tvdbId:
-                  type: number
-                  example: 123
-                seasons:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: number
-                        minimum: 0
-                    - type: string
-                      enum: [all]
-                is4k:
-                  type: boolean
-                  example: false
-                serverId:
-                  type: number
-                profileId:
-                  type: number
-                rootFolder:
-                  type: string
-                languageProfileId:
-                  type: number
-                userId:
-                  type: number
-                  nullable: true
-              required:
-                - mediaType
-                - mediaId
+              $ref: '#/components/schemas/MainSettings'
       responses:
         '201':
           description: Succesfully created the request
@@ -6229,7 +6542,7 @@ paths:
               properties:
                 mediaType:
                   type: string
-                  enum: [movie, tv]
+                  enum: [movie, tv, music]
                 seasons:
                   type: array
                   items:
@@ -6278,7 +6591,7 @@ paths:
     post:
       summary: Retry failed request
       description: |
-        Retries a request by resending requests to Sonarr or Radarr.
+        Retries a request by resending requests to Sonarr, Radarr or Lidarr.
 
         Requires the `MANAGE_REQUESTS` permission or `ADMIN`.
       tags:
@@ -6786,6 +7099,483 @@ paths:
                       $ref: '#/components/schemas/CreditCrew'
                   id:
                     type: number
+  /group/{artistId}:
+    get:
+      summary: Get artist details
+      description: Returns artist details in a JSON object.
+      tags:
+        - music
+      parameters:
+        - in: path
+          name: artistId
+          required: true
+          schema:
+            type: string
+            example: 87f17f8a-c0e2-406c-a149-8c8e311bf330
+        - in: query
+          name: full
+          schema:
+            type: boolean
+            example: false
+            default: false
+        - in: query
+          name: maxElements
+          schema:
+            type: number
+            example: 50
+            default: 25
+        - in: query
+          name: offset
+          schema:
+            type: number
+            example: 25
+            default: 0
+      responses:
+        '200':
+          description: Artist details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtistResult'
+  /group/{artistId}/discography:
+    get:
+      summary: Get artist discography
+      description: Returns the artist's discography with pagination and optional type filtering
+      tags:
+        - music
+      parameters:
+        - in: path
+          name: artistId
+          required: true
+          schema:
+            type: string
+            example: f59c5520-5f46-4d2c-b2c4-822eabf53419
+        - in: query
+          name: page
+          schema:
+            type: number
+            default: 1
+            example: 1
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [Album, Single, EP, Other]
+            description: Filter releases by type
+        - in: query
+          name: pageSize
+          schema:
+            type: number
+            default: 20
+            example: 20
+      responses:
+        '200':
+          description: Paginated artist discography
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                  pageInfo:
+                    type: object
+                    properties:
+                      total:
+                        type: number
+                      totalPages:
+                        type: number
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        type:
+                          type: string
+                          enum: [Album, Single, EP, Other]
+                        releasedate:
+                          type: string
+                        images:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              CoverType:
+                                type: string
+                              Url:
+                                type: string
+        '404':
+          description: Artist not found
+        '500':
+          description: Internal server error
+  /person/{personId}/discography:
+    get:
+      summary: Get person's musical discography
+      description: Returns the person's discography with pagination and optional type filtering
+      tags:
+        - music
+      parameters:
+        - in: path
+          name: personId
+          required: true
+          schema:
+            type: number
+            example: 287
+        - in: query
+          name: artistId
+          required: true
+          schema:
+            type: string
+            example: 'b2fbd053-4380-412c-95d2-35c6da8f1011'
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [Album, Single, EP, Other]
+            description: Filter releases by type
+        - in: query
+          name: page
+          schema:
+            type: number
+            default: 1
+            example: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: number
+            default: 20
+            example: 20
+      responses:
+        '200':
+          description: Paginated person discography
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                  pageInfo:
+                    type: object
+                    properties:
+                      total:
+                        type: number
+                      totalPages:
+                        type: number
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        type:
+                          type: string
+                          enum: [Album, Single, EP, Other]
+                        releasedate:
+                          type: string
+                        images:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              CoverType:
+                                type: string
+                              Url:
+                                type: string
+        '404':
+          description: No music artist found for this person
+        '500':
+          description: Unable to retrieve artist discography
+  /music/{mbId}:
+    get:
+      summary: Get album details
+      description: Returns full album details in a JSON object.
+      tags:
+        - music
+      parameters:
+        - in: path
+          name: mbId
+          required: true
+          schema:
+            type: string
+            example: 87f17f8a-c0e2-406c-a149-8c8e311bf330
+        - in: query
+          name: full
+          schema:
+            type: boolean
+            example: false
+            default: false
+        - in: query
+          name: maxElements
+          schema:
+            type: number
+            example: 50
+            default: 25
+        - in: query
+          name: offset
+          schema:
+            type: number
+            example: 25
+            default: 0
+      responses:
+        '200':
+          description: Album details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlbumResult'
+  /music/{mbId}/wikipedia-extract:
+    get:
+      summary: Get artist Wikipedia extract
+      description: Returns Wikipedia extract for the artist of the specified album
+      tags:
+        - music
+      parameters:
+        - in: path
+          name: mbId
+          required: true
+          schema:
+            type: string
+            example: da04991d-8e8a-43be-9892-1e6342a77410
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: en
+            default: en
+      responses:
+        '200':
+          description: Artist Wikipedia extract
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  artistId:
+                    type: string
+                  artistName:
+                    type: string
+                  overview:
+                    type: string
+                  url:
+                    type: string
+        '404':
+          description: Artist not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /music/{mbId}/tracks:
+    get:
+      summary: Get album tracks
+      description: Returns tracks listing for the specified album
+      tags:
+        - music
+      parameters:
+        - in: path
+          name: mbId
+          required: true
+          schema:
+            type: string
+            example: d9390962-495f-466e-8674-e705e660ed8b
+      responses:
+        '200':
+          description: Album tracks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  media:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        format:
+                          type: string
+                        track-count:
+                          type: integer
+                        position:
+                          type: integer
+                        tracks:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              number:
+                                type: string
+                              title:
+                                type: string
+                              length:
+                                type: integer
+                              position:
+                                type: integer
+                              recording:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                  title:
+                                    type: string
+                                  length:
+                                    type: integer
+                                  first-release-date:
+                                    type: string
+                                  video:
+                                    type: boolean
+                                  disambiguation:
+                                    type: string
+        '404':
+          description: Album not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /music/{mbId}/discography:
+    get:
+      summary: Get artist discography
+      description: Returns a list of albums by the artist of the specified discography
+      tags:
+        - music
+      parameters:
+        - in: path
+          name: mbId
+          required: true
+          schema:
+            type: string
+            example: 87f17f8a-c0e2-406c-a149-8c8e311bf330
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: List of artist albums
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: integer
+                  totalPages:
+                    type: integer
+                  totalResults:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        mediaType:
+                          type: string
+                          enum: [music]
+                        title:
+                          type: string
+                        artistName:
+                          type: string
+                        posterPath:
+                          type: string
+                        mediaInfo:
+                          $ref: '#/components/schemas/MediaInfo'
+        '404':
+          description: Artist not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /music/{mbId}/similar:
+    get:
+      tags:
+        - music
+      summary: Get similar artists for a music album
+      parameters:
+        - name: mbId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: MusicBrainz ID of the album
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+          description: Page number for pagination
+      responses:
+        '404':
+          description: Artist not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
   /media:
     get:
       summary: Get media
@@ -6826,6 +7616,12 @@ paths:
             type: string
             enum: [added, modified, mediaAdded]
             default: added
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [all, movie, tv, music, artist, album]
+            default: all
       responses:
         '200':
           description: Returned media
@@ -7101,6 +7897,46 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SonarrSeries'
+  /service/lidarr:
+    get:
+      summary: Get non-sensitive Lidarr server list
+      description: Returns a list of Lidarr server IDs and names in a JSON object.
+      tags:
+        - service
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LidarrSettings'
+  /service/lidarr/{mbId}:
+    get:
+      summary: Get Lidarr server quality profiles and root folders
+      description: Returns a Lidarr server's quality profile and root folder details in a JSON object.
+      tags:
+        - service
+      parameters:
+        - in: path
+          name: mbId
+          required: true
+          schema:
+            type: number
+            example: 0
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  server:
+                    $ref: '#/components/schemas/LidarrSettings'
+                  profiles:
+                    $ref: '#/components/schemas/ServiceProfile'
   /regions:
     get:
       summary: Regions supported by TMDB

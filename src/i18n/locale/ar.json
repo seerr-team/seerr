@@ -656,7 +656,7 @@
   "components.Settings.plexlibraries": "مكتبات بليكس",
   "components.Settings.noDefaultServer": "على الأقل {serverType} سيرفر واحد يجب أن يكون معدا كإفتراضي لإتاحة تنفيذ طلبات الـ {mediaType}.",
   "components.Settings.plexsettings": "إعدادات بليكس",
-  "components.Settings.serviceSettingsDescription": "قم بإعداد {serverType} بالإسفل.تستطيع الاتصال بأكثر من سيرفر {serverType} ,ولكن إثنان فقط يمكن إعدادهما كإفتراضيين (واحد لجودة الفور كي والأخر لغير جودة الفور كي). أصحاب الصلاحيات الإدارية بإمكانهم تجاوز السيرفر المستخدم قبل تأكيدهم لأي طلب محتوى جديد.",
+  "components.Settings.videoServiceSettingsDescription": "قم بإعداد {serverType} بالإسفل.تستطيع الاتصال بأكثر من سيرفر {serverType} ,ولكن إثنان فقط يمكن إعدادهما كإفتراضيين (واحد لجودة الفور كي والأخر لغير جودة الفور كي). أصحاب الصلاحيات الإدارية بإمكانهم تجاوز السيرفر المستخدم قبل تأكيدهم لأي طلب محتوى جديد.",
   "components.Settings.serverpresetManualMessage": "ضبط يدوي",
   "components.Settings.sonarrsettings": "إعدادات سونار",
   "components.Settings.tautulliSettingsDescription": "بشكل إختياري أضبط إعدادات سيرفرك الخاص بـ Tautulli.أوفرسيرر سيقوم بجلب بيانات سجل المشاهدة لمحتوى بليكس من Tautulli.",

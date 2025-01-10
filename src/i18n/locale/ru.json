@@ -759,7 +759,7 @@
   "components.Settings.toastPlexConnecting": "Попытка подключения к Plex…",
   "components.Settings.settingUpPlexDescription": "Чтобы настроить Plex, вы можете либо ввести данные вручную, либо выбрать сервер, полученный со страницы <RegisterPlexTVLink>plex.tv</RegisterPlexTVLink>. Нажмите кнопку справа от выпадающего списка, чтобы получить список доступных серверов.",
   "components.Settings.services": "Службы",
-  "components.Settings.serviceSettingsDescription": "Настройте сервер(ы) {serverType} ниже. Вы можете подключить несколько серверов {serverType}, но только два из них могут быть помечены как серверы по умолчанию (один не 4К и один 4К). Администраторы могут переопределить сервер для обработки новых запросов до их одобрения.",
+  "components.Settings.videoServiceSettingsDescription": "Настройте сервер(ы) {serverType} ниже. Вы можете подключить несколько серверов {serverType}, но только два из них могут быть помечены как серверы по умолчанию (один не 4К и один 4К). Администраторы могут переопределить сервер для обработки новых запросов до их одобрения.",
   "components.Settings.serverpresetLoad": "Нажмите кнопку, чтобы загрузить список доступных серверов",
   "components.Settings.serverSecure": "защищённый",
   "components.Settings.serverRemote": "удалённый",

@@ -219,6 +219,16 @@ const Discover = () => {
           case DiscoverSliderType.PLEX_WATCHLIST:
             sliderComponent = <PlexWatchlistSlider />;
             break;
+          case DiscoverSliderType.POPULAR_ALBUMS:
+            sliderComponent = (
+              <MediaSlider
+                sliderKey="popular-albums"
+                title={intl.formatMessage(sliderTitles.popularalbums)}
+                url="/api/v1/discover/music"
+                linkUrl="/discover/music"
+              />
+            );
+            break;
           case DiscoverSliderType.TRENDING:
             sliderComponent = (
               <MediaSlider

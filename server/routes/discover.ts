@@ -1,3 +1,5 @@
+import ListenBrainzAPI from '@server/api/listenbrainz';
+import MusicBrainz from '@server/api/musicbrainz';
 import PlexTvAPI from '@server/api/plextv';
 import type { SortOptions } from '@server/api/themoviedb';
 import TheMovieDb from '@server/api/themoviedb';
@@ -853,6 +855,131 @@ discoverRoutes.get<{ language: string }, GenreSliderItem[]>(
     }
   }
 );
+
+discoverRoutes.get('/music', async (req, res, next) => {
+  const listenbrainz = new ListenBrainzAPI();
+  const musicbrainz = new MusicBrainz();
+
+  try {
+    const page = Number(req.query.page) || 1;
+    const pageSize = 20;
+    const offset = (page - 1) * pageSize;
+    const sortBy = (req.query.sortBy as string) || 'listen_count.desc';
+
+    const data = await listenbrainz.getTopAlbums({
+      offset,
+      count: pageSize,
+      range: 'week',
+    });
+
+    const media = await Media.getRelatedMedia(
+      req.user,
+      data.payload.release_groups.map((album) => album.release_group_mbid)
+    );
+
+    const albumDetailsPromises = data.payload.release_groups.map(
+      async (album) => {
+        try {
+          const details = await musicbrainz.getAlbum({
+            albumId: album.release_group_mbid,
+          });
+
+          const images =
+            details.images?.length > 0
+              ? details.images.filter((img) => img.CoverType === 'Cover')
+              : album.caa_id
+              ? [
+                  {
+                    CoverType: 'Cover',
+                    Url: `https://coverartarchive.org/release/${album.caa_release_mbid}/front`,
+                  },
+                ]
+              : [];
+
+          return {
+            id: album.release_group_mbid,
+            mediaType: 'album',
+            type: 'Album',
+            title: album.release_group_name,
+            artistname: album.artist_name,
+            artistId: album.artist_mbids[0],
+            releasedate: details.releasedate || '',
+            images,
+            mediaInfo: media?.find(
+              (med) => med.mbId === album.release_group_mbid
+            ),
+            listenCount: album.listen_count,
+          };
+        } catch (e) {
+          return {
+            id: album.release_group_mbid,
+            mediaType: 'album',
+            type: 'Album',
+            title: album.release_group_name,
+            artistname: album.artist_name,
+            artistId: album.artist_mbids[0],
+            releasedate: '',
+            images: album.caa_id
+              ? [
+                  {
+                    CoverType: 'Cover',
+                    Url: `https://coverartarchive.org/release/${album.caa_release_mbid}/front`,
+                  },
+                ]
+              : [],
+            mediaInfo: media?.find(
+              (med) => med.mbId === album.release_group_mbid
+            ),
+            listenCount: album.listen_count,
+          };
+        }
+      }
+    );
+
+    const results = await Promise.all(albumDetailsPromises);
+
+    switch (sortBy) {
+      case 'listen_count.asc':
+        results.sort((a, b) => a.listenCount - b.listenCount);
+        break;
+      case 'listen_count.desc':
+        results.sort((a, b) => b.listenCount - a.listenCount);
+        break;
+      case 'title.asc':
+        results.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case 'title.desc':
+        results.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      case 'release_date.asc':
+        results.sort((a, b) =>
+          (a.releasedate || '').localeCompare(b.releasedate || '')
+        );
+        break;
+      case 'release_date.desc':
+        results.sort((a, b) =>
+          (b.releasedate || '').localeCompare(a.releasedate || '')
+        );
+        break;
+    }
+
+    return res.status(200).json({
+      page,
+      totalPages: Math.ceil(data.payload.count / pageSize),
+      totalResults: data.payload.count,
+      results,
+    });
+  } catch (e) {
+    logger.debug('Something went wrong retrieving popular music', {
+      label: 'API',
+      errorMessage: e.message,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to retrieve popular music.',
+    });
+  }
+});
 
 discoverRoutes.get<Record<string, unknown>, WatchlistResponse>(
   '/watchlist',

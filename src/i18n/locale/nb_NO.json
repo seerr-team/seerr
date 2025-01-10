@@ -929,7 +929,7 @@
   "components.Settings.Notifications.NotificationsWebhook.resetPayloadSuccess": "JSON payload tilbakestilt!",
   "components.Settings.Notifications.NotificationsPushover.userTokenTip": "Din 30-tegns <UsersGroupsLink>bruker- eller gruppe-nøkkel</UsersGroupsLink>",
   "components.Settings.SettingsJobsCache.cachevsize": "Verdistørrelse",
-  "components.Settings.serviceSettingsDescription": "Konfigurer dine {serverType}tjener(e) nedenfor. Du kan koble til flere forskellige {serverType}tjenere men kun to av dem kan markeres som standard (en som ikke er 4K og en 4K). Administratorer kan endre hvilken tjener som brukes før godkjennelse av nye forespørsler.",
+  "components.Settings.videoServiceSettingsDescription": "Konfigurer dine {serverType}tjener(e) nedenfor. Du kan koble til flere forskellige {serverType}tjenere men kun to av dem kan markeres som standard (en som ikke er 4K og en 4K). Administratorer kan endre hvilken tjener som brukes før godkjennelse av nye forespørsler.",
   "components.ManageSlideOver.manageModalClearMediaWarning": "* Dette vil slette all data for denne tittelen uten mulighet for å bli gjennopprettet, det inkluderer alle forespørsler, avvik osv. Hvis denne tittelen finnes i ditt {mediaServerName} bibliotek vil medieinformasjon bli opprettet på nytt under neste skanning.",
   "components.Settings.Notifications.NotificationsWebhook.authheader": "Autorisasjonshode",
   "components.Settings.SettingsJobsCache.cacheksize": "Nøkkelstørrelse",

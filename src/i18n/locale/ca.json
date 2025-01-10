@@ -683,7 +683,7 @@
   "components.UserProfile.UserSettings.UserNotificationSettings.discordsettingssaved": "La configuració de les notificacions de Discord s'ha desat correctament!",
   "components.UserProfile.UserSettings.UserNotificationSettings.discordsettingsfailed": "No s'ha pogut desar la configuració de les notificacions de Discord.",
   "components.UserList.autogeneratepasswordTip": "Envieu a l'usuari una contrasenya generada per servidor",
-  "components.Settings.serviceSettingsDescription": "Configureu els vostres servidors {serverType} a continuació. Podeu connectar diversos servidors {serverType}, però només dos es poden marcar com a valors predeterminats (un no 4K i un 4K). Els administradors poden substituir el servidor utilitzat per processar noves sol·licituds abans de l’aprovació.",
+  "components.Settings.videoServiceSettingsDescription": "Configureu els vostres servidors {serverType} a continuació. Podeu connectar diversos servidors {serverType}, però només dos es poden marcar com a valors predeterminats (un no 4K i un 4K). Els administradors poden substituir el servidor utilitzat per processar noves sol·licituds abans de l’aprovació.",
   "components.Settings.serverSecure": "segur",
   "components.Settings.noDefaultServer": "Cal marcar com a mínim un servidor {serverType} com a predeterminat perquè es processin les sol·licituds de {mediaType}.",
   "components.Settings.noDefaultNon4kServer": "Si només teniu un servidor únic {serverType} per a contingut no 4K i 4K (o si només descarregueu contingut 4K), el vostre servidor {serverType} <strong> NO</strong> deuria marcar-se com a servidor 4K.",

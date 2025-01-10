@@ -85,6 +85,7 @@ const messages: { [messageName: string]: MessageDescriptor } = defineMessages(
     'availability-sync': 'Media Availability Sync',
     'radarr-scan': 'Radarr Scan',
     'sonarr-scan': 'Sonarr Scan',
+    'lidarr-scan': 'Lidarr Scan',
     'download-sync': 'Download Sync',
     'download-sync-reset': 'Download Sync Reset',
     'image-cache-cleanup': 'Image Cache Cleanup',
@@ -739,6 +740,37 @@ const SettingsJobs = () => {
               </Table.TD>
               <Table.TD>
                 {formatBytes(cacheData?.imageCache.avatar.size ?? 0)}
+              </Table.TD>
+            </tr>
+            <tr>
+              <Table.TD>Cover Art Archive (caa)</Table.TD>
+              <Table.TD>
+                {intl.formatNumber(cacheData?.imageCache.caa.imageCount ?? 0)}
+              </Table.TD>
+              <Table.TD>
+                {formatBytes(cacheData?.imageCache.caa.size ?? 0)}
+              </Table.TD>
+            </tr>
+            <tr>
+              <Table.TD>Lidarr Images (lidarr)</Table.TD>
+              <Table.TD>
+                {intl.formatNumber(
+                  cacheData?.imageCache.lidarr.imageCount ?? 0
+                )}
+              </Table.TD>
+              <Table.TD>
+                {formatBytes(cacheData?.imageCache.lidarr.size ?? 0)}
+              </Table.TD>
+            </tr>
+            <tr>
+              <Table.TD>Fanart.tv (fanart)</Table.TD>
+              <Table.TD>
+                {intl.formatNumber(
+                  cacheData?.imageCache.fanart.imageCount ?? 0
+                )}
+              </Table.TD>
+              <Table.TD>
+                {formatBytes(cacheData?.imageCache.fanart.size ?? 0)}
               </Table.TD>
             </tr>
           </Table.TBody>

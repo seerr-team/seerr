@@ -790,7 +790,7 @@
   "components.Settings.serverpresetLoad": "Натисніть кнопку, щоб завантажити список доступних серверів",
   "components.Settings.serverpresetManualMessage": "Ручне налаштування",
   "components.Settings.serverpresetRefreshing": "Отримання списку серверів…",
-  "components.Settings.serviceSettingsDescription": "Налаштуйте сервер(и) {serverType} нижче. Ви можете підключити кілька серверів {serverType}, але тільки два з них можуть бути позначені як сервери за промовчанням (один не 4К і один 4К). Адміністратори можуть перевизначити сервер для обробки нових запитів до їх схвалення.",
+  "components.Settings.videoServiceSettingsDescription": "Налаштуйте сервер(и) {serverType} нижче. Ви можете підключити кілька серверів {serverType}, але тільки два з них можуть бути позначені як сервери за промовчанням (один не 4К і один 4К). Адміністратори можуть перевизначити сервер для обробки нових запитів до їх схвалення.",
   "components.Settings.services": "Служби",
   "components.Settings.settingUpPlexDescription": "Щоб налаштувати Plex, ви можете або ввести дані вручну, або вибрати сервер, отриманий зі сторінки <RegisterPlexTVLink>plex.tv</RegisterPlexTVLink>. Натисніть кнопку праворуч від випадаючого списку, щоб отримати список доступних серверів .",
   "components.Settings.sonarrsettings": "Налаштування Sonarr",

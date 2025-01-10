@@ -20,6 +20,7 @@ export interface PersonDetails {
   adult: boolean;
   imdbId?: string;
   homepage?: string;
+  mbArtistId?: string;
 }
 
 export interface PersonCredit {

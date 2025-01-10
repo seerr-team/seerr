@@ -658,7 +658,7 @@
   "components.UserProfile.UserSettings.UserNotificationSettings.email": "Email",
   "components.UserProfile.UserSettings.UserNotificationSettings.discordsettingssaved": "¡Los ajustes de notificaciones de Discord se han guardado correctamente!",
   "components.UserProfile.UserSettings.UserNotificationSettings.discordsettingsfailed": "No se han podido guardar los ajustes de notificaciones de Discord.",
-  "components.Settings.serviceSettingsDescription": "Configura tu(s) servidor(es) {serverType} a continuación. Puedes conectar a múltiples servidores de {serverType}, pero solo dos de ellos pueden ser marcados como por defecto (uno no-4k y otro 4k). Los administradores podrán modificar el servidor usado al procesar nuevas solicitudes antes de su aprobación.",
+  "components.Settings.videoServiceSettingsDescription": "Configura tu(s) servidor(es) {serverType} a continuación. Puedes conectar a múltiples servidores de {serverType}, pero solo dos de ellos pueden ser marcados como por defecto (uno no-4k y otro 4k). Los administradores podrán modificar el servidor usado al procesar nuevas solicitudes antes de su aprobación.",
   "components.Settings.mediaTypeMovie": "película",
   "components.Settings.SonarrModal.testFirstTags": "Probar conexión para cargar etiquetas",
   "components.Settings.SonarrModal.tags": "Etiquetas",

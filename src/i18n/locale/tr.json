@@ -962,7 +962,7 @@
   "components.Settings.manualscanDescription": "Normalde, bu yalnızca her 24 saatte bir çalıştırılır. Jellyseerr, Plex sunucunuzun son eklenenlerini sık sık kontrol edecektir. Plex'i ilk kez yapılandırıyorsanız, tek seferlik tam manuel kütüphane taraması önerilir!",
   "components.Settings.manualscanJellyfin": "Kütüphaneleri Elle Tara",
   "components.Settings.menuJobs": "İşlemler & Önbellek",
-  "components.Settings.serviceSettingsDescription": "{serverType} sunucu(lar)ınızı aşağıdan yapılandırın. Birden fazla {serverType} sunucusuna bağlanabilirsiniz, ancak sadece iki tanesi varsayılan olarak tanımlanabilir (bir adet 4K ve bir adet 4K dışı). Yöneticiler sunucuları her daim mutlak bir biçimde yönetebilirler.",
+  "components.Settings.videoServiceSettingsDescription": "{serverType} sunucu(lar)ınızı aşağıdan yapılandırın. Birden fazla {serverType} sunucusuna bağlanabilirsiniz, ancak sadece iki tanesi varsayılan olarak tanımlanabilir (bir adet 4K ve bir adet 4K dışı). Yöneticiler sunucuları her daim mutlak bir biçimde yönetebilirler.",
   "components.Settings.services": "Servisler",
   "components.Settings.settingUpPlexDescription": "Plex'i kurmak için, ayrıntıları manuel olarak girebilir veya <RegisterPlexTVLink>plex.tv</RegisterPlexTVLink> adresinden alınan bir sunucuyu seçebilirsiniz. Kullanılabilir sunucuların listesini almak için açılır menünün sağındaki düğmeyi kullanın.",
   "components.Settings.ssl": "SSL",

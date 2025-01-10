@@ -22,6 +22,7 @@ import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { NonFunctionProperties } from '@server/interfaces/api/common';
 import type { MovieDetails } from '@server/models/Movie';
+import type { MusicDetails } from '@server/models/Music';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
 import Link from 'next/link';
@@ -45,8 +46,16 @@ const messages = defineMessages('components.RequestCard', {
   unknowntitle: 'Unknown Title',
 });
 
-const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
+const isMovie = (
+  movie: MovieDetails | TvDetails | MusicDetails
+): movie is MovieDetails => {
   return (movie as MovieDetails).title !== undefined;
+};
+
+const isAlbum = (
+  media: MovieDetails | TvDetails | MusicDetails
+): media is MusicDetails => {
+  return (media as MusicDetails).artistId !== undefined;
 };
 
 const RequestCardPlaceholder = () => {
@@ -231,7 +240,9 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
   const url =
     request.type === 'movie'
       ? `/api/v1/movie/${request.media.tmdbId}`
-      : `/api/v1/tv/${request.media.tmdbId}`;
+      : request.type === 'tv'
+      ? `/api/v1/tv/${request.media.tmdbId}`
+      : `/api/v1/music/${request.media.mbId}`;
 
   const { data: title, error } = useSWR<MovieDetails | TvDetails>(
     inView ? `${url}` : null
@@ -335,43 +346,68 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
         className="relative flex w-72 overflow-hidden rounded-xl bg-gray-800 bg-cover bg-center p-4 text-gray-400 shadow ring-1 ring-gray-700 sm:w-96"
         data-testid="request-card"
       >
-        {title.backdropPath && (
-          <div className="absolute inset-0 z-0">
-            <CachedImage
-              type="tmdb"
-              alt=""
-              src={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              fill
-            />
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage:
-                  'linear-gradient(135deg, rgba(17, 24, 39, 0.47) 0%, rgba(17, 24, 39, 1) 75%)',
-              }}
-            />
-          </div>
-        )}
+        <div className="absolute inset-0 z-0">
+          <CachedImage
+            type={request.type === 'music' ? 'music' : 'tmdb'}
+            alt=""
+            src={
+              request.type === 'music' && isAlbum(title)
+                ? title.artist.images?.find((img) => img.CoverType === 'Fanart')
+                    ?.Url ||
+                  title.artist.images?.find((img) => img.CoverType === 'Poster')
+                    ?.Url ||
+                  title.images?.find(
+                    (img) => img.CoverType.toLowerCase() === 'cover'
+                  )?.Url ||
+                  ''
+                : `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${
+                    title.backdropPath ?? ''
+                  }`
+            }
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            fill
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage:
+                'linear-gradient(135deg, rgba(17, 24, 39, 0.47) 0%, rgba(17, 24, 39, 1) 75%)',
+            }}
+          />
+        </div>
         <div
           className="relative z-10 flex min-w-0 flex-1 flex-col pr-4"
           data-testid="request-card-title"
         >
           <div className="hidden text-xs font-medium text-white sm:flex">
-            {(isMovie(title) ? title.releaseDate : title.firstAirDate)?.slice(
-              0,
-              4
+            {(isMovie(title)
+              ? title.releaseDate
+              : isAlbum(title)
+              ? title.releaseDate
+              : title.firstAirDate
+            )?.slice(0, 4)}
+            {isAlbum(title) && (
+              <>
+                <span className="mx-2">-</span>
+                <span>{title.artist.artistName}</span>
+              </>
             )}
           </div>
           <Link
             href={
               request.type === 'movie'
                 ? `/movie/${requestData.media.tmdbId}`
-                : `/tv/${requestData.media.tmdbId}`
+                : request.type === 'tv'
+                ? `/tv/${requestData.media.tmdbId}`
+                : `/music/${requestData.media.mbId}`
             }
             className="overflow-hidden overflow-ellipsis whitespace-nowrap text-base font-bold text-white hover:underline sm:text-lg"
           >
-            {isMovie(title) ? title.title : title.name}
+            {isMovie(title)
+              ? title.title
+              : isAlbum(title)
+              ? title.title
+              : title.name}
           </Link>
           {hasPermission(
             [Permission.MANAGE_REQUESTS, Permission.REQUEST_VIEW],
@@ -608,23 +644,46 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
           href={
             request.type === 'movie'
               ? `/movie/${requestData.media.tmdbId}`
-              : `/tv/${requestData.media.tmdbId}`
+              : request.type === 'tv'
+              ? `/tv/${requestData.media.tmdbId}`
+              : `/music/${requestData.media.mbId}`
           }
-          className="w-20 flex-shrink-0 scale-100 transform-gpu cursor-pointer overflow-hidden rounded-md shadow-sm transition duration-300 hover:scale-105 hover:shadow-md sm:w-28"
+          className={`w-20 flex-shrink-0 scale-100 transform-gpu cursor-pointer overflow-hidden rounded-md shadow-sm transition duration-300 hover:scale-105 hover:shadow-md sm:w-28`}
         >
-          <CachedImage
-            type="tmdb"
-            src={
-              title.posterPath
-                ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
-                : '/images/seerr_poster_not_found.png'
-            }
-            alt=""
-            sizes="100vw"
-            style={{ width: '100%', height: 'auto' }}
-            width={600}
-            height={900}
-          />
+          <div
+            className={`${
+              request.type === 'music' ? 'relative pb-[150%]' : ''
+            }`}
+          >
+            <CachedImage
+              type={request.type === 'music' ? 'music' : 'tmdb'}
+              src={
+                request.type === 'music' && isAlbum(title)
+                  ? title.images?.find((image) => image.CoverType === 'Cover')
+                      ?.Url ?? '/images/overseerr_poster_not_found.png'
+                  : title.posterPath
+                  ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
+                  : '/images/seerr_poster_not_found.png'
+              }
+              alt=""
+              sizes="100vw"
+              style={{
+                width: '100%',
+                height: 'auto',
+                margin: request.type === 'music' ? 'auto' : undefined,
+                position: request.type === 'music' ? 'absolute' : undefined,
+                top: request.type === 'music' ? '50%' : undefined,
+                left: request.type === 'music' ? '50%' : undefined,
+                transform:
+                  request.type === 'music'
+                    ? 'translate(-50%, -50%)'
+                    : undefined,
+                borderRadius: request.type === 'music' ? '0.375rem' : undefined,
+              }}
+              width={600}
+              height={request.type === 'music' ? 600 : 900}
+            />
+          </div>
         </Link>
       </div>
     </>

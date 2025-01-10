@@ -1,4 +1,11 @@
 import type {
+  MbAlbumDetails,
+  MbAlbumResult,
+  MbArtistDetails,
+  MbArtistResult,
+  MbImage,
+} from '@server/api/musicbrainz/interfaces';
+import type {
   TmdbCollectionResult,
   TmdbMovieDetails,
   TmdbMovieResult,
@@ -9,10 +16,15 @@ import type {
 } from '@server/api/themoviedb/interfaces';
 import { MediaType as MainMediaType } from '@server/constants/media';
 import type Media from '@server/entity/Media';
+export type MediaType =
+  | 'tv'
+  | 'movie'
+  | 'person'
+  | 'collection'
+  | 'artist'
+  | 'album';
 
-export type MediaType = 'tv' | 'movie' | 'person' | 'collection';
-
-interface SearchResult {
+interface TmdbSearchResult {
   id: number;
   mediaType: MediaType;
   popularity: number;
@@ -26,7 +38,14 @@ interface SearchResult {
   mediaInfo?: Media;
 }
 
-export interface MovieResult extends SearchResult {
+interface MbSearchResult {
+  id: string;
+  mediaType: MediaType;
+  score: number;
+  mediaInfo?: Media;
+}
+
+export interface MovieResult extends TmdbSearchResult {
   mediaType: 'movie';
   title: string;
   originalTitle: string;
@@ -36,7 +55,7 @@ export interface MovieResult extends SearchResult {
   mediaInfo?: Media;
 }
 
-export interface TvResult extends SearchResult {
+export interface TvResult extends TmdbSearchResult {
   mediaType: 'tv';
   name: string;
   originalName: string;
@@ -66,7 +85,46 @@ export interface PersonResult {
   knownFor: (MovieResult | TvResult)[];
 }
 
-export type Results = MovieResult | TvResult | PersonResult | CollectionResult;
+export interface ArtistResult extends MbSearchResult {
+  mediaType: 'artist';
+  artistname: string;
+  overview: string;
+  disambiguation: string;
+  type: 'Group' | 'Person';
+  status: string;
+  sortname: string;
+  genres: string[];
+  images: MbImage[];
+  artistimage?: string;
+  rating?: {
+    Count: number;
+    Value: number | null;
+  };
+  mediaInfo?: Media;
+}
+
+export interface AlbumResult extends MbSearchResult {
+  mediaType: 'album';
+  title: string;
+  artistid: string;
+  artistname?: string;
+  type: string;
+  releasedate: string;
+  disambiguation: string;
+  genres: string[];
+  images: MbImage[];
+  secondarytypes: string[];
+  mediaInfo?: Media;
+  overview?: string;
+}
+
+export type Results =
+  | MovieResult
+  | TvResult
+  | PersonResult
+  | CollectionResult
+  | ArtistResult
+  | AlbumResult;
 
 export const mapMovieResult = (
   movieResult: TmdbMovieResult,
@@ -144,18 +202,131 @@ export const mapPersonResult = (
   }),
 });
 
-export const mapSearchResults = (
+export const mapArtistResult = (
+  artistResult: MbArtistResult,
+  media?: Media
+): ArtistResult => ({
+  id: artistResult.id,
+  score: artistResult.score,
+  mediaType: 'artist',
+  artistname: artistResult.artistname,
+  overview: artistResult.overview,
+  disambiguation: artistResult.disambiguation,
+  type: artistResult.type,
+  status: artistResult.status,
+  sortname: artistResult.sortname,
+  genres: artistResult.genres,
+  images: artistResult.images,
+  rating: artistResult.rating,
+  mediaInfo: media,
+});
+
+export const mapAlbumResult = (
+  albumResult: MbAlbumResult,
+  media?: Media
+): AlbumResult => ({
+  id: albumResult.id,
+  score: albumResult.score,
+  mediaType: 'album',
+  title: albumResult.title,
+  artistid: albumResult.artistid,
+  artistname: albumResult.artists?.[0]?.artistname,
+  type: albumResult.type,
+  releasedate: albumResult.releasedate,
+  disambiguation: albumResult.disambiguation,
+  genres: albumResult.genres,
+  images: albumResult.images,
+  secondarytypes: albumResult.secondarytypes,
+  mediaInfo: media,
+  overview: albumResult.artists?.[0]?.overview,
+});
+
+const isTmdbMovie = (
+  result:
+    | TmdbMovieResult
+    | TmdbTvResult
+    | TmdbPersonResult
+    | TmdbCollectionResult
+    | MbArtistResult
+    | MbAlbumResult
+): result is TmdbMovieResult => {
+  return result.media_type === 'movie';
+};
+
+const isTmdbTv = (
+  result:
+    | TmdbMovieResult
+    | TmdbTvResult
+    | TmdbPersonResult
+    | TmdbCollectionResult
+    | MbArtistResult
+    | MbAlbumResult
+): result is TmdbTvResult => {
+  return result.media_type === 'tv';
+};
+
+const isTmdbPerson = (
+  result:
+    | TmdbMovieResult
+    | TmdbTvResult
+    | TmdbPersonResult
+    | TmdbCollectionResult
+    | MbArtistResult
+    | MbAlbumResult
+): result is TmdbPersonResult => {
+  return result.media_type === 'person';
+};
+
+const isTmdbCollection = (
+  result:
+    | TmdbMovieResult
+    | TmdbTvResult
+    | TmdbPersonResult
+    | TmdbCollectionResult
+    | MbArtistResult
+    | MbAlbumResult
+): result is TmdbCollectionResult => {
+  return result.media_type === 'collection';
+};
+
+const isLidarrArtist = (
+  result:
+    | TmdbMovieResult
+    | TmdbTvResult
+    | TmdbPersonResult
+    | TmdbCollectionResult
+    | MbArtistResult
+    | MbAlbumResult
+): result is MbArtistResult => {
+  return result.media_type === 'artist';
+};
+
+const isLidarrAlbum = (
+  result:
+    | TmdbMovieResult
+    | TmdbTvResult
+    | TmdbPersonResult
+    | TmdbCollectionResult
+    | MbArtistResult
+    | MbAlbumResult
+): result is MbAlbumResult => {
+  return result.media_type === 'album';
+};
+
+export const mapSearchResults = async (
   results: (
     | TmdbMovieResult
     | TmdbTvResult
     | TmdbPersonResult
     | TmdbCollectionResult
+    | MbArtistResult
+    | MbAlbumResult
   )[],
   media?: Media[]
-): Results[] =>
-  results.map((result) => {
-    switch (result.media_type) {
-      case 'movie':
+): Promise<Results[]> =>
+  Promise.all(
+    results.map(async (result) => {
+      if (isTmdbMovie(result)) {
         return mapMovieResult(
           result,
           media?.find(
@@ -163,7 +334,7 @@ export const mapSearchResults = (
               req.tmdbId === result.id && req.mediaType === MainMediaType.MOVIE
           )
         );
-      case 'tv':
+      } else if (isTmdbTv(result)) {
         return mapTvResult(
           result,
           media?.find(
@@ -171,12 +342,25 @@ export const mapSearchResults = (
               req.tmdbId === result.id && req.mediaType === MainMediaType.TV
           )
         );
-      case 'collection':
-        return mapCollectionResult(result);
-      default:
+      } else if (isTmdbPerson(result)) {
         return mapPersonResult(result);
-    }
-  });
+      } else if (isTmdbCollection(result)) {
+        return mapCollectionResult(result);
+      } else if (isLidarrArtist(result)) {
+        return mapArtistResult(result);
+      } else if (isLidarrAlbum(result)) {
+        return mapAlbumResult(
+          result,
+          media?.find(
+            (req) =>
+              req.mbId === result.id && req.mediaType === MainMediaType.MUSIC
+          )
+        );
+      }
+
+      throw new Error(`Unhandled result type: ${JSON.stringify(result)}`);
+    })
+  );
 
 export const mapMovieDetailsToResult = (
   movieDetails: TmdbMovieDetails
@@ -227,4 +411,40 @@ export const mapPersonDetailsToResult = (
   adult: personDetails.adult,
   profile_path: personDetails.profile_path,
   known_for: [],
+});
+
+export const mapArtistDetailsToResult = (
+  artistDetails: MbArtistDetails
+): MbArtistResult => ({
+  id: artistDetails.id,
+  score: 100, // Default score since we're mapping details
+  media_type: 'artist',
+  artistname: artistDetails.artistname,
+  overview: artistDetails.overview,
+  disambiguation: artistDetails.disambiguation,
+  type: artistDetails.type,
+  status: artistDetails.status,
+  sortname: artistDetails.sortname,
+  genres: artistDetails.genres,
+  images: artistDetails.images,
+  links: artistDetails.links,
+  rating: artistDetails.rating,
+});
+
+export const mapAlbumDetailsToResult = (
+  albumDetails: MbAlbumDetails
+): MbAlbumResult => ({
+  id: albumDetails.id,
+  score: 100,
+  media_type: 'album',
+  title: albumDetails.title,
+  artistid: albumDetails.artistid,
+  artists: albumDetails.artists,
+  type: albumDetails.type,
+  releasedate: albumDetails.releasedate,
+  disambiguation: albumDetails.disambiguation,
+  genres: albumDetails.genres,
+  images: albumDetails.images,
+  secondarytypes: albumDetails.secondarytypes,
+  overview: albumDetails.overview || albumDetails.artists?.[0]?.overview || '',
 });

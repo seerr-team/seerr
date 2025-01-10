@@ -914,7 +914,7 @@
   "components.UserList.importfromplexerror": "Při importu uživatelů systému Plex se něco pokazilo.",
   "components.Settings.Notifications.validationSmtpHostRequired": "Musíte zadat platný název hostitele nebo IP adresu",
   "components.Settings.RadarrModal.validationProfileRequired": "Je třeba vybrat profil kvality",
-  "components.Settings.serviceSettingsDescription": "Níže nakonfigurujte server(y) {serverType}. Můžete připojit více serverů {serverType}, ale pouze dva z nich mohou být označeny jako výchozí (jeden ne-4K a jeden 4K). Správci mohou před schválením změnit server používaný ke zpracování nových požadavků.",
+  "components.Settings.videoServiceSettingsDescription": "Níže nakonfigurujte server(y) {serverType}. Můžete připojit více serverů {serverType}, ale pouze dva z nich mohou být označeny jako výchozí (jeden ne-4K a jeden 4K). Správci mohou před schválením změnit server používaný ke zpracování nových požadavků.",
   "components.Settings.RadarrModal.testFirstTags": "Testovací připojení k načítání značek",
   "components.UserList.validationpasswordminchars": "Heslo je příliš krátké; mělo by mít minimálně 8 znaků",
   "components.UserProfile.pastdays": "{type} (posledních {days} dnů)",

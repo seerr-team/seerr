@@ -18,7 +18,7 @@ import {
 import type { ZodNumber, ZodOptional, ZodString } from 'zod';
 
 @Entity()
-@Unique(['tmdbId'])
+@Unique(['tmdbId', 'mbId'])
 export class Blacklist implements BlacklistItem {
   @PrimaryGeneratedColumn()
   public id: number;
@@ -29,9 +29,13 @@ export class Blacklist implements BlacklistItem {
   @Column({ nullable: true, type: 'varchar' })
   title?: string;
 
-  @Column()
+  @Column({ nullable: true })
   @Index()
-  public tmdbId: number;
+  public tmdbId?: number;
+
+  @Column({ nullable: true })
+  @Index()
+  public mbId?: string;
 
   @ManyToOne(() => User, (user) => user.id, {
     eager: true,
@@ -62,6 +66,7 @@ export class Blacklist implements BlacklistItem {
         mediaType: MediaType;
         title?: ZodOptional<ZodString>['_output'];
         tmdbId: ZodNumber['_output'];
+        mbId?: ZodOptional<ZodString>['_output']
         blacklistedTags?: string;
       };
     },
@@ -74,9 +79,10 @@ export class Blacklist implements BlacklistItem {
 
     const mediaRepository = em.getRepository(Media);
     let media = await mediaRepository.findOne({
-      where: {
-        tmdbId: blacklistRequest.tmdbId,
-      },
+      where:
+        blacklistRequest.mediaType === 'music'
+          ? { mbId: blacklistRequest.mbId }
+          : { tmdbId: blacklistRequest.tmdbId },
     });
 
     const blacklistRepository = em.getRepository(this);
@@ -86,6 +92,7 @@ export class Blacklist implements BlacklistItem {
     if (!media) {
       media = new Media({
         tmdbId: blacklistRequest.tmdbId,
+        mbId: blacklistRequest.mbId,
         status: MediaStatus.BLACKLISTED,
         status4k: MediaStatus.BLACKLISTED,
         mediaType: blacklistRequest.mediaType,

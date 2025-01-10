@@ -1,3 +1,4 @@
+import LidarrAPI from '@server/api/servarr/lidarr';
 import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import { MediaStatus, MediaType } from '@server/constants/media';
@@ -29,33 +30,39 @@ import Season from './Season';
 class Media {
   public static async getRelatedMedia(
     user: User | undefined,
-    tmdbIds: number | number[]
+    ids: (number | string)[]
   ): Promise<Media[]> {
     const mediaRepository = getRepository(Media);
 
     try {
-      let finalIds: number[];
-      if (!Array.isArray(tmdbIds)) {
-        finalIds = [tmdbIds];
-      } else {
-        finalIds = tmdbIds;
-      }
-
-      if (finalIds.length === 0) {
+      if (ids.length === 0) {
         return [];
       }
 
-      const media = await mediaRepository
+      const tmdbIds = ids.filter((id): id is number => typeof id === 'number');
+      const mbIds = ids.filter((id): id is string => typeof id === 'string');
+
+      const queryBuilder = mediaRepository
         .createQueryBuilder('media')
         .leftJoinAndSelect(
           'media.watchlists',
           'watchlist',
-          'media.id= watchlist.media and watchlist.requestedBy = :userId',
+          'media.id = watchlist.media and watchlist.requestedBy = :userId',
           { userId: user?.id }
-        ) //,
-        .where(' media.tmdbId in (:...finalIds)', { finalIds })
-        .getMany();
+        );
 
+      if (tmdbIds.length > 0 && mbIds.length > 0) {
+        queryBuilder.where(
+          '(media.tmdbId IN (:...tmdbIds) OR media.mbId IN (:...mbIds))',
+          { tmdbIds, mbIds }
+        );
+      } else if (tmdbIds.length > 0) {
+        queryBuilder.where('media.tmdbId IN (:...tmdbIds)', { tmdbIds });
+      } else if (mbIds.length > 0) {
+        queryBuilder.where('media.mbId IN (:...mbIds)', { mbIds });
+      }
+
+      const media = await queryBuilder.getMany();
       return media;
     } catch (e) {
       logger.error(e.message);
@@ -64,14 +71,19 @@ class Media {
   }
 
   public static async getMedia(
-    id: number,
+    id: number | string,
     mediaType: MediaType
   ): Promise<Media | undefined> {
     const mediaRepository = getRepository(Media);
 
     try {
+      const whereClause =
+        typeof id === 'string'
+          ? { mbId: id, mediaType }
+          : { tmdbId: id, mediaType };
+
       const media = await mediaRepository.findOne({
-        where: { tmdbId: id, mediaType: mediaType },
+        where: whereClause,
         relations: { requests: true, issues: true },
       });
 
@@ -88,7 +100,7 @@ class Media {
   @Column({ type: 'varchar' })
   public mediaType: MediaType;
 
-  @Column()
+  @Column({ nullable: true })
   @Index()
   public tmdbId: number;
 
@@ -99,6 +111,10 @@ class Media {
   @Column({ nullable: true })
   @Index()
   public imdbId?: string;
+
+  @Column({ nullable: true })
+  @Index()
+  public mbId?: string;
 
   @Column({ type: 'int', default: MediaStatus.UNKNOWN })
   public status: MediaStatus;
@@ -319,6 +335,21 @@ class Media {
         }
       }
     }
+
+    if (this.mediaType === MediaType.MUSIC) {
+      if (this.serviceId !== null && this.externalServiceSlug !== null) {
+        const settings = getSettings();
+        const server = settings.lidarr.find(
+          (lidarr) => lidarr.id === this.serviceId
+        );
+
+        if (server) {
+          this.serviceUrl = server.externalUrl
+            ? `${server.externalUrl}/album/${this.externalServiceSlug}`
+            : LidarrAPI.buildUrl(server, `/album/${this.externalServiceSlug}`);
+        }
+      }
+    }
   }
 
   @AfterLoad()
@@ -371,6 +402,20 @@ class Media {
         this.downloadStatus4k = downloadTracker.getSeriesProgress(
           this.serviceId4k,
           this.externalServiceId4k
+        );
+      }
+    }
+
+    if (this.mediaType === MediaType.MUSIC) {
+      if (
+        this.externalServiceId !== undefined &&
+        this.externalServiceId !== null &&
+        this.serviceId !== undefined &&
+        this.serviceId !== null
+      ) {
+        this.downloadStatus = downloadTracker.getMusicProgress(
+          this.serviceId,
+          this.externalServiceId
         );
       }
     }
