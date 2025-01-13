@@ -11,6 +11,41 @@ export class AddMusicSupport1714310036946 implements MigrationInterface {
     await queryRunner.query(`DROP INDEX "IDX_41a289eb1fa489c1bc6f38d9c3"`);
     await queryRunner.query(`DROP INDEX "IDX_7157aad07c73f6a6ae3bbd5ef5"`);
 
+    await queryRunner.query(`DROP TABLE IF EXISTS "temporary_watchlist"`);
+    await queryRunner.query(
+      `CREATE TABLE "temporary_watchlist" (
+        "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        "ratingKey" varchar NOT NULL,
+        "mediaType" varchar NOT NULL,
+        "title" varchar NOT NULL,
+        "tmdbId" integer,
+        "mbId" varchar,
+        "createdAt" datetime NOT NULL DEFAULT (datetime('now')),
+        "updatedAt" datetime NOT NULL DEFAULT (datetime('now')),
+        "requestedById" integer,
+        "mediaId" integer,
+        CONSTRAINT "UNIQUE_USER_DB" UNIQUE ("tmdbId", "requestedById"),
+        CONSTRAINT "UNIQUE_USER_FOREIGN" UNIQUE ("mbId", "requestedById")
+      )`
+    );
+
+    await queryRunner.query(
+      `INSERT INTO "temporary_watchlist"(
+        "id", "ratingKey", "mediaType", "title", "tmdbId",
+        "createdAt", "updatedAt", "requestedById", "mediaId"
+      ) SELECT
+        "id", "ratingKey", "mediaType", "title", "tmdbId",
+        "createdAt", "updatedAt", "requestedById", "mediaId"
+      FROM "watchlist"`
+    );
+
+    await queryRunner.query(`DROP TABLE "watchlist"`);
+    await queryRunner.query(`ALTER TABLE "temporary_watchlist" RENAME TO "watchlist"`);
+
+    await queryRunner.query(
+      `CREATE INDEX "IDX_watchlist_mbid" ON "watchlist" ("mbId")`
+    );
+
     await queryRunner.query(
       `CREATE TABLE "temporary_media" (
         "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -68,58 +103,41 @@ export class AddMusicSupport1714310036946 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX "IDX_7157aad07c73f6a6ae3bbd5ef5" ON "media" ("tmdbId")`
     );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_media_mbid" ON "media" ("mbId")`
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "user" DROP COLUMN "musicQuotaLimit"`);
-    await queryRunner.query(`ALTER TABLE "user" DROP COLUMN "musicQuotaDays"`);
-
-    await queryRunner.query(`DROP INDEX "IDX_7ff2d11f6a83cb52386eaebe74"`);
-    await queryRunner.query(`DROP INDEX "IDX_41a289eb1fa489c1bc6f38d9c3"`);
-    await queryRunner.query(`DROP INDEX "IDX_7157aad07c73f6a6ae3bbd5ef5"`);
+    await queryRunner.query(`DROP INDEX "IDX_watchlist_mbid"`);
+    await queryRunner.query(`DROP INDEX "IDX_media_mbid"`);
 
     await queryRunner.query(
-      `CREATE TABLE "temporary_media" (
+      `CREATE TABLE "temporary_watchlist" (
         "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        "ratingKey" varchar NOT NULL,
         "mediaType" varchar NOT NULL,
+        "title" varchar NOT NULL,
         "tmdbId" integer NOT NULL,
-        "tvdbId" integer,
-        "imdbId" varchar,
-        "status" integer NOT NULL DEFAULT (1),
-        "status4k" integer NOT NULL DEFAULT (1),
         "createdAt" datetime NOT NULL DEFAULT (datetime('now')),
         "updatedAt" datetime NOT NULL DEFAULT (datetime('now')),
-        "lastSeasonChange" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-        "mediaAddedAt" datetime,
-        "serviceId" integer,
-        "serviceId4k" integer,
-        "externalServiceId" integer,
-        "externalServiceId4k" integer,
-        "externalServiceSlug" varchar,
-        "externalServiceSlug4k" varchar,
-        "ratingKey" varchar,
-        "ratingKey4k" varchar,
-        "jellyfinMediaId" varchar,
-        "jellyfinMediaId4k" varchar
+        "requestedById" integer,
+        "mediaId" integer,
+        CONSTRAINT "UNIQUE_USER_DB" UNIQUE ("tmdbId", "requestedById")
       )`
     );
 
     await queryRunner.query(
-      `INSERT INTO "temporary_media"
-      SELECT * FROM "media" WHERE "mediaType" != 'music'`
+      `INSERT INTO "temporary_watchlist"
+      SELECT "id", "ratingKey", "mediaType", "title", "tmdbId",
+             "createdAt", "updatedAt", "requestedById", "mediaId"
+      FROM "watchlist" WHERE "mediaType" != 'music'`
     );
 
-    await queryRunner.query(`DROP TABLE "media"`);
-    await queryRunner.query(`ALTER TABLE "temporary_media" RENAME TO "media"`);
+    await queryRunner.query(`DROP TABLE "watchlist"`);
+    await queryRunner.query(`ALTER TABLE "temporary_watchlist" RENAME TO "watchlist"`);
 
-    await queryRunner.query(
-      `CREATE INDEX "IDX_7ff2d11f6a83cb52386eaebe74" ON "media" ("imdbId")`
-    );
-    await queryRunner.query(
-      `CREATE INDEX "IDX_41a289eb1fa489c1bc6f38d9c3" ON "media" ("tvdbId")`
-    );
-    await queryRunner.query(
-      `CREATE INDEX "IDX_7157aad07c73f6a6ae3bbd5ef5" ON "media" ("tmdbId")`
-    );
+    await queryRunner.query(`ALTER TABLE "user" DROP COLUMN "musicQuotaLimit"`);
+    await queryRunner.query(`ALTER TABLE "user" DROP COLUMN "musicQuotaDays"`);
   }
 }
