@@ -4,10 +4,13 @@ import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
+import { LinkedAccount } from '@server/entity/LinkedAccount';
 import { User } from '@server/entity/User';
 import { UserSettings } from '@server/entity/UserSettings';
 import type {
   UserSettingsGeneralResponse,
+  UserSettingsLinkedAccount,
+  UserSettingsLinkedAccountResponse,
   UserSettingsNotificationsResponse,
 } from '@server/interfaces/api/userSettingsInterfaces';
 import { Permission } from '@server/lib/permissions';
@@ -18,7 +21,7 @@ import { ApiError } from '@server/types/error';
 import { getHostname } from '@server/utils/getHostname';
 import { Router } from 'express';
 import net from 'net';
-import { Not } from 'typeorm';
+import { In, Not, type FindOptionsWhere } from 'typeorm';
 import { canMakePermissionsChange } from '.';
 
 const isOwnProfile = (): Middleware => {
@@ -542,6 +545,73 @@ userSettingsRoutes.delete<{ id: string }>(
       return res.status(204).send();
     } catch (e) {
       return res.status(500).json({ message: e.message });
+    }
+  }
+);
+
+userSettingsRoutes.get<{ id: string }, UserSettingsLinkedAccountResponse>(
+  '/linked-accounts',
+  isOwnProfileOrAdmin(),
+  async (req, res) => {
+    const settings = getSettings();
+    if (!settings.main.oidcLogin) {
+      // don't show any linked accounts if OIDC login is disabled
+      return res.status(200).json([]);
+    }
+
+    const activeProviders = settings.oidc.providers.map((p) => p.slug);
+    const linkedAccountsRepository = getRepository(LinkedAccount);
+
+    const linkedAccounts = await linkedAccountsRepository.find({
+      relations: {
+        user: true,
+      },
+      where: {
+        provider: In(activeProviders),
+        user: {
+          id: Number(req.params.id),
+        },
+      },
+    });
+
+    const linkedAccountInfo = linkedAccounts.map((acc) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const provider = settings.oidc.providers.find(
+        (p) => p.slug === acc.provider
+      )!;
+
+      return {
+        id: acc.id,
+        username: acc.username,
+        provider: {
+          slug: provider.slug,
+          name: provider.name,
+          logo: provider.logo,
+        },
+      } satisfies UserSettingsLinkedAccount;
+    });
+
+    return res.status(200).json(linkedAccountInfo);
+  }
+);
+
+userSettingsRoutes.delete<{ id: string; acctId: string }>(
+  '/linked-accounts/:acctId',
+  isOwnProfileOrAdmin(),
+  async (req, res) => {
+    const linkedAccountsRepository = getRepository(LinkedAccount);
+    const condition: FindOptionsWhere<LinkedAccount> = {
+      id: Number(req.params.acctId),
+      user: {
+        id: Number(req.params.id),
+      },
+    };
+
+    if (await linkedAccountsRepository.exist({ where: condition })) {
+      await linkedAccountsRepository.delete(condition);
+      return res.status(204).send();
+    } else {
+      return res.status(404).send();
     }
   }
 );
