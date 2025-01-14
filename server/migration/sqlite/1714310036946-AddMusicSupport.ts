@@ -40,7 +40,9 @@ export class AddMusicSupport1714310036946 implements MigrationInterface {
     );
 
     await queryRunner.query(`DROP TABLE "watchlist"`);
-    await queryRunner.query(`ALTER TABLE "temporary_watchlist" RENAME TO "watchlist"`);
+    await queryRunner.query(
+      `ALTER TABLE "temporary_watchlist" RENAME TO "watchlist"`
+    );
 
     await queryRunner.query(
       `CREATE INDEX "IDX_watchlist_mbid" ON "watchlist" ("mbId")`
@@ -135,7 +137,9 @@ export class AddMusicSupport1714310036946 implements MigrationInterface {
     );
 
     await queryRunner.query(`DROP TABLE "watchlist"`);
-    await queryRunner.query(`ALTER TABLE "temporary_watchlist" RENAME TO "watchlist"`);
+    await queryRunner.query(
+      `ALTER TABLE "temporary_watchlist" RENAME TO "watchlist"`
+    );
 
     await queryRunner.query(`ALTER TABLE "user" DROP COLUMN "musicQuotaLimit"`);
     await queryRunner.query(`ALTER TABLE "user" DROP COLUMN "musicQuotaDays"`);

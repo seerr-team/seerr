@@ -507,7 +507,7 @@ const TitleCard = ({
 
           <Transition
             as={Fragment}
-            show={!image || showDetail || showRequestModal}
+            show={showDetail || showRequestModal}
             enter="transition-opacity"
             enterFrom="opacity-0"
             enterTo="opacity-100"
