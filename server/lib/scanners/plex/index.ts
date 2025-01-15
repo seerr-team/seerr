@@ -1,5 +1,6 @@
 import animeList from '@server/api/animelist';
 import { getMetadataProvider } from '@server/api/metadata';
+import MusicBrainz from '@server/api/musicbrainz';
 import type { PlexLibraryItem, PlexMetadata } from '@server/api/plexapi';
 import PlexAPI from '@server/api/plexapi';
 import TheMovieDb from '@server/api/themoviedb';
@@ -26,6 +27,7 @@ const imdbRegex = new RegExp(/imdb:\/\/(tt[0-9]+)/);
 const tmdbRegex = new RegExp(/tmdb:\/\/([0-9]+)/);
 const tvdbRegex = new RegExp(/tvdb:\/\/([0-9]+)/);
 const tmdbShowRegex = new RegExp(/themoviedb:\/\/([0-9]+)/);
+const mbRegex = new RegExp(/mbid:\/\/([0-9a-f-]+)/);
 const plexRegex = new RegExp(/plex:\/\//);
 // Hama agent uses ASS naming, see details here:
 // https://github.com/ZeroQI/Absolute-Series-Scanner/blob/master/README.md#forcing-the-movieseries-id
@@ -95,6 +97,7 @@ class PlexScanner
             'info',
             { lastScan: library.lastScan }
           );
+          const mappedType = library.type === 'music' ? 'artist' : library.type;
           const libraryItems = await this.plexClient.getRecentlyAdded(
             library.id,
             library.lastScan
@@ -103,7 +106,7 @@ class PlexScanner
                   addedAt: library.lastScan - 1000 * 60 * 10,
                 }
               : undefined,
-            library.type
+            mappedType
           );
 
           // Bundle items up by rating keys
@@ -215,6 +218,12 @@ class PlexScanner
         plexitem.type === 'season'
       ) {
         await this.processPlexShow(plexitem);
+      } else if (
+        plexitem.type === 'artist' ||
+        plexitem.type === 'album' ||
+        plexitem.type === 'track'
+      ) {
+        await this.processPlexMusic(plexitem);
       }
     } catch (e) {
       this.log('Failed to process Plex media', 'error', {
@@ -381,6 +390,60 @@ class PlexScanner
     }
   }
 
+  private async processPlexMusic(plexitem: PlexLibraryItem) {
+    const ratingKey =
+      plexitem.grandparentRatingKey ??
+      plexitem.parentRatingKey ??
+      plexitem.ratingKey;
+
+    let metadata;
+    try {
+      metadata = await this.plexClient.getMetadata(ratingKey, {
+        includeChildren: true,
+      });
+
+      if (metadata.Children?.Metadata) {
+        const musicBrainz = new MusicBrainz();
+
+        for (const album of metadata.Children.Metadata) {
+          const albumMetadata = await this.plexClient.getMetadata(
+            album.ratingKey
+          );
+
+          const mbReleaseId = albumMetadata.Guid?.find((g) => {
+            const id = g.id.toLowerCase();
+            return id.startsWith('mbid://');
+          })?.id.replace('mbid://', '');
+
+          if (!mbReleaseId) {
+            this.log('No MusicBrainz ID found for album', 'debug', {
+              title: album.title,
+              artist: metadata.title,
+            });
+            continue;
+          }
+
+          const releaseGroupId = await musicBrainz.getReleaseGroup({
+            releaseId: mbReleaseId,
+          });
+
+          if (releaseGroupId) {
+            await this.processMusic(releaseGroupId, {
+              mediaAddedAt: new Date(album.addedAt * 1000),
+              ratingKey: album.ratingKey,
+              title: album.title,
+            });
+          }
+        }
+      }
+    } catch (e) {
+      this.log('Failed to process music media', 'error', {
+        errorMessage: e.message,
+        title: metadata?.title,
+      });
+    }
+  }
+
   private async getMediaIds(plexitem: PlexLibraryItem): Promise<MediaIds> {
     let mediaIds: Partial<MediaIds> = {};
     // Check if item is using new plex movie/tv agent
@@ -419,6 +482,8 @@ class PlexScanner
         } else if (ref.id.match(tvdbRegex)) {
           const tvdbMatch = ref.id.match(tvdbRegex)?.[1];
           mediaIds.tvdbId = Number(tvdbMatch);
+        } else if (ref.id.match(mbRegex)) {
+          mediaIds.mbId = ref.id.match(mbRegex)?.[1] ?? undefined;
         }
       });
 
@@ -533,6 +598,12 @@ class PlexScanner
             mediaIds.imdbId = result.imdbId;
           }
         }
+      }
+      // Check for MusicBrainz
+    } else if (plexitem.guid.match(mbRegex)) {
+      const mbMatch = plexitem.guid.match(mbRegex);
+      if (mbMatch) {
+        mediaIds.mbId = mbMatch[1];
       }
     }
 

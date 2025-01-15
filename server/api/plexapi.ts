@@ -28,7 +28,7 @@ interface PlexLibraryResponse {
 }
 
 export interface PlexLibrary {
-  type: 'show' | 'movie' | 'music';
+  type: 'show' | 'movie' | 'artist';
   key: string;
   title: string;
   agent: string;
@@ -155,7 +155,7 @@ class PlexAPI {
           (library) =>
             library.type === 'movie' ||
             library.type === 'show' ||
-            library.type === 'music'
+            library.type === 'artist'
         )
         // Remove libraries that do not have a metadata agent set (usually personal video libraries)
         .filter((library) => library.agent !== 'com.plexapp.agents.none')
@@ -168,7 +168,7 @@ class PlexAPI {
             id: library.key,
             name: library.title,
             enabled: existing?.enabled ?? false,
-            type: library.type,
+            type: library.type === 'artist' ? 'music' : library.type,
             lastScan: existing?.lastScan,
           };
         });
@@ -230,7 +230,7 @@ class PlexAPI {
     options: { addedAt: number } = {
       addedAt: Date.now() - 1000 * 60 * 60,
     },
-    mediaType: 'movie' | 'show' | 'music'
+    mediaType: 'movie' | 'show' | 'artist'
   ): Promise<PlexLibraryItem[]> {
     const response = await this.plexClient.query<PlexLibraryResponse>({
       uri: `/library/sections/${id}/all?type=${

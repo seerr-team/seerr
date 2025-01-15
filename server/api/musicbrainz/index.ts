@@ -103,6 +103,73 @@ class MusicBrainz extends ExternalAPI {
     }
   }
 
+  private static requestQueue: Promise<void> = Promise.resolve();
+  private lastRequestTime = 0;
+  private readonly RATE_LIMIT_DELAY = 1100;
+
+  public async getReleaseGroup({
+    releaseId,
+  }: {
+    releaseId: string;
+  }): Promise<string | null> {
+    try {
+      await MusicBrainz.requestQueue;
+
+      MusicBrainz.requestQueue = (async () => {
+        const now = Date.now();
+        const timeSinceLastRequest = now - this.lastRequestTime;
+        if (timeSinceLastRequest < this.RATE_LIMIT_DELAY) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, this.RATE_LIMIT_DELAY - timeSinceLastRequest)
+          );
+        }
+        this.lastRequestTime = Date.now();
+      })();
+
+      await MusicBrainz.requestQueue;
+
+      const data = await this.getRolling<any>(
+        `/release/${releaseId}`,
+        {
+          inc: 'release-groups',
+          fmt: 'json',
+        },
+        43200,
+        {
+          headers: {
+            'User-Agent':
+              'Jellyseerr/1.0.0 (https://github.com/Fallenbagel/jellyseerr; hello@jellyseerr.com)',
+            Accept: 'application/json',
+          },
+        },
+        'https://musicbrainz.org/ws/2'
+      );
+
+      return data['release-group']?.id || null;
+    } catch (e) {
+      if (e.message.includes('503')) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, this.RATE_LIMIT_DELAY * 2)
+        );
+
+        await MusicBrainz.requestQueue;
+        MusicBrainz.requestQueue = Promise.resolve();
+        this.lastRequestTime = Date.now();
+
+        try {
+          return await this.getReleaseGroup({ releaseId });
+        } catch (retryError) {
+          throw new Error(
+            `[MusicBrainz] Failed to fetch release group after retry: ${retryError.message}`
+          );
+        }
+      }
+      throw new Error(
+        `[MusicBrainz] Failed to fetch release group: ${e.message}`
+      );
+    }
+  }
+
   public async getWikipediaExtract(
     id: string,
     language = 'en',
