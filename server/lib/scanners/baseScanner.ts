@@ -547,6 +547,7 @@ class BaseScanner<T> {
       externalServiceId,
       externalServiceSlug,
       mediaAddedAt,
+      ratingKey,
       processing = false,
       title = 'Unknown Title',
     }: ProcessOptions = {}
@@ -568,6 +569,10 @@ class BaseScanner<T> {
 
         if (mediaAddedAt) {
           newMedia.mediaAddedAt = mediaAddedAt;
+        }
+
+        if (ratingKey) {
+          newMedia.ratingKey = ratingKey;
         }
 
         if (serviceId) {
