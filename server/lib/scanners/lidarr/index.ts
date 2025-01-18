@@ -41,7 +41,6 @@ class LidarrScanner
     const sessionId = this.startRun();
 
     try {
-      // Filter out duplicate servers
       this.servers = uniqWith(settings.lidarr, (lidarrA, lidarrB) => {
         return (
           lidarrA.hostname === lidarrB.hostname &&
@@ -81,14 +80,10 @@ class LidarrScanner
   private async processLidarrAlbum(lidarrAlbum: LidarrAlbum): Promise<void> {
     try {
       if (!lidarrAlbum.monitored) {
-        this.log('Title is unmonitored. Skipping item.', 'debug', {
-          title: lidarrAlbum.title,
-        });
         return;
       }
 
       const mbId = lidarrAlbum.foreignAlbumId;
-
       if (!mbId) {
         this.log(
           'No MusicBrainz ID found for this title. Skipping item.',
@@ -103,7 +98,7 @@ class LidarrScanner
       await this.processMusic(mbId, {
         serviceId: this.currentServer.id,
         externalServiceId: lidarrAlbum.id,
-        externalServiceSlug: lidarrAlbum.titleSlug,
+        externalServiceSlug: mbId,
         title: lidarrAlbum.title,
         processing:
           lidarrAlbum.monitored &&

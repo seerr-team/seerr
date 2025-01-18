@@ -566,26 +566,13 @@ class BaseScanner<T> {
           ? MediaStatus.PROCESSING
           : MediaStatus.AVAILABLE;
         newMedia.mediaType = MediaType.MUSIC;
-
-        if (mediaAddedAt) {
-          newMedia.mediaAddedAt = mediaAddedAt;
-        }
-
-        if (ratingKey) {
-          newMedia.ratingKey = ratingKey;
-        }
-
-        if (serviceId) {
-          newMedia.serviceId = serviceId;
-        }
-
-        if (externalServiceId) {
-          newMedia.externalServiceId = externalServiceId;
-        }
-
-        if (externalServiceSlug) {
-          newMedia.externalServiceSlug = externalServiceSlug;
-        }
+        newMedia.mediaAddedAt = mediaAddedAt ?? newMedia.mediaAddedAt;
+        newMedia.ratingKey = ratingKey ?? newMedia.ratingKey;
+        newMedia.serviceId = serviceId ?? newMedia.serviceId;
+        newMedia.externalServiceId =
+          externalServiceId ?? newMedia.externalServiceId;
+        newMedia.externalServiceSlug =
+          externalServiceSlug ?? newMedia.externalServiceSlug;
 
         try {
           await mediaRepository.save(newMedia);
@@ -595,6 +582,41 @@ class BaseScanner<T> {
             title,
             error: err.message,
           });
+        }
+      } else {
+        let hasChanges = false;
+
+        if (serviceId && !existing.serviceId) {
+          existing.serviceId = serviceId;
+          hasChanges = true;
+        }
+        if (externalServiceId && !existing.externalServiceId) {
+          existing.externalServiceId = externalServiceId;
+          hasChanges = true;
+        }
+        if (externalServiceSlug && !existing.externalServiceSlug) {
+          existing.externalServiceSlug = externalServiceSlug;
+          hasChanges = true;
+        }
+        if (mediaAddedAt && !existing.mediaAddedAt) {
+          existing.mediaAddedAt = mediaAddedAt;
+          hasChanges = true;
+        }
+        if (ratingKey && !existing.ratingKey) {
+          existing.ratingKey = ratingKey;
+          hasChanges = true;
+        }
+
+        if (hasChanges) {
+          try {
+            await mediaRepository.save(existing);
+            this.log(`Updated existing media: ${title}`);
+          } catch (err) {
+            this.log('Failed to update existing media', 'error', {
+              title,
+              error: err.message,
+            });
+          }
         }
       }
     });

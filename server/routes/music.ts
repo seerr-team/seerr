@@ -26,12 +26,15 @@ musicRoutes.get('/:id', async (req, res, next) => {
 
     const [media, onUserWatchlist] = await Promise.all([
       getRepository(Media)
-        .findOne({
-          where: {
-            mbId: req.params.id,
-            mediaType: MediaType.MUSIC,
-          },
+        .createQueryBuilder('media')
+        .leftJoinAndSelect('media.requests', 'requests')
+        .leftJoinAndSelect('requests.requestedBy', 'requestedBy')
+        .leftJoinAndSelect('requests.modifiedBy', 'modifiedBy')
+        .where({
+          mbId: req.params.id,
+          mediaType: MediaType.MUSIC,
         })
+        .getOne()
         .then((media) => media ?? undefined),
 
       getRepository(Watchlist).exist({

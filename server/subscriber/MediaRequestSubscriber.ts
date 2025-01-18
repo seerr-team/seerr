@@ -738,6 +738,226 @@ export class MediaRequestSubscriber
     }
   }
 
+  public async sendToLidarr(): Promise<void> {
+    if (
+      this.status !== MediaRequestStatus.APPROVED ||
+      this.type !== MediaType.MUSIC
+    ) {
+      return;
+    }
+
+    try {
+      const mediaRepository = getRepository(Media);
+      const settings = getSettings();
+      const media = await mediaRepository.findOne({
+        where: { id: this.media.id },
+        relations: { requests: true },
+      });
+
+      if (!media?.mbId) {
+        throw new Error('Media data or MusicBrainz ID not found');
+      }
+
+      const lidarrSettings =
+        this.serverId !== null && this.serverId >= 0
+          ? settings.lidarr.find((l) => l.id === this.serverId)
+          : settings.lidarr.find((l) => l.isDefault);
+
+      if (!lidarrSettings) {
+        logger.warn('No valid Lidarr server configured', {
+          label: 'Media Request',
+          requestId: this.id,
+          mediaId: this.media.id,
+        });
+        return;
+      }
+
+      const rootFolder = this.rootFolder || lidarrSettings.activeDirectory;
+      const qualityProfile = this.profileId || lidarrSettings.activeProfileId;
+      const tags = lidarrSettings.tags?.map((t) => t.toString()) || [];
+
+      const lidarr = new LidarrAPI({
+        apiKey: lidarrSettings.apiKey,
+        url: LidarrAPI.buildUrl(lidarrSettings, '/api/v1'),
+      });
+
+      const lidarrAlbum = await lidarr.getAlbumByMusicBrainzId(media.mbId);
+
+      let artistId: number;
+      try {
+        const existingArtist = await lidarr.getArtistByMusicBrainzId(
+          lidarrAlbum.artist.foreignArtistId
+        );
+        artistId = existingArtist.id;
+      } catch {
+        const addedArtist = await lidarr.addArtist({
+          artistName: lidarrAlbum.artist.artistName,
+          foreignArtistId: lidarrAlbum.artist.foreignArtistId,
+          qualityProfileId: qualityProfile,
+          profileId: qualityProfile,
+          metadataProfileId: qualityProfile,
+          rootFolderPath: rootFolder,
+          monitored: false,
+          tags: tags.map((t) => Number(t)),
+          searchNow: !lidarrSettings.preventSearch,
+          monitorNewItems: 'none',
+          monitor: 'none',
+          searchForMissingAlbums: false,
+          addOptions: {
+            monitor: 'none',
+            monitored: false,
+            searchForMissingAlbums: false,
+          },
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 60000));
+        artistId = addedArtist.id;
+      }
+
+      try {
+        const album = await lidarr.addAlbum({
+          mbId: media.mbId,
+          foreignAlbumId: media.mbId,
+          title: lidarrAlbum.title,
+          qualityProfileId: qualityProfile,
+          profileId: qualityProfile,
+          metadataProfileId: qualityProfile,
+          rootFolderPath: rootFolder,
+          monitored: false,
+          tags,
+          searchNow: false,
+          artistId,
+          images: lidarrAlbum.images?.length
+            ? lidarrAlbum.images
+            : [
+                {
+                  url: '',
+                  coverType: 'cover',
+                },
+              ],
+          addOptions: {
+            monitor: 'none',
+            monitored: false,
+            searchForMissingAlbums: false,
+          },
+          artist: {
+            id: artistId,
+            foreignArtistId: lidarrAlbum.artist.foreignArtistId,
+            artistName: lidarrAlbum.artist.artistName,
+            qualityProfileId: qualityProfile,
+            metadataProfileId: qualityProfile,
+            rootFolderPath: rootFolder,
+            monitored: false,
+            monitorNewItems: 'none',
+          },
+        });
+
+        media.externalServiceId = album.id;
+        (media.externalServiceSlug = media.mbId),
+          (media.serviceId = lidarrSettings.id);
+        media.status = MediaStatus.PROCESSING;
+        await mediaRepository.save(media);
+        setTimeout(async () => {
+          try {
+            const albumDetails = await lidarr.getAlbum({ id: album.id });
+            albumDetails.monitored = true;
+            await lidarr.updateAlbum(albumDetails);
+
+            if (!lidarrSettings.preventSearch) {
+              await lidarr.searchAlbum(album.id);
+            }
+
+            setTimeout(async () => {
+              try {
+                const finalAlbumDetails = await lidarr.getAlbum({
+                  id: album.id,
+                });
+                if (!finalAlbumDetails.monitored) {
+                  finalAlbumDetails.monitored = true;
+                  await lidarr.updateAlbum(finalAlbumDetails);
+                  await lidarr.searchAlbum(album.id);
+                }
+              } catch (err) {
+                logger.error('Failed final album monitoring check', {
+                  label: 'Media Request',
+                  error: err.message,
+                  requestId: this.id,
+                  mediaId: this.media.id,
+                  albumId: album.id,
+                });
+              }
+            }, 20000);
+
+            logger.info('Completed album monitoring setup', {
+              label: 'Media Request',
+              requestId: this.id,
+              mediaId: this.media.id,
+              albumId: album.id,
+            });
+          } catch (err) {
+            logger.error('Failed to process album monitoring', {
+              label: 'Media Request',
+              error: err.message,
+              requestId: this.id,
+              mediaId: this.media.id,
+              albumId: album.id,
+            });
+          }
+        }, 60000);
+      } catch (error) {
+        if (error.message.includes('This album has already been added')) {
+          const existingAlbums = await lidarr.getAlbums();
+          const existingAlbum = existingAlbums.find(
+            (a) => a.foreignAlbumId === media.mbId
+          );
+
+          if (existingAlbum) {
+            media.externalServiceId = existingAlbum.id;
+            media.externalServiceSlug = media.mbId;
+            media.serviceId = lidarrSettings.id;
+            media.status = MediaStatus.PROCESSING;
+            await mediaRepository.save(media);
+
+            setTimeout(async () => {
+              try {
+                await new Promise((resolve) => setTimeout(resolve, 20000));
+                const albumDetails = await lidarr.getAlbum({
+                  id: existingAlbum.id,
+                });
+                albumDetails.monitored = true;
+                await lidarr.updateAlbum(albumDetails);
+
+                if (!lidarrSettings.preventSearch) {
+                  await lidarr.searchAlbum(existingAlbum.id);
+                }
+              } catch (err) {
+                logger.error('Failed to process existing album', {
+                  label: 'Media Request',
+                  error: err.message,
+                  requestId: this.id,
+                  mediaId: this.media.id,
+                  albumId: existingAlbum.id,
+                });
+              }
+            }, 0);
+          }
+        } else {
+          const requestRepository = getRepository(MediaRequest);
+          this.status = MediaRequestStatus.FAILED;
+          await requestRepository.save(this);
+          this.sendNotification(media, Notification.MEDIA_FAILED);
+          throw error;
+        }
+      }
+    } catch (e) {
+      logger.error('Failed to process Lidarr request', {
+        label: 'Media Request',
+        error: e.message,
+        requestId: this.id,
+        mediaId: this.media.id,
+      });
+    }
+  }
   public async updateParentStatus(entity: MediaRequest): Promise<void> {
     const mediaRepository = getRepository(Media);
     const media = await mediaRepository.findOne({
