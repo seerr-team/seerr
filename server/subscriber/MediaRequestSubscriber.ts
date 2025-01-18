@@ -4,6 +4,8 @@ import type {
   AddSeriesOptions,
   SonarrSeries,
 } from '@server/api/servarr/sonarr';
+import LidarrAPI from '@server/api/servarr/lidarr';
+import MusicBrainz from '@server/api/musicbrainz'
 import SonarrAPI from '@server/api/servarr/sonarr';
 import TheMovieDb from '@server/api/themoviedb';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
@@ -26,6 +28,7 @@ import type {
   InsertEvent,
   RemoveEvent,
   UpdateEvent,
+  Not
 } from 'typeorm';
 import { EventSubscriber } from 'typeorm';
 
@@ -168,6 +171,65 @@ export class MediaRequestSubscriber
         errorMessage: e.message,
         mediaId: entity.id,
       });
+    }
+  }
+
+  private async notifyAvailableMusic(
+    entity: MediaRequest,
+    event?: UpdateEvent<MediaRequest>
+  ) {
+
+    // Get fresh media state using event manager
+    let latestMedia: Media | null = null;
+    if (event?.manager) {
+      latestMedia = await event.manager.findOne(Media, {
+        where: { id: entity.media.id },
+      });
+    }
+    if (!latestMedia) {
+      const mediaRepository = getRepository(Media);
+      latestMedia = await mediaRepository.findOne({
+        where: { id: entity.media.id },
+      });
+
+      if(!latestMedia
+        || latestMedia.mediaType !== MediaType.MUSIC
+          || latestMedia['status'] != MediaStatus.AVAILABLE)
+        {
+          return
+        }
+
+        try {
+          const musicbrainz = new MusicBrainz();
+          const albumDetails = await musicbrainz.getAlbum({
+            albumId: latestMedia.mbId,
+          });
+
+          const coverImage = albumDetails.images?.find(
+            (img) => img.CoverType.toLowerCase() === 'cover'
+          )?.Url;
+
+            notificationManager.sendNotification(
+              Notification.MEDIA_AVAILABLE,
+              {
+                event: `Album Request Now Available`,
+                notifyAdmin: false,
+                notifySystem: true,
+                notifyUser: entity.requestedBy,
+                subject: albumDetails.title ?? latestMedia.mbId ?? 'Unknown Album',
+                message: albumDetails.overview || 'Album is now available.',
+                media: latestMedia,
+                request: entity,
+                image: coverImage,
+              }
+            );
+        } catch (e) {
+          logger.error('Something went wrong sending media notification(s)', {
+            label: 'Notifications',
+            errorMessage: e.message,
+            mediaId: entity.id,
+          });
+        }
     }
   }
 
@@ -738,10 +800,10 @@ export class MediaRequestSubscriber
     }
   }
 
-  public async sendToLidarr(): Promise<void> {
+  public async sendToLidarr(entity: MediaRequest): Promise<void> {
     if (
-      this.status !== MediaRequestStatus.APPROVED ||
-      this.type !== MediaType.MUSIC
+      entity.status !== MediaRequestStatus.APPROVED ||
+      entity.type !== MediaType.MUSIC
     ) {
       return;
     }
@@ -750,7 +812,7 @@ export class MediaRequestSubscriber
       const mediaRepository = getRepository(Media);
       const settings = getSettings();
       const media = await mediaRepository.findOne({
-        where: { id: this.media.id },
+        where: { id: entity.media.id },
         relations: { requests: true },
       });
 
@@ -759,21 +821,21 @@ export class MediaRequestSubscriber
       }
 
       const lidarrSettings =
-        this.serverId !== null && this.serverId >= 0
-          ? settings.lidarr.find((l) => l.id === this.serverId)
+        entity.serverId !== null && entity.serverId >= 0
+          ? settings.lidarr.find((l) => l.id === entity.serverId)
           : settings.lidarr.find((l) => l.isDefault);
 
       if (!lidarrSettings) {
         logger.warn('No valid Lidarr server configured', {
           label: 'Media Request',
-          requestId: this.id,
-          mediaId: this.media.id,
+          requestId: entity.id,
+          mediaId: entity.media.id,
         });
         return;
       }
 
-      const rootFolder = this.rootFolder || lidarrSettings.activeDirectory;
-      const qualityProfile = this.profileId || lidarrSettings.activeProfileId;
+      const rootFolder = entity.rootFolder || lidarrSettings.activeDirectory;
+      const qualityProfile = entity.profileId || lidarrSettings.activeProfileId;
       const tags = lidarrSettings.tags?.map((t) => t.toString()) || [];
 
       const lidarr = new LidarrAPI({
@@ -881,26 +943,26 @@ export class MediaRequestSubscriber
                 logger.error('Failed final album monitoring check', {
                   label: 'Media Request',
                   error: err.message,
-                  requestId: this.id,
-                  mediaId: this.media.id,
-                  albumId: album.id,
+                  requestId: entity.id,
+                  mediaId: entity.media.id,
+                  albumId: entity.id,
                 });
               }
             }, 20000);
 
             logger.info('Completed album monitoring setup', {
               label: 'Media Request',
-              requestId: this.id,
-              mediaId: this.media.id,
-              albumId: album.id,
+              requestId: entity.id,
+              mediaId: entity.media.id,
+              albumId: entity.id,
             });
           } catch (err) {
             logger.error('Failed to process album monitoring', {
               label: 'Media Request',
               error: err.message,
-              requestId: this.id,
-              mediaId: this.media.id,
-              albumId: album.id,
+              requestId: entity.id,
+              mediaId: entity.media.id,
+              albumId: entity.id,
             });
           }
         }, 60000);
@@ -934,8 +996,8 @@ export class MediaRequestSubscriber
                 logger.error('Failed to process existing album', {
                   label: 'Media Request',
                   error: err.message,
-                  requestId: this.id,
-                  mediaId: this.media.id,
+                  requestId: entity.id,
+                  mediaId: entity.media.id,
                   albumId: existingAlbum.id,
                 });
               }
@@ -943,9 +1005,9 @@ export class MediaRequestSubscriber
           }
         } else {
           const requestRepository = getRepository(MediaRequest);
-          this.status = MediaRequestStatus.FAILED;
+          entity.status = MediaRequestStatus.FAILED;
           await requestRepository.save(this);
-          this.sendNotification(media, Notification.MEDIA_FAILED);
+          MediaRequest.sendNotification(entity, media, Notification.MEDIA_FAILED);
           throw error;
         }
       }
@@ -953,8 +1015,8 @@ export class MediaRequestSubscriber
       logger.error('Failed to process Lidarr request', {
         label: 'Media Request',
         error: e.message,
-        requestId: this.id,
-        mediaId: this.media.id,
+        requestId: entity.id,
+        mediaId: entity.media.id,
       });
     }
   }
@@ -1060,6 +1122,7 @@ export class MediaRequestSubscriber
 
     this.sendToRadarr(event.entity as MediaRequest);
     this.sendToSonarr(event.entity as MediaRequest);
+    this.sendToLidarr(event.entity as MediaRequest);
 
     this.updateParentStatus(event.entity as MediaRequest);
 
@@ -1069,6 +1132,9 @@ export class MediaRequestSubscriber
       }
       if (event.entity.media.mediaType === MediaType.TV) {
         this.notifyAvailableSeries(event.entity as MediaRequest, event);
+      }
+      if (event.entity.media.mediaType === MediaType.MUSIC) {
+        this.notifyAvailableMusic(event.entity as MediaRequest, event);
       }
     }
   }
@@ -1080,6 +1146,7 @@ export class MediaRequestSubscriber
 
     this.sendToRadarr(event.entity as MediaRequest);
     this.sendToSonarr(event.entity as MediaRequest);
+    this.sendToLidarr(event.entity as MediaRequest);
 
     this.updateParentStatus(event.entity as MediaRequest);
   }

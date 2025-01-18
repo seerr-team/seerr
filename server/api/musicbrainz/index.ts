@@ -66,7 +66,7 @@ class MusicBrainz extends ExternalAPI {
   public async getAlbum({
     albumId,
   }: {
-    albumId: string;
+    albumId?: string;
   }): Promise<MbAlbumDetails> {
     try {
       const data = await this.get<MbAlbumDetails>(
