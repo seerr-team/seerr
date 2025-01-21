@@ -256,7 +256,7 @@ const UserLinkedAccountsSettings = () => {
                 ) : acct.type === LinkedAccountType.OpenIdConnect ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={acct.provider.logo ?? ''}
+                    src={acct.provider.logo ?? '/images/openid.svg'}
                     alt={acct.provider.name}
                   />
                 ) : null}

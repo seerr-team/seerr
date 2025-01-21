@@ -4,14 +4,16 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import PermissionEdit from '@app/components/PermissionEdit';
 import QuotaSelector from '@app/components/QuotaSelector';
+import SettingsOidc from '@app/components/Settings/SettingsOidc';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
+import { ArrowDownOnSquareIcon, CogIcon } from '@heroicons/react/24/outline';
 import { MediaServerType } from '@server/constants/server';
 import type { MainSettings } from '@server/lib/settings';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
+import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
@@ -31,6 +33,9 @@ const messages = defineMessages('components.Settings.SettingsUsers', {
   mediaServerLogin: 'Enable {mediaServerName} Sign-In',
   mediaServerLoginTip:
     'Allow users to sign in using their {mediaServerName} account',
+  oidcLogin: 'Enable OpenID Connect Sign-In',
+  oidcLoginTip:
+    'Allow users to sign in using OpenID Connect identity providers',
   atLeastOneAuth: 'At least one authentication method must be selected.',
   newPlexLogin: 'Enable New {mediaServerName} Sign-In',
   newPlexLoginTip:
@@ -50,23 +55,25 @@ const SettingsUsers = () => {
     mutate: revalidate,
   } = useSWR<MainSettings>('/api/v1/settings/main');
   const settings = useSettings();
+  const [showOidcDialog, setShowOidcDialog] = useState(false);
 
   const schema = yup
     .object()
     .shape({
       localLogin: yup.boolean(),
       mediaServerLogin: yup.boolean(),
+      oidcLogin: yup.boolean(),
     })
     .test({
       name: 'atLeastOneAuth',
       test: function (values) {
-        const isValid = ['localLogin', 'mediaServerLogin'].some(
+        const isValid = ['localLogin', 'mediaServerLogin', 'oidcLogin'].some(
           (field) => !!values[field]
         );
 
         if (isValid) return true;
         return this.createError({
-          path: 'localLogin | mediaServerLogin',
+          path: 'localLogin | mediaServerLogin | oidcLogin',
           message: intl.formatMessage(messages.atLeastOneAuth),
         });
       },
@@ -106,6 +113,7 @@ const SettingsUsers = () => {
           initialValues={{
             localLogin: data?.localLogin,
             mediaServerLogin: data?.mediaServerLogin,
+            oidcLogin: data?.oidcLogin,
             newPlexLogin: data?.newPlexLogin,
             movieQuotaLimit: data?.defaultQuotas.movie.quotaLimit ?? 0,
             movieQuotaDays: data?.defaultQuotas.movie.quotaDays ?? 7,
@@ -120,6 +128,7 @@ const SettingsUsers = () => {
               await axios.post('/api/v1/settings/main', {
                 localLogin: values.localLogin,
                 mediaServerLogin: values.mediaServerLogin,
+                oidcLogin: values.oidcLogin,
                 newPlexLogin: values.newPlexLogin,
                 defaultQuotas: {
                   movie: {
@@ -163,16 +172,21 @@ const SettingsUsers = () => {
                       <span className="label-tip">
                         {intl.formatMessage(messages.loginMethodsTip)}
                       </span>
-                      {'localLogin | mediaServerLogin' in errors && (
+                      {'localLogin | mediaServerLogin | oidcLogin' in
+                        errors && (
                         <span className="error">
-                          {errors['localLogin | mediaServerLogin'] as string}
+                          {
+                            errors[
+                              'localLogin | mediaServerLogin | oidcLogin'
+                            ] as string
+                          }
                         </span>
                       )}
                     </span>
 
                     <div className="form-input-area max-w-lg">
                       <LabeledCheckbox
-                        id="localLogin"
+                        name="localLogin"
                         label={intl.formatMessage(messages.localLogin)}
                         description={intl.formatMessage(
                           messages.localLoginTip,
@@ -183,7 +197,7 @@ const SettingsUsers = () => {
                         }
                       />
                       <LabeledCheckbox
-                        id="mediaServerLogin"
+                        name="mediaServerLogin"
                         className="mt-4"
                         label={intl.formatMessage(
                           messages.mediaServerLogin,
@@ -200,9 +214,40 @@ const SettingsUsers = () => {
                           )
                         }
                       />
+                      <div className="mt-4 flex justify-between">
+                        <LabeledCheckbox
+                          name="oidcLogin"
+                          label={intl.formatMessage(
+                            messages.oidcLogin,
+                            mediaServerFormatValues
+                          )}
+                          description={intl.formatMessage(
+                            messages.oidcLoginTip,
+                            mediaServerFormatValues
+                          )}
+                          onChange={() => {
+                            const newValue = !values.oidcLogin;
+                            setFieldValue('oidcLogin', newValue);
+                            if (newValue) setShowOidcDialog(true);
+                          }}
+                        />
+                        {values.oidcLogin && (
+                          <CogIcon
+                            className="w-8 cursor-pointer text-gray-400"
+                            onClick={() => setShowOidcDialog(true)}
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                {values.oidcLogin && (
+                  <SettingsOidc
+                    show={showOidcDialog}
+                    onOk={() => setShowOidcDialog(false)}
+                  />
+                )}
 
                 <div className="form-row">
                   <label htmlFor="newPlexLogin" className="checkbox-label">

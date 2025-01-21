@@ -1,31 +1,34 @@
 import { Field } from 'formik';
+import { useId } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 interface LabeledCheckboxProps {
-  id: string;
+  name: string;
   className?: string;
   label: string;
   description: string;
-  onChange: () => void;
+  onChange?: () => void;
   children?: React.ReactNode;
 }
 
 const LabeledCheckbox: React.FC<LabeledCheckboxProps> = ({
-  id,
+  name,
   className,
   label,
   description,
   onChange,
   children,
 }) => {
+  const id = useId();
+
   return (
     <>
       <div className={twMerge('relative flex items-start', className)}>
         <div className="flex h-6 items-center">
-          <Field type="checkbox" id={id} name={id} onChange={onChange} />
+          <Field type="checkbox" id={id} name={name} onChange={onChange} />
         </div>
         <div className="ml-3 text-sm leading-6">
-          <label htmlFor="localLogin" className="block">
+          <label htmlFor={id} className="block">
             <div className="flex flex-col">
               <span className="font-medium text-white">{label}</span>
               <span className="font-normal text-gray-400">{description}</span>
