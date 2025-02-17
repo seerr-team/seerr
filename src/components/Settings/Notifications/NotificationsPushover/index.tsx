@@ -17,6 +17,7 @@ const messages = defineMessages(
   'components.Settings.Notifications.NotificationsPushover',
   {
     agentenabled: 'Enable Agent',
+    embedImage: 'Embed Image',
     accessToken: 'Application API Token',
     accessTokenTip:
       '<ApplicationRegistrationLink>Register an application</ApplicationRegistrationLink> for use with Jellyseerr',
@@ -86,6 +87,7 @@ const NotificationsPushover = () => {
     <Formik
       initialValues={{
         enabled: data?.enabled,
+        embedImage: data?.embedImage,
         types: data?.types,
         accessToken: data?.options.accessToken,
         userToken: data?.options.userToken,
@@ -179,6 +181,14 @@ const NotificationsPushover = () => {
               </label>
               <div className="form-input-area">
                 <Field type="checkbox" id="enabled" name="enabled" />
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="embedImage" className="checkbox-label">
+                {intl.formatMessage(messages.embedImage)}
+              </label>
+              <div className="form-input-area">
+                <Field type="checkbox" id="embedImage" name="embedImage" />
               </div>
             </div>
             <div className="form-row">

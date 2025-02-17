@@ -207,6 +207,7 @@ interface FullPublicSettings extends PublicSettings {
 
 export interface NotificationAgentConfig {
   enabled: boolean;
+  embedImage: boolean;
   types?: number;
   options: Record<string, unknown>;
 }
@@ -434,6 +435,7 @@ class Settings {
         agents: {
           email: {
             enabled: false,
+            embedImage: true,
             options: {
               userEmailRequired: false,
               emailFrom: '',
@@ -448,6 +450,7 @@ class Settings {
           },
           discord: {
             enabled: false,
+            embedImage: true,
             types: 0,
             options: {
               webhookUrl: '',
@@ -457,6 +460,7 @@ class Settings {
           },
           slack: {
             enabled: false,
+            embedImage: true,
             types: 0,
             options: {
               webhookUrl: '',
@@ -464,6 +468,7 @@ class Settings {
           },
           telegram: {
             enabled: false,
+            embedImage: true,
             types: 0,
             options: {
               botAPI: '',
@@ -474,6 +479,7 @@ class Settings {
           },
           pushbullet: {
             enabled: false,
+            embedImage: false,
             types: 0,
             options: {
               accessToken: '',
@@ -481,6 +487,7 @@ class Settings {
           },
           pushover: {
             enabled: false,
+            embedImage: true,
             types: 0,
             options: {
               accessToken: '',
@@ -490,6 +497,7 @@ class Settings {
           },
           webhook: {
             enabled: false,
+            embedImage: true,
             types: 0,
             options: {
               webhookUrl: '',
@@ -499,10 +507,12 @@ class Settings {
           },
           webpush: {
             enabled: false,
+            embedImage: true,
             options: {},
           },
           gotify: {
             enabled: false,
+            embedImage: false,
             types: 0,
             options: {
               url: '',

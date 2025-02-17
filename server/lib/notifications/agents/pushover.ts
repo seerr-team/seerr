@@ -78,7 +78,9 @@ class PushoverAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<Partial<PushoverPayload>> {
-    const { applicationUrl, applicationTitle } = getSettings().main;
+    const settings = getSettings();
+    const { applicationUrl, applicationTitle } = settings.main;
+    const { embedImage } = settings.notifications.agents.pushover;
 
     const title = payload.event ?? payload.subject;
     let message = payload.event ? `<b>${payload.subject}</b>` : '';
@@ -155,7 +157,7 @@ class PushoverAgent
 
     let attachment_base64;
     let attachment_type;
-    if (payload.image) {
+    if (embedImage && payload.image) {
       const imagePayload = await this.getImagePayload(payload.image);
       if (imagePayload.attachment_base64 && imagePayload.attachment_type) {
         attachment_base64 = imagePayload.attachment_base64;

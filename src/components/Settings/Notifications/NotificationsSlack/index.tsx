@@ -16,6 +16,7 @@ const messages = defineMessages(
   'components.Settings.Notifications.NotificationsSlack',
   {
     agentenabled: 'Enable Agent',
+    embedImage: 'Embed Image',
     webhookUrl: 'Webhook URL',
     webhookUrlTip:
       'Create an <WebhookLink>Incoming Webhook</WebhookLink> integration',
@@ -59,6 +60,7 @@ const NotificationsSlack = () => {
     <Formik
       initialValues={{
         enabled: data.enabled,
+        embedImage: data.embedImage,
         types: data.types,
         webhookUrl: data.options.webhookUrl,
       }}
@@ -146,6 +148,14 @@ const NotificationsSlack = () => {
               </label>
               <div className="form-input-area">
                 <Field type="checkbox" id="enabled" name="enabled" />
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="embedImage" className="checkbox-label">
+                {intl.formatMessage(messages.embedImage)}
+              </label>
+              <div className="form-input-area">
+                <Field type="checkbox" id="embedImage" name="embedImage" />
               </div>
             </div>
             <div className="form-row">

@@ -15,6 +15,7 @@ const messages = defineMessages(
   'components.Settings.Notifications.NotificationsWebPush',
   {
     agentenabled: 'Enable Agent',
+    embedImage: 'Embed Image',
     webpushsettingssaved: 'Web push notification settings saved successfully!',
     webpushsettingsfailed: 'Web push notification settings failed to save.',
     toastWebPushTestSending: 'Sending web push test notification…',
@@ -55,11 +56,13 @@ const NotificationsWebPush = () => {
       <Formik
         initialValues={{
           enabled: data.enabled,
+          embedImage: data.embedImage,
         }}
         onSubmit={async (values) => {
           try {
             await axios.post('/api/v1/settings/notifications/webpush', {
               enabled: values.enabled,
+              embedImage: values.embedImage,
               options: {},
             });
             mutate('/api/v1/settings/public');
@@ -77,7 +80,7 @@ const NotificationsWebPush = () => {
           }
         }}
       >
-        {({ isSubmitting }) => {
+        {({ isSubmitting, values }) => {
           const testSettings = async () => {
             setIsTesting(true);
             let toastId: string | undefined;
@@ -94,6 +97,7 @@ const NotificationsWebPush = () => {
               );
               await axios.post('/api/v1/settings/notifications/webpush/test', {
                 enabled: true,
+                embedImage: values.embedImage,
                 options: {},
               });
 
@@ -126,6 +130,15 @@ const NotificationsWebPush = () => {
                 </label>
                 <div className="form-input-area">
                   <Field type="checkbox" id="enabled" name="enabled" />
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="embedImage" className="checkbox-label">
+                  {intl.formatMessage(messages.embedImage)}
+                  <span className="label-required">*</span>
+                </label>
+                <div className="form-input-area">
+                  <Field type="checkbox" id="embedImage" name="embedImage" />
                 </div>
               </div>
               <div className="actions">
