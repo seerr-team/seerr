@@ -765,7 +765,7 @@
   "components.UserProfile.UserSettings.UserNotificationSettings.pgpPublicKey": "Clé Publique PGP",
   "components.UserProfile.UserSettings.UserNotificationSettings.email": "Email",
   "components.UserProfile.UserSettings.UserNotificationSettings.discordsettingsfailed": "Les paramètres de notification Discord n’ont pas pu être enregistrés.",
-  "components.Settings.videoServiceSettingsDescription": "Configurez votre serveur {serverType} ci-dessous. Vous pouvez connecter plusieurs serveurs {serverType}, mais seulement deux d’entre eux peuvent être marqués par défaut (un non-4K et un 4K). Les administrateurs peuvent modifier le serveur utilisé pour traiter les nouvelles demandes avant la validation.",
+  "components.Settings.serviceSettingsDescription": "Configurez votre serveur {serverType} ci-dessous. Vous pouvez connecter plusieurs serveurs {serverType}, mais seulement deux d’entre eux peuvent être marqués par défaut (un non-4K et un 4K). Les administrateurs peuvent modifier le serveur utilisé pour traiter les nouvelles demandes avant la validation.",
   "components.Settings.mediaTypeSeries": "séries",
   "components.Settings.mediaTypeMovie": "film",
   "components.Settings.SettingsAbout.uptodate": "À jour",

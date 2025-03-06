@@ -1,5 +1,4 @@
 import Ellipsis from '@app/assets/ellipsis.svg';
-import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import ImageFader from '@app/components/Common/ImageFader';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
@@ -8,41 +7,16 @@ import TitleCard from '@app/components/TitleCard';
 import globalMessages from '@app/i18n/globalMessages';
 import Error from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
-import { CircleStackIcon } from '@heroicons/react/24/solid';
+import { ArrowRightCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import type { MediaStatus } from '@server/constants/media';
 import type { PersonCombinedCreditsResponse } from '@server/interfaces/api/personInterfaces';
 import type { PersonDetails as PersonDetailsType } from '@server/models/Person';
-import { groupBy } from 'lodash';
+import { groupBy, orderBy } from 'lodash';
 import { useRouter } from 'next/router';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import TruncateMarkup from 'react-truncate-markup';
 import useSWR from 'swr';
-import useSWRInfinite from 'swr/infinite';
-
-interface Album {
-  id: string;
-  title: string;
-  type: string;
-  releasedate: string;
-  images: {
-    CoverType: string;
-    Url: string;
-  }[];
-  mediaInfo?: {
-    status?: number;
-    downloadStatus?: unknown[];
-    watchlists?: unknown[];
-  };
-}
-
-interface DiscographyResponse {
-  page: number;
-  pageInfo: {
-    total: number;
-    totalPages: number;
-  };
-  results: Album[];
-}
 
 const messages = defineMessages('components.PersonDetails', {
   birthdate: 'Born {birthdate}',
@@ -51,132 +25,568 @@ const messages = defineMessages('components.PersonDetails', {
   appearsin: 'Appearances',
   crewmember: 'Crew',
   ascharacter: 'as {character}',
-  albums: 'Albums',
-  singles: 'Singles',
-  eps: 'EPs',
-  otherReleases: 'Other',
-  loadmore: 'Load More',
+  album: 'Album',
+  single: 'Single',
+  ep: 'EP',
+  live: 'Live',
+  compilation: 'Compilation',
+  remix: 'Remix',
+  soundtrack: 'Soundtrack',
+  broadcast: 'Broadcast',
+  demo: 'Demo',
+  other: 'Other',
+  showall: 'Show All',
+  showless: 'Show Less',
 });
 
-type MediaType = 'all' | 'movie' | 'tv';
+const albumTypeMessages: Record<string, keyof typeof messages> = {
+  Album: 'album',
+  EP: 'ep',
+  Single: 'single',
+  Live: 'live',
+  Compilation: 'compilation',
+  Remix: 'remix',
+  Soundtrack: 'soundtrack',
+  Broadcast: 'broadcast',
+  Demo: 'demo',
+  Other: 'other',
+};
+
+interface Album {
+  id: string;
+  title?: string;
+  'first-release-date'?: string;
+  posterPath?: string | null;
+  needsCoverArt?: boolean;
+  'primary-type'?: string;
+  secondary_types?: string[];
+  'artist-credit'?: { name: string }[];
+  mediaInfo?: {
+    status: MediaStatus;
+  };
+}
+
+interface ArtistWithTypeCounts {
+  name?: string;
+  artistBackdrop: string | null;
+  artistThumb?: string;
+  releaseGroups?: Album[];
+  typeCounts?: Record<string, number>;
+  area?: string;
+  artist_mbid?: string;
+}
+
+interface AlbumTypeState {
+  albums: Album[];
+  isExpanded: boolean;
+  isLoading: boolean;
+  isHovered: boolean;
+  isCollapsing: boolean;
+}
+
+interface EnhancedPersonDetails extends Omit<PersonDetailsType, 'artist'> {
+  artist?: ArtistWithTypeCounts;
+}
+
+interface MediaItem {
+  id: number;
+  title?: string;
+  name?: string;
+  posterPath?: string;
+  releaseDate?: string;
+  firstAirDate?: string;
+  mediaType: 'movie' | 'tv';
+  mediaInfo?: {
+    status?: MediaStatus;
+  };
+  character?: string;
+  job?: string;
+  backdropPath?: string;
+  popularity?: number;
+}
+
+const Biography = ({
+  content,
+  showBio,
+  onClick,
+}: {
+  content: string;
+  showBio: boolean;
+  onClick: () => void;
+}) => {
+  return (
+    <div className="relative text-left">
+      <div
+        className="group outline-none ring-0"
+        onClick={onClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+      >
+        <TruncateMarkup
+          lines={showBio ? 200 : 6}
+          ellipsis={
+            <Ellipsis className="relative -top-0.5 ml-2 inline-block opacity-70 transition duration-300 group-hover:opacity-100" />
+          }
+        >
+          <p className="pt-2 text-sm lg:text-base">{content}</p>
+        </TruncateMarkup>
+      </div>
+    </div>
+  );
+};
+
+const AlbumSection = ({
+  type,
+  state,
+  totalCount,
+  artistName,
+  onToggleExpand,
+  onHover,
+}: {
+  type: string;
+  state: AlbumTypeState;
+  totalCount: number;
+  artistName?: string;
+  onToggleExpand: (type: string) => void;
+  onHover: (type: string, isHovered: boolean) => void;
+}) => {
+  const intl = useIntl();
+  const { albums, isExpanded, isLoading, isHovered, isCollapsing } = state;
+
+  const displayAlbums = isExpanded ? albums : albums.slice(0, 20);
+
+  const shouldShowExpandButton = totalCount > 20;
+
+  const remainingItems = totalCount - albums.length;
+  const placeholdersToShow = isExpanded
+    ? Math.min(remainingItems, 20)
+    : Math.min(remainingItems, 20);
+
+  const messageKey = albumTypeMessages[type] || 'other';
+  const title = intl.formatMessage(messages[messageKey]);
+
+  return (
+    <div className="mb-8">
+      <div className="slider-header">
+        <div className="slider-title">
+          <span>{title}</span>
+          {totalCount > 0 && (
+            <span className="ml-2 text-sm text-gray-400">({totalCount})</span>
+          )}
+        </div>
+      </div>
+      <ul className="cards-vertical">
+        {displayAlbums
+          .filter((media) => media && media.id)
+          .map((media) => (
+            <li key={`release-${media.id}`}>
+              <TitleCard
+                key={media.id}
+                id={media.id}
+                title={media.title ?? 'Unknown Album'}
+                year={media['first-release-date']}
+                image={media.posterPath ?? undefined}
+                mediaType="album"
+                artist={media['artist-credit']?.[0]?.name || artistName}
+                type={media['primary-type']}
+                status={media.mediaInfo?.status}
+                needsCoverArt={media.needsCoverArt}
+                canExpand
+              />
+            </li>
+          ))}
+
+        {shouldShowExpandButton && !isLoading && (
+          <li>
+            <div
+              className={`w-40 transition-all duration-300 sm:w-40 md:w-40 ${
+                isCollapsing ? 'scale-95 opacity-50' : 'scale-100 opacity-100'
+              }`}
+              style={{ paddingBottom: '150%' }}
+            >
+              <div
+                className="absolute inset-0 h-full w-full cursor-pointer"
+                onClick={() => onToggleExpand(type)}
+                onMouseEnter={() => onHover(type, true)}
+                onMouseLeave={() => onHover(type, false)}
+                onBlur={() => onHover(type, false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onToggleExpand(type);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label={intl.formatMessage(
+                  isExpanded ? messages.showless : messages.showall
+                )}
+              >
+                <div
+                  className={`relative h-full w-full transform-gpu cursor-pointer
+                    overflow-hidden rounded-xl text-white shadow-lg ring-1 transition duration-150 ease-in-out ${
+                      isHovered
+                        ? 'scale-105 bg-gray-600 ring-gray-500'
+                        : 'scale-100 bg-gray-800 ring-gray-700'
+                    }`}
+                >
+                  <div className="absolute inset-0 flex h-full w-full flex-col items-center justify-center text-white">
+                    {isExpanded ? (
+                      <XCircleIcon className="w-14" />
+                    ) : (
+                      <ArrowRightCircleIcon className="w-14" />
+                    )}
+                    <div className="mt-2 font-extrabold">
+                      {intl.formatMessage(
+                        isExpanded ? messages.showless : messages.showall
+                      )}
+                    </div>
+                    {!isExpanded && totalCount > 20 && (
+                      <div className="mt-1 text-sm text-gray-300">
+                        {`${totalCount} total`}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+        )}
+
+        {isLoading &&
+          placeholdersToShow > 0 &&
+          [...Array(placeholdersToShow)].map((_, i) => (
+            <li key={`placeholder-${type}-${i}`}>
+              <TitleCard.Placeholder canExpand />
+            </li>
+          ))}
+      </ul>
+    </div>
+  );
+};
+
+const MediaSection = ({
+  title,
+  mediaItems,
+}: {
+  title: React.ReactNode;
+  mediaItems: MediaItem[];
+}) => {
+  if (!mediaItems.length) {
+    return null;
+  }
+
+  return (
+    <div className="mb-8">
+      <div className="slider-header">
+        <div className="slider-title">
+          <span>{title}</span>
+        </div>
+      </div>
+      <ul className="cards-vertical">
+        {mediaItems.map((media) => (
+          <li key={`media-${media.id}`}>
+            <TitleCard
+              id={media.id}
+              title={media.title || media.name || 'Unknown Title'}
+              image={media.posterPath}
+              year={
+                media.releaseDate?.slice(0, 4) ||
+                media.firstAirDate?.slice(0, 4)
+              }
+              mediaType={media.mediaType === 'movie' ? 'movie' : 'tv'}
+              status={media.mediaInfo?.status}
+              canExpand
+            />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+const sortCredits = (credits: MediaItem[]): MediaItem[] => {
+  return orderBy(
+    credits.filter((credit) => credit.releaseDate || credit.firstAirDate),
+    [
+      (credit) => credit.releaseDate || credit.firstAirDate,
+      (credit) => credit.popularity,
+    ],
+    ['desc', 'desc']
+  );
+};
 
 const PersonDetails = () => {
   const intl = useIntl();
   const router = useRouter();
-  const [currentMediaType, setCurrentMediaType] = useState<string>('all');
-  const { data, error } = useSWR<PersonDetailsType>(
-    `/api/v1/person/${router.query.personId}`
+  const personId = router.query.personId as string;
+  const [isFullyLoaded, setIsFullyLoaded] = useState(false);
+
+  const { data, error } = useSWR<EnhancedPersonDetails>(
+    personId ? `/api/v1/person/${personId}` : null,
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      dedupingInterval: 30000,
+    }
   );
-  const [showBio, setShowBio] = useState(false);
 
   const { data: combinedCredits, error: errorCombinedCredits } =
     useSWR<PersonCombinedCreditsResponse>(
-      `/api/v1/person/${router.query.personId}/combined_credits`
-    );
-
-  const {
-    data: albumData,
-    size: albumSize,
-    setSize: setAlbumSize,
-    isValidating: isLoadingAlbums,
-  } = useSWRInfinite<DiscographyResponse>(
-    (index) =>
-      data?.mbArtistId
-        ? `/api/v1/person/${router.query.personId}/discography?page=${
-            index + 1
-          }&type=Album&artistId=${data.mbArtistId}`
-        : null,
-    { revalidateFirstPage: false }
-  );
-
-  const {
-    data: singlesData,
-    size: singlesSize,
-    setSize: setSinglesSize,
-    isValidating: isLoadingSingles,
-  } = useSWRInfinite<DiscographyResponse>(
-    (index) =>
-      data?.mbArtistId
-        ? `/api/v1/person/${router.query.personId}/discography?page=${
-            index + 1
-          }&type=Single&artistId=${data.mbArtistId}`
-        : null,
-    { revalidateFirstPage: false }
-  );
-
-  const {
-    data: epsData,
-    size: epsSize,
-    setSize: setEpsSize,
-    isValidating: isLoadingEps,
-  } = useSWRInfinite<DiscographyResponse>(
-    (index) =>
-      data?.mbArtistId
-        ? `/api/v1/person/${router.query.personId}/discography?page=${
-            index + 1
-          }&type=EP&artistId=${data.mbArtistId}`
-        : null,
-    { revalidateFirstPage: false }
-  );
-
-  const {
-    data: otherData,
-    size: otherSize,
-    setSize: setOtherSize,
-    isValidating: isLoadingOther,
-  } = useSWRInfinite<DiscographyResponse>(
-    (index) =>
-      data?.mbArtistId
-        ? `/api/v1/person/${router.query.personId}/discography?page=${
-            index + 1
-          }&type=Other&artistId=${data.mbArtistId}`
-        : null,
-    { revalidateFirstPage: false }
-  );
-
-  const sortedCast = useMemo(() => {
-    const filtered = (combinedCredits?.cast ?? []).filter(
-      (media) =>
-        currentMediaType === 'all' || media.mediaType === currentMediaType
-    );
-    const grouped = groupBy(filtered, 'id');
-
-    const reduced = Object.values(grouped).map((objs) => ({
-      ...objs[0],
-      character: objs.map((pos) => pos.character).join(', '),
-    }));
-
-    return reduced.sort((a, b) => {
-      const aVotes = a.voteCount ?? 0;
-      const bVotes = b.voteCount ?? 0;
-      if (aVotes > bVotes) {
-        return -1;
+      personId ? `/api/v1/person/${personId}/combined_credits` : null,
+      {
+        revalidateOnFocus: false,
+        revalidateIfStale: false,
+        dedupingInterval: 30000,
       }
-      return 1;
-    });
-  }, [combinedCredits, currentMediaType]);
-
-  const sortedCrew = useMemo(() => {
-    const filtered = (combinedCredits?.crew ?? []).filter(
-      (media) =>
-        currentMediaType === 'all' || media.mediaType === currentMediaType
     );
-    const grouped = groupBy(filtered, 'id');
 
-    const reduced = Object.values(grouped).map((objs) => ({
-      ...objs[0],
-      job: objs.map((pos) => pos.job).join(', '),
-    }));
+  useEffect(() => {
+    if ((data && combinedCredits) || (data && !data.knownForDepartment)) {
+      setIsFullyLoaded(true);
+    }
+  }, [data, combinedCredits]);
 
-    return reduced.sort((a, b) => {
-      const aVotes = a.voteCount ?? 0;
-      const bVotes = b.voteCount ?? 0;
-      if (aVotes > bVotes) {
-        return -1;
+  const [showBio, setShowBio] = useState(false);
+  const [albumTypes, setAlbumTypes] = useState<Record<string, AlbumTypeState>>(
+    {}
+  );
+
+  useEffect(() => {
+    if (data?.artist?.typeCounts && data.artist.releaseGroups?.length) {
+      const initialAlbumTypes: Record<string, AlbumTypeState> = {};
+
+      data.artist.releaseGroups.forEach((album) => {
+        if (album && album.id) {
+          const type = album.secondary_types?.length
+            ? album.secondary_types[0]
+            : album['primary-type'] || 'Other';
+
+          if (!initialAlbumTypes[type]) {
+            initialAlbumTypes[type] = {
+              albums: [],
+              isExpanded: false,
+              isLoading: false,
+              isHovered: false,
+              isCollapsing: false,
+            };
+          }
+          initialAlbumTypes[type].albums.push({
+            ...album,
+            needsCoverArt: !album.posterPath,
+          });
+        }
+      });
+
+      setAlbumTypes(initialAlbumTypes);
+    }
+  }, [data?.artist?.typeCounts, data?.artist?.releaseGroups]);
+
+  const loadAllAlbumsOfType = useCallback(
+    async (albumType: string): Promise<void> => {
+      if (!personId) return;
+
+      setAlbumTypes((prev) => ({
+        ...prev,
+        [albumType]: {
+          ...prev[albumType],
+          isLoading: true,
+        },
+      }));
+
+      try {
+        const pageSize = data?.artist?.typeCounts?.[albumType] || 100;
+        const response = await fetch(
+          `/api/v1/person/${personId}?albumType=${albumType}&pageSize=${pageSize}`
+        );
+
+        if (response.ok) {
+          const responseData = await response.json();
+          const validAlbums =
+            responseData.artist?.releaseGroups
+              ?.filter((album: Album) => album && album.id)
+              .map((album: Album) => ({
+                ...album,
+                needsCoverArt: !album.posterPath,
+              })) || [];
+
+          setAlbumTypes((prev) => ({
+            ...prev,
+            [albumType]: {
+              ...prev[albumType],
+              albums: validAlbums,
+              isExpanded: true,
+              isLoading: false,
+            },
+          }));
+        } else {
+          setAlbumTypes((prev) => ({
+            ...prev,
+            [albumType]: {
+              ...prev[albumType],
+              isLoading: false,
+            },
+          }));
+        }
+      } catch {
+        setAlbumTypes((prev) => ({
+          ...prev,
+          [albumType]: {
+            ...prev[albumType],
+            isLoading: false,
+          },
+        }));
       }
-      return 1;
-    });
-  }, [combinedCredits, currentMediaType]);
+    },
+    [personId, data?.artist?.typeCounts]
+  );
+
+  const handleHover = useCallback((albumType: string, isHovered: boolean) => {
+    setAlbumTypes((prev) => ({
+      ...prev,
+      [albumType]: {
+        ...prev[albumType],
+        isHovered,
+      },
+    }));
+  }, []);
+
+  const toggleExpandType = useCallback(
+    (albumType: string): void => {
+      const currentState = albumTypes[albumType];
+
+      if (currentState?.isExpanded) {
+        setAlbumTypes((prev) => ({
+          ...prev,
+          [albumType]: {
+            ...prev[albumType],
+            isCollapsing: true,
+            isHovered: false,
+          },
+        }));
+
+        setTimeout(() => {
+          setAlbumTypes((prev) => ({
+            ...prev,
+            [albumType]: {
+              ...prev[albumType],
+              isExpanded: false,
+              isCollapsing: false,
+            },
+          }));
+        }, 300);
+      } else {
+        const albums = albumTypes[albumType]?.albums || [];
+        const typeCount = data?.artist?.typeCounts?.[albumType] || 0;
+
+        setAlbumTypes((prev) => ({
+          ...prev,
+          [albumType]: {
+            ...prev[albumType],
+            isHovered: false,
+          },
+        }));
+
+        if (albums.length < typeCount) {
+          loadAllAlbumsOfType(albumType);
+        } else {
+          setAlbumTypes((prev) => ({
+            ...prev,
+            [albumType]: {
+              ...prev[albumType],
+              isExpanded: true,
+            },
+          }));
+        }
+      }
+    },
+    [albumTypes, data?.artist?.typeCounts, loadAllAlbumsOfType]
+  );
+
+  const sortedCredits = useMemo(() => {
+    const cast = combinedCredits?.cast ?? [];
+    const crew = combinedCredits?.crew ?? [];
+
+    return {
+      cast: sortCredits(
+        Object.values(groupBy(cast, 'id')).map((group) => ({
+          ...group[0],
+          character: group.map((g) => g.character).join(', '),
+          mediaType: group[0].mediaType === 'movie' ? 'movie' : 'tv',
+        }))
+      ),
+      crew: sortCredits(
+        Object.values(groupBy(crew, 'id')).map((group) => ({
+          ...group[0],
+          job: group.map((g) => g.job).join(', '),
+          mediaType: group[0].mediaType === 'movie' ? 'movie' : 'tv',
+        }))
+      ),
+    };
+  }, [combinedCredits]);
+
+  const personAttributes = useMemo(() => {
+    if (!data) return [];
+
+    const attributes: string[] = [];
+
+    if (data.birthday) {
+      if (data.deathday) {
+        attributes.push(
+          intl.formatMessage(messages.lifespan, {
+            birthdate: intl.formatDate(data.birthday, {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              timeZone: 'UTC',
+            }),
+            deathdate: intl.formatDate(data.deathday, {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              timeZone: 'UTC',
+            }),
+          })
+        );
+      } else {
+        attributes.push(
+          intl.formatMessage(messages.birthdate, {
+            birthdate: intl.formatDate(data.birthday, {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              timeZone: 'UTC',
+            }),
+          })
+        );
+      }
+    }
+
+    if (data.placeOfBirth) {
+      attributes.push(data.placeOfBirth);
+    }
+
+    return attributes;
+  }, [data, intl]);
+
+  const albumTypeOrder = [
+    'Album',
+    'EP',
+    'Single',
+    'Live',
+    'Compilation',
+    'Remix',
+    'Soundtrack',
+    'Broadcast',
+    'Demo',
+    'Other',
+  ];
 
   if (!data && !error) {
     return <LoadingSpinner />;
@@ -186,247 +596,32 @@ const PersonDetails = () => {
     return <Error statusCode={404} />;
   }
 
-  const personAttributes: string[] = [];
-
-  if (data.birthday) {
-    if (data.deathday) {
-      personAttributes.push(
-        intl.formatMessage(messages.lifespan, {
-          birthdate: intl.formatDate(data.birthday, {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            timeZone: 'UTC',
-          }),
-          deathdate: intl.formatDate(data.deathday, {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            timeZone: 'UTC',
-          }),
-        })
-      );
-    } else {
-      personAttributes.push(
-        intl.formatMessage(messages.birthdate, {
-          birthdate: intl.formatDate(data.birthday, {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            timeZone: 'UTC',
-          }),
-        })
-      );
-    }
+  if (!isFullyLoaded && data.knownForDepartment) {
+    return <LoadingSpinner />;
   }
 
-  if (data.placeOfBirth) {
-    personAttributes.push(data.placeOfBirth);
-  }
+  const backgroundImages = [
+    ...(sortedCredits.cast ?? []),
+    ...(sortedCredits.crew ?? []),
+  ]
+    .filter((media) => media.backdropPath)
+    .map(
+      (media) =>
+        `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${media.backdropPath}`
+    )
+    .slice(0, 6);
 
+  const hasCredits = Boolean(
+    sortedCredits.cast?.length || sortedCredits.crew?.length
+  );
   const isLoading = !combinedCredits && !errorCombinedCredits;
-
-  const mediaTypePicker = (
-    <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
-      <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
-        <CircleStackIcon className="h-6 w-6" />
-      </span>
-      <select
-        id="mediaType"
-        name="mediaType"
-        onChange={(e) => {
-          setCurrentMediaType(e.target.value as MediaType);
-        }}
-        value={currentMediaType}
-        className="rounded-r-only"
-      >
-        <option value="all">{intl.formatMessage(globalMessages.all)}</option>
-        <option value="movie">
-          {intl.formatMessage(globalMessages.movies)}
-        </option>
-        <option value="tv">{intl.formatMessage(globalMessages.tvshows)}</option>
-      </select>
-    </div>
-  );
-
-  const cast = (sortedCast ?? []).length > 0 && (
-    <>
-      <div className="slider-header">
-        <div className="slider-title">
-          <span>{intl.formatMessage(messages.appearsin)}</span>
-        </div>
-      </div>
-      <ul className="cards-vertical">
-        {sortedCast?.map((media, index) => {
-          return (
-            <li key={`list-cast-item-${media.id}-${index}`}>
-              <TitleCard
-                key={media.id}
-                id={media.id}
-                title={media.mediaType === 'movie' ? media.title : media.name}
-                userScore={media.voteAverage}
-                year={
-                  media.mediaType === 'movie'
-                    ? media.releaseDate
-                    : media.firstAirDate
-                }
-                image={media.posterPath}
-                summary={media.overview}
-                mediaType={media.mediaType as 'movie' | 'tv'}
-                status={media.mediaInfo?.status}
-                canExpand
-              />
-              {media.character && (
-                <div className="mt-2 w-full truncate text-center text-xs text-gray-300">
-                  {intl.formatMessage(messages.ascharacter, {
-                    character: media.character,
-                  })}
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </>
-  );
-
-  const crew = (sortedCrew ?? []).length > 0 && (
-    <>
-      <div className="slider-header">
-        <div className="slider-title">
-          <span>{intl.formatMessage(messages.crewmember)}</span>
-        </div>
-      </div>
-      <ul className="cards-vertical">
-        {sortedCrew?.map((media, index) => {
-          return (
-            <li key={`list-crew-item-${media.id}-${index}`}>
-              <TitleCard
-                key={media.id}
-                id={media.id}
-                title={media.mediaType === 'movie' ? media.title : media.name}
-                userScore={media.voteAverage}
-                year={
-                  media.mediaType === 'movie'
-                    ? media.releaseDate
-                    : media.firstAirDate
-                }
-                image={media.posterPath}
-                summary={media.overview}
-                mediaType={media.mediaType as 'movie' | 'tv'}
-                status={media.mediaInfo?.status}
-                canExpand
-              />
-              {media.job && (
-                <div className="mt-2 w-full truncate text-center text-xs text-gray-300">
-                  {media.job}
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </>
-  );
-
-  const albumsList = albumData ? albumData.flatMap((page) => page.results) : [];
-  const isReachingEndAlbums =
-    albumData?.[0]?.results.length === 0 ||
-    (albumData && albumData[albumData.length - 1]?.results.length < 20);
-
-  const singlesList = singlesData
-    ? singlesData.flatMap((page) => page.results)
-    : [];
-  const isReachingEndSingles =
-    singlesData?.[0]?.results.length === 0 ||
-    (singlesData && singlesData[singlesData.length - 1]?.results.length < 20);
-
-  const epsList = epsData ? epsData.flatMap((page) => page.results) : [];
-  const isReachingEndEps =
-    epsData?.[0]?.results.length === 0 ||
-    (epsData && epsData[epsData.length - 1]?.results.length < 20);
-
-  const otherList = otherData ? otherData.flatMap((page) => page.results) : [];
-  const isReachingEndOther =
-    otherData?.[0]?.results.length === 0 ||
-    (otherData && otherData[otherData.length - 1]?.results.length < 20);
-
-  const renderAlbumSection = (
-    title: string,
-    albums: Album[],
-    isLoading: boolean,
-    isReachingEnd: boolean,
-    onLoadMore: () => void
-  ) => {
-    if (!albums?.length && !isLoading) return null;
-
-    return (
-      <>
-        <div className="slider-header">
-          <div className="slider-title">
-            <span>{title}</span>
-          </div>
-        </div>
-        <ul className="cards-vertical">
-          {albums?.map((album) => (
-            <li key={`album-${album.id}`}>
-              <TitleCard
-                id={album.id}
-                isAddedToWatchlist={album.mediaInfo?.watchlists?.length ?? 0}
-                title={album.title}
-                image={album.images?.[0]?.Url}
-                year={album.releasedate}
-                type={album.type}
-                mediaType="album"
-                status={album.mediaInfo?.status}
-                inProgress={(album.mediaInfo?.downloadStatus ?? []).length > 0}
-                canExpand
-              />
-            </li>
-          ))}
-          {isLoading &&
-            [...Array(20)].map((_, index) => (
-              <li key={`placeholder-${index}`}>
-                <TitleCard.Placeholder canExpand />
-              </li>
-            ))}
-        </ul>
-        {!isReachingEnd && (
-          <div className="mt-4 flex justify-center">
-            <Button
-              onClick={onLoadMore}
-              disabled={isLoading}
-              className="flex h-9 w-32 items-center justify-center"
-            >
-              {isLoading ? (
-                <div className="h-5 w-5">
-                  <LoadingSpinner />
-                </div>
-              ) : (
-                intl.formatMessage(messages.loadmore)
-              )}
-            </Button>
-          </div>
-        )}
-      </>
-    );
-  };
 
   return (
     <>
       <PageTitle title={data.name} />
-      {(sortedCrew || sortedCast) && (
+      {hasCredits && (
         <div className="absolute top-0 left-0 right-0 z-0 h-96">
-          <ImageFader
-            isDarker
-            backgroundImages={[...(sortedCast ?? []), ...(sortedCrew ?? [])]
-              .filter((media) => media.backdropPath)
-              .map(
-                (media) =>
-                  `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${media.backdropPath}`
-              )
-              .slice(0, 6)}
-          />
+          <ImageFader isDarker backgroundImages={backgroundImages} />
         </div>
       )}
       <div
@@ -434,11 +629,15 @@ const PersonDetails = () => {
           data.biography ? 'lg:items-start' : ''
         }`}
       >
-        {data.profilePath && (
+        {(data.profilePath || data.artist?.artistThumb) && (
           <div className="relative mb-6 mr-0 h-36 w-36 flex-shrink-0 overflow-hidden rounded-full ring-1 ring-gray-700 lg:mb-0 lg:mr-6 lg:h-44 lg:w-44">
             <CachedImage
-              type="tmdb"
-              src={`https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.profilePath}`}
+              type={data.profilePath ? 'tmdb' : 'music'}
+              src={
+                data.profilePath
+                  ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.profilePath}`
+                  : data.artist?.artistThumb ?? ''
+              }
               alt=""
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               fill
@@ -449,7 +648,7 @@ const PersonDetails = () => {
           <div className="flex w-full items-center justify-center lg:justify-between">
             <h1 className="text-3xl text-white lg:text-4xl">{data.name}</h1>
             <div className="hidden flex-shrink-0 lg:block">
-              {mediaTypePicker}
+              {/* This is where the mediaTypePicker was, but it's removed in 60c900bd */}
             </div>
           </div>
           <div className="mt-1 mb-2 space-y-1 text-xs text-white sm:text-sm lg:text-base">
@@ -467,62 +666,65 @@ const PersonDetails = () => {
               </div>
             )}
           </div>
-          <div className="lg:hidden">{mediaTypePicker}</div>
+          <div className="lg:hidden">
+            {/* This is where the mediaTypePicker was, but it's removed in 60c900bd */}
+          </div>
           {data.biography && (
-            <div className="relative text-left">
-              {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
-              <div
-                className="group outline-none ring-0"
-                onClick={() => setShowBio((show) => !show)}
-                role="button"
-                tabIndex={-1}
-              >
-                <TruncateMarkup
-                  lines={showBio ? 200 : 6}
-                  ellipsis={
-                    <Ellipsis className="relative -top-0.5 ml-2 inline-block opacity-70 transition duration-300 group-hover:opacity-100" />
-                  }
-                >
-                  <p className="pt-2 text-sm lg:text-base">{data.biography}</p>
-                </TruncateMarkup>
-              </div>
-            </div>
+            <Biography
+              content={data.biography}
+              showBio={showBio}
+              onClick={() => setShowBio((show) => !show)}
+            />
           )}
         </div>
       </div>
-      {data.mbArtistId && (
+
+      {data.artist?.typeCounts && (
+        <div className="space-y-6">
+          {albumTypeOrder
+            .filter((type) => (albumTypes[type]?.albums.length ?? 0) > 0)
+            .map((type) => (
+              <AlbumSection
+                key={`section-${type}`}
+                type={type}
+                state={albumTypes[type]}
+                totalCount={data.artist?.typeCounts?.[type] ?? 0}
+                artistName={data.artist?.name}
+                onToggleExpand={toggleExpandType}
+                onHover={handleHover}
+              />
+            ))}
+        </div>
+      )}
+
+      {data.knownForDepartment && (
         <>
-          {renderAlbumSection(
-            intl.formatMessage(messages.albums),
-            albumsList,
-            isLoadingAlbums ?? false,
-            isReachingEndAlbums ?? false,
-            () => setAlbumSize(albumSize + 1)
-          )}
-          {renderAlbumSection(
-            intl.formatMessage(messages.singles),
-            singlesList,
-            isLoadingSingles ?? false,
-            isReachingEndSingles ?? false,
-            () => setSinglesSize(singlesSize + 1)
-          )}
-          {renderAlbumSection(
-            intl.formatMessage(messages.eps),
-            epsList,
-            isLoadingEps ?? false,
-            isReachingEndEps ?? false,
-            () => setEpsSize(epsSize + 1)
-          )}
-          {renderAlbumSection(
-            intl.formatMessage(messages.otherReleases),
-            otherList,
-            isLoadingOther ?? false,
-            isReachingEndOther ?? false,
-            () => setOtherSize(otherSize + 1)
+          {data.knownForDepartment === 'Acting' ? (
+            <>
+              <MediaSection
+                title={intl.formatMessage(messages.appearsin)}
+                mediaItems={sortedCredits.cast}
+              />
+              <MediaSection
+                title={intl.formatMessage(messages.crewmember)}
+                mediaItems={sortedCredits.crew}
+              />
+            </>
+          ) : (
+            <>
+              <MediaSection
+                title={intl.formatMessage(messages.crewmember)}
+                mediaItems={sortedCredits.crew}
+              />
+              <MediaSection
+                title={intl.formatMessage(messages.appearsin)}
+                mediaItems={sortedCredits.cast}
+              />
+            </>
           )}
         </>
       )}
-      {data.knownForDepartment === 'Acting' ? [cast, crew] : [crew, cast]}
+
       {isLoading && <LoadingSpinner />}
     </>
   );

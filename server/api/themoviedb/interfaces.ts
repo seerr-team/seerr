@@ -42,6 +42,7 @@ export interface TmdbCollectionResult {
 
 export interface TmdbPersonResult {
   id: number;
+  known_for_department: string;
   name: string;
   popularity: number;
   profile_path?: string;
@@ -464,20 +465,12 @@ export interface TmdbCompanySearchResponse extends TmdbPaginatedResponse {
   results: TmdbCompany[];
 }
 
+export interface TmdbSearchPersonResponse extends TmdbPaginatedResponse {
+  results: TmdbPersonResult[];
+}
+
 export interface TmdbWatchProviderRegion {
   iso_3166_1: string;
   english_name: string;
   native_name: string;
-}
-
-export interface TmdbPersonSearchResponse extends TmdbPaginatedResponse {
-  results: TmdbPersonSearchResult[];
-}
-
-export interface TmdbPersonSearchResult
-  extends Omit<TmdbPersonResult, 'known_for'> {
-  gender: number;
-  known_for_department: string;
-  original_name: string;
-  known_for: (TmdbMovieResult | TmdbTvResult)[];
 }

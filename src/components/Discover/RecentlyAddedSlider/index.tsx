@@ -37,7 +37,7 @@ const RecentlyAddedSlider = () => {
       <Slider
         sliderKey="media"
         isLoading={!media}
-        items={(media?.results ?? []).map((item) => (
+        items={media?.results.map((item) => (
           <AddedCard
             key={`media-slider-item-${item.id}`}
             id={item.id}

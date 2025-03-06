@@ -854,7 +854,7 @@
   "components.Settings.hostname": "Име на хост или IP адрес",
   "components.Settings.SonarrModal.tagRequestsInfo": "Автоматично добавяне на допълнителен етикет с потребителското ID и показваното име на заявителя",
   "components.TvDetails.Season.noepisodes": "Няма наличен списък с епизоди.",
-  "components.Settings.videoServiceSettingsDescription": "Конфигурирайте вашия {serverType} сървър(и) по-долу. Можете да свържете множество {serverType} сървъри, но само два от тях могат да бъдат маркирани като стандартни (един не-4K и един 4K). Администраторите могат да заменят сървъра, използван за обработка на нови заявки преди одобрението.",
+  "components.Settings.serviceSettingsDescription": "Конфигурирайте вашия {serverType} сървър(и) по-долу. Можете да свържете множество {serverType} сървъри, но само два от тях могат да бъдат маркирани като стандартни (един не-4K и един 4K). Администраторите могат да заменят сървъра, използван за обработка на нови заявки преди одобрението.",
   "components.TvDetails.seasonstitle": "Сезони",
   "i18n.available": "Наличен",
   "components.Settings.menuGeneralSettings": "Общ",

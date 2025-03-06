@@ -5,6 +5,7 @@ export type AvailableCacheIds =
   | 'musicbrainz'
   | 'listenbrainz'
   | 'covertartarchive'
+  | 'tadb'
   | 'radarr'
   | 'sonarr'
   | 'lidarr'
@@ -61,6 +62,10 @@ class CacheManager {
       checkPeriod: 60 * 30,
     }),
     covertartarchive: new Cache('covertartarchive', 'CovertArtArchive API', {
+      stdTtl: 21600,
+      checkPeriod: 60 * 30,
+    }),
+    tadb: new Cache('tadb', 'The Audio Database API', {
       stdTtl: 21600,
       checkPeriod: 60 * 30,
     }),

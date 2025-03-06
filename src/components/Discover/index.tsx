@@ -219,16 +219,6 @@ const Discover = () => {
           case DiscoverSliderType.PLEX_WATCHLIST:
             sliderComponent = <PlexWatchlistSlider />;
             break;
-          case DiscoverSliderType.POPULAR_ALBUMS:
-            sliderComponent = (
-              <MediaSlider
-                sliderKey="popular-albums"
-                title={intl.formatMessage(sliderTitles.popularalbums)}
-                url="/api/v1/discover/music"
-                linkUrl="/discover/music"
-              />
-            );
-            break;
           case DiscoverSliderType.TRENDING:
             sliderComponent = (
               <MediaSlider
@@ -403,6 +393,26 @@ const Discover = () => {
                 linkUrl={`/discover/tv?watchRegion=${
                   slider.data?.split(',')[0]
                 }&watchProviders=${slider.data?.split(',')[1]}`}
+              />
+            );
+            break;
+          case DiscoverSliderType.POPULAR_ALBUMS:
+            sliderComponent = (
+              <MediaSlider
+                sliderKey="popular-albums"
+                title={intl.formatMessage(sliderTitles.popularalbums)}
+                url="/api/v1/discover/music/albums"
+                linkUrl="/discover/albums"
+              />
+            );
+            break;
+          case DiscoverSliderType.POPULAR_ARTISTS:
+            sliderComponent = (
+              <MediaSlider
+                sliderKey="popular-artists"
+                title={intl.formatMessage(sliderTitles.popularartists)}
+                url="/api/v1/discover/music/artists"
+                linkUrl="/discover/artists"
               />
             );
             break;

@@ -16,7 +16,6 @@ import type {
   TmdbNetwork,
   TmdbPersonCombinedCredits,
   TmdbPersonDetails,
-  TmdbPersonSearchResponse,
   TmdbProductionCompany,
   TmdbRegion,
   TmdbSearchMovieResponse,
@@ -230,31 +229,6 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
       };
     }
   };
-
-  public async searchPerson({
-    query,
-    page = 1,
-    includeAdult = false,
-    language = 'en',
-  }: SearchOptions): Promise<TmdbPersonSearchResponse> {
-    try {
-      const data = await this.get<TmdbPersonSearchResponse>('/search/person', {
-        query,
-        page: page.toString(),
-        include_adult: includeAdult ? 'true' : 'false',
-        language,
-      });
-
-      return data;
-    } catch (e) {
-      return {
-        page: 1,
-        results: [],
-        total_pages: 1,
-        total_results: 0,
-      };
-    }
-  }
 
   public getPerson = async ({
     personId,

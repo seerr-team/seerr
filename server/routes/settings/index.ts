@@ -761,8 +761,7 @@ settingsRoutes.get('/cache', async (_req, res) => {
   const tmdbImageCache = await ImageProxy.getImageStats('tmdb');
   const avatarImageCache = await ImageProxy.getImageStats('avatar');
   const caaImageCache = await ImageProxy.getImageStats('caa');
-  const lidarrImageCache = await ImageProxy.getImageStats('lidarr');
-  const fanartImageCache = await ImageProxy.getImageStats('fanart');
+  const tadbImageCache = await ImageProxy.getImageStats('tadb');
 
   const stats: DnsStats | undefined = dnsCache?.getStats();
   const entries: DnsEntries | undefined = dnsCache?.getCacheEntries();
@@ -773,8 +772,7 @@ settingsRoutes.get('/cache', async (_req, res) => {
       tmdb: tmdbImageCache,
       avatar: avatarImageCache,
       caa: caaImageCache,
-      lidarr: lidarrImageCache,
-      fanart: fanartImageCache,
+      tadb: tadbImageCache,
     },
     dnsCache: {
       stats,

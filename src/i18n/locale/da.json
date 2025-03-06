@@ -763,7 +763,7 @@
   "components.UserList.deleteconfirm": "Er du sikker på at du vil slette denne bruger? Alle deres forespørgselsdata vil blive slettet permanent.",
   "components.Settings.serverpresetManualMessage": "Manuel konfiguration",
   "components.Settings.serverpresetRefreshing": "Henter servere…",
-  "components.Settings.videoServiceSettingsDescription": "Konfigurér dine {serverType}server(e) nedenfor. Du kan forbinde til flere forskellige {serverType}servere men kun to af dem kan markeres som standard (én ikke-4K og én 4K). Administratorer kan ændre på serveren der bruges til at behandle nye forespørgsler inden godkendelse.",
+  "components.Settings.serviceSettingsDescription": "Konfigurér dine {serverType}server(e) nedenfor. Du kan forbinde til flere forskellige {serverType}servere men kun to af dem kan markeres som standard (én ikke-4K og én 4K). Administratorer kan ændre på serveren der bruges til at behandle nye forespørgsler inden godkendelse.",
   "components.Settings.settingUpPlexDescription": "For at sætte Plex op skal du enten indtaste oplysningerne manuelt eller vælge en server som hentes fra <RegisterPlexTVLink>plex.tv</RegisterPlexTVLink>. Klik på knappen til højre for rullemenuen for at hente en liste af tilgængelige servere.",
   "components.Settings.toastPlexConnectingFailure": "Kunne ikke forbinde til Plex.",
   "components.Settings.toastPlexConnectingSuccess": "Plex forbindelse er etableret!",

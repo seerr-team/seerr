@@ -1,4 +1,4 @@
-import GroupCard from '@app/components/GroupCard';
+import ArtistCard from '@app/components/ArtistCard';
 import ShowMoreCard from '@app/components/MediaSlider/ShowMoreCard';
 import PersonCard from '@app/components/PersonCard';
 import Slider from '@app/components/Slider';
@@ -16,7 +16,7 @@ import type {
   TvResult,
 } from '@server/models/Search';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import useSWRInfinite from 'swr/infinite';
 
 interface MixedResult {
@@ -34,12 +34,20 @@ interface MixedResult {
 
 interface MediaSliderProps {
   title: string;
-  url: string;
+  url?: string;
   linkUrl?: string;
   sliderKey: string;
   hideWhenEmpty?: boolean;
   extraParams?: string;
   onNewTitles?: (titleCount: number) => void;
+  items?: (
+    | MovieResult
+    | TvResult
+    | PersonResult
+    | AlbumResult
+    | ArtistResult
+  )[];
+  totalItems?: number;
 }
 
 const MediaSlider = ({
@@ -50,12 +58,20 @@ const MediaSlider = ({
   sliderKey,
   hideWhenEmpty = false,
   onNewTitles,
+  items: passedItems,
+  totalItems,
 }: MediaSliderProps) => {
   const settings = useSettings();
   const { hasPermission } = useUser();
+  const [titles, setTitles] = useState<
+    (MovieResult | TvResult | PersonResult | AlbumResult | ArtistResult)[]
+  >([]);
   const { data, error, setSize, size } = useSWRInfinite<MixedResult>(
     (pageIndex: number, previousPageData: MixedResult | null) => {
-      if (previousPageData && pageIndex + 1 > previousPageData.totalPages) {
+      if (
+        !url ||
+        (previousPageData && pageIndex + 1 > previousPageData.totalPages)
+      ) {
         return null;
       }
 
@@ -69,19 +85,33 @@ const MediaSlider = ({
     }
   );
 
-  let titles = (data ?? []).reduce(
-    (a, v) => [...a, ...v.results],
-    [] as (MovieResult | TvResult | PersonResult | AlbumResult | ArtistResult)[]
-  );
+  useEffect(() => {
+    const newTitles =
+      passedItems ??
+      (data ?? []).reduce(
+        (a, v) => [...a, ...v.results],
+        [] as (
+          | MovieResult
+          | TvResult
+          | PersonResult
+          | AlbumResult
+          | ArtistResult
+        )[]
+      );
 
-  if (settings.currentSettings.hideAvailable) {
-    titles = titles.filter(
-      (i) =>
-        (i.mediaType === 'movie' || i.mediaType === 'tv') &&
-        i.mediaInfo?.status !== MediaStatus.AVAILABLE &&
-        i.mediaInfo?.status !== MediaStatus.PARTIALLY_AVAILABLE
-    );
-  }
+    if (settings.currentSettings.hideAvailable) {
+      setTitles(
+        newTitles.filter(
+          (i) =>
+            (i.mediaType === 'movie' || i.mediaType === 'tv') &&
+            i.mediaInfo?.status !== MediaStatus.AVAILABLE &&
+            i.mediaInfo?.status !== MediaStatus.PARTIALLY_AVAILABLE
+        )
+      );
+    } else {
+      setTitles(newTitles);
+    }
+  }, [data, passedItems, settings.currentSettings.hideAvailable]);
 
   if (settings.currentSettings.hideBlacklisted) {
     titles = titles.filter(
@@ -93,6 +123,7 @@ const MediaSlider = ({
 
   useEffect(() => {
     if (
+      !passedItems &&
       titles.length < 24 &&
       size < 5 &&
       (data?.[0]?.totalResults ?? 0) > size * 20
@@ -105,9 +136,14 @@ const MediaSlider = ({
       // at all for our purposes.
       onNewTitles(titles.length);
     }
-  }, [titles, setSize, size, data, onNewTitles]);
+  }, [titles, setSize, size, data, onNewTitles, passedItems]);
 
-  if (hideWhenEmpty && (data?.[0].results ?? []).length === 0) {
+  if (
+    hideWhenEmpty &&
+    (!passedItems
+      ? (data?.[0].results ?? []).length === 0
+      : titles.length === 0)
+  ) {
     return null;
   }
 
@@ -174,46 +210,44 @@ const MediaSlider = ({
               key={title.id}
               id={title.id}
               isAddedToWatchlist={title.mediaInfo?.watchlists?.length ?? 0}
-              image={
-                title.images?.find((image) => image.CoverType === 'Cover')?.Url
-              }
+              image={title.posterPath}
               status={title.mediaInfo?.status}
               title={title.title}
-              year={title.releasedate}
+              year={title['first-release-date']?.split('-')[0]}
               mediaType={title.mediaType}
-              artist={title.artistname}
-              type={title.type}
+              artist={title['artist-credit']?.[0]?.name}
+              type={title['primary-type']}
               inProgress={(title.mediaInfo?.downloadStatus ?? []).length > 0}
+              needsCoverArt={title.needsCoverArt}
             />
           );
         case 'artist':
-          return title.type === 'Group' ? (
-            <GroupCard
-              key={title.id}
-              groupId={title.id}
-              name={title.artistname}
-              image={title.artistimage}
-            />
-          ) : (
+          return title.tmdbPersonId ? (
             <PersonCard
               key={title.id}
-              personId={title.id}
-              name={title.artistname}
-              mediaType="artist"
-              profilePath={title.artistimage}
+              personId={title.tmdbPersonId}
+              name={title.name}
+              profilePath={title.artistThumb ?? undefined}
+            />
+          ) : (
+            <ArtistCard
+              key={title.id}
+              artistId={title.id}
+              name={title.name}
+              artistThumb={title.artistThumb}
             />
           );
       }
     });
 
-  if (linkUrl && titles.length > 20) {
+  if (linkUrl && (totalItems ? totalItems > 20 : titles.length > 20)) {
     finalTitles.push(
       <ShowMoreCard
         url={linkUrl}
         posters={titles
           .slice(20, 24)
           .map((title) =>
-            title.mediaType !== 'person'
+            title.mediaType !== 'person' && title.mediaType !== 'album'
               ? (title as MovieResult | TvResult).posterPath
               : undefined
           )}
@@ -237,7 +271,7 @@ const MediaSlider = ({
       </div>
       <Slider
         sliderKey={sliderKey}
-        isLoading={!data && !error}
+        isLoading={!passedItems && !data && !error}
         isEmpty={false}
         items={finalTitles}
       />

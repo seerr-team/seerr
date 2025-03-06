@@ -4,12 +4,11 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 interface PersonCardProps {
-  personId: number | string;
+  personId: number;
   name: string;
   subName?: string;
   profilePath?: string;
   canExpand?: boolean;
-  mediaType?: 'person' | 'artist';
 }
 
 const PersonCard = ({
@@ -18,7 +17,6 @@ const PersonCard = ({
   subName,
   profilePath,
   canExpand = false,
-  mediaType = 'person',
 }: PersonCardProps) => {
   const [isHovered, setHovered] = useState(false);
 
@@ -53,11 +51,12 @@ const PersonCard = ({
               {profilePath ? (
                 <div className="relative h-full w-3/4 overflow-hidden rounded-full ring-1 ring-gray-700">
                   <CachedImage
-                    type={mediaType === 'person' ? 'tmdb' : 'music'}
+                    type="tmdb"
                     src={
-                      mediaType === 'person'
-                        ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${profilePath}`
-                        : profilePath
+                      // Check if profilePath already contains http(s)
+                      profilePath?.startsWith('http')
+                        ? profilePath
+                        : `https://image.tmdb.org/t/p/w600_and_h900_bestv2${profilePath}`
                     }
                     alt=""
                     style={{

@@ -1060,14 +1060,26 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
               </div>
             )}
             {!!streamingProviders.length && (
-              <div className="media-fact">
+              <div className="media-fact flex-col gap-1">
                 <span>{intl.formatMessage(messages.streamingproviders)}</span>
-                <span className="media-fact-value">
+                <span className="media-fact-value flex flex-row flex-wrap gap-5">
                   {streamingProviders.map((p) => {
                     return (
-                      <span className="block" key={`provider-${p.id}`}>
-                        {p.name}
-                      </span>
+                      <Tooltip content={p.name}>
+                        <span
+                          className="opacity-50 transition duration-300 hover:opacity-100"
+                          key={`provider-${p.id}`}
+                        >
+                          <CachedImage
+                            type="tmdb"
+                            src={'https://image.tmdb.org/t/p/w45/' + p.logoPath}
+                            alt={p.name}
+                            width={32}
+                            height={32}
+                            className="rounded-md"
+                          />
+                        </span>
+                      </Tooltip>
                     );
                   })}
                 </span>

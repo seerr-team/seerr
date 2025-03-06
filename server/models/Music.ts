@@ -1,8 +1,4 @@
-import type {
-  MbAlbumDetails,
-  MbImage,
-  MbLink,
-} from '@server/api/musicbrainz/interfaces';
+import type { LbAlbumDetails } from '@server/api/listenbrainz/interfaces';
 import type Media from '@server/entity/Media';
 
 export interface MusicDetails {
@@ -10,121 +6,120 @@ export interface MusicDetails {
   mbId: string;
   title: string;
   titleSlug?: string;
-  overview: string;
-  artistId: string;
+  mediaType: 'album';
   type: string;
   releaseDate: string;
-  disambiguation: string;
-  genres: string[];
-  secondaryTypes: string[];
-  releases: {
-    id: string;
-    title: string;
-    status: string;
-    releaseDate: string;
-    trackCount: number;
-    country: string[];
-    label: string[];
-    media: {
-      format: string;
-      name: string;
-      position: number;
-    }[];
-    tracks: {
-      id: string;
-      artistId: string;
-      trackName: string;
-      trackNumber: string;
-      trackPosition: number;
-      mediumNumber: number;
-      durationMs: number;
-      recordingId: string;
-    }[];
-    disambiguation: string;
-  }[];
   artist: {
     id: string;
-    artistName: string;
-    sortName: string;
-    type: 'Group' | 'Person';
-    disambiguation: string;
-    overview: string;
-    genres: string[];
-    status: string;
-    images: MbImage[];
-    links: MbLink[];
-    rating?: {
-      count: number;
-      value: number | null;
-    };
+    name: string;
+    area?: string;
+    beginYear?: number;
+    type?: string;
   };
-  images: MbImage[];
-  links: MbLink[];
+  tracks: {
+    name: string;
+    position: number;
+    length: number;
+    recordingMbid: string;
+    totalListenCount: number;
+    totalUserCount: number;
+    artists: {
+      name: string;
+      mbid: string;
+      tmdbMapping?: {
+        personId: number;
+        profilePath: string;
+      };
+    }[];
+  }[];
+  tags?: {
+    artist: {
+      artistMbid: string;
+      count: number;
+      tag: string;
+    }[];
+    releaseGroup: {
+      count: number;
+      genreMbid: string;
+      tag: string;
+    }[];
+  };
+  stats?: {
+    totalListenCount: number;
+    totalUserCount: number;
+    listeners: {
+      userName: string;
+      listenCount: number;
+    }[];
+  };
   mediaInfo?: Media;
   onUserWatchlist?: boolean;
+  posterPath?: string;
+  artistWikipedia?: {
+    content: string;
+    title: string;
+    url: string;
+  };
+  tmdbPersonId?: number;
+  artistBackdrop?: string;
+  artistThumb?: string;
 }
 
 export const mapMusicDetails = (
-  album: MbAlbumDetails,
+  album: LbAlbumDetails,
   media?: Media,
   userWatchlist?: boolean
 ): MusicDetails => ({
-  id: album.id,
-  mbId: album.id,
-  title: album.title,
-  titleSlug: album.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-  overview: album.overview,
-  artistId: album.artistid,
+  id: album.release_group_mbid,
+  mbId: album.release_group_mbid,
+  title: album.release_group_metadata.release_group.name,
+  titleSlug: album.release_group_metadata.release_group.name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-'),
+  mediaType: 'album',
   type: album.type,
-  releaseDate: album.releasedate,
-  disambiguation: album.disambiguation,
-  genres: album.genres,
-  secondaryTypes: album.secondaryTypes ?? [],
-  releases: album.releases.map((release) => ({
-    id: release.id,
-    title: release.title,
-    status: release.status,
-    releaseDate: release.releasedate,
-    trackCount: release.track_count,
-    country: release.country,
-    label: release.label,
-    media: release.media.map((medium) => ({
-      format: medium.Format,
-      name: medium.Name,
-      position: medium.Position,
-    })),
-    tracks: release.tracks.map((track) => ({
-      id: track.id,
-      artistId: track.artistid,
-      trackName: track.trackname,
-      trackNumber: track.tracknumber,
-      trackPosition: track.trackposition,
-      mediumNumber: track.mediumnumber,
-      durationMs: track.durationms,
-      recordingId: track.recordingid,
-    })),
-    disambiguation: release.disambiguation,
-  })),
+  releaseDate: album.release_group_metadata.release_group.date,
   artist: {
-    id: album.artists[0].id,
-    artistName: album.artists[0].artistname,
-    sortName: album.artists[0].sortname,
-    type: album.artists[0].type,
-    disambiguation: album.artists[0].disambiguation,
-    overview: album.artists[0].overview,
-    genres: album.artists[0].genres,
-    status: album.artists[0].status,
-    images: album.artists[0].images,
-    links: album.artists[0].links,
-    rating: album.artists[0].rating
-      ? {
-          count: album.artists[0].rating.Count,
-          value: album.artists[0].rating.Value,
-        }
-      : undefined,
+    id: album.release_group_metadata.artist.artists[0].artist_mbid,
+    name: album.release_group_metadata.artist.name,
+    area: album.release_group_metadata.artist.artists[0].area,
+    beginYear: album.release_group_metadata.artist.artists[0].begin_year,
+    type: album.release_group_metadata.artist.artists[0].type,
   },
-  images: album.images,
-  links: album.artists[0].links,
+  tracks: album.mediums.flatMap((medium) =>
+    medium.tracks.map((track) => ({
+      name: track.name,
+      position: track.position,
+      length: track.length,
+      recordingMbid: track.recording_mbid,
+      totalListenCount: track.total_listen_count,
+      totalUserCount: track.total_user_count,
+      artists: track.artists.map((artist) => ({
+        name: artist.artist_credit_name,
+        mbid: artist.artist_mbid,
+      })),
+    }))
+  ),
+  tags: {
+    artist: album.release_group_metadata.tag.artist.map((tag) => ({
+      artistMbid: tag.artist_mbid,
+      count: tag.count,
+      tag: tag.tag,
+    })),
+    releaseGroup: album.release_group_metadata.tag.release_group.map((tag) => ({
+      count: tag.count,
+      genreMbid: tag.genre_mbid,
+      tag: tag.tag,
+    })),
+  },
+  stats: {
+    totalListenCount: album.listening_stats.total_listen_count,
+    totalUserCount: album.listening_stats.total_user_count,
+    listeners: album.listening_stats.listeners.map((listener) => ({
+      userName: listener.user_name,
+      listenCount: listener.listen_count,
+    })),
+  },
   mediaInfo: media,
   onUserWatchlist: userWatchlist,
 });

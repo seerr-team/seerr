@@ -874,7 +874,7 @@
   "components.Settings.sonarrsettings": "Ustawienia Sonarr",
   "components.Settings.ssl": "Protokół SSL",
   "components.Settings.toastPlexConnectingSuccess": "Połączenie Plex nawiązane pomyślnie!",
-  "components.Settings.videoServiceSettingsDescription": "Skonfiguruj poniżej swój serwer(y) {serverType}. Możesz podłączyć wiele serwerów {serverType}, ale tylko dwa z nich mogą być oznaczone jako domyślne (jeden nie-4K i jeden 4K). Administratorzy mogą zmienić serwer używany do przetwarzania nowych żądań przed zatwierdzeniem.",
+  "components.Settings.serviceSettingsDescription": "Skonfiguruj poniżej swój serwer(y) {serverType}. Możesz podłączyć wiele serwerów {serverType}, ale tylko dwa z nich mogą być oznaczone jako domyślne (jeden nie-4K i jeden 4K). Administratorzy mogą zmienić serwer używany do przetwarzania nowych żądań przed zatwierdzeniem.",
   "components.Settings.toastPlexRefreshSuccess": "Lista serwerów Plex została pobrana pomyślnie!",
   "components.Settings.startscan": "Rozpocznij skanowanie",
   "components.Setup.finish": "Zakończ konfigurację",

@@ -20,7 +20,21 @@ export interface PersonDetails {
   adult: boolean;
   imdbId?: string;
   homepage?: string;
-  mbArtistId?: string;
+  artist?: {
+    artistBackdrop: string | null;
+    artistThumb?: string;
+    releaseGroups?: {
+      secondary_types?: string[];
+      id: string;
+      title: string;
+      'first-release-date': string;
+      'artist-credit': {
+        name: string;
+      }[];
+      'primary-type': string;
+      posterPath?: string;
+    }[];
+  };
 }
 
 export interface PersonCredit {

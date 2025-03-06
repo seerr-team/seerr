@@ -143,15 +143,10 @@ const UserProfile = () => {
                 }
                 if ('artist' in media) {
                   return (
-                    media.artist.images?.find(
-                      (img) => img.CoverType === 'Fanart'
-                    )?.Url ||
-                    media.artist.images?.find(
-                      (img) => img.CoverType === 'Poster'
-                    )?.Url ||
-                    media.images?.find(
-                      (img) => img.CoverType.toLowerCase() === 'cover'
-                    )?.Url
+                    media.artistBackdrop ||
+                    media.artistThumb ||
+                    media.posterPath ||
+                    ''
                   );
                 }
                 return false;
@@ -161,13 +156,12 @@ const UserProfile = () => {
                   return `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${media.backdropPath}`;
                 }
                 if ('artist' in media) {
-                  const fanart = media.artist.images?.find(
-                    (img) => img.CoverType === 'Fanart'
+                  return (
+                    media.artistBackdrop ||
+                    media.artistThumb ||
+                    media.posterPath ||
+                    ''
                   );
-                  const cover = media.artist.images?.find(
-                    (img) => img.CoverType === 'Cover'
-                  );
-                  return fanart?.Url || cover?.Url || '';
                 }
                 return '';
               })

@@ -6275,6 +6275,91 @@ paths:
                       example: Genre Name
   /discover/music:
     get:
+      summary: Discover fresh music releases
+      description: Returns a list of recent music releases from ListenBrainz in a JSON object
+      tags:
+        - search
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: days
+          schema:
+            type: number
+            example: 30
+            default: 30
+          description: Number of days to look back for fresh releases
+        - in: query
+          name: genre
+          schema:
+            type: string
+            example: 'Album,EP,Single'
+          description: Comma-separated list of music genres/types to filter by
+        - in: query
+          name: onlyWithCoverArt
+          schema:
+            type: string
+            enum:
+              - 'true'
+              - 'false'
+            default: 'false'
+            example: 'false'
+          description: Whether to hide releases without cover art (default is false)
+        - in: query
+          name: releaseDateGte
+          schema:
+            type: string
+            format: date
+            example: '2023-01-01'
+          description: Filter for releases on or after this date
+        - in: query
+          name: releaseDateLte
+          schema:
+            type: string
+            format: date
+            example: '2023-12-31'
+          description: Filter for releases on or before this date
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum:
+              - release_date.desc
+              - release_date.asc
+              - title.asc
+              - title.desc
+              - artist.asc
+              - artist.desc
+            default: release_date.desc
+            example: release_date.desc
+          description: Field and direction to sort results
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AlbumResult'
+  /discover/music/albums:
+    get:
       summary: Discover trending music albums
       description: Returns a list of trending albums from ListenBrainz in a JSON object
       tags:
@@ -6326,6 +6411,57 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/AlbumResult'
+  /discover/music/artists:
+    get:
+      summary: Discover trending music artists
+      description: Returns a list of trending artists from ListenBrainz in a JSON object
+      tags:
+        - search
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: range
+          schema:
+            type: string
+            enum: [week, month, year, all]
+            default: month
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum:
+              - listen_count.desc
+              - listen_count.asc
+              - name.asc
+              - name.desc
+            default: listen_count.desc
+            example: listen_count.desc
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ArtistResult'
   /discover/watchlist:
     get:
       summary: Get the Plex watchlist.
@@ -6458,7 +6594,46 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MainSettings'
+              type: object
+              properties:
+                mediaType:
+                  type: string
+                  enum: [movie, tv, music]
+                  example: movie
+                mediaId:
+                  oneOf:
+                    - type: number
+                    - type: string
+                  description: TMDB ID for movies/tv, MusicBrainz ID for music
+                  example: 123
+                tvdbId:
+                  type: number
+                  example: 123
+                seasons:
+                  oneOf:
+                    - type: array
+                      items:
+                        type: number
+                        minimum: 0
+                    - type: string
+                      enum: [all]
+                is4k:
+                  type: boolean
+                  example: false
+                serverId:
+                  type: number
+                profileId:
+                  type: number
+                rootFolder:
+                  type: string
+                languageProfileId:
+                  type: number
+                userId:
+                  type: number
+                  nullable: true
+              required:
+                - mediaType
+                - mediaId
       responses:
         '201':
           description: Succesfully created the request
@@ -7056,6 +7231,26 @@ paths:
           schema:
             type: string
             example: en
+        - in: query
+          name: page
+          description: Page number for paginated results
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - in: query
+          name: pageSize
+          description: Number of items per page
+          schema:
+            type: integer
+            default: 20
+            example: 20
+        - in: query
+          name: albumType
+          description: Filter results by album type (Album, EP, Single, etc.)
+          schema:
+            type: string
+            example: 'Album'
       responses:
         '200':
           description: Returned person
@@ -7099,10 +7294,37 @@ paths:
                       $ref: '#/components/schemas/CreditCrew'
                   id:
                     type: number
-  /group/{artistId}:
+  /coverart/batch/{ids}:
+    get:
+      summary: Batch fetch cover art
+      description: Fetches cover art for multiple albums by their MusicBrainz IDs in a single request. Designed for progressive loading of cover images.
+      tags:
+        - music
+      parameters:
+        - in: path
+          name: ids
+          required: true
+          schema:
+            type: string
+            example: '87f17f8a-c0e2-406c-a149-8c8e311bf330,b5b4bb4b-8ba5-3acf-88cb-4cae2699d8da'
+          description: Comma-separated list of MusicBrainz album IDs
+      responses:
+        '200':
+          description: Cover art URLs mapped to their MusicBrainz IDs
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                  nullable: true
+                example:
+                  '87f17f8a-c0e2-406c-a149-8c8e311bf330': 'https://archive.org/download/mbid-87f17f8a-c0e2-406c-a149-8c8e311bf330/mbid-87f17f8a-c0e2-406c-a149-8c8e311bf330-23795455019.jpg'
+                  'b5b4bb4b-8ba5-3acf-88cb-4cae2699d8da': null
+  /artist/{artistId}:
     get:
       summary: Get artist details
-      description: Returns artist details in a JSON object.
+      description: Returns full artist details including discography and metadata
       tags:
         - music
       parameters:
@@ -7111,188 +7333,149 @@ paths:
           required: true
           schema:
             type: string
-            example: 87f17f8a-c0e2-406c-a149-8c8e311bf330
-        - in: query
-          name: full
-          schema:
-            type: boolean
-            example: false
-            default: false
-        - in: query
-          name: maxElements
-          schema:
-            type: number
-            example: 50
-            default: 25
-        - in: query
-          name: offset
-          schema:
-            type: number
-            example: 25
-            default: 0
-      responses:
-        '200':
-          description: Artist details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ArtistResult'
-  /group/{artistId}/discography:
-    get:
-      summary: Get artist discography
-      description: Returns the artist's discography with pagination and optional type filtering
-      tags:
-        - music
-      parameters:
-        - in: path
-          name: artistId
-          required: true
-          schema:
-            type: string
-            example: f59c5520-5f46-4d2c-b2c4-822eabf53419
+            example: 'f27ec8db-af05-4f36-916e-3d57f91ecf5e'
         - in: query
           name: page
+          description: Page number for paginated results
           schema:
-            type: number
+            type: integer
             default: 1
             example: 1
         - in: query
-          name: type
-          schema:
-            type: string
-            enum: [Album, Single, EP, Other]
-            description: Filter releases by type
-        - in: query
           name: pageSize
+          description: Number of items per page
           schema:
-            type: number
+            type: integer
             default: 20
             example: 20
+        - in: query
+          name: albumType
+          description: Filter results by album type (Album, EP, Single, etc.)
+          schema:
+            type: string
+            example: 'Album'
       responses:
         '200':
-          description: Paginated artist discography
+          description: Artist details returned successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  page:
+                  name:
+                    type: string
+                    example: 'Artist Name'
+                  type:
+                    type: string
+                    example: 'Person'
+                  area:
+                    type: string
+                    example: 'United States'
+                  beginYear:
                     type: number
-                  pageInfo:
+                    example: 1990
+                  endYear:
+                    type: number
+                    nullable: true
+                  wikipedia:
                     type: object
+                    nullable: true
                     properties:
-                      total:
-                        type: number
-                      totalPages:
-                        type: number
-                  results:
+                      content:
+                        type: string
+                  artistThumb:
+                    type: string
+                    nullable: true
+                  artistBackdrop:
+                    type: string
+                    nullable: true
+                  releaseGroups:
                     type: array
                     items:
                       type: object
                       properties:
                         id:
                           type: string
+                        mediaType:
+                          type: string
+                          enum: ['album']
                         title:
                           type: string
-                        type:
+                        first-release-date:
                           type: string
-                          enum: [Album, Single, EP, Other]
-                        releasedate:
-                          type: string
-                        images:
+                          format: date
+                        artist-credit:
                           type: array
                           items:
                             type: object
                             properties:
-                              CoverType:
+                              name:
                                 type: string
-                              Url:
-                                type: string
+                        primary-type:
+                          type: string
+                          enum: ['Album', 'Single', 'EP', 'Other']
+                        secondary_types:
+                          type: array
+                          items:
+                            type: string
+                        posterPath:
+                          type: string
+                          nullable: true
+                        mediaInfo:
+                          $ref: '#/components/schemas/MediaInfo'
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        example: 1
+                      pageSize:
+                        type: integer
+                        example: 20
+                      totalItems:
+                        type: integer
+                        example: 100
+                      totalPages:
+                        type: integer
+                        example: 5
+                      albumType:
+                        type: string
+                        nullable: true
+                        example: 'Album'
+                  typeCounts:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                    example:
+                      Album: 20
+                      Single: 15
+                      EP: 5
         '404':
           description: Artist not found
-        '500':
-          description: Internal server error
-  /person/{personId}/discography:
-    get:
-      summary: Get person's musical discography
-      description: Returns the person's discography with pagination and optional type filtering
-      tags:
-        - music
-      parameters:
-        - in: path
-          name: personId
-          required: true
-          schema:
-            type: number
-            example: 287
-        - in: query
-          name: artistId
-          required: true
-          schema:
-            type: string
-            example: 'b2fbd053-4380-412c-95d2-35c6da8f1011'
-        - in: query
-          name: type
-          schema:
-            type: string
-            enum: [Album, Single, EP, Other]
-            description: Filter releases by type
-        - in: query
-          name: page
-          schema:
-            type: number
-            default: 1
-            example: 1
-        - in: query
-          name: pageSize
-          schema:
-            type: number
-            default: 20
-            example: 20
-      responses:
-        '200':
-          description: Paginated person discography
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  page:
+                  status:
                     type: number
-                  pageInfo:
-                    type: object
-                    properties:
-                      total:
-                        type: number
-                      totalPages:
-                        type: number
-                  results:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        title:
-                          type: string
-                        type:
-                          type: string
-                          enum: [Album, Single, EP, Other]
-                        releasedate:
-                          type: string
-                        images:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              CoverType:
-                                type: string
-                              Url:
-                                type: string
-        '404':
-          description: No music artist found for this person
+                    example: 404
+                  message:
+                    type: string
+                    example: 'Artist not found'
         '500':
-          description: Unable to retrieve artist discography
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: number
+                    example: 500
+                  message:
+                    type: string
+                    example: 'Unable to retrieve artist.'
   /music/{mbId}:
     get:
       summary: Get album details
@@ -7331,10 +7514,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AlbumResult'
-  /music/{mbId}/wikipedia-extract:
+  /music/{mbId}/artist:
     get:
-      summary: Get artist Wikipedia extract
-      description: Returns Wikipedia extract for the artist of the specified album
+      summary: Get artist details
+      description: Returns details about the artist of the specified album
       tags:
         - music
       parameters:
@@ -7343,183 +7526,57 @@ paths:
           required: true
           schema:
             type: string
-            example: da04991d-8e8a-43be-9892-1e6342a77410
-        - in: query
-          name: language
-          schema:
-            type: string
-            example: en
-            default: en
-      responses:
-        '200':
-          description: Artist Wikipedia extract
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  artistId:
-                    type: string
-                  artistName:
-                    type: string
-                  overview:
-                    type: string
-                  url:
-                    type: string
-        '404':
-          description: Artist not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-  /music/{mbId}/tracks:
-    get:
-      summary: Get album tracks
-      description: Returns tracks listing for the specified album
-      tags:
-        - music
-      parameters:
-        - in: path
-          name: mbId
-          required: true
-          schema:
-            type: string
-            example: d9390962-495f-466e-8674-e705e660ed8b
-      responses:
-        '200':
-          description: Album tracks
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  media:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        format:
-                          type: string
-                        track-count:
-                          type: integer
-                        position:
-                          type: integer
-                        tracks:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              id:
-                                type: string
-                              number:
-                                type: string
-                              title:
-                                type: string
-                              length:
-                                type: integer
-                              position:
-                                type: integer
-                              recording:
-                                type: object
-                                properties:
-                                  id:
-                                    type: string
-                                  title:
-                                    type: string
-                                  length:
-                                    type: integer
-                                  first-release-date:
-                                    type: string
-                                  video:
-                                    type: boolean
-                                  disambiguation:
-                                    type: string
-        '404':
-          description: Album not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-  /music/{mbId}/discography:
-    get:
-      summary: Get artist discography
-      description: Returns a list of albums by the artist of the specified discography
-      tags:
-        - music
-      parameters:
-        - in: path
-          name: mbId
-          required: true
-          schema:
-            type: string
-            example: 87f17f8a-c0e2-406c-a149-8c8e311bf330
+            example: b5b4bb4b-8ba5-3acf-88cb-4cae2699d8da
         - in: query
           name: page
           schema:
-            type: integer
-            minimum: 1
+            type: number
             default: 1
         - in: query
-          name: language
+          name: pageSize
           schema:
-            type: string
-            example: en
+            type: number
+            default: 20
       responses:
         '200':
-          description: List of artist albums
+          description: Artist details
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  page:
-                    type: integer
-                  totalPages:
-                    type: integer
-                  totalResults:
-                    type: integer
-                  results:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                        mediaType:
-                          type: string
-                          enum: [music]
-                        title:
-                          type: string
-                        artistName:
-                          type: string
-                        posterPath:
-                          type: string
-                        mediaInfo:
-                          $ref: '#/components/schemas/MediaInfo'
+                  artist:
+                    type: object
+                    properties:
+                      area:
+                        type: string
+                      artist_mbid:
+                        type: string
+                      begin_year:
+                        type: integer
+                      mbid:
+                        type: string
+                      name:
+                        type: string
+                      rels:
+                        type: object
+                        properties:
+                          free streaming:
+                            type: string
+                          purchase for download:
+                            type: string
+                          social network:
+                            type: string
+                          streaming:
+                            type: string
+                          wikidata:
+                            type: string
+                          youtube:
+                            type: string
+                      tag:
+                        type: object
+                      type:
+                        type: string
         '404':
           description: Artist not found
           content:
@@ -7527,6 +7584,8 @@ paths:
               schema:
                 type: object
                 properties:
+                  status:
+                    type: integer
                   message:
                     type: string
         '500':
@@ -7536,44 +7595,8 @@ paths:
               schema:
                 type: object
                 properties:
-                  message:
-                    type: string
-  /music/{mbId}/similar:
-    get:
-      tags:
-        - music
-      summary: Get similar artists for a music album
-      parameters:
-        - name: mbId
-          in: path
-          required: true
-          schema:
-            type: string
-          description: MusicBrainz ID of the album
-        - name: page
-          in: query
-          required: false
-          schema:
-            type: integer
-            default: 1
-          description: Page number for pagination
-      responses:
-        '404':
-          description: Artist not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
+                  status:
+                    type: integer
                   message:
                     type: string
   /media:

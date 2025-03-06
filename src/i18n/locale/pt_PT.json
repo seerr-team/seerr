@@ -692,7 +692,7 @@
   "components.UserProfile.UserSettings.UserNotificationSettings.discordsettingssaved": "Definições de notificação Discord gravadas com sucesso!",
   "components.UserProfile.UserSettings.UserNotificationSettings.discordsettingsfailed": "Falha ao gravar as definições de notificação Discord.",
   "components.RequestList.RequestItem.cancelRequest": "Cancelar Pedido",
-  "components.Settings.videoServiceSettingsDescription": "Configure o seu(s) servidor(es) {serverType} abaixo. Pode ligar vários servidores {serverType}, mas apenas dois deles podem ser marcados como predefinidos (um não 4K e um 4K). Os administradores podem mudar o servidor usado para processar novos pedidos antes da aprovação.",
+  "components.Settings.serviceSettingsDescription": "Configure o seu(s) servidor(es) {serverType} abaixo. Pode ligar vários servidores {serverType}, mas apenas dois deles podem ser marcados como predefinidos (um não 4K e um 4K). Os administradores podem mudar o servidor usado para processar novos pedidos antes da aprovação.",
   "components.Settings.noDefaultServer": "Pelo menos um servidor {serverType} deve ser marcado como predefinido para que os pedidos de {mediaType} sejam processados.",
   "components.Settings.noDefaultNon4kServer": "Se tiver apenas um único servidor {serverType} para conteúdo não 4K e 4K (ou se apenas transfere conteúdo 4K), o seu servidor {serverType} <strong>NÃO</strong> deve ser designado como um servidor 4K.",
   "components.UserProfile.UserSettings.UserPasswordChange.noPasswordSetOwnAccount": "Atualmente, sua conta não tem uma palavra-passe definida. Configure uma palavra-passe abaixo para permitir o inicio de sessão como um \"utilizador local\" usando o seu e-mail.",

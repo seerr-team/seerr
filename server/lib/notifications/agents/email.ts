@@ -71,7 +71,9 @@ class EmailAgent
     const mediaType = payload.media
       ? payload.media.mediaType === MediaType.MOVIE
         ? 'movie'
-        : 'series'
+        : payload.media.mediaType === MediaType.TV
+        ? 'series'
+        : 'album'
       : undefined;
     const is4k = payload.request?.is4k;
 

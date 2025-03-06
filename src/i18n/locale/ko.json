@@ -1093,7 +1093,7 @@
   "components.Settings.SonarrModal.loadinglanguageprofiles": "언어 프로필 불러오는 중…",
   "components.Settings.SonarrModal.validationBaseUrlLeadingSlash": "기본 URL 앞에는 슬래시가 있어야 합니다",
   "components.Settings.SonarrModal.validationNameRequired": "서버 이름을 입력해야 합니다",
-  "components.Settings.videoServiceSettingsDescription": "아래에서 {serverType} 서버(들)를 구성하세요. 여러 개의 {serverType} 서버를 연결할 수 있지만, 기본 설정으로는 두 개만 지정할 수 있습니다 (비-4K 한 대와 4K 한 대). 관리자는 승인 이전에 새로운 요청을 처리하는 데 사용할 서버를 재지정할 수 있습니다.",
+  "components.Settings.serviceSettingsDescription": "아래에서 {serverType} 서버(들)를 구성하세요. 여러 개의 {serverType} 서버를 연결할 수 있지만, 기본 설정으로는 두 개만 지정할 수 있습니다 (비-4K 한 대와 4K 한 대). 관리자는 승인 이전에 새로운 요청을 처리하는 데 사용할 서버를 재지정할 수 있습니다.",
   "components.StatusBadge.managemedia": "{mediaType} 관리",
   "components.Settings.SonarrModal.animeTags": "애니메이션 태그",
   "components.Settings.SonarrModal.hostname": "호스트 네임 또는 IP 주소",

@@ -192,7 +192,7 @@ const IssueDetails = () => {
   };
 
   const title = isMusic(data)
-    ? `${data.artist.artistName} - ${data.title}`
+    ? `${data.artist.name} - ${data.title}`
     : isMovie(data)
     ? data.title
     : data.name;
@@ -238,14 +238,7 @@ const IssueDetails = () => {
             alt=""
             src={
               isMusic(data)
-                ? data.artist.images?.find((img) => img.CoverType === 'Fanart')
-                    ?.Url ||
-                  data.artist.images?.find((img) => img.CoverType === 'Poster')
-                    ?.Url ||
-                  data.images?.find(
-                    (img) => img.CoverType.toLowerCase() === 'cover'
-                  )?.Url ||
-                  '/images/overseerr_poster_not_found.png'
+                ? data?.artistBackdrop || data?.artistThumb || ''
                 : `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data.backdropPath}`
             }
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -267,9 +260,8 @@ const IssueDetails = () => {
             type={isMusic(data) ? 'music' : 'tmdb'}
             src={
               isMusic(data)
-                ? data.images?.find(
-                    (img) => img.CoverType.toLowerCase() === 'cover'
-                  )?.Url || '/images/overseerr_poster_not_found.png'
+                ? data.posterPath ||
+                  '/images/jellyseerr_poster_not_found_square.png'
                 : data.posterPath
                 ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.posterPath}`
                 : '/images/seerr_poster_not_found.png'

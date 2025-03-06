@@ -693,7 +693,7 @@
   "components.Settings.SettingsAbout.uptodate": "最新",
   "components.Settings.noDefaultNon4kServer": "如果您只有一個 {serverType} 伺服器，請勿把它設定為 4K 伺服器。",
   "components.Settings.noDefaultServer": "您必須至少指定一個預設 {serverType} 伺服器，才能處理{mediaType}請求。",
-  "components.Settings.videoServiceSettingsDescription": "關於 {serverType} 伺服器的設定。{serverType} 伺服器數沒有最大值限制，但您只能指定兩個預設伺服器（一個非 4K、一個 4K）。",
+  "components.Settings.serviceSettingsDescription": "關於 {serverType} 伺服器的設定。{serverType} 伺服器數沒有最大值限制，但您只能指定兩個預設伺服器（一個非 4K、一個 4K）。",
   "components.Settings.mediaTypeSeries": "影集",
   "components.Settings.mediaTypeMovie": "電影",
   "components.UserProfile.UserSettings.UserPasswordChange.noPasswordSet": "此使用者的帳戶目前沒有設密碼。若在以下設定密碼，此使用者就能使用「本地登入」。",

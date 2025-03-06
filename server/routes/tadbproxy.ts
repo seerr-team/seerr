@@ -30,6 +30,13 @@ function initTvdbImageProxy() {
   return _tvdbImageProxy;
 }
 
+const tadbImageProxy = new ImageProxy('tadb', 'https://r2.theaudiodb.com', {
+  rateLimitOptions: {
+    maxRequests: 20,
+    maxRPS: 50,
+  },
+});
+
 router.get('/:type/*', async (req, res) => {
   const imagePath = req.path.replace(/^\/\w+/, '');
   try {
@@ -38,6 +45,8 @@ router.get('/:type/*', async (req, res) => {
       imageData = await initTmdbImageProxy().getImage(imagePath);
     } else if (req.params.type === 'tvdb') {
       imageData = await initTvdbImageProxy().getImage(imagePath);
+    } else if (req.params.type === 'tabd') {
+      imageData = await tadbImageProxy.getImage(imagePath);
     } else {
       logger.error('Unsupported image type', {
         imagePath,

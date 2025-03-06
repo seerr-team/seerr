@@ -1,12 +1,15 @@
 import ListenBrainzAPI from '@server/api/listenbrainz';
-import MusicBrainz from '@server/api/musicbrainz';
 import PlexTvAPI from '@server/api/plextv';
+import TheAudioDb from '@server/api/theaudiodb';
 import type { SortOptions } from '@server/api/themoviedb';
 import TheMovieDb from '@server/api/themoviedb';
 import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
+import TmdbPersonMapper from '@server/api/themoviedb/personMapper';
 import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
+import MetadataAlbum from '@server/entity/MetadataAlbum';
+import MetadataArtist from '@server/entity/MetadataArtist';
 import { User } from '@server/entity/User';
 import { Watchlist } from '@server/entity/Watchlist';
 import type {
@@ -26,6 +29,7 @@ import { mapNetwork } from '@server/models/Tv';
 import { isCollection, isMovie, isPerson } from '@server/utils/typeHelpers';
 import { Router } from 'express';
 import { sortBy } from 'lodash';
+import { In } from 'typeorm';
 import { z } from 'zod';
 
 export const createTmdbWithRegionLanguage = (user?: User): TheMovieDb => {
@@ -858,7 +862,246 @@ discoverRoutes.get<{ language: string }, GenreSliderItem[]>(
 
 discoverRoutes.get('/music', async (req, res, next) => {
   const listenbrainz = new ListenBrainzAPI();
-  const musicbrainz = new MusicBrainz();
+
+  try {
+    const page = Number(req.query.page) || 1;
+    const pageSize = 20;
+    const sortBy = (req.query.sortBy as string) || 'release_date.desc';
+    const days = Number(req.query.days) || 30;
+    const genreFilter = req.query.genre as string | undefined;
+    const showOnlyWithCovers = req.query.onlyWithCoverArt === 'true';
+    const releaseDateGte = req.query.releaseDateGte as string | undefined;
+    const releaseDateLte = req.query.releaseDateLte as string | undefined;
+
+    const [field, direction] = sortBy.split('.');
+    let apiSortField = 'release_date';
+
+    if (field === 'title') {
+      apiSortField = 'release_name';
+    } else if (field === 'artist') {
+      apiSortField = 'artist_credit_name';
+    }
+
+    const freshReleasesData = await listenbrainz.getFreshReleases({
+      offset: 0,
+      count: 20,
+      days,
+      sort: apiSortField,
+    });
+
+    let filteredReleases = freshReleasesData.payload.releases;
+
+    if (genreFilter) {
+      const genres = genreFilter.split(',');
+      filteredReleases = freshReleasesData.payload.releases.filter(
+        (release) => {
+          let releaseType;
+
+          if (release.release_group_secondary_type) {
+            releaseType = release.release_group_secondary_type;
+          } else if (release.release_tags && release.release_tags.length > 0) {
+            releaseType = release.release_tags[0];
+          } else {
+            releaseType = release.release_group_primary_type || 'Album';
+          }
+
+          return genres.includes(releaseType);
+        }
+      );
+    }
+
+    if (releaseDateGte || releaseDateLte) {
+      filteredReleases = filteredReleases.filter((release) => {
+        if (!release.release_date) {
+          return false;
+        }
+
+        const releaseDate = new Date(release.release_date);
+
+        if (releaseDateGte) {
+          const gteDate = new Date(releaseDateGte);
+          if (releaseDate < gteDate) {
+            return false;
+          }
+        }
+
+        if (releaseDateLte) {
+          const lteDate = new Date(releaseDateLte);
+          if (releaseDate > lteDate) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+    }
+
+    filteredReleases.sort((a, b) => {
+      const multiplier = direction === 'asc' ? 1 : -1;
+
+      switch (field) {
+        case 'release_date': {
+          const dateA = a.release_date ? new Date(a.release_date).getTime() : 0;
+          const dateB = b.release_date ? new Date(b.release_date).getTime() : 0;
+          return (dateA - dateB) * multiplier;
+        }
+        case 'title': {
+          return (
+            (a.release_name ?? '').localeCompare(b.release_name ?? '') *
+            multiplier
+          );
+        }
+        case 'artist': {
+          return (
+            (a.artist_credit_name ?? '').localeCompare(
+              b.artist_credit_name ?? ''
+            ) * multiplier
+          );
+        }
+        default:
+          return 0;
+      }
+    });
+
+    const mbIds = filteredReleases
+      .map((release) => release.release_group_mbid)
+      .filter(Boolean);
+
+    const existingMetadata =
+      mbIds.length > 0
+        ? await getRepository(MetadataAlbum).find({
+            where: { mbAlbumId: In(mbIds) },
+            select: ['mbAlbumId', 'caaUrl'],
+            cache: true,
+          })
+        : [];
+
+    const metadataMap = new Map(
+      existingMetadata.map((meta) => [meta.mbAlbumId, meta])
+    );
+
+    if (showOnlyWithCovers) {
+      filteredReleases = filteredReleases.filter((release) => {
+        if (!release.release_group_mbid) {
+          return false;
+        }
+        const metadata = metadataMap.get(release.release_group_mbid);
+        return !!metadata?.caaUrl;
+      });
+    }
+
+    const totalResults = filteredReleases.length;
+    const totalPages = Math.ceil(totalResults / pageSize);
+
+    const offset = (page - 1) * pageSize;
+    const paginatedReleases = filteredReleases.slice(offset, offset + pageSize);
+
+    const paginatedMbIds = paginatedReleases
+      .map((release) => release.release_group_mbid)
+      .filter(Boolean);
+
+    if (paginatedMbIds.length === 0) {
+      const results = paginatedReleases.map((release) => {
+        let secondaryType;
+        if (release.release_group_secondary_type) {
+          secondaryType = release.release_group_secondary_type;
+        } else if (release.release_tags && release.release_tags.length > 0) {
+          secondaryType = release.release_tags[0];
+        }
+
+        return {
+          id: null,
+          mediaType: 'album',
+          'primary-type': release.release_group_primary_type || 'Album',
+          secondaryType,
+          title: release.release_name,
+          'artist-credit': [{ name: release.artist_credit_name }],
+          releaseDate: release.release_date,
+          posterPath: undefined,
+        };
+      });
+
+      return res.json({
+        page,
+        totalPages,
+        totalResults,
+        results,
+      });
+    }
+
+    const media = await Media.getRelatedMedia(req.user, paginatedMbIds);
+
+    const mediaMap = new Map(
+      media.map((mediaItem) => [mediaItem.mbId, mediaItem])
+    );
+
+    const results = paginatedReleases.map((release) => {
+      if (!release.release_group_mbid) {
+        let secondaryType;
+        if (release.release_group_secondary_type) {
+          secondaryType = release.release_group_secondary_type;
+        } else if (release.release_tags && release.release_tags.length > 0) {
+          secondaryType = release.release_tags[0];
+        }
+
+        return {
+          id: null,
+          mediaType: 'album',
+          'primary-type': release.release_group_primary_type || 'Album',
+          secondaryType,
+          title: release.release_name,
+          'artist-credit': [{ name: release.artist_credit_name }],
+          releaseDate: release.release_date,
+          posterPath: undefined,
+        };
+      }
+
+      const metadata = metadataMap.get(release.release_group_mbid);
+      const hasCoverArt = !!metadata?.caaUrl;
+
+      let secondaryType;
+      if (release.release_group_secondary_type) {
+        secondaryType = release.release_group_secondary_type;
+      } else if (release.release_tags && release.release_tags.length > 0) {
+        secondaryType = release.release_tags[0];
+      }
+
+      return {
+        id: release.release_group_mbid,
+        mediaType: 'album',
+        'primary-type': release.release_group_primary_type || 'Album',
+        secondaryType,
+        title: release.release_name,
+        'artist-credit': [{ name: release.artist_credit_name }],
+        artistId: release.artist_mbids?.[0],
+        mediaInfo: mediaMap.get(release.release_group_mbid),
+        releaseDate: release.release_date,
+        posterPath: metadata?.caaUrl || null,
+        needsCoverArt: !hasCoverArt,
+      };
+    });
+
+    return res.json({
+      page,
+      totalPages,
+      totalResults,
+      results,
+    });
+  } catch (e) {
+    logger.error('Failed to retrieve fresh music releases', {
+      label: 'API',
+      error: e instanceof Error ? e.message : 'Unknown error',
+      stack: e instanceof Error ? e.stack : undefined,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to retrieve fresh music releases.',
+    });
+  }
+});
+
+discoverRoutes.get('/music/albums', async (req, res, next) => {
+  const listenbrainz = new ListenBrainzAPI();
 
   try {
     const page = Number(req.query.page) || 1;
@@ -866,117 +1109,275 @@ discoverRoutes.get('/music', async (req, res, next) => {
     const offset = (page - 1) * pageSize;
     const sortBy = (req.query.sortBy as string) || 'listen_count.desc';
 
-    const data = await listenbrainz.getTopAlbums({
+    const topAlbumsData = await listenbrainz.getTopAlbums({
       offset,
       count: pageSize,
-      range: 'week',
+      range: 'month',
     });
 
-    const media = await Media.getRelatedMedia(
-      req.user,
-      data.payload.release_groups.map((album) => album.release_group_mbid)
-    );
+    const mbIds = topAlbumsData.payload.release_groups
+      .map((album) => album.release_group_mbid)
+      .filter((id): id is string => !!id);
 
-    const albumDetailsPromises = data.payload.release_groups.map(
-      async (album) => {
-        try {
-          const details = await musicbrainz.getAlbum({
-            albumId: album.release_group_mbid,
-          });
+    if (mbIds.length === 0) {
+      const results = topAlbumsData.payload.release_groups.map((album) => ({
+        id: null,
+        mediaType: 'album',
+        'primary-type': 'Album',
+        title: album.release_group_name,
+        'artist-credit': [{ name: album.artist_name }],
+        listenCount: album.listen_count,
+        posterPath: undefined,
+      }));
 
-          const images =
-            details.images?.length > 0
-              ? details.images.filter((img) => img.CoverType === 'Cover')
-              : album.caa_id
-              ? [
-                  {
-                    CoverType: 'Cover',
-                    Url: `https://coverartarchive.org/release/${album.caa_release_mbid}/front`,
-                  },
-                ]
-              : [];
-
-          return {
-            id: album.release_group_mbid,
-            mediaType: 'album',
-            type: 'Album',
-            title: album.release_group_name,
-            artistname: album.artist_name,
-            artistId: album.artist_mbids[0],
-            releasedate: details.releasedate || '',
-            images,
-            mediaInfo: media?.find(
-              (med) => med.mbId === album.release_group_mbid
-            ),
-            listenCount: album.listen_count,
-          };
-        } catch (e) {
-          return {
-            id: album.release_group_mbid,
-            mediaType: 'album',
-            type: 'Album',
-            title: album.release_group_name,
-            artistname: album.artist_name,
-            artistId: album.artist_mbids[0],
-            releasedate: '',
-            images: album.caa_id
-              ? [
-                  {
-                    CoverType: 'Cover',
-                    Url: `https://coverartarchive.org/release/${album.caa_release_mbid}/front`,
-                  },
-                ]
-              : [],
-            mediaInfo: media?.find(
-              (med) => med.mbId === album.release_group_mbid
-            ),
-            listenCount: album.listen_count,
-          };
-        }
-      }
-    );
-
-    const results = await Promise.all(albumDetailsPromises);
-
-    switch (sortBy) {
-      case 'listen_count.asc':
-        results.sort((a, b) => a.listenCount - b.listenCount);
-        break;
-      case 'listen_count.desc':
-        results.sort((a, b) => b.listenCount - a.listenCount);
-        break;
-      case 'title.asc':
-        results.sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      case 'title.desc':
-        results.sort((a, b) => b.title.localeCompare(a.title));
-        break;
-      case 'release_date.asc':
-        results.sort((a, b) =>
-          (a.releasedate || '').localeCompare(b.releasedate || '')
-        );
-        break;
-      case 'release_date.desc':
-        results.sort((a, b) =>
-          (b.releasedate || '').localeCompare(a.releasedate || '')
-        );
-        break;
+      return res.json({
+        page,
+        totalPages: Math.ceil(topAlbumsData.payload.count / pageSize),
+        totalResults: topAlbumsData.payload.count,
+        results,
+      });
     }
 
-    return res.status(200).json({
+    const [existingMetadata, media] = await Promise.all([
+      getRepository(MetadataAlbum).find({
+        where: { mbAlbumId: In(mbIds) },
+        select: ['mbAlbumId', 'caaUrl'],
+        cache: true,
+      }),
+      Media.getRelatedMedia(req.user, mbIds),
+    ]);
+
+    const metadataMap = new Map(
+      existingMetadata.map((meta) => [meta.mbAlbumId, meta])
+    );
+
+    const mediaMap = new Map(
+      media.map((mediaItem) => [mediaItem.mbId, mediaItem])
+    );
+
+    const results = topAlbumsData.payload.release_groups.map((album) => {
+      if (!album.release_group_mbid) {
+        return {
+          id: null,
+          mediaType: 'album',
+          'primary-type': 'Album',
+          title: album.release_group_name,
+          'artist-credit': [{ name: album.artist_name }],
+          listenCount: album.listen_count,
+          posterPath: undefined,
+        };
+      }
+
+      const metadata = metadataMap.get(album.release_group_mbid);
+      const hasCoverArt = !!metadata?.caaUrl;
+
+      return {
+        id: album.release_group_mbid,
+        mediaType: 'album',
+        'primary-type': 'Album',
+        title: album.release_group_name,
+        'artist-credit': [{ name: album.artist_name }],
+        artistId: album.artist_mbids[0],
+        mediaInfo: mediaMap.get(album.release_group_mbid),
+        listenCount: album.listen_count,
+        posterPath: metadata?.caaUrl || null,
+        needsCoverArt: !hasCoverArt,
+      };
+    });
+
+    if (sortBy) {
+      const [field, direction] = sortBy.split('.');
+      const multiplier = direction === 'asc' ? 1 : -1;
+
+      results.sort((a, b) => {
+        switch (field) {
+          case 'listen_count': {
+            return (a.listenCount - b.listenCount) * multiplier;
+          }
+          case 'title': {
+            return (a.title ?? '').localeCompare(b.title ?? '') * multiplier;
+          }
+          default:
+            return 0;
+        }
+      });
+    }
+
+    return res.json({
       page,
-      totalPages: Math.ceil(data.payload.count / pageSize),
-      totalResults: data.payload.count,
+      totalPages: Math.ceil(topAlbumsData.payload.count / pageSize),
+      totalResults: topAlbumsData.payload.count,
       results,
     });
   } catch (e) {
-    logger.debug('Something went wrong retrieving popular music', {
+    logger.error('Failed to retrieve popular music', {
       label: 'API',
-      errorMessage: e.message,
+      error: e instanceof Error ? e.message : 'Unknown error',
     });
     return next({
       status: 500,
       message: 'Unable to retrieve popular music.',
+    });
+  }
+});
+
+discoverRoutes.get('/music/artists', async (req, res, next) => {
+  const listenbrainz = new ListenBrainzAPI();
+  const personMapper = TmdbPersonMapper.getInstance();
+  const theAudioDb = TheAudioDb.getInstance();
+
+  try {
+    const page = Number(req.query.page) || 1;
+    const pageSize = 20;
+    const offset = (page - 1) * pageSize;
+    const sortBy = (req.query.sortBy as string) || 'listen_count.desc';
+
+    const topArtistsData = await listenbrainz.getTopArtists({
+      offset,
+      count: pageSize,
+      range: 'month',
+    });
+
+    const mbIds = topArtistsData.payload.artists
+      .map((artist) => artist.artist_mbid)
+      .filter(Boolean);
+
+    if (mbIds.length === 0) {
+      return res.status(200).json({
+        page,
+        totalPages: Math.ceil(topArtistsData.payload.count / pageSize),
+        totalResults: topArtistsData.payload.count,
+        results: topArtistsData.payload.artists.map((artist) => ({
+          id: null,
+          mediaType: 'artist',
+          name: artist.artist_name,
+          listenCount: artist.listen_count,
+        })),
+      });
+    }
+
+    const [media, artistMetadata] = await Promise.all([
+      Media.getRelatedMedia(req.user, mbIds),
+      getRepository(MetadataArtist).find({
+        where: { mbArtistId: In(mbIds) },
+      }),
+    ]);
+
+    const mediaMap = new Map(
+      media.map((mediaItem) => [mediaItem.mbId, mediaItem])
+    );
+
+    const metadataMap = new Map(
+      artistMetadata.map((metadata) => [metadata.mbArtistId, metadata])
+    );
+
+    const artistsNeedingImages = mbIds.filter((id) => {
+      const metadata = metadataMap.get(id);
+      return !metadata?.tadbThumb && !metadata?.tadbCover;
+    });
+
+    const artistsForPersonMapping = topArtistsData.payload.artists
+      .filter((artist) => artist.artist_mbid)
+      .filter((artist) => {
+        const metadata = metadataMap.get(artist.artist_mbid);
+        return !metadata?.tmdbPersonId;
+      })
+      .map((artist) => ({
+        artistId: artist.artist_mbid,
+        artistName: artist.artist_name,
+      }));
+
+    interface ArtistImageResults {
+      [key: string]: {
+        artistThumb?: string;
+        artistBackground?: string;
+      };
+    }
+
+    const [artistImageResults] = await Promise.all([
+      artistsNeedingImages.length > 0
+        ? (theAudioDb.batchGetArtistImages(
+            artistsNeedingImages
+          ) as Promise<ArtistImageResults>)
+        : ({} as ArtistImageResults),
+      artistsForPersonMapping.length > 0
+        ? personMapper.batchGetMappings(artistsForPersonMapping)
+        : {},
+    ]);
+
+    let updatedArtistMetadata = artistMetadata;
+    if (artistsForPersonMapping.length > 0 || artistsNeedingImages.length > 0) {
+      updatedArtistMetadata = await getRepository(MetadataArtist).find({
+        where: { mbArtistId: In(mbIds) },
+      });
+    }
+
+    const updatedMetadataMap = new Map(
+      updatedArtistMetadata.map((metadata) => [metadata.mbArtistId, metadata])
+    );
+
+    const results = topArtistsData.payload.artists.map((artist) => {
+      if (!artist.artist_mbid) {
+        return {
+          id: null,
+          mediaType: 'artist',
+          name: artist.artist_name,
+          listenCount: artist.listen_count,
+        };
+      }
+
+      const metadata = updatedMetadataMap.get(artist.artist_mbid);
+      const imageResult = artistImageResults[artist.artist_mbid];
+
+      return {
+        id: artist.artist_mbid,
+        mediaType: 'artist',
+        name: artist.artist_name,
+        mediaInfo: mediaMap.get(artist.artist_mbid),
+        listenCount: artist.listen_count,
+        artistThumb:
+          metadata?.tmdbThumb ??
+          metadata?.tadbThumb ??
+          imageResult?.artistThumb ??
+          null,
+        artistBackdrop:
+          metadata?.tadbCover ?? imageResult?.artistBackground ?? null,
+        tmdbPersonId: metadata?.tmdbPersonId
+          ? Number(metadata.tmdbPersonId)
+          : null,
+      };
+    });
+
+    if (sortBy) {
+      const [field, direction] = sortBy.split('.');
+      const multiplier = direction === 'asc' ? 1 : -1;
+
+      results.sort((a, b) => {
+        switch (field) {
+          case 'listen_count':
+            return (a.listenCount - b.listenCount) * multiplier;
+          case 'name':
+            return (a.name ?? '').localeCompare(b.name ?? '') * multiplier;
+          default:
+            return 0;
+        }
+      });
+    }
+
+    return res.status(200).json({
+      page,
+      totalPages: Math.ceil(topArtistsData.payload.count / pageSize),
+      totalResults: topArtistsData.payload.count,
+      results,
+    });
+  } catch (e) {
+    logger.error('Failed to retrieve popular artists', {
+      label: 'API',
+      error: e instanceof Error ? e.message : 'Unknown error',
+    });
+    return next({
+      status: 500,
+      message: 'Unable to retrieve popular artists.',
     });
   }
 });

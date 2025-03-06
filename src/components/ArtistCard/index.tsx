@@ -3,26 +3,30 @@ import { UserCircleIcon } from '@heroicons/react/24/solid';
 import Link from 'next/link';
 import { useState } from 'react';
 
-interface GroupCardProps {
-  groupId: string;
+interface ArtistCardProps {
+  artistId: string;
   name: string;
   subName?: string;
-  image?: string;
+  profilePath?: string | null;
+  artistThumb?: string | null;
+  type?: string;
   canExpand?: boolean;
 }
 
-const GroupCard = ({
-  groupId,
+const ArtistCard = ({
+  artistId,
   name,
   subName,
-  image,
+  profilePath,
+  artistThumb,
+  type,
   canExpand = false,
-}: GroupCardProps) => {
+}: ArtistCardProps) => {
   const [isHovered, setHovered] = useState(false);
 
   return (
     <Link
-      href={`/group/${groupId}`}
+      href={`/artist/${artistId}`}
       className={canExpand ? 'w-full' : 'w-36 sm:w-36 md:w-44'}
       onMouseEnter={() => {
         setHovered(true);
@@ -48,11 +52,11 @@ const GroupCard = ({
         <div style={{ paddingBottom: '150%' }}>
           <div className="absolute inset-0 flex h-full w-full flex-col items-center p-2">
             <div className="relative mt-2 mb-4 flex h-1/2 w-full justify-center">
-              {image ? (
+              {artistThumb || profilePath ? (
                 <div className="relative h-full w-3/4 overflow-hidden rounded-full ring-1 ring-gray-700">
                   <CachedImage
                     type="music"
-                    src={image}
+                    src={artistThumb || profilePath || ''}
                     alt=""
                     style={{
                       width: '100%',
@@ -67,7 +71,7 @@ const GroupCard = ({
               )}
             </div>
             <div className="w-full truncate text-center font-bold">{name}</div>
-            {subName && (
+            {(subName || type) && (
               <div
                 className="overflow-hidden whitespace-normal text-center text-sm text-gray-300"
                 style={{
@@ -77,7 +81,7 @@ const GroupCard = ({
                   WebkitBoxOrient: 'vertical',
                 }}
               >
-                {subName}
+                {subName || type}
               </div>
             )}
             <div
@@ -92,4 +96,4 @@ const GroupCard = ({
   );
 };
 
-export default GroupCard;
+export default ArtistCard;

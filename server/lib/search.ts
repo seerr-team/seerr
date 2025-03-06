@@ -239,28 +239,17 @@ searchProviders.push({
     const musicbrainz = new MusicBrainz();
 
     try {
-      const response = await musicbrainz.searchMulti({
+      const albumResults = await musicbrainz.searchAlbum({
         query: query || '',
+        limit: 20,
       });
 
-      const results: CombinedSearchResponse['results'] = response.map(
-        (result) => {
-          if (result.artist) {
-            return {
-              ...result.artist,
-              media_type: 'artist',
-            } as MbArtistResult;
-          }
-
-          if (result.album) {
-            return {
-              ...result.album,
-              media_type: 'album',
-            } as MbAlbumResult;
-          }
-
-          throw new Error('Invalid search result type');
-        }
+      const results: CombinedSearchResponse['results'] = albumResults.map(
+        (album) =>
+          ({
+            ...album,
+            media_type: 'album',
+          } as MbAlbumResult)
       );
 
       return {

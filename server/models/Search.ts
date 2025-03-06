@@ -1,9 +1,6 @@
 import type {
-  MbAlbumDetails,
   MbAlbumResult,
-  MbArtistDetails,
   MbArtistResult,
-  MbImage,
 } from '@server/api/musicbrainz/interfaces';
 import type {
   TmdbCollectionResult,
@@ -87,35 +84,34 @@ export interface PersonResult {
 
 export interface ArtistResult extends MbSearchResult {
   mediaType: 'artist';
-  artistname: string;
-  overview: string;
-  disambiguation: string;
+  tmdbPersonId?: number;
+  name: string;
   type: 'Group' | 'Person';
-  status: string;
-  sortname: string;
-  genres: string[];
-  images: MbImage[];
-  artistimage?: string;
-  rating?: {
-    Count: number;
-    Value: number | null;
-  };
+  'sort-name': string;
+  country?: string;
+  disambiguation?: string;
+  artistThumb?: string | null;
+  artistBackdrop?: string | null;
   mediaInfo?: Media;
 }
 
 export interface AlbumResult extends MbSearchResult {
   mediaType: 'album';
   title: string;
-  artistid: string;
-  artistname?: string;
-  type: string;
-  releasedate: string;
-  disambiguation: string;
-  genres: string[];
-  images: MbImage[];
-  secondarytypes: string[];
+  'primary-type': 'Album' | 'Single' | 'EP';
+  'first-release-date': string;
+  releaseDate?: string;
+  'artist-credit': {
+    name: string;
+    artist: {
+      id: string;
+      name: string;
+      'sort-name': string;
+    };
+  }[];
+  posterPath?: string;
+  needsCoverArt?: boolean;
   mediaInfo?: Media;
-  overview?: string;
 }
 
 export type Results =
@@ -203,22 +199,18 @@ export const mapPersonResult = (
 });
 
 export const mapArtistResult = (
-  artistResult: MbArtistResult,
-  media?: Media
+  artistResult: MbArtistResult
 ): ArtistResult => ({
   id: artistResult.id,
   score: artistResult.score,
   mediaType: 'artist',
-  artistname: artistResult.artistname,
-  overview: artistResult.overview,
-  disambiguation: artistResult.disambiguation,
+  name: artistResult.name,
   type: artistResult.type,
-  status: artistResult.status,
-  sortname: artistResult.sortname,
-  genres: artistResult.genres,
-  images: artistResult.images,
-  rating: artistResult.rating,
-  mediaInfo: media,
+  'sort-name': artistResult['sort-name'],
+  country: artistResult.country,
+  disambiguation: artistResult.disambiguation,
+  artistThumb: artistResult.artistThumb,
+  artistBackdrop: artistResult.artistBackdrop,
 });
 
 export const mapAlbumResult = (
@@ -229,16 +221,12 @@ export const mapAlbumResult = (
   score: albumResult.score,
   mediaType: 'album',
   title: albumResult.title,
-  artistid: albumResult.artistid,
-  artistname: albumResult.artists?.[0]?.artistname,
-  type: albumResult.type,
-  releasedate: albumResult.releasedate,
-  disambiguation: albumResult.disambiguation,
-  genres: albumResult.genres,
-  images: albumResult.images,
-  secondarytypes: albumResult.secondarytypes,
+  'primary-type': albumResult['primary-type'],
+  'first-release-date': albumResult['first-release-date'],
+  'artist-credit': albumResult['artist-credit'],
+  posterPath: albumResult.posterPath,
+  needsCoverArt: !albumResult.posterPath,
   mediaInfo: media,
-  overview: albumResult.artists?.[0]?.overview,
 });
 
 const isTmdbMovie = (
@@ -289,7 +277,7 @@ const isTmdbCollection = (
   return result.media_type === 'collection';
 };
 
-const isLidarrArtist = (
+const isMbArtist = (
   result:
     | TmdbMovieResult
     | TmdbTvResult
@@ -301,7 +289,7 @@ const isLidarrArtist = (
   return result.media_type === 'artist';
 };
 
-const isLidarrAlbum = (
+const isMbAlbum = (
   result:
     | TmdbMovieResult
     | TmdbTvResult
@@ -346,9 +334,9 @@ export const mapSearchResults = async (
         return mapPersonResult(result);
       } else if (isTmdbCollection(result)) {
         return mapCollectionResult(result);
-      } else if (isLidarrArtist(result)) {
+      } else if (isMbArtist(result)) {
         return mapArtistResult(result);
-      } else if (isLidarrAlbum(result)) {
+      } else if (isMbAlbum(result)) {
         return mapAlbumResult(
           result,
           media?.find(
@@ -405,46 +393,11 @@ export const mapPersonDetailsToResult = (
   personDetails: TmdbPersonDetails
 ): TmdbPersonResult => ({
   id: personDetails.id,
+  known_for_department: personDetails.known_for_department,
   media_type: 'person',
   name: personDetails.name,
   popularity: personDetails.popularity,
   adult: personDetails.adult,
   profile_path: personDetails.profile_path,
   known_for: [],
-});
-
-export const mapArtistDetailsToResult = (
-  artistDetails: MbArtistDetails
-): MbArtistResult => ({
-  id: artistDetails.id,
-  score: 100, // Default score since we're mapping details
-  media_type: 'artist',
-  artistname: artistDetails.artistname,
-  overview: artistDetails.overview,
-  disambiguation: artistDetails.disambiguation,
-  type: artistDetails.type,
-  status: artistDetails.status,
-  sortname: artistDetails.sortname,
-  genres: artistDetails.genres,
-  images: artistDetails.images,
-  links: artistDetails.links,
-  rating: artistDetails.rating,
-});
-
-export const mapAlbumDetailsToResult = (
-  albumDetails: MbAlbumDetails
-): MbAlbumResult => ({
-  id: albumDetails.id,
-  score: 100,
-  media_type: 'album',
-  title: albumDetails.title,
-  artistid: albumDetails.artistid,
-  artists: albumDetails.artists,
-  type: albumDetails.type,
-  releasedate: albumDetails.releasedate,
-  disambiguation: albumDetails.disambiguation,
-  genres: albumDetails.genres,
-  images: albumDetails.images,
-  secondarytypes: albumDetails.secondarytypes,
-  overview: albumDetails.overview || albumDetails.artists?.[0]?.overview || '',
 });

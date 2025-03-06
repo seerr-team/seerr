@@ -932,7 +932,7 @@
   "components.Settings.SonarrModal.syncEnabled": "Aktivo skanimin",
   "components.Settings.SonarrModal.testFirstTags": "Testo lidhjen për të ngarkuar etiketat",
   "components.Settings.SonarrModal.validationRootFolderRequired": "Duhet të zgjedhësh një dosje rrënjë",
-  "components.Settings.videoServiceSettingsDescription": "Konfiguro serverin tënd {serverType} më poshtë. Ju mund të lidhni shumë servera {serverType}, por vetëm dy prej tyre mund të shënohen si të prezgjedhur (një jo-4K dhe një 4K). Administratorët janë në gjendje të kapërcejnë serverin e përdorur për të përpunuar kërkesa të reja përpara miratimit.",
+  "components.Settings.serviceSettingsDescription": "Konfiguro serverin tënd {serverType} më poshtë. Ju mund të lidhni shumë servera {serverType}, por vetëm dy prej tyre mund të shënohen si të prezgjedhur (një jo-4K dhe një 4K). Administratorët janë në gjendje të kapërcejnë serverin e përdorur për të përpunuar kërkesa të reja përpara miratimit.",
   "components.Settings.validationHostnameRequired": "Ju duhet të siguroni një emër të vlefshëm host ose adrese IP",
   "components.UserProfile.UserSettings.UserPasswordChange.nopermissionDescription": "Ju nuk keni leje për të modifikuar fjalëkalimin e këtij përdoruesi.",
   "components.UserProfile.UserSettings.UserPasswordChange.toastSettingsFailureVerifyCurrent": "Diçka shkoi keq duke ruajtur fjalëkalimin. A u fut fjalëkalimi në mënyrë korrekte?",

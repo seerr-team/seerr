@@ -226,12 +226,8 @@ const MusicRequestModal = ({
         backgroundClickable
         onCancel={onCancel}
         title={intl.formatMessage(messages.pendingrequest)}
-        subTitle={
-          data ? `${data.artist.artistName} - ${data.title}` : undefined
-        }
-        backdrop={
-          data?.artist?.images?.find((img) => img.CoverType === 'Fanart')?.Url
-        }
+        subTitle={data ? `${data.artist.name} - ${data.title}` : undefined}
+        backdrop={data?.artistBackdrop || data?.artistThumb || data?.posterPath}
         onOk={() =>
           hasPermission(Permission.MANAGE_REQUESTS)
             ? updateRequest(true)
@@ -315,19 +311,14 @@ const MusicRequestModal = ({
       onOk={sendRequest}
       okDisabled={isUpdating || quota?.music?.restricted}
       title={intl.formatMessage(messages.requestmusictitle)}
-      subTitle={data ? `${data.artist.artistName} - ${data.title}` : undefined}
+      subTitle={data ? `${data.artist.name} - ${data.title}` : undefined}
       okText={
         isUpdating
           ? intl.formatMessage(globalMessages.requesting)
           : intl.formatMessage(globalMessages.request)
       }
       okButtonType="primary"
-      backdrop={
-        data?.artist?.images?.find((img) => img.CoverType === 'Fanart')?.Url ||
-        data?.artist?.images?.find((img) => img.CoverType === 'Poster')?.Url ||
-        data?.images?.find((img) => img.CoverType.toLowerCase() === 'cover')
-          ?.Url
-      }
+      backdrop={data?.artistBackdrop || data?.artistThumb || data?.posterPath}
     >
       {hasAutoApprove && !quota?.music?.restricted && (
         <div className="mt-6">

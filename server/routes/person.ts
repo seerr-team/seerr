@@ -1,7 +1,10 @@
-import CoverArtArchive from '@server/api/coverartarchive';
-import MusicBrainz from '@server/api/musicbrainz';
+import ListenBrainzAPI from '@server/api/listenbrainz';
+import TheAudioDb from '@server/api/theaudiodb';
 import TheMovieDb from '@server/api/themoviedb';
+import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
+import MetadataAlbum from '@server/entity/MetadataAlbum';
+import MetadataArtist from '@server/entity/MetadataArtist';
 import logger from '@server/logger';
 import {
   mapCastCredits,
@@ -9,53 +12,176 @@ import {
   mapPersonDetails,
 } from '@server/models/Person';
 import { Router } from 'express';
+import { In } from 'typeorm';
 
 const personRoutes = Router();
 
 personRoutes.get('/:id', async (req, res, next) => {
   const tmdb = new TheMovieDb();
-  const musicBrainz = new MusicBrainz();
+  const listenbrainz = new ListenBrainzAPI();
+  const theAudioDb = TheAudioDb.getInstance();
+
+  const page = Number(req.query.page) || 1;
+  const pageSize = Number(req.query.pageSize) || 20;
+  const initialItemsPerType = 20;
+  const albumType = req.query.albumType as string | undefined;
 
   try {
-    const person = await tmdb.getPerson({
-      personId: Number(req.params.id),
-      language: (req.query.language as string) ?? req.locale,
-    });
+    const [person, existingMetadata] = await Promise.all([
+      tmdb.getPerson({
+        personId: Number(req.params.id),
+        language: (req.query.language as string) ?? req.locale,
+      }),
+      getRepository(MetadataArtist).findOne({
+        where: { tmdbPersonId: req.params.id },
+        select: ['mbArtistId', 'tmdbThumb', 'tadbThumb', 'tadbCover'],
+      }),
+    ]);
 
-    let mbArtistId = null;
-    try {
-      const artists = await musicBrainz.searchArtist({
-        query: person.name,
-      });
+    let artistData = null;
 
-      const matchedArtist = artists.find((artist) => {
-        if (artist.type !== 'Person') {
-          return false;
+    if (existingMetadata?.mbArtistId) {
+      artistData = await listenbrainz.getArtist(existingMetadata.mbArtistId);
+
+      if (artistData?.releaseGroups) {
+        const groupedReleaseGroups = artistData.releaseGroups.reduce(
+          (acc, rg) => {
+            const type = rg.secondary_types?.length
+              ? rg.secondary_types[0]
+              : rg.type || 'Other';
+
+            if (!acc[type]) {
+              acc[type] = [];
+            }
+            acc[type].push(rg);
+            return acc;
+          },
+          {} as Record<string, typeof artistData.releaseGroups>
+        );
+
+        Object.keys(groupedReleaseGroups).forEach((type) => {
+          groupedReleaseGroups[type].sort((a, b) => {
+            const dateA = a.date ? new Date(a.date).getTime() : 0;
+            const dateB = b.date ? new Date(b.date).getTime() : 0;
+            return dateB - dateA;
+          });
+        });
+
+        let releaseGroupsToProcess: typeof artistData.releaseGroups = [];
+        let totalCount: number;
+        let totalPages: number;
+
+        if (albumType) {
+          const filteredReleaseGroups = groupedReleaseGroups[albumType] || [];
+          totalCount = filteredReleaseGroups.length;
+          totalPages = Math.ceil(totalCount / pageSize);
+
+          releaseGroupsToProcess = filteredReleaseGroups.slice(
+            (page - 1) * pageSize,
+            page * pageSize
+          );
+        } else {
+          Object.entries(groupedReleaseGroups).forEach(([, releases]) => {
+            releaseGroupsToProcess.push(
+              ...releases.slice(0, initialItemsPerType)
+            );
+          });
+
+          totalCount = Object.values(groupedReleaseGroups).reduce(
+            (sum, releases) => sum + releases.length,
+            0
+          );
+          totalPages = 1;
         }
 
-        const nameMatches =
-          artist.artistname.toLowerCase() === person.name.toLowerCase();
-        const aliasMatches = artist.artistaliases?.some(
-          (alias) => alias.toLowerCase() === person.name.toLowerCase()
-        );
-        return nameMatches || aliasMatches;
-      });
+        const allReleaseGroupIds = releaseGroupsToProcess.map((rg) => rg.mbid);
 
-      if (matchedArtist) {
-        mbArtistId = matchedArtist.id;
+        const [artistImagesPromise, relatedMedia, albumMetadata] =
+          await Promise.all([
+            !existingMetadata.tadbThumb && !existingMetadata.tadbCover
+              ? theAudioDb.getArtistImages(existingMetadata.mbArtistId)
+              : Promise.resolve(null),
+            Media.getRelatedMedia(req.user, allReleaseGroupIds),
+            getRepository(MetadataAlbum).find({
+              where: { mbAlbumId: In(allReleaseGroupIds) },
+              select: ['mbAlbumId', 'caaUrl'],
+              cache: true,
+            }),
+          ]);
+
+        if (artistImagesPromise) {
+          existingMetadata.tadbThumb = artistImagesPromise.artistThumb;
+          existingMetadata.tadbCover = artistImagesPromise.artistBackground;
+        }
+
+        const mediaMap = new Map(
+          relatedMedia.map((media) => [media.mbId, media])
+        );
+
+        const metadataMap = new Map(
+          albumMetadata.map((metadata) => [metadata.mbAlbumId, metadata])
+        );
+
+        const transformedReleaseGroups = releaseGroupsToProcess.map(
+          (releaseGroup) => {
+            const metadata = metadataMap.get(releaseGroup.mbid);
+            const coverArtUrl = metadata?.caaUrl || null;
+
+            return {
+              id: releaseGroup.mbid,
+              mediaType: 'album',
+              title: releaseGroup.name,
+              'first-release-date': releaseGroup.date,
+              'artist-credit': [{ name: releaseGroup.artist_credit_name }],
+              'primary-type': releaseGroup.type || 'Other',
+              secondary_types: releaseGroup.secondary_types || [],
+              total_listen_count: releaseGroup.total_listen_count || 0,
+              posterPath: coverArtUrl,
+              needsCoverArt: !coverArtUrl,
+              mediaInfo: mediaMap.get(releaseGroup.mbid),
+            };
+          }
+        );
+
+        const typeCounts = Object.fromEntries(
+          Object.entries(groupedReleaseGroups).map(([type, releases]) => [
+            type,
+            releases.length,
+          ])
+        );
+
+        artistData = {
+          ...artistData,
+          releaseGroups: transformedReleaseGroups,
+          typeCounts,
+          pagination: {
+            page,
+            pageSize,
+            totalItems: totalCount,
+            totalPages,
+            albumType,
+          },
+        };
       }
-    } catch (e) {
-      logger.debug('Failed to fetch music artist data', {
-        label: 'API',
-        errorMessage: e.message,
-        personName: person.name,
-      });
     }
 
-    return res.status(200).json({
+    const mappedDetails = {
       ...mapPersonDetails(person),
-      mbArtistId,
-    });
+      artist:
+        artistData && existingMetadata?.mbArtistId
+          ? {
+              mbid: existingMetadata.mbArtistId,
+              profilePath: person.profile_path
+                ? `https://image.tmdb.org/t/p/w500${person.profile_path}`
+                : existingMetadata.tadbThumb ?? null,
+              artistThumb: existingMetadata.tadbThumb ?? null,
+              artistBackdrop: existingMetadata.tadbCover ?? null,
+              ...artistData,
+            }
+          : null,
+    };
+
+    return res.status(200).json(mappedDetails);
   } catch (e) {
     logger.debug('Something went wrong retrieving person', {
       label: 'API',
@@ -65,148 +191,6 @@ personRoutes.get('/:id', async (req, res, next) => {
     return next({
       status: 500,
       message: 'Unable to retrieve person.',
-    });
-  }
-});
-
-personRoutes.get('/:id/discography', async (req, res, next) => {
-  const musicBrainz = new MusicBrainz();
-  const tmdb = new TheMovieDb();
-  const coverArtArchive = new CoverArtArchive();
-  const artistId = req.query.artistId as string;
-  const type = req.query.type as string;
-  const page = Number(req.query.page) || 1;
-  const pageSize = 20;
-
-  if (!artistId) {
-    return next({
-      status: 400,
-      message: 'Artist ID is required',
-    });
-  }
-
-  const person = await tmdb.getPerson({
-    personId: Number(req.params.id),
-    language: (req.query.language as string) ?? req.locale,
-  });
-
-  if (!person.birthday) {
-    return res.status(200).json({
-      page: 1,
-      pageInfo: { total: 0, totalPages: 0 },
-      results: [],
-    });
-  }
-
-  try {
-    const artistDetails = await musicBrainz.getArtist({
-      artistId: artistId,
-    });
-
-    const { mapArtistDetails } = await import('@server/models/Artist');
-    const mappedDetails = await mapArtistDetails(artistDetails);
-
-    if (!mappedDetails.Albums?.length) {
-      return res.status(200).json({
-        page: 1,
-        pageInfo: {
-          total: 0,
-          totalPages: 0,
-        },
-        results: [],
-      });
-    }
-
-    let filteredAlbums = mappedDetails.Albums;
-    if (type) {
-      if (type === 'Other') {
-        filteredAlbums = mappedDetails.Albums.filter(
-          (album) => !['Album', 'Single', 'EP'].includes(album.type)
-        );
-      } else {
-        filteredAlbums = mappedDetails.Albums.filter(
-          (album) => album.type === type
-        );
-      }
-    }
-
-    const albumPromises = filteredAlbums.map(async (album) => {
-      try {
-        const albumDetails = await musicBrainz.getAlbum({
-          albumId: album.id,
-        });
-
-        let images = albumDetails.images;
-
-        if (!images || images.length === 0) {
-          try {
-            const coverArtData = await coverArtArchive.getCoverArt(album.id);
-            if (coverArtData.images?.length > 0) {
-              images = coverArtData.images.map((img) => ({
-                CoverType: img.front ? 'Cover' : 'Poster',
-                Url: img.image,
-              }));
-            }
-          } catch (coverArtError) {
-            // Silently handle cover art fetch errors
-          }
-        }
-
-        return {
-          ...album,
-          images: images || [],
-          releasedate: albumDetails.releasedate || '',
-        };
-      } catch (e) {
-        return album;
-      }
-    });
-
-    const albumsWithDetails = await Promise.all(albumPromises);
-
-    const sortedAlbums = albumsWithDetails.sort((a, b) => {
-      if (!a.releasedate && !b.releasedate) return 0;
-      if (!a.releasedate) return 1;
-      if (!b.releasedate) return -1;
-      return (
-        new Date(b.releasedate).getTime() - new Date(a.releasedate).getTime()
-      );
-    });
-
-    const totalResults = sortedAlbums.length;
-    const totalPages = Math.ceil(totalResults / pageSize);
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    const paginatedAlbums = sortedAlbums.slice(start, end);
-
-    const media = await Media.getRelatedMedia(
-      req.user,
-      paginatedAlbums.map((album) => album.id)
-    );
-
-    const results = paginatedAlbums.map((album) => ({
-      ...album,
-      mediaInfo: media?.find((med) => med.mbId === album.id),
-    }));
-
-    return res.status(200).json({
-      page,
-      pageInfo: {
-        total: totalResults,
-        totalPages,
-      },
-      results,
-    });
-  } catch (e) {
-    logger.error('Something went wrong retrieving discography', {
-      label: 'Person API',
-      errorMessage: e.message,
-      personId: req.params.id,
-      artistId,
-    });
-    return next({
-      status: 500,
-      message: 'Unable to retrieve discography.',
     });
   }
 });

@@ -3,14 +3,17 @@ import logger from '@server/logger';
 import { Router } from 'express';
 
 const router = Router();
-const caaImageProxy = new ImageProxy('caa', 'http://coverartarchive.org', {
+const caaImageProxy = new ImageProxy('caa', 'https://archive.org/download', {
   rateLimitOptions: {
     maxRPS: 50,
   },
 });
 
+/**
+ * Image Proxy
+ */
 router.get('/*', async (req, res) => {
-  const imagePath = req.path;
+  const imagePath = req.path.replace('/download', '');
   try {
     const imageData = await caaImageProxy.getImage(imagePath);
 
@@ -28,7 +31,7 @@ router.get('/*', async (req, res) => {
       imagePath,
       errorMessage: e.message,
     });
-    res.status(500).end();
+    res.status(500).send();
   }
 });
 

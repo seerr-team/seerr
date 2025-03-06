@@ -1,5 +1,5 @@
 import AddedCard from '@app/components/AddedCard';
-import GroupCard from '@app/components/GroupCard';
+import ArtistCard from '@app/components/ArtistCard';
 import PersonCard from '@app/components/PersonCard';
 import TitleCard from '@app/components/TitleCard';
 import { Permission, useUser } from '@app/hooks/useUser';
@@ -162,42 +162,40 @@ const ListView = ({
                     isAddedToWatchlist={
                       title.mediaInfo?.watchlists?.length ?? 0
                     }
-                    image={
-                      title.images?.find((image) => image.CoverType === 'Cover')
-                        ?.Url
-                    }
+                    image={title.posterPath}
                     status={title.mediaInfo?.status}
                     title={title.title}
-                    artist={title.artistname}
-                    type={title.type}
-                    year={title.releasedate}
+                    artist={title['artist-credit']?.[0]?.name}
+                    type={title['primary-type']}
+                    year={
+                      title.releaseDate
+                        ? title.releaseDate.split('-')[0]
+                        : title['first-release-date']?.split('-')[0]
+                    }
                     mediaType={title.mediaType}
                     inProgress={
                       (title.mediaInfo?.downloadStatus ?? []).length > 0
                     }
+                    needsCoverArt={title.needsCoverArt}
                     canExpand
                   />
                 );
                 break;
               case 'artist':
-                return title.type === 'Group' ? (
-                  <GroupCard
+                return title.tmdbPersonId ? (
+                  <PersonCard
                     key={title.id}
-                    groupId={title.id}
-                    name={title.artistname}
-                    image={
-                      title.images.find((image) => image.CoverType === 'Poster')
-                        ?.Url ?? title.artistimage
-                    }
+                    personId={title.tmdbPersonId}
+                    name={title.name}
+                    profilePath={title.artistThumb ?? undefined}
                     canExpand
                   />
                 ) : (
-                  <PersonCard
+                  <ArtistCard
                     key={title.id}
-                    personId={title.id}
-                    name={title.artistname}
-                    mediaType="artist"
-                    profilePath={title.artistimage}
+                    artistId={title.id}
+                    name={title.name}
+                    artistThumb={title.artistThumb}
                     canExpand
                   />
                 );

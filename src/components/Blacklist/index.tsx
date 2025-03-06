@@ -63,7 +63,7 @@ const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
 const isMusic = (
   media: MovieDetails | TvDetails | MusicDetails
 ): media is MusicDetails => {
-  return (media as MusicDetails).artistId !== undefined;
+  return (media as MusicDetails).artist.id !== undefined;
 };
 
 const Blacklist = () => {
@@ -341,13 +341,9 @@ const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
             type={isMusic(title) ? 'music' : 'tmdb'}
             src={
               isMusic(title)
-                ? title.artist.images?.find((img) => img.CoverType === 'Fanart')
-                    ?.Url ||
-                  title.artist.images?.find((img) => img.CoverType === 'Poster')
-                    ?.Url ||
-                  title.images?.find(
-                    (img) => img.CoverType.toLowerCase() === 'cover'
-                  )?.Url ||
+                ? title.artistBackdrop ||
+                  title.artistThumb ||
+                  title.posterPath ||
                   ''
                 : `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${
                     title.backdropPath ?? ''
@@ -383,12 +379,12 @@ const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
               src={
                 title
                   ? isMusic(title)
-                    ? title.images?.find((image) => image.CoverType === 'Cover')
-                        ?.Url ?? '/images/seerr_poster_not_found.png'
+                    ? title.posterPath ||
+                      '/images/jellyseerr_poster_not_found_square.png'
                     : title.posterPath
                     ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
-                    : '/images/seerr_poster_not_found.png'
-                  : '/images/seerr_poster_not_found.png'
+                    : '/images/jellyseerr_poster_not_found.png'
+                  : '/images/jellyseerr_poster_not_found.png'
               }
               alt=""
               sizes="100vw"
@@ -418,7 +414,7 @@ const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
               <span className="mr-2 min-w-0 truncate text-lg font-bold text-white hover:underline xl:text-xl">
                 {title &&
                   (isMusic(title)
-                    ? `${title.artist.artistName} - ${title.title}`
+                    ? `${title.artist.name} - ${title.title}`
                     : isMovie(title)
                     ? title.title
                     : title.name)}
@@ -513,7 +509,7 @@ const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
                 item.mbId,
                 title &&
                   (isMusic(title)
-                    ? `${title.artist.artistName} - ${title.title}`
+                    ? `${title.artist.name} - ${title.title}`
                     : isMovie(title)
                     ? title.title
                     : title.name)

@@ -6,6 +6,7 @@ import TheMovieDb from '@server/api/themoviedb';
 import { MediaStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
+import MetadataAlbum from '@server/entity/MetadataAlbum';
 import Season from '@server/entity/Season';
 import { User } from '@server/entity/User';
 import type {
@@ -24,6 +25,7 @@ const mediaRoutes = Router();
 
 mediaRoutes.get('/', async (req, res, next) => {
   const mediaRepository = getRepository(Media);
+  const metadataAlbumRepository = getRepository(MetadataAlbum);
 
   const pageSize = req.query.take ? Number(req.query.take) : 20;
   const skip = req.query.skip ? Number(req.query.skip) : 0;
@@ -78,6 +80,37 @@ mediaRoutes.get('/', async (req, res, next) => {
       take: pageSize,
       skip,
     });
+
+    const musicMediaItems = media.filter(
+      (item) => item.mediaType === 'music' && item.mbId
+    );
+
+    const mbIds = musicMediaItems.map((item) => item.mbId as string);
+
+    const albumMetadata =
+      mbIds.length > 0
+        ? await metadataAlbumRepository.find({
+            where: { mbAlbumId: In(mbIds) },
+            select: ['mbAlbumId', 'caaUrl'],
+          })
+        : [];
+
+    const albumMetadataMap = new Map(
+      albumMetadata.map((metadata) => [metadata.mbAlbumId, metadata])
+    );
+
+    const mediaWithCoverArt = media.map((item) => {
+      if (item.mediaType === 'music' && item.mbId) {
+        const metadata = albumMetadataMap.get(item.mbId);
+        return {
+          ...item,
+          posterPath: metadata?.caaUrl || null,
+          needsCoverArt: !metadata?.caaUrl,
+        };
+      }
+      return item;
+    });
+
     return res.status(200).json({
       pageInfo: {
         pages: Math.ceil(mediaCount / pageSize),
@@ -85,10 +118,14 @@ mediaRoutes.get('/', async (req, res, next) => {
         results: mediaCount,
         page: Math.ceil(skip / pageSize) + 1,
       },
-      results: media,
+      results: mediaWithCoverArt,
     } as MediaResultsResponse);
   } catch (e) {
-    next({ status: 500, message: e.message });
+    logger.error('Something went wrong retrieving media', {
+      label: 'Media',
+      error: e instanceof Error ? e.message : 'Unknown error',
+    });
+    next({ status: 500, message: 'Unable to retrieve media' });
   }
 });
 
@@ -206,38 +243,36 @@ mediaRoutes.delete(
         serviceSettings = settings.radarr.find(
           (radarr) => radarr.isDefault && radarr.is4k === is4k
         );
-      } else if(media.mediaType === MediaType.TV) {
+      } else if (media.mediaType === MediaType.TV) {
         serviceSettings = settings.sonarr.find(
           (sonarr) => sonarr.isDefault && sonarr.is4k === is4k
         );
       } else {
-        serviceSettings = settings.lidarr.find(
-          (lidarr) => lidarr.isDefault);
+        serviceSettings = settings.lidarr.find((lidarr) => lidarr.isDefault);
       }
 
-     
-        const specificServiceId = is4k ? media.serviceId4k : media.serviceId;
-        if (
-          specificServiceId &&
-          specificServiceId >= 0 &&
-          serviceSettings?.id !== specificServiceId
-        ) {
-          if (media.mediaType === MediaType.MOVIE) {
-            serviceSettings = settings.radarr.find(
-              (radarr) => radarr.id === specificServiceId
-            );
-          } else if (media.mediaType === MediaType.TV) {
-            serviceSettings = settings.sonarr.find(
-              (sonarr) => sonarr.id === specificServiceId
-            );
-          } else {
-            serviceSettings = settings.lidarr.find(
-              (lidarr) => lidarr.id === media.serviceId
-          )
-          }
+      const specificServiceId = is4k ? media.serviceId4k : media.serviceId;
+      if (
+        specificServiceId &&
+        specificServiceId >= 0 &&
+        serviceSettings?.id !== specificServiceId
+      ) {
+        if (media.mediaType === MediaType.MOVIE) {
+          serviceSettings = settings.radarr.find(
+            (radarr) => radarr.id === specificServiceId
+          );
+        } else if (media.mediaType === MediaType.TV) {
+          serviceSettings = settings.sonarr.find(
+            (sonarr) => sonarr.id === specificServiceId
+          );
+        } else {
+          serviceSettings = settings.lidarr.find(
+            (lidarr) => lidarr.id === media.serviceId
+          );
         }
-      
-        if (!serviceSettings) {
+      }
+
+      if (!serviceSettings) {
         logger.warn(
           `There is no default ${
             media.mediaType === MediaType.MOVIE
@@ -260,7 +295,7 @@ mediaRoutes.delete(
           apiKey: serviceSettings.apiKey,
           url: RadarrAPI.buildUrl(serviceSettings, '/api/v3'),
         });
-        
+
         await (service as RadarrAPI).removeMovie(media.tmdbId);
       } else if (media.mediaType === MediaType.TV) {
         service = new SonarrAPI({
@@ -276,8 +311,7 @@ mediaRoutes.delete(
           throw new Error('TVDB ID not found');
         }
         await (service as SonarrAPI).removeSeries(tvdbId);
-      } else if (media.mediaType == MediaType.MUSIC)
-      {
+      } else if (media.mediaType == MediaType.MUSIC) {
         service = new LidarrAPI({
           apiKey: serviceSettings.apiKey,
           url: LidarrAPI.buildUrl(serviceSettings, '/api/v1'),
@@ -291,7 +325,6 @@ mediaRoutes.delete(
       }
 
       return res.status(204).send();
-
     } catch (e) {
       logger.error('Something went wrong fetching media in delete request', {
         label: 'Media',

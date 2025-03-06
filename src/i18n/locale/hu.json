@@ -297,7 +297,7 @@
   "components.Settings.sonarrsettings": "Sonarr beállítások",
   "components.Settings.settingUpPlexDescription": "A Plex beállításához megadhatja kézzel az adatokat, vagy kiválaszthat egy <RegisterPlexTVLink>plex.tv</RegisterPlexTVLink>-ről elérhető szervert. Nyomja meg a legördülő menü jobb oldalán lévő gombot az elérhető szerverek listájának lekérdezéséhez.",
   "components.Settings.services": "Szolgáltatások",
-  "components.Settings.videoServiceSettingsDescription": "Az alábbiakban konfigurálja a {serverType} szerver(eke)t. Több {serverType} szervert is csatlakoztathat, de ezek közül csak kettő jelölhető meg alapértelmezettként (egy nem 4K és egy 4K). A rendszergazdák felülbírálhatják az új kérések feldolgozásához használt szervert a jóváhagyás előtt.",
+  "components.Settings.serviceSettingsDescription": "Az alábbiakban konfigurálja a {serverType} szerver(eke)t. Több {serverType} szervert is csatlakoztathat, de ezek közül csak kettő jelölhető meg alapértelmezettként (egy nem 4K és egy 4K). A rendszergazdák felülbírálhatják az új kérések feldolgozásához használt szervert a jóváhagyás előtt.",
   "components.Settings.serverpresetRefreshing": "Szerverek lekérése…",
   "components.Settings.serverpresetManualMessage": "Kézi beállítás",
   "components.Settings.serverpresetLoad": "Nyomja meg a gombot az elérhető szerverek betöltéséhez",

@@ -25,7 +25,9 @@ export class AddMusicSupport1714310036946 implements MigrationInterface {
         "requestedById" integer,
         "mediaId" integer,
         CONSTRAINT "UNIQUE_USER_DB" UNIQUE ("tmdbId", "requestedById"),
-        CONSTRAINT "UNIQUE_USER_FOREIGN" UNIQUE ("mbId", "requestedById")
+        CONSTRAINT "UNIQUE_USER_FOREIGN" UNIQUE ("mbId", "requestedById"),
+        CONSTRAINT "FK_ae34e6b153a90672eb9dc4857d7" FOREIGN KEY ("requestedById") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+        CONSTRAINT "FK_6641da8d831b93dfcb429f8b8bc" FOREIGN KEY ("mediaId") REFERENCES "media" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
       )`
     );
 
@@ -71,7 +73,8 @@ export class AddMusicSupport1714310036946 implements MigrationInterface {
         "ratingKey" varchar,
         "ratingKey4k" varchar,
         "jellyfinMediaId" varchar,
-        "jellyfinMediaId4k" varchar
+        "jellyfinMediaId4k" varchar,
+        CONSTRAINT "CHK_media_type" CHECK ("mediaType" IN ('movie', 'tv', 'music'))
       )`
     );
 
@@ -108,9 +111,47 @@ export class AddMusicSupport1714310036946 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX "IDX_media_mbid" ON "media" ("mbId")`
     );
+
+    await queryRunner.query(
+      `CREATE TABLE "metadata_album" (
+        "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        "mbAlbumId" varchar NOT NULL,
+        "caaUrl" varchar NOT NULL,
+        "createdAt" datetime NOT NULL DEFAULT (datetime('now')),
+        "updatedAt" datetime NOT NULL DEFAULT (datetime('now'))
+      )`
+    );
+
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX "IDX_metadata_album_mbAlbumId" ON "metadata_album" ("mbAlbumId")`
+    );
+
+    await queryRunner.query(
+      `CREATE TABLE "metadata_artist" (
+        "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        "mbArtistId" varchar NOT NULL,
+        "tmdbPersonId" varchar,
+        "tmdbThumb" varchar,
+        "tmdbUpdatedAt" datetime,
+        "tadbThumb" varchar,
+        "tadbCover" varchar,
+        "tadbUpdatedAt" datetime,
+        "createdAt" datetime NOT NULL DEFAULT (datetime('now'))
+      )`
+    );
+
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX "IDX_metadata_artist_mbArtistId" ON "metadata_artist" ("mbArtistId")`
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP INDEX "IDX_metadata_album_mbAlbumId"`);
+    await queryRunner.query(`DROP TABLE "metadata_album"`);
+
+    await queryRunner.query(`DROP INDEX "IDX_metadata_artist_mbArtistId"`);
+    await queryRunner.query(`DROP TABLE "metadata_artist"`);
+
     await queryRunner.query(`DROP INDEX "IDX_watchlist_mbid"`);
     await queryRunner.query(`DROP INDEX "IDX_media_mbid"`);
 
@@ -125,7 +166,9 @@ export class AddMusicSupport1714310036946 implements MigrationInterface {
         "updatedAt" datetime NOT NULL DEFAULT (datetime('now')),
         "requestedById" integer,
         "mediaId" integer,
-        CONSTRAINT "UNIQUE_USER_DB" UNIQUE ("tmdbId", "requestedById")
+        CONSTRAINT "UNIQUE_USER_DB" UNIQUE ("tmdbId", "requestedById"),
+        CONSTRAINT "FK_ae34e6b153a90672eb9dc4857d7" FOREIGN KEY ("requestedById") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+        CONSTRAINT "FK_6641da8d831b93dfcb429f8b8bc" FOREIGN KEY ("mediaId") REFERENCES "media" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
       )`
     );
 

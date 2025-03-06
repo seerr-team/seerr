@@ -5,6 +5,7 @@ import ConfirmButton from '@app/components/Common/ConfirmButton';
 import RequestModal from '@app/components/RequestModal';
 import StatusBadge from '@app/components/StatusBadge';
 import useDeepLinks from '@app/hooks/useDeepLinks';
+import { useProgressiveCovers } from '@app/hooks/useProgressiveCovers';
 import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
@@ -51,6 +52,11 @@ const messages = defineMessages('components.RequestList.RequestItem', {
   profileName: 'Profile',
 });
 
+interface ExtendedMedia {
+  posterPath?: string;
+  needsCoverArt?: boolean;
+}
+
 const isMovie = (
   media: MovieDetails | TvDetails | MusicDetails
 ): media is MovieDetails => {
@@ -63,7 +69,7 @@ const isMovie = (
 const isMusic = (
   media: MovieDetails | TvDetails | MusicDetails
 ): media is MusicDetails => {
-  return (media as MusicDetails).artistId !== undefined;
+  return (media as MusicDetails).artist?.id !== undefined;
 };
 
 interface RequestItemErrorProps {
@@ -336,7 +342,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
       : request.type === 'movie'
       ? `/api/v1/movie/${request.media.tmdbId}`
       : `/api/v1/tv/${request.media.tmdbId}`;
-  const { data: title, error } = useSWR<
+  const { data: titleData, error } = useSWR<
     MovieDetails | TvDetails | MusicDetails
   >(inView ? url : null);
   const { data: requestData, mutate: revalidate } = useSWR<
@@ -403,6 +409,28 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
     iOSPlexUrl4k: requestData?.media?.iOSPlexUrl4k,
   });
 
+  const title =
+    useProgressiveCovers<MovieDetails | TvDetails | MusicDetails>(
+      requestData?.type === 'music' && titleData && isMusic(titleData)
+        ? [
+            {
+              ...titleData,
+              posterPath:
+                (requestData.media as ExtendedMedia)?.posterPath ||
+                titleData.posterPath,
+              needsCoverArt:
+                (requestData.media as ExtendedMedia)?.needsCoverArt !==
+                undefined
+                  ? (requestData.media as ExtendedMedia).needsCoverArt
+                  : (titleData as MusicDetails & { needsCoverArt?: boolean })
+                      .needsCoverArt,
+            } as MusicDetails,
+          ]
+        : titleData
+        ? [titleData]
+        : []
+    )[0] ?? titleData;
+
   if (!title && !error) {
     return (
       <div
@@ -442,17 +470,16 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
             type={isMusic(title) ? 'music' : 'tmdb'}
             src={
               isMusic(title)
-                ? title.artist.images?.find((img) => img.CoverType === 'Fanart')
-                    ?.Url ||
-                  title.artist.images?.find((img) => img.CoverType === 'Poster')
-                    ?.Url ||
-                  title.images?.find(
-                    (img) => img.CoverType.toLowerCase() === 'cover'
-                  )?.Url ||
-                  ''
-                : `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${
-                    title.backdropPath ?? ''
-                  }`
+                ? title.artistBackdrop
+                  ? title.artistBackdrop
+                  : title.artistThumb
+                  ? title.artistThumb
+                  : title.posterPath
+                  ? title.posterPath
+                  : '/images/jellyseerr_poster_not_found_square.png'
+                : title.backdropPath
+                ? `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`
+                : '/images/jellyseerr_poster_not_found.png'
             }
             alt=""
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -482,8 +509,9 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                 type={isMusic(title) ? 'music' : 'tmdb'}
                 src={
                   isMusic(title)
-                    ? title.images?.find((image) => image.CoverType === 'Cover')
-                        ?.Url ?? '/images/overseerr_poster_not_found.png'
+                    ? title.posterPath
+                      ? title.posterPath
+                      : '/images/jellyseerr_poster_not_found_square.png'
                     : title.posterPath
                     ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
                     : '/images/seerr_poster_not_found.png'
@@ -515,7 +543,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                 className="mr-2 min-w-0 truncate text-lg font-bold text-white hover:underline xl:text-xl"
               >
                 {isMusic(title)
-                  ? `${title.artist.artistName} - ${title.title}`
+                  ? `${title.artist.name} - ${title.title}`
                   : isMovie(title)
                   ? title.title
                   : title.name}

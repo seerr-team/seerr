@@ -6,8 +6,8 @@ const messages = defineMessages('components.IssueModal', {
   issueAudio: 'Audio',
   issueVideo: 'Video',
   issueSubtitles: 'Subtitle',
-  issueLyrics: 'Lyrics',
   issueOther: 'Other',
+  issueLyrics: 'Lyrics',
 });
 
 interface IssueOption {
@@ -30,12 +30,12 @@ export const issueOptions: IssueOption[] = [
     issueType: IssueType.SUBTITLES,
   },
   {
-    name: messages.issueLyrics,
-    issueType: IssueType.LYRICS,
-  },
-  {
     name: messages.issueOther,
     issueType: IssueType.OTHER,
+  },
+  {
+    name: messages.issueLyrics,
+    issueType: IssueType.LYRICS,
   },
 ];
 

@@ -1,6 +1,7 @@
 import useSettings from '@app/hooks/useSettings';
 import type { ImageLoader, ImageProps } from 'next/image';
 import Image from 'next/image';
+import { useState } from 'react';
 
 const imageLoader: ImageLoader = ({ src }) => src;
 
@@ -15,8 +16,11 @@ export type CachedImageProps = ImageProps & {
  **/
 const CachedImage = ({ src, type, ...props }: CachedImageProps) => {
   const { currentSettings } = useSettings();
+  const [, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   let imageUrl: string;
+  let fallbackImage = '';
 
   if (type === 'tmdb') {
     // tmdb stuff
@@ -32,23 +36,39 @@ const CachedImage = ({ src, type, ...props }: CachedImageProps) => {
             '/imageproxy/tvdb/'
           )
         : src;
-  } else if (type === 'avatar') {
-    // jellyfin avatar (if any)
-    imageUrl = src;
+    fallbackImage = '/images/jellyseerr_poster_not_found.png';
   } else if (type === 'music') {
-    // Handle CAA, Fanart and Lidarr images
-    imageUrl = /^https?:\/\/coverartarchive\.org\//.test(src)
-      ? src.replace(/^https?:\/\/coverartarchive\.org\//, '/caaproxy/')
-      : /^https?:\/\/assets\.fanart\.tv\//.test(src)
-      ? src.replace(/^https?:\/\/assets\.fanart\.tv\//, '/fanartproxy/')
-      : currentSettings.cacheImages
-      ? src.replace(/^https:\/\/imagecache\.lidarr\.audio\//, '/lidarrproxy/')
+    // Cover Art Archive and TheAudioDB images
+    imageUrl = src.startsWith('https://archive.org/')
+      ? src.replace(/^https:\/\/archive\.org\//, '/caaproxy/')
+      : currentSettings.cacheImages &&
+        !src.startsWith('/') &&
+        src.startsWith('https://r2.theaudiodb.com/')
+      ? src.replace(/^https:\/\/r2\.theaudiodb\.com\//, '/tadbproxy/')
       : src;
+    fallbackImage = '/images/jellyseerr_poster_not_found_square.png';
+  } else if (type === 'avatar') {
+    imageUrl = src;
+    fallbackImage = '/images/user_placeholder.png';
   } else {
     return null;
   }
 
-  return <Image unoptimized loader={imageLoader} src={imageUrl} {...props} />;
+  const displaySrc = isError ? fallbackImage : imageUrl;
+
+  return (
+    <Image
+      unoptimized
+      loader={imageLoader}
+      src={displaySrc}
+      {...props}
+      onLoad={() => setIsLoading(false)}
+      onError={() => {
+        setIsError(true);
+        setIsLoading(false);
+      }}
+    />
+  );
 };
 
 export default CachedImage;

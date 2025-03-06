@@ -139,8 +139,7 @@ const IssueItem = ({ issue }: IssueItemProps) => {
             type={isMusic(title) ? 'music' : 'tmdb'}
             src={
               isMusic(title)
-                ? title.artist.images?.find((img) => img.CoverType === 'Fanart')
-                    ?.Url ?? '/images/overseerr_poster_not_found.png'
+                ? title.artistBackdrop ?? title.artistThumb ?? ''
                 : `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${
                     title.backdropPath ?? ''
                   }`
@@ -174,8 +173,8 @@ const IssueItem = ({ issue }: IssueItemProps) => {
               type={isMusic(title) ? 'music' : 'tmdb'}
               src={
                 isMusic(title)
-                  ? title.images?.find((image) => image.CoverType === 'Cover')
-                      ?.Url ?? '/images/overseerr_poster_not_found.png'
+                  ? title.posterPath ??
+                    '/images/jellyseerr_poster_not_found_square.png'
                   : title.posterPath
                   ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
                   : '/images/seerr_poster_not_found.png'
@@ -207,7 +206,7 @@ const IssueItem = ({ issue }: IssueItemProps) => {
               className="mr-2 min-w-0 truncate text-lg font-bold text-white hover:underline xl:text-xl"
             >
               {isMusic(title)
-                ? `${title.artist.artistName} - ${title.title}`
+                ? `${title.artist.name} - ${title.title}`
                 : isMovie(title)
                 ? title.title
                 : title.name}

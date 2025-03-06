@@ -752,25 +752,12 @@ const SettingsJobs = () => {
               </Table.TD>
             </tr>
             <tr>
-              <Table.TD>Lidarr Images (lidarr)</Table.TD>
+              <Table.TD>The Audio Database (tadb)</Table.TD>
               <Table.TD>
-                {intl.formatNumber(
-                  cacheData?.imageCache.lidarr.imageCount ?? 0
-                )}
+                {intl.formatNumber(cacheData?.imageCache.tadb.imageCount ?? 0)}
               </Table.TD>
               <Table.TD>
-                {formatBytes(cacheData?.imageCache.lidarr.size ?? 0)}
-              </Table.TD>
-            </tr>
-            <tr>
-              <Table.TD>Fanart.tv (fanart)</Table.TD>
-              <Table.TD>
-                {intl.formatNumber(
-                  cacheData?.imageCache.fanart.imageCount ?? 0
-                )}
-              </Table.TD>
-              <Table.TD>
-                {formatBytes(cacheData?.imageCache.fanart.size ?? 0)}
+                {formatBytes(cacheData?.imageCache.tadb.size ?? 0)}
               </Table.TD>
             </tr>
           </Table.TBody>

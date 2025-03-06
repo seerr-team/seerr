@@ -20,6 +20,11 @@ export interface LidarrArtistResult extends LidarrMediaResult {
 
 export interface LidarrAlbumResult extends LidarrMediaResult {
   album: {
+    disambiguation: string;
+    duration: number;
+    mediumCount: number;
+    ratings: LidarrRating | undefined;
+    links: never[];
     media_type: 'music';
     title: string;
     foreignAlbumId: string;
@@ -29,6 +34,22 @@ export interface LidarrAlbumResult extends LidarrMediaResult {
     genres: string[];
     images: LidarrImage[];
     artist: {
+      id: number;
+      status: string;
+      ended: boolean;
+      foreignArtistId: string;
+      tadbId: number;
+      discogsId: number;
+      artistType: string;
+      disambiguation: string | undefined;
+      links: never[];
+      images: never[];
+      genres: never[];
+      cleanName: string | undefined;
+      sortName: string | undefined;
+      tags: never[];
+      added: string;
+      ratings: LidarrRating | undefined;
       artistName: string;
       overview: string;
     };
@@ -60,6 +81,8 @@ export interface LidarrArtistDetails {
   added: string;
   ratings: LidarrRating;
   remotePoster?: string;
+  cleanName?: string;
+  sortName?: string;
 }
 
 export interface LidarrAlbumDetails {
@@ -165,24 +188,53 @@ export interface LidarrSearchResponse {
 
 export interface LidarrAlbumOptions {
   [key: string]: unknown;
-  profileId: number;
-  mbId: string;
-  qualityProfileId: number;
-  rootFolderPath: string;
   title: string;
-  monitored: boolean;
-  tags: string[];
-  searchNow: boolean;
+  disambiguation?: string;
+  overview?: string;
   artistId: number;
+  foreignAlbumId: string;
+  monitored: boolean;
+  anyReleaseOk: boolean;
+  profileId: number;
+  duration?: number;
+  albumType: string;
+  secondaryTypes: string[];
+  mediumCount?: number;
+  ratings?: LidarrRating;
+  releaseDate?: string;
+  releases: any[];
+  genres: string[];
+  media: any[];
   artist: {
-    id: number;
-    foreignArtistId: string;
+    status: string;
+    ended: boolean;
     artistName: string;
+    foreignArtistId: string;
+    tadbId?: number;
+    discogsId?: number;
+    overview?: string;
+    artistType: string;
+    disambiguation?: string;
+    links: LidarrLink[];
+    images: LidarrImage[];
+    path: string;
     qualityProfileId: number;
     metadataProfileId: number;
-    rootFolderPath: string;
     monitored: boolean;
     monitorNewItems: string;
+    rootFolderPath: string;
+    genres: string[];
+    cleanName?: string;
+    sortName?: string;
+    tags: number[];
+    added?: string;
+    ratings?: LidarrRating;
+    id: number;
+  };
+  images: LidarrImage[];
+  links: LidarrLink[];
+  addOptions: {
+    searchForNewAlbum: boolean;
   };
 }
 
@@ -221,6 +273,11 @@ export interface LidarrAlbum {
   };
 }
 
+export interface SearchCommand extends Record<string, unknown> {
+  name: 'AlbumSearch';
+  albumIds: number[];
+}
+
 class LidarrAPI extends ServarrBase<{ albumId: number }> {
   protected apiKey: string;
   constructor({ url, apiKey }: { url: string; apiKey: string }) {
@@ -237,44 +294,12 @@ class LidarrAPI extends ServarrBase<{ albumId: number }> {
     }
   }
 
-  public async getArtist({ id }: { id: number }): Promise<LidarrArtistDetails> {
-    try {
-      const data = await this.get<LidarrArtistDetails>(`/artist/${id}`);
-      return data;
-    } catch (e) {
-      throw new Error(`[Lidarr] Failed to retrieve album: ${e.message}`);
-    }
-  }
-
   public async getAlbum({ id }: { id: number }): Promise<LidarrAlbum> {
     try {
       const data = await this.get<LidarrAlbum>(`/album/${id}`);
       return data;
     } catch (e) {
       throw new Error(`[Lidarr] Failed to retrieve album: ${e.message}`);
-    }
-  }
-
-  public async getAlbumByMusicBrainzId(
-    mbId: string
-  ): Promise<LidarrAlbumDetails> {
-    try {
-      const data = await this.get<LidarrAlbumDetails[]>('/album/lookup', {
-        term: `lidarr:${mbId}`,
-      });
-
-      if (!data[0]) {
-        throw new Error('Album not found');
-      }
-
-      return data[0];
-    } catch (e) {
-      logger.error('Error retrieving album by foreign ID', {
-        label: 'Lidarr API',
-        errorMessage: e.message,
-        mbId: mbId,
-      });
-      throw new Error('Album not found');
     }
   }
 
@@ -290,215 +315,60 @@ class LidarrAPI extends ServarrBase<{ albumId: number }> {
     }
   }
 
-  public async getArtistByMusicBrainzId(
-    mbId: string
-  ): Promise<LidarrArtistDetails> {
+  public async searchAlbum(mbid: string): Promise<LidarrAlbumResult[]> {
     try {
-      const data = await this.get<LidarrArtistDetails[]>('/artist/lookup', {
-        term: `lidarr:${mbId}`,
+      const data = await this.get<LidarrAlbumResult[]>(`/search`, {
+        term: `lidarr:${mbid}`,
       });
-
-      if (!data[0]) {
-        throw new Error('Artist not found');
-      }
-
-      return data[0];
+      return data;
     } catch (e) {
-      logger.error('Error retrieving artist by foreign ID', {
-        label: 'Lidarr API',
-        errorMessage: e.message,
-        mbId: mbId,
-      });
-      throw new Error('Artist not found');
+      throw new Error(`[Lidarr] Failed to search album: ${e.message}`);
     }
   }
 
-  public async addAlbum(
-    options: LidarrAlbumOptions
-  ): Promise<LidarrAlbumDetails> {
+  public async addAlbum(options: LidarrAlbumOptions): Promise<LidarrAlbum> {
     try {
-      const data = await this.post<LidarrAlbumDetails>('/album', options);
-      return data;
-    } catch (e) {
-      if (e.message.includes('This album has already been added')) {
-        logger.info('Album already exists in Lidarr, monitoring it in Lidarr', {
-          label: 'Lidarr',
-          albumTitle: options.title,
-          mbId: options.mbId,
-        });
-        throw e;
+      const existingAlbums = await this.get<LidarrAlbum[]>('/album', {
+        foreignAlbumId: options.foreignAlbumId,
+        includeAllArtistAlbums: 'true',
+      });
+
+      if (existingAlbums.length > 0 && existingAlbums[0].monitored) {
+        logger.info(
+          'Album is already monitored in Lidarr. Skipping add and returning success',
+          {
+            label: 'Lidarr',
+          }
+        );
+        return existingAlbums[0];
       }
 
-      logger.error('Failed to add album to Lidarr', {
-        label: 'Lidarr',
-        options,
-        errorMessage: e.message,
+      const data = await this.post<LidarrAlbum>('/album', {
+        ...options,
+        monitored: true,
       });
+      return data;
+    } catch (e) {
       throw new Error(`[Lidarr] Failed to add album: ${e.message}`);
     }
   }
 
-  public async addArtist(
-    options: LidarrArtistOptions
-  ): Promise<LidarrArtistDetails> {
+  public async searchAlbumByMusicBrainzId(
+    mbid: string
+  ): Promise<LidarrAlbumResult[]> {
     try {
-      const data = await this.post<LidarrArtistDetails>('/artist', options);
+      const data = await this.get<LidarrAlbumResult[]>('/search', {
+        term: `lidarr:${mbid}`,
+      });
       return data;
     } catch (e) {
-      logger.error('Failed to add artist to Lidarr', {
-        label: 'Lidarr',
-        options,
-        errorMessage: e.message,
-      });
-      throw new Error(`[Lidarr] Failed to add artist: ${e.message}`);
-    }
-  }
-
-  public async searchMulti(searchTerm: string): Promise<LidarrSearchResponse> {
-    try {
-      const data = await this.get<
-        {
-          foreignId: string;
-          artist?: {
-            artistName: string;
-            overview?: string;
-            remotePoster?: string;
-            artistType?: string;
-            genres: string[];
-            foreignArtistId: string;
-          };
-          album?: {
-            title: string;
-            foreignAlbumId: string;
-            overview?: string;
-            releaseDate?: string;
-            albumType: string;
-            genres: string[];
-            images: LidarrImage[];
-            artist: {
-              artistName: string;
-              overview?: string;
-            };
-            remoteCover?: string;
-          };
-          id: number;
-        }[]
-      >(
-        '/search',
-        {
-          term: searchTerm,
-        },
-        undefined,
-        {
-          headers: {
-            'X-Api-Key': this.apiKey,
-          },
-        }
+      throw new Error(
+        `[Lidarr] Failed to search album by MusicBrainz ID: ${e.message}`
       );
-
-      if (!data) {
-        throw new Error('No data received from Lidarr');
-      }
-
-      const results = data.map((item) => {
-        if (item.album) {
-          return {
-            id: item.id,
-            mbId: item.album.foreignAlbumId,
-            media_type: 'music' as const,
-            album: {
-              media_type: 'music' as const,
-              title: item.album.title,
-              foreignAlbumId: item.album.foreignAlbumId,
-              overview: item.album.overview || '',
-              releaseDate: item.album.releaseDate || '',
-              albumType: item.album.albumType,
-              genres: item.album.genres,
-              images: item.album.remoteCover
-                ? [
-                    {
-                      url: item.album.remoteCover,
-                      coverType: 'cover',
-                    },
-                  ]
-                : item.album.images,
-              artist: {
-                artistName: item.album.artist.artistName,
-                overview: item.album.artist.overview || '',
-              },
-            },
-          } satisfies LidarrAlbumResult;
-        }
-
-        if (item.artist) {
-          return {
-            id: item.id,
-            mbId: item.artist.foreignArtistId,
-            media_type: 'artist' as const,
-            artist: {
-              media_type: 'artist' as const,
-              artistName: item.artist.artistName,
-              overview: item.artist.overview || '',
-              remotePoster: item.artist.remotePoster,
-              artistType: item.artist.artistType || '',
-              genres: item.artist.genres,
-            },
-          } satisfies LidarrArtistResult;
-        }
-
-        throw new Error('Invalid search result type');
-      });
-
-      return {
-        page: 1,
-        total_pages: 1,
-        total_results: results.length,
-        results,
-      };
-    } catch (e) {
-      logger.error('Failed to search Lidarr', {
-        label: 'Lidarr API',
-        errorMessage: e.message,
-      });
-      throw new Error(`[Lidarr] Failed to search: ${e.message}`);
     }
   }
 
-  public async updateArtist(
-    artist: LidarrArtistDetails
-  ): Promise<LidarrArtistDetails> {
-    try {
-      const data = await this.put<LidarrArtistDetails>(`/artist/${artist.id}`, {
-        ...artist,
-      } as Record<string, unknown>);
-      return data;
-    } catch (e) {
-      logger.error('Failed to update artist in Lidarr', {
-        label: 'Lidarr',
-        artistId: artist.id,
-        errorMessage: e.message,
-      });
-      throw new Error(`[Lidarr] Failed to update artist: ${e.message}`);
-    }
-  }
-
-  public async updateAlbum(album: LidarrAlbum): Promise<LidarrAlbumDetails> {
-    try {
-      const data = await this.put<LidarrAlbumDetails>(`/album/${album.id}`, {
-        ...album,
-      } as Record<string, unknown>);
-      return data;
-    } catch (e) {
-      logger.error('Failed to update album in Lidarr', {
-        label: 'Lidarr',
-        albumId: album.id,
-        errorMessage: e.message,
-      });
-      throw new Error(`[Lidarr] Failed to update album: ${e.message}`);
-    }
-  }
-
-  public async searchAlbum(albumId: number): Promise<void> {
+  public async searchOnAdd(albumId: number): Promise<void> {
     logger.info('Executing album search command', {
       label: 'Lidarr API',
       albumId,

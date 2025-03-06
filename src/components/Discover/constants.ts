@@ -68,7 +68,6 @@ export const genreColorMap: Record<number, [string, string]> = {
 
 export const sliderTitles = defineMessages('components.Discover', {
   recentrequests: 'Recent Requests',
-  popularalbums: 'Popular Albums',
   popularmovies: 'Popular Movies',
   populartv: 'Popular Series',
   upcomingtv: 'Upcoming Series',
@@ -89,6 +88,8 @@ export const sliderTitles = defineMessages('components.Discover', {
   tmdbsearch: 'TMDB Search',
   tmdbmoviestreamingservices: 'TMDB Movie Streaming Services',
   tmdbtvstreamingservices: 'TMDB TV Streaming Services',
+  popularalbums: 'Popular Albums',
+  popularartists: 'Popular Artists',
 });
 
 export const QueryFilterOptions = z.object({
@@ -116,6 +117,10 @@ export const QueryFilterOptions = z.object({
   certificationLte: z.string().optional(),
   certificationCountry: z.string().optional(),
   certificationMode: z.enum(['exact', 'range']).optional(),
+  onlyWithCoverArt: z.string().optional(),
+  releaseDateGte: z.string().optional(),
+  releaseDateLte: z.string().optional(),
+  days: z.string().optional(),
 });
 
 export type FilterOptions = z.infer<typeof QueryFilterOptions>;
@@ -227,6 +232,18 @@ export const prepareFilterValues = (
     filterValues.certificationMode = 'range';
   }
 
+  if (values.onlyWithCoverArt === 'true') {
+    filterValues.onlyWithCoverArt = values.onlyWithCoverArt;
+  }
+
+  if (values.releaseDateGte) {
+    filterValues.releaseDateGte = values.releaseDateGte;
+  }
+
+  if (values.releaseDateLte) {
+    filterValues.releaseDateLte = values.releaseDateLte;
+  }
+
   return filterValues;
 };
 
@@ -272,6 +289,17 @@ export const countActiveFilters = (filterValues: FilterOptions): number => {
   }
 
   delete clonedFilters.certificationMode;
+  if (clonedFilters.onlyWithCoverArt === 'true') {
+    totalCount += 1;
+    delete clonedFilters.onlyWithCoverArt;
+  }
+
+  if (clonedFilters.releaseDateGte || filterValues.releaseDateLte) {
+    totalCount += 1;
+    delete clonedFilters.releaseDateGte;
+    delete clonedFilters.releaseDateLte;
+  }
+
   totalCount += Object.keys(clonedFilters).length;
 
   return totalCount;

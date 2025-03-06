@@ -667,7 +667,7 @@
   "components.RequestModal.AdvancedRequester.notagoptions": "Nessun tag.",
   "components.Layout.VersionStatus.outofdate": "Non aggiornato",
   "components.Layout.VersionStatus.commitsbehind": "{commitsBehind} {commitsBehind, plural, one {versione} other {versioni}} indietro",
-  "components.Settings.videoServiceSettingsDescription": "Configura i tuoi server {serverType} qui sotto. Puoi collegare più server {serverType}, ma solo due possono essere contrassegnati come predefiniti (uno non-4K e uno 4K). Gli amministratori possono selezionare il server usato per elaborare le nuove richieste prima dell'approvazione.",
+  "components.Settings.serviceSettingsDescription": "Configura i tuoi server {serverType} qui sotto. Puoi collegare più server {serverType}, ma solo due possono essere contrassegnati come predefiniti (uno non-4K e uno 4K). Gli amministratori possono selezionare il server usato per elaborare le nuove richieste prima dell'approvazione.",
   "components.Settings.noDefaultServer": "Almeno un server {serverType} deve essere contrassegnato come predefinito affinché le richieste {mediaType} possano essere processate.",
   "components.Settings.noDefaultNon4kServer": "Se hai solo un singolo server {serverType} per contenuti non-4K e 4K (o se scarichi solo contenuti 4K), il tuo server {serverType} <strong>NON</strong> dovrebbe essere designato come server 4K.",
   "components.Settings.mediaTypeSeries": "serie",

@@ -1,11 +1,11 @@
-import LidarrAPI from '@server/api/servarr/lidarr';
+import CoverArtArchive from '@server/api/coverartarchive';
+import ListenBrainzAPI from '@server/api/listenbrainz';
 import TheMovieDb from '@server/api/themoviedb';
 import { IssueStatus, IssueType, IssueTypeName } from '@server/constants/issue';
 import { MediaType } from '@server/constants/media';
 import Issue from '@server/entity/Issue';
 import notificationManager, { Notification } from '@server/lib/notifications';
 import { Permission } from '@server/lib/permissions';
-import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { sortBy } from 'lodash';
 import type {
@@ -25,6 +25,8 @@ export class IssueSubscriber implements EntitySubscriberInterface<Issue> {
     let title = '';
     let image = '';
     const tmdb = new TheMovieDb();
+    const listenbrainz = new ListenBrainzAPI();
+    const coverArt = CoverArtArchive.getInstance();
 
     try {
       if (entity.media.mediaType === MediaType.MOVIE) {
@@ -41,26 +43,15 @@ export class IssueSubscriber implements EntitySubscriberInterface<Issue> {
           tvshow.first_air_date ? ` (${tvshow.first_air_date.slice(0, 4)})` : ''
         }`;
         image = `https://image.tmdb.org/t/p/w600_and_h900_bestv2${tvshow.poster_path}`;
-      } else if (entity.media.mediaType === MediaType.MUSIC) {
-        const settings = getSettings();
-        if (!settings.lidarr[0]) {
-          throw new Error('No Lidarr server configured');
-        }
+      } else if (
+        entity.media.mediaType === MediaType.MUSIC &&
+        entity.media.mbId
+      ) {
+        const album = await listenbrainz.getAlbum(entity.media.mbId);
+        const coverArtResponse = await coverArt.getCoverArt(entity.media.mbId);
 
-        const lidarr = new LidarrAPI({
-          apiKey: settings.lidarr[0].apiKey,
-          url: LidarrAPI.buildUrl(settings.lidarr[0], '/api/v1'),
-        });
-
-        if (!entity.media.mbId) {
-          throw new Error('MusicBrainz ID is undefined');
-        }
-        const album = await lidarr.getAlbumByMusicBrainzId(entity.media.mbId);
-
-        const artist = await lidarr.getArtist({ id: album.artistId });
-
-        title = `${artist.artistName} - ${album.title}`;
-        image = album.images?.[0]?.url ?? '';
+        title = `${album.release_group_metadata.release_group.name} by ${album.release_group_metadata.artist.name}`;
+        image = coverArtResponse.images[0]?.thumbnails?.['250'] ?? '';
       }
 
       const [firstComment] = sortBy(entity.comments, 'id');

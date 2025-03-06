@@ -30,39 +30,38 @@ import Season from './Season';
 class Media {
   public static async getRelatedMedia(
     user: User | undefined,
-    ids: (number | string)[]
+    ids: number | number[] | string | string[]
   ): Promise<Media[]> {
     const mediaRepository = getRepository(Media);
 
     try {
-      if (ids.length === 0) {
+      let finalIds: (number | string)[];
+      if (!Array.isArray(ids)) {
+        finalIds = [ids];
+      } else {
+        finalIds = ids;
+      }
+
+      if (finalIds.length === 0) {
         return [];
       }
 
-      const tmdbIds = ids.filter((id): id is number => typeof id === 'number');
-      const mbIds = ids.filter((id): id is string => typeof id === 'string');
-
-      const queryBuilder = mediaRepository
+      const media = await mediaRepository
         .createQueryBuilder('media')
         .leftJoinAndSelect(
           'media.watchlists',
           'watchlist',
           'media.id = watchlist.media and watchlist.requestedBy = :userId',
           { userId: user?.id }
-        );
+        )
+        .where(
+          typeof finalIds[0] === 'string'
+            ? 'media.mbId IN (:...finalIds)'
+            : 'media.tmdbId IN (:...finalIds)',
+          { finalIds }
+        )
+        .getMany();
 
-      if (tmdbIds.length > 0 && mbIds.length > 0) {
-        queryBuilder.where(
-          '(media.tmdbId IN (:...tmdbIds) OR media.mbId IN (:...mbIds))',
-          { tmdbIds, mbIds }
-        );
-      } else if (tmdbIds.length > 0) {
-        queryBuilder.where('media.tmdbId IN (:...tmdbIds)', { tmdbIds });
-      } else if (mbIds.length > 0) {
-        queryBuilder.where('media.mbId IN (:...mbIds)', { mbIds });
-      }
-
-      const media = await queryBuilder.getMany();
       return media;
     } catch (e) {
       logger.error(e.message);
@@ -77,13 +76,11 @@ class Media {
     const mediaRepository = getRepository(Media);
 
     try {
-      const whereClause =
-        typeof id === 'string'
-          ? { mbId: id, mediaType }
-          : { tmdbId: id, mediaType };
-
       const media = await mediaRepository.findOne({
-        where: whereClause,
+        where:
+          typeof id === 'string'
+            ? { mbId: id, mediaType }
+            : { tmdbId: id, mediaType },
         relations: { requests: true, issues: true },
       });
 
