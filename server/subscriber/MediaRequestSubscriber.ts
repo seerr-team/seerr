@@ -987,7 +987,10 @@ export class MediaRequestSubscriber
             const requestRepository = getRepository(MediaRequest);
 
             entity.status = MediaRequestStatus.FAILED;
-            await requestRepository.save(entity);
+            await requestRepository.update(
+              { id: entity.id },
+              { status: MediaRequestStatus.FAILED }
+            );
 
             logger.warn(
               'Something went wrong sending album request to Lidarr, marking status as FAILED',
