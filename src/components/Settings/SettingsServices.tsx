@@ -342,17 +342,6 @@ const SettingsServices = () => {
           }}
         />
       )}
-      {editLidarrModal.open && (
-        <LidarrModal
-          lidarr={editLidarrModal.lidarr}
-          onClose={() => setEditLidarrModal({ open: false, lidarr: null })}
-          onSave={() => {
-            revalidateLidarr();
-            mutate('/api/v1/settings/public');
-            setEditLidarrModal({ open: false, lidarr: null });
-          }}
-        />
-      )}
       <Transition
         as={Fragment}
         show={deleteServerModal.open}
