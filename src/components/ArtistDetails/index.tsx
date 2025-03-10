@@ -360,6 +360,30 @@ const ArtistDetails = () => {
     async (albumType: string): Promise<void> => {
       if (!artistId) return;
 
+      if (
+        !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(
+          artistId
+        )
+      ) {
+        return;
+      }
+
+      const validAlbumTypes = [
+        'Album',
+        'EP',
+        'Single',
+        'Live',
+        'Compilation',
+        'Remix',
+        'Soundtrack',
+        'Broadcast',
+        'Demo',
+        'Other',
+      ];
+      if (!validAlbumTypes.includes(albumType)) {
+        return;
+      }
+
       setAlbumTypes((prev) => ({
         ...prev,
         [albumType]: {
@@ -369,10 +393,11 @@ const ArtistDetails = () => {
       }));
 
       try {
+        const pageSize = Math.min(data?.typeCounts?.[albumType] || 100, 1000);
         const response = await fetch(
-          `/api/v1/artist/${artistId}?albumType=${albumType}&pageSize=${
-            data?.typeCounts?.[albumType] || 100
-          }`
+          `/api/v1/artist/${artistId}?albumType=${encodeURIComponent(
+            albumType
+          )}&pageSize=${pageSize}`
         );
 
         if (response.ok) {

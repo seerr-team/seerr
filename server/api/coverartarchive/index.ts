@@ -150,42 +150,84 @@ class CoverArtArchive extends ExternalAPI {
   ): Promise<Record<string, string | null>> {
     if (!ids.length) return {};
 
+    const validIds = ids.filter(
+      (id) =>
+        typeof id === 'string' &&
+        /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(
+          id
+        )
+    );
+
+    if (!validIds.length) return {};
+
     const metadataRepository = getRepository(MetadataAlbum);
     const existingMetadata = await metadataRepository.find({
-      where: { mbAlbumId: In(ids) },
+      where: { mbAlbumId: In(validIds) },
       select: ['mbAlbumId', 'caaUrl', 'updatedAt'],
     });
+
+    const metadataMap = new Map(
+      existingMetadata.map((metadata) => [metadata.mbAlbumId, metadata])
+    );
 
     const results: Record<string, string | null> = {};
     const idsToFetch: string[] = [];
 
-    ids.forEach((id) => {
-      const metadata = existingMetadata.find((m) => m.mbAlbumId === id);
+    for (const id of validIds) {
+      const metadata = metadataMap.get(id);
 
       if (metadata?.caaUrl) {
-        results[id] = metadata.caaUrl;
+        Object.defineProperty(results, id, {
+          value: metadata.caaUrl,
+          enumerable: true,
+          writable: true,
+        });
       } else if (metadata && !this.isMetadataStale(metadata)) {
-        results[id] = null;
+        Object.defineProperty(results, id, {
+          value: null,
+          enumerable: true,
+          writable: true,
+        });
       } else {
         idsToFetch.push(id);
       }
-    });
+    }
 
     if (idsToFetch.length > 0) {
-      const batchPromises = idsToFetch.map((id) =>
-        this.fetchCoverArt(id)
-          .then((response) => {
-            const frontImage = response.images.find((img) => img.front);
-            results[id] = frontImage?.thumbnails?.[250] || null;
-            return true;
-          })
-          .catch(() => {
-            results[id] = null;
-            return false;
-          })
-      );
+      try {
+        const batchPromises = idsToFetch.map((id) =>
+          this.fetchCoverArt(id)
+            .then((response) => {
+              const frontImage = response.images.find((img) => img.front);
+              Object.defineProperty(results, id, {
+                value: frontImage?.thumbnails?.[250] || null,
+                enumerable: true,
+                writable: true,
+              });
+              return true;
+            })
+            .catch((error) => {
+              logger.error('Failed to fetch cover art', {
+                label: 'CoverArtArchive',
+                id,
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              Object.defineProperty(results, id, {
+                value: null,
+                enumerable: true,
+                writable: true,
+              });
+              return false;
+            })
+        );
 
-      await Promise.all(batchPromises);
+        await Promise.all(batchPromises);
+      } catch (error) {
+        logger.error('Failed to process cover art requests', {
+          label: 'CoverArtArchive',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
     }
 
     return results;

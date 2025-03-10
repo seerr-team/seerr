@@ -98,16 +98,27 @@ class MusicBrainz extends ExternalAPI {
     artistMbid: string;
     language?: string;
   }): Promise<{ title: string; url: string; content: string } | null> {
+    if (
+      !artistMbid ||
+      typeof artistMbid !== 'string' ||
+      !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(
+        artistMbid
+      )
+    ) {
+      throw new Error('Invalid MusicBrainz artist ID format');
+    }
+
     try {
-      const response = await fetch(
-        `https://musicbrainz.org/artist/${artistMbid}/wikipedia-extract`,
-        {
-          headers: {
-            Accept: 'application/json',
-            'Accept-Language': language,
-          },
-        }
-      );
+      const safeUrl = `https://musicbrainz.org/artist/${artistMbid}/wikipedia-extract`;
+
+      const response = await fetch(safeUrl, {
+        headers: {
+          Accept: 'application/json',
+          'Accept-Language': language,
+          'User-Agent':
+            'Jellyseerr/1.0.0 (https://github.com/Fallenbagel/jellyseerr)',
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -115,7 +126,7 @@ class MusicBrainz extends ExternalAPI {
 
       const data = await response.json();
       if (!data.wikipediaExtract || !data.wikipediaExtract.content) {
-        throw new Error('No Wikipedia extract found');
+        return null;
       }
 
       const cleanContent = purify.sanitize(data.wikipediaExtract.content, {
@@ -129,7 +140,11 @@ class MusicBrainz extends ExternalAPI {
         content: cleanContent.trim(),
       };
     } catch (error) {
-      throw new Error(`Error fetching Wikipedia extract: ${error.message}`);
+      throw new Error(
+        `[MusicBrainz] Failed to fetch Wikipedia extract: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
     }
   }
 

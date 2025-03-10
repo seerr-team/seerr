@@ -392,6 +392,31 @@ const PersonDetails = () => {
     async (albumType: string): Promise<void> => {
       if (!personId) return;
 
+      const parsedPersonId = parseInt(personId, 10);
+      if (
+        isNaN(parsedPersonId) ||
+        parsedPersonId <= 0 ||
+        parsedPersonId.toString() !== personId
+      ) {
+        return;
+      }
+
+      const validAlbumTypes = [
+        'Album',
+        'EP',
+        'Single',
+        'Live',
+        'Compilation',
+        'Remix',
+        'Soundtrack',
+        'Broadcast',
+        'Demo',
+        'Other',
+      ];
+      if (!validAlbumTypes.includes(albumType)) {
+        return;
+      }
+
       setAlbumTypes((prev) => ({
         ...prev,
         [albumType]: {
@@ -401,9 +426,14 @@ const PersonDetails = () => {
       }));
 
       try {
-        const pageSize = data?.artist?.typeCounts?.[albumType] || 100;
+        const pageSize = Math.min(
+          data?.artist?.typeCounts?.[albumType] || 100,
+          1000
+        );
         const response = await fetch(
-          `/api/v1/person/${personId}?albumType=${albumType}&pageSize=${pageSize}`
+          `/api/v1/person/${parsedPersonId}?albumType=${encodeURIComponent(
+            albumType
+          )}&pageSize=${pageSize}`
         );
 
         if (response.ok) {
@@ -434,7 +464,7 @@ const PersonDetails = () => {
             },
           }));
         }
-      } catch {
+      } catch (error) {
         setAlbumTypes((prev) => ({
           ...prev,
           [albumType]: {
