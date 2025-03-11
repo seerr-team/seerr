@@ -138,7 +138,7 @@ class TmdbPersonMapper extends ExternalAPI {
       const cleanArtistName = artistName
         .split(/(?:(?:feat|ft)\.?\s+|&\s*|,\s+)/i)[0]
         .trim()
-        .replace(/['′']/g, "'");
+        .replace(/['′]/g, "'");
 
       const searchResults = await this.get<TmdbSearchPersonResponse>(
         '/search/person',
@@ -156,7 +156,7 @@ class TmdbPersonMapper extends ExternalAPI {
           .toLowerCase()
           .normalize('NFKD')
           .replace(/[\u0300-\u036f]/g, '')
-          .replace(/['′']/g, "'")
+          .replace(/['′]/g, "'")
           .replace(/[^a-z0-9\s]/g, '')
           .trim();
       };
