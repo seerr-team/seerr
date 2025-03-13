@@ -115,7 +115,11 @@ class EmailAgent
           body = `A request for the following ${mediaType} ${
             is4k ? 'in 4K ' : ''
           }failed to be added to ${
-            payload.media?.mediaType === MediaType.MOVIE ? 'Radarr' : 'Sonarr'
+            payload.media?.mediaType === MediaType.MOVIE
+              ? 'Radarr'
+              : payload.media?.mediaType === MediaType.TV
+              ? 'Sonarr'
+              : 'Lidarr'
           }:`;
           break;
       }
