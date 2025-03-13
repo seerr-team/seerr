@@ -160,6 +160,9 @@ class CoverArtArchive extends ExternalAPI {
 
     if (!validIds.length) return {};
 
+    const resultsMap = new Map<string, string | null>();
+    const idsToFetch: string[] = [];
+
     const metadataRepository = getRepository(MetadataAlbum);
     const existingMetadata = await metadataRepository.find({
       where: { mbAlbumId: In(validIds) },
@@ -170,24 +173,13 @@ class CoverArtArchive extends ExternalAPI {
       existingMetadata.map((metadata) => [metadata.mbAlbumId, metadata])
     );
 
-    const results: Record<string, string | null> = {};
-    const idsToFetch: string[] = [];
-
     for (const id of validIds) {
       const metadata = metadataMap.get(id);
 
       if (metadata?.caaUrl) {
-        Object.defineProperty(results, id, {
-          value: metadata.caaUrl,
-          enumerable: true,
-          writable: true,
-        });
+        resultsMap.set(id, metadata.caaUrl);
       } else if (metadata && !this.isMetadataStale(metadata)) {
-        Object.defineProperty(results, id, {
-          value: null,
-          enumerable: true,
-          writable: true,
-        });
+        resultsMap.set(id, null);
       } else {
         idsToFetch.push(id);
       }
@@ -199,11 +191,7 @@ class CoverArtArchive extends ExternalAPI {
           this.fetchCoverArt(id)
             .then((response) => {
               const frontImage = response.images.find((img) => img.front);
-              Object.defineProperty(results, id, {
-                value: frontImage?.thumbnails?.[250] || null,
-                enumerable: true,
-                writable: true,
-              });
+              resultsMap.set(id, frontImage?.thumbnails?.[250] || null);
               return true;
             })
             .catch((error) => {
@@ -212,22 +200,23 @@ class CoverArtArchive extends ExternalAPI {
                 id,
                 error: error instanceof Error ? error.message : 'Unknown error',
               });
-              Object.defineProperty(results, id, {
-                value: null,
-                enumerable: true,
-                writable: true,
-              });
+              resultsMap.set(id, null);
               return false;
             })
         );
 
-        await Promise.all(batchPromises);
+        await Promise.allSettled(batchPromises);
       } catch (error) {
         logger.error('Failed to process cover art requests', {
           label: 'CoverArtArchive',
           error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
+    }
+
+    const results: Record<string, string | null> = {};
+    for (const [key, value] of resultsMap.entries()) {
+      results[key] = value;
     }
 
     return results;
