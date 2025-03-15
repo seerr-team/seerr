@@ -83,16 +83,7 @@ export interface RadarrSettings extends DVRSettings {
   minimumAvailability: string;
 }
 
-export interface LidarrSettings extends DVRSettings {
-  url: string;
-  apiKey: string;
-  activeProfileId: number;
-  activeDirectory: string;
-  isDefault: boolean;
-  is4k: boolean;
-  tagRequests: boolean;
-  preventSearch: boolean;
-}
+export type LidarrSettings = DVRSettings;
 
 export interface SonarrSettings extends DVRSettings {
   seriesType: 'standard' | 'daily' | 'anime';
