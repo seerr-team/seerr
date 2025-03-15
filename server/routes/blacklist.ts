@@ -12,13 +12,18 @@ import { z } from 'zod';
 
 const blacklistRoutes = Router();
 
-export const blacklistAdd = z.object({
-  tmdbId: z.coerce.number().optional(),
-  mbId: z.string().optional(),
-  mediaType: z.nativeEnum(MediaType),
-  title: z.coerce.string().optional(),
-  user: z.coerce.number(),
-});
+export const blacklistAdd = z
+  .object({
+    mediaType: z.nativeEnum(MediaType),
+    title: z.coerce.string().optional(),
+    user: z.coerce.number(),
+  })
+  .and(
+    z.union([
+      z.object({ tmdbId: z.coerce.number() }),
+      z.object({ mbId: z.coerce.string() }),
+    ])
+  );
 
 const blacklistGet = z.object({
   take: z.coerce.number().int().positive().default(25),
