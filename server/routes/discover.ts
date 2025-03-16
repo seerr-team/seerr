@@ -1294,16 +1294,17 @@ discoverRoutes.get('/music/artists', async (req, res, next) => {
       };
     }
 
-    const [artistImageResults] = await Promise.all([
+    const responses = await Promise.allSettled([
       artistsNeedingImages.length > 0
-        ? (theAudioDb.batchGetArtistImages(
-            artistsNeedingImages
-          ) as Promise<ArtistImageResults>)
-        : ({} as ArtistImageResults),
+        ? theAudioDb.batchGetArtistImages(artistsNeedingImages)
+        : Promise.resolve({} as ArtistImageResults),
       artistsForPersonMapping.length > 0
         ? personMapper.batchGetMappings(artistsForPersonMapping)
-        : {},
+        : Promise.resolve({}),
     ]);
+
+    const artistImageResults =
+      responses[0].status === 'fulfilled' ? responses[0].value : {};
 
     let updatedArtistMetadata = artistMetadata;
     if (artistsForPersonMapping.length > 0 || artistsNeedingImages.length > 0) {

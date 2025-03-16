@@ -59,7 +59,7 @@ musicRoutes.get('/:id', async (req, res, next) => {
       metadataArtist,
       trackArtistMetadata,
       artistWikipedia,
-    ] = await Promise.all([
+    ] = await Promise.allSettled([
       getRepository(MetadataAlbum).findOne({
         where: { mbAlbumId: req.params.id },
       }),
@@ -81,6 +81,17 @@ musicRoutes.get('/:id', async (req, res, next) => {
         : Promise.resolve(null),
     ]);
 
+    const resolvedMetadataAlbum =
+      metadataAlbum.status === 'fulfilled' ? metadataAlbum.value : null;
+    const resolvedMetadataArtist =
+      metadataArtist.status === 'fulfilled' ? metadataArtist.value : undefined;
+    const resolvedTrackArtistMetadata =
+      trackArtistMetadata.status === 'fulfilled'
+        ? trackArtistMetadata.value
+        : [];
+    const resolvedArtistWikipedia =
+      artistWikipedia.status === 'fulfilled' ? artistWikipedia.value : null;
+
     const trackArtistsToMap = albumDetails.mediums
       .flatMap((medium) => medium.tracks)
       .flatMap((track) =>
@@ -88,7 +99,7 @@ musicRoutes.get('/:id', async (req, res, next) => {
           .filter((artist) => artist.artist_mbid)
           .filter(
             (artist) =>
-              !trackArtistMetadata.some(
+              !resolvedTrackArtistMetadata.some(
                 (m) => m.mbArtistId === artist.artist_mbid && m.tmdbPersonId
               )
           )
@@ -98,44 +109,54 @@ musicRoutes.get('/:id', async (req, res, next) => {
           }))
       );
 
-    const [artistImages, personMappingResult, updatedArtistMetadata] =
-      await Promise.all([
-        artistId && !metadataArtist?.tadbThumb && !metadataArtist?.tadbCover
-          ? theAudioDb.getArtistImages(artistId)
-          : Promise.resolve(null),
-        artistId && isPerson && !metadataArtist?.tmdbPersonId
-          ? personMapper
-              .getMapping(
-                artistId,
-                albumDetails.release_group_metadata.artist.artists[0].name
-              )
-              .catch(() => null)
-          : Promise.resolve(null),
-        trackArtistsToMap.length > 0
-          ? personMapper.batchGetMappings(trackArtistsToMap).then(() =>
-              getRepository(MetadataArtist).find({
-                where: { mbArtistId: In(trackArtistIds) },
-              })
+    const responses = await Promise.allSettled([
+      artistId &&
+      !resolvedMetadataArtist?.tadbThumb &&
+      !resolvedMetadataArtist?.tadbCover
+        ? theAudioDb.getArtistImages(artistId)
+        : Promise.resolve(null),
+      artistId && isPerson && !resolvedMetadataArtist?.tmdbPersonId
+        ? personMapper
+            .getMapping(
+              artistId,
+              albumDetails.release_group_metadata.artist.artists[0].name
             )
-          : Promise.resolve(trackArtistMetadata),
-      ]);
+            .catch(() => null)
+        : Promise.resolve(null),
+      trackArtistsToMap.length > 0
+        ? personMapper.batchGetMappings(trackArtistsToMap).then(() =>
+            getRepository(MetadataArtist).find({
+              where: { mbArtistId: In(trackArtistIds) },
+            })
+          )
+        : Promise.resolve(resolvedTrackArtistMetadata),
+    ]);
+
+    const artistImages =
+      responses[0].status === 'fulfilled' ? responses[0].value : null;
+    const personMappingResult =
+      responses[1].status === 'fulfilled' ? responses[1].value : null;
+    const updatedArtistMetadata =
+      responses[2].status === 'fulfilled'
+        ? responses[2].value
+        : resolvedTrackArtistMetadata;
 
     const updatedMetadataArtist =
       personMappingResult && artistId
         ? await getRepository(MetadataArtist).findOne({
             where: { mbArtistId: artistId },
           })
-        : metadataArtist;
+        : resolvedMetadataArtist;
 
     const mappedDetails = mapMusicDetails(albumDetails, media, onUserWatchlist);
     const finalTrackArtistMetadata =
-      updatedArtistMetadata || trackArtistMetadata;
+      updatedArtistMetadata || resolvedTrackArtistMetadata;
 
     return res.status(200).json({
       ...mappedDetails,
-      posterPath: metadataAlbum?.caaUrl ?? null,
-      needsCoverArt: !metadataAlbum?.caaUrl,
-      artistWikipedia,
+      posterPath: resolvedMetadataAlbum?.caaUrl ?? null,
+      needsCoverArt: !resolvedMetadataAlbum?.caaUrl,
+      artistWikipedia: resolvedArtistWikipedia,
       artistThumb:
         updatedMetadataArtist?.tmdbThumb ??
         updatedMetadataArtist?.tadbThumb ??
@@ -202,15 +223,20 @@ musicRoutes.get('/:id/artist', async (req, res, next) => {
       });
     }
 
-    const [artistDetails, cachedTheAudioDb, metadataArtist] = await Promise.all(
-      [
-        listenbrainzApi.getArtist(artistData.artist_mbid),
-        theAudioDb.getArtistImagesFromCache(artistData.artist_mbid),
-        metadataArtistRepository.findOne({
-          where: { mbArtistId: artistData.artist_mbid },
-        }),
-      ]
-    );
+    const responses = await Promise.allSettled([
+      listenbrainzApi.getArtist(artistData.artist_mbid),
+      theAudioDb.getArtistImagesFromCache(artistData.artist_mbid),
+      metadataArtistRepository.findOne({
+        where: { mbArtistId: artistData.artist_mbid },
+      }),
+    ]);
+
+    const artistDetails =
+      responses[0].status === 'fulfilled' ? responses[0].value : null;
+    const cachedTheAudioDb =
+      responses[1].status === 'fulfilled' ? responses[1].value : null;
+    const metadataArtist =
+      responses[2].status === 'fulfilled' ? responses[2].value : null;
 
     if (!artistDetails) {
       return res.status(404).json({ status: 404, message: 'Artist not found' });
@@ -229,18 +255,24 @@ musicRoutes.get('/:id/artist', async (req, res, next) => {
     const similarArtistIds =
       artistDetails.similarArtists?.artists?.map((a) => a.artist_mbid) ?? [];
 
-    const [relatedMedia, albumMetadata, similarArtistMetadata] =
-      await Promise.all([
-        Media.getRelatedMedia(req.user, releaseGroupIds),
-        metadataAlbumRepository.find({
-          where: { mbAlbumId: In(releaseGroupIds) },
-        }),
-        similarArtistIds.length > 0
-          ? metadataArtistRepository.find({
-              where: { mbArtistId: In(similarArtistIds) },
-            })
-          : Promise.resolve([]),
-      ]);
+    const mediaResponses = await Promise.allSettled([
+      Media.getRelatedMedia(req.user, releaseGroupIds),
+      metadataAlbumRepository.find({
+        where: { mbAlbumId: In(releaseGroupIds) },
+      }),
+      similarArtistIds.length > 0
+        ? metadataArtistRepository.find({
+            where: { mbArtistId: In(similarArtistIds) },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const relatedMedia =
+      mediaResponses[0].status === 'fulfilled' ? mediaResponses[0].value : [];
+    const albumMetadata =
+      mediaResponses[1].status === 'fulfilled' ? mediaResponses[1].value : [];
+    const similarArtistMetadata =
+      mediaResponses[2].status === 'fulfilled' ? mediaResponses[2].value : [];
 
     const albumMetadataMap = new Map(
       albumMetadata.map((metadata) => [metadata.mbAlbumId, metadata])
@@ -272,24 +304,34 @@ musicRoutes.get('/:id/artist', async (req, res, next) => {
       { artistThumb: string | null; artistBackground: string | null }
     >;
 
-    const [artistImageResults, updatedArtistMetadata, artistImagesResult] =
-      await Promise.all([
-        artistsNeedingImages.length > 0
-          ? theAudioDb.batchGetArtistImages(artistsNeedingImages)
-          : ({} as ArtistImageResults),
-        personArtists.length > 0
-          ? personMapper.batchGetMappings(personArtists).then(() =>
-              metadataArtistRepository.find({
-                where: { mbArtistId: In(similarArtistIds) },
-              })
-            )
-          : Promise.resolve(similarArtistMetadata),
-        !cachedTheAudioDb &&
-        !metadataArtist?.tadbThumb &&
-        !metadataArtist?.tadbCover
-          ? theAudioDb.getArtistImages(artistData.artist_mbid)
-          : Promise.resolve(null),
-      ]);
+    const artistResponses = await Promise.allSettled([
+      artistsNeedingImages.length > 0
+        ? theAudioDb.batchGetArtistImages(artistsNeedingImages)
+        : ({} as ArtistImageResults),
+      personArtists.length > 0
+        ? personMapper.batchGetMappings(personArtists).then(() =>
+            metadataArtistRepository.find({
+              where: { mbArtistId: In(similarArtistIds) },
+            })
+          )
+        : Promise.resolve(similarArtistMetadata),
+      !cachedTheAudioDb &&
+      !metadataArtist?.tadbThumb &&
+      !metadataArtist?.tadbCover
+        ? theAudioDb.getArtistImages(artistData.artist_mbid)
+        : Promise.resolve(null),
+    ]);
+
+    const artistImageResults =
+      artistResponses[0].status === 'fulfilled' ? artistResponses[0].value : {};
+    const updatedArtistMetadata =
+      artistResponses[1].status === 'fulfilled'
+        ? artistResponses[1].value
+        : similarArtistMetadata;
+    const artistImagesResult =
+      artistResponses[2].status === 'fulfilled'
+        ? artistResponses[2].value
+        : null;
 
     const relatedMediaMap = new Map(
       relatedMedia.map((media) => [media.mbId, media])

@@ -83,23 +83,31 @@ artistRoutes.get('/:id', async (req, res, next) => {
 
     const mbIds = releaseGroupsToProcess.map((rg) => rg.mbid);
 
-    const [artistWikipedia, artistImages, relatedMedia, albumMetadata] =
-      await Promise.all([
-        musicbrainz
-          .getArtistWikipediaExtract({
-            artistMbid: req.params.id,
-            language: req.locale,
-          })
-          .catch(() => null),
-        !metadataArtist?.tadbThumb && !metadataArtist?.tadbCover
-          ? theAudioDb.getArtistImages(req.params.id)
-          : theAudioDb.getArtistImagesFromCache(req.params.id),
-        Media.getRelatedMedia(req.user, mbIds),
-        getRepository(MetadataAlbum).find({
-          where: { mbAlbumId: In(mbIds) },
-          cache: true,
-        }),
-      ]);
+    const responses = await Promise.allSettled([
+      musicbrainz
+        .getArtistWikipediaExtract({
+          artistMbid: req.params.id,
+          language: req.locale,
+        })
+        .catch(() => null),
+      !metadataArtist?.tadbThumb && !metadataArtist?.tadbCover
+        ? theAudioDb.getArtistImages(req.params.id)
+        : theAudioDb.getArtistImagesFromCache(req.params.id),
+      Media.getRelatedMedia(req.user, mbIds),
+      getRepository(MetadataAlbum).find({
+        where: { mbAlbumId: In(mbIds) },
+        cache: true,
+      }),
+    ]);
+
+    const artistWikipedia =
+      responses[0].status === 'fulfilled' ? responses[0].value : null;
+    const artistImages =
+      responses[1].status === 'fulfilled' ? responses[1].value : null;
+    const relatedMedia =
+      responses[2].status === 'fulfilled' ? responses[2].value : [];
+    const albumMetadata =
+      responses[3].status === 'fulfilled' ? responses[3].value : [];
 
     const metadataMap = new Map(
       albumMetadata.map((metadata) => [metadata.mbAlbumId, metadata])

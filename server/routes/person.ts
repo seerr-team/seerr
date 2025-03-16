@@ -96,18 +96,24 @@ personRoutes.get('/:id', async (req, res, next) => {
 
         const allReleaseGroupIds = releaseGroupsToProcess.map((rg) => rg.mbid);
 
-        const [artistImagesPromise, relatedMedia, albumMetadata] =
-          await Promise.all([
-            !existingMetadata.tadbThumb && !existingMetadata.tadbCover
-              ? theAudioDb.getArtistImages(existingMetadata.mbArtistId)
-              : Promise.resolve(null),
-            Media.getRelatedMedia(req.user, allReleaseGroupIds),
-            getRepository(MetadataAlbum).find({
-              where: { mbAlbumId: In(allReleaseGroupIds) },
-              select: ['mbAlbumId', 'caaUrl'],
-              cache: true,
-            }),
-          ]);
+        const responses = await Promise.allSettled([
+          !existingMetadata.tadbThumb && !existingMetadata.tadbCover
+            ? theAudioDb.getArtistImages(existingMetadata.mbArtistId)
+            : Promise.resolve(null),
+          Media.getRelatedMedia(req.user, allReleaseGroupIds),
+          getRepository(MetadataAlbum).find({
+            where: { mbAlbumId: In(allReleaseGroupIds) },
+            select: ['mbAlbumId', 'caaUrl'],
+            cache: true,
+          }),
+        ]);
+
+        const artistImagesPromise =
+          responses[0].status === 'fulfilled' ? responses[0].value : null;
+        const relatedMedia =
+          responses[1].status === 'fulfilled' ? responses[1].value : [];
+        const albumMetadata =
+          responses[2].status === 'fulfilled' ? responses[2].value : [];
 
         if (artistImagesPromise) {
           existingMetadata.tadbThumb = artistImagesPromise.artistThumb;

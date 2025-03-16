@@ -17,7 +17,6 @@ import { In } from 'typeorm';
 
 const searchRoutes = Router();
 
-const ITEMS_PER_PAGE = 20;
 searchRoutes.get('/', async (req, res, next) => {
   const queryString = req.query.query as string;
   const page = Number(req.query.page) || 1;
@@ -42,7 +41,7 @@ searchRoutes.get('/', async (req, res, next) => {
       const theAudioDb = TheAudioDb.getInstance();
       const personMapper = TmdbPersonMapper.getInstance();
 
-      const [tmdbResults, albumResults, artistResults] = await Promise.all([
+      const responses = await Promise.allSettled([
         tmdb.searchMulti({
           query: queryString,
           page,
@@ -50,13 +49,22 @@ searchRoutes.get('/', async (req, res, next) => {
         }),
         musicbrainz.searchAlbum({
           query: queryString,
-          limit: ITEMS_PER_PAGE,
+          limit: 20,
         }),
         musicbrainz.searchArtist({
           query: queryString,
-          limit: ITEMS_PER_PAGE,
+          limit: 20,
         }),
       ]);
+
+      const tmdbResults =
+        responses[0].status === 'fulfilled'
+          ? responses[0].value
+          : { page: 1, results: [], total_pages: 1, total_results: 0 };
+      const albumResults =
+        responses[1].status === 'fulfilled' ? responses[1].value : [];
+      const artistResults =
+        responses[2].status === 'fulfilled' ? responses[2].value : [];
 
       const personIds = tmdbResults.results
         .filter(
@@ -162,7 +170,7 @@ searchRoutes.get('/', async (req, res, next) => {
         { artistThumb: string | null; artistBackground: string | null }
       >;
 
-      const [personMappingResults, artistImageResults] = await Promise.all([
+      const externalApiResponses = await Promise.allSettled([
         artistsNeedingMapping.length > 0
           ? personMapper.batchGetMappings(artistsNeedingMapping)
           : ({} as PersonMappingResult),
@@ -170,6 +178,15 @@ searchRoutes.get('/', async (req, res, next) => {
           ? theAudioDb.batchGetArtistImages(artistsNeedingImages)
           : ({} as ArtistImageResult),
       ]);
+
+      const personMappingResults =
+        externalApiResponses[0].status === 'fulfilled'
+          ? externalApiResponses[0].value
+          : ({} as PersonMappingResult);
+      const artistImageResults =
+        externalApiResponses[1].status === 'fulfilled'
+          ? externalApiResponses[1].value
+          : ({} as ArtistImageResult);
 
       let updatedArtistsMetadataMap = artistsMetadataMap;
       if (
@@ -244,7 +261,7 @@ searchRoutes.get('/', async (req, res, next) => {
       const totalItems = tmdbResults.total_results + musicResults.length;
       const totalPages = Math.max(
         tmdbResults.total_pages,
-        Math.ceil(totalItems / ITEMS_PER_PAGE)
+        Math.ceil(totalItems / 20)
       );
 
       const combinedResults =
