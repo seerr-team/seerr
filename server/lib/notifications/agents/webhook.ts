@@ -177,9 +177,26 @@ class WebhookAgent
       subject: payload.subject,
     });
 
+    let webhookUrl = settings.options.webhookUrl;
+
+    if (settings.options.supportPlaceholders) {
+      const key = 'requestedBy_username';
+      const keymapValue = KeyMap[key];
+      const placeholderValue =
+        type === Notification.TEST_NOTIFICATION
+          ? 'test'
+          : typeof keymapValue === 'function'
+          ? keymapValue(payload, type)
+          : get(payload, keymapValue) || 'test';
+      webhookUrl = webhookUrl.replace(
+        `{{${key}}}`,
+        encodeURIComponent(placeholderValue)
+      );
+    }
+
     try {
       await axios.post(
-        settings.options.webhookUrl,
+        webhookUrl,
         this.buildPayload(type, payload),
         settings.options.authHeader
           ? {

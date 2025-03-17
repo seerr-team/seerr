@@ -1451,6 +1451,9 @@ components:
               type: string
             jsonPayload:
               type: string
+            supportPlaceholders:
+              type: boolean
+              example: false
     TelegramSettings:
       type: object
       properties:

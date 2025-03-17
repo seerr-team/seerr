@@ -1,6 +1,7 @@
 import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
+import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -14,7 +15,7 @@ import { Field, Form, Formik } from 'formik';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useIntl } from 'react-intl';
+import { FormattedMessage, useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
@@ -73,6 +74,10 @@ const messages = defineMessages(
   {
     agentenabled: 'Enable Agent',
     webhookUrl: 'Webhook URL',
+    webhookUrlTip:
+      'Test Notification URL is set to {testUrl} instead of the actual webhook URL.',
+    supportPlaceholders: 'Support URL Placeholders',
+    supportPlaceholdersTip: 'Available Placeholders: {placeholders}',
     authheader: 'Authorization Header',
     validationJsonPayloadRequired: 'You must provide a valid JSON payload',
     webhooksettingssaved: 'Webhook notification settings saved successfully!',
@@ -93,6 +98,7 @@ const NotificationsWebhook = () => {
   const intl = useIntl();
   const { addToast, removeToast } = useToasts();
   const [isTesting, setIsTesting] = useState(false);
+  const placeholders = ['{{requestedBy_username}}'];
   const {
     data,
     error,
@@ -111,8 +117,25 @@ const NotificationsWebhook = () => {
       .test(
         'valid-url',
         intl.formatMessage(messages.validationWebhookUrl),
-        isValidURL
+        function (value) {
+          const { supportPlaceholders } = this.parent;
+
+          // allow placeholder syntax through
+          if (
+            supportPlaceholders &&
+            typeof value === 'string' &&
+            value.includes('{{')
+          ) {
+            return true;
+          }
+
+          // otherwise fall back to the built‑in URL check
+          return isValidURL(value);
+        }
       ),
+
+    supportPlaceholders: Yup.boolean(),
+
     jsonPayload: Yup.string()
       .when('enabled', {
         is: true,
@@ -147,6 +170,7 @@ const NotificationsWebhook = () => {
         webhookUrl: data.options.webhookUrl,
         jsonPayload: data.options.jsonPayload,
         authHeader: data.options.authHeader,
+        supportPlaceholders: data.options.supportPlaceholders ?? false,
       }}
       validationSchema={NotificationsWebhookSchema}
       onSubmit={async (values) => {
@@ -158,6 +182,7 @@ const NotificationsWebhook = () => {
               webhookUrl: values.webhookUrl,
               jsonPayload: JSON.stringify(values.jsonPayload),
               authHeader: values.authHeader,
+              supportPlaceholders: values.supportPlaceholders,
             },
           });
           addToast(intl.formatMessage(messages.webhooksettingssaved), {
@@ -215,6 +240,7 @@ const NotificationsWebhook = () => {
                 webhookUrl: values.webhookUrl,
                 jsonPayload: JSON.stringify(values.jsonPayload),
                 authHeader: values.authHeader,
+                supportPlaceholders: values.supportPlaceholders ?? false,
               },
             });
 
@@ -250,9 +276,52 @@ const NotificationsWebhook = () => {
               </div>
             </div>
             <div className="form-row">
+              <label htmlFor="supportPlaceholders" className="checkbox-label">
+                <span className="mr-2">
+                  {intl.formatMessage(messages.supportPlaceholders)}
+                </span>
+                <SettingsBadge badgeType="experimental" />
+                <span className="label-tip">
+                  <FormattedMessage
+                    {...messages.supportPlaceholdersTip}
+                    values={{
+                      placeholders: (
+                        <ul className="ml-4 list-disc">
+                          {placeholders.map((placeholder, index) => (
+                            <li key={index}>
+                              <code className="bg-opacity-50">
+                                {placeholder}
+                              </code>
+                            </li>
+                          ))}
+                        </ul>
+                      ),
+                    }}
+                  />
+                </span>
+              </label>
+              <div className="form-input-area">
+                <Field
+                  type="checkbox"
+                  id="supportPlaceholders"
+                  name="supportPlaceholders"
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setFieldValue('supportPlaceholders', e.target.checked)
+                  }
+                />
+              </div>
+            </div>
+            <div className="form-row">
               <label htmlFor="webhookUrl" className="text-label">
                 {intl.formatMessage(messages.webhookUrl)}
                 <span className="label-required">*</span>
+                {values.supportPlaceholders && (
+                  <div className="label-tip">
+                    {intl.formatMessage(messages.webhookUrlTip, {
+                      testUrl: '/test',
+                    })}
+                  </div>
+                )}
               </label>
               <div className="form-input-area">
                 <div className="form-input-field">
