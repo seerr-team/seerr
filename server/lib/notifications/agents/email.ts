@@ -141,7 +141,11 @@ class EmailAgent
           timestamp: new Date().toTimeString(),
           requestedBy: payload.request.requestedBy.displayName,
           actionUrl: applicationUrl
-            ? `${applicationUrl}/${payload.media?.mediaType}/${payload.media?.tmdbId}`
+            ? `${applicationUrl}/${payload.media?.mediaType}/${
+                payload.media?.mediaType === MediaType.MUSIC
+                  ? payload.media?.mbId
+                  : payload.media?.tmdbId
+              }`
             : undefined,
           applicationUrl,
           applicationTitle,
