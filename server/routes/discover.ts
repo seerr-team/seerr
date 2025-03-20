@@ -1112,7 +1112,7 @@ discoverRoutes.get('/music/albums', async (req, res, next) => {
     const topAlbumsData = await listenbrainz.getTopAlbums({
       offset,
       count: pageSize,
-      range: 'month',
+      range: 'week',
     });
 
     const mbIds = topAlbumsData.payload.release_groups
@@ -1235,7 +1235,7 @@ discoverRoutes.get('/music/artists', async (req, res, next) => {
     const topArtistsData = await listenbrainz.getTopArtists({
       offset,
       count: pageSize,
-      range: 'month',
+      range: 'week',
     });
 
     const mbIds = topArtistsData.payload.artists
