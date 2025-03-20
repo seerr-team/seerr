@@ -18,8 +18,8 @@ const musicRoutes = Router();
 musicRoutes.get('/:id', async (req, res, next) => {
   const listenbrainz = new ListenBrainzAPI();
   const musicbrainz = new MusicBrainz();
-  const personMapper = TmdbPersonMapper.getInstance();
-  const theAudioDb = TheAudioDb.getInstance();
+  const personMapper = new TmdbPersonMapper();
+  const theAudioDb = new TheAudioDb();
 
   try {
     const [albumDetails, media, onUserWatchlist] = await Promise.all([
@@ -203,8 +203,8 @@ musicRoutes.get('/:id', async (req, res, next) => {
 musicRoutes.get('/:id/artist', async (req, res, next) => {
   try {
     const listenbrainzApi = new ListenBrainzAPI();
-    const personMapper = TmdbPersonMapper.getInstance();
-    const theAudioDb = TheAudioDb.getInstance();
+    const personMapper = new TmdbPersonMapper();
+    const theAudioDb = new TheAudioDb();
     const metadataAlbumRepository = getRepository(MetadataAlbum);
     const metadataArtistRepository = getRepository(MetadataArtist);
 

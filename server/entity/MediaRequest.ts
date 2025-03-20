@@ -56,6 +56,7 @@ export class MediaRequest {
     options: MediaRequestOptions = {}
   ): Promise<MediaRequest> {
     const tmdb = new TheMovieDb();
+    const listenBrainz = new ListenBrainzAPI();
     const mediaRepository = getRepository(Media);
     const requestRepository = getRepository(MediaRequest);
     const userRepository = getRepository(User);
@@ -135,7 +136,7 @@ export class MediaRequest {
         ? await tmdb.getMovie({ movieId: requestBody.mediaId })
         : requestBody.mediaType === MediaType.TV
         ? await tmdb.getTvShow({ tvId: requestBody.mediaId })
-        : await new ListenBrainzAPI().getAlbum(requestBody.mediaId.toString());
+        : await listenBrainz.getAlbum(requestBody.mediaId.toString());
 
     let media = await mediaRepository.findOne({
       where:
@@ -816,7 +817,7 @@ export class MediaRequest {
   ) {
     const tmdb = new TheMovieDb();
     const listenbrainz = new ListenBrainzAPI();
-    const coverArt = CoverArtArchive.getInstance();
+    const coverArt = new CoverArtArchive();
     const musicbrainz = new MusicBrainz();
 
     try {

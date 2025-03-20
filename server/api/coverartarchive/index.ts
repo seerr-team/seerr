@@ -7,18 +7,10 @@ import { In } from 'typeorm';
 import type { CoverArtResponse } from './interfaces';
 
 class CoverArtArchive extends ExternalAPI {
-  private static instance: CoverArtArchive;
   private readonly CACHE_TTL = 43200;
   private readonly STALE_THRESHOLD = 30 * 24 * 60 * 60 * 1000;
 
-  public static getInstance(): CoverArtArchive {
-    if (!CoverArtArchive.instance) {
-      CoverArtArchive.instance = new CoverArtArchive();
-    }
-    return CoverArtArchive.instance;
-  }
-
-  private constructor() {
+  constructor() {
     super(
       'https://coverartarchive.org',
       {},

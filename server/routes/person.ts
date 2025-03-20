@@ -19,7 +19,7 @@ const personRoutes = Router();
 personRoutes.get('/:id', async (req, res, next) => {
   const tmdb = new TheMovieDb();
   const listenbrainz = new ListenBrainzAPI();
-  const theAudioDb = TheAudioDb.getInstance();
+  const theAudioDb = new TheAudioDb();
 
   const page = Number(req.query.page) || 1;
   const pageSize = Number(req.query.pageSize) || 20;

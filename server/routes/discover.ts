@@ -1223,8 +1223,8 @@ discoverRoutes.get('/music/albums', async (req, res, next) => {
 
 discoverRoutes.get('/music/artists', async (req, res, next) => {
   const listenbrainz = new ListenBrainzAPI();
-  const personMapper = TmdbPersonMapper.getInstance();
-  const theAudioDb = TheAudioDb.getInstance();
+  const personMapper = new TmdbPersonMapper();
+  const theAudioDb = new TheAudioDb();
 
   try {
     const page = Number(req.query.page) || 1;

@@ -15,7 +15,7 @@ const artistRoutes = Router();
 artistRoutes.get('/:id', async (req, res, next) => {
   const listenbrainz = new ListenBrainzAPI();
   const musicbrainz = new MusicBrainz();
-  const theAudioDb = TheAudioDb.getInstance();
+  const theAudioDb = new TheAudioDb();
 
   const page = Number(req.query.page) || 1;
   const pageSize = Number(req.query.pageSize) || 20;

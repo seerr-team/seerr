@@ -15,12 +15,11 @@ interface SearchPersonOptions {
 }
 
 class TmdbPersonMapper extends ExternalAPI {
-  private static instance: TmdbPersonMapper;
   private readonly CACHE_TTL = 43200;
   private readonly STALE_THRESHOLD = 30 * 24 * 60 * 60 * 1000;
   private tmdb: TheMovieDb;
 
-  private constructor() {
+  constructor() {
     super(
       'https://api.themoviedb.org/3',
       {
@@ -35,13 +34,6 @@ class TmdbPersonMapper extends ExternalAPI {
       }
     );
     this.tmdb = new TheMovieDb();
-  }
-
-  public static getInstance(): TmdbPersonMapper {
-    if (!TmdbPersonMapper.instance) {
-      TmdbPersonMapper.instance = new TmdbPersonMapper();
-    }
-    return TmdbPersonMapper.instance;
   }
 
   private isMetadataStale(metadata: MetadataArtist | null): boolean {

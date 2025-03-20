@@ -27,7 +27,7 @@ export class IssueCommentSubscriber
     let image = '';
     const tmdb = new TheMovieDb();
     const listenbrainz = new ListenBrainzAPI();
-    const coverArt = CoverArtArchive.getInstance();
+    const coverArt = new CoverArtArchive();
 
     try {
       const issue = (

@@ -7,7 +7,6 @@ import { In } from 'typeorm';
 import type { TadbArtistResponse } from './interfaces';
 
 class TheAudioDb extends ExternalAPI {
-  private static instance: TheAudioDb;
   private readonly apiKey = '195003';
   private readonly CACHE_TTL = 43200;
   private readonly STALE_THRESHOLD = 30 * 24 * 60 * 60 * 1000;
@@ -24,13 +23,6 @@ class TheAudioDb extends ExternalAPI {
         },
       }
     );
-  }
-
-  public static getInstance(): TheAudioDb {
-    if (!TheAudioDb.instance) {
-      TheAudioDb.instance = new TheAudioDb();
-    }
-    return TheAudioDb.instance;
   }
 
   private isMetadataStale(metadata: MetadataArtist | null): boolean {

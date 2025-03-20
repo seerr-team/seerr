@@ -5,7 +5,7 @@ import { Router } from 'express';
 const coverArtRoutes = Router();
 
 coverArtRoutes.get('/batch/:ids', async (req, res) => {
-  const coverArtArchive = CoverArtArchive.getInstance();
+  const coverArtArchive = new CoverArtArchive();
   const ids = (req.params.ids || '').split(',').filter(Boolean);
 
   if (!ids.length) {

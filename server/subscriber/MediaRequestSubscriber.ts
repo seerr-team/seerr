@@ -201,7 +201,7 @@ export class MediaRequestSubscriber
       }
 
       const listenbrainz = new ListenBrainzAPI();
-      const coverArt = CoverArtArchive.getInstance();
+      const coverArt = new CoverArtArchive();
       const musicbrainz = new MusicBrainz();
 
       try {

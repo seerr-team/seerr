@@ -26,7 +26,7 @@ export class IssueSubscriber implements EntitySubscriberInterface<Issue> {
     let image = '';
     const tmdb = new TheMovieDb();
     const listenbrainz = new ListenBrainzAPI();
-    const coverArt = CoverArtArchive.getInstance();
+    const coverArt = new CoverArtArchive();
 
     try {
       if (entity.media.mediaType === MediaType.MOVIE) {

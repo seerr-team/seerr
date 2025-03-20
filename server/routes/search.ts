@@ -38,8 +38,8 @@ searchRoutes.get('/', async (req, res, next) => {
     } else {
       const tmdb = new TheMovieDb();
       const musicbrainz = new MusicBrainz();
-      const theAudioDb = TheAudioDb.getInstance();
-      const personMapper = TmdbPersonMapper.getInstance();
+      const theAudioDb = new TheAudioDb();
+      const personMapper = new TmdbPersonMapper();
 
       const responses = await Promise.allSettled([
         tmdb.searchMulti({
