@@ -186,32 +186,25 @@ class CoverArtArchive extends ExternalAPI {
     }
 
     if (idsToFetch.length > 0) {
-      try {
-        const batchPromises = idsToFetch.map((id) =>
-          this.fetchCoverArt(id)
-            .then((response) => {
-              const frontImage = response.images.find((img) => img.front);
-              resultsMap.set(id, frontImage?.thumbnails?.[250] || null);
-              return true;
-            })
-            .catch((error) => {
-              logger.error('Failed to fetch cover art', {
-                label: 'CoverArtArchive',
-                id,
-                error: error instanceof Error ? error.message : 'Unknown error',
-              });
-              resultsMap.set(id, null);
-              return false;
-            })
-        );
+      const batchPromises = idsToFetch.map((id) =>
+        this.fetchCoverArt(id)
+          .then((response) => {
+            const frontImage = response.images.find((img) => img.front);
+            resultsMap.set(id, frontImage?.thumbnails?.[250] || null);
+            return true;
+          })
+          .catch((error) => {
+            logger.error('Failed to fetch cover art', {
+              label: 'CoverArtArchive',
+              id,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            });
+            resultsMap.set(id, null);
+            return false;
+          })
+      );
 
-        await Promise.allSettled(batchPromises);
-      } catch (error) {
-        logger.error('Failed to process cover art requests', {
-          label: 'CoverArtArchive',
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
+      await Promise.allSettled(batchPromises);
     }
 
     const results: Record<string, string | null> = {};
