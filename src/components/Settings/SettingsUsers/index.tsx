@@ -38,6 +38,10 @@ const messages = defineMessages('components.Settings.SettingsUsers', {
     'Allow {mediaServerName} users to sign in without first being imported',
   movieRequestLimitLabel: 'Global Movie Request Limit',
   tvRequestLimitLabel: 'Global Series Request Limit',
+  seasonRequestLimitLabel: 'Limit Seasons Per Request',
+  seasonRequestLimitTip:
+    'Limit the number of seasons that can be requested at once',
+  noLimit: 'Unlimited',
   defaultPermissions: 'Default Permissions',
   defaultPermissionsTip: 'Initial permissions assigned to new users',
   disabledMediaServerLoginWarning:
@@ -114,6 +118,7 @@ const SettingsUsers = () => {
             movieQuotaDays: data?.defaultQuotas.movie.quotaDays ?? 7,
             tvQuotaLimit: data?.defaultQuotas.tv.quotaLimit ?? 0,
             tvQuotaDays: data?.defaultQuotas.tv.quotaDays ?? 7,
+            maxSeasonsPerRequest: data?.maxSeasonsPerRequest ?? 0,
             defaultPermissions: data?.defaultPermissions ?? 0,
           }}
           validationSchema={schema}
@@ -135,6 +140,7 @@ const SettingsUsers = () => {
                   },
                 },
                 defaultPermissions: values.defaultPermissions,
+                maxSeasonsPerRequest: values.maxSeasonsPerRequest,
               });
               mutate('/api/v1/settings/public');
 
@@ -274,6 +280,37 @@ const SettingsUsers = () => {
                       defaultDays={values.tvQuotaDays}
                       defaultLimit={values.tvQuotaLimit}
                     />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="maxSeasonsPerRequest" className="text-label">
+                    {intl.formatMessage(messages.seasonRequestLimitLabel)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.seasonRequestLimitTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <select
+                      id="maxSeasonsPerRequest"
+                      name="maxSeasonsPerRequest"
+                      value={values.maxSeasonsPerRequest}
+                      onChange={(e) => {
+                        setFieldValue(
+                          'maxSeasonsPerRequest',
+                          Number(e.target.value)
+                        );
+                      }}
+                      className="short"
+                    >
+                      <option value="0">
+                        {intl.formatMessage(messages.noLimit)}
+                      </option>
+                      {[...Array(100)].map((_item, i) => (
+                        <option value={i + 1} key={`season-limit-${i + 1}`}>
+                          {i + 1}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 <div

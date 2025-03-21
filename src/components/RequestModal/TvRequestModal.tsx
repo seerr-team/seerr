@@ -50,6 +50,10 @@ const messages = defineMessages('components.RequestModal', {
   autoapproval: 'Automatic Approval',
   requesterror: 'Something went wrong while submitting the request.',
   pendingapproval: 'Your request is pending approval.',
+  seasonsLimitError:
+    'You cannot request more than {limit} {limit, plural, one {season} other {seasons}} at a time.',
+  tooManySeasons:
+    'Too many seasons selected. You can request up to {limit} {limit, plural, one {season} other {seasons}} at a time.',
 });
 
 interface RequestModalProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -105,6 +109,30 @@ const TvRequestModal = ({
       return;
     }
 
+    // Determine which seasons are new (not in the current request)
+    const newSeasons = selectedSeasons.filter(
+      (sn) => !editingSeasons.includes(sn)
+    );
+
+    // Check if the number of new seasons exceeds the limit
+    if (
+      settings.currentSettings.maxSeasonsPerRequest &&
+      settings.currentSettings.maxSeasonsPerRequest > 0 &&
+      newSeasons.length > settings.currentSettings.maxSeasonsPerRequest &&
+      settings.currentSettings.partialRequestsEnabled &&
+      !hasPermission([Permission.MANAGE_REQUESTS, Permission.ADMIN], {
+        type: 'or',
+      })
+    ) {
+      addToast(
+        intl.formatMessage(messages.tooManySeasons, {
+          limit: settings.currentSettings.maxSeasonsPerRequest,
+        }),
+        { appearance: 'error', autoDismiss: true }
+      );
+      return;
+    }
+
     if (onUpdating) {
       onUpdating(true);
       mutate('/api/v1/request/count');
@@ -157,11 +185,22 @@ const TvRequestModal = ({
       if (onComplete) {
         onComplete(MediaStatus.PENDING);
       }
-    } catch {
-      addToast(<span>{intl.formatMessage(messages.errorediting)}</span>, {
-        appearance: 'error',
-        autoDismiss: true,
-      });
+    } catch (e) {
+      if (e instanceof Error && e.message?.includes('Season limit of')) {
+        const limitMatch = e.message.match(/Season limit of (\d+) exceeded/);
+        const limit = limitMatch ? Number(limitMatch[1]) : 1;
+
+        addToast(intl.formatMessage(messages.seasonsLimitError, { limit }), {
+          appearance: 'error',
+          autoDismiss: true,
+        });
+      }
+      else {
+        addToast(<span>{intl.formatMessage(messages.errorediting)}</span>, {
+          appearance: 'error',
+          autoDismiss: true,
+        });
+      }
     } finally {
       if (onUpdating) {
         onUpdating(false);
@@ -174,6 +213,25 @@ const TvRequestModal = ({
       settings.currentSettings.partialRequestsEnabled &&
       selectedSeasons.length === 0
     ) {
+      return;
+    }
+
+    // Check if the number of seasons exceeds the limit
+    if (
+      settings.currentSettings.maxSeasonsPerRequest &&
+      settings.currentSettings.maxSeasonsPerRequest > 0 &&
+      selectedSeasons.length > settings.currentSettings.maxSeasonsPerRequest &&
+      settings.currentSettings.partialRequestsEnabled &&
+      !hasPermission([Permission.MANAGE_REQUESTS, Permission.ADMIN], {
+        type: 'or',
+      })
+    ) {
+      addToast(
+        intl.formatMessage(messages.tooManySeasons, {
+          limit: settings.currentSettings.maxSeasonsPerRequest,
+        }),
+        { appearance: 'error', autoDismiss: true }
+      );
       return;
     }
 
@@ -222,11 +280,22 @@ const TvRequestModal = ({
           { appearance: 'success', autoDismiss: true }
         );
       }
-    } catch {
-      addToast(intl.formatMessage(messages.requesterror), {
-        appearance: 'error',
-        autoDismiss: true,
-      });
+    } catch (e) {
+      if (e instanceof Error && e.message?.includes('Season limit of')) {
+        const limitMatch = e.message.match(/Season limit of (\d+) exceeded/);
+        const limit = limitMatch ? Number(limitMatch[1]) : 1;
+
+        addToast(intl.formatMessage(messages.seasonsLimitError, { limit }), {
+          appearance: 'error',
+          autoDismiss: true,
+        });
+      }
+      else {
+        addToast(intl.formatMessage(messages.requesterror), {
+          appearance: 'error',
+          autoDismiss: true,
+        });
+      }
     } finally {
       if (onUpdating) {
         onUpdating(false);

@@ -37,6 +37,11 @@ export class QuotaRestrictedError extends Error {}
 export class DuplicateMediaRequestError extends Error {}
 export class NoSeasonsAvailableError extends Error {}
 export class BlocklistedMediaError extends Error {}
+export class SeasonLimitError extends Error {
+  constructor(public seasonLimit: number) {
+    super(`Season limit of ${seasonLimit} exceeded`);
+  }
+}
 
 type MediaRequestOptions = {
   isAutoRequest?: boolean;
@@ -389,6 +394,18 @@ export class MediaRequest {
           : (requestBody.seasons as number[]);
       if (!settings.main.enableSpecialEpisodes) {
         requestedSeasons = requestedSeasons.filter((sn) => sn > 0);
+      }
+
+      // Check if max seasons per request is set and enforce limit
+      if (
+        settings.main.maxSeasonsPerRequest &&
+        settings.main.maxSeasonsPerRequest > 0 &&
+        requestedSeasons.length > settings.main.maxSeasonsPerRequest &&
+        !user.hasPermission([Permission.MANAGE_REQUESTS, Permission.ADMIN], {
+          type: 'or',
+        })
+      ) {
+        throw new SeasonLimitError(settings.main.maxSeasonsPerRequest);
       }
 
       let existingSeasons: number[] = [];
