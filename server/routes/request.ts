@@ -14,6 +14,7 @@ import {
   NoSeasonsAvailableError,
   QuotaRestrictedError,
   RequestPermissionError,
+  SeasonLimitError,
 } from '@server/entity/MediaRequest';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
@@ -321,7 +322,15 @@ requestRoutes.post<never, MediaRequest, MediaRequestBody>(
       switch (error.constructor) {
         case RequestPermissionError:
         case QuotaRestrictedError:
-          return next({ status: 403, message: error.message });
+        case SeasonLimitError:
+          logger.warn(
+            `User ${req.user?.displayName} failed to request title due to error: ${error.message}`,
+            { label: 'Media Request', ip: req.ip }
+          );
+          return next({
+            status: 403,
+            message: error.message,
+          });
         case DuplicateMediaRequestError:
           return next({ status: 409, message: error.message });
         case NoSeasonsAvailableError:
@@ -536,6 +545,30 @@ requestRoutes.put<{ requestId: string }>(
           relations: { requests: true },
         });
 
+        // Determine which seasons are new (not in the current request)
+        const newSeasons = requestedSeasons.filter(
+          (sn) => !request.seasons.map((s) => s.seasonNumber).includes(sn)
+        );
+
+        // Check if max seasons per request is set and enforce limit for new seasons only
+        const settings = getSettings();
+        if (
+          settings.main.maxSeasonsPerRequest &&
+          settings.main.maxSeasonsPerRequest > 0 &&
+          newSeasons.length > settings.main.maxSeasonsPerRequest &&
+          !req.user?.hasPermission(
+            [Permission.MANAGE_REQUESTS, Permission.ADMIN],
+            {
+              type: 'or',
+            }
+          )
+        ) {
+          return next({
+            status: 403,
+            message: `Season limit of ${settings.main.maxSeasonsPerRequest} exceeded`,
+          });
+        }
+
         // Get all requested seasons that are not part of this request we are editing
         const existingSeasons = media.requests
           .filter(
@@ -564,13 +597,11 @@ requestRoutes.put<{ requestId: string }>(
           });
         }
 
-        const newSeasons = requestedSeasons.filter(
-          (sn) => !request.seasons.map((s) => s.seasonNumber).includes(sn)
-        );
-
         request.seasons = request.seasons.filter((rs) =>
           filteredSeasons.includes(rs.seasonNumber)
         );
+
+        // We'll reuse the newSeasons variable we created earlier
 
         if (newSeasons.length > 0) {
           logger.debug('Adding new seasons to request', {
