@@ -1082,7 +1082,7 @@
   "components.Settings.SettingsUsers.newPlexLogin": "Enable New {mediaServerName} Sign-In",
   "components.Settings.SettingsUsers.newPlexLoginTip": "Allow {mediaServerName} users to sign in without first being imported",
   "components.Settings.SettingsUsers.noLimit": "Unlimited",
-  "components.Settings.SettingsUsers.seasonRequestLimitLabel": "Limit Seasons Per Request",
+  "components.Settings.SettingsUsers.seasonRequestLimitLabel": "Global Season Request Limit",
   "components.Settings.SettingsUsers.seasonRequestLimitTip": "Limit the number of seasons that can be requested at once",
   "components.Settings.SettingsUsers.toastSettingsFailure": "Something went wrong while saving settings.",
   "components.Settings.SettingsUsers.toastSettingsSuccess": "User settings saved successfully!",
