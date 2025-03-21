@@ -38,7 +38,7 @@ const messages = defineMessages('components.Settings.SettingsUsers', {
     'Allow {mediaServerName} users to sign in without first being imported',
   movieRequestLimitLabel: 'Global Movie Request Limit',
   tvRequestLimitLabel: 'Global Series Request Limit',
-  seasonRequestLimitLabel: 'Limit Seasons Per Request',
+  seasonRequestLimitLabel: 'Global Season Request Limit',
   seasonRequestLimitTip:
     'Limit the number of seasons that can be requested at once',
   noLimit: 'Unlimited',
