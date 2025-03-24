@@ -1,6 +1,7 @@
 import CoverArtArchive from '@server/api/coverartarchive';
 import ListenBrainzAPI from '@server/api/listenbrainz';
 import MusicBrainz from '@server/api/musicbrainz';
+import type { LidarrAlbumOptions } from '@server/api/servarr/lidarr';
 import LidarrAPI from '@server/api/servarr/lidarr';
 import type { RadarrMovieOptions } from '@server/api/servarr/radarr';
 import RadarrAPI from '@server/api/servarr/radarr';
@@ -915,6 +916,21 @@ export class MediaRequestSubscriber
           });
         }
 
+        let qualityProfile = lidarrSettings.activeProfileId;
+        const metadataProfile = lidarrSettings.activeMetadataProfileId ?? 1;
+
+        if (entity.profileId && entity.profileId !== qualityProfile) {
+          qualityProfile = entity.profileId;
+          logger.info(
+            `Request has an override quality profile ID: ${qualityProfile}`,
+            {
+              label: 'Media Request',
+              requestId: entity.id,
+              mediaId: entity.media.id,
+            }
+          );
+        }
+
         const artistPath = `${rootFolder}/${albumInfo.artist.artistName}`;
 
         const addAlbumPayload: LidarrAlbumOptions = {
@@ -925,7 +941,7 @@ export class MediaRequestSubscriber
           foreignAlbumId: albumInfo.foreignAlbumId,
           monitored: true,
           anyReleaseOk: true,
-          profileId: 1,
+          profileId: qualityProfile,
           duration: albumInfo.duration || 0,
           albumType: albumInfo.albumType,
           secondaryTypes: [],
@@ -948,8 +964,8 @@ export class MediaRequestSubscriber
             links: albumInfo.artist.links || [],
             images: albumInfo.artist.images || [],
             path: artistPath,
-            qualityProfileId: 1,
-            metadataProfileId: 2,
+            qualityProfileId: qualityProfile,
+            metadataProfileId: metadataProfile,
             monitored: true,
             monitorNewItems: 'none',
             rootFolderPath: rootFolder,
@@ -978,15 +994,10 @@ export class MediaRequestSubscriber
             };
 
             await mediaRepository.update({ id: entity.media.id }, updateFields);
-
-            if (addAlbumPayload.addOptions.searchForNewAlbum) {
-              await lidarr.searchOnAdd(result.id);
-            }
           })
           .catch(async (error) => {
             const requestRepository = getRepository(MediaRequest);
 
-            entity.status = MediaRequestStatus.FAILED;
             await requestRepository.update(
               { id: entity.id },
               { status: MediaRequestStatus.FAILED }

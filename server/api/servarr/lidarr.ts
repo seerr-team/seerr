@@ -278,6 +278,11 @@ export interface SearchCommand extends Record<string, unknown> {
   albumIds: number[];
 }
 
+export interface MetadataProfile {
+  id: number;
+  name: string;
+}
+
 class LidarrAPI extends ServarrBase<{ albumId: number }> {
   protected apiKey: string;
   constructor({ url, apiKey }: { url: string; apiKey: string }) {
@@ -368,25 +373,13 @@ class LidarrAPI extends ServarrBase<{ albumId: number }> {
     }
   }
 
-  public async searchOnAdd(albumId: number): Promise<void> {
-    logger.info('Executing album search command', {
-      label: 'Lidarr API',
-      albumId,
-    });
-
+  public async getMetadataProfiles(): Promise<MetadataProfile[]> {
     try {
-      await this.post('/command', {
-        name: 'AlbumSearch',
-        albumIds: [albumId],
-      });
+      const data = await this.get<MetadataProfile[]>('/metadataProfile');
+      return data;
     } catch (e) {
-      logger.error(
-        'Something went wrong while executing Lidarr album search.',
-        {
-          label: 'Lidarr API',
-          errorMessage: e.message,
-          albumId,
-        }
+      throw new Error(
+        `[Lidarr] Failed to retrieve metadata profiles: ${e.message}`
       );
     }
   }

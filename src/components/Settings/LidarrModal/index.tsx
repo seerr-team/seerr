@@ -59,10 +59,19 @@ const messages = defineMessages('components.Settings.LidarrModal', {
   tags: 'Tags',
   notagoptions: 'No tags.',
   selecttags: 'Select tags',
+  metadataprofile: 'Metadata Profile',
+  selectMetadataProfile: 'Select metadata profile',
+  loadingmetadataprofiles: 'Loading metadata profiles…',
+  testFirstMetadataProfiles: 'Test connection to load metadata profiles',
+  validationMetadataProfileRequired: 'You must select a metadata profile',
 });
 
 interface TestResponse {
   profiles: {
+    id: number;
+    name: string;
+  }[];
+  metadataProfiles: {
     id: number;
     name: string;
   }[];
@@ -91,6 +100,7 @@ const LidarrModal = ({ onClose, lidarr, onSave }: LidarrModalProps) => {
   const [isTesting, setIsTesting] = useState(false);
   const [testResponse, setTestResponse] = useState<TestResponse>({
     profiles: [],
+    metadataProfiles: [],
     rootFolders: [],
     tags: [],
   });
@@ -134,6 +144,9 @@ const LidarrModal = ({ onClose, lidarr, onSave }: LidarrModalProps) => {
         intl.formatMessage(messages.validationBaseUrlTrailingSlash),
         (value) => !value || !value.endsWith('/')
       ),
+    activeMetadataProfileId: Yup.string().required(
+      intl.formatMessage(messages.validationMetadataProfileRequired)
+    ),
   });
 
   const testConnection = useCallback(
@@ -236,6 +249,7 @@ const LidarrModal = ({ onClose, lidarr, onSave }: LidarrModalProps) => {
           syncEnabled: lidarr?.syncEnabled ?? false,
           enableSearch: !lidarr?.preventSearch,
           tagRequests: lidarr?.tagRequests ?? false,
+          activeMetadataProfileId: lidarr?.activeMetadataProfileId ?? 1,
         }}
         validationSchema={LidarrSettingsSchema}
         onSubmit={async (values) => {
@@ -260,6 +274,11 @@ const LidarrModal = ({ onClose, lidarr, onSave }: LidarrModalProps) => {
               syncEnabled: values.syncEnabled,
               preventSearch: !values.enableSearch,
               tagRequests: values.tagRequests,
+              activeMetadataProfileId: Number(values.activeMetadataProfileId),
+              activeMetadataProfileName: testResponse.metadataProfiles.find(
+                (profile) =>
+                  profile.id === Number(values.activeMetadataProfileId)
+              )?.name,
             };
 
             const response = await fetch(
@@ -566,6 +585,55 @@ const LidarrModal = ({ onClose, lidarr, onSave }: LidarrModalProps) => {
                       touched.rootFolder &&
                       typeof errors.rootFolder === 'string' && (
                         <div className="error">{errors.rootFolder}</div>
+                      )}
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="activeMetadataProfileId"
+                    className="text-label"
+                  >
+                    {intl.formatMessage(messages.metadataprofile)}
+                    <span className="label-required">*</span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <Field
+                        as="select"
+                        id="activeMetadataProfileId"
+                        name="activeMetadataProfileId"
+                        disabled={!isValidated || isTesting}
+                      >
+                        <option value="">
+                          {isTesting
+                            ? intl.formatMessage(
+                                messages.loadingmetadataprofiles
+                              )
+                            : !isValidated
+                            ? intl.formatMessage(
+                                messages.testFirstMetadataProfiles
+                              )
+                            : intl.formatMessage(
+                                messages.selectMetadataProfile
+                              )}
+                        </option>
+                        {testResponse.metadataProfiles.length > 0 &&
+                          testResponse.metadataProfiles.map((profile) => (
+                            <option
+                              key={`loaded-metadataprofile-${profile.id}`}
+                              value={profile.id}
+                            >
+                              {profile.name}
+                            </option>
+                          ))}
+                      </Field>
+                    </div>
+                    {errors.activeMetadataProfileId &&
+                      touched.activeMetadataProfileId &&
+                      typeof errors.activeMetadataProfileId === 'string' && (
+                        <div className="error">
+                          {errors.activeMetadataProfileId}
+                        </div>
                       )}
                   </div>
                 </div>

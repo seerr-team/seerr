@@ -251,8 +251,9 @@ serviceRoutes.get<{ id: string }>('/lidarr/:id', async (req, res, next) => {
   });
 
   try {
-    const [profiles, rootFolders, tags] = await Promise.all([
+    const [profiles, metadataProfiles, rootFolders, tags] = await Promise.all([
       lidarr.getProfiles(),
+      lidarr.getMetadataProfiles(),
       lidarr.getRootFolders(),
       lidarr.getTags(),
     ]);
@@ -264,8 +265,11 @@ serviceRoutes.get<{ id: string }>('/lidarr/:id', async (req, res, next) => {
         isDefault: lidarrSettings.isDefault,
         activeDirectory: lidarrSettings.activeDirectory,
         activeProfileId: lidarrSettings.activeProfileId,
+        activeMetadataProfileId: lidarrSettings.activeMetadataProfileId,
+        activeTags: lidarrSettings.tags ?? [],
       },
       profiles,
+      metadataProfiles,
       rootFolders: rootFolders.map((folder) => ({
         id: folder.id,
         path: folder.path,

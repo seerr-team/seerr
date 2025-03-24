@@ -727,6 +727,12 @@ components:
         activeProfileName:
           type: string
           example: 128kps
+        activeMetadataProfileId:
+          type: number
+          example: 1
+        activeMetadataProfileName:
+          type: string
+          example: Standard
         activeDirectory:
           type: string
           example: '/music/'

@@ -83,8 +83,6 @@ export interface RadarrSettings extends DVRSettings {
   minimumAvailability: string;
 }
 
-export type LidarrSettings = DVRSettings;
-
 export interface SonarrSettings extends DVRSettings {
   seriesType: 'standard' | 'daily' | 'anime';
   animeSeriesType: 'standard' | 'daily' | 'anime';
@@ -95,6 +93,11 @@ export interface SonarrSettings extends DVRSettings {
   activeLanguageProfileId?: number;
   animeTags?: number[];
   enableSeasonFolders: boolean;
+}
+
+export interface LidarrSettings extends DVRSettings {
+  activeMetadataProfileId?: number;
+  activeMetadataProfileName?: string;
 }
 
 interface Quota {

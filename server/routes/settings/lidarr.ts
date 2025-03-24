@@ -42,11 +42,13 @@ lidarrRoutes.post<
       .then((value) => value.urlBase)
       .catch(() => req.body.baseUrl);
     const profiles = await lidarr.getProfiles();
+    const metadataProfiles = await lidarr.getMetadataProfiles();
     const folders = await lidarr.getRootFolders();
     const tags = await lidarr.getTags();
 
     return res.status(200).json({
       profiles,
+      metadataProfiles,
       rootFolders: folders.map((folder) => ({
         id: folder.id,
         path: folder.path,
@@ -59,7 +61,6 @@ lidarrRoutes.post<
       label: 'Lidarr',
       message: e.message,
     });
-
     next({ status: 500, message: 'Failed to connect to Lidarr' });
   }
 });
