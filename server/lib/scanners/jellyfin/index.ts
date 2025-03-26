@@ -1,3 +1,4 @@
+import animeList from '@server/api/animelist';
 import type { JellyfinLibraryItem } from '@server/api/jellyfin';
 import JellyfinAPI from '@server/api/jellyfin';
 import { getMetadataProvider } from '@server/api/metadata';
@@ -45,6 +46,7 @@ class JellyfinScanner {
   private enable4kMovie = false;
   private enable4kShow = false;
   private asyncLock = new AsyncLock();
+  private processedAnidbSeason: Map<number, Map<number, number>>;
 
   constructor({ isRecentOnly }: { isRecentOnly?: boolean } = {}) {
     this.tmdb = new TheMovieDb();
@@ -77,8 +79,18 @@ class JellyfinScanner {
         return;
       }
 
+      const anidbId = Number(metadata.ProviderIds.AniDB);
+
       newMedia.tmdbId = Number(metadata.ProviderIds.Tmdb ?? null);
       newMedia.imdbId = metadata.ProviderIds.Imdb;
+
+      // We use anidb only if we have the anidbId and nothing else
+      if (anidbId && !newMedia.imdbId && !newMedia.tmdbId) {
+        const result = animeList.getFromAnidbId(anidbId);
+        newMedia.tmdbId = Number(result?.tmdbId ?? null);
+        newMedia.imdbId = result?.imdbId;
+      }
+
       if (newMedia.imdbId && !isNaN(newMedia.tmdbId)) {
         const tmdbMovie = await this.tmdb.getMediaByImdbId({
           imdbId: newMedia.imdbId,
@@ -97,13 +109,19 @@ class JellyfinScanner {
         });
       });
 
-      const hasOtherResolution = metadata.MediaSources?.some((MediaSource) => {
+      let hasOtherResolution = metadata.MediaSources?.some((MediaSource) => {
         return MediaSource.MediaStreams.filter(
           (MediaStream) => MediaStream.Type === 'Video'
         ).some((MediaStream) => {
           return (MediaStream.Width ?? 0) <= 2000;
         });
       });
+
+      // With AniDB we can have mixed libraries with movies in a "show" library
+      // If we found the movie and we have an anidbId we set the other resolution to true
+      if (anidbId && metadata.Type === 'Series') {
+        hasOtherResolution = true;
+      }
 
       await this.asyncLock.dispatch(newMedia.tmdbId, async () => {
         const existing = await this.getExisting(
@@ -274,6 +292,30 @@ class JellyfinScanner {
           });
         }
       }
+      let tvdbSeasonFromAnidb: number | undefined;
+      if (!tvShow && metadata.ProviderIds.AniDB) {
+        const anidbId = Number(metadata.ProviderIds.AniDB);
+        const result = animeList.getFromAnidbId(anidbId);
+        tvdbSeasonFromAnidb = result?.tvdbSeason;
+        // With AniDB we can have mixed libraries with movies in a "show" library
+        if (result?.imdbId) {
+          await this.processMovie(jellyfinitem);
+          return;
+        } else if (!result?.tvdbId && result?.tmdbId) {
+          await this.processMovie(jellyfinitem);
+          return;
+        } else if (result?.tvdbId) {
+          try {
+            tvShow = await this.tmdb.getShowByTvdbId({
+              tvdbId: result.tvdbId,
+            });
+          } catch {
+            this.log('Unable to find AniDB ID for this title.', 'debug', {
+              jellyfinitem,
+            });
+          }
+        }
+      }
 
       if (tvShow) {
         await this.asyncLock.dispatch(tvShow.id, async () => {
@@ -302,9 +344,20 @@ class JellyfinScanner {
 
           for (const season of seasons) {
             const JellyfinSeasons = await this.jfClient.getSeasons(Id);
-            const matchedJellyfinSeason = JellyfinSeasons.find(
-              (md) => Number(md.IndexNumber) === season.season_number
-            );
+            const matchedJellyfinSeason = JellyfinSeasons.find((md) => {
+              if (tvdbSeasonFromAnidb) {
+                // In AniDB we don't have the concept of seasons,
+                // we have multiple shows with only Season 1 (and sometimes a season with index 0 for specials).
+                // We use tvdbSeasonFromAnidb to check if we are on the correct TMDB season and
+                // md.IndexNumber === 1 to be sure to find the correct season on jellyfin
+                return (
+                  tvdbSeasonFromAnidb === season.season_number &&
+                  md.IndexNumber === 1
+                );
+              } else {
+                return Number(md.IndexNumber) === season.season_number;
+              }
+            });
 
             const existingSeason = media?.seasons.find(
               (es) => es.seasonNumber === season.season_number
@@ -354,6 +407,29 @@ class JellyfinScanner {
                       }
                     });
                   });
+                }
+              }
+
+              // With AniDB we can have multiple shows for one season, so we need to save
+              // the episode from all the jellyfin entries to get the total
+              if (tvdbSeasonFromAnidb) {
+                if (this.processedAnidbSeason.has(tvShow.id)) {
+                  const show = this.processedAnidbSeason.get(tvShow.id)!;
+                  if (show.has(season.season_number)) {
+                    show.set(
+                      season.season_number,
+                      show.get(season.season_number)! + totalStandard
+                    );
+
+                    totalStandard = show.get(season.season_number)!;
+                  } else {
+                    show.set(season.season_number, totalStandard);
+                  }
+                } else {
+                  this.processedAnidbSeason.set(
+                    tvShow.id,
+                    new Map([[season.season_number, totalStandard]])
+                  );
                 }
               }
 
@@ -569,6 +645,7 @@ class JellyfinScanner {
   }
 
   private async processItems(slicedItems: JellyfinLibraryItem[]) {
+    this.processedAnidbSeason = new Map();
     await Promise.all(
       slicedItems.map(async (item) => {
         if (item.Type === 'Movie') {
@@ -665,6 +742,8 @@ class JellyfinScanner {
       this.libraries = settings.jellyfin.libraries.filter(
         (library) => library.enabled
       );
+
+      await animeList.sync();
 
       this.enable4kMovie = settings.radarr.some((radarr) => radarr.is4k);
       if (this.enable4kMovie) {
