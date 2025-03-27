@@ -335,7 +335,7 @@ class LidarrAPI extends ServarrBase<{ albumId: number }> {
     try {
       const existingAlbums = await this.get<LidarrAlbum[]>('/album', {
         foreignAlbumId: options.foreignAlbumId,
-        includeAllArtistAlbums: 'true',
+        includeAllArtistAlbums: 'false',
       });
 
       if (existingAlbums.length > 0 && existingAlbums[0].monitored) {
@@ -346,6 +346,32 @@ class LidarrAPI extends ServarrBase<{ albumId: number }> {
           }
         );
         return existingAlbums[0];
+      }
+
+      if (existingAlbums.length > 0) {
+        logger.info(
+          'Album exists in Lidarr but is not monitored. Updating monitored status.',
+          {
+            label: 'Lidarr',
+            albumId: existingAlbums[0].id,
+            albumTitle: existingAlbums[0].title,
+          }
+        );
+
+        const updatedAlbum = await this.put<LidarrAlbum>(
+          `/album/${existingAlbums[0].id}`,
+          {
+            ...existingAlbums[0],
+            monitored: true,
+          }
+        );
+
+        await this.post('/command', {
+          name: 'AlbumSearch',
+          albumIds: [updatedAlbum.id],
+        });
+
+        return updatedAlbum;
       }
 
       const data = await this.post<LidarrAlbum>('/album', {
