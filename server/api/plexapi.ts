@@ -230,12 +230,19 @@ class PlexAPI {
     options: { addedAt: number } = {
       addedAt: Date.now() - 1000 * 60 * 60,
     },
-    mediaType: 'movie' | 'show' | 'artist'
+    mediaType: 'movie' | 'show' | 'album'
   ): Promise<PlexLibraryItem[]> {
+    let typeCode = '1';
+    if (mediaType === 'show') {
+      typeCode = '4';
+    } else if (mediaType === 'album') {
+      typeCode = '9';
+    }
+
     const response = await this.plexClient.query<PlexLibraryResponse>({
-      uri: `/library/sections/${id}/all?type=${
-        mediaType === 'show' ? '4' : '1'
-      }&sort=addedAt%3Adesc&addedAt>>=${Math.floor(options.addedAt / 1000)}`,
+      uri: `/library/sections/${id}/all?type=${typeCode}&sort=addedAt%3Adesc&addedAt>>=${Math.floor(
+        options.addedAt / 1000
+      )}`,
       extraHeaders: {
         'X-Plex-Container-Start': `0`,
         'X-Plex-Container-Size': `500`,

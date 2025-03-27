@@ -97,7 +97,7 @@ class PlexScanner
             'info',
             { lastScan: library.lastScan }
           );
-          const mappedType = library.type === 'music' ? 'artist' : library.type;
+          const mappedType = library.type === 'music' ? 'album' : library.type;
           const libraryItems = await this.plexClient.getRecentlyAdded(
             library.id,
             library.lastScan

@@ -586,6 +586,11 @@ class BaseScanner<T> {
       } else {
         let hasChanges = false;
 
+        if (existing.status !== MediaStatus.AVAILABLE && !processing) {
+          existing.status = MediaStatus.AVAILABLE;
+          hasChanges = true;
+        }
+
         if (serviceId && !existing.serviceId) {
           existing.serviceId = serviceId;
           hasChanges = true;
