@@ -116,7 +116,7 @@ export class AddMusicSupport1714310036946 implements MigrationInterface {
       `CREATE TABLE "metadata_album" (
         "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
         "mbAlbumId" varchar NOT NULL,
-        "caaUrl" varchar NOT NULL,
+        "caaUrl" varchar NULL,
         "createdAt" datetime NOT NULL DEFAULT (datetime('now')),
         "updatedAt" datetime NOT NULL DEFAULT (datetime('now'))
       )`
