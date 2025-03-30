@@ -42,7 +42,7 @@ const DiscoverWatchlist = () => {
     }/watchlist`
   );
 
-  if (error) {
+  if (error && !titles.length) {
     return <Error statusCode={500} />;
   }
 

@@ -37,7 +37,7 @@ const Search = () => {
     { hideAvailable: false, hideBlacklisted: false }
   );
 
-  if (error) {
+  if (error && !titles.length) {
     return <Error statusCode={500} />;
   }
 

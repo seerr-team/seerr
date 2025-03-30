@@ -34,7 +34,7 @@ const DiscoverTvKeyword = () => {
     }
   );
 
-  if (error) {
+  if (error && !titles.length) {
     return <Error statusCode={500} />;
   }
 

@@ -36,7 +36,7 @@ const DiscoverTvLanguage = () => {
     }
   >(`/api/v1/discover/tv/language/${router.query.language}`);
 
-  if (error) {
+  if (error && !titles.length) {
     return <Error statusCode={500} />;
   }
 

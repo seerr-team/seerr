@@ -29,7 +29,7 @@ const TvRecommendations = () => {
     error,
   } = useDiscover<TvResult>(`/api/v1/tv/${router.query.tvId}/recommendations`);
 
-  if (error) {
+  if (error && !titles.length) {
     return <Error statusCode={500} />;
   }
 

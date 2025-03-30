@@ -65,7 +65,7 @@ const DiscoverMovies = () => {
   );
   const [showFilters, setShowFilters] = useState(false);
 
-  if (error) {
+  if (error && !titles.length) {
     return <Error statusCode={500} />;
   }
 
