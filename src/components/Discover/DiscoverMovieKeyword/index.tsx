@@ -34,7 +34,7 @@ const DiscoverMovieKeyword = () => {
     }
   );
 
-  if (error && !titles.length) {
+  if (error) {
     return <Error statusCode={500} />;
   }
 

@@ -147,7 +147,7 @@ const useDiscover = <
     fetchMore,
     isEmpty,
     isReachingEnd,
-    error,
+    error: error && !titles.length ? null : error,
     titles,
     firstResultData: data?.[0],
     mutate,

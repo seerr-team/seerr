@@ -29,7 +29,7 @@ const Trending = () => {
     '/api/v1/discover/trending'
   );
 
-  if (error && !titles.length) {
+  if (error) {
     return <Error statusCode={500} />;
   }
 

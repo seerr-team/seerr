@@ -63,7 +63,7 @@ const DiscoverTv = () => {
     ...preparedFilters,
   });
 
-  if (error && !titles.length) {
+  if (error) {
     return <Error statusCode={500} />;
   }
 

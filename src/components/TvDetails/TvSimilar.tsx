@@ -29,7 +29,7 @@ const TvSimilar = () => {
     error,
   } = useDiscover<TvResult>(`/api/v1/tv/${router.query.tvId}/similar`);
 
-  if (error && !titles.length) {
+  if (error) {
     return <Error statusCode={500} />;
   }
 

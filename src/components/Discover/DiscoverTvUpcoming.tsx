@@ -24,7 +24,7 @@ const DiscoverTvUpcoming = () => {
     error,
   } = useDiscover<TvResult>('/api/v1/discover/tv/upcoming');
 
-  if (error && !titles.length) {
+  if (error) {
     return <Error statusCode={500} />;
   }
 

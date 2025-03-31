@@ -36,7 +36,7 @@ const DiscoverMovieLanguage = () => {
     }
   >(`/api/v1/discover/movies/language/${router.query.language}`);
 
-  if (error && !titles.length) {
+  if (error) {
     return <Error statusCode={500} />;
   }
 

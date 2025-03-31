@@ -33,7 +33,7 @@ const MovieRecommendations = () => {
     `/api/v1/movie/${router.query.movieId}/recommendations`
   );
 
-  if (error && !titles.length) {
+  if (error) {
     return <Error statusCode={500} />;
   }
 

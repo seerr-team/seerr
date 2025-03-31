@@ -31,7 +31,7 @@ const MovieSimilar = () => {
     error,
   } = useDiscover<MovieResult>(`/api/v1/movie/${router.query.movieId}/similar`);
 
-  if (error && !titles.length) {
+  if (error) {
     return <Error statusCode={500} />;
   }
 

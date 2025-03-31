@@ -24,7 +24,7 @@ const UpcomingMovies = () => {
     error,
   } = useDiscover<MovieResult>('/api/v1/discover/movies/upcoming');
 
-  if (error && !titles.length) {
+  if (error) {
     return <Error statusCode={500} />;
   }
 

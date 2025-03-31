@@ -32,7 +32,7 @@ const DiscoverTvNetwork = () => {
     `/api/v1/discover/tv/network/${router.query.networkId}`
   );
 
-  if (error && !titles.length) {
+  if (error) {
     return <Error statusCode={500} />;
   }
 

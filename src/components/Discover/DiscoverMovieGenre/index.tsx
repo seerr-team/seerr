@@ -30,7 +30,7 @@ const DiscoverMovieGenre = () => {
     `/api/v1/discover/movies/genre/${router.query.genreId}`
   );
 
-  if (error && !titles.length) {
+  if (error) {
     return <Error statusCode={500} />;
   }
 

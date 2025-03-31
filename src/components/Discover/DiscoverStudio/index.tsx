@@ -32,7 +32,7 @@ const DiscoverMovieStudio = () => {
     `/api/v1/discover/movies/studio/${router.query.studioId}`
   );
 
-  if (error && !titles.length) {
+  if (error) {
     return <Error statusCode={500} />;
   }
 
