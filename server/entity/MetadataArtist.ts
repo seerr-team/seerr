@@ -1,3 +1,4 @@
+import { DbAwareColumn } from '@server/utils/DbColumnHelper';
 import {
   Column,
   CreateDateColumn,
@@ -19,7 +20,7 @@ class MetadataArtist {
   @Column({ nullable: true, type: 'varchar' })
   public tmdbThumb: string | null;
 
-  @Column({ nullable: true, type: 'datetime' })
+  @DbAwareColumn({ nullable: true, type: 'datetime' })
   public tmdbUpdatedAt: Date | null;
 
   @Column({ nullable: true, type: 'varchar' })
@@ -28,7 +29,7 @@ class MetadataArtist {
   @Column({ nullable: true, type: 'varchar' })
   public tadbCover: string | null;
 
-  @Column({ nullable: true, type: 'datetime' })
+  @DbAwareColumn({ nullable: true, type: 'datetime' })
   public tadbUpdatedAt: Date | null;
 
   @CreateDateColumn()
