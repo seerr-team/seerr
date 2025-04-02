@@ -68,7 +68,7 @@ class JellyfinScanner {
     const mediaRepository = getRepository(Media);
 
     try {
-      const metadata = await this.jfClient.getItemData(jellyfinitem.Id);
+      let metadata = await this.jfClient.getItemData(jellyfinitem.Id);
       const newMedia = new Media();
 
       if (!metadata?.Id) {
@@ -101,6 +101,39 @@ class JellyfinScanner {
         throw new Error('Unable to find TMDb ID');
       }
 
+      // With AniDB we can have mixed libraries with movies in a "show" library
+      // We take the first episode of the first season (the movie) and use it to
+      // get more information, like the MediaSource
+      if (anidbId && metadata.Type === 'Series') {
+        const season = (await this.jfClient.getSeasons(jellyfinitem.Id)).find(
+          (md) => {
+            return md.IndexNumber === 1;
+          }
+        );
+        if (!season) {
+          this.log('No season found for anidb movie', 'debug', {
+            jellyfinitem,
+          });
+          return;
+        }
+        const episode = (
+          await this.jfClient.getEpisodes(jellyfinitem.Id, season.Id)
+        ).at(0);
+        if (!episode) {
+          this.log('No episode found for anidb movie', 'debug', {
+            jellyfinitem,
+          });
+          return;
+        }
+        metadata = await this.jfClient.getItemData(episode.Id);
+        if (!metadata) {
+          this.log('No metadata found for anidb movie', 'debug', {
+            jellyfinitem,
+          });
+          return;
+        }
+      }
+
       const has4k = metadata.MediaSources?.some((MediaSource) => {
         return MediaSource.MediaStreams.filter(
           (MediaStream) => MediaStream.Type === 'Video'
@@ -109,7 +142,7 @@ class JellyfinScanner {
         });
       });
 
-      let hasOtherResolution = metadata.MediaSources?.some((MediaSource) => {
+      const hasOtherResolution = metadata.MediaSources?.some((MediaSource) => {
         return MediaSource.MediaStreams.filter(
           (MediaStream) => MediaStream.Type === 'Video'
         ).some((MediaStream) => {
@@ -117,13 +150,13 @@ class JellyfinScanner {
         });
       });
 
-      // With AniDB we can have mixed libraries with movies in a "show" library
-      // If we found the movie and we have an anidbId we set the other resolution to true
-      if (anidbId && metadata.Type === 'Series') {
-        hasOtherResolution = true;
-      }
-
       await this.asyncLock.dispatch(newMedia.tmdbId, async () => {
+        if (!metadata) {
+          // this will never execute, but typescript thinks somebody could reset tvShow from
+          // outer scope back to null before this async gets called
+          return;
+        }
+
         const existing = await this.getExisting(
           newMedia.tmdbId,
           MediaType.MOVIE
@@ -297,14 +330,7 @@ class JellyfinScanner {
         const anidbId = Number(metadata.ProviderIds.AniDB);
         const result = animeList.getFromAnidbId(anidbId);
         tvdbSeasonFromAnidb = result?.tvdbSeason;
-        // With AniDB we can have mixed libraries with movies in a "show" library
-        if (result?.imdbId) {
-          await this.processMovie(jellyfinitem);
-          return;
-        } else if (!result?.tvdbId && result?.tmdbId) {
-          await this.processMovie(jellyfinitem);
-          return;
-        } else if (result?.tvdbId) {
+        if (result?.tvdbId) {
           try {
             tvShow = await this.tmdb.getShowByTvdbId({
               tvdbId: result.tvdbId,
@@ -314,6 +340,11 @@ class JellyfinScanner {
               jellyfinitem,
             });
           }
+        }
+        // With AniDB we can have mixed libraries with movies in a "show" library
+        else if (result?.imdbId || result?.tmdbId) {
+          await this.processMovie(jellyfinitem);
+          return;
         }
       }
 
