@@ -288,6 +288,9 @@ importers:
       '@types/csurf':
         specifier: 1.11.2
         version: 1.11.2
+      '@types/dompurify':
+        specifier: ^3.2.0
+        version: 3.2.0
       '@types/email-templates':
         specifier: 8.0.4
         version: 8.0.4(encoding@0.1.13)
@@ -375,9 +378,6 @@ importers:
       cz-conventional-changelog:
         specifier: 3.3.0
         version: 3.3.0(@types/node@22.10.5)(typescript@4.9.5)
-      dompurify:
-        specifier: ^3.2.4
-        version: 3.2.4
       eslint:
         specifier: 8.35.0
         version: 8.35.0
@@ -408,9 +408,6 @@ importers:
       husky:
         specifier: 8.0.3
         version: 8.0.3
-      jsdom:
-        specifier: ^26.0.0
-        version: 26.0.0
       lint-staged:
         specifier: 13.1.2
         version: 13.1.2(enquirer@2.4.1)
@@ -3300,6 +3297,10 @@ packages:
 
   '@types/debug@4.1.12':
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
+
+  '@types/dompurify@3.2.0':
+    resolution: {integrity: sha512-Fgg31wv9QbLDA0SpTOXO3MaxySc4DKGLi8sna4/Utjo4r3ZRPdCt4UQee8BWr+Q5z21yifghREPJGYaEOEIACg==}
+    deprecated: This is a stub types definition. dompurify provides its own type definitions, so you do not need this installed.
 
   '@types/email-templates@8.0.4':
     resolution: {integrity: sha512-HYvVoyG8qS6PrimZZOS4wMrtQ9MelKEl0sOpi4zVpz2Ds74v+UvWckIFz3NyGyTwAR1okMbwJkApgR2GL/ALjg==}
@@ -13694,6 +13695,10 @@ snapshots:
   '@types/debug@4.1.12':
     dependencies:
       '@types/ms': 0.7.34
+
+  '@types/dompurify@3.2.0':
+    dependencies:
+      dompurify: 3.2.4
 
   '@types/email-templates@8.0.4(encoding@0.1.13)':
     dependencies:
