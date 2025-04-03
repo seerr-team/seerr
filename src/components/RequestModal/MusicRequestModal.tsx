@@ -99,6 +99,7 @@ const MusicRequestModal = ({
       if (!res.ok) throw new Error();
       const mediaRequest: MediaRequest = await res.json();
       mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
+      mutate('/api/v1/request/count');
 
       if (mediaRequest) {
         if (onComplete) {
@@ -138,6 +139,7 @@ const MusicRequestModal = ({
       if (!res.ok) throw new Error();
 
       mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
+      mutate('/api/v1/request/count');
 
       if (res.status === 204) {
         if (onComplete) {
@@ -185,6 +187,7 @@ const MusicRequestModal = ({
         if (!res.ok) throw new Error();
       }
       mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
+      mutate('/api/v1/request/count');
 
       addToast(
         <span>
