@@ -799,11 +799,11 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                     <span>
                       {intl.formatMessage(messages.removearr, {
                         arr:
-                      request.type === 'music'
-                        ? 'Lidarr'
-                        : request.type === 'movie'
-                        ? 'Radarr'
-                        : 'Sonarr',
+                          request.type === 'music'
+                            ? 'Lidarr'
+                            : request.type === 'movie'
+                            ? 'Radarr'
+                            : 'Sonarr',
                       })}
                     </span>
                   </ConfirmButton>
