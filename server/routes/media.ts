@@ -239,6 +239,7 @@ mediaRoutes.delete(
       const is4k = String(req.query.is4k) === 'true';
 
       let serviceSettings;
+
       if (media.mediaType === MediaType.MOVIE) {
         serviceSettings = settings.radarr.find(
           (radarr) => radarr.isDefault && radarr.is4k === is4k
@@ -273,23 +274,29 @@ mediaRoutes.delete(
       }
 
       if (!serviceSettings) {
+        const serviceType =
+          media.mediaType === MediaType.MOVIE
+            ? 'Radarr'
+            : media.mediaType === MediaType.TV
+            ? 'Sonarr'
+            : 'Lidarr';
+
         logger.warn(
           `There is no default ${
-            media.mediaType === MediaType.MOVIE
-              ? 'Radarr'
-              : media.mediaType === MediaType.TV
-              ? 'Sonarr'
-              : 'Lidarr'
-          } server configured.`,
+            is4k && media.mediaType !== MediaType.MUSIC ? '4K ' : ''
+          }${serviceType} server configured.`,
           {
             label: 'Media Request',
             mediaId: media.id,
           }
         );
-        return;
+        return res
+          .status(500)
+          .json({ message: `No default ${serviceType} server configured` });
       }
 
       let service;
+
       if (media.mediaType === MediaType.MOVIE) {
         service = new RadarrAPI({
           apiKey: serviceSettings.apiKey,
@@ -326,7 +333,7 @@ mediaRoutes.delete(
 
       return res.status(204).send();
     } catch (e) {
-      logger.error('Something went wrong fetching media in delete request', {
+      logger.error('Something went wrong deleting media file', {
         label: 'Media',
         message: e.message,
       });
