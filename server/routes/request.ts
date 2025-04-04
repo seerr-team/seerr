@@ -287,6 +287,17 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
                 ),
               };
             }
+            case MediaType.MUSIC: {
+              return {
+                ...r,
+                // check if the lidarr server for this request is configured
+                canRemove: lidarrServers.some(
+                  (server) => server.id === r.media.serviceId
+                ),
+              };
+            }
+            default:
+              return r;
           }
         });
       }
