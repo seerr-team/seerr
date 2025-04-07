@@ -31,7 +31,7 @@ type BaseProps<P> = {
   ) => void;
 };
 
-type ButtonProps<P extends React.ElementType> = {
+export type ButtonProps<P extends React.ElementType> = {
   as?: P;
 } & MergeElementProps<P, BaseProps<P>>;
 

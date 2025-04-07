@@ -12,7 +12,7 @@ export async function processCallback(
     const result = await fetch(url);
     const message = await result.json();
 
-    if (result.status !== 200) {
+    if (!result.ok) {
       return { type: 'error', message: message.message };
     }
     return {

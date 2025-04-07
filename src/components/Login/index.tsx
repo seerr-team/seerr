@@ -1,12 +1,12 @@
 import EmbyLogo from '@app/assets/services/emby-icon-only.svg';
 import JellyfinLogo from '@app/assets/services/jellyfin-icon.svg';
 import PlexLogo from '@app/assets/services/plex.svg';
-import Button from '@app/components/Common/Button';
 import ImageFader from '@app/components/Common/ImageFader';
 import PageTitle from '@app/components/Common/PageTitle';
 import LanguagePicker from '@app/components/Layout/LanguagePicker';
 import JellyfinLogin from '@app/components/Login/JellyfinLogin';
 import LocalLogin from '@app/components/Login/LocalLogin';
+import OidcLoginButton from '@app/components/Login/OidcLoginButton';
 import PlexLoginButton from '@app/components/Login/PlexLoginButton';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
@@ -21,6 +21,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { CSSTransition, SwitchTransition } from 'react-transition-group';
 import useSWR from 'swr';
+import LoginButton from './LoginButton';
 
 const messages = defineMessages('components.Login', {
   signin: 'Sign In',
@@ -121,10 +122,9 @@ const Login = () => {
       ) : (
         settings.currentSettings.localLogin &&
         (mediaServerLogin ? (
-          <Button
+          <LoginButton
             key="jellyseerr"
             data-testid="jellyseerr-login-button"
-            className="flex-grow bg-transparent"
             onClick={() => setMediaServerLogin(false)}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -134,33 +134,24 @@ const Login = () => {
               className="mr-2 h-5"
             />
             <span>{settings.currentSettings.applicationTitle}</span>
-          </Button>
+          </LoginButton>
         ) : (
-          <Button
+          <LoginButton
             key="mediaserver"
             data-testid="mediaserver-login-button"
-            className="flex-grow bg-transparent"
             onClick={() => setMediaServerLogin(true)}
           >
             <MediaServerLogo />
             <span>{mediaServerName}</span>
-          </Button>
+          </LoginButton>
         ))
       )),
     ...settings.currentSettings.openIdProviders.map((provider) => (
-      <Button
-        as="a"
-        href={`/api/v1/auth/oidc/login/${provider.slug}`}
-        className="flex-grow bg-transparent"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={provider.logo || '/images/openid.svg'}
-          alt={provider.name}
-          className="mr-2 max-h-5 w-5"
-        />
-        <span>{provider.name}</span>
-      </Button>
+      <OidcLoginButton
+        key={provider.slug}
+        provider={provider}
+        onError={setError}
+      />
     )),
   ].filter((o): o is JSX.Element => !!o);
 

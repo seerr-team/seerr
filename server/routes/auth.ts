@@ -754,8 +754,8 @@ authRoutes.get('/oidc/login/:slug', async (req, res, next) => {
   try {
     redirectUrl = await getOpenIdRedirectUrl(req, provider, state);
   } catch (err) {
-    logger.info('Failed OIDC login attempt', {
-      cause: 'Failed to fetch OIDC redirect url',
+    logger.info('Failed OpenID Connect login attempt', {
+      cause: 'Failed to fetch OpenID Connect redirect url',
       ip: req.ip,
       errorMessage: err.message,
     });
@@ -771,7 +771,9 @@ authRoutes.get('/oidc/login/:slug', async (req, res, next) => {
     secure: req.protocol === 'https',
   });
 
-  return res.redirect(redirectUrl);
+  return res.status(200).json({
+    redirectUrl,
+  });
 });
 
 authRoutes.get('/oidc/callback/:slug', async (req, res, next) => {
@@ -992,7 +994,7 @@ authRoutes.get('/oidc/callback/:slug', async (req, res, next) => {
     logger.error('Failed OIDC login attempt', {
       cause: 'Unknown error',
       ip: req.ip,
-      errorMessage: error.message,
+      error,
     });
     return next({
       status: 500,
@@ -1000,23 +1002,6 @@ authRoutes.get('/oidc/callback/:slug', async (req, res, next) => {
     });
   }
 });
-
-// authRoutes.get('/oidc-logout', async (req, res, next) => {
-//   const settings = getSettings();
-
-//   if (!settings.main.oidcLogin || !settings.main.oidc.automaticLogin) {
-//     return next({
-//       status: 403,
-//       message: 'OpenID Connect sign-in is disabled.',
-//     });
-//   }
-
-//   const oidcEndpoints = await getOIDCWellknownConfiguration(
-//     settings.main.oidc.providerUrl
-//   );
-
-//   return res.redirect(oidcEndpoints.end_session_endpoint);
-// });
 
 authRoutes.post('/logout', async (req, res, next) => {
   try {

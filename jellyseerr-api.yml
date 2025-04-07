@@ -4113,17 +4113,21 @@ paths:
             type: string
             example: 'authentik'
       responses:
-        '302':
-          description: Redirect to the authentication url for the OpenID Connect provider
+        '200':
+          description: Authentication redirect url for the OpenID Connect provider
           headers:
-            Location:
-              schema:
-                type: string
-                example: https://example.com/auth/oidc/callback?response_type=code&client_id=client_id&redirect_uri=https%3A%2F%2Fexample.com%2Fauth%2Foidc%2Fcallback&scope=openid%20email&state=state
             Set-Cookie:
               schema:
                 type: string
                 example: 'oidc-state=123456789; HttpOnly; max-age=60000; Secure'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  redirectUrl:
+                    type: string
+                    example: https://example.com/auth/oidc/callback?response_type=code&client_id=client_id&redirect_uri=https%3A%2F%2Fexample.com%2Fauth%2Foidc%2Fcallback&scope=openid%20email&state=state
   /auth/oidc/callback/{slug}:
     get:
       security: []
