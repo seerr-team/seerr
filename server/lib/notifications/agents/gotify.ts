@@ -18,8 +18,7 @@ interface GotifyPayload {
 
 class GotifyAgent
   extends BaseAgent<NotificationAgentGotify>
-  implements NotificationAgent
-{
+  implements NotificationAgent {
   protected getSettings(): NotificationAgentGotify {
     if (this.settings) {
       return this.settings;
@@ -86,17 +85,23 @@ class GotifyAgent
 
       if (status) {
         message += `\n**${intl.formatMessage(globalMessages.requestStatus)}:** ${status}  `;
+        if (
+          type === Notification.MEDIA_DECLINED &&
+          payload.request &&
+          payload.request.declineReason
+        ) {
+          message += `\n**${intl.formatMessage(globalMessages.declineReason)}** ${payload.request.declineReason}`;
+        }
       }
     } else if (payload.comment) {
       message += `\n${intl.formatMessage(globalMessages.commentFrom, { userName: payload.comment.user.displayName })}:\n${payload.comment.message}  `;
     } else if (payload.issue) {
       message += `\n\n**${intl.formatMessage(globalMessages.reportedBy)}:** ${payload.issue.createdBy.displayName}  `;
       message += `\n**${intl.formatMessage(globalMessages.issueType)}:** ${IssueTypeName[payload.issue.issueType]}  `;
-      message += `\n**${intl.formatMessage(globalMessages.issueStatus)}:** ${
-        payload.issue.status === IssueStatus.OPEN
-          ? intl.formatMessage(globalMessages.open)
-          : intl.formatMessage(globalMessages.resolved)
-      }  `;
+      message += `\n**${intl.formatMessage(globalMessages.issueStatus)}:** ${payload.issue.status === IssueStatus.OPEN
+        ? intl.formatMessage(globalMessages.open)
+        : intl.formatMessage(globalMessages.resolved)
+        }  `;
     }
 
     for (const extra of payload.extra ?? []) {

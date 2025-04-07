@@ -45,6 +45,9 @@ const messages = defineMessages('notifications.agents.email', {
   declinedRequest: 'Your request for the following {mediaType} was declined:',
   declinedRequest4k:
     'Your request for the following {mediaType} in 4K was declined:',
+  declinedRequestReason: 'Your request for the following {mediaType} was declined because: {reason}',
+  declinedRequest4kReason:
+    'Your request for the following {mediaType} in 4K was declined because: {reason}',
   failedRequest:
     'A request for the following {mediaType} failed to be added to {service}:',
   failedRequest4k:
@@ -61,8 +64,7 @@ const messages = defineMessages('notifications.agents.email', {
 
 class EmailAgent
   extends BaseAgent<NotificationAgentEmail>
-  implements NotificationAgent
-{
+  implements NotificationAgent {
   protected getSettings(): NotificationAgentEmail {
     if (this.settings) {
       return this.settings;
@@ -165,10 +167,19 @@ class EmailAgent
           );
           break;
         case Notification.MEDIA_DECLINED:
-          body = intl.formatMessage(
-            is4k ? messages.declinedRequest4k : messages.declinedRequest,
-            { mediaType }
-          );
+          if (!payload.request.declineReason) {
+            body = intl.formatMessage(
+              is4k ? messages.declinedRequest4k : messages.declinedRequest,
+              { mediaType }
+            );
+          } else {
+            body = intl.formatMessage(
+              is4k
+                ? messages.declinedRequest4kReason
+                : messages.declinedRequestReason,
+              { mediaType, reason: payload.request.declineReason }
+            );
+          }
           break;
         case Notification.MEDIA_FAILED:
           body = intl.formatMessage(
@@ -214,8 +225,8 @@ class EmailAgent
       const issueType =
         payload.issue && payload.issue.issueType !== IssueType.OTHER
           ? intl.formatMessage(messages.issueType, {
-              type: IssueTypeName[payload.issue.issueType].toLowerCase(),
-            })
+            type: IssueTypeName[payload.issue.issueType].toLowerCase(),
+          })
           : intl.formatMessage(messages.issue);
 
       let body = '';

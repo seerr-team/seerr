@@ -689,6 +689,7 @@ requestRoutes.post<{
         relations: { requestedBy: true, modifiedBy: true },
       });
 
+      const declineReason: string = req.body ? req.body.declineReason : "";
       let newStatus: MediaRequestStatus;
 
       switch (req.params.status) {
@@ -697,6 +698,9 @@ requestRoutes.post<{
           break;
         case 'decline':
           newStatus = MediaRequestStatus.DECLINED;
+          if (declineReason) {
+            request.declineReason = declineReason.trim().substring(0, 500);
+          }
           break;
         default:
           return next({

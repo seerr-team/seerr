@@ -4,6 +4,7 @@ import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import Tooltip from '@app/components/Common/Tooltip';
 import RequestModal from '@app/components/RequestModal';
+import DeclineRequestModal from '@app/components/RequestModal/DeclineRequestModal';
 import StatusBadge from '@app/components/StatusBadge';
 import useDeepLinks from '@app/hooks/useDeepLinks';
 import useToasts from '@app/hooks/useToasts';
@@ -231,6 +232,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
     'approve' | 'decline' | null
   >(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeclineRequestModal, setShowDeclineRequestModal] = useState(false);
   const url =
     request.type === 'movie'
       ? `/api/v1/movie/${request.media.tmdbId}`
@@ -339,6 +341,16 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
         onComplete={() => {
           revalidate();
           setShowEditModal(false);
+        }}
+      />
+      <DeclineRequestModal
+        show={showDeclineRequestModal}
+        requests={[request]}
+        type={request.type}
+        onCancel={() => setShowDeclineRequestModal(false)}
+        onComplete={() => {
+          revalidate();
+          setShowDeclineRequestModal(false);
         }}
       />
       <div
@@ -537,8 +549,8 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                       buttonType="danger"
                       buttonSize="sm"
                       className="hidden sm:block"
-                      onClick={() => modifyRequest('decline')}
                       disabled={updatingType !== null}
+                      onClick={() => setShowDeclineRequestModal(true)}
                     >
                       {updatingType === 'decline' ? <Spinner /> : <XMarkIcon />}
                       <span>{intl.formatMessage(globalMessages.decline)}</span>
@@ -550,8 +562,8 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                         buttonType="danger"
                         buttonSize="sm"
                         className="sm:hidden"
-                        onClick={() => modifyRequest('decline')}
                         disabled={updatingType !== null}
+                        onClick={() => setShowDeclineRequestModal(true)}
                       >
                         {updatingType === 'decline' ? (
                           <Spinner />
