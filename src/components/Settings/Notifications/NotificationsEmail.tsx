@@ -131,10 +131,10 @@ const NotificationsEmail = () => {
         encryption: data.options.secure
           ? 'implicit'
           : data.options.requireTls
-            ? 'opportunistic'
-            : data.options.ignoreTls
-              ? 'none'
-              : 'default',
+          ? 'opportunistic'
+          : data.options.ignoreTls
+          ? 'none'
+          : 'default',
         authUser: data.options.authUser,
         authPass: data.options.authPass,
         allowSelfSigned: data.options.allowSelfSigned,
