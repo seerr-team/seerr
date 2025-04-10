@@ -28,8 +28,8 @@ class TmdbPersonMapper extends ExternalAPI {
       {
         nodeCache: cacheManager.getCache('tmdb').data,
         rateLimit: {
+          maxRequests: 20,
           maxRPS: 50,
-          id: 'tmdb',
         },
       }
     );
@@ -135,10 +135,12 @@ class TmdbPersonMapper extends ExternalAPI {
       const searchResults = await this.get<TmdbSearchPersonResponse>(
         '/search/person',
         {
-          query: cleanArtistName,
-          page: '1',
-          include_adult: 'false',
-          language: 'en',
+          params: {
+            query: cleanArtistName,
+            page: '1',
+            include_adult: 'false',
+            language: 'en',
+          },
         },
         this.CACHE_TTL
       );
@@ -316,10 +318,12 @@ class TmdbPersonMapper extends ExternalAPI {
       return await this.get<TmdbSearchPersonResponse>(
         '/search/person',
         {
-          query: options.query,
-          page: options.page?.toString() ?? '1',
-          include_adult: options.includeAdult ? 'true' : 'false',
-          language: options.language ?? 'en',
+          params: {
+            query: options.query,
+            page: options.page?.toString() ?? '1',
+            include_adult: options.includeAdult ? 'true' : 'false',
+            language: options.language ?? 'en',
+          },
         },
         this.CACHE_TTL
       );

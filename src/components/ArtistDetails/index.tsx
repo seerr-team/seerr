@@ -8,6 +8,7 @@ import Error from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowRightCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { MediaStatus } from '@server/constants/media';
+import axios from 'axios';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -394,14 +395,15 @@ const ArtistDetails = () => {
 
       try {
         const pageSize = Math.min(data?.typeCounts?.[albumType] || 100, 1000);
-        const response = await fetch(
-          `/api/v1/artist/${artistId}?albumType=${encodeURIComponent(
-            albumType
-          )}&pageSize=${pageSize}`
-        );
+        const response = await axios.get(`/api/v1/artist/${artistId}`, {
+          params: {
+            albumType,
+            pageSize,
+          },
+        });
 
-        if (response.ok) {
-          const responseData = await response.json();
+        if (response.status === 200) {
+          const responseData = response.data;
           const validAlbums = responseData.releaseGroups
             .filter((album: Album) => album && album.id)
             .map((album: Album) => ({

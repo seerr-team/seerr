@@ -4,6 +4,7 @@ import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import type { LidarrSettings } from '@server/lib/settings';
+import axios from 'axios';
 import { Field, Formik } from 'formik';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -165,28 +166,19 @@ const LidarrModal = ({ onClose, lidarr, onSave }: LidarrModalProps) => {
     }) => {
       setIsTesting(true);
       try {
-        const response = await fetch('/api/v1/settings/lidarr/test', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        const response = await axios.post<TestResponse>(
+          '/api/v1/settings/lidarr/test',
+          {
             hostname,
             apiKey,
             port: Number(port),
             baseUrl,
             useSsl,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data: TestResponse = await response.json();
+          }
+        );
 
         setIsValidated(true);
-        setTestResponse(data);
+        setTestResponse(response.data);
         if (initialLoad.current) {
           addToast(intl.formatMessage(messages.toastLidarrTestSuccess), {
             appearance: 'success',
@@ -281,21 +273,13 @@ const LidarrModal = ({ onClose, lidarr, onSave }: LidarrModalProps) => {
               )?.name,
             };
 
-            const response = await fetch(
-              !lidarr
-                ? '/api/v1/settings/lidarr'
-                : `/api/v1/settings/lidarr/${lidarr.id}`,
-              {
-                method: !lidarr ? 'POST' : 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(submission),
-              }
-            );
-
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
+            if (!lidarr) {
+              await axios.post('/api/v1/settings/lidarr', submission);
+            } else {
+              await axios.put(
+                `/api/v1/settings/lidarr/${lidarr.id}`,
+                submission
+              );
             }
 
             onSave();

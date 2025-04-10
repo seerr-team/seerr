@@ -131,7 +131,10 @@ const TitleCard = ({
         ...(mediaType === 'album' ? { mbId: id } : { tmdbId: Number(id) }),
       };
 
-      const response = await axios.post<Watchlist>('/api/v1/watchlist', requestBody);
+      const response = await axios.post<Watchlist>(
+        '/api/v1/watchlist',
+        requestBody
+      );
       mutate('/api/v1/discover/watchlist');
       if (response.data) {
         addToast(

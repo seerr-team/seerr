@@ -18,8 +18,8 @@ class TheAudioDb extends ExternalAPI {
       {
         nodeCache: cacheManager.getCache('tadb').data,
         rateLimit: {
+          maxRequests: 20,
           maxRPS: 25,
-          id: 'tadb',
         },
       }
     );
@@ -103,7 +103,7 @@ class TheAudioDb extends ExternalAPI {
     try {
       const data = await this.get<TadbArtistResponse>(
         `/${this.apiKey}/artist-mb.php`,
-        { i: id },
+        { params: { i: id } },
         this.CACHE_TTL
       );
 

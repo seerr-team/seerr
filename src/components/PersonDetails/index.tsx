@@ -11,6 +11,7 @@ import { ArrowRightCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import type { MediaStatus } from '@server/constants/media';
 import type { PersonCombinedCreditsResponse } from '@server/interfaces/api/personInterfaces';
 import type { PersonDetails as PersonDetailsType } from '@server/models/Person';
+import axios from 'axios';
 import { groupBy, orderBy } from 'lodash';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -430,40 +431,32 @@ const PersonDetails = () => {
           data?.artist?.typeCounts?.[albumType] || 100,
           1000
         );
-        const response = await fetch(
-          `/api/v1/person/${parsedPersonId}?albumType=${encodeURIComponent(
-            albumType
-          )}&pageSize=${pageSize}`
-        );
 
-        if (response.ok) {
-          const responseData = await response.json();
-          const validAlbums =
-            responseData.artist?.releaseGroups
-              ?.filter((album: Album) => album && album.id)
-              .map((album: Album) => ({
-                ...album,
-                needsCoverArt: !album.posterPath,
-              })) || [];
+        const response = await axios.get(`/api/v1/person/${parsedPersonId}`, {
+          params: {
+            albumType: albumType,
+            pageSize: pageSize,
+          },
+        });
 
-          setAlbumTypes((prev) => ({
-            ...prev,
-            [albumType]: {
-              ...prev[albumType],
-              albums: validAlbums,
-              isExpanded: true,
-              isLoading: false,
-            },
-          }));
-        } else {
-          setAlbumTypes((prev) => ({
-            ...prev,
-            [albumType]: {
-              ...prev[albumType],
-              isLoading: false,
-            },
-          }));
-        }
+        const responseData = response.data;
+        const validAlbums =
+          responseData.artist?.releaseGroups
+            ?.filter((album: Album) => album && album.id)
+            .map((album: Album) => ({
+              ...album,
+              needsCoverArt: !album.posterPath,
+            })) || [];
+
+        setAlbumTypes((prev) => ({
+          ...prev,
+          [albumType]: {
+            ...prev[albumType],
+            albums: validAlbums,
+            isExpanded: true,
+            isLoading: false,
+          },
+        }));
       } catch (error) {
         setAlbumTypes((prev) => ({
           ...prev,

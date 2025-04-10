@@ -12,6 +12,7 @@ import type { NonFunctionProperties } from '@server/interfaces/api/common';
 import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
 import { Permission } from '@server/lib/permissions';
 import type { MusicDetails } from '@server/models/Music';
+import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
@@ -85,23 +86,17 @@ const MusicRequestModal = ({
           tags: requestOverrides.tags,
         };
       }
-      const res = await fetch('/api/v1/request', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          mediaId: data?.mbId,
-          mediaType: 'music',
-          ...overrideParams,
-        }),
+
+      const response = await axios.post<MediaRequest>('/api/v1/request', {
+        mediaId: data?.mbId,
+        mediaType: 'music',
+        ...overrideParams,
       });
-      if (!res.ok) throw new Error();
-      const mediaRequest: MediaRequest = await res.json();
+
       mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
       mutate('/api/v1/request/count');
 
-      if (mediaRequest) {
+      if (response.data) {
         if (onComplete) {
           onComplete(
             hasPermission(Permission.AUTO_APPROVE)
@@ -133,15 +128,12 @@ const MusicRequestModal = ({
     setIsUpdating(true);
 
     try {
-      const res = await fetch(`/api/v1/request/${editRequest?.id}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error();
+      const response = await axios.delete(`/api/v1/request/${editRequest?.id}`);
 
       mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
       mutate('/api/v1/request/count');
 
-      if (res.status === 204) {
+      if (response.status === 204) {
         if (onComplete) {
           onComplete(MediaStatus.UNKNOWN);
         }
@@ -164,28 +156,19 @@ const MusicRequestModal = ({
     setIsUpdating(true);
 
     try {
-      const res = await fetch(`/api/v1/request/${editRequest?.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          mediaType: 'music',
-          serverId: requestOverrides?.server,
-          profileId: requestOverrides?.profile,
-          rootFolder: requestOverrides?.folder,
-          userId: requestOverrides?.user?.id,
-          tags: requestOverrides?.tags,
-        }),
+      await axios.put(`/api/v1/request/${editRequest?.id}`, {
+        mediaType: 'music',
+        serverId: requestOverrides?.server,
+        profileId: requestOverrides?.profile,
+        rootFolder: requestOverrides?.folder,
+        userId: requestOverrides?.user?.id,
+        tags: requestOverrides?.tags,
       });
-      if (!res.ok) throw new Error();
 
       if (alsoApproveRequest) {
-        const res = await fetch(`/api/v1/request/${editRequest?.id}/approve`, {
-          method: 'POST',
-        });
-        if (!res.ok) throw new Error();
+        await axios.post(`/api/v1/request/${editRequest?.id}/approve`);
       }
+
       mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
       mutate('/api/v1/request/count');
 

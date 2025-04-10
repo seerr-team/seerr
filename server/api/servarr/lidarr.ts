@@ -120,11 +120,11 @@ export interface LidarrAlbumDetails {
     status: string;
     duration: number;
     trackCount: number;
-    media: any[];
+    media: unknown[];
     mediumCount: number;
     disambiguation: string;
-    country: any[];
-    label: any[];
+    country: unknown[];
+    label: unknown[];
     format: string;
     monitored: boolean;
   }[];
@@ -136,8 +136,8 @@ export interface LidarrAlbumDetails {
   }[];
   artist: LidarrArtistDetails & {
     artistName: string;
-    nextAlbum: any | null;
-    lastAlbum: any | null;
+    nextAlbum: unknown | null;
+    lastAlbum: unknown | null;
   };
   images: LidarrImage[];
   links: {
@@ -202,9 +202,9 @@ export interface LidarrAlbumOptions {
   mediumCount?: number;
   ratings?: LidarrRating;
   releaseDate?: string;
-  releases: any[];
+  releases: unknown[];
   genres: string[];
-  media: any[];
+  media: unknown[];
   artist: {
     status: string;
     ended: boolean;
@@ -310,9 +310,11 @@ class LidarrAPI extends ServarrBase<{ albumId: number }> {
 
   public async removeAlbum(albumId: number): Promise<void> {
     try {
-      await this.delete(`/album/${albumId}`, {
-        deleteFiles: 'true',
-        addImportExclusion: 'false',
+      await this.axios.delete(`/album/${albumId}`, {
+        params: {
+          deleteFiles: 'true',
+          addImportExclusion: 'false',
+        },
       });
       logger.info(`[Lidarr] Removed album ${albumId}`);
     } catch (e) {
@@ -322,8 +324,10 @@ class LidarrAPI extends ServarrBase<{ albumId: number }> {
 
   public async searchAlbum(mbid: string): Promise<LidarrAlbumResult[]> {
     try {
-      const data = await this.get<LidarrAlbumResult[]>(`/search`, {
-        term: `lidarr:${mbid}`,
+      const data = await this.get<LidarrAlbumResult[]>('/search', {
+        params: {
+          term: `lidarr:${mbid}`,
+        },
       });
       return data;
     } catch (e) {
@@ -334,8 +338,10 @@ class LidarrAPI extends ServarrBase<{ albumId: number }> {
   public async addAlbum(options: LidarrAlbumOptions): Promise<LidarrAlbum> {
     try {
       const existingAlbums = await this.get<LidarrAlbum[]>('/album', {
-        foreignAlbumId: options.foreignAlbumId,
-        includeAllArtistAlbums: 'false',
+        params: {
+          foreignAlbumId: options.foreignAlbumId,
+          includeAllArtistAlbums: 'false',
+        },
       });
 
       if (existingAlbums.length > 0 && existingAlbums[0].monitored) {
@@ -358,7 +364,7 @@ class LidarrAPI extends ServarrBase<{ albumId: number }> {
           }
         );
 
-        const updatedAlbum = await this.put<LidarrAlbum>(
+        const updatedAlbum = await this.axios.put<LidarrAlbum>(
           `/album/${existingAlbums[0].id}`,
           {
             ...existingAlbums[0],
@@ -368,10 +374,10 @@ class LidarrAPI extends ServarrBase<{ albumId: number }> {
 
         await this.post('/command', {
           name: 'AlbumSearch',
-          albumIds: [updatedAlbum.id],
+          albumIds: [updatedAlbum.data.id],
         });
 
-        return updatedAlbum;
+        return updatedAlbum.data;
       }
 
       const data = await this.post<LidarrAlbum>('/album', {
@@ -389,7 +395,9 @@ class LidarrAPI extends ServarrBase<{ albumId: number }> {
   ): Promise<LidarrAlbumResult[]> {
     try {
       const data = await this.get<LidarrAlbumResult[]>('/search', {
-        term: `lidarr:${mbid}`,
+        params: {
+          term: `lidarr:${mbid}`,
+        },
       });
       return data;
     } catch (e) {

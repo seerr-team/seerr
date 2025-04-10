@@ -5,6 +5,7 @@ import { Router } from 'express';
 const router = Router();
 const tmdbImageProxy = new ImageProxy('tmdb', 'https://image.tmdb.org', {
   rateLimitOptions: {
+    maxRequests: 20,
     maxRPS: 50,
   },
 });

@@ -16,8 +16,8 @@ class ListenBrainzAPI extends ExternalAPI {
       {
         nodeCache: cacheManager.getCache('listenbrainz').data,
         rateLimit: {
+          maxRequests: 20,
           maxRPS: 25,
-          id: 'listenbrainz',
         },
       }
     );
@@ -25,44 +25,38 @@ class ListenBrainzAPI extends ExternalAPI {
 
   public async getAlbum(mbid: string): Promise<LbAlbumDetails> {
     try {
-      return await this.getRolling<LbAlbumDetails>(
+      return await this.post<LbAlbumDetails>(
         `/album/${mbid}`,
         {},
-        43200,
         {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({}),
+          baseURL: 'https://listenbrainz.org',
         },
-        'https://listenbrainz.org'
+        43200
       );
     } catch (e) {
       throw new Error(
-        `[ListenBrainz] Failed to fetch album details: ${e.message}`
+        `[ListenBrainz] Failed to fetch album details: ${
+          e instanceof Error ? e.message : 'Unknown error'
+        }`
       );
     }
   }
 
   public async getArtist(mbid: string): Promise<LbArtistDetails> {
     try {
-      return await this.getRolling<LbArtistDetails>(
+      return await this.post<LbArtistDetails>(
         `/artist/${mbid}`,
         {},
-        43200,
         {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({}),
+          baseURL: 'https://listenbrainz.org',
         },
-        'https://listenbrainz.org'
+        43200
       );
     } catch (e) {
       throw new Error(
-        `[ListenBrainz] Failed to fetch artist details: ${e.message}`
+        `[ListenBrainz] Failed to fetch artist details: ${
+          e instanceof Error ? e.message : 'Unknown error'
+        }`
       );
     }
   }
@@ -79,9 +73,11 @@ class ListenBrainzAPI extends ExternalAPI {
     return this.get<LbTopAlbumsResponse>(
       '/stats/sitewide/release-groups',
       {
-        offset: offset.toString(),
-        range,
-        count: count.toString(),
+        params: {
+          offset: offset.toString(),
+          range,
+          count: count.toString(),
+        },
       },
       43200
     );
@@ -99,9 +95,11 @@ class ListenBrainzAPI extends ExternalAPI {
     return this.get<LbTopArtistsResponse>(
       '/stats/sitewide/artists',
       {
-        offset: offset.toString(),
-        range,
-        count: count.toString(),
+        params: {
+          offset: offset.toString(),
+          range,
+          count: count.toString(),
+        },
       },
       43200
     );
@@ -121,10 +119,12 @@ class ListenBrainzAPI extends ExternalAPI {
     return this.get<LbFreshReleasesResponse>(
       '/explore/fresh-releases',
       {
-        days: days.toString(),
-        sort,
-        offset: offset.toString(),
-        count: count.toString(),
+        params: {
+          days: days.toString(),
+          sort,
+          offset: offset.toString(),
+          count: count.toString(),
+        },
       },
       43200
     );

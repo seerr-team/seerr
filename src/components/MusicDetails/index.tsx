@@ -33,6 +33,7 @@ import { MediaStatus, MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import type { MusicDetails as MusicDetailsType } from '@server/models/Music';
 import type { AlbumResult, ArtistResult } from '@server/models/Search';
+import axios from 'axios';
 import 'country-flag-icons/3x2/flags.css';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -217,56 +218,41 @@ const MusicDetails = ({ music }: MusicDetailsProps) => {
   const onClickWatchlistBtn = async (): Promise<void> => {
     setIsUpdating(true);
 
-    const res = await fetch('/api/v1/watchlist', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    try {
+      const { data } = await axios.post('/api/v1/watchlist', {
         mbId: music?.id,
         mediaType: MediaType.MUSIC,
         title: music?.title,
-      }),
-    });
+      });
 
-    if (!res.ok) {
+      if (data) {
+        addToast(
+          <span>
+            {intl.formatMessage(messages.watchlistSuccess, {
+              title: music?.title,
+              strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+            })}
+          </span>,
+          { appearance: 'success', autoDismiss: true }
+        );
+      }
+    } catch (error) {
       addToast(intl.formatMessage(messages.watchlistError), {
         appearance: 'error',
         autoDismiss: true,
       });
-
+    } finally {
       setIsUpdating(false);
-      return;
+      setToggleWatchlist((prevState) => !prevState);
     }
-
-    const data = await res.json();
-
-    if (data) {
-      addToast(
-        <span>
-          {intl.formatMessage(messages.watchlistSuccess, {
-            title: music?.title,
-            strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
-          })}
-        </span>,
-        { appearance: 'success', autoDismiss: true }
-      );
-    }
-
-    setIsUpdating(false);
-    setToggleWatchlist((prevState) => !prevState);
   };
 
   const onClickDeleteWatchlistBtn = async (): Promise<void> => {
     setIsUpdating(true);
     try {
-      const res = await fetch(`/api/v1/watchlist/${music?.id}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error();
+      const response = await axios.delete(`/api/v1/watchlist/${music?.id}`);
 
-      if (res.status === 204) {
+      if (response.status === 204) {
         addToast(
           <span>
             {intl.formatMessage(messages.watchlistDeleted, {
@@ -277,7 +263,7 @@ const MusicDetails = ({ music }: MusicDetailsProps) => {
           { appearance: 'info', autoDismiss: true }
         );
       }
-    } catch (e) {
+    } catch (error) {
       addToast(intl.formatMessage(messages.watchlistError), {
         appearance: 'error',
         autoDismiss: true,
@@ -291,51 +277,46 @@ const MusicDetails = ({ music }: MusicDetailsProps) => {
   const onClickHideItemBtn = async (): Promise<void> => {
     setIsBlacklistUpdating(true);
 
-    const res = await fetch('/api/v1/blacklist', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    try {
+      const response = await axios.post('/api/v1/blacklist', {
         mbId: music?.id,
         mediaType: 'music',
         title: music?.title,
         user: user?.id,
-      }),
-    });
+      });
 
-    if (res.status === 201) {
-      addToast(
-        <span>
-          {intl.formatMessage(globalMessages.blacklistSuccess, {
-            title: music?.title,
-            strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
-          })}
-        </span>,
-        { appearance: 'success', autoDismiss: true }
-      );
+      if (response.status === 201) {
+        addToast(
+          <span>
+            {intl.formatMessage(globalMessages.blacklistSuccess, {
+              title: music?.title,
+              strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+            })}
+          </span>,
+          { appearance: 'success', autoDismiss: true }
+        );
 
-      revalidate();
-    } else if (res.status === 412) {
-      addToast(
-        <span>
-          {intl.formatMessage(globalMessages.blacklistDuplicateError, {
-            title: music?.title,
-            strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
-          })}
-        </span>,
-        { appearance: 'info', autoDismiss: true }
-      );
-    } else {
+        revalidate();
+      } else if (response.status === 412) {
+        addToast(
+          <span>
+            {intl.formatMessage(globalMessages.blacklistDuplicateError, {
+              title: music?.title,
+              strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+            })}
+          </span>,
+          { appearance: 'info', autoDismiss: true }
+        );
+      }
+    } catch (error) {
       addToast(intl.formatMessage(globalMessages.blacklistError), {
         appearance: 'error',
         autoDismiss: true,
       });
+    } finally {
+      setIsBlacklistUpdating(false);
+      closeBlacklistModal();
     }
-
-    setIsBlacklistUpdating(false);
-    closeBlacklistModal();
   };
 
   const showHideButton = hasPermission([Permission.MANAGE_BLACKLIST], {

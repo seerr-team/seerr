@@ -1,5 +1,6 @@
 import ExternalAPI from '@server/api/externalapi';
 import cacheManager from '@server/lib/cache';
+import axios from 'axios';
 import DOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
 import type { MbAlbumDetails, MbArtistDetails } from './interfaces';
@@ -20,8 +21,8 @@ class MusicBrainz extends ExternalAPI {
         },
         nodeCache: cacheManager.getCache('musicbrainz').data,
         rateLimit: {
+          maxRequests: 1,
           maxRPS: 1,
-          id: 'musicbrainz',
         },
       }
     );
@@ -45,17 +46,23 @@ class MusicBrainz extends ExternalAPI {
       }>(
         '/release-group',
         {
-          query,
-          fmt: 'json',
-          limit: limit.toString(),
-          offset: offset.toString(),
+          params: {
+            query,
+            fmt: 'json',
+            limit: limit.toString(),
+            offset: offset.toString(),
+          },
         },
         43200
       );
 
       return data['release-groups'];
     } catch (e) {
-      throw new Error(`[MusicBrainz] Failed to search albums: ${e.message}`);
+      throw new Error(
+        `[MusicBrainz] Failed to search albums: ${
+          e instanceof Error ? e.message : 'Unknown error'
+        }`
+      );
     }
   }
 
@@ -77,17 +84,23 @@ class MusicBrainz extends ExternalAPI {
       }>(
         '/artist',
         {
-          query,
-          fmt: 'json',
-          limit: limit.toString(),
-          offset: offset.toString(),
+          params: {
+            query,
+            fmt: 'json',
+            limit: limit.toString(),
+            offset: offset.toString(),
+          },
         },
         43200
       );
 
       return data.artists;
     } catch (e) {
-      throw new Error(`[MusicBrainz] Failed to search artists: ${e.message}`);
+      throw new Error(
+        `[MusicBrainz] Failed to search artists: ${
+          e instanceof Error ? e.message : 'Unknown error'
+        }`
+      );
     }
   }
 
@@ -111,7 +124,7 @@ class MusicBrainz extends ExternalAPI {
     try {
       const safeUrl = `https://musicbrainz.org/artist/${artistMbid}/wikipedia-extract`;
 
-      const response = await fetch(safeUrl, {
+      const response = await axios.get(safeUrl, {
         headers: {
           Accept: 'application/json',
           'Accept-Language': language,
@@ -120,11 +133,7 @@ class MusicBrainz extends ExternalAPI {
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = response.data;
       if (!data.wikipediaExtract || !data.wikipediaExtract.content) {
         return null;
       }
@@ -161,8 +170,10 @@ class MusicBrainz extends ExternalAPI {
       }>(
         `/release/${releaseId}`,
         {
-          inc: 'release-groups',
-          fmt: 'json',
+          params: {
+            inc: 'release-groups',
+            fmt: 'json',
+          },
         },
         43200
       );
@@ -170,7 +181,9 @@ class MusicBrainz extends ExternalAPI {
       return data['release-group']?.id ?? null;
     } catch (e) {
       throw new Error(
-        `[MusicBrainz] Failed to fetch release group: ${e.message}`
+        `[MusicBrainz] Failed to fetch release group: ${
+          e instanceof Error ? e.message : 'Unknown error'
+        }`
       );
     }
   }

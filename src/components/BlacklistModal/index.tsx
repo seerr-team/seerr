@@ -57,7 +57,9 @@ const BlacklistModal = ({
       if (!show) return;
       try {
         setError(null);
-        const response = await axios.get(`/api/v1/${type}/${type === 'music' ? mbId : tmdbId}`);
+        const response = await axios.get(
+          `/api/v1/${type}/${type === 'music' ? mbId : tmdbId}`
+        );
         setData(response.data);
       } catch (err) {
         setError(err);
