@@ -377,11 +377,14 @@ class PlexTvAPI extends ExternalAPI {
     profileId: string,
     pin: string
   ): Promise<boolean> {
+    const urlPath = `/api/v2/home/users/${profileId}/switch`;
+
     try {
       const response = await axios.post(
-        `https://clients.plex.tv/api/v2/home/users/${profileId}/switch`,
+        urlPath,
         { pin },
         {
+          baseURL: 'https://clients.plex.tv',
           headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
