@@ -133,6 +133,18 @@ components:
           type: number
           example: 5
           readOnly: true
+        plexProfileId:
+          type: string
+          example: '12345'
+          readOnly: true
+        isPlexProfile:
+          type: boolean
+          example: true
+          readOnly: true
+        mainPlexUserId:
+          type: number
+          example: 1
+          readOnly: true
       required:
         - id
         - email
@@ -305,6 +317,27 @@ components:
             forceMaxTtl:
               type: number
               example: -1
+    PlexProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '12345'
+        title:
+          type: string
+          example: 'Family Member'
+        username:
+          type: string
+          example: 'family_member'
+        thumb:
+          type: string
+          example: 'https://plex.tv/users/avatar.jpg'
+        isMainUser:
+          type: boolean
+          example: false
+        protected:
+          type: boolean
+          example: true
     PlexLibrary:
       type: object
       properties:
@@ -3928,17 +3961,17 @@ paths:
   /auth/plex:
     post:
       summary: Sign in using a Plex token
-      description: Takes an `authToken` (Plex token) to log the user in. Generates a session cookie for use in further requests. If the user does not exist, and there are no other users, then a user will be created with full admin privileges. If a user logs in with access to the main Plex server, they will also have an account created, but without any permissions.
+      description: |
+        Takes an `authToken` (Plex token) to log the user in. Generates a session cookie for use in further requests.
+
+        If the user does not exist, and there are no other users, then a user will be created with full admin privileges.
+        If a user logs in with access to the main Plex server, they will also have an account created, but without any permissions.
+
+        If the Plex account has multiple profiles, the response will include a `status` field with value `REQUIRES_PROFILE`,
+        along with the available profiles and the main user ID.
       security: []
       tags:
         - auth
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
       requestBody:
         required: true
         content:
@@ -3948,8 +3981,155 @@ paths:
               properties:
                 authToken:
                   type: string
+                profileId:
+                  type: string
+                  description: Optional. If provided, will attempt to authenticate as this specific Plex profile.
+                pin:
+                  type: string
+                  description: Optional 4-digit profile PIN
+                isSetup:
+                  type: boolean
+                  description: Set to true during initial setup wizard
               required:
                 - authToken
+      responses:
+        '200':
+          description: OK or profile selection required
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/User'
+                  - type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: [REQUIRES_PROFILE]
+                        example: REQUIRES_PROFILE
+                      mainUserId:
+                        type: number
+                        example: 1
+                      profiles:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PlexProfile'
+        '401':
+          description: Invalid Plex token (or incorrect 4-digit PIN)
+        '403':
+          description: Access denied
+        '409':
+          description: Conflict. E-mail or username already exists
+        '500':
+          description: Unexpected server error
+
+  /auth/plex/profile/select:
+    post:
+      summary: Select a Plex profile to log in as
+      description: |
+        Selects a specific Plex profile to log in as. The profile must be associated with the main user ID provided.
+
+        A session cookie will be generated for the selected profile user.
+      security: []
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                profileId:
+                  type: string
+                  description: The ID of the Plex profile to log in as
+                mainUserId:
+                  type: number
+                  description: The ID of the main Plex user account
+                pin:
+                  type: string
+                  description: Optional 4 digit profile PIN
+                authToken:
+                  type: string
+                  description: Optional Plex token (when reselecting without /plex step)
+
+              required:
+                - profileId
+                - mainUserId
+      responses:
+        '200':
+          description: OK or PIN required
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/User'
+                  - type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: [REQUIRES_PIN]
+                        example: REQUIRES_PIN
+                      profileId:
+                        type: string
+                        example: '3b969e371cc3df20'
+                      profileName:
+                        type: string
+                        example: 'John Doe'
+                      mainUserId:
+                        type: number
+                        example: 1
+        '400':
+          description: Missing required parameters
+        '401':
+          description: Invalid Plex token (or incorrect 4-digit PIN)
+        '403':
+          description: Access denied
+        '404':
+          description: Profile not found
+        '500':
+          description: Error selecting profile
+
+  /auth/plex/profiles/{userId}:
+    get:
+      summary: Get Plex profiles for a given Jellyseerr user
+      description: |
+        Returns the list of available Plex home profiles and their corresponding user accounts
+        linked to the specified Jellyseerr user. The user must be a Plex-based account.
+      security: []
+      tags:
+        - auth
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+          description: The Jellyseerr user ID of the main Plex account
+      responses:
+        '200':
+          description: List of profiles and linked users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profiles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PlexProfile'
+                  profileUsers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  mainUser:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid user ID format or unsupported user type
+        '404':
+          description: User not found
+        '500':
+          description: Failed to fetch profiles
+
   /auth/jellyfin:
     post:
       summary: Sign in using a Jellyfin username and password

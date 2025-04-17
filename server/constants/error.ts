@@ -9,4 +9,6 @@ export enum ApiErrorCode {
   SyncErrorNoLibraries = 'SYNC_ERROR_NO_LIBRARIES',
   Unauthorized = 'UNAUTHORIZED',
   Unknown = 'UNKNOWN',
+  InvalidPin = 'INVALID_PIN',
+  NewPlexLoginDisabled = 'NEW_PLEX_LOGIN_DISABLED',
 }
