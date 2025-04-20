@@ -128,7 +128,7 @@ class WebhookAgent
 
   private buildPayload(type: Notification, payload: NotificationPayload) {
     const payloadString = this.getSettings().options.jsonPayload as string;
-    const parsedJSON = JSON.parse(JSON.parse(payloadString));
+    const parsedJSON = JSON.parse(payloadString);
 
     return this.parseKeys(parsedJSON, payload, type);
   }

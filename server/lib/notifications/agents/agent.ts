@@ -28,9 +28,9 @@ export interface NotificationPayload {
 
 export abstract class BaseAgent<T extends NotificationAgentConfig> {
   protected settings?: T;
-  protected id: number;
+  protected id?: number;
 
-  public constructor(id: number, settings?: T) {
+  public constructor(settings?: T, id?: number) {
     this.settings = settings;
     this.id = id;
   }

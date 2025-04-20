@@ -115,7 +115,7 @@ notificationRoutes.post<{ id: string }>('/:id/test', async (req, res, next) => {
   } else {
     return next({
       status: 500,
-      message: 'Failed to send Gotify notification.',
+      message: `Failed to send ${instanceType} notification.`,
     });
   }
 });
