@@ -76,7 +76,7 @@ notificationRoutes.post<{ id: string }>('/:id/test', async (req, res, next) => {
   }
 
   let notificationAgent: NotificationAgent;
-  const instanceType = req.body.type as NotificationAgentKey;
+  const instanceType = req.body.agent as NotificationAgentKey;
   switch (instanceType) {
     case NotificationAgentKey.DISCORD:
       notificationAgent = new DiscordAgent(req.body);

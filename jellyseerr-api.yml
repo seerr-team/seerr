@@ -1399,7 +1399,7 @@ components:
           example: 0
         name:
           type: string
-        type:
+        agent:
           type: string
           example: 'email'
         options:
