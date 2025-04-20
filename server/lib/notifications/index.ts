@@ -1,5 +1,28 @@
 import type { User } from '@server/entity/User';
+import DiscordAgent from '@server/lib/notifications/agents/discord';
+import EmailAgent from '@server/lib/notifications/agents/email';
+import GotifyAgent from '@server/lib/notifications/agents/gotify';
+import LunaSeaAgent from '@server/lib/notifications/agents/lunasea';
+import PushbulletAgent from '@server/lib/notifications/agents/pushbullet';
+import PushoverAgent from '@server/lib/notifications/agents/pushover';
+import SlackAgent from '@server/lib/notifications/agents/slack';
+import TelegramAgent from '@server/lib/notifications/agents/telegram';
+import WebhookAgent from '@server/lib/notifications/agents/webhook';
+import WebPushAgent from '@server/lib/notifications/agents/webpush';
 import { Permission } from '@server/lib/permissions';
+import type {
+  NotificationAgentConfig,
+  NotificationAgentDiscord,
+  NotificationAgentEmail,
+  NotificationAgentGotify,
+  NotificationAgentLunaSea,
+  NotificationAgentPushbullet,
+  NotificationAgentPushover,
+  NotificationAgentSlack,
+  NotificationAgentTelegram,
+  NotificationAgentWebhook,
+} from '@server/lib/settings';
+import { getSettings, NotificationAgentKey } from '@server/lib/settings';
 import logger from '@server/logger';
 import type { NotificationAgent, NotificationPayload } from './agents/agent';
 
@@ -92,7 +115,6 @@ export const shouldSendAdminNotification = (
 class NotificationManager {
   private activeAgents: NotificationAgent[] = [];
 
-  // TODO also register at startup
   public registerAgent = (agent: NotificationAgent): void => {
     this.activeAgents.push(agent);
     logger.info(`Registered notification agent instance ${agent.id}`, {
@@ -127,6 +149,87 @@ class NotificationManager {
       }
     });
   }
+
+  public createNotificationAgent = (
+    body: NotificationAgentConfig,
+    id?: number
+  ) => {
+    let notificationAgent: NotificationAgent;
+
+    const instanceAgentType = body.agent;
+    switch (instanceAgentType) {
+      case NotificationAgentKey.DISCORD:
+        notificationAgent = new DiscordAgent(
+          body as NotificationAgentDiscord,
+          id
+        );
+        break;
+      case NotificationAgentKey.EMAIL:
+        notificationAgent = new EmailAgent(body as NotificationAgentEmail, id);
+        break;
+      case NotificationAgentKey.GOTIFY:
+        notificationAgent = new GotifyAgent(
+          body as NotificationAgentGotify,
+          id
+        );
+        break;
+      case NotificationAgentKey.LUNASEA:
+        notificationAgent = new LunaSeaAgent(
+          body as NotificationAgentLunaSea,
+          id
+        );
+        break;
+      case NotificationAgentKey.PUSHBULLET:
+        notificationAgent = new PushbulletAgent(
+          body as NotificationAgentPushbullet,
+          id
+        );
+        break;
+      case NotificationAgentKey.PUSHOVER:
+        notificationAgent = new PushoverAgent(
+          body as NotificationAgentPushover,
+          id
+        );
+        break;
+      case NotificationAgentKey.SLACK:
+        notificationAgent = new SlackAgent(body as NotificationAgentSlack, id);
+        break;
+      case NotificationAgentKey.TELEGRAM:
+        notificationAgent = new TelegramAgent(
+          body as NotificationAgentTelegram,
+          id
+        );
+        break;
+      case NotificationAgentKey.WEBHOOK:
+        notificationAgent = new WebhookAgent(
+          body as NotificationAgentWebhook,
+          id
+        );
+        break;
+      case NotificationAgentKey.WEBPUSH:
+        notificationAgent = new WebPushAgent(body, id);
+        break;
+      default:
+        return;
+    }
+
+    return notificationAgent;
+  };
+
+  public registerAllAgents = () => {
+    const agentInstances = getSettings().notifications.instances;
+
+    agentInstances.forEach((instance) => {
+      const notificationAgent = notificationManager.createNotificationAgent(
+        instance,
+        instance.id
+      );
+
+      if (notificationAgent) {
+        notificationManager.registerAgent(notificationAgent);
+      }
+    });
+  };
 }
 
 const notificationManager = new NotificationManager();

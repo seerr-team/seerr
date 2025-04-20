@@ -5,6 +5,7 @@ import DiscoverSlider from '@server/entity/DiscoverSlider';
 import { Session } from '@server/entity/Session';
 import { User } from '@server/entity/User';
 import { startJobs } from '@server/job/schedule';
+import notificationManager from '@server/lib/notifications';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import clearCookies from '@server/middleware/clearcookies';
@@ -103,6 +104,9 @@ app
         await plexapi.syncLibraries();
       }
     }
+
+    // Register Notification Agents
+    notificationManager.registerAllAgents();
 
     const userRepository = getRepository(User);
     const totalUsers = await userRepository.count();
