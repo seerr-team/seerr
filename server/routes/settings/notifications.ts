@@ -25,6 +25,12 @@ const sendTestNotification = async (agent: NotificationAgent, user: User) =>
     message: 'Check check, 1, 2, 3. Are we coming in clear?',
   });
 
+notificationRoutes.get('/', (_req, res) => {
+  const settings = getSettings();
+
+  res.status(200).json(settings.notifications.instances);
+});
+
 notificationRoutes.get<{ id: string }>('/:id', (req, res, next) => {
   const settings = getSettings();
 

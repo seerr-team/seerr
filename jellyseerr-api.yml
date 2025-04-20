@@ -3066,9 +3066,24 @@ paths:
                     timestamp:
                       type: string
                       example: '2020-12-15T16:20:00.069Z'
+  /settings/notifications:
+    get:
+      summary: Get all notification instance settings
+      description: Returns all current notification instance settings in a JSON object.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: Returned all notification settings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationSettings'
   /settings/notifications/{instanceId}:
     get:
-      summary: Get notification settings
+      summary: Get given notification instance settings
       description: Returns current notification settings in a JSON object.
       tags:
         - settings
@@ -3087,8 +3102,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotificationSettings'
     post:
-      summary: Update notification settings
-      description: Update notification settings with the provided values.
+      summary: Add or update given notification instance settings
+      description: Add or Update given notification instance settings with the provided values.
       tags:
         - settings
       parameters:
@@ -3113,8 +3128,8 @@ paths:
                 $ref: '#/components/schemas/NotificationSettings'
   /settings/notifications/{instanceId}/test:
     post:
-      summary: Test notification settings
-      description: Sends a test notification.
+      summary: Test given notification instance
+      description: Sends a test notification from the given instance settings.
       tags:
         - settings
       parameters:
