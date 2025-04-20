@@ -3121,11 +3121,26 @@ paths:
               $ref: '#/components/schemas/NotificationSettings'
       responses:
         '200':
-          description: 'Values were sucessfully updated'
+          description: 'Notification instance was sucessfully added or updated'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotificationSettings'
+    delete:
+      summary: Delete given notification instance
+      description: Delete given notification instance.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: instanceId
+          required: true
+          schema:
+            type: number
+            example: 0
+      responses:
+        '200':
+          description: 'Notification instance was sucessfully deleted'
   /settings/notifications/{instanceId}/test:
     post:
       summary: Test given notification instance

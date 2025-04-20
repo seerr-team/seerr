@@ -67,6 +67,24 @@ notificationRoutes.post<{ id: string }>('/:id', async (req, res) => {
     .json(settings.notifications.instances[notificationInstanceIndex]);
 });
 
+notificationRoutes.delete<{ id: string }>('/:id', async (req, res, next) => {
+  const settings = getSettings();
+
+  const notificationInstanceIndex = settings.notifications.instances.findIndex(
+    (instance) => instance.id === Number(req.params.id)
+  );
+
+  if (notificationInstanceIndex === -1) {
+    return next({ status: '404', message: 'Notifications instance not found' });
+  }
+
+  settings.notifications.instances.splice(notificationInstanceIndex, 1);
+
+  await settings.save();
+
+  res.status(200).send();
+});
+
 notificationRoutes.post<{ id: string }>('/:id/test', async (req, res, next) => {
   if (!req.user) {
     return next({
