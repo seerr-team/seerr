@@ -17,16 +17,6 @@ class EmailAgent
   extends BaseAgent<NotificationAgentEmail>
   implements NotificationAgent
 {
-  protected getSettings(): NotificationAgentEmail {
-    if (this.settings) {
-      return this.settings;
-    }
-
-    const settings = getSettings();
-
-    return settings.notifications.agents.email;
-  }
-
   public shouldSend(): boolean {
     const settings = this.getSettings();
 
@@ -216,7 +206,7 @@ class EmailAgent
 
         try {
           const email = new PreparedEmail(
-            this.getSettings(),
+            this.getSettings() as NotificationAgentEmail,
             payload.notifyUser.settings?.pgpKey
           );
           if (EmailValidator.validate(payload.notifyUser.email)) {
@@ -278,7 +268,7 @@ class EmailAgent
 
             try {
               const email = new PreparedEmail(
-                this.getSettings(),
+                this.getSettings() as NotificationAgentEmail,
                 user.settings?.pgpKey
               );
               if (EmailValidator.validate(user.email)) {

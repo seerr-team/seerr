@@ -18,16 +18,6 @@ class GotifyAgent
   extends BaseAgent<NotificationAgentGotify>
   implements NotificationAgent
 {
-  protected getSettings(): NotificationAgentGotify {
-    if (this.settings) {
-      return this.settings;
-    }
-
-    const settings = getSettings();
-
-    return settings.notifications.agents.gotify;
-  }
-
   public shouldSend(): boolean {
     const settings = this.getSettings();
 

@@ -1,7 +1,6 @@
 import { IssueStatus, IssueType } from '@server/constants/issue';
 import { MediaStatus } from '@server/constants/media';
 import type { NotificationAgentWebhook } from '@server/lib/settings';
-import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
 import { get } from 'lodash';
@@ -61,16 +60,6 @@ class WebhookAgent
   extends BaseAgent<NotificationAgentWebhook>
   implements NotificationAgent
 {
-  protected getSettings(): NotificationAgentWebhook {
-    if (this.settings) {
-      return this.settings;
-    }
-
-    const settings = getSettings();
-
-    return settings.notifications.agents.webhook;
-  }
-
   private parseKeys(
     finalPayload: Record<string, unknown>,
     payload: NotificationPayload,
@@ -138,7 +127,7 @@ class WebhookAgent
   }
 
   private buildPayload(type: Notification, payload: NotificationPayload) {
-    const payloadString = this.getSettings().options.jsonPayload;
+    const payloadString = this.getSettings().options.jsonPayload as string;
     const parsedJSON = JSON.parse(JSON.parse(payloadString));
 
     return this.parseKeys(parsedJSON, payload, type);
@@ -158,7 +147,7 @@ class WebhookAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    const settings = this.getSettings();
+    const settings = this.getSettings() as NotificationAgentWebhook;
 
     if (
       !payload.notifySystem ||

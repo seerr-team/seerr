@@ -3,7 +3,10 @@ import type IssueComment from '@server/entity/IssueComment';
 import type Media from '@server/entity/Media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { User } from '@server/entity/User';
-import type { NotificationAgentConfig } from '@server/lib/settings';
+import {
+  getSettings,
+  type NotificationAgentConfig,
+} from '@server/lib/settings';
 import type { Notification } from '..';
 
 export interface NotificationPayload {
@@ -25,11 +28,26 @@ export interface NotificationPayload {
 
 export abstract class BaseAgent<T extends NotificationAgentConfig> {
   protected settings?: T;
-  public constructor(settings?: T) {
+  protected id: number;
+
+  public constructor(id: number, settings?: T) {
     this.settings = settings;
+    this.id = id;
   }
 
-  protected abstract getSettings(): T;
+  protected getSettings(): NotificationAgentConfig {
+    if (this.settings) {
+      return this.settings;
+    }
+
+    const settings = getSettings();
+
+    const notificationInstance = settings.notifications.instances.find(
+      (instance) => instance.id === Number(this.id)
+    );
+
+    return notificationInstance as NotificationAgentConfig;
+  }
 }
 
 export interface NotificationAgent {

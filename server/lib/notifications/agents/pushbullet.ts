@@ -3,7 +3,7 @@ import { MediaStatus } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import type { NotificationAgentPushbullet } from '@server/lib/settings';
-import { getSettings, NotificationAgentKey } from '@server/lib/settings';
+import { NotificationAgentKey } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
 import {
@@ -25,16 +25,6 @@ class PushbulletAgent
   extends BaseAgent<NotificationAgentPushbullet>
   implements NotificationAgent
 {
-  protected getSettings(): NotificationAgentPushbullet {
-    if (this.settings) {
-      return this.settings;
-    }
-
-    const settings = getSettings();
-
-    return settings.notifications.agents.pushbullet;
-  }
-
   public shouldSend(): boolean {
     return true;
   }
@@ -105,7 +95,7 @@ class PushbulletAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    const settings = this.getSettings();
+    const settings = this.getSettings() as NotificationAgentPushbullet;
     const endpoint = 'https://api.pushbullet.com/v2/pushes';
     const notificationPayload = this.getNotificationPayload(type, payload);
 

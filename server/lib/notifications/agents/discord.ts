@@ -95,16 +95,6 @@ class DiscordAgent
   extends BaseAgent<NotificationAgentDiscord>
   implements NotificationAgent
 {
-  protected getSettings(): NotificationAgentDiscord {
-    if (this.settings) {
-      return this.settings;
-    }
-
-    const settings = getSettings();
-
-    return settings.notifications.agents.discord;
-  }
-
   public buildEmbed(
     type: Notification,
     payload: NotificationPayload
@@ -243,7 +233,7 @@ class DiscordAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    const settings = this.getSettings();
+    const settings = this.getSettings() as NotificationAgentDiscord;
 
     if (
       !payload.notifySystem ||

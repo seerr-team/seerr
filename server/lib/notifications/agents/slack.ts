@@ -49,16 +49,6 @@ class SlackAgent
   extends BaseAgent<NotificationAgentSlack>
   implements NotificationAgent
 {
-  protected getSettings(): NotificationAgentSlack {
-    if (this.settings) {
-      return this.settings;
-    }
-
-    const settings = getSettings();
-
-    return settings.notifications.agents.slack;
-  }
-
   public buildEmbed(
     type: Notification,
     payload: NotificationPayload
@@ -223,7 +213,7 @@ class SlackAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    const settings = this.getSettings();
+    const settings = this.getSettings() as NotificationAgentSlack;
 
     if (
       !payload.notifySystem ||

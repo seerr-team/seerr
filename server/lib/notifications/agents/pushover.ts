@@ -34,16 +34,6 @@ class PushoverAgent
   extends BaseAgent<NotificationAgentPushover>
   implements NotificationAgent
 {
-  protected getSettings(): NotificationAgentPushover {
-    if (this.settings) {
-      return this.settings;
-    }
-
-    const settings = getSettings();
-
-    return settings.notifications.agents.pushover;
-  }
-
   public shouldSend(): boolean {
     return true;
   }
@@ -179,7 +169,7 @@ class PushoverAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    const settings = this.getSettings();
+    const settings = this.getSettings() as NotificationAgentPushover;
     const endpoint = 'https://api.pushover.net/1/messages.json';
     const notificationPayload = await this.getNotificationPayload(
       type,

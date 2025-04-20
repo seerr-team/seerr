@@ -37,16 +37,6 @@ class TelegramAgent
 {
   private baseUrl = 'https://api.telegram.org/';
 
-  protected getSettings(): NotificationAgentTelegram {
-    if (this.settings) {
-      return this.settings;
-    }
-
-    const settings = getSettings();
-
-    return settings.notifications.agents.telegram;
-  }
-
   public shouldSend(): boolean {
     const settings = this.getSettings();
 

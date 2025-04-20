@@ -28,16 +28,6 @@ class WebPushAgent
   extends BaseAgent<NotificationAgentConfig>
   implements NotificationAgent
 {
-  protected getSettings(): NotificationAgentConfig {
-    if (this.settings) {
-      return this.settings;
-    }
-
-    const settings = getSettings();
-
-    return settings.notifications.agents.webpush;
-  }
-
   private getNotificationPayload(
     type: Notification,
     payload: NotificationPayload
