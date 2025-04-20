@@ -92,9 +92,24 @@ export const shouldSendAdminNotification = (
 class NotificationManager {
   private activeAgents: NotificationAgent[] = [];
 
-  public registerAgents = (agents: NotificationAgent[]): void => {
-    this.activeAgents = [...this.activeAgents, ...agents];
-    logger.info('Registered notification agents', { label: 'Notifications' });
+  // TODO also register at startup
+  public registerAgent = (agent: NotificationAgent): void => {
+    this.activeAgents.push(agent);
+    logger.info(`Registered notification agent instance ${agent.id}`, {
+      label: 'Notifications',
+    });
+  };
+
+  public unregisterAgent = (instanceId: number): void => {
+    const instanceIndex = this.activeAgents.findIndex(
+      (instance) => instance.id === instanceId
+    );
+
+    this.activeAgents.splice(instanceIndex, 1);
+    logger.info(
+      `Unregistered notification agent instance with id ${instanceId}`,
+      { label: 'Notifications' }
+    );
   };
 
   public sendNotification(

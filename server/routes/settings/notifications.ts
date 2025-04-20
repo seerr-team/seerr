@@ -1,5 +1,5 @@
 import type { User } from '@server/entity/User';
-import { Notification } from '@server/lib/notifications';
+import notificationManager, { Notification } from '@server/lib/notifications';
 import type { NotificationAgent } from '@server/lib/notifications/agents/agent';
 import DiscordAgent from '@server/lib/notifications/agents/discord';
 import EmailAgent from '@server/lib/notifications/agents/email';
@@ -11,6 +11,18 @@ import SlackAgent from '@server/lib/notifications/agents/slack';
 import TelegramAgent from '@server/lib/notifications/agents/telegram';
 import WebhookAgent from '@server/lib/notifications/agents/webhook';
 import WebPushAgent from '@server/lib/notifications/agents/webpush';
+import type {
+  NotificationAgentConfig,
+  NotificationAgentDiscord,
+  NotificationAgentEmail,
+  NotificationAgentGotify,
+  NotificationAgentLunaSea,
+  NotificationAgentPushbullet,
+  NotificationAgentPushover,
+  NotificationAgentSlack,
+  NotificationAgentTelegram,
+  NotificationAgentWebhook,
+} from '@server/lib/settings';
 import { getSettings, NotificationAgentKey } from '@server/lib/settings';
 import { Router } from 'express';
 
@@ -24,6 +36,69 @@ const sendTestNotification = async (agent: NotificationAgent, user: User) =>
     subject: 'Test Notification',
     message: 'Check check, 1, 2, 3. Are we coming in clear?',
   });
+
+const createNotificationAgent = (
+  body: NotificationAgentConfig,
+  id?: number
+) => {
+  let notificationAgent: NotificationAgent;
+
+  const instanceAgentType = body.agent;
+  switch (instanceAgentType) {
+    case NotificationAgentKey.DISCORD:
+      notificationAgent = new DiscordAgent(
+        body as NotificationAgentDiscord,
+        id
+      );
+      break;
+    case NotificationAgentKey.EMAIL:
+      notificationAgent = new EmailAgent(body as NotificationAgentEmail, id);
+      break;
+    case NotificationAgentKey.GOTIFY:
+      notificationAgent = new GotifyAgent(body as NotificationAgentGotify, id);
+      break;
+    case NotificationAgentKey.LUNASEA:
+      notificationAgent = new LunaSeaAgent(
+        body as NotificationAgentLunaSea,
+        id
+      );
+      break;
+    case NotificationAgentKey.PUSHBULLET:
+      notificationAgent = new PushbulletAgent(
+        body as NotificationAgentPushbullet,
+        id
+      );
+      break;
+    case NotificationAgentKey.PUSHOVER:
+      notificationAgent = new PushoverAgent(
+        body as NotificationAgentPushover,
+        id
+      );
+      break;
+    case NotificationAgentKey.SLACK:
+      notificationAgent = new SlackAgent(body as NotificationAgentSlack, id);
+      break;
+    case NotificationAgentKey.TELEGRAM:
+      notificationAgent = new TelegramAgent(
+        body as NotificationAgentTelegram,
+        id
+      );
+      break;
+    case NotificationAgentKey.WEBHOOK:
+      notificationAgent = new WebhookAgent(
+        body as NotificationAgentWebhook,
+        id
+      );
+      break;
+    case NotificationAgentKey.WEBPUSH:
+      notificationAgent = new WebPushAgent(body, id);
+      break;
+    default:
+      return;
+  }
+
+  return notificationAgent;
+};
 
 notificationRoutes.get('/', (_req, res) => {
   const settings = getSettings();
@@ -45,15 +120,30 @@ notificationRoutes.get<{ id: string }>('/:id', (req, res, next) => {
   res.status(200).json(notificationInstance);
 });
 
-notificationRoutes.post<{ id: string }>('/:id', async (req, res) => {
+notificationRoutes.post<{ id: string }>('/:id', async (req, res, next) => {
   const settings = getSettings();
 
+  const notificationInstanceId = Number(req.params.id);
   let notificationInstanceIndex = settings.notifications.instances.findIndex(
-    (instance) => instance.id === Number(req.params.id)
+    (instance) => instance.id === notificationInstanceId
   );
 
   if (notificationInstanceIndex === -1) {
     notificationInstanceIndex = settings.notifications.instances.length;
+
+    const notificationAgent = createNotificationAgent(
+      req.body,
+      notificationInstanceIndex
+    );
+
+    if (!notificationAgent) {
+      return next({
+        status: 500,
+        message: 'A valid instance type is missing from the request.',
+      });
+    }
+
+    notificationManager.registerAgent(notificationAgent);
   }
 
   const request = req.body;
@@ -79,6 +169,7 @@ notificationRoutes.delete<{ id: string }>('/:id', async (req, res, next) => {
   }
 
   settings.notifications.instances.splice(notificationInstanceIndex, 1);
+  notificationManager.unregisterAgent(Number(req.params.id));
 
   await settings.save();
 
@@ -93,45 +184,12 @@ notificationRoutes.post<{ id: string }>('/:id/test', async (req, res, next) => {
     });
   }
 
-  let notificationAgent: NotificationAgent;
-  const instanceType = req.body.agent as NotificationAgentKey;
-  switch (instanceType) {
-    case NotificationAgentKey.DISCORD:
-      notificationAgent = new DiscordAgent(req.body);
-      break;
-    case NotificationAgentKey.EMAIL:
-      notificationAgent = new EmailAgent(req.body);
-      break;
-    case NotificationAgentKey.GOTIFY:
-      notificationAgent = new GotifyAgent(req.body);
-      break;
-    case NotificationAgentKey.LUNASEA:
-      notificationAgent = new LunaSeaAgent(req.body);
-      break;
-    case NotificationAgentKey.PUSHBULLET:
-      notificationAgent = new PushbulletAgent(req.body);
-      break;
-    case NotificationAgentKey.PUSHOVER:
-      notificationAgent = new PushoverAgent(req.body);
-      break;
-    case NotificationAgentKey.SLACK:
-      notificationAgent = new SlackAgent(req.body);
-      break;
-    case NotificationAgentKey.TELEGRAM:
-      notificationAgent = new TelegramAgent(req.body);
-      break;
-    case NotificationAgentKey.WEBHOOK:
-      notificationAgent = new WebhookAgent(req.body);
-      break;
-    case NotificationAgentKey.WEBPUSH:
-      notificationAgent = new WebPushAgent(req.body);
-      break;
-
-    default:
-      return next({
-        status: 500,
-        message: 'A valid instance type is missing from the request.',
-      });
+  const notificationAgent = createNotificationAgent(req.body);
+  if (!notificationAgent) {
+    return next({
+      status: 500,
+      message: 'A valid instance type is missing from the request.',
+    });
   }
 
   if (await sendTestNotification(notificationAgent, req.user)) {
@@ -139,7 +197,7 @@ notificationRoutes.post<{ id: string }>('/:id/test', async (req, res, next) => {
   } else {
     return next({
       status: 500,
-      message: `Failed to send ${instanceType} notification.`,
+      message: `Failed to send ${req.body.agent} notification.`,
     });
   }
 });

@@ -28,7 +28,7 @@ export interface NotificationPayload {
 
 export abstract class BaseAgent<T extends NotificationAgentConfig> {
   protected settings?: T;
-  protected id?: number;
+  public id?: number;
 
   public constructor(settings?: T, id?: number) {
     this.settings = settings;
@@ -51,6 +51,8 @@ export abstract class BaseAgent<T extends NotificationAgentConfig> {
 }
 
 export interface NotificationAgent {
+  id?: number;
+
   shouldSend(): boolean;
   send(type: Notification, payload: NotificationPayload): Promise<boolean>;
 }
