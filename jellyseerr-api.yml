@@ -1388,7 +1388,7 @@ components:
         results:
           type: number
           example: 100
-    DiscordSettings:
+    NotificationSettings:
       type: object
       properties:
         enabled:
@@ -1396,202 +1396,14 @@ components:
           example: false
         types:
           type: number
-          example: 2
+          example: 0
+        name:
+          type: string
+        type:
+          type: string
+          example: 'email'
         options:
           type: object
-          properties:
-            botUsername:
-              type: string
-            botAvatarUrl:
-              type: string
-            webhookUrl:
-              type: string
-            webhookRoleId:
-              type: string
-            enableMentions:
-              type: boolean
-    SlackSettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-        options:
-          type: object
-          properties:
-            webhookUrl:
-              type: string
-    WebPushSettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-    WebhookSettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-        options:
-          type: object
-          properties:
-            webhookUrl:
-              type: string
-            authHeader:
-              type: string
-            jsonPayload:
-              type: string
-    TelegramSettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-        options:
-          type: object
-          properties:
-            botUsername:
-              type: string
-            botAPI:
-              type: string
-            chatId:
-              type: string
-            messageThreadId:
-              type: string
-            sendSilently:
-              type: boolean
-    PushbulletSettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-        options:
-          type: object
-          properties:
-            accessToken:
-              type: string
-            channelTag:
-              type: string
-              nullable: true
-    PushoverSettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-        options:
-          type: object
-          properties:
-            accessToken:
-              type: string
-            userToken:
-              type: string
-            sound:
-              type: string
-    GotifySettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-        options:
-          type: object
-          properties:
-            url:
-              type: string
-            token:
-              type: string
-    NtfySettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-        options:
-          type: object
-          properties:
-            url:
-              type: string
-            topic:
-              type: string
-            authMethodUsernamePassword:
-              type: boolean
-            username:
-              type: string
-            password:
-              type: string
-            authMethodToken:
-              type: boolean
-            token:
-              type: string
-    NotificationEmailSettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-        options:
-          type: object
-          properties:
-            emailFrom:
-              type: string
-              example: no-reply@example.com
-            senderName:
-              type: string
-              example: Jellyseerr
-            smtpHost:
-              type: string
-              example: 127.0.0.1
-            smtpPort:
-              type: number
-              example: 465
-            secure:
-              type: boolean
-              example: false
-            ignoreTls:
-              type: boolean
-              example: false
-            requireTls:
-              type: boolean
-              example: false
-            authUser:
-              type: string
-              nullable: true
-            authPass:
-              type: string
-              nullable: true
-            allowSelfSigned:
-              type: boolean
-              example: false
     Job:
       type: object
       properties:
@@ -3254,49 +3066,70 @@ paths:
                     timestamp:
                       type: string
                       example: '2020-12-15T16:20:00.069Z'
-  /settings/notifications:
+  /settings/notifications/{instanceId}:
     get:
       summary: Get notification settings
       description: Returns current notification settings in a JSON object.
       tags:
         - settings
+      parameters:
+        - in: path
+          name: instanceId
+          required: true
+          schema:
+            type: number
+            example: 0
       responses:
         '200':
           description: Returned notification settings
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GotifySettings'
+                $ref: '#/components/schemas/NotificationSettings'
     post:
       summary: Update notification settings
       description: Update notification settings with the provided values.
       tags:
         - settings
+      parameters:
+        - in: path
+          name: instanceId
+          required: true
+          schema:
+            type: number
+            example: 0
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GotifySettings'
+              $ref: '#/components/schemas/NotificationSettings'
       responses:
         '200':
           description: 'Values were sucessfully updated'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GotifySettings'
-  /settings/notifications/test:
+                $ref: '#/components/schemas/NotificationSettings'
+  /settings/notifications/{instanceId}/test:
     post:
       summary: Test notification settings
       description: Sends a test notification.
       tags:
         - settings
+      parameters:
+        - in: path
+          name: instanceId
+          required: true
+          schema:
+            type: number
+            example: 0
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GotifySettings'
+              $ref: '#/components/schemas/NotificationSettings'
       responses:
         '204':
           description: Test notification attempted
