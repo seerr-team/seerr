@@ -112,17 +112,80 @@ export const shouldSendAdminNotification = (
   );
 };
 
+export const createAccordingNotificationAgent = (
+  body: NotificationAgentConfig,
+  id?: number
+) => {
+  let notificationAgent: NotificationAgent;
+
+  const instanceAgentType = body.agent;
+  switch (instanceAgentType) {
+    case NotificationAgentKey.DISCORD:
+      notificationAgent = new DiscordAgent(
+        body as NotificationAgentDiscord,
+        id
+      );
+      break;
+    case NotificationAgentKey.EMAIL:
+      notificationAgent = new EmailAgent(body as NotificationAgentEmail, id);
+      break;
+    case NotificationAgentKey.GOTIFY:
+      notificationAgent = new GotifyAgent(body as NotificationAgentGotify, id);
+      break;
+    case NotificationAgentKey.LUNASEA:
+      notificationAgent = new LunaSeaAgent(
+        body as NotificationAgentLunaSea,
+        id
+      );
+      break;
+    case NotificationAgentKey.PUSHBULLET:
+      notificationAgent = new PushbulletAgent(
+        body as NotificationAgentPushbullet,
+        id
+      );
+      break;
+    case NotificationAgentKey.PUSHOVER:
+      notificationAgent = new PushoverAgent(
+        body as NotificationAgentPushover,
+        id
+      );
+      break;
+    case NotificationAgentKey.SLACK:
+      notificationAgent = new SlackAgent(body as NotificationAgentSlack, id);
+      break;
+    case NotificationAgentKey.TELEGRAM:
+      notificationAgent = new TelegramAgent(
+        body as NotificationAgentTelegram,
+        id
+      );
+      break;
+    case NotificationAgentKey.WEBHOOK:
+      notificationAgent = new WebhookAgent(
+        body as NotificationAgentWebhook,
+        id
+      );
+      break;
+    case NotificationAgentKey.WEBPUSH:
+      notificationAgent = new WebPushAgent(body, id);
+      break;
+    default:
+      return;
+  }
+
+  return notificationAgent;
+};
+
 class NotificationManager {
   private activeAgents: NotificationAgent[] = [];
 
-  public registerAgent = (agent: NotificationAgent): void => {
+  public registerAgent = (agent: NotificationAgent) => {
     this.activeAgents.push(agent);
     logger.info(`Registered notification agent instance ${agent.id}`, {
       label: 'Notifications',
     });
   };
 
-  public unregisterAgent = (instanceId: number): void => {
+  public unregisterAgent = (instanceId: number) => {
     const instanceIndex = this.activeAgents.findIndex(
       (instance) => instance.id === instanceId
     );
@@ -134,10 +197,35 @@ class NotificationManager {
     );
   };
 
-  public sendNotification(
-    type: Notification,
-    payload: NotificationPayload
-  ): void {
+  public reregisterAgent = (agent: NotificationAgent, instanceId: number) => {
+    const instanceIndex = this.activeAgents.findIndex(
+      (instance) => instance.id === instanceId
+    );
+
+    this.activeAgents[instanceIndex] = agent;
+
+    logger.info(
+      `Reregistered notification agent instance with id ${instanceId}`,
+      { label: 'Notifications' }
+    );
+  };
+
+  public registerAllAgents = () => {
+    const agentInstances = getSettings().notifications.instances;
+
+    agentInstances.forEach((instance) => {
+      const notificationAgent = createAccordingNotificationAgent(
+        instance,
+        instance.id
+      );
+
+      if (notificationAgent) {
+        notificationManager.registerAgent(notificationAgent);
+      }
+    });
+  };
+
+  public sendNotification(type: Notification, payload: NotificationPayload) {
     logger.info(`Sending notification(s) for ${Notification[type]}`, {
       label: 'Notifications',
       subject: payload.subject,
@@ -149,87 +237,6 @@ class NotificationManager {
       }
     });
   }
-
-  public createNotificationAgent = (
-    body: NotificationAgentConfig,
-    id?: number
-  ) => {
-    let notificationAgent: NotificationAgent;
-
-    const instanceAgentType = body.agent;
-    switch (instanceAgentType) {
-      case NotificationAgentKey.DISCORD:
-        notificationAgent = new DiscordAgent(
-          body as NotificationAgentDiscord,
-          id
-        );
-        break;
-      case NotificationAgentKey.EMAIL:
-        notificationAgent = new EmailAgent(body as NotificationAgentEmail, id);
-        break;
-      case NotificationAgentKey.GOTIFY:
-        notificationAgent = new GotifyAgent(
-          body as NotificationAgentGotify,
-          id
-        );
-        break;
-      case NotificationAgentKey.LUNASEA:
-        notificationAgent = new LunaSeaAgent(
-          body as NotificationAgentLunaSea,
-          id
-        );
-        break;
-      case NotificationAgentKey.PUSHBULLET:
-        notificationAgent = new PushbulletAgent(
-          body as NotificationAgentPushbullet,
-          id
-        );
-        break;
-      case NotificationAgentKey.PUSHOVER:
-        notificationAgent = new PushoverAgent(
-          body as NotificationAgentPushover,
-          id
-        );
-        break;
-      case NotificationAgentKey.SLACK:
-        notificationAgent = new SlackAgent(body as NotificationAgentSlack, id);
-        break;
-      case NotificationAgentKey.TELEGRAM:
-        notificationAgent = new TelegramAgent(
-          body as NotificationAgentTelegram,
-          id
-        );
-        break;
-      case NotificationAgentKey.WEBHOOK:
-        notificationAgent = new WebhookAgent(
-          body as NotificationAgentWebhook,
-          id
-        );
-        break;
-      case NotificationAgentKey.WEBPUSH:
-        notificationAgent = new WebPushAgent(body, id);
-        break;
-      default:
-        return;
-    }
-
-    return notificationAgent;
-  };
-
-  public registerAllAgents = () => {
-    const agentInstances = getSettings().notifications.instances;
-
-    agentInstances.forEach((instance) => {
-      const notificationAgent = notificationManager.createNotificationAgent(
-        instance,
-        instance.id
-      );
-
-      if (notificationAgent) {
-        notificationManager.registerAgent(notificationAgent);
-      }
-    });
-  };
 }
 
 const notificationManager = new NotificationManager();

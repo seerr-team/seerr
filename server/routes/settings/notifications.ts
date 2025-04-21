@@ -1,5 +1,8 @@
 import type { User } from '@server/entity/User';
-import notificationManager, { Notification } from '@server/lib/notifications';
+import notificationManager, {
+  createAccordingNotificationAgent,
+  Notification,
+} from '@server/lib/notifications';
 import type { NotificationAgent } from '@server/lib/notifications/agents/agent';
 import { getSettings } from '@server/lib/settings';
 import { Router } from 'express';
@@ -43,27 +46,58 @@ notificationRoutes.post<{ id: string }>('/:id', async (req, res, next) => {
     (instance) => instance.id === notificationInstanceId
   );
 
-  if (notificationInstanceIndex === -1) {
-    notificationInstanceIndex = settings.notifications.instances.length;
+  const request = req.body;
+  request.id = notificationInstanceId;
 
-    const notificationAgent = notificationManager.createNotificationAgent(
-      req.body,
-      notificationInstanceIndex
+  // instance was not found -> register new one with new id
+  if (notificationInstanceIndex === -1) {
+    settings.notifications.instances.push(request);
+    notificationInstanceIndex = settings.notifications.instances.findIndex(
+      (instance) => instance.id === notificationInstanceId
+    );
+
+    const notificationAgent = createAccordingNotificationAgent(
+      request,
+      notificationInstanceId
     );
 
     if (!notificationAgent) {
       return next({
         status: 500,
-        message: 'A valid instance type is missing from the request.',
+        message: 'A valid agent is missing from the request.',
       });
     }
 
     notificationManager.registerAgent(notificationAgent);
   }
+  // agent has changed -> reregister
+  else if (
+    settings.notifications.instances[notificationInstanceIndex].agent !==
+    request.agent
+  ) {
+    settings.notifications.instances[notificationInstanceIndex] = request;
 
-  const request = req.body;
-  request.id = notificationInstanceIndex;
-  settings.notifications.instances[notificationInstanceIndex] = req.body;
+    const notificationAgent = createAccordingNotificationAgent(
+      request,
+      notificationInstanceId
+    );
+
+    if (!notificationAgent) {
+      return next({
+        status: 500,
+        message: 'A valid agent is missing from the request.',
+      });
+    }
+
+    notificationManager.reregisterAgent(
+      notificationAgent,
+      notificationInstanceId
+    );
+  }
+  // only change instance
+  else {
+    settings.notifications.instances[notificationInstanceIndex] = request;
+  }
 
   await settings.save();
 
@@ -99,13 +133,11 @@ notificationRoutes.post<{ id: string }>('/:id/test', async (req, res, next) => {
     });
   }
 
-  const notificationAgent = notificationManager.createNotificationAgent(
-    req.body
-  );
+  const notificationAgent = createAccordingNotificationAgent(req.body);
   if (!notificationAgent) {
     return next({
       status: 500,
-      message: 'A valid instance type is missing from the request.',
+      message: 'A valid agent is missing from the request.',
     });
   }
 
