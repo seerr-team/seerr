@@ -3,6 +3,7 @@ import PlexPinEntry from '@app/components/Login/PlexPinEntry';
 import defineMessages from '@app/utils/defineMessages';
 import { LockClosedIcon } from '@heroicons/react/24/solid';
 import type { PlexProfile } from '@server/api/plextv';
+import Image from 'next/image';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
 
@@ -69,10 +70,10 @@ const PlexProfileSelector = ({
     setPinError(null);
   };
 
-  if (showPinEntry && selectedProfile) {
+  if (showPinEntry && selectedProfile && selectedProfileId) {
     return (
       <PlexPinEntry
-        profileId={selectedProfileId!}
+        profileId={selectedProfileId}
         profileName={
           selectedProfile.title ||
           selectedProfile.username ||
@@ -123,11 +124,13 @@ const PlexProfileSelector = ({
                   : 'border border-white/20 bg-white/10 backdrop-blur-sm'
               } ${isSubmitting ? 'cursor-not-allowed opacity-50' : ''}`}
             >
-              <div className="mb-4 h-20 w-20 overflow-hidden rounded-full shadow-md ring-2 ring-white/30">
-                <img
+              <div className="relative mb-4 h-20 w-20 overflow-hidden rounded-full shadow-md ring-2 ring-white/30">
+                <Image
                   src={profile.thumb}
                   alt={profile.title || profile.username || 'Profile'}
-                  className="h-full w-full object-cover"
+                  fill
+                  sizes="80px"
+                  className="object-cover"
                 />
               </div>
 
