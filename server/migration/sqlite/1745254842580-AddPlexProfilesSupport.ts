@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddPlexProfilesSupport1745254842580 implements MigrationInterface {
   name = 'AddPlexProfilesSupport1745254842580';
