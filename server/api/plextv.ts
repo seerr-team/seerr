@@ -380,6 +380,7 @@ class PlexTvAPI extends ExternalAPI {
     const urlPath = `/api/v2/home/users/${profileId}/switch`;
 
     try {
+      // @codeql-disable-next-line XssThrough -- False positive: baseURL is hardcoded to Plex API
       const response = await axios.post(
         urlPath,
         { pin },
