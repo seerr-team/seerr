@@ -2,7 +2,7 @@ import { SmallLoadingSpinner } from '@app/components/Common/LoadingSpinner';
 import PlexPinEntry from '@app/components/Login/PlexPinEntry';
 import defineMessages from '@app/utils/defineMessages';
 import { LockClosedIcon } from '@heroicons/react/24/solid';
-import { PlexProfile } from '@server/api/plextv';
+import type { PlexProfile } from '@server/api/plextv';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
 
@@ -15,8 +15,6 @@ const messages = defineMessages('components.Login.PlexProfileSelector', {
 
 interface PlexProfileSelectorProps {
   profiles: PlexProfile[];
-  mainUserId: number;
-  authToken?: string;
   onProfileSelected: (
     profileId: string,
     pin?: string,
@@ -26,8 +24,6 @@ interface PlexProfileSelectorProps {
 
 const PlexProfileSelector = ({
   profiles,
-  mainUserId,
-  authToken,
   onProfileSelected,
 }: PlexProfileSelectorProps) => {
   const intl = useIntl();
@@ -49,9 +45,15 @@ const PlexProfileSelector = ({
     if (profile.protected) {
       setShowPinEntry(true);
     } else {
-      onProfileSelected(profile.id, undefined, (msg) => {
-        setError(msg);
-      });
+      setIsSubmitting(true);
+
+      try {
+        onProfileSelected(profile.id);
+      } catch (err) {
+        setError(intl.formatMessage(messages.selectProfileError));
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
