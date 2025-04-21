@@ -49,7 +49,7 @@ const PlexPinEntry = ({
 
     try {
       await onSubmit(pin);
-    } catch (err: any) {
+    } catch (err) {
       const code = err?.response?.data?.error as string | undefined;
       const httpStatus = err?.response?.status;
 
@@ -114,7 +114,6 @@ const PlexPinEntry = ({
           onKeyDown={handleKeyDown}
           placeholder="• • • •"
           maxLength={4}
-          autoFocus
           pattern="[0-9]{4}"
           inputMode="numeric"
         />
