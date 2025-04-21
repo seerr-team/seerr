@@ -15,7 +15,7 @@ import { useUser } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import { XCircleIcon } from '@heroicons/react/24/solid';
-import { PlexProfile } from '@server/api/plex';
+import type { PlexProfile } from '@server/api/plextv';
 import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType } from '@server/constants/server';
 import axios from 'axios';
@@ -65,62 +65,56 @@ const Login = () => {
       setProcessing(true);
       try {
         const response = await axios.post('/api/v1/auth/plex', { authToken });
-
         switch (response.data?.status) {
-          case 'REQUIRES_PIN':
+          case 'REQUIRES_PIN': {
             setPinProfileId(response.data.profileId);
             setPinProfileName(response.data.profileName);
             setShowPinEntry(true);
             break;
-
-          case 'REQUIRES_PROFILE':
+          }
+          case 'REQUIRES_PROFILE': {
             setProfiles(response.data.profiles);
             profilesRef.current = response.data.profiles;
-
             const rawUserId = response.data.mainUserId;
             let numericUserId = Number(rawUserId);
-
             if (!numericUserId || isNaN(numericUserId) || numericUserId <= 0) {
               numericUserId = 1;
             }
-
             setMainUserId(numericUserId);
             setShowProfileSelector(true);
             break;
-
+          }
           default:
             if (response.data?.id) {
               revalidate();
             }
             break;
         }
-      } catch (e: any) {
+      } catch (e) {
         const httpStatus = e?.response?.status;
         const msg =
           httpStatus === 403
             ? intl.formatMessage(messages.accessDenied)
             : e?.response?.data?.message ??
               intl.formatMessage(messages.authFailed);
-
         setError(msg);
         setAuthToken(undefined);
       } finally {
         setProcessing(false);
       }
     };
-
     if (authToken) {
       login();
     }
-  }, [authToken, revalidate]);
+  }, [authToken, revalidate, intl]);
 
   const handleSubmitProfile = async (
     profileId: string,
     pin?: string,
-    onError?: (message: string) => void
+    onError?: (msg: string) => void
   ) => {
     setProcessing(true);
-    setError(null);
+    setError('');
 
     try {
       const payload = {
@@ -145,7 +139,7 @@ const Login = () => {
         setPinError(null);
         revalidate();
       }
-    } catch (e: any) {
+    } catch (e) {
       const code = e?.response?.data?.error as string | undefined;
       const httpStatus = e?.response?.status;
       let msg: string;
@@ -169,6 +163,9 @@ const Login = () => {
           }
       }
       setError(msg);
+      if (onError) {
+        onError(msg);
+      }
     }
   };
 
