@@ -10,8 +10,14 @@ import type {
   UserSettingsGeneralResponse,
   UserSettingsNotificationsResponse,
 } from '@server/interfaces/api/userSettingsInterfaces';
+import { retrieveDefaultNotificationInstanceSettings } from '@server/lib/notifications';
 import { Permission } from '@server/lib/permissions';
-import { getSettings } from '@server/lib/settings';
+import type {
+  NotificationAgentDiscord,
+  NotificationAgentEmail,
+  NotificationAgentTelegram,
+} from '@server/lib/settings';
+import { getSettings, NotificationAgentKey } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { ApiError } from '@server/types/error';
@@ -551,7 +557,19 @@ userSettingsRoutes.get<{ id: string }, UserSettingsNotificationsResponse>(
   isOwnProfileOrAdmin(),
   async (req, res, next) => {
     const userRepository = getRepository(User);
-    const settings = getSettings()?.notifications.agents;
+
+    const defaultEmail = retrieveDefaultNotificationInstanceSettings(
+      NotificationAgentKey.EMAIL
+    ) as NotificationAgentEmail;
+    const defaultDiscord = retrieveDefaultNotificationInstanceSettings(
+      NotificationAgentKey.DISCORD
+    ) as NotificationAgentDiscord;
+    const defaultTelegram = retrieveDefaultNotificationInstanceSettings(
+      NotificationAgentKey.TELEGRAM
+    ) as NotificationAgentTelegram;
+    const defaultWebPush = retrieveDefaultNotificationInstanceSettings(
+      NotificationAgentKey.WEBPUSH
+    );
 
     try {
       const user = await userRepository.findOne({
@@ -563,25 +581,25 @@ userSettingsRoutes.get<{ id: string }, UserSettingsNotificationsResponse>(
       }
 
       return res.status(200).json({
-        emailEnabled: settings.email.enabled,
+        emailEnabled: defaultEmail.enabled,
         pgpKey: user.settings?.pgpKey,
         discordEnabled:
-          settings?.discord.enabled && settings.discord.options.enableMentions,
+          defaultDiscord.enabled && defaultDiscord.options.enableMentions,
         discordEnabledTypes:
-          settings?.discord.enabled && settings.discord.options.enableMentions
-            ? settings.discord.types
+          defaultDiscord.enabled && defaultDiscord.options.enableMentions
+            ? defaultDiscord.types
             : 0,
         discordId: user.settings?.discordId,
         pushbulletAccessToken: user.settings?.pushbulletAccessToken,
         pushoverApplicationToken: user.settings?.pushoverApplicationToken,
         pushoverUserKey: user.settings?.pushoverUserKey,
         pushoverSound: user.settings?.pushoverSound,
-        telegramEnabled: settings.telegram.enabled,
-        telegramBotUsername: settings.telegram.options.botUsername,
+        telegramEnabled: defaultTelegram.enabled,
+        telegramBotUsername: defaultTelegram.options.botUsername,
         telegramChatId: user.settings?.telegramChatId,
         telegramMessageThreadId: user.settings?.telegramMessageThreadId,
         telegramSendSilently: user.settings?.telegramSendSilently,
-        webPushEnabled: settings.webpush.enabled,
+        webPushEnabled: defaultWebPush.enabled,
         notificationTypes: user.settings?.notificationTypes ?? {},
       });
     } catch (e) {

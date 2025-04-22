@@ -211,6 +211,7 @@ export interface NotificationAgentConfig {
   name: string;
   id?: number;
   agent: NotificationAgentKey;
+  default?: boolean;
   options: Record<string, unknown>;
 }
 
@@ -700,11 +701,25 @@ class Settings {
       enableSpecialEpisodes: this.data.main.enableSpecialEpisodes,
       cacheImages: this.data.main.cacheImages,
       vapidPublic: this.vapidPublic,
-      // TODO no static values here
-      enablePushRegistration: false,
+      enablePushRegistration: this.notifications.instances.some(
+        (instance) =>
+          instance.default &&
+          instance.agent === NotificationAgentKey.WEBPUSH &&
+          instance.enabled
+      ),
       locale: this.data.main.locale,
-      emailEnabled: false,
-      userEmailRequired: false,
+      emailEnabled: this.notifications.instances.some(
+        (instance) =>
+          instance.default &&
+          instance.agent === NotificationAgentKey.EMAIL &&
+          instance.enabled
+      ),
+      userEmailRequired: this.notifications.instances.some(
+        (instance) =>
+          instance.default &&
+          instance.agent === NotificationAgentKey.EMAIL &&
+          instance.options.userEmailRequired
+      ),
       newPlexLogin: this.data.main.newPlexLogin,
       youtubeUrl: this.data.main.youtubeUrl,
     };

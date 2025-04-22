@@ -4,9 +4,11 @@ import { getRepository } from '@server/datasource';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
 import PreparedEmail from '@server/lib/email';
+import { retrieveDefaultNotificationInstanceSettings } from '@server/lib/notifications';
 import type { PermissionCheckOptions } from '@server/lib/permissions';
 import { hasPermission, Permission } from '@server/lib/permissions';
-import { getSettings } from '@server/lib/settings';
+import type { NotificationAgentEmail } from '@server/lib/settings';
+import { getSettings, NotificationAgentKey } from '@server/lib/settings';
 import logger from '@server/logger';
 import { AfterDate } from '@server/utils/dateHelpers';
 import { DbAwareColumn } from '@server/utils/DbColumnHelper';
@@ -196,7 +198,11 @@ export class User {
         label: 'User Management',
       });
 
-      const email = new PreparedEmail(getSettings().notifications.agents.email);
+      const defaultEmailInstance = retrieveDefaultNotificationInstanceSettings(
+        NotificationAgentKey.EMAIL
+      ) as NotificationAgentEmail;
+      const email = new PreparedEmail(defaultEmailInstance);
+
       await email.send({
         template: path.join(__dirname, '../templates/email/generatedpassword'),
         message: {
@@ -233,7 +239,11 @@ export class User {
       logger.info(`Sending reset password email for ${this.email}`, {
         label: 'User Management',
       });
-      const email = new PreparedEmail(getSettings().notifications.agents.email);
+      const defaultEmailInstance = retrieveDefaultNotificationInstanceSettings(
+        NotificationAgentKey.EMAIL
+      ) as NotificationAgentEmail;
+      const email = new PreparedEmail(defaultEmailInstance);
+
       await email.send({
         template: path.join(__dirname, '../templates/email/resetpassword'),
         message: {

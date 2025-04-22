@@ -175,6 +175,23 @@ export const createAccordingNotificationAgent = (
   return notificationAgent;
 };
 
+export const retrieveDefaultNotificationInstanceSettings = (
+  agentKey: NotificationAgentKey
+) => {
+  const settings = getSettings();
+
+  const defaults = settings.notifications.instances.filter((instance) =>
+    instance.default && instance.agent ? instance.agent === agentKey : true
+  );
+
+  // return agent template if no default is configured
+  if (!defaults[0]) {
+    return settings.notifications.agentTemplates[agentKey];
+  }
+
+  return defaults[0];
+};
+
 class NotificationManager {
   private activeAgents: NotificationAgent[] = [];
 
