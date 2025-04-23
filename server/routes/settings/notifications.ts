@@ -4,6 +4,7 @@ import notificationManager, {
   Notification,
 } from '@server/lib/notifications';
 import type { NotificationAgent } from '@server/lib/notifications/agents/agent';
+import type { NotificationAgentConfig } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { Router } from 'express';
 
@@ -18,10 +19,34 @@ const sendTestNotification = async (agent: NotificationAgent, user: User) =>
     message: 'Check check, 1, 2, 3. Are we coming in clear?',
   });
 
-notificationRoutes.get('/', (_req, res) => {
+notificationRoutes.get('/', (req, res) => {
   const settings = getSettings();
 
-  res.status(200).json(settings.notifications.instances);
+  const pageSize = req.query.take ? Number(req.query.take) : 10;
+  const skip = req.query.skip ? Number(req.query.skip) : 0;
+
+  let sortFunc: (
+    a: NotificationAgentConfig,
+    b: NotificationAgentConfig
+  ) => number;
+  switch (req.query.sort) {
+    case 'name':
+      sortFunc = (a, b) => a.name.localeCompare(b.name);
+      break;
+
+    case 'agent':
+      sortFunc = (a, b) => a.agent.localeCompare(b.agent);
+      break;
+
+    default:
+      sortFunc = (a, b) => (a.id || 0) - (b.id || 0);
+  }
+
+  const instancesResult = settings.notifications.instances
+    .sort(sortFunc)
+    .slice(skip, skip + pageSize);
+
+  res.status(200).json(instancesResult);
 });
 
 notificationRoutes.get<{ id: string }>('/:id', (req, res, next) => {

@@ -1401,7 +1401,19 @@ components:
           type: string
         agent:
           type: string
-          example: 'email'
+          enum:
+            [
+              'discord',
+              'email',
+              'gotify',
+              'lunasea',
+              'pushbullet',
+              'pushover',
+              'slack',
+              'telegram',
+              'webhook',
+              'webpush',
+            ]
         default:
           type: boolean
           example: false
@@ -3075,6 +3087,25 @@ paths:
       description: Returns all current notification instance settings in a JSON object.
       tags:
         - settings
+      parameters:
+        - in: query
+          name: take
+          schema:
+            type: number
+            nullable: true
+            example: 20
+        - in: query
+          name: skip
+          schema:
+            type: number
+            nullable: true
+            example: 0
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [id, name, agent]
+            default: id
       responses:
         '200':
           description: Returned all notification settings
