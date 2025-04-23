@@ -38,7 +38,7 @@ class GotifyAgent
     payload: NotificationPayload
   ): GotifyPayload {
     const { applicationUrl, applicationTitle } = getSettings().main;
-    const settings = this.getSettings();
+    const settings = this.getSettings() as NotificationAgentGotify;
     const priority = settings.options.priority ?? 1;
 
     const title = payload.event
