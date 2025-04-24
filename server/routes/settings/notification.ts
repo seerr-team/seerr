@@ -34,6 +34,7 @@ const findFirstFreeNotificationInstanceId = () => {
 
 notificationRoutes.get('/', (req, res) => {
   const settings = getSettings();
+  const instances = settings.notification.instances;
 
   const pageSize = req.query.take ? Number(req.query.take) : 10;
   const skip = req.query.skip ? Number(req.query.skip) : 0;
@@ -55,7 +56,7 @@ notificationRoutes.get('/', (req, res) => {
       sortFunc = (a, b) => (a.id || 0) - (b.id || 0);
   }
 
-  const instancesResponse = settings.notification.instances
+  const instancesResponse = instances
     .sort(sortFunc)
     .slice(skip, skip + pageSize);
 
@@ -63,9 +64,9 @@ notificationRoutes.get('/', (req, res) => {
     results: instancesResponse,
     agentTemplates: settings.notification.agentTemplates,
     pageInfo: {
-      pages: Math.ceil(instancesResponse.length / pageSize),
+      pages: Math.ceil(instances.length / pageSize),
       pageSize,
-      results: instancesResponse.length,
+      results: instances.length,
       page: Math.ceil(skip / pageSize) + 1,
     },
   };
