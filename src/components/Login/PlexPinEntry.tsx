@@ -1,7 +1,7 @@
 import Button from '@app/components/Common/Button';
 import defineMessages from '@app/utils/defineMessages';
 import { ApiErrorCode } from '@server/constants/error';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.Login.PlexPinEntry', {
@@ -26,26 +26,15 @@ const PlexPinEntry = ({
   profileName,
   onSubmit,
   onCancel,
-  error: externalError,
 }: PlexPinEntryProps) => {
   const intl = useIntl();
   const [pin, setPin] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [internalError, setInternalError] = useState<string | null>(null);
-
-  const displayError = externalError || internalError;
-
-  useEffect(() => {
-    if (externalError) {
-      setInternalError(null);
-    }
-  }, [externalError]);
 
   const handleSubmit = async () => {
     if (!pin || isSubmitting) return;
 
     setIsSubmitting(true);
-    setInternalError(null);
 
     try {
       await onSubmit(pin);
@@ -72,8 +61,6 @@ const PlexPinEntry = ({
               intl.formatMessage(messages.invalidPin);
           }
       }
-
-      setInternalError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -94,16 +81,6 @@ const PlexPinEntry = ({
         {intl.formatMessage(messages.pinDescription)}{' '}
         <strong>{profileName}</strong>
       </p>
-
-      {displayError && (
-        <div
-          className="mb-4 rounded-md bg-red-500/90 p-3 text-center text-sm font-medium text-white shadow-md transition-all duration-300"
-          role="alert"
-          aria-live="polite"
-        >
-          {displayError}
-        </div>
-      )}
 
       <div className="mb-6">
         <input
