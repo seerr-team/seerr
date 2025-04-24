@@ -1,3 +1,7 @@
+import type {
+  NotificationAgentConfig,
+  NotificationAgentTemplates,
+} from '@server/lib/settings';
 import type { DnsEntries, DnsStats } from 'dns-caching';
 import type { PaginatedResponse } from './common';
 
@@ -77,4 +81,9 @@ export interface StatusResponse {
   updateAvailable: boolean;
   commitsBehind: number;
   restartRequired: boolean;
+}
+
+export interface NotificationSettingsResultResponse extends PaginatedResponse {
+  results: NotificationAgentConfig[];
+  agentTemplates: NotificationAgentTemplates;
 }

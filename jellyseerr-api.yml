@@ -1388,7 +1388,7 @@ components:
         results:
           type: number
           example: 100
-    NotificationSettings:
+    NotificationInstance:
       type: object
       properties:
         enabled:
@@ -1419,6 +1419,203 @@ components:
           example: false
         options:
           type: object
+    NotificationAgentTemplates:
+      type: object
+      properties:
+        discord:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                botUsername:
+                  type: string
+                botAvatarUrl:
+                  type: string
+                webhookUrl:
+                  type: string
+                webhookRoleId:
+                  type: string
+                enableMentions:
+                  type: boolean
+        slack:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                webhookUrl:
+                  type: string
+        WebPushSettings:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            types:
+              type: number
+              example: 2
+        webhook:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                webhookUrl:
+                  type: string
+                authHeader:
+                  type: string
+                jsonPayload:
+                  type: string
+        telegram:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                botUsername:
+                  type: string
+                botAPI:
+                  type: string
+                chatId:
+                  type: string
+                messageThreadId:
+                  type: string
+                sendSilently:
+                  type: boolean
+        pushbullet:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                accessToken:
+                  type: string
+                channelTag:
+                  type: string
+                  nullable: true
+        pushover:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                accessToken:
+                  type: string
+                userToken:
+                  type: string
+                sound:
+                  type: string
+        gotify:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                url:
+                  type: string
+                token:
+                  type: string
+        lunasea:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                webhookUrl:
+                  type: string
+                profileName:
+                  type: string
+        email:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                emailFrom:
+                  type: string
+                  example: no-reply@example.com
+                senderName:
+                  type: string
+                  example: Jellyseerr
+                smtpHost:
+                  type: string
+                  example: 127.0.0.1
+                smtpPort:
+                  type: number
+                  example: 465
+                secure:
+                  type: boolean
+                  example: false
+                ignoreTls:
+                  type: boolean
+                  example: false
+                requireTls:
+                  type: boolean
+                  example: false
+                authUser:
+                  type: string
+                  nullable: true
+                authPass:
+                  type: string
+                  nullable: true
+                allowSelfSigned:
+                  type: boolean
+                  example: false
     Job:
       type: object
       properties:
@@ -3112,9 +3309,16 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NotificationSettings'
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NotificationInstance'
+                  agentTemplates:
+                    $ref: '#/components/schemas/NotificationAgentTemplates'
+                  pageInfo:
+                    $ref: '#/components/schemas/PageInfo'
     post:
       summary: Add a notification instance
       description: Add a notification instance with the provided values.
@@ -3125,14 +3329,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotificationSettings'
+              $ref: '#/components/schemas/NotificationInstance'
       responses:
         '200':
           description: 'Notification instance was sucessfully added'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NotificationSettings'
+                $ref: '#/components/schemas/NotificationInstance'
   /settings/notification/{instanceId}:
     get:
       summary: Get given notification instance settings
@@ -3152,7 +3356,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NotificationSettings'
+                $ref: '#/components/schemas/NotificationInstance'
     post:
       summary: Add or update given notification instance settings
       description: Add or Update given notification instance settings with the provided values.
@@ -3170,14 +3374,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotificationSettings'
+              $ref: '#/components/schemas/NotificationInstance'
       responses:
         '200':
           description: 'Notification instance was sucessfully added or updated'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NotificationSettings'
+                $ref: '#/components/schemas/NotificationInstance'
     delete:
       summary: Delete given notification instance
       description: Delete given notification instance.
@@ -3211,7 +3415,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotificationSettings'
+              $ref: '#/components/schemas/NotificationInstance'
       responses:
         '204':
           description: Test notification attempted

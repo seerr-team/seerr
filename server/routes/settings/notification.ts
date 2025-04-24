@@ -1,4 +1,5 @@
 import type { User } from '@server/entity/User';
+import type { NotificationSettingsResultResponse } from '@server/interfaces/api/settingsInterfaces';
 import notificationManager, {
   createAccordingNotificationAgent,
   Notification,
@@ -54,11 +55,22 @@ notificationRoutes.get('/', (req, res) => {
       sortFunc = (a, b) => (a.id || 0) - (b.id || 0);
   }
 
-  const instancesResult = settings.notification.instances
+  const instancesResponse = settings.notification.instances
     .sort(sortFunc)
     .slice(skip, skip + pageSize);
 
-  res.status(200).json(instancesResult);
+  const notificationResponse: NotificationSettingsResultResponse = {
+    results: instancesResponse,
+    agentTemplates: settings.notification.agentTemplates,
+    pageInfo: {
+      pages: Math.ceil(instancesResponse.length / pageSize),
+      pageSize,
+      results: instancesResponse.length,
+      page: Math.ceil(skip / pageSize) + 1,
+    },
+  };
+
+  res.status(200).json(notificationResponse);
 });
 
 notificationRoutes.get<{ id: string }>('/:id', (req, res, next) => {
