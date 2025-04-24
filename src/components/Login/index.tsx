@@ -132,7 +132,7 @@ const Login = () => {
       if (response.data?.status === 'REQUIRES_PIN') {
         setShowPinEntry(true);
         setPinError(intl.formatMessage(messages.invalidPin));
-        return;
+        throw new Error('Invalid PIN');
       } else {
         setShowProfileSelector(false);
         setShowPinEntry(false);
@@ -301,7 +301,9 @@ const Login = () => {
                 <PlexPinEntry
                   profileId={pinProfileId}
                   profileName={pinProfileName}
-                  onSubmit={handleSubmitProfile}
+                  onSubmit={(pin) => {
+                    return handleSubmitProfile(pinProfileId, pin);
+                  }}
                   onCancel={() => {
                     setShowPinEntry(false);
                     setPinProfileId(null);

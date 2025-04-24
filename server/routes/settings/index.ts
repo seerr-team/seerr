@@ -475,13 +475,13 @@ settingsRoutes.get(
   async (req, res, next) => {
     const userRepository = getRepository(User);
     const qb = userRepository.createQueryBuilder('user');
-
     try {
       const admin = await userRepository.findOneOrFail({
         select: { id: true, plexToken: true },
         where: { id: 1 },
       });
       const plexApi = new PlexTvAPI(admin.plexToken ?? '');
+
       const plexUsers = (await plexApi.getUsers()).MediaContainer.User.map(
         (user) => user.$
       ).filter((user) => user.email);
@@ -510,7 +510,7 @@ settingsRoutes.get(
         plexUsers.map(async (plexUser) => {
           if (
             !existingUsers.find(
-              (user) =>
+              (user: User) =>
                 user.plexId === parseInt(plexUser.id) ||
                 user.email === plexUser.email.toLowerCase()
             ) &&
@@ -520,16 +520,36 @@ settingsRoutes.get(
           }
         })
       );
-
-      return res.status(200).json(sortBy(unimportedPlexUsers, 'username'));
-    } catch (e) {
-      logger.error('Something went wrong getting unimported Plex users', {
-        label: 'API',
-        errorMessage: e.message,
+      const profiles = await plexApi.getProfiles();
+      const existingProfileUsers = await userRepository.find({
+        where: {
+          isPlexProfile: true,
+        },
       });
+
+      const unimportedProfiles = profiles.filter(
+        (profile) =>
+          !profile.isMainUser &&
+          !existingProfileUsers.some(
+            (user: User) => user.plexProfileId === profile.id
+          )
+      );
+
+      return res.status(200).json({
+        users: sortBy(unimportedPlexUsers, 'username'),
+        profiles: unimportedProfiles,
+      });
+    } catch (e) {
+      logger.error(
+        'Something went wrong getting unimported Plex users and profiles',
+        {
+          label: 'API',
+          errorMessage: e.message,
+        }
+      );
       next({
         status: 500,
-        message: 'Unable to retrieve unimported Plex users.',
+        message: 'Unable to retrieve unimported Plex users and profiles.',
       });
     }
   }
