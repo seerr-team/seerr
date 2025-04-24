@@ -42,7 +42,7 @@ export abstract class BaseAgent<T extends NotificationAgentConfig> {
 
     const settings = getSettings();
 
-    const notificationInstance = settings.notifications.instances.find(
+    const notificationInstance = settings.notification.instances.find(
       (instance) => instance.id === Number(this.id)
     );
 

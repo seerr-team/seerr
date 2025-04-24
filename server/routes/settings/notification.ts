@@ -20,7 +20,7 @@ const sendTestNotification = async (agent: NotificationAgent, user: User) =>
   });
 
 const findFirstFreeNotificationInstanceId = () => {
-  const instances = getSettings().notifications.instances;
+  const instances = getSettings().notification.instances;
 
   for (let i = 0; i < instances.length; ++i) {
     if (!instances.find((instance) => instance.id === i)) {
@@ -54,7 +54,7 @@ notificationRoutes.get('/', (req, res) => {
       sortFunc = (a, b) => (a.id || 0) - (b.id || 0);
   }
 
-  const instancesResult = settings.notifications.instances
+  const instancesResult = settings.notification.instances
     .sort(sortFunc)
     .slice(skip, skip + pageSize);
 
@@ -64,7 +64,7 @@ notificationRoutes.get('/', (req, res) => {
 notificationRoutes.get<{ id: string }>('/:id', (req, res, next) => {
   const settings = getSettings();
 
-  const notificationInstance = settings.notifications.instances.find(
+  const notificationInstance = settings.notification.instances.find(
     (instance) => instance.id === Number(req.params.id)
   );
 
@@ -77,7 +77,7 @@ notificationRoutes.get<{ id: string }>('/:id', (req, res, next) => {
 
 notificationRoutes.post('/', async (req, res, next) => {
   const settings = getSettings();
-  const instances = settings.notifications.instances;
+  const instances = settings.notification.instances;
 
   const notificationInstanceId = findFirstFreeNotificationInstanceId();
 
@@ -110,7 +110,7 @@ notificationRoutes.post('/', async (req, res, next) => {
 
 notificationRoutes.post<{ id: string }>('/:id', async (req, res, next) => {
   const settings = getSettings();
-  const instances = settings.notifications.instances;
+  const instances = settings.notification.instances;
 
   const notificationInstanceId = Number(req.params.id);
   let notificationInstanceIndex = instances.findIndex(
@@ -174,7 +174,7 @@ notificationRoutes.post<{ id: string }>('/:id', async (req, res, next) => {
 
 notificationRoutes.delete<{ id: string }>('/:id', async (req, res, next) => {
   const settings = getSettings();
-  const instances = settings.notifications.instances;
+  const instances = settings.notification.instances;
 
   const notificationInstanceIndex = instances.findIndex(
     (instance) => instance.id === Number(req.params.id)

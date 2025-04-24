@@ -180,13 +180,13 @@ export const retrieveDefaultNotificationInstanceSettings = (
 ) => {
   const settings = getSettings();
 
-  const defaults = settings.notifications.instances.filter((instance) =>
+  const defaults = settings.notification.instances.filter((instance) =>
     instance.default && instance.agent ? instance.agent === agentKey : true
   );
 
   // return agent template if no default is configured
   if (!defaults[0]) {
-    return settings.notifications.agentTemplates[agentKey];
+    return settings.notification.agentTemplates[agentKey];
   }
 
   return defaults[0];
@@ -228,7 +228,7 @@ class NotificationManager {
   };
 
   public registerAllAgents = () => {
-    const agentInstances = getSettings().notifications.instances;
+    const agentInstances = getSettings().notification.instances;
 
     agentInstances.forEach((instance) => {
       const notificationAgent = createAccordingNotificationAgent(

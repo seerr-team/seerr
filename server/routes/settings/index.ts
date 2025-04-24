@@ -40,7 +40,7 @@ import path from 'path';
 import semver from 'semver';
 import { URL } from 'url';
 import metadataRoutes from './metadata';
-import notificationRoutes from './notifications';
+import notificationRoutes from './notification';
 import radarrRoutes from './radarr';
 import sonarrRoutes from './sonarr';
 
