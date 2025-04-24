@@ -19,6 +19,18 @@ const sendTestNotification = async (agent: NotificationAgent, user: User) =>
     message: 'Check check, 1, 2, 3. Are we coming in clear?',
   });
 
+const findFirstFreeNotificationInstanceId = () => {
+  const instances = getSettings().notifications.instances;
+
+  for (let i = 0; i < instances.length; ++i) {
+    if (!instances.find((instance) => instance.id === i)) {
+      return i;
+    }
+  }
+
+  return instances.length;
+};
+
 notificationRoutes.get('/', (req, res) => {
   const settings = getSettings();
 
@@ -63,11 +75,45 @@ notificationRoutes.get<{ id: string }>('/:id', (req, res, next) => {
   res.status(200).json(notificationInstance);
 });
 
+notificationRoutes.post('/', async (req, res, next) => {
+  const settings = getSettings();
+  const instances = settings.notifications.instances;
+
+  const notificationInstanceId = findFirstFreeNotificationInstanceId();
+
+  const request = req.body;
+  request.id = notificationInstanceId;
+
+  instances.push(request);
+  const notificationInstanceIndex = instances.findIndex(
+    (instance) => instance.id === notificationInstanceId
+  );
+
+  const notificationAgent = createAccordingNotificationAgent(
+    request,
+    notificationInstanceId
+  );
+
+  if (!notificationAgent) {
+    return next({
+      status: 500,
+      message: 'A valid agent is missing from the request.',
+    });
+  }
+
+  notificationManager.registerAgent(notificationAgent);
+
+  await settings.save();
+
+  res.status(200).json(instances[notificationInstanceIndex]);
+});
+
 notificationRoutes.post<{ id: string }>('/:id', async (req, res, next) => {
   const settings = getSettings();
+  const instances = settings.notifications.instances;
 
   const notificationInstanceId = Number(req.params.id);
-  let notificationInstanceIndex = settings.notifications.instances.findIndex(
+  let notificationInstanceIndex = instances.findIndex(
     (instance) => instance.id === notificationInstanceId
   );
 
@@ -76,8 +122,8 @@ notificationRoutes.post<{ id: string }>('/:id', async (req, res, next) => {
 
   // instance was not found -> register new one with new id
   if (notificationInstanceIndex === -1) {
-    settings.notifications.instances.push(request);
-    notificationInstanceIndex = settings.notifications.instances.findIndex(
+    instances.push(request);
+    notificationInstanceIndex = instances.findIndex(
       (instance) => instance.id === notificationInstanceId
     );
 
@@ -96,11 +142,8 @@ notificationRoutes.post<{ id: string }>('/:id', async (req, res, next) => {
     notificationManager.registerAgent(notificationAgent);
   }
   // agent has changed -> reregister
-  else if (
-    settings.notifications.instances[notificationInstanceIndex].agent !==
-    request.agent
-  ) {
-    settings.notifications.instances[notificationInstanceIndex] = request;
+  else if (instances[notificationInstanceIndex].agent !== request.agent) {
+    instances[notificationInstanceIndex] = request;
 
     const notificationAgent = createAccordingNotificationAgent(
       request,
@@ -121,20 +164,19 @@ notificationRoutes.post<{ id: string }>('/:id', async (req, res, next) => {
   }
   // only change instance
   else {
-    settings.notifications.instances[notificationInstanceIndex] = request;
+    instances[notificationInstanceIndex] = request;
   }
 
   await settings.save();
 
-  res
-    .status(200)
-    .json(settings.notifications.instances[notificationInstanceIndex]);
+  res.status(200).json(instances[notificationInstanceIndex]);
 });
 
 notificationRoutes.delete<{ id: string }>('/:id', async (req, res, next) => {
   const settings = getSettings();
+  const instances = settings.notifications.instances;
 
-  const notificationInstanceIndex = settings.notifications.instances.findIndex(
+  const notificationInstanceIndex = instances.findIndex(
     (instance) => instance.id === Number(req.params.id)
   );
 
@@ -142,7 +184,7 @@ notificationRoutes.delete<{ id: string }>('/:id', async (req, res, next) => {
     return next({ status: '404', message: 'Notifications instance not found' });
   }
 
-  settings.notifications.instances.splice(notificationInstanceIndex, 1);
+  instances.splice(notificationInstanceIndex, 1);
   notificationManager.unregisterAgent(Number(req.params.id));
 
   await settings.save();

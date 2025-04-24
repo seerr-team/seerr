@@ -3115,6 +3115,24 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/NotificationSettings'
+    post:
+      summary: Add a notification instance
+      description: Add a notification instance with the provided values.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationSettings'
+      responses:
+        '200':
+          description: 'Notification instance was sucessfully added'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationSettings'
   /settings/notifications/{instanceId}:
     get:
       summary: Get given notification instance settings
