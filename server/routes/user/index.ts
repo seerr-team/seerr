@@ -22,7 +22,6 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { getHostname } from '@server/utils/getHostname';
-import { normalizeJellyfinGuid } from '@server/utils/jellyfin';
 import { isOwnProfileOrAdmin } from '@server/utils/profileMiddleware';
 import { Router } from 'express';
 import gravatarUrl from 'gravatar-url';
@@ -45,35 +44,6 @@ router.get('/', async (req, res, next) => {
       : Math.max(10, includeIds.length);
     const skip = req.query.skip ? Number(req.query.skip) : 0;
     const q = req.query.q ? req.query.q.toString().toLowerCase() : '';
-    const sortParam = req.query.sort ? req.query.sort.toString() : undefined;
-    const sortDirectionQuery = req.query.sortDirection
-      ? req.query.sortDirection.toString().toLowerCase()
-      : undefined;
-
-    let sortDirection: 'ASC' | 'DESC';
-    if (sortDirectionQuery === 'asc') {
-      sortDirection = 'ASC';
-    } else if (sortDirectionQuery === 'desc') {
-      sortDirection = 'DESC';
-    } else {
-      switch (sortParam) {
-        case 'displayname':
-          sortDirection = 'ASC';
-          break;
-        case 'requests':
-        case 'updated':
-          sortDirection = 'DESC';
-          break;
-        case 'created':
-        case 'usertype':
-        case 'role':
-        case undefined:
-        default:
-          sortDirection = 'ASC';
-          break;
-      }
-    }
-
     let query = getRepository(User).createQueryBuilder('user');
 
     if (q) {
@@ -87,32 +57,29 @@ router.get('/', async (req, res, next) => {
       query.andWhereInIds(includeIds);
     }
 
-    switch (sortParam) {
-      case 'created':
-        query = query.orderBy('user.createdAt', sortDirection);
-        break;
+    switch (req.query.sort) {
       case 'updated':
-        query = query.orderBy('user.updatedAt', sortDirection);
+        query = query.orderBy('user.updatedAt', 'DESC');
         break;
       case 'displayname':
         query = query
           .addSelect(
             `CASE WHEN (user.username IS NULL OR user.username = '') THEN (
-                CASE WHEN (user.plexUsername IS NULL OR user.plexUsername = '') THEN (
-                  CASE WHEN (user.jellyfinUsername IS NULL OR user.jellyfinUsername = '') THEN
-                    "user"."email"
-                  ELSE
-                    LOWER(user.jellyfinUsername)
-                  END)
+              CASE WHEN (user.plexUsername IS NULL OR user.plexUsername = '') THEN (
+                CASE WHEN (user.jellyfinUsername IS NULL OR user.jellyfinUsername = '') THEN
+                  "user"."email"
                 ELSE
-                  LOWER(user.plexUsername)
+                  LOWER(user.jellyfinUsername)
                 END)
               ELSE
-                LOWER(user.username)
-              END`,
+                LOWER(user.jellyfinUsername)
+              END)
+            ELSE
+              LOWER(user.username)
+            END`,
             'displayname_sort_key'
           )
-          .orderBy('displayname_sort_key', sortDirection);
+          .orderBy('displayname_sort_key', 'ASC');
         break;
       case 'requests':
         query = query
@@ -122,25 +89,10 @@ router.get('/', async (req, res, next) => {
               .from(MediaRequest, 'request')
               .where('request.requestedBy.id = user.id');
           }, 'request_count')
-          .orderBy('request_count', sortDirection);
-        break;
-      case 'usertype':
-        query = query.orderBy('user.userType', sortDirection);
-        break;
-      case 'role':
-        query = query
-          .addSelect(
-            `CASE
-              WHEN user.id = 1 THEN 0
-              WHEN (user.permissions & ${Permission.ADMIN}) != 0 THEN 1
-              ELSE 2
-            END`,
-            'role_sort_key'
-          )
-          .orderBy('role_sort_key', sortDirection);
+          .orderBy('request_count', 'DESC');
         break;
       default:
-        query = query.orderBy('user.id', sortDirection);
+        query = query.orderBy('user.id', 'ASC');
         break;
     }
 
@@ -316,7 +268,7 @@ router.post<
     );
 
     return res.status(204).send();
-  } catch {
+  } catch (e) {
     logger.error('Failed to register user push subscription', {
       label: 'API',
     });
@@ -324,8 +276,8 @@ router.post<
   }
 });
 
-router.get<{ id: string }>(
-  '/:id/pushSubscriptions',
+router.get<{ userId: string }>(
+  '/:userId/pushSubscriptions',
   isOwnProfileOrAdmin(),
   async (req, res, next) => {
     try {
@@ -333,18 +285,18 @@ router.get<{ id: string }>(
 
       const userPushSubs = await userPushSubRepository.find({
         relations: { user: true },
-        where: { user: { id: Number(req.params.id) } },
+        where: { user: { id: Number(req.params.userId) } },
       });
 
       return res.status(200).json(userPushSubs);
-    } catch {
+    } catch (e) {
       next({ status: 404, message: 'User subscriptions not found.' });
     }
   }
 );
 
-router.get<{ id: string; endpoint: string }>(
-  '/:id/pushSubscription/:endpoint',
+router.get<{ userId: string; endpoint: string }>(
+  '/:userId/pushSubscription/:endpoint',
   isOwnProfileOrAdmin(),
   async (req, res, next) => {
     try {
@@ -355,20 +307,20 @@ router.get<{ id: string; endpoint: string }>(
           user: true,
         },
         where: {
-          user: { id: Number(req.params.id) },
+          user: { id: Number(req.params.userId) },
           endpoint: req.params.endpoint,
         },
       });
 
       return res.status(200).json(userPushSub);
-    } catch {
+    } catch (e) {
       next({ status: 404, message: 'User subscription not found.' });
     }
   }
 );
 
-router.delete<{ id: string; endpoint: string }>(
-  '/:id/pushSubscription/:endpoint',
+router.delete<{ userId: string; endpoint: string }>(
+  '/:userId/pushSubscription/:endpoint',
   isOwnProfileOrAdmin(),
   async (req, res, next) => {
     try {
@@ -377,7 +329,7 @@ router.delete<{ id: string; endpoint: string }>(
       const userPushSub = await userPushSubRepository.findOne({
         relations: { user: true },
         where: {
-          user: { id: Number(req.params.id) },
+          user: { id: Number(req.params.userId) },
           endpoint: req.params.endpoint,
         },
       });
@@ -415,34 +367,10 @@ router.get<{ id: string }>('/:id', async (req, res, next) => {
     const isAdmin = req.user?.hasPermission(Permission.MANAGE_USERS);
 
     return res.status(200).json(user.filter(isOwnProfile || isAdmin));
-  } catch {
+  } catch (e) {
     next({ status: 404, message: 'User not found.' });
   }
 });
-
-router.get<{ jellyfinUserId: string }>(
-  '/jellyfin/:jellyfinUserId',
-  async (req, res, next) => {
-    try {
-      const userRepository = getRepository(User);
-
-      const jellyfinUserId = normalizeJellyfinGuid(req.params.jellyfinUserId);
-      if (!jellyfinUserId) {
-        return next({ status: 400, message: 'Invalid Jellyfin User ID.' });
-      }
-
-      const user = await userRepository.findOneOrFail({
-        where: { jellyfinUserId },
-      });
-
-      return res
-        .status(200)
-        .json(user.filter(req.user?.hasPermission(Permission.MANAGE_USERS)));
-    } catch {
-      next({ status: 404, message: 'User not found.' });
-    }
-  }
-);
 
 router.use('/:id/settings', userSettingsRoutes);
 
@@ -584,7 +512,7 @@ router.put<{ id: string }>(
       await userRepository.save(user);
 
       return res.status(200).json(user.filter());
-    } catch {
+    } catch (e) {
       next({ status: 404, message: 'User not found.' });
     }
   }
@@ -661,45 +589,80 @@ router.post(
     try {
       const settings = getSettings();
       const userRepository = getRepository(User);
-      const body = req.body as { plexIds: string[] } | undefined;
+      const { plexIds, profileIds } = req.body as {
+        plexIds?: string[];
+        profileIds?: string[];
+      };
 
-      // taken from auth.ts
+      const skippedItems: {
+        id: string;
+        type: 'user' | 'profile';
+        reason: string;
+      }[] = [];
+      const createdUsers: User[] = [];
+
       const mainUser = await userRepository.findOneOrFail({
-        select: { id: true, plexToken: true },
+        select: { id: true, plexToken: true, email: true, plexId: true },
         where: { id: 1 },
       });
+
       const mainPlexTv = new PlexTvAPI(mainUser.plexToken ?? '');
 
-      const plexUsersResponse = await mainPlexTv.getUsers();
-      const createdUsers: User[] = [];
-      let refreshedUsers = 0;
-      for (const rawUser of plexUsersResponse.MediaContainer.User) {
-        const account = rawUser.$;
+      if (plexIds && plexIds.length > 0) {
+        const plexUsersResponse = await mainPlexTv.getUsers();
 
-        if (account.email) {
-          const user = await userRepository
-            .createQueryBuilder('user')
-            .where('user.plexId = :id', { id: account.id })
-            .orWhere('user.email = :email', {
-              email: account.email.toLowerCase(),
-            })
-            .getOne();
+        for (const rawUser of plexUsersResponse.MediaContainer.User) {
+          const account = rawUser.$;
 
-          if (user) {
-            // Update the user's avatar with their Plex thumbnail, in case it changed
-            user.avatar = account.thumb;
-            user.email = account.email;
-            user.plexUsername = account.username;
+          if (account.email && plexIds.includes(account.id)) {
+            // Check for duplicate users more thoroughly
+            const user = await userRepository
+              .createQueryBuilder('user')
+              .where('user.plexId = :id', { id: account.id })
+              .orWhere('user.email = :email', {
+                email: account.email.toLowerCase(),
+              })
+              .orWhere('user.plexUsername = :username', {
+                username: account.username,
+              })
+              .getOne();
 
-            // In case the user was previously a local account
-            if (user.userType === UserType.LOCAL) {
-              user.userType = UserType.PLEX;
-              user.plexId = parseInt(account.id);
-            }
-            await userRepository.save(user);
-            refreshedUsers += 1;
-          } else if (!body || body.plexIds.includes(account.id)) {
-            if (await mainPlexTv.checkUserAccess(parseInt(account.id))) {
+            if (user) {
+              // Update the user's avatar with their Plex thumbnail, in case it changed
+              user.avatar = account.thumb;
+              user.email = account.email;
+              user.plexUsername = account.username;
+
+              // In case the user was previously a local account
+              if (user.userType === UserType.LOCAL) {
+                user.userType = UserType.PLEX;
+                user.plexId = parseInt(account.id);
+              }
+
+              await userRepository.save(user);
+              skippedItems.push({
+                id: account.id,
+                type: 'user',
+                reason: 'USER_ALREADY_EXISTS',
+              });
+            } else if (await mainPlexTv.checkUserAccess(parseInt(account.id))) {
+              // Check for profiles with the same username
+              const existingProfile = await userRepository.findOne({
+                where: {
+                  plexUsername: account.username,
+                  isPlexProfile: true,
+                },
+              });
+
+              if (existingProfile) {
+                skippedItems.push({
+                  id: account.id,
+                  type: 'user',
+                  reason: 'PROFILE_WITH_SAME_NAME_EXISTS',
+                });
+                continue;
+              }
+
               const newUser = new User({
                 plexUsername: account.username,
                 email: account.email,
@@ -709,6 +672,7 @@ router.post(
                 avatar: account.thumb,
                 userType: UserType.PLEX,
               });
+
               await userRepository.save(newUser);
               createdUsers.push(newUser);
             }
@@ -716,9 +680,63 @@ router.post(
         }
       }
 
+      if (profileIds && profileIds.length > 0) {
+        const profiles = await mainPlexTv.getProfiles();
+
+        for (const profileId of profileIds) {
+          const profileData = profiles.find((p: any) => p.id === profileId);
+
+          if (profileData) {
+            const emailPrefix = mainUser.email.split('@')[0];
+            const domainPart = mainUser.email.includes('@')
+              ? mainUser.email.split('@')[1]
+              : 'plex.local';
+
+            const safeUsername = (profileData.username || profileData.title)
+              .replace(/\s+/g, '.')
+              .replace(/[^a-zA-Z0-9._-]/g, '');
+
+            // Check for existing user with same username or email
+            const existingUser = await userRepository.findOne({
+              where: [
+                { plexUsername: profileData.username || profileData.title },
+                { email: `${emailPrefix}+${safeUsername}@${domainPart}` },
+                { plexProfileId: profileId },
+              ],
+            });
+
+            if (existingUser) {
+              // Skip this profile and add to skipped list
+              skippedItems.push({
+                id: profileId,
+                type: 'profile',
+                reason: 'DUPLICATE_USER_EXISTS',
+              });
+              continue;
+            }
+
+            const profileUser = new User({
+              email: `${emailPrefix}+${safeUsername}@${domainPart}`,
+              plexUsername: profileData.username || profileData.title,
+              plexId: mainUser.plexId,
+              plexToken: mainUser.plexToken,
+              permissions: settings.main.defaultPermissions,
+              avatar: profileData.thumb,
+              userType: UserType.PLEX,
+              plexProfileId: profileId,
+              isPlexProfile: true,
+              mainPlexUserId: mainUser.id,
+            });
+
+            await userRepository.save(profileUser);
+            createdUsers.push(profileUser);
+          }
+        }
+      }
+
       return res.status(201).json({
-        createdUsers: User.filterMany(createdUsers),
-        refreshedUsers,
+        data: User.filterMany(createdUsers),
+        skipped: skippedItems,
       });
     } catch (e) {
       next({ status: 500, message: e.message });
@@ -756,20 +774,10 @@ router.post(
       jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
       const jellyfinUsers = await jellyfinClient.getUsers();
 
-      const jellyfinUsersById = new Map(
-        jellyfinUsers.users.map((user) => [
-          normalizeJellyfinGuid(user.Id),
-          user,
-        ])
-      );
-
-      for (const rawJellyfinUserId of body.jellyfinUserIds) {
-        const jellyfinUserId = normalizeJellyfinGuid(rawJellyfinUserId);
-        if (!jellyfinUserId) {
-          continue;
-        }
-
-        const jellyfinUser = jellyfinUsersById.get(jellyfinUserId);
+      for (const jellyfinUserId of body.jellyfinUserIds) {
+        const jellyfinUser = jellyfinUsers.users.find(
+          (user) => user.Id === jellyfinUserId
+        );
 
         const user = await userRepository.findOne({
           select: ['id', 'jellyfinUserId'],
@@ -953,7 +961,7 @@ router.get<{ id: string }, WatchlistResponse>(
     }
 
     const itemsPerPage = 20;
-    const page = req.query.page ? Number(req.query.page) : 1;
+    const page = Number(req.query.page) ?? 1;
     const offset = (page - 1) * itemsPerPage;
 
     const user = await getRepository(User).findOneOrFail({
