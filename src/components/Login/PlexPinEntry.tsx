@@ -1,6 +1,5 @@
 import Button from '@app/components/Common/Button';
 import defineMessages from '@app/utils/defineMessages';
-import { ApiErrorCode } from '@server/constants/error';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
 
@@ -33,34 +32,12 @@ const PlexPinEntry = ({
 
   const handleSubmit = async () => {
     if (!pin || isSubmitting) return;
-
     setIsSubmitting(true);
-
     try {
       await onSubmit(pin);
+      setPin('');
     } catch (err) {
-      const code = err?.response?.data?.error as string | undefined;
-      const httpStatus = err?.response?.status;
-
-      let msg: string;
-      switch (code) {
-        case ApiErrorCode.InvalidPin:
-          msg = intl.formatMessage(messages.invalidPin);
-          break;
-        case ApiErrorCode.NewPlexLoginDisabled:
-          msg = intl.formatMessage(messages.accessDenied);
-          break;
-        default:
-          if (httpStatus === 401) {
-            msg = intl.formatMessage(messages.invalidPin);
-          } else if (httpStatus === 403) {
-            msg = intl.formatMessage(messages.accessDenied);
-          } else {
-            msg =
-              err?.response?.data?.message ??
-              intl.formatMessage(messages.invalidPin);
-          }
-      }
+      setPin('');
     } finally {
       setIsSubmitting(false);
     }
