@@ -3081,7 +3081,7 @@ paths:
                     timestamp:
                       type: string
                       example: '2020-12-15T16:20:00.069Z'
-  /settings/notifications:
+  /settings/notification:
     get:
       summary: Get all notification instance settings
       description: Returns all current notification instance settings in a JSON object.
@@ -3133,7 +3133,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotificationSettings'
-  /settings/notifications/{instanceId}:
+  /settings/notification/{instanceId}:
     get:
       summary: Get given notification instance settings
       description: Returns current notification settings in a JSON object.
@@ -3193,7 +3193,7 @@ paths:
       responses:
         '200':
           description: 'Notification instance was sucessfully deleted'
-  /settings/notifications/{instanceId}/test:
+  /settings/notification/{instanceId}/test:
     post:
       summary: Test given notification instance
       description: Sends a test notification from the given instance settings.

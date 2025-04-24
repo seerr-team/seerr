@@ -46,7 +46,7 @@ import sonarrRoutes from './sonarr';
 
 const settingsRoutes = Router();
 
-settingsRoutes.use('/notifications', notificationRoutes);
+settingsRoutes.use('/notification', notificationRoutes);
 settingsRoutes.use('/radarr', radarrRoutes);
 settingsRoutes.use('/sonarr', sonarrRoutes);
 settingsRoutes.use('/discover', discoverSettingRoutes);
