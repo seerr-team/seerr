@@ -568,6 +568,11 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
 
         // Use the existing user
         profileUser = existingEmailUser;
+
+        if (req.session) {
+          req.session.userId = profileUser.id;
+        }
+        return res.status(200).json(profileUser.filter() ?? {});
       } else {
         // Then check for any other potential matches
         const allUsers = await userRepository.find();
@@ -585,6 +590,11 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
           });
 
           profileUser = matchingUser;
+
+          if (req.session) {
+            req.session.userId = matchingUser.id;
+          }
+          return res.status(200).json(matchingUser.filter() ?? {});
         } else {
           // Create a new profile user
           profileUser = new User({
