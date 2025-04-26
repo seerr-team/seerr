@@ -164,16 +164,6 @@ export interface PlexWatchlistCache {
   response: WatchlistResponse;
 }
 
-export interface PlexProfile {
-  id: string;
-  uuid?: string;
-  title: string;
-  username?: string;
-  thumb: string;
-  isMainUser?: boolean;
-  isManaged?: boolean;
-}
-
 class PlexTvAPI extends ExternalAPI {
   private authToken: string;
 
