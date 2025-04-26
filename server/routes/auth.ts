@@ -580,8 +580,6 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
             matchingUserId: matchingUser.id,
           });
 
-          profileUser = matchingUser;
-
           if (req.session) {
             req.session.userId = matchingUser.id;
           }
