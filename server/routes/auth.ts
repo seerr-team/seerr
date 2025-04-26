@@ -299,64 +299,56 @@ authRoutes.post('/plex', async (req, res, next) => {
       }
     }
 
-    // Create or update profiles for this user
-    for (const profile of profiles) {
-      // Skip the main user's profile as it's already handled
-      if (profile.isMainUser) {
-        continue;
-      }
+    const adminUser = await userRepository.findOne({ where: { id: 1 } });
+    const isMainUser = profiles.some(
+      (profile) => profile.isMainUser && profile.id === account.id.toString()
+    );
+    const isAdmin = user?.id === adminUser?.id;
 
-      // Check if this profile already exists in the database
-      const existingProfileUser = await userRepository.findOne({
-        where: { plexProfileId: profile.id },
-      });
+    if (isMainUser || isAdmin) {
+      // Only update existing profiles for the main user
+      for (const profile of profiles) {
+        if (profile.isMainUser) continue;
 
-      if (existingProfileUser) {
-        // Update the profile with latest data
-        existingProfileUser.plexToken = user.plexToken;
-        existingProfileUser.avatar = profile.thumb;
-        existingProfileUser.plexUsername = profile.username || profile.title;
-        existingProfileUser.mainPlexUserId = user.id;
-
-        await userRepository.save(existingProfileUser);
-      } else if (settings.main.newPlexLogin) {
-        // Create a new profile user
-        const emailPrefix = user.email.split('@')[0];
-        const domainPart = user.email.includes('@')
-          ? user.email.split('@')[1]
-          : 'plex.local';
-
-        const safeUsername = (profile.username || profile.title)
-          .replace(/\s+/g, '.') // Replace spaces with dots
-          .replace(/[^a-zA-Z0-9._-]/g, ''); // Remove any special characters
-
-        const profileUser = new User({
-          email: `${emailPrefix}+${safeUsername}@${domainPart}`,
-          plexUsername: profile.username || profile.title,
-          plexId: user.plexId,
-          plexToken: user.plexToken,
-          permissions: settings.main.defaultPermissions,
-          avatar: profile.thumb,
-          userType: UserType.PLEX,
-          plexProfileId: profile.id.toString(),
-          isPlexProfile: true,
-          mainPlexUserId: user.id,
+        const existingProfileUser = await userRepository.findOne({
+          where: { plexProfileId: profile.id },
         });
 
-        await userRepository.save(profileUser);
+        if (existingProfileUser) {
+          // Only update profiles that don't have their own Plex ID
+          // or are already marked as profiles
+          if (
+            !existingProfileUser.plexId ||
+            existingProfileUser.plexId === user.plexId ||
+            existingProfileUser.isPlexProfile
+          ) {
+            existingProfileUser.plexToken = user.plexToken;
+            existingProfileUser.avatar = profile.thumb;
+            existingProfileUser.plexUsername =
+              profile.username || profile.title;
+            await userRepository.save(existingProfileUser);
+          }
+        }
       }
     }
 
-    // Return main user ID and profiles for selection
-    const mainUserIdToSend =
-      user?.id && Number(user.id) > 0 ? Number(user.id) : 1;
+    if (isAdmin || isMainUser) {
+      // Return main user ID and profiles for selection
+      const mainUserIdToSend =
+        user?.id && Number(user.id) > 0 ? Number(user.id) : 1;
 
-    // Always return profiles for selection, regardless of PIN protection
-    return res.status(200).json({
-      status: 'REQUIRES_PROFILE',
-      mainUserId: mainUserIdToSend,
-      profiles: profiles,
-    });
+      return res.status(200).json({
+        status: 'REQUIRES_PROFILE',
+        mainUserId: mainUserIdToSend,
+        profiles: profiles,
+      });
+    } else {
+      // For non-main users, just log them in directly
+      if (user && req.session) {
+        req.session.userId = user.id;
+      }
+      return res.status(200).json(user?.filter() ?? {});
+    }
   } catch (e) {
     logger.error('Something went wrong authenticating with Plex account', {
       label: 'API',
@@ -507,11 +499,23 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
       }
     }
 
+    const userAccount = await plextv.getUser();
+    const adminUser = await userRepository.findOne({ where: { id: 1 } });
+    const isMainPlexUser = profiles.some(
+      (profile) =>
+        profile.isMainUser && profile.id === userAccount.id.toString()
+    );
+    const isAdminUser = mainUser.id === adminUser?.id;
+
     let profileUser = await userRepository.findOne({
-      where: { plexProfileId: profileId },
+      where: [
+        { plexProfileId: profileId },
+        { plexUsername: selectedProfile.username || selectedProfile.title },
+      ],
     });
 
     if (!profileUser) {
+      // Profile doesn't exist yet - only allow creation for admin/main Plex user
       if (!settings.main.newPlexLogin) {
         return next({
           status: 403,
@@ -520,6 +524,62 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
         });
       }
 
+      // Only allow profile creation for main Plex user or admin user
+      if (!isMainPlexUser && !isAdminUser) {
+        return next({
+          status: 403,
+          message: 'Only the Plex server owner can create profile users.',
+        });
+      }
+
+      // Create the profile user on-demand
+      const emailPrefix = mainUser.email.split('@')[0];
+      const domainPart = mainUser.email.includes('@')
+        ? mainUser.email.split('@')[1]
+        : 'plex.local';
+
+      const safeUsername = (selectedProfile.username || selectedProfile.title)
+        .replace(/\s+/g, '.')
+        .replace(/[^a-zA-Z0-9._-]/g, '');
+
+      const proposedEmail = `${emailPrefix}+${safeUsername}@${domainPart}`;
+
+      const existingEmailUser = await userRepository.findOne({
+        where: { email: proposedEmail },
+      });
+
+      if (existingEmailUser) {
+        logger.warn('Attempted to create profile with duplicate email', {
+          label: 'Auth',
+          email: proposedEmail,
+          profileId,
+          existingUserId: existingEmailUser.id,
+        });
+        profileUser = existingEmailUser;
+      } else {
+        profileUser = new User({
+          email: `${emailPrefix}+${safeUsername}@${domainPart}`,
+          plexUsername: selectedProfile.username || selectedProfile.title,
+          plexId: mainUser.plexId,
+          plexToken: tokenToUse,
+          permissions: settings.main.defaultPermissions,
+          avatar: selectedProfile.thumb,
+          userType: UserType.PLEX,
+          plexProfileId: profileId,
+          isPlexProfile: true,
+          mainPlexUserId: mainUser.id,
+        });
+
+        await userRepository.save(profileUser);
+
+        logger.info('Created profile user on-demand', {
+          label: 'Auth',
+          profileId,
+          username: profileUser.plexUsername,
+        });
+      }
+
+      // Continue with profile creation for main/admin user...
       const allUsers = await userRepository.find();
       const matchingUser = allUsers.find(
         (u) =>
@@ -536,25 +596,43 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
             'Profile not found. Please sign in again to set up your profiles.',
         });
       }
+    } else {
+      // Profile exists - only set mainPlexUserId if it's the main user creating it
+      if (
+        profileUser.plexId &&
+        profileUser.plexId !== mainUser.plexId &&
+        !profileUser.isPlexProfile
+      ) {
+        logger.warn('Attempted to use a regular Plex user as a profile', {
+          label: 'Auth',
+          profileId,
+          userId: profileUser.id,
+          mainUserId: mainUser.id,
+        });
+
+        // Simply use their account without modifying it
+        if (req.session) {
+          req.session.userId = profileUser.id;
+        }
+        return res.status(200).json(profileUser.filter() ?? {});
+      }
+
+      // Otherwise continue with normal profile updates
+      profileUser.plexToken = tokenToUse;
+      profileUser.avatar = selectedProfile.thumb;
+      profileUser.plexUsername =
+        selectedProfile.username || selectedProfile.title;
+      profileUser.mainPlexUserId = mainUser.id;
+      profileUser.isPlexProfile = true;
+
+      await userRepository.save(profileUser);
+
+      if (req.session) {
+        req.session.userId = profileUser.id;
+      }
+
+      return res.status(200).json(profileUser.filter() ?? {});
     }
-
-    profileUser.plexToken = tokenToUse;
-
-    profileUser.avatar = selectedProfile.thumb;
-    profileUser.plexUsername =
-      selectedProfile.username || selectedProfile.title;
-
-    profileUser.mainPlexUserId = mainUser.id;
-    profileUser.isPlexProfile = true;
-
-    await userRepository.save(profileUser);
-
-    if (req.session) {
-      req.session.userId = profileUser.id;
-    }
-
-    // Return the profile user data
-    return res.status(200).json(profileUser.filter() ?? {});
   } catch (e) {
     return next({
       status: 500,
