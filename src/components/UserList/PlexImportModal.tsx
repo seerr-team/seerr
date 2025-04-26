@@ -3,8 +3,6 @@ import Modal from '@app/components/Common/Modal';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import type PlexUser from '@server/api/plexapi';
-import type { PlexProfile } from '@server/api/plextv';
 import axios from 'axios';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
@@ -15,11 +13,6 @@ import useSWR from 'swr';
 interface PlexImportProps {
   onCancel?: () => void;
   onComplete?: () => void;
-}
-
-interface PlexImportData {
-  users: PlexUser[];
-  profiles: PlexProfile[];
 }
 
 const messages = defineMessages('components.UserList', {
@@ -61,12 +54,25 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
     [key: string]: { type: 'user' | 'profile'; duplicateWith: string[] };
   }>({});
 
-  const { data, error } = useSWR<PlexImportData>(
-    '/api/v1/settings/plex/users',
-    {
-      revalidateOnMount: true,
-    }
-  );
+  const { data, error } = useSWR<{
+    users: {
+      id: string;
+      title: string;
+      username: string;
+      email: string;
+      thumb: string;
+    }[];
+    profiles: {
+      id: string;
+      title: string;
+      username?: string;
+      thumb: string;
+      isMainUser?: boolean;
+      protected?: boolean;
+    }[];
+  }>('/api/v1/settings/plex/users', {
+    revalidateOnMount: true,
+  });
 
   useEffect(() => {
     if (data) {
@@ -76,11 +82,11 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
 
       const usernameMap = new Map<string, string>();
 
-      data.users.forEach((user: PlexUser) => {
+      data.users.forEach((user) => {
         usernameMap.set(user.username.toLowerCase(), user.id);
       });
 
-      data.profiles.forEach((profile: PlexProfile) => {
+      data.profiles.forEach((profile) => {
         const profileName = (profile.username || profile.title).toLowerCase();
 
         if (usernameMap.has(profileName)) {
@@ -116,10 +122,10 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
 
       if (response.data) {
         const importedUsers = response.data.filter(
-          (item) => !item.isPlexProfile
+          (item: { isPlexProfile: boolean }) => !item.isPlexProfile
         ).length;
         const importedProfiles = response.data.filter(
-          (item) => item.isPlexProfile
+          (item: { isPlexProfile: boolean }) => item.isPlexProfile
         ).length;
 
         let successMessage;
@@ -146,10 +152,10 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
 
         if (response.skipped && response.skipped.length > 0) {
           const skippedUsers = response.skipped.filter(
-            (item) => item.type === 'user'
+            (item: { type: string }) => item.type === 'user'
           ).length;
           const skippedProfiles = response.skipped.filter(
-            (item) => item.type === 'profile'
+            (item: { type: string }) => item.type === 'profile'
           ).length;
 
           let skippedMessage = '';
@@ -288,7 +294,7 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
 
   const toggleAllUsers = (): void => {
     if (data?.users && data.users.length > 0 && !isAllUsers()) {
-      setSelectedUsers(data.users.map((user: PlexUser) => user.id));
+      setSelectedUsers(data.users.map((user) => user.id));
     } else {
       setSelectedUsers([]);
     }
@@ -296,9 +302,7 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
 
   const toggleAllProfiles = (): void => {
     if (data?.profiles && data.profiles.length > 0 && !isAllProfiles()) {
-      setSelectedProfiles(
-        data.profiles.map((profile: PlexProfile) => profile.id)
-      );
+      setSelectedProfiles(data.profiles.map((profile) => profile.id));
     } else {
       setSelectedProfiles([]);
     }
