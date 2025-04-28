@@ -36,7 +36,7 @@ describe('User List', () => {
     cy.get('#email').type(testUser.emailAddress);
     cy.get('#password').type(testUser.password);
 
-    cy.intercept('/api/v1/user?take=10&skip=0&sort=displayname').as('user');
+    cy.intercept('/api/v1/user*').as('user');
 
     cy.get('[data-testid=modal-ok-button]').click();
 
@@ -56,7 +56,7 @@ describe('User List', () => {
 
     cy.get('[data-testid=modal-title]').should('contain', `Delete User`);
 
-    cy.intercept('/api/v1/user?take=10&skip=0&sort=displayname').as('user');
+    cy.intercept('/api/v1/user*').as('user');
 
     cy.get('[data-testid=modal-ok-button]').should('contain', 'Delete').click();
 
