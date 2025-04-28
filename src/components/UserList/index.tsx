@@ -87,9 +87,6 @@ const messages = defineMessages('components.UserList', {
   toggleSortDirection: 'Click again to sort {direction}',
   ascending: 'ascending',
   descending: 'descending',
-  sortCreated: 'Join Date',
-  sortDisplayName: 'Display Name',
-  sortRequests: 'Request Count',
   localLoginDisabled:
     'The <strong>Enable Local Sign-In</strong> setting is currently disabled.',
 });
