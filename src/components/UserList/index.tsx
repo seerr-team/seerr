@@ -18,6 +18,8 @@ import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import {
+  BarsArrowDownIcon,
+  BarsArrowUpIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -611,7 +613,7 @@ const UserList = () => {
               <span>{intl.formatMessage(messages.createlocaluser)}</span>
             </Button>
             <Button
-              className="flex-grow"
+              className="flex-grow lg:mr-2"
               buttonType="primary"
               onClick={() => setShowImportModal(true)}
             >
@@ -632,6 +634,50 @@ const UserList = () => {
                     })}
               </span>
             </Button>
+          </div>
+
+          <div className="mb-2 flex flex-grow lg:mb-0 lg:flex-grow-0">
+            <button
+              type="button"
+              className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100"
+              onClick={() =>
+                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+              }
+              title={
+                sortDirection === 'asc'
+                  ? intl.formatMessage(messages.descending)
+                  : intl.formatMessage(messages.ascending)
+              }
+            >
+              {sortDirection === 'asc' ? (
+                <BarsArrowUpIcon className="h-6 w-6" />
+              ) : (
+                <BarsArrowDownIcon className="h-6 w-6" />
+              )}
+            </button>
+            <select
+              id="sort"
+              name="sort"
+              onChange={(e) => {
+                setCurrentSort(e.target.value as Sort);
+              }}
+              value={currentSort}
+              className="rounded-r-only"
+            >
+              <option value="created">
+                {intl.formatMessage(messages.created)}
+              </option>
+              <option value="requests">
+                {intl.formatMessage(messages.totalrequests)}
+              </option>
+              <option value="displayname">
+                {intl.formatMessage(messages.username)}
+              </option>
+              <option value="usertype">
+                {intl.formatMessage(messages.accounttype)}
+              </option>
+              <option value="role">{intl.formatMessage(messages.role)}</option>
+            </select>
           </div>
         </div>
       </div>
