@@ -664,19 +664,19 @@ const UserList = () => {
               value={currentSort}
               className="rounded-r-only"
             >
-              <option value="created">
-                {intl.formatMessage(messages.created)}
+              <option value="displayname">
+                {intl.formatMessage(messages.username)}
               </option>
               <option value="requests">
                 {intl.formatMessage(messages.totalrequests)}
-              </option>
-              <option value="displayname">
-                {intl.formatMessage(messages.username)}
               </option>
               <option value="usertype">
                 {intl.formatMessage(messages.accounttype)}
               </option>
               <option value="role">{intl.formatMessage(messages.role)}</option>
+              <option value="created">
+                {intl.formatMessage(messages.created)}
+              </option>
             </select>
           </div>
         </div>
