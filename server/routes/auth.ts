@@ -566,24 +566,21 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
         return res.status(200).json(profileUser.filter() ?? {});
       } else {
         // Then check for any other potential matches
-        const allUsers = await userRepository.find();
-        const matchingUser = allUsers.find(
-          (u) =>
-            u.plexProfileId?.includes(profileId) ||
-            profileId.includes(u.plexProfileId || '')
-        );
+        const exactProfileUser = await userRepository.findOne({
+          where: { plexProfileId: profileId },
+        });
 
-        if (matchingUser) {
-          logger.info('Found matching profile user', {
+        if (exactProfileUser) {
+          logger.info('Found existing profile user with exact ID match', {
             label: 'Auth',
             profileId,
-            matchingUserId: matchingUser.id,
+            userId: exactProfileUser.id,
           });
 
           if (req.session) {
-            req.session.userId = matchingUser.id;
+            req.session.userId = exactProfileUser.id;
           }
-          return res.status(200).json(matchingUser.filter() ?? {});
+          return res.status(200).json(exactProfileUser.filter() ?? {});
         } else {
           // Create a new profile user
           profileUser = new User({
