@@ -1406,6 +1406,7 @@ components:
               'discord',
               'email',
               'gotify',
+              'ntfy',
               'lunasea',
               'pushbullet',
               'pushover',
@@ -1556,6 +1557,32 @@ components:
               properties:
                 url:
                   type: string
+                token:
+                  type: string
+        ntfy:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                url:
+                  type: string
+                topic:
+                  type: string
+                authMethodUsernamePassword:
+                  type: boolean
+                username:
+                  type: string
+                password:
+                  type: string
+                authMethodToken:
+                  type: boolean
                 token:
                   type: string
         lunasea:

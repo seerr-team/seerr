@@ -97,11 +97,6 @@ notificationRoutes.post('/', async (req, res, next) => {
   const request = req.body;
   request.id = notificationInstanceId;
 
-  instances.push(request);
-  const notificationInstanceIndex = instances.findIndex(
-    (instance) => instance.id === notificationInstanceId
-  );
-
   const notificationAgent = createAccordingNotificationAgent(
     request,
     notificationInstanceId
@@ -116,6 +111,8 @@ notificationRoutes.post('/', async (req, res, next) => {
 
   notificationManager.registerAgent(notificationAgent);
 
+  const notificationInstanceIndex = instances.length;
+  instances[notificationInstanceIndex] = request;
   await settings.save();
 
   res.status(200).json(instances[notificationInstanceIndex]);
@@ -135,11 +132,6 @@ notificationRoutes.post<{ id: string }>('/:id', async (req, res, next) => {
 
   // instance was not found -> register new one with new id
   if (notificationInstanceIndex === -1) {
-    instances.push(request);
-    notificationInstanceIndex = instances.findIndex(
-      (instance) => instance.id === notificationInstanceId
-    );
-
     const notificationAgent = createAccordingNotificationAgent(
       request,
       notificationInstanceId
@@ -153,11 +145,11 @@ notificationRoutes.post<{ id: string }>('/:id', async (req, res, next) => {
     }
 
     notificationManager.registerAgent(notificationAgent);
+
+    notificationInstanceIndex = instances.length;
   }
   // agent has changed -> reregister
   else if (instances[notificationInstanceIndex].agent !== request.agent) {
-    instances[notificationInstanceIndex] = request;
-
     const notificationAgent = createAccordingNotificationAgent(
       request,
       notificationInstanceId
@@ -175,10 +167,8 @@ notificationRoutes.post<{ id: string }>('/:id', async (req, res, next) => {
       notificationInstanceId
     );
   }
-  // only change instance
-  else {
-    instances[notificationInstanceIndex] = request;
-  }
+
+  instances[notificationInstanceIndex] = request;
 
   await settings.save();
 
@@ -227,40 +217,6 @@ notificationRoutes.post<{ id: string }>('/:id/test', async (req, res, next) => {
     return next({
       status: 500,
       message: `Failed to send ${req.body.agent} notification.`,
-    });
-  }
-});
-
-notificationRoutes.get('/ntfy', (_req, res) => {
-  const settings = getSettings();
-
-  res.status(200).json(settings.notifications.agents.ntfy);
-});
-
-notificationRoutes.post('/ntfy', async (req, res) => {
-  const settings = getSettings();
-
-  settings.notifications.agents.ntfy = req.body;
-  await settings.save();
-
-  res.status(200).json(settings.notifications.agents.ntfy);
-});
-
-notificationRoutes.post('/ntfy/test', async (req, res, next) => {
-  if (!req.user) {
-    return next({
-      status: 500,
-      message: 'User information is missing from the request.',
-    });
-  }
-
-  const ntfyAgent = new NtfyAgent(req.body);
-  if (await sendTestNotification(ntfyAgent, req.user)) {
-    return res.status(204).send();
-  } else {
-    return next({
-      status: 500,
-      message: 'Failed to send ntfy notification.',
     });
   }
 });

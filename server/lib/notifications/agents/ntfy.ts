@@ -11,16 +11,6 @@ class NtfyAgent
   extends BaseAgent<NotificationAgentNtfy>
   implements NotificationAgent
 {
-  protected getSettings(): NotificationAgentNtfy {
-    if (this.settings) {
-      return this.settings;
-    }
-
-    const settings = getSettings();
-
-    return settings.notifications.agents.ntfy;
-  }
-
   private buildPayload(type: Notification, payload: NotificationPayload) {
     const { applicationUrl } = getSettings().main;
 
@@ -103,7 +93,7 @@ class NtfyAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    const settings = this.getSettings();
+    const settings = this.getSettings() as NotificationAgentNtfy;
 
     if (
       !payload.notifySystem ||

@@ -3,6 +3,7 @@ import DiscordAgent from '@server/lib/notifications/agents/discord';
 import EmailAgent from '@server/lib/notifications/agents/email';
 import GotifyAgent from '@server/lib/notifications/agents/gotify';
 import LunaSeaAgent from '@server/lib/notifications/agents/lunasea';
+import NtfyAgent from '@server/lib/notifications/agents/ntfy';
 import PushbulletAgent from '@server/lib/notifications/agents/pushbullet';
 import PushoverAgent from '@server/lib/notifications/agents/pushover';
 import SlackAgent from '@server/lib/notifications/agents/slack';
@@ -16,6 +17,7 @@ import type {
   NotificationAgentEmail,
   NotificationAgentGotify,
   NotificationAgentLunaSea,
+  NotificationAgentNtfy,
   NotificationAgentPushbullet,
   NotificationAgentPushover,
   NotificationAgentSlack,
@@ -131,6 +133,9 @@ export const createAccordingNotificationAgent = (
       break;
     case NotificationAgentKey.GOTIFY:
       notificationAgent = new GotifyAgent(body as NotificationAgentGotify, id);
+      break;
+    case NotificationAgentKey.NTFY:
+      notificationAgent = new NtfyAgent(body as NotificationAgentNtfy, id);
       break;
     case NotificationAgentKey.LUNASEA:
       notificationAgent = new LunaSeaAgent(
