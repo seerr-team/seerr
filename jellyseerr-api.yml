@@ -3364,6 +3364,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotificationInstance'
+  /settings/notification/test:
+    post:
+      summary: Test given notification instance settings
+      description: Sends a test notification from the given instance settings.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationInstance'
+      responses:
+        '204':
+          description: Test notification attempted
   /settings/notification/{instanceId}:
     get:
       summary: Get given notification instance settings
@@ -3424,28 +3439,6 @@ paths:
       responses:
         '200':
           description: 'Notification instance was sucessfully deleted'
-  /settings/notification/{instanceId}/test:
-    post:
-      summary: Test given notification instance
-      description: Sends a test notification from the given instance settings.
-      tags:
-        - settings
-      parameters:
-        - in: path
-          name: instanceId
-          required: true
-          schema:
-            type: number
-            example: 0
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NotificationInstance'
-      responses:
-        '204':
-          description: Test notification attempted
   /settings/discover:
     get:
       summary: Get all discover sliders

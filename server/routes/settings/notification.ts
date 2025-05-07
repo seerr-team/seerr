@@ -74,20 +74,6 @@ notificationRoutes.get('/', (req, res) => {
   res.status(200).json(notificationResponse);
 });
 
-notificationRoutes.get<{ id: string }>('/:id', (req, res, next) => {
-  const settings = getSettings();
-
-  const notificationInstance = settings.notification.instances.find(
-    (instance) => instance.id === Number(req.params.id)
-  );
-
-  if (!notificationInstance) {
-    return next({ status: '404', message: 'Notifications instance not found' });
-  }
-
-  res.status(200).json(notificationInstance);
-});
-
 notificationRoutes.post('/', async (req, res, next) => {
   const settings = getSettings();
   const instances = settings.notification.instances;
@@ -116,6 +102,46 @@ notificationRoutes.post('/', async (req, res, next) => {
   await settings.save();
 
   res.status(200).json(instances[notificationInstanceIndex]);
+});
+
+notificationRoutes.post('/test', async (req, res, next) => {
+  if (!req.user) {
+    return next({
+      status: 500,
+      message: 'User information is missing from the request.',
+    });
+  }
+
+  const notificationAgent = createAccordingNotificationAgent(req.body);
+  if (!notificationAgent) {
+    return next({
+      status: 500,
+      message: 'A valid agent is missing from the request.',
+    });
+  }
+
+  if (await sendTestNotification(notificationAgent, req.user)) {
+    return res.status(204).send();
+  } else {
+    return next({
+      status: 500,
+      message: `Failed to send ${req.body.agent} test notification.`,
+    });
+  }
+});
+
+notificationRoutes.get<{ id: string }>('/:id', (req, res, next) => {
+  const settings = getSettings();
+
+  const notificationInstance = settings.notification.instances.find(
+    (instance) => instance.id === Number(req.params.id)
+  );
+
+  if (!notificationInstance) {
+    return next({ status: '404', message: 'Notifications instance not found' });
+  }
+
+  res.status(200).json(notificationInstance);
 });
 
 notificationRoutes.post<{ id: string }>('/:id', async (req, res, next) => {
@@ -184,7 +210,7 @@ notificationRoutes.delete<{ id: string }>('/:id', async (req, res, next) => {
   );
 
   if (notificationInstanceIndex === -1) {
-    return next({ status: '404', message: 'Notifications instance not found' });
+    return next({ status: 404, message: 'Notifications instance not found' });
   }
 
   instances.splice(notificationInstanceIndex, 1);
@@ -193,32 +219,6 @@ notificationRoutes.delete<{ id: string }>('/:id', async (req, res, next) => {
   await settings.save();
 
   res.status(200).send();
-});
-
-notificationRoutes.post<{ id: string }>('/:id/test', async (req, res, next) => {
-  if (!req.user) {
-    return next({
-      status: 500,
-      message: 'User information is missing from the request.',
-    });
-  }
-
-  const notificationAgent = createAccordingNotificationAgent(req.body);
-  if (!notificationAgent) {
-    return next({
-      status: 500,
-      message: 'A valid agent is missing from the request.',
-    });
-  }
-
-  if (await sendTestNotification(notificationAgent, req.user)) {
-    return res.status(204).send();
-  } else {
-    return next({
-      status: 500,
-      message: `Failed to send ${req.body.agent} notification.`,
-    });
-  }
 });
 
 export default notificationRoutes;
