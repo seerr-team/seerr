@@ -8,8 +8,11 @@ import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import {
   BarsArrowDownIcon,
+  BeakerIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  PencilIcon,
+  TrashIcon,
 } from '@heroicons/react/24/solid';
 import type { NotificationSettingsResultResponse } from '@server/interfaces/api/settingsInterfaces';
 import axios from 'axios';
@@ -28,9 +31,9 @@ const messages = defineMessages('components.Settings', {
   instanceDeleted: 'Notification instance deleted successfully!',
   instanceDeleteError:
     'Something went wrong while deleting the notification instance.',
-  email: 'Email',
-  webhook: 'Webhook',
-  webpush: 'Web Push',
+  toastTestSending: 'Sending test notification…',
+  toastTestSuccess: 'Test notification sent!',
+  toastTestFailed: 'Test notification failed to send.',
 });
 
 enum Sort {
@@ -42,10 +45,9 @@ enum Sort {
 const SettingsNotifications = () => {
   const intl = useIntl();
   const router = useRouter();
-  const { addToast } = useToasts();
+  const { addToast, removeToast } = useToasts();
   const [currentSort, setCurrentSort] = useState<Sort>(Sort.ID);
   const [currentPageSize, setCurrentPageSize] = useState<number>(10);
-  const [, setDeleting] = useState(false);
   const [selectedInstances, setSelectedInstances] = useState<number[]>([]);
 
   const page = router.query.page ? Number(router.query.page) : 1;
@@ -108,8 +110,6 @@ const SettingsNotifications = () => {
   };
 
   const deleteInstance = async (instanceId: number) => {
-    setDeleting(true);
-
     try {
       await axios.delete(`/api/v1/settings/notification/${instanceId}`);
 
@@ -123,8 +123,43 @@ const SettingsNotifications = () => {
         appearance: 'error',
       });
     } finally {
-      setDeleting(false);
       revalidate();
+    }
+  };
+
+  const testInstance = async (instanceId: number) => {
+    let toastId: string | undefined;
+    try {
+      addToast(
+        intl.formatMessage(messages.toastTestSending),
+        {
+          autoDismiss: false,
+          appearance: 'info',
+        },
+        (id) => {
+          toastId = id;
+        }
+      );
+      await axios.post(
+        '/api/v1/settings/notification/test',
+        data?.results[instanceId]
+      );
+
+      if (toastId) {
+        removeToast(toastId);
+      }
+      addToast(intl.formatMessage(messages.toastTestSuccess), {
+        autoDismiss: true,
+        appearance: 'success',
+      });
+    } catch (e) {
+      if (toastId) {
+        removeToast(toastId);
+      }
+      addToast(intl.formatMessage(messages.toastTestFailed), {
+        autoDismiss: true,
+        appearance: 'error',
+      });
     }
   };
 
@@ -230,7 +265,14 @@ const SettingsNotifications = () => {
               <Table.TD>{instance.name}</Table.TD>
               <Table.TD>{instance.id}</Table.TD>
               <Table.TD>{instance.agent}</Table.TD>
-              <Table.TD alignText="right">
+              <Table.TD className="flex flex-row-reverse">
+                <Button
+                  buttonType="danger"
+                  onClick={() => deleteInstance(instance.id)}
+                >
+                  <TrashIcon />
+                  <span>{intl.formatMessage(globalMessages.delete)}</span>
+                </Button>
                 <Button
                   buttonType="warning"
                   className="mr-2"
@@ -241,13 +283,19 @@ const SettingsNotifications = () => {
                     )
                   }
                 >
-                  {intl.formatMessage(globalMessages.edit)}
+                  <PencilIcon />
+                  <span>{intl.formatMessage(globalMessages.edit)}</span>
                 </Button>
                 <Button
-                  buttonType="danger"
-                  onClick={() => deleteInstance(instance.id)}
+                  buttonType="warning"
+                  className="mr-4"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    testInstance(instance.id);
+                  }}
                 >
-                  {intl.formatMessage(globalMessages.delete)}
+                  <BeakerIcon />
+                  <span>{intl.formatMessage(globalMessages.test)}</span>
                 </Button>
               </Table.TD>
             </tr>
