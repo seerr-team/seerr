@@ -1,11 +1,11 @@
 import type { User } from '@server/entity/User';
 import type { NotificationSettingsResultResponse } from '@server/interfaces/api/settingsInterfaces';
+import type { NotificationAgentConfig } from '@server/interfaces/settings';
 import notificationManager, {
   createAccordingNotificationAgent,
   Notification,
 } from '@server/lib/notifications';
 import type { NotificationAgent } from '@server/lib/notifications/agents/agent';
-import type { NotificationAgentConfig } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { Router } from 'express';
 

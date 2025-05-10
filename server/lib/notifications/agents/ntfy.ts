@@ -1,5 +1,5 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
-import type { NotificationAgentNtfy } from '@server/lib/settings';
+import type { NotificationAgentNtfy } from '@server/interfaces/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';

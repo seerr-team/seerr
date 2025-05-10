@@ -10,14 +10,15 @@ import type {
   UserSettingsGeneralResponse,
   UserSettingsNotificationsResponse,
 } from '@server/interfaces/api/userSettingsInterfaces';
+import {
+  NotificationAgentKey,
+  type NotificationAgentDiscord,
+  type NotificationAgentEmail,
+  type NotificationAgentTelegram,
+} from '@server/interfaces/settings';
 import { retrieveDefaultNotificationInstanceSettings } from '@server/lib/notifications';
 import { Permission } from '@server/lib/permissions';
-import type {
-  NotificationAgentDiscord,
-  NotificationAgentEmail,
-  NotificationAgentTelegram,
-} from '@server/lib/settings';
-import { getSettings, NotificationAgentKey } from '@server/lib/settings';
+import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { ApiError } from '@server/types/error';

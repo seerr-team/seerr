@@ -9,7 +9,7 @@ import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import { MediaServerType } from '@server/constants/server';
-import type { MainSettings } from '@server/lib/settings';
+import type { MainSettings } from '@server/interfaces/settings';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useIntl } from 'react-intl';

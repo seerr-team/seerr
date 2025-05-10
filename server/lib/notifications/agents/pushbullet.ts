@@ -2,8 +2,8 @@ import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { MediaStatus } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
-import type { NotificationAgentPushbullet } from '@server/lib/settings';
-import { NotificationAgentKey } from '@server/lib/settings';
+import type { NotificationAgentPushbullet } from '@server/interfaces/settings';
+import { NotificationAgentKey } from '@server/interfaces/settings';
 import logger from '@server/logger';
 import axios from 'axios';
 import {

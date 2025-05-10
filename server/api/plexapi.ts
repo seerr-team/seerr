@@ -1,4 +1,4 @@
-import type { Library, PlexSettings } from '@server/lib/settings';
+import type { Library, PlexSettings } from '@server/interfaces/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import NodePlexAPI from 'plex-api';

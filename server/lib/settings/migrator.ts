@@ -1,4 +1,4 @@
-import type { AllSettings } from '@server/lib/settings';
+import type { AllSettings } from '@server/interfaces/settings';
 import logger from '@server/logger';
 import fs from 'fs/promises';
 import path from 'path';

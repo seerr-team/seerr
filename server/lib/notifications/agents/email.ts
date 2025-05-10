@@ -2,9 +2,12 @@ import { IssueType, IssueTypeName } from '@server/constants/issue';
 import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
+import {
+  NotificationAgentKey,
+  type NotificationAgentEmail,
+} from '@server/interfaces/settings';
 import PreparedEmail from '@server/lib/email';
-import type { NotificationAgentEmail } from '@server/lib/settings';
-import { getSettings, NotificationAgentKey } from '@server/lib/settings';
+import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import type { EmailOptions } from 'email-templates';
 import * as EmailValidator from 'email-validator';

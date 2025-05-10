@@ -15,7 +15,7 @@ import type {
   DVRSettings,
   RadarrSettings,
   SonarrSettings,
-} from '@server/lib/settings';
+} from '@server/interfaces/settings';
 import axios from 'axios';
 import { Field, Formik } from 'formik';
 import { useCallback, useEffect, useState } from 'react';
