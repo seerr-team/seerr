@@ -624,6 +624,7 @@
   "components.Settings.Notifications.NotificationsGotify.validationUrlRequired": "You must provide a valid URL",
   "components.Settings.Notifications.NotificationsGotify.validationUrlTrailingSlash": "URL must not end in a trailing slash",
   "components.Settings.Notifications.NotificationsNtfy.agentenabled": "Enable Agent",
+  "components.Settings.Notifications.NotificationsNtfy.embedImage": "Embed Image",
   "components.Settings.Notifications.NotificationsNtfy.ntfysettingsfailed": "Ntfy notification settings failed to save.",
   "components.Settings.Notifications.NotificationsNtfy.ntfysettingssaved": "Ntfy notification settings saved successfully!",
   "components.Settings.Notifications.NotificationsNtfy.password": "Password",
