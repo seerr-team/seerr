@@ -88,6 +88,7 @@ const NotificationsDiscord = () => {
         try {
           await axios.post('/api/v1/settings/notifications/discord', {
             enabled: values.enabled,
+            embedImage: values.embedImage,
             types: values.types,
             options: {
               botUsername: values.botUsername,
@@ -137,6 +138,7 @@ const NotificationsDiscord = () => {
             );
             await axios.post('/api/v1/settings/notifications/discord/test', {
               enabled: true,
+              embedImage: values.embedImage,
               types: values.types,
               options: {
                 botUsername: values.botUsername,

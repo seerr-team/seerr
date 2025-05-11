@@ -103,6 +103,7 @@ const NotificationsTelegram = () => {
         try {
           await axios.post('/api/v1/settings/notifications/telegram', {
             enabled: values.enabled,
+            embedImage: values.embedImage,
             types: values.types,
             options: {
               botAPI: values.botAPI,

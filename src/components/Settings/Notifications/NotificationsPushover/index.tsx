@@ -98,6 +98,7 @@ const NotificationsPushover = () => {
         try {
           await axios.post('/api/v1/settings/notifications/pushover', {
             enabled: values.enabled,
+            embedImage: values.embedImage,
             types: values.types,
             options: {
               accessToken: values.accessToken,
@@ -144,6 +145,7 @@ const NotificationsPushover = () => {
             );
             await axios.post('/api/v1/settings/notifications/pushover/test', {
               enabled: true,
+              embedImage: values.embedImage,
               types: values.types,
               options: {
                 accessToken: values.accessToken,

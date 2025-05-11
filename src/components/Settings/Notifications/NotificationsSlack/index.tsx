@@ -69,6 +69,7 @@ const NotificationsSlack = () => {
         try {
           await axios.post('/api/v1/settings/notifications/slack', {
             enabled: values.enabled,
+            embedImage: values.embedImage,
             types: values.types,
             options: {
               webhookUrl: values.webhookUrl,
@@ -113,6 +114,7 @@ const NotificationsSlack = () => {
             );
             await axios.post('/api/v1/settings/notifications/slack/test', {
               enabled: true,
+              embedImage: values.embedImage,
               types: values.types,
               options: {
                 webhookUrl: values.webhookUrl,
