@@ -3,9 +3,11 @@ import Header from '@app/components/Common/Header';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import Table from '@app/components/Common/Table';
+import NotificationModal from '@app/components/Settings/SettingsNotifications/NotificationModal';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import { Transition } from '@headlessui/react';
 import {
   BarsArrowDownIcon,
   BeakerIcon,
@@ -15,6 +17,7 @@ import {
   TrashIcon,
 } from '@heroicons/react/24/solid';
 import type { NotificationSettingsResultResponse } from '@server/interfaces/api/settingsInterfaces';
+import type { NotificationAgentConfig } from '@server/interfaces/settings';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -22,7 +25,7 @@ import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
-const messages = defineMessages('components.Settings', {
+const messages = defineMessages('components.Settings.SettingsNotifications', {
   notifications: 'Notifications',
   notificationInstanceList: 'Notification Instance List',
   instanceName: 'Name',
@@ -49,6 +52,13 @@ const SettingsNotifications = () => {
   const [currentSort, setCurrentSort] = useState<Sort>(Sort.ID);
   const [currentPageSize, setCurrentPageSize] = useState<number>(10);
   const [selectedInstances, setSelectedInstances] = useState<number[]>([]);
+  const [notificationModal, setNotificationModal] = useState<{
+    open: boolean;
+    instance: NotificationAgentConfig | null;
+  }>({
+    open: false,
+    instance: null,
+  });
 
   const page = router.query.page ? Number(router.query.page) : 1;
   const pageIndex = page - 1;
@@ -127,7 +137,7 @@ const SettingsNotifications = () => {
     }
   };
 
-  const testInstance = async (instanceId: number) => {
+  const testInstance = async (instanceIndex: number) => {
     let toastId: string | undefined;
     try {
       addToast(
@@ -142,7 +152,7 @@ const SettingsNotifications = () => {
       );
       await axios.post(
         '/api/v1/settings/notification/test',
-        data?.results[instanceId]
+        data?.results[instanceIndex]
       );
 
       if (toastId) {
@@ -178,6 +188,30 @@ const SettingsNotifications = () => {
           intl.formatMessage(globalMessages.settings),
         ]}
       />
+
+      {notificationModal.open && (
+        <Transition
+          as="div"
+          enter="transition-opacity duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="transition-opacity duration-300"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+          show={notificationModal.open}
+        >
+          <NotificationModal
+            data={notificationModal.instance}
+            afterSave={() => {
+              revalidate();
+              setNotificationModal({ open: false, instance: null });
+            }}
+            onClose={() => {
+              setNotificationModal({ open: false, instance: null });
+            }}
+          />
+        </Transition>
+      )}
 
       <div className="flex flex-col justify-between lg:flex-row lg:items-end">
         <Header>{intl.formatMessage(messages.notificationInstanceList)}</Header>
@@ -246,7 +280,7 @@ const SettingsNotifications = () => {
         </thead>
 
         <Table.TBody>
-          {data.results.map((instance) => (
+          {data.results.map((instance, instanceIndex) => (
             <tr
               key={`notification-instance-list-${instance.id}`}
               data-testid="notification-instance-list-row"
@@ -277,10 +311,7 @@ const SettingsNotifications = () => {
                   buttonType="warning"
                   className="mr-2"
                   onClick={() =>
-                    router.push(
-                      '/users/[userId]/settings',
-                      `/users/${instance.id}/settings`
-                    )
+                    setNotificationModal({ open: true, instance: instance })
                   }
                 >
                   <PencilIcon />
@@ -291,7 +322,7 @@ const SettingsNotifications = () => {
                   className="mr-4"
                   onClick={(e) => {
                     e.preventDefault();
-                    testInstance(instance.id);
+                    testInstance(instanceIndex);
                   }}
                 >
                   <BeakerIcon />
