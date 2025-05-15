@@ -1,0 +1,9 @@
+{
+  "label": "Settings",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "title": "Settings",
+    "description": "Configure Seerr to your liking"
+  }
+}

@@ -1,5 +1,5 @@
 services:
-  jellyseerr:
+  seerr:
     build:
       context: .
       dockerfile: Dockerfile.local
@@ -9,9 +9,9 @@ services:
       DB_TYPE: 'postgres' # Which DB engine to use. The default is "sqlite". To use postgres, this needs to be set to "postgres"
       DB_HOST: 'postgres' # The host (url) of the database
       DB_PORT: '5432' # The port to connect to
-      DB_USER: 'jellyseerr' # Username used to connect to the database
-      DB_PASS: 'jellyseerr' # Password of the user used to connect to the database
-      DB_NAME: 'jellyseerr' # The name of the database to connect to
+      DB_USER: 'seerr' # Username used to connect to the database
+      DB_PASS: 'seerr' # Password of the user used to connect to the database
+      DB_NAME: 'seerr' # The name of the database to connect to
       DB_LOG_QUERIES: 'false' # Whether to log the DB queries for debugging
       DB_USE_SSL: 'false' # Whether to enable ssl for database connection
     volumes:
@@ -25,9 +25,9 @@ services:
   postgres:
     image: postgres:18
     environment:
-      POSTGRES_USER: jellyseerr
-      POSTGRES_PASSWORD: jellyseerr
-      POSTGRES_DB: jellyseerr
+      POSTGRES_USER: seerr
+      POSTGRES_PASSWORD: seerr
+      POSTGRES_DB: seerr
     ports:
       - '5432:5432'
     volumes:

@@ -1,8 +1,8 @@
-# Jellyseerr Documentation
+# Seerr Documentation
 
-Jellyseerr docs is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+Seerr docs is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
 
-Jellyseerr docs will be available at [docs.seerr.dev](https://docs.seerr.dev).
+Seerr docs will be available at [docs.seerr.dev](https://docs.seerr.dev).
 
 ### Installation
 
