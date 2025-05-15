@@ -1,6 +1,6 @@
 ---
 title: AUR (Advanced)
-description: Install Jellyseerr using the Arch User Repository
+description: Install Seerr using the Arch User Repository
 sidebar_position: 2
 ---
 
@@ -15,7 +15,7 @@ This method is not recommended for most users. It is intended for advanced users
 
 ## Installation
 
-To install Jellyseerr from the AUR, you can use an AUR helper like `yay` or `paru`:
+To install Seerr from the AUR, you can use an AUR helper like `yay` or `paru`:
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -23,20 +23,20 @@ import TabItem from '@theme/TabItem';
 <Tabs groupId="aur-methods" queryString>
   <TabItem value="yay" label="yay">
     ```bash
-    yay -S jellyseerr
+    yay -S seerr
     ```
   </TabItem>
   <TabItem value="paru" label="paru">
     ```bash
-    paru -S jellyseerr
+    paru -S seerr
     ```
   </TabItem>
 </Tabs>
 
 :::info
-After installing Jellyseerr, configure it by visiting the web UI at `http://[address]:5055` and completing the setup steps.
+After installing Seerr, configure it by visiting the web UI at `http://[address]:5055` and completing the setup steps.
 :::
 
 :::tip
-You can find the environment file at `/etc/conf.d/jellyseerr` and the service file at `/etc/systemd/system/jellyseerr.service`.
+You can find the environment file at `/etc/conf.d/seerr` and the service file at `/etc/systemd/system/seerr.service`.
 :::
