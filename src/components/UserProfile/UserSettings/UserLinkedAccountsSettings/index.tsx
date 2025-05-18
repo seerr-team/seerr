@@ -25,6 +25,7 @@ const messages = defineMessages(
     linkedAccounts: 'Linked Accounts',
     linkedAccountsHint:
       'These external accounts are linked to your {applicationName} account.',
+    linkAccount: 'Link Account',
     noLinkedAccounts:
       'You do not have any external accounts linked to your account.',
     noPermissionDescription:
@@ -194,7 +195,10 @@ const UserLinkedAccountsSettings = () => {
         </div>
         {currentUser?.id === user?.id && !!linkable.length && (
           <div>
-            <Dropdown text="Link Account" buttonType="ghost">
+            <Dropdown
+              text={<span>{intl.formatMessage(messages.linkAccount)}</span>}
+              buttonType="ghost"
+            >
               {linkable.map(({ name, action }) => (
                 <Dropdown.Item key={name} onClick={action}>
                   {name}

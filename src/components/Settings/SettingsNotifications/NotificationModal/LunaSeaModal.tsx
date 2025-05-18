@@ -1,5 +1,6 @@
 import Modal from '@app/components/Common/Modal';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
+import { NotificationModalType } from '@app/components/Settings/SettingsNotifications/NotificationModal';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import type { NotificationAgentLunaSea } from '@server/interfaces/settings';
@@ -10,6 +11,9 @@ import * as Yup from 'yup';
 const messages = defineMessages(
   'components.Settings.SettingsNotifications.NotificationModal',
   {
+    editTitle: 'Edit Notification Instance',
+    createTitle: 'Create Notification Instance',
+    createInstance: 'Create Instance',
     instanceName: 'Name',
     lunaSeaWebhookUrl: 'Webhook URL',
     lunaSeaWebhookUrlTip:
@@ -23,7 +27,7 @@ const messages = defineMessages(
 );
 
 interface LunaSeaModalProps {
-  title: string;
+  type: NotificationModalType;
   data: NotificationAgentLunaSea;
   onClose: () => void;
   onTest: (testData: NotificationAgentLunaSea) => void;
@@ -31,7 +35,7 @@ interface LunaSeaModalProps {
 }
 
 const LunaSeaModal = ({
-  title,
+  type,
   data,
   onClose,
   onTest,
@@ -89,6 +93,11 @@ const LunaSeaModal = ({
         setFieldTouched,
         handleSubmit,
       }) => {
+        const title =
+          type === NotificationModalType.EDIT
+            ? `${intl.formatMessage(messages.editTitle)} #${data?.id}`
+            : intl.formatMessage(messages.createTitle);
+
         return (
           <Modal
             title={title}
@@ -114,7 +123,9 @@ const LunaSeaModal = ({
             okText={
               isSubmitting
                 ? intl.formatMessage(globalMessages.saving)
-                : intl.formatMessage(globalMessages.save)
+                : type === NotificationModalType.EDIT
+                ? intl.formatMessage(globalMessages.save)
+                : intl.formatMessage(messages.createInstance)
             }
             onOk={() => {
               handleSubmit();

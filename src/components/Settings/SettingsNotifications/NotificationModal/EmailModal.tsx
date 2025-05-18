@@ -1,6 +1,7 @@
 import Modal from '@app/components/Common/Modal';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
+import { NotificationModalType } from '@app/components/Settings/SettingsNotifications/NotificationModal';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import type { NotificationAgentEmail } from '@server/interfaces/settings';
@@ -11,6 +12,9 @@ import * as Yup from 'yup';
 const messages = defineMessages(
   'components.Settings.SettingsNotifications.NotificationModal',
   {
+    editTitle: 'Edit Notification Instance',
+    createTitle: 'Create Notification Instance',
+    createInstance: 'Create Instance',
     instanceName: 'Name',
     emailValidationSmtpHostRequired:
       'You must provide a valid hostname or IP address',
@@ -51,7 +55,7 @@ export function OpenPgpLink(msg: React.ReactNode) {
 }
 
 interface EmailModalProps {
-  title: string;
+  type: NotificationModalType;
   data: NotificationAgentEmail;
   onClose: () => void;
   onTest: (testData: NotificationAgentEmail) => void;
@@ -59,7 +63,7 @@ interface EmailModalProps {
 }
 
 const EmailModal = ({
-  title,
+  type,
   data,
   onClose,
   onTest,
@@ -174,6 +178,11 @@ const EmailModal = ({
       }}
     >
       {({ errors, touched, isSubmitting, values, isValid, handleSubmit }) => {
+        const title =
+          type === NotificationModalType.EDIT
+            ? `${intl.formatMessage(messages.editTitle)} #${data?.id}`
+            : intl.formatMessage(messages.createTitle);
+
         return (
           <Modal
             title={title}
@@ -209,7 +218,9 @@ const EmailModal = ({
             okText={
               isSubmitting
                 ? intl.formatMessage(globalMessages.saving)
-                : intl.formatMessage(globalMessages.save)
+                : type === NotificationModalType.EDIT
+                ? intl.formatMessage(globalMessages.save)
+                : intl.formatMessage(messages.createInstance)
             }
             onOk={() => {
               handleSubmit();

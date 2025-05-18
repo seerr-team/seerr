@@ -1,5 +1,6 @@
 import Modal from '@app/components/Common/Modal';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
+import { NotificationModalType } from '@app/components/Settings/SettingsNotifications/NotificationModal';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -11,6 +12,9 @@ import * as Yup from 'yup';
 const messages = defineMessages(
   'components.Settings.SettingsNotifications.NotificationModal',
   {
+    editTitle: 'Edit Notification Instance',
+    createTitle: 'Create Notification Instance',
+    createInstance: 'Create Instance',
     instanceName: 'Name',
     gotifyUrl: 'Server URL',
     gotifyToken: 'Application Token',
@@ -24,7 +28,7 @@ const messages = defineMessages(
 );
 
 interface GotifyModalProps {
-  title: string;
+  type: NotificationModalType;
   data: NotificationAgentGotify;
   onClose: () => void;
   onTest: (testData: NotificationAgentGotify) => void;
@@ -32,7 +36,7 @@ interface GotifyModalProps {
 }
 
 const GotifyModal = ({
-  title,
+  type,
   data,
   onClose,
   onTest,
@@ -119,6 +123,11 @@ const GotifyModal = ({
         setFieldTouched,
         handleSubmit,
       }) => {
+        const title =
+          type === NotificationModalType.EDIT
+            ? `${intl.formatMessage(messages.editTitle)} #${data?.id}`
+            : intl.formatMessage(messages.createTitle);
+
         return (
           <Modal
             title={title}
@@ -145,7 +154,9 @@ const GotifyModal = ({
             okText={
               isSubmitting
                 ? intl.formatMessage(globalMessages.saving)
-                : intl.formatMessage(globalMessages.save)
+                : type === NotificationModalType.EDIT
+                ? intl.formatMessage(globalMessages.save)
+                : intl.formatMessage(messages.createInstance)
             }
             onOk={() => {
               handleSubmit();

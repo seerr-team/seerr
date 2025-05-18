@@ -33,6 +33,7 @@ const messages = defineMessages(
   {
     editTitle: 'Edit Notification Instance',
     createTitle: 'Create Notification Instance',
+    createInstance: 'Create Instance',
     toastTestSending: 'Sending test notification…',
     toastTestSuccess: 'Test notification sent!',
     toastTestFailed: 'Test notification failed to send.',
@@ -41,13 +42,20 @@ const messages = defineMessages(
   }
 );
 
+export enum NotificationModalType {
+  EDIT = 'edit',
+  CREATE = 'create',
+}
+
 interface NotificationModalProps {
-  data: NotificationAgentConfig | null;
+  type: NotificationModalType;
+  data?: NotificationAgentConfig;
   afterSave: () => void;
   onClose: () => void;
 }
 
 const NotificationModal = ({
+  type,
   data,
   afterSave,
   onClose,
@@ -109,13 +117,11 @@ const NotificationModal = ({
     }
   };
 
-  const editTitle = `${intl.formatMessage(messages.editTitle)} #${data?.id}`;
-
   switch (data?.agent) {
     case NotificationAgentKey.DISCORD:
       return (
         <DiscordModal
-          title={editTitle}
+          type={type}
           data={data as NotificationAgentDiscord}
           onClose={onClose}
           onTest={onTest}
@@ -125,7 +131,7 @@ const NotificationModal = ({
     case NotificationAgentKey.EMAIL:
       return (
         <EmailModal
-          title={editTitle}
+          type={type}
           data={data as NotificationAgentEmail}
           onClose={onClose}
           onTest={onTest}
@@ -135,7 +141,7 @@ const NotificationModal = ({
     case NotificationAgentKey.GOTIFY:
       return (
         <GotifyModal
-          title={editTitle}
+          type={type}
           data={data as NotificationAgentGotify}
           onClose={onClose}
           onTest={onTest}
@@ -145,7 +151,7 @@ const NotificationModal = ({
     case NotificationAgentKey.NTFY:
       return (
         <NtfyModal
-          title={editTitle}
+          type={type}
           data={data as NotificationAgentNtfy}
           onClose={onClose}
           onTest={onTest}
@@ -155,7 +161,7 @@ const NotificationModal = ({
     case NotificationAgentKey.LUNASEA:
       return (
         <LunaSeaModal
-          title={editTitle}
+          type={type}
           data={data as NotificationAgentLunaSea}
           onClose={onClose}
           onTest={onTest}
@@ -165,7 +171,7 @@ const NotificationModal = ({
     case NotificationAgentKey.PUSHBULLET:
       return (
         <PushbulletModal
-          title={editTitle}
+          type={type}
           data={data as NotificationAgentPushbullet}
           onClose={onClose}
           onTest={onTest}
@@ -175,7 +181,7 @@ const NotificationModal = ({
     case NotificationAgentKey.PUSHOVER:
       return (
         <PushoverModal
-          title={editTitle}
+          type={type}
           data={data as NotificationAgentPushover}
           onClose={onClose}
           onTest={onTest}
@@ -185,7 +191,7 @@ const NotificationModal = ({
     case NotificationAgentKey.SLACK:
       return (
         <SlackModal
-          title={editTitle}
+          type={type}
           data={data as NotificationAgentSlack}
           onClose={onClose}
           onTest={onTest}
@@ -195,7 +201,7 @@ const NotificationModal = ({
     case NotificationAgentKey.TELEGRAM:
       return (
         <TelegramModal
-          title={editTitle}
+          type={type}
           data={data as NotificationAgentTelegram}
           onClose={onClose}
           onTest={onTest}
@@ -205,7 +211,7 @@ const NotificationModal = ({
     case NotificationAgentKey.WEBHOOK:
       return (
         <WebhookModal
-          title={editTitle}
+          type={type}
           data={data as NotificationAgentWebhook}
           onClose={onClose}
           onTest={onTest}
@@ -215,7 +221,7 @@ const NotificationModal = ({
     case NotificationAgentKey.WEBPUSH:
       return (
         <WebPushModal
-          title={editTitle}
+          type={type}
           data={data as NotificationAgentConfig}
           onClose={onClose}
           onTest={onTest}

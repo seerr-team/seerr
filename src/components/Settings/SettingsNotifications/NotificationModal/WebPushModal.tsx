@@ -1,5 +1,6 @@
 import Alert from '@app/components/Common/Alert';
 import Modal from '@app/components/Common/Modal';
+import { NotificationModalType } from '@app/components/Settings/SettingsNotifications/NotificationModal';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import type { NotificationAgentConfig } from '@server/interfaces/settings';
@@ -10,6 +11,9 @@ import { useIntl } from 'react-intl';
 const messages = defineMessages(
   'components.Settings.SettingsNotifications.NotificationModal',
   {
+    editTitle: 'Edit Notification Instance',
+    createTitle: 'Create Notification Instance',
+    createInstance: 'Create Instance',
     instanceName: 'Name',
     webPushHttpsRequirement:
       'In order to receive web push notifications, Jellyseerr must be served over HTTPS.',
@@ -17,7 +21,7 @@ const messages = defineMessages(
 );
 
 interface WebPushModalProps {
-  title: string;
+  type: NotificationModalType;
   data: NotificationAgentConfig;
   onClose: () => void;
   onTest: (testData: NotificationAgentConfig) => void;
@@ -25,7 +29,7 @@ interface WebPushModalProps {
 }
 
 const WebPushModal = ({
-  title,
+  type,
   data,
   onClose,
   onTest,
@@ -66,6 +70,11 @@ const WebPushModal = ({
         }}
       >
         {({ values, isSubmitting, handleSubmit }) => {
+          const title =
+            type === NotificationModalType.EDIT
+              ? `${intl.formatMessage(messages.editTitle)} #${data?.id}`
+              : intl.formatMessage(messages.createTitle);
+
           return (
             <Modal
               title={title}
@@ -87,7 +96,9 @@ const WebPushModal = ({
               okText={
                 isSubmitting
                   ? intl.formatMessage(globalMessages.saving)
-                  : intl.formatMessage(globalMessages.save)
+                  : type === NotificationModalType.EDIT
+                  ? intl.formatMessage(globalMessages.save)
+                  : intl.formatMessage(messages.createInstance)
               }
               onOk={() => {
                 handleSubmit();

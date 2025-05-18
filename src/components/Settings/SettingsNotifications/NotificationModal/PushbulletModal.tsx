@@ -1,6 +1,7 @@
 import Modal from '@app/components/Common/Modal';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
+import { NotificationModalType } from '@app/components/Settings/SettingsNotifications/NotificationModal';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import type { NotificationAgentPushbullet } from '@server/interfaces/settings';
@@ -11,6 +12,9 @@ import * as Yup from 'yup';
 const messages = defineMessages(
   'components.Settings.SettingsNotifications.NotificationModal',
   {
+    editTitle: 'Edit Notification Instance',
+    createTitle: 'Create Notification Instance',
+    createInstance: 'Create Instance',
     instanceName: 'Name',
     pushbulletAccessToken: 'Access Token',
     pushbulletAccessTokenTip:
@@ -22,7 +26,7 @@ const messages = defineMessages(
 );
 
 interface PushbulletModalProps {
-  title: string;
+  type: NotificationModalType;
   data: NotificationAgentPushbullet;
   onClose: () => void;
   onTest: (testData: NotificationAgentPushbullet) => void;
@@ -30,7 +34,7 @@ interface PushbulletModalProps {
 }
 
 const PushbulletModal = ({
-  title,
+  type,
   data,
   onClose,
   onTest,
@@ -88,6 +92,11 @@ const PushbulletModal = ({
         setFieldTouched,
         handleSubmit,
       }) => {
+        const title =
+          type === NotificationModalType.EDIT
+            ? `${intl.formatMessage(messages.editTitle)} #${data?.id}`
+            : intl.formatMessage(messages.createTitle);
+
         return (
           <Modal
             title={title}
@@ -113,7 +122,9 @@ const PushbulletModal = ({
             okText={
               isSubmitting
                 ? intl.formatMessage(globalMessages.saving)
-                : intl.formatMessage(globalMessages.save)
+                : type === NotificationModalType.EDIT
+                ? intl.formatMessage(globalMessages.save)
+                : intl.formatMessage(messages.createInstance)
             }
             onOk={() => {
               handleSubmit();

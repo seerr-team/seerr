@@ -1,5 +1,6 @@
 import Modal from '@app/components/Common/Modal';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
+import { NotificationModalType } from '@app/components/Settings/SettingsNotifications/NotificationModal';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -11,6 +12,9 @@ import * as Yup from 'yup';
 const messages = defineMessages(
   'components.Settings.SettingsNotifications.NotificationModal',
   {
+    editTitle: 'Edit Notification Instance',
+    createTitle: 'Create Notification Instance',
+    createInstance: 'Create Instance',
     instanceName: 'Name',
     discordBotUsername: 'Bot Username',
     discordBotAvatarUrl: 'Bot Avatar URL',
@@ -28,7 +32,7 @@ const messages = defineMessages(
 );
 
 interface DiscordModalProps {
-  title: string;
+  type: NotificationModalType;
   data: NotificationAgentDiscord;
   onClose: () => void;
   onTest: (testData: NotificationAgentDiscord) => void;
@@ -36,7 +40,7 @@ interface DiscordModalProps {
 }
 
 const DiscordModal = ({
-  title,
+  type,
   data,
   onClose,
   onTest,
@@ -110,6 +114,11 @@ const DiscordModal = ({
         setFieldTouched,
         handleSubmit,
       }) => {
+        const title =
+          type === NotificationModalType.EDIT
+            ? `${intl.formatMessage(messages.editTitle)} #${data?.id}`
+            : intl.formatMessage(messages.createTitle);
+
         return (
           <Modal
             title={title}
@@ -138,7 +147,9 @@ const DiscordModal = ({
             okText={
               isSubmitting
                 ? intl.formatMessage(globalMessages.saving)
-                : intl.formatMessage(globalMessages.save)
+                : type === NotificationModalType.EDIT
+                ? intl.formatMessage(globalMessages.save)
+                : intl.formatMessage(messages.createInstance)
             }
             onOk={() => {
               handleSubmit();

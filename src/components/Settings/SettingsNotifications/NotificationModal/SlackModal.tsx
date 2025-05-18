@@ -1,5 +1,6 @@
 import Modal from '@app/components/Common/Modal';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
+import { NotificationModalType } from '@app/components/Settings/SettingsNotifications/NotificationModal';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import type { NotificationAgentSlack } from '@server/interfaces/settings';
@@ -10,6 +11,9 @@ import * as Yup from 'yup';
 const messages = defineMessages(
   'components.Settings.SettingsNotifications.NotificationModal',
   {
+    editTitle: 'Edit Notification Instance',
+    createTitle: 'Create Notification Instance',
+    createInstance: 'Create Instance',
     instanceName: 'Name',
     slackWebhookUrl: 'Webhook URL',
     slackWebhookUrlTip:
@@ -20,7 +24,7 @@ const messages = defineMessages(
 );
 
 interface SlackModalProps {
-  title: string;
+  type: NotificationModalType;
   data: NotificationAgentSlack;
   onClose: () => void;
   onTest: (testData: NotificationAgentSlack) => void;
@@ -28,7 +32,7 @@ interface SlackModalProps {
 }
 
 const SlackModal = ({
-  title,
+  type,
   data,
   onClose,
   onTest,
@@ -84,6 +88,11 @@ const SlackModal = ({
         setFieldTouched,
         handleSubmit,
       }) => {
+        const title =
+          type === NotificationModalType.EDIT
+            ? `${intl.formatMessage(messages.editTitle)} #${data?.id}`
+            : intl.formatMessage(messages.createTitle);
+
         return (
           <Modal
             title={title}
@@ -108,7 +117,9 @@ const SlackModal = ({
             okText={
               isSubmitting
                 ? intl.formatMessage(globalMessages.saving)
-                : intl.formatMessage(globalMessages.save)
+                : type === NotificationModalType.EDIT
+                ? intl.formatMessage(globalMessages.save)
+                : intl.formatMessage(messages.createInstance)
             }
             onOk={() => {
               handleSubmit();

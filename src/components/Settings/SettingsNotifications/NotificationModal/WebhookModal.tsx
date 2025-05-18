@@ -1,6 +1,7 @@
 import Button from '@app/components/Common/Button';
 import Modal from '@app/components/Common/Modal';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
+import { NotificationModalType } from '@app/components/Settings/SettingsNotifications/NotificationModal';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -68,6 +69,9 @@ const defaultPayload = {
 const messages = defineMessages(
   'components.Settings.SettingsNotifications.NotificationModal',
   {
+    editTitle: 'Edit Notification Instance',
+    createTitle: 'Create Notification Instance',
+    createInstance: 'Create Instance',
     instanceName: 'Name',
     webhookUrl: 'Webhook URL',
     webhookAuthheader: 'Authorization Header',
@@ -83,7 +87,7 @@ const messages = defineMessages(
 );
 
 interface WebhookModalProps {
-  title: string;
+  type: NotificationModalType;
   data: NotificationAgentWebhook;
   onClose: () => void;
   onTest: (testData: NotificationAgentWebhook) => void;
@@ -91,7 +95,7 @@ interface WebhookModalProps {
 }
 
 const WebhookModal = ({
-  title,
+  type,
   data,
   onClose,
   onTest,
@@ -178,6 +182,11 @@ const WebhookModal = ({
         setFieldTouched,
         handleSubmit,
       }) => {
+        const title =
+          type === NotificationModalType.EDIT
+            ? `${intl.formatMessage(messages.editTitle)} #${data?.id}`
+            : intl.formatMessage(messages.createTitle);
+
         const resetPayload = () => {
           setFieldValue(
             'jsonPayload',
@@ -215,7 +224,9 @@ const WebhookModal = ({
             okText={
               isSubmitting
                 ? intl.formatMessage(globalMessages.saving)
-                : intl.formatMessage(globalMessages.save)
+                : type === NotificationModalType.EDIT
+                ? intl.formatMessage(globalMessages.save)
+                : intl.formatMessage(messages.createInstance)
             }
             onOk={() => {
               handleSubmit();
