@@ -44,12 +44,6 @@ const WebPushModal = ({
 
   return (
     <>
-      {!isHttps && (
-        <Alert
-          title={intl.formatMessage(messages.webPushHttpsRequirement)}
-          type="warning"
-        />
-      )}
       <Formik
         initialValues={{
           enabled: data.enabled,
@@ -105,6 +99,13 @@ const WebPushModal = ({
               }}
               okDisabled={isSubmitting}
             >
+              {!isHttps && (
+                <Alert
+                  title={intl.formatMessage(messages.webPushHttpsRequirement)}
+                  type="warning"
+                />
+              )}
+
               <Form className="section">
                 <div className="form-row">
                   <label htmlFor="name" className="text-label">
