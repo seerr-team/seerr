@@ -37,8 +37,10 @@ const messages = defineMessages(
     toastTestSending: 'Sending test notification…',
     toastTestSuccess: 'Test notification sent!',
     toastTestFailed: 'Test notification failed to send.',
-    toastSaveSuccess: 'Notification settings saved successfully!',
-    toastSaveFail: 'Notification settings failed to save.',
+    toastSaveSuccess: 'Notification instance saved successfully!',
+    toastSaveFail: 'Notification instance failed to save.',
+    toastCreateSuccess: 'Notification instance created successfully!',
+    toastCreateFail: 'Notification instance failed to create.',
   }
 );
 
@@ -76,6 +78,24 @@ const NotificationModal = ({
       });
     } catch (e) {
       addToast(intl.formatMessage(messages.toastSaveFail), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    } finally {
+      afterSave();
+    }
+  };
+
+  const onCreate = async (submitData: NotificationAgentConfig) => {
+    try {
+      await axios.post(`/api/v1/settings/notification`, submitData);
+
+      addToast(intl.formatMessage(messages.toastCreateSuccess), {
+        appearance: 'success',
+        autoDismiss: true,
+      });
+    } catch (e) {
+      addToast(intl.formatMessage(messages.toastCreateFail), {
         appearance: 'error',
         autoDismiss: true,
       });
@@ -125,7 +145,7 @@ const NotificationModal = ({
           data={data as NotificationAgentDiscord}
           onClose={onClose}
           onTest={onTest}
-          onSave={onSave}
+          onSave={type === NotificationModalType.EDIT ? onSave : onCreate}
         />
       );
     case NotificationAgentKey.EMAIL:
@@ -135,7 +155,7 @@ const NotificationModal = ({
           data={data as NotificationAgentEmail}
           onClose={onClose}
           onTest={onTest}
-          onSave={onSave}
+          onSave={type === NotificationModalType.EDIT ? onSave : onCreate}
         />
       );
     case NotificationAgentKey.GOTIFY:
@@ -145,7 +165,7 @@ const NotificationModal = ({
           data={data as NotificationAgentGotify}
           onClose={onClose}
           onTest={onTest}
-          onSave={onSave}
+          onSave={type === NotificationModalType.EDIT ? onSave : onCreate}
         />
       );
     case NotificationAgentKey.NTFY:
@@ -155,7 +175,7 @@ const NotificationModal = ({
           data={data as NotificationAgentNtfy}
           onClose={onClose}
           onTest={onTest}
-          onSave={onSave}
+          onSave={type === NotificationModalType.EDIT ? onSave : onCreate}
         />
       );
     case NotificationAgentKey.LUNASEA:
@@ -165,7 +185,7 @@ const NotificationModal = ({
           data={data as NotificationAgentLunaSea}
           onClose={onClose}
           onTest={onTest}
-          onSave={onSave}
+          onSave={type === NotificationModalType.EDIT ? onSave : onCreate}
         />
       );
     case NotificationAgentKey.PUSHBULLET:
@@ -175,7 +195,7 @@ const NotificationModal = ({
           data={data as NotificationAgentPushbullet}
           onClose={onClose}
           onTest={onTest}
-          onSave={onSave}
+          onSave={type === NotificationModalType.EDIT ? onSave : onCreate}
         />
       );
     case NotificationAgentKey.PUSHOVER:
@@ -185,7 +205,7 @@ const NotificationModal = ({
           data={data as NotificationAgentPushover}
           onClose={onClose}
           onTest={onTest}
-          onSave={onSave}
+          onSave={type === NotificationModalType.EDIT ? onSave : onCreate}
         />
       );
     case NotificationAgentKey.SLACK:
@@ -195,7 +215,7 @@ const NotificationModal = ({
           data={data as NotificationAgentSlack}
           onClose={onClose}
           onTest={onTest}
-          onSave={onSave}
+          onSave={type === NotificationModalType.EDIT ? onSave : onCreate}
         />
       );
     case NotificationAgentKey.TELEGRAM:
@@ -205,7 +225,7 @@ const NotificationModal = ({
           data={data as NotificationAgentTelegram}
           onClose={onClose}
           onTest={onTest}
-          onSave={onSave}
+          onSave={type === NotificationModalType.EDIT ? onSave : onCreate}
         />
       );
     case NotificationAgentKey.WEBHOOK:
@@ -215,7 +235,7 @@ const NotificationModal = ({
           data={data as NotificationAgentWebhook}
           onClose={onClose}
           onTest={onTest}
-          onSave={onSave}
+          onSave={type === NotificationModalType.EDIT ? onSave : onCreate}
         />
       );
     case NotificationAgentKey.WEBPUSH:
@@ -225,7 +245,7 @@ const NotificationModal = ({
           data={data as NotificationAgentConfig}
           onClose={onClose}
           onTest={onTest}
-          onSave={onSave}
+          onSave={type === NotificationModalType.EDIT ? onSave : onCreate}
         />
       );
   }
