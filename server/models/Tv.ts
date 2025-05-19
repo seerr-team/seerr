@@ -38,6 +38,7 @@ interface Episode {
   stillPath?: string;
   voteAverage: number;
   voteCount: number;
+  available?: boolean;
 }
 
 interface Season {
@@ -114,7 +115,10 @@ export interface TvDetails {
   onUserWatchlist?: boolean;
 }
 
-const mapEpisodeResult = (episode: TmdbTvEpisodeResult): Episode => ({
+const mapEpisodeResult = (
+  episode: TmdbTvEpisodeResult,
+  availableMap?: Record<number, boolean>
+): Episode => ({
   id: episode.id,
   airDate: episode.air_date,
   episodeNumber: episode.episode_number,
@@ -126,6 +130,9 @@ const mapEpisodeResult = (episode: TmdbTvEpisodeResult): Episode => ({
   voteAverage: episode.vote_average,
   voteCount: episode.vote_count,
   stillPath: episode.still_path,
+  available: availableMap
+    ? (availableMap[episode.episode_number] ?? false)
+    : undefined,
 });
 
 const mapSeasonResult = (season: TmdbTvSeasonResult): Season => ({
@@ -139,10 +146,13 @@ const mapSeasonResult = (season: TmdbTvSeasonResult): Season => ({
 });
 
 export const mapSeasonWithEpisodes = (
-  season: TmdbSeasonWithEpisodes
+  season: TmdbSeasonWithEpisodes,
+  availableMap?: Record<number, boolean>
 ): SeasonWithEpisodes => ({
   airDate: season.air_date,
-  episodes: season.episodes.map(mapEpisodeResult),
+  episodes: season.episodes.map((episode) =>
+    mapEpisodeResult(episode, availableMap)
+  ),
   externalIds: mapExternalIds(season.external_ids),
   id: season.id,
   name: season.name,

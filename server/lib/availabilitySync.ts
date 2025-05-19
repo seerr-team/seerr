@@ -8,6 +8,7 @@ import SonarrAPI from '@server/api/servarr/sonarr';
 import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
+import Episode from '@server/entity/Episode';
 import Media from '@server/entity/Media';
 import MediaRequest from '@server/entity/MediaRequest';
 import type Season from '@server/entity/Season';
@@ -766,6 +767,7 @@ class AvailabilitySync {
     is4k: boolean
   ): Promise<boolean> {
     let seasonExists = false;
+    const episodeRepository = getRepository(Episode);
 
     // Check each sonarr instance to see if the media still exists
     // If found, we will assume the media exists and prevent removal
@@ -794,6 +796,82 @@ class AvailabilitySync {
 
       if (seasonIsAvailable && sonarrSeasons) {
         seasonExists = true;
+
+        const sonarrApi = new SonarrAPI({
+          url: SonarrAPI.buildUrl(server, '/api/v3'),
+          apiKey: server.apiKey,
+        });
+
+        try {
+          const serviceId = is4k
+            ? media.externalServiceId4k
+            : media.externalServiceId;
+
+          if (!serviceId) {
+            logger.error('Missing service ID for episode sync', {
+              label: 'Availability Sync',
+              tvId: media.tmdbId,
+              seasonNumber: season.seasonNumber,
+              is4k,
+            });
+            return seasonExists;
+          }
+
+          const episodes = await sonarrApi.getEpisodesBySeriesId(serviceId);
+
+          for (const ep of episodes) {
+            if (ep.seasonNumber === season.seasonNumber) {
+              const existingEpisode = await episodeRepository.findOne({
+                where: {
+                  episodeNumber: ep.episodeNumber,
+                  season: { id: season.id },
+                },
+                relations: ['season'],
+              });
+
+              if (existingEpisode) {
+                existingEpisode[is4k ? 'status4k' : 'status'] = ep.hasFile
+                  ? MediaStatus.AVAILABLE
+                  : MediaStatus.UNKNOWN;
+                await episodeRepository.save(existingEpisode);
+              } else {
+                const newEpisode = new Episode();
+                newEpisode.episodeNumber = ep.episodeNumber;
+                newEpisode.status = is4k
+                  ? MediaStatus.UNKNOWN
+                  : ep.hasFile
+                    ? MediaStatus.AVAILABLE
+                    : MediaStatus.UNKNOWN;
+                newEpisode.status4k = is4k
+                  ? ep.hasFile
+                    ? MediaStatus.AVAILABLE
+                    : MediaStatus.UNKNOWN
+                  : MediaStatus.UNKNOWN;
+                newEpisode.season = Promise.resolve(season);
+
+                try {
+                  await episodeRepository.save(newEpisode);
+                } catch (saveError) {
+                  logger.error('Failed to save new episode', {
+                    label: 'Availability Sync',
+                    errorMessage: saveError.message,
+                    tvId: media.tmdbId,
+                    seasonNumber: season.seasonNumber,
+                    episodeNumber: ep.episodeNumber,
+                  });
+                }
+              }
+            }
+          }
+        } catch (err) {
+          logger.error('Failed to update episode availability', {
+            label: 'Availability Sync',
+            errorMessage: err.message,
+            tvId: media.tmdbId,
+            seasonNumber: season.seasonNumber,
+            sonarrServerId: server.id,
+          });
+        }
       }
     }
 

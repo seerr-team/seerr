@@ -448,6 +448,21 @@ class SonarrAPI extends ServarrBase<{
       });
     }
   };
+
+  public async getEpisodesBySeriesId(
+    seriesId: number
+  ): Promise<EpisodeResult[]> {
+    try {
+      const response = await this.axios.get<EpisodeResult[]>(`/episode`, {
+        params: { seriesId },
+      });
+      return response.data;
+    } catch (e) {
+      throw new Error(
+        `[Sonarr] Failed to retrieve episodes for series: ${e.message}`
+      );
+    }
+  }
 }
 
 export default SonarrAPI;
