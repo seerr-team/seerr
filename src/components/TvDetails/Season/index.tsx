@@ -1,6 +1,8 @@
 import AirDateBadge from '@app/components/AirDateBadge';
+import Badge from '@app/components/Common/Badge';
 import CachedImage from '@app/components/Common/CachedImage';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
+import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import type { SeasonWithEpisodes } from '@server/models/Tv';
 import { useIntl } from 'react-intl';
@@ -52,6 +54,13 @@ const Season = ({ seasonNumber, tvId }: SeasonProps) => {
                     {episode.airDate && (
                       <AirDateBadge airDate={episode.airDate} />
                     )}
+                    <Badge badgeType={episode.available ? 'success' : 'danger'}>
+                      {intl.formatMessage(
+                        episode.available
+                          ? globalMessages.available
+                          : globalMessages.unavailable
+                      )}
+                    </Badge>
                   </div>
                   {episode.overview && <p>{episode.overview}</p>}
                 </div>

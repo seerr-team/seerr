@@ -1,23 +1,15 @@
 import { MediaStatus } from '@server/constants/media';
 import { DbAwareColumn } from '@server/utils/DbColumnHelper';
-import {
-  Column,
-  Entity,
-  Index,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
-import Episode from './Episode';
-import Media from './Media';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import Season from './Season';
 
 @Entity()
-class Season {
+class Episode {
   @PrimaryGeneratedColumn()
   public id: number;
 
   @Column()
-  public seasonNumber: number;
+  public episodeNumber: number;
 
   @Column({ type: 'int', default: MediaStatus.UNKNOWN })
   public status: MediaStatus;
@@ -25,17 +17,11 @@ class Season {
   @Column({ type: 'int', default: MediaStatus.UNKNOWN })
   public status4k: MediaStatus;
 
-  @ManyToOne(() => Media, (media) => media.seasons, {
+  @ManyToOne(() => Season, (season: Season) => season.episodes, {
     onDelete: 'CASCADE',
+    nullable: true,
   })
-  @Index()
-  public media: Promise<Media>;
-
-  @OneToMany(() => Episode, (episode) => episode.season, {
-    cascade: true,
-    eager: true,
-  })
-  public episodes: Episode[];
+  public season?: Promise<Season>;
 
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
@@ -47,9 +33,11 @@ class Season {
   })
   public updatedAt: Date;
 
-  constructor(init?: Partial<Season>) {
-    Object.assign(this, init);
+  constructor(init?: Partial<Episode>) {
+    if (init) {
+      Object.assign(this, init);
+    }
   }
 }
 
-export default Season;
+export default Episode;

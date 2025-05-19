@@ -71,9 +71,27 @@ class Media {
     const mediaRepository = getRepository(Media);
 
     try {
+      const relations: {
+        requests: boolean;
+        issues: boolean;
+        seasons?: {
+          episodes: boolean;
+        };
+      } = {
+        requests: true,
+        issues: true,
+      };
+
+      // Only load seasons for TV shows
+      if (mediaType === MediaType.TV) {
+        relations.seasons = {
+          episodes: true,
+        };
+      }
+
       const media = await mediaRepository.findOne({
         where: { tmdbId: id, mediaType: mediaType },
-        relations: { requests: true, issues: true },
+        relations,
       });
 
       return media ?? undefined;
