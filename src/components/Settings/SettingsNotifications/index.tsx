@@ -49,6 +49,7 @@ const messages = defineMessages('components.Settings.SettingsNotifications', {
   instanceId: 'ID',
   notificationAgent: 'Agent',
   instanceEnabled: 'Enabled',
+  instanceDefault: 'Default',
   instanceDeleted: 'Notification instance deleted successfully!',
   instanceDeleteError:
     'Something went wrong while deleting the notification instance.',
@@ -58,6 +59,9 @@ const messages = defineMessages('components.Settings.SettingsNotifications', {
   toastEnabledToggleSuccess:
     'Notification instance enabled toggled successfully!',
   toastEnabledToggleFailed: 'Notification instance failed to toggle enabled!',
+  toastDefaultToggleSuccess:
+    'Notification instance default toggled successfully!',
+  toastDefaultToggleFailed: 'Notification instance failed to toggle default!',
 });
 
 enum Sort {
@@ -170,6 +174,10 @@ const SettingsNotifications = () => {
   const toggleInstanceEnabled = async (instance: NotificationAgentConfig) => {
     instance.enabled = !instance.enabled;
 
+    if (!instance.enabled) {
+      instance.default = false;
+    }
+
     try {
       await axios.post(
         `/api/v1/settings/notification/${instance.id}`,
@@ -182,6 +190,40 @@ const SettingsNotifications = () => {
       });
     } catch (e) {
       addToast(intl.formatMessage(messages.toastEnabledToggleFailed), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    } finally {
+      revalidate();
+    }
+  };
+
+  const toggleInstanceDefault = async (instance: NotificationAgentConfig) => {
+    const currentDefault = data?.results.find(
+      (result) =>
+        result.agent === instance.agent &&
+        result.default &&
+        result.id !== instance.id
+    );
+
+    if (currentDefault) {
+      return;
+    }
+
+    instance.default = !instance.default;
+
+    try {
+      await axios.post(
+        `/api/v1/settings/notification/${instance.id}`,
+        instance
+      );
+
+      addToast(intl.formatMessage(messages.toastDefaultToggleSuccess), {
+        appearance: 'success',
+        autoDismiss: true,
+      });
+    } catch (e) {
+      addToast(intl.formatMessage(messages.toastDefaultToggleFailed), {
         appearance: 'error',
         autoDismiss: true,
       });
@@ -422,6 +464,7 @@ const SettingsNotifications = () => {
               {intl.formatMessage(messages.notificationAgent)}
             </Table.TH>
             <Table.TH>{intl.formatMessage(messages.instanceEnabled)}</Table.TH>
+            <Table.TH>{intl.formatMessage(messages.instanceDefault)}</Table.TH>
             <Table.TH></Table.TH>
           </tr>
         </thead>
@@ -440,6 +483,24 @@ const SettingsNotifications = () => {
                   isToggled={instance.enabled}
                   onToggle={() => toggleInstanceEnabled(instance)}
                   highContrast
+                />
+              </Table.TD>
+              <Table.TD>
+                <input
+                  type="checkbox"
+                  onClick={() => {
+                    toggleInstanceDefault(instance);
+                  }}
+                  disabled={
+                    !instance.enabled ||
+                    data.results.findIndex(
+                      (result) =>
+                        result.agent === instance.agent &&
+                        result.default &&
+                        result.id !== instance.id
+                    ) !== -1
+                  }
+                  checked={instance.default}
                 />
               </Table.TD>
               <Table.TD className="flex flex-row-reverse">

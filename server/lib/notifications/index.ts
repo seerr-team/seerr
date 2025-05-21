@@ -178,16 +178,17 @@ export const retrieveDefaultNotificationInstanceSettings = (
 ) => {
   const settings = getSettings();
 
-  const defaults = settings.notification.instances.filter((instance) =>
-    instance.default && instance.agent ? instance.agent === agentKey : true
+  const defaultInstance = settings.notification.instances.find(
+    (instance) =>
+      instance.default && instance.enabled && instance.agent === agentKey
   );
 
   // return agent template if no default is configured
-  if (!defaults[0]) {
+  if (!defaultInstance) {
     return settings.notification.agentTemplates[agentKey];
   }
 
-  return defaults[0];
+  return defaultInstance;
 };
 
 class NotificationManager {
