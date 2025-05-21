@@ -1,5 +1,6 @@
 import Alert from '@app/components/Common/Alert';
 import Modal from '@app/components/Common/Modal';
+import ToggleSwitch from '@app/components/Common/ToggleSwitch';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -135,31 +136,10 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
                     <thead>
                       <tr>
                         <th className="w-16 bg-gray-500 px-4 py-3">
-                          <span
-                            role="checkbox"
-                            tabIndex={0}
-                            aria-checked={isAllUsers()}
-                            onClick={() => toggleAllUsers()}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === 'Space') {
-                                toggleAllUsers();
-                              }
-                            }}
-                            className="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none"
-                          >
-                            <span
-                              aria-hidden="true"
-                              className={`${
-                                isAllUsers() ? 'bg-indigo-500' : 'bg-gray-800'
-                              } absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out`}
-                            ></span>
-                            <span
-                              aria-hidden="true"
-                              className={`${
-                                isAllUsers() ? 'translate-x-5' : 'translate-x-0'
-                              } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
-                            ></span>
-                          </span>
+                          <ToggleSwitch
+                            isToggled={isAllUsers()}
+                            onToggle={() => toggleAllUsers()}
+                          />
                         </th>
                         <th className="bg-gray-500 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                           {intl.formatMessage(messages.user)}
@@ -170,35 +150,10 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
                       {data?.map((user) => (
                         <tr key={`user-${user.id}`}>
                           <td className="whitespace-nowrap px-4 py-4 text-sm font-medium leading-5 text-gray-100">
-                            <span
-                              role="checkbox"
-                              tabIndex={0}
-                              aria-checked={isSelectedUser(user.id)}
-                              onClick={() => toggleUser(user.id)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === 'Space') {
-                                  toggleUser(user.id);
-                                }
-                              }}
-                              className="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none"
-                            >
-                              <span
-                                aria-hidden="true"
-                                className={`${
-                                  isSelectedUser(user.id)
-                                    ? 'bg-indigo-500'
-                                    : 'bg-gray-800'
-                                } absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out`}
-                              ></span>
-                              <span
-                                aria-hidden="true"
-                                className={`${
-                                  isSelectedUser(user.id)
-                                    ? 'translate-x-5'
-                                    : 'translate-x-0'
-                                } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
-                              ></span>
-                            </span>
+                            <ToggleSwitch
+                              isToggled={isSelectedUser(user.id)}
+                              onToggle={() => toggleUser(user.id)}
+                            />
                           </td>
                           <td className="whitespace-nowrap px-1 py-4 text-sm font-medium leading-5 text-gray-100 md:px-6">
                             <div className="flex items-center">

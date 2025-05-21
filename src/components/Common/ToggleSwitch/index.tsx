@@ -1,5 +1,5 @@
 interface ToggleSwitchProps {
-  isToggled: boolean;
+  isToggled?: boolean;
   onToggle: () => void;
   disabled?: unknown;
   highContrast?: boolean;
