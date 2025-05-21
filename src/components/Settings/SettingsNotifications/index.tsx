@@ -72,7 +72,6 @@ const SettingsNotifications = () => {
   const { addToast, removeToast } = useToasts();
   const [currentSort, setCurrentSort] = useState<Sort>(Sort.ID);
   const [currentPageSize, setCurrentPageSize] = useState<number>(10);
-  const [selectedInstances, setSelectedInstances] = useState<number[]>([]);
   const [notificationModal, setNotificationModal] = useState<{
     open: boolean;
     type: NotificationModalType;
@@ -113,33 +112,6 @@ const SettingsNotifications = () => {
       })
     );
   }, [currentSort, currentPageSize]);
-
-  const isAllInstancesSelected = () =>
-    selectedInstances.length === data?.results.length;
-  const isInstanceSelected = (instanceId: number) =>
-    selectedInstances.includes(instanceId);
-
-  const toggleAllInstances = () => {
-    if (
-      data &&
-      selectedInstances.length >= 0 &&
-      selectedInstances.length < data.results.length - 1
-    ) {
-      setSelectedInstances(data.results.map((instance) => instance.id));
-    } else {
-      setSelectedInstances([]);
-    }
-  };
-
-  const toggleInstance = (instanceId: number) => {
-    if (selectedInstances.includes(instanceId)) {
-      setSelectedInstances((instances) =>
-        instances.filter((u) => u !== instanceId)
-      );
-    } else {
-      setSelectedInstances((instances) => [...instances, instanceId]);
-    }
-  };
 
   const deleteInstance = async (instanceId: number) => {
     try {
@@ -444,19 +416,6 @@ const SettingsNotifications = () => {
       <Table>
         <thead>
           <tr>
-            <Table.TH>
-              {(data.results ?? []).length > 1 && (
-                <input
-                  type="checkbox"
-                  id="selectAll"
-                  name="selectAll"
-                  checked={isAllInstancesSelected()}
-                  onChange={() => {
-                    toggleAllInstances();
-                  }}
-                />
-              )}
-            </Table.TH>
             <Table.TH>{intl.formatMessage(messages.instanceName)}</Table.TH>
             <Table.TH>{intl.formatMessage(messages.instanceId)}</Table.TH>
             <Table.TH>
@@ -473,17 +432,6 @@ const SettingsNotifications = () => {
               key={`notification-instance-list-${instance.id}`}
               data-testid="notification-instance-list-row"
             >
-              <Table.TD>
-                <input
-                  type="checkbox"
-                  id={`notification-instance-list-select-${instance.id}`}
-                  name={`notification-instance-list-select-${instance.id}`}
-                  checked={isInstanceSelected(instance.id)}
-                  onChange={() => {
-                    toggleInstance(instance.id);
-                  }}
-                />
-              </Table.TD>
               <Table.TD>{instance.name}</Table.TD>
               <Table.TD>{instance.id}</Table.TD>
               <Table.TD>{instance.agent}</Table.TD>
