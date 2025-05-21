@@ -12,6 +12,7 @@ import Header from '@app/components/Common/Header';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import Table from '@app/components/Common/Table';
+import ToggleSwitch from '@app/components/Common/ToggleSwitch';
 import NotificationModal, {
   NotificationModalType,
 } from '@app/components/Settings/SettingsNotifications/NotificationModal';
@@ -47,12 +48,16 @@ const messages = defineMessages('components.Settings.SettingsNotifications', {
   instanceName: 'Name',
   instanceId: 'ID',
   notificationAgent: 'Agent',
+  instanceEnabled: 'Enabled',
   instanceDeleted: 'Notification instance deleted successfully!',
   instanceDeleteError:
     'Something went wrong while deleting the notification instance.',
   toastTestSending: 'Sending test notification…',
   toastTestSuccess: 'Test notification sent!',
   toastTestFailed: 'Test notification failed to send.',
+  toastEnabledToggleSuccess:
+    'Notification instance enabled toggled successfully!',
+  toastEnabledToggleFailed: 'Notification instance failed to toggle enabled!',
 });
 
 enum Sort {
@@ -187,6 +192,29 @@ const SettingsNotifications = () => {
         autoDismiss: true,
         appearance: 'error',
       });
+    }
+  };
+
+  const toggleInstanceEnabled = async (instance: NotificationAgentConfig) => {
+    instance.enabled = !instance.enabled;
+
+    try {
+      await axios.post(
+        `/api/v1/settings/notification/${instance.id}`,
+        instance
+      );
+
+      addToast(intl.formatMessage(messages.toastEnabledToggleSuccess), {
+        appearance: 'success',
+        autoDismiss: true,
+      });
+    } catch (e) {
+      addToast(intl.formatMessage(messages.toastEnabledToggleFailed), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    } finally {
+      revalidate();
     }
   };
 
@@ -434,6 +462,7 @@ const SettingsNotifications = () => {
             <Table.TH>
               {intl.formatMessage(messages.notificationAgent)}
             </Table.TH>
+            <Table.TH>{intl.formatMessage(messages.instanceEnabled)}</Table.TH>
             <Table.TH></Table.TH>
           </tr>
         </thead>
@@ -458,6 +487,13 @@ const SettingsNotifications = () => {
               <Table.TD>{instance.name}</Table.TD>
               <Table.TD>{instance.id}</Table.TD>
               <Table.TD>{instance.agent}</Table.TD>
+              <Table.TD>
+                <ToggleSwitch
+                  isToggled={instance.enabled}
+                  onToggle={() => toggleInstanceEnabled(instance)}
+                  highContrast
+                />
+              </Table.TD>
               <Table.TD className="flex flex-row-reverse">
                 <Button
                   buttonType="danger"
