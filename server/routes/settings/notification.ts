@@ -173,9 +173,7 @@ notificationRoutes.post<{ id: string }>('/:id', async (req, res, next) => {
     notificationManager.registerAgent(notificationAgent);
 
     notificationInstanceIndex = instances.length;
-  }
-  // agent has changed -> reregister
-  else if (instances[notificationInstanceIndex].agent !== request.agent) {
+  } else {
     const notificationAgent = createAccordingNotificationAgent(
       request,
       notificationInstanceId
