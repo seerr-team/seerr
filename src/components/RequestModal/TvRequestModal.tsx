@@ -1,6 +1,7 @@
 import Alert from '@app/components/Common/Alert';
 import Badge from '@app/components/Common/Badge';
 import Modal from '@app/components/Common/Modal';
+import ToggleSwitch from '@app/components/Common/ToggleSwitch';
 import type { RequestOverrides } from '@app/components/RequestModal/AdvancedRequester';
 import AdvancedRequester from '@app/components/RequestModal/AdvancedRequester';
 import QuotaDisplay from '@app/components/RequestModal/QuotaDisplay';
@@ -529,37 +530,15 @@ const TvRequestModal = ({
                         'hidden'
                       }`}
                     >
-                      <span
-                        role="checkbox"
-                        tabIndex={0}
-                        aria-checked={isAllSeasons()}
-                        onClick={() => toggleAllSeasons()}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === 'Space') {
-                            toggleAllSeasons();
-                          }
-                        }}
-                        className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none ${
+                      <ToggleSwitch
+                        isToggled={isAllSeasons()}
+                        onToggle={() => toggleAllSeasons()}
+                        disabled={
                           quota?.tv.remaining &&
                           quota.tv.limit &&
                           quota.tv.remaining < unrequestedSeasons.length
-                            ? 'opacity-50'
-                            : ''
-                        }`}
-                      >
-                        <span
-                          aria-hidden="true"
-                          className={`${
-                            isAllSeasons() ? 'bg-indigo-500' : 'bg-gray-800'
-                          } absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out`}
-                        ></span>
-                        <span
-                          aria-hidden="true"
-                          className={`${
-                            isAllSeasons() ? 'translate-x-5' : 'translate-x-0'
-                          } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
-                        ></span>
-                      </span>
+                        }
+                      />
                     </th>
                     <th className="bg-gray-700 bg-opacity-80 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(messages.season)}
@@ -604,10 +583,8 @@ const TvRequestModal = ({
                                 .partialRequestsEnabled && 'hidden'
                             }`}
                           >
-                            <span
-                              role="checkbox"
-                              tabIndex={0}
-                              aria-checked={
+                            <ToggleSwitch
+                              isToggled={
                                 !!mediaSeason ||
                                 (!!seasonRequest &&
                                   !editingSeasons.includes(
@@ -615,50 +592,17 @@ const TvRequestModal = ({
                                   )) ||
                                 isSelectedSeason(season.seasonNumber)
                               }
-                              onClick={() => toggleSeason(season.seasonNumber)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === 'Space') {
-                                  toggleSeason(season.seasonNumber);
-                                }
-                              }}
-                              className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none ${
+                              onToggle={() => toggleSeason(season.seasonNumber)}
+                              disabled={
                                 mediaSeason ||
                                 (quota?.tv.limit &&
                                   currentlyRemaining <= 0 &&
                                   !isSelectedSeason(season.seasonNumber)) ||
                                 (!!seasonRequest &&
                                   !editingSeasons.includes(season.seasonNumber))
-                                  ? 'opacity-50'
-                                  : ''
-                              }`}
-                            >
-                              <span
-                                aria-hidden="true"
-                                className={`${
-                                  !!mediaSeason ||
-                                  (!!seasonRequest &&
-                                    !editingSeasons.includes(
-                                      season.seasonNumber
-                                    )) ||
-                                  isSelectedSeason(season.seasonNumber)
-                                    ? 'bg-indigo-500'
-                                    : 'bg-gray-700'
-                                } absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out`}
-                              ></span>
-                              <span
-                                aria-hidden="true"
-                                className={`${
-                                  !!mediaSeason ||
-                                  (!!seasonRequest &&
-                                    !editingSeasons.includes(
-                                      season.seasonNumber
-                                    )) ||
-                                  isSelectedSeason(season.seasonNumber)
-                                    ? 'translate-x-5'
-                                    : 'translate-x-0'
-                                } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
-                              ></span>
-                            </span>
+                              }
+                              highContrast
+                            />
                           </td>
                           <td className="whitespace-nowrap px-1 py-4 text-sm font-medium leading-5 text-gray-100 md:px-6">
                             {season.seasonNumber === 0

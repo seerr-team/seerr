@@ -2,6 +2,7 @@ import Alert from '@app/components/Common/Alert';
 import Badge from '@app/components/Common/Badge';
 import CachedImage from '@app/components/Common/CachedImage';
 import Modal from '@app/components/Common/Modal';
+import ToggleSwitch from '@app/components/Common/ToggleSwitch';
 import type { RequestOverrides } from '@app/components/RequestModal/AdvancedRequester';
 import AdvancedRequester from '@app/components/RequestModal/AdvancedRequester';
 import QuotaDisplay from '@app/components/RequestModal/QuotaDisplay';
@@ -318,36 +319,10 @@ const CollectionRequestModal = ({
                 <thead>
                   <tr>
                     <th className="w-16 bg-gray-700 bg-opacity-80 px-4 py-3">
-                      <span
-                        role="checkbox"
-                        tabIndex={0}
-                        aria-checked={isAllParts()}
-                        onClick={() => toggleAllParts()}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === 'Space') {
-                            toggleAllParts();
-                          }
-                        }}
-                        className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none ${
-                          quota?.movie.limit &&
-                          (quota.movie.remaining ?? 0) < unrequestedParts.length
-                            ? 'opacity-50'
-                            : ''
-                        }`}
-                      >
-                        <span
-                          aria-hidden="true"
-                          className={`${
-                            isAllParts() ? 'bg-indigo-500' : 'bg-gray-800'
-                          } absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out`}
-                        ></span>
-                        <span
-                          aria-hidden="true"
-                          className={`${
-                            isAllParts() ? 'translate-x-5' : 'translate-x-0'
-                          } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
-                        ></span>
-                      </span>
+                      <ToggleSwitch
+                        isToggled={isAllParts()}
+                        onToggle={() => toggleAllParts()}
+                      />
                     </th>
                     <th className="bg-gray-700 bg-opacity-80 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(globalMessages.movie)}
@@ -385,22 +360,16 @@ const CollectionRequestModal = ({
                               'pointer-events-none opacity-50'
                             }`}
                           >
-                            <span
-                              role="checkbox"
-                              tabIndex={0}
-                              aria-checked={
+                            <ToggleSwitch
+                              isToggled={
                                 (!!partMedia &&
                                   partMedia.status !==
                                     MediaStatus.BLACKLISTED) ||
+                                partRequest !== undefined ||
                                 isSelectedPart(part.id)
                               }
-                              onClick={() => togglePart(part.id)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === 'Space') {
-                                  togglePart(part.id);
-                                }
-                              }}
-                              className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none ${
+                              onToggle={() => togglePart(part.id)}
+                              disabled={
                                 (!!partMedia &&
                                   partMedia.status !==
                                     MediaStatus.BLACKLISTED) ||
@@ -408,35 +377,9 @@ const CollectionRequestModal = ({
                                 (quota?.movie.limit &&
                                   currentlyRemaining <= 0 &&
                                   !isSelectedPart(part.id))
-                                  ? 'opacity-50'
-                                  : ''
-                              }`}
-                            >
-                              <span
-                                aria-hidden="true"
-                                className={`${
-                                  (!!partMedia &&
-                                    partMedia.status !==
-                                      MediaStatus.BLACKLISTED) ||
-                                  partRequest ||
-                                  isSelectedPart(part.id)
-                                    ? 'bg-indigo-500'
-                                    : 'bg-gray-700'
-                                } absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out`}
-                              ></span>
-                              <span
-                                aria-hidden="true"
-                                className={`${
-                                  (!!partMedia &&
-                                    partMedia.status !==
-                                      MediaStatus.BLACKLISTED) ||
-                                  partRequest ||
-                                  isSelectedPart(part.id)
-                                    ? 'translate-x-5'
-                                    : 'translate-x-0'
-                                } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
-                              ></span>
-                            </span>
+                              }
+                              highContrast
+                            />
                           </td>
                           <td
                             className={`flex items-center px-1 py-4 text-sm font-medium leading-5 text-gray-100 md:px-6 ${
