@@ -13,6 +13,7 @@ import type { NotificationAgentWebhook } from '@server/interfaces/settings';
 import { Field, Form, Formik } from 'formik';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useMemo } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import * as Yup from 'yup';
@@ -141,6 +142,17 @@ const WebhookModal = ({
         }
       ),
   });
+
+  // set default payload on creation of a new instance
+  useMemo(() => {
+    if (!data.options.jsonPayload) {
+      data.options.jsonPayload = JSON.stringify(
+        defaultPayload,
+        undefined,
+        '    '
+      );
+    }
+  }, [data]);
 
   return (
     <Formik
