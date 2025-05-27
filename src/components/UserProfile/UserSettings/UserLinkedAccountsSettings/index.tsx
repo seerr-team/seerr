@@ -12,11 +12,11 @@ import defineMessages from '@app/utils/defineMessages';
 import PlexOAuth from '@app/utils/plex';
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { MediaServerType } from '@server/constants/server';
-import axios from 'axios';
 import type {
   UserSettingsLinkedAccount,
   UserSettingsLinkedAccountResponse,
 } from '@server/interfaces/api/userSettingsInterfaces';
+import axios from 'axios';
 import { useRouter } from 'next/router';
 import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -158,8 +158,11 @@ const UserLinkedAccountsSettings = () => {
     },
     ...settings.currentSettings.openIdProviders.map((p) => ({
       name: p.name,
-      action: () => {
-        window.location.href = `/api/v1/auth/oidc/login/${p.slug}`;
+      action: async () => {
+        const res = await fetch(`/api/v1/auth/oidc/login/${p.slug}`);
+        if (!res.ok) setError(intl.formatMessage(messages.errorUnknown));
+        const json = await res.json();
+        window.location.href = json.redirectUrl;
       },
       hide: accounts.some(
         (a) =>

@@ -289,7 +289,7 @@ CoreApp.getInitialProps = async (initialProps) => {
 
         if (
           router.pathname.match(/(setup|login)/) &&
-          !router.pathname.includes('oidc')
+          !router.query.callback === true
         ) {
           ctx.res.writeHead(307, {
             Location: '/',
