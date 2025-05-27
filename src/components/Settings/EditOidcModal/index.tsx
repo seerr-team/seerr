@@ -58,15 +58,16 @@ interface EditOidcModalProps {
   onOk: () => void;
 }
 
-function SlugField(props: FieldAttributes<unknown>) {
+function SlugField(props: FieldAttributes<unknown> & { readOnly?: boolean }) {
   const {
     values: { name },
     setFieldValue,
   } = useFormikContext<Partial<OidcProvider>>();
 
   useEffect(() => {
-    setFieldValue(props.name, name?.toLowerCase().replace(/\s/g, '-'));
-  }, [props.name, name, setFieldValue]);
+    if (!props.readOnly)
+      setFieldValue(props.name, name?.toLowerCase().replace(/\s/g, '-'));
+  }, [props.name, props.readOnly, name, setFieldValue]);
 
   return <Field {...props} />;
 }
