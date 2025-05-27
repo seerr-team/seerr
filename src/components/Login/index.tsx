@@ -203,46 +203,50 @@ const Login = () => {
               </div>
             </Transition>
             <div className="px-10 py-8">
-              <SwitchTransition mode="out-in">
-                <CSSTransition
-                  key={mediaServerLogin ? 'ms' : 'local'}
-                  nodeRef={loginRef}
-                  addEndListener={(done) => {
-                    loginRef.current?.addEventListener(
-                      'transitionend',
-                      done,
-                      false
-                    );
-                  }}
-                  onEntered={() => {
-                    document
-                      .querySelector<HTMLInputElement>('#email, #username')
-                      ?.focus();
-                  }}
-                  classNames={{
-                    appear: 'opacity-0',
-                    appearActive: 'transition-opacity duration-500 opacity-100',
-                    enter: 'opacity-0',
-                    enterActive: 'transition-opacity duration-500 opacity-100',
-                    exitActive: 'transition-opacity duration-0 opacity-0',
-                  }}
-                >
-                  <div ref={loginRef} className="button-container">
-                    {isJellyfin &&
-                    (mediaServerLogin ||
-                      !settings.currentSettings.localLogin) ? (
-                      <JellyfinLogin
-                        serverType={settings.currentSettings.mediaServerType}
-                        revalidate={revalidate}
-                      />
-                    ) : (
-                      settings.currentSettings.localLogin && (
-                        <LocalLogin revalidate={revalidate} />
-                      )
-                    )}
-                  </div>
-                </CSSTransition>
-              </SwitchTransition>
+              {loginFormVisible && (
+                <SwitchTransition mode="out-in">
+                  <CSSTransition
+                    key={mediaServerLogin ? 'ms' : 'local'}
+                    nodeRef={loginRef}
+                    addEndListener={(done) => {
+                      loginRef.current?.addEventListener(
+                        'transitionend',
+                        done,
+                        false
+                      );
+                    }}
+                    onEntered={() => {
+                      document
+                        .querySelector<HTMLInputElement>('#email, #username')
+                        ?.focus();
+                    }}
+                    classNames={{
+                      appear: 'opacity-0',
+                      appearActive:
+                        'transition-opacity duration-500 opacity-100',
+                      enter: 'opacity-0',
+                      enterActive:
+                        'transition-opacity duration-500 opacity-100',
+                      exitActive: 'transition-opacity duration-0 opacity-0',
+                    }}
+                  >
+                    <div ref={loginRef} className="button-container">
+                      {isJellyfin &&
+                      (mediaServerLogin ||
+                        !settings.currentSettings.localLogin) ? (
+                        <JellyfinLogin
+                          serverType={settings.currentSettings.mediaServerType}
+                          revalidate={revalidate}
+                        />
+                      ) : (
+                        settings.currentSettings.localLogin && (
+                          <LocalLogin revalidate={revalidate} />
+                        )
+                      )}
+                    </div>
+                  </CSSTransition>
+                </SwitchTransition>
+              )}
 
               {additionalLoginOptions.length > 0 &&
                 (loginFormVisible ? (
