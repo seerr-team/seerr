@@ -668,5 +668,7 @@
   "components.Settings.Notifications.NotificationsWebhook.webhooksettingssaved": "הגדרות ההתראות של ה-Webhook נשמרו בהצלחה!",
   "components.Settings.Notifications.NotificationsWebPush.agentenabled": "הפעל סוכן",
   "components.Settings.Notifications.NotificationsWebhook.toastWebhookTestFailed": "התראת הבדיקה של ה-Webhook נכשלה להשלח.",
-  "components.Settings.Notifications.NotificationsWebhook.toastWebhookTestSending": "שולח התראת בדיקה של ה-Webhook…"
+  "components.Settings.Notifications.NotificationsWebhook.toastWebhookTestSending": "שולח התראת בדיקה של ה-Webhook…",
+  "components.Settings.Notifications.NotificationsWebPush.httpsRequirement": "על מנת לקבל התראות אינטרנט, על Jellyseerr להיות מוגש בעזרת HTTPS.",
+  "components.Settings.Notifications.NotificationsWebhook.templatevariablehelp": "תבנית משתנה עזרה"
 }
