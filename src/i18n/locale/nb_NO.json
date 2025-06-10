@@ -1151,5 +1151,6 @@
   "components.Discover.FilterSlideover.firstAirDate": "Første Sendingsdato",
   "components.Discover.FilterSlideover.from": "Fra",
   "components.Discover.FilterSlideover.genres": "Sjangere",
-  "components.Discover.PlexWatchlistSlider.plexwatchlist": "Din Visningsliste"
+  "components.Discover.PlexWatchlistSlider.plexwatchlist": "Din Visningsliste",
+  "components.Discover.FilterSlideover.ratingText": "Vurderinger mellom {minValue} og {maxValue}"
 }
