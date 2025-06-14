@@ -1,7 +1,6 @@
 import DiscordModal from '@app/components/Settings/SettingsNotifications/NotificationModal/DiscordModal';
 import EmailModal from '@app/components/Settings/SettingsNotifications/NotificationModal/EmailModal';
 import GotifyModal from '@app/components/Settings/SettingsNotifications/NotificationModal/GotifyModal';
-import LunaSeaModal from '@app/components/Settings/SettingsNotifications/NotificationModal/LunaSeaModal';
 import NtfyModal from '@app/components/Settings/SettingsNotifications/NotificationModal/NtfyModal';
 import PushbulletModal from '@app/components/Settings/SettingsNotifications/NotificationModal/PushbulletModal';
 import PushoverModal from '@app/components/Settings/SettingsNotifications/NotificationModal/PushoverModal';
@@ -15,7 +14,6 @@ import type {
   NotificationAgentDiscord,
   NotificationAgentEmail,
   NotificationAgentGotify,
-  NotificationAgentLunaSea,
   NotificationAgentNtfy,
   NotificationAgentPushbullet,
   NotificationAgentPushover,
@@ -173,16 +171,6 @@ const NotificationModal = ({
         <NtfyModal
           type={type}
           data={data as NotificationAgentNtfy}
-          onClose={onClose}
-          onTest={onTest}
-          onSave={type === NotificationModalType.EDIT ? onSave : onCreate}
-        />
-      );
-    case NotificationAgentKey.LUNASEA:
-      return (
-        <LunaSeaModal
-          type={type}
-          data={data as NotificationAgentLunaSea}
           onClose={onClose}
           onTest={onTest}
           onSave={type === NotificationModalType.EDIT ? onSave : onCreate}

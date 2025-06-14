@@ -1,6 +1,5 @@
 import DiscordLogo from '@app/assets/extlogos/discord.svg';
 import GotifyLogo from '@app/assets/extlogos/gotify.svg';
-import LunaSeaLogo from '@app/assets/extlogos/lunasea.svg';
 import NtfyLogo from '@app/assets/extlogos/ntfy.svg';
 import PushbulletLogo from '@app/assets/extlogos/pushbullet.svg';
 import PushoverLogo from '@app/assets/extlogos/pushover.svg';
@@ -340,18 +339,6 @@ const SettingsNotifications = () => {
               >
                 <NtfyLogo />
                 <span>Ntfy</span>
-              </Dropdown.Item>
-              <Dropdown.Item
-                onClick={() =>
-                  setNotificationModal({
-                    open: true,
-                    instance: data.agentTemplates.lunasea,
-                    type: NotificationModalType.CREATE,
-                  })
-                }
-              >
-                <LunaSeaLogo />
-                <span>LunaSea</span>
               </Dropdown.Item>
               <Dropdown.Item
                 onClick={() =>
