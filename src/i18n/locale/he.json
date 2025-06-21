@@ -625,7 +625,7 @@
   "components.Settings.Notifications.NotificationsSlack.validationTypes": "יש לבחור לפחות סוג התראה אחד",
   "components.Settings.Notifications.NotificationsSlack.webhookUrl": "URL של ה-Webhook",
   "component.BlacklistModal.blacklisting": "חסימה",
-  "components.Blacklist.blacklistNotFoundError": "<strong>{title}</strong> לא חסום.",
+  "components.Blacklist.blacklistNotFoundError": "<strong>{title}</strong> לא ברשימת החסימה.",
   "components.Blacklist.blacklistSettingsDescription": "ניהול מדיה חסומה.",
   "components.Blacklist.blacklistdate": "תאריך",
   "components.Blacklist.blacklistedby": "{date} על ידי {user}",
@@ -765,5 +765,9 @@
   "components.Settings.Notifications.validationTypes": "יש לבחור לפחות סוג התראות אחד",
   "components.Settings.Notifications.validationUrl": "יש לספק כתובת URL תקינה",
   "components.Settings.Notifications.webhookUrl": "URL של ה-Webhook",
-  "components.Settings.Notifications.chatId": "מזהה צ'אט"
+  "components.Settings.Notifications.chatId": "מזהה צ'אט",
+  "i18n.addToBlacklist": "הוספה לרשימת החסימות",
+  "i18n.blacklistDuplicateError": "<strong>{title}</strong> כבר נוסף לרשימת החסימה.",
+  "i18n.blacklistSuccess": "<strong>{title}</strong> נוסף לרשימת החסימה בהצלחה.",
+  "i18n.blacklisted": "חסום"
 }
