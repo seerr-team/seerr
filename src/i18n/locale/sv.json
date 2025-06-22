@@ -736,7 +736,7 @@
   "components.Settings.Notifications.toastTelegramTestSending": "Skickar Telegram-testmeddelande…",
   "components.Settings.Notifications.toastTelegramTestFailed": "Telegram-testmeddelande kunde inte skickas.",
   "components.Settings.Notifications.toastEmailTestSuccess": "E-posttestmeddelande skickat!",
-  "components.Settings.Notifications.toastEmailTestSending": "kickar e-posttestmeddelande…",
+  "components.Settings.Notifications.toastEmailTestSending": "Skickar e-posttestmeddelande…",
   "components.Settings.Notifications.toastEmailTestFailed": "E-posttestmeddelande kunde inte skickas.",
   "components.Settings.Notifications.toastDiscordTestSuccess": "Discord-testmeddelande skickat!",
   "components.Settings.Notifications.toastDiscordTestSending": "Skickar Discord-testmeddelande…",
