@@ -562,6 +562,8 @@
   "components.RequestModal.requesterror": "Something went wrong while submitting the request.",
   "components.RequestModal.requestfrom": "{username}'s request is pending approval.",
   "components.RequestModal.requestmovie4ktitle": "Request Movie in 4K",
+  "components.RequestModal.requestmovieNonTheattricalInTheFuture": "The Digital or Physical release is in the future",
+  "components.RequestModal.requestMovieHasNoNonTheatricalRealease": "There is no non-Theatrical Release",
   "components.RequestModal.requestmovies": "Request {count} {count, plural, one {Movie} other {Movies}}",
   "components.RequestModal.requestmovies4k": "Request {count} {count, plural, one {Movie} other {Movies}} in 4K",
   "components.RequestModal.requestmovietitle": "Request Movie",
