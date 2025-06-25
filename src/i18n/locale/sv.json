@@ -554,7 +554,7 @@
   "components.Discover.TvGenreSlider.tvgenres": "Seriegenrer",
   "components.RequestModal.AdvancedRequester.folder": "{path} ({space})",
   "components.TvDetails.episodeRuntimeMinutes": "{runtime} minuter",
-  "components.TvDetails.episodeRuntime": "Avsnittets speltid",
+  "components.TvDetails.episodeRuntime": "Avsnittslängd",
   "components.Settings.Notifications.pgpPrivateKeyTip": "Signera krypterade e-postmeddelanden med <OpenPgpLink>OpenPGP</OpenPgpLink>",
   "components.Settings.Notifications.pgpPrivateKey": "Privat PGP-nyckel",
   "components.Settings.Notifications.pgpPasswordTip": "Signera krypterade e-postmeddelanden med <OpenPgpLink>OpenPGP</OpenPgpLink>",
