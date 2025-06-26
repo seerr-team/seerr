@@ -1229,7 +1229,7 @@
   "components.Settings.SettingsJobsCache.editJobScheduleSelectorSeconds": "Co {jobScheduleSeconds, plural, one {sekundę} other {{jobScheduleSeconds} sekundy}}",
   "components.Settings.SettingsJobsCache.image-cache-cleanup": "Czyszczenie pamięci podręcznej obrazów",
   "components.Settings.SettingsJobsCache.imagecache": "Pamięć podręczna obrazów",
-  "components.Discover.DiscoverMovies.activefilters": "{count, plural, one {# Aktywny filtr} other {# Aktywne filtry}}",
+  "components.Discover.DiscoverMovies.activefilters": "{count, plural, one {# aktywny filtr} few {# aktywne filtry} other {# aktywnych filtrów}}",
   "components.Login.enablessl": "Użyj SSL",
   "components.Login.invalidurlerror": "Niepowodzenie połączenia z serwerem {mediaServerName}.",
   "components.Login.port": "Port",
