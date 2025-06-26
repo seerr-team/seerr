@@ -46,7 +46,7 @@ export const runMigrations = async (
       } catch (e) {
         // we stop Seerr if the migration failed
         logger.error(
-          `Error while running migration '${migration}': ${e.message}`,
+          `Error while running migration '${migration}': ${e.message}\n${e.stack}`,
           {
             label: 'Settings Migrator',
           }
