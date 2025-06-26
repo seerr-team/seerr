@@ -937,7 +937,7 @@
   "components.RequestModal.selectmovies": "Wybierz film(y)",
   "components.RequestModal.requestmovies": "Prośba o {count} {count, plural, one {film} other {filmów}}",
   "components.IssueDetails.commentplaceholder": "Dodaj komentarz…",
-  "components.MovieDetails.productioncountries": "Produkcja {countryCount, plural, one {kraj} other {kraje}}",
+  "components.MovieDetails.productioncountries": "{countryCount, plural, one {Kraj} other {Kraje}} produkcji",
   "components.RequestModal.requestseasons4k": "Prośba o {seasonCount} {seasonCount, plural, one {sezon} other {sezony}} w 4K",
   "components.TvDetails.productioncountries": "Produkcja {countryCount, plural, one {kraj} other {kraje}}",
   "components.RequestModal.approve": "Zatwierdź prośbę",
