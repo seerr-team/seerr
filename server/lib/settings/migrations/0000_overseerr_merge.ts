@@ -15,14 +15,14 @@ const overseerrMerge = async (settings: any): Promise<AllSettings> => {
   newSettings.main.applicationTitle = 'Seerr';
   newSettings.notifications.agents.email.options.senderName = 'Seerr';
 
-  // MediaStatus.Blacklisted was added before MediaStatus. Deleted in Jellyseerr
+  // MediaStatus.Blacklisted was added before MediaStatus.Deleted in Jellyseerr
   const mediaRepository = getRepository(Media);
-  await mediaRepository
-    .createQueryBuilder()
-    .update(Media)
-    .set({ status: 7 })
-    .where('status = :status', { status: 6 })
-    .execute();
+  const mediaToUpdate = await mediaRepository.find({ where: { status: 6 } });
+
+  for (const media of mediaToUpdate) {
+    media.status = 7;
+    await mediaRepository.save(media);
+  }
 
   return newSettings;
 };
