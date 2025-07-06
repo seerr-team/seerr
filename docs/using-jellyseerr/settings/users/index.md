@@ -22,6 +22,14 @@ When disabled, users will only be able to sign in using their email address. Use
 
 This setting is **enabled** by default.
 
+## Enable OpenID Connect Sign-In
+
+When enabled, users will be able to sign in to Jellyseerr using their OpenID Connect credentials, provided they have linked their OpenID Connect accounts. Once enabled, the [OpenID Connect settings](./oidc.md) can be accessed using the settings cog to the right of this option, and OpenID Connect providers can be configured.
+
+When disabled, users will only be able to sign in using their email address. Users without a password set will not be able to sign in to Jellyseerr.
+
+This setting is **disabled** by default.
+
 ## Enable New Jellyfin/Emby/Plex Sign-In
 
 When enabled, users with access to your media server will be able to sign in to Jellyseerr even if they have not yet been imported. Users will be automatically assigned the permissions configured in the [Default Permissions](#default-permissions) setting upon first sign-in.
