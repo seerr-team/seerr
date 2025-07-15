@@ -103,7 +103,7 @@ const PlexPinEntry = ({
         <Button
           buttonType="primary"
           disabled={!pin || isSubmitting}
-          onClick={handleSubmit}
+          onClick={() => handleSubmit()}
           className="ml-2 flex-1"
         >
           {isSubmitting
