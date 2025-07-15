@@ -603,6 +603,11 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
           });
 
           await userRepository.save(profileUser);
+
+          if (req.session) {
+            req.session.userId = profileUser.id;
+          }
+          return res.status(200).json(profileUser.filter() ?? {});
         }
       }
     } else {
