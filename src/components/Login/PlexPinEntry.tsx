@@ -1,6 +1,6 @@
 import Button from '@app/components/Common/Button';
 import defineMessages from '@app/utils/defineMessages';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.Login.PlexPinEntry', {
@@ -29,12 +29,20 @@ const PlexPinEntry = ({
   const intl = useIntl();
   const [pin, setPin] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = async () => {
-    if (!pin || isSubmitting) return;
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
+  const handleSubmit = async (pinToSubmit?: string) => {
+    const pinValue = pinToSubmit || pin;
+    if (!pinValue || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      await onSubmit(pin);
+      await onSubmit(pinValue);
       setPin('');
     } catch (err) {
       setPin('');
@@ -49,6 +57,19 @@ const PlexPinEntry = ({
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '');
+    setPin(value);
+
+    if (value.length === 4 && !isSubmitting) {
+      handleSubmit(value);
+    }
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.select();
+  };
+
   return (
     <div className="w-full max-w-md">
       <h2 className="mb-6 text-center text-xl font-bold text-gray-100">
@@ -61,11 +82,13 @@ const PlexPinEntry = ({
 
       <div className="mb-6">
         <input
+          ref={inputRef}
           type="password"
           className="w-full rounded-md bg-white/10 px-4 py-3 text-center font-mono text-3xl tracking-[0.3em] text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           value={pin}
-          onChange={(e) => setPin(e.target.value)}
+          onChange={handleChange}
           onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
           placeholder="• • • •"
           maxLength={4}
           pattern="[0-9]{4}"
