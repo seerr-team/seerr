@@ -35,7 +35,6 @@ const PlexProfileSelector = ({
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pinError, setPinError] = useState<string | null>(null);
   const [showPinEntry, setShowPinEntry] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<PlexProfile | null>(
     null
@@ -62,14 +61,13 @@ const PlexProfileSelector = ({
 
   const handlePinSubmit = async (pin: string) => {
     if (!selectedProfileId) return;
-    await onProfileSelected(selectedProfileId, pin, setPinError);
+    await onProfileSelected(selectedProfileId, pin);
   };
 
   const handlePinCancel = () => {
     setShowPinEntry(false);
     setSelectedProfile(null);
     setSelectedProfileId(null);
-    setPinError(null);
   };
 
   if (showPinEntry && selectedProfile && selectedProfileId) {
@@ -81,9 +79,11 @@ const PlexProfileSelector = ({
           selectedProfile.username ||
           intl.formatMessage(messages.profile)
         }
+        profileThumb={selectedProfile.thumb}
+        isProtected={selectedProfile.protected}
+        isMainUser={selectedProfile.isMainUser}
         onSubmit={handlePinSubmit}
         onCancel={handlePinCancel}
-        error={pinError}
       />
     );
   }
@@ -110,7 +110,7 @@ const PlexProfileSelector = ({
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-2 justify-items-center gap-4 sm:grid-cols-3 sm:gap-6 md:gap-8">
           {profiles.map((profile) => (
             <button
               key={profile.id}
@@ -120,13 +120,13 @@ const PlexProfileSelector = ({
                 isSubmitting ||
                 (selectedProfileId === profile.id && !profile.protected)
               }
-              className={`relative flex transform flex-col items-center rounded-2xl p-5 transition-all hover:scale-105 hover:shadow-lg ${
+              className={`relative flex h-48 w-32 flex-col items-center justify-start rounded-2xl border border-white/20 bg-white/10 p-6 shadow-lg backdrop-blur transition-all hover:ring-2 hover:ring-indigo-400 ${
                 selectedProfileId === profile.id
                   ? 'bg-indigo-600 ring-2 ring-indigo-400'
                   : 'border border-white/20 bg-white/10 backdrop-blur-sm'
               } ${isSubmitting ? 'cursor-not-allowed opacity-50' : ''}`}
             >
-              <div className="relative mb-4 h-20 w-20 overflow-hidden rounded-full shadow-md ring-2 ring-white/30">
+              <div className="relative mx-auto mb-2 flex h-20 w-20 shrink-0 grow-0 items-center justify-center overflow-hidden rounded-full bg-gray-900 shadow ring-2 ring-indigo-400">
                 <Image
                   src={profile.thumb}
                   alt={profile.title || profile.username || 'Profile'}
@@ -135,19 +135,30 @@ const PlexProfileSelector = ({
                   className="object-cover"
                 />
               </div>
-
+              <div className="mb-2 flex items-center justify-center gap-2">
+                {profile.protected && (
+                  <span className="z-10 rounded-full bg-black/80 p-1.5">
+                    <LockClosedIcon className="h-4 w-4 text-indigo-400" />
+                  </span>
+                )}
+                {profile.isMainUser && (
+                  <span className="z-10 rounded-full bg-black/80 p-1.5">
+                    <svg
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      className="h-4 w-4 text-yellow-400"
+                    >
+                      <path d="M2.166 6.5l3.5 7 4.334-7 4.334 7 3.5-7L17.5 17.5h-15z" />
+                    </svg>
+                  </span>
+                )}
+              </div>
               <span
                 className="mb-1 w-full break-words text-center text-base font-semibold text-white"
                 title={profile.username || profile.title}
               >
                 {profile.username || profile.title}
               </span>
-
-              {profile.protected && (
-                <div className="mt-2 text-gray-400">
-                  <LockClosedIcon className="h-4 w-4" />
-                </div>
-              )}
             </button>
           ))}
         </div>

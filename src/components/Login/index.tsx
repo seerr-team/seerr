@@ -57,6 +57,9 @@ const Login = () => {
   const [showPinEntry, setShowPinEntry] = useState(false);
   const [pinProfileId, setPinProfileId] = useState<string | null>(null);
   const [pinProfileName, setPinProfileName] = useState<string | null>(null);
+  const [pinProfileThumb, setPinProfileThumb] = useState<string | null>(null);
+  const [pinIsProtected, setPinIsProtected] = useState<boolean>(false);
+  const [pinIsMainUser, setPinIsMainUser] = useState<boolean>(false);
   const [pinError, setPinError] = useState<string | null>(null);
 
   // Effect that is triggered when the `authToken` comes back from the Plex OAuth
@@ -69,6 +72,9 @@ const Login = () => {
           case 'REQUIRES_PIN': {
             setPinProfileId(response.data.profileId);
             setPinProfileName(response.data.profileName);
+            setPinProfileThumb(response.data.profileThumb);
+            setPinIsProtected(response.data.isProtected);
+            setPinIsMainUser(response.data.isMainUser);
             setShowPinEntry(true);
             break;
           }
@@ -131,12 +137,32 @@ const Login = () => {
 
       if (response.data?.status === 'REQUIRES_PIN') {
         setShowPinEntry(true);
+        setPinProfileId(profileId);
+        setPinProfileName(
+          profiles.find((p) => p.id === profileId)?.title ||
+            profiles.find((p) => p.id === profileId)?.username ||
+            'Profile'
+        );
+        setPinProfileThumb(
+          profiles.find((p) => p.id === profileId)?.thumb || null
+        );
+        setPinIsProtected(
+          profiles.find((p) => p.id === profileId)?.protected || false
+        );
+        setPinIsMainUser(
+          profiles.find((p) => p.id === profileId)?.isMainUser || false
+        );
         setPinError(intl.formatMessage(messages.invalidPin));
         throw new Error('Invalid PIN');
       } else {
         setShowProfileSelector(false);
         setShowPinEntry(false);
         setPinError(null);
+        setPinProfileId(null);
+        setPinProfileName(null);
+        setPinProfileThumb(null);
+        setPinIsProtected(false);
+        setPinIsMainUser(false);
         revalidate();
       }
     } catch (e) {
@@ -301,6 +327,10 @@ const Login = () => {
                 <PlexPinEntry
                   profileId={pinProfileId}
                   profileName={pinProfileName}
+                  profileThumb={pinProfileThumb}
+                  isProtected={pinIsProtected}
+                  isMainUser={pinIsMainUser}
+                  error={pinError}
                   onSubmit={(pin) => {
                     return handleSubmitProfile(pinProfileId, pin);
                   }}
@@ -308,10 +338,12 @@ const Login = () => {
                     setShowPinEntry(false);
                     setPinProfileId(null);
                     setPinProfileName(null);
+                    setPinProfileThumb(null);
+                    setPinIsProtected(false);
+                    setPinIsMainUser(false);
                     setPinError(null);
                     setShowProfileSelector(true);
                   }}
-                  error={pinError}
                 />
               ) : showProfileSelector ? (
                 <PlexProfileSelector
