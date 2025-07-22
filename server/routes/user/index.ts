@@ -621,26 +621,37 @@ router.post(
 
       if (profileIds && profileIds.length > 0) {
         const profiles = await mainPlexTv.getProfiles();
+        // Filter out real Plex users (with email/isMainUser) from importable profiles
+        const importableProfiles = profiles.filter((p: any) => !p.isMainUser);
 
         for (const profileId of profileIds) {
-          const profileData = profiles.find((p: any) => p.id === profileId);
+          const profileData = importableProfiles.find(
+            (p: any) => p.id === profileId
+          );
 
           if (profileData) {
+            // Check for existing user with same plexProfileId
+            const existingUser = await userRepository.findOne({
+              where: { plexProfileId: profileId },
+            });
+
             const emailPrefix = mainUser.email.split('@')[0];
             const domainPart = mainUser.email.includes('@')
               ? mainUser.email.split('@')[1]
               : 'plex.local';
-
             const safeUsername = (profileData.username || profileData.title)
               .replace(/\s+/g, '.')
               .replace(/[^a-zA-Z0-9._-]/g, '');
+            const proposedEmail = `${emailPrefix}+${safeUsername}@${domainPart}`;
 
-            // Check for existing user with same username or email
-            const existingUser = await userRepository.findOne({
+            // Check for main user with same plexUsername or email
+            const mainUserDuplicate = await userRepository.findOne({
               where: [
-                { plexUsername: profileData.username || profileData.title },
-                { email: `${emailPrefix}+${safeUsername}@${domainPart}` },
-                { plexProfileId: profileId },
+                {
+                  plexUsername: profileData.username || profileData.title,
+                  isPlexProfile: false,
+                },
+                { email: proposedEmail, isPlexProfile: false },
               ],
             });
 
@@ -654,8 +665,22 @@ router.post(
               continue;
             }
 
+            if (mainUserDuplicate) {
+              // Skip this profile and add to skipped list, but ensure main user is imported
+              skippedItems.push({
+                id: profileId,
+                type: 'profile',
+                reason: 'MAIN_USER_ALREADY_EXISTS',
+              });
+              // If main user is not already in createdUsers, add it
+              if (!createdUsers.find((u) => u.id === mainUserDuplicate.id)) {
+                createdUsers.push(mainUserDuplicate);
+              }
+              continue;
+            }
+
             const profileUser = new User({
-              email: `${emailPrefix}+${safeUsername}@${domainPart}`,
+              email: proposedEmail,
               plexUsername: profileData.username || profileData.title,
               plexId: mainUser.plexId,
               plexToken: mainUser.plexToken,

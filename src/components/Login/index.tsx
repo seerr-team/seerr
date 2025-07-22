@@ -36,6 +36,8 @@ const messages = defineMessages('components.Login', {
   authFailed: 'Authentication failed',
   invalidPin: 'Invalid PIN. Please try again.',
   accessDenied: 'Access denied.',
+  profileUserExists:
+    'A profile user already exists for this Plex account. Please contact your administrator to resolve this duplicate.',
 });
 
 const Login = () => {
@@ -176,6 +178,9 @@ const Login = () => {
           break;
         case ApiErrorCode.InvalidPin:
           msg = intl.formatMessage(messages.invalidPin);
+          break;
+        case ApiErrorCode.ProfileUserExists:
+          msg = intl.formatMessage(messages.profileUserExists);
           break;
         default:
           if (httpStatus === 401) {

@@ -168,6 +168,38 @@ authRoutes.post('/plex', async (req, res, next) => {
       })
       .getOne();
 
+    const safeUsername = (account.username || account.title)
+      .replace(/\s+/g, '.')
+      .replace(/[^a-zA-Z0-9._-]/g, '');
+    const emailPrefix = account.email.split('@')[0];
+    const domainPart = account.email.includes('@')
+      ? account.email.split('@')[1]
+      : 'plex.local';
+    const proposedEmail = `${emailPrefix}+${safeUsername}@${domainPart}`;
+    const existingProfileUser = await userRepository.findOne({
+      where: [
+        { plexUsername: account.username, isPlexProfile: true },
+        { email: proposedEmail, isPlexProfile: true },
+      ],
+    });
+    if (!user && existingProfileUser) {
+      logger.warn(
+        'Main user login attempted but profile user already exists for this person',
+        {
+          label: 'Auth',
+          plexUsername: account.username,
+          email: account.email,
+          profileUserId: existingProfileUser.id,
+        }
+      );
+      return next({
+        status: 409,
+        message:
+          'A profile user already exists for this Plex account. Please contact your administrator to resolve this duplicate.',
+        error: ApiErrorCode.ProfileUserExists,
+      });
+    }
+
     if (!user && !(await userRepository.count())) {
       // First user setup through standard auth flow
       user = new User({

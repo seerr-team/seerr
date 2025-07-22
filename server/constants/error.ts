@@ -11,4 +11,5 @@ export enum ApiErrorCode {
   Unknown = 'UNKNOWN',
   InvalidPin = 'INVALID_PIN',
   NewPlexLoginDisabled = 'NEW_PLEX_LOGIN_DISABLED',
+  ProfileUserExists = 'PROFILE_USER_EXISTS',
 }
