@@ -260,6 +260,7 @@
   "components.Login.orsigninwith": "Or sign in with",
   "components.Login.password": "Password",
   "components.Login.port": "Port",
+  "components.Login.profileUserExists": "A profile user already exists for this Plex account. Please contact your administrator to resolve this duplicate.",
   "components.Login.save": "Add",
   "components.Login.saving": "Adding…",
   "components.Login.servertype": "Server Type",
