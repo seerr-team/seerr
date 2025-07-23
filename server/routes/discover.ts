@@ -49,6 +49,15 @@ export const createTmdbWithRegionLanguage = (user?: User): TheMovieDb => {
   });
 };
 
+export const createTmdbWithBlacklistSettings = (): TheMovieDb => {
+  const settings = getSettings();
+
+  return new TheMovieDb({
+    discoverRegion: settings.main.blacklistRegion,
+    originalLanguage: settings.main.blacklistLanguage,
+  });
+};
+
 const discoverRoutes = Router();
 
 const QueryFilterOptions = z.object({

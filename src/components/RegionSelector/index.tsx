@@ -89,7 +89,7 @@ const RegionSelector = ({
   };
 
   return (
-    <div className="z-40 w-full">
+    <div className="w-full">
       <Listbox as="div" value={selectedRegion} onChange={handleRegionSelect}>
         {({ open }) => (
           <div className="relative">
@@ -131,7 +131,7 @@ const RegionSelector = ({
               leave="transition-opacity ease-in duration-100"
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
-              className="absolute mt-1 w-full rounded-md bg-gray-800 shadow-lg"
+              className="absolute z-50 mt-1 w-full rounded-md bg-gray-800 shadow-lg"
             >
               <Listbox.Options
                 static

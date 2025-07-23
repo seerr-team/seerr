@@ -38,6 +38,12 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   discoverRegionTip: 'Filter content by regional availability',
   originallanguage: 'Discover Language',
   originallanguageTip: 'Filter content by original language',
+  blacklistRegion: 'Blacklist Region',
+  blacklistRegionTip:
+    'Region used for blacklist content scanning (independent of discover settings)',
+  blacklistLanguage: 'Blacklist Language',
+  blacklistLanguageTip:
+    'Language used for blacklist content scanning (independent of discover settings)',
   blocklistedTags: 'Blocklist Content with Tags',
   blocklistedTagsTip:
     'Automatically add content with tags to the blocklist using the "Process Blocklisted Tags" job',
@@ -169,6 +175,8 @@ const SettingsMain = () => {
             discoverRegion: data?.discoverRegion,
             originalLanguage: data?.originalLanguage,
             streamingRegion: data?.streamingRegion || 'US',
+            blacklistRegion: data?.blacklistRegion || '',
+            blacklistLanguage: data?.blacklistLanguage || '',
             blocklistedTags: data?.blocklistedTags,
             blocklistedTagsLimit: data?.blocklistedTagsLimit || 50,
             partialRequestsEnabled: data?.partialRequestsEnabled,
@@ -189,6 +197,8 @@ const SettingsMain = () => {
                 discoverRegion: values.discoverRegion,
                 streamingRegion: values.streamingRegion,
                 originalLanguage: values.originalLanguage,
+                blacklistRegion: values.blacklistRegion,
+                blacklistLanguage: values.blacklistLanguage,
                 blocklistedTags: values.blocklistedTags,
                 blocklistedTagsLimit: values.blocklistedTagsLimit,
                 partialRequestsEnabled: values.partialRequestsEnabled,
@@ -379,6 +389,7 @@ const SettingsMain = () => {
                       <LanguageSelector
                         setFieldValue={setFieldValue}
                         value={values.originalLanguage}
+                        fieldName="originalLanguage"
                       />
                     </div>
                   </div>
@@ -391,13 +402,89 @@ const SettingsMain = () => {
                     </span>
                   </label>
                   <div className="form-input-area">
-                    <div className="form-input-field relative z-20">
+                    <div className="form-input-field relative">
                       <RegionSelector
                         value={values.streamingRegion}
                         name="streamingRegion"
                         onChange={setFieldValue}
                         regionType="streaming"
                         disableAll
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="blacklistRegion" className="text-label">
+                    <span>{intl.formatMessage(messages.blacklistRegion)}</span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.blacklistRegionTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <RegionSelector
+                        value={values.blacklistRegion}
+                        name="blacklistRegion"
+                        onChange={setFieldValue}
+                        regionType="discover"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="blacklistLanguage" className="text-label">
+                    <span>
+                      {intl.formatMessage(messages.blacklistLanguage)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.blacklistLanguageTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field relative z-20">
+                      <LanguageSelector
+                        setFieldValue={setFieldValue}
+                        serverValue={data?.blacklistLanguage}
+                        value={values.blacklistLanguage}
+                        fieldName="blacklistLanguage"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="blocklistRegion" className="text-label">
+                    <span>{intl.formatMessage(messages.blacklistRegion)}</span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.blacklistRegionTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <RegionSelector
+                        value={values.blacklistRegion}
+                        name="blacklistRegion"
+                        onChange={setFieldValue}
+                        regionType="discover"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="blacklistLanguage" className="text-label">
+                    <span>
+                      {intl.formatMessage(messages.blacklistLanguage)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.blacklistLanguageTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field relative z-20">
+                      <LanguageSelector
+                        setFieldValue={setFieldValue}
+                        serverValue={data?.blacklistLanguage}
+                        value={values.blacklistLanguage}
+                        fieldName="blacklistLanguage"
                       />
                     </div>
                   </div>
