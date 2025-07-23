@@ -363,29 +363,40 @@ class PlexTvAPI extends ExternalAPI {
     }
   }
 
+  public async switchProfile(
+    profileId: string,
+    pin?: string
+  ): Promise<boolean> {
+    const urlPath = `/api/v2/home/users/${profileId}/switch`;
+    try {
+      // @codeql-disable-next-line XssThrough -- False positive: baseURL is hardcoded to Plex API
+      const response = await axios.post(urlPath, pin ? { pin } : {}, {
+        baseURL: 'https://clients.plex.tv',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-Plex-Token': this.authToken,
+          'X-Plex-Client-Identifier': randomUUID(),
+        },
+      });
+      return response.status >= 200 && response.status < 300;
+    } catch (e) {
+      logger.warn('Failed to switch Plex profile', {
+        label: 'Plex.TV Metadata API',
+        errorMessage: e.message,
+        profileId,
+      });
+      return false;
+    }
+  }
+
   public async validateProfilePin(
     profileId: string,
     pin: string
   ): Promise<boolean> {
-    const urlPath = `/api/v2/home/users/${profileId}/switch`;
-
     try {
-      // @codeql-disable-next-line XssThrough -- False positive: baseURL is hardcoded to Plex API
-      const response = await axios.post(
-        urlPath,
-        { pin },
-        {
-          baseURL: 'https://clients.plex.tv',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'X-Plex-Token': this.authToken,
-            'X-Plex-Client-Identifier': randomUUID(),
-          },
-        }
-      );
-
-      return response.status >= 200 && response.status < 300;
+      const success = await this.switchProfile(profileId, pin);
+      return success;
     } catch (e) {
       logger.error('Failed to validate Plex profile pin', {
         label: 'Plex.tv API',
