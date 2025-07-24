@@ -1,5 +1,6 @@
 import { SmallLoadingSpinner } from '@app/components/Common/LoadingSpinner';
 import PlexPinEntry from '@app/components/Login/PlexPinEntry';
+import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { LockClosedIcon } from '@heroicons/react/24/solid';
 import type { PlexProfile } from '@server/api/plextv';
@@ -23,11 +24,13 @@ interface PlexProfileSelectorProps {
     pin?: string,
     onError?: (msg: string) => void
   ) => Promise<void>;
+  onBack?: () => void;
 }
 
 const PlexProfileSelector = ({
   profiles,
   onProfileSelected,
+  onBack,
 }: PlexProfileSelectorProps) => {
   const intl = useIntl();
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
@@ -90,6 +93,29 @@ const PlexProfileSelector = ({
 
   return (
     <div className="w-full">
+      {/* Back Button */}
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="mb-4 flex items-center text-indigo-400 transition-colors hover:text-indigo-200"
+        >
+          <svg
+            className="mr-2 h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          {intl.formatMessage(globalMessages.back)}
+        </button>
+      )}
       <h2 className="mb-6 text-center text-xl font-bold text-gray-100">
         {intl.formatMessage(messages.selectProfile)}
       </h2>

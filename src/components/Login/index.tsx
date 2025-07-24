@@ -358,6 +358,10 @@ const Login = () => {
                   onProfileSelected={(profileId, pin, onError) =>
                     handleSubmitProfile(profileId, pin, onError)
                   }
+                  onBack={() => {
+                    setShowProfileSelector(false);
+                    setAuthToken(undefined);
+                  }}
                 />
               ) : (
                 <SwitchTransition mode="out-in">
