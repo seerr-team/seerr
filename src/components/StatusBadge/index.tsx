@@ -139,7 +139,11 @@ const StatusBadge = ({
     <div
       className={`
       absolute top-0 left-0 z-10 flex h-full bg-opacity-80 ${
-        status === MediaStatus.PROCESSING ? 'bg-indigo-500' : 'bg-green-500'
+        status === MediaStatus.DELETED
+          ? 'bg-red-600'
+          : status === MediaStatus.PROCESSING
+          ? 'bg-indigo-500'
+          : 'bg-green-500'
       } transition-all duration-200 ease-in-out
     `}
       style={{
@@ -373,11 +377,53 @@ const StatusBadge = ({
 
     case MediaStatus.DELETED:
       return (
-        <Tooltip content={mediaLinkDescription}>
-          <Badge badgeType="danger">
-            {intl.formatMessage(is4k ? messages.status4k : messages.status, {
-              status: intl.formatMessage(globalMessages.deleted),
-            })}
+        <Tooltip
+          content={inProgress ? tooltipContent : mediaLinkDescription}
+          className={`${
+            inProgress && 'hidden max-h-96 w-96 overflow-y-auto sm:block'
+          }`}
+          tooltipConfig={{
+            ...(inProgress && { interactive: true, delayHide: 100 }),
+          }}
+        >
+          <Badge
+            badgeType="danger"
+            href={mediaLink}
+            className={`${
+              inProgress &&
+              'relative !bg-gray-700 !bg-opacity-80 !px-0 hover:!bg-gray-700'
+            } overflow-hidden`}
+          >
+            {inProgress && badgeDownloadProgress}
+            <div
+              className={`relative z-20 flex items-center ${
+                inProgress && 'px-2'
+              }`}
+            >
+              <span>
+                {intl.formatMessage(
+                  is4k ? messages.status4k : messages.status,
+                  {
+                    status: inProgress
+                      ? intl.formatMessage(globalMessages.processing)
+                      : intl.formatMessage(globalMessages.deleted),
+                  }
+                )}
+              </span>
+              {inProgress && (
+                <>
+                  {mediaType === 'tv' && downloadItem[0].episode && (
+                    <span className="ml-1">
+                      {intl.formatMessage(messages.seasonepisodenumber, {
+                        seasonNumber: downloadItem[0].episode.seasonNumber,
+                        episodeNumber: downloadItem[0].episode.episodeNumber,
+                      })}
+                    </span>
+                  )}
+                  <Spinner className="ml-1 h-3 w-3" />
+                </>
+              )}
+            </div>
           </Badge>
         </Tooltip>
       );
