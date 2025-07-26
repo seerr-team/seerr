@@ -688,6 +688,7 @@ router.post(
               avatar: profileData.thumb,
               userType: UserType.PLEX,
               plexProfileId: profileId,
+              plexProfileNumericId: profileData.numericId || null,
               isPlexProfile: true,
               mainPlexUserId: mainUser.id,
             });
@@ -834,7 +835,13 @@ router.get<{ id: string }, UserWatchDataResponse>(
     try {
       const user = await getRepository(User).findOneOrFail({
         where: { id: Number(req.params.id) },
-        select: { id: true, plexId: true },
+        select: {
+          id: true,
+          plexId: true,
+          plexProfileId: true,
+          plexProfileNumericId: true,
+          isPlexProfile: true,
+        },
       });
 
       const tautulli = new TautulliAPI(settings);

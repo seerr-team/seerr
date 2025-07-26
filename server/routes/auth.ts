@@ -623,6 +623,7 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
             avatar: selectedProfile.thumb,
             userType: UserType.PLEX,
             plexProfileId: profileId,
+            plexProfileNumericId: selectedProfile.numericId || null,
             isPlexProfile: true,
             mainPlexUserId: mainUser.id,
           });
