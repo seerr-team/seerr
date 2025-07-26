@@ -56,6 +56,7 @@ interface PlexHomeUsersResponse {
 
 export interface PlexProfile {
   id: string;
+  numericId?: number;
   title: string;
   username?: string;
   thumb: string;
@@ -330,6 +331,7 @@ class PlexTvAPI extends ExternalAPI {
             })
             .map((user) => ({
               id: user.$.uuid,
+              numericId: parseInt(user.$.id, 10),
               title: user.$.title ?? 'Unknown',
               username: user.$.username || user.$.title || 'Unknown',
               thumb: user.$.thumb ?? '',
