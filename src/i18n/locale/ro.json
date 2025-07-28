@@ -618,5 +618,10 @@
   "components.Settings.Notifications.NotificationsSlack.agentenabled": "Activați Agentul",
   "components.Settings.Notifications.NotificationsSlack.slacksettingsfailed": "Setările de notificare Slack nu au reușit să fie salvate.",
   "components.Settings.Notifications.NotificationsSlack.slacksettingssaved": "Setările de notificare Slack au fost salvate cu success!",
-  "components.Discover.FilterSlideover.status": "Status"
+  "components.Discover.FilterSlideover.status": "Status",
+  "components.Blacklist.mediaName": "Nume",
+  "components.Blacklist.mediaType": "Tip",
+  "components.Blacklist.blacklistedby": "{date} de către {user}",
+  "components.Blacklist.blacklistdate": "dată",
+  "components.Blacklist.mediaTmdbId": "Id tmdb"
 }
