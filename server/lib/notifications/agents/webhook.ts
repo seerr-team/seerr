@@ -35,6 +35,8 @@ const KeyMap: Record<string, string | KeyMapFunction> = {
     payload.media ? MediaStatus[payload.media.status] : '',
   media_status4k: (payload) =>
     payload.media ? MediaStatus[payload.media.status4k] : '',
+  media_plexRatingKey: (payload) => payload.media?.ratingKey ?? '',
+  media_plexRatingKey4k: (payload) => payload.media?.ratingKey4k ?? '',
   request_id: 'request.id',
   requestedBy_jellyfinUserId: 'request.requestedBy.jellyfinUserId',
   requestedBy_username: 'request.requestedBy.displayName',
