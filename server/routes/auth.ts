@@ -939,6 +939,19 @@ authRoutes.get('/oidc/callback/:slug', async (req, res, next) => {
 
     // Create user if one doesn't already exist
     if (!user && fullUserInfo.email != null && provider.newUserLogin) {
+      // Check if a user with this email already exists
+      const existingUser = await userRepository.findOne({
+        where: { email: fullUserInfo.email },
+      });
+
+      if (existingUser) {
+        // If a user with the email exists, throw a 409 Conflict error
+        return next({
+          status: 409,
+          message: 'A user with this email address already exists.',
+        });
+      }
+
       logger.info(`Creating user for ${fullUserInfo.email}`, {
         ip: req.ip,
         email: fullUserInfo.email,
