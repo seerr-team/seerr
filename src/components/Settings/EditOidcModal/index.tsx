@@ -7,9 +7,9 @@ import { Transition } from '@headlessui/react';
 import { ChevronRightIcon } from '@heroicons/react/20/solid';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import type { OidcProvider } from '@server/lib/settings';
-import axios from 'axios'; // <-- Import axios
+import axios from 'axios';
 import {
-  ErrorMessage,
+  // ErrorMessage has been removed from the import
   Field,
   Formik,
   useFormikContext,
@@ -132,8 +132,10 @@ export default function EditOidcModal(props: EditOidcModalProps) {
         }}
         validationSchema={oidcSettingsSchema}
         onSubmit={onSubmit}
+        enableReinitialize
       >
-        {({ handleSubmit, isValid }) => (
+        {/* Get errors and touched from Formik render props */}
+        {({ handleSubmit, isValid, errors, touched }) => (
           <Modal
             onCancel={props.onClose}
             cancelButtonProps={{ type: 'button' }}
@@ -160,7 +162,12 @@ export default function EditOidcModal(props: EditOidcModalProps) {
               </label>
               <div className="form-input-area">
                 <Field id="oidcName" name="name" type="text" />
-                <ErrorMessage className="error" component="span" name="name" />
+                {/* Replaced ErrorMessage component with manual div */}
+                {errors.name &&
+                  touched.name &&
+                  typeof errors.name === 'string' && (
+                    <div className="error">{errors.name}</div>
+                  )}
               </div>
             </div>
             <div className="form-row">
@@ -187,7 +194,11 @@ export default function EditOidcModal(props: EditOidcModalProps) {
                     <MagnifyingGlassIcon className="h-4 w-4" />
                   </a>
                 </div>
-                <ErrorMessage className="error" component="span" name="logo" />
+                {errors.logo &&
+                  touched.logo &&
+                  typeof errors.logo === 'string' && (
+                    <div className="error">{errors.logo}</div>
+                  )}
               </div>
             </div>
             <div className="form-row">
@@ -200,11 +211,11 @@ export default function EditOidcModal(props: EditOidcModalProps) {
               </label>
               <div className="form-input-area">
                 <Field id="oidcDomain" name="issuerUrl" type="text" />
-                <ErrorMessage
-                  className="error"
-                  component="span"
-                  name="issuerUrl"
-                />
+                {errors.issuerUrl &&
+                  touched.issuerUrl &&
+                  typeof errors.issuerUrl === 'string' && (
+                    <div className="error">{errors.issuerUrl}</div>
+                  )}
               </div>
             </div>
             <div className="form-row">
@@ -217,11 +228,11 @@ export default function EditOidcModal(props: EditOidcModalProps) {
               </label>
               <div className="form-input-area">
                 <Field id="oidcClientId" name="clientId" type="text" />
-                <ErrorMessage
-                  className="error"
-                  component="span"
-                  name="clientId"
-                />
+                {errors.clientId &&
+                  touched.clientId &&
+                  typeof errors.clientId === 'string' && (
+                    <div className="error">{errors.clientId}</div>
+                  )}
               </div>
             </div>
             <div className="form-row">
@@ -241,11 +252,11 @@ export default function EditOidcModal(props: EditOidcModalProps) {
                     autoComplete="new-password"
                   />
                 </div>
-                <ErrorMessage
-                  className="error"
-                  component="span"
-                  name="clientSecret"
-                />
+                {errors.clientSecret &&
+                  touched.clientSecret &&
+                  typeof errors.clientSecret === 'string' && (
+                    <div className="error">{errors.clientSecret}</div>
+                  )}
               </div>
             </div>
 
@@ -281,17 +292,15 @@ export default function EditOidcModal(props: EditOidcModalProps) {
                           id="oidcSlug"
                           name="slug"
                           type="text"
-                          // prevent editing of slug if editing an existing provider,
-                          // to avoid invalidating existing linked accounts
                           readOnly={props.provider != null}
                           disabled={props.provider != null}
                           className={props.provider != null ? 'opacity-50' : ''}
                         />
-                        <ErrorMessage
-                          className="error"
-                          component="span"
-                          name="slug"
-                        />
+                        {errors.slug &&
+                          touched.slug &&
+                          typeof errors.slug === 'string' && (
+                            <div className="error">{errors.slug}</div>
+                          )}
                       </div>
                     </div>
                     <div className="form-row">
@@ -303,11 +312,11 @@ export default function EditOidcModal(props: EditOidcModalProps) {
                       </label>
                       <div className="form-input-area">
                         <Field id="oidcScopes" name="scopes" type="text" />
-                        <ErrorMessage
-                          className="error"
-                          component="span"
-                          name="scopes"
-                        />
+                        {errors.scopes &&
+                          touched.scopes &&
+                          typeof errors.scopes === 'string' && (
+                            <div className="error">{errors.scopes}</div>
+                          )}
                       </div>
                     </div>
                     <div className="form-row">
@@ -326,11 +335,11 @@ export default function EditOidcModal(props: EditOidcModalProps) {
                           name="requiredClaims"
                           type="text"
                         />
-                        <ErrorMessage
-                          className="error"
-                          component="span"
-                          name="requiredClaims"
-                        />
+                        {errors.requiredClaims &&
+                          touched.requiredClaims &&
+                          typeof errors.requiredClaims === 'string' && (
+                            <div className="error">{errors.requiredClaims}</div>
+                          )}
                       </div>
                     </div>
                     <div className="form-row">
@@ -346,11 +355,11 @@ export default function EditOidcModal(props: EditOidcModalProps) {
                           name="newUserLogin"
                           type="checkbox"
                         />
-                        <ErrorMessage
-                          className="error"
-                          component="span"
-                          name="newUserLogin"
-                        />
+                        {errors.newUserLogin &&
+                          touched.newUserLogin &&
+                          typeof errors.newUserLogin === 'string' && (
+                            <div className="error">{errors.newUserLogin}</div>
+                          )}
                       </div>
                     </div>
                   </AccordionContent>
