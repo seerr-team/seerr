@@ -1,6 +1,7 @@
 import Alert from '@app/components/Common/Alert';
 import Modal from '@app/components/Common/Modal';
 import useSettings from '@app/hooks/useSettings';
+import { UserType } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import axios from 'axios';
@@ -122,10 +123,12 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
 
       if (response.data) {
         const importedUsers = response.data.filter(
-          (item: { isPlexProfile: boolean }) => !item.isPlexProfile
+          (item: { userType: number }) =>
+            item.userType !== UserType.PLEX_PROFILE
         ).length;
         const importedProfiles = response.data.filter(
-          (item: { isPlexProfile: boolean }) => item.isPlexProfile
+          (item: { userType: number }) =>
+            item.userType === UserType.PLEX_PROFILE
         ).length;
 
         let successMessage;

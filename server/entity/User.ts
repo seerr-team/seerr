@@ -97,9 +97,6 @@ export class User {
   @Column({ type: 'integer', nullable: true })
   public plexProfileNumericId?: number | null;
 
-  @Column({ type: 'boolean', default: false })
-  public isPlexProfile?: boolean;
-
   @Column({ type: 'integer', nullable: true })
   public mainPlexUserId?: number | null;
 

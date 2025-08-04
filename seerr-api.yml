@@ -114,6 +114,7 @@ components:
         userType:
           type: integer
           example: 1
+          description: 'User type - 1=PLEX, 2=LOCAL, 3=JELLYFIN, 4=EMBY, 5=PLEX_PROFILE'
           readOnly: true
         permissions:
           type: number
@@ -137,10 +138,7 @@ components:
           type: string
           example: '12345'
           readOnly: true
-        isPlexProfile:
-          type: boolean
-          example: true
-          readOnly: true
+
         mainPlexUserId:
           type: number
           example: 1
