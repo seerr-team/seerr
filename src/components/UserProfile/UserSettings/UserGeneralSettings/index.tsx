@@ -38,6 +38,7 @@ const messages = defineMessages(
     mediaServerUser: '{mediaServerName} User',
     accounttype: 'Account Type',
     plexuser: 'Plex User',
+    plexprofile: 'Plex Profile',
     localuser: 'Local User',
     role: 'Role',
     owner: 'Owner',
@@ -255,6 +256,10 @@ const UserGeneralSettings = () => {
                     {user?.userType === UserType.PLEX ? (
                       <Badge badgeType="warning">
                         {intl.formatMessage(messages.plexuser)}
+                      </Badge>
+                    ) : user?.userType === UserType.PLEX_PROFILE ? (
+                      <Badge badgeType="warning">
+                        {intl.formatMessage(messages.plexprofile)}
                       </Badge>
                     ) : user?.userType === UserType.LOCAL ? (
                       <Badge badgeType="default">
