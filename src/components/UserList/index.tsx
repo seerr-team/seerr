@@ -52,6 +52,7 @@ const messages = defineMessages('components.UserList', {
   owner: 'Owner',
   admin: 'Admin',
   plexuser: 'Plex User',
+  plexprofile: 'Plex Profile',
   deleteuser: 'Delete User',
   userdeleted: 'User deleted successfully!',
   userdeleteerror: 'Something went wrong while deleting the user.',
@@ -677,6 +678,10 @@ const UserList = () => {
                 {user.userType === UserType.PLEX ? (
                   <Badge badgeType="warning">
                     {intl.formatMessage(messages.plexuser)}
+                  </Badge>
+                ) : user.userType === UserType.PLEX_PROFILE ? (
+                  <Badge badgeType="warning">
+                    {intl.formatMessage(messages.plexprofile)}
                   </Badge>
                 ) : user.userType === UserType.LOCAL ? (
                   <Badge badgeType="default">
