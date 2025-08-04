@@ -3,6 +3,7 @@ import PlexAPI from '@server/api/plexapi';
 import PlexTvAPI from '@server/api/plextv';
 import TautulliAPI from '@server/api/tautulli';
 import { ApiErrorCode } from '@server/constants/error';
+import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
@@ -523,7 +524,7 @@ settingsRoutes.get(
       const profiles = await plexApi.getProfiles();
       const existingProfileUsers = await userRepository.find({
         where: {
-          isPlexProfile: true,
+          userType: UserType.PLEX_PROFILE,
         },
       });
 
@@ -531,7 +532,9 @@ settingsRoutes.get(
         (profile) =>
           !profile.isMainUser &&
           !existingProfileUsers.some(
-            (user: User) => user.plexProfileId === profile.id
+            (user: User) =>
+              user.plexProfileId === profile.id &&
+              user.userType === UserType.PLEX_PROFILE
           )
       );
 

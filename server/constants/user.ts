@@ -3,4 +3,5 @@ export enum UserType {
   LOCAL = 2,
   JELLYFIN = 3,
   EMBY = 4,
+  PLEX_PROFILE = 5,
 }

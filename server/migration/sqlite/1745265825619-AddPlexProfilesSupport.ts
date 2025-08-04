@@ -7,9 +7,7 @@ export class AddPlexProfilesSupport1745265825619 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "user" ADD "plexProfileId" character varying`
     );
-    await queryRunner.query(
-      `ALTER TABLE "user" ADD "isPlexProfile" boolean NOT NULL DEFAULT false`
-    );
+
     await queryRunner.query(`ALTER TABLE "user" ADD "mainPlexUserId" integer`);
     await queryRunner.query(
       `ALTER TABLE "user" ADD "plexProfileNumericId" integer`
@@ -21,7 +19,7 @@ export class AddPlexProfilesSupport1745265825619 implements MigrationInterface {
       `ALTER TABLE "user" DROP COLUMN "plexProfileNumericId"`
     );
     await queryRunner.query(`ALTER TABLE "user" DROP COLUMN "mainPlexUserId"`);
-    await queryRunner.query(`ALTER TABLE "user" DROP COLUMN "isPlexProfile"`);
+
     await queryRunner.query(`ALTER TABLE "user" DROP COLUMN "plexProfileId"`);
   }
 }

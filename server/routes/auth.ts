@@ -107,7 +107,6 @@ authRoutes.post('/plex', async (req, res, next) => {
           avatar: account.thumb,
           userType: UserType.PLEX,
           plexProfileId: mainUserProfile?.id || account.id.toString(),
-          isPlexProfile: false,
         });
 
         settings.main.mediaServerType = MediaServerType.PLEX;
@@ -121,6 +120,7 @@ authRoutes.post('/plex', async (req, res, next) => {
         user.plexId = account.id;
         user.avatar = account.thumb;
         user.plexProfileId = mainUserProfile?.id || account.id.toString();
+        user.userType = UserType.PLEX;
 
         await userRepository.save(user);
       }
@@ -188,8 +188,8 @@ authRoutes.post('/plex', async (req, res, next) => {
     const proposedEmail = `${emailPrefix}+${safeUsername}@${domainPart}`;
     const existingProfileUser = await userRepository.findOne({
       where: [
-        { plexUsername: account.username, isPlexProfile: true },
-        { email: proposedEmail, isPlexProfile: true },
+        { plexUsername: account.username, userType: UserType.PLEX_PROFILE },
+        { email: proposedEmail, userType: UserType.PLEX_PROFILE },
       ],
     });
     if (!user && existingProfileUser) {
@@ -221,7 +221,6 @@ authRoutes.post('/plex', async (req, res, next) => {
         avatar: account.thumb,
         userType: UserType.PLEX,
         plexProfileId: account.id.toString(),
-        isPlexProfile: false,
       });
 
       settings.main.mediaServerType = MediaServerType.PLEX;
@@ -277,7 +276,7 @@ authRoutes.post('/plex', async (req, res, next) => {
           user.plexUsername = account.username;
           user.userType = UserType.PLEX;
           user.plexProfileId = account.id.toString();
-          user.isPlexProfile = false;
+          user.userType = UserType.PLEX;
 
           await userRepository.save(user);
         } else if (!settings.main.newPlexLogin) {
@@ -316,7 +315,6 @@ authRoutes.post('/plex', async (req, res, next) => {
             avatar: account.thumb,
             userType: UserType.PLEX,
             plexProfileId: account.id.toString(),
-            isPlexProfile: false,
           });
 
           await userRepository.save(user);
@@ -361,7 +359,7 @@ authRoutes.post('/plex', async (req, res, next) => {
           if (
             !existingProfileUser.plexId ||
             existingProfileUser.plexId === user.plexId ||
-            existingProfileUser.isPlexProfile
+            existingProfileUser.userType === UserType.PLEX_PROFILE
           ) {
             existingProfileUser.plexToken = user.plexToken;
             existingProfileUser.avatar = profile.thumb;
@@ -631,10 +629,9 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
             plexToken: tokenToUse,
             permissions: settings.main.defaultPermissions,
             avatar: selectedProfile.thumb,
-            userType: UserType.PLEX,
+            userType: UserType.PLEX_PROFILE,
             plexProfileId: profileId,
             plexProfileNumericId: selectedProfile.numericId || null,
-            isPlexProfile: true,
             mainPlexUserId: mainUser.id,
           });
 
@@ -657,7 +654,7 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
       if (
         profileUser.plexId &&
         profileUser.plexId !== mainUser.plexId &&
-        !profileUser.isPlexProfile
+        profileUser.userType !== UserType.PLEX_PROFILE
       ) {
         logger.warn('Attempted to use a regular Plex user as a profile', {
           label: 'Auth',
@@ -679,7 +676,7 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
       profileUser.plexUsername =
         selectedProfile.username || selectedProfile.title;
       profileUser.mainPlexUserId = mainUser.id;
-      profileUser.isPlexProfile = true;
+      profileUser.userType = UserType.PLEX_PROFILE;
 
       await userRepository.save(profileUser);
 
@@ -739,7 +736,7 @@ authRoutes.get('/plex/profiles/:userId', async (req, res, next) => {
     const profileUsers = await userRepository.find({
       where: {
         mainPlexUserId: mainUser.id,
-        isPlexProfile: true,
+        userType: UserType.PLEX_PROFILE,
       },
     });
 

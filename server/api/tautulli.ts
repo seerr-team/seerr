@@ -1,3 +1,4 @@
+import { UserType } from '@server/constants/user';
 import type { User } from '@server/entity/User';
 import type { TautulliSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -206,9 +207,10 @@ class TautulliAPI {
 
   public async getUserWatchStats(user: User): Promise<TautulliWatchStats> {
     try {
-      const userId = user.isPlexProfile
-        ? user.plexProfileNumericId
-        : user.plexId;
+      const userId =
+        user.userType === UserType.PLEX_PROFILE
+          ? user.plexProfileNumericId
+          : user.plexId;
 
       if (!userId) {
         throw new Error('User does not have an associated Plex ID');
@@ -246,9 +248,10 @@ class TautulliAPI {
     let results: TautulliHistoryRecord[] = [];
 
     try {
-      const userId = user.isPlexProfile
-        ? user.plexProfileNumericId
-        : user.plexId;
+      const userId =
+        user.userType === UserType.PLEX_PROFILE
+          ? user.plexProfileNumericId
+          : user.plexId;
 
       if (!userId) {
         throw new Error('User does not have an associated Plex ID');
