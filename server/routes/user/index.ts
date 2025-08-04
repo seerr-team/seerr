@@ -1,4 +1,5 @@
 import JellyfinAPI from '@server/api/jellyfin';
+import type { PlexProfile } from '@server/api/plextv';
 import PlexTvAPI from '@server/api/plextv';
 import TautulliAPI from '@server/api/tautulli';
 import { MediaType } from '@server/constants/media';
@@ -650,7 +651,7 @@ router.post(
               const existingProfile = await userRepository.findOne({
                 where: {
                   plexUsername: account.username,
-                  isPlexProfile: true,
+                  userType: UserType.PLEX_PROFILE,
                 },
               });
 
@@ -683,11 +684,13 @@ router.post(
       if (profileIds && profileIds.length > 0) {
         const profiles = await mainPlexTv.getProfiles();
         // Filter out real Plex users (with email/isMainUser) from importable profiles
-        const importableProfiles = profiles.filter((p: any) => !p.isMainUser);
+        const importableProfiles = profiles.filter(
+          (p: PlexProfile) => !p.isMainUser
+        );
 
         for (const profileId of profileIds) {
           const profileData = importableProfiles.find(
-            (p: any) => p.id === profileId
+            (p: PlexProfile) => p.id === profileId
           );
 
           if (profileData) {
@@ -710,9 +713,9 @@ router.post(
               where: [
                 {
                   plexUsername: profileData.username || profileData.title,
-                  isPlexProfile: false,
+                  userType: UserType.PLEX,
                 },
-                { email: proposedEmail, isPlexProfile: false },
+                { email: proposedEmail, userType: UserType.PLEX },
               ],
             });
 
@@ -747,10 +750,9 @@ router.post(
               plexToken: mainUser.plexToken,
               permissions: settings.main.defaultPermissions,
               avatar: profileData.thumb,
-              userType: UserType.PLEX,
+              userType: UserType.PLEX_PROFILE,
               plexProfileId: profileId,
               plexProfileNumericId: profileData.numericId || null,
-              isPlexProfile: true,
               mainPlexUserId: mainUser.id,
             });
 
@@ -891,7 +893,7 @@ router.get<{ id: string }, UserWatchDataResponse>(
           plexId: true,
           plexProfileId: true,
           plexProfileNumericId: true,
-          isPlexProfile: true,
+          userType: true,
         },
       });
 
