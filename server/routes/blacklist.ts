@@ -288,30 +288,21 @@ blacklistRoutes.delete(
   }),
   async (req, res, next) => {
     try {
-      const blacklistRepository = getRepository(Blacklist);
-      const mediaRepository = getRepository(Media);
+      const blacklisteRepository = getRepository(Blacklist);
 
-      const blacklistItem = await blacklistRepository.findOne({
+      const blacklistItem = await blacklisteRepository.findOneOrFail({
         where: { tmdbId: Number(req.params.id) },
       });
 
-      if (!blacklistItem) {
-        return res.status(204).send();
-      }
+      await blacklisteRepository.remove(blacklistItem);
 
-      await blacklistRepository.remove(blacklistItem);
+      const mediaRepository = getRepository(Media);
 
-      try {
-        const mediaItem = await mediaRepository.findOneOrFail({
-          where: { tmdbId: Number(req.params.id) },
-        });
+      const mediaItem = await mediaRepository.findOneOrFail({
+        where: { tmdbId: Number(req.params.id) },
+      });
 
-        mediaItem.status = MediaStatus.UNKNOWN;
-        mediaItem.status4k = MediaStatus.UNKNOWN;
-        await mediaRepository.save(mediaItem);
-      } catch (mediaError) {
-        // Media entity doesn't exist, which is fine
-      }
+      await mediaRepository.remove(mediaItem);
 
       return res.status(204).send();
     } catch (e) {
