@@ -1,4 +1,5 @@
-import { MediaType } from '@server/constants/media';
+import TheMovieDb from '@server/api/themoviedb';
+import { MediaStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { Blocklist } from '@server/entity/Blocklist';
 import Media from '@server/entity/Media';
@@ -17,6 +18,7 @@ export const blocklistAdd = z.object({
   mediaType: z.nativeEnum(MediaType),
   title: z.coerce.string().optional(),
   user: z.coerce.number(),
+  blocklistedTags: z.string().optional(),
 });
 
 const blocklistGet = z.object({
@@ -129,6 +131,14 @@ blocklistRoutes.post(
     try {
       const values = blocklistAdd.parse(req.body);
 
+      const existingBlacklist = await getRepository(Blacklist).findOne({
+        where: { tmdbId: values.tmdbId },
+      });
+
+      if (existingBlacklist) {
+        return next({ status: 412, message: 'Item already blacklisted' });
+      }
+
       await Blocklist.addToBlocklist({
         blocklistRequest: values,
       });
@@ -158,42 +168,84 @@ blocklistRoutes.post(
   }
 );
 
+blacklistRoutes.delete(
+  '/:id',
+  isAuthenticated([Permission.MANAGE_BLOCKLIST], {
+    type: 'or',
+  }),
+  async (req, res, next) => {
+    try {
+      const tmdb = new TheMovieDb();
+      const collection = await tmdb.getCollection({
+        collectionId: Number(req.params.id),
+        language: req.locale,
+      });
+
+      const blocklistRepository = getRepository(Blocklist);
+      const mediaRepository = getRepository(Media);
+
+      // Remove all movies in the collection from blocklist
+      await Promise.all(
+        collection.parts.map(async (part) => {
+          const blocklistItem = await blocklistRepository.findOne({
+            where: { tmdbId: part.id },
+          });
+
+          if (blocklistItem) {
+            await blocklistRepository.remove(blocklistItem);
+
+            const mediaItem = await mediaRepository.findOne({
+              where: { tmdbId: part.id },
+            });
+
+            if (mediaItem) {
+              mediaItem.status = MediaStatus.UNKNOWN;
+              mediaItem.status4k = MediaStatus.UNKNOWN;
+              await mediaRepository.save(mediaItem);
+            }
+          }
+        })
+      );
+
+      return res.status(204).send();
+    } catch (e) {
+      logger.error('Error unblocklisting collection', {
+        label: 'Blocklist',
+        errorMessage: e.message,
+        collectionId: req.params.id,
+      });
+      return next({ status: 500, message: e.message });
+    }
+  }
+);
+
 blocklistRoutes.delete(
   '/:id',
   isAuthenticated([Permission.MANAGE_BLOCKLIST], {
     type: 'or',
   }),
   async (req, res, next) => {
-    const mediaType = req.query.mediaType;
-    if (mediaType !== MediaType.MOVIE && mediaType !== MediaType.TV) {
-      return next({
-        status: 400,
-        message: 'Invalid or missing mediaType query parameter.',
-      });
-    }
-
     try {
-      const blocklisteRepository = getRepository(Blocklist);
-
-      const blocklistItem = await blocklisteRepository.findOneOrFail({
-        where: {
-          tmdbId: Number(req.params.id),
-          mediaType,
-        },
-      });
-
-      await blocklisteRepository.remove(blocklistItem);
-
+      const blocklistRepository = getRepository(Blocklist);
       const mediaRepository = getRepository(Media);
 
-      const mediaItem = await mediaRepository.findOneOrFail({
-        where: {
-          tmdbId: Number(req.params.id),
-          mediaType: req.query.mediaType as MediaType,
-        },
+      const blocklistItem = await blocklistRepository.findOneOrFail({
+        where: { tmdbId: Number(req.params.id) },
       });
 
-      await mediaRepository.remove(mediaItem);
+      await blocklistRepository.remove(blocklistItem);
+
+      try {
+        const mediaItem = await mediaRepository.findOneOrFail({
+          where: { tmdbId: Number(req.params.id) },
+        });
+
+        mediaItem.status = MediaStatus.UNKNOWN;
+        mediaItem.status4k = MediaStatus.UNKNOWN;
+        await mediaRepository.save(mediaItem);
+      } catch (mediaError) {
+        // Media entity doesn't exist, which is fine
+      }
 
       return res.status(204).send();
     } catch (e) {

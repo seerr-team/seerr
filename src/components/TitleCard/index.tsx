@@ -2,6 +2,7 @@ import Spinner from '@app/assets/spinner.svg';
 import BlocklistModal from '@app/components/BlocklistModal';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
+
 import StatusBadgeMini from '@app/components/Common/StatusBadgeMini';
 import Tooltip from '@app/components/Common/Tooltip';
 import RequestModal from '@app/components/RequestModal';
@@ -90,6 +91,14 @@ const TitleCard = ({
     setCurrentStatus(status);
   }, [status]);
 
+  // For collections, check if any movies in the collection are blacklisted
+  useEffect(() => {
+    if (mediaType === 'collection' && !status) {
+      // We could add a check here to determine collection blacklist status
+      // For now, we'll rely on the status prop being passed from parent components
+    }
+  }, [mediaType, status]);
+
   const requestComplete = useCallback((newStatus: MediaStatus) => {
     setCurrentStatus(newStatus);
     setShowRequestModal(false);
@@ -175,12 +184,16 @@ const TitleCard = ({
 
     if (topNode) {
       try {
-        await axios.post('/api/v1/blocklist', {
-          tmdbId: id,
-          mediaType,
-          title,
-          user: user?.id,
-        });
+        if (mediaType === 'collection') {
+          await axios.post(`/api/v1/blocklist/collection/${id}`);
+        } else {
+          await axios.post('/api/v1/blocklist', {
+            tmdbId: id,
+            mediaType,
+            title,
+            user: user?.id,
+          });
+        }
         addToast(
           <span>
             {intl.formatMessage(globalMessages.blocklistSuccess, {
@@ -225,22 +238,51 @@ const TitleCard = ({
     const topNode = cardRef.current;
 
     if (topNode) {
-      const res = await axios.delete(
-        `/api/v1/blocklist/${id}?mediaType=${mediaType}`
-      );
+      try {
+        if (mediaType === 'collection') {
+          const res = await axios.delete(`/api/v1/blocklist/collection/${id}`);
 
-      if (res.status === 204) {
-        addToast(
-          <span>
-            {intl.formatMessage(globalMessages.removeFromBlocklistSuccess, {
-              title,
-              strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
-            })}
-          </span>,
-          { appearance: 'success', autoDismiss: true }
-        );
-        setCurrentStatus(MediaStatus.UNKNOWN);
-      } else {
+          if (res.status === 204) {
+            addToast(
+              <span>
+                {intl.formatMessage(globalMessages.removeFromBlocklistSuccess, {
+                  title,
+                  strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+                })}
+              </span>,
+              { appearance: 'success', autoDismiss: true }
+            );
+            setCurrentStatus(MediaStatus.UNKNOWN);
+          } else {
+            addToast(intl.formatMessage(globalMessages.blocklistError), {
+              appearance: 'error',
+              autoDismiss: true,
+            });
+          }
+        } else {
+          const res = await axios.delete(
+            `/api/v1/blocklist/${id}?mediaType=${mediaType}`
+          );
+
+          if (res.status === 204) {
+            addToast(
+              <span>
+                {intl.formatMessage(globalMessages.removeFromBlocklistSuccess, {
+                  title,
+                  strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+                })}
+              </span>,
+              { appearance: 'success', autoDismiss: true }
+            );
+            setCurrentStatus(MediaStatus.UNKNOWN);
+          } else {
+            addToast(intl.formatMessage(globalMessages.blocklistError), {
+              appearance: 'error',
+              autoDismiss: true,
+            });
+          }
+        }
+      } catch (e) {
         addToast(intl.formatMessage(globalMessages.blocklistError), {
           appearance: 'error',
           autoDismiss: true,
