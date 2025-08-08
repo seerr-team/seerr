@@ -18,7 +18,6 @@ export const blacklistAdd = z.object({
   mediaType: z.nativeEnum(MediaType),
   title: z.coerce.string().optional(),
   user: z.coerce.number(),
-  blacklistedTags: z.string().optional(),
 });
 
 const blacklistGet = z.object({
@@ -133,7 +132,6 @@ blacklistRoutes.post(
           tmdbId: values.tmdbId,
           mediaType: values.mediaType as MediaType,
           title: values.title,
-          blacklistedTags: values.blacklistedTags,
         },
       });
 
