@@ -185,7 +185,7 @@ const TitleCard = ({
     if (topNode) {
       try {
         if (mediaType === 'collection') {
-          await axios.post(`/api/v1/blocklist/collection/${id}`);
+          await axios.post(`/api/v1/blacklist/collection/${id}`);
         } else {
           await axios.post('/api/v1/blocklist', {
             tmdbId: id,
