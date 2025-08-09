@@ -35,10 +35,10 @@ const messages = defineMessages('settings.settings.SettingsOidc', {
   oidcLogoTip:
     'The logo to display for the provider. Should be a URL or base64 encoded image',
   oidcScopes: 'Scopes',
-  oidcScopesTip: 'Comma-separated list of scopes to request from the provider',
+  oidcScopesTip: 'Space-separated list of scopes to request from the provider',
   oidcRequiredClaims: 'Required Claims',
   oidcRequiredClaimsTip:
-    'Comma-separated list of boolean claims that are required to log in',
+    'Space-separated list of boolean claims that are required to log in',
   oidcNewUserLogin: 'Allow New Users',
   oidcNewUserLoginTip:
     'Create accounts for new users logging in with this provider',

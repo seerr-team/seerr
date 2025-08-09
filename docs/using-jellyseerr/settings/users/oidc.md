@@ -50,11 +50,11 @@ Unique identifier for the provider
 
 ### Scopes
 
-Comma-separated list of scopes to request from the provider
+Space-separated list of scopes to request from the provider
 
 ### Required Claims
 
-Comma-separated list of boolean claims that are required to log in
+Space-separated list of boolean claims that are required to log in
 
 ### Allow New Users
 
