@@ -60,10 +60,12 @@ if (!appDataPermissions()) {
 app
   .prepare()
   .then(async () => {
-    const dbConnection = await dataSource.initialize();
-
     // Run Overseerr to Seerr migration
-    await checkOverseerrMerge(dbConnection);
+    await checkOverseerrMerge();
+
+    const dbConnection = dataSource.isInitialized
+      ? dataSource
+      : await dataSource.initialize();
 
     // Run migrations in production
     if (process.env.NODE_ENV === 'production') {
