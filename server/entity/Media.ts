@@ -49,7 +49,8 @@ class Media {
           'watchlist',
           'media.id= watchlist.media and watchlist.requestedBy = :userId',
           { userId: user?.id }
-        ) //,
+        )
+        .leftJoinAndSelect('media.requests', 'requests')
         .where(' media.tmdbId in (:...finalIds)', { finalIds })
         .getMany();
 
