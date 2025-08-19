@@ -86,7 +86,10 @@ const MediaSlider = ({
     titles = titles.filter(
       (i) =>
         (i.mediaType === 'movie' || i.mediaType === 'tv') &&
-        (!i.mediaInfo?.requests || i.mediaInfo.requests.length === 0)
+        (i.mediaInfo?.status === MediaStatus.AVAILABLE ||
+          i.mediaInfo?.status === MediaStatus.PARTIALLY_AVAILABLE ||
+          !i.mediaInfo?.requests ||
+          i.mediaInfo.requests.length === 0)
     );
   }
 
