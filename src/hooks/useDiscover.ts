@@ -15,7 +15,7 @@ interface BaseMedia {
   mediaType: string;
   mediaInfo?: {
     status: MediaStatus;
-    requests?: any[];
+    requests?: unknown[];
   };
 }
 
