@@ -1334,5 +1334,6 @@
   "components.Settings.Notifications.userEmailRequired": "Изисква потребителски е-майл",
   "components.Settings.SettingsAbout.supportjellyseerr": "Поддръжка Jellyseerr",
   "components.Settings.jellyfinSettings": "{mediaServerName} Настройки",
-  "components.Settings.jellyfinSettingsFailure": "Нещо се обърка докато запаметявахте {mediaServerName} настройките."
+  "components.Settings.jellyfinSettingsFailure": "Нещо се обърка докато запаметявахте {mediaServerName} настройките.",
+  "components.Settings.jellyfinSettingsSuccess": "{mediaServerName} настройките са запазени успешно!"
 }
