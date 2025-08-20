@@ -1332,5 +1332,6 @@
   "components.Settings.SettingsUsers.loginMethodsTip": "Настройте методи за влизане напотребителите",
   "components.Settings.SettingsUsers.mediaServerLoginTip": "Позволи на потребителите да се вписват с техния {mediaServerName} акаунт",
   "components.Settings.Notifications.userEmailRequired": "Изисква потребителски е-майл",
-  "components.Settings.SettingsAbout.supportjellyseerr": "Поддръжка Jellyseerr"
+  "components.Settings.SettingsAbout.supportjellyseerr": "Поддръжка Jellyseerr",
+  "components.Settings.jellyfinSettings": "{mediaServerName} Настройки"
 }
