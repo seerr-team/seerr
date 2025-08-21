@@ -1,3 +1,4 @@
+import Button from '@app/components/Common/Button';
 import ButtonWithDropdown from '@app/components/Common/ButtonWithDropdown';
 import RequestModal from '@app/components/RequestModal';
 import useSettings from '@app/hooks/useSettings';
@@ -122,6 +123,8 @@ const RequestButton = ({
   };
 
   const buttons: ButtonOption[] = [];
+  const separate4kButtons: ButtonOption[] = [];
+  const useSeparate4kButtons = settings.currentSettings.separate4kButton;
 
   // If there are pending requests, show request management options first
   if (activeRequest || active4kRequest) {
@@ -201,7 +204,7 @@ const RequestButton = ({
         (active4kRequests?.length === 1 &&
           hasPermission(Permission.MANAGE_REQUESTS)))
     ) {
-      buttons.push({
+      const viewButton = {
         id: 'active-4k-request',
         text: intl.formatMessage(messages.viewrequest4k),
         action: () => {
@@ -209,7 +212,13 @@ const RequestButton = ({
           setShowRequest4kModal(true);
         },
         svg: <InformationCircleIcon />,
-      });
+      };
+
+      if (useSeparate4kButtons) {
+        separate4kButtons.push(viewButton);
+      } else {
+        buttons.push(viewButton);
+      }
     }
 
     if (
@@ -217,52 +226,60 @@ const RequestButton = ({
       hasPermission(Permission.MANAGE_REQUESTS) &&
       mediaType === 'movie'
     ) {
-      buttons.push(
-        {
-          id: 'approve-4k-request',
-          text: intl.formatMessage(messages.approverequest4k),
-          action: () => {
-            modifyRequest(active4kRequest, 'approve');
-          },
-          svg: <CheckIcon />,
+      const approveButton = {
+        id: 'approve-4k-request',
+        text: intl.formatMessage(messages.approverequest4k),
+        action: () => {
+          modifyRequest(active4kRequest, 'approve');
         },
-        {
-          id: 'decline-4k-request',
-          text: intl.formatMessage(messages.declinerequest4k),
-          action: () => {
-            modifyRequest(active4kRequest, 'decline');
-          },
-          svg: <XMarkIcon />,
-        }
-      );
+        svg: <CheckIcon />,
+      };
+      const declineButton = {
+        id: 'decline-4k-request',
+        text: intl.formatMessage(messages.declinerequest4k),
+        action: () => {
+          modifyRequest(active4kRequest, 'decline');
+        },
+        svg: <XMarkIcon />,
+      };
+
+      if (useSeparate4kButtons) {
+        separate4kButtons.push(approveButton, declineButton);
+      } else {
+        buttons.push(approveButton, declineButton);
+      }
     } else if (
       active4kRequests &&
       active4kRequests.length > 0 &&
       hasPermission(Permission.MANAGE_REQUESTS) &&
       mediaType === 'tv'
     ) {
-      buttons.push(
-        {
-          id: 'approve-4k-request-batch',
-          text: intl.formatMessage(messages.approve4krequests, {
-            requestCount: active4kRequests.length,
-          }),
-          action: () => {
-            modifyRequests(active4kRequests, 'approve');
-          },
-          svg: <CheckIcon />,
+      const approveBatchButton = {
+        id: 'approve-4k-request-batch',
+        text: intl.formatMessage(messages.approve4krequests, {
+          requestCount: active4kRequests.length,
+        }),
+        action: () => {
+          modifyRequests(active4kRequests, 'approve');
         },
-        {
-          id: 'decline-4k-request-batch',
-          text: intl.formatMessage(messages.decline4krequests, {
-            requestCount: active4kRequests.length,
-          }),
-          action: () => {
-            modifyRequests(active4kRequests, 'decline');
-          },
-          svg: <XMarkIcon />,
-        }
-      );
+        svg: <CheckIcon />,
+      };
+      const declineBatchButton = {
+        id: 'decline-4k-request-batch',
+        text: intl.formatMessage(messages.decline4krequests, {
+          requestCount: active4kRequests.length,
+        }),
+        action: () => {
+          modifyRequests(active4kRequests, 'decline');
+        },
+        svg: <XMarkIcon />,
+      };
+
+      if (useSeparate4kButtons) {
+        separate4kButtons.push(approveBatchButton, declineBatchButton);
+      } else {
+        buttons.push(approveBatchButton, declineBatchButton);
+      }
     }
   }
 
@@ -312,56 +329,66 @@ const RequestButton = ({
   }
 
   // 4K request button
-  if (
-    (!media ||
+  const add4kButton =
+    ((!media ||
       media.status4k === MediaStatus.UNKNOWN ||
       (media.status4k === MediaStatus.DELETED && !active4kRequest)) &&
-    hasPermission(
-      [
-        Permission.REQUEST_4K,
-        mediaType === 'movie'
-          ? Permission.REQUEST_4K_MOVIE
-          : Permission.REQUEST_4K_TV,
-      ],
-      { type: 'or' }
-    ) &&
-    ((settings.currentSettings.movie4kEnabled && mediaType === 'movie') ||
-      (settings.currentSettings.series4kEnabled && mediaType === 'tv'))
-  ) {
-    buttons.push({
-      id: 'request4k',
-      text: intl.formatMessage(globalMessages.request4k),
+      hasPermission(
+        [
+          Permission.REQUEST_4K,
+          mediaType === 'movie'
+            ? Permission.REQUEST_4K_MOVIE
+            : Permission.REQUEST_4K_TV,
+        ],
+        { type: 'or' }
+      ) &&
+      ((settings.currentSettings.movie4kEnabled && mediaType === 'movie') ||
+        (settings.currentSettings.series4kEnabled && mediaType === 'tv'))) ||
+    (mediaType === 'tv' &&
+      (!active4kRequest || active4kRequest.requestedBy.id !== user?.id) &&
+      hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_TV], {
+        type: 'or',
+      }) &&
+      media &&
+      media.status4k !== MediaStatus.BLACKLISTED &&
+      !is4kShowComplete &&
+      settings.currentSettings.series4kEnabled);
+
+  if (add4kButton) {
+    const is4kMoreRequest =
+      mediaType === 'tv' &&
+      (!active4kRequest || active4kRequest.requestedBy.id !== user?.id) &&
+      hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_TV], {
+        type: 'or',
+      }) &&
+      media &&
+      media.status4k !== MediaStatus.BLACKLISTED &&
+      !is4kShowComplete &&
+      settings.currentSettings.series4kEnabled;
+
+    const button4k = {
+      id: is4kMoreRequest ? 'request-more-4k' : 'request4k',
+      text: intl.formatMessage(
+        is4kMoreRequest ? messages.requestmore4k : globalMessages.request4k
+      ),
       action: () => {
         setEditRequest(false);
         setShowRequest4kModal(true);
       },
       svg: <ArrowDownTrayIcon />,
-    });
-  } else if (
-    mediaType === 'tv' &&
-    (!active4kRequest || active4kRequest.requestedBy.id !== user?.id) &&
-    hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_TV], {
-      type: 'or',
-    }) &&
-    media &&
-    media.status4k !== MediaStatus.BLACKLISTED &&
-    !is4kShowComplete &&
-    settings.currentSettings.series4kEnabled
-  ) {
-    buttons.push({
-      id: 'request-more-4k',
-      text: intl.formatMessage(messages.requestmore4k),
-      action: () => {
-        setEditRequest(false);
-        setShowRequest4kModal(true);
-      },
-      svg: <ArrowDownTrayIcon />,
-    });
+    };
+
+    if (useSeparate4kButtons) {
+      separate4kButtons.push(button4k);
+    } else {
+      buttons.push(button4k);
+    }
   }
 
   const [buttonOne, ...others] = buttons;
+  const [separate4kButtonOne, ...otherSeparate4k] = separate4kButtons;
 
-  if (!buttonOne) {
+  if (!buttonOne && !separate4kButtonOne) {
     return null;
   }
 
@@ -390,28 +417,55 @@ const RequestButton = ({
         }}
         onCancel={() => setShowRequest4kModal(false)}
       />
-      <ButtonWithDropdown
-        text={
-          <>
-            {buttonOne.svg}
-            <span>{buttonOne.text}</span>
-          </>
-        }
-        onClick={buttonOne.action}
-        className="ml-2"
-      >
-        {others && others.length > 0
-          ? others.map((button) => (
-              <ButtonWithDropdown.Item
-                onClick={button.action}
-                key={`request-option-${button.id}`}
-              >
-                {button.svg}
-                <span>{button.text}</span>
-              </ButtonWithDropdown.Item>
-            ))
-          : null}
-      </ButtonWithDropdown>
+      <div className="flex flex-wrap gap-2">
+        {buttonOne && (
+          <ButtonWithDropdown
+            text={
+              <>
+                {buttonOne.svg}
+                <span>{buttonOne.text}</span>
+              </>
+            }
+            onClick={buttonOne.action}
+            className="ml-2"
+          >
+            {others && others.length > 0
+              ? others.map((button) => (
+                  <ButtonWithDropdown.Item
+                    onClick={button.action}
+                    key={`request-option-${button.id}`}
+                  >
+                    {button.svg}
+                    <span>{button.text}</span>
+                  </ButtonWithDropdown.Item>
+                ))
+              : null}
+          </ButtonWithDropdown>
+        )}
+        {separate4kButtonOne && (
+          <Button
+            buttonType="primary"
+            className="ml-2"
+            onClick={separate4kButtonOne.action}
+          >
+            {separate4kButtonOne.svg}
+            <span>{separate4kButtonOne.text}</span>
+          </Button>
+        )}
+        {otherSeparate4k &&
+          otherSeparate4k.length > 0 &&
+          otherSeparate4k.map((button) => (
+            <Button
+              key={`request-4k-option-${button.id}`}
+              buttonType="primary"
+              className="ml-2"
+              onClick={button.action}
+            >
+              {button.svg}
+              <span>{button.text}</span>
+            </Button>
+          ))}
+      </div>
     </>
   );
 };

@@ -68,6 +68,9 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   youtubeUrl: 'YouTube URL',
   youtubeUrlTip:
     'Base URL for YouTube videos if a self-hosted YouTube instance is used.',
+  separate4kButton: 'Show Separate 4K Request Button',
+  separate4kButtonTip:
+    'Display 4K request button separately instead of in dropdown for better discoverability',
   validationUrl: 'You must provide a valid URL',
   validationUrlTrailingSlash: 'URL must not end in a trailing slash',
 });
@@ -175,6 +178,7 @@ const SettingsMain = () => {
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
+            separate4kButton: data?.separate4kButton,
           }}
           enableReinitialize
           validationSchema={MainSettingsSchema}
@@ -195,6 +199,7 @@ const SettingsMain = () => {
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
+                separate4kButton: values.separate4kButton,
               });
               mutate('/api/v1/settings/public');
               mutate('/api/v1/status');
@@ -530,6 +535,29 @@ const SettingsMain = () => {
                         setFieldValue(
                           'enableSpecialEpisodes',
                           !values.enableSpecialEpisodes
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="separate4kButton" className="checkbox-label">
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.separate4kButton)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.separate4kButtonTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="separate4kButton"
+                      name="separate4kButton"
+                      onChange={() => {
+                        setFieldValue(
+                          'separate4kButton',
+                          !values.separate4kButton
                         );
                       }}
                     />
