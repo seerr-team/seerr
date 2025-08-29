@@ -5,13 +5,11 @@ import PushbulletLogo from '@app/assets/extlogos/pushbullet.svg';
 import PushoverLogo from '@app/assets/extlogos/pushover.svg';
 import SlackLogo from '@app/assets/extlogos/slack.svg';
 import TelegramLogo from '@app/assets/extlogos/telegram.svg';
-import Button from '@app/components/Common/Button';
 import Dropdown from '@app/components/Common/Dropdown';
 import Header from '@app/components/Common/Header';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
-import Table from '@app/components/Common/Table';
-import ToggleSwitch from '@app/components/Common/ToggleSwitch';
+import NotificationInstanceList from '@app/components/Settings/SettingsNotifications/NotificationInstanceList';
 import NotificationModal, {
   NotificationModalType,
 } from '@app/components/Settings/SettingsNotifications/NotificationModal';
@@ -21,23 +19,16 @@ import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import {
   BarsArrowDownIcon,
-  BeakerIcon,
   BoltIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   CloudIcon,
   EnvelopeIcon,
-  PencilIcon,
   PlusIcon,
-  TrashIcon,
 } from '@heroicons/react/24/solid';
 import type { NotificationSettingsResultResponse } from '@server/interfaces/api/settingsInterfaces';
 import type { NotificationAgentConfig } from '@server/interfaces/settings';
-import axios from 'axios';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
 const messages = defineMessages('components.Settings.SettingsNotifications', {
@@ -47,20 +38,6 @@ const messages = defineMessages('components.Settings.SettingsNotifications', {
   instanceName: 'Name',
   instanceId: 'ID',
   notificationAgent: 'Agent',
-  instanceEnabled: 'Enabled',
-  instanceDefault: 'Default',
-  instanceDeleted: 'Notification instance deleted successfully!',
-  instanceDeleteError:
-    'Something went wrong while deleting the notification instance.',
-  toastTestSending: 'Sending test notification…',
-  toastTestSuccess: 'Test notification sent!',
-  toastTestFailed: 'Test notification failed to send.',
-  toastEnabledToggleSuccess:
-    'Notification instance enabled toggled successfully!',
-  toastEnabledToggleFailed: 'Notification instance failed to toggle enabled!',
-  toastDefaultToggleSuccess:
-    'Notification instance default toggled successfully!',
-  toastDefaultToggleFailed: 'Notification instance failed to toggle default!',
 });
 
 enum Sort {
@@ -72,7 +49,6 @@ enum Sort {
 const SettingsNotifications = () => {
   const intl = useIntl();
   const router = useRouter();
-  const { addToast, removeToast } = useToasts();
   const [currentSort, setCurrentSort] = useState<Sort>(Sort.ID);
   const [currentPageSize, setCurrentPageSize] = useState<number>(10);
   const [notificationModal, setNotificationModal] = useState<{
@@ -116,119 +92,12 @@ const SettingsNotifications = () => {
     );
   }, [currentSort, currentPageSize]);
 
-  const deleteInstance = async (instanceId: number) => {
-    try {
-      await axios.delete(`/api/v1/settings/notification/${instanceId}`);
-
-      addToast(intl.formatMessage(messages.instanceDeleted), {
-        autoDismiss: true,
-        appearance: 'success',
-      });
-    } catch (e) {
-      addToast(intl.formatMessage(messages.instanceDeleteError), {
-        autoDismiss: true,
-        appearance: 'error',
-      });
-    } finally {
-      revalidate();
-    }
-  };
-
-  const testInstance = async (instanceIndex: number) => {
-    let toastId: string | undefined;
-    try {
-      addToast(
-        intl.formatMessage(messages.toastTestSending),
-        {
-          autoDismiss: false,
-          appearance: 'info',
-        },
-        (id) => {
-          toastId = id;
-        }
-      );
-      await axios.post(
-        '/api/v1/settings/notification/test',
-        data?.results[instanceIndex]
-      );
-
-      if (toastId) {
-        removeToast(toastId);
-      }
-      addToast(intl.formatMessage(messages.toastTestSuccess), {
-        autoDismiss: true,
-        appearance: 'success',
-      });
-    } catch (e) {
-      if (toastId) {
-        removeToast(toastId);
-      }
-      addToast(intl.formatMessage(messages.toastTestFailed), {
-        autoDismiss: true,
-        appearance: 'error',
-      });
-    }
-  };
-
-  const toggleInstanceEnabled = async (instance: NotificationAgentConfig) => {
-    instance.enabled = !instance.enabled;
-
-    if (!instance.enabled) {
-      instance.default = false;
-    }
-
-    try {
-      await axios.post(
-        `/api/v1/settings/notification/${instance.id}`,
-        instance
-      );
-
-      addToast(intl.formatMessage(messages.toastEnabledToggleSuccess), {
-        appearance: 'success',
-        autoDismiss: true,
-      });
-    } catch (e) {
-      addToast(intl.formatMessage(messages.toastEnabledToggleFailed), {
-        appearance: 'error',
-        autoDismiss: true,
-      });
-    } finally {
-      revalidate();
-    }
-  };
-
-  const toggleInstanceDefault = async (instance: NotificationAgentConfig) => {
-    const currentDefault = data?.results.find(
-      (result) =>
-        result.agent === instance.agent &&
-        result.default &&
-        result.id !== instance.id
-    );
-
-    if (currentDefault) {
-      return;
-    }
-
-    instance.default = !instance.default;
-
-    try {
-      await axios.post(
-        `/api/v1/settings/notification/${instance.id}`,
-        instance
-      );
-
-      addToast(intl.formatMessage(messages.toastDefaultToggleSuccess), {
-        appearance: 'success',
-        autoDismiss: true,
-      });
-    } catch (e) {
-      addToast(intl.formatMessage(messages.toastDefaultToggleFailed), {
-        appearance: 'error',
-        autoDismiss: true,
-      });
-    } finally {
-      revalidate();
-    }
+  const onNotificationInstanceEdit = (instance: NotificationAgentConfig) => {
+    setNotificationModal({
+      open: true,
+      instance: instance,
+      type: NotificationModalType.EDIT,
+    });
   };
 
   if (!data) {
@@ -442,163 +311,18 @@ const SettingsNotifications = () => {
         </div>
       </div>
 
-      <Table>
-        <thead>
-          <tr>
-            <Table.TH>{intl.formatMessage(messages.instanceName)}</Table.TH>
-            <Table.TH>{intl.formatMessage(messages.instanceId)}</Table.TH>
-            <Table.TH>
-              {intl.formatMessage(messages.notificationAgent)}
-            </Table.TH>
-            <Table.TH>{intl.formatMessage(messages.instanceEnabled)}</Table.TH>
-            <Table.TH>{intl.formatMessage(messages.instanceDefault)}</Table.TH>
-            <Table.TH></Table.TH>
-          </tr>
-        </thead>
-
-        <Table.TBody>
-          {data.results.map((instance, instanceIndex) => (
-            <tr
-              key={`notification-instance-list-${instance.id}`}
-              data-testid="notification-instance-list-row"
-            >
-              <Table.TD>{instance.name}</Table.TD>
-              <Table.TD>{instance.id}</Table.TD>
-              <Table.TD>{instance.agent}</Table.TD>
-              <Table.TD>
-                <ToggleSwitch
-                  isToggled={instance.enabled}
-                  onToggle={() => toggleInstanceEnabled(instance)}
-                  highContrast
-                />
-              </Table.TD>
-              <Table.TD>
-                <input
-                  type="checkbox"
-                  onClick={() => {
-                    toggleInstanceDefault(instance);
-                  }}
-                  disabled={
-                    !instance.enabled ||
-                    data.results.findIndex(
-                      (result) =>
-                        result.agent === instance.agent &&
-                        result.default &&
-                        result.id !== instance.id
-                    ) !== -1
-                  }
-                  checked={instance.default}
-                />
-              </Table.TD>
-              <Table.TD className="flex flex-row-reverse">
-                <Button
-                  buttonType="danger"
-                  onClick={() => deleteInstance(instance.id)}
-                >
-                  <TrashIcon />
-                  <span>{intl.formatMessage(globalMessages.delete)}</span>
-                </Button>
-                <Button
-                  buttonType="warning"
-                  className="mr-2"
-                  onClick={() =>
-                    setNotificationModal({
-                      open: true,
-                      instance: instance,
-                      type: NotificationModalType.EDIT,
-                    })
-                  }
-                >
-                  <PencilIcon />
-                  <span>{intl.formatMessage(globalMessages.edit)}</span>
-                </Button>
-                <Button
-                  buttonType="warning"
-                  className="mr-4"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    testInstance(instanceIndex);
-                  }}
-                >
-                  <BeakerIcon />
-                  <span>{intl.formatMessage(globalMessages.test)}</span>
-                </Button>
-              </Table.TD>
-            </tr>
-          ))}
-          <tr className="bg-gray-700">
-            <Table.TD colSpan={8} noPadding>
-              <nav
-                className="flex w-screen flex-col items-center space-x-4 space-y-3 px-6 py-3 sm:flex-row sm:space-y-0 lg:w-full"
-                aria-label="Pagination"
-              >
-                <div className="hidden lg:flex lg:flex-1">
-                  <p className="text-sm">
-                    {data.results.length > 0 &&
-                      intl.formatMessage(globalMessages.showingresults, {
-                        from: pageIndex * currentPageSize + 1,
-                        to:
-                          data.results.length < currentPageSize
-                            ? pageIndex * currentPageSize + data.results.length
-                            : (pageIndex + 1) * currentPageSize,
-                        total: data.pageInfo.results,
-                        strong: (msg: React.ReactNode) => (
-                          <span className="font-medium">{msg}</span>
-                        ),
-                      })}
-                  </p>
-                </div>
-                <div className="flex justify-center sm:flex-1 sm:justify-start lg:justify-center">
-                  <span className="-mt-3 items-center text-sm sm:-ml-4 sm:mt-0 lg:ml-0">
-                    {intl.formatMessage(globalMessages.resultsperpage, {
-                      pageSize: (
-                        <select
-                          id="pageSize"
-                          name="pageSize"
-                          onChange={(e) => {
-                            setCurrentPageSize(Number(e.target.value));
-                            router
-                              .push(router.pathname)
-                              .then(() => window.scrollTo(0, 0));
-                          }}
-                          value={currentPageSize}
-                          className="short inline"
-                        >
-                          <option value="5">5</option>
-                          <option value="10">10</option>
-                          <option value="25">25</option>
-                          <option value="50">50</option>
-                          <option value="100">100</option>
-                        </select>
-                      ),
-                    })}
-                  </span>
-                </div>
-                <div className="flex flex-auto justify-center space-x-2 sm:flex-1 sm:justify-end">
-                  <Button
-                    disabled={!hasPrevPage}
-                    onClick={() =>
-                      updateQueryParams('page', (page - 1).toString())
-                    }
-                  >
-                    <ChevronLeftIcon />
-                    <span>{intl.formatMessage(globalMessages.previous)}</span>
-                  </Button>
-                  <Button
-                    disabled={!hasNextPage}
-                    onClick={() =>
-                      updateQueryParams('page', (page + 1).toString())
-                    }
-                  >
-                    <span>{intl.formatMessage(globalMessages.next)}</span>
-                    <ChevronRightIcon />
-                  </Button>
-                </div>
-              </nav>
-            </Table.TD>
-          </tr>
-        </Table.TBody>
-      </Table>
+      <NotificationInstanceList
+        instances={data.results}
+        revalidateInstances={revalidate}
+        onEdit={onNotificationInstanceEdit}
+        currentPageIndex={pageIndex}
+        currentPageSize={currentPageSize}
+        setCurrentPageSize={setCurrentPageSize}
+        hasPrevPage={hasPrevPage}
+        hasNextPage={hasNextPage}
+        updateQueryParams={updateQueryParams}
+        totalItemsSize={data.pageInfo.results}
+      />
     </>
   );
 };
