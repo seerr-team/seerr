@@ -91,6 +91,39 @@ mediaRoutes.get('/', async (req, res, next) => {
   }
 });
 
+mediaRoutes.post<{ id: string }>('/:id/prefetch', async (req, res, next) => {
+  try {
+    const mediaRepository = getRepository(Media);
+    const media = await mediaRepository.findOneOrFail({
+      where: { id: Number(req.params.id) },
+    });
+
+    if (media.mediaType !== MediaType.TV) {
+      return next({
+        status: 400,
+        message: 'Prefetching is only available to media with type TV.',
+      });
+    }
+
+    media.prefetchEnabled = req.body.enabled;
+    media.prefetchEpisodeThreshold = req.body.episodeThreshold;
+
+    await mediaRepository.save(media);
+
+    return res.status(200).json(media);
+  } catch (e) {
+    logger.debug('Something went wrong saving series prefetch settings', {
+      label: 'API',
+      errorMessage: e.message,
+      tvId: req.params.id,
+    });
+    return next({
+      status: 500,
+      message: 'Failed to save series prefetch settings.',
+    });
+  }
+});
+
 mediaRoutes.post<
   {
     id: string;

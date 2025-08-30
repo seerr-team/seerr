@@ -31,15 +31,15 @@ function PrefetchForm({ data }: PrefetchFormProps) {
   return (
     <Formik
       initialValues={{
-        enabled: data.prefetchSettings?.enabled,
+        enabled: data.mediaInfo?.prefetchEnabled,
         episodeThreshold:
-          data.prefetchSettings?.episodeThreshold ?? DEFAULT_EPISODE_THRESHOLD,
+          data.mediaInfo?.prefetchEpisodeThreshold ?? DEFAULT_EPISODE_THRESHOLD,
       }}
       onSubmit={async (values) => {
         try {
-          await axios.post(`/api/v1/tv/${data.id}/prefetch`, {
+          await axios.post(`/api/v1/media/${data.mediaInfo?.id}/prefetch`, {
             enabled: values.enabled,
-            episodeThreshold: values.episodeThreshold,
+            episodeThreshold: Number(values.episodeThreshold),
           });
 
           addToast(intl.formatMessage(messages.prefetchSettingsSaved), {

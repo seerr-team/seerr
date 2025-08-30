@@ -185,6 +185,12 @@ class Media {
   @Column({ nullable: true, type: 'varchar' })
   public jellyfinMediaId4k?: string | null;
 
+  @Column({ nullable: true, type: 'boolean' })
+  prefetchEnabled?: boolean;
+
+  @Column({ nullable: true, type: 'int' })
+  prefetchEpisodeThreshold?: number;
+
   public serviceUrl?: string;
   public serviceUrl4k?: string;
   public downloadStatus?: DownloadingItem[] = [];
