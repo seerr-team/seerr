@@ -22,9 +22,10 @@ const messages = defineMessages('components.ManageSlideOver.PrefetchForm', {
 
 interface PrefetchFormProps {
   data: TvDetails;
+  revalidate: () => void;
 }
 
-function PrefetchForm({ data }: PrefetchFormProps) {
+function PrefetchForm({ data, revalidate }: PrefetchFormProps) {
   const intl = useIntl();
   const { addToast } = useToasts();
 
@@ -51,6 +52,8 @@ function PrefetchForm({ data }: PrefetchFormProps) {
             appearance: 'error',
             autoDismiss: true,
           });
+        } finally {
+          revalidate();
         }
       }}
     >

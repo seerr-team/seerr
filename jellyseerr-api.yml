@@ -6907,11 +6907,7 @@ paths:
               $ref: '#/components/schemas/PrefetchSettings'
       responses:
         '200':
-          description: Prefetch Settings returned
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PrefetchSettings'
+          description: Successfully saved Prefetch Settings
   /media/{mediaId}/{status}:
     post:
       summary: Update media status

@@ -236,7 +236,7 @@ const ManageSlideOver = ({
             <h3 className="mb-2 text-xl font-bold">
               {intl.formatMessage(messages.manageModalPrefetch)}
             </h3>
-            <PrefetchForm data={data} />
+            <PrefetchForm data={data} revalidate={revalidate} />
           </div>
         )}
         {hasPermission([Permission.MANAGE_ISSUES, Permission.VIEW_ISSUES], {
