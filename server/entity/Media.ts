@@ -186,10 +186,10 @@ class Media {
   public jellyfinMediaId4k?: string | null;
 
   @Column({ nullable: true, type: 'boolean' })
-  prefetchEnabled?: boolean;
+  public prefetchEnabled?: boolean;
 
   @Column({ nullable: true, type: 'int' })
-  prefetchEpisodeThreshold?: number;
+  public prefetchEpisodeThreshold?: number;
 
   public serviceUrl?: string;
   public serviceUrl4k?: string;
