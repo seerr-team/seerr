@@ -61,6 +61,11 @@ interface SpokenLanguage {
   name: string;
 }
 
+interface PrefetchSettings {
+  enabled: boolean;
+  episodeThreshold: number;
+}
+
 export interface TvDetails {
   id: number;
   backdropPath?: string;
@@ -112,6 +117,7 @@ export interface TvDetails {
   mediaInfo?: Media;
   watchProviders?: WatchProviders[];
   onUserWatchlist?: boolean;
+  prefetchSettings?: PrefetchSettings;
 }
 
 const mapEpisodeResult = (episode: TmdbTvEpisodeResult): Episode => ({

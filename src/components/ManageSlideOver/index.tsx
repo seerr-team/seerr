@@ -6,6 +6,7 @@ import SlideOver from '@app/components/Common/SlideOver';
 import Tooltip from '@app/components/Common/Tooltip';
 import DownloadBlock from '@app/components/DownloadBlock';
 import IssueBlock from '@app/components/IssueBlock';
+import PrefetchForm from '@app/components/ManageSlideOver/PrefetchForm';
 import RequestBlock from '@app/components/RequestBlock';
 import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
@@ -35,6 +36,7 @@ import useSWR from 'swr';
 
 const messages = defineMessages('components.ManageSlideOver', {
   manageModalTitle: 'Manage {mediaType}',
+  manageModalPrefetch: 'Prefetch',
   manageModalIssues: 'Open Issues',
   manageModalRequests: 'Requests',
   manageModalMedia: 'Media',
@@ -227,6 +229,14 @@ const ManageSlideOver = ({
                 ))}
               </ul>
             </div>
+          </div>
+        )}
+        {mediaType === 'tv' && hasPermission(Permission.MANAGE_REQUESTS) && (
+          <div>
+            <h3 className="mb-2 text-xl font-bold">
+              {intl.formatMessage(messages.manageModalPrefetch)}
+            </h3>
+            <PrefetchForm data={data} />
           </div>
         )}
         {hasPermission([Permission.MANAGE_ISSUES, Permission.VIEW_ISSUES], {
