@@ -180,6 +180,7 @@
   "components.IssueDetails.toaststatusupdated": "Issue status updated successfully!",
   "components.IssueDetails.toaststatusupdatefailed": "Something went wrong while updating the issue status.",
   "components.IssueDetails.unknownissuetype": "Unknown",
+  "components.IssueList.IssueItem.descriptionpreview": "Issue Description",
   "components.IssueList.IssueItem.episodes": "{episodeCount, plural, one {Episode} other {Episodes}}",
   "components.IssueList.IssueItem.issuestatus": "Status",
   "components.IssueList.IssueItem.issuetype": "Type",
