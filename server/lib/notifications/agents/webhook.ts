@@ -179,19 +179,20 @@ class WebhookAgent
 
     let webhookUrl = settings.options.webhookUrl;
 
-    if (settings.options.supportPlaceholders) {
-      const key = 'requestedBy_username';
-      const keymapValue = KeyMap[key];
-      const placeholderValue =
-        type === Notification.TEST_NOTIFICATION
-          ? 'test'
-          : typeof keymapValue === 'function'
-          ? keymapValue(payload, type)
-          : get(payload, keymapValue) || 'test';
-      webhookUrl = webhookUrl.replace(
-        `{{${key}}}`,
-        encodeURIComponent(placeholderValue)
-      );
+    if (settings.options.supportVariables) {
+      Object.keys(KeyMap).forEach((keymapKey) => {
+        const keymapValue = KeyMap[keymapKey as keyof typeof KeyMap];
+        const variableValue =
+          type === Notification.TEST_NOTIFICATION
+            ? 'test'
+            : typeof keymapValue === 'function'
+            ? keymapValue(payload, type)
+            : get(payload, keymapValue) || 'test';
+        webhookUrl = webhookUrl.replace(
+          new RegExp(`{{${keymapKey}}}`, 'g'),
+          encodeURIComponent(variableValue)
+        );
+      });
     }
 
     try {

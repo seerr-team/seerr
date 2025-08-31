@@ -15,7 +15,7 @@ import { Field, Form, Formik } from 'formik';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useState } from 'react';
-import { FormattedMessage, useIntl } from 'react-intl';
+import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
@@ -76,8 +76,9 @@ const messages = defineMessages(
     webhookUrl: 'Webhook URL',
     webhookUrlTip:
       'Test Notification URL is set to {testUrl} instead of the actual webhook URL.',
-    supportPlaceholders: 'Support URL Placeholders',
-    supportPlaceholdersTip: 'Available Placeholders: {placeholders}',
+    supportVariables: 'Support URL Variables',
+    supportVariablesTip:
+      'Available variables are documented in the webhook template variables section',
     authheader: 'Authorization Header',
     validationJsonPayloadRequired: 'You must provide a valid JSON payload',
     webhooksettingssaved: 'Webhook notification settings saved successfully!',
@@ -98,7 +99,6 @@ const NotificationsWebhook = () => {
   const intl = useIntl();
   const { addToast, removeToast } = useToasts();
   const [isTesting, setIsTesting] = useState(false);
-  const placeholders = ['{{requestedBy_username}}'];
   const {
     data,
     error,
@@ -118,11 +118,11 @@ const NotificationsWebhook = () => {
         'valid-url',
         intl.formatMessage(messages.validationWebhookUrl),
         function (value) {
-          const { supportPlaceholders } = this.parent;
+          const { supportVariables } = this.parent;
 
-          // allow placeholder syntax through
+          // allow variable syntax through
           if (
-            supportPlaceholders &&
+            supportVariables &&
             typeof value === 'string' &&
             value.includes('{{')
           ) {
@@ -134,7 +134,7 @@ const NotificationsWebhook = () => {
         }
       ),
 
-    supportPlaceholders: Yup.boolean(),
+    supportVariables: Yup.boolean(),
 
     jsonPayload: Yup.string()
       .when('enabled', {
@@ -170,7 +170,7 @@ const NotificationsWebhook = () => {
         webhookUrl: data.options.webhookUrl,
         jsonPayload: data.options.jsonPayload,
         authHeader: data.options.authHeader,
-        supportPlaceholders: data.options.supportPlaceholders ?? false,
+        supportVariables: data.options.supportVariables ?? false,
       }}
       validationSchema={NotificationsWebhookSchema}
       onSubmit={async (values) => {
@@ -182,7 +182,7 @@ const NotificationsWebhook = () => {
               webhookUrl: values.webhookUrl,
               jsonPayload: JSON.stringify(values.jsonPayload),
               authHeader: values.authHeader,
-              supportPlaceholders: values.supportPlaceholders,
+              supportVariables: values.supportVariables,
             },
           });
           addToast(intl.formatMessage(messages.webhooksettingssaved), {
@@ -240,7 +240,7 @@ const NotificationsWebhook = () => {
                 webhookUrl: values.webhookUrl,
                 jsonPayload: JSON.stringify(values.jsonPayload),
                 authHeader: values.authHeader,
-                supportPlaceholders: values.supportPlaceholders ?? false,
+                supportVariables: values.supportVariables ?? false,
               },
             });
 
@@ -276,46 +276,52 @@ const NotificationsWebhook = () => {
               </div>
             </div>
             <div className="form-row">
-              <label htmlFor="supportPlaceholders" className="checkbox-label">
+              <label htmlFor="supportVariables" className="checkbox-label">
                 <span className="mr-2">
-                  {intl.formatMessage(messages.supportPlaceholders)}
+                  {intl.formatMessage(messages.supportVariables)}
                 </span>
                 <SettingsBadge badgeType="experimental" />
                 <span className="label-tip">
-                  <FormattedMessage
-                    {...messages.supportPlaceholdersTip}
-                    values={{
-                      placeholders: (
-                        <ul className="ml-4 list-disc">
-                          {placeholders.map((placeholder, index) => (
-                            <li key={index}>
-                              <code className="bg-opacity-50">
-                                {placeholder}
-                              </code>
-                            </li>
-                          ))}
-                        </ul>
-                      ),
-                    }}
-                  />
+                  {intl.formatMessage(messages.supportVariablesTip)}
                 </span>
               </label>
               <div className="form-input-area">
                 <Field
                   type="checkbox"
-                  id="supportPlaceholders"
-                  name="supportPlaceholders"
+                  id="supportVariables"
+                  name="supportVariables"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setFieldValue('supportPlaceholders', e.target.checked)
+                    setFieldValue('supportVariables', e.target.checked)
                   }
                 />
               </div>
             </div>
+            {values.supportVariables && (
+              <div className="mt-2">
+                <Link
+                  href="https://docs.overseerr.dev/using-overseerr/notifications/webhooks#template-variables"
+                  passHref
+                  legacyBehavior
+                >
+                  <Button
+                    as="a"
+                    buttonSize="sm"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <QuestionMarkCircleIcon />
+                    <span>
+                      {intl.formatMessage(messages.templatevariablehelp)}
+                    </span>
+                  </Button>
+                </Link>
+              </div>
+            )}
             <div className="form-row">
               <label htmlFor="webhookUrl" className="text-label">
                 {intl.formatMessage(messages.webhookUrl)}
                 <span className="label-required">*</span>
-                {values.supportPlaceholders && (
+                {values.supportVariables && (
                   <div className="label-tip">
                     {intl.formatMessage(messages.webhookUrlTip, {
                       testUrl: '/test',
