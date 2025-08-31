@@ -94,7 +94,7 @@ self.addEventListener('push', (event) => {
     });
   }
 
-  if (payload.notificationType === 'MEDIA_PENDING') {
+  if (payload.notificationType === 'MEDIA_PENDING' || payload.notificationType === 'MEDIA_PENDING_UPDATED') {
     options.actions.push(
       {
         action: 'approve',
@@ -120,7 +120,7 @@ self.addEventListener('push', (event) => {
     return;
   }
 
-  if (payload.notificationType === 'MEDIA_PENDING') {
+  if (payload.notificationType === 'MEDIA_PENDING' || payload.notificationType === 'MEDIA_PENDING_UPDATED') {
     if ('setAppBadge' in navigator) {
       navigator.setAppBadge(payload.pendingRequestsCount);
     }

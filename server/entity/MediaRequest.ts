@@ -709,6 +709,29 @@ export class MediaRequest {
     }
   }
 
+  public async notifyRequestUpdated(): Promise<void> {
+    if (this.status === MediaRequestStatus.PENDING) {
+      const mediaRepository = getRepository(Media);
+      const media = await mediaRepository.findOne({
+        where: { id: this.media.id },
+      });
+      if (!media) {
+        logger.error('Media data not found', {
+          label: 'Media Request',
+          requestId: this.id,
+          mediaId: this.media.id,
+        });
+        return;
+      }
+
+      MediaRequest.sendNotification(
+        this,
+        media,
+        Notification.MEDIA_PENDING_UPDATED
+      );
+    }
+  }
+
   static async sendNotification(
     entity: MediaRequest,
     media: Media,
@@ -733,6 +756,9 @@ export class MediaRequest {
           break;
         case Notification.MEDIA_PENDING:
           event = `New ${entity.is4k ? '4K ' : ''}${mediaType} Request`;
+          break;
+        case Notification.MEDIA_PENDING_UPDATED:
+          event = `${entity.is4k ? '4K ' : ''}${mediaType} Request Updated`;
           break;
         case Notification.MEDIA_AUTO_REQUESTED:
           event = `${
