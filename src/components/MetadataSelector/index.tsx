@@ -1,7 +1,4 @@
-import TmdbLogo from '@app/assets/services/tmdb.svg';
-import TvdbLogo from '@app/assets/services/tvdb.svg';
 import defineMessages from '@app/utils/defineMessages';
-import React from 'react';
 import { useIntl } from 'react-intl';
 import Select, { type StylesConfig } from 'react-select';
 
@@ -14,7 +11,6 @@ type MetadataProviderOptionType = {
   testId?: string;
   value: MetadataProviderType;
   label: string;
-  icon: React.ReactNode;
 };
 
 const messages = defineMessages('components.MetadataSelector', {
@@ -43,13 +39,11 @@ const MetadataSelector = ({
       testId: 'tmdb-option',
       value: MetadataProviderType.TMDB,
       label: intl.formatMessage(messages.tmdbLabel),
-      icon: <TmdbLogo />,
     },
     {
       testId: 'tvdb-option',
       value: MetadataProviderType.TVDB,
       label: intl.formatMessage(messages.tvdbLabel),
-      icon: <TvdbLogo />,
     },
   ];
 
@@ -68,7 +62,6 @@ const MetadataSelector = ({
 
   const formatOptionLabel = (option: MetadataProviderOptionType) => (
     <div className="flex items-center">
-      {option.icon}
       <span data-testid={option.testId}>{option.label}</span>
     </div>
   );
