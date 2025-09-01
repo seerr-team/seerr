@@ -1,6 +1,6 @@
 import animeList from '@server/api/animelist';
-import type { JellyfinLibraryItem } from '@server/api/jellyfin';
-import JellyfinAPI from '@server/api/jellyfin';
+import type { JellyfinLibraryItem } from '@server/api/jellyfinMain';
+import JellyfinMainAPI from '@server/api/jellyfinMain';
 import { getMetadataProvider } from '@server/api/metadata';
 import TheMovieDb from '@server/api/themoviedb';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
@@ -36,7 +36,7 @@ interface SyncStatus {
 class JellyfinScanner {
   private sessionId: string;
   private tmdb: TheMovieDb;
-  private jfClient: JellyfinAPI;
+  private jfClient: JellyfinMainAPI;
   private items: JellyfinLibraryItem[] = [];
   private progress = 0;
   private libraries: Library[];
@@ -763,7 +763,7 @@ class JellyfinScanner {
         return this.log('No admin configured. Jellyfin sync skipped.', 'warn');
       }
 
-      this.jfClient = new JellyfinAPI(
+      this.jfClient = new JellyfinMainAPI(
         getHostname(),
         settings.jellyfin.apiKey,
         admin.jellyfinDeviceId

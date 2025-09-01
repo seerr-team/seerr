@@ -1,4 +1,4 @@
-import JellyfinAPI from '@server/api/jellyfin';
+import JellyfinMainAPI from '@server/api/jellyfinMain';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
@@ -21,7 +21,7 @@ const migrateApiTokens = async (settings: any): Promise<AllSettings> => {
     if (!admin) {
       return settings;
     }
-    const jellyfinClient = new JellyfinAPI(
+    const jellyfinClient = new JellyfinMainAPI(
       getHostname(settings.jellyfin),
       admin.jellyfinAuthToken,
       admin.jellyfinDeviceId

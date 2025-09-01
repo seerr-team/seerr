@@ -1,4 +1,4 @@
-import JellyfinAPI from '@server/api/jellyfin';
+import JellyfinMainAPI from '@server/api/jellyfinMain';
 import PlexAPI from '@server/api/plexapi';
 import PlexTvAPI from '@server/api/plextv';
 import TautulliAPI from '@server/api/tautulli';
@@ -286,7 +286,7 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
 
     const tempJellyfinSettings = { ...settings.jellyfin, ...req.body };
 
-    const jellyfinClient = new JellyfinAPI(
+    const jellyfinClient = new JellyfinMainAPI(
       getHostname(tempJellyfinSettings),
       tempJellyfinSettings.apiKey,
       admin.jellyfinDeviceId ?? ''
@@ -340,7 +340,7 @@ settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
       where: { id: 1 },
       order: { id: 'ASC' },
     });
-    const jellyfinClient = new JellyfinAPI(
+    const jellyfinClient = new JellyfinMainAPI(
       getHostname(),
       settings.jellyfin.apiKey,
       admin.jellyfinDeviceId ?? ''
@@ -402,7 +402,7 @@ settingsRoutes.get('/jellyfin/users', async (req, res) => {
     where: { id: 1 },
     order: { id: 'ASC' },
   });
-  const jellyfinClient = new JellyfinAPI(
+  const jellyfinClient = new JellyfinMainAPI(
     getHostname(),
     settings.jellyfin.apiKey,
     admin.jellyfinDeviceId ?? ''

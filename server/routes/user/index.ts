@@ -1,4 +1,4 @@
-import JellyfinAPI from '@server/api/jellyfin';
+import JellyfinMainAPI from '@server/api/jellyfinMain';
 import PlexTvAPI from '@server/api/plextv';
 import TautulliAPI from '@server/api/tautulli';
 import { MediaType } from '@server/constants/media';
@@ -609,7 +609,7 @@ router.post(
       });
 
       const hostname = getHostname();
-      const jellyfinClient = new JellyfinAPI(
+      const jellyfinClient = new JellyfinMainAPI(
         hostname,
         settings.jellyfin.apiKey,
         admin.jellyfinDeviceId ?? ''
