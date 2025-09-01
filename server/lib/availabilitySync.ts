@@ -1,5 +1,5 @@
-import type { JellyfinLibraryItem } from '@server/api/jellyfin';
-import JellyfinAPI from '@server/api/jellyfin';
+import type { JellyfinLibraryItem } from '@server/api/jellyfinMain';
+import JellyfinMainAPI from '@server/api/jellyfinMain';
 import type { PlexMetadata } from '@server/api/plexapi';
 import PlexAPI from '@server/api/plexapi';
 import RadarrAPI, { type RadarrMovie } from '@server/api/servarr/radarr';
@@ -22,7 +22,7 @@ class AvailabilitySync {
   private plexClient: PlexAPI;
   private plexSeasonsCache: Record<string, PlexMetadata[]>;
 
-  private jellyfinClient: JellyfinAPI;
+  private jellyfinClient: JellyfinMainAPI;
   private jellyfinSeasonsCache: Record<string, JellyfinLibraryItem[]>;
 
   private sonarrSeasonsCache: Record<string, SonarrSeason[]>;
@@ -78,7 +78,7 @@ class AvailabilitySync {
         case MediaServerType.JELLYFIN:
         case MediaServerType.EMBY:
           if (admin) {
-            this.jellyfinClient = new JellyfinAPI(
+            this.jellyfinClient = new JellyfinMainAPI(
               getHostname(),
               settings.jellyfin.apiKey,
               admin.jellyfinDeviceId
