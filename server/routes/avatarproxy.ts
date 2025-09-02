@@ -6,6 +6,7 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { getAppVersion } from '@server/utils/appVersion';
 import { getHostname } from '@server/utils/getHostname';
+import { getMediaServerAdmin } from '@server/utils/getMediaServerAdmin';
 import axios from 'axios';
 import { Router } from 'express';
 import gravatarUrl from 'gravatar-url';
@@ -17,12 +18,7 @@ let _avatarImageProxy: ImageProxy | null = null;
 
 async function initAvatarImageProxy() {
   if (!_avatarImageProxy) {
-    const userRepository = getRepository(User);
-    const admin = await userRepository.findOne({
-      where: { id: 1 },
-      select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
-      order: { id: 'ASC' },
-    });
+    const admin = await getMediaServerAdmin();
     const deviceId = admin?.jellyfinDeviceId || 'BOT_seerr';
     const authToken = getSettings().jellyfin.apiKey;
     _avatarImageProxy = new ImageProxy('avatar', '', {

@@ -13,12 +13,12 @@ import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import Season from '@server/entity/Season';
-import { User } from '@server/entity/User';
 import type { Library } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import AsyncLock from '@server/utils/asyncLock';
 import { getHostname } from '@server/utils/getHostname';
+import { getMediaServerAdmin } from '@server/utils/getMediaServerAdmin';
 import { randomUUID as uuid } from 'crypto';
 import { uniqWith } from 'lodash';
 
@@ -752,12 +752,8 @@ class JellyfinScanner {
     });
     try {
       this.running = true;
-      const userRepository = getRepository(User);
-      const admin = await userRepository.findOne({
-        where: { id: 1 },
-        select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
-        order: { id: 'ASC' },
-      });
+
+      const admin = await getMediaServerAdmin();
 
       if (!admin) {
         return this.log('No admin configured. Jellyfin sync skipped.', 'warn');

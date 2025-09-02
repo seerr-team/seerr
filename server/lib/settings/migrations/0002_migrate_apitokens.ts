@@ -1,9 +1,8 @@
 import JellyfinMainAPI from '@server/api/jellyfinMain';
 import { MediaServerType } from '@server/constants/server';
-import { getRepository } from '@server/datasource';
-import { User } from '@server/entity/User';
 import type { AllSettings } from '@server/lib/settings';
 import { getHostname } from '@server/utils/getHostname';
+import { getMediaServerAdmin } from '@server/utils/getMediaServerAdmin';
 
 const migrateApiTokens = async (settings: any): Promise<AllSettings> => {
   const mediaServerType = settings.main.mediaServerType;
@@ -12,12 +11,7 @@ const migrateApiTokens = async (settings: any): Promise<AllSettings> => {
     (mediaServerType === MediaServerType.JELLYFIN ||
       mediaServerType === MediaServerType.EMBY)
   ) {
-    const userRepository = getRepository(User);
-    const admin = await userRepository.findOne({
-      where: { id: 1 },
-      select: ['id', 'jellyfinAuthToken', 'jellyfinUserId', 'jellyfinDeviceId'],
-      order: { id: 'ASC' },
-    });
+    const admin = await getMediaServerAdmin();
     if (!admin) {
       return settings;
     }
