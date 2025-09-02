@@ -4,9 +4,14 @@ import SensitiveInput from '@app/components/Common/SensitiveInput';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowDownOnSquareIcon,
+  BeakerIcon,
+  CogIcon,
+} from '@heroicons/react/24/outline';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
+import { useRouter } from 'next/router';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
@@ -47,6 +52,7 @@ const messages = defineMessages('components.Settings.Notifications', {
   pgpPasswordTip:
     'Sign encrypted email messages using <OpenPgpLink>OpenPGP</OpenPgpLink>',
   validationPgpPassword: 'You must provide a PGP password',
+  customizeTemplates: 'Customize Templates',
 });
 
 export function OpenPgpLink(msg: React.ReactNode) {
@@ -59,6 +65,7 @@ export function OpenPgpLink(msg: React.ReactNode) {
 
 const NotificationsEmail = () => {
   const intl = useIntl();
+  const router = useRouter();
   const { addToast, removeToast } = useToasts();
   const [isTesting, setIsTesting] = useState(false);
   const {
@@ -141,6 +148,7 @@ const NotificationsEmail = () => {
         senderName: data.options.senderName,
         pgpPrivateKey: data.options.pgpPrivateKey,
         pgpPassword: data.options.pgpPassword,
+        customTemplates: data.options.customTemplates || {},
       }}
       validationSchema={NotificationsEmailSchema}
       onSubmit={async (values) => {
@@ -162,6 +170,7 @@ const NotificationsEmail = () => {
               senderName: values.senderName,
               pgpPrivateKey: values.pgpPrivateKey,
               pgpPassword: values.pgpPassword,
+              customTemplates: values.customTemplates,
             },
           });
           mutate('/api/v1/settings/public');
@@ -489,6 +498,21 @@ const NotificationsEmail = () => {
             </div>
             <div className="actions">
               <div className="flex justify-end">
+                <span className="inline-flex rounded-md shadow-sm">
+                  <Button
+                    buttonType="ghost"
+                    disabled={isSubmitting}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      router.push('/settings/notifications/email/templates');
+                    }}
+                  >
+                    <CogIcon />
+                    <span>
+                      {intl.formatMessage(messages.customizeTemplates)}
+                    </span>
+                  </Button>
+                </span>
                 <span className="ml-3 inline-flex rounded-md shadow-sm">
                   <Button
                     buttonType="warning"
