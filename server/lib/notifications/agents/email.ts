@@ -3,6 +3,7 @@ import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import PreparedEmail from '@server/lib/email';
+import { TemplateEngine } from '@server/lib/notifications/template-engine';
 import type { NotificationAgentEmail } from '@server/lib/settings';
 import { getSettings, NotificationAgentKey } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -42,15 +43,150 @@ class EmailAgent
     return false;
   }
 
-  private buildMessage(
+  private getCustomTemplateKey(notificationType: Notification): string | null {
+    switch (notificationType) {
+      case Notification.MEDIA_PENDING:
+        return 'mediaPending';
+      case Notification.MEDIA_APPROVED:
+        return 'mediaApproved';
+      case Notification.MEDIA_AUTO_APPROVED:
+        return 'mediaAutoApproved';
+      case Notification.MEDIA_AVAILABLE:
+        return 'mediaAvailable';
+      case Notification.MEDIA_DECLINED:
+        return 'mediaDeclined';
+      case Notification.MEDIA_FAILED:
+        return 'mediaFailed';
+      case Notification.MEDIA_AUTO_REQUESTED:
+        return 'mediaAutoRequested';
+      case Notification.ISSUE_CREATED:
+        return 'issueCreated';
+      case Notification.ISSUE_COMMENT:
+        return 'issueComment';
+      case Notification.ISSUE_RESOLVED:
+        return 'issueResolved';
+      case Notification.ISSUE_REOPENED:
+        return 'issueReopened';
+      case Notification.TEST_NOTIFICATION:
+        return 'testNotification';
+      default:
+        return null;
+    }
+  }
+
+  private shouldUseCustomTemplate(type: Notification): boolean {
+    const settings = this.getSettings();
+    const customTemplates = settings.options.customTemplates;
+
+    if (!customTemplates) return false;
+
+    const templateKey = this.getCustomTemplateKey(type);
+    if (!templateKey) return false;
+
+    const template =
+      customTemplates[templateKey as keyof typeof customTemplates];
+    return !!(template?.subject && template?.body);
+  }
+
+  private buildCustomMessage(
     type: Notification,
     payload: NotificationPayload,
     recipientEmail: string,
     recipientName?: string
   ): EmailOptions | undefined {
-    const settings = getSettings();
-    const { applicationUrl, applicationTitle } = settings.main;
-    const { embedPoster } = settings.notifications.agents.email;
+    const { applicationUrl, applicationTitle } = getSettings().main;
+    const settings = this.getSettings();
+    const customTemplates = settings.options.customTemplates;
+
+    if (!customTemplates) return undefined;
+
+    const templateKey = this.getCustomTemplateKey(type);
+    if (!templateKey) {
+      return undefined;
+    }
+
+    const template =
+      customTemplates[templateKey as keyof typeof customTemplates];
+    if (!template) {
+      return undefined;
+    }
+
+    const subjectTemplate = template.subject || '';
+    const bodyTemplate = template.body || '';
+
+    const customSubject = TemplateEngine.renderTemplate(
+      subjectTemplate,
+      type,
+      payload,
+      recipientEmail,
+      recipientName,
+      applicationUrl,
+      applicationTitle
+    );
+
+    const customBody = TemplateEngine.renderTemplate(
+      bodyTemplate,
+      type,
+      payload,
+      recipientEmail,
+      recipientName,
+      applicationUrl,
+      applicationTitle
+    );
+
+    const htmlBody = customBody;
+
+    const actionUrl = applicationUrl
+      ? payload.media
+        ? `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`
+        : payload.issue
+        ? `${applicationUrl}/issues/${payload.issue.id}`
+        : applicationUrl
+      : undefined;
+
+    const useRawHtml = template.useCustomHtml;
+    const templatePath = useRawHtml
+      ? path.join(__dirname, '../../../templates/email/raw-html')
+      : path.join(__dirname, '../../../templates/email/custom-template');
+
+    const emailMessage = {
+      template: templatePath,
+      message: {
+        to: recipientEmail,
+        subject: customSubject,
+      },
+      locals: {
+        customSubject,
+        customBody: useRawHtml ? customBody : htmlBody,
+        applicationUrl,
+        applicationTitle,
+        recipientName,
+        recipientEmail,
+        actionUrl: useRawHtml ? undefined : actionUrl,
+      },
+    };
+
+    return emailMessage;
+  }
+
+  public buildMessage(
+    type: Notification,
+    payload: NotificationPayload,
+    recipientEmail: string,
+    recipientName?: string
+  ): EmailOptions | undefined {
+    const { applicationUrl, applicationTitle } = getSettings().main;
+    const { embedPoster } = this.getSettings().options;
+
+    if (this.shouldUseCustomTemplate(type)) {
+      const customMessage = this.buildCustomMessage(
+        type,
+        payload,
+        recipientEmail,
+        recipientName
+      );
+      if (customMessage) return customMessage;
+    }
 
     if (type === Notification.TEST_NOTIFICATION) {
       return {
@@ -134,9 +270,10 @@ class EmailAgent
           imageUrl: embedPoster ? payload.image : undefined,
           timestamp: new Date().toTimeString(),
           requestedBy: payload.request.requestedBy.displayName,
-          actionUrl: applicationUrl
-            ? `${applicationUrl}/${payload.media?.mediaType}/${payload.media?.tmdbId}`
-            : undefined,
+          actionUrl:
+            applicationUrl && payload.media
+              ? `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`
+              : undefined,
           applicationUrl,
           applicationTitle,
           recipientName,
@@ -180,9 +317,12 @@ class EmailAgent
           extra: payload.extra ?? [],
           imageUrl: embedPoster ? payload.image : undefined,
           timestamp: new Date().toTimeString(),
-          actionUrl: applicationUrl
-            ? `${applicationUrl}/issues/${payload.issue.id}`
-            : undefined,
+          actionUrl:
+            applicationUrl && payload.issue
+              ? `${applicationUrl}/issues/${
+                  (payload.issue as unknown as { id: number }).id
+                }`
+              : undefined,
           applicationUrl,
           applicationTitle,
           recipientName,
@@ -201,8 +341,6 @@ class EmailAgent
     if (payload.notifyUser) {
       if (
         !payload.notifyUser.settings ||
-        // Check if user has email notifications enabled and fallback to true if undefined
-        // since email should default to true
         (payload.notifyUser.settings.hasNotificationType(
           NotificationAgentKey.EMAIL,
           type
@@ -261,8 +399,6 @@ class EmailAgent
           .filter(
             (user) =>
               (!user.settings ||
-                // Check if user has email notifications enabled and fallback to true if undefined
-                // since email should default to true
                 (user.settings.hasNotificationType(
                   NotificationAgentKey.EMAIL,
                   type
