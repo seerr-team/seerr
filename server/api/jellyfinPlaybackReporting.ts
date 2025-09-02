@@ -16,12 +16,12 @@ interface JellyfinPlaybackActivityResponse {
 }
 
 class JellyfinPlaybackReportingAPI extends JellyfinAPI {
-  public async getPlaybackActivity(lastScanDate?: Date) {
+  public async getPlaybackActivity(sinceDate?: Date) {
     try {
       const CustomQueryString = `SELECT ItemId, UserId, MAX(DateCreated) AS LastPlayed FROM PlaybackActivity \
                                 ${
-                                  lastScanDate
-                                    ? `WHERE DateCreated > '${lastScanDate.toISOString()}'`
+                                  sinceDate
+                                    ? `WHERE DateCreated > '${sinceDate.toISOString()}'`
                                     : ''
                                 }\
                                 GROUP BY ItemId, UserId \
@@ -41,7 +41,7 @@ class JellyfinPlaybackReportingAPI extends JellyfinAPI {
     } catch (e) {
       logger.error(
         `Something went wrong while getting the Playback Activity from the Jellyfin Playback Reporting Plugin: ${e.message}`,
-        { label: 'Jellyfin API', error: e.response?.status }
+        { label: 'Jellyfin Playback Reporting API', error: e.response?.status }
       );
 
       throw new ApiError(e.response?.status, ApiErrorCode.InvalidAuthToken);
