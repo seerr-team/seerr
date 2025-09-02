@@ -8,6 +8,7 @@ import {
   jellyfinFullScanner,
   jellyfinRecentScanner,
 } from '@server/lib/scanners/jellyfin';
+import { jellyfinPlaybackReportingFullScanner } from '@server/lib/scanners/jellyfin/playbackReporting';
 import { plexFullScanner, plexRecentScanner } from '@server/lib/scanners/plex';
 import { radarrScanner } from '@server/lib/scanners/radarr';
 import { sonarrScanner } from '@server/lib/scanners/sonarr';
@@ -139,6 +140,29 @@ export const startJobs = (): void => {
       }),
       running: () => jellyfinFullScanner.status().running,
       cancelFn: () => jellyfinFullScanner.cancel(),
+    });
+
+    // Run full jellyfin playback reporting sync every 24 hours
+    scheduledJobs.push({
+      id: 'jellyfin-playback-reporting-full-scan',
+      name: 'Jellyfin Playback Reporting Full Scan',
+      type: 'process',
+      interval: 'hours',
+      cronSchedule: jobs['jellyfin-playback-reporting-full-scan'].schedule,
+      job: schedule.scheduleJob(
+        jobs['jellyfin-playback-reporting-full-scan'].schedule,
+        () => {
+          logger.info(
+            'Starting scheduled job: Jellyfin Playback Reporting Full Scan',
+            {
+              label: 'Jobs',
+            }
+          );
+          jellyfinPlaybackReportingFullScanner.run();
+        }
+      ),
+      running: () => jellyfinPlaybackReportingFullScanner.status().running,
+      cancelFn: () => jellyfinPlaybackReportingFullScanner.cancel(),
     });
   }
 
