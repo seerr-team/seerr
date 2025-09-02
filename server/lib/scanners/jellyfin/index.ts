@@ -13,8 +13,6 @@ import type {
   TmdbTvScanDetails,
 } from '@server/api/themoviedb/interfaces';
 import { MediaServerType } from '@server/constants/server';
-import { getRepository } from '@server/datasource';
-import { User } from '@server/entity/User';
 import type {
   ProcessableSeason,
   RunnableScanner,
@@ -24,6 +22,7 @@ import BaseScanner from '@server/lib/scanners/baseScanner';
 import type { Library } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { getHostname } from '@server/utils/getHostname';
+import { getMediaServerAdmin } from '@server/utils/getMediaServerAdmin';
 import { uniqWith } from 'lodash';
 
 interface JellyfinSyncStatus extends StatusBase {
@@ -467,12 +466,7 @@ class JellyfinScanner extends BaseScanner<JellyfinLibraryItem>
     const sessionId = this.startRun();
 
     try {
-      const userRepository = getRepository(User);
-      const admin = await userRepository.findOne({
-        where: { id: 1 },
-        select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
-        order: { id: 'ASC' },
-      });
+      const admin = await getMediaServerAdmin();
 
       if (!admin) {
         return this.log('No admin configured. Jellyfin sync skipped.', 'warn');
