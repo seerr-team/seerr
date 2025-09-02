@@ -1,0 +1,40 @@
+doctype html
+head
+  meta(charset='utf-8')
+  meta(name='x-apple-disable-message-reformatting')
+  meta(http-equiv='x-ua-compatible' content='ie=edge')
+  meta(name='viewport' content='width=device-width, initial-scale=1')
+  meta(name='format-detection' content='telephone=no, date=no, address=no, email=no')
+  link(href='https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap' rel='stylesheet' media='screen')
+  style.
+    .title:hover * {
+    text-decoration: underline;
+    }
+    @media only screen and (max-width:600px) {
+    table {
+    font-size: 20px !important;
+    width: 100% !important;
+    }
+    }
+div(style='display: block; background-color: #111827; padding: 2.5rem 0;')
+  table(style='margin: 0 auto; font-family: Inter, Arial, sans-serif; color: #fff; font-size: 16px; width: 26rem;')
+    tr
+      td(style="text-align: center;")
+        if applicationUrl
+          a(href=applicationUrl style='margin: 0 1rem;')
+            img(src=applicationUrl +'/logo_full.png' style='width: 26rem; image-rendering: crisp-edges; image-rendering: -webkit-optimize-contrast;')
+        else
+          div(style='margin: 0 1rem 2.5rem; font-size: 3em; font-weight: 700;')
+            | #{applicationTitle}
+    tr
+      td(style='text-align: left; padding: 2rem;')
+        div(style='background: rgba(255,255,255,0.05); border-radius: .75rem; padding: 1.5rem;')
+          div(style='white-space: pre-line; line-height: 1.6;')
+            if customBody
+              | #{customBody}
+    if actionUrl
+      tr
+        td
+          a(href=actionUrl style='display: block; margin: 1.5rem 3rem 0; text-decoration: none; font-size: 1.0em; line-height: 2.25em;')
+            span(style='padding: 0.2rem; font-weight: 500; text-align: center; border-radius: 10px; background-color: rgb(99,102,241); color: #fff; display: block; border: 1px solid rgba(255,255,255,0.2);')
+              | View in #{applicationTitle}
