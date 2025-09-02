@@ -1,6 +1,7 @@
 import Modal from '@app/components/Common/Modal';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import type { SonarrTestResponse } from '@app/components/Settings/SettingsServices';
+import TagSelect from '@app/components/Settings/TagSelect';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -10,15 +11,8 @@ import axios from 'axios';
 import { Field, Formik } from 'formik';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
-import type { OnChangeValue } from 'react-select';
-import Select from 'react-select';
 import { useToasts } from 'react-toast-notifications';
 import * as Yup from 'yup';
-
-type OptionType = {
-  value: number;
-  label: string;
-};
 
 const messages = defineMessages('components.Settings.SonarrModal', {
   createsonarr: 'Add New Sonarr Server',
@@ -75,6 +69,9 @@ const messages = defineMessages('components.Settings.SonarrModal', {
   validationBaseUrlLeadingSlash: 'Base URL must have a leading slash',
   validationBaseUrlTrailingSlash: 'Base URL must not end in a trailing slash',
   tags: 'Tags',
+  exemptTags: 'Exempt Tags',
+  exemptTagsInfo:
+    'Tags to exclude from sync (content with these tags will be ignored)',
   animeTags: 'Anime Tags',
   notagoptions: 'No tags.',
   selecttags: 'Select tags',
@@ -239,6 +236,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
           activeAnimeLanguageProfileId: sonarr?.activeAnimeLanguageProfileId,
           activeAnimeRootFolder: sonarr?.activeAnimeDirectory,
           tags: sonarr?.tags ?? [],
+          exemptTags: sonarr?.exemptTags ?? [],
           animeTags: sonarr?.animeTags ?? [],
           isDefault: sonarr?.isDefault ?? false,
           is4k: sonarr?.is4k ?? false,
@@ -282,6 +280,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
               activeAnimeProfileName: animeProfileName ?? undefined,
               activeAnimeDirectory: values.activeAnimeRootFolder,
               tags: values.tags,
+              exemptTags: values.exemptTags,
               animeTags: values.animeTags,
               is4k: values.is4k,
               isDefault: values.isDefault,
@@ -683,66 +682,33 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                     </div>
                   </div>
                 )}
-                <div className="form-row">
-                  <label htmlFor="tags" className="text-label">
-                    {intl.formatMessage(messages.tags)}
-                  </label>
-                  <div className="form-input-area">
-                    <Select<OptionType, true>
-                      options={
-                        isValidated
-                          ? testResponse.tags.map((tag) => ({
-                              label: tag.label,
-                              value: tag.id,
-                            }))
-                          : []
-                      }
-                      isMulti
-                      isDisabled={!isValidated || isTesting}
-                      placeholder={
-                        !isValidated
-                          ? intl.formatMessage(messages.testFirstTags)
-                          : isTesting
-                          ? intl.formatMessage(messages.loadingTags)
-                          : intl.formatMessage(messages.selecttags)
-                      }
-                      isLoading={isTesting}
-                      className="react-select-container"
-                      classNamePrefix="react-select"
-                      value={
-                        isTesting
-                          ? []
-                          : (values.tags
-                              .map((tagId) => {
-                                const foundTag = testResponse.tags.find(
-                                  (tag) => tag.id === tagId
-                                );
-
-                                if (!foundTag) {
-                                  return undefined;
-                                }
-
-                                return {
-                                  value: foundTag.id,
-                                  label: foundTag.label,
-                                };
-                              })
-                              .filter(
-                                (option) => option !== undefined
-                              ) as OptionType[])
-                      }
-                      onChange={(value: OnChangeValue<OptionType, true>) => {
-                        setFieldValue(
-                          'tags',
-                          value.map((option) => option.value)
-                        );
-                      }}
-                      noOptionsMessage={() =>
-                        intl.formatMessage(messages.notagoptions)
-                      }
-                    />
-                  </div>
-                </div>
+                <TagSelect
+                  fieldName="tags"
+                  label={intl.formatMessage(messages.tags)}
+                  values={values.tags}
+                  onFieldChange={setFieldValue}
+                  tags={testResponse.tags}
+                  isValidated={isValidated}
+                  isTesting={isTesting}
+                  testFirstMessage={intl.formatMessage(messages.testFirstTags)}
+                  loadingMessage={intl.formatMessage(messages.loadingTags)}
+                  selectMessage={intl.formatMessage(messages.selecttags)}
+                  noOptionsMessage={intl.formatMessage(messages.notagoptions)}
+                />
+                <TagSelect
+                  fieldName="exemptTags"
+                  label={intl.formatMessage(messages.exemptTags)}
+                  labelTip={intl.formatMessage(messages.exemptTagsInfo)}
+                  values={values.exemptTags}
+                  onFieldChange={setFieldValue}
+                  tags={testResponse.tags}
+                  isValidated={isValidated}
+                  isTesting={isTesting}
+                  testFirstMessage={intl.formatMessage(messages.testFirstTags)}
+                  loadingMessage={intl.formatMessage(messages.loadingTags)}
+                  selectMessage={intl.formatMessage(messages.selecttags)}
+                  noOptionsMessage={intl.formatMessage(messages.notagoptions)}
+                />
                 <div className="form-row">
                   <label htmlFor="animeSeriesType" className="text-label">
                     {intl.formatMessage(messages.animeSeriesType)}
@@ -889,66 +855,19 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                     </div>
                   </div>
                 )}
-                <div className="form-row">
-                  <label htmlFor="tags" className="text-label">
-                    {intl.formatMessage(messages.animeTags)}
-                  </label>
-                  <div className="form-input-area">
-                    <Select<OptionType, true>
-                      options={
-                        isValidated
-                          ? testResponse.tags.map((tag) => ({
-                              label: tag.label,
-                              value: tag.id,
-                            }))
-                          : []
-                      }
-                      isMulti
-                      isDisabled={!isValidated}
-                      placeholder={
-                        !isValidated
-                          ? intl.formatMessage(messages.testFirstTags)
-                          : isTesting
-                          ? intl.formatMessage(messages.loadingTags)
-                          : intl.formatMessage(messages.selecttags)
-                      }
-                      isLoading={isTesting}
-                      className="react-select-container"
-                      classNamePrefix="react-select"
-                      value={
-                        isTesting
-                          ? []
-                          : (values.animeTags
-                              .map((tagId) => {
-                                const foundTag = testResponse.tags.find(
-                                  (tag) => tag.id === tagId
-                                );
-
-                                if (!foundTag) {
-                                  return undefined;
-                                }
-
-                                return {
-                                  value: foundTag.id,
-                                  label: foundTag.label,
-                                };
-                              })
-                              .filter(
-                                (option) => option !== undefined
-                              ) as OptionType[])
-                      }
-                      onChange={(value) => {
-                        setFieldValue(
-                          'animeTags',
-                          value.map((option) => option.value)
-                        );
-                      }}
-                      noOptionsMessage={() =>
-                        intl.formatMessage(messages.notagoptions)
-                      }
-                    />
-                  </div>
-                </div>
+                <TagSelect
+                  fieldName="animeTags"
+                  label={intl.formatMessage(messages.animeTags)}
+                  values={values.animeTags}
+                  onFieldChange={setFieldValue}
+                  tags={testResponse.tags}
+                  isValidated={isValidated}
+                  isTesting={false}
+                  testFirstMessage={intl.formatMessage(messages.testFirstTags)}
+                  loadingMessage={intl.formatMessage(messages.loadingTags)}
+                  selectMessage={intl.formatMessage(messages.selecttags)}
+                  noOptionsMessage={intl.formatMessage(messages.notagoptions)}
+                />
                 <div className="form-row">
                   <label
                     htmlFor="enableSeasonFolders"
