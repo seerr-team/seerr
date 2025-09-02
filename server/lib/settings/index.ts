@@ -242,6 +242,68 @@ export interface NotificationAgentEmail extends NotificationAgentConfig {
     senderName: string;
     pgpPrivateKey?: string;
     pgpPassword?: string;
+    customTemplates?: {
+      mediaPending?: {
+        subject?: string;
+        body?: string;
+        useCustomHtml?: boolean;
+      };
+      mediaApproved?: {
+        subject?: string;
+        body?: string;
+        useCustomHtml?: boolean;
+      };
+      mediaAutoApproved?: {
+        subject?: string;
+        body?: string;
+        useCustomHtml?: boolean;
+      };
+      mediaAvailable?: {
+        subject?: string;
+        body?: string;
+        useCustomHtml?: boolean;
+      };
+      mediaDeclined?: {
+        subject?: string;
+        body?: string;
+        useCustomHtml?: boolean;
+      };
+      mediaFailed?: {
+        subject?: string;
+        body?: string;
+        useCustomHtml?: boolean;
+      };
+      mediaAutoRequested?: {
+        subject?: string;
+        body?: string;
+        useCustomHtml?: boolean;
+      };
+      issueCreated?: {
+        subject?: string;
+        body?: string;
+        useCustomHtml?: boolean;
+      };
+      issueComment?: {
+        subject?: string;
+        body?: string;
+        useCustomHtml?: boolean;
+      };
+      issueResolved?: {
+        subject?: string;
+        body?: string;
+        useCustomHtml?: boolean;
+      };
+      issueReopened?: {
+        subject?: string;
+        body?: string;
+        useCustomHtml?: boolean;
+      };
+      testNotification?: {
+        subject?: string;
+        body?: string;
+        useCustomHtml?: boolean;
+      };
+    };
   };
 }
 
