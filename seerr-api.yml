@@ -3303,6 +3303,130 @@ paths:
       responses:
         '204':
           description: Test notification attempted
+  /settings/notifications/email/test-template:
+    post:
+      summary: Test specific email template
+      description: Sends a test notification using a specific template type with example data.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - notificationType
+                - settings
+              properties:
+                notificationType:
+                  type: integer
+                  description: The notification type enum value to test
+                settings:
+                  $ref: '#/components/schemas/NotificationEmailSettings'
+      responses:
+        '204':
+          description: Template test notification sent successfully
+        '400':
+          description: Invalid notification type or missing required parameters
+        '500':
+          description: Failed to send template test notification
+  /settings/notifications/email/preview:
+    post:
+      summary: Preview email template
+      description: Renders an email template to HTML for preview without sending.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - notificationType
+                - settings
+                - useCustom
+              properties:
+                notificationType:
+                  type: integer
+                  description: The notification type enum value to preview
+                settings:
+                  $ref: '#/components/schemas/NotificationEmailSettings'
+                useCustom:
+                  type: boolean
+                  description: Whether to use custom template or default template
+                templateName:
+                  type: string
+                  description: User-friendly name of the template for display purposes
+      responses:
+        '200':
+          description: Email preview rendered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subject:
+                    type: string
+                    description: The rendered email subject
+                  html:
+                    type: string
+                    description: The rendered email HTML content
+        '400':
+          description: Invalid notification type or missing required parameters
+        '500':
+          description: Failed to render email preview
+  /settings/notifications/email/template-variables:
+    get:
+      summary: Get available email template variables
+      description: Returns available template variables for email customization and default templates.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: Available template variables and default templates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  variables:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          example: 'user_name'
+                        name:
+                          type: string
+                          example: 'User Name'
+                        description:
+                          type: string
+                          example: 'The name of the user making the request'
+                        example:
+                          type: string
+                          example: 'John Doe'
+                      required:
+                        - key
+                        - name
+                        - description
+                        - example
+                  defaults:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        subject:
+                          type: string
+                          example: 'New request for {{media_name}}'
+                        body:
+                          type: string
+                          example: 'Hello {{user_name}}, your request for {{media_name}} has been received.'
+                      required:
+                        - subject
+                        - body
   /settings/notifications/discord:
     get:
       summary: Get Discord notification settings
