@@ -9,10 +9,10 @@ interface CustomQueryResponse {
   message?: string;
 }
 
-interface JellyfinPlaybackActivityResponse {
+export interface JellyfinPlaybackActivityResponse {
   ItemId: string;
   UserId: string;
-  LastPlayed: string;
+  DateCreated: string;
 }
 
 class JellyfinPlaybackReportingAPI extends JellyfinAPI {
