@@ -18,14 +18,13 @@ interface JellyfinPlaybackActivityResponse {
 class JellyfinPlaybackReportingAPI extends JellyfinAPI {
   public async getPlaybackActivity(sinceDate?: Date) {
     try {
-      const CustomQueryString = `SELECT ItemId, UserId, MAX(DateCreated) AS LastPlayed FROM PlaybackActivity \
+      const CustomQueryString = `SELECT ItemId, UserId, DateCreated FROM PlaybackActivity \
                                 ${
                                   sinceDate
                                     ? `WHERE DateCreated > '${sinceDate.toISOString()}'`
                                     : ''
                                 }\
-                                GROUP BY ItemId, UserId \
-                                ORDER BY LastPlayed ASC`;
+                                ORDER BY DateCreated ASC`;
 
       const playbackActivityResult = await this.post<CustomQueryResponse>(
         'user_usage_stats/submit_custom_query',
