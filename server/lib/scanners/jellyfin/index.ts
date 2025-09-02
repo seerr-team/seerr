@@ -13,6 +13,7 @@ import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import Season from '@server/entity/Season';
+import type { StatusBase } from '@server/lib/scanners/baseScanner';
 import type { Library } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -25,10 +26,7 @@ import { uniqWith } from 'lodash';
 const BUNDLE_SIZE = 20;
 const UPDATE_RATE = 4 * 1000;
 
-interface SyncStatus {
-  running: boolean;
-  progress: number;
-  total: number;
+interface SyncStatus extends StatusBase {
   currentLibrary: Library;
   libraries: Library[];
 }

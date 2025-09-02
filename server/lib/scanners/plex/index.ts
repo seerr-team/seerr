@@ -32,10 +32,10 @@ const hamaTvdbRegex = new RegExp(/hama:\/\/tvdb[0-9]?-([0-9]+)/);
 const hamaAnidbRegex = new RegExp(/hama:\/\/anidb[0-9]?-([0-9]+)/);
 const HAMA_AGENT = 'com.plexapp.agents.hama';
 
-type SyncStatus = StatusBase & {
+interface SyncStatus extends StatusBase {
   currentLibrary: Library;
   libraries: Library[];
-};
+}
 
 class PlexScanner
   extends BaseScanner<PlexLibraryItem>

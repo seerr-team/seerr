@@ -12,11 +12,11 @@ import { randomUUID } from 'crypto';
 const BUNDLE_SIZE = 20;
 const UPDATE_RATE = 4 * 1000;
 
-export type StatusBase = {
+export interface StatusBase {
   running: boolean;
   progress: number;
   total: number;
-};
+}
 
 export interface RunnableScanner<T> {
   run: () => Promise<void>;
