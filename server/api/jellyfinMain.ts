@@ -315,6 +315,25 @@ class JellyfinMainAPI extends JellyfinAPI {
     }
   }
 
+  public async getPlayedItems(userId: string): Promise<JellyfinLibraryItem[]> {
+    try {
+      const playedItemsResult = await this.get<any>(
+        `/Items?Recursive=true&isPlayed=true&enableImages=false&enableUserData=true&groupItems=false&userId=${userId}`
+      );
+
+      return playedItemsResult.Items.filter(
+        (item: JellyfinLibraryItem) => item.LocationType !== 'Virtual'
+      );
+    } catch (e) {
+      logger.error(
+        `Something went wrong while getting the list of played items from the Jellyfin server: ${e.message}`,
+        { label: 'Jellyfin API', error: e.response?.status }
+      );
+
+      throw new ApiError(e.response?.status, ApiErrorCode.InvalidAuthToken);
+    }
+  }
+
   public async createApiToken(appName: string): Promise<string> {
     try {
       await this.post(`/Auth/Keys?App=${appName}`);
