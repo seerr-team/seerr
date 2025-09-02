@@ -3,7 +3,7 @@ import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import { getSettings } from '@server/lib/settings';
 
-export const getMediaServerAdmin = async () => {
+export const getMediaServerAdmin = async (): Promise<User | undefined> => {
   let admin: User | null = null;
 
   const mediaServerType = getSettings().main.mediaServerType;
@@ -25,5 +25,5 @@ export const getMediaServerAdmin = async () => {
     });
   }
 
-  return admin;
+  return admin ?? undefined;
 };
