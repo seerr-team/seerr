@@ -8,6 +8,7 @@ import {
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import { Blocklist } from '@server/entity/Blocklist';
+import { MediaPlayback } from '@server/entity/MediaPlayback';
 import type { User } from '@server/entity/User';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { DownloadingItem } from '@server/lib/downloadtracker';
@@ -157,6 +158,11 @@ class Media {
   @OneToMany(() => Issue, (issue) => issue.media, { cascade: true })
   public issues: Issue[];
 
+  @OneToMany(() => MediaPlayback, (playback) => playback.media, {
+    cascade: ['insert', 'remove'],
+  })
+  public playbacks: MediaPlayback[];
+
   @OneToOne(() => Blocklist, (blocklist) => blocklist.media)
   public blocklist: Promise<Blocklist>;
 
@@ -255,11 +261,14 @@ class Media {
   }
 
   @AfterLoad()
-  public setPlexUrls(): void {
-    const { machineId, webAppUrl } = getSettings().plex;
-    const { externalUrl: tautulliUrl } = getSettings().tautulli;
+  public setMediaServerUrls(): void {
+    const settings = getSettings();
+    const mediaServerType = settings.main.mediaServerType;
 
-    if (getSettings().main.mediaServerType == MediaServerType.PLEX) {
+    if (mediaServerType === MediaServerType.PLEX) {
+      const { machineId, webAppUrl } = settings.plex;
+      const { externalUrl: tautulliUrl } = settings.tautulli;
+
       if (this.ratingKey) {
         this.mediaUrl = `${
           webAppUrl ? webAppUrl : 'https://app.plex.tv/desktop'
@@ -287,12 +296,13 @@ class Media {
           this.tautulliUrl4k = `${tautulliUrl}/info?rating_key=${this.ratingKey4k}`;
         }
       }
-    } else {
+    } else if (
+      mediaServerType === MediaServerType.JELLYFIN ||
+      mediaServerType === MediaServerType.EMBY
+    ) {
       const pageName =
-        getSettings().main.mediaServerType == MediaServerType.EMBY
-          ? 'item'
-          : 'details';
-      const { serverId, externalHostname } = getSettings().jellyfin;
+        mediaServerType == MediaServerType.EMBY ? 'item' : 'details';
+      const { serverId, externalHostname } = settings.jellyfin;
       const jellyfinHost =
         externalHostname && externalHostname.length > 0
           ? externalHostname
@@ -457,6 +467,18 @@ class Media {
           )
         : [],
     } as Media;
+  }
+
+  @AfterLoad()
+  public sortPlaybacks() {
+    if (Array.isArray(this.playbacks)) {
+      this.playbacks.sort((a, b) => {
+        const aPlayedAtTime = a.playedAt.getTime();
+        const bPlayedAtTime = b.playedAt.getTime();
+
+        return bPlayedAtTime - aPlayedAtTime;
+      });
+    }
   }
 }
 
