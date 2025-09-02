@@ -19,22 +19,18 @@ class JellyfinPlaybackReportingAPI extends JellyfinAPI {
   public async getPlaybackActivity(lastScanDate?: Date) {
     try {
       const CustomQueryString = `SELECT ItemId, UserId, MAX(DateCreated) AS LastPlayed FROM PlaybackActivity \
-         GROUP BY ItemId, UserId \
-         ORDER BY LastPlayed ASC \
-         ${
-           lastScanDate
-             ? `WHERE LastPlayed > ${lastScanDate.toISOString()}`
-             : ''
-         };`;
+                                ${
+                                  lastScanDate
+                                    ? `WHERE DateCreated > '${lastScanDate.toISOString()}'`
+                                    : ''
+                                }\
+                                GROUP BY ItemId, UserId \
+                                ORDER BY LastPlayed ASC`;
 
       const playbackActivityResult = await this.post<CustomQueryResponse>(
         'user_usage_stats/submit_custom_query',
         { CustomQueryString }
       );
-
-      if (playbackActivityResult.message) {
-        throw new Error(playbackActivityResult.message);
-      }
 
       const parsedPlaybackActivityResult =
         this.parseCustomQueryResult<JellyfinPlaybackActivityResponse>(
