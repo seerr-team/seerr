@@ -7,12 +7,13 @@ import type {
   TmdbTvEpisodeResult,
   TmdbTvSeasonResult,
 } from '@server/api/themoviedb/interfaces';
-import type {
-  TvdbBaseResponse,
-  TvdbEpisode,
-  TvdbLoginResponse,
-  TvdbSeasonDetails,
-  TvdbTvDetails,
+import {
+  convertTmdbLanguageToTvdbWithFallback,
+  type TvdbBaseResponse,
+  type TvdbEpisode,
+  type TvdbLoginResponse,
+  type TvdbSeasonDetails,
+  type TvdbTvDetails,
 } from '@server/api/tvdb/interfaces';
 import cacheManager, { type AvailableCacheIds } from '@server/lib/cache';
 import logger from '@server/logger';
@@ -203,6 +204,10 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
     seasonNumber: number;
     language?: string;
   }): Promise<TmdbSeasonWithEpisodes> {
+    logger.info(
+      `Getting TV season ${seasonNumber} for TV ID: ${tvId} in language: ${language}`
+    );
+
     try {
       const tmdbTvShow = await this.tmdb.getTvShow({ tvId, language });
 
@@ -215,7 +220,12 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
           return await this.tmdb.getTvSeason({ tvId, seasonNumber, language });
         }
 
-        return await this.getTvdbSeasonData(tvdbId, seasonNumber, tvId);
+        return await this.getTvdbSeasonData(
+          tvdbId,
+          seasonNumber,
+          tvId,
+          language
+        );
       } catch (error) {
         this.handleError('Failed to fetch TV season details', error);
         return await this.tmdb.getTvSeason({ tvId, seasonNumber, language });
@@ -316,8 +326,8 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
   private async getTvdbSeasonData(
     tvdbId: number,
     seasonNumber: number,
-    tvId: number
-    //language: string = Tvdb.DEFAULT_LANGUAGE
+    tvId: number,
+    language: string = Tvdb.DEFAULT_LANGUAGE
   ): Promise<TmdbSeasonWithEpisodes> {
     const tvdbData = await this.fetchTvdbShowData(tvdbId);
 
@@ -325,6 +335,26 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
       logger.error(`Failed to fetch TVDB data for ID: ${tvdbId}`);
       return this.createEmptySeasonResponse(tvId);
     }
+
+    let wantedTranslation = convertTmdbLanguageToTvdbWithFallback(
+      language,
+      Tvdb.DEFAULT_LANGUAGE
+    );
+
+    const availableTranslation = tvdbData.nameTranslations.filter(
+      (translation) =>
+        translation === wantedTranslation ||
+        translation === Tvdb.DEFAULT_LANGUAGE
+    );
+
+    if (!availableTranslation) {
+      // if no translations are available, use the original language (no wanted translation and no english fallback)
+      wantedTranslation = tvdbData.originalLanguage;
+    }
+
+    logger.info(
+      `TVDB: Wanted translation: ${wantedTranslation} for language: ${language} on TVDB ID: ${tvdbId}`
+    );
 
     // get season id
     const season = tvdbData.seasons.find(
@@ -334,6 +364,100 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
         season.type.type === 'official'
     );
 
+    if (!season) {
+      logger.error(
+        `Failed to find season ${seasonNumber} for TVDB ID: ${tvdbId}`
+      );
+      return this.createEmptySeasonResponse(tvId);
+    }
+
+    if (season && wantedTranslation === tvdbData.originalLanguage) {
+      return this.getSeasonWithOriginalLanguage(
+        tvdbId,
+        tvId,
+        seasonNumber,
+        season
+      );
+    }
+
+    return this.getSeasonWithTranslation(
+      tvdbId,
+      tvId,
+      seasonNumber,
+      season,
+      wantedTranslation
+    );
+  }
+
+  private async getSeasonWithTranslation(
+    tvdbId: number,
+    tvId: number,
+    seasonNumber: number,
+    season: TvdbSeasonDetails,
+    language: string
+  ): Promise<TmdbSeasonWithEpisodes> {
+    if (!season) {
+      logger.error(
+        `Failed to find season ${seasonNumber} for TVDB ID: ${tvdbId}`
+      );
+      return this.createEmptySeasonResponse(tvId);
+    }
+
+    let allEpisodes = [] as TvdbEpisode[];
+    let page = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      logger.info(
+        `Fetching TVDB season ${seasonNumber} page ${page} for TVDB ID: ${tvdbId} in language ${language}: /series/${season.id}/episodes/default/${language}?page=${page}`
+      );
+      const resp = await this.get<TvdbBaseResponse<TvdbSeasonDetails>>(
+        `/series/${tvdbId}/episodes/default/${language}?page=${page}`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+          },
+        }
+      );
+
+      const currentPage = resp.data;
+
+      allEpisodes = allEpisodes.concat(currentPage.episodes);
+      if (resp.links) {
+        logger.debug(`TVDB Pagination Info: ${JSON.stringify(resp.links)}`);
+        hasMore =
+          resp.links.next && resp.data.episodes && resp.data.episodes.length > 0
+            ? true
+            : false;
+        page++;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    const episodes = this.processEpisodes(
+      { ...season, episodes: allEpisodes },
+      seasonNumber,
+      tvId
+    );
+
+    return {
+      episodes,
+      external_ids: { tvdb_id: tvdbId },
+      name: '',
+      overview: '',
+      id: season.id,
+      air_date: season.firstAired,
+      season_number: episodes.length,
+    };
+  }
+
+  private async getSeasonWithOriginalLanguage(
+    tvdbId: number,
+    tvId: number,
+    seasonNumber: number,
+    season: TvdbSeasonDetails
+  ): Promise<TmdbSeasonWithEpisodes> {
     if (!season) {
       logger.error(
         `Failed to find season ${seasonNumber} for TVDB ID: ${tvdbId}`
@@ -394,7 +518,10 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
       season_number: episode.seasonNumber,
       production_code: '',
       show_id: tvId,
-      still_path: episode.image ? episode.image : '',
+      still_path:
+        episode.image && !episode.image.startsWith('https://')
+          ? 'https://artworks.thetvdb.com' + episode.image
+          : '',
       vote_average: 1,
       vote_count: 1,
     };
