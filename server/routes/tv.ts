@@ -28,6 +28,7 @@ tvRoutes.get('/:id', async (req, res, next) => {
       : await getMetadataProvider('tv');
     const tv = await metadataProvider.getTvShow({
       tvId: Number(req.params.id),
+      language: (req.query.language as string) ?? req.locale,
     });
     const media = await Media.getMedia(tv.id, MediaType.TV);
 
@@ -79,7 +80,6 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
     const season = await metadataProvider.getTvSeason({
       tvId: Number(req.params.id),
       seasonNumber: Number(req.params.seasonNumber),
-      language: (req.query.language as string) ?? req.locale,
     });
 
     const media = await Media.getMedia(Number(req.params.id), MediaType.TV);
