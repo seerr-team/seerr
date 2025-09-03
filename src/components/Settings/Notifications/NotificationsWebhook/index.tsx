@@ -119,18 +119,7 @@ const NotificationsWebhook = () => {
         intl.formatMessage(messages.validationWebhookUrl),
         function (value) {
           const { supportVariables } = this.parent;
-
-          // allow variable syntax through
-          if (
-            supportVariables &&
-            typeof value === 'string' &&
-            value.includes('{{')
-          ) {
-            return true;
-          }
-
-          // otherwise fall back to the built‑in URL check
-          return isValidURL(value);
+          return supportVariables || isValidURL(value);
         }
       ),
 
