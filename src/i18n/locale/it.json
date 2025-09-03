@@ -577,7 +577,7 @@
   "components.Settings.SettingsLogs.resumeLogs": "Riprendi",
   "components.Settings.SettingsLogs.pauseLogs": "Pausa",
   "components.Settings.SettingsLogs.message": "Messaggio",
-  "components.Settings.SettingsLogs.logsDescription": "Puoi anche visualizzare questi registri direttamente tramite <code>stdout</code>, o in <code>{appDataPath}/logs/overseerr.log</code>.",
+  "components.Settings.SettingsLogs.logsDescription": "Puoi anche visualizzare questi registri direttamente tramite <code>stdout</code>, o in <code>{appDataPath}/logs/jellyseerr.log</code>.",
   "components.Settings.SettingsLogs.level": "Gravità",
   "components.Settings.SettingsLogs.label": "Etichetta",
   "components.Settings.SettingsLogs.filterWarn": "Attenzione",
@@ -1331,5 +1331,11 @@
   "components.Settings.OverrideRuleTile.settings": "Impostazioni",
   "components.Settings.OverrideRuleTile.tags": "Tags",
   "components.Settings.OverrideRuleTile.users": "Utenti",
-  "components.Settings.SettingsJobsCache.plex-refresh-token": "Token di aggiornamento Plex"
+  "components.Settings.SettingsJobsCache.plex-refresh-token": "Token di aggiornamento Plex",
+  "components.Settings.SettingsMain.discoverRegionTip": "Filtra i contenuti in base alla disponibilità della regione",
+  "components.Settings.SettingsMain.discoverRegion": "Ricerca per Regione",
+  "components.Settings.SettingsMain.streamingRegionTip": "Mostra i siti di streaming in base alla disponibilità della regione",
+  "components.Settings.SettingsMain.enableSpecialEpisodes": "Consenti richieste di episodi speciali",
+  "components.Settings.SettingsJobsCache.usersavatars": "Avatar degli utenti",
+  "components.Settings.SettingsMain.streamingRegion": "Regione di streaming"
 }
