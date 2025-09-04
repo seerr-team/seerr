@@ -193,7 +193,11 @@ const TMDB_TO_TVDB_MAPPING: Record<string, string> = {
 export function convertTMDBToTVDB(tmdbCode: string): string | null {
   const normalizedCode = tmdbCode.toLowerCase();
 
-  return TMDB_TO_TVDB_MAPPING[normalizedCode] || null;
+  return (
+    TMDB_TO_TVDB_MAPPING[tmdbCode] ||
+    TMDB_TO_TVDB_MAPPING[normalizedCode] ||
+    null
+  );
 }
 
 export function convertTmdbLanguageToTvdbWithFallback(
@@ -201,14 +205,8 @@ export function convertTmdbLanguageToTvdbWithFallback(
   fallback: string
 ): string {
   // First try exact match
-  let tvdbCode = convertTMDBToTVDB(tmdbCode);
+  const tvdbCode = convertTMDBToTVDB(tmdbCode);
   if (tvdbCode) return tvdbCode;
-
-  // Try base language code for regional variants
-  if (tmdbCode.includes('-')) {
-    const baseCode = tmdbCode.split('-')[0];
-    tvdbCode = convertTMDBToTVDB(baseCode);
-  }
 
   return tvdbCode || fallback || 'eng'; // Default to English if no match found
 }
