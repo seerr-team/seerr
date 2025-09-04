@@ -336,26 +336,6 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
       return this.createEmptySeasonResponse(tvId);
     }
 
-    let wantedTranslation = convertTmdbLanguageToTvdbWithFallback(
-      language,
-      Tvdb.DEFAULT_LANGUAGE
-    );
-
-    const availableTranslation = tvdbData.nameTranslations.filter(
-      (translation) =>
-        translation === wantedTranslation ||
-        translation === Tvdb.DEFAULT_LANGUAGE
-    );
-
-    if (!availableTranslation) {
-      // if no translations are available, use the original language (no wanted translation and no english fallback)
-      wantedTranslation = tvdbData.originalLanguage;
-    }
-
-    logger.info(
-      `TVDB: Wanted translation: ${wantedTranslation} for language: ${language} on TVDB ID: ${tvdbId}`
-    );
-
     // get season id
     const season = tvdbData.seasons.find(
       (season) =>
@@ -370,6 +350,27 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
       );
       return this.createEmptySeasonResponse(tvId);
     }
+
+    let wantedTranslation = convertTmdbLanguageToTvdbWithFallback(
+      language,
+      Tvdb.DEFAULT_LANGUAGE
+    );
+
+    // check if translation is available for the season
+    const availableTranslation = season.nameTranslations.filter(
+      (translation) =>
+        translation === wantedTranslation ||
+        translation === Tvdb.DEFAULT_LANGUAGE
+    );
+
+    if (!availableTranslation) {
+      // if no translations are available, use the original language (no wanted translation and no english fallback)
+      wantedTranslation = tvdbData.originalLanguage;
+    }
+
+    logger.debug(
+      `TVDB: Wanted translation: ${wantedTranslation} for language: ${language} on TVDB ID: ${tvdbId}`
+    );
 
     if (season && wantedTranslation === tvdbData.originalLanguage) {
       return this.getSeasonWithOriginalLanguage(
