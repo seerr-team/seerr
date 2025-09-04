@@ -288,7 +288,7 @@ const NotificationsWebhook = () => {
             {values.supportVariables && (
               <div className="mt-2">
                 <Link
-                  href="https://docs.overseerr.dev/using-overseerr/notifications/webhooks#template-variables"
+                  href="https://docs.jellyseerr.dev/using-jellyseerr/notifications/webhook#template-variables"
                   passHref
                   legacyBehavior
                 >
