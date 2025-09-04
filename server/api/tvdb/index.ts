@@ -404,36 +404,59 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
       return this.createEmptySeasonResponse(tvId);
     }
 
-    let allEpisodes = [] as TvdbEpisode[];
+    const allEpisodes = [] as TvdbEpisode[];
     let page = 0;
-    let hasMore = true;
+    // Limit to max 50 pages to avoid infinite loops.
+    // 50 pages with 500 items per page = 25_000 episodes in a series which should be more than enough
+    const maxPages = 50;
 
-    while (hasMore) {
+    while (page < maxPages) {
       logger.info(
         `Fetching TVDB season ${seasonNumber} page ${page} for TVDB ID: ${tvdbId} in language ${language}: /series/${season.id}/episodes/default/${language}?page=${page}`
       );
       const resp = await this.get<TvdbBaseResponse<TvdbSeasonDetails>>(
-        `/series/${tvdbId}/episodes/default/${language}?page=${page}`,
+        `/series/${tvdbId}/episodes/default/${language}`,
         {
           headers: {
             Authorization: `Bearer ${this.token}`,
           },
+          params: {
+            page: page,
+          },
         }
       );
 
-      const currentPage = resp.data;
-
-      allEpisodes = allEpisodes.concat(currentPage.episodes);
-      if (resp.links) {
-        logger.debug(`TVDB Pagination Info: ${JSON.stringify(resp.links)}`);
-        hasMore =
-          resp.links.next && resp.data.episodes && resp.data.episodes.length > 0
-            ? true
-            : false;
-        page++;
-      } else {
-        hasMore = false;
+      if (!resp?.data?.episodes) {
+        logger.warn(
+          `No episodes found for TVDB ID: ${tvdbId} on page ${page} for season ${seasonNumber}`
+        );
+        break;
       }
+
+      const { episodes } = resp.data;
+
+      if (!episodes || episodes.length === 0) {
+        logger.info(
+          `No more episodes found for TVDB ID: ${tvdbId} on page ${page} for season ${seasonNumber}`
+        );
+        break;
+      }
+
+      allEpisodes.push(...episodes);
+
+      const hasNextPage = resp.links?.next && episodes.length > 0;
+
+      if (!hasNextPage) {
+        break;
+      }
+
+      page++;
+    }
+
+    if (page >= maxPages) {
+      logger.warn(
+        `Reached max pages (${maxPages}) for TVDB ID: ${tvdbId} on season ${seasonNumber}. There might be more episodes available.`
+      );
     }
 
     const episodes = this.processEpisodes(
