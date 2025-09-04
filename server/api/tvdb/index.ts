@@ -368,10 +368,6 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
       wantedTranslation = tvdbData.originalLanguage;
     }
 
-    logger.debug(
-      `TVDB: Wanted translation: ${wantedTranslation} for language: ${language} on TVDB ID: ${tvdbId}`
-    );
-
     if (season && wantedTranslation === tvdbData.originalLanguage) {
       return this.getSeasonWithOriginalLanguage(
         tvdbId,
@@ -411,9 +407,6 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
     const maxPages = 50;
 
     while (page < maxPages) {
-      logger.info(
-        `Fetching TVDB season ${seasonNumber} page ${page} for TVDB ID: ${tvdbId} in language ${language}: /series/${season.id}/episodes/default/${language}?page=${page}`
-      );
       const resp = await this.get<TvdbBaseResponse<TvdbSeasonDetails>>(
         `/series/${tvdbId}/episodes/default/${language}`,
         {
@@ -435,8 +428,8 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
 
       const { episodes } = resp.data;
 
-      if (!episodes || episodes.length === 0) {
-        logger.info(
+      if (!episodes) {
+        logger.debug(
           `No more episodes found for TVDB ID: ${tvdbId} on page ${page} for season ${seasonNumber}`
         );
         break;
@@ -455,7 +448,7 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
 
     if (page >= maxPages) {
       logger.warn(
-        `Reached max pages (${maxPages}) for TVDB ID: ${tvdbId} on season ${seasonNumber}. There might be more episodes available.`
+        `Reached max pages (${maxPages}) for TVDB ID: ${tvdbId} on season ${seasonNumber} with language ${language}. There might be more episodes available.`
       );
     }
 
