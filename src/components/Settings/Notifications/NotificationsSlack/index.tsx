@@ -16,7 +16,7 @@ const messages = defineMessages(
   'components.Settings.Notifications.NotificationsSlack',
   {
     agentenabled: 'Enable Agent',
-    embedImage: 'Embed Image',
+    embedPoster: 'Embed Poster',
     webhookUrl: 'Webhook URL',
     webhookUrlTip:
       'Create an <WebhookLink>Incoming Webhook</WebhookLink> integration',
@@ -60,7 +60,7 @@ const NotificationsSlack = () => {
     <Formik
       initialValues={{
         enabled: data.enabled,
-        embedImage: data.embedImage,
+        embedPoster: data.embedPoster,
         types: data.types,
         webhookUrl: data.options.webhookUrl,
       }}
@@ -69,7 +69,7 @@ const NotificationsSlack = () => {
         try {
           await axios.post('/api/v1/settings/notifications/slack', {
             enabled: values.enabled,
-            embedImage: values.embedImage,
+            embedPoster: values.embedPoster,
             types: values.types,
             options: {
               webhookUrl: values.webhookUrl,
@@ -114,7 +114,7 @@ const NotificationsSlack = () => {
             );
             await axios.post('/api/v1/settings/notifications/slack/test', {
               enabled: true,
-              embedImage: values.embedImage,
+              embedPoster: values.embedPoster,
               types: values.types,
               options: {
                 webhookUrl: values.webhookUrl,
@@ -153,11 +153,11 @@ const NotificationsSlack = () => {
               </div>
             </div>
             <div className="form-row">
-              <label htmlFor="embedImage" className="checkbox-label">
-                {intl.formatMessage(messages.embedImage)}
+              <label htmlFor="embedPoster" className="checkbox-label">
+                {intl.formatMessage(messages.embedPoster)}
               </label>
               <div className="form-input-area">
-                <Field type="checkbox" id="embedImage" name="embedImage" />
+                <Field type="checkbox" id="embedPoster" name="embedPoster" />
               </div>
             </div>
             <div className="form-row">

@@ -15,7 +15,7 @@ import * as Yup from 'yup';
 
 const messages = defineMessages('components.Settings.Notifications', {
   agentenabled: 'Enable Agent',
-  embedImage: 'Embed Image',
+  embedPoster: 'Embed Poster',
   botUsername: 'Bot Username',
   botUsernameTip:
     'Allow users to also start a chat with your bot and configure their own notifications',
@@ -90,7 +90,7 @@ const NotificationsTelegram = () => {
     <Formik
       initialValues={{
         enabled: data?.enabled,
-        embedImage: data?.embedImage,
+        embedPoster: data?.embedPoster,
         types: data?.types,
         botUsername: data?.options.botUsername,
         botAPI: data?.options.botAPI,
@@ -103,7 +103,7 @@ const NotificationsTelegram = () => {
         try {
           await axios.post('/api/v1/settings/notifications/telegram', {
             enabled: values.enabled,
-            embedImage: values.embedImage,
+            embedPoster: values.embedPoster,
             types: values.types,
             options: {
               botAPI: values.botAPI,
@@ -195,11 +195,11 @@ const NotificationsTelegram = () => {
               </div>
             </div>
             <div className="form-row">
-              <label htmlFor="embedImage" className="checkbox-label">
-                {intl.formatMessage(messages.embedImage)}
+              <label htmlFor="embedPoster" className="checkbox-label">
+                {intl.formatMessage(messages.embedPoster)}
               </label>
               <div className="form-input-area">
-                <Field type="checkbox" id="embedImage" name="embedImage" />
+                <Field type="checkbox" id="embedPoster" name="embedPoster" />
               </div>
             </div>
             <div className="form-row">

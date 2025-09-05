@@ -24,7 +24,7 @@ class NtfyAgent
   private buildPayload(type: Notification, payload: NotificationPayload) {
     const settings = getSettings();
     const { applicationUrl } = settings.main;
-    const { embedImage } = settings.notifications.agents.ntfy;
+    const { embedPoster } = settings.notifications.agents.ntfy;
 
     const topic = this.getSettings().options.topic;
     const priority = 3;
@@ -74,7 +74,7 @@ class NtfyAgent
       message += `\n\n**${extra.name}**\n${extra.value}`;
     }
 
-    const attach = embedImage ? payload.image : undefined;
+    const attach = embedPoster ? payload.image : undefined;
 
     let click;
     if (applicationUrl && payload.media) {

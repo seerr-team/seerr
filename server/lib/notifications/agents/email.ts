@@ -50,7 +50,7 @@ class EmailAgent
   ): EmailOptions | undefined {
     const settings = getSettings();
     const { applicationUrl, applicationTitle } = settings.main;
-    const { embedImage } = settings.notifications.agents.email;
+    const { embedPoster } = settings.notifications.agents.email;
 
     if (type === Notification.TEST_NOTIFICATION) {
       return {
@@ -131,7 +131,7 @@ class EmailAgent
           body,
           mediaName: payload.subject,
           mediaExtra: payload.extra ?? [],
-          imageUrl: embedImage ? payload.image : undefined,
+          imageUrl: embedPoster ? payload.image : undefined,
           timestamp: new Date().toTimeString(),
           requestedBy: payload.request.requestedBy.displayName,
           actionUrl: applicationUrl
@@ -178,7 +178,7 @@ class EmailAgent
           issueComment: payload.comment?.message,
           mediaName: payload.subject,
           extra: payload.extra ?? [],
-          imageUrl: embedImage ? payload.image : undefined,
+          imageUrl: embedPoster ? payload.image : undefined,
           timestamp: new Date().toTimeString(),
           actionUrl: applicationUrl
             ? `${applicationUrl}/issues/${payload.issue.id}`

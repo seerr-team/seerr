@@ -65,7 +65,7 @@ class SlackAgent
   ): SlackBlockEmbed {
     const settings = getSettings();
     const { applicationUrl, applicationTitle } = settings.main;
-    const { embedImage } = settings.notifications.agents.slack;
+    const { embedPoster } = settings.notifications.agents.slack;
 
     const fields: EmbedField[] = [];
 
@@ -162,7 +162,7 @@ class SlackAgent
           text: payload.message,
         },
         accessory:
-          embedImage && payload.image
+          embedPoster && payload.image
             ? {
                 type: 'image',
                 image_url: payload.image,

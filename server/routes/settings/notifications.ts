@@ -270,7 +270,7 @@ notificationRoutes.get('/webhook', (_req, res) => {
 
   const response: typeof webhookSettings = {
     enabled: webhookSettings.enabled,
-    embedImage: webhookSettings.embedImage,
+    embedPoster: webhookSettings.embedPoster,
     types: webhookSettings.types,
     options: {
       ...webhookSettings.options,
@@ -292,7 +292,7 @@ notificationRoutes.post('/webhook', async (req, res, next) => {
 
     settings.notifications.agents.webhook = {
       enabled: req.body.enabled,
-      embedImage: req.body.embedImage,
+      embedPoster: req.body.embedPoster,
       types: req.body.types,
       options: {
         jsonPayload: Buffer.from(req.body.options.jsonPayload).toString(
@@ -323,7 +323,7 @@ notificationRoutes.post('/webhook/test', async (req, res, next) => {
 
     const testBody = {
       enabled: req.body.enabled,
-      embedImage: req.body.embedImage,
+      embedPoster: req.body.embedPoster,
       types: req.body.types,
       options: {
         jsonPayload: Buffer.from(req.body.options.jsonPayload).toString(

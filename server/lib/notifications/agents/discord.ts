@@ -111,7 +111,7 @@ class DiscordAgent
   ): DiscordRichEmbed {
     const settings = getSettings();
     const { applicationUrl } = settings.main;
-    const { embedImage } = settings.notifications.agents.discord;
+    const { embedPoster } = settings.notifications.agents.discord;
 
     const appUrl =
       applicationUrl || `http://localhost:${process.env.port || 5055}`;
@@ -225,7 +225,7 @@ class DiscordAgent
           }
         : undefined,
       fields,
-      thumbnail: embedImage
+      thumbnail: embedPoster
         ? {
             url: payload.image,
           }

@@ -17,7 +17,7 @@ const messages = defineMessages('components.Settings.Notifications', {
   validationSmtpHostRequired: 'You must provide a valid hostname or IP address',
   validationSmtpPortRequired: 'You must provide a valid port number',
   agentenabled: 'Enable Agent',
-  embedImage: 'Embed Image',
+  embedPoster: 'Embed Poster',
   userEmailRequired: 'Require user email',
   emailsender: 'Sender Address',
   smtpHost: 'SMTP Host',
@@ -123,7 +123,7 @@ const NotificationsEmail = () => {
     <Formik
       initialValues={{
         enabled: data.enabled,
-        embedImage: data.embedImage,
+        embedPoster: data.embedPoster,
         userEmailRequired: data.options.userEmailRequired,
         emailFrom: data.options.emailFrom,
         smtpHost: data.options.smtpHost,
@@ -147,7 +147,7 @@ const NotificationsEmail = () => {
         try {
           await axios.post('/api/v1/settings/notifications/email', {
             enabled: values.enabled,
-            embedImage: values.embedImage,
+            embedPoster: values.embedPoster,
             options: {
               userEmailRequired: values.userEmailRequired,
               emailFrom: values.emailFrom,
@@ -197,7 +197,7 @@ const NotificationsEmail = () => {
             );
             await axios.post('/api/v1/settings/notifications/email/test', {
               enabled: true,
-              embedImage: values.embedImage,
+              embedPoster: values.embedPoster,
               options: {
                 emailFrom: values.emailFrom,
                 smtpHost: values.smtpHost,
@@ -246,11 +246,11 @@ const NotificationsEmail = () => {
               </div>
             </div>
             <div className="form-row">
-              <label htmlFor="embedImage" className="checkbox-label">
-                {intl.formatMessage(messages.embedImage)}
+              <label htmlFor="embedPoster" className="checkbox-label">
+                {intl.formatMessage(messages.embedPoster)}
               </label>
               <div className="form-input-area">
-                <Field type="checkbox" id="embedImage" name="embedImage" />
+                <Field type="checkbox" id="embedPoster" name="embedPoster" />
               </div>
             </div>
             <div className="form-row">
