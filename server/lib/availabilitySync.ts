@@ -14,7 +14,7 @@ import MediaRequest from '@server/entity/MediaRequest';
 import type Season from '@server/entity/Season';
 import { User } from '@server/entity/User';
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
-import { getSettings } from '@server/lib/settings';
+import { getSettings, MetadataProviderType } from '@server/lib/settings';
 import logger from '@server/logger';
 import { getHostname } from '@server/utils/getHostname';
 
@@ -506,16 +506,13 @@ class AvailabilitySync {
             : null;
       }
       logger.info(
-        `The ${is4k ? '4K' : 'non-4K'} ${
-          media.mediaType === 'movie' ? 'movie' : 'show'
-        } [TMDB ID ${media.tmdbId}] was not found in any ${
-          media.mediaType === 'movie' ? 'Radarr' : 'Sonarr'
-        } and ${
-          mediaServerType === MediaServerType.PLEX
-            ? 'plex'
-            : mediaServerType === MediaServerType.JELLYFIN
-              ? 'jellyfin'
-              : 'emby'
+        `The ${is4k ? '4K' : 'non-4K'} ${media.mediaType === 'movie' ? 'movie' : 'show'
+        } [TMDB ID ${media.tmdbId}] was not found in any ${media.mediaType === 'movie' ? 'Radarr' : 'Sonarr'
+        } and ${mediaServerType === MediaServerType.PLEX
+          ? 'plex'
+          : mediaServerType === MediaServerType.JELLYFIN
+            ? 'jellyfin'
+            : 'emby'
         } instance. Status will be changed to deleted.`,
         { label: 'AvailabilitySync' }
       );
@@ -523,8 +520,7 @@ class AvailabilitySync {
       await mediaRepository.save(media);
     } catch (ex) {
       logger.debug(
-        `Failure updating the ${is4k ? '4K' : 'non-4K'} ${
-          media.mediaType === 'tv' ? 'show' : 'movie'
+        `Failure updating the ${is4k ? '4K' : 'non-4K'} ${media.mediaType === 'tv' ? 'show' : 'movie'
         } [TMDB ID ${media.tmdbId}].`,
         {
           errorMessage: ex.message,
@@ -581,23 +577,19 @@ class AvailabilitySync {
       await mediaRepository.save(media);
 
       logger.info(
-        `The ${is4k ? '4K' : 'non-4K'} season(s) [${seasonKeys}] [TMDB ID ${
-          media.tmdbId
-        }] was not found in any ${
-          media.mediaType === 'tv' ? 'Sonarr' : 'Radarr'
-        } and ${
-          mediaServerType === MediaServerType.PLEX
-            ? 'plex'
-            : mediaServerType === MediaServerType.JELLYFIN
-              ? 'jellyfin'
-              : 'emby'
+        `The ${is4k ? '4K' : 'non-4K'} season(s) [${seasonKeys}] [TMDB ID ${media.tmdbId
+        }] was not found in any ${media.mediaType === 'tv' ? 'Sonarr' : 'Radarr'
+        } and ${mediaServerType === MediaServerType.PLEX
+          ? 'plex'
+          : mediaServerType === MediaServerType.JELLYFIN
+            ? 'jellyfin'
+            : 'emby'
         } instance. Status will be changed to deleted.`,
         { label: 'AvailabilitySync' }
       );
     } catch (ex) {
       logger.debug(
-        `Failure updating the ${
-          is4k ? '4K' : 'non-4K'
+        `Failure updating the ${is4k ? '4K' : 'non-4K'
         } season(s) [${seasonKeys}], TMDB ID ${media.tmdbId}.`,
         {
           errorMessage: ex.message,
@@ -663,8 +655,7 @@ class AvailabilitySync {
         if (!ex.message.includes('404')) {
           existsInRadarr = true;
           logger.debug(
-            `Failure retrieving the ${is4k ? '4K' : 'non-4K'} movie [TMDB ID ${
-              media.tmdbId
+            `Failure retrieving the ${is4k ? '4K' : 'non-4K'} movie [TMDB ID ${media.tmdbId
             }] from Radarr.`,
             {
               errorMessage: ex.message,
@@ -720,8 +711,7 @@ class AvailabilitySync {
           existsInSonarr = true;
           preventSeasonSearch = true;
           logger.debug(
-            `Failure retrieving the ${is4k ? '4K' : 'non-4K'} show [TMDB ID ${
-              media.tmdbId
+            `Failure retrieving the ${is4k ? '4K' : 'non-4K'} show [TMDB ID ${media.tmdbId
             }] from Sonarr.`,
             {
               errorMessage: ex.message,
@@ -742,7 +732,7 @@ class AvailabilitySync {
         (season) =>
           season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
           season[is4k ? 'status4k' : 'status'] ===
-            MediaStatus.PARTIALLY_AVAILABLE
+          MediaStatus.PARTIALLY_AVAILABLE
       );
 
       for (const season of filteredSeasons) {
@@ -768,6 +758,12 @@ class AvailabilitySync {
   ): Promise<boolean> {
     let seasonExists = false;
     const episodeRepository = getRepository(Episode);
+
+    const settings = getSettings();
+    const shouldTrackEpisodes =
+      settings.main.enableEpisodeAvailability &&
+      (settings.metadataSettings.tv === MetadataProviderType.TVDB ||
+        settings.metadataSettings.anime === MetadataProviderType.TVDB);
 
     // Check each sonarr instance to see if the media still exists
     // If found, we will assume the media exists and prevent removal
@@ -817,48 +813,50 @@ class AvailabilitySync {
             return seasonExists;
           }
 
-          const episodes = await sonarrApi.getEpisodesBySeriesId(serviceId);
+          if (shouldTrackEpisodes) {
+            const episodes = await sonarrApi.getEpisodesBySeriesId(serviceId);
 
-          for (const ep of episodes) {
-            if (ep.seasonNumber === season.seasonNumber) {
-              const existingEpisode = await episodeRepository.findOne({
-                where: {
-                  episodeNumber: ep.episodeNumber,
-                  season: { id: season.id },
-                },
-                relations: ['season'],
-              });
+            for (const ep of episodes) {
+              if (ep.seasonNumber === season.seasonNumber) {
+                const existingEpisode = await episodeRepository.findOne({
+                  where: {
+                    episodeNumber: ep.episodeNumber,
+                    season: { id: season.id },
+                  },
+                  relations: ['season'],
+                });
 
-              if (existingEpisode) {
-                existingEpisode[is4k ? 'status4k' : 'status'] = ep.hasFile
-                  ? MediaStatus.AVAILABLE
-                  : MediaStatus.UNKNOWN;
-                await episodeRepository.save(existingEpisode);
-              } else {
-                const newEpisode = new Episode();
-                newEpisode.episodeNumber = ep.episodeNumber;
-                newEpisode.status = is4k
-                  ? MediaStatus.UNKNOWN
-                  : ep.hasFile
+                if (existingEpisode) {
+                  existingEpisode[is4k ? 'status4k' : 'status'] = ep.hasFile
                     ? MediaStatus.AVAILABLE
                     : MediaStatus.UNKNOWN;
-                newEpisode.status4k = is4k
-                  ? ep.hasFile
-                    ? MediaStatus.AVAILABLE
-                    : MediaStatus.UNKNOWN
-                  : MediaStatus.UNKNOWN;
-                newEpisode.season = Promise.resolve(season);
+                  await episodeRepository.save(existingEpisode);
+                } else {
+                  const newEpisode = new Episode();
+                  newEpisode.episodeNumber = ep.episodeNumber;
+                  newEpisode.status = is4k
+                    ? MediaStatus.UNKNOWN
+                    : ep.hasFile
+                      ? MediaStatus.AVAILABLE
+                      : MediaStatus.UNKNOWN;
+                  newEpisode.status4k = is4k
+                    ? ep.hasFile
+                      ? MediaStatus.AVAILABLE
+                      : MediaStatus.UNKNOWN
+                    : MediaStatus.UNKNOWN;
+                  newEpisode.season = Promise.resolve(season);
 
-                try {
-                  await episodeRepository.save(newEpisode);
-                } catch (saveError) {
-                  logger.error('Failed to save new episode', {
-                    label: 'Availability Sync',
-                    errorMessage: saveError.message,
-                    tvId: media.tmdbId,
-                    seasonNumber: season.seasonNumber,
-                    episodeNumber: ep.episodeNumber,
-                  });
+                  try {
+                    await episodeRepository.save(newEpisode);
+                  } catch (saveError) {
+                    logger.error('Failed to save new episode', {
+                      label: 'Availability Sync',
+                      errorMessage: saveError.message,
+                      tvId: media.tmdbId,
+                      seasonNumber: season.seasonNumber,
+                      episodeNumber: ep.episodeNumber,
+                    });
+                  }
                 }
               }
             }
@@ -964,8 +962,7 @@ class AvailabilitySync {
         existsInPlex = true;
         preventSeasonSearch = true;
         logger.debug(
-          `Failure retrieving the ${is4k ? '4K' : 'non-4K'} ${
-            media.mediaType === 'tv' ? 'show' : 'movie'
+          `Failure retrieving the ${is4k ? '4K' : 'non-4K'} ${media.mediaType === 'tv' ? 'show' : 'movie'
           } [TMDB ID ${media.tmdbId}] from Plex.`,
           {
             errorMessage: ex.message,
@@ -986,7 +983,7 @@ class AvailabilitySync {
           (season) =>
             season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
             season[is4k ? 'status4k' : 'status'] ===
-              MediaStatus.PARTIALLY_AVAILABLE
+            MediaStatus.PARTIALLY_AVAILABLE
         );
 
         for (const season of filteredSeasons) {
@@ -1081,8 +1078,7 @@ class AvailabilitySync {
         existsInJellyfin = true;
         preventSeasonSearch = true;
         logger.debug(
-          `Failure retrieving the ${is4k ? '4K' : 'non-4K'} ${
-            media.mediaType === 'tv' ? 'show' : 'movie'
+          `Failure retrieving the ${is4k ? '4K' : 'non-4K'} ${media.mediaType === 'tv' ? 'show' : 'movie'
           } [TMDB ID ${media.tmdbId}] from Jellyfin.`,
           {
             errorMessage: ex.message,
@@ -1103,7 +1099,7 @@ class AvailabilitySync {
           (season) =>
             season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
             season[is4k ? 'status4k' : 'status'] ===
-              MediaStatus.PARTIALLY_AVAILABLE
+            MediaStatus.PARTIALLY_AVAILABLE
         );
 
         for (const season of filteredSeasons) {
