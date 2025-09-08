@@ -1,3 +1,5 @@
+import { type AvailableLocale } from '@server/types/languages';
+
 export interface TvdbBaseResponse<T> {
   data: T;
   errors: string;
@@ -152,7 +154,9 @@ export interface TvdbEpisodeTranslation {
   language: string;
 }
 
-const TMDB_TO_TVDB_MAPPING: Record<string, string> = {
+const TMDB_TO_TVDB_MAPPING: Record<string, string> & {
+  [key in AvailableLocale]: string;
+} = {
   ar: 'ara', // Arabic
   bg: 'bul', // Bulgarian
   ca: 'cat', // Catalan
