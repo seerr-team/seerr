@@ -295,14 +295,13 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
     season: TvdbSeasonDetails,
     tvdbData: TvdbTvDetails
   ): TmdbTvSeasonResult {
-    const seasonNumber = season.number ?? -1;
-    if (seasonNumber < 0) {
+    if (!season.number) {
       return {
         id: 0,
         episode_count: 0,
         name: '',
         overview: '',
-        season_number: -1,
+        season_number: 0,
         poster_path: '',
         air_date: '',
       };
