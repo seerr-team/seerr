@@ -913,132 +913,144 @@ discoverRoutes.get<Record<string, unknown>, WatchlistResponse>(
 );
 
 // TMDB list slider: return items from a TMDB list by id
-discoverRoutes.get<{ listId: string }>('/list/:listId', async (req, res, next) => {
-  const listId = Number(req.params.listId);
-  if (!listId || Number.isNaN(listId)) {
-    return next({ status: 400, message: 'Invalid list ID.' });
-  }
-
-  // same helper as in /trending etc.
-  const tmdb = createTmdbWithRegionLanguage(req.user);
-  const language = (req.query.language as string) ?? req.locale;
-  const page = req.query.page ? Number(req.query.page) || 1 : 1;
-
-  try {
-    let data: { results: Array<any> } | null = null;
-
-    // 1) v3: all items come without pagination
-    try {
-      const v3 = await tmdb.getList({ listId, language });
-      data = v3;
-    } catch {
-      data = null;
+discoverRoutes.get<{ listId: string }>(
+  '/list/:listId',
+  async (req, res, next) => {
+    const listId = Number(req.params.listId);
+    if (!listId || Number.isNaN(listId)) {
+      return next({ status: 400, message: 'Invalid list ID.' });
     }
 
-    // 2) fallback to v4 if v3 is empty or failed
-    if (!data || !Array.isArray(data.results) || data.results.length === 0) {
-      // use the existing Axios instance of the TMDB client (proxy/timeouts are preserved)
-      const axiosInstance: any = (tmdb as any).axios;
-      const v4Url = `https://api.themoviedb.org/4/list/${listId}`;
+    // same helper as in /trending etc.
+    const tmdb = createTmdbWithRegionLanguage(req.user);
+    const language = (req.query.language as string) ?? req.locale;
+    const page = req.query.page ? Number(req.query.page) || 1 : 1;
 
+    try {
+      let data: { results: any[] } | null = null;
+
+      // 1) v3: all items come without pagination
       try {
-        const resp = await axiosInstance.get(v4Url, {
-          params: { page, language },
-        });
+        const v3 = await tmdb.getList({ listId, language });
+        data = v3;
+      } catch {
+        data = null;
+      }
 
-        const v4 = resp.data as {
-          page?: number;
-          total_pages?: number;
-          total_results?: number;
-          results?: Array<{ id: number; media_type: string }>;
-        };
+      // 2) fallback to v4 if v3 is empty or failed
+      if (!data || !Array.isArray(data.results) || data.results.length === 0) {
+        // use the existing Axios instance of the TMDB client (proxy/timeouts are preserved)
+        const axiosInstance: any = (tmdb as any).axios;
+        const v4Url = `https://api.themoviedb.org/4/list/${listId}`;
 
+        try {
+          const resp = await axiosInstance.get(v4Url, {
+            params: { page, language },
+          });
+
+          const v4 = resp.data as {
+            page?: number;
+            total_pages?: number;
+            total_results?: number;
+            results?: { id: number; media_type: string }[];
+          };
+
+          const media = await Media.getRelatedMedia(
+            req.user,
+            (v4.results ?? []).map((r) => r.id)
+          );
+
+          const mappedResults = (v4.results ?? []).map((r) => {
+            switch (r.media_type) {
+              case 'movie':
+                return mapMovieResult(
+                  r as any,
+                  media.find(
+                    (m) => m.tmdbId === r.id && m.mediaType === MediaType.MOVIE
+                  )
+                );
+              case 'tv':
+                return mapTvResult(
+                  r as any,
+                  media.find(
+                    (m) => m.tmdbId === r.id && m.mediaType === MediaType.TV
+                  )
+                );
+              case 'person':
+                return mapPersonResult(r as any);
+              default:
+                return mapCollectionResult(r as any);
+            }
+          });
+
+          return res.status(200).json({
+            page: v4.page ?? 1,
+            totalPages: v4.total_pages ?? 1,
+            totalResults: mappedResults.length,
+            results: mappedResults,
+          });
+        } catch {
+          // if v4 also fails → continue to empty response below
+        }
+      }
+
+      // 3) return v3 data if available
+      if (data && Array.isArray(data.results) && data.results.length > 0) {
         const media = await Media.getRelatedMedia(
           req.user,
-          (v4.results ?? []).map((r) => r.id)
+          data.results.map((r) => r.id)
         );
 
-        const mappedResults = (v4.results ?? []).map((r) => {
-          switch (r.media_type) {
-            case 'movie':
-              return mapMovieResult(
-                r as any,
-                media.find((m) => m.tmdbId === r.id && m.mediaType === MediaType.MOVIE)
-              );
-            case 'tv':
-              return mapTvResult(
-                r as any,
-                media.find((m) => m.tmdbId === r.id && m.mediaType === MediaType.TV)
-              );
-            case 'person':
-              return mapPersonResult(r as any);
-            default:
-              return mapCollectionResult(r as any);
-          }
-        });
+        const mappedResults = data.results.map((result) =>
+          isMovie(result)
+            ? mapMovieResult(
+                result,
+                media.find(
+                  (m) =>
+                    m.tmdbId === result.id && m.mediaType === MediaType.MOVIE
+                )
+              )
+            : isPerson(result)
+            ? mapPersonResult(result)
+            : isCollection(result)
+            ? mapCollectionResult(result)
+            : mapTvResult(
+                result,
+                media.find(
+                  (m) => m.tmdbId === result.id && m.mediaType === MediaType.TV
+                )
+              )
+        );
 
         return res.status(200).json({
-          page: v4.page ?? 1,
-          totalPages: v4.total_pages ?? 1,
+          page: 1,
+          totalPages: 1,
           totalResults: mappedResults.length,
           results: mappedResults,
         });
-      } catch {
-        // if v4 also fails → continue to empty response below
       }
-    }
 
-    // 3) return v3 data if available
-    if (data && Array.isArray(data.results) && data.results.length > 0) {
-      const media = await Media.getRelatedMedia(
-        req.user,
-        data.results.map((r) => r.id)
-      );
-
-      const mappedResults = data.results.map((result) =>
-        isMovie(result)
-          ? mapMovieResult(
-              result,
-              media.find((m) => m.tmdbId === result.id && m.mediaType === MediaType.MOVIE)
-            )
-          : isPerson(result)
-          ? mapPersonResult(result)
-          : isCollection(result)
-          ? mapCollectionResult(result)
-          : mapTvResult(
-              result,
-              media.find((m) => m.tmdbId === result.id && m.mediaType === MediaType.TV)
-            )
-      );
-
+      // 4) both paths empty → return empty response
       return res.status(200).json({
         page: 1,
         totalPages: 1,
-        totalResults: mappedResults.length,
-        results: mappedResults,
+        totalResults: 0,
+        results: [],
+      });
+    } catch (err) {
+      logger.debug('TMDB list slider failed', {
+        label: 'API',
+        errorMessage: (err as Error).message,
+        listId: req.params.listId,
+      });
+      return res.status(200).json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
       });
     }
-
-    // 4) both paths empty → return empty response
-    return res.status(200).json({
-      page: 1,
-      totalPages: 1,
-      totalResults: 0,
-      results: [],
-    });
-  } catch (err) {
-    logger.debug('TMDB list slider failed', {
-      label: 'API',
-      errorMessage: (err as Error).message,
-      listId: req.params.listId,
-    });
-    return res.status(200).json({
-      page: 1,
-      totalPages: 1,
-      totalResults: 0,
-      results: [],
-    });
   }
-});
+);
 
 export default discoverRoutes;
