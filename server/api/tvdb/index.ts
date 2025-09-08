@@ -204,10 +204,6 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
     seasonNumber: number;
     language?: string;
   }): Promise<TmdbSeasonWithEpisodes> {
-    logger.info(
-      `Getting TV season ${seasonNumber} for TV ID: ${tvId} in language: ${language}`
-    );
-
     try {
       const tmdbTvShow = await this.tmdb.getTvShow({ tvId, language });
 
