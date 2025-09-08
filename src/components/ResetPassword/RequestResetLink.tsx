@@ -4,6 +4,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import LanguagePicker from '@app/components/Layout/LanguagePicker';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowLeftIcon, EnvelopeIcon } from '@heroicons/react/24/solid';
+import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -84,18 +85,14 @@ const ResetPassword = () => {
                 }}
                 validationSchema={ResetSchema}
                 onSubmit={async (values) => {
-                  const res = await fetch(`/api/v1/auth/reset-password`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
+                  const response = await axios.post(
+                    `/api/v1/auth/reset-password`,
+                    {
                       email: values.email,
-                    }),
-                  });
-                  if (!res.ok) throw new Error();
+                    }
+                  );
 
-                  if (res.status === 200) {
+                  if (response.status === 200) {
                     setSubmitted(true);
                   }
                 }}

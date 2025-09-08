@@ -401,6 +401,48 @@ router.get('/watchproviders/tv', async (req, res, next) => {
   }
 });
 
+router.get(
+  '/certifications/movie',
+  isAuthenticated(),
+  async (req, res, next) => {
+    const tmdb = new TheMovieDb();
+
+    try {
+      const certifications = await tmdb.getMovieCertifications();
+
+      return res.status(200).json(certifications);
+    } catch (e) {
+      logger.error('Something went wrong retrieving movie certifications', {
+        label: 'API',
+        errorMessage: e.message,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to retrieve movie certifications.',
+      });
+    }
+  }
+);
+
+router.get('/certifications/tv', isAuthenticated(), async (req, res, next) => {
+  const tmdb = new TheMovieDb();
+
+  try {
+    const certifications = await tmdb.getTvCertifications();
+
+    return res.status(200).json(certifications);
+  } catch (e) {
+    logger.debug('Something went wrong retrieving TV certifications', {
+      label: 'API',
+      errorMessage: e.message,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to retrieve TV certifications.',
+    });
+  }
+});
+
 router.get('/', (_req, res) => {
   return res.status(200).json({
     api: 'Jellyseerr API',

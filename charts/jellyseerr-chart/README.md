@@ -1,6 +1,6 @@
 # jellyseerr-chart
 
-![Version: 2.3.2](https://img.shields.io/badge/Version-2.3.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.5.1](https://img.shields.io/badge/AppVersion-2.5.1-informational?style=flat-square)
+![Version: 2.6.2](https://img.shields.io/badge/Version-2.6.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.7.3](https://img.shields.io/badge/AppVersion-2.7.3-informational?style=flat-square)
 
 Jellyseerr helm chart for Kubernetes
 
@@ -52,6 +52,9 @@ Kubernetes: `>=1.23.0-0`
 | podAnnotations | object | `{}` |  |
 | podLabels | object | `{}` |  |
 | podSecurityContext | object | `{}` |  |
+| probes.livenessProbe | object | `{}` | Configure liveness probe |
+| probes.readinessProbe | object | `{}` | Configure readiness probe |
+| probes.startupProbe | string | `nil` | Configure startup probe |
 | replicaCount | int | `1` |  |
 | resources | object | `{}` |  |
 | securityContext | object | `{}` |  |

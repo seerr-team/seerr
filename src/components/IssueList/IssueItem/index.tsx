@@ -1,6 +1,7 @@
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
+import Tooltip from '@app/components/Common/Tooltip';
 import { issueOptions } from '@app/components/IssueModal/constants';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
@@ -26,6 +27,7 @@ const messages = defineMessages('components.IssueList.IssueItem', {
   opened: 'Opened',
   viewissue: 'View Issue',
   unknownissuetype: 'Unknown',
+  descriptionpreview: 'Issue Description',
 });
 
 const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
@@ -107,8 +109,15 @@ const IssueItem = ({ issue }: IssueItemProps) => {
     }
   }
 
+  const description = issue.comments?.[0]?.message || '';
+  const maxDescriptionLength = 120;
+  const shouldTruncate = description.length > maxDescriptionLength;
+  const truncatedDescription = shouldTruncate
+    ? description.substring(0, maxDescriptionLength) + '...'
+    : description;
+
   return (
-    <div className="relative flex w-full flex-col justify-between overflow-hidden rounded-xl bg-gray-800 py-4 text-gray-400 shadow-md ring-1 ring-gray-700 xl:h-28 xl:flex-row">
+    <div className="relative flex w-full flex-col justify-between overflow-hidden rounded-xl bg-gray-800 py-4 text-gray-400 shadow-md ring-1 ring-gray-700 xl:flex-row">
       {title.backdropPath && (
         <div className="absolute inset-0 z-0 w-full bg-cover bg-center xl:w-2/3">
           <CachedImage
@@ -168,8 +177,38 @@ const IssueItem = ({ issue }: IssueItemProps) => {
             >
               {isMovie(title) ? title.title : title.name}
             </Link>
+            {description && (
+              <div className="mt-1 max-w-full">
+                <div className="overflow-hidden text-sm text-gray-300">
+                  {shouldTruncate ? (
+                    <Tooltip
+                      content={
+                        <div className="max-w-sm p-3">
+                          <div className="mb-1 text-sm font-medium text-gray-200">
+                            Issue Description
+                          </div>
+                          <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-300">
+                            {description}
+                          </div>
+                        </div>
+                      }
+                      tooltipConfig={{
+                        placement: 'top',
+                        offset: [0, 8],
+                      }}
+                    >
+                      <span className="block cursor-help truncate transition-colors hover:text-gray-200">
+                        {truncatedDescription}
+                      </span>
+                    </Tooltip>
+                  ) : (
+                    <span className="block break-words">{description}</span>
+                  )}
+                </div>
+              </div>
+            )}
             {problemSeasonEpisodeLine.length > 0 && (
-              <div className="card-field">
+              <div className="card-field mt-1">
                 {problemSeasonEpisodeLine.map((t, k) => (
                   <span key={k}>{t}</span>
                 ))}

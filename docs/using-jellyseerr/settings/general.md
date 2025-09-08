@@ -62,11 +62,25 @@ Set the default display language for Jellyseerr. Users can override this setting
 
 These settings filter content shown on the "Discover" home page based on regional availability and original language, respectively. The Streaming Region filters the available streaming providers on the media page. Users can override these global settings by configuring these same options in their user settings.
 
+## Blacklist Content with Tags and Limit Content Blacklisted per Tag
+
+These settings blacklist any TV shows or movies that have one of the entered tags. The "Process Blacklisted Tags" job adds entries to the blacklist based on the configured blacklisted tags. If a blacklisted tag is removed, any media blacklisted under that tag will be removed from the blacklist when the "Process Blacklisted Tags" job runs.
+
+The limit setting determines how many pages per tag the job will process, with each page containing 20 entries. The job cycles through all 16 available discovery sort options, querying the defined number of pages to blacklist media that is most likely to appear at the top of each sort. Higher limits will create a more accurate blacklist, but will require more storage.
+
+Blacklisted tags are disabled until at least one tag is entered. These settings cannot be overridden in user settings.
+
 ## Hide Available Media
 
 When enabled, media which is already available will not appear on the "Discover" home page, or in the "Recommended" or "Similar" categories or other links on media detail pages.
 
 Available media will still appear in search results, however, so it is possible to locate and view hidden items by searching for them by title.
+
+This setting is **disabled** by default.
+
+## Hide Blacklisted Items
+
+When enabled, media that has been blacklisted will not appear on the "Discover" home page, for all administrators. This can be useful to hide content that you don't want to see, such as content with specific tags or content that has been manually blacklisted when you have the "Manage Blacklist" permission.
 
 This setting is **disabled** by default.
 

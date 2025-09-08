@@ -42,13 +42,13 @@ FROM node:22-alpine
 ARG BUILD_DATE
 ARG BUILD_VERSION
 LABEL \
-    org.opencontainers.image.authors="Fallenbagel" \
-    org.opencontainers.image.source="https://github.com/fallenbagel/jellyseerr" \
-    org.opencontainers.image.created=${BUILD_DATE} \
-    org.opencontainers.image.version=${BUILD_VERSION} \
-    org.opencontainers.image.title="Jellyseerr" \
-    org.opencontainers.image.description="Open-source media request and discovery manager for Jellyfin, Plex, and Emby." \
-    org.opencontainers.image.licenses="MIT"
+  org.opencontainers.image.authors="Fallenbagel" \
+  org.opencontainers.image.source="https://github.com/fallenbagel/jellyseerr" \
+  org.opencontainers.image.created=${BUILD_DATE} \
+  org.opencontainers.image.version=${BUILD_VERSION} \
+  org.opencontainers.image.title="Jellyseerr" \
+  org.opencontainers.image.description="Open-source media request and discovery manager for Jellyfin, Plex, and Emby." \
+  org.opencontainers.image.licenses="MIT"
 
 WORKDIR /app
 

@@ -1,10 +1,3 @@
-import type { RadarrMovieOptions } from '@server/api/servarr/radarr';
-import RadarrAPI from '@server/api/servarr/radarr';
-import type {
-  AddSeriesOptions,
-  SonarrSeries,
-} from '@server/api/servarr/sonarr';
-import SonarrAPI from '@server/api/servarr/sonarr';
 import TheMovieDb from '@server/api/themoviedb';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
@@ -20,19 +13,18 @@ import notificationManager, { Notification } from '@server/lib/notifications';
 import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import { isEqual, truncate } from 'lodash';
+import { DbAwareColumn } from '@server/utils/DbColumnHelper';
+import { truncate } from 'lodash';
 import {
   AfterInsert,
-  AfterRemove,
+  AfterLoad,
   AfterUpdate,
   Column,
-  CreateDateColumn,
   Entity,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   RelationCount,
-  UpdateDateColumn,
 } from 'typeorm';
 import Media from './Media';
 import SeasonRequest from './SeasonRequest';
@@ -181,7 +173,8 @@ export class MediaRequest {
       // If there is an existing movie request that isn't declined, don't allow a new one.
       if (
         requestBody.mediaType === MediaType.MOVIE &&
-        existing[0].status !== MediaRequestStatus.DECLINED
+        existing[0].status !== MediaRequestStatus.DECLINED &&
+        existing[0].status !== MediaRequestStatus.COMPLETED
       ) {
         logger.warn('Duplicate request for media blocked', {
           tmdbId: tmdbMedia.id,
@@ -388,7 +381,9 @@ export class MediaRequest {
       >;
       let requestedSeasons =
         requestBody.seasons === 'all'
-          ? tmdbMediaShow.seasons.map((season) => season.season_number)
+          ? tmdbMediaShow.seasons
+              .filter((season) => season.season_number !== 0)
+              .map((season) => season.season_number)
           : (requestBody.seasons as number[]);
       if (!settings.main.enableSpecialEpisodes) {
         requestedSeasons = requestedSeasons.filter((sn) => sn > 0);
@@ -404,7 +399,8 @@ export class MediaRequest {
           .filter(
             (request) =>
               request.is4k === requestBody.is4k &&
-              request.status !== MediaRequestStatus.DECLINED
+              request.status !== MediaRequestStatus.DECLINED &&
+              request.status !== MediaRequestStatus.COMPLETED
           )
           .reduce((seasons, request) => {
             const combinedSeasons = request.seasons.map(
@@ -423,7 +419,9 @@ export class MediaRequest {
             .filter(
               (season) =>
                 season[requestBody.is4k ? 'status4k' : 'status'] !==
-                MediaStatus.UNKNOWN
+                  MediaStatus.UNKNOWN &&
+                season[requestBody.is4k ? 'status4k' : 'status'] !==
+                  MediaStatus.DELETED
             )
             .map((season) => season.seasonNumber),
         ];
@@ -537,10 +535,14 @@ export class MediaRequest {
   })
   public modifiedBy?: User;
 
-  @CreateDateColumn()
+  @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
-  @UpdateDateColumn()
+  @DbAwareColumn({
+    type: 'datetime',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+  })
   public updatedAt: Date;
 
   @Column({ type: 'varchar' })
@@ -608,12 +610,6 @@ export class MediaRequest {
     Object.assign(this, init);
   }
 
-  @AfterUpdate()
-  @AfterInsert()
-  public async sendMedia(): Promise<void> {
-    await Promise.all([this.sendToRadarr(), this.sendToSonarr()]);
-  }
-
   @AfterInsert()
   public async notifyNewRequest(): Promise<void> {
     if (this.status === MediaRequestStatus.PENDING) {
@@ -630,10 +626,14 @@ export class MediaRequest {
         return;
       }
 
-      this.sendNotification(media, Notification.MEDIA_PENDING);
+      MediaRequest.sendNotification(this, media, Notification.MEDIA_PENDING);
 
       if (this.isAutoRequest) {
-        this.sendNotification(media, Notification.MEDIA_AUTO_REQUESTED);
+        MediaRequest.sendNotification(
+          this,
+          media,
+          Notification.MEDIA_AUTO_REQUESTED
+        );
       }
     }
   }
@@ -671,7 +671,8 @@ export class MediaRequest {
         return;
       }
 
-      this.sendNotification(
+      MediaRequest.sendNotification(
+        this,
         media,
         this.status === MediaRequestStatus.APPROVED
           ? autoApproved
@@ -685,7 +686,11 @@ export class MediaRequest {
         autoApproved &&
         this.isAutoRequest
       ) {
-        this.sendNotification(media, Notification.MEDIA_AUTO_REQUESTED);
+        MediaRequest.sendNotification(
+          this,
+          media,
+          Notification.MEDIA_AUTO_REQUESTED
+        );
       }
     }
   }
@@ -697,699 +702,63 @@ export class MediaRequest {
     }
   }
 
-  @AfterUpdate()
-  @AfterInsert()
-  public async updateParentStatus(): Promise<void> {
-    const mediaRepository = getRepository(Media);
-    const media = await mediaRepository.findOne({
-      where: { id: this.media.id },
-      relations: { requests: true },
-    });
-    if (!media) {
-      logger.error('Media data not found', {
-        label: 'Media Request',
-        requestId: this.id,
-        mediaId: this.media.id,
-      });
-      return;
-    }
-    const seasonRequestRepository = getRepository(SeasonRequest);
-    if (
-      this.status === MediaRequestStatus.APPROVED &&
-      // Do not update the status if the item is already partially available or available
-      media[this.is4k ? 'status4k' : 'status'] !== MediaStatus.AVAILABLE &&
-      media[this.is4k ? 'status4k' : 'status'] !==
-        MediaStatus.PARTIALLY_AVAILABLE &&
-      media[this.is4k ? 'status4k' : 'status'] !== MediaStatus.PROCESSING
-    ) {
-      const statusField = this.is4k ? 'status4k' : 'status';
-
-      await mediaRepository.update(
-        { id: this.media.id },
-        { [statusField]: MediaStatus.PROCESSING }
-      );
-    }
-
-    if (
-      media.mediaType === MediaType.MOVIE &&
-      this.status === MediaRequestStatus.DECLINED
-    ) {
-      const statusField = this.is4k ? 'status4k' : 'status';
-      await mediaRepository.update(
-        { id: this.media.id },
-        { [statusField]: MediaStatus.UNKNOWN }
-      );
-    }
-
-    /**
-     * If the media type is TV, and we are declining a request,
-     * we must check if its the only pending request and that
-     * there the current media status is just pending (meaning no
-     * other requests have yet to be approved)
-     */
-    if (
-      media.mediaType === MediaType.TV &&
-      this.status === MediaRequestStatus.DECLINED &&
-      media.requests.filter(
-        (request) => request.status === MediaRequestStatus.PENDING
-      ).length === 0 &&
-      media[this.is4k ? 'status4k' : 'status'] === MediaStatus.PENDING
-    ) {
-      const statusField = this.is4k ? 'status4k' : 'status';
-      mediaRepository.update(
-        { id: this.media.id },
-        { [statusField]: MediaStatus.UNKNOWN }
-      );
-    }
-
-    // Approve child seasons if parent is approved
-    if (
-      media.mediaType === MediaType.TV &&
-      this.status === MediaRequestStatus.APPROVED
-    ) {
-      this.seasons.forEach((season) => {
-        season.status = MediaRequestStatus.APPROVED;
-        seasonRequestRepository.save(season);
-      });
+  @AfterLoad()
+  private sortSeasons() {
+    if (Array.isArray(this.seasons)) {
+      this.seasons.sort((a, b) => a.id - b.id);
     }
   }
 
-  @AfterRemove()
-  public async handleRemoveParentUpdate(): Promise<void> {
-    const mediaRepository = getRepository(Media);
-    const fullMedia = await mediaRepository.findOneOrFail({
-      where: { id: this.media.id },
-      relations: { requests: true },
-    });
-
-    if (
-      !fullMedia.requests.some((request) => !request.is4k) &&
-      fullMedia.status !== MediaStatus.AVAILABLE
-    ) {
-      fullMedia.status = MediaStatus.UNKNOWN;
-    }
-
-    if (
-      !fullMedia.requests.some((request) => request.is4k) &&
-      fullMedia.status4k !== MediaStatus.AVAILABLE
-    ) {
-      fullMedia.status4k = MediaStatus.UNKNOWN;
-    }
-
-    mediaRepository.save(fullMedia);
-  }
-
-  public async sendToRadarr(): Promise<void> {
-    if (
-      this.status === MediaRequestStatus.APPROVED &&
-      this.type === MediaType.MOVIE
-    ) {
-      try {
-        const mediaRepository = getRepository(Media);
-        const settings = getSettings();
-        if (settings.radarr.length === 0 && !settings.radarr[0]) {
-          logger.info(
-            'No Radarr server configured, skipping request processing',
-            {
-              label: 'Media Request',
-              requestId: this.id,
-              mediaId: this.media.id,
-            }
-          );
-          return;
-        }
-
-        let radarrSettings = settings.radarr.find(
-          (radarr) => radarr.isDefault && radarr.is4k === this.is4k
-        );
-
-        if (
-          this.serverId !== null &&
-          this.serverId >= 0 &&
-          radarrSettings?.id !== this.serverId
-        ) {
-          radarrSettings = settings.radarr.find(
-            (radarr) => radarr.id === this.serverId
-          );
-          logger.info(
-            `Request has an override server: ${radarrSettings?.name}`,
-            {
-              label: 'Media Request',
-              requestId: this.id,
-              mediaId: this.media.id,
-            }
-          );
-        }
-
-        if (!radarrSettings) {
-          logger.warn(
-            `There is no default ${
-              this.is4k ? '4K ' : ''
-            }Radarr server configured. Did you set any of your ${
-              this.is4k ? '4K ' : ''
-            }Radarr servers as default?`,
-            {
-              label: 'Media Request',
-              requestId: this.id,
-              mediaId: this.media.id,
-            }
-          );
-          return;
-        }
-
-        let rootFolder = radarrSettings.activeDirectory;
-        let qualityProfile = radarrSettings.activeProfileId;
-        let tags = radarrSettings.tags ? [...radarrSettings.tags] : [];
-
-        if (
-          this.rootFolder &&
-          this.rootFolder !== '' &&
-          this.rootFolder !== radarrSettings.activeDirectory
-        ) {
-          rootFolder = this.rootFolder;
-          logger.info(`Request has an override root folder: ${rootFolder}`, {
-            label: 'Media Request',
-            requestId: this.id,
-            mediaId: this.media.id,
-          });
-        }
-
-        if (
-          this.profileId &&
-          this.profileId !== radarrSettings.activeProfileId
-        ) {
-          qualityProfile = this.profileId;
-          logger.info(
-            `Request has an override quality profile ID: ${qualityProfile}`,
-            {
-              label: 'Media Request',
-              requestId: this.id,
-              mediaId: this.media.id,
-            }
-          );
-        }
-
-        if (this.tags && !isEqual(this.tags, radarrSettings.tags)) {
-          tags = this.tags;
-          logger.info(`Request has override tags`, {
-            label: 'Media Request',
-            requestId: this.id,
-            mediaId: this.media.id,
-            tagIds: tags,
-          });
-        }
-
-        const tmdb = new TheMovieDb();
-        const radarr = new RadarrAPI({
-          apiKey: radarrSettings.apiKey,
-          url: RadarrAPI.buildUrl(radarrSettings, '/api/v3'),
-        });
-        const movie = await tmdb.getMovie({ movieId: this.media.tmdbId });
-
-        const media = await mediaRepository.findOne({
-          where: { id: this.media.id },
-        });
-
-        if (!media) {
-          logger.error('Media data not found', {
-            label: 'Media Request',
-            requestId: this.id,
-            mediaId: this.media.id,
-          });
-          return;
-        }
-
-        if (radarrSettings.tagRequests) {
-          let userTag = (await radarr.getTags()).find((v) =>
-            v.label.startsWith(this.requestedBy.id + ' - ')
-          );
-          if (!userTag) {
-            logger.info(`Requester has no active tag. Creating new`, {
-              label: 'Media Request',
-              requestId: this.id,
-              mediaId: this.media.id,
-              userId: this.requestedBy.id,
-              newTag:
-                this.requestedBy.id + ' - ' + this.requestedBy.displayName,
-            });
-            userTag = await radarr.createTag({
-              label: this.requestedBy.id + ' - ' + this.requestedBy.displayName,
-            });
-          }
-          if (userTag.id) {
-            if (!tags?.find((v) => v === userTag?.id)) {
-              tags?.push(userTag.id);
-            }
-          } else {
-            logger.warn(`Requester has no tag and failed to add one`, {
-              label: 'Media Request',
-              requestId: this.id,
-              mediaId: this.media.id,
-              userId: this.requestedBy.id,
-              radarrServer: radarrSettings.hostname + ':' + radarrSettings.port,
-            });
-          }
-        }
-
-        if (
-          media[this.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
-        ) {
-          logger.warn('Media already exists, marking request as APPROVED', {
-            label: 'Media Request',
-            requestId: this.id,
-            mediaId: this.media.id,
-          });
-
-          const requestRepository = getRepository(MediaRequest);
-
-          await requestRepository.update(this.id, {
-            status: MediaRequestStatus.APPROVED,
-          });
-          return;
-        }
-
-        const radarrMovieOptions: RadarrMovieOptions = {
-          profileId: qualityProfile,
-          qualityProfileId: qualityProfile,
-          rootFolderPath: rootFolder,
-          minimumAvailability: radarrSettings.minimumAvailability,
-          title: movie.title,
-          tmdbId: movie.id,
-          year: Number(movie.release_date.slice(0, 4)),
-          monitored: true,
-          tags,
-          searchNow: !radarrSettings.preventSearch,
-        };
-
-        // Run this asynchronously so we don't wait for it on the UI side
-        radarr
-          .addMovie(radarrMovieOptions)
-          .then(async (radarrMovie) => {
-            // We grab media again here to make sure we have the latest version of it
-            const media = await mediaRepository.findOne({
-              where: { id: this.media.id },
-            });
-
-            if (!media) {
-              throw new Error('Media data not found');
-            }
-
-            const updateFields = {
-              [this.is4k ? 'externalServiceId4k' : 'externalServiceId']:
-                radarrMovie.id,
-              [this.is4k ? 'externalServiceSlug4k' : 'externalServiceSlug']:
-                radarrMovie.titleSlug,
-              [this.is4k ? 'serviceId4k' : 'serviceId']: radarrSettings?.id,
-            };
-
-            await mediaRepository.update({ id: this.media.id }, updateFields);
-          })
-          .catch(async () => {
-            const requestRepository = getRepository(MediaRequest);
-
-            await requestRepository.update(this.id, {
-              status: MediaRequestStatus.FAILED,
-            });
-
-            logger.warn(
-              'Something went wrong sending movie request to Radarr, marking status as FAILED',
-              {
-                label: 'Media Request',
-                requestId: this.id,
-                mediaId: this.media.id,
-                radarrMovieOptions,
-              }
-            );
-
-            this.sendNotification(media, Notification.MEDIA_FAILED);
-          })
-          .finally(() => {
-            radarr.clearCache({
-              tmdbId: movie.id,
-              externalId: this.is4k
-                ? media.externalServiceId4k
-                : media.externalServiceId,
-            });
-          });
-        logger.info('Sent request to Radarr', {
-          label: 'Media Request',
-          requestId: this.id,
-          mediaId: this.media.id,
-        });
-      } catch (e) {
-        logger.error('Something went wrong sending request to Radarr', {
-          label: 'Media Request',
-          errorMessage: e.message,
-          requestId: this.id,
-          mediaId: this.media.id,
-        });
-        throw new Error(e.message);
-      }
-    }
-  }
-
-  public async sendToSonarr(): Promise<void> {
-    if (
-      this.status === MediaRequestStatus.APPROVED &&
-      this.type === MediaType.TV
-    ) {
-      try {
-        const mediaRepository = getRepository(Media);
-        const settings = getSettings();
-        if (settings.sonarr.length === 0 && !settings.sonarr[0]) {
-          logger.warn(
-            'No Sonarr server configured, skipping request processing',
-            {
-              label: 'Media Request',
-              requestId: this.id,
-              mediaId: this.media.id,
-            }
-          );
-          return;
-        }
-
-        let sonarrSettings = settings.sonarr.find(
-          (sonarr) => sonarr.isDefault && sonarr.is4k === this.is4k
-        );
-
-        if (
-          this.serverId !== null &&
-          this.serverId >= 0 &&
-          sonarrSettings?.id !== this.serverId
-        ) {
-          sonarrSettings = settings.sonarr.find(
-            (sonarr) => sonarr.id === this.serverId
-          );
-          logger.info(
-            `Request has an override server: ${sonarrSettings?.name}`,
-            {
-              label: 'Media Request',
-              requestId: this.id,
-              mediaId: this.media.id,
-            }
-          );
-        }
-
-        if (!sonarrSettings) {
-          logger.warn(
-            `There is no default ${
-              this.is4k ? '4K ' : ''
-            }Sonarr server configured. Did you set any of your ${
-              this.is4k ? '4K ' : ''
-            }Sonarr servers as default?`,
-            {
-              label: 'Media Request',
-              requestId: this.id,
-              mediaId: this.media.id,
-            }
-          );
-          return;
-        }
-
-        const media = await mediaRepository.findOne({
-          where: { id: this.media.id },
-          relations: { requests: true },
-        });
-
-        if (!media) {
-          throw new Error('Media data not found');
-        }
-
-        if (
-          media[this.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
-        ) {
-          logger.warn('Media already exists, marking request as APPROVED', {
-            label: 'Media Request',
-            requestId: this.id,
-            mediaId: this.media.id,
-          });
-
-          const requestRepository = getRepository(MediaRequest);
-          await requestRepository.update(this.id, {
-            status: MediaRequestStatus.APPROVED,
-          });
-          return;
-        }
-
-        const tmdb = new TheMovieDb();
-        const sonarr = new SonarrAPI({
-          apiKey: sonarrSettings.apiKey,
-          url: SonarrAPI.buildUrl(sonarrSettings, '/api/v3'),
-        });
-        const series = await tmdb.getTvShow({ tvId: media.tmdbId });
-        const tvdbId = series.external_ids.tvdb_id ?? media.tvdbId;
-
-        if (!tvdbId) {
-          const requestRepository = getRepository(MediaRequest);
-          await mediaRepository.remove(media);
-          await requestRepository.remove(this);
-          throw new Error('TVDB ID not found');
-        }
-
-        let seriesType: SonarrSeries['seriesType'] = 'standard';
-
-        // Change series type to anime if the anime keyword is present on tmdb
-        if (
-          series.keywords.results.some(
-            (keyword) => keyword.id === ANIME_KEYWORD_ID
-          )
-        ) {
-          seriesType = sonarrSettings.animeSeriesType ?? 'anime';
-        }
-
-        let rootFolder =
-          seriesType === 'anime' && sonarrSettings.activeAnimeDirectory
-            ? sonarrSettings.activeAnimeDirectory
-            : sonarrSettings.activeDirectory;
-        let qualityProfile =
-          seriesType === 'anime' && sonarrSettings.activeAnimeProfileId
-            ? sonarrSettings.activeAnimeProfileId
-            : sonarrSettings.activeProfileId;
-        let languageProfile =
-          seriesType === 'anime' && sonarrSettings.activeAnimeLanguageProfileId
-            ? sonarrSettings.activeAnimeLanguageProfileId
-            : sonarrSettings.activeLanguageProfileId;
-        let tags =
-          seriesType === 'anime'
-            ? sonarrSettings.animeTags
-              ? [...sonarrSettings.animeTags]
-              : []
-            : sonarrSettings.tags
-            ? [...sonarrSettings.tags]
-            : [];
-
-        if (
-          this.rootFolder &&
-          this.rootFolder !== '' &&
-          this.rootFolder !== rootFolder
-        ) {
-          rootFolder = this.rootFolder;
-          logger.info(`Request has an override root folder: ${rootFolder}`, {
-            label: 'Media Request',
-            requestId: this.id,
-            mediaId: this.media.id,
-          });
-        }
-
-        if (this.profileId && this.profileId !== qualityProfile) {
-          qualityProfile = this.profileId;
-          logger.info(
-            `Request has an override quality profile ID: ${qualityProfile}`,
-            {
-              label: 'Media Request',
-              requestId: this.id,
-              mediaId: this.media.id,
-            }
-          );
-        }
-
-        if (
-          this.languageProfileId &&
-          this.languageProfileId !== languageProfile
-        ) {
-          languageProfile = this.languageProfileId;
-          logger.info(
-            `Request has an override language profile ID: ${languageProfile}`,
-            {
-              label: 'Media Request',
-              requestId: this.id,
-              mediaId: this.media.id,
-            }
-          );
-        }
-
-        if (this.tags && !isEqual(this.tags, tags)) {
-          tags = this.tags;
-          logger.info(`Request has override tags`, {
-            label: 'Media Request',
-            requestId: this.id,
-            mediaId: this.media.id,
-            tagIds: tags,
-          });
-        }
-
-        if (sonarrSettings.tagRequests) {
-          let userTag = (await sonarr.getTags()).find((v) =>
-            v.label.startsWith(this.requestedBy.id + ' - ')
-          );
-          if (!userTag) {
-            logger.info(`Requester has no active tag. Creating new`, {
-              label: 'Media Request',
-              requestId: this.id,
-              mediaId: this.media.id,
-              userId: this.requestedBy.id,
-              newTag:
-                this.requestedBy.id + ' - ' + this.requestedBy.displayName,
-            });
-            userTag = await sonarr.createTag({
-              label: this.requestedBy.id + ' - ' + this.requestedBy.displayName,
-            });
-          }
-          if (userTag.id) {
-            if (!tags?.find((v) => v === userTag?.id)) {
-              tags?.push(userTag.id);
-            }
-          } else {
-            logger.warn(`Requester has no tag and failed to add one`, {
-              label: 'Media Request',
-              requestId: this.id,
-              mediaId: this.media.id,
-              userId: this.requestedBy.id,
-              sonarrServer: sonarrSettings.hostname + ':' + sonarrSettings.port,
-            });
-          }
-        }
-
-        const sonarrSeriesOptions: AddSeriesOptions = {
-          profileId: qualityProfile,
-          languageProfileId: languageProfile,
-          rootFolderPath: rootFolder,
-          title: series.name,
-          tvdbid: tvdbId,
-          seasons: this.seasons.map((season) => season.seasonNumber),
-          seasonFolder: sonarrSettings.enableSeasonFolders,
-          seriesType,
-          tags,
-          monitored: true,
-          searchNow: !sonarrSettings.preventSearch,
-        };
-
-        // Run this asynchronously so we don't wait for it on the UI side
-        sonarr
-          .addSeries(sonarrSeriesOptions)
-          .then(async (sonarrSeries) => {
-            // We grab media again here to make sure we have the latest version of it
-            const media = await mediaRepository.findOne({
-              where: { id: this.media.id },
-              relations: { requests: true },
-            });
-
-            if (!media) {
-              throw new Error('Media data not found');
-            }
-
-            const updateFields = {
-              [this.is4k ? 'externalServiceId4k' : 'externalServiceId']:
-                sonarrSeries.id,
-              [this.is4k ? 'externalServiceSlug4k' : 'externalServiceSlug']:
-                sonarrSeries.titleSlug,
-              [this.is4k ? 'serviceId4k' : 'serviceId']: sonarrSettings?.id,
-            };
-
-            await mediaRepository.update({ id: this.media.id }, updateFields);
-          })
-          .catch(async () => {
-            const requestRepository = getRepository(MediaRequest);
-
-            await requestRepository.update(
-              { id: this.id },
-              { status: MediaRequestStatus.FAILED }
-            );
-
-            logger.warn(
-              'Something went wrong sending series request to Sonarr, marking status as FAILED',
-              {
-                label: 'Media Request',
-                requestId: this.id,
-                mediaId: this.media.id,
-                sonarrSeriesOptions,
-              }
-            );
-
-            this.sendNotification(media, Notification.MEDIA_FAILED);
-          })
-          .finally(() => {
-            sonarr.clearCache({
-              tvdbId,
-              externalId: this.is4k
-                ? media.externalServiceId4k
-                : media.externalServiceId,
-              title: series.name,
-            });
-          });
-        logger.info('Sent request to Sonarr', {
-          label: 'Media Request',
-          requestId: this.id,
-          mediaId: this.media.id,
-        });
-      } catch (e) {
-        logger.error('Something went wrong sending request to Sonarr', {
-          label: 'Media Request',
-          errorMessage: e.message,
-          requestId: this.id,
-          mediaId: this.media.id,
-        });
-        throw new Error(e.message);
-      }
-    }
-  }
-
-  private async sendNotification(media: Media, type: Notification) {
+  static async sendNotification(
+    entity: MediaRequest,
+    media: Media,
+    type: Notification
+  ) {
     const tmdb = new TheMovieDb();
 
     try {
-      const mediaType = this.type === MediaType.MOVIE ? 'Movie' : 'Series';
+      const mediaType = entity.type === MediaType.MOVIE ? 'Movie' : 'Series';
       let event: string | undefined;
       let notifyAdmin = true;
       let notifySystem = true;
 
       switch (type) {
         case Notification.MEDIA_APPROVED:
-          event = `${this.is4k ? '4K ' : ''}${mediaType} Request Approved`;
+          event = `${entity.is4k ? '4K ' : ''}${mediaType} Request Approved`;
           notifyAdmin = false;
           break;
         case Notification.MEDIA_DECLINED:
-          event = `${this.is4k ? '4K ' : ''}${mediaType} Request Declined`;
+          event = `${entity.is4k ? '4K ' : ''}${mediaType} Request Declined`;
           notifyAdmin = false;
           break;
         case Notification.MEDIA_PENDING:
-          event = `New ${this.is4k ? '4K ' : ''}${mediaType} Request`;
+          event = `New ${entity.is4k ? '4K ' : ''}${mediaType} Request`;
           break;
         case Notification.MEDIA_AUTO_REQUESTED:
           event = `${
-            this.is4k ? '4K ' : ''
+            entity.is4k ? '4K ' : ''
           }${mediaType} Request Automatically Submitted`;
           notifyAdmin = false;
           notifySystem = false;
           break;
         case Notification.MEDIA_AUTO_APPROVED:
           event = `${
-            this.is4k ? '4K ' : ''
+            entity.is4k ? '4K ' : ''
           }${mediaType} Request Automatically Approved`;
           break;
         case Notification.MEDIA_FAILED:
-          event = `${this.is4k ? '4K ' : ''}${mediaType} Request Failed`;
+          event = `${entity.is4k ? '4K ' : ''}${mediaType} Request Failed`;
           break;
       }
 
-      if (this.type === MediaType.MOVIE) {
+      if (entity.type === MediaType.MOVIE) {
         const movie = await tmdb.getMovie({ movieId: media.tmdbId });
         notificationManager.sendNotification(type, {
           media,
-          request: this,
+          request: entity,
           notifyAdmin,
           notifySystem,
-          notifyUser: notifyAdmin ? undefined : this.requestedBy,
+          notifyUser: notifyAdmin ? undefined : entity.requestedBy,
           event,
           subject: `${movie.title}${
             movie.release_date ? ` (${movie.release_date.slice(0, 4)})` : ''
@@ -1401,14 +770,14 @@ export class MediaRequest {
           }),
           image: `https://image.tmdb.org/t/p/w600_and_h900_bestv2${movie.poster_path}`,
         });
-      } else if (this.type === MediaType.TV) {
+      } else if (entity.type === MediaType.TV) {
         const tv = await tmdb.getTvShow({ tvId: media.tmdbId });
         notificationManager.sendNotification(type, {
           media,
-          request: this,
+          request: entity,
           notifyAdmin,
           notifySystem,
-          notifyUser: notifyAdmin ? undefined : this.requestedBy,
+          notifyUser: notifyAdmin ? undefined : entity.requestedBy,
           event,
           subject: `${tv.name}${
             tv.first_air_date ? ` (${tv.first_air_date.slice(0, 4)})` : ''
@@ -1422,7 +791,7 @@ export class MediaRequest {
           extra: [
             {
               name: 'Requested Seasons',
-              value: this.seasons
+              value: entity.seasons
                 .map((season) => season.seasonNumber)
                 .join(', '),
             },
@@ -1433,8 +802,8 @@ export class MediaRequest {
       logger.error('Something went wrong sending media notification(s)', {
         label: 'Notifications',
         errorMessage: e.message,
-        requestId: this.id,
-        mediaId: this.media.id,
+        requestId: entity.id,
+        mediaId: entity.media.id,
       });
     }
   }

@@ -21,8 +21,6 @@
   "components.RequestBlock.seasons": "{seasonCount, plural, one {Season} other {Seasons}}",
   "components.RequestBlock.rootfolder": "Root könyvtár",
   "components.RequestBlock.requestoverrides": "Kérés felülbírálások",
-  "components.PlexLoginButton.signinwithplex": "Bejelentkezés",
-  "components.PlexLoginButton.signingin": "Bejelentkezés…",
   "components.PersonDetails.crewmember": "Stáb",
   "components.PersonDetails.ascharacter": "mint {character}",
   "components.PersonDetails.appearsin": "Szerepel a következőkben",

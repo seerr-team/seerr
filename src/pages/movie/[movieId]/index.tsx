@@ -1,5 +1,6 @@
 import MovieDetails from '@app/components/MovieDetails';
 import type { MovieDetails as MovieDetailsType } from '@server/models/Movie';
+import axios from 'axios';
 import type { GetServerSideProps, NextPage } from 'next';
 
 interface MoviePageProps {
@@ -13,7 +14,7 @@ const MoviePage: NextPage<MoviePageProps> = ({ movie }) => {
 export const getServerSideProps: GetServerSideProps<MoviePageProps> = async (
   ctx
 ) => {
-  const res = await fetch(
+  const response = await axios.get<MovieDetailsType>(
     `http://${process.env.HOST || 'localhost'}:${
       process.env.PORT || 5055
     }/api/v1/movie/${ctx.query.movieId}`,
@@ -23,12 +24,10 @@ export const getServerSideProps: GetServerSideProps<MoviePageProps> = async (
         : undefined,
     }
   );
-  if (!res.ok) throw new Error();
-  const movie: MovieDetailsType = await res.json();
 
   return {
     props: {
-      movie,
+      movie: response.data,
     },
   };
 };

@@ -18,11 +18,12 @@ import {
   TrashIcon,
   XMarkIcon,
 } from '@heroicons/react/24/solid';
-import { MediaRequestStatus } from '@server/constants/media';
+import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { NonFunctionProperties } from '@server/interfaces/api/common';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
+import axios from 'axios';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
@@ -74,10 +75,7 @@ const RequestCardError = ({ requestData }: RequestCardErrorProps) => {
   });
 
   const deleteRequest = async () => {
-    const res = await fetch(`/api/v1/media/${requestData?.media.id}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) throw new Error();
+    await axios.delete(`/api/v1/media/${requestData?.media.id}`);
     mutate('/api/v1/media?filter=allavailable&take=20&sort=mediaAdded');
     mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
     mutate('/api/v1/request/count');
@@ -264,23 +262,16 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
   });
 
   const modifyRequest = async (type: 'approve' | 'decline') => {
-    const res = await fetch(`/api/v1/request/${request.id}/${type}`, {
-      method: 'POST',
-    });
-    if (!res.ok) throw new Error();
-    const data = await res.json();
+    const response = await axios.post(`/api/v1/request/${request.id}/${type}`);
 
-    if (data) {
+    if (response) {
       revalidate();
       mutate('/api/v1/request/count');
     }
   };
 
   const deleteRequest = async () => {
-    const res = await fetch(`/api/v1/request/${request.id}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) throw new Error();
+    await axios.delete(`/api/v1/request/${request.id}`);
     mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
     mutate('/api/v1/request/count');
   };
@@ -289,13 +280,9 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
     setRetrying(true);
 
     try {
-      const res = await fetch(`/api/v1/request/${request.id}/retry`, {
-        method: 'POST',
-      });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
+      const response = await axios.post(`/api/v1/request/${request.id}/retry`);
 
-      if (data) {
+      if (response) {
         revalidate();
       }
     } catch (e) {
@@ -452,6 +439,15 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                 href={`/${requestData.type}/${requestData.media.tmdbId}?manage=1`}
               >
                 {intl.formatMessage(globalMessages.failed)}
+              </Badge>
+            ) : requestData.status === MediaRequestStatus.PENDING &&
+              requestData.media[requestData.is4k ? 'status4k' : 'status'] ===
+                MediaStatus.DELETED ? (
+              <Badge
+                badgeType="warning"
+                href={`/${requestData.type}/${requestData.media.tmdbId}?manage=1`}
+              >
+                {intl.formatMessage(globalMessages.pending)}
               </Badge>
             ) : (
               <StatusBadge

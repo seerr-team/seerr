@@ -5,6 +5,7 @@ import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
+import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -14,6 +15,7 @@ import * as Yup from 'yup';
 
 const messages = defineMessages('components.Settings.Notifications', {
   agentenabled: 'Enable Agent',
+  embedPoster: 'Embed Poster',
   botUsername: 'Bot Username',
   botUsernameTip:
     'Allow users to also start a chat with your bot and configure their own notifications',
@@ -88,6 +90,7 @@ const NotificationsTelegram = () => {
     <Formik
       initialValues={{
         enabled: data?.enabled,
+        embedPoster: data?.embedPoster,
         types: data?.types,
         botUsername: data?.options.botUsername,
         botAPI: data?.options.botAPI,
@@ -98,24 +101,18 @@ const NotificationsTelegram = () => {
       validationSchema={NotificationsTelegramSchema}
       onSubmit={async (values) => {
         try {
-          const res = await fetch('/api/v1/settings/notifications/telegram', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
+          await axios.post('/api/v1/settings/notifications/telegram', {
+            enabled: values.enabled,
+            embedPoster: values.embedPoster,
+            types: values.types,
+            options: {
+              botAPI: values.botAPI,
+              chatId: values.chatId,
+              messageThreadId: values.messageThreadId,
+              sendSilently: values.sendSilently,
+              botUsername: values.botUsername,
             },
-            body: JSON.stringify({
-              enabled: values.enabled,
-              types: values.types,
-              options: {
-                botAPI: values.botAPI,
-                chatId: values.chatId,
-                messageThreadId: values.messageThreadId,
-                sendSilently: values.sendSilently,
-                botUsername: values.botUsername,
-              },
-            }),
           });
-          if (!res.ok) throw new Error();
 
           addToast(intl.formatMessage(messages.telegramsettingssaved), {
             appearance: 'success',
@@ -154,27 +151,17 @@ const NotificationsTelegram = () => {
                 toastId = id;
               }
             );
-            const res = await fetch(
-              '/api/v1/settings/notifications/telegram/test',
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  enabled: true,
-                  types: values.types,
-                  options: {
-                    botAPI: values.botAPI,
-                    chatId: values.chatId,
-                    messageThreadId: values.messageThreadId,
-                    sendSilently: values.sendSilently,
-                    botUsername: values.botUsername,
-                  },
-                }),
-              }
-            );
-            if (!res.ok) throw new Error();
+            await axios.post('/api/v1/settings/notifications/telegram/test', {
+              enabled: true,
+              types: values.types,
+              options: {
+                botAPI: values.botAPI,
+                chatId: values.chatId,
+                messageThreadId: values.messageThreadId,
+                sendSilently: values.sendSilently,
+                botUsername: values.botUsername,
+              },
+            });
 
             if (toastId) {
               removeToast(toastId);
@@ -205,6 +192,14 @@ const NotificationsTelegram = () => {
               </label>
               <div className="form-input-area">
                 <Field type="checkbox" id="enabled" name="enabled" />
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="embedPoster" className="checkbox-label">
+                {intl.formatMessage(messages.embedPoster)}
+              </label>
+              <div className="form-input-area">
+                <Field type="checkbox" id="embedPoster" name="embedPoster" />
               </div>
             </div>
             <div className="form-row">

@@ -160,9 +160,12 @@ const UserProfile = () => {
                 <dd className="mt-1 text-3xl font-semibold text-white">
                   <Link
                     href={
-                      user.id === currentUser?.id
-                        ? '/profile/requests?filter=all'
-                        : `/users/${user?.id}/requests?filter=all`
+                      currentHasPermission(
+                        [Permission.MANAGE_REQUESTS, Permission.REQUEST_VIEW],
+                        { type: 'or' }
+                      )
+                        ? `/users/${user?.id}/requests?filter=all`
+                        : '/requests'
                     }
                   >
                     {intl.formatNumber(user.requestCount)}
@@ -293,9 +296,12 @@ const UserProfile = () => {
             <div className="slider-header">
               <Link
                 href={
-                  user.id === currentUser?.id
-                    ? '/profile/requests?filter=all'
-                    : `/users/${user?.id}/requests?filter=all`
+                  currentHasPermission(
+                    [Permission.MANAGE_REQUESTS, Permission.REQUEST_VIEW],
+                    { type: 'or' }
+                  )
+                    ? `/users/${user?.id}/requests?filter=all`
+                    : '/requests'
                 }
                 className="slider-title"
               >
@@ -372,7 +378,7 @@ const UserProfile = () => {
       {user.userType === UserType.PLEX &&
         (user.id === currentUser?.id ||
           currentHasPermission(Permission.ADMIN)) &&
-        (!watchData || !!watchData.recentlyWatched.length) &&
+        (!watchData || !!watchData.recentlyWatched?.length) &&
         !watchDataError && (
           <>
             <div className="slider-header">
@@ -383,7 +389,7 @@ const UserProfile = () => {
             <Slider
               sliderKey="media"
               isLoading={!watchData}
-              items={watchData?.recentlyWatched.map((item) => (
+              items={watchData?.recentlyWatched?.map((item) => (
                 <TmdbTitleCard
                   key={`media-slider-item-${item.id}`}
                   id={item.id}

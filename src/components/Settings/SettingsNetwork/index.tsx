@@ -7,6 +7,7 @@ import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import type { NetworkSettings } from '@server/lib/settings';
+import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
@@ -38,13 +39,19 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
     "Use ',' as a separator, and '*.' as a wildcard for subdomains",
   proxyBypassLocalAddresses: 'Bypass Proxy for Local Addresses',
   validationProxyPort: 'You must provide a valid port',
-  advancedNetworkSettings: 'Advanced Network Settings',
   networkDisclaimer:
     'Network parameters from your container/system should be used instead of these settings. See the {docs} for more information.',
   docs: 'documentation',
   forceIpv4First: 'Force IPv4 Resolution First',
   forceIpv4FirstTip:
     'Force Jellyseerr to resolve IPv4 addresses first instead of IPv6',
+  dnsCache: 'DNS Cache',
+  dnsCacheTip:
+    'Enable caching of DNS lookups to optimize performance and avoid making unnecessary API calls',
+  dnsCacheHoverTip:
+    'Do NOT enable this if you are experiencing issues with DNS lookups',
+  dnsCacheForceMinTtl: 'DNS Cache Minimum TTL',
+  dnsCacheForceMaxTtl: 'DNS Cache Maximum TTL',
 });
 
 const SettingsNetwork = () => {
@@ -90,6 +97,9 @@ const SettingsNetwork = () => {
           initialValues={{
             csrfProtection: data?.csrfProtection,
             forceIpv4First: data?.forceIpv4First,
+            dnsCacheEnabled: data?.dnsCache.enabled,
+            dnsCacheForceMinTtl: data?.dnsCache.forceMinTtl,
+            dnsCacheForceMaxTtl: data?.dnsCache.forceMaxTtl,
             trustProxy: data?.trustProxy,
             proxyEnabled: data?.proxy?.enabled,
             proxyHostname: data?.proxy?.hostname,
@@ -104,28 +114,26 @@ const SettingsNetwork = () => {
           validationSchema={NetworkSettingsSchema}
           onSubmit={async (values) => {
             try {
-              const res = await fetch('/api/v1/settings/network', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
+              await axios.post('/api/v1/settings/network', {
+                csrfProtection: values.csrfProtection,
+                forceIpv4First: values.forceIpv4First,
+                trustProxy: values.trustProxy,
+                dnsCache: {
+                  enabled: values.dnsCacheEnabled,
+                  forceMinTtl: values.dnsCacheForceMinTtl,
+                  forceMaxTtl: values.dnsCacheForceMaxTtl,
                 },
-                body: JSON.stringify({
-                  csrfProtection: values.csrfProtection,
-                  forceIpv4First: values.forceIpv4First,
-                  trustProxy: values.trustProxy,
-                  proxy: {
-                    enabled: values.proxyEnabled,
-                    hostname: values.proxyHostname,
-                    port: values.proxyPort,
-                    useSsl: values.proxySsl,
-                    user: values.proxyUser,
-                    password: values.proxyPassword,
-                    bypassFilter: values.proxyBypassFilter,
-                    bypassLocalAddresses: values.proxyBypassLocalAddresses,
-                  },
-                }),
+                proxy: {
+                  enabled: values.proxyEnabled,
+                  hostname: values.proxyHostname,
+                  port: Number(values.proxyPort),
+                  useSsl: values.proxySsl,
+                  user: values.proxyUser,
+                  password: values.proxyPassword,
+                  bypassFilter: values.proxyBypassFilter,
+                  bypassLocalAddresses: values.proxyBypassLocalAddresses,
+                },
               });
-              if (!res.ok) throw new Error();
               mutate('/api/v1/settings/public');
               mutate('/api/v1/status');
 
@@ -205,6 +213,113 @@ const SettingsNetwork = () => {
                     </Tooltip>
                   </div>
                 </div>
+                <div className="form-row">
+                  <label htmlFor="forceIpv4First" className="checkbox-label">
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.forceIpv4First)}
+                    </span>
+                    <SettingsBadge badgeType="advanced" className="mr-2" />
+                    <SettingsBadge badgeType="restartRequired" />
+                    <SettingsBadge badgeType="experimental" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.forceIpv4FirstTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="forceIpv4First"
+                      name="forceIpv4First"
+                      onChange={() => {
+                        setFieldValue('forceIpv4First', !values.forceIpv4First);
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="dnsCacheEnabled" className="checkbox-label">
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.dnsCache)}
+                    </span>
+                    <SettingsBadge badgeType="advanced" className="mr-2" />
+                    <SettingsBadge badgeType="restartRequired" />
+                    <SettingsBadge badgeType="experimental" className="mr-2" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.dnsCacheTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Tooltip
+                      content={intl.formatMessage(messages.dnsCacheHoverTip)}
+                    >
+                      <Field
+                        type="checkbox"
+                        id="dnsCacheEnabled"
+                        name="dnsCacheEnabled"
+                        onChange={() => {
+                          setFieldValue(
+                            'dnsCacheEnabled',
+                            !values.dnsCacheEnabled
+                          );
+                        }}
+                      />
+                    </Tooltip>
+                  </div>
+                </div>
+                {values.dnsCacheEnabled && (
+                  <>
+                    <div className="mr-2 ml-4">
+                      <div className="form-row">
+                        <label
+                          htmlFor="dnsCacheForceMinTtl"
+                          className="checkbox-label"
+                        >
+                          {intl.formatMessage(messages.dnsCacheForceMinTtl)}
+                        </label>
+                        <div className="form-input-area">
+                          <div className="form-input-field">
+                            <Field
+                              id="dnsCacheForceMinTtl"
+                              name="dnsCacheForceMinTtl"
+                              type="text"
+                            />
+                          </div>
+                          {errors.dnsCacheForceMinTtl &&
+                            touched.dnsCacheForceMinTtl &&
+                            typeof errors.dnsCacheForceMinTtl === 'string' && (
+                              <div className="error">
+                                {errors.dnsCacheForceMinTtl}
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                      <div className="form-row">
+                        <label
+                          htmlFor="dnsCacheForceMaxTtl"
+                          className="checkbox-label"
+                        >
+                          {intl.formatMessage(messages.dnsCacheForceMaxTtl)}
+                        </label>
+                        <div className="form-input-area">
+                          <div className="form-input-field">
+                            <Field
+                              id="dnsCacheForceMaxTtl"
+                              name="dnsCacheForceMaxTtl"
+                              type="text"
+                            />
+                          </div>
+                          {errors.dnsCacheForceMaxTtl &&
+                            touched.dnsCacheForceMaxTtl &&
+                            typeof errors.dnsCacheForceMaxTtl === 'string' && (
+                              <div className="error">
+                                {errors.dnsCacheForceMaxTtl}
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
                 <div className="form-row">
                   <label htmlFor="proxyEnabled" className="checkbox-label">
                     <span className="mr-2">
@@ -381,46 +496,6 @@ const SettingsNetwork = () => {
                     </div>
                   </>
                 )}
-                <h3 className="heading mt-10">
-                  {intl.formatMessage(messages.advancedNetworkSettings)}
-                </h3>
-                <p className="description">
-                  {intl.formatMessage(messages.networkDisclaimer, {
-                    docs: (
-                      <a
-                        href="https://docs.jellyseerr.dev/troubleshooting"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-white"
-                      >
-                        {intl.formatMessage(messages.docs)}
-                      </a>
-                    ),
-                  })}
-                </p>
-                <div className="form-row">
-                  <label htmlFor="forceIpv4First" className="checkbox-label">
-                    <span className="mr-2">
-                      {intl.formatMessage(messages.forceIpv4First)}
-                    </span>
-                    <SettingsBadge badgeType="advanced" className="mr-2" />
-                    <SettingsBadge badgeType="restartRequired" />
-                    <SettingsBadge badgeType="experimental" />
-                    <span className="label-tip">
-                      {intl.formatMessage(messages.forceIpv4FirstTip)}
-                    </span>
-                  </label>
-                  <div className="form-input-area">
-                    <Field
-                      type="checkbox"
-                      id="forceIpv4First"
-                      name="forceIpv4First"
-                      onChange={() => {
-                        setFieldValue('forceIpv4First', !values.forceIpv4First);
-                      }}
-                    />
-                  </div>
-                </div>
                 <div className="actions">
                   <div className="flex justify-end">
                     <span className="ml-3 inline-flex rounded-md shadow-sm">

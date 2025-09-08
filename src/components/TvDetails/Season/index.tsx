@@ -1,8 +1,8 @@
 import AirDateBadge from '@app/components/AirDateBadge';
+import CachedImage from '@app/components/Common/CachedImage';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import defineMessages from '@app/utils/defineMessages';
 import type { SeasonWithEpisodes } from '@server/models/Tv';
-import Image from 'next/image';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
 
@@ -57,9 +57,10 @@ const Season = ({ seasonNumber, tvId }: SeasonProps) => {
                 </div>
                 {episode.stillPath && (
                   <div className="relative aspect-video xl:h-32">
-                    <Image
+                    <CachedImage
+                      type="tmdb"
                       className="rounded-lg object-contain"
-                      src={`https://image.tmdb.org/t/p/original/${episode.stillPath}`}
+                      src={episode.stillPath}
                       alt=""
                       fill
                     />

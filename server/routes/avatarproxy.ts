@@ -6,6 +6,7 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { getAppVersion } from '@server/utils/appVersion';
 import { getHostname } from '@server/utils/getHostname';
+import axios from 'axios';
 import { Router } from 'express';
 import gravatarUrl from 'gravatar-url';
 import { createHash } from 'node:crypto';
@@ -22,7 +23,7 @@ async function initAvatarImageProxy() {
       select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
       order: { id: 'ASC' },
     });
-    const deviceId = admin?.jellyfinDeviceId;
+    const deviceId = admin?.jellyfinDeviceId || 'BOT_jellyseerr';
     const authToken = getSettings().jellyfin.apiKey;
     _avatarImageProxy = new ImageProxy('avatar', '', {
       headers: {
@@ -54,22 +55,26 @@ export async function checkAvatarChanged(
 
     const jellyfinAvatarUrl = getJellyfinAvatarUrl(user.jellyfinUserId);
 
-    const headResponse = await fetch(jellyfinAvatarUrl, { method: 'HEAD' });
-    if (!headResponse.ok) {
+    let headResponse;
+    try {
+      headResponse = await axios.head(jellyfinAvatarUrl);
+      if (headResponse.status !== 200) {
+        return { changed: false };
+      }
+    } catch (error) {
       return { changed: false };
     }
 
     const settings = getSettings();
     let remoteVersion: string;
     if (settings.main.mediaServerType === MediaServerType.JELLYFIN) {
-      const remoteLastModifiedStr =
-        headResponse.headers.get('last-modified') || '';
+      const remoteLastModifiedStr = headResponse.headers['last-modified'] || '';
       remoteVersion = (
         Date.parse(remoteLastModifiedStr) || Date.now()
       ).toString();
     } else if (settings.main.mediaServerType === MediaServerType.EMBY) {
       remoteVersion =
-        headResponse.headers.get('etag')?.replace(/"/g, '') ||
+        headResponse.headers['etag']?.replace(/"/g, '') ||
         Date.now().toString();
     } else {
       remoteVersion = Date.now().toString();

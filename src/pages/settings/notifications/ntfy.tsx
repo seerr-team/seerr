@@ -1,4 +1,4 @@
-import NotificationsLunaSea from '@app/components/Settings/Notifications/NotificationsLunaSea';
+import NotificationsNtfy from '@app/components/Settings/Notifications/NotificationsNtfy';
 import SettingsLayout from '@app/components/Settings/SettingsLayout';
 import SettingsNotifications from '@app/components/Settings/SettingsNotifications';
 import useRouteGuard from '@app/hooks/useRouteGuard';
@@ -10,7 +10,7 @@ const NotificationsPage: NextPage = () => {
   return (
     <SettingsLayout>
       <SettingsNotifications>
-        <NotificationsLunaSea />
+        <NotificationsNtfy />
       </SettingsNotifications>
     </SettingsLayout>
   );

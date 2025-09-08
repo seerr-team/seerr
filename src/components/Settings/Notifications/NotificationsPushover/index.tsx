@@ -5,6 +5,7 @@ import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
 import type { PushoverSound } from '@server/api/pushover';
+import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -16,6 +17,7 @@ const messages = defineMessages(
   'components.Settings.Notifications.NotificationsPushover',
   {
     agentenabled: 'Enable Agent',
+    embedPoster: 'Embed Poster',
     accessToken: 'Application API Token',
     accessTokenTip:
       '<ApplicationRegistrationLink>Register an application</ApplicationRegistrationLink> for use with Jellyseerr',
@@ -85,6 +87,7 @@ const NotificationsPushover = () => {
     <Formik
       initialValues={{
         enabled: data?.enabled,
+        embedPoster: data?.embedPoster,
         types: data?.types,
         accessToken: data?.options.accessToken,
         userToken: data?.options.userToken,
@@ -93,21 +96,16 @@ const NotificationsPushover = () => {
       validationSchema={NotificationsPushoverSchema}
       onSubmit={async (values) => {
         try {
-          const res = await fetch('/api/v1/settings/notifications/pushover', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
+          await axios.post('/api/v1/settings/notifications/pushover', {
+            enabled: values.enabled,
+            embedPoster: values.embedPoster,
+            types: values.types,
+            options: {
+              accessToken: values.accessToken,
+              userToken: values.userToken,
+              sound: values.sound,
             },
-            body: JSON.stringify({
-              enabled: values.enabled,
-              types: values.types,
-              options: {
-                accessToken: values.accessToken,
-                userToken: values.userToken,
-              },
-            }),
           });
-          if (!res.ok) throw new Error();
           addToast(intl.formatMessage(messages.pushoversettingssaved), {
             appearance: 'success',
             autoDismiss: true,
@@ -145,25 +143,17 @@ const NotificationsPushover = () => {
                 toastId = id;
               }
             );
-            const res = await fetch(
-              '/api/v1/settings/notifications/pushover/test',
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  enabled: true,
-                  types: values.types,
-                  options: {
-                    accessToken: values.accessToken,
-                    userToken: values.userToken,
-                    sound: values.sound,
-                  },
-                }),
-              }
-            );
-            if (!res.ok) throw new Error();
+            await axios.post('/api/v1/settings/notifications/pushover/test', {
+              enabled: true,
+              embedPoster: values.embedPoster,
+              types: values.types,
+              options: {
+                accessToken: values.accessToken,
+                userToken: values.userToken,
+                sound: values.sound,
+              },
+            });
+
             if (toastId) {
               removeToast(toastId);
             }
@@ -193,6 +183,14 @@ const NotificationsPushover = () => {
               </label>
               <div className="form-input-area">
                 <Field type="checkbox" id="enabled" name="enabled" />
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="embedPoster" className="checkbox-label">
+                {intl.formatMessage(messages.embedPoster)}
+              </label>
+              <div className="form-input-area">
+                <Field type="checkbox" id="embedPoster" name="embedPoster" />
               </div>
             </div>
             <div className="form-row">

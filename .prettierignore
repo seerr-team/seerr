@@ -4,6 +4,7 @@ dist/
 config/
 CHANGELOG.md
 pnpm-lock.yaml
+cypress/config/settings.cypress.json
 
 # assets
 src/assets/

@@ -5,6 +5,7 @@ import {
   ClockIcon,
   EyeSlashIcon,
   MinusSmallIcon,
+  TrashIcon,
 } from '@heroicons/react/24/solid';
 import { MediaStatus } from '@server/constants/media';
 
@@ -58,6 +59,10 @@ const StatusBadgeMini = ({
         'bg-green-500 border-green-400 ring-green-400 text-green-100'
       );
       indicatorIcon = <MinusSmallIcon />;
+      break;
+    case MediaStatus.DELETED:
+      badgeStyle.push('bg-red-500 border-red-400 ring-red-400 text-red-100');
+      indicatorIcon = <TrashIcon />;
       break;
   }
 

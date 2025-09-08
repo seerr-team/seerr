@@ -4,6 +4,7 @@ import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
+import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -15,6 +16,7 @@ const messages = defineMessages(
   'components.Settings.Notifications.NotificationsSlack',
   {
     agentenabled: 'Enable Agent',
+    embedPoster: 'Embed Poster',
     webhookUrl: 'Webhook URL',
     webhookUrlTip:
       'Create an <WebhookLink>Incoming Webhook</WebhookLink> integration',
@@ -58,26 +60,21 @@ const NotificationsSlack = () => {
     <Formik
       initialValues={{
         enabled: data.enabled,
+        embedPoster: data.embedPoster,
         types: data.types,
         webhookUrl: data.options.webhookUrl,
       }}
       validationSchema={NotificationsSlackSchema}
       onSubmit={async (values) => {
         try {
-          const res = await fetch('/api/v1/settings/notifications/slack', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
+          await axios.post('/api/v1/settings/notifications/slack', {
+            enabled: values.enabled,
+            embedPoster: values.embedPoster,
+            types: values.types,
+            options: {
+              webhookUrl: values.webhookUrl,
             },
-            body: JSON.stringify({
-              enabled: values.enabled,
-              types: values.types,
-              options: {
-                webhookUrl: values.webhookUrl,
-              },
-            }),
           });
-          if (!res.ok) throw new Error();
           addToast(intl.formatMessage(messages.slacksettingssaved), {
             appearance: 'success',
             autoDismiss: true,
@@ -115,23 +112,14 @@ const NotificationsSlack = () => {
                 toastId = id;
               }
             );
-            const res = await fetch(
-              '/api/v1/settings/notifications/slack/test',
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  enabled: true,
-                  types: values.types,
-                  options: {
-                    webhookUrl: values.webhookUrl,
-                  },
-                }),
-              }
-            );
-            if (!res.ok) throw new Error();
+            await axios.post('/api/v1/settings/notifications/slack/test', {
+              enabled: true,
+              embedPoster: values.embedPoster,
+              types: values.types,
+              options: {
+                webhookUrl: values.webhookUrl,
+              },
+            });
 
             if (toastId) {
               removeToast(toastId);
@@ -162,6 +150,14 @@ const NotificationsSlack = () => {
               </label>
               <div className="form-input-area">
                 <Field type="checkbox" id="enabled" name="enabled" />
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="embedPoster" className="checkbox-label">
+                {intl.formatMessage(messages.embedPoster)}
+              </label>
+              <div className="form-input-area">
+                <Field type="checkbox" id="embedPoster" name="embedPoster" />
               </div>
             </div>
             <div className="form-row">

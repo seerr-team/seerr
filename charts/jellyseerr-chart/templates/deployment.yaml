@@ -48,10 +48,44 @@ spec:
             httpGet:
               path: /
               port: http
+            {{- if .Values.probes.livenessProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ .Values.probes.livenessProbe.initialDelaySeconds }}
+            {{- end }}
+            {{- if .Values.probes.livenessProbe.periodSeconds }}
+            periodSeconds: {{ .Values.probes.livenessProbe.periodSeconds }}
+            {{- end }}
+            {{- if .Values.probes.livenessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .Values.probes.livenessProbe.timeoutSeconds }}
+            {{- end }}
+            {{- if .Values.probes.livenessProbe.successThreshold }}
+            successThreshold: {{ .Values.probes.livenessProbe.successThreshold }}
+            {{- end }}
+            {{- if .Values.probes.livenessProbe.failureThreshold }}
+            failureThreshold: {{ .Values.probes.livenessProbe.failureThreshold }}
+            {{- end }}
           readinessProbe:
             httpGet:
               path: /
               port: http
+            {{- if .Values.probes.readinessProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ .Values.probes.readinessProbe.initialDelaySeconds }}
+            {{- end }}
+            {{- if .Values.probes.readinessProbe.periodSeconds }}
+            periodSeconds: {{ .Values.probes.readinessProbe.periodSeconds }}
+            {{- end }}
+            {{- if .Values.probes.readinessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .Values.probes.readinessProbe.timeoutSeconds }}
+            {{- end }}
+            {{- if .Values.probes.readinessProbe.successThreshold }}
+            successThreshold: {{ .Values.probes.readinessProbe.successThreshold }}
+            {{- end }}
+            {{- if .Values.probes.readinessProbe.failureThreshold }}
+            failureThreshold: {{ .Values.probes.readinessProbe.failureThreshold }}
+            {{- end }}
+          {{- if .Values.probes.startupProbe }}
+          startupProbe:
+            {{- toYaml .Values.probes.startupProbe | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           {{- with .Values.extraEnv }}

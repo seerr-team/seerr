@@ -3,8 +3,10 @@ import SensitiveInput from '@app/components/Common/SensitiveInput';
 import type { SonarrTestResponse } from '@app/components/Settings/SettingsServices';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import { isValidURL } from '@app/utils/urlValidationHelper';
 import { Transition } from '@headlessui/react';
 import type { SonarrSettings } from '@server/lib/settings';
+import axios from 'axios';
 import { Field, Formik } from 'formik';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -101,12 +103,9 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
     name: Yup.string().required(
       intl.formatMessage(messages.validationNameRequired)
     ),
-    hostname: Yup.string()
-      .required(intl.formatMessage(messages.validationHostnameRequired))
-      .matches(
-        /^(((([a-z]|\d|_|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*)?([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])):((([a-z]|\d|_|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*)?([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))@)?(([a-z]|\d|_|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*)?([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])$/i,
-        intl.formatMessage(messages.validationHostnameRequired)
-      ),
+    hostname: Yup.string().required(
+      intl.formatMessage(messages.validationHostnameRequired)
+    ),
     port: Yup.number()
       .nullable()
       .required(intl.formatMessage(messages.validationPortRequired)),
@@ -125,9 +124,10 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
         )
       : Yup.number(),
     externalUrl: Yup.string()
-      .matches(
-        /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*))?$/i,
-        intl.formatMessage(messages.validationApplicationUrl)
+      .test(
+        'valid-url',
+        intl.formatMessage(messages.validationApplicationUrl),
+        isValidURL
       )
       .test(
         'no-trailing-slash',
@@ -163,24 +163,19 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
     }) => {
       setIsTesting(true);
       try {
-        const res = await fetch('/api/v1/settings/sonarr/test', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        const response = await axios.post<SonarrTestResponse>(
+          '/api/v1/settings/sonarr/test',
+          {
             hostname,
             apiKey,
             port: Number(port),
             baseUrl,
             useSsl,
-          }),
-        });
-        if (!res.ok) throw new Error();
-        const data: SonarrTestResponse = await res.json();
+          }
+        );
 
         setIsValidated(true);
-        setTestResponse(data);
+        setTestResponse(response.data);
         if (initialLoad.current) {
           addToast(intl.formatMessage(messages.toastSonarrTestSuccess), {
             appearance: 'success',
@@ -297,23 +292,12 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
               tagRequests: values.tagRequests,
             };
             if (!sonarr) {
-              const res = await fetch('/api/v1/settings/sonarr', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(submission),
-              });
-              if (!res.ok) throw new Error();
+              await axios.post('/api/v1/settings/sonarr', submission);
             } else {
-              const res = await fetch(`/api/v1/settings/sonarr/${sonarr.id}`, {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(submission),
-              });
-              if (!res.ok) throw new Error();
+              await axios.put(
+                `/api/v1/settings/sonarr/${sonarr.id}`,
+                submission
+              );
             }
 
             onSave();

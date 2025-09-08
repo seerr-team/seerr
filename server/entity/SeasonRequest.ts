@@ -1,14 +1,6 @@
 import { MediaRequestStatus } from '@server/constants/media';
-import { getRepository } from '@server/datasource';
-import {
-  AfterRemove,
-  Column,
-  CreateDateColumn,
-  Entity,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { DbAwareColumn } from '@server/utils/DbColumnHelper';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { MediaRequest } from './MediaRequest';
 
 @Entity()
@@ -27,26 +19,18 @@ class SeasonRequest {
   })
   public request: MediaRequest;
 
-  @CreateDateColumn()
+  @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
-  @UpdateDateColumn()
+  @DbAwareColumn({
+    type: 'datetime',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+  })
   public updatedAt: Date;
 
   constructor(init?: Partial<SeasonRequest>) {
     Object.assign(this, init);
-  }
-
-  @AfterRemove()
-  public async handleRemoveParent(): Promise<void> {
-    const mediaRequestRepository = getRepository(MediaRequest);
-    const requestToBeDeleted = await mediaRequestRepository.findOneOrFail({
-      where: { id: this.request.id },
-    });
-
-    if (requestToBeDeleted.seasons.length === 0) {
-      await mediaRequestRepository.delete({ id: this.request.id });
-    }
   }
 }
 

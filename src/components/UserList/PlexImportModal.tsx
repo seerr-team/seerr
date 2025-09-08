@@ -3,6 +3,7 @@ import Modal from '@app/components/Common/Modal';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import axios from 'axios';
 import Image from 'next/image';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -47,17 +48,10 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
     setImporting(true);
 
     try {
-      const res = await fetch('/api/v1/user/import-from-plex', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          plexIds: selectedUsers,
-        }),
-      });
-      if (!res.ok) throw new Error();
-      const createdUsers = await res.json();
+      const { data: createdUsers } = await axios.post(
+        '/api/v1/user/import-from-plex',
+        { plexIds: selectedUsers }
+      );
 
       if (!Array.isArray(createdUsers) || createdUsers.length === 0) {
         throw new Error('No users were imported from Plex.');

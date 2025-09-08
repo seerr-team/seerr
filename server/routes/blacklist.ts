@@ -19,39 +19,54 @@ export const blacklistAdd = z.object({
   user: z.coerce.number(),
 });
 
+const blacklistGet = z.object({
+  take: z.coerce.number().int().positive().default(25),
+  skip: z.coerce.number().int().nonnegative().default(0),
+  search: z.string().optional(),
+  filter: z.enum(['all', 'manual', 'blacklistedTags']).optional(),
+});
+
 blacklistRoutes.get(
   '/',
   isAuthenticated([Permission.MANAGE_BLACKLIST, Permission.VIEW_BLACKLIST], {
     type: 'or',
   }),
   async (req, res, next) => {
-    const pageSize = req.query.take ? Number(req.query.take) : 25;
-    const skip = req.query.skip ? Number(req.query.skip) : 0;
-    const search = (req.query.search as string) ?? '';
+    const { take, skip, search, filter } = blacklistGet.parse(req.query);
 
     try {
       let query = getRepository(Blacklist)
         .createQueryBuilder('blacklist')
-        .leftJoinAndSelect('blacklist.user', 'user');
+        .leftJoinAndSelect('blacklist.user', 'user')
+        .where('1 = 1'); // Allow use of andWhere later
 
-      if (search.length > 0) {
-        query = query.where('blacklist.title like :title', {
+      switch (filter) {
+        case 'manual':
+          query = query.andWhere('blacklist.blacklistedTags IS NULL');
+          break;
+        case 'blacklistedTags':
+          query = query.andWhere('blacklist.blacklistedTags IS NOT NULL');
+          break;
+      }
+
+      if (search) {
+        query = query.andWhere('blacklist.title like :title', {
           title: `%${search}%`,
         });
       }
 
       const [blacklistedItems, itemsCount] = await query
         .orderBy('blacklist.createdAt', 'DESC')
-        .take(pageSize)
+        .take(take)
         .skip(skip)
         .getManyAndCount();
 
       return res.status(200).json({
         pageInfo: {
-          pages: Math.ceil(itemsCount / pageSize),
-          pageSize,
+          pages: Math.ceil(itemsCount / take),
+          pageSize: take,
           results: itemsCount,
-          page: Math.ceil(skip / pageSize) + 1,
+          page: Math.ceil(skip / take) + 1,
         },
         results: blacklistedItems,
       } as BlacklistResultsResponse);

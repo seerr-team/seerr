@@ -250,8 +250,6 @@
   "components.PersonDetails.ascharacter": "si {character}",
   "components.PersonDetails.birthdate": "Lindur {birthdate}",
   "components.PersonDetails.crewmember": "Ekuipazhi",
-  "components.PlexLoginButton.signingin": "Po identifikohet…",
-  "components.PlexLoginButton.signinwithplex": "Hyr",
   "components.RegionSelector.regionServerDefault": "Parazgjedhur ({region})",
   "components.RequestBlock.requestoverrides": "Anashkalime të Kërkesës",
   "components.RequestBlock.rootfolder": "Direktoria",

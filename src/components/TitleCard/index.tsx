@@ -23,6 +23,7 @@ import {
 import { MediaStatus } from '@server/constants/media';
 import type { Watchlist } from '@server/entity/Watchlist';
 import type { MediaType } from '@server/models/Search';
+import axios from 'axios';
 import Link from 'next/link';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -108,21 +109,13 @@ const TitleCard = ({
   const onClickWatchlistBtn = async (): Promise<void> => {
     setIsUpdating(true);
     try {
-      const res = await fetch('/api/v1/watchlist', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tmdbId: id,
-          mediaType,
-          title,
-        }),
+      const response = await axios.post<Watchlist>('/api/v1/watchlist', {
+        tmdbId: id,
+        mediaType,
+        title,
       });
-      if (!res.ok) throw new Error();
-      const data: Watchlist = await res.json();
       mutate('/api/v1/discover/watchlist');
-      if (data) {
+      if (response.data) {
         addToast(
           <span>
             {intl.formatMessage(messages.watchlistSuccess, {
@@ -147,11 +140,9 @@ const TitleCard = ({
   const onClickDeleteWatchlistBtn = async (): Promise<void> => {
     setIsUpdating(true);
     try {
-      const res = await fetch('/api/v1/watchlist/' + id, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error();
-      if (res.status === 204) {
+      const response = await axios.delete<Watchlist>('/api/v1/watchlist/' + id);
+
+      if (response.status === 204) {
         addToast(
           <span>
             {intl.formatMessage(messages.watchlistDeleted, {
@@ -182,21 +173,13 @@ const TitleCard = ({
     const topNode = cardRef.current;
 
     if (topNode) {
-      const res = await fetch('/api/v1/blacklist', {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      try {
+        await axios.post('/api/v1/blacklist', {
           tmdbId: id,
           mediaType,
           title,
           user: user?.id,
-        }),
-      });
-
-      if (res.status === 201) {
+        });
         addToast(
           <span>
             {intl.formatMessage(globalMessages.blacklistSuccess, {
@@ -207,21 +190,23 @@ const TitleCard = ({
           { appearance: 'success', autoDismiss: true }
         );
         setCurrentStatus(MediaStatus.BLACKLISTED);
-      } else if (res.status === 412) {
-        addToast(
-          <span>
-            {intl.formatMessage(globalMessages.blacklistDuplicateError, {
-              title,
-              strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
-            })}
-          </span>,
-          { appearance: 'info', autoDismiss: true }
-        );
-      } else {
-        addToast(intl.formatMessage(globalMessages.blacklistError), {
-          appearance: 'error',
-          autoDismiss: true,
-        });
+      } catch (e) {
+        if (e?.response?.status === 412) {
+          addToast(
+            <span>
+              {intl.formatMessage(globalMessages.blacklistDuplicateError, {
+                title,
+                strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+              })}
+            </span>,
+            { appearance: 'info', autoDismiss: true }
+          );
+        } else {
+          addToast(intl.formatMessage(globalMessages.blacklistError), {
+            appearance: 'error',
+            autoDismiss: true,
+          });
+        }
       }
 
       setIsUpdating(false);
@@ -239,9 +224,7 @@ const TitleCard = ({
     const topNode = cardRef.current;
 
     if (topNode) {
-      const res = await fetch('/api/v1/blacklist/' + id, {
-        method: 'DELETE',
-      });
+      const res = await axios.delete('/api/v1/blacklist/' + id);
 
       if (res.status === 204) {
         addToast(
@@ -484,7 +467,9 @@ const TitleCard = ({
                   <div
                     className={`px-2 text-white ${
                       !showRequestButton ||
-                      (currentStatus && currentStatus !== MediaStatus.UNKNOWN)
+                      (currentStatus &&
+                        currentStatus !== MediaStatus.UNKNOWN &&
+                        currentStatus !== MediaStatus.DELETED)
                         ? 'pb-2'
                         : 'pb-11'
                     }`}
@@ -510,7 +495,8 @@ const TitleCard = ({
                         WebkitLineClamp:
                           !showRequestButton ||
                           (currentStatus &&
-                            currentStatus !== MediaStatus.UNKNOWN)
+                            currentStatus !== MediaStatus.UNKNOWN &&
+                            currentStatus !== MediaStatus.DELETED)
                             ? 5
                             : 3,
                         display: '-webkit-box',
@@ -527,7 +513,9 @@ const TitleCard = ({
 
               <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 py-2">
                 {showRequestButton &&
-                  (!currentStatus || currentStatus === MediaStatus.UNKNOWN) && (
+                  (!currentStatus ||
+                    currentStatus === MediaStatus.UNKNOWN ||
+                    currentStatus === MediaStatus.DELETED) && (
                     <Button
                       buttonType="primary"
                       buttonSize="sm"

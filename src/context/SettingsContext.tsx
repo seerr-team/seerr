@@ -13,6 +13,7 @@ const defaultSettings = {
   applicationTitle: 'Jellyseerr',
   applicationUrl: '',
   hideAvailable: false,
+  hideBlacklisted: false,
   localLogin: true,
   mediaServerLogin: true,
   movie4kEnabled: false,
@@ -29,6 +30,7 @@ const defaultSettings = {
   locale: 'en',
   emailEnabled: false,
   newPlexLogin: true,
+  youtubeUrl: '',
 };
 
 export const SettingsContext = React.createContext<SettingsContextProps>({

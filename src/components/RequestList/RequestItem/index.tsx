@@ -17,12 +17,13 @@ import {
   TrashIcon,
   XMarkIcon,
 } from '@heroicons/react/24/solid';
-import { MediaRequestStatus, MediaType } from '@server/constants/media';
+import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { NonFunctionProperties } from '@server/interfaces/api/common';
-import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
+import type { RequestResultsResponse } from '@server/interfaces/api/requestInterfaces';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
+import axios from 'axios';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useInView } from 'react-intersection-observer';
@@ -65,10 +66,7 @@ const RequestItemError = ({
   const { hasPermission } = useUser();
 
   const deleteRequest = async () => {
-    const res = await fetch(`/api/v1/media/${requestData?.media.id}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) throw new Error();
+    await axios.delete(`/api/v1/media/${requestData?.media.id}`);
     revalidateList();
     mutate('/api/v1/request/count');
   };
@@ -292,18 +290,11 @@ const RequestItemError = ({
 };
 
 interface RequestItemProps {
-  request: NonFunctionProperties<MediaRequest> & { profileName?: string };
+  request: RequestResultsResponse['results'][number];
   revalidateList: () => void;
-  radarrData?: RadarrSettings[];
-  sonarrData?: SonarrSettings[];
 }
 
-const RequestItem = ({
-  request,
-  revalidateList,
-  radarrData,
-  sonarrData,
-}: RequestItemProps) => {
+const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
   const settings = useSettings();
   const { ref, inView } = useInView({
     triggerOnce: true,
@@ -335,23 +326,16 @@ const RequestItem = ({
   const [isRetrying, setRetrying] = useState(false);
 
   const modifyRequest = async (type: 'approve' | 'decline') => {
-    const res = await fetch(`/api/v1/request/${request.id}/${type}`, {
-      method: 'POST',
-    });
-    if (!res.ok) throw new Error();
-    const data = await res.json();
+    const response = await axios.post(`/api/v1/request/${request.id}/${type}`);
 
-    if (data) {
+    if (response) {
       revalidate();
       mutate('/api/v1/request/count');
     }
   };
 
   const deleteRequest = async () => {
-    const res = await fetch(`/api/v1/request/${request.id}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) throw new Error();
+    await axios.delete(`/api/v1/request/${request.id}`);
 
     revalidateList();
     mutate('/api/v1/request/count');
@@ -359,13 +343,10 @@ const RequestItem = ({
 
   const deleteMediaFile = async () => {
     if (request.media) {
-      // we don't check if the response is ok here because there may be no file to delete
-      await fetch(`/api/v1/media/${request.media.id}/file`, {
-        method: 'DELETE',
-      });
-      await fetch(`/api/v1/media/${request.media.id}`, {
-        method: 'DELETE',
-      });
+      await axios.delete(
+        `/api/v1/media/${request.media.id}/file?is4k=${request.is4k}`
+      );
+      await axios.delete(`/api/v1/media/${request.media.id}`);
       revalidateList();
     }
   };
@@ -374,12 +355,7 @@ const RequestItem = ({
     setRetrying(true);
 
     try {
-      const res = await fetch(`/api/v1/request/${request.id}/retry`, {
-        method: 'POST',
-      });
-      if (!res.ok) throw new Error();
-      const result = await res.json();
-
+      const result = await axios.post(`/api/v1/request/${request.id}/retry`);
       revalidate(result.data);
     } catch (e) {
       addToast(intl.formatMessage(messages.failedretry), {
@@ -397,23 +373,6 @@ const RequestItem = ({
     iOSPlexUrl: requestData?.media?.iOSPlexUrl,
     iOSPlexUrl4k: requestData?.media?.iOSPlexUrl4k,
   });
-
-  const serviceExists = () => {
-    if (title?.mediaInfo) {
-      if (title?.mediaInfo.mediaType === MediaType.MOVIE) {
-        return (
-          radarrData?.find((radarr) => radarr.id === request.serverId) !==
-          undefined
-        );
-      } else {
-        return (
-          sonarrData?.find((sonarr) => sonarr.id === request.serverId) !==
-          undefined
-        );
-      }
-    }
-    return false;
-  };
 
   if (!title && !error) {
     return (
@@ -551,6 +510,15 @@ const RequestItem = ({
                   href={`/${requestData.type}/${requestData.media.tmdbId}?manage=1`}
                 >
                   {intl.formatMessage(globalMessages.failed)}
+                </Badge>
+              ) : requestData.status === MediaRequestStatus.PENDING &&
+                requestData.media[requestData.is4k ? 'status4k' : 'status'] ===
+                  MediaStatus.DELETED ? (
+                <Badge
+                  badgeType="warning"
+                  href={`/${requestData.type}/${requestData.media.tmdbId}?manage=1`}
+                >
+                  {intl.formatMessage(globalMessages.pending)}
                 </Badge>
               ) : (
                 <StatusBadge
@@ -722,30 +690,30 @@ const RequestItem = ({
             )}
           {requestData.status !== MediaRequestStatus.PENDING &&
             hasPermission(Permission.MANAGE_REQUESTS) && (
-              <ConfirmButton
-                onClick={() => deleteRequest()}
-                confirmText={intl.formatMessage(globalMessages.areyousure)}
-                className="w-full"
-              >
-                <TrashIcon />
-                <span>{intl.formatMessage(messages.deleterequest)}</span>
-              </ConfirmButton>
-            )}
-          {hasPermission(Permission.MANAGE_REQUESTS) &&
-            title?.mediaInfo?.serviceId &&
-            serviceExists() && (
-              <ConfirmButton
-                onClick={() => deleteMediaFile()}
-                confirmText={intl.formatMessage(globalMessages.areyousure)}
-                className="w-full"
-              >
-                <TrashIcon />
-                <span>
-                  {intl.formatMessage(messages.removearr, {
-                    arr: request.type === 'movie' ? 'Radarr' : 'Sonarr',
-                  })}
-                </span>
-              </ConfirmButton>
+              <>
+                <ConfirmButton
+                  onClick={() => deleteRequest()}
+                  confirmText={intl.formatMessage(globalMessages.areyousure)}
+                  className="w-full"
+                >
+                  <TrashIcon />
+                  <span>{intl.formatMessage(messages.deleterequest)}</span>
+                </ConfirmButton>
+                {request.canRemove && (
+                  <ConfirmButton
+                    onClick={() => deleteMediaFile()}
+                    confirmText={intl.formatMessage(globalMessages.areyousure)}
+                    className="w-full"
+                  >
+                    <TrashIcon />
+                    <span>
+                      {intl.formatMessage(messages.removearr, {
+                        arr: request.type === 'movie' ? 'Radarr' : 'Sonarr',
+                      })}
+                    </span>
+                  </ConfirmButton>
+                )}
+              </>
             )}
           {requestData.status === MediaRequestStatus.PENDING &&
             hasPermission(Permission.MANAGE_REQUESTS) && (

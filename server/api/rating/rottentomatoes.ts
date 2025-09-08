@@ -105,12 +105,15 @@ class RottenTomatoes extends ExternalAPI {
     super(
       'https://79frdp12pn-dsn.algolia.net/1/indexes/*',
       {
-        'x-algolia-agent': 'Algolia for JavaScript (4.14.3); Browser (lite)',
+        'x-algolia-agent':
+          'Algolia%20for%20JavaScript%20(4.14.3)%3B%20Browser%20(lite)',
         'x-algolia-api-key': '175588f6e5f8319b27702e4cc4013561',
         'x-algolia-application-id': '79FRDP12PN',
       },
       {
         headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
           'x-algolia-usertoken': settings.clientId,
         },
         nodeCache: cacheManager.getCache('rt').data,

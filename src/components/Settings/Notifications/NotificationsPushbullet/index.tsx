@@ -5,6 +5,7 @@ import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
+import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -67,21 +68,14 @@ const NotificationsPushbullet = () => {
       validationSchema={NotificationsPushbulletSchema}
       onSubmit={async (values) => {
         try {
-          const res = await fetch('/api/v1/settings/notifications/pushbullet', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
+          await axios.post('/api/v1/settings/notifications/pushbullet', {
+            enabled: values.enabled,
+            types: values.types,
+            options: {
+              accessToken: values.accessToken,
+              channelTag: values.channelTag,
             },
-            body: JSON.stringify({
-              enabled: values.enabled,
-              types: values.types,
-              options: {
-                accessToken: values.accessToken,
-                channelTag: values.channelTag,
-              },
-            }),
           });
-          if (!res.ok) throw new Error();
           addToast(intl.formatMessage(messages.pushbulletSettingsSaved), {
             appearance: 'success',
             autoDismiss: true,
@@ -119,24 +113,14 @@ const NotificationsPushbullet = () => {
                 toastId = id;
               }
             );
-            const res = await fetch(
-              '/api/v1/settings/notifications/pushbullet/test',
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  enabled: true,
-                  types: values.types,
-                  options: {
-                    accessToken: values.accessToken,
-                    channelTag: values.channelTag,
-                  },
-                }),
-              }
-            );
-            if (!res.ok) throw new Error();
+            await axios.post('/api/v1/settings/notifications/pushbullet/test', {
+              enabled: true,
+              types: values.types,
+              options: {
+                accessToken: values.accessToken,
+                channelTag: values.channelTag,
+              },
+            });
 
             if (toastId) {
               removeToast(toastId);

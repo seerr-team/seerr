@@ -4,6 +4,7 @@ import { User } from '@server/entity/User';
 import type { NotificationAgentDiscord } from '@server/lib/settings';
 import { getSettings, NotificationAgentKey } from '@server/lib/settings';
 import logger from '@server/logger';
+import axios from 'axios';
 import {
   hasNotificationType,
   Notification,
@@ -108,8 +109,12 @@ class DiscordAgent
     type: Notification,
     payload: NotificationPayload
   ): DiscordRichEmbed {
-    const { applicationUrl } = getSettings().main;
+    const settings = getSettings();
+    const { applicationUrl } = settings.main;
+    const { embedPoster } = settings.notifications.agents.discord;
 
+    const appUrl =
+      applicationUrl || `http://localhost:${process.env.port || 5055}`;
     let color = EmbedColors.DARK_PURPLE;
     const fields: Field[] = [];
 
@@ -124,7 +129,7 @@ class DiscordAgent
       switch (type) {
         case Notification.MEDIA_PENDING:
           color = EmbedColors.ORANGE;
-          status = 'Pending Approval';
+          status = `[Pending Approval](${appUrl}/requests)`;
           break;
         case Notification.MEDIA_APPROVED:
         case Notification.MEDIA_AUTO_APPROVED:
@@ -220,9 +225,11 @@ class DiscordAgent
           }
         : undefined,
       fields,
-      thumbnail: {
-        url: payload.image,
-      },
+      thumbnail: embedPoster
+        ? {
+            url: payload.image,
+          }
+        : undefined,
     };
   }
 
@@ -295,39 +302,23 @@ class DiscordAgent
         userMentions.push(`<@&${settings.options.webhookRoleId}>`);
       }
 
-      const response = await fetch(settings.options.webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: settings.options.botUsername
-            ? settings.options.botUsername
-            : getSettings().main.applicationTitle,
-          avatar_url: settings.options.botAvatarUrl,
-          embeds: [this.buildEmbed(type, payload)],
-          content: userMentions.join(' '),
-        } as DiscordWebhookPayload),
-      });
-      if (!response.ok) {
-        throw new Error(response.statusText, { cause: response });
-      }
+      await axios.post(settings.options.webhookUrl, {
+        username: settings.options.botUsername
+          ? settings.options.botUsername
+          : getSettings().main.applicationTitle,
+        avatar_url: settings.options.botAvatarUrl,
+        embeds: [this.buildEmbed(type, payload)],
+        content: userMentions.join(' '),
+      } as DiscordWebhookPayload);
 
       return true;
     } catch (e) {
-      let errorData;
-      try {
-        errorData = await e.cause?.text();
-        errorData = JSON.parse(errorData);
-      } catch {
-        /* empty */
-      }
       logger.error('Error sending Discord notification', {
         label: 'Notifications',
         type: Notification[type],
         subject: payload.subject,
         errorMessage: e.message,
-        response: errorData,
+        response: e?.response?.data,
       });
 
       return false;

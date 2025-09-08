@@ -9,6 +9,7 @@ import {
   GenreSelector,
   KeywordSelector,
   StatusSelector,
+  USCertificationSelector,
   WatchProviderSelector,
 } from '@app/components/Selector';
 import useSettings from '@app/hooks/useSettings';
@@ -42,6 +43,7 @@ const messages = defineMessages('components.Discover.FilterSlideover', {
   streamingservices: 'Streaming Services',
   voteCount: 'Number of votes between {minValue} and {maxValue}',
   status: 'Status',
+  certification: 'Content Rating',
 });
 
 type FilterSlideoverProps = {
@@ -188,6 +190,16 @@ const FilterSlideover = ({
           isUserSettings
           setFieldValue={(_key, value) => {
             updateQueryParams('language', value);
+          }}
+        />
+        <span className="text-lg font-semibold">
+          {intl.formatMessage(messages.certification)}
+        </span>
+        <USCertificationSelector
+          type={type}
+          certification={currentFilters.certification}
+          onChange={(params) => {
+            batchUpdateQueryParams(params);
           }}
         />
         <span className="text-lg font-semibold">

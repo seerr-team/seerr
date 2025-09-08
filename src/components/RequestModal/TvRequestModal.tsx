@@ -17,6 +17,7 @@ import type { NonFunctionProperties } from '@server/interfaces/api/common';
 import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
 import { Permission } from '@server/lib/permissions';
 import type { TvDetails } from '@server/models/Tv';
+import axios from 'axios';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
@@ -111,35 +112,22 @@ const TvRequestModal = ({
 
     try {
       if (selectedSeasons.length > 0) {
-        const res = await fetch(`/api/v1/request/${editRequest.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            mediaType: 'tv',
-            serverId: requestOverrides?.server,
-            profileId: requestOverrides?.profile,
-            rootFolder: requestOverrides?.folder,
-            languageProfileId: requestOverrides?.language,
-            userId: requestOverrides?.user?.id,
-            tags: requestOverrides?.tags,
-            seasons: selectedSeasons,
-          }),
+        await axios.put(`/api/v1/request/${editRequest.id}`, {
+          mediaType: 'tv',
+          serverId: requestOverrides?.server,
+          profileId: requestOverrides?.profile,
+          rootFolder: requestOverrides?.folder,
+          languageProfileId: requestOverrides?.language,
+          userId: requestOverrides?.user?.id,
+          tags: requestOverrides?.tags,
+          seasons: selectedSeasons.sort((a, b) => a - b),
         });
-        if (!res.ok) throw new Error();
 
         if (alsoApproveRequest) {
-          const res = await fetch(`/api/v1/request/${editRequest.id}/approve`, {
-            method: 'POST',
-          });
-          if (!res.ok) throw new Error();
+          await axios.post(`/api/v1/request/${editRequest.id}/approve`);
         }
       } else {
-        const res = await fetch(`/api/v1/request/${editRequest.id}`, {
-          method: 'DELETE',
-        });
-        if (!res.ok) throw new Error();
+        await axios.delete(`/api/v1/request/${editRequest.id}`);
       }
       mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
       mutate('/api/v1/request/count');
@@ -206,32 +194,24 @@ const TvRequestModal = ({
           tags: requestOverrides.tags,
         };
       }
-      const res = await fetch('/api/v1/request', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          mediaId: data?.id,
-          tvdbId: tvdbId ?? data?.externalIds.tvdbId,
-          mediaType: 'tv',
-          is4k,
-          seasons: settings.currentSettings.partialRequestsEnabled
-            ? selectedSeasons.sort((a, b) => a - b)
-            : getAllSeasons().filter(
-                (season) => !getAllRequestedSeasons().includes(season)
-              ),
-          ...overrideParams,
-        }),
+      const response = await axios.post<MediaRequest>('/api/v1/request', {
+        mediaId: data?.id,
+        tvdbId: tvdbId ?? data?.externalIds.tvdbId,
+        mediaType: 'tv',
+        is4k,
+        seasons: settings.currentSettings.partialRequestsEnabled
+          ? selectedSeasons.sort((a, b) => a - b)
+          : getAllSeasons().filter(
+              (season) =>
+                !getAllRequestedSeasons().includes(season) && season !== 0
+            ),
+        ...overrideParams,
       });
-      if (!res.ok) throw new Error();
-      const mediaRequest: MediaRequest = await res.json();
-
       mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
 
-      if (mediaRequest) {
+      if (response.data) {
         if (onComplete) {
-          onComplete(mediaRequest.media.status);
+          onComplete(response.data.media.status);
         }
         addToast(
           <span>
@@ -270,7 +250,8 @@ const TvRequestModal = ({
       .filter(
         (request) =>
           request.is4k === is4k &&
-          request.status !== MediaRequestStatus.DECLINED
+          request.status !== MediaRequestStatus.DECLINED &&
+          request.status !== MediaRequestStatus.COMPLETED
       )
       .reduce((requestedSeasons, request) => {
         return [
@@ -322,8 +303,10 @@ const TvRequestModal = ({
     }
   };
 
-  const unrequestedSeasons = getAllSeasons().filter(
-    (season) => !getAllRequestedSeasons().includes(season)
+  const unrequestedSeasons = getAllSeasons().filter((season) =>
+    !settings.currentSettings.partialRequestsEnabled
+      ? !getAllRequestedSeasons().includes(season) && season !== 0
+      : !getAllRequestedSeasons().includes(season)
   );
 
   const toggleAllSeasons = (): void => {
@@ -335,12 +318,16 @@ const TvRequestModal = ({
       return;
     }
 
+    const standardUnrequestedSeasons = unrequestedSeasons.filter(
+      (seasonNumber) => seasonNumber !== 0
+    );
+
     if (
       data &&
       selectedSeasons.length >= 0 &&
-      selectedSeasons.length < unrequestedSeasons.length
+      selectedSeasons.length < standardUnrequestedSeasons.length
     ) {
-      setSelectedSeasons(unrequestedSeasons);
+      setSelectedSeasons(standardUnrequestedSeasons);
     } else {
       setSelectedSeasons([]);
     }
@@ -351,9 +338,9 @@ const TvRequestModal = ({
       return false;
     }
     return (
-      selectedSeasons.length ===
+      selectedSeasons.filter((season) => season !== 0).length ===
       getAllSeasons().filter(
-        (season) => !getAllRequestedSeasons().includes(season)
+        (season) => !getAllRequestedSeasons().includes(season) && season !== 0
       ).length
     );
   };
@@ -368,7 +355,8 @@ const TvRequestModal = ({
       (data.mediaInfo.requests || []).filter(
         (request) =>
           request.is4k === is4k &&
-          request.status !== MediaRequestStatus.DECLINED
+          request.status !== MediaRequestStatus.DECLINED &&
+          request.status !== MediaRequestStatus.COMPLETED
       ).length > 0
     ) {
       data.mediaInfo.requests
@@ -376,7 +364,9 @@ const TvRequestModal = ({
         .forEach((request) => {
           if (!seasonRequest) {
             seasonRequest = request.seasons.find(
-              (season) => season.seasonNumber === seasonNumber
+              (season) =>
+                season.seasonNumber === seasonNumber &&
+                season.status !== MediaRequestStatus.COMPLETED
             );
           }
         });
@@ -588,7 +578,11 @@ const TvRequestModal = ({
                       (season) =>
                         (!settings.currentSettings.enableSpecialEpisodes
                           ? season.seasonNumber !== 0
-                          : true) && season.episodeCount !== 0
+                          : true) &&
+                        (!settings.currentSettings.partialRequestsEnabled
+                          ? season.episodeCount !== 0 &&
+                            season.seasonNumber !== 0
+                          : season.episodeCount !== 0)
                     )
                     .map((season) => {
                       const seasonRequest = getSeasonRequest(
@@ -598,7 +592,9 @@ const TvRequestModal = ({
                         (sn) =>
                           sn.seasonNumber === season.seasonNumber &&
                           sn[is4k ? 'status4k' : 'status'] !==
-                            MediaStatus.UNKNOWN
+                            MediaStatus.UNKNOWN &&
+                          sn[is4k ? 'status4k' : 'status'] !==
+                            MediaStatus.DELETED
                       );
                       return (
                         <tr key={`season-${season.id}`}>

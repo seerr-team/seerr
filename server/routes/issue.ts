@@ -54,6 +54,7 @@ issueRoutes.get<Record<string, string>, IssueResultsResponse>(
       .leftJoinAndSelect('issue.createdBy', 'createdBy')
       .leftJoinAndSelect('issue.media', 'media')
       .leftJoinAndSelect('issue.modifiedBy', 'modifiedBy')
+      .leftJoinAndSelect('issue.comments', 'comments')
       .where('issue.status IN (:...issueStatus)', {
         issueStatus: statusFilter,
       });

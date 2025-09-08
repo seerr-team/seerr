@@ -1,6 +1,6 @@
 import CachedImage from '@app/components/Common/CachedImage';
 import MiniQuotaDisplay from '@app/components/Layout/UserDropdown/MiniQuotaDisplay';
-import { useUser } from '@app/hooks/useUser';
+import { Permission, useUser } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
 import { Menu, Transition } from '@headlessui/react';
 import {
@@ -8,6 +8,7 @@ import {
   ClockIcon,
 } from '@heroicons/react/24/outline';
 import { CogIcon, UserIcon } from '@heroicons/react/24/solid';
+import axios from 'axios';
 import type { LinkProps } from 'next/link';
 import Link from 'next/link';
 import { forwardRef, Fragment } from 'react';
@@ -35,16 +36,12 @@ ForwardedLink.displayName = 'ForwardedLink';
 
 const UserDropdown = () => {
   const intl = useIntl();
-  const { user, revalidate } = useUser();
+  const { user, revalidate, hasPermission } = useUser();
 
   const logout = async () => {
-    const res = await fetch('/api/v1/auth/logout', {
-      method: 'POST',
-    });
-    if (!res.ok) throw new Error();
-    const data = await res.json();
+    const response = await axios.post('/api/v1/auth/logout');
 
-    if (data?.status === 'ok') {
+    if (response.data?.status === 'ok') {
       revalidate();
     }
   };
@@ -121,7 +118,14 @@ const UserDropdown = () => {
               <Menu.Item>
                 {({ active }) => (
                   <ForwardedLink
-                    href={`/users/${user?.id}/requests?filter=all`}
+                    href={
+                      hasPermission(
+                        [Permission.MANAGE_REQUESTS, Permission.REQUEST_VIEW],
+                        { type: 'or' }
+                      )
+                        ? `/users/${user?.id}/requests?filter=all`
+                        : '/requests'
+                    }
                     className={`flex items-center rounded px-4 py-2 text-sm font-medium text-gray-200 transition duration-150 ease-in-out ${
                       active
                         ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white'

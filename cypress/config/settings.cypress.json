@@ -6,7 +6,6 @@
     "apiKey": "testkey",
     "applicationTitle": "Jellyseerr",
     "applicationUrl": "",
-    "csrfProtection": false,
     "cacheImages": false,
     "defaultPermissions": 32,
     "defaultQuotas": {
@@ -19,11 +18,12 @@
     "discoverRegion": "",
     "streamingRegion": "",
     "originalLanguage": "",
+    "blacklistedTags": "",
+    "blacklistedTagsLimit": 50,
     "trustProxy": false,
     "mediaServerType": 1,
     "partialRequestsEnabled": true,
     "enableSpecialEpisodes": false,
-    "forceIpv4First": false,
     "locale": "en"
   },
   "plex": {
@@ -82,13 +82,6 @@
           "enableMentions": true
         }
       },
-      "lunasea": {
-        "enabled": false,
-        "types": 0,
-        "options": {
-          "webhookUrl": ""
-        }
-      },
       "slack": {
         "enabled": false,
         "types": 0,
@@ -138,7 +131,16 @@
         "types": 0,
         "options": {
           "url": "",
-          "token": ""
+          "token": "",
+          "priority": 0
+        }
+      },
+      "ntfy": {
+        "enabled": false,
+        "types": 0,
+        "options": {
+          "url": "",
+          "topic": ""
         }
       }
     }
@@ -176,6 +178,27 @@
     },
     "image-cache-cleanup": {
       "schedule": "0 0 5 * * *"
+    }
+  },
+  "network": {
+    "csrfProtection": false,
+    "trustProxy": false,
+    "forceIpv4First": false,
+    "dnsServers": "",
+    "proxy": {
+      "enabled": false,
+      "hostname": "",
+      "port": 8080,
+      "useSsl": false,
+      "user": "",
+      "password": "",
+      "bypassFilter": "",
+      "bypassLocalAddresses": true
+    },
+    "dnsCache": {
+      "enabled": false,
+      "forceMinTtl": 0,
+      "forceMaxTtl": -1
     }
   }
 }

@@ -4,6 +4,7 @@ import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
+import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
@@ -44,12 +45,8 @@ const BlacklistModal = ({
       if (!show) return;
       try {
         setError(null);
-        const response = await fetch(`/api/v1/${type}/${tmdbId}`);
-        if (!response.ok) {
-          throw new Error();
-        }
-        const result = await response.json();
-        setData(result);
+        const response = await axios.get(`/api/v1/${type}/${tmdbId}`);
+        setData(response.data);
       } catch (err) {
         setError(err);
       }

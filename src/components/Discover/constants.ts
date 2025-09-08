@@ -109,6 +109,11 @@ export const QueryFilterOptions = z.object({
   watchRegion: z.string().optional(),
   watchProviders: z.string().optional(),
   status: z.string().optional(),
+  certification: z.string().optional(),
+  certificationGte: z.string().optional(),
+  certificationLte: z.string().optional(),
+  certificationCountry: z.string().optional(),
+  certificationMode: z.enum(['exact', 'range']).optional(),
 });
 
 export type FilterOptions = z.infer<typeof QueryFilterOptions>;
@@ -192,6 +197,30 @@ export const prepareFilterValues = (
     filterValues.watchRegion = values.watchRegion;
   }
 
+  if (values.certification) {
+    filterValues.certification = values.certification;
+  }
+
+  if (values.certificationGte) {
+    filterValues.certificationGte = values.certificationGte;
+  }
+
+  if (values.certificationLte) {
+    filterValues.certificationLte = values.certificationLte;
+  }
+
+  if (values.certificationCountry) {
+    filterValues.certificationCountry = values.certificationCountry;
+  }
+
+  if (values.certificationMode) {
+    filterValues.certificationMode = values.certificationMode;
+  } else if (values.certification) {
+    filterValues.certificationMode = 'exact';
+  } else if (values.certificationGte || values.certificationLte) {
+    filterValues.certificationMode = 'range';
+  }
+
   return filterValues;
 };
 
@@ -223,6 +252,20 @@ export const countActiveFilters = (filterValues: FilterOptions): number => {
     delete clonedFilters.watchRegion;
   }
 
+  if (
+    clonedFilters.certification ||
+    clonedFilters.certificationGte ||
+    clonedFilters.certificationLte ||
+    clonedFilters.certificationCountry
+  ) {
+    totalCount += 1;
+    delete clonedFilters.certification;
+    delete clonedFilters.certificationGte;
+    delete clonedFilters.certificationLte;
+    delete clonedFilters.certificationCountry;
+  }
+
+  delete clonedFilters.certificationMode;
   totalCount += Object.keys(clonedFilters).length;
 
   return totalCount;

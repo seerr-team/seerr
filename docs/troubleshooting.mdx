@@ -97,43 +97,19 @@ You can try them all and see which one works for your network.
   </TabItem>
 </Tabs>
 
-### Option 2: Force IPV4 resolution first
-
-Sometimes there are configuration issues with IPV6 that prevent the hostname resolution from working correctly.
-
-You can try to force the resolution to use IPV4 first by going to `Settings > Networking > Advanced Networking` and enabling `Force IPv4 Resolution First` setting and restarting. You can also add the environment variable, `FORCE_IPV4_FIRST=true`:
-
-<Tabs groupId="methods" queryString>
-  <TabItem value="docker-cli" label="Docker CLI">
-
-Add the following to your `docker run` command:
-```bash
--e "FORCE_IPV4_FIRST=true"
-```
-
-  </TabItem>
-
-  <TabItem value="docker-compose" label="Docker Compose">
-
-Add the following to your `compose.yaml`:
-```yaml
----
-services:
-  jellyseerr:
-    environment:
-      - FORCE_IPV4_FIRST=true
-```
-
-  </TabItem>
-</Tabs>
-
-### Option 3: Use Jellyseerr through a proxy
+### Option 2: Use Jellyseerr through a proxy
 
 If you can't change your DNS servers or force IPV4 resolution, you can use Jellyseerr through a proxy.
 
 In some places (like China), the ISP blocks not only the DNS resolution but also the connection to the TMDB API.
 
 You can configure Jellyseerr to use a proxy with the [HTTP(S) Proxy](/using-jellyseerr/settings/general#https-proxy) setting.
+
+### Option 3: Force IPV4 resolution first
+
+Sometimes there are configuration issues with IPV6 that prevent the hostname resolution from working correctly.
+
+You can try to force the resolution to use IPV4 first by going to `Settings > Networking > Advanced Networking` and enabling `Force IPv4 Resolution First` setting and restarting Jellyseerr.
 
 ### Option 4: Check that your server can reach TMDB API
 
@@ -176,3 +152,26 @@ In a PowerShell window:
 
 If you can't get a response, then your server can't reach the TMDB API.
 This is usually due to a network configuration issue or a firewall blocking the connection.
+
+## Account does not have admin privileges
+
+If your admin account no longer has admin privileges, this is typically because your Jellyfin/Emby user ID has changed on the server side.
+
+This can happen if you have a new installation of Jellyfin/Emby or if you have changed the user ID of your admin account.
+
+### Solution: Reset admin access
+
+1. Back up your `settings.json` file (located in your Jellyseerr data directory)
+2. Stop the Jellyseerr container/service
+3. Delete the `settings.json` file
+4. Start Jellyseerr again
+5. This will force the setup page to appear
+6. Go through the setup process with the same login details
+7. You can skip the services setup
+8. Once you reach the discover page, stop Jellyseerr
+9. Restore your backed-up `settings.json` file
+10. Start Jellyseerr again
+
+This process should restore your admin privileges while preserving your settings.
+
+If you still encounter issues, please reach out on our support channels.

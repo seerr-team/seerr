@@ -1,7 +1,12 @@
 import type { JellyfinLibraryItem } from '@server/api/jellyfin';
 import JellyfinAPI from '@server/api/jellyfin';
+import { getMetadataProvider } from '@server/api/metadata';
 import TheMovieDb from '@server/api/themoviedb';
-import type { TmdbTvDetails } from '@server/api/themoviedb/interfaces';
+import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
+import type {
+  TmdbKeyword,
+  TmdbTvDetails,
+} from '@server/api/themoviedb/interfaces';
 import { MediaStatus, MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
@@ -43,6 +48,7 @@ class JellyfinScanner {
 
   constructor({ isRecentOnly }: { isRecentOnly?: boolean } = {}) {
     this.tmdb = new TheMovieDb();
+
     this.isRecentOnly = isRecentOnly ?? false;
   }
 
@@ -65,8 +71,8 @@ class JellyfinScanner {
 
       if (!metadata?.Id) {
         logger.debug('No Id metadata for this title. Skipping', {
-          label: 'Plex Sync',
-          ratingKey: jellyfinitem.Id,
+          label: 'Jellyfin Sync',
+          jellyfinItemId: jellyfinitem.Id,
         });
         return;
       }
@@ -192,6 +198,42 @@ class JellyfinScanner {
     }
   }
 
+  private async getTvShow({
+    tmdbId,
+    tvdbId,
+  }: {
+    tmdbId?: number;
+    tvdbId?: number;
+  }): Promise<TmdbTvDetails> {
+    let tvShow;
+
+    if (tmdbId) {
+      tvShow = await this.tmdb.getTvShow({
+        tvId: Number(tmdbId),
+      });
+    } else if (tvdbId) {
+      tvShow = await this.tmdb.getShowByTvdbId({
+        tvdbId: Number(tvdbId),
+      });
+    } else {
+      throw new Error('No ID provided');
+    }
+
+    const metadataProvider = tvShow.keywords.results.some(
+      (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
+    )
+      ? await getMetadataProvider('anime')
+      : await getMetadataProvider('tv');
+
+    if (!(metadataProvider instanceof TheMovieDb)) {
+      tvShow = await metadataProvider.getTvShow({
+        tvId: Number(tmdbId),
+      });
+    }
+
+    return tvShow;
+  }
+
   private async processShow(jellyfinitem: JellyfinLibraryItem) {
     const mediaRepository = getRepository(Media);
 
@@ -204,16 +246,16 @@ class JellyfinScanner {
 
       if (!metadata?.Id) {
         logger.debug('No Id metadata for this title. Skipping', {
-          label: 'Plex Sync',
-          ratingKey: jellyfinitem.Id,
+          label: 'Jellyfin Sync',
+          jellyfinItemId: jellyfinitem.Id,
         });
         return;
       }
 
       if (metadata.ProviderIds.Tmdb) {
         try {
-          tvShow = await this.tmdb.getTvShow({
-            tvId: Number(metadata.ProviderIds.Tmdb),
+          tvShow = await this.getTvShow({
+            tmdbId: Number(metadata.ProviderIds.Tmdb),
           });
         } catch {
           this.log('Unable to find TMDb ID for this title.', 'debug', {
@@ -223,7 +265,7 @@ class JellyfinScanner {
       }
       if (!tvShow && metadata.ProviderIds.Tvdb) {
         try {
-          tvShow = await this.tmdb.getShowByTvdbId({
+          tvShow = await this.getTvShow({
             tvdbId: Number(metadata.ProviderIds.Tvdb),
           });
         } catch {

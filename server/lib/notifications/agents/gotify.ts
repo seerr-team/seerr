@@ -2,6 +2,7 @@ import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import type { NotificationAgentGotify } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import axios from 'axios';
 import { hasNotificationType, Notification } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
 import { BaseAgent } from './agent';
@@ -30,7 +31,12 @@ class GotifyAgent
   public shouldSend(): boolean {
     const settings = this.getSettings();
 
-    if (settings.enabled && settings.options.url && settings.options.token) {
+    if (
+      settings.enabled &&
+      settings.options.url &&
+      settings.options.token &&
+      settings.options.priority !== undefined
+    ) {
       return true;
     }
 
@@ -42,15 +48,17 @@ class GotifyAgent
     payload: NotificationPayload
   ): GotifyPayload {
     const { applicationUrl, applicationTitle } = getSettings().main;
-    let priority = 0;
+    const settings = this.getSettings();
+    const priority = settings.options.priority ?? 1;
 
     const title = payload.event
       ? `${payload.event} - ${payload.subject}`
       : payload.subject;
-    let message = payload.message ?? '';
+
+    let message = payload.message ? `${payload.message}  \n\n` : '';
 
     if (payload.request) {
-      message += `\n\nRequested By: ${payload.request.requestedBy.displayName}`;
+      message += `\n**Requested By:** ${payload.request.requestedBy.displayName}  `;
 
       let status = '';
       switch (type) {
@@ -73,29 +81,29 @@ class GotifyAgent
       }
 
       if (status) {
-        message += `\nRequest Status: ${status}`;
+        message += `\n**Request Status:** ${status}  `;
       }
     } else if (payload.comment) {
-      message += `\nComment from ${payload.comment.user.displayName}:\n${payload.comment.message}`;
+      message += `\nComment from ${payload.comment.user.displayName}:\n${payload.comment.message}  `;
     } else if (payload.issue) {
-      message += `\n\nReported By: ${payload.issue.createdBy.displayName}`;
-      message += `\nIssue Type: ${IssueTypeName[payload.issue.issueType]}`;
-      message += `\nIssue Status: ${
+      message += `\n\n**Reported By:** ${payload.issue.createdBy.displayName}  `;
+      message += `\n**Issue Type:** ${
+        IssueTypeName[payload.issue.issueType]
+      }  `;
+      message += `\n**Issue Status:** ${
         payload.issue.status === IssueStatus.OPEN ? 'Open' : 'Resolved'
-      }`;
-
-      if (type == Notification.ISSUE_CREATED) {
-        priority = 1;
-      }
+      }  `;
     }
 
     for (const extra of payload.extra ?? []) {
-      message += `\n\n**${extra.name}**\n${extra.value}`;
+      message += `\n\n**${extra.name}**\n${extra.value}  `;
     }
 
     if (applicationUrl && payload.media) {
       const actionUrl = `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`;
-      message += `\n\nOpen in ${applicationTitle}(${actionUrl})`;
+      const displayUrl =
+        actionUrl.length > 40 ? `${actionUrl.slice(0, 41)}...` : actionUrl;
+      message += `\n\n**Open in ${applicationTitle}:** [${displayUrl}](${actionUrl})  `;
     }
 
     return {
@@ -132,32 +140,16 @@ class GotifyAgent
       const endpoint = `${settings.options.url}/message?token=${settings.options.token}`;
       const notificationPayload = this.getNotificationPayload(type, payload);
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(notificationPayload),
-      });
-      if (!response.ok) {
-        throw new Error(response.statusText, { cause: response });
-      }
+      await axios.post(endpoint, notificationPayload);
 
       return true;
     } catch (e) {
-      let errorData;
-      try {
-        errorData = await e.cause?.text();
-        errorData = JSON.parse(errorData);
-      } catch {
-        /* empty */
-      }
       logger.error('Error sending Gotify notification', {
         label: 'Notifications',
         type: Notification[type],
         subject: payload.subject,
         errorMessage: e.message,
-        response: errorData,
+        response: e?.response?.data,
       });
 
       return false;

@@ -4,6 +4,7 @@ import defineMessages from '@app/utils/defineMessages';
 import { InformationCircleIcon } from '@heroicons/react/24/solid';
 import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType, ServerType } from '@server/constants/server';
+import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
@@ -26,7 +27,6 @@ const messages = defineMessages('components.Login', {
   validationusernamerequired: 'Username required',
   validationpasswordrequired: 'You must provide a password',
   validationservertyperequired: 'Please select a server type',
-  validationHostnameRequired: 'You must provide a valid hostname or IP address',
   validationPortRequired: 'You must provide a valid port number',
   validationUrlTrailingSlash: 'URL must not end in a trailing slash',
   validationUrlBaseLeadingSlash: 'URL base must have a leading slash',
@@ -112,38 +112,19 @@ function JellyfinSetup({
       validationSchema={LoginSchema}
       onSubmit={async (values) => {
         try {
-          // Check if serverType is either 'Jellyfin' or 'Emby'
-          // if (serverType !== 'Jellyfin' && serverType !== 'Emby') {
-          //   throw new Error('Invalid serverType'); // You can customize the error message
-          // }
-
-          const res = await fetch('/api/v1/auth/jellyfin', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              username: values.username,
-              password: values.password,
-              hostname: values.hostname,
-              port: values.port,
-              useSsl: values.useSsl,
-              urlBase: values.urlBase,
-              email: values.email,
-              serverType: serverType,
-            }),
+          await axios.post('/api/v1/auth/jellyfin', {
+            username: values.username,
+            password: values.password,
+            hostname: values.hostname,
+            port: values.port,
+            useSsl: values.useSsl,
+            urlBase: values.urlBase,
+            email: values.email,
+            serverType: serverType,
           });
-          if (!res.ok) throw new Error(res.statusText, { cause: res });
         } catch (e) {
-          let errorData;
-          try {
-            errorData = await e.cause?.text();
-            errorData = JSON.parse(errorData);
-          } catch {
-            /* empty */
-          }
           let errorMessage = null;
-          switch (errorData?.message) {
+          switch (e?.response?.data?.message) {
             case ApiErrorCode.InvalidUrl:
               errorMessage = messages.invalidurlerror;
               break;
