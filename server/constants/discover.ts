@@ -1,6 +1,6 @@
 import type DiscoverSlider from '@server/entity/DiscoverSlider';
 
-export enum DiscoverSliderType {
+export enum #DiscoverSliderType {
   RECENTLY_ADDED = 1,
   RECENT_REQUESTS,
   PLEX_WATCHLIST,
@@ -22,6 +22,7 @@ export enum DiscoverSliderType {
   TMDB_NETWORK,
   TMDB_MOVIE_STREAMING_SERVICES,
   TMDB_TV_STREAMING_SERVICES,
+  TMDB_LIST,
 }
 
 export const defaultSliders: Partial<DiscoverSlider>[] = [
