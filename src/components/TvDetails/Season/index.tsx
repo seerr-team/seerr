@@ -2,10 +2,11 @@ import AirDateBadge from '@app/components/AirDateBadge';
 import Badge from '@app/components/Common/Badge';
 import CachedImage from '@app/components/Common/CachedImage';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
-import useSettings from '@app/hooks/useSettings';
+import { MetadataProviderType } from '@app/components/MetadataSelector';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import type { SeasonWithEpisodes } from '@server/models/Tv';
+import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
+import type { SeasonWithEpisodes, TvDetails } from '@server/models/Tv';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
 
@@ -21,10 +22,14 @@ type SeasonProps = {
 
 const Season = ({ seasonNumber, tvId }: SeasonProps) => {
   const intl = useIntl();
-  const settings = useSettings();
   const { data, error } = useSWR<SeasonWithEpisodes>(
     `/api/v1/tv/${tvId}/season/${seasonNumber}`
   );
+  const { data: tvData } = useSWR<TvDetails>(`/api/v1/tv/${tvId}`);
+  const { data: metadataSettings } = useSWR<{
+    tv: MetadataProviderType;
+    anime: MetadataProviderType;
+  }>('/api/v1/settings/metadatas');
 
   if (!data && !error) {
     return <LoadingSpinner />;
@@ -33,6 +38,15 @@ const Season = ({ seasonNumber, tvId }: SeasonProps) => {
   if (!data) {
     return <div>{intl.formatMessage(messages.somethingwentwrong)}</div>;
   }
+
+  const isAnime = tvData?.keywords.some(
+    (keyword) => keyword.id === ANIME_KEYWORD_ID
+  );
+  const isTvdbProvider = metadataSettings
+    ? isAnime
+      ? metadataSettings.anime === MetadataProviderType.TVDB
+      : metadataSettings.tv === MetadataProviderType.TVDB
+    : false;
 
   return (
     <div className="flex flex-col justify-center divide-y divide-gray-700">
@@ -56,10 +70,10 @@ const Season = ({ seasonNumber, tvId }: SeasonProps) => {
                     {episode.airDate && (
                       <AirDateBadge airDate={episode.airDate} />
                     )}
-                    {settings.currentSettings.enableEpisodeAvailability &&
+                    {isTvdbProvider &&
                       episode.airDate &&
                       new Date(episode.airDate) <= new Date() &&
-                      episode.available && (
+                      episode.available === true && (
                         <Badge badgeType="success">
                           {intl.formatMessage(globalMessages.available)}
                         </Badge>
