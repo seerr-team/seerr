@@ -204,6 +204,10 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
     seasonNumber: number;
     language?: string;
   }): Promise<TmdbSeasonWithEpisodes> {
+    if (seasonNumber === 0) {
+      return this.createEmptySeasonResponse(tvId);
+    }
+
     try {
       const tmdbTvShow = await this.tmdb.getTvShow({ tvId, language });
 
@@ -277,12 +281,12 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
     }
 
     const seasons = tvdbData.seasons
-      .filter((season) => season.type && season.type.type === 'official')
-      .sort((a, b) => a.number - b.number)
-      .map((season) => this.createSeasonData(season, tvdbData))
       .filter(
-        (season) => season && season.season_number >= 0
-      ) as TmdbTvSeasonResult[];
+        (season) =>
+          season.number > 0 && season.type && season.type.type === 'official'
+      )
+      .sort((a, b) => a.number - b.number)
+      .map((season) => this.createSeasonData(season, tvdbData));
 
     return seasons;
   }
