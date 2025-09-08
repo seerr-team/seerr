@@ -7,6 +7,7 @@ import { MediaStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { Watchlist } from '@server/entity/Watchlist';
+import { getSettings, MetadataProviderType } from '@server/lib/settings';
 import logger from '@server/logger';
 import { mapTvResult } from '@server/models/Search';
 import { mapSeasonWithEpisodes, mapTvDetails } from '@server/models/Tv';
@@ -82,23 +83,34 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
       seasonNumber: Number(req.params.seasonNumber),
     });
 
-    const media = await Media.getMedia(Number(req.params.id), MediaType.TV);
     const availableMap: Record<number, boolean> = {};
 
-    if (media?.seasons) {
-      const dbSeason = media.seasons.find(
-        (s) => s.seasonNumber === Number(req.params.seasonNumber)
-      );
-      if (dbSeason) {
-        if (dbSeason.status === MediaStatus.AVAILABLE) {
-          for (const episode of season.episodes) {
-            availableMap[episode.episode_number] = true;
-          }
-        } else if (dbSeason.status === MediaStatus.PARTIALLY_AVAILABLE) {
-          if (dbSeason.episodes) {
-            for (const episode of dbSeason.episodes) {
-              availableMap[episode.episodeNumber] =
-                episode.status === MediaStatus.AVAILABLE;
+    const settings = await getSettings();
+    const isAnime = tmdbTv.keywords.results.some(
+      (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
+    );
+    const isTvdbProvider = isAnime
+      ? settings.metadataSettings.anime === MetadataProviderType.TVDB
+      : settings.metadataSettings.tv === MetadataProviderType.TVDB;
+
+    if (isTvdbProvider) {
+      const media = await Media.getMedia(Number(req.params.id), MediaType.TV);
+
+      if (media?.seasons) {
+        const dbSeason = media.seasons.find(
+          (s) => s.seasonNumber === Number(req.params.seasonNumber)
+        );
+        if (dbSeason) {
+          if (dbSeason.status === MediaStatus.AVAILABLE) {
+            for (const episode of season.episodes) {
+              availableMap[episode.episode_number] = true;
+            }
+          } else if (dbSeason.status === MediaStatus.PARTIALLY_AVAILABLE) {
+            if (dbSeason.episodes) {
+              for (const episode of dbSeason.episodes) {
+                availableMap[episode.episodeNumber] =
+                  episode.status === MediaStatus.AVAILABLE;
+              }
             }
           }
         }
