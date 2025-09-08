@@ -26,6 +26,10 @@ import type {
   TmdbUpcomingMoviesResponse,
   TmdbWatchProviderDetails,
   TmdbWatchProviderRegion,
+  TmdbMovieResult,
+  TmdbTvResult,
+  TmdbPersonResult,
+  TmdbCollectionResult,
 } from './interfaces';
 
 interface SearchOptions {
@@ -746,6 +750,62 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
       return data;
     } catch (e) {
       throw new Error(`[TMDB] Failed to fetch all trending: ${e.message}`);
+    }
+  };
+
+  /**
+   * Retrieve a public TMDB list by its ID. The TMDB API returns a list of mixed
+   * media items under the `items` property. This helper normalises the response
+   * to the same paginated structure used by discover and trending endpoints.
+   * If the list is private or does not exist, an exception will be thrown.
+   */
+  public getList = async ({
+    listId,
+    language = this.locale,
+  }: {
+    listId: number;
+    language?: string;
+  }): Promise<{
+    page: number;
+    total_pages: number;
+    total_results: number;
+    results: (
+      | TmdbMovieResult
+      | TmdbTvResult
+      | TmdbPersonResult
+      | TmdbCollectionResult
+    )[];
+  }> => {
+    try {
+      const data = await this.get<any>(`/list/${listId}`, {
+        params: {
+          language,
+        },
+      });
+
+      // The API does not provide pagination on lists so we normalise here.
+      const items =
+        data?.items ??
+        ([] as (
+          | TmdbMovieResult
+          | TmdbTvResult
+          | TmdbPersonResult
+          | TmdbCollectionResult
+        )[]);
+
+      return {
+        page: 1,
+        total_pages: 1,
+        total_results: items.length,
+        results: items as (
+          | TmdbMovieResult
+          | TmdbTvResult
+          | TmdbPersonResult
+          | TmdbCollectionResult
+        )[],
+      };
+    } catch (e) {
+      throw new Error(`[TMDB] Failed to fetch list: ${e.message}`);
     }
   };
 
