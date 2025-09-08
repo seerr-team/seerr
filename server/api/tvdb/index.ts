@@ -347,7 +347,7 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
       return this.createEmptySeasonResponse(tvId);
     }
 
-    let wantedTranslation = convertTmdbLanguageToTvdbWithFallback(
+    const wantedTranslation = convertTmdbLanguageToTvdbWithFallback(
       language,
       Tvdb.DEFAULT_LANGUAGE
     );
@@ -360,11 +360,6 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
     );
 
     if (!availableTranslation) {
-      // if no translations are available, use the original language (no wanted translation and no english fallback)
-      wantedTranslation = tvdbData.originalLanguage;
-    }
-
-    if (season && wantedTranslation === tvdbData.originalLanguage) {
       return this.getSeasonWithOriginalLanguage(
         tvdbId,
         tvId,
