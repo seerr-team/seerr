@@ -1,6 +1,6 @@
 import type DiscoverSlider from '@server/entity/DiscoverSlider';
 
-export enum #DiscoverSliderType {
+export enum DiscoverSliderType {
   RECENTLY_ADDED = 1,
   RECENT_REQUESTS,
   PLEX_WATCHLIST,
