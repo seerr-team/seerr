@@ -376,7 +376,7 @@ const NotificationsWebhook = () => {
                     <span>{intl.formatMessage(messages.resetPayload)}</span>
                   </Button>
                   <Link
-                    href="https://docs.overseerr.dev/using-overseerr/notifications/webhooks#template-variables"
+                    href="https://docs.jellyseerr.dev/using-jellyseerr/notifications/webhook#template-variables"
                     passHref
                     legacyBehavior
                   >
