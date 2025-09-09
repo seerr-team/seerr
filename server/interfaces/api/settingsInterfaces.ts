@@ -49,6 +49,10 @@ export interface PublicSettingsResponse {
   emailEnabled: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  metadataSettings: {
+    tv: string;
+    anime: string;
+  };
 }
 
 export interface CacheItem {

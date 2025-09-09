@@ -205,6 +205,7 @@ interface FullPublicSettings extends PublicSettings {
   userEmailRequired: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  metadataSettings: MetadataSettings;
 }
 
 export interface NotificationAgentConfig {
@@ -701,6 +702,7 @@ class Settings {
         this.data.notifications.agents.email.options.userEmailRequired,
       newPlexLogin: this.data.main.newPlexLogin,
       youtubeUrl: this.data.main.youtubeUrl,
+      metadataSettings: this.data.metadataSettings,
     };
   }
 
