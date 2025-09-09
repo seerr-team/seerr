@@ -32,6 +32,10 @@ const defaultSettings = {
   emailEnabled: false,
   newPlexLogin: true,
   youtubeUrl: '',
+  metadataSettings: {
+    tv: 'tmdb',
+    anime: 'tmdb',
+  },
 };
 
 export const SettingsContext = React.createContext<SettingsContextProps>({
