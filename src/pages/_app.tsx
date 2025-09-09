@@ -250,6 +250,10 @@ CoreApp.getInitialProps = async (initialProps) => {
     emailEnabled: false,
     newPlexLogin: true,
     youtubeUrl: '',
+    metadataSettings: {
+      tv: 'tmdb',
+      anime: 'tmdb',
+    },
   };
 
   if (ctx.res) {
