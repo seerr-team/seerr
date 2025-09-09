@@ -86,14 +86,12 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
     const availableMap: Record<number, boolean> = {};
 
     const settings = await getSettings();
-    const isAnime = tmdbTv.keywords.results.some(
-      (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
-    );
-    const isTvdbProvider = isAnime
-      ? settings.metadataSettings.anime === MetadataProviderType.TVDB
-      : settings.metadataSettings.tv === MetadataProviderType.TVDB;
+    const shouldTrackEpisodes =
+      settings.main.enableEpisodeAvailability &&
+      (settings.metadataSettings.tv === MetadataProviderType.TVDB ||
+        settings.metadataSettings.anime === MetadataProviderType.TVDB);
 
-    if (isTvdbProvider) {
+    if (shouldTrackEpisodes) {
       const media = await Media.getMedia(Number(req.params.id), MediaType.TV);
 
       if (media?.seasons) {
