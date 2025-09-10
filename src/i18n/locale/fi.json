@@ -245,5 +245,19 @@
   "i18n.requesting": "Pyydetään…",
   "i18n.requested": "Pyydetty",
   "i18n.request4k": "Pyydä 4K:na",
-  "i18n.request": "Pyydä"
+  "i18n.request": "Pyydä",
+  "components.DiscoverTvUpcoming.upcomingtv": "Tulossa olevat sarjat",
+  "components.ManageSlideOver.manageModalRequests": "Pyynnöt",
+  "i18n.usersettings": "Käyttäjäasetukset",
+  "i18n.view": "Näytä",
+  "i18n.save": "Tallenna muutokset",
+  "i18n.unavailable": "Ei saatavilla",
+  "i18n.tvshows": "Sarjat",
+  "i18n.tvshow": "Sarjat",
+  "i18n.testing": "Kokeillaan…",
+  "i18n.test": "Kokeile",
+  "i18n.status": "Tila",
+  "i18n.specials": "Erikoisjaksot",
+  "i18n.settings": "Asetukset",
+  "i18n.saving": "Tallennetaan…"
 }
