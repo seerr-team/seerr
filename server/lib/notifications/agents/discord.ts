@@ -102,9 +102,8 @@ class DiscordAgent
     type: Notification,
     payload: NotificationPayload
   ): DiscordRichEmbed {
-    const settings = getSettings();
-    const { applicationUrl } = settings.main;
-    const { embedPoster } = settings.notifications.agents.discord;
+    const { applicationUrl } = getSettings().main;
+    const embedPoster = this.getSettings().embedPoster;
 
     const appUrl =
       applicationUrl || `http://localhost:${process.env.port || 5055}`;

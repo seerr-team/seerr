@@ -105,6 +105,7 @@ const GotifyModal = ({
           id: values.id,
           agent: values.agent,
           default: values.default,
+          embedPoster: true,
           options: {
             url: values.url,
             token: values.token,
@@ -143,6 +144,7 @@ const GotifyModal = ({
                 id: values.id,
                 agent: values.agent,
                 default: values.default,
+                embedPoster: true,
                 options: {
                   url: values.url,
                   token: values.token,

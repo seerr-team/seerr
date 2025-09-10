@@ -71,9 +71,8 @@ class PushoverAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<Partial<PushoverPayload>> {
-    const settings = getSettings();
-    const { applicationUrl, applicationTitle } = settings.main;
-    const { embedPoster } = settings.notifications.agents.pushover;
+    const { applicationUrl, applicationTitle } = getSettings().main;
+    const embedPoster = this.getSettings().embedPoster;
 
     const title = payload.event ?? payload.subject;
     let message = payload.event ? `<b>${payload.subject}</b>` : '';

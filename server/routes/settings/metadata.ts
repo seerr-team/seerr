@@ -1,10 +1,10 @@
 import TheMovieDb from '@server/api/themoviedb';
 import Tvdb from '@server/api/tvdb';
 import {
-  getSettings,
   MetadataProviderType,
   type MetadataSettings,
-} from '@server/lib/settings';
+} from '@server/interfaces/settings';
+import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { Router } from 'express';
 

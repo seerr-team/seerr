@@ -53,9 +53,8 @@ class SlackAgent
     type: Notification,
     payload: NotificationPayload
   ): SlackBlockEmbed {
-    const settings = getSettings();
-    const { applicationUrl, applicationTitle } = settings.main;
-    const { embedPoster } = settings.notifications.agents.slack;
+    const { applicationUrl, applicationTitle } = getSettings().main;
+    const embedPoster = this.getSettings().embedPoster;
 
     const fields: EmbedField[] = [];
 

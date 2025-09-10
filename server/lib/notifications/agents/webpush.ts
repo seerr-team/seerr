@@ -35,7 +35,7 @@ class WebPushAgent
     type: Notification,
     payload: NotificationPayload
   ): PushNotificationPayload {
-    const { embedPoster } = getSettings().notifications.agents.webpush;
+    const embedPoster = this.getSettings().embedPoster;
 
     const mediaType = payload.media
       ? payload.media.mediaType === MediaType.MOVIE

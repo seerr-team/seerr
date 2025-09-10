@@ -75,6 +75,7 @@ const PushbulletModal = ({
           id: values.id,
           agent: values.agent,
           default: values.default,
+          embedPoster: true,
           options: {
             accessToken: values.accessToken,
             channelTag: values.channelTag,
@@ -112,6 +113,7 @@ const PushbulletModal = ({
                 id: values.id,
                 agent: values.agent,
                 default: values.default,
+                embedPoster: true,
                 options: {
                   accessToken: values.accessToken,
                   channelTag: values.channelTag,

@@ -41,9 +41,8 @@ class EmailAgent
     recipientEmail: string,
     recipientName?: string
   ): EmailOptions | undefined {
-    const settings = getSettings();
-    const { applicationUrl, applicationTitle } = settings.main;
-    const { embedPoster } = settings.notifications.agents.email;
+    const { applicationUrl, applicationTitle } = getSettings().main;
+    const embedPoster = this.getSettings().embedPoster;
 
     if (type === Notification.TEST_NOTIFICATION) {
       return {

@@ -12,9 +12,8 @@ class NtfyAgent
   implements NotificationAgent
 {
   private buildPayload(type: Notification, payload: NotificationPayload) {
-    const settings = getSettings();
-    const { applicationUrl } = settings.main;
-    const { embedPoster } = settings.notifications.agents.ntfy;
+    const { applicationUrl } = getSettings().main;
+    const embedPoster = this.getSettings().embedPoster;
 
     const topic = this.getSettings().options.topic;
     const priority = 3;

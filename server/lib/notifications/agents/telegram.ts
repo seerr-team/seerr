@@ -58,9 +58,8 @@ class TelegramAgent
     type: Notification,
     payload: NotificationPayload
   ): Partial<TelegramMessagePayload | TelegramPhotoPayload> {
-    const settings = getSettings();
-    const { applicationUrl, applicationTitle } = settings.main;
-    const { embedPoster } = settings.notifications.agents.telegram;
+    const { applicationUrl, applicationTitle } = getSettings().main;
+    const embedPoster = this.getSettings().embedPoster;
 
     /* eslint-disable no-useless-escape */
     let message = `\*${this.escapeText(
