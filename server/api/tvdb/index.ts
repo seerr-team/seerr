@@ -7,12 +7,13 @@ import type {
   TmdbTvEpisodeResult,
   TmdbTvSeasonResult,
 } from '@server/api/themoviedb/interfaces';
-import type {
-  TvdbBaseResponse,
-  TvdbEpisode,
-  TvdbLoginResponse,
-  TvdbSeasonDetails,
-  TvdbTvDetails,
+import {
+  convertTmdbLanguageToTvdbWithFallback,
+  type TvdbBaseResponse,
+  type TvdbEpisode,
+  type TvdbLoginResponse,
+  type TvdbSeasonDetails,
+  type TvdbTvDetails,
 } from '@server/api/tvdb/interfaces';
 import cacheManager, { type AvailableCacheIds } from '@server/lib/cache';
 import logger from '@server/logger';
@@ -203,10 +204,6 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
     seasonNumber: number;
     language?: string;
   }): Promise<TmdbSeasonWithEpisodes> {
-    if (seasonNumber === 0) {
-      return this.createEmptySeasonResponse(tvId);
-    }
-
     try {
       const tmdbTvShow = await this.tmdb.getTvShow({ tvId, language });
 
@@ -219,7 +216,12 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
           return await this.tmdb.getTvSeason({ tvId, seasonNumber, language });
         }
 
-        return await this.getTvdbSeasonData(tvdbId, seasonNumber, tvId);
+        return await this.getTvdbSeasonData(
+          tvdbId,
+          seasonNumber,
+          tvId,
+          language
+        );
       } catch (error) {
         this.handleError('Failed to fetch TV season details', error);
         return await this.tmdb.getTvSeason({ tvId, seasonNumber, language });
@@ -275,12 +277,12 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
     }
 
     const seasons = tvdbData.seasons
-      .filter(
-        (season) =>
-          season.number > 0 && season.type && season.type.type === 'official'
-      )
+      .filter((season) => season.type && season.type.type === 'official')
       .sort((a, b) => a.number - b.number)
-      .map((season) => this.createSeasonData(season, tvdbData));
+      .map((season) => this.createSeasonData(season, tvdbData))
+      .filter(
+        (season) => season && season.season_number >= 0
+      ) as TmdbTvSeasonResult[];
 
     return seasons;
   }
@@ -289,13 +291,14 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
     season: TvdbSeasonDetails,
     tvdbData: TvdbTvDetails
   ): TmdbTvSeasonResult {
-    if (!season.number) {
+    const seasonNumber = season.number ?? -1;
+    if (seasonNumber < 0) {
       return {
         id: 0,
         episode_count: 0,
         name: '',
         overview: '',
-        season_number: 0,
+        season_number: -1,
         poster_path: '',
         air_date: '',
       };
@@ -319,8 +322,8 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
   private async getTvdbSeasonData(
     tvdbId: number,
     seasonNumber: number,
-    tvId: number
-    //language: string = Tvdb.DEFAULT_LANGUAGE
+    tvId: number,
+    language: string = Tvdb.DEFAULT_LANGUAGE
   ): Promise<TmdbSeasonWithEpisodes> {
     const tvdbData = await this.fetchTvdbShowData(tvdbId);
 
@@ -337,6 +340,132 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
         season.type.type === 'official'
     );
 
+    if (!season) {
+      logger.error(
+        `Failed to find season ${seasonNumber} for TVDB ID: ${tvdbId}`
+      );
+      return this.createEmptySeasonResponse(tvId);
+    }
+
+    const wantedTranslation = convertTmdbLanguageToTvdbWithFallback(
+      language,
+      Tvdb.DEFAULT_LANGUAGE
+    );
+
+    // check if translation is available for the season
+    const availableTranslation = season.nameTranslations.filter(
+      (translation) =>
+        translation === wantedTranslation ||
+        translation === Tvdb.DEFAULT_LANGUAGE
+    );
+
+    if (!availableTranslation) {
+      return this.getSeasonWithOriginalLanguage(
+        tvdbId,
+        tvId,
+        seasonNumber,
+        season
+      );
+    }
+
+    return this.getSeasonWithTranslation(
+      tvdbId,
+      tvId,
+      seasonNumber,
+      season,
+      wantedTranslation
+    );
+  }
+
+  private async getSeasonWithTranslation(
+    tvdbId: number,
+    tvId: number,
+    seasonNumber: number,
+    season: TvdbSeasonDetails,
+    language: string
+  ): Promise<TmdbSeasonWithEpisodes> {
+    if (!season) {
+      logger.error(
+        `Failed to find season ${seasonNumber} for TVDB ID: ${tvdbId}`
+      );
+      return this.createEmptySeasonResponse(tvId);
+    }
+
+    const allEpisodes = [] as TvdbEpisode[];
+    let page = 0;
+    // Limit to max 50 pages to avoid infinite loops.
+    // 50 pages with 500 items per page = 25_000 episodes in a series which should be more than enough
+    const maxPages = 50;
+
+    while (page < maxPages) {
+      const resp = await this.get<TvdbBaseResponse<TvdbSeasonDetails>>(
+        `/series/${tvdbId}/episodes/default/${language}`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+          },
+          params: {
+            page: page,
+          },
+        }
+      );
+
+      if (!resp?.data?.episodes) {
+        logger.warn(
+          `No episodes found for TVDB ID: ${tvdbId} on page ${page} for season ${seasonNumber}`
+        );
+        break;
+      }
+
+      const { episodes } = resp.data;
+
+      if (!episodes) {
+        logger.debug(
+          `No more episodes found for TVDB ID: ${tvdbId} on page ${page} for season ${seasonNumber}`
+        );
+        break;
+      }
+
+      allEpisodes.push(...episodes);
+
+      const hasNextPage = resp.links?.next && episodes.length > 0;
+
+      if (!hasNextPage) {
+        break;
+      }
+
+      page++;
+    }
+
+    if (page >= maxPages) {
+      logger.warn(
+        `Reached max pages (${maxPages}) for TVDB ID: ${tvdbId} on season ${seasonNumber} with language ${language}. There might be more episodes available.`
+      );
+    }
+
+    const episodes = this.processEpisodes(
+      { ...season, episodes: allEpisodes },
+      seasonNumber,
+      tvId
+    );
+
+    return {
+      episodes,
+      external_ids: { tvdb_id: tvdbId },
+      name: '',
+      overview: '',
+      id: season.id,
+      air_date: season.firstAired,
+      season_number: episodes.length,
+    };
+  }
+
+  private async getSeasonWithOriginalLanguage(
+    tvdbId: number,
+    tvId: number,
+    seasonNumber: number,
+    season: TvdbSeasonDetails
+  ): Promise<TmdbSeasonWithEpisodes> {
     if (!season) {
       logger.error(
         `Failed to find season ${seasonNumber} for TVDB ID: ${tvdbId}`
@@ -397,7 +526,10 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
       season_number: episode.seasonNumber,
       production_code: '',
       show_id: tvId,
-      still_path: episode.image ? episode.image : '',
+      still_path:
+        episode.image && !episode.image.startsWith('https://')
+          ? 'https://artworks.thetvdb.com' + episode.image
+          : '',
       vote_average: 1,
       vote_count: 1,
     };

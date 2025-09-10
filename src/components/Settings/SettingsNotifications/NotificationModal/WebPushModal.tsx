@@ -15,6 +15,7 @@ const messages = defineMessages(
     createTitle: 'Create Notification Instance',
     createInstance: 'Create Instance',
     instanceName: 'Name',
+    embedPoster: 'Embed Poster',
     webPushHttpsRequirement:
       'In order to receive web push notifications, Jellyseerr must be served over HTTPS.',
   }
@@ -51,6 +52,7 @@ const WebPushModal = ({
           id: data.id,
           agent: data.agent,
           default: data.default,
+          embedPoster: data.embedPoster,
         }}
         onSubmit={async (values) => {
           await onSave({
@@ -59,6 +61,7 @@ const WebPushModal = ({
             id: values.id,
             agent: values.agent,
             default: values.default,
+            embedPoster: values.embedPoster,
             options: {},
           });
         }}
@@ -83,6 +86,7 @@ const WebPushModal = ({
                   id: values.id,
                   agent: values.agent,
                   default: values.default,
+                  embedPoster: values.embedPoster,
                   options: {},
                 })
               }
@@ -115,6 +119,19 @@ const WebPushModal = ({
                     <div className="form-input-field">
                       <Field id="name" name="name" type="text" />
                     </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="embedPoster" className="checkbox-label">
+                    {intl.formatMessage(messages.embedPoster)}
+                    <span className="label-required">*</span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="embedPoster"
+                      name="embedPoster"
+                    />
                   </div>
                 </div>
               </Form>

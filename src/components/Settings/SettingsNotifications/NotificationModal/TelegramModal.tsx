@@ -16,6 +16,7 @@ const messages = defineMessages(
     createTitle: 'Create Notification Instance',
     createInstance: 'Create Instance',
     instanceName: 'Name',
+    embedPoster: 'Embed Poster',
     telegramBotUsername: 'Bot Username',
     telegramBotUsernameTip:
       'Allow users to also start a chat with your bot and configure their own notifications',
@@ -104,6 +105,7 @@ const TelegramModal = ({
         id: data.id,
         agent: data.agent,
         default: data.default,
+        embedPoster: data.embedPoster,
         botUsername: data.options.botUsername,
         botAPI: data.options.botAPI,
         chatId: data.options.chatId,
@@ -119,6 +121,7 @@ const TelegramModal = ({
           id: values.id,
           agent: values.agent,
           default: values.default,
+          embedPoster: values.embedPoster,
           options: {
             botUsername: values.botUsername,
             botAPI: values.botAPI,
@@ -159,6 +162,7 @@ const TelegramModal = ({
                 id: values.id,
                 agent: values.agent,
                 default: values.default,
+                embedPoster: values.embedPoster,
                 options: {
                   botUsername: values.botUsername,
                   botAPI: values.botAPI,
@@ -190,6 +194,14 @@ const TelegramModal = ({
                   <div className="form-input-field">
                     <Field id="name" name="name" type="text" />
                   </div>
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="embedPoster" className="checkbox-label">
+                  {intl.formatMessage(messages.embedPoster)}
+                </label>
+                <div className="form-input-area">
+                  <Field type="checkbox" id="embedPoster" name="embedPoster" />
                 </div>
               </div>
               <div className="form-row">

@@ -99,6 +99,7 @@ class Settings {
         agentTemplates: {
           email: {
             enabled: true,
+            embedPoster: true,
             name: '',
             id: 0,
             agent: NotificationAgentKey.EMAIL,
@@ -116,6 +117,7 @@ class Settings {
           },
           discord: {
             enabled: true,
+            embedPoster: true,
             types: 0,
             name: '',
             id: 0,
@@ -128,6 +130,7 @@ class Settings {
           },
           slack: {
             enabled: true,
+            embedPoster: true,
             types: 0,
             name: '',
             id: 0,
@@ -138,6 +141,7 @@ class Settings {
           },
           telegram: {
             enabled: true,
+            embedPoster: true,
             types: 0,
             name: '',
             id: 0,
@@ -151,6 +155,7 @@ class Settings {
           },
           pushbullet: {
             enabled: true,
+            embedPoster: true,
             types: 0,
             name: '',
             id: 0,
@@ -161,6 +166,7 @@ class Settings {
           },
           pushover: {
             enabled: true,
+            embedPoster: true,
             types: 0,
             name: '',
             id: 0,
@@ -173,6 +179,7 @@ class Settings {
           },
           webhook: {
             enabled: true,
+            embedPoster: true,
             types: 0,
             name: '',
             id: 0,
@@ -184,6 +191,7 @@ class Settings {
           },
           webpush: {
             enabled: true,
+            embedPoster: true,
             name: '',
             id: 0,
             agent: NotificationAgentKey.WEBPUSH,
@@ -191,6 +199,7 @@ class Settings {
           },
           gotify: {
             enabled: true,
+            embedPoster: true,
             types: 0,
             name: '',
             id: 0,
@@ -203,6 +212,7 @@ class Settings {
           },
           ntfy: {
             enabled: true,
+            embedPoster: true,
             types: 0,
             name: '',
             id: 0,

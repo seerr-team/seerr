@@ -1394,6 +1394,9 @@ components:
         enabled:
           type: boolean
           example: false
+        embedPoster:
+          type: boolean
+          example: true
         types:
           type: number
           example: 0
@@ -1429,6 +1432,9 @@ components:
             enabled:
               type: boolean
               example: false
+            embedPoster:
+              type: boolean
+              example: true
             types:
               type: number
               example: 2
@@ -1451,6 +1457,9 @@ components:
             enabled:
               type: boolean
               example: false
+            embedPoster:
+              type: boolean
+              example: true
             types:
               type: number
               example: 2
@@ -1459,12 +1468,15 @@ components:
               properties:
                 webhookUrl:
                   type: string
-        WebPushSettings:
+        webpush:
           type: object
           properties:
             enabled:
               type: boolean
               example: false
+            embedPoster:
+              type: boolean
+              example: true
             types:
               type: number
               example: 2
@@ -1474,6 +1486,9 @@ components:
             enabled:
               type: boolean
               example: false
+            embedPoster:
+              type: boolean
+              example: true
             types:
               type: number
               example: 2
@@ -1486,12 +1501,18 @@ components:
                   type: string
                 jsonPayload:
                   type: string
+                supportVariables:
+                  type: boolean
+                  example: false
         telegram:
           type: object
           properties:
             enabled:
               type: boolean
               example: false
+            embedPoster:
+              type: boolean
+              example: true
             types:
               type: number
               example: 2
@@ -1514,6 +1535,9 @@ components:
             enabled:
               type: boolean
               example: false
+            embedPoster:
+              type: boolean
+              example: true
             types:
               type: number
               example: 2
@@ -1531,6 +1555,9 @@ components:
             enabled:
               type: boolean
               example: false
+            embedPoster:
+              type: boolean
+              example: true
             types:
               type: number
               example: 2
@@ -1549,6 +1576,9 @@ components:
             enabled:
               type: boolean
               example: false
+            embedPoster:
+              type: boolean
+              example: true
             types:
               type: number
               example: 2
@@ -1565,6 +1595,9 @@ components:
             enabled:
               type: boolean
               example: false
+            embedPoster:
+              type: boolean
+              example: true
             types:
               type: number
               example: 2
@@ -1591,6 +1624,9 @@ components:
             enabled:
               type: boolean
               example: false
+            embedPoster:
+              type: boolean
+              example: true
             types:
               type: number
               example: 2
@@ -1607,6 +1643,9 @@ components:
             enabled:
               type: boolean
               example: false
+            embedPoster:
+              type: boolean
+              example: true
             types:
               type: number
               example: 2

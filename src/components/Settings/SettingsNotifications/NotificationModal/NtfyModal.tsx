@@ -17,6 +17,7 @@ const messages = defineMessages(
     createTitle: 'Create Notification Instance',
     createInstance: 'Create Instance',
     instanceName: 'Name',
+    embedPoster: 'Embed Poster',
     ntfyUrl: 'Server root URL',
     ntfyTopic: 'Topic',
     ntfyUsernamePasswordAuth: 'Username + Password authentication',
@@ -75,6 +76,7 @@ const NtfyModal = ({ type, data, onClose, onTest, onSave }: NtfyModalProps) => {
         id: data.id,
         agent: data.agent,
         default: data.default,
+        embedPoster: data.embedPoster,
         url: data.options.url,
         topic: data.options.topic,
         authMethodUsernamePassword: data.options.authMethodUsernamePassword,
@@ -92,6 +94,7 @@ const NtfyModal = ({ type, data, onClose, onTest, onSave }: NtfyModalProps) => {
           id: values.id,
           agent: values.agent,
           default: values.default,
+          embedPoster: values.embedPoster,
           options: {
             url: values.url,
             topic: values.topic,
@@ -134,6 +137,7 @@ const NtfyModal = ({ type, data, onClose, onTest, onSave }: NtfyModalProps) => {
                 id: values.id,
                 agent: values.agent,
                 default: values.default,
+                embedPoster: values.embedPoster,
                 options: {
                   url: values.url,
                   topic: values.topic,
@@ -167,6 +171,14 @@ const NtfyModal = ({ type, data, onClose, onTest, onSave }: NtfyModalProps) => {
                   <div className="form-input-field">
                     <Field id="name" name="name" type="text" />
                   </div>
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="embedPoster" className="checkbox-label">
+                  {intl.formatMessage(messages.embedPoster)}
+                </label>
+                <div className="form-input-area">
+                  <Field type="checkbox" id="embedPoster" name="embedPoster" />
                 </div>
               </div>
               <div className="form-row">

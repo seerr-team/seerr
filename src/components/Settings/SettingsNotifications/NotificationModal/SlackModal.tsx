@@ -15,6 +15,7 @@ const messages = defineMessages(
     createTitle: 'Create Notification Instance',
     createInstance: 'Create Instance',
     instanceName: 'Name',
+    embedPoster: 'Embed Poster',
     slackWebhookUrl: 'Webhook URL',
     slackWebhookUrlTip:
       'Create an <WebhookLink>Incoming Webhook</WebhookLink> integration',
@@ -61,6 +62,7 @@ const SlackModal = ({
         id: data.id,
         agent: data.agent,
         default: data.default,
+        embedPoster: data.embedPoster,
         webhookUrl: data.options.webhookUrl,
       }}
       validationSchema={NotificationsSlackSchema}
@@ -72,6 +74,7 @@ const SlackModal = ({
           id: values.id,
           agent: values.agent,
           default: values.default,
+          embedPoster: values.embedPoster,
           options: {
             webhookUrl: values.webhookUrl,
           },
@@ -108,6 +111,7 @@ const SlackModal = ({
                 id: values.id,
                 agent: values.agent,
                 default: values.default,
+                embedPoster: values.embedPoster,
                 options: {
                   webhookUrl: values.webhookUrl,
                 },
@@ -135,6 +139,14 @@ const SlackModal = ({
                   <div className="form-input-field">
                     <Field id="name" name="name" type="text" />
                   </div>
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="embedPoster" className="checkbox-label">
+                  {intl.formatMessage(messages.embedPoster)}
+                </label>
+                <div className="form-input-area">
+                  <Field type="checkbox" id="embedPoster" name="embedPoster" />
                 </div>
               </div>
               <div className="form-row">

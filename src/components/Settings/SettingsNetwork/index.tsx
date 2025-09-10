@@ -126,7 +126,7 @@ const SettingsNetwork = () => {
                 proxy: {
                   enabled: values.proxyEnabled,
                   hostname: values.proxyHostname,
-                  port: values.proxyPort,
+                  port: Number(values.proxyPort),
                   useSsl: values.proxySsl,
                   user: values.proxyUser,
                   password: values.proxyPassword,

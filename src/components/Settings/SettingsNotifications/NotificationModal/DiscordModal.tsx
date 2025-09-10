@@ -16,6 +16,7 @@ const messages = defineMessages(
     createTitle: 'Create Notification Instance',
     createInstance: 'Create Instance',
     instanceName: 'Name',
+    embedPoster: 'Embed Poster',
     discordBotUsername: 'Bot Username',
     discordBotAvatarUrl: 'Bot Avatar URL',
     discordWebhookUrl: 'Webhook URL',
@@ -79,6 +80,7 @@ const DiscordModal = ({
         id: data.id,
         agent: data.agent,
         default: data.default,
+        embedPoster: data.embedPoster,
         botUsername: data.options.botUsername,
         botAvatarUrl: data.options.botAvatarUrl,
         webhookUrl: data.options.webhookUrl,
@@ -94,6 +96,7 @@ const DiscordModal = ({
           id: values.id,
           agent: values.agent,
           default: values.default,
+          embedPoster: values.embedPoster,
           options: {
             botUsername: values.botUsername,
             botAvatarUrl: values.botAvatarUrl,
@@ -134,6 +137,7 @@ const DiscordModal = ({
                 id: values.id,
                 agent: values.agent,
                 default: values.default,
+                embedPoster: values.embedPoster,
                 options: {
                   botUsername: values.botUsername,
                   botAvatarUrl: values.botAvatarUrl,
@@ -165,6 +169,14 @@ const DiscordModal = ({
                   <div className="form-input-field">
                     <Field id="name" name="name" type="text" />
                   </div>
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="embedPoster" className="checkbox-label">
+                  {intl.formatMessage(messages.embedPoster)}
+                </label>
+                <div className="form-input-area">
+                  <Field type="checkbox" id="embedPoster" name="embedPoster" />
                 </div>
               </div>
               <div className="form-row">

@@ -187,6 +187,7 @@ export interface FullPublicSettings extends PublicSettings {
 
 export interface NotificationAgentConfig {
   enabled: boolean;
+  embedPoster: boolean;
   types?: number;
   name: string;
   id: number;
@@ -259,6 +260,7 @@ export interface NotificationAgentWebhook extends NotificationAgentConfig {
     webhookUrl: string;
     jsonPayload: string;
     authHeader?: string;
+    supportVariables?: boolean;
   };
 }
 

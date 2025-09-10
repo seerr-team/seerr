@@ -16,6 +16,7 @@ const messages = defineMessages(
     createTitle: 'Create Notification Instance',
     createInstance: 'Create Instance',
     instanceName: 'Name',
+    embedPoster: 'Embed Poster',
     emailValidationSmtpHostRequired:
       'You must provide a valid hostname or IP address',
     emailValidationSmtpPortRequired: 'You must provide a valid port number',
@@ -133,6 +134,7 @@ const EmailModal = ({
         id: data.id,
         agent: data.agent,
         default: data.default,
+        embedPoster: data.embedPoster,
         userEmailRequired: data.options.userEmailRequired,
         emailFrom: data.options.emailFrom,
         smtpHost: data.options.smtpHost,
@@ -159,6 +161,7 @@ const EmailModal = ({
           id: values.id,
           agent: values.agent,
           default: values.default,
+          embedPoster: values.embedPoster,
           options: {
             userEmailRequired: values.userEmailRequired,
             emailFrom: values.emailFrom,
@@ -197,6 +200,7 @@ const EmailModal = ({
                 id: values.id,
                 agent: values.agent,
                 default: values.default,
+                embedPoster: values.embedPoster,
                 options: {
                   userEmailRequired: values.userEmailRequired,
                   emailFrom: values.emailFrom,
@@ -236,6 +240,14 @@ const EmailModal = ({
                   <div className="form-input-field">
                     <Field id="name" name="name" type="text" />
                   </div>
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="embedPoster" className="checkbox-label">
+                  {intl.formatMessage(messages.embedPoster)}
+                </label>
+                <div className="form-input-area">
+                  <Field type="checkbox" id="embedPoster" name="embedPoster" />
                 </div>
               </div>
               <div className="form-row">

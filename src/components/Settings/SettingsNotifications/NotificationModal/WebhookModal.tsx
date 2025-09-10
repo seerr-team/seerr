@@ -1,6 +1,7 @@
 import Button from '@app/components/Common/Button';
 import Modal from '@app/components/Common/Modal';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
+import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import { NotificationModalType } from '@app/components/Settings/SettingsNotifications/NotificationModal';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -75,6 +76,11 @@ const messages = defineMessages(
     createInstance: 'Create Instance',
     instanceName: 'Name',
     webhookUrl: 'Webhook URL',
+    webhookUrlTip:
+      'Test Notification URL is set to {testUrl} instead of the actual webhook URL.',
+    supportVariables: 'Support URL Variables',
+    supportVariablesTip:
+      'Available variables are documented in the webhook template variables section',
     webhookAuthheader: 'Authorization Header',
     webhookValidationJsonPayloadRequired:
       'You must provide a valid JSON payload',
@@ -117,8 +123,12 @@ const WebhookModal = ({
       .test(
         'valid-url',
         intl.formatMessage(messages.webhookValidationWebhookUrl),
-        isValidURL
+        function (value) {
+          const { supportVariables } = this.parent;
+          return supportVariables || isValidURL(value);
+        }
       ),
+    supportVariables: Yup.boolean(),
     jsonPayload: Yup.string()
       .when('enabled', {
         is: true,
@@ -166,6 +176,7 @@ const WebhookModal = ({
         webhookUrl: data.options.webhookUrl,
         jsonPayload: data.options.jsonPayload,
         authHeader: data.options.authHeader,
+        supportVariables: data.options.supportVariables ?? false,
       }}
       validationSchema={NotificationsWebhookSchema}
       onSubmit={async (values) => {
@@ -176,10 +187,12 @@ const WebhookModal = ({
           id: values.id,
           agent: values.agent,
           default: values.default,
+          embedPoster: true,
           options: {
             webhookUrl: values.webhookUrl,
             jsonPayload: values.jsonPayload,
             authHeader: values.authHeader,
+            supportVariables: values.supportVariables,
           },
         });
       }}
@@ -225,10 +238,12 @@ const WebhookModal = ({
                 id: values.id,
                 agent: values.agent,
                 default: values.default,
+                embedPoster: true,
                 options: {
                   webhookUrl: values.webhookUrl,
                   jsonPayload: values.jsonPayload,
                   authHeader: values.authHeader,
+                  supportVariables: values.supportVariables,
                 },
               })
             }
@@ -257,9 +272,60 @@ const WebhookModal = ({
                 </div>
               </div>
               <div className="form-row">
+                <label htmlFor="supportVariables" className="checkbox-label">
+                  <span className="mr-2">
+                    {intl.formatMessage(messages.supportVariables)}
+                  </span>
+                  <SettingsBadge badgeType="experimental" />
+                  <span className="label-tip">
+                    {intl.formatMessage(messages.supportVariablesTip)}
+                  </span>
+                </label>
+                <div className="form-input-area">
+                  <Field
+                    type="checkbox"
+                    id="supportVariables"
+                    name="supportVariables"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setFieldValue('supportVariables', e.target.checked)
+                    }
+                  />
+                </div>
+              </div>
+              {values.supportVariables && (
+                <div className="mt-2">
+                  <Link
+                    href="https://docs.jellyseerr.dev/using-jellyseerr/notifications/webhook#template-variables"
+                    passHref
+                    legacyBehavior
+                  >
+                    <Button
+                      as="a"
+                      buttonSize="sm"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <QuestionMarkCircleIcon />
+                      <span>
+                        {intl.formatMessage(
+                          messages.webhookTemplateVariableHelp
+                        )}
+                      </span>
+                    </Button>
+                  </Link>
+                </div>
+              )}
+              <div className="form-row">
                 <label htmlFor="webhookUrl" className="text-label">
                   {intl.formatMessage(messages.webhookUrl)}
                   <span className="label-required">*</span>
+                  {values.supportVariables && (
+                    <div className="label-tip">
+                      {intl.formatMessage(messages.webhookUrlTip, {
+                        testUrl: '/test',
+                      })}
+                    </div>
+                  )}
                 </label>
                 <div className="form-input-area">
                   <div className="form-input-field">
@@ -321,7 +387,7 @@ const WebhookModal = ({
                       </span>
                     </Button>
                     <Link
-                      href="https://docs.overseerr.dev/using-overseerr/notifications/webhooks#template-variables"
+                      href="https://docs.jellyseerr.dev/using-jellyseerr/notifications/webhook#template-variables"
                       passHref
                       legacyBehavior
                     >
