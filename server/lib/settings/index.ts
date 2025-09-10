@@ -344,7 +344,6 @@ export type JobId =
   | 'download-sync-reset'
   | 'jellyfin-recently-added-scan'
   | 'jellyfin-full-scan'
-  | 'jellyfin-playback-reporting-full-scan'
   | 'image-cache-cleanup'
   | 'availability-sync'
   | 'process-blacklisted-tags';
@@ -566,9 +565,6 @@ class Settings {
           schedule: '0 */5 * * * *',
         },
         'jellyfin-full-scan': {
-          schedule: '0 0 3 * * *',
-        },
-        'jellyfin-playback-reporting-full-scan': {
           schedule: '0 0 3 * * *',
         },
         'image-cache-cleanup': {

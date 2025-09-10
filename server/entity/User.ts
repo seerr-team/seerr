@@ -1,7 +1,6 @@
 import { MediaRequestStatus, MediaType } from '@server/constants/media';
 import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
-import { MediaPlayback } from '@server/entity/MediaPlayback';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
 import PreparedEmail from '@server/lib/email';
@@ -112,9 +111,6 @@ export class User {
 
   @OneToMany(() => Watchlist, (watchlist) => watchlist.requestedBy)
   public watchlists: Watchlist[];
-
-  @OneToMany(() => MediaPlayback, (playback) => playback.playedBy)
-  public playbacks: MediaPlayback[];
 
   @Column({ nullable: true })
   public movieQuotaLimit?: number;
@@ -263,18 +259,6 @@ export class User {
   public setDisplayName(): void {
     this.displayName =
       this.username || this.plexUsername || this.jellyfinUsername || this.email;
-  }
-
-  @AfterLoad()
-  public sortPlaybacks() {
-    if (Array.isArray(this.playbacks)) {
-      this.playbacks.sort((a, b) => {
-        const aPlayedAtTime = a.playedAt.getTime();
-        const bPlayedAtTime = b.playedAt.getTime();
-
-        return bPlayedAtTime - aPlayedAtTime;
-      });
-    }
   }
 
   public async getQuota(): Promise<QuotaResponse> {

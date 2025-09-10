@@ -4,7 +4,6 @@ import { MediaStatus, MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import { Blacklist } from '@server/entity/Blacklist';
-import { MediaPlayback } from '@server/entity/MediaPlayback';
 import type { User } from '@server/entity/User';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { DownloadingItem } from '@server/lib/downloadtracker';
@@ -123,11 +122,6 @@ class Media {
 
   @OneToMany(() => Issue, (issue) => issue.media, { cascade: true })
   public issues: Issue[];
-
-  @OneToMany(() => MediaPlayback, (playback) => playback.media, {
-    cascade: ['insert', 'remove'],
-  })
-  public playbacks: MediaPlayback[];
 
   @OneToOne(() => Blacklist, (blacklist) => blacklist.media)
   public blacklist: Promise<Blacklist>;
@@ -383,18 +377,6 @@ class Media {
           this.externalServiceId4k
         );
       }
-    }
-  }
-
-  @AfterLoad()
-  public sortPlaybacks() {
-    if (Array.isArray(this.playbacks)) {
-      this.playbacks.sort((a, b) => {
-        const aPlayedAtTime = a.playedAt.getTime();
-        const bPlayedAtTime = b.playedAt.getTime();
-
-        return bPlayedAtTime - aPlayedAtTime;
-      });
     }
   }
 }
