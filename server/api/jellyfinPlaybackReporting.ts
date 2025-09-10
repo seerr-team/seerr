@@ -10,19 +10,26 @@ interface CustomQueryResponse {
 }
 
 export interface JellyfinPlaybackActivityResponse {
-  ItemId: string;
-  UserId: string;
   DateCreated: string;
+  UserId: string;
+  ItemId: string;
+  PlayDuration: number;
 }
 
 class JellyfinPlaybackReportingAPI extends JellyfinAPI {
-  public async getPlaybackActivity(sinceDate?: Date) {
+  public async getPlaybackActivity(
+    sinceDate?: Date,
+    userId?: string
+  ): Promise<JellyfinPlaybackActivityResponse[]> {
     try {
-      const CustomQueryString = `SELECT ItemId, UserId, DateCreated FROM PlaybackActivity \
+      const CustomQueryString = `SELECT DateCreated, UserId, ItemId, PlayDuration FROM PlaybackActivity \
                                 ${
                                   sinceDate
-                                    ? `WHERE DateCreated > '${sinceDate.toISOString()}'`
+                                    ? `WHERE DateCreated >= '${sinceDate.toISOString()}'`
                                     : ''
+                                }\
+                                ${
+                                  sinceDate ? `WHERE UserId = '${userId}'` : ''
                                 }\
                                 ORDER BY DateCreated ASC`;
 
