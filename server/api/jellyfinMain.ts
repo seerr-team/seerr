@@ -53,16 +53,17 @@ export interface JellyfinLibraryItem {
   Name: string;
   Id: string;
   HasSubtitles: boolean;
+  RunTimeTicks?: number;
+  IndexNumber?: number;
+  IndexNumberEnd?: number;
+  ParentIndexNumber?: number;
   Type: 'Movie' | 'Episode' | 'Season' | 'Series';
-  LocationType: 'FileSystem' | 'Offline' | 'Remote' | 'Virtual';
   UserData?: JellyfinUserData;
   SeriesName?: string;
   SeriesId?: string;
   SeasonId?: string;
   SeasonName?: string;
-  IndexNumber?: number;
-  IndexNumberEnd?: number;
-  ParentIndexNumber?: number;
+  LocationType: 'FileSystem' | 'Offline' | 'Remote' | 'Virtual';
   MediaType: string;
 }
 
