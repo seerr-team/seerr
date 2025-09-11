@@ -1,13 +1,11 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "jellyseerr.fullname" . }}
   labels:
     {{- include "jellyseerr.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
-  strategy:
-    type: {{ .Values.strategy.type }}
+  serviceName: {{ include "jellyseerr.fullname" . }}
   selector:
     matchLabels:
       {{- include "jellyseerr.selectorLabels" . | nindent 6 }}

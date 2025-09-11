@@ -3,7 +3,7 @@ kubeVersion: ">=1.23.0-0"
 name: jellyseerr-chart
 description: Jellyseerr helm chart for Kubernetes
 type: application
-version: 2.6.2
+version: 2.7.0
 appVersion: "2.7.3"
 maintainers:
   - name: Jellyseerr
