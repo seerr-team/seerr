@@ -368,5 +368,15 @@
   "components.IssueList.IssueItem.seasons": "{seasonCount, plural, one {Tuotantokausi} other {Tuotantokautta}}",
   "components.ManageSlideOver.movie": "elokuva",
   "components.UserProfile.recentlywatched": "Viimeaikaiset katselut",
-  "components.UserProfile.plexwatchlist": "Plex-katselulista"
+  "components.UserProfile.plexwatchlist": "Plex-katselulista",
+  "components.NotificationTypeSelector.mediaapprovedDescription": "Lähetä ilmoituksia, kun mediapyyntöjä hyväksytään manuaalisesti.",
+  "components.NotificationTypeSelector.mediaapproved": "Pyyntö hyväksytty",
+  "i18n.pending": "Odottaa",
+  "components.Layout.VersionStatus.streamdevelop": "Jellyseerr kehittäjä",
+  "components.Layout.VersionStatus.streamstable": "Jellyseerr vakaa",
+  "i18n.partiallyavailable": "Osittain saatavilla",
+  "i18n.previous": "Edellinen",
+  "i18n.processing": "Käsitellään",
+  "i18n.removeFromBlacklistSuccess": "<strong>{title}</strong> poistettiin onnistuneesti estolistalta.",
+  "i18n.removefromBlacklist": "Poista estolistalta"
 }
