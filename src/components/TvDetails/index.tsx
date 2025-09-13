@@ -55,6 +55,7 @@ import {
   MediaType,
 } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
+import type { RecentSearches } from '@server/entity/RecentSearches';
 import type { Crew } from '@server/models/common';
 import type { TvDetails as TvDetailsType } from '@server/models/Tv';
 import axios from 'axios';
@@ -65,7 +66,7 @@ import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 
 const messages = defineMessages('components.TvDetails', {
   firstAirDate: 'First Air Date',
@@ -105,6 +106,8 @@ const messages = defineMessages('components.TvDetails', {
   watchlistError: 'Something went wrong. Please try again.',
   removefromwatchlist: 'Remove From Watchlist',
   addtowatchlist: 'Add To Watchlist',
+  recentsearchSuccess:
+    '<strong>{title}</strong> added to recent searches successfully!',
 });
 
 interface TvDetailsProps {
@@ -152,6 +155,40 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     () => sortCrewPriority(data?.credits.crew ?? []),
     [data]
   );
+
+  useEffect(() => {
+    const addToRecentSearch = async () => {
+      try {
+        const response = await axios.post<RecentSearches>(
+          '/api/v1/recentsearches',
+          {
+            tmdbId: tv?.id,
+            mediaType: MediaType.TV,
+            title: tv?.name,
+          }
+        );
+        mutate('/api/v1/discover/recentsearches');
+        if (response.data) {
+          addToast(
+            <span>
+              {intl.formatMessage(messages.recentsearchSuccess, {
+                title: tv?.name,
+                strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+              })}
+            </span>,
+            { appearance: 'success', autoDismiss: true }
+          );
+        }
+      } catch (e) {
+        addToast(intl.formatMessage(messages.watchlistError), {
+          appearance: 'error',
+          autoDismiss: true,
+        });
+      }
+    };
+
+    addToRecentSearch();
+  }, []);
 
   useEffect(() => {
     setShowManager(router.query.manage == '1');

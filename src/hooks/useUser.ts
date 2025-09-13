@@ -23,6 +23,7 @@ export interface User {
   updatedAt: Date;
   requestCount: number;
   settings?: UserSettings;
+  searchItemsHistory: number[];
 }
 
 type NotificationAgentTypes = Record<NotificationAgentKey, number>;

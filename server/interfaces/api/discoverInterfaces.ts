@@ -18,3 +18,19 @@ export interface WatchlistResponse {
   totalResults: number;
   results: WatchlistItem[];
 }
+
+export interface RecentSearchesItem {
+  id: number;
+  ratingKey: string;
+  tmdbId: number;
+  mediaType: 'movie' | 'tv';
+  title: string;
+  createdAt: Date;
+}
+
+export interface RecentSearchesResponse {
+  page: number;
+  totalPages: number;
+  totalResults: number;
+  results: RecentSearchesItem[];
+}

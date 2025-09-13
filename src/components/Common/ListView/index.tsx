@@ -5,7 +5,10 @@ import { Permission, useUser } from '@app/hooks/useUser';
 import useVerticalScroll from '@app/hooks/useVerticalScroll';
 import globalMessages from '@app/i18n/globalMessages';
 import { MediaStatus } from '@server/constants/media';
-import type { WatchlistItem } from '@server/interfaces/api/discoverInterfaces';
+import type {
+  RecentSearchesItem,
+  WatchlistItem,
+} from '@server/interfaces/api/discoverInterfaces';
 import type {
   CollectionResult,
   MovieResult,
@@ -17,6 +20,7 @@ import { useIntl } from 'react-intl';
 type ListViewProps = {
   items?: (TvResult | MovieResult | PersonResult | CollectionResult)[];
   plexItems?: WatchlistItem[];
+  recentSearchItems?: RecentSearchesItem[];
   isEmpty?: boolean;
   isLoading?: boolean;
   isReachingEnd?: boolean;
@@ -31,6 +35,7 @@ const ListView = ({
   onScrollBottom,
   isReachingEnd,
   plexItems,
+  recentSearchItems,
   mutateParent,
 }: ListViewProps) => {
   const intl = useIntl();
@@ -64,6 +69,24 @@ const ListView = ({
             </li>
           );
         })}
+        {recentSearchItems
+          ?.sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          )
+          ?.map((title, index) => {
+            return (
+              <li key={`${title.ratingKey}-${index}`}>
+                <TmdbTitleCard
+                  id={title.tmdbId}
+                  tmdbId={title.tmdbId}
+                  type={title.mediaType}
+                  canExpand
+                  mutateParent={mutateParent}
+                />
+              </li>
+            );
+          })}
         {items
           ?.filter((title) => {
             if (!blacklistVisibility)

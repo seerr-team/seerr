@@ -5,10 +5,13 @@ import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
 import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
+import { RecentSearches } from '@server/entity/RecentSearches';
 import { User } from '@server/entity/User';
 import { Watchlist } from '@server/entity/Watchlist';
 import type {
   GenreSliderItem,
+  RecentSearchesItem,
+  RecentSearchesResponse,
   WatchlistResponse,
 } from '@server/interfaces/api/discoverInterfaces';
 import { getSettings } from '@server/lib/settings';
@@ -914,6 +917,48 @@ discoverRoutes.get<Record<string, unknown>, WatchlistResponse>(
         tmdbId: item.tmdbId,
       })),
     });
+  }
+);
+
+discoverRoutes.get<Record<string, unknown>, RecentSearchesResponse>(
+  '/recentsearches',
+  async (req, res) => {
+    const userRepository = getRepository(User);
+    const itemsPerPage = 20;
+    const page = Number(req.query.page) ?? 1;
+    const offset = (page - 1) * itemsPerPage;
+
+    const activeUser = await userRepository.findOne({
+      where: { id: req.user?.id },
+      select: ['id', 'plexToken'],
+    });
+
+    if (activeUser) {
+      // Non-Plex users can only see their own recentSearches
+      const [result, total] = await getRepository(RecentSearches).findAndCount({
+        where: { requestedBy: { id: activeUser?.id } },
+        relations: {},
+        take: itemsPerPage,
+        skip: offset,
+      });
+      if (total) {
+        return res.json({
+          page: page,
+          totalPages: Math.ceil(total / itemsPerPage),
+          totalResults: total,
+          results: result as RecentSearchesItem[],
+        });
+      }
+    }
+    if (!activeUser?.recentSearches) {
+      // We will just return an empty array if the user has no recent searches
+      return res.json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
   }
 );
 

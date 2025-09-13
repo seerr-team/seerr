@@ -1,6 +1,7 @@
 import { MediaRequestStatus, MediaType } from '@server/constants/media';
 import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
+import { RecentSearches } from '@server/entity/RecentSearches';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
 import PreparedEmail from '@server/lib/email';
@@ -148,6 +149,12 @@ export class User {
   public updatedAt: Date;
 
   public warnings: string[] = [];
+
+  @OneToMany(
+    () => RecentSearches,
+    (recentSearches) => recentSearches.requestedBy
+  )
+  public recentSearches: RecentSearches[];
 
   constructor(init?: Partial<User>) {
     Object.assign(this, init);
