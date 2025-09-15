@@ -2,7 +2,7 @@ name: Cypress Tests
 
 on:
   pull_request:
-    branches: [*]
+    branches: ['*']
     paths-ignore:
       - '**/*.md'
       - 'docs/**'    
