@@ -8,14 +8,26 @@ on:
       - 'docs/**'
       - 'gen-docs/**'
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build Docusaurus
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5          
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -38,46 +50,30 @@ jobs:
           path: ${{ env.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-pnpm-store-          
 
       - name: Install dependencies
         run: |
           cd gen-docs
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile        
 
       - name: Build website
-        run: |
-          cd gen-docs
-          pnpm build
+        working-directory: gen-docs
+        run: pnpm build     
 
       - name: Upload Build Artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: gen-docs/build
 
   deploy:
     name: Deploy to GitHub Pages
     needs: build
-    concurrency: build-deploy-pages
-
-    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
-    permissions:
-      pages: write # to deploy to Pages
-      id-token: write # to verify the deployment originates from an appropriate source
-
-    # Deploy to the github-pages environment
+    runs-on: ubuntu-24.04
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
-    runs-on: ubuntu-latest
     steps:
-      # - name: Download Build Artifact
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: docusaurus-build
-      #     path: gen-docs/build
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

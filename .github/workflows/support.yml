@@ -4,9 +4,13 @@ on:
   issues:
     types: [labeled, unlabeled, reopened]
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   support:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: dessant/support-requests@v4
         with:

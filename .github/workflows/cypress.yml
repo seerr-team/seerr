@@ -2,26 +2,43 @@ name: Cypress Tests
 
 on:
   pull_request:
-    branches:
-      - '*'
+    branches: [*]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'    
   push:
-    branches:
-      - develop
+    branches: [develop]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'    
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cypress-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   cypress-run:
+    name: Cypress Run
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      
       - name: Pnpm Setup
         uses: pnpm/action-setup@v4
         with:
           version: 9
+      
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
@@ -36,6 +53,7 @@ jobs:
           # Fix test titles in cypress dashboard
           COMMIT_INFO_MESSAGE: ${{github.event.pull_request.title}}
           COMMIT_INFO_SHA: ${{github.event.pull_request.head.sha}}
+      
       - name: Upload video files
         if: always()
         uses: actions/upload-artifact@v4
