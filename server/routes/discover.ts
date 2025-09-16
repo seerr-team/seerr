@@ -61,6 +61,7 @@ const QueryFilterOptions = z.object({
   studio: z.coerce.string().optional(),
   genre: z.coerce.string().optional(),
   keywords: z.coerce.string().optional(),
+  excludeKeywords: z.coerce.string().optional(),
   language: z.coerce.string().optional(),
   withRuntimeGte: z.coerce.string().optional(),
   withRuntimeLte: z.coerce.string().optional(),
@@ -90,6 +91,7 @@ discoverRoutes.get('/movies', async (req, res, next) => {
   try {
     const query = ApiQuerySchema.parse(req.query);
     const keywords = query.keywords;
+    const excludeKeywords = query.excludeKeywords;
 
     const data = await tmdb.getDiscoverMovies({
       page: Number(query.page),
@@ -105,6 +107,7 @@ discoverRoutes.get('/movies', async (req, res, next) => {
         ? new Date(query.primaryReleaseDateGte).toISOString().split('T')[0]
         : undefined,
       keywords,
+      excludeKeywords,
       withRuntimeGte: query.withRuntimeGte,
       withRuntimeLte: query.withRuntimeLte,
       voteAverageGte: query.voteAverageGte,
@@ -381,6 +384,7 @@ discoverRoutes.get('/tv', async (req, res, next) => {
   try {
     const query = ApiQuerySchema.parse(req.query);
     const keywords = query.keywords;
+    const excludeKeywords = query.excludeKeywords;
     const data = await tmdb.getDiscoverTv({
       page: Number(query.page),
       sortBy: query.sortBy as SortOptions,
@@ -395,6 +399,7 @@ discoverRoutes.get('/tv', async (req, res, next) => {
         : undefined,
       originalLanguage: query.language,
       keywords,
+      excludeKeywords,
       withRuntimeGte: query.withRuntimeGte,
       withRuntimeLte: query.withRuntimeLte,
       voteAverageGte: query.voteAverageGte,
