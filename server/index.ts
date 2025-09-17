@@ -82,7 +82,7 @@ app
     }
 
     // Add DNS caching
-    if (settings.network.dnsCache) {
+    if (settings.network.dnsCache?.enabled) {
       initializeDnsCache({
         forceMinTtl: settings.network.dnsCache.forceMinTtl,
         forceMaxTtl: settings.network.dnsCache.forceMaxTtl,
