@@ -15,16 +15,6 @@ import { useToasts } from 'react-toast-notifications';
 
 const messages = defineMessages('components.Discover.DiscoverHistory', {
   discoverhistory: 'Recent Searches',
-  activefilters:
-    '{count, plural, one {# Active Filter} other {# Active Filters}}',
-  sortPopularityAsc: 'Popularity Ascending',
-  sortPopularityDesc: 'Popularity Descending',
-  sortFirstAirDateAsc: 'First Air Date Ascending',
-  sortFirstAirDateDesc: 'First Air Date Descending',
-  sortTmdbRatingAsc: 'TMDB Rating Ascending',
-  sortTmdbRatingDesc: 'TMDB Rating Descending',
-  sortTitleAsc: 'Title (A-Z) Ascending',
-  sortTitleDesc: 'Title (Z-A) Descending',
   clearSearches: 'Clear Searches',
   searchesCleared: 'Recent searches cleared successfully!',
   recentSearchesError: 'Something went wrong. Please try again.',

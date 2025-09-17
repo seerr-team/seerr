@@ -2,7 +2,6 @@ import DiscoverRecentSearches from '@app/components/Discover/DiscoverRecentSearc
 import type { NextPage } from 'next';
 
 const DiscoverHistoryPage: NextPage = () => {
-  // return <div>Discover History</div>;
   return <DiscoverRecentSearches />;
 };
 

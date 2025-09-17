@@ -930,11 +930,10 @@ discoverRoutes.get<Record<string, unknown>, RecentSearchesResponse>(
 
     const activeUser = await userRepository.findOne({
       where: { id: req.user?.id },
-      select: ['id', 'plexToken'],
+      select: ['id'],
     });
 
     if (activeUser) {
-      // Non-Plex users can only see their own recentSearches
       const [result, total] = await getRepository(RecentSearches).findAndCount({
         where: { requestedBy: { id: activeUser?.id } },
         relations: {},
