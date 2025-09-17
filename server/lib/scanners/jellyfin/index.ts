@@ -79,7 +79,7 @@ class JellyfinScanner {
         return;
       }
 
-      const anidbId = Number(metadata.ProviderIds.AniDB);
+      const anidbId = Number(metadata.ProviderIds.AniDB ?? null);
 
       newMedia.tmdbId = Number(metadata.ProviderIds.Tmdb ?? null);
       newMedia.imdbId = metadata.ProviderIds.Imdb;
