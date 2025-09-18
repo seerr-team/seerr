@@ -84,8 +84,8 @@ importers:
         specifier: 1.11.7
         version: 1.11.7
       dns-caching:
-        specifier: ^0.2.6
-        version: 0.2.6
+        specifier: ^0.2.7
+        version: 0.2.7
       email-templates:
         specifier: 12.0.1
         version: 12.0.1(@babel/core@7.24.7)(encoding@0.1.13)(handlebars@4.7.8)(mustache@4.2.0)(pug@3.0.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(underscore@1.13.7)
@@ -3397,8 +3397,8 @@ packages:
   '@types/node@17.0.45':
     resolution: {integrity: sha512-w+tIMs3rq2afQdsPJlODhoUEKzFP1ayaoyl1CcnwtIlsVe7K7bA1NGm4s3PraqTLlXnbIN84zuBlxBWo1u9BLw==}
 
-  '@types/node@18.19.126':
-    resolution: {integrity: sha512-8AXQlBfrGmtYJEJUPs63F/uZQqVeFiN9o6NUjbDJYfxNxFnArlZufANPw4h6dGhYGKxcyw+TapXFvEsguzIQow==}
+  '@types/node@18.19.127':
+    resolution: {integrity: sha512-gSjxjrnKXML/yo0BO099uPixMqfpJU0TKYjpfLU7TrtA2WWDki412Np/RSTPRil1saKBhvVVKzVx/p/6p94nVA==}
 
   '@types/node@20.5.1':
     resolution: {integrity: sha512-4tT2UrL5LBqDwoed9wZ6N3umC4Yhz3W3FloMmiiG4JwmUJWpie0c7lcnUNd4gtMKuDEO4wRVS8B6Xa0uMRsMKg==}
@@ -4029,8 +4029,8 @@ packages:
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
-  baseline-browser-mapping@2.8.4:
-    resolution: {integrity: sha512-L+YvJwGAgwJBV1p6ffpSTa2KRc69EeeYGYjRVWKs0GKrK+LON0GC0gV+rKSNtALEDvMDqkvCFq9r1r94/Gjwxw==}
+  baseline-browser-mapping@2.8.5:
+    resolution: {integrity: sha512-TiU4qUT9jdCuh4aVOG7H1QozyeI2sZRqoRPdqBIaslfNt4WUSanRBueAwl2x5jt4rXBMim3lIN2x6yT8PDi24Q==}
     hasBin: true
 
   bcrypt-pbkdf@1.0.2:
@@ -4094,11 +4094,6 @@ packages:
 
   browserslist@4.23.1:
     resolution: {integrity: sha512-TUfofFo/KsK/bWZ9TWQ5O26tsWW4Uhmt8IYklbnUa70udB6P2wA7w7o4PY4muaEPBQaAX+CEnmmIA41NVHtPVw==}
-    engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
-    hasBin: true
-
-  browserslist@4.25.1:
-    resolution: {integrity: sha512-KGj0KoOMXLpSNkkEI6Z6mShmQy0bc1I+T7K9N81k4WWMrfz+6fQ6es80B/YLAeRoKvjYE1YSHHOW1qe9xIVzHw==}
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
 
@@ -4876,8 +4871,8 @@ packages:
   dlv@1.1.3:
     resolution: {integrity: sha512-+HlytyjlPKnIG8XuRG8WvmBP8xs8P71y+SKKS6ZXWoEgLuePxtDoUEiH7WkdePWrQ5JBpE6aoVqfZfJUQkjXwA==}
 
-  dns-caching@0.2.6:
-    resolution: {integrity: sha512-ndfwU7hAWzNTbXLggcJDMwNzpDcUUoEtUqlHFBFRmnRT5jenPpATbVU+gsFBFVU0cs4Wites+mOAn4bcqlHFQQ==}
+  dns-caching@0.2.7:
+    resolution: {integrity: sha512-48fgJWH9aUHPN+TOmbozx1hxX9YoCsEkZzR/wHKRFPFx0NZtmSgtZY3M0Vsl7x/fDcq3mCI3SMgyTKVgZZrogg==}
 
   doctrine@2.1.0:
     resolution: {integrity: sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==}
@@ -4950,8 +4945,8 @@ packages:
   electron-to-chromium@1.4.810:
     resolution: {integrity: sha512-Kaxhu4T7SJGpRQx99tq216gCq2nMxJo+uuT6uzz9l8TVN2stL7M06MIIXAtr9jsrLs2Glflgf2vMQRepxawOdQ==}
 
-  electron-to-chromium@1.5.220:
-    resolution: {integrity: sha512-TWXijEwR1ggr4BdAKrb1nMNqYLTx1/4aD1fkeZU+FVJGTKu53/T7UyHKXlqEX3Ub02csyHePbHmkvnrjcaYzMA==}
+  electron-to-chromium@1.5.221:
+    resolution: {integrity: sha512-/1hFJ39wkW01ogqSyYoA4goOXOtMRy6B+yvA1u42nnsEGtHzIzmk93aPISumVQeblj47JUHLC9coCjUxb1EvtQ==}
 
   email-templates@12.0.1:
     resolution: {integrity: sha512-849pjBFVUAWWTa3HqhDjxlXHaSWmxf4CZOlZ9iVkrSAbQ8YCYi+7KiKqt35L6F20WhSViWX7lmMjno6zBv2rNQ==}
@@ -10117,7 +10112,7 @@ snapshots:
     dependencies:
       '@babel/compat-data': 7.28.4
       '@babel/helper-validator-option': 7.27.1
-      browserslist: 4.25.1
+      browserslist: 4.26.2
       lru-cache: 5.1.1
       semver: 6.3.1
 
@@ -13576,7 +13571,7 @@ snapshots:
 
   '@rnx-kit/chromium-edge-launcher@1.0.0':
     dependencies:
-      '@types/node': 18.19.126
+      '@types/node': 18.19.127
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -14042,7 +14037,7 @@ snapshots:
 
   '@types/node@17.0.45': {}
 
-  '@types/node@18.19.126':
+  '@types/node@18.19.127':
     dependencies:
       undici-types: 5.26.5
 
@@ -14754,7 +14749,7 @@ snapshots:
 
   base64-js@1.5.1: {}
 
-  baseline-browser-mapping@2.8.4: {}
+  baseline-browser-mapping@2.8.5: {}
 
   bcrypt-pbkdf@1.0.2:
     dependencies:
@@ -14835,18 +14830,11 @@ snapshots:
       node-releases: 2.0.14
       update-browserslist-db: 1.0.16(browserslist@4.23.1)
 
-  browserslist@4.25.1:
-    dependencies:
-      caniuse-lite: 1.0.30001743
-      electron-to-chromium: 1.5.220
-      node-releases: 2.0.21
-      update-browserslist-db: 1.1.3(browserslist@4.25.1)
-
   browserslist@4.26.2:
     dependencies:
-      baseline-browser-mapping: 2.8.4
+      baseline-browser-mapping: 2.8.5
       caniuse-lite: 1.0.30001743
-      electron-to-chromium: 1.5.220
+      electron-to-chromium: 1.5.221
       node-releases: 2.0.21
       update-browserslist-db: 1.1.3(browserslist@4.26.2)
 
@@ -15730,7 +15718,7 @@ snapshots:
 
   dlv@1.1.3: {}
 
-  dns-caching@0.2.6:
+  dns-caching@0.2.7:
     dependencies:
       lru-cache: 11.2.1
 
@@ -15818,7 +15806,7 @@ snapshots:
 
   electron-to-chromium@1.4.810: {}
 
-  electron-to-chromium@1.5.220: {}
+  electron-to-chromium@1.5.221: {}
 
   email-templates@12.0.1(@babel/core@7.24.7)(encoding@0.1.13)(handlebars@4.7.8)(mustache@4.2.0)(pug@3.0.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(underscore@1.13.7):
     dependencies:
@@ -21339,12 +21327,6 @@ snapshots:
       browserslist: 4.23.1
       escalade: 3.1.2
       picocolors: 1.0.1
-
-  update-browserslist-db@1.1.3(browserslist@4.25.1):
-    dependencies:
-      browserslist: 4.25.1
-      escalade: 3.2.0
-      picocolors: 1.1.1
 
   update-browserslist-db@1.1.3(browserslist@4.26.2):
     dependencies:
