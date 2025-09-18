@@ -13,16 +13,26 @@ export interface JellyfinPlaybackActivityResponse {
   DateCreated: string;
   UserId: string;
   ItemId: string;
+  ItemType: 'Episode' | 'Movie';
   PlayDuration: number;
 }
 
+interface GetPlaybackActivityOptions {
+  sinceDate?: Date;
+  userId?: string;
+  itemType?: string;
+}
+
 class JellyfinPlaybackReportingAPI extends JellyfinAPI {
-  public async getPlaybackActivity(
-    sinceDate?: Date,
-    userId?: string
-  ): Promise<JellyfinPlaybackActivityResponse[]> {
+  public async getPlaybackActivity({
+    sinceDate,
+    userId,
+    itemType,
+  }: GetPlaybackActivityOptions = {}): Promise<
+    JellyfinPlaybackActivityResponse[]
+  > {
     try {
-      const CustomQueryString = `SELECT DateCreated, UserId, ItemId, PlayDuration FROM PlaybackActivity \
+      const CustomQueryString = `SELECT DateCreated, UserId, ItemId, ItemType, PlayDuration FROM PlaybackActivity \
                                 ${
                                   sinceDate
                                     ? `WHERE DateCreated >= '${sinceDate.toISOString()}'`
@@ -30,6 +40,11 @@ class JellyfinPlaybackReportingAPI extends JellyfinAPI {
                                 }\
                                 ${
                                   sinceDate ? `WHERE UserId = '${userId}'` : ''
+                                }\
+                                ${
+                                  sinceDate
+                                    ? `WHERE ItemType = '${itemType}'`
+                                    : ''
                                 }\
                                 ORDER BY DateCreated ASC`;
 
