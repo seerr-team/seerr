@@ -57,7 +57,7 @@
     "cronstrue": "2.23.0",
     "date-fns": "2.29.3",
     "dayjs": "1.11.7",
-    "dns-caching": "^0.2.5",
+    "dns-caching": "^0.2.7",
     "email-templates": "12.0.1",
     "email-validator": "2.0.4",
     "express": "4.21.2",

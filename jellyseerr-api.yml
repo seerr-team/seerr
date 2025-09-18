@@ -4933,6 +4933,12 @@ paths:
             type: string
             example: 1,2
         - in: query
+          name: excludeKeywords
+          schema:
+            type: string
+            example: 3,4
+          description: Comma-separated list of keyword IDs to exclude from results
+        - in: query
           name: sortBy
           schema:
             type: string
@@ -5252,6 +5258,12 @@ paths:
           schema:
             type: string
             example: 1,2
+        - in: query
+          name: excludeKeywords
+          schema:
+            type: string
+            example: 3,4
+          description: Comma-separated list of keyword IDs to exclude from results
         - in: query
           name: sortBy
           schema:
