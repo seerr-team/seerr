@@ -5,7 +5,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 concurrency:
   group: release-${{ github.ref }}
@@ -25,6 +24,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -55,6 +55,10 @@ jobs:
       - name: Release
         id: release
         uses: cycjimmy/semantic-release-action@v4
+        with:
+          extra_plugins: |
+            @semantic-release/git
+            @semantic-release/changelog
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
@@ -75,10 +79,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Deterministic timestamp
+      - name: Commit timestamp
         id: ts
-        run: echo "now=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -93,7 +99,7 @@ jobs:
           build-args: |
             COMMIT_TAG=${{ github.sha }}
             BUILD_VERSION=${{ needs.semantic-release.outputs.new_release_version }}
-            BUILD_DATE=${{ steps.ts.outputs.now }}
+            SOURCE_DATE_EPOCH=${{ steps.ts.outputs.TIMESTAMP }}
           cache-from: type=gha,scope=${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
           provenance: false
@@ -103,13 +109,19 @@ jobs:
     needs: [semantic-release, build]
     if: needs.semantic-release.outputs.new_release_published == 'true'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Deterministic timestamp
+      - name: Commit timestamp
         id: ts
-        run: echo "now=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU (enable ARM emulation)
         uses: docker/setup-qemu-action@v3
@@ -135,6 +147,21 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
 
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            fallenbagel/jellyseerr
+            ghcr.io/${{ env.OWNER_LC }}/jellyseerr
+          tags: |
+            type=raw,value=${{ needs.semantic-release.outputs.new_release_version }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.semantic-release.outputs.new_release_version }}
+            org.opencontainers.image.created=${{ steps.ts.outputs.TIMESTAMP }}
+
       - name: Build & Push (multi-arch, single tag)
         uses: docker/build-push-action@v6
         with:
@@ -145,14 +172,9 @@ jobs:
           build-args: |
             COMMIT_TAG=${{ github.sha }}
             BUILD_VERSION=${{ needs.semantic-release.outputs.new_release_version }}
-            BUILD_DATE=${{ steps.ts.outputs.now }}
-          labels: |
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=${{ needs.semantic-release.outputs.new_release_version }}
-          tags: |
-            fallenbagel/jellyseerr:${{ needs.semantic-release.outputs.new_release_version }}
-            ghcr.io/${{ env.OWNER_LC }}/jellyseerr:${{ needs.semantic-release.outputs.new_release_version }}
+            SOURCE_DATE_EPOCH=${{ steps.ts.outputs.TIMESTAMP }}
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
           cache-from: |
             type=gha,scope=linux/amd64
             type=gha,scope=linux/arm64

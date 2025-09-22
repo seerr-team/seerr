@@ -10,7 +10,6 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-  packages: write
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -25,6 +24,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Pnpm Setup
         uses: pnpm/action-setup@v4
         with:
@@ -67,10 +68,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Deterministic timestamp
+      - name: Commit timestamp
         id: ts
-        run: echo "now=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -85,7 +88,7 @@ jobs:
           build-args: |
             COMMIT_TAG=${{ github.sha }}
             BUILD_VERSION=develop
-            BUILD_DATE=${{ steps.ts.outputs.now }}
+            SOURCE_DATE_EPOCH=${{ steps.ts.outputs.TIMESTAMP }}
           cache-from: type=gha,scope=${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
           provenance: false
@@ -94,13 +97,19 @@ jobs:
     name: Publish multi-arch image
     needs: build
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Deterministic timestamp
+      - name: Commit timestamp
         id: ts
-        run: echo "now=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU (enable ARM emulation)
         uses: docker/setup-qemu-action@v3
@@ -126,6 +135,17 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
 
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            fallenbagel/jellyseerr
+            ghcr.io/${{ env.OWNER_LC }}/jellyseerr
+          tags: |
+            type=raw,value=develop
+            type=sha
+
       - name: Build & Push (multi-arch, single tag)
         uses: docker/build-push-action@v6
         with:
@@ -136,16 +156,9 @@ jobs:
           build-args: |
             COMMIT_TAG=${{ github.sha }}
             BUILD_VERSION=develop
-            BUILD_DATE=${{ steps.ts.outputs.now }}
-          labels: |
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=develop
-          tags: |
-            fallenbagel/jellyseerr:develop
-            fallenbagel/jellyseerr:${{ github.sha }}
-            ghcr.io/${{ env.OWNER_LC }}/jellyseerr:develop
-            ghcr.io/${{ env.OWNER_LC }}/jellyseerr:${{ github.sha }}
+            SOURCE_DATE_EPOCH=${{ steps.ts.outputs.TIMESTAMP }}
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
           cache-from: |
             type=gha,scope=linux/amd64
             type=gha,scope=linux/arm64

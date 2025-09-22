@@ -119,8 +119,6 @@
     "@codedependant/semantic-release-docker": "^5.1.0",
     "@commitlint/cli": "17.4.4",
     "@commitlint/config-conventional": "17.4.4",
-    "@semantic-release/changelog": "6.0.3",
-    "@semantic-release/git": "10.0.1",
     "@tailwindcss/aspect-ratio": "0.4.2",
     "@tailwindcss/forms": "0.5.10",
     "@tailwindcss/typography": "0.5.16",
@@ -208,28 +206,12 @@
     "plugins": [
       "@semantic-release/commit-analyzer",
       "@semantic-release/release-notes-generator",
-      [
-        "@semantic-release/changelog",
-        {
-          "changelogFile": "CHANGELOG.md"
-        }
-      ],
       "@semantic-release/npm",
-      [
-        "@semantic-release/git",
-        {
-          "assets": [
-            "package.json",
-            "CHANGELOG.md"
-          ],
-          "message": "chore(release): ${nextRelease.version}"
-        }
-      ],
       [
         "@codedependant/semantic-release-docker",
         {
           "dockerArgs": {
-            "COMMIT_TAG": "$GIT_SHA"
+            "COMMIT_TAG": "${GITHUB_SHA}"
           },
           "dockerLogin": false,
           "dockerProject": "fallenbagel",
@@ -250,7 +232,7 @@
         "@codedependant/semantic-release-docker",
         {
           "dockerArgs": {
-            "COMMIT_TAG": "$GIT_SHA"
+            "COMMIT_TAG": "${GITHUB_SHA}"
           },
           "dockerLogin": false,
           "dockerRegistry": "ghcr.io",
