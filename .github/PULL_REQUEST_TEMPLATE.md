@@ -4,6 +4,7 @@
 
 #### To-Dos
 
+- [ ] Disclosed any use of AI (see our [policy](https://github.com/fallenbagel/jellyseerr/blob/docs-contributing/CONTRIBUTING.md#ai-assistance-notice))
 - [ ] Successful build `pnpm build`
 - [ ] Translation keys `pnpm i18n:extract`
 - [ ] Database migration (if required)
