@@ -16,7 +16,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
 
 concurrency:
   group: codeql-${{ github.ref }}
@@ -27,6 +26,9 @@ jobs:
     name: Analyze
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write    
     strategy:
       fail-fast: false
       matrix:
@@ -35,6 +37,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false        
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3

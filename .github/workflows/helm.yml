@@ -8,6 +8,9 @@ on:
       - 'charts/**'
       - '.github/workflows/release-charts.yml'      
 
+permissions:
+  contents: read
+
 concurrency:
   group: helm-charts
   cancel-in-progress: true
@@ -26,6 +29,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install helm
         uses: azure/setup-helm@v4
@@ -90,6 +94,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install helm
         uses: azure/setup-helm@v4

@@ -6,11 +6,13 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
   support:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write    
     steps:
       - uses: dessant/support-requests@v4
         with:

@@ -22,17 +22,20 @@ concurrency:
 jobs:
   lint-test:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Helm
-        uses: azure/setup-helm@v4.3.1
+        uses: azure/setup-helm@v4
 
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@v2.7.0
+        uses: helm/chart-testing-action@v2
 
       - name: Ensure documentation is updated
         uses: docker://jnorwood/helm-docs:v1.14.2
@@ -48,4 +51,4 @@ jobs:
 
       - name: Run chart-testing
         if: steps.list-changed.outputs.changed == 'true'
-        run: ct lint --target-branch ${{ github.event.repository.default_branch }} --validate-maintainers=false --check-version-increment=true
+        run: ct lint --target-branch ${{ github.event.repository.default_branch }} --validate-maintainers=false

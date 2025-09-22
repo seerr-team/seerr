@@ -8,6 +8,9 @@ on:
     branches: [develop]
     types: [opened, synchronize, reopened]
 
+permissions:
+  contents: read
+
 concurrency:
   group: merge-conflict-${{ github.ref }}
   cancel-in-progress: true
@@ -24,7 +27,7 @@ jobs:
       
     steps:
       - name: Apply label
-        uses: eps1lon/actions-label-merge-conflict@v3.0.3
+        uses: eps1lon/actions-label-merge-conflict@v3
         with:
           dirtyLabel: 'merge conflict'
           commentOnDirty: 'This pull request has merge conflicts. Please resolve the conflicts so the PR can be successfully reviewed and merged.'
