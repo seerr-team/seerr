@@ -21,6 +21,27 @@ import { In } from 'typeorm';
 
 const mediaRoutes = Router();
 
+mediaRoutes.get<{ mediatype: string; mediaid: string }>(
+  '/lookup/:mediatype/:mediaid',
+  async (req, res, next) => {
+    const mediaRepository = getRepository(Media);
+
+    try {
+      const mediaTypeParam = req.params.mediatype.toLowerCase();
+      const externalId = Number(req.params.mediaid);
+      const key = mediaTypeParam === 'book' ? 'hcId' : 'tmdbId';
+
+      const media = await mediaRepository.findOne({
+        where: { [key]: externalId, mediaType: mediaTypeParam as MediaType },
+      });
+
+      return res.status(200).json({ id: media?.id || null });
+    } catch (e) {
+      next({ status: 500, message: e.message });
+    }
+  }
+);
+
 mediaRoutes.get('/', async (req, res, next) => {
   const mediaRepository = getRepository(Media);
 
@@ -116,7 +137,7 @@ mediaRoutes.post<
 
     switch (req.params.status) {
       case 'available':
-        media[is4k ? 'status4k' : 'status'] = MediaStatus.AVAILABLE;
+        media[is4k ? 'statusAlt' : 'status'] = MediaStatus.AVAILABLE;
 
         if (media.mediaType === MediaType.TV) {
           const expectedSeasons = req.body.seasons ?? [];
@@ -260,12 +281,15 @@ mediaRoutes.delete(
         await (service as RadarrAPI).removeMovie(
           parseInt(
             is4k
-              ? (media.externalServiceSlug4k as string)
+              ? (media.externalServiceSlugAlt as string)
               : (media.externalServiceSlug as string)
           )
         );
       } else {
         const tmdb = new TheMovieDb();
+        if (!media.hasTmdbId()) {
+          throw new Error('TMDB ID is missing for this media!');
+        }
         const series = await tmdb.getTvShow({ tvId: media.tmdbId });
         const tvdbId = series.external_ids.tvdb_id ?? media.tvdbId;
         if (!tvdbId) {
@@ -340,12 +364,12 @@ mediaRoutes.get<{ id: string }, MediaWatchDataResponse>(
         };
       }
 
-      if (media.ratingKey4k) {
+      if (media.ratingKeyAlt) {
         const watchStats4k = await tautulli.getMediaWatchStats(
-          media.ratingKey4k
+          media.ratingKeyAlt
         );
         const watchUsers4k = await tautulli.getMediaWatchUsers(
-          media.ratingKey4k
+          media.ratingKeyAlt
         );
 
         const users = await userRepository

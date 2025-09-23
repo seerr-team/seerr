@@ -13,7 +13,7 @@ import { z } from 'zod';
 const blacklistRoutes = Router();
 
 export const blacklistAdd = z.object({
-  tmdbId: z.coerce.number(),
+  externalId: z.coerce.number(),
   mediaType: z.nativeEnum(MediaType),
   title: z.coerce.string().optional(),
   user: z.coerce.number(),
@@ -84,7 +84,7 @@ blacklistRoutes.get(
 );
 
 blacklistRoutes.get(
-  '/:id',
+  '/:mediaType/:id',
   isAuthenticated([Permission.MANAGE_BLACKLIST], {
     type: 'or',
   }),
@@ -93,7 +93,10 @@ blacklistRoutes.get(
       const blacklisteRepository = getRepository(Blacklist);
 
       const blacklistItem = await blacklisteRepository.findOneOrFail({
-        where: { tmdbId: Number(req.params.id) },
+        where: {
+          externalId: Number(req.params.id),
+          mediaType: req.params.mediaType as MediaType,
+        },
       });
 
       return res.status(200).send(blacklistItem);
@@ -134,7 +137,7 @@ blacklistRoutes.post(
             return next({ status: 412, message: 'Item already blacklisted' });
           default:
             logger.warn('Something wrong with data blacklist', {
-              tmdbId: req.body.tmdbId,
+              externalId: req.body.externalId,
               mediaType: req.body.mediaType,
               label: 'Blacklist',
             });
@@ -148,7 +151,7 @@ blacklistRoutes.post(
 );
 
 blacklistRoutes.delete(
-  '/:id',
+  '/:mediaType/:id',
   isAuthenticated([Permission.MANAGE_BLACKLIST], {
     type: 'or',
   }),
@@ -157,15 +160,23 @@ blacklistRoutes.delete(
       const blacklisteRepository = getRepository(Blacklist);
 
       const blacklistItem = await blacklisteRepository.findOneOrFail({
-        where: { tmdbId: Number(req.params.id) },
+        where: {
+          externalId: Number(req.params.id),
+          mediaType: req.params.mediaType as MediaType,
+        },
       });
 
       await blacklisteRepository.remove(blacklistItem);
 
       const mediaRepository = getRepository(Media);
 
+      const whereCondition =
+        req.params.mediaType === MediaType.BOOK
+          ? { hcId: Number(req.params.id) }
+          : { tmdbId: Number(req.params.id) };
+
       const mediaItem = await mediaRepository.findOneOrFail({
-        where: { tmdbId: Number(req.params.id) },
+        where: whereCondition,
       });
 
       await mediaRepository.remove(mediaItem);

@@ -158,6 +158,9 @@ class JellyfinScanner {
           return;
         }
 
+        if (!newMedia.hasTmdbId()) {
+          throw new Error('TMDB ID is missing for this media!');
+        }
         const existing = await this.getExisting(
           newMedia.tmdbId,
           MediaType.MOVIE
@@ -178,9 +181,9 @@ class JellyfinScanner {
           if (
             has4k &&
             this.enable4kMovie &&
-            existing.status4k !== MediaStatus.AVAILABLE
+            existing.statusAlt !== MediaStatus.AVAILABLE
           ) {
-            existing.status4k = MediaStatus.AVAILABLE;
+            existing.statusAlt = MediaStatus.AVAILABLE;
             changedExisting = true;
           }
 
@@ -200,9 +203,9 @@ class JellyfinScanner {
           if (
             has4k &&
             this.enable4kMovie &&
-            existing.jellyfinMediaId4k !== metadata.Id
+            existing.jellyfinMediaIdAlt !== metadata.Id
           ) {
-            existing.jellyfinMediaId4k = metadata.Id;
+            existing.jellyfinMediaIdAlt = metadata.Id;
             changedExisting = true;
           }
 
@@ -222,7 +225,7 @@ class JellyfinScanner {
             hasOtherResolution || (!this.enable4kMovie && has4k)
               ? MediaStatus.AVAILABLE
               : MediaStatus.UNKNOWN;
-          newMedia.status4k =
+          newMedia.statusAlt =
             has4k && this.enable4kMovie
               ? MediaStatus.AVAILABLE
               : MediaStatus.UNKNOWN;
@@ -232,7 +235,7 @@ class JellyfinScanner {
             hasOtherResolution || (!this.enable4kMovie && has4k)
               ? metadata.Id
               : null;
-          newMedia.jellyfinMediaId4k =
+          newMedia.jellyfinMediaIdAlt =
             has4k && this.enable4kMovie ? metadata.Id : null;
           await mediaRepository.save(newMedia);
           this.log(`Saved ${metadata.Name}`);
@@ -477,9 +480,9 @@ class JellyfinScanner {
                 media &&
                 total4k > 0 &&
                 this.enable4kShow &&
-                media.jellyfinMediaId4k !== Id
+                media.jellyfinMediaIdAlt !== Id
               ) {
-                media.jellyfinMediaId4k = Id;
+                media.jellyfinMediaIdAlt = Id;
               }
 
               if (existingSeason) {
@@ -598,7 +601,7 @@ class JellyfinScanner {
                 (season) => season.status !== MediaStatus.UNKNOWN
               ).length === 0;
             const shouldStayAvailable4k =
-              media.status4k === MediaStatus.AVAILABLE &&
+              media.statusAlt === MediaStatus.AVAILABLE &&
               newSeasons.filter(
                 (season) => season.status4k !== MediaStatus.UNKNOWN
               ).length === 0;
@@ -611,7 +614,7 @@ class JellyfinScanner {
                   )
                 ? MediaStatus.PARTIALLY_AVAILABLE
                 : MediaStatus.UNKNOWN;
-            media.status4k =
+            media.statusAlt =
               (isAll4kSeasons || shouldStayAvailable4k) && this.enable4kShow
                 ? MediaStatus.AVAILABLE
                 : this.enable4kShow &&
@@ -630,7 +633,7 @@ class JellyfinScanner {
               tvdbId: tvShow.external_ids.tvdb_id,
               mediaAddedAt: new Date(metadata.DateCreated ?? ''),
               jellyfinMediaId: isAllStandardSeasons ? Id : null,
-              jellyfinMediaId4k:
+              jellyfinMediaIdAlt:
                 isAll4kSeasons && this.enable4kShow ? Id : null,
               status: isAllStandardSeasons
                 ? MediaStatus.AVAILABLE
@@ -639,7 +642,7 @@ class JellyfinScanner {
                   )
                 ? MediaStatus.PARTIALLY_AVAILABLE
                 : MediaStatus.UNKNOWN,
-              status4k:
+              statusAlt:
                 isAll4kSeasons && this.enable4kShow
                   ? MediaStatus.AVAILABLE
                   : this.enable4kShow &&

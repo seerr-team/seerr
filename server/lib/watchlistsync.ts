@@ -118,7 +118,7 @@ class WatchlistSync {
               mediaItem.type === 'show' ? MediaType.TV : MediaType.MOVIE,
             seasons: mediaItem.type === 'show' ? 'all' : undefined,
             tvdbId: mediaItem.tvdbId,
-            is4k: false,
+            isAlt: false,
           },
           user,
           { isAutoRequest: true }

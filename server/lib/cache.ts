@@ -1,9 +1,11 @@
 import NodeCache from 'node-cache';
 
 export type AvailableCacheIds =
+  | 'hardcover'
   | 'tmdb'
   | 'radarr'
   | 'sonarr'
+  | 'readarr'
   | 'rt'
   | 'imdb'
   | 'github'
@@ -50,6 +52,7 @@ class CacheManager {
     }),
     radarr: new Cache('radarr', 'Radarr API'),
     sonarr: new Cache('sonarr', 'Sonarr API'),
+    readarr: new Cache('readarr', 'Readarr API'),
     rt: new Cache('rt', 'Rotten Tomatoes API', {
       stdTtl: 43200,
       checkPeriod: 60 * 30,
@@ -72,6 +75,10 @@ class CacheManager {
     }),
     plexwatchlist: new Cache('plexwatchlist', 'Plex Watchlist'),
     tvdb: new Cache('tvdb', 'The TVDB API', {
+      stdTtl: 21600,
+      checkPeriod: 60 * 30,
+    }),
+    hardcover: new Cache('hardcover', 'Hardcover API', {
       stdTtl: 21600,
       checkPeriod: 60 * 30,
     }),

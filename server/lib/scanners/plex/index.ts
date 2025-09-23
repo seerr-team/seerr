@@ -231,6 +231,9 @@ class PlexScanner
       (media) => media.videoResolution === '4k'
     );
 
+    if (!mediaIds.tmdbId) {
+      throw new Error('TMDB ID is missing for this media!');
+    }
     await this.processMovie(mediaIds.tmdbId, {
       is4k: has4k && this.enable4kMovie,
       mediaAddedAt: new Date(plexitem.addedAt * 1000),
@@ -367,7 +370,7 @@ class PlexScanner
       }
     }
 
-    if (mediaIds.tvdbId) {
+    if (mediaIds.tmdbId && mediaIds.tvdbId) {
       await this.processShow(
         mediaIds.tmdbId,
         mediaIds.tvdbId ?? tvShow.external_ids.tvdb_id,

@@ -206,14 +206,18 @@ export const mapTvDetails = (
   type: show.type,
   voteAverage: show.vote_average,
   voteCount: show.vote_count,
-  backdropPath: show.backdrop_path,
+  backdropPath: show.backdrop_path
+    ? `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${show.backdrop_path}`
+    : undefined,
   lastEpisodeToAir: show.last_episode_to_air
     ? mapEpisodeResult(show.last_episode_to_air)
     : undefined,
   nextEpisodeToAir: show.next_episode_to_air
     ? mapEpisodeResult(show.next_episode_to_air)
     : undefined,
-  posterPath: show.poster_path,
+  posterPath: show.poster_path
+    ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${show.poster_path}`
+    : undefined,
   credits: {
     cast: show.aggregate_credits.cast.map(mapAggregateCast),
     crew: show.credits.crew.map(mapCrew),

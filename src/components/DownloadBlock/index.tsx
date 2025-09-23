@@ -11,13 +11,13 @@ const messages = defineMessages('components.DownloadBlock', {
 
 interface DownloadBlockProps {
   downloadItem: DownloadingItem;
-  is4k?: boolean;
+  isAlt?: boolean;
   title?: string;
 }
 
 const DownloadBlock = ({
   downloadItem,
-  is4k = false,
+  isAlt = false,
   title,
 }: DownloadBlockProps) => {
   const intl = useIntl();
@@ -66,7 +66,7 @@ const DownloadBlock = ({
       </div>
       <div className="flex items-center justify-between text-xs">
         <span>
-          {is4k && (
+          {isAlt && (
             <Badge badgeType="warning" className="mr-2">
               4K
             </Badge>

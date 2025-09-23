@@ -124,11 +124,15 @@ export const mapMovieDetails = (
   video: movie.video,
   voteAverage: movie.vote_average,
   voteCount: movie.vote_count,
-  backdropPath: movie.backdrop_path,
+  backdropPath: movie.backdrop_path
+    ? `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${movie.backdrop_path}`
+    : undefined,
   homepage: movie.homepage,
   imdbId: movie.imdb_id,
   overview: movie.overview,
-  posterPath: movie.poster_path,
+  posterPath: movie.poster_path
+    ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${movie.poster_path}`
+    : undefined,
   runtime: movie.runtime,
   tagline: movie.tagline,
   credits: {

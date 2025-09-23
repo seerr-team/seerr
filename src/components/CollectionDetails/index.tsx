@@ -42,16 +42,18 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
   const [is4k, setIs4k] = useState(false);
 
   const returnCollectionDownloadItems = (data: Collection | undefined) => {
-    const [downloadStatus, downloadStatus4k] = [
+    const [downloadStatus, downloadStatusAlt] = [
       data?.parts.flatMap((item) =>
         item.mediaInfo?.downloadStatus ? item.mediaInfo?.downloadStatus : []
       ),
       data?.parts.flatMap((item) =>
-        item.mediaInfo?.downloadStatus4k ? item.mediaInfo?.downloadStatus4k : []
+        item.mediaInfo?.downloadStatusAlt
+          ? item.mediaInfo?.downloadStatusAlt
+          : []
       ),
     ];
 
-    return { downloadStatus, downloadStatus4k };
+    return { downloadStatus, downloadStatusAlt };
   };
 
   const {
@@ -72,7 +74,7 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
 
   const [downloadStatus, downloadStatus4k] = useMemo(() => {
     const downloadItems = returnCollectionDownloadItems(data);
-    return [downloadItems.downloadStatus, downloadItems.downloadStatus4k];
+    return [downloadItems.downloadStatus, downloadItems.downloadStatusAlt];
   }, [data]);
 
   const [titles, titles4k] = useMemo(() => {
@@ -81,7 +83,9 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
         .filter((media) => (media.mediaInfo?.downloadStatus ?? []).length > 0)
         .map((title) => title.title),
       data?.parts
-        .filter((media) => (media.mediaInfo?.downloadStatus4k ?? []).length > 0)
+        .filter(
+          (media) => (media.mediaInfo?.downloadStatusAlt ?? []).length > 0
+        )
         .map((title) => title.title),
     ];
   }, [data?.parts]);
@@ -116,14 +120,14 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
   if (
     data.parts.every(
       (part) =>
-        part.mediaInfo && part.mediaInfo.status4k === MediaStatus.AVAILABLE
+        part.mediaInfo && part.mediaInfo.statusAlt === MediaStatus.AVAILABLE
     )
   ) {
     collectionStatus4k = MediaStatus.AVAILABLE;
   } else if (
     data.parts.some(
       (part) =>
-        part.mediaInfo && part.mediaInfo.status4k === MediaStatus.AVAILABLE
+        part.mediaInfo && part.mediaInfo.statusAlt === MediaStatus.AVAILABLE
     )
   ) {
     collectionStatus4k = MediaStatus.PARTIALLY_AVAILABLE;
@@ -139,12 +143,12 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
 
   const hasRequestable4k =
     settings.currentSettings.movie4kEnabled &&
-    hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_MOVIE], {
+    hasPermission([Permission.REQUEST_ALT, Permission.REQUEST_4K_MOVIE], {
       type: 'or',
     }) &&
     data.parts.filter(
       (part) =>
-        !part.mediaInfo || part.mediaInfo.status4k === MediaStatus.UNKNOWN
+        !part.mediaInfo || part.mediaInfo.statusAlt === MediaStatus.UNKNOWN
     ).length > 0;
 
   const collectionAttributes: React.ReactNode[] = [];
@@ -216,10 +220,10 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
       )}
       <PageTitle title={data.name} />
       <RequestModal
-        tmdbId={data.id}
+        mediaId={data.id}
         show={requestModal}
         type="collection"
-        is4k={is4k}
+        isAlt={is4k}
         onComplete={() => {
           revalidate();
           setRequestModal(false);
@@ -255,7 +259,7 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
             />
             {settings.currentSettings.movie4kEnabled &&
               hasPermission(
-                [Permission.REQUEST_4K, Permission.REQUEST_4K_MOVIE],
+                [Permission.REQUEST_ALT, Permission.REQUEST_4K_MOVIE],
                 {
                   type: 'or',
                 }
@@ -264,10 +268,10 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
                   status={collectionStatus4k}
                   downloadItem={downloadStatus4k}
                   title={titles4k}
-                  is4k
+                  isAlt
                   inProgress={data.parts.some(
                     (part) =>
-                      (part.mediaInfo?.downloadStatus4k ?? []).length > 0
+                      (part.mediaInfo?.downloadStatusAlt ?? []).length > 0
                   )}
                 />
               )}
