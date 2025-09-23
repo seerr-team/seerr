@@ -183,8 +183,8 @@ jobs:
           VER="${{ needs.semantic-release.outputs.new_release_version }}"
           if [[ "$VER" != *"-"* ]]; then
             docker buildx imagetools create \
-              -t fallenbagel/jellyseerr:latest \
-              fallenbagel/jellyseerr:${VER}
+              -t ${{ github.repository }}:latest \
+              ${{ github.repository }}:${VER}
             docker buildx imagetools create \
               -t ghcr.io/${{ github.repository }}:latest \
               ghcr.io/${{ github.repository }}:${VER}

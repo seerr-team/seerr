@@ -14,13 +14,13 @@ permissions:
 concurrency:
   group: docs-pr-${{ github.ref }}
   cancel-in-progress: true
-  
+
 jobs:
   test-deploy:
     name: Test deployment
     runs-on: ubuntu-24.04
     permissions:
-      contents: read    
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,7 +57,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd gen-docs 
+          cd gen-docs
           pnpm install --frozen-lockfile
 
       - name: Build website

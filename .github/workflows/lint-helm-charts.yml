@@ -18,12 +18,12 @@ permissions:
 concurrency:
   group: charts-lint-${{ github.ref }}
   cancel-in-progress: true
-  
+
 jobs:
   lint-test:
     runs-on: ubuntu-24.04
     permissions:
-      contents: read    
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4

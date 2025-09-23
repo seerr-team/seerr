@@ -4,28 +4,29 @@ on:
   issues:
     types: [labeled, unlabeled, reopened]
 
-permissions:
-  contents: read
+permissions: {}
+
+concurrency:
+  group: support-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   support:
+    if: github.event.label.name == 'support'
     runs-on: ubuntu-24.04
     permissions:
-      contents: read
-      issues: write    
+      issues: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      NUMBER: ${{ github.event.issue.number }}
     steps:
-      - uses: dessant/support-requests@v4
-        with:
-          github-token: ${{ github.token }}
-          support-label: 'support'
-          issue-comment: >
+      - run: gh issue close "$NUMBER" -r "off-topic -c "$BODY"
+        env:
+          BODY: >
             :wave: @{issue-author}, we use the issue tracker exclusively
             for bug reports and feature requests. However, this issue appears
             to be a support request. Please use our support channels
             to get help with Jellyseerr.
 
             - [Discord](https://discord.gg/ckbvBtDJgC)
-
-          close-issue: true
-          lock-issue: true
-          issue-lock-reason: 'off-topic'

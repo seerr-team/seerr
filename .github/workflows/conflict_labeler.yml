@@ -3,7 +3,7 @@ name: Merge Conflict Labeler
 on:
   push:
     branches: [develop]
-  
+
   pull_request_target:
     branches: [develop]
     types: [opened, synchronize, reopened]
@@ -20,11 +20,9 @@ jobs:
     name: Labeling
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    if: ${{ github.repository == 'fallenbagel/jellyseerr' }}
     permissions:
       contents: read
       pull-requests: write
-      
     steps:
       - name: Apply label
         uses: eps1lon/actions-label-merge-conflict@v3

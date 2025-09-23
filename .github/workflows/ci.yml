@@ -178,17 +178,14 @@ jobs:
     if: always() && github.event_name != 'pull_request' && !contains(github.event.head_commit.message, '[skip ci]')
     runs-on: ubuntu-24.04
     steps:
-      - name: Get Build Job Status
-        uses: technote-space/workflow-conclusion-action@v3
-
       - name: Combine Job Status
         id: status
         run: |
           failures=(neutral, skipped, timed_out, action_required)
-          if [[ ${array[@]} =~ $WORKFLOW_CONCLUSION ]]; then
+          if [[ ${array[@]} =~ ${{ needs.publish.result }} ]]; then
             echo "status=failure" >> $GITHUB_OUTPUT
           else
-            echo "status=$WORKFLOW_CONCLUSION" >> $GITHUB_OUTPUT
+            echo "status=${{ needs.publish.result }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Post Status to Discord
