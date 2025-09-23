@@ -189,8 +189,8 @@ jobs:
               -t fallenbagel/jellyseerr:latest \
               fallenbagel/jellyseerr:${VER}
             docker buildx imagetools create \
-              -t ghcr.io/${{ env.OWNER_LC }}/jellyseerr:latest \
-              ghcr.io/${{ env.OWNER_LC }}/jellyseerr:${VER}
+              -t ghcr.io/${{ github.repository }}:latest \
+              ghcr.io/${{ github.repository }}:${VER}
           fi
 
   discord:
