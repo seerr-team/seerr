@@ -10,7 +10,7 @@ on:
     branches: ['develop']
     paths-ignore:
       - '**/*.md'
-      - 'docs/**'    
+      - 'docs/**'
   schedule:
     - cron: '50 7 * * 5'
 
@@ -28,7 +28,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      security-events: write    
+      security-events: write
     strategy:
       fail-fast: false
       matrix:
@@ -38,7 +38,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          persist-credentials: false        
+          persist-credentials: false
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3

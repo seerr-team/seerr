@@ -6,7 +6,7 @@ on:
       - develop
     paths:
       - 'charts/**'
-      - '.github/workflows/release-charts.yml'      
+      - '.github/workflows/release-charts.yml'
 
 permissions:
   contents: read
