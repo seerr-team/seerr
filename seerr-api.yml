@@ -51,9 +51,13 @@ components:
     Blacklist:
       type: object
       properties:
-        tmdbId:
+        externalId:
           type: number
           example: 1
+        mediaType:
+          type: string
+          enum: [movie, tv, book, collection]
+          example: movie
         title:
           type: string
         media:
@@ -695,6 +699,73 @@ components:
         - is4k
         - enableSeasonFolders
         - isDefault
+    ReadarrSettings:
+      type: object
+      properties:
+        id:
+          type: number
+          example: 0
+          readOnly: true
+        name:
+          type: string
+          example: 'Readarr Main'
+        hostname:
+          type: string
+          example: '127.0.0.1'
+        port:
+          type: number
+          example: 7878
+        apiKey:
+          type: string
+          example: 'exampleapikey'
+        useSsl:
+          type: boolean
+          example: false
+        baseUrl:
+          type: string
+        activeProfileId:
+          type: number
+          example: 1
+        activeProfileName:
+          type: string
+          example: ebook/Spoken
+        activeMetadataProfileId:
+          type: number
+          example: 1
+        activeMetadataProfileName:
+          type: string
+          example: Standard
+        activeDirectory:
+          type: string
+          example: '/books'
+        isAudio:
+          type: boolean
+          example: false
+        isDefault:
+          type: boolean
+          example: false
+        externalUrl:
+          type: string
+          example: http://readarr.example.com
+        syncEnabled:
+          type: boolean
+          example: false
+        preventSearch:
+          type: boolean
+          example: false
+      required:
+        - name
+        - hostname
+        - port
+        - apiKey
+        - useSsl
+        - activeProfileId
+        - activeProfileName
+        - activeMetadataProfileId
+        - activeMetadataProfileName
+        - activeDirectory
+        - isDefault
+        - isAudio
     ServarrTag:
       type: object
       properties:
@@ -2123,6 +2194,195 @@ components:
             - certification: 'PG'
               meaning: 'Some material may not be suitable for children under 10.'
               order: 2
+
+    BookDetails:
+      type: object
+      properties:
+        id:
+          type: number
+        title:
+          type: string
+        description:
+          type: string
+        releaseDate:
+          type: string
+        image:
+          type: object
+          properties:
+            url:
+              type: string
+        mediaInfo:
+          $ref: '#/components/schemas/MediaInfo'
+        author:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorSummary'
+        pages:
+          type: number
+        tags:
+          $ref: '#/components/schemas/BookTags'
+        headline:
+          type: string
+        subtitle:
+          type: string
+        series:
+          type: array
+          items:
+            type: object
+            properties:
+              position:
+                type: number
+              series_id:
+                type: number
+              series:
+                $ref: '#/components/schemas/SeriesSummary'
+
+    BookResult:
+      type: object
+      properties:
+        id:
+          type: number
+        mediaType:
+          type: string
+          enum: [book]
+        title:
+          type: string
+        overview:
+          type: string
+        releaseDate:
+          type: string
+        posterPath:
+          type: string
+          nullable: true
+        position:
+          type: number
+          nullable: true
+        mediaInfo:
+          $ref: '#/components/schemas/MediaInfo'
+
+    AuthorDetails:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        bio:
+          type: string
+        born_date:
+          type: string
+        books_count:
+          type: number
+        posterPath:
+          type: string
+          nullable: true
+        books:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookResult'
+
+    AuthorResult:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        image:
+          type: string
+          nullable: true
+        mediaType:
+          type: string
+          enum: [author]
+
+    AuthorSummary:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        born_date:
+          type: string
+          nullable: true
+        image:
+          type: object
+          nullable: true
+          properties:
+            url:
+              type: string
+
+    Series:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        overview:
+          type: string
+          nullable: true
+        posterPath:
+          type: string
+          nullable: true
+        backdropPath:
+          type: string
+          nullable: true
+        books:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookResult'
+
+    SeriesSummary:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+
+    BookTags:
+      type: object
+      properties:
+        Genre:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookTag'
+        Mood:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookTag'
+        'Content Warning':
+          type: array
+          items:
+            $ref: '#/components/schemas/BookTag'
+        Tag:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookTag'
+
+    BookTag:
+      type: object
+      properties:
+        tag:
+          type: string
+        tagSlug:
+          type: string
+        category:
+          type: string
+        categorySlug:
+          type: string
+        spoilerRatio:
+          type: number
+        count:
+          type: number
+
   securitySchemes:
     cookieAuth:
       type: apiKey
@@ -2943,6 +3203,173 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SonarrSettings'
+  /settings/readarr:
+    get:
+      summary: Get Readarr settings
+      description: Returns all Readarr settings in a JSON array.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: 'Values were returned'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReadarrSettings'
+    post:
+      summary: Create Readarr instance
+      description: Creates a new Readarr instance from the request body.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReadarrSettings'
+      responses:
+        '201':
+          description: 'New Readarr instance created'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadarrSettings'
+  /settings/readarr/test:
+    post:
+      summary: Test Readarr configuration
+      description: Tests if the Readarr configuration is valid. Returns profiles and root folders on success.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                hostname:
+                  type: string
+                  example: '127.0.0.1'
+                port:
+                  type: number
+                  example: 7878
+                apiKey:
+                  type: string
+                  example: yourapikey
+                useSsl:
+                  type: boolean
+                  example: false
+                baseUrl:
+                  type: string
+              required:
+                - hostname
+                - port
+                - apiKey
+                - useSsl
+      responses:
+        '200':
+          description: Succesfully connected to Readarr instance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profiles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceProfile'
+  /settings/readarr/{readarrId}:
+    put:
+      summary: Update Readarr instance
+      description: Updates an existing Readarr instance with the provided values.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: readarrId
+          required: true
+          schema:
+            type: integer
+          description: Readarr instance ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReadarrSettings'
+      responses:
+        '200':
+          description: 'Readarr instance updated'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadarrSettings'
+    delete:
+      summary: Delete Readarr instance
+      description: Deletes an existing Readarr instance based on the readarrId parameter.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: readarrId
+          required: true
+          schema:
+            type: integer
+          description: Readarr instance ID
+      responses:
+        '200':
+          description: 'Readarr instance deleted'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadarrSettings'
+  /settings/readarr/{readarrId}/profiles:
+    get:
+      summary: Get available Readarr profiles
+      description: Returns a list of profiles available on the Readarr server instance in a JSON array.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: readarrId
+          required: true
+          schema:
+            type: integer
+          description: Readarr instance ID
+      responses:
+        '200':
+          description: Returned list of profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceProfile'
+  /settings/readarr/{readarrId}/metadataprofiles:
+    get:
+      summary: Get available Readarr metadata profiles
+      description: Returns a list of metadata profiles available on the Readarr server instance in a JSON array.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: readarrId
+          required: true
+          schema:
+            type: integer
+          description: Readarr instance ID
+      responses:
+        '200':
+          description: Returned list of metadata profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceProfile'
+
   /settings/public:
     get:
       summary: Get public settings
@@ -4603,15 +5030,23 @@ paths:
           description: Item succesfully blacklisted
         '412':
           description: Item has already been blacklisted
-  /blacklist/{tmdbId}:
+  /blacklist/{mediaType}/{id}:
     get:
       summary: Get media from blacklist
       tags:
         - blacklist
       parameters:
         - in: path
-          name: tmdbId
-          description: tmdbId ID
+          name: mediaType
+          description: Media type (movie, tv, book, collection)
+          required: true
+          example: 'movie'
+          schema:
+            type: string
+            enum: [movie, tv, book, collection]
+        - in: path
+          name: id
+          description: External ID (tmdbId for movies/tv, hcId for books)
           required: true
           example: '1'
           schema:
@@ -4625,8 +5060,16 @@ paths:
         - blacklist
       parameters:
         - in: path
-          name: tmdbId
-          description: tmdbId ID
+          name: mediaType
+          description: Media type (movie, tv, book, collection)
+          required: true
+          example: 'movie'
+          schema:
+            type: string
+            enum: [movie, tv, book, collection]
+        - in: path
+          name: id
+          description: External ID (tmdbId for movies/tv, hcId for books)
           required: true
           example: '1'
           schema:
@@ -5061,6 +5504,12 @@ paths:
           schema:
             type: string
             example: en
+        - in: query
+          name: type
+          required: true
+          schema:
+            type: string
+            example: 'Book'
       responses:
         '200':
           description: Results
@@ -5165,6 +5614,42 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Company'
+
+  /discover/books:
+    get:
+      summary: Discover books
+      description: Returns a list of books in a JSON object.
+      tags:
+        - search
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BookResult'
+
   /discover/movies:
     get:
       summary: Discover movies
@@ -6075,7 +6560,7 @@ paths:
           name: mediaType
           schema:
             type: string
-            enum: [movie, tv, all]
+            enum: [movie, tv, book, all]
             nullable: true
             default: all
       responses:
@@ -6109,7 +6594,7 @@ paths:
               properties:
                 mediaType:
                   type: string
-                  enum: [movie, tv]
+                  enum: [movie, tv, book]
                   example: movie
                 mediaId:
                   type: number
@@ -6125,12 +6610,14 @@ paths:
                         minimum: 0
                     - type: string
                       enum: [all]
-                is4k:
+                isAlt:
                   type: boolean
                   example: false
                 serverId:
                   type: number
                 profileId:
+                  type: number
+                metadataProfileId:
                   type: number
                 rootFolder:
                   type: string
@@ -6225,7 +6712,7 @@ paths:
               properties:
                 mediaType:
                   type: string
-                  enum: [movie, tv]
+                  enum: [movie, tv, book]
                 seasons:
                   type: array
                   items:
@@ -6237,6 +6724,8 @@ paths:
                 serverId:
                   type: number
                 profileId:
+                  type: number
+                metadataProfileId:
                   type: number
                 rootFolder:
                   type: string
@@ -6325,6 +6814,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MediaRequest'
+  /book/{bookId}:
+    get:
+      summary: Get book details
+      description: Returns full book details in a JSON object.
+      tags:
+        - books
+      parameters:
+        - in: path
+          name: bookId
+          required: true
+          schema:
+            type: number
+            example: 337401
+      responses:
+        '200':
+          description: Book details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDetails'
   /movie/{movieId}:
     get:
       summary: Get movie details
@@ -6721,6 +7230,26 @@ paths:
                   criticsRating:
                     type: string
                     enum: ['Rotten', 'Fresh']
+  /author/{authorId}:
+    get:
+      summary: Get author details
+      description: Returns author details based on provided authorId in a JSON object.
+      tags:
+        - person
+      parameters:
+        - in: path
+          name: authorId
+          required: true
+          schema:
+            type: number
+            example: 287
+      responses:
+        '200':
+          description: Returned author
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorDetails'
   /person/{personId}:
     get:
       summary: Get person details
@@ -6877,6 +7406,42 @@ paths:
       responses:
         '204':
           description: Successfully removed media item
+  /media/lookup/{mediaType}/{mediaId}:
+    get:
+      summary: Lookup internal media ID by external ID
+      description: |
+        Returns the internal media ID for a given external identifier (TMDB ID for movies/TV, Hardcover ID for books).
+      tags:
+        - media
+      parameters:
+        - in: path
+          name: mediaType
+          description: Type of media (movie, tv, or book)
+          required: true
+          schema:
+            type: string
+            enum: [movie, tv, book]
+        - in: path
+          name: mediaId
+          description: External ID (TMDB ID for movies/TV, Hardcover ID for books)
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Internal media ID lookup result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                    nullable: true
+                    description: Internal media ID, or null if not found
+                    example: 123
+        '500':
+          description: Internal server error
   /media/{mediaId}/{status}:
     post:
       summary: Update media status
@@ -6991,6 +7556,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
+  /series/{seriesId}:
+    get:
+      summary: Get series details
+      description: Returns full series details in a JSON object.
+      tags:
+        - series
+      parameters:
+        - in: path
+          name: seriesId
+          required: true
+          schema:
+            type: number
+            example: 537982
+      responses:
+        '200':
+          description: Series details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Series'
   /service/radarr:
     get:
       summary: Get non-sensitive Radarr server list
@@ -7093,6 +7678,47 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SonarrSeries'
+  /service/readarr:
+    get:
+      summary: Get non-sensitive Readarr server list
+      description: Returns a list of Readarr server IDs and names in a JSON object.
+      tags:
+        - service
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReadarrSettings'
+  /service/readarr/{readarrId}:
+    get:
+      summary: Get Readarr server quality profiles, metadata profiles and root folders
+      description: Returns a Readarr server's quality profile, metadata profiles and root folder details in a JSON object.
+      tags:
+        - service
+      parameters:
+        - in: path
+          name: readarrId
+          required: true
+          schema:
+            type: number
+            example: 0
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  server:
+                    $ref: '#/components/schemas/ReadarrSettings'
+                  profiles:
+                    $ref: '#/components/schemas/ServiceProfile'
+
   /regions:
     get:
       summary: Regions supported by TMDB
