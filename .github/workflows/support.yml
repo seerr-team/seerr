@@ -21,7 +21,8 @@ jobs:
       GH_REPO: ${{ github.repository }}
       NUMBER: ${{ github.event.issue.number }}
     steps:
-      - run: gh issue close "$NUMBER" -r "off-topic -c "$BODY"
+      - name: Comment and close issue
+        run: gh issue close "$NUMBER" -r "off-topic" -c "$BODY"
         env:
           BODY: >
             :wave: @{issue-author}, we use the issue tracker exclusively
@@ -30,3 +31,6 @@ jobs:
             to get help with Jellyseerr.
 
             - [Discord](https://discord.gg/ckbvBtDJgC)
+
+      - name: Lock issue
+        run: gh issue lock "$NUMBER" -r "off_topic"
