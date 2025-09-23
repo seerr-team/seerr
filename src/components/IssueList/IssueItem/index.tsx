@@ -10,6 +10,7 @@ import { EyeIcon } from '@heroicons/react/24/solid';
 import { IssueStatus } from '@server/constants/issue';
 import { MediaType } from '@server/constants/media';
 import type Issue from '@server/entity/Issue';
+import type { BookDetails } from '@server/models/Book';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
 import Link from 'next/link';
@@ -30,8 +31,16 @@ const messages = defineMessages('components.IssueList.IssueItem', {
   descriptionpreview: 'Issue Description',
 });
 
-const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
-  return (movie as MovieDetails).title !== undefined;
+const isMovie = (
+  media: MovieDetails | TvDetails | BookDetails
+): media is MovieDetails => {
+  return (media as MovieDetails).title !== undefined;
+};
+
+const isBook = (
+  media: MovieDetails | TvDetails | BookDetails
+): media is BookDetails => {
+  return (media as BookDetails).author !== undefined;
 };
 
 interface IssueItemProps {
@@ -47,8 +56,10 @@ const IssueItem = ({ issue }: IssueItemProps) => {
   const url =
     issue.media.mediaType === 'movie'
       ? `/api/v1/movie/${issue.media.tmdbId}`
+      : issue.media.mediaType === 'book'
+      ? `/api/v1/book/${issue.media.hcId}`
       : `/api/v1/tv/${issue.media.tmdbId}`;
-  const { data: title, error } = useSWR<MovieDetails | TvDetails>(
+  const { data: title, error } = useSWR<MovieDetails | TvDetails | BookDetails>(
     inView ? url : null
   );
 
@@ -121,8 +132,8 @@ const IssueItem = ({ issue }: IssueItemProps) => {
       {title.backdropPath && (
         <div className="absolute inset-0 z-0 w-full bg-cover bg-center xl:w-2/3">
           <CachedImage
-            type="tmdb"
-            src={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`}
+            type={isBook(title) ? 'hardcover' : 'tmdb'}
+            src={title.backdropPath}
             alt=""
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             fill
@@ -142,15 +153,17 @@ const IssueItem = ({ issue }: IssueItemProps) => {
             href={
               issue.media.mediaType === MediaType.MOVIE
                 ? `/movie/${issue.media.tmdbId}`
+                : issue.media.mediaType === MediaType.BOOK
+                ? `/book/${issue.media.hcId}`
                 : `/tv/${issue.media.tmdbId}`
             }
             className="relative h-auto w-12 flex-shrink-0 scale-100 transform-gpu overflow-hidden rounded-md transition duration-300 hover:scale-105"
           >
             <CachedImage
-              type="tmdb"
+              type={isBook(title) ? 'hardcover' : 'tmdb'}
               src={
                 title.posterPath
-                  ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
+                  ? title.posterPath
                   : '/images/jellyseerr_poster_not_found.png'
               }
               alt=""
@@ -162,20 +175,28 @@ const IssueItem = ({ issue }: IssueItemProps) => {
           </Link>
           <div className="flex flex-col justify-center overflow-hidden pl-2 xl:pl-4">
             <div className="pt-0.5 text-xs text-white sm:pt-1">
-              {(isMovie(title) ? title.releaseDate : title.firstAirDate)?.slice(
-                0,
-                4
-              )}
+              {(isBook(title)
+                ? title.releaseDate
+                : isMovie(title)
+                ? title.releaseDate
+                : title.firstAirDate
+              )?.slice(0, 4)}
             </div>
             <Link
               href={
                 issue.media.mediaType === MediaType.MOVIE
                   ? `/movie/${issue.media.tmdbId}`
+                  : issue.media.mediaType === MediaType.BOOK
+                  ? `/book/${issue.media.hcId}`
                   : `/tv/${issue.media.tmdbId}`
               }
               className="mr-2 min-w-0 truncate text-lg font-bold text-white hover:underline xl:text-xl"
             >
-              {isMovie(title) ? title.title : title.name}
+              {isBook(title)
+                ? title.title
+                : isMovie(title)
+                ? title.title
+                : title.name}
             </Link>
             {description && (
               <div className="mt-1 max-w-full">
