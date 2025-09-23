@@ -1,5 +1,3 @@
-replicaCount: 1
-
 image:
   registry: ghcr.io
   repository: fallenbagel/jellyseerr
@@ -11,10 +9,6 @@ image:
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
-
-# -- Deployment strategy
-strategy:
-  type: Recreate
 
 # Liveness / Readiness / Startup Probes
 probes:
@@ -115,14 +109,14 @@ resources: {}
 #   cpu: 100m
 #   memory: 128Mi
 
-# -- Additional volumes on the output Deployment definition.
+# -- Additional volumes on the output StatefulSet definition.
 volumes: []
 # - name: foo
 #   secret:
 #     secretName: mysecret
 #     optional: false
 
-# -- Additional volumeMounts on the output Deployment definition.
+# -- Additional volumeMounts on the output StatefulSet definition.
 volumeMounts: []
 # - name: foo
 #   mountPath: "/etc/foo"

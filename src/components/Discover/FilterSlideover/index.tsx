@@ -33,6 +33,7 @@ const messages = defineMessages('components.Discover.FilterSlideover', {
   studio: 'Studio',
   genres: 'Genres',
   keywords: 'Keywords',
+  excludeKeywords: 'Exclude Keywords',
   originalLanguage: 'Original Language',
   runtimeText: '{minValue}-{maxValue} minute runtime',
   ratingText: 'Ratings between {minValue} and {maxValue}',
@@ -179,6 +180,19 @@ const FilterSlideover = ({
           isMulti
           onChange={(value) => {
             updateQueryParams('keywords', value?.map((v) => v.value).join(','));
+          }}
+        />
+        <span className="text-lg font-semibold">
+          {intl.formatMessage(messages.excludeKeywords)}
+        </span>
+        <KeywordSelector
+          defaultValue={currentFilters.excludeKeywords}
+          isMulti
+          onChange={(value) => {
+            updateQueryParams(
+              'excludeKeywords',
+              value?.map((v) => v.value).join(',')
+            );
           }}
         />
         <span className="text-lg font-semibold">

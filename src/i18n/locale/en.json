@@ -78,6 +78,7 @@
   "components.Discover.FilterSlideover.activefilters": "{count, plural, one {# Active Filter} other {# Active Filters}}",
   "components.Discover.FilterSlideover.certification": "Content Rating",
   "components.Discover.FilterSlideover.clearfilters": "Clear Active Filters",
+  "components.Discover.FilterSlideover.excludeKeywords": "Exclude Keywords",
   "components.Discover.FilterSlideover.filters": "Filters",
   "components.Discover.FilterSlideover.firstAirDate": "First Air Date",
   "components.Discover.FilterSlideover.from": "From",
