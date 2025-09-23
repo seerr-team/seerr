@@ -100,7 +100,11 @@ class GotifyAgent
     }
 
     if (applicationUrl && payload.media) {
-      const actionUrl = `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`;
+      const actionUrl = `${applicationUrl}/${payload.media.mediaType}/${
+        payload.media.mediaType === 'book'
+          ? payload.media.hcId
+          : payload.media.tmdbId
+      }`;
       const displayUrl =
         actionUrl.length > 40 ? `${actionUrl.slice(0, 41)}...` : actionUrl;
       message += `\n\n**Open in ${applicationTitle}:** [${displayUrl}](${actionUrl})  `;

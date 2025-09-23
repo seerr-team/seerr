@@ -78,7 +78,11 @@ class NtfyAgent
 
     let click;
     if (applicationUrl && payload.media) {
-      click = `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`;
+      click = `${applicationUrl}/${payload.media.mediaType}/${
+        payload.media.mediaType === 'book'
+          ? payload.media.hcId
+          : payload.media.tmdbId
+      }`;
     }
 
     return {
