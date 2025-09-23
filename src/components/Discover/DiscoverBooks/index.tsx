@@ -1,27 +1,24 @@
 import Header from '@app/components/Common/Header';
 import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
+import type { FilterOptions } from '@app/components/Discover/constants';
+import { prepareFilterValues } from '@app/components/Discover/constants';
 import useDiscover from '@app/hooks/useDiscover';
 import Error from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
-import type {
-  AuthorResult,
-  BookResult,
-  MovieResult,
-  PersonResult,
-  TvResult,
-} from '@server/models/Search';
+import type { BookResult } from '@server/models/Search';
 import { useRouter } from 'next/router';
 import { useIntl } from 'react-intl';
 
-const messages = defineMessages('components.Search', {
-  search: 'Search',
-  searchresults: 'Search Results',
+const messages = defineMessages('components.Discover.DiscoverBooks', {
+  discoverbooks: 'Books',
 });
 
-const Search = () => {
+const DiscoverBooks = () => {
   const intl = useIntl();
   const router = useRouter();
+
+  const preparedFilters = prepareFilterValues(router.query);
 
   const {
     isLoadingInitialData,
@@ -31,26 +28,22 @@ const Search = () => {
     titles,
     fetchMore,
     error,
-  } = useDiscover<
-    MovieResult | TvResult | PersonResult | BookResult | AuthorResult
-  >(
-    `/api/v1/search`,
-    {
-      query: router.query.query,
-      type: router.query.type,
-    },
-    { hideAvailable: false, hideBlacklisted: false }
+  } = useDiscover<BookResult, unknown, FilterOptions>(
+    '/api/v1/discover/books',
+    preparedFilters
   );
 
   if (error) {
     return <Error statusCode={500} />;
   }
 
+  const title = intl.formatMessage(messages.discoverbooks);
+
   return (
     <>
-      <PageTitle title={intl.formatMessage(messages.search)} />
-      <div className="mt-1 mb-5">
-        <Header>{intl.formatMessage(messages.searchresults)}</Header>
+      <PageTitle title={title} />
+      <div className="mb-4 flex flex-col justify-between lg:flex-row lg:items-end">
+        <Header>{title}</Header>
       </div>
       <ListView
         items={titles}
@@ -65,4 +58,4 @@ const Search = () => {
   );
 };
 
-export default Search;
+export default DiscoverBooks;

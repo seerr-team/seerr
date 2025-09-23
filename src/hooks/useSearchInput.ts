@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
+import { isBookRoute } from '@app/utils/mediaTypeRoutes';
 import type { Nullable } from '@app/utils/typeHelpers';
 import { useRouter } from 'next/router';
 import type { Dispatch, SetStateAction } from 'react';
@@ -46,7 +47,10 @@ const useSearchInput = (): SearchObject => {
         router
           .push({
             pathname: '/search',
-            query: { query: debouncedValue },
+            query: {
+              query: debouncedValue,
+              ...(isBookRoute(router.pathname) ? { type: 'book' } : {}),
+            },
           })
           .then(() => window.scrollTo(0, 0));
       }

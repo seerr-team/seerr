@@ -7,6 +7,7 @@ interface ImageFaderProps extends HTMLAttributes<HTMLDivElement> {
   rotationSpeed?: number;
   isDarker?: boolean;
   forceOptimize?: boolean;
+  cache?: 'tmdb' | 'avatar' | 'hardcover' | 'tvdb';
 }
 
 const DEFAULT_ROTATION_SPEED = 6000;
@@ -14,6 +15,7 @@ const DEFAULT_ROTATION_SPEED = 6000;
 const ImageFader: ForwardRefRenderFunction<HTMLDivElement, ImageFaderProps> = (
   {
     backgroundImages,
+    cache = 'tmdb',
     rotationSpeed = DEFAULT_ROTATION_SPEED,
     isDarker,
     forceOptimize,
@@ -61,7 +63,7 @@ const ImageFader: ForwardRefRenderFunction<HTMLDivElement, ImageFaderProps> = (
           {...props}
         >
           <CachedImage
-            type="tmdb"
+            type={cache}
             className="absolute inset-0 h-full w-full"
             alt=""
             src={imageUrl}

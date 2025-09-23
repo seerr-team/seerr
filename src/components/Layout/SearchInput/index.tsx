@@ -1,16 +1,24 @@
 import useSearchInput from '@app/hooks/useSearchInput';
 import defineMessages from '@app/utils/defineMessages';
+import { isBookRoute } from '@app/utils/mediaTypeRoutes';
 import { XCircleIcon } from '@heroicons/react/24/outline';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
+import { MediaType } from '@server/constants/media';
+import { useRouter } from 'next/router';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.Layout.SearchInput', {
   searchPlaceholder: 'Search Movies & TV',
+  searchPlaceholderBooks: 'Search Books',
 });
 
 const SearchInput = () => {
   const intl = useIntl();
   const { searchValue, setSearchValue, setIsOpen, clear } = useSearchInput();
+  const router = useRouter();
+  const isBooks = router.pathname.startsWith('/search')
+    ? router.query.type === MediaType.BOOK
+    : isBookRoute(router.pathname);
   return (
     <div className="flex flex-1">
       <div className="flex w-full">
@@ -25,7 +33,11 @@ const SearchInput = () => {
             id="search_field"
             style={{ paddingRight: searchValue.length > 0 ? '1.75rem' : '' }}
             className="block w-full rounded-full border border-gray-600 bg-gray-900 bg-opacity-80 py-2 pl-10 text-white placeholder-gray-300 hover:border-gray-500 focus:border-gray-500 focus:bg-opacity-100 focus:placeholder-gray-400 focus:outline-none focus:ring-0 sm:text-base"
-            placeholder={intl.formatMessage(messages.searchPlaceholder)}
+            placeholder={
+              isBooks
+                ? intl.formatMessage(messages.searchPlaceholderBooks)
+                : intl.formatMessage(messages.searchPlaceholder)
+            }
             type="search"
             autoComplete="off"
             value={searchValue}

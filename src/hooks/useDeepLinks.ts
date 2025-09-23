@@ -4,19 +4,19 @@ import { useEffect, useState } from 'react';
 
 interface useDeepLinksProps {
   mediaUrl?: string;
-  mediaUrl4k?: string;
+  mediaUrlAlt?: string;
   iOSPlexUrl?: string;
-  iOSPlexUrl4k?: string;
+  iOSPlexUrlAlt?: string;
 }
 
 const useDeepLinks = ({
   mediaUrl,
-  mediaUrl4k,
+  mediaUrlAlt,
   iOSPlexUrl,
-  iOSPlexUrl4k,
+  iOSPlexUrlAlt,
 }: useDeepLinksProps) => {
   const [returnedMediaUrl, setReturnedMediaUrl] = useState(mediaUrl);
-  const [returnedMediaUrl4k, setReturnedMediaUrl4k] = useState(mediaUrl4k);
+  const [returnedMediaUrlAlt, setReturnedMediaUrlAlt] = useState(mediaUrlAlt);
   const settings = useSettings();
 
   useEffect(() => {
@@ -26,20 +26,20 @@ const useDeepLinks = ({
         (navigator.userAgent.includes('Mac') && navigator.maxTouchPoints > 1))
     ) {
       setReturnedMediaUrl(iOSPlexUrl);
-      setReturnedMediaUrl4k(iOSPlexUrl4k);
+      setReturnedMediaUrlAlt(iOSPlexUrlAlt);
     } else {
       setReturnedMediaUrl(mediaUrl);
-      setReturnedMediaUrl4k(mediaUrl4k);
+      setReturnedMediaUrlAlt(mediaUrlAlt);
     }
   }, [
     iOSPlexUrl,
-    iOSPlexUrl4k,
+    iOSPlexUrlAlt,
     mediaUrl,
-    mediaUrl4k,
+    mediaUrlAlt,
     settings.currentSettings.mediaServerType,
   ]);
 
-  return { mediaUrl: returnedMediaUrl, mediaUrl4k: returnedMediaUrl4k };
+  return { mediaUrl: returnedMediaUrl, mediaUrlAlt: returnedMediaUrlAlt };
 };
 
 export default useDeepLinks;
