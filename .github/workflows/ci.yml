@@ -8,6 +8,7 @@ on:
     branches:
       - develop
   workflow_dispatch:
+
 permissions:
   contents: read
 
@@ -26,14 +27,22 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
+      - name: Get PNPM version from package.json
+        id: pnpm-version
+        shell: bash
+        run: echo "pnpm_version=$(node -p 'require(`./package.json`).packageManager.split(\"@\")[1]')" >> $GITHUB_OUTPUT
+
       - name: Pnpm Setup
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ steps.pnpm-version.outputs.pnpm_version }}
+
       - name: Get pnpm store directory
         shell: sh
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
@@ -41,14 +50,18 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
+
       - name: Install dependencies
         env:
           HUSKY: 0
         run: pnpm install
+
       - name: Lint
         run: pnpm lint
+
       - name: Formatting
         run: pnpm format:check
+
       - name: Build
         run: pnpm build
 
@@ -130,21 +143,18 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Lower-case owner
-        run: echo "OWNER_LC=${OWNER,,}" >> "$GITHUB_ENV"
-        env:
-          OWNER: ${{ github.repository_owner }}
-
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
-            fallenbagel/jellyseerr
-            ghcr.io/${{ env.OWNER_LC }}/jellyseerr
+            ${{ github.repository }}
+            ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=develop
             type=sha
+          labels: |
+            org.opencontainers.image.created=${{ steps.ts.outputs.TIMESTAMP }}
 
       - name: Build & Push (multi-arch, single tag)
         uses: docker/build-push-action@v6
@@ -173,6 +183,7 @@ jobs:
     steps:
       - name: Get Build Job Status
         uses: technote-space/workflow-conclusion-action@v3
+
       - name: Combine Job Status
         id: status
         run: |
@@ -182,6 +193,7 @@ jobs:
           else
             echo "status=$WORKFLOW_CONCLUSION" >> $GITHUB_OUTPUT
           fi
+
       - name: Post Status to Discord
         uses: sarisia/actions-status-discord@v1
         with:

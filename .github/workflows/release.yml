@@ -29,12 +29,18 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: package.json
+          cache: 'pnpm'
+
+      - name: Get PNPM version from package.json
+        id: pnpm-version
+        shell: bash
+        run: echo "pnpm_version=$(node -p 'require(`./package.json`).packageManager.split(\"@\")[1]')" >> $GITHUB_OUTPUT
 
       - name: Pnpm Setup
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ steps.pnpm-version.outputs.pnpm_version }}
 
       - name: Get pnpm store directory
         shell: sh
@@ -54,11 +60,12 @@ jobs:
 
       - name: Release
         id: release
-        uses: cycjimmy/semantic-release-action@v4
+        uses: cycjimmy/semantic-release-action@v5
         with:
           extra_plugins: |
-            @semantic-release/git
-            @semantic-release/changelog
+            @semantic-release/git@10
+            @semantic-release/changelog@6
+            @codedependant/semantic-release-docker@5
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
@@ -142,24 +149,16 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Lower-case owner
-        run: echo "OWNER_LC=${OWNER,,}" >> "$GITHUB_ENV"
-        env:
-          OWNER: ${{ github.repository_owner }}
-
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
-            fallenbagel/jellyseerr
-            ghcr.io/${{ env.OWNER_LC }}/jellyseerr
+            ${{ github.repository }}
+            ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=${{ needs.semantic-release.outputs.new_release_version }}
           labels: |
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=${{ needs.semantic-release.outputs.new_release_version }}
             org.opencontainers.image.created=${{ steps.ts.outputs.TIMESTAMP }}
 
       - name: Build & Push (multi-arch, single tag)
@@ -202,6 +201,7 @@ jobs:
     steps:
       - name: Get Build Job Status
         uses: technote-space/workflow-conclusion-action@v3
+
       - name: Combine Job Status
         id: status
         run: |
@@ -211,6 +211,7 @@ jobs:
           else
             echo "status=$WORKFLOW_CONCLUSION" >> $GITHUB_OUTPUT
           fi
+
       - name: Post Status to Discord
         uses: sarisia/actions-status-discord@v1
         with:

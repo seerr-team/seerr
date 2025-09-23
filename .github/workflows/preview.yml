@@ -101,11 +101,6 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Lower-case owner
-        run: echo "OWNER_LC=${OWNER,,}" >> "$GITHUB_ENV"
-        env:
-          OWNER: ${{ github.repository_owner }}
-
       - name: Derive preview version from tag
         id: ver
         shell: bash
@@ -121,13 +116,11 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            fallenbagel/jellyseerr
-            ghcr.io/${{ env.OWNER_LC }}/jellyseerr
+            ${{ github.repository }}
+            ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=preview-${{ steps.ver.outputs.version }}
           labels: |
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=preview-${{ steps.ver.outputs.version }}
             org.opencontainers.image.created=${{ steps.ts.outputs.TIMESTAMP }}
 
