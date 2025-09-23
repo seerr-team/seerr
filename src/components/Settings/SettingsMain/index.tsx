@@ -31,6 +31,7 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   generalsettingsDescription:
     'Configure global and default settings for Seerr.',
   apikey: 'API Key',
+  hardcoverapikey: 'Hardcover API Key',
   apikeyCopied: 'Copied API key to clipboard.',
   applicationTitle: 'Application Title',
   applicationurl: 'Application URL',
@@ -161,6 +162,7 @@ const SettingsMain = () => {
       <div className="section">
         <Formik
           initialValues={{
+            hardcoverapikey: data?.hardcoverapikey,
             applicationTitle: data?.applicationTitle,
             applicationUrl: data?.applicationUrl,
             hideAvailable: data?.hideAvailable,
@@ -181,6 +183,7 @@ const SettingsMain = () => {
           onSubmit={async (values) => {
             try {
               await axios.post('/api/v1/settings/main', {
+                hardcoverapikey: values.hardcoverapikey,
                 applicationTitle: values.applicationTitle,
                 applicationUrl: values.applicationUrl,
                 hideAvailable: values.hideAvailable,
@@ -232,39 +235,61 @@ const SettingsMain = () => {
             return (
               <Form className="section" data-testid="settings-main-form">
                 {userHasPermission(Permission.ADMIN) && (
-                  <div className="form-row">
-                    <label htmlFor="apiKey" className="text-label">
-                      {intl.formatMessage(messages.apikey)}
-                    </label>
-                    <div className="form-input-area">
-                      <div className="form-input-field">
-                        <SensitiveInput
-                          type="text"
-                          id="apiKey"
-                          className="rounded-l-only"
-                          value={data?.apiKey}
-                          readOnly
-                        />
-                        <CopyButton
-                          textToCopy={data?.apiKey ?? ''}
-                          toastMessage={intl.formatMessage(
-                            messages.apikeyCopied
-                          )}
-                          key={data?.apiKey}
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            regenerate();
-                          }}
-                          className="input-action"
-                          type="button"
-                        >
-                          <ArrowPathIcon />
-                        </button>
+                  <>
+                    <div className="form-row">
+                      <label htmlFor="apiKey" className="text-label">
+                        {intl.formatMessage(messages.apikey)}
+                      </label>
+                      <div className="form-input-area">
+                        <div className="form-input-field">
+                          <SensitiveInput
+                            type="text"
+                            id="apiKey"
+                            className="rounded-l-only"
+                            value={data?.apiKey}
+                            readOnly
+                          />
+                          <CopyButton
+                            textToCopy={data?.apiKey ?? ''}
+                            toastMessage={intl.formatMessage(
+                              messages.apikeyCopied
+                            )}
+                            key={data?.apiKey}
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              regenerate();
+                            }}
+                            className="input-action"
+                            type="button"
+                          >
+                            <ArrowPathIcon />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                    <div className="form-row">
+                      <label htmlFor="hardcoverapikey" className="text-label">
+                        {intl.formatMessage(messages.hardcoverapikey)}
+                      </label>
+                      <div className="form-input-area">
+                        <div className="form-input-field">
+                          <SensitiveInput
+                            as="field"
+                            type="text"
+                            id="hardcoverapikey"
+                            name="hardcoverapikey"
+                            className="rounded-l-only"
+                          />
+                          <CopyButton
+                            textToCopy={values?.hardcoverapikey ?? ''}
+                            key={values?.hardcoverapikey}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 )}
                 <div className="form-row">
                   <label htmlFor="applicationTitle" className="text-label">

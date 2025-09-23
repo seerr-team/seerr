@@ -40,9 +40,11 @@ const PermissionOption = ({
     Permission.AUTO_APPROVE,
     Permission.AUTO_APPROVE_MOVIE,
     Permission.AUTO_APPROVE_TV,
-    Permission.AUTO_APPROVE_4K,
+    Permission.AUTO_APPROVE_ALT,
     Permission.AUTO_APPROVE_4K_MOVIE,
     Permission.AUTO_APPROVE_4K_TV,
+    Permission.AUTO_APPROVE_BOOK,
+    Permission.AUTO_APPROVE_AUDIO_BOOK,
   ];
 
   let disabled = false;
@@ -73,6 +75,64 @@ const PermissionOption = ({
     disabled = true;
   }
 
+  // Parent permission cleanup
+  if (
+    option.permission === Permission.REQUEST_ALT ||
+    option.permission === Permission.AUTO_APPROVE_ALT
+  ) {
+    // Check if parent permission is set but not all services are enabled
+    if (
+      hasPermission(option.permission, currentPermission) &&
+      (!settings.currentSettings.movie4kEnabled ||
+        !settings.currentSettings.series4kEnabled ||
+        !settings.currentSettings.bookAudioEnabled)
+    ) {
+      let newPermission = currentPermission - option.permission;
+
+      if (option.permission === Permission.REQUEST_ALT) {
+        if (
+          settings.currentSettings.movie4kEnabled &&
+          !hasPermission(Permission.REQUEST_4K_MOVIE, newPermission)
+        ) {
+          newPermission = newPermission + Permission.REQUEST_4K_MOVIE;
+        }
+        if (
+          settings.currentSettings.series4kEnabled &&
+          !hasPermission(Permission.REQUEST_4K_TV, newPermission)
+        ) {
+          newPermission = newPermission + Permission.REQUEST_4K_TV;
+        }
+        if (
+          settings.currentSettings.bookAudioEnabled &&
+          !hasPermission(Permission.REQUEST_AUDIO_BOOK, newPermission)
+        ) {
+          newPermission = newPermission + Permission.REQUEST_AUDIO_BOOK;
+        }
+      } else {
+        if (
+          settings.currentSettings.movie4kEnabled &&
+          !hasPermission(Permission.AUTO_APPROVE_4K_MOVIE, newPermission)
+        ) {
+          newPermission = newPermission + Permission.AUTO_APPROVE_4K_MOVIE;
+        }
+        if (
+          settings.currentSettings.series4kEnabled &&
+          !hasPermission(Permission.AUTO_APPROVE_4K_TV, newPermission)
+        ) {
+          newPermission = newPermission + Permission.AUTO_APPROVE_4K_TV;
+        }
+        if (
+          settings.currentSettings.bookAudioEnabled &&
+          !hasPermission(Permission.AUTO_APPROVE_AUDIO_BOOK, newPermission)
+        ) {
+          newPermission = newPermission + Permission.AUTO_APPROVE_AUDIO_BOOK;
+        }
+      }
+
+      onUpdate(newPermission);
+    }
+  }
+
   if (
     // Some permissions are dependent on others; check requirements are fulfilled
     (option.requires &&
@@ -82,10 +142,11 @@ const PermissionOption = ({
         })
       )) ||
     // Request 4K and Auto-Approve 4K require both 4K movie & 4K series requests to be enabled
-    ((option.permission === Permission.REQUEST_4K ||
-      option.permission === Permission.AUTO_APPROVE_4K) &&
+    ((option.permission === Permission.REQUEST_ALT ||
+      option.permission === Permission.AUTO_APPROVE_ALT) &&
       (!settings.currentSettings.movie4kEnabled ||
-        !settings.currentSettings.series4kEnabled)) ||
+        !settings.currentSettings.series4kEnabled ||
+        !settings.currentSettings.bookAudioEnabled)) ||
     // Request 4K Movie and Auto-Approve 4K Movie require 4K movie requests to be enabled
     ((option.permission === Permission.REQUEST_4K_MOVIE ||
       option.permission === Permission.AUTO_APPROVE_4K_MOVIE) &&
@@ -93,7 +154,11 @@ const PermissionOption = ({
     // Request 4K Series and Auto-Approve 4K Series require 4K series requests to be enabled
     ((option.permission === Permission.REQUEST_4K_TV ||
       option.permission === Permission.AUTO_APPROVE_4K_TV) &&
-      !settings.currentSettings.series4kEnabled)
+      !settings.currentSettings.series4kEnabled) ||
+    // Request Audiobooks and Auto-Approve Audiobooks require audiobook requests to be enabled
+    ((option.permission === Permission.REQUEST_AUDIO_BOOK ||
+      option.permission === Permission.AUTO_APPROVE_AUDIO_BOOK) &&
+      !settings.currentSettings.bookAudioEnabled)
   ) {
     disabled = true;
     checked = false;

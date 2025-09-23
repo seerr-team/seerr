@@ -1,4 +1,5 @@
 import RadarrAPI from '@server/api/servarr/radarr';
+import ReadarrAPI from '@server/api/servarr/readarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import TheMovieDb from '@server/api/themoviedb';
 import type {
@@ -210,6 +211,78 @@ serviceRoutes.get<{ tmdbId: string }>(
         message: 'Something went wrong trying to fetch series information',
       });
     }
+  }
+);
+
+serviceRoutes.get('/readarr', async (req, res) => {
+  const settings = getSettings();
+
+  const filteredReadarrServers: ServiceCommonServer[] = settings.readarr.map(
+    (readarr) => ({
+      id: readarr.id,
+      name: readarr.name,
+      isAlt: readarr.isAudio,
+      isDefault: readarr.isDefault,
+      activeDirectory: readarr.activeDirectory,
+      activeProfileId: readarr.activeProfileId,
+      activeMetadataProfileId: readarr.activeMetadataProfileId,
+      activeTags: readarr.tags ?? [],
+    })
+  );
+
+  return res.status(200).json(filteredReadarrServers);
+});
+
+serviceRoutes.get<{ readarrId: string }>(
+  '/readarr/:readarrId',
+  async (req, res, next) => {
+    const settings = getSettings();
+
+    const readarrSettings = settings.readarr.find(
+      (readarr) => readarr.id === Number(req.params.readarrId)
+    );
+
+    if (!readarrSettings) {
+      return next({
+        status: 404,
+        message: 'Readarr server with provided ID does not exist.',
+      });
+    }
+
+    const readarr = new ReadarrAPI({
+      apiKey: readarrSettings.apiKey,
+      url: ReadarrAPI.buildUrl(readarrSettings, '/api/v1'),
+    });
+
+    const profiles = await readarr.getProfiles();
+    const rootFolders = await readarr.getRootFolders();
+    const tags = await readarr.getTags();
+    const metadataProfiles = await readarr.getMetadataProfiles();
+
+    return res.status(200).json({
+      server: {
+        id: readarrSettings.id,
+        name: readarrSettings.name,
+        isAlt: readarrSettings.isAudio,
+        isDefault: readarrSettings.isDefault,
+        activeDirectory: readarrSettings.activeDirectory,
+        activeProfileId: readarrSettings.activeProfileId,
+        activeMetadataProfileId: readarrSettings.activeMetadataProfileId,
+        activeTags: readarrSettings.tags,
+      },
+      profiles: profiles.map((profile) => ({
+        id: profile.id,
+        name: profile.name,
+      })),
+      rootFolders: rootFolders.map((folder) => ({
+        id: folder.id,
+        freeSpace: folder.freeSpace,
+        path: folder.path,
+        totalSpace: folder.totalSpace,
+      })),
+      metadataProfiles,
+      tags,
+    } as ServiceCommonServerWithDetails);
   }
 );
 

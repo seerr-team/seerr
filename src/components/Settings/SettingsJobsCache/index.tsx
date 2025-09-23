@@ -84,6 +84,7 @@ const messages: { [messageName: string]: MessageDescriptor } = defineMessages(
     'jellyfin-recently-added-scan': 'Jellyfin Recently Added Scan',
     'availability-sync': 'Media Availability Sync',
     'radarr-scan': 'Radarr Scan',
+    'readarr-scan': 'Readarr Scan',
     'sonarr-scan': 'Sonarr Scan',
     'download-sync': 'Download Sync',
     'download-sync-reset': 'Download Sync Reset',
@@ -739,6 +740,17 @@ const SettingsJobs = () => {
               </Table.TD>
               <Table.TD>
                 {formatBytes(cacheData?.imageCache.avatar.size ?? 0)}
+              </Table.TD>
+            </tr>
+            <tr>
+              <Table.TD>Hardcover</Table.TD>
+              <Table.TD>
+                {intl.formatNumber(
+                  cacheData?.imageCache.hardcover.imageCount ?? 0
+                )}
+              </Table.TD>
+              <Table.TD>
+                {formatBytes(cacheData?.imageCache.hardcover.size ?? 0)}
               </Table.TD>
             </tr>
           </Table.TBody>

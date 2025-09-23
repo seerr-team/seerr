@@ -1,10 +1,11 @@
 import type { QualityProfile, RootFolder, Tag } from '@server/api/servarr/base';
+import type { MetadataProfile } from '@server/api/servarr/readarr';
 import type { LanguageProfile } from '@server/api/servarr/sonarr';
 
 export interface ServiceCommonServer {
   id: number;
   name: string;
-  is4k: boolean;
+  isAlt?: boolean;
   isDefault: boolean;
   activeProfileId: number;
   activeDirectory: string;
@@ -12,6 +13,7 @@ export interface ServiceCommonServer {
   activeAnimeProfileId?: number;
   activeAnimeDirectory?: string;
   activeAnimeLanguageProfileId?: number;
+  activeMetadataProfileId?: number;
   activeTags: number[];
   activeAnimeTags?: number[];
 }
@@ -21,5 +23,6 @@ export interface ServiceCommonServerWithDetails {
   profiles: QualityProfile[];
   rootFolders: Partial<RootFolder>[];
   languageProfiles?: LanguageProfile[];
+  metadataProfiles?: MetadataProfile[];
   tags: Tag[];
 }

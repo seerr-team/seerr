@@ -42,6 +42,7 @@ import { URL } from 'url';
 import metadataRoutes from './metadata';
 import notificationRoutes from './notifications';
 import radarrRoutes from './radarr';
+import readarrRoutes from './readarr';
 import sonarrRoutes from './sonarr';
 
 const settingsRoutes = Router();
@@ -49,6 +50,7 @@ const settingsRoutes = Router();
 settingsRoutes.use('/notifications', notificationRoutes);
 settingsRoutes.use('/radarr', radarrRoutes);
 settingsRoutes.use('/sonarr', sonarrRoutes);
+settingsRoutes.use('/readarr', readarrRoutes);
 settingsRoutes.use('/discover', discoverSettingRoutes);
 settingsRoutes.use('/metadatas', metadataRoutes);
 
@@ -75,6 +77,14 @@ settingsRoutes.get('/main', (req, res, next) => {
 
 settingsRoutes.post('/main', async (req, res) => {
   const settings = getSettings();
+
+  if (
+    req.body.hardcoverapikey &&
+    req.body.hardcoverapikey !== settings.main.hardcoverapikey
+  ) {
+    const hardcoverCache = cacheManager.getCache('hardcover');
+    hardcoverCache.flush();
+  }
 
   settings.main = merge(settings.main, req.body);
   await settings.save();
@@ -758,6 +768,7 @@ settingsRoutes.get('/cache', async (_req, res) => {
 
   const tmdbImageCache = await ImageProxy.getImageStats('tmdb');
   const avatarImageCache = await ImageProxy.getImageStats('avatar');
+  const hardcoverImageCache = await ImageProxy.getImageStats('hardcover');
 
   const stats: DnsStats | undefined = dnsCache?.getStats();
   const entries: DnsEntries | undefined = dnsCache?.getCacheEntries();
@@ -767,6 +778,7 @@ settingsRoutes.get('/cache', async (_req, res) => {
     imageCache: {
       tmdb: tmdbImageCache,
       avatar: avatarImageCache,
+      hardcover: hardcoverImageCache,
     },
     dnsCache: {
       stats,
