@@ -1,4 +1,4 @@
-import { MediaStatus, type MediaType } from '@server/constants/media';
+import { MediaStatus, MediaType } from '@server/constants/media';
 import dataSource from '@server/datasource';
 import Media from '@server/entity/Media';
 import { User } from '@server/entity/User';
@@ -18,7 +18,7 @@ import {
 import type { ZodNumber, ZodOptional, ZodString } from 'zod';
 
 @Entity()
-@Unique(['tmdbId'])
+@Unique(['externalId', 'mediaType'])
 export class Blacklist implements BlacklistItem {
   @PrimaryGeneratedColumn()
   public id: number;
@@ -31,7 +31,7 @@ export class Blacklist implements BlacklistItem {
 
   @Column()
   @Index()
-  public tmdbId: number;
+  public externalId: number;
 
   @ManyToOne(() => User, (user) => user.id, {
     eager: true,
@@ -61,7 +61,7 @@ export class Blacklist implements BlacklistItem {
       blacklistRequest: {
         mediaType: MediaType;
         title?: ZodOptional<ZodString>['_output'];
-        tmdbId: ZodNumber['_output'];
+        externalId: ZodNumber['_output'];
         blacklistedTags?: string;
       };
     },
@@ -73,10 +73,14 @@ export class Blacklist implements BlacklistItem {
     });
 
     const mediaRepository = em.getRepository(Media);
+
+    const whereCondition =
+      blacklistRequest.mediaType === MediaType.BOOK
+        ? { hcId: blacklistRequest.externalId }
+        : { tmdbId: blacklistRequest.externalId };
+
     let media = await mediaRepository.findOne({
-      where: {
-        tmdbId: blacklistRequest.tmdbId,
-      },
+      where: whereCondition,
     });
 
     const blacklistRepository = em.getRepository(this);
@@ -85,18 +89,20 @@ export class Blacklist implements BlacklistItem {
 
     if (!media) {
       media = new Media({
-        tmdbId: blacklistRequest.tmdbId,
         status: MediaStatus.BLACKLISTED,
-        status4k: MediaStatus.BLACKLISTED,
+        statusAlt: MediaStatus.BLACKLISTED,
         mediaType: blacklistRequest.mediaType,
         blacklist: Promise.resolve(blacklist),
+        ...(blacklistRequest.mediaType === MediaType.BOOK
+          ? { hcId: blacklistRequest.externalId }
+          : { tmdbId: blacklistRequest.externalId }),
       });
 
       await mediaRepository.save(media);
     } else {
       media.blacklist = Promise.resolve(blacklist);
       media.status = MediaStatus.BLACKLISTED;
-      media.status4k = MediaStatus.BLACKLISTED;
+      media.statusAlt = MediaStatus.BLACKLISTED;
 
       await mediaRepository.save(media);
     }
