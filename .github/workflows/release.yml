@@ -1,6 +1,14 @@
-name: Jellyseer Release
+name: Jellyseerr Release
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   semantic-release:
@@ -8,38 +16,37 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       HUSKY: 0
+    outputs:
+      new_release_published: ${{ steps.release.outputs.new_release_published }}
+      new_release_version: ${{ steps.release.outputs.new_release_version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GH_TOKEN }}
+          node-version-file: package.json
+          cache: 'pnpm'
+
+      - name: Get PNPM version from package.json
+        id: pnpm-version
+        shell: bash
+        run: echo "pnpm_version=$(node -p 'require(`./package.json`).packageManager.split(\"@\")[1]')" >> $GITHUB_OUTPUT
+
       - name: Pnpm Setup
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ steps.pnpm-version.outputs.pnpm_version }}
+
       - name: Get pnpm store directory
         shell: sh
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
@@ -47,77 +54,154 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
+
       - name: Install dependencies
         run: pnpm install
+
       - name: Release
+        id: release
+        uses: cycjimmy/semantic-release-action@v5
+        with:
+          extra_plugins: |
+            @semantic-release/git@10
+            @semantic-release/changelog@6
+            @codedependant/semantic-release-docker@5
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: npx semantic-release
 
-  # build-snap:
-  #   name: Build Snap Package (${{ matrix.architecture }})
-  #   needs: semantic-release
-  #   runs-on: ubuntu-22.04
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       architecture:
-  #         - amd64
-  #         - arm64
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #     - name: Switch to main branch
-  #       run: git checkout main
-  #     - name: Pull latest changes
-  #       run: git pull
-  #     - name: Prepare
-  #       id: prepare
-  #       run: |
-  #         git fetch --prune --tags
-  #         if [[ $GITHUB_REF == refs/tags/* || $GITHUB_REF == refs/heads/master ]]; then
-  #           echo "RELEASE=stable" >> $GITHUB_OUTPUT
-  #         else
-  #           echo "RELEASE=edge" >> $GITHUB_OUTPUT
-  #         fi
-  #     - name: Set Up QEMU
-  #       uses: docker/setup-qemu-action@v3
-  #       with:
-  #         image: tonistiigi/binfmt@sha256:df15403e06a03c2f461c1f7938b171fda34a5849eb63a70e2a2109ed5a778bde
-  #     - name: Build Snap Package
-  #       uses: diddlesnaps/snapcraft-multiarch-action@v1
-  #       id: build
-  #       with:
-  #         architecture: ${{ matrix.architecture }}
-  #     - name: Upload Snap Package
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: jellyseerr-snap-package-${{ matrix.architecture }}
-  #         path: ${{ steps.build.outputs.snap }}
-  #     - name: Review Snap Package
-  #       uses: diddlesnaps/snapcraft-review-tools-action@v1
-  #       with:
-  #         snap: ${{ steps.build.outputs.snap }}
-  #     - name: Publish Snap Package
-  #       uses: snapcore/action-publish@v1
-  #       env:
-  #         SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAP_LOGIN }}
-  #       with:
-  #         snap: ${{ steps.build.outputs.snap }}
-  #         release: ${{ steps.prepare.outputs.RELEASE }}
+  build:
+    name: Build (per-arch, native runners)
+    needs: semantic-release
+    if: needs.semantic-release.outputs.new_release_published == 'true'
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux/amd64
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Commit timestamp
+        id: ts
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Warm cache (no push) — ${{ matrix.platform }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ matrix.platform }}
+          push: false
+          build-args: |
+            COMMIT_TAG=${{ github.sha }}
+            BUILD_VERSION=${{ needs.semantic-release.outputs.new_release_version }}
+            SOURCE_DATE_EPOCH=${{ steps.ts.outputs.TIMESTAMP }}
+          cache-from: type=gha,scope=${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
+          provenance: false
+
+  publish:
+    name: Publish multi-arch image
+    needs: [semantic-release, build]
+    if: needs.semantic-release.outputs.new_release_published == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Commit timestamp
+        id: ts
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU (enable ARM emulation)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ github.repository }}
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ needs.semantic-release.outputs.new_release_version }}
+          labels: |
+            org.opencontainers.image.created=${{ steps.ts.outputs.TIMESTAMP }}
+
+      - name: Build & Push (multi-arch, single tag)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            COMMIT_TAG=${{ github.sha }}
+            BUILD_VERSION=${{ needs.semantic-release.outputs.new_release_version }}
+            SOURCE_DATE_EPOCH=${{ steps.ts.outputs.TIMESTAMP }}
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: |
+            type=gha,scope=linux/amd64
+            type=gha,scope=linux/arm64
+          cache-to: type=gha,mode=max
+          provenance: false
+
+      - name: Also tag :latest (non-pre-release only)
+        shell: bash
+        run: |
+          VER="${{ needs.semantic-release.outputs.new_release_version }}"
+          if [[ "$VER" != *"-"* ]]; then
+            docker buildx imagetools create \
+              -t fallenbagel/jellyseerr:latest \
+              fallenbagel/jellyseerr:${VER}
+            docker buildx imagetools create \
+              -t ghcr.io/${{ env.OWNER_LC }}/jellyseerr:latest \
+              ghcr.io/${{ env.OWNER_LC }}/jellyseerr:${VER}
+          fi
 
   discord:
     name: Send Discord Notification
-    needs: semantic-release
+    needs: publish
     if: always()
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Get Build Job Status
         uses: technote-space/workflow-conclusion-action@v3
+
       - name: Combine Job Status
         id: status
         run: |
@@ -127,6 +211,7 @@ jobs:
           else
             echo "status=$WORKFLOW_CONCLUSION" >> $GITHUB_OUTPUT
           fi
+
       - name: Post Status to Discord
         uses: sarisia/actions-status-discord@v1
         with:
