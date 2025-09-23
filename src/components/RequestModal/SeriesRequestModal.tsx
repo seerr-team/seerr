@@ -8,11 +8,15 @@ import QuotaDisplay from '@app/components/RequestModal/QuotaDisplay';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
+import {
+  MediaRequestStatus,
+  MediaStatus,
+  MediaType,
+} from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
 import { Permission } from '@server/lib/permissions';
-import type { Collection } from '@server/models/Collection';
+import type { Series } from '@server/models/Series';
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -22,36 +26,36 @@ import useSWR, { mutate } from 'swr';
 const messages = defineMessages('components.RequestModal', {
   requestadmin: 'This request will be approved automatically.',
   requestSuccess: '<strong>{title}</strong> requested successfully!',
-  requestcollectiontitle: 'Request Collection',
-  requestcollection4ktitle: 'Request Collection in 4K',
+  requestseriestitle: 'Request Series',
+  requestseriesaudiotitle: 'Request Series in Audiobook',
   requesterror: 'Something went wrong while submitting the request.',
-  selectmovies: 'Select Movie(s)',
-  requestmovies: 'Request {count} {count, plural, one {Movie} other {Movies}}',
-  requestmovies4k:
-    'Request {count} {count, plural, one {Movie} other {Movies}} in 4K',
+  selectbooks: 'Select Book(s)',
+  requestbooks: 'Request {count} {count, plural, one {Book} other {Books}}',
+  requestbooksaudio:
+    'Request {count} {count, plural, one {Book} other {Books}} in Audiobook',
 });
 
 interface RequestModalProps extends React.HTMLAttributes<HTMLDivElement> {
-  tmdbId?: number;
-  is4k?: boolean;
+  seriesId?: number;
+  isAudio?: boolean;
   onCancel?: () => void;
   onComplete?: (newStatus: MediaStatus) => void;
   onUpdating?: (isUpdating: boolean) => void;
 }
 
-const CollectionRequestModal = ({
+const SeriesRequestModal = ({
   onCancel,
   onComplete,
-  tmdbId,
+  seriesId,
   onUpdating,
-  is4k = false,
+  isAudio = false,
 }: RequestModalProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [requestOverrides, setRequestOverrides] =
     useState<RequestOverrides | null>(null);
   const [selectedParts, setSelectedParts] = useState<number[]>([]);
   const { addToast } = useToasts();
-  const { data, error } = useSWR<Collection>(`/api/v1/collection/${tmdbId}`, {
+  const { data, error } = useSWR<Series>(`/api/v1/series/${seriesId}`, {
     revalidateOnMount: true,
   });
   const intl = useIntl();
@@ -64,81 +68,81 @@ const CollectionRequestModal = ({
   );
 
   const currentlyRemaining =
-    (quota?.movie.remaining ?? 0) - selectedParts.length;
+    (quota?.book.remaining ?? 0) - selectedParts.length;
 
   const getAllParts = (): number[] => {
-    return (data?.parts ?? [])
-      .filter((part) => part.mediaInfo?.status !== MediaStatus.BLACKLISTED)
-      .map((part) => part.id);
+    return (data?.books ?? [])
+      .filter((book) => book.mediaInfo?.status !== MediaStatus.BLACKLISTED)
+      .map((book) => book.id);
   };
 
   const getAllRequestedParts = (): number[] => {
-    const requestedParts = (data?.parts ?? []).reduce(
-      (requestedParts, part) => {
+    const requestedParts = (data?.books ?? []).reduce(
+      (requestedParts, book) => {
         return [
           ...requestedParts,
-          ...(part.mediaInfo?.requests ?? [])
+          ...(book.mediaInfo?.requests ?? [])
             .filter(
               (request) =>
-                request.isAlt === is4k &&
+                request.isAlt === isAudio &&
                 request.status !== MediaRequestStatus.DECLINED &&
                 request.status !== MediaRequestStatus.COMPLETED
             )
-            .map((part) => part.id),
+            .map((book) => book.id),
         ];
       },
       [] as number[]
     );
 
-    const availableParts = (data?.parts ?? [])
+    const availableParts = (data?.books ?? [])
       .filter(
-        (part) =>
-          part.mediaInfo &&
-          (part.mediaInfo[is4k ? 'statusAlt' : 'status'] ===
+        (book) =>
+          book.mediaInfo &&
+          (book.mediaInfo[isAudio ? 'statusAlt' : 'status'] ===
             MediaStatus.AVAILABLE ||
-            part.mediaInfo[is4k ? 'statusAlt' : 'status'] ===
+            book.mediaInfo[isAudio ? 'statusAlt' : 'status'] ===
               MediaStatus.PROCESSING) &&
-          !requestedParts.includes(part.id)
+          !requestedParts.includes(book.id)
       )
-      .map((part) => part.id);
+      .map((book) => book.id);
 
     return [...requestedParts, ...availableParts];
   };
 
-  const isSelectedPart = (tmdbId: number): boolean =>
-    selectedParts.includes(tmdbId);
+  const isSelectedPart = (bookId: number): boolean =>
+    selectedParts.includes(bookId);
 
-  const togglePart = (tmdbId: number): void => {
+  const togglePart = (bookId: number): void => {
     // If this part already has a pending request, don't allow it to be toggled
-    if (getAllRequestedParts().includes(tmdbId)) {
+    if (getAllRequestedParts().includes(bookId)) {
       return;
     }
 
     // If there are no more remaining requests available, block toggle
     if (
-      quota?.movie.limit &&
+      quota?.book.limit &&
       currentlyRemaining <= 0 &&
-      !isSelectedPart(tmdbId)
+      !isSelectedPart(bookId)
     ) {
       return;
     }
 
-    if (selectedParts.includes(tmdbId)) {
-      setSelectedParts((parts) => parts.filter((partId) => partId !== tmdbId));
+    if (selectedParts.includes(bookId)) {
+      setSelectedParts((parts) => parts.filter((partId) => partId !== bookId));
     } else {
-      setSelectedParts((parts) => [...parts, tmdbId]);
+      setSelectedParts((parts) => [...parts, bookId]);
     }
   };
 
   const unrequestedParts = getAllParts().filter(
-    (tmdbId) => !getAllRequestedParts().includes(tmdbId)
+    (bookId) => !getAllRequestedParts().includes(bookId)
   );
 
   const toggleAllParts = (): void => {
     // If the user has a quota and not enough requests for all parts, block toggleAllParts
     if (
-      quota?.movie.limit &&
-      (quota?.movie.remaining ?? 0) < unrequestedParts.length
+      quota?.book.limit &&
+      (quota?.book.remaining ?? 0) < unrequestedParts.length
     ) {
       return;
     }
@@ -161,17 +165,17 @@ const CollectionRequestModal = ({
 
     return (
       selectedParts.length ===
-      getAllParts().filter((part) => !getAllRequestedParts().includes(part))
+      getAllParts().filter((book) => !getAllRequestedParts().includes(book))
         .length
     );
   };
 
-  const getPartRequest = (tmdbId: number): MediaRequest | undefined => {
-    const part = (data?.parts ?? []).find((part) => part.id === tmdbId);
+  const getPartRequest = (bookId: number): MediaRequest | undefined => {
+    const book = (data?.books ?? []).find((book) => book.id === bookId);
 
-    return (part?.mediaInfo?.requests ?? []).find(
+    return (book?.mediaInfo?.requests ?? []).find(
       (request) =>
-        request.isAlt === is4k &&
+        request.isAlt === isAudio &&
         request.status !== MediaRequestStatus.DECLINED &&
         request.status !== MediaRequestStatus.COMPLETED
     );
@@ -200,12 +204,12 @@ const CollectionRequestModal = ({
 
       await Promise.all(
         (
-          data?.parts.filter((part) => selectedParts.includes(part.id)) ?? []
-        ).map(async (part) => {
+          data?.books.filter((book) => selectedParts.includes(book.id)) ?? []
+        ).map(async (book) => {
           await axios.post<MediaRequest>('/api/v1/request', {
-            mediaId: part.id,
-            mediaType: 'movie',
-            isAlt: is4k,
+            mediaId: book.id,
+            mediaType: MediaType.BOOK,
+            isAlt: isAudio,
             ...overrideParams,
           });
         })
@@ -213,7 +217,7 @@ const CollectionRequestModal = ({
 
       if (onComplete) {
         onComplete(
-          selectedParts.length === (data?.parts ?? []).length
+          selectedParts.length === (data?.books ?? []).length
             ? MediaStatus.UNKNOWN
             : MediaStatus.PARTIALLY_AVAILABLE
         );
@@ -239,20 +243,22 @@ const CollectionRequestModal = ({
     }
   }, [
     requestOverrides,
-    data?.parts,
+    data?.books,
     data?.name,
     onComplete,
     addToast,
     intl,
     selectedParts,
-    is4k,
+    isAudio,
   ]);
 
   const hasAutoApprove = hasPermission(
     [
       Permission.MANAGE_REQUESTS,
-      is4k ? Permission.AUTO_APPROVE_ALT : Permission.AUTO_APPROVE,
-      is4k ? Permission.AUTO_APPROVE_4K_MOVIE : Permission.AUTO_APPROVE_MOVIE,
+      isAudio ? Permission.AUTO_APPROVE_ALT : Permission.AUTO_APPROVE,
+      isAudio
+        ? Permission.AUTO_APPROVE_AUDIO_BOOK
+        : Permission.AUTO_APPROVE_BOOK,
     ],
     { type: 'or' }
   );
@@ -269,18 +275,16 @@ const CollectionRequestModal = ({
       onCancel={onCancel}
       onOk={sendRequest}
       title={intl.formatMessage(
-        is4k
-          ? messages.requestcollection4ktitle
-          : messages.requestcollectiontitle
+        isAudio ? messages.requestseriesaudiotitle : messages.requestseriestitle
       )}
       subTitle={data?.name}
       okText={
         isUpdating
           ? intl.formatMessage(globalMessages.requesting)
           : selectedParts.length === 0
-          ? intl.formatMessage(messages.selectmovies)
+          ? intl.formatMessage(messages.selectbooks)
           : intl.formatMessage(
-              is4k ? messages.requestmovies4k : messages.requestmovies,
+              isAudio ? messages.requestbooksaudio : messages.requestbooks,
               {
                 count: selectedParts.length,
               }
@@ -288,9 +292,9 @@ const CollectionRequestModal = ({
       }
       okDisabled={selectedParts.length === 0}
       okButtonType={'primary'}
-      backdrop={data?.backdropPath}
+      backdrop={undefined}
     >
-      {hasAutoApprove && !quota?.movie.restricted && (
+      {hasAutoApprove && !quota?.book.restricted && (
         <div className="mt-6">
           <Alert
             title={intl.formatMessage(messages.requestadmin)}
@@ -298,10 +302,10 @@ const CollectionRequestModal = ({
           />
         </div>
       )}
-      {(quota?.movie.limit ?? 0) > 0 && (
+      {(quota?.book.limit ?? 0) > 0 && (
         <QuotaDisplay
-          mediaType="movie"
-          quota={quota?.movie}
+          mediaType="book"
+          quota={quota?.book}
           remaining={currentlyRemaining}
           userOverride={
             requestOverrides?.user && requestOverrides.user.id !== user?.id
@@ -329,8 +333,8 @@ const CollectionRequestModal = ({
                           }
                         }}
                         className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none ${
-                          quota?.movie.limit &&
-                          (quota.movie.remaining ?? 0) < unrequestedParts.length
+                          quota?.book.limit &&
+                          (quota.book.remaining ?? 0) < unrequestedParts.length
                             ? 'opacity-50'
                             : ''
                         }`}
@@ -350,7 +354,7 @@ const CollectionRequestModal = ({
                       </span>
                     </th>
                     <th className="bg-gray-700 bg-opacity-80 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
-                      {intl.formatMessage(globalMessages.movie)}
+                      {intl.formatMessage(globalMessages.book)}
                     </th>
                     <th className="bg-gray-700 bg-opacity-80 px-2 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(globalMessages.status)}
@@ -358,27 +362,27 @@ const CollectionRequestModal = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
-                  {data?.parts
-                    .filter((part) => {
+                  {data?.books
+                    .filter((book) => {
                       if (!blacklistVisibility)
                         return (
-                          part.mediaInfo?.status !== MediaStatus.BLACKLISTED
+                          book.mediaInfo?.status !== MediaStatus.BLACKLISTED
                         );
-                      return part;
+                      return book;
                     })
-                    .map((part) => {
-                      const partRequest = getPartRequest(part.id);
+                    .map((book) => {
+                      const partRequest = getPartRequest(book.id);
                       const partMedia =
-                        part.mediaInfo &&
-                        part.mediaInfo[is4k ? 'statusAlt' : 'status'] !==
+                        book.mediaInfo &&
+                        book.mediaInfo[isAudio ? 'statusAlt' : 'status'] !==
                           MediaStatus.UNKNOWN &&
-                        part.mediaInfo[is4k ? 'statusAlt' : 'status'] !==
+                        book.mediaInfo[isAudio ? 'statusAlt' : 'status'] !==
                           MediaStatus.DELETED
-                          ? part.mediaInfo
+                          ? book.mediaInfo
                           : undefined;
 
                       return (
-                        <tr key={`part-${part.id}`}>
+                        <tr key={`book-${book.id}`}>
                           <td
                             className={`whitespace-nowrap px-4 py-4 text-sm font-medium leading-5 text-gray-100 ${
                               partMedia?.status === MediaStatus.BLACKLISTED &&
@@ -392,12 +396,12 @@ const CollectionRequestModal = ({
                                 (!!partMedia &&
                                   partMedia.status !==
                                     MediaStatus.BLACKLISTED) ||
-                                isSelectedPart(part.id)
+                                isSelectedPart(book.id)
                               }
-                              onClick={() => togglePart(part.id)}
+                              onClick={() => togglePart(book.id)}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === 'Space') {
-                                  togglePart(part.id);
+                                  togglePart(book.id);
                                 }
                               }}
                               className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none ${
@@ -405,9 +409,9 @@ const CollectionRequestModal = ({
                                   partMedia.status !==
                                     MediaStatus.BLACKLISTED) ||
                                 partRequest ||
-                                (quota?.movie.limit &&
+                                (quota?.book.limit &&
                                   currentlyRemaining <= 0 &&
-                                  !isSelectedPart(part.id))
+                                  !isSelectedPart(book.id))
                                   ? 'opacity-50'
                                   : ''
                               }`}
@@ -419,7 +423,7 @@ const CollectionRequestModal = ({
                                     partMedia.status !==
                                       MediaStatus.BLACKLISTED) ||
                                   partRequest ||
-                                  isSelectedPart(part.id)
+                                  isSelectedPart(book.id)
                                     ? 'bg-indigo-500'
                                     : 'bg-gray-700'
                                 } absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out`}
@@ -431,7 +435,7 @@ const CollectionRequestModal = ({
                                     partMedia.status !==
                                       MediaStatus.BLACKLISTED) ||
                                   partRequest ||
-                                  isSelectedPart(part.id)
+                                  isSelectedPart(book.id)
                                     ? 'translate-x-5'
                                     : 'translate-x-0'
                                 } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
@@ -446,10 +450,10 @@ const CollectionRequestModal = ({
                           >
                             <div className="relative h-auto w-10 flex-shrink-0 overflow-hidden rounded-md">
                               <CachedImage
-                                type="tmdb"
+                                type="hardcover"
                                 src={
-                                  part.posterPath
-                                    ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${part.posterPath}`
+                                  book.posterPath
+                                    ? book.posterPath
                                     : '/images/jellyseerr_poster_not_found.png'
                                 }
                                 alt=""
@@ -465,10 +469,11 @@ const CollectionRequestModal = ({
                             </div>
                             <div className="flex flex-col justify-center pl-2">
                               <div className="text-xs font-medium">
-                                {part.releaseDate?.slice(0, 4)}
+                                {book.releaseDate?.slice(0, 4)}
+                                {book.position && ` - #${book.position}`}
                               </div>
                               <div className="text-base font-bold">
-                                {part.title}
+                                {book.title}
                               </div>
                             </div>
                           </td>
@@ -490,13 +495,13 @@ const CollectionRequestModal = ({
                             {((!partMedia &&
                               partRequest?.status ===
                                 MediaRequestStatus.APPROVED) ||
-                              partMedia?.[is4k ? 'statusAlt' : 'status'] ===
+                              partMedia?.[isAudio ? 'statusAlt' : 'status'] ===
                                 MediaStatus.PROCESSING) && (
                               <Badge badgeType="primary">
                                 {intl.formatMessage(globalMessages.requested)}
                               </Badge>
                             )}
-                            {partMedia?.[is4k ? 'statusAlt' : 'status'] ===
+                            {partMedia?.[isAudio ? 'statusAlt' : 'status'] ===
                               MediaStatus.AVAILABLE && (
                               <Badge badgeType="success">
                                 {intl.formatMessage(globalMessages.available)}
@@ -520,8 +525,8 @@ const CollectionRequestModal = ({
       {(hasPermission(Permission.REQUEST_ADVANCED) ||
         hasPermission(Permission.MANAGE_REQUESTS)) && (
         <AdvancedRequester
-          type="movie"
-          isAlt={is4k}
+          type={MediaType.BOOK}
+          isAlt={isAudio}
           onChange={(overrides) => {
             setRequestOverrides(overrides);
           }}
@@ -531,4 +536,4 @@ const CollectionRequestModal = ({
   );
 };
 
-export default CollectionRequestModal;
+export default SeriesRequestModal;

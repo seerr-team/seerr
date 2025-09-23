@@ -21,12 +21,16 @@ import { mutate } from 'swr';
 const messages = defineMessages('components.RequestButton', {
   viewrequest: 'View Request',
   viewrequest4k: 'View 4K Request',
+  viewrequestaudiobook: 'View Audiobook Request',
   requestmore: 'Request More',
   requestmore4k: 'Request More in 4K',
+  requestmoreaudiobook: 'Request More Audiobook',
   approverequest: 'Approve Request',
   approverequest4k: 'Approve 4K Request',
+  approverequestaudiobook: 'Approve Audiobook Request',
   declinerequest: 'Decline Request',
   declinerequest4k: 'Decline 4K Request',
+  declinerequestaudiobook: 'Decline Audiobook Request',
   approverequests:
     'Approve {requestCount, plural, one {Request} other {{requestCount} Requests}}',
   declinerequests:
@@ -45,16 +49,16 @@ interface ButtonOption {
 }
 
 interface RequestButtonProps {
-  mediaType: 'movie' | 'tv';
+  mediaType: 'movie' | 'tv' | 'book';
   onUpdate: () => void;
-  tmdbId: number;
+  mediaId: number;
   media?: Media;
   isShowComplete?: boolean;
   is4kShowComplete?: boolean;
 }
 
 const RequestButton = ({
-  tmdbId,
+  mediaId,
   onUpdate,
   media,
   mediaType,
@@ -65,15 +69,15 @@ const RequestButton = ({
   const settings = useSettings();
   const { user, hasPermission } = useUser();
   const [showRequestModal, setShowRequestModal] = useState(false);
-  const [showRequest4kModal, setShowRequest4kModal] = useState(false);
+  const [showRequestAltModal, setShowRequestAltModal] = useState(false);
   const [editRequest, setEditRequest] = useState(false);
 
   // All pending requests
   const activeRequests = media?.requests.filter(
-    (request) => request.status === MediaRequestStatus.PENDING && !request.is4k
+    (request) => request.status === MediaRequestStatus.PENDING && !request.isAlt
   );
-  const active4kRequests = media?.requests.filter(
-    (request) => request.status === MediaRequestStatus.PENDING && request.is4k
+  const activeAltRequests = media?.requests.filter(
+    (request) => request.status === MediaRequestStatus.PENDING && request.isAlt
   );
 
   // Current user's pending request, or the first pending request
@@ -83,13 +87,13 @@ const RequestButton = ({
           activeRequests[0]
       : undefined;
   }, [activeRequests, user]);
-  const active4kRequest = useMemo(() => {
-    return active4kRequests && active4kRequests.length > 0
-      ? active4kRequests.find(
+  const activeAltRequest = useMemo(() => {
+    return activeAltRequests && activeAltRequests.length > 0
+      ? activeAltRequests.find(
           (request) => request.requestedBy.id === user?.id
-        ) ?? active4kRequests[0]
+        ) ?? activeAltRequests[0]
       : undefined;
-  }, [active4kRequests, user]);
+  }, [activeAltRequests, user]);
 
   const modifyRequest = async (
     request: MediaRequest,
@@ -124,7 +128,7 @@ const RequestButton = ({
   const buttons: ButtonOption[] = [];
 
   // If there are pending requests, show request management options first
-  if (activeRequest || active4kRequest) {
+  if (activeRequest || activeAltRequest) {
     if (
       activeRequest &&
       (activeRequest.requestedBy.id === user?.id ||
@@ -145,7 +149,7 @@ const RequestButton = ({
     if (
       activeRequest &&
       hasPermission(Permission.MANAGE_REQUESTS) &&
-      mediaType === 'movie'
+      (mediaType === 'movie' || mediaType === 'book')
     ) {
       buttons.push(
         {
@@ -196,69 +200,81 @@ const RequestButton = ({
     }
 
     if (
-      active4kRequest &&
-      (active4kRequest.requestedBy.id === user?.id ||
-        (active4kRequests?.length === 1 &&
+      activeAltRequest &&
+      (activeAltRequest.requestedBy.id === user?.id ||
+        (activeAltRequests?.length === 1 &&
           hasPermission(Permission.MANAGE_REQUESTS)))
     ) {
       buttons.push({
-        id: 'active-4k-request',
-        text: intl.formatMessage(messages.viewrequest4k),
+        id: 'active-alt-request',
+        text: intl.formatMessage(
+          mediaType === 'book'
+            ? messages.viewrequestaudiobook
+            : messages.viewrequest4k
+        ),
         action: () => {
           setEditRequest(true);
-          setShowRequest4kModal(true);
+          setShowRequestAltModal(true);
         },
         svg: <InformationCircleIcon />,
       });
     }
 
     if (
-      active4kRequest &&
+      activeAltRequest &&
       hasPermission(Permission.MANAGE_REQUESTS) &&
-      mediaType === 'movie'
+      (mediaType === 'movie' || mediaType === 'book')
     ) {
       buttons.push(
         {
-          id: 'approve-4k-request',
-          text: intl.formatMessage(messages.approverequest4k),
+          id: 'approve-alt-request',
+          text: intl.formatMessage(
+            mediaType === 'book'
+              ? messages.approverequestaudiobook
+              : messages.approverequest4k
+          ),
           action: () => {
-            modifyRequest(active4kRequest, 'approve');
+            modifyRequest(activeAltRequest, 'approve');
           },
           svg: <CheckIcon />,
         },
         {
-          id: 'decline-4k-request',
-          text: intl.formatMessage(messages.declinerequest4k),
+          id: 'decline-alt-request',
+          text: intl.formatMessage(
+            mediaType === 'book'
+              ? messages.declinerequestaudiobook
+              : messages.declinerequest4k
+          ),
           action: () => {
-            modifyRequest(active4kRequest, 'decline');
+            modifyRequest(activeAltRequest, 'decline');
           },
           svg: <XMarkIcon />,
         }
       );
     } else if (
-      active4kRequests &&
-      active4kRequests.length > 0 &&
+      activeAltRequests &&
+      activeAltRequests.length > 0 &&
       hasPermission(Permission.MANAGE_REQUESTS) &&
       mediaType === 'tv'
     ) {
       buttons.push(
         {
-          id: 'approve-4k-request-batch',
+          id: 'approve-alt-request-batch',
           text: intl.formatMessage(messages.approve4krequests, {
-            requestCount: active4kRequests.length,
+            requestCount: activeAltRequests.length,
           }),
           action: () => {
-            modifyRequests(active4kRequests, 'approve');
+            modifyRequests(activeAltRequests, 'approve');
           },
           svg: <CheckIcon />,
         },
         {
-          id: 'decline-4k-request-batch',
+          id: 'decline-alt-request-batch',
           text: intl.formatMessage(messages.decline4krequests, {
-            requestCount: active4kRequests.length,
+            requestCount: activeAltRequests.length,
           }),
           action: () => {
-            modifyRequests(active4kRequests, 'decline');
+            modifyRequests(activeAltRequests, 'decline');
           },
           svg: <XMarkIcon />,
         }
@@ -276,7 +292,9 @@ const RequestButton = ({
         Permission.REQUEST,
         mediaType === 'movie'
           ? Permission.REQUEST_MOVIE
-          : Permission.REQUEST_TV,
+          : mediaType === 'tv'
+          ? Permission.REQUEST_TV
+          : Permission.REQUEST_BOOK,
       ],
       { type: 'or' }
     )
@@ -311,49 +329,56 @@ const RequestButton = ({
     });
   }
 
-  // 4K request button
+  // 4K/Alt request button
   if (
     (!media ||
-      media.status4k === MediaStatus.UNKNOWN ||
-      (media.status4k === MediaStatus.DELETED && !active4kRequest)) &&
+      media.statusAlt === MediaStatus.UNKNOWN ||
+      (media.statusAlt === MediaStatus.DELETED && !activeAltRequest)) &&
     hasPermission(
       [
-        Permission.REQUEST_4K,
+        Permission.REQUEST_ALT,
         mediaType === 'movie'
           ? Permission.REQUEST_4K_MOVIE
-          : Permission.REQUEST_4K_TV,
+          : mediaType === 'tv'
+          ? Permission.REQUEST_4K_TV
+          : Permission.REQUEST_AUDIO_BOOK,
       ],
       { type: 'or' }
     ) &&
     ((settings.currentSettings.movie4kEnabled && mediaType === 'movie') ||
-      (settings.currentSettings.series4kEnabled && mediaType === 'tv'))
+      (settings.currentSettings.series4kEnabled && mediaType === 'tv') ||
+      (settings.currentSettings.bookAudioEnabled && mediaType === 'book'))
   ) {
     buttons.push({
-      id: 'request4k',
-      text: intl.formatMessage(globalMessages.request4k),
+      id: 'requestAlt',
+      text: intl.formatMessage(
+        mediaType === 'book'
+          ? globalMessages.requestAudio
+          : globalMessages.request4k
+      ),
       action: () => {
         setEditRequest(false);
-        setShowRequest4kModal(true);
+        setShowRequestAltModal(true);
       },
       svg: <ArrowDownTrayIcon />,
     });
   } else if (
     mediaType === 'tv' &&
-    (!active4kRequest || active4kRequest.requestedBy.id !== user?.id) &&
-    hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_TV], {
+    (!activeAltRequest || activeAltRequest.requestedBy.id !== user?.id) &&
+    hasPermission([Permission.REQUEST_ALT, Permission.REQUEST_4K_TV], {
       type: 'or',
     }) &&
     media &&
-    media.status4k !== MediaStatus.BLACKLISTED &&
+    media.statusAlt !== MediaStatus.BLACKLISTED &&
     !is4kShowComplete &&
     settings.currentSettings.series4kEnabled
   ) {
     buttons.push({
-      id: 'request-more-4k',
+      id: 'request-more-alt',
       text: intl.formatMessage(messages.requestmore4k),
       action: () => {
         setEditRequest(false);
-        setShowRequest4kModal(true);
+        setShowRequestAltModal(true);
       },
       svg: <ArrowDownTrayIcon />,
     });
@@ -368,7 +393,7 @@ const RequestButton = ({
   return (
     <>
       <RequestModal
-        tmdbId={tmdbId}
+        mediaId={mediaId}
         show={showRequestModal}
         type={mediaType}
         editRequest={editRequest ? activeRequest : undefined}
@@ -376,19 +401,21 @@ const RequestButton = ({
           onUpdate();
           setShowRequestModal(false);
         }}
-        onCancel={() => setShowRequestModal(false)}
+        onCancel={() => {
+          setShowRequestModal(false);
+        }}
       />
       <RequestModal
-        tmdbId={tmdbId}
-        show={showRequest4kModal}
+        mediaId={mediaId}
+        show={showRequestAltModal}
         type={mediaType}
-        editRequest={editRequest ? active4kRequest : undefined}
-        is4k
+        editRequest={editRequest ? activeAltRequest : undefined}
+        isAlt
         onComplete={() => {
           onUpdate();
-          setShowRequest4kModal(false);
+          setShowRequestAltModal(false);
         }}
-        onCancel={() => setShowRequest4kModal(false)}
+        onCancel={() => setShowRequestAltModal(false)}
       />
       <ButtonWithDropdown
         text={

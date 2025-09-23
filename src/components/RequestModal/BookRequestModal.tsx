@@ -6,12 +6,12 @@ import QuotaDisplay from '@app/components/RequestModal/QuotaDisplay';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { MediaStatus } from '@server/constants/media';
+import { MediaStatus, MediaType } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { NonFunctionProperties } from '@server/interfaces/api/common';
 import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
 import { Permission } from '@server/lib/permissions';
-import type { MovieDetails } from '@server/models/Movie';
+import type { BookDetails } from '@server/models/Book';
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -22,13 +22,13 @@ const messages = defineMessages('components.RequestModal', {
   requestadmin: 'This request will be approved automatically.',
   requestSuccess: '<strong>{title}</strong> requested successfully!',
   requestCancel: 'Request for <strong>{title}</strong> canceled.',
-  requestmovietitle: 'Request Movie',
-  requestmovie4ktitle: 'Request Movie in 4K',
+  requestbooktitle: 'Request Book',
+  requestaudiobooktitle: 'Request Audiobook',
   edit: 'Edit Request',
   approve: 'Approve Request',
   cancel: 'Cancel Request',
-  pendingrequest: 'Pending Movie Request',
-  pending4krequest: 'Pending 4K Movie Request',
+  pendingrequest: 'Pending Book Request',
+  pendingaudiobookrequest: 'Pending Audiobook Request',
   requestfrom: "{username}'s request is pending approval.",
   errorediting: 'Something went wrong while editing the request.',
   requestedited: 'Request for <strong>{title}</strong> edited successfully!',
@@ -38,29 +38,30 @@ const messages = defineMessages('components.RequestModal', {
 });
 
 interface RequestModalProps extends React.HTMLAttributes<HTMLDivElement> {
-  tmdbId?: number;
-  is4k?: boolean;
+  hcId?: number;
+  isAudio?: boolean;
   editRequest?: NonFunctionProperties<MediaRequest>;
   onCancel?: () => void;
   onComplete?: (newStatus: MediaStatus) => void;
   onUpdating?: (isUpdating: boolean) => void;
 }
 
-const MovieRequestModal = ({
+const BookRequestModal = ({
   onCancel,
   onComplete,
-  tmdbId,
+  hcId,
   onUpdating,
   editRequest,
-  is4k = false,
+  isAudio = false,
 }: RequestModalProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [requestOverrides, setRequestOverrides] =
     useState<RequestOverrides | null>(null);
   const { addToast } = useToasts();
-  const { data, error } = useSWR<MovieDetails>(`/api/v1/movie/${tmdbId}`, {
+  const { data, error } = useSWR<BookDetails>(`/api/v1/book/${hcId}`, {
     revalidateOnMount: true,
   });
+
   const intl = useIntl();
   const { user, hasPermission } = useUser();
   const { data: quota } = useSWR<QuotaResponse>(
@@ -85,6 +86,7 @@ const MovieRequestModal = ({
         overrideParams = {
           serverId: requestOverrides.server,
           profileId: requestOverrides.profile,
+          metadataProfileId: requestOverrides.metadataProfile,
           rootFolder: requestOverrides.folder,
           userId: requestOverrides.user?.id,
           tags: requestOverrides.tags,
@@ -92,8 +94,8 @@ const MovieRequestModal = ({
       }
       const response = await axios.post<MediaRequest>('/api/v1/request', {
         mediaId: data?.id,
-        mediaType: 'movie',
-        isAlt: is4k,
+        mediaType: 'book',
+        isAlt: isAudio,
         ...overrideParams,
       });
       mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
@@ -103,12 +105,12 @@ const MovieRequestModal = ({
         if (onComplete) {
           onComplete(
             hasPermission(
-              is4k ? Permission.AUTO_APPROVE_ALT : Permission.AUTO_APPROVE
+              isAudio ? Permission.AUTO_APPROVE_ALT : Permission.AUTO_APPROVE
             ) ||
               hasPermission(
-                is4k
-                  ? Permission.AUTO_APPROVE_4K_MOVIE
-                  : Permission.AUTO_APPROVE_MOVIE
+                isAudio
+                  ? Permission.AUTO_APPROVE_AUDIO_BOOK
+                  : Permission.AUTO_APPROVE_BOOK
               )
               ? MediaStatus.PROCESSING
               : MediaStatus.PENDING
@@ -136,7 +138,7 @@ const MovieRequestModal = ({
     requestOverrides,
     data?.id,
     data?.title,
-    is4k,
+    isAudio,
     onComplete,
     addToast,
     intl,
@@ -177,9 +179,10 @@ const MovieRequestModal = ({
 
     try {
       await axios.put(`/api/v1/request/${editRequest?.id}`, {
-        mediaType: 'movie',
+        mediaType: 'book',
         serverId: requestOverrides?.server,
         profileId: requestOverrides?.profile,
+        metadataProfileId: requestOverrides?.metadataProfile,
         rootFolder: requestOverrides?.folder,
         userId: requestOverrides?.user?.id,
         tags: requestOverrides?.tags,
@@ -231,7 +234,7 @@ const MovieRequestModal = ({
         backgroundClickable
         onCancel={onCancel}
         title={intl.formatMessage(
-          is4k ? messages.pending4krequest : messages.pendingrequest
+          isAudio ? messages.pendingaudiobookrequest : messages.pendingrequest
         )}
         subTitle={data?.title}
         onOk={() =>
@@ -277,7 +280,7 @@ const MovieRequestModal = ({
         }
         secondaryButtonType="danger"
         cancelText={intl.formatMessage(globalMessages.close)}
-        backdrop={data?.backdropPath}
+        backdrop={`${data?.backdropPath}`}
       >
         {isOwner
           ? intl.formatMessage(messages.pendingapproval)
@@ -287,12 +290,13 @@ const MovieRequestModal = ({
         {(hasPermission(Permission.REQUEST_ADVANCED) ||
           hasPermission(Permission.MANAGE_REQUESTS)) && (
           <AdvancedRequester
-            type="movie"
-            isAlt={is4k}
+            type={'book'}
+            isAlt={isAudio}
             requestUser={editRequest.requestedBy}
             defaultOverrides={{
               folder: editRequest.rootFolder,
               profile: editRequest.profileId,
+              metadataProfile: editRequest.metadataProfileId,
               server: editRequest.serverId,
               tags: editRequest.tags,
             }}
@@ -308,8 +312,10 @@ const MovieRequestModal = ({
   const hasAutoApprove = hasPermission(
     [
       Permission.MANAGE_REQUESTS,
-      is4k ? Permission.AUTO_APPROVE_ALT : Permission.AUTO_APPROVE,
-      is4k ? Permission.AUTO_APPROVE_4K_MOVIE : Permission.AUTO_APPROVE_MOVIE,
+      isAudio ? Permission.AUTO_APPROVE_ALT : Permission.AUTO_APPROVE,
+      isAudio
+        ? Permission.AUTO_APPROVE_AUDIO_BOOK
+        : Permission.AUTO_APPROVE_BOOK,
     ],
     { type: 'or' }
   );
@@ -320,22 +326,22 @@ const MovieRequestModal = ({
       backgroundClickable
       onCancel={onCancel}
       onOk={sendRequest}
-      okDisabled={isUpdating || quota?.movie.restricted}
+      okDisabled={isUpdating || quota?.book.restricted}
       title={intl.formatMessage(
-        is4k ? messages.requestmovie4ktitle : messages.requestmovietitle
+        isAudio ? messages.requestaudiobooktitle : messages.requestbooktitle
       )}
       subTitle={data?.title}
       okText={
         isUpdating
           ? intl.formatMessage(globalMessages.requesting)
           : intl.formatMessage(
-              is4k ? globalMessages.request4k : globalMessages.request
+              isAudio ? globalMessages.requestAudio : globalMessages.request
             )
       }
       okButtonType={'primary'}
-      backdrop={data?.backdropPath}
+      backdrop={`${data?.backdropPath}`}
     >
-      {hasAutoApprove && !quota?.movie.restricted && (
+      {hasAutoApprove && !quota?.book.restricted && (
         <div className="mt-6">
           <Alert
             title={intl.formatMessage(messages.requestadmin)}
@@ -343,10 +349,10 @@ const MovieRequestModal = ({
           />
         </div>
       )}
-      {(quota?.movie.limit ?? 0) > 0 && (
+      {(quota?.book.limit ?? 0) > 0 && (
         <QuotaDisplay
-          mediaType="movie"
-          quota={quota?.movie}
+          mediaType="book"
+          quota={quota?.book}
           userOverride={
             requestOverrides?.user && requestOverrides.user.id !== user?.id
               ? requestOverrides?.user?.id
@@ -357,8 +363,8 @@ const MovieRequestModal = ({
       {(hasPermission(Permission.REQUEST_ADVANCED) ||
         hasPermission(Permission.MANAGE_REQUESTS)) && (
         <AdvancedRequester
-          type="movie"
-          isAlt={is4k}
+          type={MediaType.BOOK}
+          isAlt={isAudio}
           onChange={(overrides) => {
             setRequestOverrides(overrides);
           }}
@@ -368,4 +374,4 @@ const MovieRequestModal = ({
   );
 };
 
-export default MovieRequestModal;
+export default BookRequestModal;

@@ -1,5 +1,7 @@
+import BookRequestModal from '@app/components/RequestModal/BookRequestModal';
 import CollectionRequestModal from '@app/components/RequestModal/CollectionRequestModal';
 import MovieRequestModal from '@app/components/RequestModal/MovieRequestModal';
+import SeriesRequestModal from '@app/components/RequestModal/SeriesRequestModal';
 import TvRequestModal from '@app/components/RequestModal/TvRequestModal';
 import { Transition } from '@headlessui/react';
 import type { MediaStatus } from '@server/constants/media';
@@ -8,9 +10,9 @@ import type { NonFunctionProperties } from '@server/interfaces/api/common';
 
 interface RequestModalProps {
   show: boolean;
-  type: 'movie' | 'tv' | 'collection';
-  tmdbId: number;
-  is4k?: boolean;
+  type: 'movie' | 'tv' | 'book' | 'collection' | 'series';
+  mediaId?: number;
+  isAlt?: boolean;
   editRequest?: NonFunctionProperties<MediaRequest>;
   onComplete?: (newStatus: MediaStatus) => void;
   onCancel?: () => void;
@@ -20,8 +22,8 @@ interface RequestModalProps {
 const RequestModal = ({
   type,
   show,
-  tmdbId,
-  is4k,
+  mediaId,
+  isAlt,
   editRequest,
   onComplete,
   onUpdating,
@@ -42,27 +44,44 @@ const RequestModal = ({
         <MovieRequestModal
           onComplete={onComplete}
           onCancel={onCancel}
-          tmdbId={tmdbId}
+          tmdbId={mediaId}
           onUpdating={onUpdating}
-          is4k={is4k}
+          is4k={isAlt}
           editRequest={editRequest}
         />
       ) : type === 'tv' ? (
         <TvRequestModal
           onComplete={onComplete}
           onCancel={onCancel}
-          tmdbId={tmdbId}
+          tmdbId={mediaId}
           onUpdating={onUpdating}
-          is4k={is4k}
+          is4k={isAlt}
           editRequest={editRequest}
+        />
+      ) : type === 'book' ? (
+        <BookRequestModal
+          onComplete={onComplete}
+          onCancel={onCancel}
+          hcId={mediaId}
+          onUpdating={onUpdating}
+          isAudio={isAlt}
+          editRequest={editRequest}
+        />
+      ) : type === 'series' ? (
+        <SeriesRequestModal
+          onComplete={onComplete}
+          onCancel={onCancel}
+          seriesId={mediaId}
+          onUpdating={onUpdating}
+          isAudio={isAlt}
         />
       ) : (
         <CollectionRequestModal
           onComplete={onComplete}
           onCancel={onCancel}
-          tmdbId={tmdbId}
+          tmdbId={mediaId}
           onUpdating={onUpdating}
-          is4k={is4k}
+          is4k={isAlt}
         />
       )}
     </Transition>
