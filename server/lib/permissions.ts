@@ -59,6 +59,10 @@ export const hasPermission = (
     return true;
   }
 
+  if (isNaN(value)) {
+    return false;
+  }
+
   const bigValue = BigInt(value);
 
   if (Array.isArray(permissions)) {
