@@ -116,16 +116,14 @@ class JellyfinScanner {
           });
           return;
         }
-        const episode = (
-          await this.jfClient.getEpisodes(jellyfinitem.Id, season.Id)
-        ).at(0);
-        if (!episode) {
+        const episodes = this.jfClient.getEpisodes(jellyfinitem.Id, season.Id);
+        if (!episodes[0]) {
           this.log('No episode found for anidb movie', 'debug', {
             jellyfinitem,
           });
           return;
         }
-        metadata = await this.jfClient.getItemData(episode.Id);
+        metadata = await this.jfClient.getItemData(episodes[0].Id);
         if (!metadata) {
           this.log('No metadata found for anidb movie', 'debug', {
             jellyfinitem,
