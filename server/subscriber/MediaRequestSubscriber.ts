@@ -894,9 +894,17 @@ export class MediaRequestSubscriber
         }
 
         if (readarrSettings.tagRequests) {
-          let userTag = (await readarr.getTags()).find((v) =>
+          const readarrTags = await readarr.getTags();
+          // old tags had space around the hyphen
+          let userTag = readarrTags.find((v) =>
             v.label.startsWith(entity.requestedBy.id + ' - ')
           );
+          // new tags do not have spaces around the hyphen, since spaces are not allowed anymore
+          if (!userTag) {
+            userTag = readarrTags.find((v) =>
+              v.label.startsWith(entity.requestedBy.id + '-')
+            );
+          }
           if (!userTag) {
             logger.info(`Requester has no active tag. Creating new`, {
               label: 'Media Request',
@@ -904,11 +912,11 @@ export class MediaRequestSubscriber
               mediaId: entity.media.id,
               userId: entity.requestedBy.id,
               newTag:
-                entity.requestedBy.id + ' - ' + entity.requestedBy.displayName,
+                entity.requestedBy.id + '-' + entity.requestedBy.displayName,
             });
             userTag = await readarr.createTag({
               label:
-                entity.requestedBy.id + ' - ' + entity.requestedBy.displayName,
+                entity.requestedBy.id + '-' + entity.requestedBy.displayName,
             });
           }
           if (userTag.id) {
