@@ -642,6 +642,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "sudo-kraken",
+      "name": "Joe Harrison",
+      "avatar_url": "https://avatars.githubusercontent.com/u/53116754?v=4",
+      "profile": "https://sudo-kraken.github.io/docs/",
+      "contributions": [
+        "infra"
+      ]
     }
   ]
 }
