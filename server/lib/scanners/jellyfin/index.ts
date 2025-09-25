@@ -116,7 +116,10 @@ class JellyfinScanner {
           });
           return;
         }
-        const episodes = this.jfClient.getEpisodes(jellyfinitem.Id, season.Id);
+        const episodes = await this.jfClient.getEpisodes(
+          jellyfinitem.Id,
+          season.Id
+        );
         if (!episodes[0]) {
           this.log('No episode found for anidb movie', 'debug', {
             jellyfinitem,
