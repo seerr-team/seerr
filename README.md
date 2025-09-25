@@ -11,7 +11,7 @@
 <a href="http://translate.jellyseerr.dev/engage/jellyseerr/"><img src="http://translate.jellyseerr.dev/widget/jellyseerr/jellyseerr-frontend/svg-badge.svg" alt="Translation status" /></a>
 <a href="https://github.com/fallenbagel/jellyseerr/blob/develop/LICENSE"><img alt="GitHub" src="https://img.shields.io/github/license/fallenbagel/jellyseerr"></a>
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-<a href="#contributors-"><img alt="All Contributors" src="https://img.shields.io/badge/all_contributors-70-orange.svg"/></a>
+<a href="#contributors-"><img alt="All Contributors" src="https://img.shields.io/badge/all_contributors-71-orange.svg"/></a>
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 **Jellyseerr** is a free and open source software application for managing requests for your media library. It integrates with the media server of your choice: [Jellyfin](https://jellyfin.org), [Plex](https://plex.tv), and [Emby](https://emby.media/). In addition, it integrates with your existing services, such as **[Sonarr](https://sonarr.tv/)**, **[Radarr](https://radarr.video/)**.
@@ -174,6 +174,9 @@ Thanks goes to these wonderful people from Overseerr ([emoji key](https://allcon
       <td align="center" valign="top" width="14.28%"><a href="http://www.joelowrance.com"><img src="https://avatars.githubusercontent.com/u/63176?v=4?s=100" width="100px;" alt="Joe Lowrance"/><br /><sub><b>Joe Lowrance</b></sub></a><br /><a href="https://github.com/fallenbagel/jellyseerr/commits?author=joelowrance" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/0xSysR3ll"><img src="https://avatars.githubusercontent.com/u/31414959?v=4?s=100" width="100px;" alt="0xsysr3ll"/><br /><sub><b>0xsysr3ll</b></sub></a><br /><a href="https://github.com/fallenbagel/jellyseerr/commits?author=0xSysR3ll" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://sudo-kraken.github.io/docs/"><img src="https://avatars.githubusercontent.com/u/53116754?v=4?s=100" width="100px;" alt="Joe Harrison"/><br /><sub><b>Joe Harrison</b></sub></a><br /><a href="#infra-sudo-kraken" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ale183"><img src="https://avatars.githubusercontent.com/u/8809439?v=4?s=100" width="100px;" alt="ale183"/><br /><sub><b>ale183</b></sub></a><br /><a href="https://github.com/fallenbagel/jellyseerr/commits?author=ale183" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
