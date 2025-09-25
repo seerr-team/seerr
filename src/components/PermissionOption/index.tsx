@@ -75,64 +75,6 @@ const PermissionOption = ({
     disabled = true;
   }
 
-  // Parent permission cleanup
-  if (
-    option.permission === Permission.REQUEST_ALT ||
-    option.permission === Permission.AUTO_APPROVE_ALT
-  ) {
-    // Check if parent permission is set but not all services are enabled
-    if (
-      hasPermission(option.permission, currentPermission) &&
-      (!settings.currentSettings.movie4kEnabled ||
-        !settings.currentSettings.series4kEnabled ||
-        !settings.currentSettings.bookAudioEnabled)
-    ) {
-      let newPermission = currentPermission - option.permission;
-
-      if (option.permission === Permission.REQUEST_ALT) {
-        if (
-          settings.currentSettings.movie4kEnabled &&
-          !hasPermission(Permission.REQUEST_4K_MOVIE, newPermission)
-        ) {
-          newPermission = newPermission + Permission.REQUEST_4K_MOVIE;
-        }
-        if (
-          settings.currentSettings.series4kEnabled &&
-          !hasPermission(Permission.REQUEST_4K_TV, newPermission)
-        ) {
-          newPermission = newPermission + Permission.REQUEST_4K_TV;
-        }
-        if (
-          settings.currentSettings.bookAudioEnabled &&
-          !hasPermission(Permission.REQUEST_AUDIO_BOOK, newPermission)
-        ) {
-          newPermission = newPermission + Permission.REQUEST_AUDIO_BOOK;
-        }
-      } else {
-        if (
-          settings.currentSettings.movie4kEnabled &&
-          !hasPermission(Permission.AUTO_APPROVE_4K_MOVIE, newPermission)
-        ) {
-          newPermission = newPermission + Permission.AUTO_APPROVE_4K_MOVIE;
-        }
-        if (
-          settings.currentSettings.series4kEnabled &&
-          !hasPermission(Permission.AUTO_APPROVE_4K_TV, newPermission)
-        ) {
-          newPermission = newPermission + Permission.AUTO_APPROVE_4K_TV;
-        }
-        if (
-          settings.currentSettings.bookAudioEnabled &&
-          !hasPermission(Permission.AUTO_APPROVE_AUDIO_BOOK, newPermission)
-        ) {
-          newPermission = newPermission + Permission.AUTO_APPROVE_AUDIO_BOOK;
-        }
-      }
-
-      onUpdate(newPermission);
-    }
-  }
-
   if (
     // Some permissions are dependent on others; check requirements are fulfilled
     (option.requires &&
