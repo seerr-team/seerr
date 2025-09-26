@@ -1124,7 +1124,8 @@ export class MediaRequestSubscriber
     }
 
     if (
-      media.mediaType === MediaType.MOVIE &&
+      (media.mediaType === MediaType.MOVIE ||
+        media.mediaType === MediaType.BOOK) &&
       entity.status === MediaRequestStatus.DECLINED &&
       media[entity.isAlt ? 'statusAlt' : 'status'] !== MediaStatus.DELETED
     ) {
