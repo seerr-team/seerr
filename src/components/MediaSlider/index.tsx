@@ -184,11 +184,14 @@ const MediaSlider = ({
     finalTitles.push(
       <ShowMoreCard
         url={linkUrl}
-        posters={titles
-          .slice(20, 24)
-          .map((title) =>
-            title.mediaType !== 'person' ? title.posterPath : undefined
-          )}
+        posters={titles.slice(20, 24).map((title) =>
+          title.mediaType !== 'person'
+            ? {
+                url: title.posterPath ?? '',
+                cache: title.mediaType === 'book' ? 'hardcover' : 'tmdb',
+              }
+            : { url: undefined, cache: 'tmdb' }
+        )}
       />
     );
   }

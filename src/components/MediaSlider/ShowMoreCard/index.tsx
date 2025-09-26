@@ -13,7 +13,10 @@ const messages = defineMessages('components.MediaSlider.ShowMoreCard', {
 
 interface ShowMoreCardProps {
   url: string;
-  posters: (string | undefined)[];
+  posters: {
+    url: string | undefined;
+    cache: 'tmdb' | 'avatar' | 'hardcover' | 'tvdb';
+  }[];
 }
 
 const ShowMoreCard = ({ url, posters }: ShowMoreCardProps) => {
@@ -58,53 +61,24 @@ const ShowMoreCard = ({ url, posters }: ShowMoreCardProps) => {
         <div style={{ paddingBottom: '150%' }}>
           <div className="absolute inset-0 flex h-full w-full flex-col items-center p-2">
             <div className="relative z-10 grid h-full w-full grid-cols-2 items-center justify-center gap-2 opacity-30">
-              {posters[0] && (
-                <div className="">
-                  <CachedImage
-                    type="tmdb"
-                    src={`https://image.tmdb.org/t/p/w300_and_h450_face${posters[0]}`}
-                    alt=""
-                    className="rounded-md"
-                    width={300}
-                    height={450}
-                  />
-                </div>
-              )}
-              {posters[1] && (
-                <div className="">
-                  <CachedImage
-                    type="tmdb"
-                    src={`https://image.tmdb.org/t/p/w300_and_h450_face${posters[1]}`}
-                    alt=""
-                    className="rounded-md"
-                    width={300}
-                    height={450}
-                  />
-                </div>
-              )}
-              {posters[2] && (
-                <div className="">
-                  <CachedImage
-                    type="tmdb"
-                    src={`https://image.tmdb.org/t/p/w300_and_h450_face${posters[2]}`}
-                    alt=""
-                    className="rounded-md"
-                    width={300}
-                    height={450}
-                  />
-                </div>
-              )}
-              {posters[3] && (
-                <div className="">
-                  <CachedImage
-                    type="tmdb"
-                    src={`https://image.tmdb.org/t/p/w300_and_h450_face${posters[3]}`}
-                    alt=""
-                    className="rounded-md"
-                    width={300}
-                    height={450}
-                  />
-                </div>
+              {posters.map(
+                (poster) =>
+                  poster.url && (
+                    <div className="">
+                      <CachedImage
+                        type={poster.cache}
+                        src={
+                          poster.cache === 'hardcover'
+                            ? poster.url
+                            : `https://image.tmdb.org/t/p/w300_and_h450_face${poster.url}`
+                        }
+                        alt=""
+                        className="rounded-md"
+                        width={300}
+                        height={450}
+                      />
+                    </div>
+                  )
               )}
             </div>
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-white">
