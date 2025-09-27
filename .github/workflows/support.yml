@@ -19,6 +19,7 @@ jobs:
       issues: write
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
       NUMBER: ${{ github.event.issue.number }}
       ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
     steps:
@@ -35,21 +36,21 @@ jobs:
             - [Discord](https://discord.gg/ckbvBtDJgC)
         run: |
           retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
-          retry gh issue comment "$NUMBER" -b "$BODY" || true
-          retry gh issue close "$NUMBER" || true
-          gh issue lock "$NUMBER" -r "off_topic" || true
+          retry gh issue comment "$NUMBER" -R "$GH_REPO" -b "$BODY" || true
+          retry gh issue close "$NUMBER" -R "$GH_REPO" || true
+          gh issue lock "$NUMBER" -R "$GH_REPO" -r "off_topic" || true
 
       - name: Reopened or label removed, unlock issue
         if: github.event.action == 'unlabeled' && github.event.label.name == 'support'
         shell: bash
         run: |
           retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
-          retry gh issue reopen "$NUMBER" || true
-          gh issue unlock "$NUMBER" || true
+          retry gh issue reopen "$NUMBER" -R "$GH_REPO" || true
+          gh issue unlock "$NUMBER" -R "$GH_REPO" || true
 
       - name: Remove support label on manual reopen
         if: github.event.action == 'reopened'
         shell: bash
         run: |
-          gh issue edit "$NUMBER" --remove-label "support" || true
-          gh issue unlock "$NUMBER" || true
+          gh issue edit "$NUMBER" -R "$GH_REPO" --remove-label "support" || true
+          gh issue unlock "$NUMBER" -R "$GH_REPO" || true
