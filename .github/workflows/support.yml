@@ -4,33 +4,52 @@ on:
   issues:
     types: [labeled, unlabeled, reopened]
 
-permissions: {}
+permissions:
+  issues: read
 
 concurrency:
-  group: support-${{ github.ref }}
+  group: support-${{ github.event.issue.number }}
   cancel-in-progress: true
 
 jobs:
   support:
-    if: github.event.label.name == 'support'
+    if: github.event.label.name == 'support' || github.event.action == 'reopened'
     runs-on: ubuntu-24.04
     permissions:
       issues: write
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GH_REPO: ${{ github.repository }}
       NUMBER: ${{ github.event.issue.number }}
+      ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
     steps:
-      - name: Comment and close issue
-        run: gh issue close "$NUMBER" -r "off-topic" -c "$BODY"
+      - name: Label added, comment and close issue
+        if: github.event.action == 'labeled' && github.event.label.name == 'support'
+        shell: bash
         env:
           BODY: >
-            :wave: @{issue-author}, we use the issue tracker exclusively
+            :wave: @${{ env.ISSUE_AUTHOR }}, we use the issue tracker exclusively
             for bug reports and feature requests. However, this issue appears
             to be a support request. Please use our support channels
             to get help with Jellyseerr.
 
             - [Discord](https://discord.gg/ckbvBtDJgC)
+        run: |
+          retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
+          retry gh issue comment "$NUMBER" -b "$BODY" || true
+          retry gh issue close "$NUMBER" || true
+          gh issue lock "$NUMBER" -r "off_topic" || true
 
-      - name: Lock issue
-        run: gh issue lock "$NUMBER" -r "off_topic"
+      - name: Reopened or label removed, unlock issue
+        if: github.event.action == 'unlabeled' && github.event.label.name == 'support'
+        shell: bash
+        run: |
+          retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
+          retry gh issue reopen "$NUMBER" || true
+          gh issue unlock "$NUMBER" || true
+
+      - name: Remove support label on manual reopen
+        if: github.event.action == 'reopened'
+        shell: bash
+        run: |
+          gh issue edit "$NUMBER" --remove-label "support" || true
+          gh issue unlock "$NUMBER" || true
