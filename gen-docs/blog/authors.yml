@@ -1,5 +1,6 @@
 fallenbagel:
   name: Fallenbagel
+  page: true
   title: Developer & Maintainer of Jellyseerr
   url: https://github.com/fallenbagel
   image_url: https://avatars.githubusercontent.com/u/98979876?v=4
@@ -9,6 +10,7 @@ fallenbagel:
 
 gauthier-th:
   name: Gauthier Thomas
+  page: true
   title: Co-Developer & Co-Maintainer of Jellyseerr
   url: https://gauthierth.fr
   image_url: https://avatars.githubusercontent.com/u/37781713?v=4
