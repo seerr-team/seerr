@@ -2,6 +2,7 @@ fallenbagel:
   name: Fallenbagel
   page: true
   title: Developer & Maintainer of Jellyseerr
+  description: Core Maintainer & Developer of Jellyseerr | Full-Stack Software Engineer | MSc Software Engineering Candidate.
   url: https://github.com/fallenbagel
   image_url: https://avatars.githubusercontent.com/u/98979876?v=4
   email: hello@fallenbagel.com
@@ -12,6 +13,7 @@ gauthier-th:
   name: Gauthier Thomas
   page: true
   title: Co-Developer & Co-Maintainer of Jellyseerr
+  description: Co-Maintainer & Developer of Jellyseerr | PhD Student in AI at ICB, Dijon
   url: https://gauthierth.fr
   image_url: https://avatars.githubusercontent.com/u/37781713?v=4
   email: mail@gauthierth.fr
