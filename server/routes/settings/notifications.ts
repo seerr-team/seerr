@@ -4,7 +4,7 @@ import type { NotificationAgent } from '@server/lib/notifications/agents/agent';
 import DiscordAgent from '@server/lib/notifications/agents/discord';
 import EmailAgent from '@server/lib/notifications/agents/email';
 import GotifyAgent from '@server/lib/notifications/agents/gotify';
-import LunaSeaAgent from '@server/lib/notifications/agents/lunasea';
+import NtfyAgent from '@server/lib/notifications/agents/ntfy';
 import PushbulletAgent from '@server/lib/notifications/agents/pushbullet';
 import PushoverAgent from '@server/lib/notifications/agents/pushover';
 import SlackAgent from '@server/lib/notifications/agents/slack';
@@ -270,6 +270,7 @@ notificationRoutes.get('/webhook', (_req, res) => {
 
   const response: typeof webhookSettings = {
     enabled: webhookSettings.enabled,
+    embedPoster: webhookSettings.embedPoster,
     types: webhookSettings.types,
     options: {
       ...webhookSettings.options,
@@ -278,6 +279,7 @@ notificationRoutes.get('/webhook', (_req, res) => {
           'utf8'
         )
       ),
+      supportVariables: webhookSettings.options.supportVariables ?? false,
     },
   };
 
@@ -291,6 +293,7 @@ notificationRoutes.post('/webhook', async (req, res, next) => {
 
     settings.notifications.agents.webhook = {
       enabled: req.body.enabled,
+      embedPoster: req.body.embedPoster,
       types: req.body.types,
       options: {
         jsonPayload: Buffer.from(req.body.options.jsonPayload).toString(
@@ -298,6 +301,7 @@ notificationRoutes.post('/webhook', async (req, res, next) => {
         ),
         webhookUrl: req.body.options.webhookUrl,
         authHeader: req.body.options.authHeader,
+        supportVariables: req.body.options.supportVariables ?? false,
       },
     };
     await settings.save();
@@ -321,6 +325,7 @@ notificationRoutes.post('/webhook/test', async (req, res, next) => {
 
     const testBody = {
       enabled: req.body.enabled,
+      embedPoster: req.body.embedPoster,
       types: req.body.types,
       options: {
         jsonPayload: Buffer.from(req.body.options.jsonPayload).toString(
@@ -328,6 +333,7 @@ notificationRoutes.post('/webhook/test', async (req, res, next) => {
         ),
         webhookUrl: req.body.options.webhookUrl,
         authHeader: req.body.options.authHeader,
+        supportVariables: req.body.options.supportVariables ?? false,
       },
     };
 
@@ -342,40 +348,6 @@ notificationRoutes.post('/webhook/test', async (req, res, next) => {
     }
   } catch (e) {
     next({ status: 500, message: e.message });
-  }
-});
-
-notificationRoutes.get('/lunasea', (_req, res) => {
-  const settings = getSettings();
-
-  res.status(200).json(settings.notifications.agents.lunasea);
-});
-
-notificationRoutes.post('/lunasea', async (req, res) => {
-  const settings = getSettings();
-
-  settings.notifications.agents.lunasea = req.body;
-  await settings.save();
-
-  res.status(200).json(settings.notifications.agents.lunasea);
-});
-
-notificationRoutes.post('/lunasea/test', async (req, res, next) => {
-  if (!req.user) {
-    return next({
-      status: 500,
-      message: 'User information is missing from the request.',
-    });
-  }
-
-  const lunaseaAgent = new LunaSeaAgent(req.body);
-  if (await sendTestNotification(lunaseaAgent, req.user)) {
-    return res.status(204).send();
-  } else {
-    return next({
-      status: 500,
-      message: 'Failed to send web push notification.',
-    });
   }
 });
 
@@ -409,6 +381,40 @@ notificationRoutes.post('/gotify/test', async (req, res, next) => {
     return next({
       status: 500,
       message: 'Failed to send Gotify notification.',
+    });
+  }
+});
+
+notificationRoutes.get('/ntfy', (_req, res) => {
+  const settings = getSettings();
+
+  res.status(200).json(settings.notifications.agents.ntfy);
+});
+
+notificationRoutes.post('/ntfy', async (req, res) => {
+  const settings = getSettings();
+
+  settings.notifications.agents.ntfy = req.body;
+  await settings.save();
+
+  res.status(200).json(settings.notifications.agents.ntfy);
+});
+
+notificationRoutes.post('/ntfy/test', async (req, res, next) => {
+  if (!req.user) {
+    return next({
+      status: 500,
+      message: 'User information is missing from the request.',
+    });
+  }
+
+  const ntfyAgent = new NtfyAgent(req.body);
+  if (await sendTestNotification(ntfyAgent, req.user)) {
+    return res.status(204).send();
+  } else {
+    return next({
+      status: 500,
+      message: 'Failed to send ntfy notification.',
     });
   }
 });

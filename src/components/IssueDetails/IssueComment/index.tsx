@@ -2,10 +2,12 @@ import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import Modal from '@app/components/Common/Modal';
 import { Permission, useUser } from '@app/hooks/useUser';
+import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { Menu, Transition } from '@headlessui/react';
 import { EllipsisVerticalIcon } from '@heroicons/react/24/solid';
 import type { default as IssueCommentType } from '@server/entity/IssueComment';
+import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import Link from 'next/link';
 import { Fragment, useState } from 'react';
@@ -48,10 +50,7 @@ const IssueComment = ({
 
   const deleteComment = async () => {
     try {
-      const res = await fetch(`/api/v1/issueComment/${comment.id}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error();
+      await axios.delete(`/api/v1/issueComment/${comment.id}`);
     } catch (e) {
       // something went wrong deleting the comment
     } finally {
@@ -178,17 +177,9 @@ const IssueComment = ({
               <Formik
                 initialValues={{ newMessage: comment.message }}
                 onSubmit={async (values) => {
-                  const res = await fetch(
-                    `/api/v1/issueComment/${comment.id}`,
-                    {
-                      method: 'PUT',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({ message: values.newMessage }),
-                    }
-                  );
-                  if (!res.ok) throw new Error();
+                  await axios.put(`/api/v1/issueComment/${comment.id}`, {
+                    message: values.newMessage,
+                  });
 
                   if (onUpdate) {
                     onUpdate();
@@ -217,13 +208,13 @@ const IssueComment = ({
                           type="button"
                           onClick={() => setIsEditing(false)}
                         >
-                          Cancel
+                          {intl.formatMessage(globalMessages.cancel)}
                         </Button>
                         <Button
                           buttonType="primary"
                           disabled={!isValid || isSubmitting}
                         >
-                          Save Changes
+                          {intl.formatMessage(globalMessages.save)}
                         </Button>
                       </div>
                     </Form>
@@ -232,7 +223,10 @@ const IssueComment = ({
               </Formik>
             ) : (
               <div className="prose w-full max-w-full">
-                <ReactMarkdown skipHtml allowedElements={['p', 'em', 'strong']}>
+                <ReactMarkdown
+                  skipHtml
+                  allowedElements={['p', 'em', 'strong', 'ul', 'ol', 'li']}
+                >
                   {comment.message}
                 </ReactMarkdown>
               </div>

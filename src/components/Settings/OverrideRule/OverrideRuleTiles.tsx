@@ -12,6 +12,7 @@ import type {
   SonarrSettings,
 } from '@server/lib/settings';
 import type { Keyword } from '@server/models/common';
+import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
@@ -64,34 +65,26 @@ const OverrideRuleTiles = ({
     for (const service of services) {
       const { hostname, port, apiKey, baseUrl, useSsl = false } = service;
       try {
-        const res = await fetch(
+        const response = await axios.post<DVRTestResponse>(
           `/api/v1/settings/${
             radarrServices.includes(service as RadarrSettings)
               ? 'radarr'
               : 'sonarr'
           }/test`,
           {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              hostname,
-              apiKey,
-              port: Number(port),
-              baseUrl,
-              useSsl,
-            }),
+            hostname,
+            apiKey,
+            port: Number(port),
+            baseUrl,
+            useSsl,
           }
         );
-        if (!res.ok) throw new Error();
-        const data: DVRTestResponse = await res.json();
         results.push({
           type: radarrServices.includes(service as RadarrSettings)
             ? 'radarr'
             : 'sonarr',
           id: service.id,
-          ...data,
+          ...response.data,
         });
       } catch {
         results.push({
@@ -120,28 +113,30 @@ const OverrideRuleTiles = ({
           .flat()
           .filter((keywordId) => keywordId)
           .map(async (keywordId) => {
-            const res = await fetch(`/api/v1/keyword/${keywordId}`);
-            if (!res.ok) throw new Error();
-            const keyword: Keyword = await res.json();
-            return keyword;
+            const response = await axios.get<Keyword | null>(
+              `/api/v1/keyword/${keywordId}`
+            );
+            return response.data;
           })
       );
-      setKeywords(keywords);
+      const validKeywords: Keyword[] = keywords.filter(
+        (keyword): keyword is Keyword => keyword !== null
+      );
+      setKeywords(validKeywords);
       const allUsersFromRules = rules
         .map((rule) => rule.users)
         .filter((users) => users)
         .join(',');
       if (allUsersFromRules) {
-        const res = await fetch(
+        const response = await axios.get(
           `/api/v1/user?includeIds=${encodeURIComponent(allUsersFromRules)}`
         );
-        if (!res.ok) throw new Error();
-        const users: User[] = (await res.json()).results;
+        const users: User[] = response.data.results;
         setUsers(users);
       }
       setUsers(users);
     })();
-  }, [rules]);
+  }, [rules, users]);
 
   return (
     <>
@@ -295,10 +290,7 @@ const OverrideRuleTiles = ({
               <div className="-ml-px flex w-0 flex-1">
                 <button
                   onClick={async () => {
-                    const res = await fetch(`/api/v1/overrideRule/${rule.id}`, {
-                      method: 'DELETE',
-                    });
-                    if (!res.ok) throw new Error();
+                    await axios.delete(`/api/v1/overrideRule/${rule.id}`);
                     revalidate();
                   }}
                   className="focus:ring-blue relative inline-flex w-0 flex-1 items-center justify-center rounded-br-lg border border-transparent py-4 text-sm font-medium leading-5 text-gray-200 transition duration-150 ease-in-out hover:text-white focus:z-10 focus:border-gray-500 focus:outline-none"

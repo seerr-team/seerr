@@ -4,6 +4,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
+import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -14,6 +15,7 @@ const messages = defineMessages(
   'components.Settings.Notifications.NotificationsWebPush',
   {
     agentenabled: 'Enable Agent',
+    embedPoster: 'Embed Poster',
     webpushsettingssaved: 'Web push notification settings saved successfully!',
     webpushsettingsfailed: 'Web push notification settings failed to save.',
     toastWebPushTestSending: 'Sending web push test notification…',
@@ -54,20 +56,15 @@ const NotificationsWebPush = () => {
       <Formik
         initialValues={{
           enabled: data.enabled,
+          embedPoster: data.embedPoster,
         }}
         onSubmit={async (values) => {
           try {
-            const res = await fetch('/api/v1/settings/notifications/webpush', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                enabled: values.enabled,
-                options: {},
-              }),
+            await axios.post('/api/v1/settings/notifications/webpush', {
+              enabled: values.enabled,
+              embedPoster: values.embedPoster,
+              options: {},
             });
-            if (!res.ok) throw new Error();
             mutate('/api/v1/settings/public');
             addToast(intl.formatMessage(messages.webpushsettingssaved), {
               appearance: 'success',
@@ -83,7 +80,7 @@ const NotificationsWebPush = () => {
           }
         }}
       >
-        {({ isSubmitting }) => {
+        {({ isSubmitting, values }) => {
           const testSettings = async () => {
             setIsTesting(true);
             let toastId: string | undefined;
@@ -98,20 +95,11 @@ const NotificationsWebPush = () => {
                   toastId = id;
                 }
               );
-              const res = await fetch(
-                '/api/v1/settings/notifications/webpush/test',
-                {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    enabled: true,
-                    options: {},
-                  }),
-                }
-              );
-              if (!res.ok) throw new Error();
+              await axios.post('/api/v1/settings/notifications/webpush/test', {
+                enabled: true,
+                embedPoster: values.embedPoster,
+                options: {},
+              });
 
               if (toastId) {
                 removeToast(toastId);
@@ -142,6 +130,15 @@ const NotificationsWebPush = () => {
                 </label>
                 <div className="form-input-area">
                   <Field type="checkbox" id="enabled" name="enabled" />
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="embedPoster" className="checkbox-label">
+                  {intl.formatMessage(messages.embedPoster)}
+                  <span className="label-required">*</span>
+                </label>
+                <div className="form-input-area">
+                  <Field type="checkbox" id="embedPoster" name="embedPoster" />
                 </div>
               </div>
               <div className="actions">

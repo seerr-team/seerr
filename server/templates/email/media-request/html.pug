@@ -53,10 +53,11 @@ div(style='display: block; background-color: #111827; padding: 2.5rem 0;')
                       b(style='color: #9ca3af; font-weight: 700;')
                         | #{extra.name}&nbsp;
                       | #{extra.value}
-              td(rowspan='2' style='width: 7rem;')
-                a(style='display: block; width: 7rem; overflow: hidden; border-radius: .375rem;' href=actionUrl)
-                  div(style='overflow: hidden; box-sizing: border-box; margin: 0px;')
-                    img(alt='' src=imageUrl style='box-sizing: border-box; padding: 0px; border: none; margin: auto; display: block; min-width: 100%; max-width: 100%; min-height: 100%; max-height: 100%;')
+              if imageUrl
+                td(rowspan='2' style='width: 7rem;')
+                  a(style='display: block; width: 7rem; overflow: hidden; border-radius: .375rem;' href=actionUrl)
+                    div(style='overflow: hidden; box-sizing: border-box; margin: 0px;')
+                      img(alt='' src=imageUrl style='box-sizing: border-box; padding: 0px; border: none; margin: auto; display: block; min-width: 100%; max-width: 100%; min-height: 100%; max-height: 100%;')
             tr
               td(style='font-size: .85em; color: #9ca3af; line-height: 1em; vertical-align: bottom; margin-right: 1rem')
                 span

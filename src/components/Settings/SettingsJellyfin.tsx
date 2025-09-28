@@ -6,10 +6,12 @@ import LibraryItem from '@app/components/Settings/LibraryItem';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType } from '@server/constants/server';
 import type { JellyfinSettings } from '@server/lib/settings';
+import axios from 'axios';
 import { Field, Formik } from 'formik';
 import { useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
@@ -111,11 +113,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
   const JellyfinSettingsSchema = Yup.object().shape({
     hostname: Yup.string()
       .nullable()
-      .required(intl.formatMessage(messages.validationHostnameRequired))
-      .matches(
-        /^(((([a-z]|\d|_|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*)?([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])):((([a-z]|\d|_|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*)?([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))@)?(([a-z]|\d|_|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*)?([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])$/i,
-        intl.formatMessage(messages.validationHostnameRequired)
-      ),
+      .required(intl.formatMessage(messages.validationHostnameRequired)),
     port: Yup.number().when(['hostname'], {
       is: (value: unknown) => !!value,
       then: Yup.number()
@@ -139,10 +137,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       ),
     jellyfinExternalUrl: Yup.string()
       .nullable()
-      .matches(
-        /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*))?$/i,
-        intl.formatMessage(messages.validationUrl)
-      )
+      .test('valid-url', intl.formatMessage(messages.validationUrl), isValidURL)
       .test(
         'no-trailing-slash',
         intl.formatMessage(messages.validationUrlTrailingSlash),
@@ -150,10 +145,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       ),
     jellyfinForgotPasswordUrl: Yup.string()
       .nullable()
-      .matches(
-        /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*))?$/i,
-        intl.formatMessage(messages.validationUrl)
-      )
+      .test('valid-url', intl.formatMessage(messages.validationUrl), isValidURL)
       .test(
         'no-trailing-slash',
         intl.formatMessage(messages.validationUrlTrailingSlash),
@@ -178,25 +170,13 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
     }
 
     try {
-      const searchParams = new URLSearchParams({
-        sync: params.sync ? 'true' : 'false',
-        ...(params.enable ? { enable: params.enable } : {}),
+      await axios.get('/api/v1/settings/jellyfin/library', {
+        params,
       });
-      const res = await fetch(
-        `/api/v1/settings/jellyfin/library?${searchParams.toString()}`
-      );
-      if (!res.ok) throw new Error(res.statusText, { cause: res });
       setIsSyncing(false);
       revalidate();
     } catch (e) {
-      let errorData;
-      try {
-        errorData = await e.cause?.text();
-        errorData = JSON.parse(errorData);
-      } catch {
-        /* empty */
-      }
-      if (errorData?.message === 'SYNC_ERROR_GROUPED_FOLDERS') {
+      if (e?.response?.data?.message === 'SYNC_ERROR_GROUPED_FOLDERS') {
         toasts.addToast(
           intl.formatMessage(
             messages.jellyfinSyncFailedAutomaticGroupedFolders
@@ -206,7 +186,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
             appearance: 'warning',
           }
         );
-      } else if (errorData?.message === 'SYNC_ERROR_NO_LIBRARIES') {
+      } else if (e?.response?.data?.message === 'SYNC_ERROR_NO_LIBRARIES') {
         toasts.addToast(
           intl.formatMessage(messages.jellyfinSyncFailedNoLibrariesFound),
           {
@@ -229,32 +209,16 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
   };
 
   const startScan = async () => {
-    const res = await fetch('/api/v1/settings/jellyfin/sync', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        start: true,
-      }),
+    await axios.post('/api/v1/settings/jellyfin/sync', {
+      start: true,
     });
-    if (!res.ok) throw new Error();
-
     revalidateSync();
   };
 
   const cancelScan = async () => {
-    const res = await fetch('/api/v1/settings/jellyfin/sync', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        cancel: true,
-      }),
+    await axios.post('/api/v1/settings/jellyfin/sync', {
+      cancel: true,
     });
-    if (!res.ok) throw new Error();
-
     revalidateSync();
   };
 
@@ -269,19 +233,15 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
           .join(',');
       }
 
-      const searchParams = new URLSearchParams(params.enable ? params : {});
-      const res = await fetch(
-        `/api/v1/settings/jellyfin/library?${searchParams.toString()}`
-      );
-      if (!res.ok) throw new Error();
-    } else {
-      const searchParams = new URLSearchParams({
-        enable: [...activeLibraries, libraryId].join(','),
+      await axios.get('/api/v1/settings/jellyfin/library', {
+        params,
       });
-      const res = await fetch(
-        `/api/v1/settings/jellyfin/library?${searchParams.toString()}`
-      );
-      if (!res.ok) throw new Error();
+    } else {
+      await axios.get('/api/v1/settings/jellyfin/library', {
+        params: {
+          enable: [...activeLibraries, libraryId].join(','),
+        },
+      });
     }
     if (onComplete) {
       onComplete();
@@ -491,22 +451,15 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
         validationSchema={JellyfinSettingsSchema}
         onSubmit={async (values) => {
           try {
-            const res = await fetch('/api/v1/settings/jellyfin', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                ip: values.hostname,
-                port: Number(values.port),
-                useSsl: values.useSsl,
-                urlBase: values.urlBase,
-                externalHostname: values.jellyfinExternalUrl,
-                jellyfinForgotPasswordUrl: values.jellyfinForgotPasswordUrl,
-                apiKey: values.apiKey,
-              } as JellyfinSettings),
-            });
-            if (!res.ok) throw new Error(res.statusText, { cause: res });
+            await axios.post('/api/v1/settings/jellyfin', {
+              ip: values.hostname,
+              port: Number(values.port),
+              useSsl: values.useSsl,
+              urlBase: values.urlBase,
+              externalHostname: values.jellyfinExternalUrl,
+              jellyfinForgotPasswordUrl: values.jellyfinForgotPasswordUrl,
+              apiKey: values.apiKey,
+            } as JellyfinSettings);
 
             addToast(
               intl.formatMessage(
@@ -519,14 +472,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
               }
             );
           } catch (e) {
-            let errorData;
-            try {
-              errorData = await e.cause?.text();
-              errorData = JSON.parse(errorData);
-            } catch {
-              /* empty */
-            }
-            if (errorData?.message === ApiErrorCode.InvalidUrl) {
+            if (e?.response?.data?.message === ApiErrorCode.InvalidUrl) {
               addToast(
                 intl.formatMessage(
                   messages.invalidurlerror,

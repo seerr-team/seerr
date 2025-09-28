@@ -16,6 +16,7 @@ import type {
   RadarrSettings,
   SonarrSettings,
 } from '@server/lib/settings';
+import axios from 'axios';
 import { Field, Formik } from 'formik';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -95,24 +96,19 @@ const OverrideRuleModal = ({
     }) => {
       setIsTesting(true);
       try {
-        const res = await fetch('/api/v1/settings/sonarr/test', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        const response = await axios.post<DVRTestResponse>(
+          '/api/v1/settings/sonarr/test',
+          {
             hostname,
             apiKey,
             port: Number(port),
             baseUrl,
             useSsl,
-          }),
-        });
-        if (!res.ok) throw new Error();
-        const data: DVRTestResponse = await res.json();
+          }
+        );
 
         setIsValidated(true);
-        setTestResponse(data);
+        setTestResponse(response.data);
       } catch (e) {
         setIsValidated(false);
       } finally {
@@ -179,27 +175,13 @@ const OverrideRuleModal = ({
               sonarrServiceId: values.sonarrServiceId,
             };
             if (!rule) {
-              const res = await fetch('/api/v1/overrideRule', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(submission),
-              });
-              if (!res.ok) throw new Error();
+              await axios.post('/api/v1/overrideRule', submission);
               addToast(intl.formatMessage(messages.ruleCreated), {
                 appearance: 'success',
                 autoDismiss: true,
               });
             } else {
-              const res = await fetch(`/api/v1/overrideRule/${rule.id}`, {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(submission),
-              });
-              if (!res.ok) throw new Error();
+              await axios.put(`/api/v1/overrideRule/${rule.id}`, submission);
               addToast(intl.formatMessage(messages.ruleUpdated), {
                 appearance: 'success',
                 autoDismiss: true,

@@ -14,4 +14,15 @@
 
 {{ template "chart.requirementsSection" . }}
 
+## Update Notes
+
+### Updating to 2.7.0
+
+Jellyseerr is a stateful application and it is not designed to have multiple replicas. In version 2.7.0 we address this by:
+
+- replacing `Deployment` with `StatefulSet`
+- removing `replicaCount` value
+
+If `replicaCount` value was used - remove it. Helm update should work fine after that.
+
 {{ template "chart.valuesSection" . }}

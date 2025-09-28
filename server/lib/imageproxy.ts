@@ -1,6 +1,7 @@
 import logger from '@server/logger';
-import type { RateLimitOptions } from '@server/utils/rateLimit';
-import rateLimit from '@server/utils/rateLimit';
+import { requestInterceptorFunction } from '@server/utils/customProxyAgent';
+import axios from 'axios';
+import rateLimit, { type rateLimitOptions } from 'axios-rate-limit';
 import { createHash } from 'crypto';
 import { promises } from 'fs';
 import mime from 'mime/lite';
@@ -131,33 +132,30 @@ class ImageProxy {
     return 0;
   }
 
-  private fetch: typeof fetch;
+  private axios;
   private cacheVersion;
   private key;
-  private baseUrl;
-  private headers: HeadersInit | null = null;
 
   constructor(
     key: string,
     baseUrl: string,
     options: {
       cacheVersion?: number;
-      rateLimitOptions?: RateLimitOptions;
-      headers?: HeadersInit;
+      rateLimitOptions?: rateLimitOptions;
+      headers?: Record<string, string>;
     } = {}
   ) {
     this.cacheVersion = options.cacheVersion ?? 1;
-    this.baseUrl = baseUrl;
     this.key = key;
+    this.axios = axios.create({
+      baseURL: baseUrl,
+      headers: options.headers,
+    });
+    this.axios.interceptors.request.use(requestInterceptorFunction);
 
     if (options.rateLimitOptions) {
-      this.fetch = rateLimit(fetch, {
-        ...options.rateLimitOptions,
-      });
-    } else {
-      this.fetch = fetch;
+      this.axios = rateLimit(this.axios, options.rateLimitOptions);
     }
-    this.headers = options.headers || null;
   }
 
   public async getImage(
@@ -193,14 +191,34 @@ class ImageProxy {
   public async clearCachedImage(path: string) {
     // find cacheKey
     const cacheKey = this.getCacheKey(path);
+    const directory = join(this.getCacheDirectory(), cacheKey);
 
     try {
-      const directory = join(this.getCacheDirectory(), cacheKey);
+      await promises.access(directory);
+    } catch (e) {
+      if (e.code === 'ENOENT') {
+        logger.debug(
+          `Cache directory '${cacheKey}' does not exist; nothing to clear.`,
+          {
+            label: 'Image Cache',
+          }
+        );
+        return;
+      } else {
+        logger.error('Error checking cache directory existence', {
+          label: 'Image Cache',
+          message: e.message,
+        });
+        return;
+      }
+    }
+
+    try {
       const files = await promises.readdir(directory);
 
       await promises.rm(directory, { recursive: true });
 
-      logger.info(`Cleared ${files[0]} from cache 'avatar'`, {
+      logger.debug(`Cleared ${files[0]} from cache 'avatar'`, {
         label: 'Image Cache',
       });
     } catch (e) {
@@ -249,34 +267,22 @@ class ImageProxy {
   ): Promise<ImageResponse | null> {
     try {
       const directory = join(this.getCacheDirectory(), cacheKey);
-      const href =
-        this.baseUrl +
-        (this.baseUrl.length > 0
-          ? this.baseUrl.endsWith('/')
-            ? ''
-            : '/'
-          : '') +
-        (path.startsWith('/') ? path.slice(1) : path);
-      const response = await this.fetch(href, {
-        headers: this.headers || undefined,
+      const response = await this.axios.get(path, {
+        responseType: 'arraybuffer',
       });
-      if (!response.ok) {
-        return null;
-      }
-      const arrayBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
 
-      const extension = mime.getExtension(
-        response.headers.get('content-type') ?? ''
-      );
+      const buffer = Buffer.from(response.data, 'binary');
+
+      const contentType = response.headers['content-type'] || '';
+      const extension = mime.getExtension(contentType) || '';
 
       let maxAge = Number(
-        (response.headers.get('cache-control') ?? '0').split('=')[1]
+        (response.headers['cache-control'] ?? '0').split('=')[1]
       );
 
       if (!maxAge) maxAge = 86400;
       const expireAt = Date.now() + maxAge * 1000;
-      const etag = (response.headers.get('etag') ?? '').replace(/"/g, '');
+      const etag = (response.headers.etag ?? '').replace(/"/g, '');
 
       await this.writeToCacheDir(
         directory,

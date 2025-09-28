@@ -4,6 +4,10 @@ metadata:
   name: {{ include "jellyseerr.configPersistenceName" . }}
   labels:
     {{- include "jellyseerr.labels" . | nindent 4 }}
+  {{- with .Values.config.persistence.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- with .Values.config.persistence.accessModes }}
   accessModes:

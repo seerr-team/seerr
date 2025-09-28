@@ -1,3 +1,4 @@
+import BlacklistedTagsSelector from '@app/components/BlacklistedTagsSelector';
 import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
@@ -6,16 +7,18 @@ import LanguageSelector from '@app/components/LanguageSelector';
 import RegionSelector from '@app/components/RegionSelector';
 import CopyButton from '@app/components/Settings/CopyButton';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
-import type { AvailableLocale } from '@app/context/LanguageContext';
 import { availableLanguages } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import { ArrowPathIcon } from '@heroicons/react/24/solid';
 import type { UserSettingsGeneralResponse } from '@server/interfaces/api/userSettingsInterfaces';
 import type { MainSettings } from '@server/lib/settings';
+import type { AvailableLocale } from '@server/types/languages';
+import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
@@ -28,19 +31,31 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   generalsettingsDescription:
     'Configure global and default settings for Jellyseerr.',
   apikey: 'API Key',
+  apikeyCopied: 'Copied API key to clipboard.',
   applicationTitle: 'Application Title',
   applicationurl: 'Application URL',
   discoverRegion: 'Discover Region',
   discoverRegionTip: 'Filter content by regional availability',
   originallanguage: 'Discover Language',
   originallanguageTip: 'Filter content by original language',
+  blacklistedTags: 'Blacklist Content with Tags',
+  blacklistedTagsTip:
+    'Automatically add content with tags to the blacklist using the "Process Blacklisted Tags" job',
+  blacklistedTagsLimit: 'Limit Content Blacklisted per Tag',
+  blacklistedTagsLimitTip:
+    'The "Process Blacklisted Tags" job will blacklist this many pages into each sort. Larger numbers will create a more accurate blacklist, but use more space.',
   streamingRegion: 'Streaming Region',
   streamingRegionTip: 'Show streaming sites by regional availability',
+  hideBlacklisted: 'Hide Blacklisted Items',
+  hideBlacklistedTip:
+    'Hide blacklisted items from discover pages for all users with the "Manage Blacklist" permission',
   toastApiKeySuccess: 'New API key generated successfully!',
   toastApiKeyFailure: 'Something went wrong while generating a new API key.',
   toastSettingsSuccess: 'Settings saved successfully!',
   toastSettingsFailure: 'Something went wrong while saving settings.',
   hideAvailable: 'Hide Available Media',
+  hideAvailableTip:
+    'Hide available media from the discover pages but not search results',
   cacheImages: 'Enable Image Caching',
   cacheImagesTip:
     'Cache externally sourced images (requires a significant amount of disk space)',
@@ -50,6 +65,11 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   partialRequestsEnabled: 'Allow Partial Series Requests',
   enableSpecialEpisodes: 'Allow Special Episodes Requests',
   locale: 'Display Language',
+  youtubeUrl: 'YouTube URL',
+  youtubeUrlTip:
+    'Base URL for YouTube videos if a self-hosted YouTube instance is used.',
+  validationUrl: 'You must provide a valid URL',
+  validationUrlTrailingSlash: 'URL must not end in a trailing slash',
 });
 
 const SettingsMain = () => {
@@ -71,23 +91,39 @@ const SettingsMain = () => {
       intl.formatMessage(messages.validationApplicationTitle)
     ),
     applicationUrl: Yup.string()
-      .matches(
-        /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*))?$/i,
-        intl.formatMessage(messages.validationApplicationUrl)
+      .test(
+        'valid-url',
+        intl.formatMessage(messages.validationApplicationUrl),
+        isValidURL
       )
       .test(
         'no-trailing-slash',
         intl.formatMessage(messages.validationApplicationUrlTrailingSlash),
         (value) => !value || !value.endsWith('/')
       ),
+    blacklistedTagsLimit: Yup.number()
+      .test(
+        'positive',
+        'Number must be greater than 0.',
+        (value) => (value ?? 0) >= 0
+      )
+      .test(
+        'lte-250',
+        'Number must be less than or equal to 250.',
+        (value) => (value ?? 0) <= 250
+      ),
+    youtubeUrl: Yup.string()
+      .url(intl.formatMessage(messages.validationUrl))
+      .test(
+        'no-trailing-slash',
+        intl.formatMessage(messages.validationUrlTrailingSlash),
+        (value) => !value || !value.endsWith('/')
+      ),
   });
 
   const regenerate = async () => {
     try {
-      const res = await fetch('/api/v1/settings/main/regenerate', {
-        method: 'POST',
-      });
-      if (!res.ok) throw new Error();
+      await axios.post('/api/v1/settings/main/regenerate');
 
       revalidate();
       addToast(intl.formatMessage(messages.toastApiKeySuccess), {
@@ -128,37 +164,38 @@ const SettingsMain = () => {
             applicationTitle: data?.applicationTitle,
             applicationUrl: data?.applicationUrl,
             hideAvailable: data?.hideAvailable,
+            hideBlacklisted: data?.hideBlacklisted,
             locale: data?.locale ?? 'en',
             discoverRegion: data?.discoverRegion,
             originalLanguage: data?.originalLanguage,
             streamingRegion: data?.streamingRegion || 'US',
+            blacklistedTags: data?.blacklistedTags,
+            blacklistedTagsLimit: data?.blacklistedTagsLimit || 50,
             partialRequestsEnabled: data?.partialRequestsEnabled,
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
             cacheImages: data?.cacheImages,
+            youtubeUrl: data?.youtubeUrl,
           }}
           enableReinitialize
           validationSchema={MainSettingsSchema}
           onSubmit={async (values) => {
             try {
-              const res = await fetch('/api/v1/settings/main', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  applicationTitle: values.applicationTitle,
-                  applicationUrl: values.applicationUrl,
-                  hideAvailable: values.hideAvailable,
-                  locale: values.locale,
-                  discoverRegion: values.discoverRegion,
-                  streamingRegion: values.streamingRegion,
-                  originalLanguage: values.originalLanguage,
-                  partialRequestsEnabled: values.partialRequestsEnabled,
-                  enableSpecialEpisodes: values.enableSpecialEpisodes,
-                  cacheImages: values.cacheImages,
-                }),
+              await axios.post('/api/v1/settings/main', {
+                applicationTitle: values.applicationTitle,
+                applicationUrl: values.applicationUrl,
+                hideAvailable: values.hideAvailable,
+                hideBlacklisted: values.hideBlacklisted,
+                locale: values.locale,
+                discoverRegion: values.discoverRegion,
+                streamingRegion: values.streamingRegion,
+                originalLanguage: values.originalLanguage,
+                blacklistedTags: values.blacklistedTags,
+                blacklistedTagsLimit: values.blacklistedTagsLimit,
+                partialRequestsEnabled: values.partialRequestsEnabled,
+                enableSpecialEpisodes: values.enableSpecialEpisodes,
+                cacheImages: values.cacheImages,
+                youtubeUrl: values.youtubeUrl,
               });
-              if (!res.ok) throw new Error();
               mutate('/api/v1/settings/public');
               mutate('/api/v1/status');
 
@@ -210,6 +247,9 @@ const SettingsMain = () => {
                         />
                         <CopyButton
                           textToCopy={data?.apiKey ?? ''}
+                          toastMessage={intl.formatMessage(
+                            messages.apikeyCopied
+                          )}
                           key={data?.apiKey}
                         />
                         <button
@@ -218,6 +258,7 @@ const SettingsMain = () => {
                             regenerate();
                           }}
                           className="input-action"
+                          type="button"
                         >
                           <ArrowPathIcon />
                         </button>
@@ -362,11 +403,57 @@ const SettingsMain = () => {
                   </div>
                 </div>
                 <div className="form-row">
+                  <label htmlFor="blacklistedTags" className="text-label">
+                    <span>{intl.formatMessage(messages.blacklistedTags)}</span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.blacklistedTagsTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field relative z-10">
+                      <BlacklistedTagsSelector
+                        defaultValue={values.blacklistedTags}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="blacklistedTagsLimit" className="text-label">
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.blacklistedTagsLimit)}
+                    </span>
+                    <SettingsBadge badgeType="advanced" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.blacklistedTagsLimitTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      id="blacklistedTagsLimit"
+                      name="blacklistedTagsLimit"
+                      type="text"
+                      inputMode="numeric"
+                      className="short"
+                      placeholder={50}
+                    />
+                    {errors.blacklistedTagsLimit &&
+                      touched.blacklistedTagsLimit &&
+                      typeof errors.blacklistedTagsLimit === 'string' && (
+                        <div className="error">
+                          {errors.blacklistedTagsLimit}
+                        </div>
+                      )}
+                  </div>
+                </div>
+                <div className="form-row">
                   <label htmlFor="hideAvailable" className="checkbox-label">
                     <span className="mr-2">
                       {intl.formatMessage(messages.hideAvailable)}
                     </span>
                     <SettingsBadge badgeType="experimental" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.hideAvailableTip)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <Field
@@ -375,6 +462,29 @@ const SettingsMain = () => {
                       name="hideAvailable"
                       onChange={() => {
                         setFieldValue('hideAvailable', !values.hideAvailable);
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="hideBlacklisted" className="checkbox-label">
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.hideBlacklisted)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.hideBlacklistedTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="hideBlacklisted"
+                      name="hideBlacklisted"
+                      onChange={() => {
+                        setFieldValue(
+                          'hideBlacklisted',
+                          !values.hideBlacklisted
+                        );
                       }}
                     />
                   </div>
@@ -423,6 +533,29 @@ const SettingsMain = () => {
                         );
                       }}
                     />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="youtubeUrl" className="text-label">
+                    {intl.formatMessage(messages.youtubeUrl)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.youtubeUrlTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <Field
+                        id="youtubeUrl"
+                        name="youtubeUrl"
+                        type="text"
+                        inputMode="url"
+                      />
+                    </div>
+                    {errors.youtubeUrl &&
+                      touched.youtubeUrl &&
+                      typeof errors.youtubeUrl === 'string' && (
+                        <div className="error">{errors.youtubeUrl}</div>
+                      )}
                   </div>
                 </div>
                 <div className="actions">

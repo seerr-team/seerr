@@ -1,8 +1,7 @@
 import logger from '@server/logger';
-import fs, { promises as fsp } from 'node:fs';
-import path from 'node:path';
-import { Readable } from 'node:stream';
-import type { ReadableStream } from 'node:stream/web';
+import axios from 'axios';
+import fs, { promises as fsp } from 'fs';
+import path from 'path';
 import xml2js from 'xml2js';
 
 const UPDATE_INTERVAL_MSEC = 24 * 3600 * 1000; // how often to download new mapping in milliseconds
@@ -49,6 +48,7 @@ export interface AnidbItem {
   tvdbId?: number;
   tmdbId?: number;
   imdbId?: string;
+  tvdbSeason?: number;
 }
 
 class AnimeListMapping {
@@ -98,6 +98,7 @@ class AnimeListMapping {
           tvdbId: anime.$.defaulttvdbseason === '0' ? undefined : tvdbId,
           tmdbId: tmdbId,
           imdbId: imdbIds[0], // this is used for one AniDB -> one imdb movie mapping
+          tvdbSeason: Number(anime.$.defaulttvdbseason),
         };
 
         if (tvdbId) {
@@ -162,18 +163,14 @@ class AnimeListMapping {
       label: 'Anime-List Sync',
     });
     try {
-      const response = await fetch(MAPPING_URL);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch: ${response.statusText}`);
-      }
+      const response = await axios.get(MAPPING_URL, {
+        responseType: 'stream',
+      });
       await new Promise<void>((resolve, reject) => {
         const writer = fs.createWriteStream(LOCAL_PATH);
         writer.on('finish', resolve);
         writer.on('error', reject);
-        if (!response.body) return reject();
-        Readable.fromWeb(response.body as ReadableStream<Uint8Array>).pipe(
-          writer
-        );
+        response.data.pipe(writer);
       });
     } catch (e) {
       throw new Error(`Failed to download Anime-List mapping: ${e.message}`);

@@ -15,6 +15,7 @@ import useSettings from '@app/hooks/useSettings';
 import defineMessages from '@app/utils/defineMessages';
 import { MediaServerType } from '@server/constants/server';
 import type { Library } from '@server/lib/settings';
+import axios from 'axios';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useState } from 'react';
@@ -57,27 +58,15 @@ const Setup = () => {
 
   const finishSetup = async () => {
     setIsUpdating(true);
-    const res = await fetch('/api/v1/settings/initialize', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    if (!res.ok) throw new Error();
-    const data: { initialized: boolean } = await res.json();
+    const response = await axios.post<{ initialized: boolean }>(
+      '/api/v1/settings/initialize'
+    );
 
     setIsUpdating(false);
-    if (data.initialized) {
-      const mainRes = await fetch('/api/v1/settings/main', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ locale }),
-      });
-      if (!mainRes.ok) throw new Error();
-
+    if (response.data.initialized) {
+      await axios.post('/api/v1/settings/main', { locale });
       mutate('/api/v1/settings/public');
+
       router.push('/');
     }
   };
@@ -94,11 +83,9 @@ const Setup = () => {
       const endpoint = endpointMap[mediaServerType];
       if (!endpoint) return;
 
-      const res = await fetch(endpoint);
-      if (!res.ok) throw new Error('Fetch failed');
-      const data = await res.json();
+      const response = await axios.get(endpoint);
 
-      const hasEnabledLibraries = data?.libraries?.some(
+      const hasEnabledLibraries = response.data?.libraries?.some(
         (library: Library) => library.enabled
       );
 

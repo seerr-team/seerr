@@ -1,13 +1,13 @@
 import type { IssueType } from '@server/constants/issue';
 import { IssueStatus } from '@server/constants/issue';
+import { DbAwareColumn } from '@server/utils/DbColumnHelper';
 import {
+  AfterLoad,
   Column,
-  CreateDateColumn,
   Entity,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import IssueComment from './IssueComment';
 import Media from './Media';
@@ -55,11 +55,20 @@ class Issue {
   })
   public comments: IssueComment[];
 
-  @CreateDateColumn()
+  @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
-  @UpdateDateColumn()
+  @DbAwareColumn({
+    type: 'datetime',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+  })
   public updatedAt: Date;
+
+  @AfterLoad()
+  sortComments() {
+    this.comments?.sort((a, b) => a.id - b.id);
+  }
 
   constructor(init?: Partial<Issue>) {
     Object.assign(this, init);

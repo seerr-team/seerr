@@ -5,6 +5,7 @@ import defineMessages from '@app/utils/defineMessages';
 import { ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
 import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType, ServerType } from '@server/constants/server';
+import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
@@ -71,28 +72,14 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
         validateOnBlur={false}
         onSubmit={async (values) => {
           try {
-            const res = await fetch('/api/v1/auth/jellyfin', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                username: values.username,
-                password: values.password,
-                email: values.username,
-              }),
+            await axios.post('/api/v1/auth/jellyfin', {
+              username: values.username,
+              password: values.password,
+              email: values.username,
             });
-            if (!res.ok) throw new Error(res.statusText, { cause: res });
           } catch (e) {
-            let errorData;
-            try {
-              errorData = await e.cause?.text();
-              errorData = JSON.parse(errorData);
-            } catch {
-              /* empty */
-            }
             let errorMessage = null;
-            switch (errorData?.message) {
+            switch (e?.response?.data?.message) {
               case ApiErrorCode.InvalidUrl:
                 errorMessage = messages.invalidurlerror;
                 break;
@@ -161,7 +148,6 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
                         data-form-type="password"
                         data-1pignore="false"
                         data-lpignore="false"
-                        data-bwignore="false"
                       />
                     </div>
                     <div className="flex">

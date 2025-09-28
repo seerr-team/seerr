@@ -2,6 +2,7 @@ import Modal from '@app/components/Common/Modal';
 import useSettings from '@app/hooks/useSettings';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
+import axios from 'axios';
 import { Field, Formik } from 'formik';
 import { useIntl } from 'react-intl';
 import * as Yup from 'yup';
@@ -57,18 +58,11 @@ const AddEmailModal: React.FC<AddEmailModalProps> = ({
         validationSchema={EmailSettingsSchema}
         onSubmit={async (values) => {
           try {
-            const res = await fetch('/api/v1/auth/jellyfin', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                username: username,
-                password: password,
-                email: values.email,
-              }),
+            await axios.post('/api/v1/auth/jellyfin', {
+              username: username,
+              password: password,
+              email: values.email,
             });
-            if (!res.ok) throw new Error();
 
             onSave();
           } catch (e) {

@@ -6,6 +6,7 @@ import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import type { UserSettingsNotificationsResponse } from '@server/interfaces/api/userSettingsInterfaces';
+import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useRouter } from 'next/router';
 import { useIntl } from 'react-intl';
@@ -67,28 +68,18 @@ const UserNotificationsDiscord = () => {
       enableReinitialize
       onSubmit={async (values) => {
         try {
-          const res = await fetch(
-            `/api/v1/user/${user?.id}/settings/notifications`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                pgpKey: data?.pgpKey,
-                discordId: values.discordId,
-                pushbulletAccessToken: data?.pushbulletAccessToken,
-                pushoverApplicationToken: data?.pushoverApplicationToken,
-                pushoverUserKey: data?.pushoverUserKey,
-                telegramChatId: data?.telegramChatId,
-                telegramSendSilently: data?.telegramSendSilently,
-                notificationTypes: {
-                  discord: values.types,
-                },
-              }),
-            }
-          );
-          if (!res.ok) throw new Error();
+          await axios.post(`/api/v1/user/${user?.id}/settings/notifications`, {
+            pgpKey: data?.pgpKey,
+            discordId: values.discordId,
+            pushbulletAccessToken: data?.pushbulletAccessToken,
+            pushoverApplicationToken: data?.pushoverApplicationToken,
+            pushoverUserKey: data?.pushoverUserKey,
+            telegramChatId: data?.telegramChatId,
+            telegramSendSilently: data?.telegramSendSilently,
+            notificationTypes: {
+              discord: values.types,
+            },
+          });
           addToast(intl.formatMessage(messages.discordsettingssaved), {
             appearance: 'success',
             autoDismiss: true,

@@ -18,6 +18,7 @@ import { ApiError } from '@server/types/error';
 import { getHostname } from '@server/utils/getHostname';
 import { Router } from 'express';
 import net from 'net';
+import { Not } from 'typeorm';
 import { canMakePermissionsChange } from '.';
 
 const isOwnProfile = (): Middleware => {
@@ -125,8 +126,9 @@ userSettingsRoutes.post<
     }
 
     const existingUser = await userRepository.findOne({
-      where: { email: user.email },
+      where: { email: user.email, id: Not(user.id) },
     });
+
     if (oldEmail !== user.email && existingUser) {
       throw new ApiError(400, ApiErrorCode.InvalidEmail);
     }
@@ -419,7 +421,9 @@ userSettingsRoutes.post<{ username: string; password: string }>(
 
     const hostname = getHostname();
     const deviceId = Buffer.from(
-      `BOT_jellyseerr_${req.user.username ?? ''}`
+      req.user?.id === 1
+        ? 'BOT_jellyseerr'
+        : `BOT_jellyseerr_${req.user.username ?? ''}`
     ).toString('base64');
 
     const jellyfinserver = new JellyfinAPI(hostname, undefined, deviceId);

@@ -8,24 +8,32 @@ on:
       - 'docs/**'
       - 'gen-docs/**'
 
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-pr-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-deploy:
     name: Test deployment
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: package.json
 
       - name: Pnpm Setup
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Get pnpm store directory
         shell: sh
@@ -42,7 +50,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd gen-docs 
+          cd gen-docs
           pnpm install --frozen-lockfile
 
       - name: Build website

@@ -42,6 +42,8 @@ class WebPushAgent
     type: Notification,
     payload: NotificationPayload
   ): PushNotificationPayload {
+    const { embedPoster } = getSettings().notifications.agents.webpush;
+
     const mediaType = payload.media
       ? payload.media.mediaType === MediaType.MOVIE
         ? 'movie'
@@ -128,7 +130,7 @@ class WebPushAgent
       notificationType: Notification[type],
       subject: payload.subject,
       message,
-      image: payload.image,
+      image: embedPoster ? payload.image : undefined,
       requestId: payload.request?.id,
       actionUrl,
       actionUrlTitle,
@@ -241,7 +243,7 @@ class WebPushAgent
       const allSubs = await userPushSubRepository
         .createQueryBuilder('pushSub')
         .leftJoinAndSelect('pushSub.user', 'user')
-        .where('pushSub.userId IN (:users)', {
+        .where('pushSub.userId IN (:...users)', {
           users: manageUsers.map((user) => user.id),
         })
         .getMany();

@@ -1,15 +1,23 @@
 import type { ProxySettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
+import { HttpProxyAgent } from 'http-proxy-agent';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import type { Dispatcher } from 'undici';
 import { Agent, ProxyAgent, setGlobalDispatcher } from 'undici';
+
+export let requestInterceptorFunction: (
+  config: InternalAxiosRequestConfig
+) => InternalAxiosRequestConfig;
 
 export default async function createCustomProxyAgent(
   proxySettings: ProxySettings
 ) {
   const defaultAgent = new Agent({ keepAliveTimeout: 5000 });
 
-  const skipUrl = (url: string) => {
-    const hostname = new URL(url).hostname;
+  const skipUrl = (url: string | URL) => {
+    const hostname =
+      typeof url === 'string' ? new URL(url).hostname : url.hostname;
 
     if (proxySettings.bypassLocalAddresses && isLocalAddress(hostname)) {
       return true;
@@ -38,8 +46,7 @@ export default async function createCustomProxyAgent(
     dispatch: Dispatcher['dispatch']
   ): Dispatcher['dispatch'] => {
     return (opts, handler) => {
-      const url = opts.origin?.toString();
-      return url && skipUrl(url)
+      return opts.origin && skipUrl(opts.origin)
         ? defaultAgent.dispatch(opts, handler)
         : dispatch(opts, handler);
     };
@@ -53,20 +60,35 @@ export default async function createCustomProxyAgent(
       : undefined;
 
   try {
+    const proxyUrl = `${proxySettings.useSsl ? 'https' : 'http'}://${
+      proxySettings.hostname
+    }:${proxySettings.port}`;
     const proxyAgent = new ProxyAgent({
-      uri:
-        (proxySettings.useSsl ? 'https://' : 'http://') +
-        proxySettings.hostname +
-        ':' +
-        proxySettings.port,
+      uri: proxyUrl,
       token,
-      interceptors: {
-        Client: [noProxyInterceptor],
-      },
       keepAliveTimeout: 5000,
     });
 
-    setGlobalDispatcher(proxyAgent);
+    setGlobalDispatcher(proxyAgent.compose(noProxyInterceptor));
+
+    axios.defaults.httpAgent = new HttpProxyAgent(proxyUrl, {
+      headers: token ? { 'proxy-authorization': token } : undefined,
+    });
+    axios.defaults.httpsAgent = new HttpsProxyAgent(proxyUrl, {
+      headers: token ? { 'proxy-authorization': token } : undefined,
+    });
+
+    requestInterceptorFunction = (config) => {
+      const url = config.baseURL
+        ? new URL(config.baseURL + (config.url || ''))
+        : config.url;
+      if (url && skipUrl(url)) {
+        config.httpAgent = false;
+        config.httpsAgent = false;
+      }
+      return config;
+    };
+    axios.interceptors.request.use(requestInterceptorFunction);
   } catch (e) {
     logger.error('Failed to connect to the proxy: ' + e.message, {
       label: 'Proxy',
@@ -76,15 +98,8 @@ export default async function createCustomProxyAgent(
   }
 
   try {
-    const res = await fetch('https://www.google.com', { method: 'HEAD' });
-    if (res.ok) {
-      logger.debug('HTTP(S) proxy connected successfully', { label: 'Proxy' });
-    } else {
-      logger.error('Proxy responded, but with a non-OK status: ' + res.status, {
-        label: 'Proxy',
-      });
-      setGlobalDispatcher(defaultAgent);
-    }
+    await axios.head('https://www.google.com');
+    logger.debug('HTTP(S) proxy connected successfully', { label: 'Proxy' });
   } catch (e) {
     logger.error(
       'Failed to connect to the proxy: ' + e.message + ': ' + e.cause,
@@ -95,7 +110,11 @@ export default async function createCustomProxyAgent(
 }
 
 function isLocalAddress(hostname: string) {
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+  if (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '::1'
+  ) {
     return true;
   }
 

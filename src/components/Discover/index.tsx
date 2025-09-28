@@ -28,6 +28,7 @@ import {
 } from '@heroicons/react/24/solid';
 import { DiscoverSliderType } from '@server/constants/discover';
 import type DiscoverSlider from '@server/entity/DiscoverSlider';
+import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
@@ -75,14 +76,7 @@ const Discover = () => {
 
   const updateSliders = async () => {
     try {
-      const res = await fetch('/api/v1/settings/discover', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(sliders),
-      });
-      if (!res.ok) throw new Error();
+      await axios.post('/api/v1/settings/discover', sliders);
 
       addToast(intl.formatMessage(messages.updatesuccess), {
         appearance: 'success',
@@ -100,10 +94,7 @@ const Discover = () => {
 
   const resetSliders = async () => {
     try {
-      const res = await fetch('/api/v1/settings/discover/reset', {
-        method: 'GET',
-      });
-      if (!res.ok) throw new Error();
+      await axios.get('/api/v1/settings/discover/reset');
 
       addToast(intl.formatMessage(messages.resetsuccess), {
         appearance: 'success',

@@ -3,6 +3,7 @@ import SensitiveInput from '@app/components/Common/SensitiveInput';
 import useSettings from '@app/hooks/useSettings';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
+import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -54,17 +55,10 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
       validateOnBlur={false}
       onSubmit={async (values) => {
         try {
-          const res = await fetch('/api/v1/auth/local', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: values.email,
-              password: values.password,
-            }),
+          await axios.post('/api/v1/auth/local', {
+            email: values.email,
+            password: values.password,
           });
-          if (!res.ok) throw new Error();
         } catch (e) {
           setLoginError(intl.formatMessage(messages.loginerror));
         } finally {
@@ -118,7 +112,6 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                       className="!bg-gray-700/80 placeholder:text-gray-400"
                       data-1pignore="false"
                       data-lpignore="false"
-                      data-bwignore="false"
                     />
                   </div>
                   <div className="flex">

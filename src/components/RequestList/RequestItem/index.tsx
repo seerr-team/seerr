@@ -17,11 +17,13 @@ import {
   TrashIcon,
   XMarkIcon,
 } from '@heroicons/react/24/solid';
-import { MediaRequestStatus } from '@server/constants/media';
+import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { NonFunctionProperties } from '@server/interfaces/api/common';
+import type { RequestResultsResponse } from '@server/interfaces/api/requestInterfaces';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
+import axios from 'axios';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useInView } from 'react-intersection-observer';
@@ -64,10 +66,7 @@ const RequestItemError = ({
   const { hasPermission } = useUser();
 
   const deleteRequest = async () => {
-    const res = await fetch(`/api/v1/media/${requestData?.media.id}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) throw new Error();
+    await axios.delete(`/api/v1/media/${requestData?.media.id}`);
     revalidateList();
     mutate('/api/v1/request/count');
   };
@@ -291,7 +290,7 @@ const RequestItemError = ({
 };
 
 interface RequestItemProps {
-  request: NonFunctionProperties<MediaRequest> & { profileName?: string };
+  request: RequestResultsResponse['results'][number];
   revalidateList: () => void;
 }
 
@@ -327,23 +326,16 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
   const [isRetrying, setRetrying] = useState(false);
 
   const modifyRequest = async (type: 'approve' | 'decline') => {
-    const res = await fetch(`/api/v1/request/${request.id}/${type}`, {
-      method: 'POST',
-    });
-    if (!res.ok) throw new Error();
-    const data = await res.json();
+    const response = await axios.post(`/api/v1/request/${request.id}/${type}`);
 
-    if (data) {
+    if (response) {
       revalidate();
       mutate('/api/v1/request/count');
     }
   };
 
   const deleteRequest = async () => {
-    const res = await fetch(`/api/v1/request/${request.id}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) throw new Error();
+    await axios.delete(`/api/v1/request/${request.id}`);
 
     revalidateList();
     mutate('/api/v1/request/count');
@@ -351,13 +343,10 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
 
   const deleteMediaFile = async () => {
     if (request.media) {
-      // we don't check if the response is ok here because there may be no file to delete
-      await fetch(`/api/v1/media/${request.media.id}/file`, {
-        method: 'DELETE',
-      });
-      await fetch(`/api/v1/media/${request.media.id}`, {
-        method: 'DELETE',
-      });
+      await axios.delete(
+        `/api/v1/media/${request.media.id}/file?is4k=${request.is4k}`
+      );
+      await axios.delete(`/api/v1/media/${request.media.id}`);
       revalidateList();
     }
   };
@@ -366,12 +355,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
     setRetrying(true);
 
     try {
-      const res = await fetch(`/api/v1/request/${request.id}/retry`, {
-        method: 'POST',
-      });
-      if (!res.ok) throw new Error();
-      const result = await res.json();
-
+      const result = await axios.post(`/api/v1/request/${request.id}/retry`);
       revalidate(result.data);
     } catch (e) {
       addToast(intl.formatMessage(messages.failedretry), {
@@ -526,6 +510,15 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                   href={`/${requestData.type}/${requestData.media.tmdbId}?manage=1`}
                 >
                   {intl.formatMessage(globalMessages.failed)}
+                </Badge>
+              ) : requestData.status === MediaRequestStatus.PENDING &&
+                requestData.media[requestData.is4k ? 'status4k' : 'status'] ===
+                  MediaStatus.DELETED ? (
+                <Badge
+                  badgeType="warning"
+                  href={`/${requestData.type}/${requestData.media.tmdbId}?manage=1`}
+                >
+                  {intl.formatMessage(globalMessages.pending)}
                 </Badge>
               ) : (
                 <StatusBadge
@@ -706,18 +699,20 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                   <TrashIcon />
                   <span>{intl.formatMessage(messages.deleterequest)}</span>
                 </ConfirmButton>
-                <ConfirmButton
-                  onClick={() => deleteMediaFile()}
-                  confirmText={intl.formatMessage(globalMessages.areyousure)}
-                  className="w-full"
-                >
-                  <TrashIcon />
-                  <span>
-                    {intl.formatMessage(messages.removearr, {
-                      arr: request.type === 'movie' ? 'Radarr' : 'Sonarr',
-                    })}
-                  </span>
-                </ConfirmButton>
+                {request.canRemove && (
+                  <ConfirmButton
+                    onClick={() => deleteMediaFile()}
+                    confirmText={intl.formatMessage(globalMessages.areyousure)}
+                    className="w-full"
+                  >
+                    <TrashIcon />
+                    <span>
+                      {intl.formatMessage(messages.removearr, {
+                        arr: request.type === 'movie' ? 'Radarr' : 'Sonarr',
+                      })}
+                    </span>
+                  </ConfirmButton>
+                )}
               </>
             )}
           {requestData.status === MediaRequestStatus.PENDING &&

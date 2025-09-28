@@ -12,6 +12,7 @@ import defineMessages from '@app/utils/defineMessages';
 import PlexOAuth from '@app/utils/plex';
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { MediaServerType } from '@server/constants/server';
+import axios from 'axios';
 import { useRouter } from 'next/router';
 import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -91,25 +92,21 @@ const UserLinkedAccountsSettings = () => {
     setError(null);
     try {
       const authToken = await plexOAuth.login();
-      const res = await fetch(
+      await axios.post(
         `/api/v1/user/${user?.id}/settings/linked-accounts/plex`,
         {
-          method: 'POST',
-          body: JSON.stringify({ authToken }),
+          authToken,
         }
       );
-      if (!res.ok) {
-        if (res.status === 401) {
-          setError(intl.formatMessage(messages.plexErrorUnauthorized));
-        } else if (res.status === 422) {
-          setError(intl.formatMessage(messages.plexErrorExists));
-        } else {
-          setError(intl.formatMessage(messages.errorUnknown));
-        }
-      } else {
-        await revalidateUser();
-      }
+      await revalidateUser();
     } catch (e) {
+      if (e?.response?.status === 401) {
+        setError(intl.formatMessage(messages.plexErrorUnauthorized));
+      } else if (e?.response?.status === 422) {
+        setError(intl.formatMessage(messages.plexErrorExists));
+      } else {
+        setError(intl.formatMessage(messages.errorUnknown));
+      }
       setError(intl.formatMessage(messages.errorUnknown));
     }
   };
@@ -143,11 +140,9 @@ const UserLinkedAccountsSettings = () => {
 
   const deleteRequest = async (account: string) => {
     try {
-      const res = await fetch(
-        `/api/v1/user/${user?.id}/settings/linked-accounts/${account}`,
-        { method: 'DELETE' }
+      await axios.delete(
+        `/api/v1/user/${user?.id}/settings/linked-accounts/${account}`
       );
-      if (!res.ok) throw new Error();
     } catch {
       setError(intl.formatMessage(messages.deleteFailed));
     }

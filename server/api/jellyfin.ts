@@ -22,6 +22,23 @@ export interface JellyfinUserResponse {
   PrimaryImageTag?: string;
 }
 
+export interface JellyfinDevice {
+  Id: string;
+  Name: string;
+  LastUserName: string;
+  AppName: string;
+  AppVersion: string;
+  LastUserId: string;
+  DateLastActivity: string;
+  Capabilities: Record<string, unknown>;
+}
+
+export interface JellyfinDevicesResponse {
+  Items: JellyfinDevice[];
+  TotalRecordCount: number;
+  StartIndex: number;
+}
+
 export interface JellyfinLoginResponse {
   User: JellyfinUserResponse;
   AccessToken: string;
@@ -86,6 +103,7 @@ export interface JellyfinLibraryItemExtended extends JellyfinLibraryItem {
     Tmdb?: string;
     Imdb?: string;
     Tvdb?: string;
+    AniDB?: string;
   };
   MediaSources?: JellyfinMediaSource[];
   Width?: number;
@@ -110,11 +128,16 @@ class JellyfinAPI extends ExternalAPI {
     deviceId?: string | null
   ) {
     const settings = getSettings();
+    const safeDeviceId =
+      deviceId && deviceId.length > 0
+        ? deviceId
+        : Buffer.from('BOT_jellyseerr').toString('base64');
+
     let authHeaderVal: string;
     if (authToken) {
-      authHeaderVal = `MediaBrowser Client="Jellyseerr", Device="Jellyseerr", DeviceId="${deviceId}", Version="${getAppVersion()}", Token="${authToken}"`;
+      authHeaderVal = `MediaBrowser Client="Jellyseerr", Device="Jellyseerr", DeviceId="${safeDeviceId}", Version="${getAppVersion()}", Token="${authToken}"`;
     } else {
-      authHeaderVal = `MediaBrowser Client="Jellyseerr", Device="Jellyseerr", DeviceId="${deviceId}", Version="${getAppVersion()}"`;
+      authHeaderVal = `MediaBrowser Client="Jellyseerr", Device="Jellyseerr", DeviceId="${safeDeviceId}", Version="${getAppVersion()}"`;
     }
 
     super(
@@ -123,6 +146,8 @@ class JellyfinAPI extends ExternalAPI {
       {
         headers: {
           'X-Emby-Authorization': authHeaderVal,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
         },
       }
     );
@@ -136,7 +161,7 @@ class JellyfinAPI extends ExternalAPI {
     ClientIP?: string
   ): Promise<JellyfinLoginResponse> {
     const authenticate = async (useHeaders: boolean) => {
-      const headers: { [key: string]: string } =
+      const headers =
         useHeaders && ClientIP ? { 'X-Forwarded-For': ClientIP } : {};
 
       return this.post<JellyfinLoginResponse>(
@@ -145,8 +170,6 @@ class JellyfinAPI extends ExternalAPI {
           Username,
           Pw: Password,
         },
-        {},
-        undefined,
         { headers }
       );
     };
@@ -156,36 +179,36 @@ class JellyfinAPI extends ExternalAPI {
     } catch (e) {
       logger.debug('Failed to authenticate with headers', {
         label: 'Jellyfin API',
-        error: e.cause.message ?? e.cause.statusText,
+        error: e.response?.statusText,
         ip: ClientIP,
       });
 
-      if (!e.cause.status) {
+      if (!e.response?.status) {
         throw new ApiError(404, ApiErrorCode.InvalidUrl);
       }
 
-      if (e.cause.status === 401) {
-        throw new ApiError(e.cause.status, ApiErrorCode.InvalidCredentials);
+      if (e.response?.status === 401) {
+        throw new ApiError(e.response?.status, ApiErrorCode.InvalidCredentials);
       }
     }
 
     try {
       return await authenticate(false);
     } catch (e) {
-      if (e.cause.status === 401) {
-        throw new ApiError(e.cause.status, ApiErrorCode.InvalidCredentials);
+      if (e.response?.status === 401) {
+        throw new ApiError(e.response?.status, ApiErrorCode.InvalidCredentials);
       }
 
       logger.error(
-        'Something went wrong while authenticating with the Jellyfin server',
+        `Something went wrong while authenticating with the Jellyfin server: ${e.message}`,
         {
           label: 'Jellyfin API',
-          error: e.cause.message ?? e.cause.statusText,
+          error: e.response?.status,
           ip: ClientIP,
         }
       );
 
-      throw new ApiError(e.cause.status, ApiErrorCode.Unknown);
+      throw new ApiError(e.response?.status, ApiErrorCode.Unknown);
     }
   }
 
@@ -200,7 +223,7 @@ class JellyfinAPI extends ExternalAPI {
 
       return systemInfoResponse;
     } catch (e) {
-      throw new ApiError(e.cause?.status, ApiErrorCode.InvalidAuthToken);
+      throw new ApiError(e.response?.status, ApiErrorCode.InvalidAuthToken);
     }
   }
 
@@ -213,11 +236,11 @@ class JellyfinAPI extends ExternalAPI {
       return serverResponse.ServerName;
     } catch (e) {
       logger.error(
-        'Something went wrong while getting the server name from the Jellyfin server',
-        { label: 'Jellyfin API', error: e.cause.message ?? e.cause.statusText }
+        `Something went wrong while getting the server name from the Jellyfin server: ${e.message}`,
+        { label: 'Jellyfin API', error: e.response?.status }
       );
 
-      throw new ApiError(e.cause?.status, ApiErrorCode.Unknown);
+      throw new ApiError(e.response?.status, ApiErrorCode.Unknown);
     }
   }
 
@@ -228,11 +251,11 @@ class JellyfinAPI extends ExternalAPI {
       return { users: userReponse };
     } catch (e) {
       logger.error(
-        'Something went wrong while getting the account from the Jellyfin server',
-        { label: 'Jellyfin API', error: e.cause.message ?? e.cause.statusText }
+        `Something went wrong while getting the account from the Jellyfin server: ${e.message}`,
+        { label: 'Jellyfin API', error: e.response?.status }
       );
 
-      throw new ApiError(e.cause?.status, ApiErrorCode.InvalidAuthToken);
+      throw new ApiError(e.response?.status, ApiErrorCode.InvalidAuthToken);
     }
   }
 
@@ -244,11 +267,11 @@ class JellyfinAPI extends ExternalAPI {
       return userReponse;
     } catch (e) {
       logger.error(
-        'Something went wrong while getting the account from the Jellyfin server',
-        { label: 'Jellyfin API', error: e.cause.message ?? e.cause.statusText }
+        `Something went wrong while getting the account from the Jellyfin server: ${e.message}`,
+        { label: 'Jellyfin API', error: e.response?.status }
       );
 
-      throw new ApiError(e.cause?.status, ApiErrorCode.InvalidAuthToken);
+      throw new ApiError(e.response?.status, ApiErrorCode.InvalidAuthToken);
     }
   }
 
@@ -268,10 +291,10 @@ class JellyfinAPI extends ExternalAPI {
         return this.mapLibraries(mediaFolderResponse.Items);
       } catch (e) {
         logger.error(
-          'Something went wrong while getting libraries from the Jellyfin server',
+          `Something went wrong while getting libraries from the Jellyfin server: ${e.message}`,
           {
             label: 'Jellyfin API',
-            error: e.cause.message ?? e.cause.statusText,
+            error: e.response?.status,
           }
         );
 
@@ -308,26 +331,20 @@ class JellyfinAPI extends ExternalAPI {
 
   public async getLibraryContents(id: string): Promise<JellyfinLibraryItem[]> {
     try {
-      const libraryItemsResponse = await this.get<any>(`/Items`, {
-        SortBy: 'SortName',
-        SortOrder: 'Ascending',
-        IncludeItemTypes: 'Series,Movie,Others',
-        Recursive: 'true',
-        StartIndex: '0',
-        ParentId: id,
-        collapseBoxSetItems: 'false',
-      });
+      const libraryItemsResponse = await this.get<any>(
+        `/Items?SortBy=SortName&SortOrder=Ascending&IncludeItemTypes=Series,Movie,Others&Recursive=true&StartIndex=0&ParentId=${id}&collapseBoxSetItems=false`
+      );
 
       return libraryItemsResponse.Items.filter(
         (item: JellyfinLibraryItem) => item.LocationType !== 'Virtual'
       );
     } catch (e) {
       logger.error(
-        'Something went wrong while getting library content from the Jellyfin server',
-        { label: 'Jellyfin API', error: e.cause.message ?? e.cause.statusText }
+        `Something went wrong while getting library content from the Jellyfin server: ${e.message}`,
+        { label: 'Jellyfin API', error: e?.response?.status }
       );
 
-      throw new ApiError(e.cause?.status, ApiErrorCode.InvalidAuthToken);
+      throw new ApiError(e.response?.status, ApiErrorCode.InvalidAuthToken);
     }
   }
 
@@ -337,27 +354,22 @@ class JellyfinAPI extends ExternalAPI {
         this.mediaServerType === MediaServerType.JELLYFIN
           ? `/Items/Latest`
           : `/Users/${this.userId}/Items/Latest`;
-
-      const baseParams = {
-        Limit: '12',
-        ParentId: id,
-      };
-
-      const params =
-        this.mediaServerType === MediaServerType.JELLYFIN
-          ? { ...baseParams, userId: this.userId ?? `Me` }
-          : baseParams;
-
-      const itemResponse = await this.get<any>(endpoint, params);
+      const itemResponse = await this.get<any>(
+        `${endpoint}?Limit=12&ParentId=${id}${
+          this.mediaServerType === MediaServerType.JELLYFIN
+            ? `&userId=${this.userId ?? 'Me'}`
+            : ''
+        }`
+      );
 
       return itemResponse;
     } catch (e) {
       logger.error(
-        'Something went wrong while getting library content from the Jellyfin server',
-        { label: 'Jellyfin API', error: e.cause.message ?? e.cause.statusText }
+        `Something went wrong while getting library content from the Jellyfin server: ${e.message}`,
+        { label: 'Jellyfin API', error: e.response?.status }
       );
 
-      throw new ApiError(e.cause?.status, ApiErrorCode.InvalidAuthToken);
+      throw new ApiError(e.response?.status, ApiErrorCode.InvalidAuthToken);
     }
   }
 
@@ -366,23 +378,25 @@ class JellyfinAPI extends ExternalAPI {
   ): Promise<JellyfinLibraryItemExtended | undefined> {
     try {
       const itemResponse = await this.get<JellyfinItemsReponse>(`/Items`, {
-        ids: id,
-        fields: 'ProviderIds,MediaSources,Width,Height,IsHD,DateCreated',
+        params: {
+          ids: id,
+          fields: 'ProviderIds,MediaSources,Width,Height,IsHD,DateCreated',
+        },
       });
 
       return itemResponse.Items?.[0];
     } catch (e) {
       if (availabilitySync.running) {
-        if (e.cause?.status === 500) {
+        if (e.response?.status === 500) {
           return undefined;
         }
       }
 
       logger.error(
-        'Something went wrong while getting library content from the Jellyfin server',
-        { label: 'Jellyfin API', error: e.cause.message ?? e.cause.statusText }
+        `Something went wrong while getting library content from the Jellyfin server: ${e.message}`,
+        { label: 'Jellyfin API', error: e.response?.status }
       );
-      throw new ApiError(e.cause?.status, ApiErrorCode.InvalidAuthToken);
+      throw new ApiError(e.response?.status, ApiErrorCode.InvalidAuthToken);
     }
   }
 
@@ -393,11 +407,11 @@ class JellyfinAPI extends ExternalAPI {
       return seasonResponse.Items;
     } catch (e) {
       logger.error(
-        'Something went wrong while getting the list of seasons from the Jellyfin server',
-        { label: 'Jellyfin API', error: e.cause.message ?? e.cause.statusText }
+        `Something went wrong while getting the list of seasons from the Jellyfin server: ${e.message}`,
+        { label: 'Jellyfin API', error: e.response?.status }
       );
 
-      throw new ApiError(e.cause?.status, ApiErrorCode.InvalidAuthToken);
+      throw new ApiError(e.response?.status, ApiErrorCode.InvalidAuthToken);
     }
   }
 
@@ -407,10 +421,7 @@ class JellyfinAPI extends ExternalAPI {
   ): Promise<JellyfinLibraryItem[]> {
     try {
       const episodeResponse = await this.get<any>(
-        `/Shows/${seriesID}/Episodes`,
-        {
-          seasonId: seasonID,
-        }
+        `/Shows/${seriesID}/Episodes?seasonId=${seasonID}`
       );
 
       return episodeResponse.Items.filter(
@@ -418,11 +429,11 @@ class JellyfinAPI extends ExternalAPI {
       );
     } catch (e) {
       logger.error(
-        'Something went wrong while getting the list of episodes from the Jellyfin server',
-        { label: 'Jellyfin API', error: e.cause.message ?? e.cause.statusText }
+        `Something went wrong while getting the list of episodes from the Jellyfin server: ${e.message}`,
+        { label: 'Jellyfin API', error: e.response?.status }
       );
 
-      throw new ApiError(e.cause?.status, ApiErrorCode.InvalidAuthToken);
+      throw new ApiError(e.response?.status, ApiErrorCode.InvalidAuthToken);
     }
   }
 
@@ -435,8 +446,8 @@ class JellyfinAPI extends ExternalAPI {
       ).AccessToken;
     } catch (e) {
       logger.error(
-        'Something went wrong while creating an API key from the Jellyfin server',
-        { label: 'Jellyfin API', error: e.cause.message ?? e.cause.statusText }
+        `Something went wrong while creating an API key from the Jellyfin server: ${e.message}`,
+        { label: 'Jellyfin API', error: e.response?.status }
       );
 
       throw new ApiError(e.response?.status, ApiErrorCode.InvalidAuthToken);

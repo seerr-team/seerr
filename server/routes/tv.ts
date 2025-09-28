@@ -1,5 +1,8 @@
+import { getMetadataProvider } from '@server/api/metadata';
 import RottenTomatoes from '@server/api/rating/rottentomatoes';
 import TheMovieDb from '@server/api/themoviedb';
+import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
+import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
 import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
@@ -13,12 +16,20 @@ const tvRoutes = Router();
 
 tvRoutes.get('/:id', async (req, res, next) => {
   const tmdb = new TheMovieDb();
+
   try {
-    const tv = await tmdb.getTvShow({
+    const tmdbTv = await tmdb.getTvShow({
+      tvId: Number(req.params.id),
+    });
+    const metadataProvider = tmdbTv.keywords.results.some(
+      (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
+    )
+      ? await getMetadataProvider('anime')
+      : await getMetadataProvider('tv');
+    const tv = await metadataProvider.getTvShow({
       tvId: Number(req.params.id),
       language: (req.query.language as string) ?? req.locale,
     });
-
     const media = await Media.getMedia(tv.id, MediaType.TV);
 
     const onUserWatchlist = await getRepository(Watchlist).exist({
@@ -34,7 +45,9 @@ tvRoutes.get('/:id', async (req, res, next) => {
 
     // TMDB issue where it doesnt fallback to English when no overview is available in requested locale.
     if (!data.overview) {
-      const tvEnglish = await tmdb.getTvShow({ tvId: Number(req.params.id) });
+      const tvEnglish = await metadataProvider.getTvShow({
+        tvId: Number(req.params.id),
+      });
       data.overview = tvEnglish.overview;
     }
 
@@ -53,10 +66,18 @@ tvRoutes.get('/:id', async (req, res, next) => {
 });
 
 tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
-  const tmdb = new TheMovieDb();
-
   try {
-    const season = await tmdb.getTvSeason({
+    const tmdb = new TheMovieDb();
+    const tmdbTv = await tmdb.getTvShow({
+      tvId: Number(req.params.id),
+    });
+    const metadataProvider = tmdbTv.keywords.results.some(
+      (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
+    )
+      ? await getMetadataProvider('anime')
+      : await getMetadataProvider('tv');
+
+    const season = await metadataProvider.getTvSeason({
       tvId: Number(req.params.id),
       seasonNumber: Number(req.params.seasonNumber),
       language: (req.query.language as string) ?? req.locale,

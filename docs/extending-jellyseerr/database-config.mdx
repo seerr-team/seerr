@@ -12,7 +12,7 @@ Jellyseerr supports SQLite and PostgreSQL. The database connection can be config
 If you want to use SQLite, you can simply set the `DB_TYPE` environment variable to `sqlite`. This is the default configuration so even if you don't set any other options, SQLite will be used.
 
 ```dotenv
-DB_TYPE="sqlite" # Which DB engine to use, either "sqlite" or "postgres". The default is "sqlite".
+DB_TYPE=sqlite # Which DB engine to use, either sqlite or postgres. The default is sqlite.
 CONFIG_DIRECTORY="config" # (optional) The path to the config directory where the db file is stored. The default is "config".
 DB_LOG_QUERIES="false" # (optional) Whether to log the DB queries for debugging. The default is "false".
 ```
@@ -24,7 +24,7 @@ DB_LOG_QUERIES="false" # (optional) Whether to log the DB queries for debugging.
 If your PostgreSQL server is configured to accept TCP connections, you can specify the host and port using the `DB_HOST` and `DB_PORT` environment variables. This is useful for remote connections where the server uses a network host and port.
 
 ```dotenv
-DB_TYPE="postgres" # Which DB engine to use, either "sqlite" or "postgres". The default is "sqlite".
+DB_TYPE=postgres # Which DB engine to use, either sqlite or postgres. The default is sqlite.
 DB_HOST="localhost" # (optional) The host (URL) of the database. The default is "localhost".
 DB_PORT="5432" # (optional) The port to connect to. The default is "5432".
 DB_USER= # (required) Username used to connect to the database.
@@ -38,13 +38,34 @@ DB_LOG_QUERIES="false" # (optional) Whether to log the DB queries for debugging.
 If your PostgreSQL server is configured to accept Unix socket connections, you can specify the path to the socket directory using the `DB_SOCKET_PATH` environment variable. This is useful for local connections where the server uses a Unix socket.
 
 ```dotenv
-DB_TYPE="postgres" # Which DB engine to use, either "sqlite" or "postgres". The default is "sqlite".
+DB_TYPE=postgres # Which DB engine to use, either sqlite or postgres. The default is sqlite.
 DB_SOCKET_PATH="/var/run/postgresql" # (required) The path to the PostgreSQL Unix socket directory.
 DB_USER= # (required) Username used to connect to the database.
 DB_PASS= # (optional) Password of the user used to connect to the database, depending on the server's authentication configuration.
 DB_NAME="jellyseerr" # (optional) The name of the database to connect to. The default is "jellyseerr".
 DB_LOG_QUERIES="false" # (optional) Whether to log the DB queries for debugging. The default is "false".
 ```
+
+:::info
+**Finding Your PostgreSQL Socket Path**
+
+The PostgreSQL socket path varies by operating system and installation method:
+
+- **Ubuntu/Debian**: `/var/run/postgresql`
+- **CentOS/RHEL/Fedora**: `/var/run/postgresql`
+- **macOS (Homebrew)**: `/tmp` or `/opt/homebrew/var/postgresql`
+- **macOS (Postgres.app)**: `/tmp`
+- **Windows**: Not applicable (uses TCP connections)
+
+You can find your socket path by running:
+```bash
+# Find PostgreSQL socket directory
+find /tmp /var/run /run -name ".s.PGSQL.*" 2>/dev/null | head -1 | xargs dirname
+
+# Or check PostgreSQL configuration
+sudo -u postgres psql -c "SHOW unix_socket_directories;"
+```
+:::
 
 ### SSL configuration
 
@@ -56,10 +77,11 @@ DB_SSL_REJECT_UNAUTHORIZED="true" # (optional) Whether to reject ssl connections
 DB_SSL_CA= # (optional) The CA certificate to verify the connection, provided as a string. The default is "".
 DB_SSL_CA_FILE= # (optional) The path to a CA certificate to verify the connection. The default is "".
 DB_SSL_KEY= # (optional) The private key for the connection in PEM format, provided as a string. The default is "".
-DB_SSL_KEY_FILE= # (optinal) Path to the private key for the connection in PEM format. The default is "".
+DB_SSL_KEY_FILE= # (optional) Path to the private key for the connection in PEM format. The default is "".
 DB_SSL_CERT= # (optional) Certificate chain in pem format for the private key, provided as a string. The default is "".
 DB_SSL_CERT_FILE= # (optional) Path to certificate chain in pem format for the private key. The default is "".
 ```
+
 ---
 
 ### Migrating from SQLite to PostgreSQL
@@ -68,15 +90,76 @@ DB_SSL_CERT_FILE= # (optional) Path to certificate chain in pem format for the p
 2. Run Jellyseerr to create the tables in the PostgreSQL database
 3. Stop Jellyseerr
 4. Run the following command to export the data from the SQLite database and import it into the PostgreSQL database:
+
 :::info
-Edit the postgres connection string to match your setup.
+Edit the postgres connection string (without the \{\{ and \}\} brackets) to match your setup.
 
 If you don't have or don't want to use docker, you can build the working pgloader version [in this PR](https://github.com/dimitri/pgloader/pull/1531) from source and use the same options as below.
 :::
+
 :::caution
 The most recent release of pgloader has an issue quoting the table columns. Use the version in the docker container to avoid this issue.
 :::
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+<TabItem value="docker" label="Using pgloader Container (Recommended)" default>
+
+**Recommended method**: Use the pgloader container even for standalone Jellyseerr installations. This avoids building from source and ensures compatibility.
+
 ```bash
-docker run --rm -v config/db.sqlite3:/db.sqlite3:ro ghcr.io/ralgar/pgloader:pr-1531 pgloader --with "quote identifiers" --with "data only" /db.sqlite3 postgresql://{{DB_USER}}:{{DB_PASS}}@{{DB_HOST}}:{{DB_PORT}}/{{DB_NAME}}
-   ```
+# For standalone installations (no Docker network needed)
+docker run --rm \
+  -v /path/to/your/config/db.sqlite3:/db.sqlite3:ro \
+  ghcr.io/ralgar/pgloader:pr-1531 \
+  pgloader --with "quote identifiers" --with "data only" \
+  /db.sqlite3 postgresql://{{DB_USER}}:{{DB_PASS}}@{{DB_HOST}}:{{DB_PORT}}/{{DB_NAME}}
+```
+
+**For Docker Compose setups**: Add the network parameter if your PostgreSQL is also in a container:
+```bash
+docker run --rm \
+  --network your-jellyseerr-network \
+  -v /path/to/your/config/db.sqlite3:/db.sqlite3:ro \
+  ghcr.io/ralgar/pgloader:pr-1531 \
+  pgloader --with "quote identifiers" --with "data only" \
+  /db.sqlite3 postgresql://{{DB_USER}}:{{DB_PASS}}@{{DB_HOST}}:{{DB_PORT}}/{{DB_NAME}}
+```
+
+</TabItem>
+<TabItem value="standalone" label="Building pgloader from Source">
+
+For users who prefer not to use Docker or need a custom build:
+
+```bash
+# Clone the repository and checkout the working version
+git clone https://github.com/dimitri/pgloader.git
+cd pgloader
+git fetch origin pull/1531/head:pr-1531
+git checkout pr-1531
+
+# Follow the official installation instructions
+# See: https://github.com/dimitri/pgloader/blob/master/INSTALL.md
+```
+
+:::info
+**Building pgloader from source requires following the complete installation process outlined in the [official pgloader INSTALL.md](https://github.com/dimitri/pgloader/blob/master/INSTALL.md).**
+
+Please refer to the official documentation for detailed, up-to-date installation instructions.
+:::
+
+Once pgloader is built, run the migration:
+
+```bash
+# Run migration (adjust path to your config directory)
+./pgloader --with "quote identifiers" --with "data only" \
+  /path/to/your/config/db.sqlite3 \
+  postgresql://{{DB_USER}}:{{DB_PASS}}@{{DB_HOST}}:{{DB_PORT}}/{{DB_NAME}}
+```
+
+</TabItem>
+</Tabs>
+
 5. Start Jellyseerr

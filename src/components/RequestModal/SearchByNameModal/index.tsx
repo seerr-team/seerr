@@ -1,9 +1,9 @@
 import Alert from '@app/components/Common/Alert';
+import CachedImage from '@app/components/Common/CachedImage';
 import Modal from '@app/components/Common/Modal';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import type { SonarrSeries } from '@server/api/servarr/sonarr';
-import Image from 'next/image';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
 
@@ -89,7 +89,8 @@ const SearchByNameModal = ({
               } `}
             >
               <div className="relative flex w-24 flex-none items-center space-x-4 self-stretch">
-                <Image
+                <CachedImage
+                  type="tvdb"
                   src={
                     item.remotePoster ??
                     '/images/jellyseerr_poster_not_found.png'

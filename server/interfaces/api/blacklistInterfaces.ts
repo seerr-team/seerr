@@ -6,7 +6,8 @@ export interface BlacklistItem {
   mediaType: 'movie' | 'tv';
   title?: string;
   createdAt?: Date;
-  user: User;
+  user?: User;
+  blacklistedTags?: string;
 }
 
 export interface BlacklistResultsResponse extends PaginatedResponse {

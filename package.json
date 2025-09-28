@@ -2,6 +2,7 @@
   "name": "jellyseerr",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.17.1",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "postinstall": "node postinstall-win.js",
@@ -32,6 +33,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@dr.pogodin/csurf": "^1.14.1",
     "@formatjs/intl-displaynames": "6.2.6",
     "@formatjs/intl-locale": "3.1.1",
     "@formatjs/intl-pluralrules": "5.1.10",
@@ -42,8 +44,11 @@
     "@supercharge/request-ip": "1.2.0",
     "@svgr/webpack": "6.5.1",
     "@tanem/react-nprogress": "5.0.30",
+    "@types/ua-parser-js": "^0.7.36",
     "@types/wink-jaro-distance": "^2.0.2",
     "ace-builds": "1.15.2",
+    "axios": "1.10.0",
+    "axios-rate-limit": "1.3.0",
     "bcrypt": "5.1.0",
     "bowser": "2.11.0",
     "connect-typeorm": "1.1.4",
@@ -51,9 +56,9 @@
     "copy-to-clipboard": "3.3.3",
     "country-flag-icons": "1.5.5",
     "cronstrue": "2.23.0",
-    "csrf-csrf": "^3.1.0",
     "date-fns": "2.29.3",
     "dayjs": "1.11.7",
+    "dns-caching": "^0.2.7",
     "email-templates": "12.0.1",
     "email-validator": "2.0.4",
     "express": "4.21.2",
@@ -62,9 +67,11 @@
     "express-session": "1.17.3",
     "formik": "^2.4.6",
     "gravatar-url": "3.1.0",
+    "http-proxy-agent": "^7.0.2",
+    "https-proxy-agent": "^7.0.6",
     "lodash": "4.17.21",
     "mime": "3",
-    "next": "^14.2.24",
+    "next": "^14.2.25",
     "node-cache": "5.1.2",
     "node-gyp": "9.3.1",
     "node-schedule": "2.1.1",
@@ -97,7 +104,8 @@
     "swagger-ui-express": "4.6.2",
     "swr": "2.2.5",
     "tailwind-merge": "^2.6.0",
-    "typeorm": "0.3.11",
+    "typeorm": "0.3.12",
+    "ua-parser-js": "^1.0.35",
     "undici": "^7.3.0",
     "web-push": "3.5.0",
     "wink-jaro-distance": "^2.0.0",
@@ -111,10 +119,6 @@
   "devDependencies": {
     "@commitlint/cli": "17.4.4",
     "@commitlint/config-conventional": "17.4.4",
-    "@semantic-release/changelog": "6.0.2",
-    "@semantic-release/commit-analyzer": "9.0.2",
-    "@semantic-release/exec": "6.0.3",
-    "@semantic-release/git": "10.0.1",
     "@tailwindcss/aspect-ratio": "0.4.2",
     "@tailwindcss/forms": "0.5.10",
     "@tailwindcss/typography": "0.5.16",
@@ -164,8 +168,6 @@
     "prettier": "2.8.4",
     "prettier-plugin-organize-imports": "3.2.2",
     "prettier-plugin-tailwindcss": "0.2.3",
-    "semantic-release": "19.0.5",
-    "semantic-release-docker-buildx": "1.0.1",
     "tailwindcss": "3.2.7",
     "ts-node": "10.9.1",
     "tsc-alias": "1.8.2",
@@ -174,7 +176,7 @@
   },
   "engines": {
     "node": "^22.0.0",
-    "pnpm": "^9.0.0"
+    "pnpm": "^10.0.0"
   },
   "overrides": {
     "sqlite3/node-gyp": "8.4.1",
@@ -203,24 +205,50 @@
     "plugins": [
       "@semantic-release/commit-analyzer",
       "@semantic-release/release-notes-generator",
-      [
-        "@semantic-release/changelog",
-        {
-          "changelogFile": "CHANGELOG.md"
-        }
-      ],
       "@semantic-release/npm",
       [
-        "@semantic-release/git",
+        "@codedependant/semantic-release-docker",
         {
-          "assets": [
-            "package.json",
-            "CHANGELOG.md"
+          "dockerArgs": {
+            "COMMIT_TAG": "${GITHUB_SHA}"
+          },
+          "dockerLogin": false,
+          "dockerProject": "fallenbagel",
+          "dockerImage": "jellyseerr",
+          "dockerTags": [
+            "latest",
+            "{{major}}",
+            "{{major}}.{{minor}}",
+            "{{major}}.{{minor}}.{{patch}}"
           ],
-          "message": "chore(release): ${nextRelease.version}"
+          "dockerPlatform": [
+            "linux/amd64",
+            "linux/arm64"
+          ]
         }
       ],
-      "semantic-release-docker-buildx",
+      [
+        "@codedependant/semantic-release-docker",
+        {
+          "dockerArgs": {
+            "COMMIT_TAG": "${GITHUB_SHA}"
+          },
+          "dockerLogin": false,
+          "dockerRegistry": "ghcr.io",
+          "dockerProject": "fallenbagel",
+          "dockerImage": "jellyseerr",
+          "dockerTags": [
+            "latest",
+            "{{major}}",
+            "{{major}}.{{minor}}",
+            "{{major}}.{{minor}}.{{patch}}"
+          ],
+          "dockerPlatform": [
+            "linux/amd64",
+            "linux/arm64"
+          ]
+        }
+      ],
       [
         "@semantic-release/github",
         {
@@ -233,21 +261,14 @@
     ],
     "npmPublish": false,
     "publish": [
-      {
-        "path": "semantic-release-docker-buildx",
-        "buildArgs": {
-          "COMMIT_TAG": "$GIT_SHA"
-        },
-        "imageNames": [
-          "fallenbagel/jellyseerr",
-          "ghcr.io/fallenbagel/jellyseerr"
-        ],
-        "platforms": [
-          "linux/amd64",
-          "linux/arm64"
-        ]
-      },
+      "@codedependant/semantic-release-docker",
       "@semantic-release/github"
+    ]
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sqlite3",
+      "bcrypt"
     ]
   }
 }

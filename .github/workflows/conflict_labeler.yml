@@ -2,18 +2,24 @@ name: Merge Conflict Labeler
 
 on:
   push:
-    branches:
-      - develop
+    branches: [develop]
+
   pull_request_target:
-    branches:
-      - develop
-    types: [synchronize]
+    branches: [develop]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merge-conflict-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   label:
     name: Labeling
-    runs-on: ubuntu-latest
-    if: ${{ github.repository == 'Fallenbagel/jellyseerr' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: write

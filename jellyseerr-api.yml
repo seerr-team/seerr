@@ -141,14 +141,83 @@ components:
     UserSettings:
       type: object
       properties:
+        username:
+          type: string
+          nullable: true
+          example: 'Mr User'
+        email:
+          type: string
+          example: 'user@example.com'
+        discordId:
+          type: string
+          nullable: true
+          example: '123456789'
         locale:
           type: string
+          nullable: true
+          example: 'en'
         discoverRegion:
           type: string
-        originalLanguage:
-          type: string
+          nullable: true
+          example: 'US'
         streamingRegion:
           type: string
+          nullable: true
+          example: 'US'
+        originalLanguage:
+          type: string
+          nullable: true
+          example: 'en'
+        movieQuotaLimit:
+          type: number
+          nullable: true
+          description: 'Maximum number of movie requests allowed'
+          example: 10
+        movieQuotaDays:
+          type: number
+          nullable: true
+          description: 'Time period in days for movie quota'
+          example: 30
+        tvQuotaLimit:
+          type: number
+          nullable: true
+          description: 'Maximum number of TV requests allowed'
+          example: 5
+        tvQuotaDays:
+          type: number
+          nullable: true
+          description: 'Time period in days for TV quota'
+          example: 14
+        globalMovieQuotaDays:
+          type: number
+          nullable: true
+          description: 'Global movie quota days setting'
+          example: 30
+        globalMovieQuotaLimit:
+          type: number
+          nullable: true
+          description: 'Global movie quota limit setting'
+          example: 10
+        globalTvQuotaLimit:
+          type: number
+          nullable: true
+          description: 'Global TV quota limit setting'
+          example: 5
+        globalTvQuotaDays:
+          type: number
+          nullable: true
+          description: 'Global TV quota days setting'
+          example: 14
+        watchlistSyncMovies:
+          type: boolean
+          nullable: true
+          description: 'Enable watchlist sync for movies'
+          example: true
+        watchlistSyncTv:
+          type: boolean
+          nullable: true
+          description: 'Enable watchlist sync for TV'
+          example: false
     MainSettings:
       type: object
       properties:
@@ -196,7 +265,46 @@ components:
           example: false
         trustProxy:
           type: boolean
-          example: true
+          example: false
+        proxy:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            hostname:
+              type: string
+              example: ''
+            port:
+              type: number
+              example: 8080
+            useSsl:
+              type: boolean
+              example: false
+            user:
+              type: string
+              example: ''
+            password:
+              type: string
+              example: ''
+            bypassFilter:
+              type: string
+              example: ''
+            bypassLocalAddresses:
+              type: boolean
+              example: true
+        dnsCache:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            forceMinTtl:
+              type: number
+              example: 0
+            forceMaxTtl:
+              type: number
+              example: -1
     PlexLibrary:
       type: object
       properties:
@@ -411,6 +519,20 @@ components:
         serverID:
           type: string
           readOnly: true
+    MetadataSettings:
+      type: object
+      properties:
+        settings:
+          type: object
+          properties:
+            tv:
+              type: string
+              enum: [tvdb, tmdb]
+              example: 'tvdb'
+            anime:
+              type: string
+              enum: [tvdb, tmdb]
+              example: 'tvdb'
     TautulliSettings:
       type: object
       properties:
@@ -1160,7 +1282,7 @@ components:
         status:
           type: number
           example: 0
-          description: Availability of the media. 1 = `UNKNOWN`, 2 = `PENDING`, 3 = `PROCESSING`, 4 = `PARTIALLY_AVAILABLE`, 5 = `AVAILABLE`
+          description: Availability of the media. 1 = `UNKNOWN`, 2 = `PENDING`, 3 = `PROCESSING`, 4 = `PARTIALLY_AVAILABLE`, 5 = `AVAILABLE`, 6 = `DELETED`
         requests:
           type: array
           readOnly: true
@@ -1329,6 +1451,9 @@ components:
               type: string
             jsonPayload:
               type: string
+            supportVariables:
+              type: boolean
+              example: false
     TelegramSettings:
       type: object
       properties:
@@ -1402,7 +1527,7 @@ components:
               type: string
             token:
               type: string
-    LunaSeaSettings:
+    NtfySettings:
       type: object
       properties:
         enabled:
@@ -1414,9 +1539,19 @@ components:
         options:
           type: object
           properties:
-            webhookUrl:
+            url:
               type: string
-            profileName:
+            topic:
+              type: string
+            authMethodUsernamePassword:
+              type: boolean
+            username:
+              type: string
+            password:
+              type: string
+            authMethodToken:
+              type: boolean
+            token:
               type: string
     NotificationEmailSettings:
       type: object
@@ -1953,6 +2088,41 @@ components:
       properties:
         id:
           type: string
+    Certification:
+      type: object
+      properties:
+        certification:
+          type: string
+          example: 'PG-13'
+        meaning:
+          type: string
+          example: 'Some material may be inappropriate for children under 13.'
+          nullable: true
+        order:
+          type: number
+          example: 3
+          nullable: true
+      required:
+        - certification
+
+    CertificationResponse:
+      type: object
+      properties:
+        certifications:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/Certification'
+      example:
+        certifications:
+          US:
+            - certification: 'G'
+              meaning: 'All ages admitted'
+              order: 1
+            - certification: 'PG'
+              meaning: 'Some material may not be suitable for children under 10.'
+              order: 2
   securitySchemes:
     cookieAuth:
       type: apiKey
@@ -2415,6 +2585,67 @@ paths:
                       type: string
                     thumb:
                       type: string
+  /settings/metadatas:
+    get:
+      summary: Get Metadata settings
+      description: Retrieves current Metadata settings.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataSettings'
+    put:
+      summary: Update Metadata settings
+      description: Updates Metadata settings with the provided values.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MetadataSettings'
+      responses:
+        '200':
+          description: 'Values were successfully updated'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataSettings'
+  /settings/metadatas/test:
+    post:
+      summary: Test Provider configuration
+      description: Tests if the TVDB configuration is valid. Returns a list of available languages on success.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tmdb:
+                  type: boolean
+                  example: true
+                tvdb:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: Succesfully connected to TVDB
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Successfully connected to TVDB'
   /settings/tautulli:
     get:
       summary: Get Tautulli settings
@@ -2856,6 +3087,68 @@ paths:
                           imageCount:
                             type: number
                             example: 123
+                  dnsCache:
+                    type: object
+                    properties:
+                      stats:
+                        type: object
+                        properties:
+                          size:
+                            type: number
+                            example: 1
+                          maxSize:
+                            type: number
+                            example: 500
+                          hits:
+                            type: number
+                            example: 19
+                          misses:
+                            type: number
+                            example: 1
+                          failures:
+                            type: number
+                            example: 0
+                          ipv4Fallbacks:
+                            type: number
+                            example: 0
+                          hitRate:
+                            type: number
+                            example: 0.95
+                      entries:
+                        type: array
+                        additionalProperties:
+                          type: object
+                          properties:
+                            addresses:
+                              type: object
+                              properties:
+                                ipv4:
+                                  type: number
+                                  example: 1
+                                ipv6:
+                                  type: number
+                                  example: 1
+                            activeAddress:
+                              type: string
+                              example: 127.0.0.1
+                            family:
+                              type: number
+                              example: 4
+                            age:
+                              type: number
+                              example: 10
+                            ttl:
+                              type: number
+                              example: 10
+                            networkErrors:
+                              type: number
+                              example: 0
+                            hits:
+                              type: number
+                              example: 1
+                            misses:
+                              type: number
+                              example: 1
                   apiCaches:
                     type: array
                     items:
@@ -2895,6 +3188,21 @@ paths:
       responses:
         '204':
           description: 'Flushed cache'
+  /settings/cache/dns/{dnsEntry}/flush:
+    post:
+      summary: Flush a specific DNS cache entry
+      description: Flushes a specific DNS cache entry
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: dnsEntry
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'Flushed dns cache'
   /settings/logs:
     get:
       summary: Returns logs
@@ -3038,52 +3346,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/DiscordSettings'
-      responses:
-        '204':
-          description: Test notification attempted
-  /settings/notifications/lunasea:
-    get:
-      summary: Get LunaSea notification settings
-      description: Returns current LunaSea notification settings in a JSON object.
-      tags:
-        - settings
-      responses:
-        '200':
-          description: Returned LunaSea settings
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LunaSeaSettings'
-    post:
-      summary: Update LunaSea notification settings
-      description: Updates LunaSea notification settings with the provided values.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LunaSeaSettings'
-      responses:
-        '200':
-          description: 'Values were sucessfully updated'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LunaSeaSettings'
-  /settings/notifications/lunasea/test:
-    post:
-      summary: Test LunaSea settings
-      description: Sends a test notification to the LunaSea agent.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LunaSeaSettings'
       responses:
         '204':
           description: Test notification attempted
@@ -3249,6 +3511,52 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/GotifySettings'
+      responses:
+        '204':
+          description: Test notification attempted
+  /settings/notifications/ntfy:
+    get:
+      summary: Get ntfy.sh notification settings
+      description: Returns current ntfy.sh notification settings in a JSON object.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: Returned ntfy.sh settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NtfySettings'
+    post:
+      summary: Update ntfy.sh notification settings
+      description: Update ntfy.sh notification settings with the provided values.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NtfySettings'
+      responses:
+        '200':
+          description: 'Values were sucessfully updated'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NtfySettings'
+  /settings/notifications/ntfy/test:
+    post:
+      summary: Test ntfy.sh settings
+      description: Sends a test notification to the ntfy.sh agent.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NtfySettings'
       responses:
         '204':
           description: Test notification attempted
@@ -3965,6 +4273,8 @@ paths:
                   type: string
                 p256dh:
                   type: string
+                userAgent:
+                  type: string
               required:
                 - endpoint
                 - auth
@@ -3972,6 +4282,88 @@ paths:
       responses:
         '204':
           description: Successfully registered push subscription
+  /user/{userId}/pushSubscriptions:
+    get:
+      summary: Get all web push notification settings for a user
+      description: |
+        Returns all web push notification settings for a user in a JSON object.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: User web push notification settings in JSON
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  endpoint:
+                    type: string
+                  p256dh:
+                    type: string
+                  auth:
+                    type: string
+                  userAgent:
+                    type: string
+  /user/{userId}/pushSubscription/{endpoint}:
+    get:
+      summary: Get web push notification settings for a user
+      description: |
+        Returns web push notification settings for a user in a JSON object.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+        - in: path
+          name: endpoint
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User web push notification settings in JSON
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  endpoint:
+                    type: string
+                  p256dh:
+                    type: string
+                  auth:
+                    type: string
+                  userAgent:
+                    type: string
+    delete:
+      summary: Delete user push subscription by key
+      description: Deletes the user push subscription with the provided key.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+        - in: path
+          name: endpoint
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successfully removed user push subscription
   /user/{userId}:
     get:
       summary: Get user by ID
@@ -4158,6 +4550,12 @@ paths:
             type: string
             nullable: true
             example: dune
+        - in: query
+          name: filter
+          schema:
+            type: string
+            enum: [all, manual, blacklistedTags]
+            default: manual
       responses:
         '200':
           description: Blacklisted items returned
@@ -4337,11 +4735,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  username:
-                    type: string
-                    example: 'Mr User'
+                $ref: '#/components/schemas/UserSettings'
     post:
       summary: Update general settings for a user
       description: Updates and returns general settings for a specific user. Requires `MANAGE_USERS` permission if editing other users.
@@ -4358,22 +4752,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                  nullable: true
+              $ref: '#/components/schemas/UserSettings'
       responses:
         '200':
           description: Updated user general settings returned
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  username:
-                    type: string
-                    example: 'Mr User'
+                $ref: '#/components/schemas/UserSettings'
   /user/{userId}/settings/password:
     get:
       summary: Get password page informatiom
@@ -4813,6 +5199,12 @@ paths:
             type: string
             example: 1,2
         - in: query
+          name: excludeKeywords
+          schema:
+            type: string
+            example: 3,4
+          description: Comma-separated list of keyword IDs to exclude from results
+        - in: query
           name: sortBy
           schema:
             type: string
@@ -4867,6 +5259,37 @@ paths:
           schema:
             type: string
             example: 8|9
+        - in: query
+          name: certification
+          schema:
+            type: string
+            example: PG-13
+          description: Exact certification to filter by (used when certificationMode is 'exact')
+        - in: query
+          name: certificationGte
+          schema:
+            type: string
+            example: G
+          description: Minimum certification to filter by (used when certificationMode is 'range')
+        - in: query
+          name: certificationLte
+          schema:
+            type: string
+            example: PG-13
+          description: Maximum certification to filter by (used when certificationMode is 'range')
+        - in: query
+          name: certificationCountry
+          schema:
+            type: string
+            example: US
+          description: Country code for the certification system (e.g., US, GB, CA)
+        - in: query
+          name: certificationMode
+          schema:
+            type: string
+            enum: [exact, range]
+            example: exact
+          description: Determines whether to use exact certification matching or a certification range (internal use only, not sent to TMDB API)
       responses:
         '200':
           description: Results
@@ -5102,6 +5525,12 @@ paths:
             type: string
             example: 1,2
         - in: query
+          name: excludeKeywords
+          schema:
+            type: string
+            example: 3,4
+          description: Comma-separated list of keyword IDs to exclude from results
+        - in: query
           name: sortBy
           schema:
             type: string
@@ -5161,6 +5590,37 @@ paths:
           schema:
             type: string
             example: 3|4
+        - in: query
+          name: certification
+          schema:
+            type: string
+            example: TV-14
+          description: Exact certification to filter by (used when certificationMode is 'exact')
+        - in: query
+          name: certificationGte
+          schema:
+            type: string
+            example: TV-PG
+          description: Minimum certification to filter by (used when certificationMode is 'range')
+        - in: query
+          name: certificationLte
+          schema:
+            type: string
+            example: TV-MA
+          description: Maximum certification to filter by (used when certificationMode is 'range')
+        - in: query
+          name: certificationCountry
+          schema:
+            type: string
+            example: US
+          description: Country code for the certification system (e.g., US, GB, CA)
+        - in: query
+          name: certificationMode
+          schema:
+            type: string
+            enum: [exact, range]
+            example: exact
+          description: Determines whether to use exact certification matching or a certification range (internal use only, not sent to TMDB API)
       responses:
         '200':
           description: Results
@@ -5589,6 +6049,8 @@ paths:
                 processing,
                 unavailable,
                 failed,
+                deleted,
+                completed,
               ]
         - in: query
           name: sort
@@ -5609,6 +6071,13 @@ paths:
             type: number
             nullable: true
             example: 1
+        - in: query
+          name: mediaType
+          schema:
+            type: string
+            enum: [movie, tv, all]
+            nullable: true
+            default: all
       responses:
         '200':
           description: Requests returned
@@ -5684,7 +6153,7 @@ paths:
     get:
       summary: Gets request counts
       description: |
-        Returns the number of pending and approved requests.
+        Returns the number of requests by status including pending, approved, available, and completed requests.
       tags:
         - request
       responses:
@@ -5710,6 +6179,8 @@ paths:
                   processing:
                     type: number
                   available:
+                    type: number
+                  completed:
                     type: number
   /request/{requestId}:
     get:
@@ -6093,7 +6564,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TvDetails'
-  /tv/{tvId}/season/{seasonId}:
+  /tv/{tvId}/season/{seasonNumber}:
     get:
       summary: Get season details and episode list
       description: Returns season details with a list of episodes in a JSON object.
@@ -6107,11 +6578,11 @@ paths:
             type: number
             example: 76479
         - in: path
-          name: seasonId
+          name: seasonNumber
           required: true
           schema:
             type: number
-            example: 1
+            example: 123456
         - in: query
           name: language
           schema:
@@ -6335,7 +6806,16 @@ paths:
           schema:
             type: string
             nullable: true
-            enum: [all, available, partial, allavailable, processing, pending]
+            enum:
+              [
+                all,
+                available,
+                partial,
+                allavailable,
+                processing,
+                pending,
+                deleted,
+              ]
         - in: query
           name: sort
           schema:
@@ -6387,9 +6867,16 @@ paths:
           example: '1'
           schema:
             type: string
+        - in: query
+          name: is4k
+          description: Whether to remove from 4K service instance (true) or regular service instance (false)
+          required: false
+          example: false
+          schema:
+            type: boolean
       responses:
         '204':
-          description: Succesfully removed media item
+          description: Successfully removed media item
   /media/{mediaId}/{status}:
     post:
       summary: Update media status
@@ -6411,7 +6898,7 @@ paths:
           example: available
           schema:
             type: string
-            enum: [available, partial, processing, pending, unknown]
+            enum: [available, partial, processing, pending, unknown, deleted]
       requestBody:
         content:
           application/json:
@@ -7056,11 +7543,22 @@ paths:
             example: 1
       responses:
         '200':
-          description: Keyword returned
+          description: Keyword returned (null if not found)
           content:
             application/json:
               schema:
+                nullable: true
                 $ref: '#/components/schemas/Keyword'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Unable to retrieve keyword data.'
   /watchproviders/regions:
     get:
       summary: Get watch provider regions
@@ -7123,6 +7621,64 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WatchProviderDetails'
+  /certifications/movie:
+    get:
+      summary: Get movie certifications
+      description: Returns list of movie certifications from TMDB.
+      tags:
+        - other
+      security:
+        - cookieAuth: []
+        - apiKey: []
+      responses:
+        '200':
+          description: Movie certifications returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CertificationResponse'
+        '500':
+          description: Unable to retrieve movie certifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: number
+                    example: 500
+                  message:
+                    type: string
+                    example: Unable to retrieve movie certifications.
+  /certifications/tv:
+    get:
+      summary: Get TV certifications
+      description: Returns list of TV show certifications from TMDB.
+      tags:
+        - other
+      security:
+        - cookieAuth: []
+        - apiKey: []
+      responses:
+        '200':
+          description: TV certifications returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CertificationResponse'
+        '500':
+          description: Unable to retrieve TV certifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: number
+                    example: 500
+                  message:
+                    type: string
+                    example: Unable to retrieve TV certifications.
   /overrideRule:
     get:
       summary: Get override rules

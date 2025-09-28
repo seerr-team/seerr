@@ -1,6 +1,7 @@
 ---
 title: Jobs & Cache
 description: Configure jobs and cache settings.
+sidebar_position: 6
 ---
 
 # Jobs & Cache

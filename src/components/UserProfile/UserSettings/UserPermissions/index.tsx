@@ -8,6 +8,7 @@ import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
+import axios from 'axios';
 import { Form, Formik } from 'formik';
 import { useRouter } from 'next/router';
 import { useIntl } from 'react-intl';
@@ -83,19 +84,10 @@ const UserPermissions = () => {
         enableReinitialize
         onSubmit={async (values) => {
           try {
-            const res = await fetch(
-              `/api/v1/user/${user?.id}/settings/permissions`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  permissions: values.currentPermissions ?? 0,
-                }),
-              }
-            );
-            if (!res.ok) throw new Error();
+            await axios.post(`/api/v1/user/${user?.id}/settings/permissions`, {
+              permissions: values.currentPermissions ?? 0,
+            });
+
             addToast(intl.formatMessage(messages.toastSettingsSuccess), {
               autoDismiss: true,
               appearance: 'success',

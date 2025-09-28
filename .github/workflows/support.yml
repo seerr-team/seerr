@@ -4,22 +4,53 @@ on:
   issues:
     types: [labeled, unlabeled, reopened]
 
+permissions:
+  issues: read
+
+concurrency:
+  group: support-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
 jobs:
   support:
-    runs-on: ubuntu-latest
+    if: github.event.label.name == 'support' || github.event.action == 'reopened'
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      NUMBER: ${{ github.event.issue.number }}
+      ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
     steps:
-      - uses: dessant/support-requests@v4
-        with:
-          github-token: ${{ github.token }}
-          support-label: 'support'
-          issue-comment: >
-            :wave: @{issue-author}, we use the issue tracker exclusively
+      - name: Label added, comment and close issue
+        if: github.event.action == 'labeled' && github.event.label.name == 'support'
+        shell: bash
+        env:
+          BODY: >
+            :wave: @${{ env.ISSUE_AUTHOR }}, we use the issue tracker exclusively
             for bug reports and feature requests. However, this issue appears
             to be a support request. Please use our support channels
             to get help with Jellyseerr.
 
             - [Discord](https://discord.gg/ckbvBtDJgC)
+        run: |
+          retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
+          retry gh issue comment "$NUMBER" -R "$GH_REPO" -b "$BODY" || true
+          retry gh issue close "$NUMBER" -R "$GH_REPO" || true
+          gh issue lock "$NUMBER" -R "$GH_REPO" -r "off_topic" || true
 
-          close-issue: true
-          lock-issue: true
-          issue-lock-reason: 'off-topic'
+      - name: Reopened or label removed, unlock issue
+        if: github.event.action == 'unlabeled' && github.event.label.name == 'support'
+        shell: bash
+        run: |
+          retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
+          retry gh issue reopen "$NUMBER" -R "$GH_REPO" || true
+          gh issue unlock "$NUMBER" -R "$GH_REPO" || true
+
+      - name: Remove support label on manual reopen
+        if: github.event.action == 'reopened'
+        shell: bash
+        run: |
+          gh issue edit "$NUMBER" -R "$GH_REPO" --remove-label "support" || true
+          gh issue unlock "$NUMBER" -R "$GH_REPO" || true

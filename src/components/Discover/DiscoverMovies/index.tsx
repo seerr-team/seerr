@@ -85,7 +85,7 @@ const DiscoverMovies = () => {
               id="sortBy"
               name="sortBy"
               className="rounded-r-only"
-              value={preparedFilters.sortBy}
+              value={preparedFilters.sortBy || SortOptions.PopularityDesc}
               onChange={(e) => updateQueryParams('sortBy', e.target.value)}
             >
               <option value={SortOptions.PopularityDesc}>
