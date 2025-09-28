@@ -34,8 +34,6 @@ jobs:
 
       - name: Pnpm Setup
         uses: pnpm/action-setup@v4
-        with:
-          version: ${{ steps.pnpm-version.outputs.pnpm_version }}
 
       - name: Get pnpm store directory
         shell: sh
