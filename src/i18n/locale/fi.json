@@ -275,7 +275,6 @@
   "components.Login.description": "Koska tämä on ensimmäinen kirjautumisesi sovellukseen {applicationName}, sinun täytyy lisätä toimiva sähköpostiosoite.",
   "components.Login.noadminerror": "Järjestelmänvalvojan käyttäjää ei löytynyt palvelimelta.",
   "components.Login.username": "Käyttäjänimi",
-  "components.Login.validationHostnameRequired": "Sinun täytyy antaa toimiva isäntänimi tai IP-osoite",
   "components.ManageSlideOver.manageModalClearMediaWarning": "* Tämä poistaa peruuttamattomasti kaikki tämän {mediaType}-kohteen tiedot, mukaan lukien kaikki pyynnöt. Jos tämä kohde on {mediaServerName}-kirjastossasi, mediatiedot luodaan uudelleen seuraavan skannauksen aikana.",
   "components.ManageSlideOver.manageModalAdvanced": "Lisäasetukset",
   "components.Login.password": "Salasana",
