@@ -3,7 +3,7 @@ FROM node:22-alpine
 COPY . /app
 WORKDIR /app
 
-RUN npm install --global pnpm@9
+RUN npm install --global pnpm@10
 
 RUN pnpm install
 
