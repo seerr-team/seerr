@@ -390,45 +390,43 @@ const TitleCard = ({
                   : intl.formatMessage(globalMessages.tvshow)}
               </div>
             </div>
-            {showDetail &&
-              currentStatus !== MediaStatus.BLACKLISTED &&
-              mediaType !== 'book' && (
-                <div className="flex flex-col gap-1">
-                  {user?.userType !== UserType.PLEX &&
-                    (toggleWatchlist ? (
-                      <Button
-                        buttonType={'ghost'}
-                        className="z-40"
-                        buttonSize={'sm'}
-                        onClick={onClickWatchlistBtn}
-                      >
-                        <StarIcon className={'h-3 text-amber-300'} />
-                      </Button>
-                    ) : (
-                      <Button
-                        className="z-40"
-                        buttonSize={'sm'}
-                        onClick={onClickDeleteWatchlistBtn}
-                      >
-                        <MinusCircleIcon className={'h-3'} />
-                      </Button>
-                    ))}
-                  {showHideButton &&
-                    currentStatus !== MediaStatus.PROCESSING &&
-                    currentStatus !== MediaStatus.AVAILABLE &&
-                    currentStatus !== MediaStatus.PARTIALLY_AVAILABLE &&
-                    currentStatus !== MediaStatus.PENDING && (
-                      <Button
-                        buttonType={'ghost'}
-                        className="z-40"
-                        buttonSize={'sm'}
-                        onClick={() => setShowBlacklistModal(true)}
-                      >
-                        <EyeSlashIcon className={'h-3'} />
-                      </Button>
-                    )}
-                </div>
-              )}
+            {showDetail && currentStatus !== MediaStatus.BLACKLISTED && (
+              <div className="flex flex-col gap-1">
+                {user?.userType !== UserType.PLEX &&
+                  (toggleWatchlist ? (
+                    <Button
+                      buttonType={'ghost'}
+                      className="z-40"
+                      buttonSize={'sm'}
+                      onClick={onClickWatchlistBtn}
+                    >
+                      <StarIcon className={'h-3 text-amber-300'} />
+                    </Button>
+                  ) : (
+                    <Button
+                      className="z-40"
+                      buttonSize={'sm'}
+                      onClick={onClickDeleteWatchlistBtn}
+                    >
+                      <MinusCircleIcon className={'h-3'} />
+                    </Button>
+                  ))}
+                {showHideButton &&
+                  currentStatus !== MediaStatus.PROCESSING &&
+                  currentStatus !== MediaStatus.AVAILABLE &&
+                  currentStatus !== MediaStatus.PARTIALLY_AVAILABLE &&
+                  currentStatus !== MediaStatus.PENDING && (
+                    <Button
+                      buttonType={'ghost'}
+                      className="z-40"
+                      buttonSize={'sm'}
+                      onClick={() => setShowBlacklistModal(true)}
+                    >
+                      <EyeSlashIcon className={'h-3'} />
+                    </Button>
+                  )}
+              </div>
+            )}
             {showDetail &&
               showHideButton &&
               currentStatus == MediaStatus.BLACKLISTED && (
