@@ -34,7 +34,6 @@ const config: Config = {
           editUrl:
             'https://github.com/fallenbagel/jellyseerr/edit/develop/docs/',
         },
-        blog: false,
         pages: false,
         theme: {
           customCss: './src/css/custom.css',
@@ -70,6 +69,11 @@ const config: Config = {
       },
       items: [
         {
+          to: 'blog',
+          label: 'Blog',
+          position: 'right',
+        },
+        {
           href: 'https://github.com/fallenbagel/jellyseerr',
           label: 'GitHub',
           position: 'right',
@@ -85,6 +89,19 @@ const config: Config = {
             {
               label: 'Documentation',
               to: '/',
+            },
+          ],
+        },
+        {
+          title: 'Project',
+          items: [
+            {
+              label: 'Blog',
+              to: '/blog',
+            },
+            {
+              label: 'GitHub',
+              href: 'https://github.com/fallenbagel/jellyseerr',
             },
           ],
         },

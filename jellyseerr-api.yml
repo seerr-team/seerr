@@ -5887,7 +5887,7 @@ paths:
     get:
       summary: Gets request counts
       description: |
-        Returns the number of pending and approved requests.
+        Returns the number of requests by status including pending, approved, available, and completed requests.
       tags:
         - request
       responses:
@@ -5913,6 +5913,8 @@ paths:
                   processing:
                     type: number
                   available:
+                    type: number
+                  completed:
                     type: number
   /request/{requestId}:
     get:

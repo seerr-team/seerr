@@ -7,6 +7,14 @@ on:
   push:
     branches:
       - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -17,14 +25,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
       - name: Pnpm Setup
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
+
       - name: Get pnpm store directory
         shell: sh
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
@@ -32,137 +43,144 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
+
       - name: Install dependencies
         env:
           HUSKY: 0
         run: pnpm install
+
       - name: Lint
         run: pnpm lint
+
       - name: Formatting
         run: pnpm format:check
+
       - name: Build
         run: pnpm build
 
   build:
-    name: Build & Publish Docker Images
+    name: Build (per-arch, native runners)
     if: github.ref == 'refs/heads/develop' && !contains(github.event.head_commit.message, '[skip ci]')
     strategy:
       matrix:
         include:
           - runner: ubuntu-24.04
             platform: linux/amd64
+            arch: amd64
           - runner: ubuntu-24.04-arm
             platform: linux/arm64
+            arch: arm64
     runs-on: ${{ matrix.runner }}
-    outputs:
-      digest-amd64: ${{ steps.set_outputs.outputs.digest-amd64 }}
-      digest-arm64: ${{ steps.set_outputs.outputs.digest-arm64 }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Commit timestamp
+        id: ts
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set lower case owner name
-        run: |
-          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
-        env:
-          OWNER: ${{ github.repository_owner }}
-      - name: Docker metadata
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: |
-            fallenbagel/jellyseerr
-            ghcr.io/${{ env.OWNER_LC }}/jellyseerr
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix=,suffix=,format=short
-      - name: Build and push by digest
-        id: build
-        uses: docker/build-push-action@v5
+
+      - name: Warm cache (no push) — ${{ matrix.platform }}
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
-          push: true
+          push: false
           build-args: |
             COMMIT_TAG=${{ github.sha }}
             BUILD_VERSION=develop
-            BUILD_DATE=${{ github.event.repository.updated_at }}
-          outputs: |
-            type=image,push-by-digest=true,name=fallenbagel/jellyseerr,push=true
-            type=image,push-by-digest=true,name=ghcr.io/${{ env.OWNER_LC }}/jellyseerr,push=true
+            SOURCE_DATE_EPOCH=${{ steps.ts.outputs.TIMESTAMP }}
           cache-from: type=gha,scope=${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
           provenance: false
-      - name: Set outputs
-        id: set_outputs
-        run: |
-          platform="${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}"
-          echo "digest-${platform}=${{ steps.build.outputs.digest }}" >> $GITHUB_OUTPUT
 
-  merge_and_push:
-    name: Create and Push Multi-arch Manifest
+  publish:
+    name: Publish multi-arch image
     needs: build
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Commit timestamp
+        id: ts
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set lower case owner name
-        run: |
-          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
-        env:
-          OWNER: ${{ github.repository_owner }}
-      - name: Create and push manifest
-        run: |
-          docker manifest create fallenbagel/jellyseerr:develop \
-            --amend fallenbagel/jellyseerr@${{ needs.build.outputs.digest-amd64 }} \
-            --amend fallenbagel/jellyseerr@${{ needs.build.outputs.digest-arm64 }}
-          docker manifest push fallenbagel/jellyseerr:develop
 
-          # GHCR manifest
-          docker manifest create ghcr.io/${{ env.OWNER_LC }}/jellyseerr:develop \
-            --amend ghcr.io/${{ env.OWNER_LC }}/jellyseerr@${{ needs.build.outputs.digest-amd64 }} \
-            --amend ghcr.io/${{ env.OWNER_LC }}/jellyseerr@${{ needs.build.outputs.digest-arm64 }}
-          docker manifest push ghcr.io/${{ env.OWNER_LC }}/jellyseerr:develop
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ github.repository }}
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=develop
+            type=sha
+          labels: |
+            org.opencontainers.image.created=${{ steps.ts.outputs.TIMESTAMP }}
+
+      - name: Build & Push (multi-arch, single tag)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            COMMIT_TAG=${{ github.sha }}
+            BUILD_VERSION=develop
+            SOURCE_DATE_EPOCH=${{ steps.ts.outputs.TIMESTAMP }}
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: |
+            type=gha,scope=linux/amd64
+            type=gha,scope=linux/arm64
+          cache-to: type=gha,mode=max
+          provenance: false
 
   discord:
     name: Send Discord Notification
-    needs: merge_and_push
+    needs: publish
     if: always() && github.event_name != 'pull_request' && !contains(github.event.head_commit.message, '[skip ci]')
     runs-on: ubuntu-24.04
     steps:
-      - name: Get Build Job Status
-        uses: technote-space/workflow-conclusion-action@v3
       - name: Combine Job Status
         id: status
         run: |
           failures=(neutral, skipped, timed_out, action_required)
-          if [[ ${array[@]} =~ $WORKFLOW_CONCLUSION ]]; then
+          if [[ ${array[@]} =~ ${{ needs.publish.result }} ]]; then
             echo "status=failure" >> $GITHUB_OUTPUT
           else
-            echo "status=$WORKFLOW_CONCLUSION" >> $GITHUB_OUTPUT
+            echo "status=${{ needs.publish.result }}" >> $GITHUB_OUTPUT
           fi
+
       - name: Post Status to Discord
         uses: sarisia/actions-status-discord@v1
         with:

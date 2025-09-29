@@ -4,11 +4,21 @@ on:
   push:
     branches:
       - develop
+    paths:
+      - 'charts/**'
+      - '.github/workflows/release-charts.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: helm-charts
+  cancel-in-progress: true
 
 jobs:
   package-helm-chart:
     name: Package helm chart
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: read
@@ -19,6 +29,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install helm
         uses: azure/setup-helm@v4
@@ -42,16 +53,11 @@ jobs:
               # get current version
               current_version=$(grep '^version:' "$chart_path/Chart.yaml" | awk '{print $2}')
               # try to get current release version
-              set +e
-              oras discover ghcr.io/${GITHUB_REPOSITORY@L}/${chart_name}:${current_version}
-              oras_exit_code=$?
-              set -e
-
-              if [ $oras_exit_code -ne 0 ]; then
+              if oras manifest fetch "ghcr.io/${GITHUB_REPOSITORY@L}/${chart_name}:${current_version}" >/dev/null 2>&1; then
+                echo "No version change for $chart_name. Skipping."
+              else
                 helm dependency build "$chart_path"
                 helm package "$chart_path" --destination ./.cr-release-packages
-              else
-                echo "No version change for $chart_name. Skipping."
               fi
             else
               echo "Skipping $chart_name: Not a valid Helm chart"
@@ -61,7 +67,7 @@ jobs:
       - name: Check if artifacts exist
         id: check-artifacts
         run: |
-          if ls .cr-release-packages/* >/dev/null 2>&1; then
+          if ls .cr-release-packages/*.tgz >/dev/null 2>&1; then
             echo "has_artifacts=true" >> $GITHUB_OUTPUT
           else
             echo "has_artifacts=false" >> $GITHUB_OUTPUT
@@ -77,7 +83,7 @@ jobs:
 
   publish:
     name: Publish to ghcr.io
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       packages: write # needed for pushing to github registry
       id-token: write # needed for signing the images with GitHub OIDC Token
@@ -88,6 +94,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install helm
         uses: azure/setup-helm@v4

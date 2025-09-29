@@ -113,7 +113,7 @@ interface MetadataResponse {
       ratingKey: string;
       type: 'movie' | 'show';
       title: string;
-      Guid: {
+      Guid?: {
         id: `imdb://tt${number}` | `tmdb://${number}` | `tvdb://${number}`;
       }[];
     }[];
@@ -334,10 +334,10 @@ class PlexTvAPI extends ExternalAPI {
 
             const metadata = detailedResponse.MediaContainer.Metadata[0];
 
-            const tmdbString = metadata.Guid.find((guid) =>
+            const tmdbString = metadata.Guid?.find((guid) =>
               guid.id.startsWith('tmdb')
             );
-            const tvdbString = metadata.Guid.find((guid) =>
+            const tvdbString = metadata.Guid?.find((guid) =>
               guid.id.startsWith('tvdb')
             );
 

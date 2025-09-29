@@ -8,24 +8,30 @@ on:
       - 'docs/**'
       - 'gen-docs/**'
 
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build Docusaurus
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: package.json
 
       - name: Pnpm Setup
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Get pnpm store directory
         shell: sh
@@ -46,38 +52,26 @@ jobs:
           pnpm install --frozen-lockfile
 
       - name: Build website
-        run: |
-          cd gen-docs
-          pnpm build
+        working-directory: gen-docs
+        run: pnpm build
 
       - name: Upload Build Artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: gen-docs/build
 
   deploy:
     name: Deploy to GitHub Pages
     needs: build
-    concurrency: build-deploy-pages
-
-    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    runs-on: ubuntu-24.04
     permissions:
-      pages: write # to deploy to Pages
-      id-token: write # to verify the deployment originates from an appropriate source
-
-    # Deploy to the github-pages environment
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
-    runs-on: ubuntu-latest
     steps:
-      # - name: Download Build Artifact
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: docusaurus-build
-      #     path: gen-docs/build
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

@@ -1,6 +1,6 @@
 # jellyseerr-chart
 
-![Version: 2.6.2](https://img.shields.io/badge/Version-2.6.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.7.3](https://img.shields.io/badge/AppVersion-2.7.3-informational?style=flat-square)
+![Version: 2.7.0](https://img.shields.io/badge/Version-2.7.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.7.3](https://img.shields.io/badge/AppVersion-2.7.3-informational?style=flat-square)
 
 Jellyseerr helm chart for Kubernetes
 
@@ -19,6 +19,17 @@ Jellyseerr helm chart for Kubernetes
 ## Requirements
 
 Kubernetes: `>=1.23.0-0`
+
+## Update Notes
+
+### Updating to 2.7.0
+
+Jellyseerr is a stateful application and it is not designed to have multiple replicas. In version 2.7.0 we address this by:
+
+- replacing `Deployment` with `StatefulSet`
+- removing `replicaCount` value
+
+If `replicaCount` value was used - remove it. Helm update should work fine after that.
 
 ## Values
 
@@ -55,7 +66,6 @@ Kubernetes: `>=1.23.0-0`
 | probes.livenessProbe | object | `{}` | Configure liveness probe |
 | probes.readinessProbe | object | `{}` | Configure readiness probe |
 | probes.startupProbe | string | `nil` | Configure startup probe |
-| replicaCount | int | `1` |  |
 | resources | object | `{}` |  |
 | securityContext | object | `{}` |  |
 | service.port | int | `80` |  |
@@ -64,7 +74,6 @@ Kubernetes: `>=1.23.0-0`
 | serviceAccount.automount | bool | `true` | Automatically mount a ServiceAccount's API credentials? |
 | serviceAccount.create | bool | `true` | Specifies whether a service account should be created |
 | serviceAccount.name | string | `""` | If not set and create is true, a name is generated using the fullname template |
-| strategy | object | `{"type":"Recreate"}` | Deployment strategy |
 | tolerations | list | `[]` |  |
-| volumeMounts | list | `[]` | Additional volumeMounts on the output Deployment definition. |
-| volumes | list | `[]` | Additional volumes on the output Deployment definition. |
+| volumeMounts | list | `[]` | Additional volumeMounts on the output StatefulSet definition. |
+| volumes | list | `[]` | Additional volumes on the output StatefulSet definition. |
