@@ -41,9 +41,10 @@ const migrationArrTags = async (settings: any): Promise<AllSettings> => {
           label: userTag.label.replace(`${user.id} - `, `${user.id}-`),
         });
       }
-    } catch {
+    } catch (error) {
       console.error(
-        `Unable to rename Radarr tags to the new format. Please check your Radarr connection settings for the instance "${radarrSettings.name}".`
+        `Unable to rename Radarr tags to the new format. Please check your Radarr connection settings for the instance "${radarrSettings.name}".`,
+        error.message
       );
       errorOccurred = true;
     }
@@ -71,9 +72,10 @@ const migrationArrTags = async (settings: any): Promise<AllSettings> => {
           label: userTag.label.replace(`${user.id} - `, `${user.id}-`),
         });
       }
-    } catch {
+    } catch (error) {
       console.error(
-        `Unable to rename Sonarr tags to the new format. Please check your Sonarr connection settings for the instance "${sonarrSettings.name}".`
+        `Unable to rename Sonarr tags to the new format. Please check your Sonarr connection settings for the instance "${sonarrSettings.name}".`,
+        error.message
       );
       errorOccurred = true;
     }
