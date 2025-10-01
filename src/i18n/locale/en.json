@@ -680,6 +680,8 @@
   "components.Settings.Notifications.NotificationsSlack.webhookUrl": "Webhook URL",
   "components.Settings.Notifications.NotificationsSlack.webhookUrlTip": "Create an <WebhookLink>Incoming Webhook</WebhookLink> integration",
   "components.Settings.Notifications.NotificationsWebhook.agentenabled": "Enable Agent",
+  "components.Settings.Notifications.NotificationsWebhook.apikey": "API Key",
+  "components.Settings.Notifications.NotificationsWebhook.apikeyTip": "API key will be sent as X-API-Key header",
   "components.Settings.Notifications.NotificationsWebhook.authheader": "Authorization Header",
   "components.Settings.Notifications.NotificationsWebhook.customJson": "JSON Payload",
   "components.Settings.Notifications.NotificationsWebhook.resetPayload": "Reset to Default",

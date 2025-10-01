@@ -196,16 +196,19 @@ class WebhookAgent
     }
 
     try {
+      const headers: Record<string, string> = {};
+
+      if (settings.options.authHeader) {
+        headers.Authorization = settings.options.authHeader;
+      }
+      if (settings.options.apiKey) {
+        headers['X-API-Key'] = settings.options.apiKey;
+      }
+
       await axios.post(
         webhookUrl,
         this.buildPayload(type, payload),
-        settings.options.authHeader
-          ? {
-              headers: {
-                Authorization: settings.options.authHeader,
-              },
-            }
-          : undefined
+        Object.keys(headers).length > 0 ? { headers } : undefined
       );
 
       return true;

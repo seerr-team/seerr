@@ -1449,6 +1449,8 @@ components:
               type: string
             authHeader:
               type: string
+            apiKey:
+              type: string
             jsonPayload:
               type: string
             supportVariables:

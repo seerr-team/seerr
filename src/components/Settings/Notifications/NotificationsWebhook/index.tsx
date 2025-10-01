@@ -80,6 +80,8 @@ const messages = defineMessages(
     supportVariablesTip:
       'Available variables are documented in the webhook template variables section',
     authheader: 'Authorization Header',
+    apikey: 'API Key',
+    apikeyTip: 'API key will be sent as X-API-Key header',
     validationJsonPayloadRequired: 'You must provide a valid JSON payload',
     webhooksettingssaved: 'Webhook notification settings saved successfully!',
     webhooksettingsfailed: 'Webhook notification settings failed to save.',
@@ -159,6 +161,7 @@ const NotificationsWebhook = () => {
         webhookUrl: data.options.webhookUrl,
         jsonPayload: data.options.jsonPayload,
         authHeader: data.options.authHeader,
+        apiKey: data.options.apiKey,
         supportVariables: data.options.supportVariables ?? false,
       }}
       validationSchema={NotificationsWebhookSchema}
@@ -171,6 +174,7 @@ const NotificationsWebhook = () => {
               webhookUrl: values.webhookUrl,
               jsonPayload: JSON.stringify(values.jsonPayload),
               authHeader: values.authHeader,
+              apiKey: values.apiKey,
               supportVariables: values.supportVariables,
             },
           });
@@ -229,6 +233,7 @@ const NotificationsWebhook = () => {
                 webhookUrl: values.webhookUrl,
                 jsonPayload: JSON.stringify(values.jsonPayload),
                 authHeader: values.authHeader,
+                apiKey: values.apiKey,
                 supportVariables: values.supportVariables ?? false,
               },
             });
@@ -341,6 +346,19 @@ const NotificationsWebhook = () => {
               <div className="form-input-area">
                 <div className="form-input-field">
                   <Field id="authHeader" name="authHeader" type="text" />
+                </div>
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="apiKey" className="text-label">
+                {intl.formatMessage(messages.apikey)}
+                <div className="label-tip">
+                  {intl.formatMessage(messages.apikeyTip)}
+                </div>
+              </label>
+              <div className="form-input-area">
+                <div className="form-input-field">
+                  <Field id="apiKey" name="apiKey" type="text" />
                 </div>
               </div>
             </div>

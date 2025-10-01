@@ -22,6 +22,14 @@ This is typically not needed. Please refer to your webhook provider's documentat
 
 This value will be sent as an `Authorization` HTTP header.
 
+### API Key (optional)
+
+:::info
+Uses the `X-API-Key` header, a de facto standard for webhook authentication.
+:::
+
+This value will be sent as an `X-API-Key` HTTP header.
+
 ### JSON Payload
 
 Customize the JSON payload to suit your needs. Jellyseerr provides several [template variables](#template-variables) for use in the payload, which will be replaced with the relevant data when the notifications are triggered.

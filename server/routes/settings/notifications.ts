@@ -301,6 +301,7 @@ notificationRoutes.post('/webhook', async (req, res, next) => {
         ),
         webhookUrl: req.body.options.webhookUrl,
         authHeader: req.body.options.authHeader,
+        apiKey: req.body.options.apiKey,
         supportVariables: req.body.options.supportVariables ?? false,
       },
     };
@@ -333,6 +334,7 @@ notificationRoutes.post('/webhook/test', async (req, res, next) => {
         ),
         webhookUrl: req.body.options.webhookUrl,
         authHeader: req.body.options.authHeader,
+        apiKey: req.body.options.apiKey,
         supportVariables: req.body.options.supportVariables ?? false,
       },
     };
