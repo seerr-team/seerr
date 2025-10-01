@@ -38,6 +38,7 @@ const messages = defineMessages('components.RequestModal.AdvancedRequester', {
   tags: 'Tags',
   selecttags: 'Select tags',
   notagoptions: 'No tags.',
+  autosearch: 'Start searching automatically',
 });
 
 export type RequestOverrides = {
@@ -47,6 +48,7 @@ export type RequestOverrides = {
   tags?: number[];
   language?: number;
   user?: User;
+  autoSearch?: boolean;
 };
 
 interface AdvancedRequesterProps {
@@ -110,6 +112,8 @@ const AdvancedRequester = ({
         revalidateOnFocus: false,
       }
     );
+
+  const [autoSearch, setAutoSearch] = useState<boolean>(true);
 
   const [selectedUser, setSelectedUser] = useState<User | null>(
     requestUser ?? null
@@ -233,6 +237,7 @@ const AdvancedRequester = ({
       ) {
         setSelectedTags(defaultTags);
       }
+      setAutoSearch(!serverData.server.preventSearch);
     }
   }, [serverData]);
 
@@ -273,6 +278,7 @@ const AdvancedRequester = ({
         user: selectedUser ?? undefined,
         language: selectedLanguage !== -1 ? selectedLanguage : undefined,
         tags: selectedTags,
+        autoSearch: autoSearch,
       });
     }
   }, [
@@ -282,6 +288,7 @@ const AdvancedRequester = ({
     selectedUser,
     selectedLanguage,
     selectedTags,
+    autoSearch,
   ]);
 
   if (!data && !error) {
@@ -657,6 +664,18 @@ const AdvancedRequester = ({
             {intl.formatMessage(messages.animenote)}
           </div>
         )}
+        <div className="mx-2 mt-6 flex items-center">
+          <input
+            type="checkbox"
+            id="auto_search_for_series"
+            className="mr-2"
+            checked={autoSearch}
+            onChange={(e) => setAutoSearch(e.target.checked)} // Update state on change
+          />
+          <p className="text-gray-300">
+            {intl.formatMessage(messages.autosearch)}
+          </p>
+        </div>
       </div>
     </>
   );

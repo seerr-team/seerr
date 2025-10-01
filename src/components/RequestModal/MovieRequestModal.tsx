@@ -88,6 +88,7 @@ const MovieRequestModal = ({
           rootFolder: requestOverrides.folder,
           userId: requestOverrides.user?.id,
           tags: requestOverrides.tags,
+          autoSearch: requestOverrides.autoSearch,
         };
       }
       const response = await axios.post<MediaRequest>('/api/v1/request', {
@@ -183,6 +184,7 @@ const MovieRequestModal = ({
         rootFolder: requestOverrides?.folder,
         userId: requestOverrides?.user?.id,
         tags: requestOverrides?.tags,
+        autoSearch: requestOverrides?.autoSearch,
       });
 
       if (alsoApproveRequest) {

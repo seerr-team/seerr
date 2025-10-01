@@ -486,6 +486,10 @@ requestRoutes.put<{ requestId: string }>(
           where: { id: req.body.userId },
         });
       }
+      // Adds override for automatic searching
+      if (req.body?.autoSearch !== undefined) {
+        request.autoSearch = req.body.autoSearch;
+      }
 
       if (req.body.mediaType === MediaType.MOVIE) {
         request.serverId = req.body.serverId;
