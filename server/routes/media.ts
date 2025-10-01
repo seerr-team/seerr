@@ -145,16 +145,16 @@ mediaRoutes.post<
             message: 'Only series can be set to be partially available',
           });
         }
-        media.status = MediaStatus.PARTIALLY_AVAILABLE;
+        media[is4k ? 'status4k' : 'status'] = MediaStatus.PARTIALLY_AVAILABLE;
         break;
       case 'processing':
-        media.status = MediaStatus.PROCESSING;
+        media[is4k ? 'status4k' : 'status'] = MediaStatus.PROCESSING;
         break;
       case 'pending':
-        media.status = MediaStatus.PENDING;
+        media[is4k ? 'status4k' : 'status'] = MediaStatus.PENDING;
         break;
       case 'unknown':
-        media.status = MediaStatus.UNKNOWN;
+        media[is4k ? 'status4k' : 'status'] = MediaStatus.UNKNOWN;
     }
 
     await mediaRepository.save(media);
