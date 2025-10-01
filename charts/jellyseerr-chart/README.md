@@ -4,17 +4,17 @@
 
 Jellyseerr helm chart for Kubernetes
 
-**Homepage:** <https://github.com/Fallenbagel/jellyseerr>
+**Homepage:** <https://github.com/fallenbagel/jellyseerr>
 
 ## Maintainers
 
 | Name | Email | Url |
 | ---- | ------ | --- |
-| Jellyseerr |  | <https://github.com/Fallenbagel/jellyseerr> |
+| Jellyseerr |  | <https://github.com/fallenbagel/jellyseerr> |
 
 ## Source Code
 
-* <https://github.com/Fallenbagel/jellyseerr/tree/main/charts/jellyseerr>
+* <https://github.com/fallenbagel/jellyseerr/tree/main/charts/jellyseerr>
 
 ## Requirements
 

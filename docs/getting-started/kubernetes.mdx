@@ -12,10 +12,10 @@ This method is not recommended for most users. It is intended for advanced users
 ```console
 helm install jellyseerr oci://ghcr.io/fallenbagel/jellyseerr/jellyseerr-chart
 ```
-Helm values can be found in the Jellyseerr repository under [charts/jellyseerr-chart/README.md](https://github.com/Fallenbagel/jellyseerr/tree/develop/charts/jellyseerr-chart).
+Helm values can be found in the Jellyseerr repository under [charts/jellyseerr-chart/README.md](https://github.com/fallenbagel/jellyseerr/tree/develop/charts/jellyseerr-chart).
 
 Verify the signature with [cosign](https://docs.sigstore.dev/cosign/system_config/installation/) (replace [tag], with the TAG you want to verify) :
 ```console
-cosign verify ghcr.io/fallenbagel/jellyseerr/jellyseerr-chart:[tag] --certificate-identity=https://github.com/Fallenbagel/jellyseerr/.github/workflows/helm.yml@refs/heads/main --certificate-oidc-issuer=https://token.ac
+cosign verify ghcr.io/fallenbagel/jellyseerr/jellyseerr-chart:[tag] --certificate-identity=https://github.com/fallenbagel/jellyseerr/.github/workflows/helm.yml@refs/heads/main --certificate-oidc-issuer=https://token.ac
 tions.githubusercontent.com
 ```
