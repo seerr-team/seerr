@@ -360,6 +360,14 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           return;
         }
 
+        let searchNow = entity.autoSearch;
+        if (entity.autoSearch === null || entity.autoSearch === undefined) {
+          // fallback to radarr settings if not set on the request (old requests)
+          searchNow = !radarrSettings.preventSearch;
+        }
+
+        logger.debug('SearchNow: ' + searchNow);
+
         const radarrMovieOptions: RadarrMovieOptions = {
           profileId: qualityProfile,
           qualityProfileId: qualityProfile,
@@ -370,7 +378,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           year: Number(movie.release_date.slice(0, 4)),
           monitored: true,
           tags,
-          searchNow: !radarrSettings.preventSearch,
+          searchNow: searchNow,
         };
 
         // Run entity asynchronously so we don't wait for it on the UI side
@@ -700,6 +708,12 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           }
         }
 
+        let searchNow = entity.autoSearch;
+        if (entity.autoSearch === null || entity.autoSearch === undefined) {
+          // fallback to sonarr settings if not set on the request (old requests)
+          searchNow = !sonarrSettings.preventSearch;
+        }
+
         const sonarrSeriesOptions: AddSeriesOptions = {
           profileId: qualityProfile,
           languageProfileId: languageProfile,
@@ -712,7 +726,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           tags,
           monitored: true,
           monitorNewItems: sonarrSettings.monitorNewItems,
-          searchNow: !sonarrSettings.preventSearch,
+          searchNow: searchNow,
         };
 
         // Run entity asynchronously so we don't wait for it on the UI side

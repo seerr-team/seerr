@@ -195,6 +195,7 @@ const CollectionRequestModal = ({
           rootFolder: requestOverrides.folder,
           userId: requestOverrides.user?.id,
           tags: requestOverrides.tags,
+          autoSearch: requestOverrides?.autoSearch,
         };
       }
 

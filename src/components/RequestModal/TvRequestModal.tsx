@@ -121,6 +121,7 @@ const TvRequestModal = ({
           userId: requestOverrides?.user?.id,
           tags: requestOverrides?.tags,
           seasons: selectedSeasons.sort((a, b) => a - b),
+          autoSearch: requestOverrides?.autoSearch,
         });
 
         if (alsoApproveRequest) {
@@ -192,6 +193,7 @@ const TvRequestModal = ({
           languageProfileId: requestOverrides.language,
           userId: requestOverrides?.user?.id,
           tags: requestOverrides.tags,
+          autoSearch: requestOverrides?.autoSearch,
         };
       }
       const response = await axios.post<MediaRequest>('/api/v1/request', {
