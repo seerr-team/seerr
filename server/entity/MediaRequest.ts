@@ -111,10 +111,22 @@ export class MediaRequest {
 
     const quotas = await requestUser.getQuota();
 
-    if (requestBody.mediaType === MediaType.MOVIE && quotas.movie.restricted) {
-      throw new QuotaRestrictedError('Movie Quota exceeded.');
-    } else if (requestBody.mediaType === MediaType.TV && quotas.tv.restricted) {
-      throw new QuotaRestrictedError('Series Quota exceeded.');
+    const isCombinedMode = quotas.mode === 'combined';
+
+    if (requestBody.mediaType === MediaType.MOVIE) {
+      if (
+        (isCombinedMode && quotas.combined.restricted) ||
+        (!isCombinedMode && quotas.movie.restricted)
+      ) {
+        throw new QuotaRestrictedError('Request quota exceeded.');
+      }
+    } else if (requestBody.mediaType === MediaType.TV) {
+      if (
+        (isCombinedMode && quotas.combined.restricted) ||
+        (!isCombinedMode && quotas.tv.restricted)
+      ) {
+        throw new QuotaRestrictedError('Request quota exceeded.');
+      }
     }
 
     const tmdbMedia =
@@ -433,11 +445,20 @@ export class MediaRequest {
 
       if (finalSeasons.length === 0) {
         throw new NoSeasonsAvailableError('No seasons available to request');
-      } else if (
-        quotas.tv.limit &&
-        finalSeasons.length > (quotas.tv.remaining ?? 0)
-      ) {
-        throw new QuotaRestrictedError('Series Quota exceeded.');
+      } else {
+        const applicableLimit = isCombinedMode
+          ? quotas.combined.limit
+          : quotas.tv.limit;
+        const applicableRemaining = isCombinedMode
+          ? quotas.combined.remaining
+          : quotas.tv.remaining;
+
+        if (
+          applicableLimit &&
+          finalSeasons.length > (applicableRemaining ?? 0)
+        ) {
+          throw new QuotaRestrictedError('Request quota exceeded.');
+        }
       }
 
       await mediaRepository.save(media);

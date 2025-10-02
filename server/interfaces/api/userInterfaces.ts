@@ -19,9 +19,13 @@ export interface QuotaStatus {
   restricted: boolean;
 }
 
+export type QuotaMode = 'split' | 'combined';
+
 export interface QuotaResponse {
+  mode: QuotaMode;
   movie: QuotaStatus;
   tv: QuotaStatus;
+  combined: QuotaStatus;
 }
 
 export interface UserWatchDataResponse {

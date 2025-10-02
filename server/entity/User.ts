@@ -8,7 +8,6 @@ import type { PermissionCheckOptions } from '@server/lib/permissions';
 import { hasPermission, Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import { AfterDate } from '@server/utils/dateHelpers';
 import { DbAwareColumn } from '@server/utils/DbColumnHelper';
 import bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
@@ -18,7 +17,6 @@ import {
   AfterLoad,
   Column,
   Entity,
-  Not,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -123,6 +121,12 @@ export class User {
 
   @Column({ nullable: true })
   public tvQuotaDays?: number;
+
+  @Column({ nullable: true })
+  public combinedQuotaLimit?: number;
+
+  @Column({ nullable: true })
+  public combinedQuotaDays?: number;
 
   @OneToOne(() => UserSettings, (settings) => settings.user, {
     cascade: true,
@@ -270,92 +274,192 @@ export class User {
       type: 'or',
     });
 
-    const movieQuotaLimit = !canBypass
-      ? this.movieQuotaLimit ?? defaultQuotas.movie.quotaLimit
-      : 0;
-    const movieQuotaDays = this.movieQuotaDays ?? defaultQuotas.movie.quotaDays;
+    const hasValue = (value?: number | null): boolean =>
+      value !== null && value !== undefined;
 
-    // Count movie requests made during quota period
-    const movieDate = new Date();
-    if (movieQuotaDays) {
-      movieDate.setDate(movieDate.getDate() - movieQuotaDays);
-    }
+    const userCombinedConfigured =
+      hasValue(this.combinedQuotaLimit) || hasValue(this.combinedQuotaDays);
+    const userSplitConfigured =
+      hasValue(this.movieQuotaLimit) ||
+      hasValue(this.movieQuotaDays) ||
+      hasValue(this.tvQuotaLimit) ||
+      hasValue(this.tvQuotaDays);
+    const globalCombinedConfigured =
+      hasValue(defaultQuotas.combined?.quotaLimit) ||
+      hasValue(defaultQuotas.combined?.quotaDays);
 
-    const movieQuotaUsed = movieQuotaLimit
-      ? await requestRepository.count({
-          where: {
-            requestedBy: {
-              id: this.id,
-            },
-            createdAt: AfterDate(movieDate),
-            type: MediaType.MOVIE,
-            status: Not(MediaRequestStatus.DECLINED),
-          },
+    const mode = userCombinedConfigured
+      ? 'combined'
+      : userSplitConfigured
+      ? 'split'
+      : globalCombinedConfigured
+      ? 'combined'
+      : 'split';
+
+    const effectiveMovieLimit =
+      this.movieQuotaLimit ?? defaultQuotas.movie.quotaLimit;
+    const effectiveMovieDays =
+      this.movieQuotaDays ?? defaultQuotas.movie.quotaDays;
+    const effectiveTvLimit = this.tvQuotaLimit ?? defaultQuotas.tv.quotaLimit;
+    const effectiveTvDays = this.tvQuotaDays ?? defaultQuotas.tv.quotaDays;
+    const effectiveCombinedLimit = userCombinedConfigured
+      ? this.combinedQuotaLimit
+      : defaultQuotas.combined?.quotaLimit;
+    const effectiveCombinedDays = userCombinedConfigured
+      ? this.combinedQuotaDays
+      : defaultQuotas.combined?.quotaDays;
+
+    const movieQuotaLimit =
+      !canBypass && mode === 'split' ? effectiveMovieLimit ?? 0 : 0;
+    const movieQuotaDays =
+      mode === 'split' ? effectiveMovieDays : defaultQuotas.movie.quotaDays;
+
+    const tvQuotaLimit =
+      !canBypass && mode === 'split' ? effectiveTvLimit ?? 0 : 0;
+    const tvQuotaDays =
+      mode === 'split' ? effectiveTvDays : defaultQuotas.tv.quotaDays;
+
+    const combinedQuotaLimit =
+      !canBypass && mode === 'combined' ? effectiveCombinedLimit ?? 0 : 0;
+    const combinedQuotaDays =
+      mode === 'combined' ? effectiveCombinedDays : undefined;
+
+    const buildDateIsoString = (days?: number | null): string | undefined => {
+      if (!days) {
+        return undefined;
+      }
+
+      const date = new Date();
+      date.setDate(date.getDate() - days);
+      return date.toJSON();
+    };
+
+    const fetchMovieUsage = async (dateIso?: string): Promise<number> => {
+      const query = requestRepository
+        .createQueryBuilder('request')
+        .leftJoin('request.requestedBy', 'requestedBy')
+        .where('requestedBy.id = :userId', {
+          userId: this.id,
         })
-      : 0;
+        .andWhere('request.type = :requestType', {
+          requestType: MediaType.MOVIE,
+        })
+        .andWhere('request.status != :declinedStatus', {
+          declinedStatus: MediaRequestStatus.DECLINED,
+        });
 
-    const tvQuotaLimit = !canBypass
-      ? this.tvQuotaLimit ?? defaultQuotas.tv.quotaLimit
-      : 0;
-    const tvQuotaDays = this.tvQuotaDays ?? defaultQuotas.tv.quotaDays;
+      if (dateIso) {
+        query.andWhere('request.createdAt > :movieDate', {
+          movieDate: dateIso,
+        });
+      }
 
-    // Count tv season requests made during quota period
-    const tvDate = new Date();
-    if (tvQuotaDays) {
-      tvDate.setDate(tvDate.getDate() - tvQuotaDays);
+      return query.getCount();
+    };
+
+    const fetchTvUsage = async (dateIso?: string): Promise<number> => {
+      const query = requestRepository
+        .createQueryBuilder('request')
+        .leftJoin('request.seasons', 'seasons')
+        .leftJoin('request.requestedBy', 'requestedBy')
+        .where('request.type = :requestType', {
+          requestType: MediaType.TV,
+        })
+        .andWhere('requestedBy.id = :userId', {
+          userId: this.id,
+        })
+        .andWhere('request.status != :declinedStatus', {
+          declinedStatus: MediaRequestStatus.DECLINED,
+        })
+        .addSelect((subQuery) => {
+          return subQuery
+            .select('COUNT(season.id)', 'seasonCount')
+            .from(SeasonRequest, 'season')
+            .leftJoin('season.request', 'parentRequest')
+            .where('parentRequest.id = request.id');
+        }, 'seasonCount');
+
+      if (dateIso) {
+        query.andWhere('request.createdAt > :tvDate', {
+          tvDate: dateIso,
+        });
+      }
+
+      const requests = await query.getMany();
+
+      return requests.reduce(
+        (sum: number, req: MediaRequest) => sum + req.seasonCount,
+        0
+      );
+    };
+
+    let movieQuotaUsed = 0;
+    if (mode === 'split' && movieQuotaLimit) {
+      movieQuotaUsed = await fetchMovieUsage(
+        buildDateIsoString(movieQuotaDays)
+      );
     }
-    const tvQuotaStartDate = tvDate.toJSON();
-    const tvQuotaUsed = tvQuotaLimit
-      ? (
-          await requestRepository
-            .createQueryBuilder('request')
-            .leftJoin('request.seasons', 'seasons')
-            .leftJoin('request.requestedBy', 'requestedBy')
-            .where('request.type = :requestType', {
-              requestType: MediaType.TV,
-            })
-            .andWhere('requestedBy.id = :userId', {
-              userId: this.id,
-            })
-            .andWhere('request.createdAt > :date', {
-              date: tvQuotaStartDate,
-            })
-            .andWhere('request.status != :declinedStatus', {
-              declinedStatus: MediaRequestStatus.DECLINED,
-            })
-            .addSelect((subQuery) => {
-              return subQuery
-                .select('COUNT(season.id)', 'seasonCount')
-                .from(SeasonRequest, 'season')
-                .leftJoin('season.request', 'parentRequest')
-                .where('parentRequest.id = request.id');
-            }, 'seasonCount')
-            .getMany()
-        ).reduce((sum: number, req: MediaRequest) => sum + req.seasonCount, 0)
-      : 0;
+
+    let tvQuotaUsed = 0;
+    if (mode === 'split' && tvQuotaLimit) {
+      tvQuotaUsed = await fetchTvUsage(buildDateIsoString(tvQuotaDays));
+    }
+
+    let combinedQuotaUsed = 0;
+    let combinedRemaining: number | undefined;
+    let combinedRestricted = false;
+
+    if (mode === 'combined' && combinedQuotaLimit) {
+      const combinedDateIso = buildDateIsoString(combinedQuotaDays ?? null);
+
+      const [combinedMovieUsage, combinedTvUsage] = await Promise.all([
+        fetchMovieUsage(combinedDateIso),
+        fetchTvUsage(combinedDateIso),
+      ]);
+
+      combinedQuotaUsed = combinedMovieUsage + combinedTvUsage;
+      combinedRemaining = Math.max(0, combinedQuotaLimit - combinedQuotaUsed);
+      combinedRestricted = combinedQuotaLimit - combinedQuotaUsed <= 0;
+
+      // Update per-type usage for downstream consumers when split fields are disabled.
+      movieQuotaUsed = combinedMovieUsage;
+      tvQuotaUsed = combinedTvUsage;
+    }
 
     return {
+      mode,
       movie: {
-        days: movieQuotaDays,
-        limit: movieQuotaLimit,
-        used: movieQuotaUsed,
-        remaining: movieQuotaLimit
-          ? Math.max(0, movieQuotaLimit - movieQuotaUsed)
-          : undefined,
+        days: mode === 'split' ? movieQuotaDays : undefined,
+        limit: mode === 'split' ? movieQuotaLimit : undefined,
+        used: mode === 'split' ? movieQuotaUsed : 0,
+        remaining:
+          mode === 'split' && movieQuotaLimit
+            ? Math.max(0, movieQuotaLimit - movieQuotaUsed)
+            : undefined,
         restricted:
-          movieQuotaLimit && movieQuotaLimit - movieQuotaUsed <= 0
-            ? true
+          mode === 'split' && movieQuotaLimit
+            ? movieQuotaLimit - movieQuotaUsed <= 0
             : false,
       },
       tv: {
-        days: tvQuotaDays,
-        limit: tvQuotaLimit,
-        used: tvQuotaUsed,
-        remaining: tvQuotaLimit
-          ? Math.max(0, tvQuotaLimit - tvQuotaUsed)
-          : undefined,
+        days: mode === 'split' ? tvQuotaDays : undefined,
+        limit: mode === 'split' ? tvQuotaLimit : undefined,
+        used: mode === 'split' ? tvQuotaUsed : 0,
+        remaining:
+          mode === 'split' && tvQuotaLimit
+            ? Math.max(0, tvQuotaLimit - tvQuotaUsed)
+            : undefined,
         restricted:
-          tvQuotaLimit && tvQuotaLimit - tvQuotaUsed <= 0 ? true : false,
+          mode === 'split' && tvQuotaLimit
+            ? tvQuotaLimit - tvQuotaUsed <= 0
+            : false,
+      },
+      combined: {
+        days: mode === 'combined' ? combinedQuotaDays ?? undefined : undefined,
+        limit: mode === 'combined' ? combinedQuotaLimit : undefined,
+        used: mode === 'combined' ? combinedQuotaUsed : 0,
+        remaining: mode === 'combined' ? combinedRemaining : undefined,
+        restricted: mode === 'combined' ? combinedRestricted : false,
       },
     };
   }

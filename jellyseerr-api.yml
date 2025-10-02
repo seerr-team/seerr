@@ -188,6 +188,16 @@ components:
           nullable: true
           description: 'Time period in days for TV quota'
           example: 14
+        combinedQuotaLimit:
+          type: number
+          nullable: true
+          description: 'Maximum number of combined requests allowed'
+          example: 15
+        combinedQuotaDays:
+          type: number
+          nullable: true
+          description: 'Time period in days for combined quota'
+          example: 30
         globalMovieQuotaDays:
           type: number
           nullable: true
@@ -208,6 +218,21 @@ components:
           nullable: true
           description: 'Global TV quota days setting'
           example: 14
+        globalCombinedQuotaLimit:
+          type: number
+          nullable: true
+          description: 'Global combined quota limit setting'
+          example: 15
+        globalCombinedQuotaDays:
+          type: number
+          nullable: true
+          description: 'Global combined quota days setting'
+          example: 30
+        quotaMode:
+          type: string
+          enum: [split, combined]
+          description: 'Active quota mode for the user'
+          example: split
         watchlistSyncMovies:
           type: boolean
           nullable: true

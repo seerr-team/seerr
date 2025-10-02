@@ -70,6 +70,28 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
         return next({ status: 404, message: 'User not found.' });
       }
 
+      const hasValue = (value?: number | null): boolean =>
+        value !== null && value !== undefined;
+
+      const userCombinedConfigured =
+        hasValue(user.combinedQuotaLimit) || hasValue(user.combinedQuotaDays);
+      const userSplitConfigured =
+        hasValue(user.movieQuotaLimit) ||
+        hasValue(user.movieQuotaDays) ||
+        hasValue(user.tvQuotaLimit) ||
+        hasValue(user.tvQuotaDays);
+      const globalCombinedConfigured =
+        hasValue(defaultQuotas.combined?.quotaLimit) ||
+        hasValue(defaultQuotas.combined?.quotaDays);
+
+      const quotaMode = userCombinedConfigured
+        ? 'combined'
+        : userSplitConfigured
+        ? 'split'
+        : globalCombinedConfigured
+        ? 'combined'
+        : 'split';
+
       return res.status(200).json({
         username: user.username,
         email: user.email,
@@ -82,12 +104,17 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
         movieQuotaDays: user.movieQuotaDays,
         tvQuotaLimit: user.tvQuotaLimit,
         tvQuotaDays: user.tvQuotaDays,
+        combinedQuotaLimit: user.combinedQuotaLimit,
+        combinedQuotaDays: user.combinedQuotaDays,
         globalMovieQuotaDays: defaultQuotas.movie.quotaDays,
         globalMovieQuotaLimit: defaultQuotas.movie.quotaLimit,
         globalTvQuotaDays: defaultQuotas.tv.quotaDays,
         globalTvQuotaLimit: defaultQuotas.tv.quotaLimit,
+        globalCombinedQuotaDays: defaultQuotas.combined?.quotaDays,
+        globalCombinedQuotaLimit: defaultQuotas.combined?.quotaLimit,
         watchlistSyncMovies: user.settings?.watchlistSyncMovies,
         watchlistSyncTv: user.settings?.watchlistSyncTv,
+        quotaMode,
       });
     } catch (e) {
       next({ status: 500, message: e.message });
@@ -142,6 +169,8 @@ userSettingsRoutes.post<
       user.movieQuotaLimit = req.body.movieQuotaLimit;
       user.tvQuotaDays = req.body.tvQuotaDays;
       user.tvQuotaLimit = req.body.tvQuotaLimit;
+      user.combinedQuotaDays = req.body.combinedQuotaDays;
+      user.combinedQuotaLimit = req.body.combinedQuotaLimit;
     }
 
     if (!user.settings) {

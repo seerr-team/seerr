@@ -12,12 +12,17 @@ export interface UserSettingsGeneralResponse {
   movieQuotaDays?: number;
   tvQuotaLimit?: number;
   tvQuotaDays?: number;
+  combinedQuotaLimit?: number;
+  combinedQuotaDays?: number;
   globalMovieQuotaDays?: number;
   globalMovieQuotaLimit?: number;
   globalTvQuotaLimit?: number;
   globalTvQuotaDays?: number;
+  globalCombinedQuotaLimit?: number;
+  globalCombinedQuotaDays?: number;
   watchlistSyncMovies?: boolean;
   watchlistSyncTv?: boolean;
+  quotaMode?: 'split' | 'combined';
 }
 
 export type NotificationAgentTypes = Record<NotificationAgentKey, number>;

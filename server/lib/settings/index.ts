@@ -130,6 +130,7 @@ export interface MainSettings {
   defaultQuotas: {
     movie: Quota;
     tv: Quota;
+    combined: Quota;
   };
   hideAvailable: boolean;
   hideBlacklisted: boolean;
@@ -387,6 +388,7 @@ class Settings {
         defaultQuotas: {
           movie: {},
           tv: {},
+          combined: {},
         },
         hideAvailable: false,
         hideBlacklisted: false,
