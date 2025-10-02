@@ -191,7 +191,7 @@ components:
         combinedQuotaLimit:
           type: number
           nullable: true
-          description: 'Maximum number of combined requests allowed'
+          description: 'Maximum number of requests allowed'
           example: 15
         combinedQuotaDays:
           type: number

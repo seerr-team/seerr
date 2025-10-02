@@ -90,12 +90,15 @@ const SettingsUsers = () => {
         : undefined,
   };
 
-  const defaultQuotaMode =
-    data?.defaultQuotas?.combined &&
-    (data.defaultQuotas.combined.quotaLimit !== undefined ||
-      data.defaultQuotas.combined.quotaDays !== undefined)
+  const hasValue = (value?: number | null): boolean =>
+    value !== null && value !== undefined;
+
+  const defaultQuotaMode: QuotaMode =
+    (data?.defaultQuotas?.mode as QuotaMode | undefined) ??
+    (hasValue(data?.defaultQuotas?.combined?.quotaLimit) ||
+    hasValue(data?.defaultQuotas?.combined?.quotaDays)
       ? 'combined'
-      : 'split';
+      : 'split');
 
   return (
     <>
@@ -135,27 +138,19 @@ const SettingsUsers = () => {
                 mediaServerLogin: values.mediaServerLogin,
                 newPlexLogin: values.newPlexLogin,
                 defaultQuotas: {
-                  movie:
-                    (values.quotaMode as QuotaMode) === 'split'
-                      ? {
-                          quotaLimit: values.movieQuotaLimit,
-                          quotaDays: values.movieQuotaDays,
-                        }
-                      : { quotaLimit: null, quotaDays: null },
-                  tv:
-                    (values.quotaMode as QuotaMode) === 'split'
-                      ? {
-                          quotaLimit: values.tvQuotaLimit,
-                          quotaDays: values.tvQuotaDays,
-                        }
-                      : { quotaLimit: null, quotaDays: null },
-                  combined:
-                    (values.quotaMode as QuotaMode) === 'combined'
-                      ? {
-                          quotaLimit: values.combinedQuotaLimit,
-                          quotaDays: values.combinedQuotaDays,
-                        }
-                      : { quotaLimit: null, quotaDays: null },
+                  mode: values.quotaMode as QuotaMode,
+                  movie: {
+                    quotaLimit: values.movieQuotaLimit,
+                    quotaDays: values.movieQuotaDays,
+                  },
+                  tv: {
+                    quotaLimit: values.tvQuotaLimit,
+                    quotaDays: values.tvQuotaDays,
+                  },
+                  combined: {
+                    quotaLimit: values.combinedQuotaLimit,
+                    quotaDays: values.combinedQuotaDays,
+                  },
                 },
                 defaultPermissions: values.defaultPermissions,
               });

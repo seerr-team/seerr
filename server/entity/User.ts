@@ -2,7 +2,10 @@ import { MediaRequestStatus, MediaType } from '@server/constants/media';
 import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
 import { Watchlist } from '@server/entity/Watchlist';
-import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
+import type {
+  QuotaMode,
+  QuotaResponse,
+} from '@server/interfaces/api/userInterfaces';
 import PreparedEmail from '@server/lib/email';
 import type { PermissionCheckOptions } from '@server/lib/permissions';
 import { hasPermission, Permission } from '@server/lib/permissions';
@@ -284,17 +287,20 @@ export class User {
       hasValue(this.movieQuotaDays) ||
       hasValue(this.tvQuotaLimit) ||
       hasValue(this.tvQuotaDays);
-    const globalCombinedConfigured =
+
+    const legacyGlobalCombinedConfigured =
       hasValue(defaultQuotas.combined?.quotaLimit) ||
       hasValue(defaultQuotas.combined?.quotaDays);
 
-    const mode = userCombinedConfigured
+    const globalMode: QuotaMode =
+      defaultQuotas.mode ??
+      (legacyGlobalCombinedConfigured ? 'combined' : 'split');
+
+    const mode: QuotaMode = userCombinedConfigured
       ? 'combined'
       : userSplitConfigured
       ? 'split'
-      : globalCombinedConfigured
-      ? 'combined'
-      : 'split';
+      : globalMode;
 
     const effectiveMovieLimit =
       this.movieQuotaLimit ?? defaultQuotas.movie.quotaLimit;

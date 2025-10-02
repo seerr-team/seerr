@@ -1,4 +1,5 @@
 import { MediaServerType } from '@server/constants/server';
+import type { QuotaMode } from '@server/interfaces/api/userInterfaces';
 import { Permission } from '@server/lib/permissions';
 import { runMigrations } from '@server/lib/settings/migrator';
 import { randomUUID } from 'crypto';
@@ -100,6 +101,13 @@ interface Quota {
   quotaDays?: number;
 }
 
+interface DefaultQuotas {
+  mode?: QuotaMode;
+  movie: Quota;
+  tv: Quota;
+  combined: Quota;
+}
+
 export enum MetadataProviderType {
   TMDB = 'tmdb',
   TVDB = 'tvdb',
@@ -127,11 +135,7 @@ export interface MainSettings {
   applicationUrl: string;
   cacheImages: boolean;
   defaultPermissions: number;
-  defaultQuotas: {
-    movie: Quota;
-    tv: Quota;
-    combined: Quota;
-  };
+  defaultQuotas: DefaultQuotas;
   hideAvailable: boolean;
   hideBlacklisted: boolean;
   localLogin: boolean;
@@ -386,6 +390,7 @@ class Settings {
         cacheImages: false,
         defaultPermissions: Permission.REQUEST,
         defaultQuotas: {
+          mode: undefined,
           movie: {},
           tv: {},
           combined: {},
@@ -600,6 +605,17 @@ class Settings {
     };
     if (initialSettings) {
       this.data = merge(this.data, initialSettings);
+    }
+
+    if (!this.data.main.defaultQuotas.mode) {
+      const hasValue = (value?: number | null): boolean =>
+        value !== null && value !== undefined;
+
+      this.data.main.defaultQuotas.mode =
+        hasValue(this.data.main.defaultQuotas.combined?.quotaLimit) ||
+        hasValue(this.data.main.defaultQuotas.combined?.quotaDays)
+          ? 'combined'
+          : 'split';
     }
   }
 

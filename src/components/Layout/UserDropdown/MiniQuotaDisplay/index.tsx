@@ -38,7 +38,7 @@ const MiniQuotaDisplay = ({ userId }: MiniQuotaDisplayProps) => {
     return (
       <div className="flex">
         <div className="flex w-full flex-col space-y-2">
-          <div className="text-sm text-gray-200">Combined Requests</div>
+          <div className="text-sm text-gray-200">Requests</div>
           <div className="flex h-full items-center space-x-2 text-gray-200">
             {data.combined.limit ? (
               <>

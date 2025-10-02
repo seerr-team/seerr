@@ -80,17 +80,20 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
         hasValue(user.movieQuotaDays) ||
         hasValue(user.tvQuotaLimit) ||
         hasValue(user.tvQuotaDays);
-      const globalCombinedConfigured =
+
+      const legacyGlobalCombinedConfigured =
         hasValue(defaultQuotas.combined?.quotaLimit) ||
         hasValue(defaultQuotas.combined?.quotaDays);
+
+      const globalMode =
+        defaultQuotas.mode ??
+        (legacyGlobalCombinedConfigured ? 'combined' : 'split');
 
       const quotaMode = userCombinedConfigured
         ? 'combined'
         : userSplitConfigured
         ? 'split'
-        : globalCombinedConfigured
-        ? 'combined'
-        : 'split';
+        : globalMode;
 
       return res.status(200).json({
         username: user.username,

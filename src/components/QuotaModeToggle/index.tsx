@@ -36,7 +36,7 @@ const QuotaModeToggle: React.FC<QuotaModeToggleProps> = ({
   return (
     <div className={`grid gap-3 md:grid-cols-2 ${className ?? ''}`}>
       <label className={cardClasses(value === 'split', undefined)}>
-        <span>Separate movie and series limits</span>
+        <span>Separate movie and shows limits</span>
         <span className={radioIndicatorClasses(value === 'split')}>
           <span className={radioDotClasses(value === 'split')}></span>
         </span>
