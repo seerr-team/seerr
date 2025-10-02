@@ -1,0 +1,32 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+
+  packageRules: [
+    // pnpm lockfile maintenance
+    {
+      matchManagers: ['npm'],
+      lockFileMaintenance: {
+        enabled: true,
+        automerge: true,
+        schedule: ['before 9pm on friday'],
+        commitMessageAction: 'Update',
+        commitMessageTopic: 'lockfile',
+      },
+    },
+
+    // pnpm version updates
+    {
+      matchManagers: ['npm'],
+      matchPackageNames: ['pnpm'],
+      groupName: 'pnpm',
+      rangeStrategy: 'bump',
+      automerge: false,
+    },
+  ],
+
+  postUpdateOptions: ['pnpmDedupe'],
+
+  constraints: {
+    pnpm: '>=10.0.0',
+  },
+}

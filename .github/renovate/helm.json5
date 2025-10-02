@@ -1,0 +1,24 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+
+  packageRules: [
+    {
+      matchManagers: ['helm-values'],
+      matchFileNames: ['charts/jellyseerr-chart/**'],
+      automerge: false,
+    },
+  ],
+
+  customManagers: [
+    {
+      customType: 'regex',
+      description: 'Update appVersion in Chart.yaml to match Docker image',
+      fileMatch: ['(^|/)Chart\\.yaml$'],
+      matchStrings: [
+        'appVersion:\\s*"(?<currentValue>.*)"',
+      ],
+      datasourceTemplate: 'docker',
+      depNameTemplate: 'ghcr.io/fallenbagel/jellyseerr',
+    },
+  ],
+}

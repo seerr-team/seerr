@@ -1,0 +1,47 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+
+  packageRules: [
+    // All dependency updates
+    {
+      matchPackagePatterns: ['*'],
+      labels: ['dependencies'],
+    },
+
+    // JavaScript/npm packages
+    {
+      matchManagers: ['npm'],
+      labels: ['javascript'],
+    },
+
+    // GitHub Actions
+    {
+      matchManagers: ['github-actions'],
+      labels: ['github_actions'],
+    },
+
+    // Docker images
+    {
+      matchManagers: ['dockerfile', 'docker-compose'],
+      labels: ['docker'],
+    },
+
+    // Helm charts
+    {
+      matchManagers: ['helm-values'],
+      labels: ['helm'],
+    },
+
+    // Database packages need extra review
+    {
+      matchPackageNames: ['typeorm', 'pg', 'sqlite3'],
+      labels: ['dependencies', 'javascript', 'awaiting triage'],
+    },
+
+    // Major updates need review
+    {
+      matchUpdateTypes: ['major'],
+      labels: ['dependencies', 'awaiting triage'],
+    },
+  ],
+}

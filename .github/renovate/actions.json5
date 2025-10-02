@@ -1,0 +1,36 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+
+  packageRules: [
+    // Pin GitHub Actions to commit SHA
+    {
+      matchManagers: ['github-actions'],
+      pinDigests: true,
+    },
+
+    // Official actions (actions/*, docker/*)
+    {
+      matchManagers: ['github-actions'],
+      matchPackagePatterns: ['^actions/', '^docker/'],
+      groupName: 'GitHub Actions',
+      automerge: true,
+      minimumReleaseAge: '3 days',
+    },
+
+    // Third-party actions need more review
+    {
+      matchManagers: ['github-actions'],
+      excludePackagePatterns: ['^actions/', '^docker/'],
+      groupName: 'Third-party Actions',
+      automerge: false,
+      minimumReleaseAge: '7 days',
+    },
+
+    // Major updates
+    {
+      matchManagers: ['github-actions'],
+      matchUpdateTypes: ['major'],
+      automerge: false,
+    },
+  ],
+}
