@@ -277,9 +277,18 @@ class PlexTvAPI extends ExternalAPI {
   }> {
     try {
       const watchlistCache = cacheManager.getCache('plexwatchlist');
+      logger.debug('Fetching watchlist from Plex.TV', {
+        offset,
+        size,
+        label: 'Plex.TV Metadata API',
+      });
       let cachedWatchlist = watchlistCache.data.get<PlexWatchlistCache>(
         this.authToken
       );
+      logger.debug(`Found cached watchlist: ${!!cachedWatchlist}`, {
+        cachedWatchlist,
+        label: 'Plex.TV Metadata API',
+      });
 
       const response = await this.axios.get<WatchlistResponse>(
         '/library/sections/watchlist/all',
@@ -295,6 +304,10 @@ class PlexTvAPI extends ExternalAPI {
           validateStatus: (status) => status < 400, // Allow HTTP 304 to return without error
         }
       );
+
+      logger.debug(`Watchlist fetch returned status ${response.status}`, {
+        label: 'Plex.TV Metadata API',
+      });
 
       // If we don't recieve HTTP 304, the watchlist has been updated and we need to update the cache.
       if (response.status >= 200 && response.status <= 299) {
