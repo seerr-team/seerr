@@ -1271,6 +1271,9 @@ components:
           type: number
         rootFolder:
           type: string
+        autoSearch:
+          type: boolean
+          example: false
       required:
         - id
         - status
