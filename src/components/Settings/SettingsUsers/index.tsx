@@ -3,6 +3,9 @@ import LabeledCheckbox from '@app/components/Common/LabeledCheckbox';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import PermissionEdit from '@app/components/PermissionEdit';
+import QuotaModeToggle, {
+  type QuotaMode,
+} from '@app/components/QuotaModeToggle';
 import QuotaSelector from '@app/components/QuotaSelector';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
@@ -133,21 +136,21 @@ const SettingsUsers = () => {
                 newPlexLogin: values.newPlexLogin,
                 defaultQuotas: {
                   movie:
-                    values.quotaMode === 'split'
+                    (values.quotaMode as QuotaMode) === 'split'
                       ? {
                           quotaLimit: values.movieQuotaLimit,
                           quotaDays: values.movieQuotaDays,
                         }
                       : { quotaLimit: null, quotaDays: null },
                   tv:
-                    values.quotaMode === 'split'
+                    (values.quotaMode as QuotaMode) === 'split'
                       ? {
                           quotaLimit: values.tvQuotaLimit,
                           quotaDays: values.tvQuotaDays,
                         }
                       : { quotaLimit: null, quotaDays: null },
                   combined:
-                    values.quotaMode === 'combined'
+                    (values.quotaMode as QuotaMode) === 'combined'
                       ? {
                           quotaLimit: values.combinedQuotaLimit,
                           quotaDays: values.combinedQuotaDays,
@@ -256,74 +259,10 @@ const SettingsUsers = () => {
                     <span>Request Limit Mode</span>
                   </label>
                   <div className="form-input-area">
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <label
-                        className={`flex cursor-pointer items-center justify-between rounded-md border px-4 py-3 text-sm transition focus-within:ring-2 focus-within:ring-indigo-500 hover:border-indigo-400 focus:outline-none ${
-                          values.quotaMode === 'split'
-                            ? 'border-indigo-500 bg-indigo-500/10 text-white shadow'
-                            : 'border-gray-700 bg-gray-900 text-gray-200'
-                        }`}
-                      >
-                        <span>Separate movie and series limits</span>
-                        <span
-                          className={`ml-4 grid h-4 w-4 place-items-center rounded-full border ${
-                            values.quotaMode === 'split'
-                              ? 'border-indigo-300 bg-indigo-500'
-                              : 'border-gray-500'
-                          }`}
-                        >
-                          <span
-                            className={`h-2 w-2 rounded-full ${
-                              values.quotaMode === 'split'
-                                ? 'bg-white'
-                                : 'bg-transparent'
-                            }`}
-                          ></span>
-                        </span>
-                        <input
-                          className="sr-only"
-                          type="radio"
-                          name="quotaMode"
-                          value="split"
-                          checked={values.quotaMode === 'split'}
-                          onChange={() => setFieldValue('quotaMode', 'split')}
-                        />
-                      </label>
-                      <label
-                        className={`flex cursor-pointer items-center justify-between rounded-md border px-4 py-3 text-sm transition focus-within:ring-2 focus-within:ring-indigo-500 hover:border-indigo-400 focus:outline-none ${
-                          values.quotaMode === 'combined'
-                            ? 'border-indigo-500 bg-indigo-500/10 text-white shadow'
-                            : 'border-gray-700 bg-gray-900 text-gray-200'
-                        }`}
-                      >
-                        <span>Use a combined limit for requests</span>
-                        <span
-                          className={`ml-4 grid h-4 w-4 place-items-center rounded-full border ${
-                            values.quotaMode === 'combined'
-                              ? 'border-indigo-300 bg-indigo-500'
-                              : 'border-gray-500'
-                          }`}
-                        >
-                          <span
-                            className={`h-2 w-2 rounded-full ${
-                              values.quotaMode === 'combined'
-                                ? 'bg-white'
-                                : 'bg-transparent'
-                            }`}
-                          ></span>
-                        </span>
-                        <input
-                          className="sr-only"
-                          type="radio"
-                          name="quotaMode"
-                          value="combined"
-                          checked={values.quotaMode === 'combined'}
-                          onChange={() =>
-                            setFieldValue('quotaMode', 'combined')
-                          }
-                        />
-                      </label>
-                    </div>
+                    <QuotaModeToggle
+                      value={values.quotaMode as QuotaMode}
+                      onChange={(mode) => setFieldValue('quotaMode', mode)}
+                    />
                   </div>
                 </div>
                 {values.quotaMode === 'combined' ? (

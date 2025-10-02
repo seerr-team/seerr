@@ -3,6 +3,9 @@ import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import LanguageSelector from '@app/components/LanguageSelector';
+import QuotaModeToggle, {
+  type QuotaMode,
+} from '@app/components/QuotaModeToggle';
 import QuotaSelector from '@app/components/QuotaSelector';
 import RegionSelector from '@app/components/RegionSelector';
 import { availableLanguages } from '@app/context/LanguageContext';
@@ -80,7 +83,7 @@ const UserGeneralSettings = () => {
   const { addToast } = useToasts();
   const { locale, setLocale } = useLocale();
   const [overrideEnabled, setOverrideEnabled] = useState(false);
-  const [quotaMode, setQuotaMode] = useState<'split' | 'combined'>('split');
+  const [quotaMode, setQuotaMode] = useState<QuotaMode>('split');
   const router = useRouter();
   const {
     user,
@@ -524,72 +527,10 @@ const UserGeneralSettings = () => {
                             <span>Request Limit Mode</span>
                           </label>
                           <div className="form-input-area">
-                            <div className="grid gap-3 md:grid-cols-2">
-                              <label
-                                className={`flex cursor-pointer items-center justify-between rounded-md border px-4 py-3 text-sm transition focus-within:ring-2 focus-within:ring-indigo-500 hover:border-indigo-400 focus:outline-none ${
-                                  quotaMode === 'split'
-                                    ? 'border-indigo-500 bg-indigo-500/10 text-white shadow'
-                                    : 'border-gray-700 bg-gray-900 text-gray-200'
-                                }`}
-                              >
-                                <span>Separate movie and series limits</span>
-                                <span
-                                  className={`ml-4 grid h-4 w-4 place-items-center rounded-full border ${
-                                    quotaMode === 'split'
-                                      ? 'border-indigo-300 bg-indigo-500'
-                                      : 'border-gray-500'
-                                  }`}
-                                >
-                                  <span
-                                    className={`h-2 w-2 rounded-full ${
-                                      quotaMode === 'split'
-                                        ? 'bg-white'
-                                        : 'bg-transparent'
-                                    }`}
-                                  ></span>
-                                </span>
-                                <input
-                                  className="sr-only"
-                                  type="radio"
-                                  name="quotaMode"
-                                  value="split"
-                                  checked={quotaMode === 'split'}
-                                  onChange={() => setQuotaMode('split')}
-                                />
-                              </label>
-                              <label
-                                className={`flex cursor-pointer items-center justify-between rounded-md border px-4 py-3 text-sm transition focus-within:ring-2 focus-within:ring-indigo-500 hover:border-indigo-400 focus:outline-none ${
-                                  quotaMode === 'combined'
-                                    ? 'border-indigo-500 bg-indigo-500/10 text-white shadow'
-                                    : 'border-gray-700 bg-gray-900 text-gray-200'
-                                }`}
-                              >
-                                <span>Use a combined limit for requests</span>
-                                <span
-                                  className={`ml-4 grid h-4 w-4 place-items-center rounded-full border ${
-                                    quotaMode === 'combined'
-                                      ? 'border-indigo-300 bg-indigo-500'
-                                      : 'border-gray-500'
-                                  }`}
-                                >
-                                  <span
-                                    className={`h-2 w-2 rounded-full ${
-                                      quotaMode === 'combined'
-                                        ? 'bg-white'
-                                        : 'bg-transparent'
-                                    }`}
-                                  ></span>
-                                </span>
-                                <input
-                                  className="sr-only"
-                                  type="radio"
-                                  name="quotaMode"
-                                  value="combined"
-                                  checked={quotaMode === 'combined'}
-                                  onChange={() => setQuotaMode('combined')}
-                                />
-                              </label>
-                            </div>
+                            <QuotaModeToggle
+                              value={quotaMode}
+                              onChange={setQuotaMode}
+                            />
                           </div>
                         </div>
                         {quotaMode === 'combined' ? (
@@ -678,47 +619,7 @@ const UserGeneralSettings = () => {
                           </>
                         )}
                       </>
-                    ) : (
-                      <div className="form-row">
-                        <div className="text-label">
-                          <span>Global Request Limits</span>
-                        </div>
-                        <div className="form-input-area">
-                          {data?.quotaMode === 'combined' ? (
-                            <QuotaSelector
-                              mediaType="combined"
-                              dayFieldName="combinedQuotaDays"
-                              limitFieldName="combinedQuotaLimit"
-                              onChange={() => undefined}
-                              defaultDays={data?.globalCombinedQuotaDays ?? 7}
-                              defaultLimit={data?.globalCombinedQuotaLimit ?? 0}
-                              isDisabled
-                            />
-                          ) : (
-                            <div className="space-y-4">
-                              <QuotaSelector
-                                mediaType="movie"
-                                dayFieldName="movieQuotaDays"
-                                limitFieldName="movieQuotaLimit"
-                                onChange={() => undefined}
-                                defaultDays={data?.globalMovieQuotaDays ?? 7}
-                                defaultLimit={data?.globalMovieQuotaLimit ?? 0}
-                                isDisabled
-                              />
-                              <QuotaSelector
-                                mediaType="tv"
-                                dayFieldName="tvQuotaDays"
-                                limitFieldName="tvQuotaLimit"
-                                onChange={() => undefined}
-                                defaultDays={data?.globalTvQuotaDays ?? 7}
-                                defaultLimit={data?.globalTvQuotaLimit ?? 0}
-                                isDisabled
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                    ) : null}
                   </>
                 )}
               {hasPermission(
