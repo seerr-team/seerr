@@ -14,7 +14,7 @@ const messages = defineMessages('components.QuotaSelector', {
 });
 
 interface QuotaSelectorProps {
-  mediaType: 'movie' | 'tv';
+  mediaType: 'movie' | 'tv' | 'combined';
   defaultDays?: number;
   defaultLimit?: number;
   dayOverride?: number;
@@ -50,54 +50,63 @@ const QuotaSelector = ({
     onChange(limitFieldName, quotaLimit);
   }, [limitFieldName, onChange, quotaLimit]);
 
+  const currentLimit = limitOverride ?? quotaLimit;
+  const currentDays = dayOverride ?? quotaDays;
+
+  const unitsLabel = (() => {
+    if (mediaType === 'movie') {
+      return intl.formatMessage(messages.movies, { count: currentLimit });
+    }
+
+    if (mediaType === 'tv') {
+      return intl.formatMessage(messages.seasons, { count: currentLimit });
+    }
+
+    return currentLimit === 1 ? 'request' : 'requests';
+  })();
+
+  const quotaMessage =
+    mediaType === 'tv' ? messages.tvRequests : messages.movieRequests;
+
   return (
     <div className={`${isDisabled ? 'opacity-50' : ''}`}>
-      {intl.formatMessage(
-        mediaType === 'movie' ? messages.movieRequests : messages.tvRequests,
-        {
-          quotaLimit: (
-            <select
-              className="short inline"
-              value={limitOverride ?? quotaLimit}
-              onChange={(e) => setQuotaLimit(Number(e.target.value))}
-              disabled={isDisabled}
-            >
-              <option value="0">
-                {intl.formatMessage(messages.unlimited)}
+      {intl.formatMessage(quotaMessage, {
+        quotaLimit: (
+          <select
+            className="short inline"
+            value={currentLimit}
+            onChange={(e) => setQuotaLimit(Number(e.target.value))}
+            disabled={isDisabled}
+          >
+            <option value="0">{intl.formatMessage(messages.unlimited)}</option>
+            {[...Array(100)].map((_item, i) => (
+              <option value={i + 1} key={`${mediaType}-limit-${i + 1}`}>
+                {i + 1}
               </option>
-              {[...Array(100)].map((_item, i) => (
-                <option value={i + 1} key={`${mediaType}-limit-${i + 1}`}>
-                  {i + 1}
-                </option>
-              ))}
-            </select>
-          ),
-          quotaDays: (
-            <select
-              className="short inline"
-              value={dayOverride ?? quotaDays}
-              onChange={(e) => setQuotaDays(Number(e.target.value))}
-              disabled={isDisabled}
-            >
-              {[...Array(100)].map((_item, i) => (
-                <option value={i + 1} key={`${mediaType}-days-${i + 1}`}>
-                  {i + 1}
-                </option>
-              ))}
-            </select>
-          ),
-          movies: intl.formatMessage(messages.movies, { count: quotaLimit }),
-          seasons: intl.formatMessage(messages.seasons, { count: quotaLimit }),
-          days: intl.formatMessage(messages.days, { count: quotaDays }),
-          quotaUnits: function quotaUnits(msg) {
-            return (
-              <span className={limitOverride || quotaLimit ? '' : 'hidden'}>
-                {msg}
-              </span>
-            );
-          },
-        }
-      )}
+            ))}
+          </select>
+        ),
+        quotaDays: (
+          <select
+            className="short inline"
+            value={currentDays}
+            onChange={(e) => setQuotaDays(Number(e.target.value))}
+            disabled={isDisabled}
+          >
+            {[...Array(100)].map((_item, i) => (
+              <option value={i + 1} key={`${mediaType}-days-${i + 1}`}>
+                {i + 1}
+              </option>
+            ))}
+          </select>
+        ),
+        movies: unitsLabel,
+        seasons: unitsLabel,
+        days: intl.formatMessage(messages.days, { count: currentDays }),
+        quotaUnits: function quotaUnits(msg) {
+          return <span className={currentLimit ? '' : 'hidden'}>{msg}</span>;
+        },
+      })}
     </div>
   );
 };

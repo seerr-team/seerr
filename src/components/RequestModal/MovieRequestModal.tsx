@@ -69,6 +69,8 @@ const MovieRequestModal = ({
       ? `/api/v1/user/${requestOverrides?.user?.id ?? user.id}/quota`
       : null
   );
+  const quotaMode = quota?.mode ?? 'split';
+  const movieQuota = quotaMode === 'combined' ? quota?.combined : quota?.movie;
 
   useEffect(() => {
     if (onUpdating) {
@@ -320,7 +322,7 @@ const MovieRequestModal = ({
       backgroundClickable
       onCancel={onCancel}
       onOk={sendRequest}
-      okDisabled={isUpdating || quota?.movie.restricted}
+      okDisabled={isUpdating || movieQuota?.restricted}
       title={intl.formatMessage(
         is4k ? messages.requestmovie4ktitle : messages.requestmovietitle
       )}
@@ -335,7 +337,7 @@ const MovieRequestModal = ({
       okButtonType={'primary'}
       backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
     >
-      {hasAutoApprove && !quota?.movie.restricted && (
+      {hasAutoApprove && !movieQuota?.restricted && (
         <div className="mt-6">
           <Alert
             title={intl.formatMessage(messages.requestadmin)}
@@ -343,10 +345,10 @@ const MovieRequestModal = ({
           />
         </div>
       )}
-      {(quota?.movie.limit ?? 0) > 0 && (
+      {(movieQuota?.limit ?? 0) > 0 && (
         <QuotaDisplay
-          mediaType="movie"
-          quota={quota?.movie}
+          mediaType={quotaMode === 'combined' ? 'combined' : 'movie'}
+          quota={movieQuota}
           userOverride={
             requestOverrides?.user && requestOverrides.user.id !== user?.id
               ? requestOverrides?.user?.id

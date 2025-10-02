@@ -8,9 +8,10 @@ import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.RequestModal.QuotaDisplay', {
   requestsremaining:
-    '{remaining, plural, =0 {No} other {<strong>#</strong>}} {type} {remaining, plural, one {request} other {requests}} remaining',
+    '{remaining, plural, =0 {No {typePlural}} one {<strong>#</strong> {typeSingular}} other {<strong>#</strong> {typePlural}}} available',
   movielimit: '{limit, plural, one {movie} other {movies}}',
   seasonlimit: '{limit, plural, one {season} other {seasons}}',
+  combinedlimit: '{limit, plural, one {request} other {requests}}',
   allowedRequests:
     'You are allowed to request <strong>{limit}</strong> {type} every <strong>{days}</strong> days.',
   allowedRequestsUser:
@@ -19,8 +20,12 @@ const messages = defineMessages('components.RequestModal.QuotaDisplay', {
     'You can view a summary of your request limits on your <ProfileLink>profile page</ProfileLink>.',
   quotaLinkUser:
     "You can view a summary of this user's request limits on their <ProfileLink>profile page</ProfileLink>.",
-  movie: 'movie',
-  season: 'season',
+  movieSingular: 'movie request',
+  moviePlural: 'movie requests',
+  seasonSingular: 'season request',
+  seasonPlural: 'season requests',
+  combinedSingular: 'request',
+  combinedPlural: 'requests',
   notenoughseasonrequests: 'Not enough season requests remaining',
   requiredquota:
     'You need to have at least <strong>{seasons}</strong> {seasons, plural, one {season request} other {season requests}} remaining in order to submit a request for this series.',
@@ -30,7 +35,7 @@ const messages = defineMessages('components.RequestModal.QuotaDisplay', {
 
 interface QuotaDisplayProps {
   quota?: QuotaStatus;
-  mediaType: 'movie' | 'tv';
+  mediaType: 'movie' | 'tv' | 'combined';
   userOverride?: number | null;
   remaining?: number;
   overLimit?: number;
@@ -45,6 +50,20 @@ const QuotaDisplay = ({
 }: QuotaDisplayProps) => {
   const intl = useIntl();
   const [showDetails, setShowDetails] = useState(false);
+  const typeSingular = intl.formatMessage(
+    mediaType === 'movie'
+      ? messages.movieSingular
+      : mediaType === 'tv'
+      ? messages.seasonSingular
+      : messages.combinedSingular
+  );
+  const typePlural = intl.formatMessage(
+    mediaType === 'movie'
+      ? messages.moviePlural
+      : mediaType === 'tv'
+      ? messages.seasonPlural
+      : messages.combinedPlural
+  );
   return (
     <div
       className="my-4 flex flex-col rounded-md border border-gray-700 p-4 backdrop-blur"
@@ -77,9 +96,8 @@ const QuotaDisplay = ({
               ? intl.formatMessage(messages.notenoughseasonrequests)
               : intl.formatMessage(messages.requestsremaining, {
                   remaining: remaining ?? quota?.remaining ?? 0,
-                  type: intl.formatMessage(
-                    mediaType === 'movie' ? messages.movie : messages.season
-                  ),
+                  typeSingular,
+                  typePlural,
                   strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
                 })}
           </div>
@@ -118,7 +136,9 @@ const QuotaDisplay = ({
                 type: intl.formatMessage(
                   mediaType === 'movie'
                     ? messages.movielimit
-                    : messages.seasonlimit,
+                    : mediaType === 'tv'
+                    ? messages.seasonlimit
+                    : messages.combinedlimit,
                   { limit: quota?.limit }
                 ),
                 strong: (msg: React.ReactNode) => <strong>{msg}</strong>,

@@ -62,9 +62,11 @@ const CollectionRequestModal = ({
       ? `/api/v1/user/${requestOverrides?.user?.id ?? user.id}/quota`
       : null
   );
+  const quotaMode = quota?.mode ?? 'split';
+  const movieQuota = quotaMode === 'combined' ? quota?.combined : quota?.movie;
 
   const currentlyRemaining =
-    (quota?.movie.remaining ?? 0) - selectedParts.length;
+    (movieQuota?.remaining ?? 0) - selectedParts.length;
 
   const getAllParts = (): number[] => {
     return (data?.parts ?? [])
@@ -116,7 +118,7 @@ const CollectionRequestModal = ({
 
     // If there are no more remaining requests available, block toggle
     if (
-      quota?.movie.limit &&
+      movieQuota?.limit &&
       currentlyRemaining <= 0 &&
       !isSelectedPart(tmdbId)
     ) {
@@ -137,8 +139,8 @@ const CollectionRequestModal = ({
   const toggleAllParts = (): void => {
     // If the user has a quota and not enough requests for all parts, block toggleAllParts
     if (
-      quota?.movie.limit &&
-      (quota?.movie.remaining ?? 0) < unrequestedParts.length
+      movieQuota?.limit &&
+      (movieQuota?.remaining ?? 0) < unrequestedParts.length
     ) {
       return;
     }
@@ -290,7 +292,7 @@ const CollectionRequestModal = ({
       okButtonType={'primary'}
       backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
     >
-      {hasAutoApprove && !quota?.movie.restricted && (
+      {hasAutoApprove && !movieQuota?.restricted && (
         <div className="mt-6">
           <Alert
             title={intl.formatMessage(messages.requestadmin)}
@@ -298,10 +300,10 @@ const CollectionRequestModal = ({
           />
         </div>
       )}
-      {(quota?.movie.limit ?? 0) > 0 && (
+      {(movieQuota?.limit ?? 0) > 0 && (
         <QuotaDisplay
-          mediaType="movie"
-          quota={quota?.movie}
+          mediaType={quotaMode === 'combined' ? 'combined' : 'movie'}
+          quota={movieQuota}
           remaining={currentlyRemaining}
           userOverride={
             requestOverrides?.user && requestOverrides.user.id !== user?.id
@@ -329,8 +331,8 @@ const CollectionRequestModal = ({
                           }
                         }}
                         className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none ${
-                          quota?.movie.limit &&
-                          (quota.movie.remaining ?? 0) < unrequestedParts.length
+                          movieQuota?.limit &&
+                          (movieQuota?.remaining ?? 0) < unrequestedParts.length
                             ? 'opacity-50'
                             : ''
                         }`}
@@ -405,7 +407,7 @@ const CollectionRequestModal = ({
                                   partMedia.status !==
                                     MediaStatus.BLACKLISTED) ||
                                 partRequest ||
-                                (quota?.movie.limit &&
+                                (movieQuota?.limit &&
                                   currentlyRemaining <= 0 &&
                                   !isSelectedPart(part.id))
                                   ? 'opacity-50'

@@ -79,8 +79,8 @@ const UserGeneralSettings = () => {
   const intl = useIntl();
   const { addToast } = useToasts();
   const { locale, setLocale } = useLocale();
-  const [movieQuotaEnabled, setMovieQuotaEnabled] = useState(false);
-  const [tvQuotaEnabled, setTvQuotaEnabled] = useState(false);
+  const [overrideEnabled, setOverrideEnabled] = useState(false);
+  const [quotaMode, setQuotaMode] = useState<'split' | 'combined'>('split');
   const router = useRouter();
   const {
     user,
@@ -116,11 +116,26 @@ const UserGeneralSettings = () => {
   });
 
   useEffect(() => {
-    setMovieQuotaEnabled(
-      data?.movieQuotaLimit != undefined && data?.movieQuotaDays != undefined
-    );
-    setTvQuotaEnabled(
-      data?.tvQuotaLimit != undefined && data?.tvQuotaDays != undefined
+    if (!data) {
+      return;
+    }
+
+    const combinedOverrideActive =
+      data.combinedQuotaLimit != null || data.combinedQuotaDays != null;
+    const movieOverrideActive =
+      data.movieQuotaLimit != null || data.movieQuotaDays != null;
+    const tvOverrideActive =
+      data.tvQuotaLimit != null || data.tvQuotaDays != null;
+
+    const derivedMode = combinedOverrideActive
+      ? 'combined'
+      : movieOverrideActive || tvOverrideActive
+      ? 'split'
+      : data.quotaMode ?? 'split';
+
+    setQuotaMode(derivedMode);
+    setOverrideEnabled(
+      combinedOverrideActive || movieOverrideActive || tvOverrideActive
     );
   }, [data]);
 
@@ -158,6 +173,8 @@ const UserGeneralSettings = () => {
           movieQuotaDays: data?.movieQuotaDays,
           tvQuotaLimit: data?.tvQuotaLimit,
           tvQuotaDays: data?.tvQuotaDays,
+          combinedQuotaLimit: data?.combinedQuotaLimit,
+          combinedQuotaDays: data?.combinedQuotaDays,
           watchlistSyncMovies: data?.watchlistSyncMovies,
           watchlistSyncTv: data?.watchlistSyncTv,
         }}
@@ -174,12 +191,30 @@ const UserGeneralSettings = () => {
               discoverRegion: values.discoverRegion,
               streamingRegion: values.streamingRegion,
               originalLanguage: values.originalLanguage,
-              movieQuotaLimit: movieQuotaEnabled
-                ? values.movieQuotaLimit
-                : null,
-              movieQuotaDays: movieQuotaEnabled ? values.movieQuotaDays : null,
-              tvQuotaLimit: tvQuotaEnabled ? values.tvQuotaLimit : null,
-              tvQuotaDays: tvQuotaEnabled ? values.tvQuotaDays : null,
+              movieQuotaLimit:
+                overrideEnabled && quotaMode === 'split'
+                  ? values.movieQuotaLimit
+                  : null,
+              movieQuotaDays:
+                overrideEnabled && quotaMode === 'split'
+                  ? values.movieQuotaDays
+                  : null,
+              tvQuotaLimit:
+                overrideEnabled && quotaMode === 'split'
+                  ? values.tvQuotaLimit
+                  : null,
+              tvQuotaDays:
+                overrideEnabled && quotaMode === 'split'
+                  ? values.tvQuotaDays
+                  : null,
+              combinedQuotaLimit:
+                overrideEnabled && quotaMode === 'combined'
+                  ? values.combinedQuotaLimit
+                  : null,
+              combinedQuotaDays:
+                overrideEnabled && quotaMode === 'combined'
+                  ? values.combinedQuotaDays
+                  : null,
               watchlistSyncMovies: values.watchlistSyncMovies,
               watchlistSyncTv: values.watchlistSyncTv,
             });
@@ -452,85 +487,238 @@ const UserGeneralSettings = () => {
                 !hasPermission(Permission.MANAGE_USERS) && (
                   <>
                     <div className="form-row">
-                      <label htmlFor="movieQuotaLimit" className="text-label">
+                      <label
+                        htmlFor="requestLimitOverride"
+                        className="text-label"
+                      >
                         <span>
-                          {intl.formatMessage(messages.movierequestlimit)}
+                          {intl.formatMessage(messages.enableOverride)}
                         </span>
                       </label>
                       <div className="form-input-area">
-                        <div className="flex flex-col">
-                          <div className="mb-4 flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={movieQuotaEnabled}
-                              onChange={() => setMovieQuotaEnabled((s) => !s)}
-                            />
-                            <span className="ml-2 text-gray-300">
-                              {intl.formatMessage(messages.enableOverride)}
-                            </span>
-                          </div>
-                          <QuotaSelector
-                            isDisabled={!movieQuotaEnabled}
-                            dayFieldName="movieQuotaDays"
-                            limitFieldName="movieQuotaLimit"
-                            mediaType="movie"
-                            onChange={setFieldValue}
-                            defaultDays={values.movieQuotaDays}
-                            defaultLimit={values.movieQuotaLimit}
-                            dayOverride={
-                              !movieQuotaEnabled
-                                ? data?.globalMovieQuotaDays
-                                : undefined
-                            }
-                            limitOverride={
-                              !movieQuotaEnabled
-                                ? data?.globalMovieQuotaLimit
-                                : undefined
-                            }
+                        <div className="mb-4 flex items-center">
+                          <input
+                            id="requestLimitOverride"
+                            type="checkbox"
+                            checked={overrideEnabled}
+                            onChange={() => {
+                              if (overrideEnabled) {
+                                setOverrideEnabled(false);
+                                setQuotaMode(data?.quotaMode ?? 'split');
+                              } else {
+                                setOverrideEnabled(true);
+                                setQuotaMode(data?.quotaMode ?? 'split');
+                              }
+                            }}
                           />
+                          <span className="ml-2 text-gray-300">
+                            Enable override
+                          </span>
                         </div>
                       </div>
                     </div>
-                    <div className="form-row">
-                      <label htmlFor="tvQuotaLimit" className="text-label">
-                        <span>
-                          {intl.formatMessage(messages.seriesrequestlimit)}
-                        </span>
-                      </label>
-                      <div className="form-input-area">
-                        <div className="flex flex-col">
-                          <div className="mb-4 flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={tvQuotaEnabled}
-                              onChange={() => setTvQuotaEnabled((s) => !s)}
-                            />
-                            <span className="ml-2 text-gray-300">
-                              {intl.formatMessage(messages.enableOverride)}
-                            </span>
+                    {overrideEnabled ? (
+                      <>
+                        <div className="form-row">
+                          <label htmlFor="quotaMode" className="text-label">
+                            <span>Request Limit Mode</span>
+                          </label>
+                          <div className="form-input-area">
+                            <div className="grid gap-3 md:grid-cols-2">
+                              <label
+                                className={`flex cursor-pointer items-center justify-between rounded-md border px-4 py-3 text-sm transition focus-within:ring-2 focus-within:ring-indigo-500 hover:border-indigo-400 focus:outline-none ${
+                                  quotaMode === 'split'
+                                    ? 'border-indigo-500 bg-indigo-500/10 text-white shadow'
+                                    : 'border-gray-700 bg-gray-900 text-gray-200'
+                                }`}
+                              >
+                                <span>Separate movie and series limits</span>
+                                <span
+                                  className={`ml-4 grid h-4 w-4 place-items-center rounded-full border ${
+                                    quotaMode === 'split'
+                                      ? 'border-indigo-300 bg-indigo-500'
+                                      : 'border-gray-500'
+                                  }`}
+                                >
+                                  <span
+                                    className={`h-2 w-2 rounded-full ${
+                                      quotaMode === 'split'
+                                        ? 'bg-white'
+                                        : 'bg-transparent'
+                                    }`}
+                                  ></span>
+                                </span>
+                                <input
+                                  className="sr-only"
+                                  type="radio"
+                                  name="quotaMode"
+                                  value="split"
+                                  checked={quotaMode === 'split'}
+                                  onChange={() => setQuotaMode('split')}
+                                />
+                              </label>
+                              <label
+                                className={`flex cursor-pointer items-center justify-between rounded-md border px-4 py-3 text-sm transition focus-within:ring-2 focus-within:ring-indigo-500 hover:border-indigo-400 focus:outline-none ${
+                                  quotaMode === 'combined'
+                                    ? 'border-indigo-500 bg-indigo-500/10 text-white shadow'
+                                    : 'border-gray-700 bg-gray-900 text-gray-200'
+                                }`}
+                              >
+                                <span>Use a combined limit for requests</span>
+                                <span
+                                  className={`ml-4 grid h-4 w-4 place-items-center rounded-full border ${
+                                    quotaMode === 'combined'
+                                      ? 'border-indigo-300 bg-indigo-500'
+                                      : 'border-gray-500'
+                                  }`}
+                                >
+                                  <span
+                                    className={`h-2 w-2 rounded-full ${
+                                      quotaMode === 'combined'
+                                        ? 'bg-white'
+                                        : 'bg-transparent'
+                                    }`}
+                                  ></span>
+                                </span>
+                                <input
+                                  className="sr-only"
+                                  type="radio"
+                                  name="quotaMode"
+                                  value="combined"
+                                  checked={quotaMode === 'combined'}
+                                  onChange={() => setQuotaMode('combined')}
+                                />
+                              </label>
+                            </div>
                           </div>
-                          <QuotaSelector
-                            isDisabled={!tvQuotaEnabled}
-                            dayFieldName="tvQuotaDays"
-                            limitFieldName="tvQuotaLimit"
-                            mediaType="tv"
-                            onChange={setFieldValue}
-                            defaultDays={values.tvQuotaDays}
-                            defaultLimit={values.tvQuotaLimit}
-                            dayOverride={
-                              !tvQuotaEnabled
-                                ? data?.globalTvQuotaDays
-                                : undefined
-                            }
-                            limitOverride={
-                              !tvQuotaEnabled
-                                ? data?.globalTvQuotaLimit
-                                : undefined
-                            }
-                          />
+                        </div>
+                        {quotaMode === 'combined' ? (
+                          <div className="form-row">
+                            <label
+                              htmlFor="combinedQuotaLimit"
+                              className="text-label"
+                            >
+                              <span>Combined Request Limit</span>
+                            </label>
+                            <div className="form-input-area">
+                              <QuotaSelector
+                                dayFieldName="combinedQuotaDays"
+                                limitFieldName="combinedQuotaLimit"
+                                mediaType="combined"
+                                onChange={setFieldValue}
+                                defaultDays={
+                                  values.combinedQuotaDays ??
+                                  data?.globalCombinedQuotaDays
+                                }
+                                defaultLimit={
+                                  values.combinedQuotaLimit ??
+                                  data?.globalCombinedQuotaLimit
+                                }
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="form-row">
+                              <label
+                                htmlFor="movieQuotaLimit"
+                                className="text-label"
+                              >
+                                <span>
+                                  {intl.formatMessage(
+                                    messages.movierequestlimit
+                                  )}
+                                </span>
+                              </label>
+                              <div className="form-input-area">
+                                <QuotaSelector
+                                  dayFieldName="movieQuotaDays"
+                                  limitFieldName="movieQuotaLimit"
+                                  mediaType="movie"
+                                  onChange={setFieldValue}
+                                  defaultDays={
+                                    values.movieQuotaDays ??
+                                    data?.globalMovieQuotaDays
+                                  }
+                                  defaultLimit={
+                                    values.movieQuotaLimit ??
+                                    data?.globalMovieQuotaLimit
+                                  }
+                                />
+                              </div>
+                            </div>
+                            <div className="form-row">
+                              <label
+                                htmlFor="tvQuotaLimit"
+                                className="text-label"
+                              >
+                                <span>
+                                  {intl.formatMessage(
+                                    messages.seriesrequestlimit
+                                  )}
+                                </span>
+                              </label>
+                              <div className="form-input-area">
+                                <QuotaSelector
+                                  dayFieldName="tvQuotaDays"
+                                  limitFieldName="tvQuotaLimit"
+                                  mediaType="tv"
+                                  onChange={setFieldValue}
+                                  defaultDays={
+                                    values.tvQuotaDays ??
+                                    data?.globalTvQuotaDays
+                                  }
+                                  defaultLimit={
+                                    values.tvQuotaLimit ??
+                                    data?.globalTvQuotaLimit
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <div className="form-row">
+                        <div className="text-label">
+                          <span>Global Request Limits</span>
+                        </div>
+                        <div className="form-input-area">
+                          {data?.quotaMode === 'combined' ? (
+                            <QuotaSelector
+                              mediaType="combined"
+                              dayFieldName="combinedQuotaDays"
+                              limitFieldName="combinedQuotaLimit"
+                              onChange={() => undefined}
+                              defaultDays={data?.globalCombinedQuotaDays ?? 7}
+                              defaultLimit={data?.globalCombinedQuotaLimit ?? 0}
+                              isDisabled
+                            />
+                          ) : (
+                            <div className="space-y-4">
+                              <QuotaSelector
+                                mediaType="movie"
+                                dayFieldName="movieQuotaDays"
+                                limitFieldName="movieQuotaLimit"
+                                onChange={() => undefined}
+                                defaultDays={data?.globalMovieQuotaDays ?? 7}
+                                defaultLimit={data?.globalMovieQuotaLimit ?? 0}
+                                isDisabled
+                              />
+                              <QuotaSelector
+                                mediaType="tv"
+                                dayFieldName="tvQuotaDays"
+                                limitFieldName="tvQuotaLimit"
+                                onChange={() => undefined}
+                                defaultDays={data?.globalTvQuotaDays ?? 7}
+                                defaultLimit={data?.globalTvQuotaLimit ?? 0}
+                                isDisabled
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
+                    )}
                   </>
                 )}
               {hasPermission(

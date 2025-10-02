@@ -30,67 +30,103 @@ const MiniQuotaDisplay = ({ userId }: MiniQuotaDisplayProps) => {
     return <SmallLoadingSpinner />;
   }
 
-  return (
-    <>
-      {((data?.movie.limit ?? 0) !== 0 || (data?.tv.limit ?? 0) !== 0) && (
-        <div className="flex">
-          <div className="flex basis-1/2 flex-col space-y-2">
-            <div className="text-sm text-gray-200">
-              {intl.formatMessage(messages.movierequests)}
-            </div>
-            <div className="flex h-full items-center space-x-2 text-gray-200">
-              {data?.movie.limit ?? 0 > 0 ? (
-                <>
-                  <ProgressCircle
-                    className="h-8 w-8"
-                    progress={Math.round(
-                      ((data?.movie.remaining ?? 0) /
-                        (data?.movie.limit ?? 1)) *
-                        100
-                    )}
-                    useHeatLevel
-                  />
-                  <span className="text-lg font-bold">
-                    {data?.movie.remaining} / {data?.movie.limit}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Infinity className="w-7" />
-                  <span className="font-bold">Unlimited</span>
-                </>
-              )}
-            </div>
-          </div>
-          <div className="flex basis-1/2 flex-col space-y-2">
-            <div className="text-sm text-gray-200">
-              {intl.formatMessage(messages.seriesrequests)}
-            </div>
-            <div className="flex h-full items-center space-x-2 text-gray-200">
-              {data?.tv.limit ?? 0 > 0 ? (
-                <>
-                  <ProgressCircle
-                    className="h-8 w-8"
-                    progress={Math.round(
-                      ((data?.tv.remaining ?? 0) / (data?.tv.limit ?? 1)) * 100
-                    )}
-                    useHeatLevel
-                  />
-                  <span className="text-lg font-bold text-gray-200">
-                    {data?.tv.remaining} / {data?.tv.limit}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Infinity className="w-7" />
-                  <span className="font-bold">Unlimited</span>
-                </>
-              )}
-            </div>
+  if (data?.mode === 'combined') {
+    if ((data.combined.limit ?? 0) === 0) {
+      return null;
+    }
+
+    return (
+      <div className="flex">
+        <div className="flex w-full flex-col space-y-2">
+          <div className="text-sm text-gray-200">Combined Requests</div>
+          <div className="flex h-full items-center space-x-2 text-gray-200">
+            {data.combined.limit ? (
+              <>
+                <ProgressCircle
+                  className="h-8 w-8"
+                  progress={Math.round(
+                    ((data.combined.remaining ?? 0) /
+                      (data.combined.limit ?? 1)) *
+                      100
+                  )}
+                  useHeatLevel
+                />
+                <span className="text-lg font-bold text-gray-200">
+                  {data.combined.remaining} / {data.combined.limit}
+                </span>
+              </>
+            ) : (
+              <>
+                <Infinity className="w-7" />
+                <span className="font-bold">Unlimited</span>
+              </>
+            )}
           </div>
         </div>
-      )}
-    </>
+      </div>
+    );
+  }
+
+  if ((data?.movie.limit ?? 0) === 0 && (data?.tv.limit ?? 0) === 0) {
+    return null;
+  }
+
+  return (
+    <div className="flex">
+      <div className="flex basis-1/2 flex-col space-y-2">
+        <div className="text-sm text-gray-200">
+          {intl.formatMessage(messages.movierequests)}
+        </div>
+        <div className="flex h-full items-center space-x-2 text-gray-200">
+          {data?.movie.limit ? (
+            <>
+              <ProgressCircle
+                className="h-8 w-8"
+                progress={Math.round(
+                  ((data?.movie.remaining ?? 0) / (data?.movie.limit ?? 1)) *
+                    100
+                )}
+                useHeatLevel
+              />
+              <span className="text-lg font-bold">
+                {data?.movie.remaining} / {data?.movie.limit}
+              </span>
+            </>
+          ) : (
+            <>
+              <Infinity className="w-7" />
+              <span className="font-bold">Unlimited</span>
+            </>
+          )}
+        </div>
+      </div>
+      <div className="flex basis-1/2 flex-col space-y-2">
+        <div className="text-sm text-gray-200">
+          {intl.formatMessage(messages.seriesrequests)}
+        </div>
+        <div className="flex h-full items-center space-x-2 text-gray-200">
+          {data?.tv.limit ? (
+            <>
+              <ProgressCircle
+                className="h-8 w-8"
+                progress={Math.round(
+                  ((data?.tv.remaining ?? 0) / (data?.tv.limit ?? 1)) * 100
+                )}
+                useHeatLevel
+              />
+              <span className="text-lg font-bold text-gray-200">
+                {data?.tv.remaining} / {data?.tv.limit}
+              </span>
+            </>
+          ) : (
+            <>
+              <Infinity className="w-7" />
+              <span className="font-bold">Unlimited</span>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 
