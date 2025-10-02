@@ -19,7 +19,7 @@ serviceRoutes.get('/radarr', async (req, res) => {
     (radarr) => ({
       id: radarr.id,
       name: radarr.name,
-      is4k: radarr.is4k,
+      isAlt: radarr.is4k,
       isDefault: radarr.isDefault,
       activeDirectory: radarr.activeDirectory,
       activeProfileId: radarr.activeProfileId,
@@ -59,7 +59,7 @@ serviceRoutes.get<{ radarrId: string }>(
       server: {
         id: radarrSettings.id,
         name: radarrSettings.name,
-        is4k: radarrSettings.is4k,
+        isAlt: radarrSettings.is4k,
         isDefault: radarrSettings.isDefault,
         activeDirectory: radarrSettings.activeDirectory,
         activeProfileId: radarrSettings.activeProfileId,
@@ -87,7 +87,7 @@ serviceRoutes.get('/sonarr', async (req, res) => {
     (sonarr) => ({
       id: sonarr.id,
       name: sonarr.name,
-      is4k: sonarr.is4k,
+      isAlt: sonarr.is4k,
       isDefault: sonarr.isDefault,
       activeDirectory: sonarr.activeDirectory,
       activeProfileId: sonarr.activeProfileId,
@@ -137,7 +137,7 @@ serviceRoutes.get<{ sonarrId: string }>(
         server: {
           id: sonarrSettings.id,
           name: sonarrSettings.name,
-          is4k: sonarrSettings.is4k,
+          isAlt: sonarrSettings.is4k,
           isDefault: sonarrSettings.isDefault,
           activeDirectory: sonarrSettings.activeDirectory,
           activeProfileId: sonarrSettings.activeProfileId,
