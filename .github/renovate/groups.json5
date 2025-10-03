@@ -38,31 +38,11 @@
       groupName: 'ESLint',
     },
 
-    // Prettier
-    {
-      matchPackageNames: ['prettier'],
-      matchPackagePatterns: ['^prettier-plugin-'],
-      groupName: 'Prettier',
-    },
-
-    // Testing (Cypress)
-    {
-      matchPackageNames: ['cypress'],
-      matchPackagePatterns: ['^@cypress/', '^cypress-'],
-      groupName: 'Cypress',
-    },
-
     // Database - needs careful review due to migrations
     {
       matchPackageNames: ['pg', 'sqlite3', 'typeorm'],
       groupName: 'Database',
       minimumReleaseAge: '7 days',
-    },
-
-    // Major updates need review
-    {
-      matchUpdateTypes: ['major'],
-      minimumReleaseAge: '3 days',
     },
   ],
 }
