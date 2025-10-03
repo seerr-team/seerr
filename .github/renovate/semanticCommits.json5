@@ -29,14 +29,5 @@
       semanticCommitType: 'build',
       semanticCommitScope: 'docker',
     },
-
-    // Security vulnerability fixes
-    {
-      matchDatasources: ['npm'],
-      matchUpdateTypes: ['patch'],
-      isVulnerabilityAlert: true,
-      semanticCommitType: 'fix',
-      semanticCommitScope: 'deps',
-    },
   ],
 }
