@@ -2,7 +2,7 @@
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
 
   packageRules: [
-    // Node.js runtime
+    // Node.js
     {
       matchPackageNames: ['node'],
       matchManagers: ['dockerfile', 'npm'],
@@ -10,35 +10,7 @@
       commitMessageTopic: 'Node.js',
     },
 
-    // TypeScript ecosystem
-    {
-      matchPackageNames: ['typescript'],
-      matchPackagePatterns: ['^@types/'],
-      groupName: 'TypeScript',
-    },
-
-    // Next.js + React
-    {
-      matchPackageNames: ['next', 'react', 'react-dom'],
-      matchPackagePatterns: ['^@next/'],
-      groupName: 'Next.js',
-    },
-
-    // Tailwind
-    {
-      matchPackageNames: ['tailwindcss'],
-      matchPackagePatterns: ['^@tailwindcss/'],
-      groupName: 'Tailwind CSS',
-    },
-
-    // ESLint
-    {
-      matchPackageNames: ['eslint'],
-      matchPackagePatterns: ['^eslint-', '^@typescript-eslint/'],
-      groupName: 'ESLint',
-    },
-
-    // Database - needs careful review due to migrations
+    // Database packages
     {
       matchPackageNames: ['pg', 'sqlite3', 'typeorm'],
       groupName: 'Database',
