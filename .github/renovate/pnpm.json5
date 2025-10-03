@@ -1,31 +1,24 @@
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
 
-  packageRules: [
-    // pnpm lockfile maintenance
-    {
-      matchManagers: ['npm'],
-      lockFileMaintenance: {
-        enabled: true,
-        automerge: false,
-        schedule: ['before 9pm on friday'],
-        commitMessageAction: 'Update',
-        commitMessageTopic: 'lockfile',
-      },
-    },
+  // Weekly lockfile refresh
+  lockFileMaintenance: {
+    enabled: true,
+    automerge: false,
+    schedule: ['before 9pm on friday'],
+    commitMessageAction: 'Update',
+    commitMessageTopic: 'lockfile',
+  },
 
-    // pnpm version updates
+  // Run pnpm dedupe after dependency updates
+  postUpdateOptions: ['pnpmDedupe'],
+
+  // Bump pnpm engine requirement in package.json
+  packageRules: [
     {
-      matchManagers: ['npm'],
       matchPackageNames: ['pnpm'],
       groupName: 'pnpm',
       rangeStrategy: 'bump',
     },
   ],
-
-  postUpdateOptions: ['pnpmDedupe'],
-
-  constraints: {
-    pnpm: '>=10.0.0',
-  },
 }
