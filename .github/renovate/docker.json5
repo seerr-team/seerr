@@ -1,39 +1,19 @@
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
 
-  docker: {
-    major: { enabled: true },
-    pinDigests: true,
-  },
+  extends: ['docker:pinDigests'],
 
   packageRules: [
-    // Node.js base images - follow LTS Alpine
+    // Node.js base images
     {
       matchManagers: ['dockerfile'],
       matchPackageNames: ['node'],
-      automerge: false,
-      followTag: 'lts-alpine',
-    },
-
-    // Alpine base
-    {
-      matchManagers: ['dockerfile'],
-      matchPackageNames: ['alpine'],
-      groupName: 'Alpine',
     },
 
     // Docker Compose
     {
       matchManagers: ['docker-compose'],
       groupName: 'Docker Compose',
-      automerge: false,
-    },
-
-    // Major updates
-    {
-      matchManagers: ['dockerfile', 'docker-compose'],
-      matchUpdateTypes: ['major'],
-      automerge: false,
     },
   ],
 }

@@ -5,7 +5,6 @@
     {
       matchManagers: ['helm-values'],
       matchFileNames: ['charts/jellyseerr-chart/**'],
-      automerge: false,
     },
   ],
 

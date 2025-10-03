@@ -7,7 +7,7 @@
       matchManagers: ['npm'],
       lockFileMaintenance: {
         enabled: true,
-        automerge: true,
+        automerge: false,
         schedule: ['before 9pm on friday'],
         commitMessageAction: 'Update',
         commitMessageTopic: 'lockfile',
@@ -20,7 +20,6 @@
       matchPackageNames: ['pnpm'],
       groupName: 'pnpm',
       rangeStrategy: 'bump',
-      automerge: false,
     },
   ],
 

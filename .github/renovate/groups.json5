@@ -15,7 +15,6 @@
       matchPackageNames: ['typescript'],
       matchPackagePatterns: ['^@types/'],
       groupName: 'TypeScript',
-      automerge: false,
     },
 
     // Next.js + React
@@ -23,7 +22,6 @@
       matchPackageNames: ['next', 'react', 'react-dom'],
       matchPackagePatterns: ['^@next/'],
       groupName: 'Next.js',
-      automerge: false,
     },
 
     // Tailwind
@@ -43,7 +41,7 @@
     // Prettier
     {
       matchPackageNames: ['prettier'],
-      matchPackagePatterns: ['^prettier-', '^@prettier/'],
+      matchPackagePatterns: ['^prettier-plugin-'],
       groupName: 'Prettier',
     },
 
@@ -56,29 +54,14 @@
 
     // Database - needs careful review due to migrations
     {
-      matchPackageNames: ['pg', 'sqlite3', 'better-sqlite3', 'typeorm'],
+      matchPackageNames: ['pg', 'sqlite3', 'typeorm'],
       groupName: 'Database',
-      automerge: false,
       minimumReleaseAge: '7 days',
-    },
-
-    // Auth & security
-    {
-      matchPackageNames: ['bcrypt', 'jsonwebtoken', 'cookie-parser', '@dr.pogodin/csurf'],
-      groupName: 'Security',
-      automerge: false,
-    },
-
-    // Helm charts
-    {
-      matchManagers: ['helm-values'],
-      groupName: 'Helm',
     },
 
     // Major updates need review
     {
       matchUpdateTypes: ['major'],
-      automerge: false,
       minimumReleaseAge: '3 days',
     },
   ],
