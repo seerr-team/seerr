@@ -1,4 +1,4 @@
-FROM node:22-alpine AS BUILD_IMAGE
+FROM node:22-alpine AS build_image
 
 ARG SOURCE_DATE_EPOCH
 ARG TARGETPLATFORM
@@ -44,7 +44,7 @@ WORKDIR /app
 RUN apk add --no-cache tzdata tini && rm -rf /tmp/*
 
 # copy from build image
-COPY --from=BUILD_IMAGE /app ./
+COPY --from=build_image /app ./
 
 ENTRYPOINT [ "/sbin/tini", "--" ]
 CMD [ "pnpm", "start" ]
