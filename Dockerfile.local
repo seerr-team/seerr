@@ -1,9 +1,11 @@
 FROM node:22-alpine
 
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
 COPY . /app
 WORKDIR /app
-
-RUN npm install --global pnpm@10
 
 RUN pnpm install
 
