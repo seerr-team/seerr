@@ -5,7 +5,6 @@ export default defineConfig({
   e2e: {
     baseUrl: 'http://localhost:5055',
     video: true,
-    experimentalSessionAndOrigin: true,
   },
   env: {
     ADMIN_EMAIL: 'admin@seerr.dev',
