@@ -285,6 +285,7 @@ class Settings {
           forceMaxTtl: -1,
         },
       },
+      migrations: [],
     };
     if (initialSettings) {
       this.data = merge(this.data, initialSettings);
@@ -426,6 +427,14 @@ class Settings {
 
   set network(data: NetworkSettings) {
     this.data.network = data;
+  }
+
+  get migrations(): string[] {
+    return this.data.migrations;
+  }
+
+  set migrations(data: string[]) {
+    this.data.migrations = data;
   }
 
   get clientId(): string {

@@ -1,0 +1,35 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Close stale issues and PRs
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+
+permissions: {}
+
+concurrency:
+  group: close-stale-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stale:
+    name: Close stale issues and PRs
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/stale@v10.1.0
+        with:
+          any-of-labels: "pending author's response"
+          exempt-issue-labels: 'confirmed'
+          days-before-stale: 30
+          days-before-close: 30
+          stale-issue-label: 'stale'
+          stale-issue-message: 'This issue is stale because it has been open 30 days with no activity. Please provide an update or the requested information to keep it open.'
+          close-issue-message: 'This issue was closed because it has been stalled for 30 days with no activity. Feel free to reopen it once you provide the required update or information.'
+          stale-pr-label: 'stale'
+          stale-pr-message: 'This PR is stale because it has been open 30 days with no activity. Please address the feedback or provide an update to keep it open.'
+          close-pr-message: 'This PR was closed because it has been stalled for 30 days with no activity. You can reopen it once you address the feedback or provide the requested changes.'

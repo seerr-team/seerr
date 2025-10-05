@@ -198,6 +198,25 @@ class ServarrBase<QueueItemAppendT> extends ExternalAPI {
     }
   };
 
+  public renameTag = async ({
+    id,
+    label,
+  }: {
+    id: number;
+    label: string;
+  }): Promise<Tag> => {
+    try {
+      const response = await this.axios.put<Tag>(`/tag/${id}`, {
+        id,
+        label,
+      });
+
+      return response.data;
+    } catch (e) {
+      throw new Error(`[${this.apiName}] Failed to rename tag: ${e.message}`);
+    }
+  };
+
   async refreshMonitoredDownloads(): Promise<void> {
     await this.runCommand('RefreshMonitoredDownloads', {});
   }
