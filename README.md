@@ -45,8 +45,6 @@ Archlinux: [AUR](https://aur.archlinux.org/packages/jellyseerr)
 
 Nix: [Nixpkg](https://search.nixos.org/packages?channel=unstable&show=jellyseerr)
 
-~Snap: [Snap](https://snapcraft.io/jellyseerr)~(Deprecated)
-
 ## Preview
 
 <img src="./public/preview.jpg">
