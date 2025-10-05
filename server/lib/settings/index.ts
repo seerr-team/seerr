@@ -48,6 +48,7 @@ export interface JellyfinSettings {
   libraries: Library[];
   serverId: string;
   apiKey: string;
+  enablePlaybackReporting: boolean;
 }
 export interface TautulliSettings {
   hostname?: string;
@@ -424,6 +425,7 @@ class Settings {
         libraries: [],
         serverId: '',
         apiKey: '',
+        enablePlaybackReporting: false,
       },
       tautulli: {},
       metadataSettings: {
