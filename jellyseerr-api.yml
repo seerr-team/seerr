@@ -2104,7 +2104,6 @@ components:
           nullable: true
       required:
         - certification
-
     CertificationResponse:
       type: object
       properties:
@@ -2123,6 +2122,15 @@ components:
             - certification: 'PG'
               meaning: 'Some material may not be suitable for children under 10.'
               order: 2
+    PrefetchSettings:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        episodeThreshold:
+          type: number
+          example: 2
+
   securitySchemes:
     cookieAuth:
       type: apiKey
@@ -6877,6 +6885,29 @@ paths:
       responses:
         '204':
           description: Successfully removed media item
+  /media/{mediaId}/prefetch:
+    post:
+      summary: Saves TV Prefetch Settings
+      description: Takes in TV Prefetch Settings in JSON then saves and returns them.
+      tags:
+        - tv
+      parameters:
+        - in: path
+          name: mediaId
+          description: Media ID
+          required: true
+          example: '1'
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrefetchSettings'
+      responses:
+        '200':
+          description: Successfully saved Prefetch Settings
   /media/{mediaId}/{status}:
     post:
       summary: Update media status
