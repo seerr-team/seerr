@@ -1,12 +1,14 @@
-FROM node:22-alpine AS BUILD_IMAGE
-
-WORKDIR /app
+FROM node:22-alpine AS build_image
 
 ARG SOURCE_DATE_EPOCH
 ARG TARGETPLATFORM
 ARG COMMIT_TAG
 ENV TARGETPLATFORM=${TARGETPLATFORM:-linux/amd64}
 ENV COMMIT_TAG=${COMMIT_TAG}
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
 RUN \
   case "${TARGETPLATFORM}" in \
@@ -17,7 +19,7 @@ RUN \
   ;; \
   esac
 
-RUN npm install --global pnpm@10
+WORKDIR /app
 
 COPY package.json pnpm-lock.yaml postinstall-win.js ./
 RUN CYPRESS_INSTALL_BINARY=0 pnpm install --frozen-lockfile
@@ -33,14 +35,16 @@ RUN pnpm prune --prod --ignore-scripts && \
 
 FROM node:22-alpine
 
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
 WORKDIR /app
 
 RUN apk add --no-cache tzdata tini && rm -rf /tmp/*
 
-RUN npm install -g pnpm@10
-
 # copy from build image
-COPY --from=BUILD_IMAGE /app ./
+COPY --from=build_image /app ./
 
 ENTRYPOINT [ "/sbin/tini", "--" ]
 CMD [ "pnpm", "start" ]

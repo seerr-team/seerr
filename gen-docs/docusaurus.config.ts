@@ -110,7 +110,7 @@ const config: Config = {
           items: [
             {
               label: 'Discord',
-              href: 'https://discord.gg/ckbvBtDJgC',
+              href: 'https://discord.gg/seerr',
             },
             {
               label: 'Github Discussions',

@@ -35,7 +35,7 @@ jobs:
             to be a support request. Please use our support channels
             to get help with Jellyseerr.
 
-            - [Discord](https://discord.gg/ckbvBtDJgC)
+            - [Discord](https://discord.gg/seerr)
         run: |
           retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
           retry gh issue comment "$NUMBER" -R "$GH_REPO" -b "$BODY" || true

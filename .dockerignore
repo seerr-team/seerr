@@ -1,12 +1,10 @@
 **/*.md
 **/.gitkeep
 **/.vscode
-.all-contributorsrc
 .dockerignore
 .editorconfig
 .eslintrc.js
 .git
-.gitbook.yaml
 .gitconfig
 .github
 .gitignore

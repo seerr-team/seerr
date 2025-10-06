@@ -1,0 +1,74 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Check Docs Links
+
+on:
+    pull_request:
+        branches:
+            - '*'
+        paths:
+            - 'docs/**'
+            - 'gen-docs/**'
+            - '.github/workflows/docs-link-check.yml'
+    push:
+        branches:
+            - develop
+        paths:
+            - 'docs/**'
+            - 'gen-docs/**'
+            - '.github/workflows/docs-link-check.yml'
+    schedule:
+        - cron: '50 7 * * 5'
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: docs-link-check-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    link-check:
+        name: Verify external links in Markdown and MDX
+        runs-on: ubuntu-24.04
+        timeout-minutes: 20
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+
+            - name: Run Lychee link checker
+              uses: lycheeverse/lychee-action@v2
+              with:
+                  fail: false
+                  args: >-
+                      --verbose
+                      --no-progress
+                      --accept 200..204,300..304,307,308,404,429,999
+                      --include '^(http|https)://.*'
+                      --exclude '^file://'
+                      --exclude '^https?://localhost'
+                      --exclude '^https?://127\.0\.0\.1'
+                      --exclude '^https?://0\.0\.0\.0'
+                      --exclude '^https?://\[\:\:1\]'
+                      --exclude '^https?://\[\:\:\]'
+                      --exclude '^https?://support.discord.com'
+                      './docs/**/*.md'
+                      './docs/**/*.mdx'
+                      './gen-docs/**/*.md'
+                      './gen-docs/**/*.mdx'
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Upload Lychee report
+              uses: actions/upload-artifact@v4
+              with:
+                  name: lychee-report
+                  path: |
+                      lychee/out.md
+                      lychee/results.json
+                  if-no-files-found: ignore

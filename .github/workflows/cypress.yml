@@ -39,6 +39,9 @@ jobs:
       - name: Pnpm Setup
         uses: pnpm/action-setup@v4
 
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Setup cypress cache
         uses: actions/cache@v4
         with:
@@ -47,9 +50,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cypress-store-
 
+      - name: Install Cypress binary
+        env:
+          CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
+        run: pnpm exec cypress install
+
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
+          install: false
           build: pnpm cypress:build
           start: pnpm start
           wait-on: 'http://localhost:5055'
@@ -61,12 +70,3 @@ jobs:
           # Fix test titles in cypress dashboard
           COMMIT_INFO_MESSAGE: ${{github.event.pull_request.title}}
           COMMIT_INFO_SHA: ${{github.event.pull_request.head.sha}}
-
-      - name: Upload video files
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-videos
-          path: |
-            cypress/videos
-            cypress/screenshots
