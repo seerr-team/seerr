@@ -1,6 +1,7 @@
 import { MediaRequestStatus, MediaType } from '@server/constants/media';
 import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
+import { LinkedAccount } from '@server/entity/LinkedAccount';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
 import PreparedEmail from '@server/lib/email';
@@ -90,6 +91,9 @@ export class User {
 
   @Column({ type: 'varchar', nullable: true, select: false })
   public plexToken?: string | null;
+
+  @OneToMany(() => LinkedAccount, (link) => link.user)
+  public linkedAccounts: LinkedAccount[];
 
   @Column({ type: 'integer', default: 0 })
   public permissions = 0;

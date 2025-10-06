@@ -8,7 +8,7 @@ export interface SettingsContextProps {
   children?: React.ReactNode;
 }
 
-const defaultSettings = {
+const defaultSettings: PublicSettingsResponse = {
   initialized: false,
   applicationTitle: 'Jellyseerr',
   applicationUrl: '',
@@ -31,6 +31,7 @@ const defaultSettings = {
   emailEnabled: false,
   newPlexLogin: true,
   youtubeUrl: '',
+  openIdProviders: [],
 };
 
 export const SettingsContext = React.createContext<SettingsContextProps>({

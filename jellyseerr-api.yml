@@ -254,6 +254,41 @@ components:
         enableSpecialEpisodes:
           type: boolean
           example: false
+    OidcProvider:
+      type: object
+      properties:
+        slug:
+          type: string
+          readOnly: true
+        name:
+          type: string
+        issuerUrl:
+          type: string
+        clientId:
+          type: string
+        clientSecret:
+          type: string
+        logo:
+          type: string
+        requiredClaims:
+          type: string
+        scopes:
+          type: string
+        newUserLogin:
+          type: boolean
+      required:
+        - slug
+        - name
+        - issuerUrl
+        - clientId
+        - clientSecret
+    OidcSettings:
+      type: object
+      properties:
+        providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/OidcProvider'
     NetworkSettings:
       type: object
       properties:
@@ -2215,6 +2250,64 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MainSettings'
+  /settings/oidc:
+    get:
+      summary: Get OpenID Connect settings
+      description: Retrieves all OpenID Connect settings in a JSON object.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcSettings'
+  /settings/oidc/{provider}:
+    put:
+      summary: Update OpenID Connect provider
+      description: Updates an existing OpenID Connect provider with the provided values.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+          description: Provider slug
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OidcProvider'
+      responses:
+        '200':
+          description: 'Radarr instance updated'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RadarrSettings'
+    delete:
+      summary: Delete OpenID Connect provider
+      description: Deletes an existing OpenID Connect provider based on the provider slug parameter.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+          description: Provider slug
+      responses:
+        '200':
+          description: 'OpenID Connect provider deleted'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcSettings'
   /settings/network:
     get:
       summary: Get network settings
@@ -4008,6 +4101,81 @@ paths:
               required:
                 - email
                 - password
+  /auth/oidc/login/{slug}:
+    get:
+      security: []
+      summary: Redirect to the OpenID Connect provider
+      description: Constructs the redirect URL to the OpenID Connect provider, and redirects the user to it.
+      tags:
+        - auth
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+            example: 'authentik'
+      responses:
+        '200':
+          description: Authentication redirect url for the OpenID Connect provider
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: 'oidc-state=123456789; HttpOnly; max-age=60000; Secure'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  redirectUrl:
+                    type: string
+                    example: https://example.com/auth/oidc/callback?response_type=code&client_id=client_id&redirect_uri=https%3A%2F%2Fexample.com%2Fauth%2Foidc%2Fcallback&scope=openid%20email&state=state
+  /auth/oidc/callback/{slug}:
+    get:
+      security: []
+      summary: The callback endpoint for the OpenID Connect provider redirect
+      description: Takes the `code` and `state` parameters from the OpenID Connect provider, and exchanges them for a token.
+      x-allow-unknown-query-parameters: true
+      tags:
+        - auth
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+            example: 'authentik'
+        - in: query
+          name: code
+          required: true
+          schema:
+            type: string
+            example: '123456789'
+        - in: query
+          name: state
+          required: true
+          schema:
+            type: string
+            example: '123456789'
+        - in: cookie
+          name: oidc-state
+          required: true
+          schema:
+            type: string
+            example: '123456789'
+      responses:
+        '302':
+          description: A redirect to the home page if successful or back to the login page if not
+          headers:
+            Location:
+              schema:
+                type: string
+                example: /
+            Set-Cookie:
+              schema:
+                type: string
+                example: 'oidc-state=deleted; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
   /auth/logout:
     post:
       summary: Sign out and clear session cookie
@@ -4811,6 +4979,23 @@ paths:
       responses:
         '204':
           description: User password updated
+  /user/{userId}/settings/linked-accounts:
+    get:
+      summary: Lists the user's linked OpenID Connect accounts
+      description: Lists the user's linked OpenID Connect accounts
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: List of linked accounts
+        '403':
+          description: Invalid credentials
   /user/{userId}/settings/linked-accounts/plex:
     post:
       summary: Link the provided Plex account to the current user
@@ -4909,6 +5094,28 @@ paths:
           description: Unlink request invalid
         '404':
           description: User does not exist
+  /user/{userId}/settings/linked-accounts/{acctId}:
+    delete:
+      summary: Remove a linked account for a user
+      description: Removes the linked account with the given ID for a specific user. Requires `MANAGE_USERS` permission if editing other users.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+        - in: path
+          name: acctId
+          required: true
+          schema:
+            type: number
+      responses:
+        '204':
+          description: Unlinking account succeeded
+        '404':
+          description: User or linked account does not exist
   /user/{userId}/settings/notifications:
     get:
       summary: Get notification settings for a user
