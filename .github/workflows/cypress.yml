@@ -39,13 +39,13 @@ jobs:
       - name: Pnpm Setup
         uses: pnpm/action-setup@v4
 
-      - name: Setup cypress cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/Cypress
-          key: ${{ runner.os }}-cypress-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-cypress-store-
+      # - name: Setup cypress cache
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.cache/Cypress
+      #     key: ${{ runner.os }}-cypress-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-cypress-store-
 
       - name: Cypress run
         uses: cypress-io/github-action@v6
@@ -61,12 +61,3 @@ jobs:
           # Fix test titles in cypress dashboard
           COMMIT_INFO_MESSAGE: ${{github.event.pull_request.title}}
           COMMIT_INFO_SHA: ${{github.event.pull_request.head.sha}}
-
-      - name: Upload video files
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-videos
-          path: |
-            cypress/videos
-            cypress/screenshots
