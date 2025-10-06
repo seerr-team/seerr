@@ -4,4 +4,8 @@
   // Run pnpm dedupe after dependency updates
   postUpdateOptions: ['pnpmDedupe'],
 
+  lockFileMaintenance: {
+    enabled: true,
+  },
+
 }

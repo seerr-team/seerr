@@ -4,7 +4,7 @@
   packageRules: [
     {
       matchManagers: ['helm-values'],
-      matchFileNames: ['charts/jellyseerr-chart/**'],
+      matchFileNames: ['charts/*/values.yaml'],
     },
   ],
 
@@ -17,7 +17,6 @@
         'appVersion:\\s*"(?<currentValue>.*)"',
       ],
       datasourceTemplate: 'docker',
-      depNameTemplate: 'ghcr.io/seerr-team/seerr',
     },
   ],
 }
