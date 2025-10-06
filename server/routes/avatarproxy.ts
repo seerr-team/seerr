@@ -23,7 +23,7 @@ async function initAvatarImageProxy() {
       select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
       order: { id: 'ASC' },
     });
-    const deviceId = admin?.jellyfinDeviceId || 'BOT_jellyseerr';
+    const deviceId = admin?.jellyfinDeviceId || 'BOT_seerr';
     const authToken = getSettings().jellyfin.apiKey;
     _avatarImageProxy = new ImageProxy('avatar', '', {
       headers: {

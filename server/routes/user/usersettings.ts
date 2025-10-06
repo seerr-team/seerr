@@ -421,9 +421,7 @@ userSettingsRoutes.post<{ username: string; password: string }>(
 
     const hostname = getHostname();
     const deviceId = Buffer.from(
-      req.user?.id === 1
-        ? 'BOT_jellyseerr'
-        : `BOT_jellyseerr_${req.user.username ?? ''}`
+      req.user?.id === 1 ? 'BOT_seerr' : `BOT_seerr_${req.user.username ?? ''}`
     ).toString('base64');
 
     const jellyfinserver = new JellyfinAPI(hostname, undefined, deviceId);
