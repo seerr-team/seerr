@@ -19,6 +19,10 @@ DB_LOG_QUERIES="false" # (optional) Whether to log the DB queries for debugging.
 
 ## PostgreSQL Options
 
+:::caution
+When migrating Postgres from version 17 to 18 in Docker, note that the data mount point has changed. Instead of using `/var/lib/postgresql/data`, the correct mount path is now `/var/lib/postgresql`.
+:::
+
 ### TCP Connection
 
 If your PostgreSQL server is configured to accept TCP connections, you can specify the host and port using the `DB_HOST` and `DB_PORT` environment variables. This is useful for remote connections where the server uses a network host and port.
