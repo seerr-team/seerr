@@ -1,0 +1,14 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+
+  extends: ['helpers:pinGitHubActionDigests'],
+
+  packageRules: [
+    // All GitHub Actions need manual review
+    {
+      matchManagers: ['github-actions'],
+      groupName: 'GitHub Actions',
+      minimumReleaseAge: '7 days',
+    },
+  ],
+}

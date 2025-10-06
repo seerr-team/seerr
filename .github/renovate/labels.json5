@@ -1,0 +1,29 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+
+  packageRules: [
+    // JavaScript/npm packages
+    {
+      matchManagers: ['npm'],
+      addLabels: ['javascript'],
+    },
+
+    // GitHub Actions
+    {
+      matchManagers: ['github-actions'],
+      addLabels: ['github_actions'],
+    },
+
+    // Docker images
+    {
+      matchManagers: ['dockerfile', 'docker-compose'],
+      addLabels: ['docker'],
+    },
+
+    // Helm charts
+    {
+      matchManagers: ['helm-values'],
+      addLabels: ['helm'],
+    },
+  ],
+}
