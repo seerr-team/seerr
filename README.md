@@ -49,7 +49,7 @@ Nix: [Nixpkg](https://search.nixos.org/packages?channel=unstable&show=jellyseerr
 ## Support
 
 - Check out the [Jellyseerr Documentation](https://docs.jellyseerr.dev) before asking for help. Your question might already be in the docs!
-- You can get support on [Discord](https://discord.gg/ckbvBtDJgC).
+- You can get support on [Discord](https://discord.gg/seerr).
 - You can ask questions in the Help category of our [GitHub Discussions](/../../discussions).
 - Bug reports and feature requests can be submitted via [GitHub Issues](/../../issues).
 
@@ -61,7 +61,7 @@ You can access the API documentation from your local Jellyseerr install at http:
 
 You can ask questions, share ideas, and more in [GitHub Discussions](/../../discussions).
 
-If you would like to chat with other members of our growing community, [join the Jellyseerr Discord server](https://discord.gg/ckbvBtDJgC)!
+If you would like to chat with other members of our growing community, [join the Jellyseerr Discord server](https://discord.gg/seerr)!
 
 Our [Code of Conduct](./CODE_OF_CONDUCT.md) applies to all Jellyseerr community channels.
 

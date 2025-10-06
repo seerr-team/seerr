@@ -179,12 +179,12 @@ const SettingsAbout = () => {
           </List.Item>
           <List.Item title="Discord">
             <a
-              href="https://discord.gg/ckbvBtDJgC"
+              href="https://discord.gg/seerr"
               target="_blank"
               rel="noreferrer"
               className="text-indigo-500 transition duration-300 hover:underline"
             >
-              https://discord.gg/ckbvBtDJgC
+              https://discord.gg/seerr
             </a>
           </List.Item>
         </List>
