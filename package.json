@@ -71,7 +71,7 @@
     "https-proxy-agent": "^7.0.6",
     "lodash": "4.17.21",
     "mime": "3",
-    "next": "^14.2.25",
+    "next": "^14.2.32",
     "node-cache": "5.1.2",
     "node-gyp": "9.3.1",
     "node-schedule": "2.1.1",
