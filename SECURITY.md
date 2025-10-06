@@ -4,7 +4,7 @@
 
 Maintainers and community take security bugs seriously. We appreciate your efforts to responsibly disclose your findings, and will make every effort to acknowledge your contributions.
 
-To report a security issue, please use the GitHub Security Advisory ["Report a Vulnerability"](https://github.com/fallenbagel/jellyseerr/security/advisories/new) tab.
+To report a security issue, please use the GitHub Security Advisory ["Report a Vulnerability"](../../security/advisories/new) tab.
 
 **Please do not report security vulnerabilities through public GitHub issues, discussions, or Discord.**
 
