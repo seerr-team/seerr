@@ -1,4 +1,5 @@
 import { useUser } from '@app/hooks/useUser';
+import { getBasedPath } from '@app/utils/navigationUtil';
 import type { Permission } from '@server/lib/permissions';
 import { hasPermission } from '@server/lib/permissions';
 import Link from 'next/link';
@@ -86,10 +87,10 @@ const SettingsTabs = ({
         <select
           id="tabs"
           onChange={(e) => {
-            router.push(e.target.value);
+            router.push(getBasedPath(e.target.value));
           }}
           onBlur={(e) => {
-            router.push(e.target.value);
+            router.push(getBasedPath(e.target.value));
           }}
           defaultValue={
             settingsRoutes.find((route) => !!router.pathname.match(route.regex))

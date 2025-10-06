@@ -10,6 +10,7 @@ import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import globalMessages from '@app/i18n/globalMessages';
 import Error from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
+import { getBasedPath } from '@app/utils/navigationUtil';
 import { Transition } from '@headlessui/react';
 import {
   ChevronLeftIcon,
@@ -286,7 +287,7 @@ const SettingsLogs = () => {
                 name="filter"
                 onChange={(e) => {
                   setCurrentFilter(e.target.value as Filter);
-                  router.push(router.pathname);
+                  router.push(getBasedPath(router.pathname));
                 }}
                 value={currentFilter}
                 className="rounded-r-only"

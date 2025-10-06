@@ -1,3 +1,4 @@
+import Image from '@app/components/Common/BaseImage';
 import Button from '@app/components/Common/Button';
 import ImageFader from '@app/components/Common/ImageFader';
 import PageTitle from '@app/components/Common/PageTitle';
@@ -6,7 +7,6 @@ import defineMessages from '@app/utils/defineMessages';
 import { ArrowLeftIcon, EnvelopeIcon } from '@heroicons/react/24/solid';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';

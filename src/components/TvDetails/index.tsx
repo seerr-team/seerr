@@ -33,6 +33,7 @@ import globalMessages from '@app/i18n/globalMessages';
 import Error from '@app/pages/_error';
 import { sortCrewPriority } from '@app/utils/creditHelpers';
 import defineMessages from '@app/utils/defineMessages';
+import { getBasedPath } from '@app/utils/navigationUtil';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
 import { Disclosure, Transition } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
@@ -518,7 +519,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
         onClose={() => {
           setShowManager(false);
           router.push({
-            pathname: router.pathname,
+            pathname: getBasedPath(router.pathname),
             query: { tvId: router.query.tvId },
           });
         }}

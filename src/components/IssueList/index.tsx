@@ -6,6 +6,7 @@ import IssueItem from '@app/components/IssueList/IssueItem';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import { getBasedPath } from '@app/utils/navigationUtil';
 import {
   BarsArrowDownIcon,
   ChevronLeftIcon,
@@ -107,7 +108,7 @@ const IssueList = () => {
               onChange={(e) => {
                 setCurrentFilter(e.target.value as Filter);
                 router.push({
-                  pathname: router.pathname,
+                  pathname: getBasedPath(router.pathname),
                   query: router.query.userId
                     ? { userId: router.query.userId }
                     : {},
@@ -137,7 +138,7 @@ const IssueList = () => {
               onChange={(e) => {
                 setCurrentSort(e.target.value as Sort);
                 router.push({
-                  pathname: router.pathname,
+                  pathname: getBasedPath(router.pathname),
                   query: router.query.userId
                     ? { userId: router.query.userId }
                     : {},

@@ -1,3 +1,4 @@
+import { getBasedPath } from '@app/utils/navigationUtil';
 import type { NextRouter } from 'next/router';
 import { useRouter } from 'next/router';
 import type { ParsedUrlQuery } from 'querystring';
@@ -106,9 +107,15 @@ export const useQueryParams = (): UseQueryParamReturnedFunction => {
 
       if (newRoute.path !== router.asPath) {
         if (routerAction === 'replace') {
-          router.replace(newRoute.pathname, newRoute.path);
+          router.replace(
+            getBasedPath(newRoute.pathname),
+            getBasedPath(newRoute.path)
+          );
         } else {
-          router.push(newRoute.pathname, newRoute.path);
+          router.push(
+            getBasedPath(newRoute.pathname),
+            getBasedPath(newRoute.path)
+          );
         }
       }
     },

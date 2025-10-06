@@ -2,6 +2,7 @@ import EmbyLogo from '@app/assets/services/emby.svg';
 import JellyfinLogo from '@app/assets/services/jellyfin.svg';
 import PlexLogo from '@app/assets/services/plex.svg';
 import AppDataWarning from '@app/components/AppDataWarning';
+import Image from '@app/components/Common/BaseImage';
 import Button from '@app/components/Common/Button';
 import ImageFader from '@app/components/Common/ImageFader';
 import PageTitle from '@app/components/Common/PageTitle';
@@ -13,10 +14,10 @@ import SetupSteps from '@app/components/Setup/SetupSteps';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
 import defineMessages from '@app/utils/defineMessages';
+import { getBasedPath } from '@app/utils/navigationUtil';
 import { MediaServerType } from '@server/constants/server';
 import type { Library } from '@server/lib/settings';
 import axios from 'axios';
-import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -67,7 +68,7 @@ const Setup = () => {
       await axios.post('/api/v1/settings/main', { locale });
       mutate('/api/v1/settings/public');
 
-      router.push('/');
+      router.push(getBasedPath('/'));
     }
   };
 
@@ -108,7 +109,7 @@ const Setup = () => {
 
   useEffect(() => {
     if (settings.currentSettings.initialized) {
-      router.push('/');
+      router.push(getBasedPath('/'));
     }
 
     if (

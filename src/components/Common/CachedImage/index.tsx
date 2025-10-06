@@ -1,6 +1,6 @@
+import Image from '@app/components/Common/BaseImage';
 import useSettings from '@app/hooks/useSettings';
 import type { ImageLoader, ImageProps } from 'next/image';
-import Image from 'next/image';
 
 const imageLoader: ImageLoader = ({ src }) => src;
 

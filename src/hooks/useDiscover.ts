@@ -78,7 +78,8 @@ const useDiscover = <
         )
         .join('&');
 
-      return `${endpoint}?${finalQueryString}`;
+      const fullEndpoint = endpoint.startsWith('/') ? `${endpoint}` : endpoint;
+      return `${fullEndpoint}?${finalQueryString}`;
     },
     {
       initialSize: 3,
