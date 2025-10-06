@@ -347,6 +347,14 @@ export class MediaRequestSubscriber
           return;
         }
 
+        let searchNow = entity.autoSearch;
+        if (entity.autoSearch === null || entity.autoSearch === undefined) {
+          // fallback to radarr settings if not set on the request (old requests)
+          searchNow = !radarrSettings.preventSearch;
+        }
+
+        logger.debug('SearchNow: ' + searchNow);
+
         const radarrMovieOptions: RadarrMovieOptions = {
           profileId: qualityProfile,
           qualityProfileId: qualityProfile,
@@ -357,7 +365,7 @@ export class MediaRequestSubscriber
           year: Number(movie.release_date.slice(0, 4)),
           monitored: true,
           tags,
-          searchNow: !radarrSettings.preventSearch,
+          searchNow: searchNow,
         };
 
         // Run entity asynchronously so we don't wait for it on the UI side
@@ -649,6 +657,12 @@ export class MediaRequestSubscriber
           }
         }
 
+        let searchNow = entity.autoSearch;
+        if (entity.autoSearch === null || entity.autoSearch === undefined) {
+          // fallback to sonarr settings if not set on the request (old requests)
+          searchNow = !sonarrSettings.preventSearch;
+        }
+
         const sonarrSeriesOptions: AddSeriesOptions = {
           profileId: qualityProfile,
           languageProfileId: languageProfile,
@@ -660,7 +674,7 @@ export class MediaRequestSubscriber
           seriesType,
           tags,
           monitored: true,
-          searchNow: !sonarrSettings.preventSearch,
+          searchNow: searchNow,
         };
 
         // Run entity asynchronously so we don't wait for it on the UI side
