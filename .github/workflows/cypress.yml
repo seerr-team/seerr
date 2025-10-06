@@ -42,11 +42,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Cypress binary
-        env:
-          CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
-        run: pnpm exec cypress install
-
       - name: Setup cypress cache
         uses: actions/cache@v4
         with:
@@ -54,6 +49,11 @@ jobs:
           key: ${{ runner.os }}-cypress-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-cypress-store-
+
+      - name: Install Cypress binary
+        env:
+          CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
+        run: pnpm exec cypress install
 
       - name: Cypress run
         uses: cypress-io/github-action@v6
