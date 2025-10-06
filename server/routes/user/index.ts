@@ -633,7 +633,7 @@ router.post(
             jellyfinUsername: jellyfinUser?.Name,
             jellyfinUserId: jellyfinUser?.Id,
             jellyfinDeviceId: Buffer.from(
-              `BOT_jellyseerr_${jellyfinUser?.Name ?? ''}`
+              `BOT_seerr_${jellyfinUser?.Name ?? ''}`
             ).toString('base64'),
             email: jellyfinUser?.Name,
             permissions: settings.main.defaultPermissions,

@@ -1,12 +1,12 @@
 {
-  "name": "jellyseerr",
+  "name": "seerr",
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@10.17.1",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "postinstall": "node postinstall-win.js",
-    "dev": "nodemon -e ts --watch server --watch jellyseerr-api.yml -e .json,.ts,.yml -x ts-node -r tsconfig-paths/register --files --project server/tsconfig.json server/index.ts",
+    "dev": "nodemon -e ts --watch server --watch seerr-api.yml -e .json,.ts,.yml -x ts-node -r tsconfig-paths/register --files --project server/tsconfig.json server/index.ts",
     "build:server": "tsc --project server/tsconfig.json && copyfiles -u 2 server/templates/**/*.{html,pug} dist/templates && tsc-alias -p server/tsconfig.json",
     "build:next": "next build",
     "build": "pnpm build:next && pnpm build:server",
@@ -29,7 +29,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/fallenbagel/jellyseerr.git"
+    "url": "https://github.com/seerr-team/seerr.git"
   },
   "license": "MIT",
   "dependencies": {

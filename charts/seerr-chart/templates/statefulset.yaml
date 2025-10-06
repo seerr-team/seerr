@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "jellyseerr.fullname" . }}
+  name: {{ include "seerr.fullname" . }}
   labels:
-    {{- include "jellyseerr.labels" . | nindent 4 }}
+    {{- include "seerr.labels" . | nindent 4 }}
 spec:
-  serviceName: {{ include "jellyseerr.fullname" . }}
+  serviceName: {{ include "seerr.fullname" . }}
   selector:
     matchLabels:
-      {{- include "jellyseerr.selectorLabels" . | nindent 6 }}
+      {{- include "seerr.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -16,7 +16,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "jellyseerr.labels" . | nindent 8 }}
+        {{- include "seerr.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -25,7 +25,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "jellyseerr.serviceAccountName" . }}
+      serviceAccountName: {{ include "seerr.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -103,7 +103,7 @@ spec:
       volumes:
         - name: config
           persistentVolumeClaim:
-            claimName: {{ include "jellyseerr.configPersistenceName" . }}
+            claimName: {{ include "seerr.configPersistenceName" . }}
       {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
       {{- end }}

@@ -4,7 +4,7 @@
   "vapidPublic": "BK_EpP8NDm9waor2zn6_S28o3ZYv4kCkJOfYpO3pt3W6jnPmxrgTLANUBNbbyaNatPnSQ12De9CeqSYQrqWzHTs",
   "main": {
     "apiKey": "testkey",
-    "applicationTitle": "Jellyseerr",
+    "applicationTitle": "Seerr",
     "applicationUrl": "",
     "cacheImages": false,
     "defaultPermissions": 32,
@@ -70,7 +70,7 @@
           "ignoreTls": false,
           "requireTls": false,
           "allowSelfSigned": false,
-          "senderName": "Jellyseerr"
+          "senderName": "Seerr"
         }
       },
       "discord": {

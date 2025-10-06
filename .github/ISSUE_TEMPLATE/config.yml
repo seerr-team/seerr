@@ -2,7 +2,7 @@ blank_issues_enabled: false
 contact_links:
   - name: 💬 Support via Discord
     url: https://discord.gg/seerr
-    about: Chat with other users and the Jellyseerr dev team
+    about: Chat with other users and the Seerr dev team
   - name: 💬 Support via GitHub Discussions
-    url: https://github.com/fallenbagel/jellyseerr/discussions
+    url: https://github.com/seerr-team/seerr/discussions
     about: Ask questions and discuss with other community members

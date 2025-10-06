@@ -1,0 +1,14 @@
+apiVersion: v2
+kubeVersion: '>=1.23.0-0'
+name: seerr-chart
+description: Seerr helm chart for Kubernetes
+type: application
+version: 3.0.0
+# renovate: image=ghcr.io/fallenbagel/jellyseerr
+appVersion: '2.7.3'
+maintainers:
+  - name: Seerr Team
+    url: https://github.com/orgs/seerr-team/people
+sources:
+  - https://github.com/seerr-team/seerr/tree/main/charts/seerr
+home: https://github.com/seerr-team/seerr

@@ -31,7 +31,7 @@ We will send a response indicating the next steps in handling your report. After
 
 ## Third-Party Dependencies
 
-If you discover a security vulnerability in a third-party dependency used by Jellyseerr, please report it directly to the maintainers of that module. You can also notify us through our security advisory process so we can:
+If you discover a security vulnerability in a third-party dependency used by Seerr, please report it directly to the maintainers of that module. You can also notify us through our security advisory process so we can:
 
 - Track the issue and monitor for updates
 - Apply patches or workarounds if available
@@ -47,5 +47,6 @@ Security updates and advisories will be published on our [GitHub Security Adviso
 ## Community
 
 For general questions and support (non-security related):
+
 - [GitHub Discussions](../../discussions)
 - [Discord](https://discord.gg/seerr)
