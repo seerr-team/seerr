@@ -42,7 +42,7 @@ We regularly monitor and update our dependencies to address known security vulne
 
 ## Security Updates
 
-Security updates and advisories will be published on our [GitHub Security Advisories page](https://github.com/fallenbagel/jellyseerr/security/advisories).
+Security updates and advisories will be published on our [GitHub Security Advisories page](../../security/advisories).
 
 ## Community
 
