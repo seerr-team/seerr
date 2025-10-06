@@ -39,17 +39,18 @@ jobs:
       - name: Pnpm Setup
         uses: pnpm/action-setup@v4
 
-      # - name: Setup cypress cache
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: ~/.cache/Cypress
-      #     key: ${{ runner.os }}-cypress-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-cypress-store-
+      - name: Setup cypress cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-cypress-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-cypress-store-
 
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
+          install-command: pnpm install --frozen-lockfile
           build: pnpm cypress:build
           start: pnpm start
           wait-on: 'http://localhost:5055'
