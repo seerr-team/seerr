@@ -42,7 +42,7 @@ jobs:
                   persist-credentials: false
 
             - name: Run Lychee link checker
-              uses: lycheeverse/lychee-action@885c65f3dc543b57c898c8099f4e08c8afd178a2 # v2.6.1
+              uses: lycheeverse/lychee-action@v2
               with:
                   fail: false
                   args: >-
@@ -50,11 +50,11 @@ jobs:
                       --no-progress
                       --accept 200..204,300..304,307,308,404,429,999
                       --include '^(http|https)://.*'
-                      --exclude '^file://'
-                      --exclude '^http://localhost'
-                      --exclude '^https://localhost'
-                      --exclude '^http://127\.0\.0\.1'
-                      --exclude '^http://0\.0\.0\.0'
+                      --exclude '^https?://localhost'
+                      --exclude '^https?://127\.0\.0\.1'
+                      --exclude '^https?://0\.0\.0\.0'
+                      --exclude '^https?://\[\:\:1\]'
+                      --exclude '^https?://\[\:\:\]'
                       './docs/**/*.md'
                       './docs/**/*.mdx'
                       './gen-docs/**/*.md'
@@ -63,7 +63,6 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Upload Lychee report
-              if: always()
               uses: actions/upload-artifact@v4
               with:
                   name: lychee-report
