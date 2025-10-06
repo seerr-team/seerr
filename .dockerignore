@@ -1,7 +1,6 @@
 **/*.md
 **/.gitkeep
 **/.vscode
-.all-contributorsrc
 .dockerignore
 .editorconfig
 .eslintrc.js
