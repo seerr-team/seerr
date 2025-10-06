@@ -19,7 +19,7 @@ body:
     id: version
     attributes:
       label: Version
-      description: What version of Jellyseerr are you running? (You can find this in Settings → About → Version.)
+      description: What version of Seerr are you running? (You can find this in Settings → About → Version.)
     validations:
       required: true
   - type: textarea
@@ -97,5 +97,5 @@ body:
       label: Code of Conduct
       description: By submitting this issue, you agree to follow our [Code of Conduct](/../../CODE_OF_CONDUCT.md)
       options:
-        - label: I agree to follow Jellyseerr's Code of Conduct
+        - label: I agree to follow Seerr's Code of Conduct
           required: true

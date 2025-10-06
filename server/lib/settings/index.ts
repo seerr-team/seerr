@@ -380,7 +380,7 @@ class Settings {
       vapidPublic: '',
       main: {
         apiKey: '',
-        applicationTitle: 'Jellyseerr',
+        applicationTitle: 'Seerr',
         applicationUrl: '',
         cacheImages: false,
         defaultPermissions: Permission.REQUEST,
@@ -447,7 +447,7 @@ class Settings {
               ignoreTls: false,
               requireTls: false,
               allowSelfSigned: false,
-              senderName: 'Jellyseerr',
+              senderName: 'Seerr',
             },
           },
           discord: {
