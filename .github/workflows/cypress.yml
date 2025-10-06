@@ -5,14 +5,24 @@ name: Cypress Tests
 on:
   pull_request:
     branches: ['*']
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
+    paths:
+      - '{src,server,config,cypress}/**'
+      - 'cypress.config.ts'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'next.config.js'
+      - 'tsconfig.json'
+      - '.github/workflows/cypress.yml'
   push:
     branches: [develop]
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
+    paths:
+      - '{src,server,config,cypress}/**'
+      - 'cypress.config.ts'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'next.config.js'
+      - 'tsconfig.json'
+      - '.github/workflows/cypress.yml'
 
 permissions:
   contents: read
