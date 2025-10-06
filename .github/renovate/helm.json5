@@ -14,7 +14,7 @@
       description: 'Update appVersion in Chart.yaml to match Docker image',
       fileMatch: ['(^|/)Chart\\.yaml$'],
       matchStrings: [
-        'appVersion:\\s*"(?<currentValue>.*)"',
+        '#\\s+image:\\s+(?<depName>\\S*)\nappVersion:\\s+"(?<currentValue>\\S*)"',
       ],
       datasourceTemplate: 'docker',
     },
