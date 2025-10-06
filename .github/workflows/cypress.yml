@@ -39,8 +39,13 @@ jobs:
       - name: Pnpm Setup
         uses: pnpm/action-setup@v4
 
-      - name: Configure pnpm
-        run: pnpm config set enable-pre-post-scripts true
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Cypress binary
+        env:
+          CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
+        run: pnpm exec cypress install
 
       - name: Setup cypress cache
         uses: actions/cache@v4
@@ -53,6 +58,7 @@ jobs:
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
+          install: false
           build: pnpm cypress:build
           start: pnpm start
           wait-on: 'http://localhost:5055'
