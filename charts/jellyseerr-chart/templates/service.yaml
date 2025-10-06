@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "seerr.fullname" . }}
+  name: {{ include "jellyseerr.fullname" . }}
   labels:
-    {{- include "seerr.labels" . | nindent 4 }}
+    {{- include "jellyseerr.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -12,5 +12,5 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "seerr.selectorLabels" . | nindent 4 }}
+    {{- include "jellyseerr.selectorLabels" . | nindent 4 }}
   ipFamilyPolicy: PreferDualStack
