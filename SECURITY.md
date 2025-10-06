@@ -47,5 +47,5 @@ Security updates and advisories will be published on our [GitHub Security Adviso
 ## Community
 
 For general questions and support (non-security related):
-- [GitHub Discussions](https://github.com/fallenbagel/jellyseerr/discussions)
+- [GitHub Discussions](../../discussions)
 - [Discord](https://discord.gg/ckbvBtDJgC)
