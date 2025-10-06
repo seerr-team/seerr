@@ -5,7 +5,7 @@ name: Trivy Container Vulnerability Scan
 on:
     workflow_run:
         workflows:
-            - Jellyseerr Release
+            - Seerr Release
         types:
             - completed
     schedule:
