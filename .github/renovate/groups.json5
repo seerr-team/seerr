@@ -7,6 +7,7 @@
       matchPackageNames: ['node'],
       matchManagers: ['dockerfile', 'npm'],
       groupName: 'Node.js',
+      minimumReleaseAge: '7 days',
       commitMessageTopic: 'Node.js',
     },
 
