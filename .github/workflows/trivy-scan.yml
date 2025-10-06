@@ -1,0 +1,61 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Trivy Container Vulnerability Scan
+
+on:
+    workflow_run:
+        workflows:
+            - Jellyseerr Release
+        types:
+            - completed
+    schedule:
+        - cron: '50 7 * * 5'
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: trivy-scan-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    trivy:
+        if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+        name: Scan latest container image
+        runs-on: ubuntu-24.04
+
+        permissions:
+            contents: read
+            security-events: write
+
+        env:
+            TRIVY_CACHE_DIR: .trivycache
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+
+            - name: Cache Trivy DB
+              uses: actions/cache@v4
+              with:
+                  path: .trivycache
+                  key: trivy-${{ runner.os }}-${{ hashFiles('**/Dockerfile') }}
+                  restore-keys: |
+                      trivy-${{ runner.os }}-
+
+            - name: Run Trivy image scan
+              uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
+              with:
+                  image-ref: ghcr.io/${{ github.repository }}:latest
+                  format: sarif
+                  output: trivy.sarif
+                  ignore-unfixed: true
+
+            - name: Upload SARIF to code scanning
+              uses: github/codeql-action/upload-sarif@v3
+              with:
+                  sarif_file: trivy.sarif
