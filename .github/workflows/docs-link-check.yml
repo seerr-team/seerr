@@ -50,11 +50,13 @@ jobs:
                       --no-progress
                       --accept 200..204,300..304,307,308,404,429,999
                       --include '^(http|https)://.*'
+                      --exclude '^file://'
                       --exclude '^https?://localhost'
                       --exclude '^https?://127\.0\.0\.1'
                       --exclude '^https?://0\.0\.0\.0'
                       --exclude '^https?://\[\:\:1\]'
                       --exclude '^https?://\[\:\:\]'
+                      --exclude '^https?://support.discord.com'
                       './docs/**/*.md'
                       './docs/**/*.mdx'
                       './gen-docs/**/*.md'
