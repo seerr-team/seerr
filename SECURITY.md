@@ -48,4 +48,4 @@ Security updates and advisories will be published on our [GitHub Security Adviso
 
 For general questions and support (non-security related):
 - [GitHub Discussions](../../discussions)
-- [Discord](https://discord.gg/ckbvBtDJgC)
+- [Discord](https://discord.gg/seerr)
