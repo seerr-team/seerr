@@ -1,20 +1,20 @@
-# jellyseerr-chart
+# seerr-chart
 
-![Version: 2.7.0](https://img.shields.io/badge/Version-2.7.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.7.3](https://img.shields.io/badge/AppVersion-2.7.3-informational?style=flat-square)
+![Version: 3.0.0](https://img.shields.io/badge/Version-3.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.7.3](https://img.shields.io/badge/AppVersion-2.7.3-informational?style=flat-square)
 
-Jellyseerr helm chart for Kubernetes
+Seerr helm chart for Kubernetes
 
-**Homepage:** <https://github.com/fallenbagel/jellyseerr>
+**Homepage:** <https://github.com/seerr-team/seerr>
 
 ## Maintainers
 
 | Name | Email | Url |
 | ---- | ------ | --- |
-| Jellyseerr |  | <https://github.com/fallenbagel/jellyseerr> |
+| Seerr Team |  | <https://github.com/orgs/seerr-team/people> |
 
 ## Source Code
 
-* <https://github.com/fallenbagel/jellyseerr/tree/main/charts/jellyseerr>
+* <https://github.com/seerr-team/seerr/tree/main/charts/seerr>
 
 ## Requirements
 
@@ -22,9 +22,13 @@ Kubernetes: `>=1.23.0-0`
 
 ## Update Notes
 
+### Updating to 3.0.0
+
+Nothing has changed; we just rebranded the `jellyseerr` Helm chart to `seerr` 🥳.
+
 ### Updating to 2.7.0
 
-Jellyseerr is a stateful application and it is not designed to have multiple replicas. In version 2.7.0 we address this by:
+Seerr is a stateful application and it is not designed to have multiple replicas. In version 2.7.0 we address this by:
 
 - replacing `Deployment` with `StatefulSet`
 - removing `replicaCount` value
@@ -42,8 +46,8 @@ If `replicaCount` value was used - remove it. Helm update should work fine after
 | config.persistence.name | string | `""` | Config name |
 | config.persistence.size | string | `"5Gi"` | Size of persistent disk |
 | config.persistence.volumeName | string | `""` | Name of the permanent volume to reference in the claim. Can be used to bind to existing volumes. |
-| extraEnv | list | `[]` | Environment variables to add to the jellyseerr pods |
-| extraEnvFrom | list | `[]` | Environment variables from secrets or configmaps to add to the jellyseerr pods |
+| extraEnv | list | `[]` | Environment variables to add to the seerr pods |
+| extraEnvFrom | list | `[]` | Environment variables from secrets or configmaps to add to the seerr pods |
 | fullnameOverride | string | `""` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.registry | string | `"ghcr.io"` |  |

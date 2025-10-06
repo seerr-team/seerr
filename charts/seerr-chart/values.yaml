@@ -3,12 +3,12 @@ image:
   repository: fallenbagel/jellyseerr
   pullPolicy: IfNotPresent
   # -- Overrides the image tag whose default is the chart appVersion.
-  tag: ""
-  sha: ""
+  tag: ''
+  sha: ''
 
 imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+nameOverride: ''
+fullnameOverride: ''
 
 # Liveness / Readiness / Startup Probes
 probes:
@@ -31,9 +31,9 @@ probes:
   #  tcpSocket:
   #    port: http
 
-# -- Environment variables to add to the jellyseerr pods
+# -- Environment variables to add to the seerr pods
 extraEnv: []
-# -- Environment variables from secrets or configmaps to add to the jellyseerr pods
+# -- Environment variables from secrets or configmaps to add to the seerr pods
 extraEnvFrom: []
 
 serviceAccount:
@@ -45,7 +45,7 @@ serviceAccount:
   annotations: {}
   # -- The name of the service account to use.
   # -- If not set and create is true, a name is generated using the fullname template
-  name: ""
+  name: ''
 
 podAnnotations: {}
 podLabels: {}
@@ -76,14 +76,14 @@ config:
     accessModes:
       - ReadWriteOnce
     # -- Config name
-    name: ""
+    name: ''
     # -- Name of the permanent volume to reference in the claim.
     # Can be used to bind to existing volumes.
-    volumeName: ""
+    volumeName: ''
 
 ingress:
   enabled: false
-  ingressClassName: ""
+  ingressClassName: ''
   annotations: {}
   #  kubernetes.io/ingress.class: nginx
   #  kubernetes.io/tls-acme: "true"
