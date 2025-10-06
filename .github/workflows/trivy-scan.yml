@@ -53,14 +53,9 @@ jobs:
                   image-ref: ghcr.io/${{ github.repository }}:latest
                   format: sarif
                   output: trivy.sarif
-                  scanners: vuln
-                  vuln-type: 'os,library'
-                  severity: 'CRITICAL,HIGH,MEDIUM,LOW'
                   ignore-unfixed: true
-                  exit-code: 0
 
             - name: Upload SARIF to code scanning
-              if: always()
               uses: github/codeql-action/upload-sarif@v3
               with:
                   sarif_file: trivy.sarif
