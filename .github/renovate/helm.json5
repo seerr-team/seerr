@@ -17,7 +17,7 @@
         'appVersion:\\s*"(?<currentValue>.*)"',
       ],
       datasourceTemplate: 'docker',
-      depNameTemplate: 'ghcr.io/fallenbagel/jellyseerr',
+      depNameTemplate: 'ghcr.io/seerr-team/seerr',
     },
   ],
 }
