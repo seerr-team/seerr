@@ -20,7 +20,7 @@ const messages = defineMessages(
     embedPoster: 'Embed Poster',
     accessToken: 'Application API Token',
     accessTokenTip:
-      '<ApplicationRegistrationLink>Register an application</ApplicationRegistrationLink> for use with Jellyseerr',
+      '<ApplicationRegistrationLink>Register an application</ApplicationRegistrationLink> for use with Seerr',
     userToken: 'User or Group Key',
     userTokenTip:
       'Your 30-character <UsersGroupsLink>user or group identifier</UsersGroupsLink>',

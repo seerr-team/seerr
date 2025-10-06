@@ -71,8 +71,7 @@ You can help improve Seerr too! Check out our [Contribution Guide](./CONTRIBUTIN
 
 ## Contributors ✨
 
-[![contributors](https://opencollective.com/seerr/contributors.svg?width=890)](https://opencollective.com/seerr/#backers)
+[![Contributors](https://opencollective.com/seerr/contributors.svg?width=890)](https://opencollective.com/seerr/#backers)
 
-[![backers](https://opencollective.com/seerr/backers.svg?width=890)](https://opencollective.com/seerr/#backers)
-
-[![sponsors](https://opencollective.com/seerr/sponsors.svg?width=890)](https://opencollective.com/seerr/#sponsors)
+[![Become a Backer](https://opencollective.com/seerr/backers.svg)](https://opencollective.com/seerr/#backers)
+[![Become a Sponsor](https://opencollective.com/seerr/sponsors.svg)](https://opencollective.com/seerr/#sponsors)

@@ -25,7 +25,7 @@ import useSWR, { mutate } from 'swr';
 import SetupLogin from './SetupLogin';
 
 const messages = defineMessages('components.Setup', {
-  welcome: 'Welcome to Jellyseerr',
+  welcome: 'Welcome to Seerr',
   subtitle: 'Get started by choosing your media server',
   configjellyfin: 'Configure Jellyfin',
   configplex: 'Configure Plex',

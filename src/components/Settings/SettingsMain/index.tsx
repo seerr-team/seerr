@@ -29,7 +29,7 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   general: 'General',
   generalsettings: 'General Settings',
   generalsettingsDescription:
-    'Configure global and default settings for Jellyseerr.',
+    'Configure global and default settings for Seerr.',
   apikey: 'API Key',
   apikeyCopied: 'Copied API key to clipboard.',
   applicationTitle: 'Application Title',
