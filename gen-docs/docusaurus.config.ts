@@ -7,7 +7,7 @@ const config: Config = {
   tagline: 'One Stop Solution for all your media request needs',
   favicon: 'img/favicon.ico',
 
-  url: 'https://docs.jellyseerr.dev',
+  url: 'https://docs.seerr.dev',
   baseUrl: '/',
   trailingSlash: false,
 
