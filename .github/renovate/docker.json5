@@ -1,13 +1,15 @@
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
 
-  extends: ['helpers:pinGitHubActionDigests'],
+  extends: [
+    'docker:enableMajor',
+    'docker:pinDigests'
+  ],
 
   packageRules: [
-    // All GitHub Actions need manual review
     {
-      matchManagers: ['github-actions'],
-      groupName: 'GitHub Actions',
+      matchManagers: ['dockerfile'],
+      groupName: 'Dockerfile',
       minimumReleaseAge: '7 days',
       matchUpdateTypes: ['major'],
     },

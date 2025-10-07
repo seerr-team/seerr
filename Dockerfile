@@ -1,4 +1,4 @@
-FROM node:22-alpine AS build_image
+FROM node:22-alpine@sha256:cb3143549582cc5f74f26f0992cdef4a422b22128cb517f94173a5f910fa4ee7 AS build_image
 
 ARG SOURCE_DATE_EPOCH
 ARG TARGETPLATFORM
@@ -33,7 +33,7 @@ RUN pnpm prune --prod --ignore-scripts && \
   touch config/DOCKER && \
   echo "{\"commitTag\": \"${COMMIT_TAG}\"}" > committag.json
 
-FROM node:22-alpine
+FROM node:22-alpine@sha256:cb3143549582cc5f74f26f0992cdef4a422b22128cb517f94173a5f910fa4ee7
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
