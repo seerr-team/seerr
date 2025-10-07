@@ -5,11 +5,4 @@
     'docker:enableMajor',
     'docker:pinDigests'
   ],
-
-  packageRules: [
-    {
-      matchManagers: ['dockerfile'],
-      groupName: 'Dockerfile',
-    },
-  ],
 }
