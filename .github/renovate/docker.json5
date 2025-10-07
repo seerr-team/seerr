@@ -10,8 +10,6 @@
     {
       matchManagers: ['dockerfile'],
       groupName: 'Dockerfile',
-      minimumReleaseAge: '7 days',
-      matchUpdateTypes: ['major'],
     },
   ],
 }

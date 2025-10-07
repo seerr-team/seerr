@@ -5,6 +5,7 @@
     {
       matchManagers: ['helm-values'],
       matchFileNames: ['charts/*/values.yaml'],
+      minimumReleaseAge: '0'
     },
   ],
 

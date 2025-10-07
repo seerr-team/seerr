@@ -8,8 +8,6 @@
     {
       matchManagers: ['github-actions'],
       groupName: 'GitHub Actions',
-      minimumReleaseAge: '7 days',
-      matchUpdateTypes: ['major'],
     },
   ],
 }

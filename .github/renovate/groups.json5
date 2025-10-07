@@ -7,7 +7,6 @@
       matchPackageNames: ['node'],
       matchManagers: ['dockerfile', 'npm'],
       groupName: 'Node.js',
-      minimumReleaseAge: '7 days',
       commitMessageTopic: 'Node.js',
     },
 
@@ -15,7 +14,6 @@
     {
       matchPackageNames: ['pg', 'sqlite3', 'typeorm'],
       groupName: 'Database',
-      minimumReleaseAge: '7 days',
     },
   ],
 }
