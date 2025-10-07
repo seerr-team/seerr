@@ -34,7 +34,7 @@ With more features on the way! Check out our [issue tracker](/../../issues) to s
 
 Check out our documentation for instructions on how to install and run Seerr:
 
-https://docs.jellyseerr.dev/getting-started/
+https://docs.seerr.dev/getting-started/
 
 ### Packages:
 
@@ -48,7 +48,7 @@ Nix: [Nixpkg](https://search.nixos.org/packages?channel=unstable&show=jellyseerr
 
 ## Support
 
-- Check out the [Seerr Documentation](https://docs.jellyseerr.dev) before asking for help. Your question might already be in the docs!
+- Check out the [Seerr Documentation](https://docs.seerr.dev) before asking for help. Your question might already be in the docs!
 - You can get support on [Discord](https://discord.gg/seerr).
 - You can ask questions in the Help category of our [GitHub Discussions](/../../discussions).
 - Bug reports and feature requests can be submitted via [GitHub Issues](/../../issues).
