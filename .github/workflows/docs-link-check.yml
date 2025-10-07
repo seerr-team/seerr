@@ -51,7 +51,7 @@ jobs:
                       --accept 200..204,300..304,307,308,404,429,999
                       --include '^(http|https)://.*'
                       --exclude '^file://'
-                      "--exclude ^https?://(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|\[::\])"
+                      --exclude '^https?://(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|\[::\])'
                       --exclude '^https?://support\.discord\.com'
                       './docs/**/*.md'
                       './docs/**/*.mdx'
