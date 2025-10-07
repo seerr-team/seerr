@@ -5,4 +5,11 @@
     'docker:enableMajor',
     'docker:pinDigests'
   ],
+
+  packageRules: [
+    {
+      matchManagers: ['docker-compose'],
+      pinDigests: false,
+    },
+  ],
 }
