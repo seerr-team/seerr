@@ -21,7 +21,7 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - uses: actions/stale@v10.1.0
+      - uses: actions/stale@3a9db7e6a41a89f618792c92c0e97cc736e1b13f # v10.0.0
         with:
           any-of-labels: "pending author's response"
           exempt-issue-labels: 'confirmed'

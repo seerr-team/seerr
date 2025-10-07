@@ -28,19 +28,19 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up Helm
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@29960d0f5f19214b88e1d9ba750a9914ab0f1a2f # v4.0.0
 
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@v2
+        uses: helm/chart-testing-action@ed8c395d13ec493a81a19485dda73c287a96007d # v2.0.0
 
       - name: Ensure documentation is updated
-        uses: docker://jnorwood/helm-docs:v1.14.2
+        uses: docker://jnorwood/helm-docs@sha256:7e562b49ab6b1dbc50c3da8f2dd6ffa8a5c6bba327b1c6335cc15ce29267979c # v1.14.2
 
       - name: Run chart-testing (list-changed)
         id: list-changed

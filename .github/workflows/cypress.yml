@@ -37,23 +37,23 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version-file: package.json
 
       - name: Pnpm Setup
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Setup cypress cache
-        uses: actions/cache@v4
+        uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v4.0.0
         with:
           path: ~/.cache/Cypress
           key: ${{ runner.os }}-cypress-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -66,7 +66,7 @@ jobs:
         run: pnpm exec cypress install
 
       - name: Cypress run
-        uses: cypress-io/github-action@v6
+        uses: cypress-io/github-action@a55856e0e961f64708c68ddcb38fba233d164ed8 # v6.0.0
         with:
           install: false
           build: pnpm cypress:build

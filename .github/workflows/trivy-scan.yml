@@ -34,13 +34,13 @@ jobs:
 
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
               with:
                   fetch-depth: 0
                   persist-credentials: false
 
             - name: Cache Trivy DB
-              uses: actions/cache@v4
+              uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v4.0.0
               with:
                   path: .trivycache
                   key: trivy-${{ runner.os }}-${{ hashFiles('**/Dockerfile') }}
@@ -56,6 +56,6 @@ jobs:
                   ignore-unfixed: true
 
             - name: Upload SARIF to code scanning
-              uses: github/codeql-action/upload-sarif@v3
+              uses: github/codeql-action/upload-sarif@b374143c1149a9115d881581d29b8390bbcbb59c # v3.22.11
               with:
                   sarif_file: trivy.sarif

@@ -26,12 +26,12 @@ jobs:
     container: node:22-alpine
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
 
       - name: Pnpm Setup
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
 
       - name: Get pnpm store directory
         shell: sh
@@ -39,7 +39,7 @@ jobs:
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - name: Setup pnpm cache
-        uses: actions/cache@v4
+        uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v4.0.0
         with:
           path: ${{ env.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -75,7 +75,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
 
@@ -84,10 +84,10 @@ jobs:
         run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
 
       - name: Warm cache (no push) — ${{ matrix.platform }}
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@c382f710d39a5bb4e430307530a720f50c2d3318 # v6.0.0
         with:
           context: .
           file: ./Dockerfile
@@ -111,7 +111,7 @@ jobs:
       id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
 
@@ -120,16 +120,16 @@ jobs:
         run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -137,7 +137,7 @@ jobs:
 
       - name: Extract metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
         with:
           images: |
             ${{ github.repository }}
@@ -149,7 +149,7 @@ jobs:
             org.opencontainers.image.created=${{ steps.ts.outputs.TIMESTAMP }}
 
       - name: Build & Push (multi-arch, single tag)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@c382f710d39a5bb4e430307530a720f50c2d3318 # v6.0.0
         with:
           context: .
           file: ./Dockerfile
@@ -184,7 +184,7 @@ jobs:
           fi
 
       - name: Post Status to Discord
-        uses: sarisia/actions-status-discord@v1
+        uses: sarisia/actions-status-discord@58667542682a27f270460405363e3a982f57a7ee # v1.0.0
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           status: ${{ steps.status.outputs.status }}

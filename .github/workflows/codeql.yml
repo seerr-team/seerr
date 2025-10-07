@@ -37,20 +37,20 @@ jobs:
         language: [actions, javascript]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@b374143c1149a9115d881581d29b8390bbcbb59c # v3.22.11
         with:
           languages: ${{ matrix.language }}
           queries: +security-and-quality
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@b374143c1149a9115d881581d29b8390bbcbb59c # v3.22.11
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@b374143c1149a9115d881581d29b8390bbcbb59c # v3.22.11
         with:
           category: '/language:${{ matrix.language }}'
