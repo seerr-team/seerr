@@ -1,6 +1,6 @@
-<p align="center">
-<img src="./public/logo_full.svg" alt="Jellyseerr" style="margin: 20px 0;">
-</p>
+<div align="center">⚠️ <strong>NOTE:</strong> We are currently in the process of merging Overseerr and Jellyseerr into this unified repository.</div>
+
+<h1 align="center" style="font-size: 4em;">🚧 Seerr</h1>
 <p align="center">
 <img src="https://github.com/seerr-team/seerr/actions/workflows/release.yml/badge.svg" alt="Seerr Release" />
 <img src="https://github.com/seerr-team/seerr/actions/workflows/ci.yml/badge.svg" alt="Seerr CI">
