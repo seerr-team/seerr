@@ -3,67 +3,67 @@
 name: Check Docs Links
 
 on:
-    pull_request:
-        branches:
-            - '*'
-        paths:
-            - 'docs/**'
-            - 'gen-docs/**'
-            - '.github/workflows/docs-link-check.yml'
-    push:
-        branches:
-            - develop
-        paths:
-            - 'docs/**'
-            - 'gen-docs/**'
-            - '.github/workflows/docs-link-check.yml'
-    schedule:
-        - cron: '50 7 * * 5'
-    workflow_dispatch:
+  pull_request:
+    branches:
+      - '*'
+    paths:
+      - 'docs/**'
+      - 'gen-docs/**'
+      - '.github/workflows/docs-link-check.yml'
+  push:
+    branches:
+      - develop
+    paths:
+      - 'docs/**'
+      - 'gen-docs/**'
+      - '.github/workflows/docs-link-check.yml'
+  schedule:
+    - cron: '50 7 * * 5'
+  workflow_dispatch:
 
 permissions:
-    contents: read
+  contents: read
 
 concurrency:
-    group: docs-link-check-${{ github.ref }}
-    cancel-in-progress: true
+  group: docs-link-check-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-    link-check:
-        name: Verify external links in Markdown and MDX
-        runs-on: ubuntu-24.04
-        timeout-minutes: 20
+  link-check:
+    name: Verify external links in Markdown and MDX
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-              with:
-                  fetch-depth: 0
-                  persist-credentials: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
-            - name: Run Lychee link checker
-              uses: lycheeverse/lychee-action@885c65f3dc543b57c898c8099f4e08c8afd178a2 # v2.6.1
-              with:
-                  fail: false
-                  args: >-
-                      --verbose
-                      --no-progress
-                      --accept 200..204,300..304,307,308,404,429,999
-                      --exclude '^file://'
-                      --exclude '^https?://(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|\[::\])'
-                      --exclude '^https?://support\.discord\.com'
-                      './docs/**/*.md'
-                      './docs/**/*.mdx'
-                      './gen-docs/**/*.md'
-                      './gen-docs/**/*.mdx'
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run Lychee link checker
+        uses: lycheeverse/lychee-action@885c65f3dc543b57c898c8099f4e08c8afd178a2 # v2.6.1
+        with:
+          fail: false
+          args: >-
+            --verbose
+            --no-progress
+            --accept 200..204,300..304,307,308,404,429,999
+            --exclude '^file://'
+            --exclude '^https?://(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|\[::\])'
+            --exclude '^https?://support\.discord\.com'
+            './docs/**/*.md'
+            './docs/**/*.mdx'
+            './gen-docs/**/*.md'
+            './gen-docs/**/*.mdx'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Upload Lychee report
-              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-              with:
-                  name: lychee-report
-                  path: |
-                      lychee/out.md
-                      lychee/results.json
-                  if-no-files-found: ignore
+      - name: Upload Lychee report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: lychee-report
+          path: |
+            lychee/out.md
+            lychee/results.json
+          if-no-files-found: ignore

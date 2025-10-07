@@ -3,59 +3,59 @@
 name: Trivy Container Vulnerability Scan
 
 on:
-    workflow_run:
-        workflows:
-            - Seerr Release
-        types:
-            - completed
-    schedule:
-        - cron: '50 7 * * 5'
-    workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Seerr Release
+    types:
+      - completed
+  schedule:
+    - cron: '50 7 * * 5'
+  workflow_dispatch:
 
 permissions:
-    contents: read
+  contents: read
 
 concurrency:
-    group: trivy-scan-${{ github.ref }}
-    cancel-in-progress: true
+  group: trivy-scan-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-    trivy:
-        if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
-        name: Scan latest container image
-        runs-on: ubuntu-24.04
+  trivy:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    name: Scan latest container image
+    runs-on: ubuntu-24.04
 
-        permissions:
-            contents: read
-            security-events: write
+    permissions:
+      contents: read
+      security-events: write
 
-        env:
-            TRIVY_CACHE_DIR: .trivycache
+    env:
+      TRIVY_CACHE_DIR: .trivycache
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-              with:
-                  fetch-depth: 0
-                  persist-credentials: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
-            - name: Cache Trivy DB
-              uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-              with:
-                  path: .trivycache
-                  key: trivy-${{ runner.os }}-${{ hashFiles('**/Dockerfile') }}
-                  restore-keys: |
-                      trivy-${{ runner.os }}-
+      - name: Cache Trivy DB
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .trivycache
+          key: trivy-${{ runner.os }}-${{ hashFiles('**/Dockerfile') }}
+          restore-keys: |
+            trivy-${{ runner.os }}-
 
-            - name: Run Trivy image scan
-              uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
-              with:
-                  image-ref: ghcr.io/${{ github.repository }}:latest
-                  format: sarif
-                  output: trivy.sarif
-                  ignore-unfixed: true
+      - name: Run Trivy image scan
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:latest
+          format: sarif
+          output: trivy.sarif
+          ignore-unfixed: true
 
-            - name: Upload SARIF to code scanning
-              uses: github/codeql-action/upload-sarif@64d10c13136e1c5bce3e5fbde8d4906eeaafc885 # v3.30.6
-              with:
-                  sarif_file: trivy.sarif
+      - name: Upload SARIF to code scanning
+        uses: github/codeql-action/upload-sarif@64d10c13136e1c5bce3e5fbde8d4906eeaafc885 # v3.30.6
+        with:
+          sarif_file: trivy.sarif
