@@ -43,7 +43,7 @@
     "@heroicons/react": "2.0.16",
     "@supercharge/request-ip": "1.2.0",
     "@svgr/webpack": "6.5.1",
-    "@tanem/react-nprogress": "5.0.30",
+    "@tanem/react-nprogress": "5.0.55",
     "@types/ua-parser-js": "^0.7.36",
     "@types/wink-jaro-distance": "^2.0.2",
     "ace-builds": "1.15.2",
