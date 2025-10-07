@@ -249,6 +249,8 @@ CoreApp.getInitialProps = async (initialProps) => {
     emailEnabled: false,
     newPlexLogin: true,
     youtubeUrl: '',
+    removeUnmonitoredSeasonsEnabled: false,
+    removeUnmonitoredSeriesSeasonsEnabled: false,
   };
 
   if (ctx.res) {

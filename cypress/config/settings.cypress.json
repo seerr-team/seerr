@@ -24,6 +24,8 @@
     "mediaServerType": 1,
     "partialRequestsEnabled": true,
     "enableSpecialEpisodes": false,
+    "removeUnmonitoredSeasonsEnabled": false,
+    "removeUnmonitoredSeriesSeasonsEnabled": false,
     "locale": "en"
   },
   "plex": {

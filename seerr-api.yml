@@ -254,6 +254,12 @@ components:
         enableSpecialEpisodes:
           type: boolean
           example: false
+        removeUnmonitoredSeasonsEnabled:
+          type: boolean
+          example: false
+        removeUnmonitoredSeriesSeasonsEnabled:
+          type: boolean
+          example: false
     NetworkSettings:
       type: object
       properties:

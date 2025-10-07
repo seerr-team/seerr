@@ -146,6 +146,8 @@ export interface MainSettings {
   enableSpecialEpisodes: boolean;
   locale: string;
   youtubeUrl: string;
+  removeUnmonitoredSeasonsEnabled: boolean;
+  removeUnmonitoredSeriesSeasonsEnabled: boolean;
 }
 
 export interface ProxySettings {
@@ -203,6 +205,8 @@ interface FullPublicSettings extends PublicSettings {
   userEmailRequired: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  removeUnmonitoredSeasonsEnabled: boolean;
+  removeUnmonitoredSeriesSeasonsEnabled: boolean;
 }
 
 export interface NotificationAgentConfig {
@@ -403,6 +407,8 @@ class Settings {
         enableSpecialEpisodes: false,
         locale: 'en',
         youtubeUrl: '',
+        removeUnmonitoredSeasonsEnabled: false,
+        removeUnmonitoredSeriesSeasonsEnabled: false,
       },
       plex: {
         name: '',
@@ -697,6 +703,10 @@ class Settings {
         this.data.notifications.agents.email.options.userEmailRequired,
       newPlexLogin: this.data.main.newPlexLogin,
       youtubeUrl: this.data.main.youtubeUrl,
+      removeUnmonitoredSeasonsEnabled:
+        this.data.main.removeUnmonitoredSeasonsEnabled,
+      removeUnmonitoredSeriesSeasonsEnabled:
+        this.data.main.removeUnmonitoredSeriesSeasonsEnabled,
     };
   }
 

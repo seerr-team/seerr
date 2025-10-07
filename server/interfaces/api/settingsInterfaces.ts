@@ -48,6 +48,8 @@ export interface PublicSettingsResponse {
   emailEnabled: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  removeUnmonitoredSeasonsEnabled: boolean;
+  removeUnmonitoredSeriesSeasonsEnabled: boolean;
 }
 
 export interface CacheItem {

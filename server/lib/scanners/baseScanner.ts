@@ -48,6 +48,7 @@ export interface ProcessableSeason {
   episodes4k: number;
   is4kOverride?: boolean;
   processing?: boolean;
+  unmonitored?: boolean;
 }
 
 class BaseScanner<T> {
@@ -282,6 +283,10 @@ class BaseScanner<T> {
               : season.episodes > 0
               ? MediaStatus.PARTIALLY_AVAILABLE
               : !season.is4kOverride &&
+                season.unmonitored &&
+                existingSeason.status !== MediaStatus.DELETED
+              ? MediaStatus.UNKNOWN
+              : !season.is4kOverride &&
                 season.processing &&
                 existingSeason.status !== MediaStatus.DELETED
               ? MediaStatus.PROCESSING
@@ -297,6 +302,10 @@ class BaseScanner<T> {
               : this.enable4kShow && season.episodes4k > 0
               ? MediaStatus.PARTIALLY_AVAILABLE
               : season.is4kOverride &&
+                season.unmonitored &&
+                existingSeason.status !== MediaStatus.DELETED
+              ? MediaStatus.UNKNOWN
+              : season.is4kOverride &&
                 season.processing &&
                 existingSeason.status4k !== MediaStatus.DELETED
               ? MediaStatus.PROCESSING
@@ -310,7 +319,9 @@ class BaseScanner<T> {
                   ? MediaStatus.AVAILABLE
                   : season.episodes > 0
                   ? MediaStatus.PARTIALLY_AVAILABLE
-                  : !season.is4kOverride && season.processing
+                  : !season.is4kOverride &&
+                    season.processing &&
+                    !season.unmonitored
                   ? MediaStatus.PROCESSING
                   : MediaStatus.UNKNOWN,
               status4k:
@@ -320,7 +331,9 @@ class BaseScanner<T> {
                   ? MediaStatus.AVAILABLE
                   : this.enable4kShow && season.episodes4k > 0
                   ? MediaStatus.PARTIALLY_AVAILABLE
-                  : season.is4kOverride && season.processing
+                  : season.is4kOverride &&
+                    season.processing &&
+                    !season.unmonitored
                   ? MediaStatus.PROCESSING
                   : MediaStatus.UNKNOWN,
             })

@@ -31,6 +31,8 @@ const defaultSettings = {
   emailEnabled: false,
   newPlexLogin: true,
   youtubeUrl: '',
+  removeUnmonitoredSeasonsEnabled: false,
+  removeUnmonitoredSeriesSeasonsEnabled: false,
 };
 
 export const SettingsContext = React.createContext<SettingsContextProps>({

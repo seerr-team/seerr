@@ -112,6 +112,12 @@ class SonarrScanner
 
       for (const season of filteredSeasons) {
         const totalAvailableEpisodes = season.statistics?.episodeFileCount ?? 0;
+        const unmonitoredSeason =
+          settings.main.removeUnmonitoredSeasonsEnabled &&
+          season.monitored === false;
+        const unmonitoredSeries =
+          settings.main.removeUnmonitoredSeriesSeasonsEnabled &&
+          sonarrSeries.monitored === false;
 
         processableSeasons.push({
           seasonNumber: season.seasonNumber,
@@ -120,6 +126,7 @@ class SonarrScanner
           totalEpisodes: season.statistics?.totalEpisodeCount ?? 0,
           processing: season.monitored && totalAvailableEpisodes === 0,
           is4kOverride: server4k,
+          unmonitored: unmonitoredSeason || unmonitoredSeries,
         });
       }
 

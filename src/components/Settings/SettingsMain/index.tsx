@@ -70,6 +70,13 @@ const messages = defineMessages('components.Settings.SettingsMain', {
     'Base URL for YouTube videos if a self-hosted YouTube instance is used.',
   validationUrl: 'You must provide a valid URL',
   validationUrlTrailingSlash: 'URL must not end in a trailing slash',
+  removeUnmonitoredSeasonsEnabled: 'Remove Unmonitored Seasons',
+  removeUnmonitoredSeasonsExplanation:
+    'Remove seasons from Seerr if they are not available and are unmonitored in Sonarr',
+  removeUnmonitoredSeriesSeasonsEnabled:
+    'Remove Unavailable Seasons for Unmonitored Series',
+  removeUnmonitoredSeriesSeasonsExplanation:
+    'Remove seasons from Seerr if they are not available and parent series is unmonitored in Sonarr',
 });
 
 const SettingsMain = () => {
@@ -175,6 +182,10 @@ const SettingsMain = () => {
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
+            removeUnmonitoredSeasonsEnabled:
+              data?.removeUnmonitoredSeasonsEnabled,
+            removeUnmonitoredSeriesSeasonsEnabled:
+              data?.removeUnmonitoredSeriesSeasonsEnabled,
           }}
           enableReinitialize
           validationSchema={MainSettingsSchema}
@@ -195,6 +206,10 @@ const SettingsMain = () => {
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
+                removeUnmonitoredSeasonsEnabled:
+                  values.removeUnmonitoredSeasonsEnabled,
+                removeUnmonitoredSeriesSeasonsEnabled:
+                  values.removeUnmonitoredSeriesSeasonsEnabled,
               });
               mutate('/api/v1/settings/public');
               mutate('/api/v1/status');
@@ -530,6 +545,68 @@ const SettingsMain = () => {
                         setFieldValue(
                           'enableSpecialEpisodes',
                           !values.enableSpecialEpisodes
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="removeUnmonitoredSeasonsEnabled"
+                    className="checkbox-label"
+                  >
+                    <span className="mr-2">
+                      {intl.formatMessage(
+                        messages.removeUnmonitoredSeasonsEnabled
+                      )}
+                    </span>
+                    <SettingsBadge badgeType="experimental" />
+                    <span className="label-tip">
+                      {intl.formatMessage(
+                        messages.removeUnmonitoredSeasonsExplanation
+                      )}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="removeUnmonitoredSeasonsEnabled"
+                      name="removeUnmonitoredSeasonsEnabled"
+                      onChange={() => {
+                        setFieldValue(
+                          'removeUnmonitoredSeasonsEnabled',
+                          !values.removeUnmonitoredSeasonsEnabled
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="removeUnmonitoredSeriesSeasonsEnabled"
+                    className="checkbox-label"
+                  >
+                    <span className="mr-2">
+                      {intl.formatMessage(
+                        messages.removeUnmonitoredSeriesSeasonsEnabled
+                      )}
+                    </span>
+                    <SettingsBadge badgeType="experimental" />
+                    <span className="label-tip">
+                      {intl.formatMessage(
+                        messages.removeUnmonitoredSeriesSeasonsExplanation
+                      )}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="removeUnmonitoredSeriesSeasonsEnabled"
+                      name="removeUnmonitoredSeriesSeasonsEnabled"
+                      onChange={() => {
+                        setFieldValue(
+                          'removeUnmonitoredSeriesSeasonsEnabled',
+                          !values.removeUnmonitoredSeriesSeasonsEnabled
                         );
                       }}
                     />
