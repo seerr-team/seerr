@@ -3,7 +3,7 @@ image:
   repository: fallenbagel/jellyseerr
   pullPolicy: IfNotPresent
   # -- Overrides the image tag whose default is the chart appVersion.
-  tag: ''
+  tag: '@sha256:9cc9e9ee6cd5cf5a23feb45c37742ba34cfd6314d81d259cddb373a97ac92cdd'
   sha: ''
 
 imagePullSecrets: []
