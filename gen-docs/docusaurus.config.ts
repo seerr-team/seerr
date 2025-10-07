@@ -3,7 +3,7 @@ import type { Config } from '@docusaurus/types';
 import { themes as prismThemes } from 'prism-react-renderer';
 
 const config: Config = {
-  title: 'Jellyseerr',
+  title: 'Seerr',
   tagline: 'One Stop Solution for all your media request needs',
   favicon: 'img/favicon.ico',
 
@@ -11,8 +11,8 @@ const config: Config = {
   baseUrl: '/',
   trailingSlash: false,
 
-  organizationName: 'fallenbagel',
-  projectName: 'Jellyseerr',
+  organizationName: 'seerr-team',
+  projectName: 'seerr',
   deploymentBranch: 'gh-pages',
 
   onBrokenLinks: 'throw',
@@ -31,8 +31,7 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           routeBasePath: '/',
           path: '../docs',
-          editUrl:
-            'https://github.com/fallenbagel/jellyseerr/edit/develop/docs/',
+          editUrl: 'https://github.com/seerr-team/seerr/edit/develop/docs/',
         },
         pages: false,
         theme: {
@@ -64,7 +63,7 @@ const config: Config = {
     },
     navbar: {
       logo: {
-        alt: 'Jellyseerr',
+        alt: 'Seerr',
         src: 'img/logo.svg',
       },
       items: [
@@ -74,7 +73,7 @@ const config: Config = {
           position: 'right',
         },
         {
-          href: 'https://github.com/fallenbagel/jellyseerr',
+          href: 'https://github.com/seerr-team/seerr',
           label: 'GitHub',
           position: 'right',
         },
@@ -101,7 +100,7 @@ const config: Config = {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/fallenbagel/jellyseerr',
+              href: 'https://github.com/seerr-team/seerr',
             },
           ],
         },
@@ -114,12 +113,12 @@ const config: Config = {
             },
             {
               label: 'Github Discussions',
-              href: 'https://github.com/fallenbagel/jellyseerr/discussions',
+              href: 'https://github.com/seerr-team/seerr/discussions',
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Jellyseerr. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Seerr. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.shadesOfPurple,
