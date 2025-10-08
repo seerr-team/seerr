@@ -19,7 +19,7 @@ Apart from the settings, all other data—including user accounts, media request
 
 ### SQLite
 
-If your backup system uses filesystem snapshots (such as Kubernetes with Volsync), you can directly back up the JellSeerryseerr data folder.  
+If your backup system uses filesystem snapshots (such as Kubernetes with Volsync), you can directly back up the Seerr data folder.  
 Otherwise, you need to stop the Seerr application and back up the `config` folder.
 
 For advanced users, it's possible to back up the database without stopping the application by using the [SQLite CLI](https://www.sqlite.org/download.html). Run the following command to create a backup:  
