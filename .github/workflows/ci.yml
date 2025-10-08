@@ -23,7 +23,7 @@ jobs:
     name: Lint & Test Build
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    container: node:22.20.0-alpine3.22@sha256:096829fd4bb8c2ce2340ed64dd2f857951f8704325f7acf53e3dc0561c36a214
+    container: node:22.20.0-alpine3.22@sha256:cb3143549582cc5f74f26f0992cdef4a422b22128cb517f94173a5f910fa4ee7
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
