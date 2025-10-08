@@ -8,7 +8,7 @@ import { getHostname } from '@server/utils/getHostname';
 const migrateApiTokens = async (settings: any): Promise<AllSettings> => {
   const mediaServerType = settings.main.mediaServerType;
   if (
-    !settings.jellyfin.apiKey &&
+    !settings.jellyfin?.apiKey &&
     (mediaServerType === MediaServerType.JELLYFIN ||
       mediaServerType === MediaServerType.EMBY)
   ) {
