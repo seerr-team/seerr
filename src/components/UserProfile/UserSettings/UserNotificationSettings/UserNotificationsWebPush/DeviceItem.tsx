@@ -1,16 +1,18 @@
+import Button from '@app/components/Common/Button';
 import ConfirmButton from '@app/components/Common/ConfirmButton';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import {
   ComputerDesktopIcon,
   DevicePhoneMobileIcon,
+  LockClosedIcon,
   TrashIcon,
 } from '@heroicons/react/24/solid';
 import { useIntl } from 'react-intl';
 import { UAParser } from 'ua-parser-js';
 
 interface DeviceItemProps {
-  disablePushNotifications: (p256dh: string) => void;
+  deletePushSubscriptionFromBackend: (endpoint: string) => void;
   device: {
     endpoint: string;
     p256dh: string;
@@ -18,6 +20,7 @@ interface DeviceItemProps {
     userAgent: string;
     createdAt: Date;
   };
+  subEndpoint: string | null;
 }
 
 const messages = defineMessages(
@@ -28,10 +31,15 @@ const messages = defineMessages(
     engine: 'Engine',
     deletesubscription: 'Delete Subscription',
     unknown: 'Unknown',
+    activesubscription: 'Active Subscription',
   }
 );
 
-const DeviceItem = ({ disablePushNotifications, device }: DeviceItemProps) => {
+const DeviceItem = ({
+  deletePushSubscriptionFromBackend,
+  device,
+  subEndpoint,
+}: DeviceItemProps) => {
   const intl = useIntl();
   const parsedUserAgent = UAParser(device.userAgent);
 
@@ -91,14 +99,21 @@ const DeviceItem = ({ disablePushNotifications, device }: DeviceItemProps) => {
         </div>
       </div>
       <div className="z-10 mt-4 flex w-full flex-col justify-center space-y-2 pl-4 pr-4 xl:mt-0 xl:w-96 xl:items-end xl:pl-0">
-        <ConfirmButton
-          onClick={() => disablePushNotifications(device.endpoint)}
-          confirmText={intl.formatMessage(globalMessages.areyousure)}
-          className="w-full"
-        >
-          <TrashIcon />
-          <span>{intl.formatMessage(messages.deletesubscription)}</span>
-        </ConfirmButton>
+        {subEndpoint === device.endpoint ? (
+          <Button buttonType="primary" className="w-full" disabled>
+            <LockClosedIcon />{' '}
+            <span>{intl.formatMessage(messages.activesubscription)}</span>
+          </Button>
+        ) : (
+          <ConfirmButton
+            onClick={() => deletePushSubscriptionFromBackend(device.endpoint)}
+            confirmText={intl.formatMessage(globalMessages.areyousure)}
+            className="w-full"
+          >
+            <TrashIcon />
+            <span>{intl.formatMessage(messages.deletesubscription)}</span>
+          </ConfirmButton>
+        )}
       </div>
     </div>
   );
