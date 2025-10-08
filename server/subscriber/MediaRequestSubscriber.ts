@@ -992,7 +992,7 @@ export class MediaRequestSubscriber
             requestRepository.save(entity);
 
             logger.warn(
-              'Something went wrong sending movie request to Radarr, marking status as FAILED',
+              'Something went wrong sending book request to Readarr, marking status as FAILED',
               {
                 label: 'Media Request',
                 requestId: entity.id,
