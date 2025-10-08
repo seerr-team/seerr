@@ -147,10 +147,10 @@ const ManageSlideOver = ({
     }
   };
 
-  const deleteMediaFile = async (is4k = false) => {
+  const deleteMediaFile = async (isAlt = false) => {
     if (data.mediaInfo) {
       await axios.delete(
-        `/api/v1/media/${data.mediaInfo.id}/file?is4k=${is4k}`
+        `/api/v1/media/${data.mediaInfo.id}/file?isAlt=${isAlt}`
       );
       await axios.delete(`/api/v1/media/${data.mediaInfo.id}`);
       revalidate();

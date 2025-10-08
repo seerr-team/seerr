@@ -7385,7 +7385,7 @@ paths:
   /media/{mediaId}/file:
     delete:
       summary: Delete media file
-      description: Removes a media file from radarr/sonarr. The `ADMIN` permission is required to perform this action.
+      description: Removes a media file from radarr/sonarr/readarr. The `ADMIN` permission is required to perform this action.
       tags:
         - media
       parameters:
@@ -7397,8 +7397,8 @@ paths:
           schema:
             type: string
         - in: query
-          name: is4k
-          description: Whether to remove from 4K service instance (true) or regular service instance (false)
+          name: isAlt
+          description: Whether to remove from 4K/audiobook service instance (true) or regular service instance (false)
           required: false
           example: false
           schema:

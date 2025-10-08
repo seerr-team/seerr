@@ -341,6 +341,21 @@ class ReadarrAPI extends ServarrBase<{ bookId: number }> {
     }
   }
 
+  public removeBook = async (bookId: number): Promise<void> => {
+    try {
+      const { id, title } = await this.getBookByHcId(bookId);
+      await this.axios.delete(`/book/${id}`, {
+        params: {
+          deleteFiles: true,
+          addImportExclusion: false,
+        },
+      });
+      logger.info(`[Readarr] Removed book ${title}`);
+    } catch (e) {
+      throw new Error(`[Readarr] Failed to remove book: ${e.message}`);
+    }
+  };
+
   public clearCache = ({
     tmdbId: hcId,
     externalId,
