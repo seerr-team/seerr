@@ -1436,6 +1436,7 @@
   "components.UserProfile.UserSettings.UserLinkedAccountsSettings.noPermissionDescription": "You do not have permission to modify this user's linked accounts.",
   "components.UserProfile.UserSettings.UserLinkedAccountsSettings.plexErrorExists": "This account is already linked to a Plex user",
   "components.UserProfile.UserSettings.UserLinkedAccountsSettings.plexErrorUnauthorized": "Unable to connect to Plex using your credentials",
+  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.activesubscription": "Active Subscription",
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.browser": "Browser",
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.created": "Created",
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.deletesubscription": "Delete Subscription",
