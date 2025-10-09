@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import CachedImage from '@app/components/Common/CachedImage';
 import { SmallLoadingSpinner } from '@app/components/Common/LoadingSpinner';
+import SlideCheckbox from '@app/components/Common/SlideCheckbox';
 import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
@@ -38,6 +39,9 @@ const messages = defineMessages('components.RequestModal.AdvancedRequester', {
   tags: 'Tags',
   selecttags: 'Select tags',
   notagoptions: 'No tags.',
+  ignoreQuotaTitle: 'Bypass User Quota',
+  ignoreQuotaDescription:
+    "This request will not count against the user's quota limits. Use with caution.",
 });
 
 export type RequestOverrides = {
@@ -47,6 +51,7 @@ export type RequestOverrides = {
   tags?: number[];
   language?: number;
   user?: User;
+  ignoreQuota?: boolean;
 };
 
 interface AdvancedRequesterProps {
@@ -55,6 +60,7 @@ interface AdvancedRequesterProps {
   isAnime?: boolean;
   defaultOverrides?: RequestOverrides;
   requestUser?: User;
+  quota?: { movie: { limit?: number }; tv: { limit?: number } };
   onChange: (overrides: RequestOverrides) => void;
 }
 
@@ -64,6 +70,7 @@ const AdvancedRequester = ({
   isAnime = false,
   defaultOverrides,
   requestUser,
+  quota,
   onChange,
 }: AdvancedRequesterProps) => {
   const intl = useIntl();
@@ -95,6 +102,10 @@ const AdvancedRequester = ({
 
   const [selectedTags, setSelectedTags] = useState<number[]>(
     defaultOverrides?.tags ?? []
+  );
+
+  const [ignoreQuota, setIgnoreQuota] = useState<boolean>(
+    defaultOverrides?.ignoreQuota ?? false
   );
 
   const { data: serverData, isValidating } =
@@ -273,6 +284,7 @@ const AdvancedRequester = ({
         user: selectedUser ?? undefined,
         language: selectedLanguage !== -1 ? selectedLanguage : undefined,
         tags: selectedTags,
+        ignoreQuota: ignoreQuota || undefined,
       });
     }
   }, [
@@ -282,6 +294,7 @@ const AdvancedRequester = ({
     selectedUser,
     selectedLanguage,
     selectedTags,
+    ignoreQuota,
   ]);
 
   if (!data && !error) {
@@ -538,6 +551,25 @@ const AdvancedRequester = ({
                   intl.formatMessage(messages.notagoptions)
                 }
               />
+            </div>
+          )}
+        {currentHasPermission([Permission.MANAGE_REQUESTS]) &&
+          quota &&
+          ((type === 'movie' && quota.movie.limit && quota.movie.limit > 0) ||
+            (type === 'tv' && quota.tv.limit && quota.tv.limit > 0)) && (
+            <div className="mb-2">
+              <label htmlFor="ignoreQuota">
+                {intl.formatMessage(messages.ignoreQuotaTitle)}
+              </label>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-400">
+                  {intl.formatMessage(messages.ignoreQuotaDescription)}
+                </p>
+                <SlideCheckbox
+                  checked={ignoreQuota}
+                  onClick={() => setIgnoreQuota(!ignoreQuota)}
+                />
+              </div>
             </div>
           )}
         {currentHasPermission([
