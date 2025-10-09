@@ -1270,7 +1270,7 @@ components:
         ignoreQuota:
           type: boolean
           example: false
-          description: If true, this request does not count against the user's quota
+          description: If true, this request will not count against the user's quota. Requires MANAGE_REQUESTS permission.
       required:
         - id
         - status
