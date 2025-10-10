@@ -764,7 +764,7 @@ class Settings {
    * This will load settings from file unless an optional argument of the object structure
    * is passed in.
    * @param overrideSettings If passed in, will override all existing settings with these
-   * @param skipMigrations If true, will skip running migrations on the loaded settings
+   * @param raw If true, will load the settings without running migrations or generating missing
    * values
    */
   public async load(
