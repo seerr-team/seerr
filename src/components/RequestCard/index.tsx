@@ -491,6 +491,22 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
               />
             )}
           </div>
+          {requestData.declineReason && (
+            <Tooltip
+              tooltipConfig={{ delayHide: 100 }}
+              className="m-4 w-96 rounded-xl px-4 py-2 text-lg"
+              content={requestData.declineReason}
+            >
+              <div className="mt-2 flex flex-wrap items-center text-sm sm:mt-1">
+                <span className="mr-2 block font-bold">
+                  {intl.formatMessage(globalMessages.declinemessage)}
+                </span>
+                <span className="mr-2 block overflow-hidden overflow-ellipsis whitespace-nowrap">
+                  {requestData.declineReason}
+                </span>
+              </div>
+            </Tooltip>
+          )}
           <div className="flex flex-1 items-end space-x-2">
             {requestData.status === MediaRequestStatus.FAILED &&
               hasPermission(Permission.MANAGE_REQUESTS) && (

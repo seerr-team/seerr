@@ -683,14 +683,14 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
             {requestData.declineReason && (
               <Tooltip
                 tooltipConfig={{ delayHide: 100 }}
-                className="w-96 text-lg"
+                className="m-4 w-96 rounded-xl px-4 py-2 text-lg"
                 content={requestData.declineReason}
               >
-                <div className="card-field">
+                <div className="card-field whitespace-normal lg:whitespace-nowrap">
                   <span className="card-field-name">
                     {intl.formatMessage(messages.declineReason)}
                   </span>
-                  <span className="flex truncate text-sm text-gray-300">
+                  <span className="flex text-sm text-gray-300">
                     {requestData.declineReason}
                   </span>
                 </div>
