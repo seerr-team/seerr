@@ -7,7 +7,7 @@ export const JellyseerrVersion = () => {
     async function fetchVersion() {
       try {
         const response = await fetch(
-          'https://raw.githubusercontent.com/Fallenbagel/jellyseerr/main/package.json'
+          'https://raw.githubusercontent.com/fallenbagel/jellyseerr/main/package.json'
         );
 
         const data = await response.json();
@@ -36,7 +36,7 @@ export const NixpkgVersion = () => {
         const unstableUrl =
           'https://raw.githubusercontent.com/NixOS/nixpkgs/refs/heads/nixos-unstable/pkgs/by-name/je/jellyseerr/package.nix';
         const stableUrl =
-          'https://raw.githubusercontent.com/NixOS/nixpkgs/refs/heads/nixos-24.11/pkgs/servers/jellyseerr/default.nix';
+          'https://raw.githubusercontent.com/NixOS/nixpkgs/refs/heads/nixos-25.05/pkgs/by-name/je/jellyseerr/package.nix';
 
         const [unstableResponse, stableResponse] = await Promise.all([
           fetch(unstableUrl),

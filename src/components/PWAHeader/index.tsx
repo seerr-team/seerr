@@ -2,7 +2,7 @@ interface PWAHeaderProps {
   applicationTitle?: string;
 }
 
-const PWAHeader = ({ applicationTitle = 'Jellyseerr' }: PWAHeaderProps) => {
+const PWAHeader = ({ applicationTitle = 'Seerr' }: PWAHeaderProps) => {
   return (
     <>
       <link
@@ -152,7 +152,6 @@ const PWAHeader = ({ applicationTitle = 'Jellyseerr' }: PWAHeaderProps) => {
         href="/apple-splash-1136-640.jpg"
         media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
       />
-      <meta name="apple-mobile-web-app-capable" content="yes" />
       <meta
         name="apple-mobile-web-app-status-bar-style"
         content="black-translucent"

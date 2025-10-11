@@ -197,8 +197,10 @@ mediaRoutes.delete(
       const media = await mediaRepository.findOneOrFail({
         where: { id: Number(req.params.id) },
       });
-      const is4k = media.serviceUrl4k !== undefined;
+
+      const is4k = req.query.is4k === 'true';
       const isMovie = media.mediaType === MediaType.MOVIE;
+
       let serviceSettings;
       if (isMovie) {
         serviceSettings = settings.radarr.find(
@@ -225,6 +227,7 @@ mediaRoutes.delete(
           );
         }
       }
+
       if (!serviceSettings) {
         logger.warn(
           `There is no default ${
@@ -239,6 +242,7 @@ mediaRoutes.delete(
         );
         return;
       }
+
       let service;
       if (isMovie) {
         service = new RadarrAPI({

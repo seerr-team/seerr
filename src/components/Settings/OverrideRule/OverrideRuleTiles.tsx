@@ -113,12 +113,16 @@ const OverrideRuleTiles = ({
           .flat()
           .filter((keywordId) => keywordId)
           .map(async (keywordId) => {
-            const response = await axios.get(`/api/v1/keyword/${keywordId}`);
-            const keyword: Keyword = response.data;
-            return keyword;
+            const response = await axios.get<Keyword | null>(
+              `/api/v1/keyword/${keywordId}`
+            );
+            return response.data;
           })
       );
-      setKeywords(keywords);
+      const validKeywords: Keyword[] = keywords.filter(
+        (keyword): keyword is Keyword => keyword !== null
+      );
+      setKeywords(validKeywords);
       const allUsersFromRules = rules
         .map((rule) => rule.users)
         .filter((users) => users)

@@ -177,9 +177,27 @@ class WebhookAgent
       subject: payload.subject,
     });
 
+    let webhookUrl = settings.options.webhookUrl;
+
+    if (settings.options.supportVariables) {
+      Object.keys(KeyMap).forEach((keymapKey) => {
+        const keymapValue = KeyMap[keymapKey as keyof typeof KeyMap];
+        const variableValue =
+          type === Notification.TEST_NOTIFICATION
+            ? 'test'
+            : typeof keymapValue === 'function'
+            ? keymapValue(payload, type)
+            : get(payload, keymapValue) || 'test';
+        webhookUrl = webhookUrl.replace(
+          new RegExp(`{{${keymapKey}}}`, 'g'),
+          encodeURIComponent(variableValue)
+        );
+      });
+    }
+
     try {
       await axios.post(
-        settings.options.webhookUrl,
+        webhookUrl,
         this.buildPayload(type, payload),
         settings.options.authHeader
           ? {

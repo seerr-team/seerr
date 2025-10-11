@@ -207,3 +207,62 @@ labels:
 ```
 
 For more information, please refer to the [Traefik documentation](https://doc.traefik.io/traefik/user-guides/docker-compose/basic-example/).
+
+## Apache2 HTTP Server
+
+<Tabs groupId="apache2-reverse-proxy" queryString>
+    <TabItem value="subdomain" label="Subdomain">
+
+Add the following Location block to your existing Server configuration.
+
+```apache
+# Jellyseerr
+		ProxyPreserveHost On
+		ProxyPass / http://localhost:5055 retry=0 connectiontimeout=5 timeout=30 keepalive=on
+		ProxyPassReverse http://localhost:5055 /
+		RequestHeader set Connection ""
+```
+
+</TabItem>
+
+<TabItem value="subfolder" label="Subfolder">
+
+:::warning
+This Apache2 subfolder reverse proxy is an unsupported workaround, and only provided as an example. The filters may stop working when Jellyseerr is updated.
+
+If you encounter any issues with Jellyseerr while using this workaround, we may ask you to try to reproduce the problem without the Apache2 proxy.
+:::
+
+Add the following Location block to your existing Server configuration.
+
+```apache
+# Jellyseerr
+# We will use "/jellyseerr" as subfolder
+# You can replace it with any that you like
+	<Location /jellyseerr>
+		ProxyPreserveHost On
+		ProxyPass http://localhost:5055 retry=0 connectiontimeout=5 timeout=30 keepalive=on
+		ProxyPassReverse http://localhost:5055
+		RequestHeader set Connection ""
+
+		# Header update, to support subfolder
+		# Please Replace "FQDN" with your domain
+		Header edit location ^/login https://FQDN/jellyseerr/login
+		Header edit location ^/setup https://FQDN/jellyseerr/setup
+		
+		AddOutputFilterByType INFLATE;SUBSTITUTE text/html application/javascript application/json
+		SubstituteMaxLineLength 2000K
+		# This is HTML and JS update
+		# Please update "/jellyseerr" if needed
+		Substitute "s|href=\"|href=\"/jellyseerr|inq"
+		Substitute "s|src=\"|src=\"/jellyseerr|inq"
+		Substitute "s|/api/|/jellyseerr/api/|inq"
+		Substitute "s|\"/_next/|\"/jellyseerr/_next/|inq"
+		# This is JSON update
+		Substitute "s|\"/avatarproxy/|\"/jellyseerr/avatarproxy/|inq"
+	</Location>
+```
+
+</TabItem>
+
+</Tabs>

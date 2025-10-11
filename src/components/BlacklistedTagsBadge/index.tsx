@@ -29,14 +29,10 @@ const BlacklistedTagsBadge = ({ data }: BlacklistedTagsBadgeProps) => {
     const keywordIds = data.blacklistedTags.slice(1, -1).split(',');
     Promise.all(
       keywordIds.map(async (keywordId) => {
-        try {
-          const { data } = await axios.get<Keyword>(
-            `/api/v1/keyword/${keywordId}`
-          );
-          return data.name;
-        } catch (err) {
-          return '';
-        }
+        const { data } = await axios.get<Keyword | null>(
+          `/api/v1/keyword/${keywordId}`
+        );
+        return data?.name || `[Invalid: ${keywordId}]`;
       })
     ).then((keywords) => {
       setTagNamesBlacklistedFor(keywords.join(', '));

@@ -1,3 +1,4 @@
+import { requestInterceptorFunction } from '@server/utils/customProxyAgent';
 import type { AxiosInstance, AxiosRequestConfig } from 'axios';
 import axios from 'axios';
 import rateLimit from 'axios-rate-limit';
@@ -9,7 +10,7 @@ const DEFAULT_TTL = 300;
 // 10 seconds default rolling buffer (in ms)
 const DEFAULT_ROLLING_BUFFER = 10000;
 
-interface ExternalAPIOptions {
+export interface ExternalAPIOptions {
   nodeCache?: NodeCache;
   headers?: Record<string, unknown>;
   rateLimit?: {
@@ -37,6 +38,7 @@ class ExternalAPI {
         ...options.headers,
       },
     });
+    this.axios.interceptors.request.use(requestInterceptorFunction);
 
     if (options.rateLimit) {
       this.axios = rateLimit(this.axios, {

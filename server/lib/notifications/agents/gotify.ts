@@ -35,7 +35,7 @@ class GotifyAgent
       settings.enabled &&
       settings.options.url &&
       settings.options.token &&
-      settings.options.priority
+      settings.options.priority !== undefined
     ) {
       return true;
     }

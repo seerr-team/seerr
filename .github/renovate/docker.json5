@@ -1,0 +1,15 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+
+  extends: [
+    'docker:enableMajor',
+    'docker:pinDigests'
+  ],
+
+  packageRules: [
+    {
+      matchManagers: ['docker-compose'],
+      pinDigests: false,
+    },
+  ],
+}

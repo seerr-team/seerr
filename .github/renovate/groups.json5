@@ -1,0 +1,19 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+
+  packageRules: [
+    // Node.js
+    {
+      matchPackageNames: ['node'],
+      matchManagers: ['dockerfile', 'npm'],
+      groupName: 'Node.js',
+      commitMessageTopic: 'Node.js',
+    },
+
+    // Database packages
+    {
+      matchPackageNames: ['pg', 'sqlite3', 'typeorm'],
+      groupName: 'Database',
+    },
+  ],
+}

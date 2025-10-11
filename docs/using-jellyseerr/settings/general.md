@@ -78,6 +78,12 @@ Available media will still appear in search results, however, so it is possible 
 
 This setting is **disabled** by default.
 
+## Hide Blacklisted Items
+
+When enabled, media that has been blacklisted will not appear on the "Discover" home page, for all administrators. This can be useful to hide content that you don't want to see, such as content with specific tags or content that has been manually blacklisted when you have the "Manage Blacklist" permission.
+
+This setting is **disabled** by default.
+
 ## Allow Partial Series Requests
 
 When enabled, users will be able to submit requests for specific seasons of TV series. If disabled, users will only be able to submit requests for all unavailable seasons.

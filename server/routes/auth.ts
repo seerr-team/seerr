@@ -12,7 +12,9 @@ import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { checkAvatarChanged } from '@server/routes/avatarproxy';
 import { ApiError } from '@server/types/error';
+import { getAppVersion } from '@server/utils/appVersion';
 import { getHostname } from '@server/utils/getHostname';
+import axios from 'axios';
 import * as EmailValidator from 'email-validator';
 import { Router } from 'express';
 import net from 'net';
@@ -159,7 +161,7 @@ authRoutes.post('/plex', async (req, res, next) => {
           });
         } else {
           logger.info(
-            'Sign-in attempt from Plex user with access to the media server; creating new Jellyseerr user',
+            'Sign-in attempt from Plex user with access to the media server; creating new Seerr user',
             {
               label: 'API',
               ip: req.ip,
@@ -275,13 +277,14 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       select: { id: true, jellyfinDeviceId: true },
     });
 
-    let deviceId = '';
-    if (user) {
-      deviceId = user.jellyfinDeviceId ?? '';
-    } else {
-      deviceId = Buffer.from(`BOT_jellyseerr_${body.username ?? ''}`).toString(
-        'base64'
-      );
+    let deviceId = 'BOT_seerr';
+    if (user && user.id === 1) {
+      // Admin is always BOT_seerr
+      deviceId = 'BOT_seerr';
+    } else if (user && user.jellyfinDeviceId) {
+      deviceId = user.jellyfinDeviceId;
+    } else if (body.username) {
+      deviceId = Buffer.from(`BOT_seerr_${body.username}`).toString('base64');
     }
 
     // First we need to attempt to log the user in to jellyfin
@@ -329,7 +332,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
 
       if (missingAdminUser) {
         logger.info(
-          'Sign-in attempt from Jellyfin user with access to the media server; creating initial admin user for Jellyseerr',
+          'Sign-in attempt from Jellyfin user with access to the media server; creating initial admin user for Seerr',
           {
             label: 'API',
             ip: req.ip,
@@ -358,7 +361,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
         await userRepository.save(user);
       } else {
         logger.info(
-          'Sign-in attempt from Jellyfin user with access to the media server; editing admin user for Jellyseerr',
+          'Sign-in attempt from Jellyfin user with access to the media server; editing admin user for Seerr',
           {
             label: 'API',
             ip: req.ip,
@@ -395,7 +398,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
         account.AccessToken,
         deviceId
       );
-      const apiKey = await jellyfinClient.createApiToken('Jellyseerr');
+      const apiKey = await jellyfinClient.createApiToken('Seerr');
 
       const serverName = await jellyfinserver.getServerName();
 
@@ -451,7 +454,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       });
     } else if (!user) {
       logger.info(
-        'Sign-in attempt from Jellyfin user with access to the media server; creating new Jellyseerr user',
+        'Sign-in attempt from Jellyfin user with access to the media server; creating new Seerr user',
         {
           label: 'API',
           ip: req.ip,
@@ -511,7 +514,9 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       case ApiErrorCode.InvalidUrl:
         logger.error(
           `The provided ${
-            process.env.JELLYFIN_TYPE == 'emby' ? 'Emby' : 'Jellyfin'
+            settings.main.mediaServerType === MediaServerType.JELLYFIN
+              ? ServerType.JELLYFIN
+              : ServerType.EMBY
           } is invalid or the server is not reachable.`,
           {
             label: 'Auth',
@@ -609,7 +614,7 @@ authRoutes.post('/local', async (req, res, next) => {
       .getOne();
 
     if (!user || !(await user.passwordMatch(body.password))) {
-      logger.warn('Failed sign-in attempt using invalid Jellyseerr password', {
+      logger.warn('Failed sign-in attempt using invalid Seerr password', {
         label: 'API',
         ip: req.ip,
         email: body.email,
@@ -698,15 +703,12 @@ authRoutes.post('/local', async (req, res, next) => {
 
     return res.status(200).json(user?.filter() ?? {});
   } catch (e) {
-    logger.error(
-      'Something went wrong authenticating with Jellyseerr password',
-      {
-        label: 'API',
-        errorMessage: e.message,
-        ip: req.ip,
-        email: body.email,
-      }
-    );
+    logger.error('Something went wrong authenticating with Seerr password', {
+      label: 'API',
+      errorMessage: e.message,
+      ip: req.ip,
+      email: body.email,
+    });
     return next({
       status: 500,
       message: 'Unable to authenticate.',
@@ -714,17 +716,79 @@ authRoutes.post('/local', async (req, res, next) => {
   }
 });
 
-authRoutes.post('/logout', (req, res, next) => {
-  req.session?.destroy((err) => {
-    if (err) {
-      return next({
-        status: 500,
-        message: 'Something went wrong.',
-      });
+authRoutes.post('/logout', async (req, res, next) => {
+  try {
+    const userId = req.session?.userId;
+    if (!userId) {
+      return res.status(200).json({ status: 'ok' });
     }
 
-    return res.status(200).json({ status: 'ok' });
-  });
+    const settings = getSettings();
+    const isJellyfinOrEmby =
+      settings.main.mediaServerType === MediaServerType.JELLYFIN ||
+      settings.main.mediaServerType === MediaServerType.EMBY;
+
+    if (isJellyfinOrEmby) {
+      const user = await getRepository(User)
+        .createQueryBuilder('user')
+        .addSelect(['user.jellyfinUserId', 'user.jellyfinDeviceId'])
+        .where('user.id = :id', { id: userId })
+        .getOne();
+
+      if (user?.jellyfinUserId && user.jellyfinDeviceId) {
+        try {
+          const baseUrl = getHostname();
+          try {
+            await axios.delete(`${baseUrl}/Devices`, {
+              params: { Id: user.jellyfinDeviceId },
+              headers: {
+                'X-Emby-Authorization': `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="seerr", Version="${getAppVersion()}", Token="${
+                  settings.jellyfin.apiKey
+                }"`,
+              },
+            });
+          } catch (error) {
+            logger.error('Failed to delete Jellyfin device', {
+              label: 'Auth',
+              error: error instanceof Error ? error.message : 'Unknown error',
+              userId: user.id,
+              jellyfinUserId: user.jellyfinUserId,
+            });
+          }
+        } catch (error) {
+          logger.error('Failed to delete Jellyfin device', {
+            label: 'Auth',
+            error: error instanceof Error ? error.message : 'Unknown error',
+            userId: user.id,
+            jellyfinUserId: user.jellyfinUserId,
+          });
+        }
+      }
+    }
+
+    req.session?.destroy((err: Error | null) => {
+      if (err) {
+        logger.error('Failed to destroy session', {
+          label: 'Auth',
+          error: err.message,
+          userId,
+        });
+        return next({ status: 500, message: 'Failed to destroy session.' });
+      }
+      logger.info('Successfully logged out user', {
+        label: 'Auth',
+        userId,
+      });
+      res.status(200).json({ status: 'ok' });
+    });
+  } catch (error) {
+    logger.error('Error during logout process', {
+      label: 'Auth',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId: req.session?.userId,
+    });
+    next({ status: 500, message: 'Error during logout process.' });
+  }
 });
 
 authRoutes.post('/reset-password', async (req, res, next) => {

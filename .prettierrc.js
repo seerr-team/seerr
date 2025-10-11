@@ -21,5 +21,11 @@ module.exports = {
         rangeEnd: 0, // default: Infinity
       },
     },
+    {
+      files: 'cypress/config/settings.cypress.json',
+      options: {
+        rangeEnd: 0,
+      },
+    },
   ],
 };

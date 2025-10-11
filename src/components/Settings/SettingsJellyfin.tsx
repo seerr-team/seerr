@@ -6,6 +6,7 @@ import LibraryItem from '@app/components/Settings/LibraryItem';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType } from '@server/constants/server';
@@ -51,7 +52,7 @@ const messages = defineMessages('components.Settings', {
   syncJellyfin: 'Sync Libraries',
   manualscanJellyfin: 'Manual Library Scan',
   manualscanDescriptionJellyfin:
-    "Normally, this will only be run once every 24 hours. Jellyseerr will check your {mediaServerName} server's recently added more aggressively. If this is your first time configuring Jellyseerr, a one-time full manual library scan is recommended!",
+    "Normally, this will only be run once every 24 hours. Seerr will check your {mediaServerName} server's recently added more aggressively. If this is your first time configuring Seerr, a one-time full manual library scan is recommended!",
   notrunning: 'Not Running',
   currentlibrary: 'Current Library: {name}',
   librariesRemaining: 'Libraries Remaining: {count}',
@@ -112,11 +113,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
   const JellyfinSettingsSchema = Yup.object().shape({
     hostname: Yup.string()
       .nullable()
-      .required(intl.formatMessage(messages.validationHostnameRequired))
-      .matches(
-        /^(((([a-z]|\d|_|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*)?([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])):((([a-z]|\d|_|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*)?([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))@)?(([a-z]|\d|_|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*)?([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])$/i,
-        intl.formatMessage(messages.validationHostnameRequired)
-      ),
+      .required(intl.formatMessage(messages.validationHostnameRequired)),
     port: Yup.number().when(['hostname'], {
       is: (value: unknown) => !!value,
       then: Yup.number()
@@ -140,10 +137,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       ),
     jellyfinExternalUrl: Yup.string()
       .nullable()
-      .matches(
-        /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*))?$/i,
-        intl.formatMessage(messages.validationUrl)
-      )
+      .test('valid-url', intl.formatMessage(messages.validationUrl), isValidURL)
       .test(
         'no-trailing-slash',
         intl.formatMessage(messages.validationUrlTrailingSlash),
@@ -151,10 +145,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       ),
     jellyfinForgotPasswordUrl: Yup.string()
       .nullable()
-      .matches(
-        /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*))?$/i,
-        intl.formatMessage(messages.validationUrl)
-      )
+      .test('valid-url', intl.formatMessage(messages.validationUrl), isValidURL)
       .test(
         'no-trailing-slash',
         intl.formatMessage(messages.validationUrlTrailingSlash),

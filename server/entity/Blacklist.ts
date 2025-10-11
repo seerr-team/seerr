@@ -3,10 +3,10 @@ import dataSource from '@server/datasource';
 import Media from '@server/entity/Media';
 import { User } from '@server/entity/User';
 import type { BlacklistItem } from '@server/interfaces/api/blacklistInterfaces';
+import { DbAwareColumn } from '@server/utils/DbColumnHelper';
 import type { EntityManager } from 'typeorm';
 import {
   Column,
-  CreateDateColumn,
   Entity,
   Index,
   JoinColumn,
@@ -47,7 +47,7 @@ export class Blacklist implements BlacklistItem {
   @Column({ nullable: true, type: 'varchar' })
   public blacklistedTags?: string;
 
-  @CreateDateColumn()
+  @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
   constructor(init?: Partial<Blacklist>) {

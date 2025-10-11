@@ -1,4 +1,5 @@
 import logger from '@server/logger';
+import { requestInterceptorFunction } from '@server/utils/customProxyAgent';
 import axios from 'axios';
 import rateLimit, { type rateLimitOptions } from 'axios-rate-limit';
 import { createHash } from 'crypto';
@@ -150,6 +151,7 @@ class ImageProxy {
       baseURL: baseUrl,
       headers: options.headers,
     });
+    this.axios.interceptors.request.use(requestInterceptorFunction);
 
     if (options.rateLimitOptions) {
       this.axios = rateLimit(this.axios, options.rateLimitOptions);

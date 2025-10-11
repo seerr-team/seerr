@@ -1,3 +1,4 @@
+import type { DnsEntries, DnsStats } from 'dns-caching';
 import type { PaginatedResponse } from './common';
 
 export type LogMessage = {
@@ -29,6 +30,7 @@ export interface PublicSettingsResponse {
   applicationTitle: string;
   applicationUrl: string;
   hideAvailable: boolean;
+  hideBlacklisted: boolean;
   localLogin: boolean;
   mediaServerLogin: boolean;
   movie4kEnabled: boolean;
@@ -45,6 +47,7 @@ export interface PublicSettingsResponse {
   locale: string;
   emailEnabled: boolean;
   newPlexLogin: boolean;
+  youtubeUrl: string;
 }
 
 export interface CacheItem {
@@ -62,6 +65,10 @@ export interface CacheItem {
 export interface CacheResponse {
   apiCaches: CacheItem[];
   imageCache: Record<'tmdb' | 'avatar', { size: number; imageCount: number }>;
+  dnsCache: {
+    stats: DnsStats | undefined;
+    entries: DnsEntries | undefined;
+  };
 }
 
 export interface StatusResponse {

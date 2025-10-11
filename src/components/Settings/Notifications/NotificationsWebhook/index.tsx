@@ -1,8 +1,10 @@
 import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
+import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
 import {
   ArrowPathIcon,
@@ -72,6 +74,11 @@ const messages = defineMessages(
   {
     agentenabled: 'Enable Agent',
     webhookUrl: 'Webhook URL',
+    webhookUrlTip:
+      'Test Notification URL is set to {testUrl} instead of the actual webhook URL.',
+    supportVariables: 'Support URL Variables',
+    supportVariablesTip:
+      'Available variables are documented in the webhook template variables section',
     authheader: 'Authorization Header',
     validationJsonPayloadRequired: 'You must provide a valid JSON payload',
     webhooksettingssaved: 'Webhook notification settings saved successfully!',
@@ -107,11 +114,17 @@ const NotificationsWebhook = () => {
           .required(intl.formatMessage(messages.validationWebhookUrl)),
         otherwise: Yup.string().nullable(),
       })
-      .matches(
-        // eslint-disable-next-line no-useless-escape
-        /^(https?:)?\/\/(((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:)*@)?(((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*)?([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))(:\d*)?)(\/((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)+(\/(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*)?)?(\?((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|[\uE000-\uF8FF]|\/|\?)*)?(\#((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|\/|\?)*)?$/i,
-        intl.formatMessage(messages.validationWebhookUrl)
+      .test(
+        'valid-url',
+        intl.formatMessage(messages.validationWebhookUrl),
+        function (value) {
+          const { supportVariables } = this.parent;
+          return supportVariables || isValidURL(value);
+        }
       ),
+
+    supportVariables: Yup.boolean(),
+
     jsonPayload: Yup.string()
       .when('enabled', {
         is: true,
@@ -146,6 +159,7 @@ const NotificationsWebhook = () => {
         webhookUrl: data.options.webhookUrl,
         jsonPayload: data.options.jsonPayload,
         authHeader: data.options.authHeader,
+        supportVariables: data.options.supportVariables ?? false,
       }}
       validationSchema={NotificationsWebhookSchema}
       onSubmit={async (values) => {
@@ -157,6 +171,7 @@ const NotificationsWebhook = () => {
               webhookUrl: values.webhookUrl,
               jsonPayload: JSON.stringify(values.jsonPayload),
               authHeader: values.authHeader,
+              supportVariables: values.supportVariables,
             },
           });
           addToast(intl.formatMessage(messages.webhooksettingssaved), {
@@ -214,6 +229,7 @@ const NotificationsWebhook = () => {
                 webhookUrl: values.webhookUrl,
                 jsonPayload: JSON.stringify(values.jsonPayload),
                 authHeader: values.authHeader,
+                supportVariables: values.supportVariables ?? false,
               },
             });
 
@@ -249,9 +265,58 @@ const NotificationsWebhook = () => {
               </div>
             </div>
             <div className="form-row">
+              <label htmlFor="supportVariables" className="checkbox-label">
+                <span className="mr-2">
+                  {intl.formatMessage(messages.supportVariables)}
+                </span>
+                <SettingsBadge badgeType="experimental" />
+                <span className="label-tip">
+                  {intl.formatMessage(messages.supportVariablesTip)}
+                </span>
+              </label>
+              <div className="form-input-area">
+                <Field
+                  type="checkbox"
+                  id="supportVariables"
+                  name="supportVariables"
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setFieldValue('supportVariables', e.target.checked)
+                  }
+                />
+              </div>
+            </div>
+            {values.supportVariables && (
+              <div className="mt-2">
+                <Link
+                  href="https://docs.seerr.dev/using-jellyseerr/notifications/webhook#template-variables"
+                  passHref
+                  legacyBehavior
+                >
+                  <Button
+                    as="a"
+                    buttonSize="sm"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <QuestionMarkCircleIcon />
+                    <span>
+                      {intl.formatMessage(messages.templatevariablehelp)}
+                    </span>
+                  </Button>
+                </Link>
+              </div>
+            )}
+            <div className="form-row">
               <label htmlFor="webhookUrl" className="text-label">
                 {intl.formatMessage(messages.webhookUrl)}
                 <span className="label-required">*</span>
+                {values.supportVariables && (
+                  <div className="label-tip">
+                    {intl.formatMessage(messages.webhookUrlTip, {
+                      testUrl: '/test',
+                    })}
+                  </div>
+                )}
               </label>
               <div className="form-input-area">
                 <div className="form-input-field">
@@ -311,7 +376,7 @@ const NotificationsWebhook = () => {
                     <span>{intl.formatMessage(messages.resetPayload)}</span>
                   </Button>
                   <Link
-                    href="https://docs.overseerr.dev/using-overseerr/notifications/webhooks#template-variables"
+                    href="https://docs.seerr.dev/using-jellyseerr/notifications/webhook#template-variables"
                     passHref
                     legacyBehavior
                   >

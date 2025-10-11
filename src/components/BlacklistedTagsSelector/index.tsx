@@ -5,7 +5,10 @@ import { encodeURIExtraParams } from '@app/hooks/useDiscover';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import { ArrowDownIcon } from '@heroicons/react/24/solid';
-import type { TmdbKeywordSearchResponse } from '@server/api/themoviedb/interfaces';
+import type {
+  TmdbKeyword,
+  TmdbKeywordSearchResponse,
+} from '@server/api/themoviedb/interfaces';
 import type { Keyword } from '@server/models/common';
 import axios from 'axios';
 import { useFormikContext } from 'formik';
@@ -124,15 +127,19 @@ const ControlledKeywordSelector = ({
 
       const keywords = await Promise.all(
         defaultValue.split(',').map(async (keywordId) => {
-          const { data } = await axios.get<Keyword>(
+          const { data } = await axios.get<Keyword | null>(
             `/api/v1/keyword/${keywordId}`
           );
           return data;
         })
       );
 
+      const validKeywords: TmdbKeyword[] = keywords.filter(
+        (keyword): keyword is TmdbKeyword => keyword !== null
+      );
+
       onChange(
-        keywords.map((keyword) => ({
+        validKeywords.map((keyword) => ({
           label: keyword.name,
           value: keyword.id,
         }))

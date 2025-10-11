@@ -1,0 +1,10 @@
+{
+  "label": "Plex Integration",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "title": "Plex Integration",
+    "description": "Learn about Jellyseerr's Plex integration features"
+  }
+}
+

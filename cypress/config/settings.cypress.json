@@ -4,9 +4,8 @@
   "vapidPublic": "BK_EpP8NDm9waor2zn6_S28o3ZYv4kCkJOfYpO3pt3W6jnPmxrgTLANUBNbbyaNatPnSQ12De9CeqSYQrqWzHTs",
   "main": {
     "apiKey": "testkey",
-    "applicationTitle": "Jellyseerr",
+    "applicationTitle": "Seerr",
     "applicationUrl": "",
-    "csrfProtection": false,
     "cacheImages": false,
     "defaultPermissions": 32,
     "defaultQuotas": {
@@ -71,7 +70,7 @@
           "ignoreTls": false,
           "requireTls": false,
           "allowSelfSigned": false,
-          "senderName": "Jellyseerr"
+          "senderName": "Seerr"
         }
       },
       "discord": {
@@ -81,13 +80,6 @@
           "webhookUrl": "",
           "webhookRoleId": "",
           "enableMentions": true
-        }
-      },
-      "lunasea": {
-        "enabled": false,
-        "types": 0,
-        "options": {
-          "webhookUrl": ""
         }
       },
       "slack": {
@@ -142,6 +134,14 @@
           "token": "",
           "priority": 0
         }
+      },
+      "ntfy": {
+        "enabled": false,
+        "types": 0,
+        "options": {
+          "url": "",
+          "topic": ""
+        }
       }
     }
   },
@@ -178,6 +178,27 @@
     },
     "image-cache-cleanup": {
       "schedule": "0 0 5 * * *"
+    }
+  },
+  "network": {
+    "csrfProtection": false,
+    "trustProxy": false,
+    "forceIpv4First": false,
+    "dnsServers": "",
+    "proxy": {
+      "enabled": false,
+      "hostname": "",
+      "port": 8080,
+      "useSsl": false,
+      "user": "",
+      "password": "",
+      "bypassFilter": "",
+      "bypassLocalAddresses": true
+    },
+    "dnsCache": {
+      "enabled": false,
+      "forceMinTtl": 0,
+      "forceMaxTtl": -1
     }
   }
 }

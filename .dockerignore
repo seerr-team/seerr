@@ -1,12 +1,10 @@
 **/*.md
 **/.gitkeep
 **/.vscode
-.all-contributorsrc
 .dockerignore
 .editorconfig
 .eslintrc.js
 .git
-.gitbook.yaml
 .gitconfig
 .github
 .gitignore
@@ -24,6 +22,5 @@ LICENSE
 node_modules
 public/os_logo_filled.png
 public/preview.jpg
-snap
 stylelint.config.js
 cypress

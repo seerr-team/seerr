@@ -1,3 +1,4 @@
+import CachedImage from '@app/components/Common/CachedImage';
 import Header from '@app/components/Common/Header';
 import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
@@ -7,7 +8,6 @@ import Error from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import type { ProductionCompany } from '@server/models/common';
 import type { MovieResult } from '@server/models/Search';
-import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useIntl } from 'react-intl';
 
@@ -49,7 +49,8 @@ const DiscoverMovieStudio = () => {
         <Header>
           {firstResultData?.studio.logoPath ? (
             <div className="relative mb-6 flex h-24 justify-center sm:h-32">
-              <Image
+              <CachedImage
+                type="tmdb"
                 src={`https://image.tmdb.org/t/p/w780_filter(duotone,ffffff,bababa)${firstResultData.studio.logoPath}`}
                 alt={firstResultData.studio.name}
                 className="object-contain"

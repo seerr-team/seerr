@@ -2,6 +2,7 @@ import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import Modal from '@app/components/Common/Modal';
 import { Permission, useUser } from '@app/hooks/useUser';
+import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { Menu, Transition } from '@headlessui/react';
 import { EllipsisVerticalIcon } from '@heroicons/react/24/solid';
@@ -207,13 +208,13 @@ const IssueComment = ({
                           type="button"
                           onClick={() => setIsEditing(false)}
                         >
-                          Cancel
+                          {intl.formatMessage(globalMessages.cancel)}
                         </Button>
                         <Button
                           buttonType="primary"
                           disabled={!isValid || isSubmitting}
                         >
-                          Save Changes
+                          {intl.formatMessage(globalMessages.save)}
                         </Button>
                       </div>
                     </Form>
@@ -222,7 +223,10 @@ const IssueComment = ({
               </Formik>
             ) : (
               <div className="prose w-full max-w-full">
-                <ReactMarkdown skipHtml allowedElements={['p', 'em', 'strong']}>
+                <ReactMarkdown
+                  skipHtml
+                  allowedElements={['p', 'em', 'strong', 'ul', 'ol', 'li']}
+                >
                   {comment.message}
                 </ReactMarkdown>
               </div>

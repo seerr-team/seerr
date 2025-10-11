@@ -22,6 +22,23 @@ export interface JellyfinUserResponse {
   PrimaryImageTag?: string;
 }
 
+export interface JellyfinDevice {
+  Id: string;
+  Name: string;
+  LastUserName: string;
+  AppName: string;
+  AppVersion: string;
+  LastUserId: string;
+  DateLastActivity: string;
+  Capabilities: Record<string, unknown>;
+}
+
+export interface JellyfinDevicesResponse {
+  Items: JellyfinDevice[];
+  TotalRecordCount: number;
+  StartIndex: number;
+}
+
 export interface JellyfinLoginResponse {
   User: JellyfinUserResponse;
   AccessToken: string;
@@ -86,6 +103,7 @@ export interface JellyfinLibraryItemExtended extends JellyfinLibraryItem {
     Tmdb?: string;
     Imdb?: string;
     Tvdb?: string;
+    AniDB?: string;
   };
   MediaSources?: JellyfinMediaSource[];
   Width?: number;
@@ -113,15 +131,13 @@ class JellyfinAPI extends ExternalAPI {
     const safeDeviceId =
       deviceId && deviceId.length > 0
         ? deviceId
-        : Buffer.from(`BOT_jellyseerr_fallback_${Date.now()}`).toString(
-            'base64'
-          );
+        : Buffer.from('BOT_seerr').toString('base64');
 
     let authHeaderVal: string;
     if (authToken) {
-      authHeaderVal = `MediaBrowser Client="Jellyseerr", Device="Jellyseerr", DeviceId="${safeDeviceId}", Version="${getAppVersion()}", Token="${authToken}"`;
+      authHeaderVal = `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="${safeDeviceId}", Version="${getAppVersion()}", Token="${authToken}"`;
     } else {
-      authHeaderVal = `MediaBrowser Client="Jellyseerr", Device="Jellyseerr", DeviceId="${safeDeviceId}", Version="${getAppVersion()}"`;
+      authHeaderVal = `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="${safeDeviceId}", Version="${getAppVersion()}"`;
     }
 
     super(

@@ -27,7 +27,6 @@ const messages = defineMessages('components.Login', {
   validationusernamerequired: 'Username required',
   validationpasswordrequired: 'You must provide a password',
   validationservertyperequired: 'Please select a server type',
-  validationHostnameRequired: 'You must provide a valid hostname or IP address',
   validationPortRequired: 'You must provide a valid port number',
   validationUrlTrailingSlash: 'URL must not end in a trailing slash',
   validationUrlBaseLeadingSlash: 'URL base must have a leading slash',

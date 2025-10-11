@@ -10,7 +10,7 @@ const messages = defineMessages('components.Settings', {
   experimentalTooltip:
     'Enabling this setting may result in unexpected application behavior',
   restartrequiredTooltip:
-    'Jellyseerr must be restarted for changes to this setting to take effect',
+    'Seerr must be restarted for changes to this setting to take effect',
 });
 
 const SettingsBadge = ({

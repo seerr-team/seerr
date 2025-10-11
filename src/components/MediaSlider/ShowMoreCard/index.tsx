@@ -1,7 +1,7 @@
+import CachedImage from '@app/components/Common/CachedImage';
 import TitleCard from '@app/components/TitleCard';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowRightCircleIcon } from '@heroicons/react/24/solid';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useInView } from 'react-intersection-observer';
@@ -60,7 +60,8 @@ const ShowMoreCard = ({ url, posters }: ShowMoreCardProps) => {
             <div className="relative z-10 grid h-full w-full grid-cols-2 items-center justify-center gap-2 opacity-30">
               {posters[0] && (
                 <div className="">
-                  <Image
+                  <CachedImage
+                    type="tmdb"
                     src={`https://image.tmdb.org/t/p/w300_and_h450_face${posters[0]}`}
                     alt=""
                     className="rounded-md"
@@ -71,7 +72,8 @@ const ShowMoreCard = ({ url, posters }: ShowMoreCardProps) => {
               )}
               {posters[1] && (
                 <div className="">
-                  <Image
+                  <CachedImage
+                    type="tmdb"
                     src={`https://image.tmdb.org/t/p/w300_and_h450_face${posters[1]}`}
                     alt=""
                     className="rounded-md"
@@ -82,7 +84,8 @@ const ShowMoreCard = ({ url, posters }: ShowMoreCardProps) => {
               )}
               {posters[2] && (
                 <div className="">
-                  <Image
+                  <CachedImage
+                    type="tmdb"
                     src={`https://image.tmdb.org/t/p/w300_and_h450_face${posters[2]}`}
                     alt=""
                     className="rounded-md"
@@ -93,7 +96,8 @@ const ShowMoreCard = ({ url, posters }: ShowMoreCardProps) => {
               )}
               {posters[3] && (
                 <div className="">
-                  <Image
+                  <CachedImage
+                    type="tmdb"
                     src={`https://image.tmdb.org/t/p/w300_and_h450_face${posters[3]}`}
                     alt=""
                     className="rounded-md"

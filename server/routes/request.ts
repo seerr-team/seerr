@@ -38,6 +38,7 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
       const requestedBy = req.query.requestedBy
         ? Number(req.query.requestedBy)
         : null;
+      const mediaType = (req.query.mediaType as MediaType | 'all') || 'all';
 
       let statusFilter: MediaRequestStatus[];
 
@@ -157,6 +158,21 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
         query = query.andWhere('requestedBy.id = :id', {
           id: requestedBy,
         });
+      }
+
+      switch (mediaType) {
+        case 'all':
+          break;
+        case 'movie':
+          query = query.andWhere('request.type = :type', {
+            type: MediaType.MOVIE,
+          });
+          break;
+        case 'tv':
+          query = query.andWhere('request.type = :type', {
+            type: MediaType.TV,
+          });
+          break;
       }
 
       const [requests, requestCount] = await query
@@ -365,6 +381,12 @@ requestRoutes.get('/count', async (_req, res, next) => {
       )
       .getCount();
 
+    const completedCount = await query
+      .where('request.status = :requestStatus', {
+        requestStatus: MediaRequestStatus.COMPLETED,
+      })
+      .getCount();
+
     return res.status(200).json({
       total: totalCount,
       movie: movieCount,
@@ -374,6 +396,7 @@ requestRoutes.get('/count', async (_req, res, next) => {
       declined: declinedCount,
       processing: processingCount,
       available: availableCount,
+      completed: completedCount,
     });
   } catch (e) {
     logger.error('Something went wrong retrieving request counts', {

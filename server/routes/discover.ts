@@ -61,6 +61,7 @@ const QueryFilterOptions = z.object({
   studio: z.coerce.string().optional(),
   genre: z.coerce.string().optional(),
   keywords: z.coerce.string().optional(),
+  excludeKeywords: z.coerce.string().optional(),
   language: z.coerce.string().optional(),
   withRuntimeGte: z.coerce.string().optional(),
   withRuntimeLte: z.coerce.string().optional(),
@@ -72,16 +73,26 @@ const QueryFilterOptions = z.object({
   watchProviders: z.coerce.string().optional(),
   watchRegion: z.coerce.string().optional(),
   status: z.coerce.string().optional(),
+  certification: z.coerce.string().optional(),
+  certificationGte: z.coerce.string().optional(),
+  certificationLte: z.coerce.string().optional(),
+  certificationCountry: z.coerce.string().optional(),
+  certificationMode: z.enum(['exact', 'range']).optional(),
 });
 
 export type FilterOptions = z.infer<typeof QueryFilterOptions>;
+const ApiQuerySchema = QueryFilterOptions.omit({
+  certificationMode: true,
+});
 
 discoverRoutes.get('/movies', async (req, res, next) => {
   const tmdb = createTmdbWithRegionLanguage(req.user);
 
   try {
-    const query = QueryFilterOptions.parse(req.query);
+    const query = ApiQuerySchema.parse(req.query);
     const keywords = query.keywords;
+    const excludeKeywords = query.excludeKeywords;
+
     const data = await tmdb.getDiscoverMovies({
       page: Number(query.page),
       sortBy: query.sortBy as SortOptions,
@@ -96,6 +107,7 @@ discoverRoutes.get('/movies', async (req, res, next) => {
         ? new Date(query.primaryReleaseDateGte).toISOString().split('T')[0]
         : undefined,
       keywords,
+      excludeKeywords,
       withRuntimeGte: query.withRuntimeGte,
       withRuntimeLte: query.withRuntimeLte,
       voteAverageGte: query.voteAverageGte,
@@ -104,6 +116,10 @@ discoverRoutes.get('/movies', async (req, res, next) => {
       voteCountLte: query.voteCountLte,
       watchProviders: query.watchProviders,
       watchRegion: query.watchRegion,
+      certification: query.certification,
+      certificationGte: query.certificationGte,
+      certificationLte: query.certificationLte,
+      certificationCountry: query.certificationCountry,
     });
 
     const media = await Media.getRelatedMedia(
@@ -115,10 +131,14 @@ discoverRoutes.get('/movies', async (req, res, next) => {
     if (keywords) {
       const splitKeywords = keywords.split(',');
 
-      keywordData = await Promise.all(
+      const keywordResults = await Promise.all(
         splitKeywords.map(async (keywordId) => {
           return await tmdb.getKeywordDetails({ keywordId: Number(keywordId) });
         })
+      );
+
+      keywordData = keywordResults.filter(
+        (keyword): keyword is TmdbKeyword => keyword !== null
       );
     }
 
@@ -362,8 +382,9 @@ discoverRoutes.get('/tv', async (req, res, next) => {
   const tmdb = createTmdbWithRegionLanguage(req.user);
 
   try {
-    const query = QueryFilterOptions.parse(req.query);
+    const query = ApiQuerySchema.parse(req.query);
     const keywords = query.keywords;
+    const excludeKeywords = query.excludeKeywords;
     const data = await tmdb.getDiscoverTv({
       page: Number(query.page),
       sortBy: query.sortBy as SortOptions,
@@ -378,6 +399,7 @@ discoverRoutes.get('/tv', async (req, res, next) => {
         : undefined,
       originalLanguage: query.language,
       keywords,
+      excludeKeywords,
       withRuntimeGte: query.withRuntimeGte,
       withRuntimeLte: query.withRuntimeLte,
       voteAverageGte: query.voteAverageGte,
@@ -387,6 +409,10 @@ discoverRoutes.get('/tv', async (req, res, next) => {
       watchProviders: query.watchProviders,
       watchRegion: query.watchRegion,
       withStatus: query.status,
+      certification: query.certification,
+      certificationGte: query.certificationGte,
+      certificationLte: query.certificationLte,
+      certificationCountry: query.certificationCountry,
     });
 
     const media = await Media.getRelatedMedia(
@@ -398,10 +424,14 @@ discoverRoutes.get('/tv', async (req, res, next) => {
     if (keywords) {
       const splitKeywords = keywords.split(',');
 
-      keywordData = await Promise.all(
+      const keywordResults = await Promise.all(
         splitKeywords.map(async (keywordId) => {
           return await tmdb.getKeywordDetails({ keywordId: Number(keywordId) });
         })
+      );
+
+      keywordData = keywordResults.filter(
+        (keyword): keyword is TmdbKeyword => keyword !== null
       );
     }
 

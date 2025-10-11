@@ -32,7 +32,7 @@ The primary motivation for starting Jellyseerr was to bring Jellyfin and Emby su
 
 ## We need your help!
 
-[Jellyseerr](https://github.com/Fallenbagel/jellyseerr) is an ambitious project where developers/contributors poured a lot of work into, and that builds on top of [Overseerr](https://github.com/sct/overseerr). And we have a lot more to do as well.
+[Jellyseerr](https://github.com/fallenbagel/jellyseerr) is an ambitious project where developers/contributors poured a lot of work into, and that builds on top of [Overseerr](https://github.com/sct/overseerr). And we have a lot more to do as well.
 
 We value your feedback and support in identifying and fixing bugs to make Jellyseerr even better. As an open-source project, we welcome contributions from everyone. While Jellyseerr has diverged from Overseerr and evolved into its own unique application, we still encourage contributions to Overseerr, as it played a crucial role in inspiring what Jellyseerr has become today.
 

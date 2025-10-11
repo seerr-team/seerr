@@ -1,4 +1,5 @@
 import ExternalAPI from '@server/api/externalapi';
+import type { TvShowProvider } from '@server/api/provider';
 import cacheManager from '@server/lib/cache';
 import { getSettings } from '@server/lib/settings';
 import { sortBy } from 'lodash';
@@ -59,6 +60,16 @@ export const SortOptionsIterable = [
 
 export type SortOptions = (typeof SortOptionsIterable)[number];
 
+export interface TmdbCertificationResponse {
+  certifications: {
+    [country: string]: {
+      certification: string;
+      meaning?: string;
+      order?: number;
+    }[];
+  };
+}
+
 interface DiscoverMovieOptions {
   page?: number;
   includeAdult?: boolean;
@@ -75,9 +86,14 @@ interface DiscoverMovieOptions {
   genre?: string;
   studio?: string;
   keywords?: string;
+  excludeKeywords?: string;
   sortBy?: SortOptions;
   watchRegion?: string;
   watchProviders?: string;
+  certification?: string;
+  certificationGte?: string;
+  certificationLte?: string;
+  certificationCountry?: string;
 }
 
 interface DiscoverTvOptions {
@@ -96,13 +112,18 @@ interface DiscoverTvOptions {
   genre?: string;
   network?: number;
   keywords?: string;
+  excludeKeywords?: string;
   sortBy?: SortOptions;
   watchRegion?: string;
   watchProviders?: string;
   withStatus?: string; // Returning Series: 0 Planned: 1 In Production: 2 Ended: 3 Cancelled: 4 Pilot: 5
+  certification?: string;
+  certificationGte?: string;
+  certificationLte?: string;
+  certificationCountry?: string;
 }
 
-class TheMovieDb extends ExternalAPI {
+class TheMovieDb extends ExternalAPI implements TvShowProvider {
   private locale: string;
   private discoverRegion?: string;
   private originalLanguage?: string;
@@ -323,6 +344,13 @@ class TheMovieDb extends ExternalAPI {
         }
       );
 
+      data.episodes = data.episodes.map((episode) => {
+        if (episode.still_path) {
+          episode.still_path = `https://image.tmdb.org/t/p/original/${episode.still_path}`;
+        }
+        return episode;
+      });
+
       return data;
     } catch (e) {
       throw new Error(`[TMDB] Failed to fetch TV show details: ${e.message}`);
@@ -469,6 +497,7 @@ class TheMovieDb extends ExternalAPI {
     genre,
     studio,
     keywords,
+    excludeKeywords,
     withRuntimeGte,
     withRuntimeLte,
     voteAverageGte,
@@ -477,6 +506,10 @@ class TheMovieDb extends ExternalAPI {
     voteCountLte,
     watchProviders,
     watchRegion,
+    certification,
+    certificationGte,
+    certificationLte,
+    certificationCountry,
   }: DiscoverMovieOptions = {}): Promise<TmdbSearchMovieResponse> => {
     try {
       const defaultFutureDate = new Date(
@@ -515,6 +548,7 @@ class TheMovieDb extends ExternalAPI {
           with_genres: genre,
           with_companies: studio,
           with_keywords: keywords,
+          without_keywords: excludeKeywords,
           'with_runtime.gte': withRuntimeGte,
           'with_runtime.lte': withRuntimeLte,
           'vote_average.gte': voteAverageGte,
@@ -523,6 +557,10 @@ class TheMovieDb extends ExternalAPI {
           'vote_count.lte': voteCountLte,
           watch_region: watchRegion,
           with_watch_providers: watchProviders,
+          certification: certification,
+          'certification.gte': certificationGte,
+          'certification.lte': certificationLte,
+          certification_country: certificationCountry,
         },
       });
 
@@ -543,6 +581,7 @@ class TheMovieDb extends ExternalAPI {
     genre,
     network,
     keywords,
+    excludeKeywords,
     withRuntimeGte,
     withRuntimeLte,
     voteAverageGte,
@@ -552,6 +591,10 @@ class TheMovieDb extends ExternalAPI {
     watchProviders,
     watchRegion,
     withStatus,
+    certification,
+    certificationGte,
+    certificationLte,
+    certificationCountry,
   }: DiscoverTvOptions = {}): Promise<TmdbSearchTvResponse> => {
     try {
       const defaultFutureDate = new Date(
@@ -590,6 +633,7 @@ class TheMovieDb extends ExternalAPI {
           with_genres: genre,
           with_networks: network,
           with_keywords: keywords,
+          without_keywords: excludeKeywords,
           'with_runtime.gte': withRuntimeGte,
           'with_runtime.lte': withRuntimeLte,
           'vote_average.gte': voteAverageGte,
@@ -599,6 +643,10 @@ class TheMovieDb extends ExternalAPI {
           with_watch_providers: watchProviders,
           watch_region: watchRegion,
           with_status: withStatus,
+          certification: certification,
+          'certification.gte': certificationGte,
+          'certification.lte': certificationLte,
+          certification_country: certificationCountry,
         },
       });
 
@@ -987,11 +1035,40 @@ class TheMovieDb extends ExternalAPI {
     }
   }
 
+  public getMovieCertifications =
+    async (): Promise<TmdbCertificationResponse> => {
+      try {
+        const data = await this.get<TmdbCertificationResponse>(
+          '/certification/movie/list',
+          {},
+          604800 // 7 days
+        );
+
+        return data;
+      } catch (e) {
+        throw new Error(`[TMDB] Failed to fetch movie certifications: ${e}`);
+      }
+    };
+
+  public getTvCertifications = async (): Promise<TmdbCertificationResponse> => {
+    try {
+      const data = await this.get<TmdbCertificationResponse>(
+        '/certification/tv/list',
+        {},
+        604800 // 7 days
+      );
+
+      return data;
+    } catch (e) {
+      throw new Error(`[TMDB] Failed to fetch TV certifications: ${e.message}`);
+    }
+  };
+
   public async getKeywordDetails({
     keywordId,
   }: {
     keywordId: number;
-  }): Promise<TmdbKeyword> {
+  }): Promise<TmdbKeyword | null> {
     try {
       const data = await this.get<TmdbKeyword>(
         `/keyword/${keywordId}`,
@@ -1001,6 +1078,9 @@ class TheMovieDb extends ExternalAPI {
 
       return data;
     } catch (e) {
+      if (e.response?.status === 404) {
+        return null;
+      }
       throw new Error(`[TMDB] Failed to fetch keyword: ${e.message}`);
     }
   }

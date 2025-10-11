@@ -33,17 +33,23 @@ docker run -d \
   --name jellyseerr \
   -e LOG_LEVEL=debug \
   -e TZ=Asia/Tashkent \
-  -e PORT=5055 `#optional` \
+  -e PORT=5055 \
   -p 5055:5055 \
   -v /path/to/appdata/config:/app/config \
   --restart unless-stopped \
-  ghcr.io/fallenbagel/jellyseerr
+  fallenbagel/jellyseerr
 ```
-:::tip
-If you are using emby, make sure to set the `JELLYFIN_TYPE` environment variable to `emby`.
 
-`-e JELLYFIN_TYPE=emby`
-:::
+The argument `-e PORT=5055` is optional.
+
+If you want to add a healthcheck to the above command, you can add the following flags :
+```
+  --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1" \
+  --health-start-period 20s \
+  --health-timeout 3s \
+  --health-interval 15s \
+  --health-retries 3 \
+```
 
 To run the container as a specific user/group, you may optionally add `--user=[ user | user:group | uid | uid:gid | user:gid | uid:group ]` to the above command.
 
@@ -51,11 +57,11 @@ To run the container as a specific user/group, you may optionally add `--user=[ 
 
 Stop and remove the existing container:
 ```bash
-docker stop jellyseerr && docker rm Jellyseerr
+docker stop jellyseerr && docker rm jellyseerr
 ```
 Pull the latest image:
 ```bash
-docker pull ghcr.io/fallenbagel/jellyseerr
+docker pull fallenbagel/jellyseerr
 ```
 Finally, run the container with the same parameters originally used to create the container:
 ```bash
@@ -78,7 +84,7 @@ Define the `jellyseerr` service in your `compose.yaml` as follows:
 ---
 services:
   jellyseerr:
-    image: ghcr.io/fallenbagel/jellyseerr:latest
+    image: fallenbagel/jellyseerr:latest
     container_name: jellyseerr
     environment:
       - LOG_LEVEL=debug
@@ -88,11 +94,14 @@ services:
       - 5055:5055
     volumes:
       - /path/to/appdata/config:/app/config
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
     restart: unless-stopped
 ```
-:::tip
-If you are using emby, make sure to set the `JELLYFIN_TYPE` environment variable to `emby`.
-:::
 
 Then, start all services defined in the Compose file:
 ```bash
@@ -121,8 +130,7 @@ You may alternatively use a third-party mechanism like [dockge](https://github.c
 2. Inside the **Community Applications** app store, search for **Jellyseerr**.
 3. Click the **Install Button**.
 4. On the following **Add Container** screen, make changes to the **Host Port** and **Host Path 1** \(Appdata\) as needed.
-5. If you want to use emby, make sure to set the `JELLYFIN_TYPE` environment variable to `emby`. Otherwise, remove the variable.
-6. Click apply and access "Jellyseerr" at your `<ServerIP:HostPort>` in a web browser.
+5. Click apply and access "Jellyseerr" at your `<ServerIP:HostPort>` in a web browser.
 
 ## Windows
 
@@ -146,7 +154,26 @@ Then, create and start the Jellyseerr container:
 <Tabs groupId="docker-methods" queryString>
   <TabItem value="docker-cli" label="Docker CLI">
 ```bash
-docker run -d --name jellyseerr -e LOG_LEVEL=debug -e TZ=Asia/Tashkent -p 5055:5055 -v "jellyseerr-data:/app/config" --restart unless-stopped ghcr.io/fallenbagel/jellyseerr:latest
+docker run -d \
+  --name jellyseerr \
+  -e LOG_LEVEL=debug \
+  -e TZ=Asia/Tashkent \
+  -e PORT=5055 \
+  -p 5055:5055 \
+  -v jellyseerr-data:/app/config \
+  --restart unless-stopped \
+  fallenbagel/jellyseerr
+```
+
+The argument `-e PORT=5055` is optional.
+
+If you want to add a healthcheck to the above command, you can add the following flags :
+```
+  --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1" \
+  --health-start-period 20s \
+  --health-timeout 3s \
+  --health-interval 15s \
+  --health-retries 3 \
 ```
 
 #### Updating:
@@ -174,6 +201,12 @@ services:
       - 5055:5055
     volumes:
       - jellyseerr-data:/app/config
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
     restart: unless-stopped
 
 volumes:
@@ -192,12 +225,6 @@ docker compose up -d
 ```
   </TabItem>
 </Tabs>
-
-:::tip
-If you are using a named volume, then you can safely **ignore** the warning about the `/app/config` folder being incorrectly mounted.
-
-If you are using emby, make sure to set the `JELLYFIN_TYPE` environment variable to `emby`.
-:::
 
 To access the files inside the volume created above, navigate to `\\wsl$\docker-desktop-data\version-pack-data\community\docker\volumes\jellyseerr-data\_data` using File Explorer.
 

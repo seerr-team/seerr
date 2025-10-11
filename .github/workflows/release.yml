@@ -1,6 +1,16 @@
-name: Jellyseer Release
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Seerr Release
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   semantic-release:
@@ -8,129 +18,209 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       HUSKY: 0
+    outputs:
+      new_release_published: ${{ steps.release.outputs.new_release_published }}
+      new_release_version: ${{ steps.release.outputs.new_release_version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
+          persist-credentials: false
+
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
-          node-version: 22
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GH_TOKEN }}
+          node-version-file: package.json
+          package-manager-cache: false
+
       - name: Pnpm Setup
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+
       - name: Get pnpm store directory
         shell: sh
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
       - name: Setup pnpm cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ env.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
+
       - name: Install dependencies
         run: pnpm install
+
       - name: Release
+        id: release
+        uses: cycjimmy/semantic-release-action@9cc899c47e6841430bbaedb43de1560a568dfd16 # v5.0.0
+        with:
+          extra_plugins: |
+            @semantic-release/git@10
+            @semantic-release/changelog@6
+            @codedependant/semantic-release-docker@5
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: npx semantic-release
 
-  # build-snap:
-  #   name: Build Snap Package (${{ matrix.architecture }})
-  #   needs: semantic-release
-  #   runs-on: ubuntu-22.04
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       architecture:
-  #         - amd64
-  #         - arm64
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #     - name: Switch to main branch
-  #       run: git checkout main
-  #     - name: Pull latest changes
-  #       run: git pull
-  #     - name: Prepare
-  #       id: prepare
-  #       run: |
-  #         git fetch --prune --tags
-  #         if [[ $GITHUB_REF == refs/tags/* || $GITHUB_REF == refs/heads/master ]]; then
-  #           echo "RELEASE=stable" >> $GITHUB_OUTPUT
-  #         else
-  #           echo "RELEASE=edge" >> $GITHUB_OUTPUT
-  #         fi
-  #     - name: Set Up QEMU
-  #       uses: docker/setup-qemu-action@v3
-  #       with:
-  #         image: tonistiigi/binfmt@sha256:df15403e06a03c2f461c1f7938b171fda34a5849eb63a70e2a2109ed5a778bde
-  #     - name: Build Snap Package
-  #       uses: diddlesnaps/snapcraft-multiarch-action@v1
-  #       id: build
-  #       with:
-  #         architecture: ${{ matrix.architecture }}
-  #     - name: Upload Snap Package
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: jellyseerr-snap-package-${{ matrix.architecture }}
-  #         path: ${{ steps.build.outputs.snap }}
-  #     - name: Review Snap Package
-  #       uses: diddlesnaps/snapcraft-review-tools-action@v1
-  #       with:
-  #         snap: ${{ steps.build.outputs.snap }}
-  #     - name: Publish Snap Package
-  #       uses: snapcore/action-publish@v1
-  #       env:
-  #         SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAP_LOGIN }}
-  #       with:
-  #         snap: ${{ steps.build.outputs.snap }}
-  #         release: ${{ steps.prepare.outputs.RELEASE }}
+  build:
+    name: Build (per-arch, native runners)
+    needs: semantic-release
+    if: needs.semantic-release.outputs.new_release_published == 'true'
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux/amd64
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+
+      - name: Commit timestamp
+        id: ts
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+
+      - name: Warm cache (no push) — ${{ matrix.platform }}
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ matrix.platform }}
+          push: false
+          build-args: |
+            COMMIT_TAG=${{ github.sha }}
+            BUILD_VERSION=${{ needs.semantic-release.outputs.new_release_version }}
+            SOURCE_DATE_EPOCH=${{ steps.ts.outputs.TIMESTAMP }}
+          cache-from: type=gha,scope=${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
+          provenance: false
+
+  publish:
+    name: Publish multi-arch image
+    needs: [semantic-release, build]
+    if: needs.semantic-release.outputs.new_release_published == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+
+      - name: Commit timestamp
+        id: ts
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
+        with:
+          images: |
+            ${{ github.repository }}
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ needs.semantic-release.outputs.new_release_version }}
+          labels: |
+            org.opencontainers.image.created=${{ steps.ts.outputs.TIMESTAMP }}
+
+      - name: Build & Push (multi-arch, single tag)
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            COMMIT_TAG=${{ github.sha }}
+            BUILD_VERSION=${{ needs.semantic-release.outputs.new_release_version }}
+            SOURCE_DATE_EPOCH=${{ steps.ts.outputs.TIMESTAMP }}
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: |
+            type=gha,scope=linux/amd64
+            type=gha,scope=linux/arm64
+          cache-to: type=gha,mode=max
+          provenance: false
+
+      - name: Also tag :latest (non-pre-release only)
+        shell: bash
+        run: |
+          VER="${{ needs.semantic-release.outputs.new_release_version }}"
+          if [[ "$VER" != *"-"* ]]; then
+            docker buildx imagetools create \
+              -t ${{ github.repository }}:latest \
+              ${{ github.repository }}:${VER}
+            docker buildx imagetools create \
+              -t ghcr.io/${{ github.repository }}:latest \
+              ghcr.io/${{ github.repository }}:${VER}
+          fi
 
   discord:
     name: Send Discord Notification
-    needs: semantic-release
+    needs: publish
     if: always()
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - name: Get Build Job Status
-        uses: technote-space/workflow-conclusion-action@v3
-      - name: Combine Job Status
+      - name: Determine Workflow Status
         id: status
         run: |
-          failures=(neutral, skipped, timed_out, action_required)
-          if [[ ${array[@]} =~ $WORKFLOW_CONCLUSION ]]; then
-            echo "status=failure" >> $GITHUB_OUTPUT
-          else
-            echo "status=$WORKFLOW_CONCLUSION" >> $GITHUB_OUTPUT
-          fi
-      - name: Post Status to Discord
-        uses: sarisia/actions-status-discord@v1
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          status: ${{ steps.status.outputs.status }}
-          title: ${{ github.workflow }}
-          nofail: true
+          case "${{ needs.publish.result }}" in
+            success)   echo "status=Success"   >> $GITHUB_OUTPUT; echo "colour=3066993"  >> $GITHUB_OUTPUT ;;
+            failure)   echo "status=Failure"   >> $GITHUB_OUTPUT; echo "colour=15158332" >> $GITHUB_OUTPUT ;;
+            cancelled) echo "status=Cancelled" >> $GITHUB_OUTPUT; echo "colour=10181046" >> $GITHUB_OUTPUT ;;
+            *)         echo "status=Skipped"   >> $GITHUB_OUTPUT; echo "colour=9807270"  >> $GITHUB_OUTPUT ;;
+          esac
+
+      - name: Send Discord notification
+        shell: bash
+        run: |
+          WEBHOOK="${{ secrets.DISCORD_WEBHOOK }}"
+
+          PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "${{ steps.status.outputs.status }}: ${{ github.workflow }}",
+              "color": ${{ steps.status.outputs.colour }},
+              "fields": [
+                { "name": "Repository",   "value": "[${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})", "inline": true },
+                { "name": "Ref",          "value": "${{ github.ref }}", "inline": true },
+                { "name": "Event",        "value": "${{ github.event_name }}", "inline": true },
+                { "name": "Triggered by", "value": "${{ github.actor }}", "inline": true },
+                { "name": "Workflow",     "value": "[${{ github.workflow }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})", "inline": true }
+              ],
+            }]
+          }
+          EOF
+          )
+
+          curl -sS -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK" || true

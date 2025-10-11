@@ -1,8 +1,14 @@
 import type { ProxySettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import axios from 'axios';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
+import { HttpProxyAgent } from 'http-proxy-agent';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import type { Dispatcher } from 'undici';
 import { Agent, ProxyAgent, setGlobalDispatcher } from 'undici';
+
+export let requestInterceptorFunction: (
+  config: InternalAxiosRequestConfig
+) => InternalAxiosRequestConfig;
 
 export default async function createCustomProxyAgent(
   proxySettings: ProxySettings
@@ -54,17 +60,35 @@ export default async function createCustomProxyAgent(
       : undefined;
 
   try {
+    const proxyUrl = `${proxySettings.useSsl ? 'https' : 'http'}://${
+      proxySettings.hostname
+    }:${proxySettings.port}`;
     const proxyAgent = new ProxyAgent({
-      uri:
-        (proxySettings.useSsl ? 'https://' : 'http://') +
-        proxySettings.hostname +
-        ':' +
-        proxySettings.port,
+      uri: proxyUrl,
       token,
       keepAliveTimeout: 5000,
     });
 
     setGlobalDispatcher(proxyAgent.compose(noProxyInterceptor));
+
+    axios.defaults.httpAgent = new HttpProxyAgent(proxyUrl, {
+      headers: token ? { 'proxy-authorization': token } : undefined,
+    });
+    axios.defaults.httpsAgent = new HttpsProxyAgent(proxyUrl, {
+      headers: token ? { 'proxy-authorization': token } : undefined,
+    });
+
+    requestInterceptorFunction = (config) => {
+      const url = config.baseURL
+        ? new URL(config.baseURL + (config.url || ''))
+        : config.url;
+      if (url && skipUrl(url)) {
+        config.httpAgent = false;
+        config.httpsAgent = false;
+      }
+      return config;
+    };
+    axios.interceptors.request.use(requestInterceptorFunction);
   } catch (e) {
     logger.error('Failed to connect to the proxy: ' + e.message, {
       label: 'Proxy',

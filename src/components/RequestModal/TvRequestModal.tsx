@@ -120,7 +120,7 @@ const TvRequestModal = ({
           languageProfileId: requestOverrides?.language,
           userId: requestOverrides?.user?.id,
           tags: requestOverrides?.tags,
-          seasons: selectedSeasons,
+          seasons: selectedSeasons.sort((a, b) => a - b),
         });
 
         if (alsoApproveRequest) {
@@ -202,7 +202,8 @@ const TvRequestModal = ({
         seasons: settings.currentSettings.partialRequestsEnabled
           ? selectedSeasons.sort((a, b) => a - b)
           : getAllSeasons().filter(
-              (season) => !getAllRequestedSeasons().includes(season)
+              (season) =>
+                !getAllRequestedSeasons().includes(season) && season !== 0
             ),
         ...overrideParams,
       });
@@ -302,8 +303,10 @@ const TvRequestModal = ({
     }
   };
 
-  const unrequestedSeasons = getAllSeasons().filter(
-    (season) => !getAllRequestedSeasons().includes(season)
+  const unrequestedSeasons = getAllSeasons().filter((season) =>
+    !settings.currentSettings.partialRequestsEnabled
+      ? !getAllRequestedSeasons().includes(season) && season !== 0
+      : !getAllRequestedSeasons().includes(season)
   );
 
   const toggleAllSeasons = (): void => {
@@ -575,7 +578,11 @@ const TvRequestModal = ({
                       (season) =>
                         (!settings.currentSettings.enableSpecialEpisodes
                           ? season.seasonNumber !== 0
-                          : true) && season.episodeCount !== 0
+                          : true) &&
+                        (!settings.currentSettings.partialRequestsEnabled
+                          ? season.episodeCount !== 0 &&
+                            season.seasonNumber !== 0
+                          : season.episodeCount !== 0)
                     )
                     .map((season) => {
                       const seasonRequest = getSeasonRequest(

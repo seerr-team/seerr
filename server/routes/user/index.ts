@@ -240,8 +240,8 @@ router.get<{ userId: number }>(
   }
 );
 
-router.get<{ userId: number; key: string }>(
-  '/:userId/pushSubscription/:key',
+router.get<{ userId: number; endpoint: string }>(
+  '/:userId/pushSubscription/:endpoint',
   async (req, res, next) => {
     try {
       const userPushSubRepository = getRepository(UserPushSubscription);
@@ -252,7 +252,7 @@ router.get<{ userId: number; key: string }>(
         },
         where: {
           user: { id: req.params.userId },
-          p256dh: req.params.key,
+          endpoint: req.params.endpoint,
         },
       });
 
@@ -263,8 +263,8 @@ router.get<{ userId: number; key: string }>(
   }
 );
 
-router.delete<{ userId: number; key: string }>(
-  '/:userId/pushSubscription/:key',
+router.delete<{ userId: number; endpoint: string }>(
+  '/:userId/pushSubscription/:endpoint',
   async (req, res, next) => {
     try {
       const userPushSubRepository = getRepository(UserPushSubscription);
@@ -275,7 +275,7 @@ router.delete<{ userId: number; key: string }>(
         },
         where: {
           user: { id: req.params.userId },
-          p256dh: req.params.key,
+          endpoint: req.params.endpoint,
         },
       });
 
@@ -284,7 +284,7 @@ router.delete<{ userId: number; key: string }>(
     } catch (e) {
       logger.error('Something went wrong deleting the user push subcription', {
         label: 'API',
-        key: req.params.key,
+        endpoint: req.params.endpoint,
         errorMessage: e.message,
       });
       return next({
@@ -633,7 +633,7 @@ router.post(
             jellyfinUsername: jellyfinUser?.Name,
             jellyfinUserId: jellyfinUser?.Id,
             jellyfinDeviceId: Buffer.from(
-              `BOT_jellyseerr_${jellyfinUser?.Name ?? ''}`
+              `BOT_seerr_${jellyfinUser?.Name ?? ''}`
             ).toString('base64'),
             email: jellyfinUser?.Name,
             permissions: settings.main.defaultPermissions,

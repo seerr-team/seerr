@@ -1,9 +1,14 @@
-FROM node:22-alpine AS BUILD_IMAGE
+FROM node:22.20.0-alpine3.22@sha256:cb3143549582cc5f74f26f0992cdef4a422b22128cb517f94173a5f910fa4ee7 AS build_image
 
-WORKDIR /app
-
+ARG SOURCE_DATE_EPOCH
 ARG TARGETPLATFORM
+ARG COMMIT_TAG
 ENV TARGETPLATFORM=${TARGETPLATFORM:-linux/amd64}
+ENV COMMIT_TAG=${COMMIT_TAG}
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
 RUN \
   case "${TARGETPLATFORM}" in \
@@ -14,50 +19,32 @@ RUN \
   ;; \
   esac
 
-RUN npm install --global pnpm@9
+WORKDIR /app
 
 COPY package.json pnpm-lock.yaml postinstall-win.js ./
 RUN CYPRESS_INSTALL_BINARY=0 pnpm install --frozen-lockfile
 
 COPY . ./
-
-ARG COMMIT_TAG
-ENV COMMIT_TAG=${COMMIT_TAG}
-
 RUN pnpm build
 
 # remove development dependencies
-RUN pnpm prune --prod --ignore-scripts
+RUN pnpm prune --prod --ignore-scripts && \
+  rm -rf src server .next/cache charts gen-docs docs && \
+  touch config/DOCKER && \
+  echo "{\"commitTag\": \"${COMMIT_TAG}\"}" > committag.json
 
-RUN rm -rf src server .next/cache charts gen-docs docs
+FROM node:22.20.0-alpine3.22@sha256:cb3143549582cc5f74f26f0992cdef4a422b22128cb517f94173a5f910fa4ee7
 
-RUN touch config/DOCKER
-
-RUN echo "{\"commitTag\": \"${COMMIT_TAG}\"}" > committag.json
-
-
-FROM node:22-alpine
-
-# OCI Meta information
-ARG BUILD_DATE
-ARG BUILD_VERSION
-LABEL \
-  org.opencontainers.image.authors="Fallenbagel" \
-  org.opencontainers.image.source="https://github.com/fallenbagel/jellyseerr" \
-  org.opencontainers.image.created=${BUILD_DATE} \
-  org.opencontainers.image.version=${BUILD_VERSION} \
-  org.opencontainers.image.title="Jellyseerr" \
-  org.opencontainers.image.description="Open-source media request and discovery manager for Jellyfin, Plex, and Emby." \
-  org.opencontainers.image.licenses="MIT"
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
 WORKDIR /app
 
 RUN apk add --no-cache tzdata tini && rm -rf /tmp/*
 
-RUN npm install -g pnpm@9
-
 # copy from build image
-COPY --from=BUILD_IMAGE /app ./
+COPY --from=build_image /app ./
 
 ENTRYPOINT [ "/sbin/tini", "--" ]
 CMD [ "pnpm", "start" ]

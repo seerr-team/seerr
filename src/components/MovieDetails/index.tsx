@@ -99,7 +99,7 @@ const messages = defineMessages('components.MovieDetails', {
   rtcriticsscore: 'Rotten Tomatoes Tomatometer',
   rtaudiencescore: 'Rotten Tomatoes Audience Score',
   tmdbuserscore: 'TMDB User Score',
-  imdbuserscore: 'IMDB User Score',
+  imdbuserscore: 'IMDB User Score – votes: {formattedCount}',
   watchlistSuccess: '<strong>{title}</strong> added to watchlist successfully!',
   watchlistDeleted:
     '<strong>{title}</strong> Removed from watchlist successfully!',
@@ -210,10 +210,16 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
       svg: <PlayIcon />,
     });
   }
-  const trailerUrl = data.relatedVideos
+
+  const trailerVideo = data.relatedVideos
     ?.filter((r) => r.type === 'Trailer')
     .sort((a, b) => a.size - b.size)
-    .pop()?.url;
+    .pop();
+  const trailerUrl =
+    trailerVideo?.site === 'YouTube' &&
+    settings.currentSettings.youtubeUrl != ''
+      ? `${settings.currentSettings.youtubeUrl}${trailerVideo?.key}`
+      : trailerVideo?.url;
 
   if (trailerUrl) {
     mediaLinks.push({
@@ -806,7 +812,18 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                     </Tooltip>
                   )}
                 {ratingData?.imdb?.criticsScore && (
-                  <Tooltip content={intl.formatMessage(messages.imdbuserscore)}>
+                  <Tooltip
+                    content={intl.formatMessage(messages.imdbuserscore, {
+                      formattedCount: intl.formatNumber(
+                        ratingData.imdb.criticsScoreCount,
+                        {
+                          notation: 'compact',
+                          compactDisplay: 'short',
+                          maximumFractionDigits: 1,
+                        }
+                      ),
+                    })}
+                  >
                     <a
                       href={ratingData.imdb.url}
                       className="media-rating"
