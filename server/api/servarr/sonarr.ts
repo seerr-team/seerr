@@ -257,7 +257,7 @@ class SonarrAPI extends ServarrBase<{
           series: createdSeriesResponse.data,
         });
       } else {
-        logger.error('Failed to add movie to Sonarr', {
+        logger.error('Failed to add series to Sonarr', {
           label: 'Sonarr',
           options,
         });
@@ -342,7 +342,7 @@ class SonarrAPI extends ServarrBase<{
 
     return newSeasons;
   }
-  public removeSerie = async (serieId: number): Promise<void> => {
+  public removeSeries = async (serieId: number): Promise<void> => {
     try {
       const { id, title } = await this.getSeriesByTvdbId(serieId);
       await this.axios.delete(`/series/${id}`, {
@@ -351,9 +351,9 @@ class SonarrAPI extends ServarrBase<{
           addImportExclusion: false,
         },
       });
-      logger.info(`[Radarr] Removed serie ${title}`);
+      logger.info(`[Sonarr] Removed series ${title}`);
     } catch (e) {
-      throw new Error(`[Radarr] Failed to remove serie: ${e.message}`);
+      throw new Error(`[Sonarr] Failed to remove series: ${e.message}`);
     }
   };
 
