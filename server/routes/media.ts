@@ -271,7 +271,7 @@ mediaRoutes.delete(
         if (!tvdbId) {
           throw new Error('TVDB ID not found');
         }
-        await (service as SonarrAPI).removeSerie(tvdbId);
+        await (service as SonarrAPI).removeSeries(tvdbId);
       }
 
       return res.status(204).send();
