@@ -43,16 +43,16 @@ import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 
-const API_SPEC_PATH = path.join(__dirname, '../jellyseerr-api.yml');
+const API_SPEC_PATH = path.join(__dirname, '../seerr-api.yml');
 
-logger.info(`Starting Jellyseerr version ${getAppVersion()}`);
+logger.info(`Starting Seerr version ${getAppVersion()}`);
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
 if (!appDataPermissions()) {
   logger.error(
-    'Something went wrong while checking config folder! Please ensure the config folder is set up properly.\nhttps://docs.jellyseerr.dev/getting-started'
+    'Something went wrong while checking config folder! Please ensure the config folder is set up properly.\nhttps://docs.seerr.dev/getting-started'
   );
 }
 
@@ -82,7 +82,7 @@ app
     }
 
     // Add DNS caching
-    if (settings.network.dnsCache) {
+    if (settings.network.dnsCache?.enabled) {
       initializeDnsCache({
         forceMinTtl: settings.network.dnsCache.forceMinTtl,
         forceMaxTtl: settings.network.dnsCache.forceMaxTtl,

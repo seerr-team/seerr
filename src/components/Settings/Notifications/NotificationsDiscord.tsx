@@ -15,6 +15,7 @@ import * as Yup from 'yup';
 
 const messages = defineMessages('components.Settings.Notifications', {
   agentenabled: 'Enable Agent',
+  embedPoster: 'Embed Poster',
   botUsername: 'Bot Username',
   botAvatarUrl: 'Bot Avatar URL',
   webhookUrl: 'Webhook URL',
@@ -74,6 +75,7 @@ const NotificationsDiscord = () => {
     <Formik
       initialValues={{
         enabled: data.enabled,
+        embedPoster: data.embedPoster,
         types: data.types,
         botUsername: data?.options.botUsername,
         botAvatarUrl: data?.options.botAvatarUrl,
@@ -86,6 +88,7 @@ const NotificationsDiscord = () => {
         try {
           await axios.post('/api/v1/settings/notifications/discord', {
             enabled: values.enabled,
+            embedPoster: values.embedPoster,
             types: values.types,
             options: {
               botUsername: values.botUsername,
@@ -135,6 +138,7 @@ const NotificationsDiscord = () => {
             );
             await axios.post('/api/v1/settings/notifications/discord/test', {
               enabled: true,
+              embedPoster: values.embedPoster,
               types: values.types,
               options: {
                 botUsername: values.botUsername,
@@ -174,6 +178,14 @@ const NotificationsDiscord = () => {
               </label>
               <div className="form-input-area">
                 <Field type="checkbox" id="enabled" name="enabled" />
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="embedPoster" className="checkbox-label">
+                {intl.formatMessage(messages.embedPoster)}
+              </label>
+              <div className="form-input-area">
+                <Field type="checkbox" id="embedPoster" name="embedPoster" />
               </div>
             </div>
             <div className="form-row">

@@ -1,7 +1,13 @@
 import animeList from '@server/api/animelist';
+import { getMetadataProvider } from '@server/api/metadata';
 import type { PlexLibraryItem, PlexMetadata } from '@server/api/plexapi';
 import PlexAPI from '@server/api/plexapi';
-import type { TmdbTvDetails } from '@server/api/themoviedb/interfaces';
+import TheMovieDb from '@server/api/themoviedb';
+import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
+import type {
+  TmdbKeyword,
+  TmdbTvDetails,
+} from '@server/api/themoviedb/interfaces';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import cacheManager from '@server/lib/cache';
@@ -249,6 +255,42 @@ class PlexScanner
     });
   }
 
+  private async getTvShow({
+    tmdbId,
+    tvdbId,
+  }: {
+    tmdbId?: number;
+    tvdbId?: number;
+  }): Promise<TmdbTvDetails> {
+    let tvShow;
+
+    if (tmdbId) {
+      tvShow = await this.tmdb.getTvShow({
+        tvId: Number(tmdbId),
+      });
+    } else if (tvdbId) {
+      tvShow = await this.tmdb.getShowByTvdbId({
+        tvdbId: Number(tvdbId),
+      });
+    } else {
+      throw new Error('No ID provided');
+    }
+
+    const metadataProvider = tvShow.keywords.results.some(
+      (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
+    )
+      ? await getMetadataProvider('anime')
+      : await getMetadataProvider('tv');
+
+    if (!(metadataProvider instanceof TheMovieDb)) {
+      tvShow = await metadataProvider.getTvShow({
+        tvId: Number(tmdbId),
+      });
+    }
+
+    return tvShow;
+  }
+
   private async processPlexShow(plexitem: PlexLibraryItem) {
     const ratingKey =
       plexitem.grandparentRatingKey ??
@@ -273,7 +315,9 @@ class PlexScanner
       await this.processHamaSpecials(metadata, mediaIds.tvdbId);
     }
 
-    const tvShow = await this.tmdb.getTvShow({ tvId: mediaIds.tmdbId });
+    const tvShow = await this.getTvShow({
+      tmdbId: mediaIds.tmdbId,
+    });
 
     const seasons = tvShow.seasons;
     const processableSeasons: ProcessableSeason[] = [];

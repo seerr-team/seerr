@@ -1,4 +1,5 @@
 import ExternalAPI from '@server/api/externalapi';
+import type { TvShowProvider } from '@server/api/provider';
 import cacheManager from '@server/lib/cache';
 import { getSettings } from '@server/lib/settings';
 import { sortBy } from 'lodash';
@@ -85,6 +86,7 @@ interface DiscoverMovieOptions {
   genre?: string;
   studio?: string;
   keywords?: string;
+  excludeKeywords?: string;
   sortBy?: SortOptions;
   watchRegion?: string;
   watchProviders?: string;
@@ -110,6 +112,7 @@ interface DiscoverTvOptions {
   genre?: string;
   network?: number;
   keywords?: string;
+  excludeKeywords?: string;
   sortBy?: SortOptions;
   watchRegion?: string;
   watchProviders?: string;
@@ -120,7 +123,7 @@ interface DiscoverTvOptions {
   certificationCountry?: string;
 }
 
-class TheMovieDb extends ExternalAPI {
+class TheMovieDb extends ExternalAPI implements TvShowProvider {
   private locale: string;
   private discoverRegion?: string;
   private originalLanguage?: string;
@@ -341,6 +344,13 @@ class TheMovieDb extends ExternalAPI {
         }
       );
 
+      data.episodes = data.episodes.map((episode) => {
+        if (episode.still_path) {
+          episode.still_path = `https://image.tmdb.org/t/p/original/${episode.still_path}`;
+        }
+        return episode;
+      });
+
       return data;
     } catch (e) {
       throw new Error(`[TMDB] Failed to fetch TV show details: ${e.message}`);
@@ -487,6 +497,7 @@ class TheMovieDb extends ExternalAPI {
     genre,
     studio,
     keywords,
+    excludeKeywords,
     withRuntimeGte,
     withRuntimeLte,
     voteAverageGte,
@@ -537,6 +548,7 @@ class TheMovieDb extends ExternalAPI {
           with_genres: genre,
           with_companies: studio,
           with_keywords: keywords,
+          without_keywords: excludeKeywords,
           'with_runtime.gte': withRuntimeGte,
           'with_runtime.lte': withRuntimeLte,
           'vote_average.gte': voteAverageGte,
@@ -569,6 +581,7 @@ class TheMovieDb extends ExternalAPI {
     genre,
     network,
     keywords,
+    excludeKeywords,
     withRuntimeGte,
     withRuntimeLte,
     voteAverageGte,
@@ -620,6 +633,7 @@ class TheMovieDb extends ExternalAPI {
           with_genres: genre,
           with_networks: network,
           with_keywords: keywords,
+          without_keywords: excludeKeywords,
           'with_runtime.gte': withRuntimeGte,
           'with_runtime.lte': withRuntimeLte,
           'vote_average.gte': voteAverageGte,

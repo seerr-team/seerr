@@ -377,6 +377,7 @@ mediaRoutes.delete(
             },
           });
         }
+        await (service as SonarrAPI).removeSeries(tvdbId);
       }
 
       return res.status(204).send();

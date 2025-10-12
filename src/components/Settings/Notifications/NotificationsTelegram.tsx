@@ -15,12 +15,12 @@ import * as Yup from 'yup';
 
 const messages = defineMessages('components.Settings.Notifications', {
   agentenabled: 'Enable Agent',
+  embedPoster: 'Embed Poster',
   botUsername: 'Bot Username',
   botUsernameTip:
     'Allow users to also start a chat with your bot and configure their own notifications',
   botAPI: 'Bot Authorization Token',
-  botApiTip:
-    '<CreateBotLink>Create a bot</CreateBotLink> for use with Jellyseerr',
+  botApiTip: '<CreateBotLink>Create a bot</CreateBotLink> for use with Seerr',
   chatId: 'Chat ID',
   chatIdTip:
     'Start a chat with your bot, add <GetIdBotLink>@get_id_bot</GetIdBotLink>, and issue the <code>/my_id</code> command',
@@ -89,6 +89,7 @@ const NotificationsTelegram = () => {
     <Formik
       initialValues={{
         enabled: data?.enabled,
+        embedPoster: data?.embedPoster,
         types: data?.types,
         botUsername: data?.options.botUsername,
         botAPI: data?.options.botAPI,
@@ -101,6 +102,7 @@ const NotificationsTelegram = () => {
         try {
           await axios.post('/api/v1/settings/notifications/telegram', {
             enabled: values.enabled,
+            embedPoster: values.embedPoster,
             types: values.types,
             options: {
               botAPI: values.botAPI,
@@ -189,6 +191,14 @@ const NotificationsTelegram = () => {
               </label>
               <div className="form-input-area">
                 <Field type="checkbox" id="enabled" name="enabled" />
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="embedPoster" className="checkbox-label">
+                {intl.formatMessage(messages.embedPoster)}
+              </label>
+              <div className="form-input-area">
+                <Field type="checkbox" id="embedPoster" name="embedPoster" />
               </div>
             </div>
             <div className="form-row">

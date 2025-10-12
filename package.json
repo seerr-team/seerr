@@ -1,11 +1,12 @@
 {
-  "name": "jellyseerr",
+  "name": "seerr",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.17.1",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "postinstall": "node postinstall-win.js",
-    "dev": "nodemon -e ts --watch server --watch jellyseerr-api.yml -e .json,.ts,.yml -x ts-node -r tsconfig-paths/register --files --project server/tsconfig.json server/index.ts",
+    "dev": "nodemon -e ts --watch server --watch seerr-api.yml -e .json,.ts,.yml -x ts-node -r tsconfig-paths/register --files --project server/tsconfig.json server/index.ts",
     "build:server": "tsc --project server/tsconfig.json && copyfiles -u 2 server/templates/**/*.{html,pug} dist/templates && tsc-alias -p server/tsconfig.json",
     "build:next": "next build",
     "build": "pnpm build:next && pnpm build:server",
@@ -28,7 +29,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/fallenbagel/jellyseerr.git"
+    "url": "https://github.com/seerr-team/seerr.git"
   },
   "license": "MIT",
   "dependencies": {
@@ -57,7 +58,7 @@
     "cronstrue": "2.23.0",
     "date-fns": "2.29.3",
     "dayjs": "1.11.7",
-    "dns-caching": "^0.2.5",
+    "dns-caching": "^0.2.7",
     "email-templates": "12.0.1",
     "email-validator": "2.0.4",
     "express": "4.21.2",
@@ -116,11 +117,8 @@
     "zod": "3.24.2"
   },
   "devDependencies": {
-    "@codedependant/semantic-release-docker": "^5.1.0",
     "@commitlint/cli": "17.4.4",
     "@commitlint/config-conventional": "17.4.4",
-    "@semantic-release/changelog": "6.0.3",
-    "@semantic-release/git": "10.0.1",
     "@tailwindcss/aspect-ratio": "0.4.2",
     "@tailwindcss/forms": "0.5.10",
     "@tailwindcss/typography": "0.5.16",
@@ -170,7 +168,6 @@
     "prettier": "2.8.4",
     "prettier-plugin-organize-imports": "3.2.2",
     "prettier-plugin-tailwindcss": "0.2.3",
-    "semantic-release": "24.2.7",
     "tailwindcss": "3.2.7",
     "ts-node": "10.9.1",
     "tsc-alias": "1.8.2",
@@ -179,7 +176,7 @@
   },
   "engines": {
     "node": "^22.0.0",
-    "pnpm": "^9.0.0"
+    "pnpm": "^10.0.0"
   },
   "overrides": {
     "sqlite3/node-gyp": "8.4.1",
@@ -208,28 +205,12 @@
     "plugins": [
       "@semantic-release/commit-analyzer",
       "@semantic-release/release-notes-generator",
-      [
-        "@semantic-release/changelog",
-        {
-          "changelogFile": "CHANGELOG.md"
-        }
-      ],
       "@semantic-release/npm",
-      [
-        "@semantic-release/git",
-        {
-          "assets": [
-            "package.json",
-            "CHANGELOG.md"
-          ],
-          "message": "chore(release): ${nextRelease.version}"
-        }
-      ],
       [
         "@codedependant/semantic-release-docker",
         {
           "dockerArgs": {
-            "COMMIT_TAG": "$GIT_SHA"
+            "COMMIT_TAG": "${GITHUB_SHA}"
           },
           "dockerLogin": false,
           "dockerProject": "fallenbagel",
@@ -250,7 +231,7 @@
         "@codedependant/semantic-release-docker",
         {
           "dockerArgs": {
-            "COMMIT_TAG": "$GIT_SHA"
+            "COMMIT_TAG": "${GITHUB_SHA}"
           },
           "dockerLogin": false,
           "dockerRegistry": "ghcr.io",
@@ -282,6 +263,12 @@
     "publish": [
       "@codedependant/semantic-release-docker",
       "@semantic-release/github"
+    ]
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sqlite3",
+      "bcrypt"
     ]
   }
 }
