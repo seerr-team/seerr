@@ -134,11 +134,23 @@ const NotificationsWebhook = () => {
         otherwise: Yup.string().nullable(),
       })
       .test(
-        'validate-json',
+        'validate-json-or-template',
         intl.formatMessage(messages.validationJsonPayloadRequired),
         (value) => {
+          if (!value) return false;
+
+          // Check if the payload contains Handlebars template syntax
+          const hasHandlebarsContent = /\{\{[^}]+\}\}/.test(value);
+
+          if (hasHandlebarsContent) {
+            // For templates with Handlebars syntax, just check if it's not empty
+            // Backend will validate Handlebars syntax and provide error logs
+            return value.trim().length > 0;
+          }
+
+          // For non-template payloads, validate as strict JSON
           try {
-            JSON.parse(value ?? '');
+            JSON.parse(value);
             return true;
           } catch (e) {
             return false;
