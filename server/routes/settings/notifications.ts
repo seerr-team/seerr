@@ -300,8 +300,6 @@ notificationRoutes.get('/webhook', (_req, res) => {
 notificationRoutes.post('/webhook', async (req, res, next) => {
   const settings = getSettings();
   try {
-    JSON.parse(req.body.options.jsonPayload);
-
     settings.notifications.agents.webhook = {
       enabled: req.body.enabled,
       embedPoster: req.body.embedPoster,
@@ -333,8 +331,6 @@ notificationRoutes.post('/webhook/test', async (req, res, next) => {
   }
 
   try {
-    JSON.parse(req.body.options.jsonPayload);
-
     const testBody = {
       enabled: req.body.enabled,
       embedPoster: req.body.embedPoster,
