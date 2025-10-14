@@ -4,7 +4,7 @@ description: Install Seerr using Nix
 sidebar_position: 3
 ---
 
-import { JellyseerrVersion, NixpkgVersion } from '@site/src/components/JellyseerrVersion';
+import { SeerrVersion, NixpkgVersion } from '@site/src/components/SeerrVersion';
 import Admonition from '@theme/Admonition';
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -15,10 +15,10 @@ This method is not recommended for most users. It is intended for advanced users
 :::
 
 export const VersionMismatchWarning = () => {
-  let jellyseerrVersion = null;
+  let seerrVersion = null;
   let nixpkgVersions = null;
   try {
-    jellyseerrVersion = JellyseerrVersion();
+    seerrVersion = SeerrVersion();
     nixpkgVersions = NixpkgVersion();
   } catch (err) {
     return (
@@ -36,8 +36,8 @@ export const VersionMismatchWarning = () => {
     );
   }
 
-  const isUnstableUpToDate = jellyseerrVersion === nixpkgVersions.unstable;
-  const isStableUpToDate = jellyseerrVersion === nixpkgVersions.stable;
+  const isUnstableUpToDate = seerrVersion === nixpkgVersions.unstable;
+  const isStableUpToDate = seerrVersion === nixpkgVersions.stable;
 
   return (
      <>
@@ -47,7 +47,7 @@ export const VersionMismatchWarning = () => {
     <a href="https://github.com/NixOS/nixpkgs/blob/nixos-24.11/pkgs/servers/jellyseerr/default.nix#L14">
       upstream Jellyseerr Nix Package (v{nixpkgVersions.stable})
     </a>{' '}
-    is not <b>up-to-date</b>. If you want to use <b>Jellyseerr v{jellyseerrVersion}</b>,{' '}
+    is not <b>up-to-date</b>. If you want to use <b>Jellyseerr v{seerrVersion}</b>,{' '}
     {isUnstableUpToDate ? (
       <>
         consider using the{' '}
