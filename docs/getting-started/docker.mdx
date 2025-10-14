@@ -38,7 +38,7 @@ docker run -d \
   -p 5055:5055 \
   -v /path/to/appdata/config:/app/config \
   --restart unless-stopped \
-  fallenbagel/jellyseerr
+  ghcr.io/fallenbagel/jellyseerr:latest
 ```
 
 The argument `-e PORT=5055` is optional.
@@ -62,7 +62,7 @@ docker stop jellyseerr && docker rm jellyseerr
 ```
 Pull the latest image:
 ```bash
-docker pull fallenbagel/jellyseerr
+docker pull ghcr.io/fallenbagel/jellyseerr:latest
 ```
 Finally, run the container with the same parameters originally used to create the container:
 ```bash
@@ -85,7 +85,7 @@ Define the `jellyseerr` service in your `compose.yaml` as follows:
 ---
 services:
   jellyseerr:
-    image: fallenbagel/jellyseerr:latest
+    image: ghcr.io/fallenbagel/jellyseerr:latest
     init: true
     container_name: jellyseerr
     environment:
@@ -165,7 +165,7 @@ docker run -d \
   -p 5055:5055 \
   -v jellyseerr-data:/app/config \
   --restart unless-stopped \
-  fallenbagel/jellyseerr
+  ghcr.io/fallenbagel/jellyseerr:latest
 ```
 
 The argument `-e PORT=5055` is optional.
@@ -195,7 +195,7 @@ docker compose up -d
 ---
 services:
   jellyseerr:
-    image: fallenbagel/jellyseerr:latest
+    image: ghcr.io/fallenbagel/jellyseerr:latest
     init: true
     container_name: jellyseerr
     environment:
