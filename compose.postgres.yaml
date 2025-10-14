@@ -23,7 +23,7 @@ services:
     links:
       - postgres
   postgres:
-    image: postgres
+    image: postgres:18
     environment:
       POSTGRES_USER: jellyseerr
       POSTGRES_PASSWORD: jellyseerr
@@ -31,6 +31,6 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - postgres:/var/lib/postgresql/data
+      - postgres:var/lib/postgresql/18/docker
 volumes:
   postgres:
