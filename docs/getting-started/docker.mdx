@@ -31,6 +31,7 @@ For details on the Docker CLI, please [review the official `docker run` document
 ```bash
 docker run -d \
   --name jellyseerr \
+  --init \
   -e LOG_LEVEL=debug \
   -e TZ=Asia/Tashkent \
   -e PORT=5055 \
@@ -85,6 +86,7 @@ Define the `jellyseerr` service in your `compose.yaml` as follows:
 services:
   jellyseerr:
     image: fallenbagel/jellyseerr:latest
+    init: true
     container_name: jellyseerr
     environment:
       - LOG_LEVEL=debug
@@ -156,6 +158,7 @@ Then, create and start the Jellyseerr container:
 ```bash
 docker run -d \
   --name jellyseerr \
+  --init \
   -e LOG_LEVEL=debug \
   -e TZ=Asia/Tashkent \
   -e PORT=5055 \
@@ -193,6 +196,7 @@ docker compose up -d
 services:
   jellyseerr:
     image: fallenbagel/jellyseerr:latest
+    init: true
     container_name: jellyseerr
     environment:
       - LOG_LEVEL=debug

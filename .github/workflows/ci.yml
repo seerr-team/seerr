@@ -48,7 +48,7 @@ jobs:
 
       - name: Install dependencies
         env:
-          HUSKY: 0
+          CI: true
         run: pnpm install
 
       - name: Lint
