@@ -277,6 +277,7 @@ Add the following Location block to your existing Server configuration.
       bind 0.0.0.0:443 ssl crt /etc/ssl/private/seerr.example.com.pem
       mode http
       log global
+      option httplog
       option http-keep-alive
       http-request set-header X-Real-IP %[src]
       option forwardfor
@@ -287,11 +288,11 @@ Add the following Location block to your existing Server configuration.
     backend seerr-backend
       mode http
       log global
-      http-response set-header Strict-Transport-Security max-age=15552000;
-      http-check send meth OPTIONS uri /api/v2/status
+      option httplog
+      http-response set-header Strict-Transport-Security max-age=15552000
+      option httpchk GET /api/v1/status
       timeout connect 30000
       timeout server 30000
       retries 3
-      option httpchk
       server seerr 127.0.0.1:5055 check inter 1000
     ```
