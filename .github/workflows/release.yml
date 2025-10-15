@@ -174,7 +174,7 @@ jobs:
 
       - name: Also tag :latest (non-pre-release only)
         shell: bash
-        if: ${{ !contains(env.VERSION, '-') }}
+        if: !contains(env.VERSION, '-')
         run: |
           docker buildx imagetools create \
             -t ${{ github.repository }}:latest \
