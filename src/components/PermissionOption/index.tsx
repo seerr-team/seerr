@@ -40,6 +40,7 @@ const PermissionOption = ({
     Permission.AUTO_APPROVE,
     Permission.AUTO_APPROVE_MOVIE,
     Permission.AUTO_APPROVE_TV,
+    Permission.AUTO_APPROVE_MUSIC,
     Permission.AUTO_APPROVE_4K,
     Permission.AUTO_APPROVE_4K_MOVIE,
     Permission.AUTO_APPROVE_4K_TV,

@@ -333,7 +333,7 @@ mediaRoutes.delete(
           throw new Error('TVDB ID not found');
         }
 
-        await service.removeSerie(tvdbId);
+        await service.removeSeries(tvdbId);
       } else if (media.mediaType === MediaType.MUSIC) {
         service = new LidarrAPI({
           apiKey: serviceSettings.apiKey,

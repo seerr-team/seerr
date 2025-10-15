@@ -52,26 +52,33 @@ export const hasPermission = (
   value: number,
   options: PermissionCheckOptions = { type: 'and' }
 ): boolean => {
-  let total = 0;
+  let total = 0n;
 
   // If we are not checking any permissions, bail out and return true
   if (permissions === 0) {
     return true;
   }
 
+  // Convert to BigInt
+  const valueBigInt = BigInt(value);
+
   if (Array.isArray(permissions)) {
-    if (value & Permission.ADMIN) {
+    if (valueBigInt & BigInt(Permission.ADMIN)) {
       return true;
     }
     switch (options.type) {
       case 'and':
-        return permissions.every((permission) => !!(value & permission));
+        return permissions.every(
+          (permission) => !!(valueBigInt & BigInt(permission))
+        );
       case 'or':
-        return permissions.some((permission) => !!(value & permission));
+        return permissions.some(
+          (permission) => !!(valueBigInt & BigInt(permission))
+        );
     }
   } else {
-    total = permissions;
+    total = BigInt(permissions);
   }
 
-  return !!(value & Permission.ADMIN) || !!(value & total);
+  return !!(valueBigInt & BigInt(Permission.ADMIN)) || !!(valueBigInt & total);
 };

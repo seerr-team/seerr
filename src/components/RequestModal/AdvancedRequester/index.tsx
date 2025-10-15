@@ -351,8 +351,7 @@ const AdvancedRequester = ({
             )}
             {(isValidating ||
               !serverData ||
-              (serverData.profiles.length > 1 &&
-                (!serverData.server.isDefault || type !== 'music'))) && (
+              serverData.profiles.length > 1) && (
               <div className="mb-3 w-full flex-shrink-0 flex-grow last:pr-0 md:w-1/4 md:pr-4">
                 <label htmlFor="profile">
                   {intl.formatMessage(messages.qualityprofile)}
