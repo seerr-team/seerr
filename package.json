@@ -104,7 +104,7 @@
     "swagger-ui-express": "4.6.2",
     "swr": "2.2.5",
     "tailwind-merge": "^2.6.0",
-    "typeorm": "0.3.11",
+    "typeorm": "0.3.12",
     "ua-parser-js": "^1.0.35",
     "undici": "^7.3.0",
     "web-push": "3.5.0",
