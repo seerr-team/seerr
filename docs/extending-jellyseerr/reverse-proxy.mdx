@@ -249,7 +249,7 @@ Add the following Location block to your existing Server configuration.
 		# Please Replace "FQDN" with your domain
 		Header edit location ^/login https://FQDN/jellyseerr/login
 		Header edit location ^/setup https://FQDN/jellyseerr/setup
-		
+
 		AddOutputFilterByType INFLATE;SUBSTITUTE text/html application/javascript application/json
 		SubstituteMaxLineLength 2000K
 		# This is HTML and JS update
@@ -264,5 +264,45 @@ Add the following Location block to your existing Server configuration.
 ```
 
 </TabItem>
+
+
+
+
+</Tabs>
+
+
+## HAProxy (v3)
+
+<Tabs groupId="haproxy-reverse-proxy" queryString>
+  <TabItem value="subdomain" label="Subdomain">
+
+    Add the following frontend and backend configurations for your seerr instance.
+
+    ```haproxy
+    frontend seerr-frontend
+      bind 0.0.0.0:80
+      bind 0.0.0.0:443 ssl crt /etc/ssl/private/seerr.example.com.pem
+      mode http
+      log global
+      option http-keep-alive
+      http-request set-header X-Real-IP %[src]
+      option forwardfor
+      acl seerr hdr(host) -i seerr.example.com
+      redirect scheme https code 301 if !{ ssl_fc }
+      use_backend seerr-backend if seerr
+
+    backend seerr-backend
+      mode http
+      log global
+      http-response set-header Strict-Transport-Security max-age=15552000;
+      http-check send meth OPTIONS uri /api/v2/status
+      timeout connect 30000
+      timeout server 30000
+      retries 3
+      option httpchk
+      server seerr 127.0.0.1:5055 check inter 1000
+    ```
+
+  </TabItem>
 
 </Tabs>
