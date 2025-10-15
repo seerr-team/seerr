@@ -1,12 +1,15 @@
+import AddedCard from '@app/components/AddedCard';
+import ArtistCard from '@app/components/ArtistCard';
 import PersonCard from '@app/components/PersonCard';
 import TitleCard from '@app/components/TitleCard';
-import TmdbTitleCard from '@app/components/TitleCard/TmdbTitleCard';
 import { Permission, useUser } from '@app/hooks/useUser';
 import useVerticalScroll from '@app/hooks/useVerticalScroll';
 import globalMessages from '@app/i18n/globalMessages';
 import { MediaStatus } from '@server/constants/media';
 import type { WatchlistItem } from '@server/interfaces/api/discoverInterfaces';
 import type {
+  AlbumResult,
+  ArtistResult,
   CollectionResult,
   MovieResult,
   PersonResult,
@@ -15,7 +18,14 @@ import type {
 import { useIntl } from 'react-intl';
 
 type ListViewProps = {
-  items?: (TvResult | MovieResult | PersonResult | CollectionResult)[];
+  items?: (
+    | TvResult
+    | MovieResult
+    | PersonResult
+    | CollectionResult
+    | ArtistResult
+    | AlbumResult
+  )[];
   plexItems?: WatchlistItem[];
   isEmpty?: boolean;
   isLoading?: boolean;
@@ -53,9 +63,10 @@ const ListView = ({
         {plexItems?.map((title, index) => {
           return (
             <li key={`${title.ratingKey}-${index}`}>
-              <TmdbTitleCard
-                id={title.tmdbId}
-                tmdbId={title.tmdbId}
+              <AddedCard
+                id={title.tmdbId ?? 0}
+                tmdbId={title.tmdbId ?? 0}
+                mbId={title.mbId}
                 type={title.mediaType}
                 isAddedToWatchlist={true}
                 canExpand
@@ -68,8 +79,8 @@ const ListView = ({
           ?.filter((title) => {
             if (!blacklistVisibility)
               return (
-                (title as TvResult | MovieResult).mediaInfo?.status !==
-                MediaStatus.BLACKLISTED
+                (title as TvResult | MovieResult | AlbumResult).mediaInfo
+                  ?.status !== MediaStatus.BLACKLISTED
               );
             return title;
           })
@@ -143,6 +154,51 @@ const ListView = ({
                   />
                 );
                 break;
+              case 'album':
+                titleCard = (
+                  <TitleCard
+                    key={title.id}
+                    id={title.id}
+                    isAddedToWatchlist={
+                      title.mediaInfo?.watchlists?.length ?? 0
+                    }
+                    image={title.posterPath}
+                    status={title.mediaInfo?.status}
+                    title={title.title}
+                    artist={title['artist-credit']?.[0]?.name}
+                    type={title['primary-type']}
+                    year={
+                      title.releaseDate
+                        ? title.releaseDate.split('-')[0]
+                        : title['first-release-date']?.split('-')[0]
+                    }
+                    mediaType={title.mediaType}
+                    inProgress={
+                      (title.mediaInfo?.downloadStatus ?? []).length > 0
+                    }
+                    needsCoverArt={title.needsCoverArt}
+                    canExpand
+                  />
+                );
+                break;
+              case 'artist':
+                return title.tmdbPersonId ? (
+                  <PersonCard
+                    key={title.id}
+                    personId={title.tmdbPersonId}
+                    name={title.name}
+                    profilePath={title.artistThumb ?? undefined}
+                    canExpand
+                  />
+                ) : (
+                  <ArtistCard
+                    key={title.id}
+                    artistId={title.id}
+                    name={title.name}
+                    artistThumb={title.artistThumb}
+                    canExpand
+                  />
+                );
             }
 
             return <li key={`${title.id}-${index}`}>{titleCard}</li>;

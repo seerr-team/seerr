@@ -12,12 +12,18 @@ import { z } from 'zod';
 
 const blacklistRoutes = Router();
 
-export const blacklistAdd = z.object({
-  tmdbId: z.coerce.number(),
-  mediaType: z.nativeEnum(MediaType),
-  title: z.coerce.string().optional(),
-  user: z.coerce.number(),
-});
+export const blacklistAdd = z
+  .object({
+    mediaType: z.nativeEnum(MediaType),
+    title: z.coerce.string().optional(),
+    user: z.coerce.number(),
+  })
+  .and(
+    z.union([
+      z.object({ tmdbId: z.coerce.number() }),
+      z.object({ mbId: z.coerce.string() }),
+    ])
+  );
 
 const blacklistGet = z.object({
   take: z.coerce.number().int().positive().default(25),
@@ -90,10 +96,12 @@ blacklistRoutes.get(
   }),
   async (req, res, next) => {
     try {
-      const blacklisteRepository = getRepository(Blacklist);
+      const blacklistRepository = getRepository(Blacklist);
 
-      const blacklistItem = await blacklisteRepository.findOneOrFail({
-        where: { tmdbId: Number(req.params.id) },
+      const blacklistItem = await blacklistRepository.findOneOrFail({
+        where: !isNaN(Number(req.params.id))
+          ? { tmdbId: Number(req.params.id) }
+          : { mbId: req.params.id },
       });
 
       return res.status(200).send(blacklistItem);
@@ -135,6 +143,7 @@ blacklistRoutes.post(
           default:
             logger.warn('Something wrong with data blacklist', {
               tmdbId: req.body.tmdbId,
+              mbId: req.body.mbId,
               mediaType: req.body.mediaType,
               label: 'Blacklist',
             });
@@ -154,18 +163,22 @@ blacklistRoutes.delete(
   }),
   async (req, res, next) => {
     try {
-      const blacklisteRepository = getRepository(Blacklist);
+      const blacklistRepository = getRepository(Blacklist);
 
-      const blacklistItem = await blacklisteRepository.findOneOrFail({
-        where: { tmdbId: Number(req.params.id) },
+      const blacklistItem = await blacklistRepository.findOneOrFail({
+        where: !isNaN(Number(req.params.id))
+          ? { tmdbId: Number(req.params.id) }
+          : { mbId: req.params.id },
       });
 
-      await blacklisteRepository.remove(blacklistItem);
+      await blacklistRepository.remove(blacklistItem);
 
       const mediaRepository = getRepository(Media);
 
       const mediaItem = await mediaRepository.findOneOrFail({
-        where: { tmdbId: Number(req.params.id) },
+        where: !isNaN(Number(req.params.id))
+          ? { tmdbId: Number(req.params.id) }
+          : { mbId: req.params.id },
       });
 
       await mediaRepository.remove(mediaItem);

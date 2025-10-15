@@ -39,6 +39,7 @@ import { rescheduleJob } from 'node-schedule';
 import path from 'path';
 import semver from 'semver';
 import { URL } from 'url';
+import lidarrRoutes from './lidarr';
 import metadataRoutes from './metadata';
 import notificationRoutes from './notifications';
 import radarrRoutes from './radarr';
@@ -49,6 +50,7 @@ const settingsRoutes = Router();
 settingsRoutes.use('/notifications', notificationRoutes);
 settingsRoutes.use('/radarr', radarrRoutes);
 settingsRoutes.use('/sonarr', sonarrRoutes);
+settingsRoutes.use('/lidarr', lidarrRoutes);
 settingsRoutes.use('/discover', discoverSettingRoutes);
 settingsRoutes.use('/metadatas', metadataRoutes);
 
@@ -761,12 +763,16 @@ settingsRoutes.get('/cache', async (_req, res) => {
 
   const stats: DnsStats | undefined = dnsCache?.getStats();
   const entries: DnsEntries | undefined = dnsCache?.getCacheEntries();
+  const caaImageCache = await ImageProxy.getImageStats('caa');
+  const tadbImageCache = await ImageProxy.getImageStats('tadb');
 
   return res.status(200).json({
     apiCaches,
     imageCache: {
       tmdb: tmdbImageCache,
       avatar: avatarImageCache,
+      caa: caaImageCache,
+      tadb: tadbImageCache,
     },
     dnsCache: {
       stats,

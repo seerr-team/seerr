@@ -26,6 +26,7 @@ import { MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import type Issue from '@server/entity/Issue';
 import type { MovieDetails } from '@server/models/Movie';
+import type { MusicDetails } from '@server/models/Music';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
@@ -73,8 +74,19 @@ const messages = defineMessages('components.IssueDetails', {
   commentplaceholder: 'Add a comment…',
 });
 
-const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
-  return (movie as MovieDetails).title !== undefined;
+const isMovie = (
+  media: MovieDetails | TvDetails | MusicDetails
+): media is MovieDetails => {
+  return (
+    (media as MovieDetails).title !== undefined &&
+    (media as MovieDetails).releaseDate !== undefined
+  );
+};
+
+const isMusic = (
+  media: MovieDetails | TvDetails | MusicDetails
+): media is MusicDetails => {
+  return (media as MusicDetails).artist !== undefined;
 };
 
 const IssueDetails = () => {
@@ -86,9 +98,13 @@ const IssueDetails = () => {
   const { data: issueData, mutate: revalidateIssue } = useSWR<Issue>(
     `/api/v1/issue/${router.query.issueId}`
   );
-  const { data, error } = useSWR<MovieDetails | TvDetails>(
-    issueData?.media.tmdbId
-      ? `/api/v1/${issueData.media.mediaType}/${issueData.media.tmdbId}`
+  const { data, error } = useSWR<MovieDetails | TvDetails | MusicDetails>(
+    issueData?.media.tmdbId || issueData?.media.mbId
+      ? `/api/v1/${issueData.media.mediaType}/${
+          issueData.media.mediaType === MediaType.MUSIC
+            ? issueData.media.mbId
+            : issueData.media.tmdbId
+        }`
       : null
   );
 
@@ -175,8 +191,17 @@ const IssueDetails = () => {
     }
   };
 
-  const title = isMovie(data) ? data.title : data.name;
-  const releaseYear = isMovie(data) ? data.releaseDate : data.firstAirDate;
+  const title = isMusic(data)
+    ? `${data.artist.name} - ${data.title}`
+    : isMovie(data)
+    ? data.title
+    : data.name;
+
+  const releaseYear = isMusic(data)
+    ? data.releaseDate
+    : isMovie(data)
+    ? data.releaseDate
+    : data.firstAirDate;
 
   return (
     <div
@@ -206,12 +231,16 @@ const IssueDetails = () => {
           {intl.formatMessage(messages.deleteissueconfirm)}
         </Modal>
       </Transition>
-      {data.backdropPath && (
+      {((!isMusic(data) && data.backdropPath) || isMusic(data)) && (
         <div className="media-page-bg-image">
           <CachedImage
-            type="tmdb"
+            type={isMusic(data) ? 'music' : 'tmdb'}
             alt=""
-            src={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data.backdropPath}`}
+            src={
+              isMusic(data)
+                ? data?.artistBackdrop || data?.artistThumb || ''
+                : `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data.backdropPath}`
+            }
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             fill
             priority
@@ -228,9 +257,12 @@ const IssueDetails = () => {
       <div className="media-header">
         <div className="media-poster">
           <CachedImage
-            type="tmdb"
+            type={isMusic(data) ? 'music' : 'tmdb'}
             src={
-              data.posterPath
+              isMusic(data)
+                ? data.posterPath ||
+                  '/images/jellyseerr_poster_not_found_square.png'
+                : data.posterPath
                 ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.posterPath}`
                 : '/images/jellyseerr_poster_not_found.png'
             }
@@ -258,8 +290,18 @@ const IssueDetails = () => {
           <h1>
             <Link
               href={`/${
-                issueData.media.mediaType === MediaType.MOVIE ? 'movie' : 'tv'
-              }/${data.id}`}
+                issueData.media.mediaType === MediaType.MOVIE
+                  ? 'movie'
+                  : issueData.media.mediaType === MediaType.TV
+                  ? 'tv'
+                  : 'music'
+              }/${
+                issueData.media.mediaType === MediaType.MUSIC
+                  ? isMusic(data)
+                    ? data.mbId
+                    : data.id
+                  : data.id
+              }`}
               className="hover:underline"
             >
               {title}

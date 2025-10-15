@@ -1,10 +1,10 @@
+import AddedCard from '@app/components/AddedCard';
 import ImageFader from '@app/components/Common/ImageFader';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import ProgressCircle from '@app/components/Common/ProgressCircle';
 import RequestCard from '@app/components/RequestCard';
 import Slider from '@app/components/Slider';
-import TmdbTitleCard from '@app/components/TitleCard/TmdbTitleCard';
 import ProfileHeader from '@app/components/UserProfile/ProfileHeader';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import Error from '@app/pages/_error';
@@ -17,6 +17,7 @@ import type {
   UserWatchDataResponse,
 } from '@server/interfaces/api/userInterfaces';
 import type { MovieDetails } from '@server/models/Movie';
+import type { MusicDetails } from '@server/models/Music';
 import type { TvDetails } from '@server/models/Tv';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -33,6 +34,7 @@ const messages = defineMessages('components.UserProfile', {
   pastdays: '{type} (past {days} days)',
   movierequests: 'Movie Requests',
   seriesrequest: 'Series Requests',
+  musicrequests: 'Music Requests',
   recentlywatched: 'Recently Watched',
   plexwatchlist: 'Plex Watchlist',
   localWatchlist: "{username}'s Watchlist",
@@ -40,7 +42,7 @@ const messages = defineMessages('components.UserProfile', {
     'Media added to your <PlexWatchlistSupportLink>Plex Watchlist</PlexWatchlistSupportLink> will appear here.',
 });
 
-type MediaTitle = MovieDetails | TvDetails;
+type MediaTitle = MovieDetails | TvDetails | MusicDetails;
 
 const UserProfile = () => {
   const intl = useIntl();
@@ -135,11 +137,35 @@ const UserProfile = () => {
             key={user.id}
             isDarker
             backgroundImages={Object.values(availableTitles)
-              .filter((media) => media.backdropPath)
-              .map(
-                (media) =>
-                  `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${media.backdropPath}`
-              )
+              .filter((media) => {
+                if ('backdropPath' in media) {
+                  return media.backdropPath;
+                }
+                if ('artist' in media) {
+                  return (
+                    media.artistBackdrop ||
+                    media.artistThumb ||
+                    media.posterPath ||
+                    ''
+                  );
+                }
+                return false;
+              })
+              .map((media) => {
+                if ('backdropPath' in media) {
+                  return `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${media.backdropPath}`;
+                }
+                if ('artist' in media) {
+                  return (
+                    media.artistBackdrop ||
+                    media.artistThumb ||
+                    media.posterPath ||
+                    ''
+                  );
+                }
+                return '';
+              })
+              .filter(Boolean)
               .slice(0, 6)}
           />
         </div>
@@ -152,7 +178,7 @@ const UserProfile = () => {
             { type: 'and' }
           )) && (
           <div className="relative z-40">
-            <dl className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
+            <dl className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-4">
               <div className="overflow-hidden rounded-lg bg-gray-800 bg-opacity-50 px-4 py-5 shadow ring-1 ring-gray-700 sm:p-6">
                 <dt className="truncate text-sm font-bold text-gray-300">
                   {intl.formatMessage(messages.totalrequests)}
@@ -282,6 +308,61 @@ const UserProfile = () => {
                   )}
                 </dd>
               </div>
+              <div
+                className={`overflow-hidden rounded-lg bg-gray-800 bg-opacity-50 px-4 py-5 shadow ring-1 ${
+                  quota.music?.restricted
+                    ? 'bg-gradient-to-t from-red-900 to-transparent ring-red-500'
+                    : 'ring-gray-700'
+                } sm:p-6`}
+              >
+                <dt
+                  className={`truncate text-sm font-bold ${
+                    quota.music?.restricted ? 'text-red-500' : 'text-gray-300'
+                  }`}
+                >
+                  {quota.music?.limit
+                    ? intl.formatMessage(messages.pastdays, {
+                        type: intl.formatMessage(messages.musicrequests),
+                        days: quota?.music.days,
+                      })
+                    : intl.formatMessage(messages.musicrequests)}
+                </dt>
+                <dd
+                  className={`mt-1 flex items-center text-sm ${
+                    quota.music?.restricted ? 'text-red-500' : 'text-white'
+                  }`}
+                >
+                  {quota.music?.limit ? (
+                    <>
+                      <ProgressCircle
+                        progress={Math.round(
+                          ((quota?.music.remaining ?? 0) /
+                            (quota?.music.limit ?? 1)) *
+                            100
+                        )}
+                        useHeatLevel
+                        className="mr-2 h-8 w-8"
+                      />
+                      <div>
+                        {intl.formatMessage(messages.requestsperdays, {
+                          limit: (
+                            <span className="text-3xl font-semibold">
+                              {intl.formatMessage(messages.limit, {
+                                remaining: quota.music.remaining,
+                                limit: quota.music.limit,
+                              })}
+                            </span>
+                          ),
+                        })}
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-3xl font-semibold">
+                      {intl.formatMessage(messages.unlimited)}
+                    </span>
+                  )}
+                </dd>
+              </div>
             </dl>
           </div>
         )}
@@ -365,10 +446,11 @@ const UserProfile = () => {
                 ),
               })}
               items={watchlistItems?.results.map((item) => (
-                <TmdbTitleCard
-                  id={item.tmdbId}
+                <AddedCard
+                  id={item.mediaType === 'music' ? item.mbId : item.tmdbId}
                   key={`watchlist-slider-item-${item.ratingKey}`}
                   tmdbId={item.tmdbId}
+                  mbId={item.mbId}
                   type={item.mediaType}
                 />
               ))}
@@ -390,7 +472,7 @@ const UserProfile = () => {
               sliderKey="media"
               isLoading={!watchData}
               items={watchData?.recentlyWatched?.map((item) => (
-                <TmdbTitleCard
+                <AddedCard
                   key={`media-slider-item-${item.id}`}
                   id={item.id}
                   tmdbId={item.tmdbId}

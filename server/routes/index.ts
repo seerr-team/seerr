@@ -27,14 +27,17 @@ import { getAppVersion, getCommitTag } from '@server/utils/appVersion';
 import restartFlag from '@server/utils/restartFlag';
 import { isPerson } from '@server/utils/typeHelpers';
 import { Router } from 'express';
+import artistRoutes from './artist';
 import authRoutes from './auth';
 import blacklistRoutes from './blacklist';
 import collectionRoutes from './collection';
+import coverArtRoutes from './coverart';
 import discoverRoutes, { createTmdbWithRegionLanguage } from './discover';
 import issueRoutes from './issue';
 import issueCommentRoutes from './issueComment';
 import mediaRoutes from './media';
 import movieRoutes from './movie';
+import musicRoutes from './music';
 import personRoutes from './person';
 import requestRoutes from './request';
 import searchRoutes from './search';
@@ -154,8 +157,10 @@ router.use('/watchlist', isAuthenticated(), watchlistRoutes);
 router.use('/blacklist', isAuthenticated(), blacklistRoutes);
 router.use('/movie', isAuthenticated(), movieRoutes);
 router.use('/tv', isAuthenticated(), tvRoutes);
+router.use('/music', isAuthenticated(), musicRoutes);
 router.use('/media', isAuthenticated(), mediaRoutes);
 router.use('/person', isAuthenticated(), personRoutes);
+router.use('/artist', isAuthenticated(), artistRoutes);
 router.use('/collection', isAuthenticated(), collectionRoutes);
 router.use('/service', isAuthenticated(), serviceRoutes);
 router.use('/issue', isAuthenticated(), issueRoutes);
@@ -166,7 +171,7 @@ router.use(
   isAuthenticated(Permission.ADMIN),
   overrideRuleRoutes
 );
-
+router.use('/coverart', isAuthenticated(), coverArtRoutes);
 router.get('/regions', isAuthenticated(), async (req, res, next) => {
   const tmdb = new TheMovieDb();
 

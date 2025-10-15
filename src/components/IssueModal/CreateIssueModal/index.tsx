@@ -1,6 +1,9 @@
 import Button from '@app/components/Common/Button';
 import Modal from '@app/components/Common/Modal';
-import { issueOptions } from '@app/components/IssueModal/constants';
+import {
+  getIssueOptionsForMediaType,
+  issueOptions,
+} from '@app/components/IssueModal/constants';
 import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
@@ -10,6 +13,7 @@ import { ArrowRightCircleIcon } from '@heroicons/react/24/solid';
 import { MediaStatus } from '@server/constants/media';
 import type Issue from '@server/entity/Issue';
 import type { MovieDetails } from '@server/models/Movie';
+import type { MusicDetails } from '@server/models/Music';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
 import { Field, Formik } from 'formik';
@@ -39,8 +43,16 @@ const messages = defineMessages('components.IssueModal.CreateIssueModal', {
   submitissue: 'Submit Issue',
 });
 
-const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
-  return (movie as MovieDetails).title !== undefined;
+const isMovie = (
+  media: MovieDetails | TvDetails | MusicDetails
+): media is MovieDetails => {
+  return (media as MovieDetails).title !== undefined && !('artist' in media);
+};
+
+const isMusic = (
+  media: MovieDetails | TvDetails | MusicDetails
+): media is MusicDetails => {
+  return 'artist' in media;
 };
 
 const classNames = (...classes: string[]) => {
@@ -48,8 +60,9 @@ const classNames = (...classes: string[]) => {
 };
 
 interface CreateIssueModalProps {
-  mediaType: 'movie' | 'tv';
+  mediaType: 'movie' | 'tv' | 'music';
   tmdbId?: number;
+  mbId?: string;
   onCancel?: () => void;
 }
 
@@ -57,16 +70,21 @@ const CreateIssueModal = ({
   onCancel,
   mediaType,
   tmdbId,
+  mbId,
 }: CreateIssueModalProps) => {
   const intl = useIntl();
   const settings = useSettings();
   const { hasPermission } = useUser();
   const { addToast } = useToasts();
-  const { data, error } = useSWR<MovieDetails | TvDetails>(
-    tmdbId ? `/api/v1/${mediaType}/${tmdbId}` : null
+  const { data, error } = useSWR<MovieDetails | TvDetails | MusicDetails>(
+    mediaType === 'music' && mbId
+      ? `/api/v1/music/${mbId}`
+      : tmdbId
+      ? `/api/v1/${mediaType}/${tmdbId}`
+      : null
   );
 
-  if (!tmdbId) {
+  if (!tmdbId && !mbId) {
     return null;
   }
 
@@ -90,10 +108,13 @@ const CreateIssueModal = ({
     ),
   });
 
+  // Filter issue options based on media type
+  const availableIssueOptions = getIssueOptionsForMediaType(mediaType);
+
   return (
     <Formik
       initialValues={{
-        selectedIssue: issueOptions[0],
+        selectedIssue: availableIssueOptions[0],
         message: '',
         problemSeason: availableSeasons.length === 1 ? availableSeasons[0] : 0,
         problemEpisode: 0,
@@ -115,7 +136,11 @@ const CreateIssueModal = ({
               <>
                 <div>
                   {intl.formatMessage(messages.toastSuccessCreate, {
-                    title: isMovie(data) ? data.title : data.name,
+                    title: isMusic(data)
+                      ? `${data.artist.name} - ${data.title}`
+                      : isMovie(data)
+                      ? data.title
+                      : data.name,
                     strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
                   })}
                 </div>
@@ -152,12 +177,28 @@ const CreateIssueModal = ({
             backgroundClickable
             onCancel={onCancel}
             title={intl.formatMessage(messages.reportissue)}
-            subTitle={data && isMovie(data) ? data?.title : data?.name}
+            subTitle={
+              data &&
+              (isMusic(data)
+                ? `${data.artist.name} - ${data.title}`
+                : isMovie(data)
+                ? data.title
+                : data.name)
+            }
             cancelText={intl.formatMessage(globalMessages.close)}
             onOk={() => handleSubmit()}
             okText={intl.formatMessage(messages.submitissue)}
             loading={!data && !error}
-            backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
+            backdrop={
+              data
+                ? isMusic(data)
+                  ? data.posterPath ||
+                    '/images/jellyseerr_poster_not_found_square.png'
+                  : data.backdropPath
+                  ? `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data.backdropPath}`
+                  : '/images/jellyseerr_poster_not_found.png'
+                : undefined
+            }
           >
             {mediaType === 'tv' && data && !isMovie(data) && (
               <>
@@ -211,24 +252,25 @@ const CreateIssueModal = ({
                           <option value={0}>
                             {intl.formatMessage(messages.allepisodes)}
                           </option>
-                          {[
-                            ...Array(
-                              data.seasons.find(
-                                (season) =>
-                                  Number(values.problemSeason) ===
-                                  season.seasonNumber
-                              )?.episodeCount ?? 0
-                            ),
-                          ].map((i, index) => (
-                            <option
-                              value={index + 1}
-                              key={`problem-episode-${index + 1}`}
-                            >
-                              {intl.formatMessage(messages.episode, {
-                                episodeNumber: index + 1,
-                              })}
-                            </option>
-                          ))}
+                          {!isMusic(data) &&
+                            [
+                              ...Array(
+                                data.seasons.find(
+                                  (season) =>
+                                    Number(values.problemSeason) ===
+                                    season.seasonNumber
+                                )?.episodeCount ?? 0
+                              ),
+                            ].map((i, index) => (
+                              <option
+                                value={index + 1}
+                                key={`problem-episode-${index + 1}`}
+                              >
+                                {intl.formatMessage(messages.episode, {
+                                  episodeNumber: index + 1,
+                                })}
+                              </option>
+                            ))}
                         </Field>
                       </div>
                     </div>
@@ -245,7 +287,7 @@ const CreateIssueModal = ({
                 Select an Issue
               </RadioGroup.Label>
               <div className="-space-y-px overflow-hidden rounded-md bg-gray-800 bg-opacity-30">
-                {issueOptions.map((setting, index) => (
+                {availableIssueOptions.map((setting, index) => (
                   <RadioGroup.Option
                     key={`issue-type-${setting.issueType}`}
                     value={setting}

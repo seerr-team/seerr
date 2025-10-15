@@ -13,7 +13,7 @@ import { MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 
 interface ExternalLinkBlockProps {
-  mediaType: 'movie' | 'tv';
+  mediaType: 'movie' | 'tv' | 'music';
   tmdbId?: number;
   tvdbId?: number;
   imdbId?: string;

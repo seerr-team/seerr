@@ -5,6 +5,7 @@ import Tooltip from '@app/components/Common/Tooltip';
 import RequestModal from '@app/components/RequestModal';
 import StatusBadge from '@app/components/StatusBadge';
 import useDeepLinks from '@app/hooks/useDeepLinks';
+import { useProgressiveCovers } from '@app/hooks/useProgressiveCovers';
 import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
@@ -22,6 +23,7 @@ import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { NonFunctionProperties } from '@server/interfaces/api/common';
 import type { MovieDetails } from '@server/models/Movie';
+import type { MusicDetails } from '@server/models/Music';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
 import Link from 'next/link';
@@ -45,8 +47,28 @@ const messages = defineMessages('components.RequestCard', {
   unknowntitle: 'Unknown Title',
 });
 
-const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
+const isMovie = (
+  movie: MovieDetails | TvDetails | MusicDetails
+): movie is MovieDetails => {
   return (movie as MovieDetails).title !== undefined;
+};
+
+const isAlbum = (
+  media: MovieDetails | TvDetails | MusicDetails
+): media is MusicDetails => {
+  return (media as MusicDetails).artist?.id !== undefined;
+};
+
+const hasBackdropPath = (
+  media: MovieDetails | TvDetails | MusicDetails
+): media is MovieDetails | TvDetails => {
+  return 'backdropPath' in media;
+};
+
+const hasSeasons = (
+  media: MovieDetails | TvDetails | MusicDetails
+): media is TvDetails => {
+  return 'seasons' in media && Array.isArray((media as TvDetails).seasons);
 };
 
 const RequestCardPlaceholder = () => {
@@ -215,7 +237,10 @@ const RequestCardError = ({ requestData }: RequestCardErrorProps) => {
 
 interface RequestCardProps {
   request: NonFunctionProperties<MediaRequest>;
-  onTitleData?: (requestId: number, title: MovieDetails | TvDetails) => void;
+  onTitleData?: (
+    requestId: number,
+    title: MovieDetails | TvDetails | MusicDetails
+  ) => void;
 }
 
 const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
@@ -231,11 +256,14 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
   const url =
     request.type === 'movie'
       ? `/api/v1/movie/${request.media.tmdbId}`
-      : `/api/v1/tv/${request.media.tmdbId}`;
+      : request.type === 'tv'
+      ? `/api/v1/tv/${request.media.tmdbId}`
+      : `/api/v1/music/${request.media.mbId}`;
 
-  const { data: title, error } = useSWR<MovieDetails | TvDetails>(
-    inView ? `${url}` : null
-  );
+  const { data: titleData, error } = useSWR<
+    MovieDetails | TvDetails | MusicDetails
+  >(inView ? url : null);
+
   const {
     data: requestData,
     error: requestError,
@@ -296,12 +324,39 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
   };
 
   useEffect(() => {
-    if (title && onTitleData) {
-      onTitleData(request.id, title);
+    if (titleData && onTitleData) {
+      onTitleData(request.id, titleData);
     }
-  }, [title, onTitleData, request]);
+  }, [titleData, onTitleData, request]);
 
-  if (!title && !error) {
+  interface ExtendedMedia {
+    posterPath?: string;
+    needsCoverArt?: boolean;
+  }
+
+  const title =
+    useProgressiveCovers<MovieDetails | TvDetails | MusicDetails>(
+      requestData?.type === 'music' && titleData && isAlbum(titleData)
+        ? [
+            {
+              ...titleData,
+              posterPath:
+                (requestData.media as ExtendedMedia)?.posterPath ||
+                titleData.posterPath,
+              needsCoverArt:
+                (requestData.media as ExtendedMedia)?.needsCoverArt !==
+                undefined
+                  ? (requestData.media as ExtendedMedia).needsCoverArt
+                  : (titleData as MusicDetails & { needsCoverArt?: boolean })
+                      .needsCoverArt,
+            } as MusicDetails,
+          ]
+        : titleData
+        ? [titleData]
+        : []
+    )[0] ?? titleData;
+
+  if (!titleData && !error) {
     return (
       <div ref={ref}>
         <RequestCardPlaceholder />
@@ -335,43 +390,67 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
         className="relative flex w-72 overflow-hidden rounded-xl bg-gray-800 bg-cover bg-center p-4 text-gray-400 shadow ring-1 ring-gray-700 sm:w-96"
         data-testid="request-card"
       >
-        {title.backdropPath && (
-          <div className="absolute inset-0 z-0">
-            <CachedImage
-              type="tmdb"
-              alt=""
-              src={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              fill
-            />
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage:
-                  'linear-gradient(135deg, rgba(17, 24, 39, 0.47) 0%, rgba(17, 24, 39, 1) 75%)',
-              }}
-            />
-          </div>
-        )}
+        <div className="absolute inset-0 z-0">
+          <CachedImage
+            type={request.type === 'music' ? 'music' : 'tmdb'}
+            alt=""
+            src={
+              request.type === 'music' && isAlbum(title)
+                ? title.artistBackdrop
+                  ? title.artistBackdrop
+                  : title.artistThumb
+                  ? title.artistThumb
+                  : title.posterPath
+                  ? title.posterPath
+                  : '/images/jellyseerr_poster_not_found_square.png'
+                : hasBackdropPath(title) && title.backdropPath
+                ? `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`
+                : '/images/jellyseerr_poster_not_found.png'
+            }
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            fill
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage:
+                'linear-gradient(135deg, rgba(17, 24, 39, 0.47) 0%, rgba(17, 24, 39, 1) 75%)',
+            }}
+          />
+        </div>
         <div
           className="relative z-10 flex min-w-0 flex-1 flex-col pr-4"
           data-testid="request-card-title"
         >
           <div className="hidden text-xs font-medium text-white sm:flex">
-            {(isMovie(title) ? title.releaseDate : title.firstAirDate)?.slice(
-              0,
-              4
+            {(isMovie(title)
+              ? title.releaseDate
+              : isAlbum(title)
+              ? title.releaseDate
+              : title.firstAirDate
+            )?.slice(0, 4)}
+            {isAlbum(title) && (
+              <>
+                <span className="mx-2">-</span>
+                <span className="truncate">{title.artist.name}</span>
+              </>
             )}
           </div>
           <Link
             href={
               request.type === 'movie'
                 ? `/movie/${requestData.media.tmdbId}`
-                : `/tv/${requestData.media.tmdbId}`
+                : request.type === 'tv'
+                ? `/tv/${requestData.media.tmdbId}`
+                : `/music/${requestData.media.mbId}`
             }
             className="overflow-hidden overflow-ellipsis whitespace-nowrap text-base font-bold text-white hover:underline sm:text-lg"
           >
-            {isMovie(title) ? title.title : title.name}
+            {isMovie(title)
+              ? title.title
+              : isAlbum(title)
+              ? title.title
+              : title.name}
           </Link>
           {hasPermission(
             [Permission.MANAGE_REQUESTS, Permission.REQUEST_VIEW],
@@ -398,33 +477,35 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
               </Link>
             </div>
           )}
-          {!isMovie(title) && request.seasons.length > 0 && (
-            <div className="my-0.5 hidden items-center text-sm sm:my-1 sm:flex">
-              <span className="mr-2 font-bold ">
-                {intl.formatMessage(messages.seasons, {
-                  seasonCount:
-                    (settings.currentSettings.enableSpecialEpisodes
-                      ? title.seasons.length
-                      : title.seasons.filter(
-                          (season) => season.seasonNumber !== 0
-                        ).length) === request.seasons.length
-                      ? 0
-                      : request.seasons.length,
-                })}
-              </span>
-              <div className="hide-scrollbar overflow-x-scroll">
-                {request.seasons.map((season) => (
-                  <span key={`season-${season.id}`} className="mr-2">
-                    <Badge>
-                      {season.seasonNumber === 0
-                        ? intl.formatMessage(globalMessages.specials)
-                        : season.seasonNumber}
-                    </Badge>
-                  </span>
-                ))}
+          {!isMovie(title) &&
+            hasSeasons(title) &&
+            request.seasons.length > 0 && (
+              <div className="my-0.5 hidden items-center text-sm sm:my-1 sm:flex">
+                <span className="mr-2 font-bold ">
+                  {intl.formatMessage(messages.seasons, {
+                    seasonCount:
+                      (settings.currentSettings.enableSpecialEpisodes
+                        ? title.seasons.length
+                        : title.seasons.filter(
+                            (season) => season.seasonNumber !== 0
+                          ).length) === request.seasons.length
+                        ? 0
+                        : request.seasons.length,
+                  })}
+                </span>
+                <div className="hide-scrollbar overflow-x-scroll">
+                  {request.seasons.map((season) => (
+                    <span key={`season-${season.id}`} className="mr-2">
+                      <Badge>
+                        {season.seasonNumber === 0
+                          ? intl.formatMessage(globalMessages.specials)
+                          : season.seasonNumber}
+                      </Badge>
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
           <div className="mt-2 flex items-center text-sm sm:mt-1">
             <span className="mr-2 hidden font-bold sm:block">
               {intl.formatMessage(globalMessages.status)}
@@ -459,7 +540,13 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                     requestData.is4k ? 'downloadStatus4k' : 'downloadStatus'
                   ]
                 }
-                title={isMovie(title) ? title.title : title.name}
+                title={
+                  isMovie(title)
+                    ? title.title
+                    : isAlbum(title)
+                    ? title.title
+                    : (title as TvDetails).name
+                }
                 inProgress={
                   (
                     requestData.media[
@@ -608,23 +695,47 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
           href={
             request.type === 'movie'
               ? `/movie/${requestData.media.tmdbId}`
-              : `/tv/${requestData.media.tmdbId}`
+              : request.type === 'tv'
+              ? `/tv/${requestData.media.tmdbId}`
+              : `/music/${requestData.media.mbId}`
           }
-          className="w-20 flex-shrink-0 scale-100 transform-gpu cursor-pointer overflow-hidden rounded-md shadow-sm transition duration-300 hover:scale-105 hover:shadow-md sm:w-28"
+          className={`w-20 flex-shrink-0 scale-100 transform-gpu cursor-pointer overflow-hidden rounded-md shadow-sm transition duration-300 hover:scale-105 hover:shadow-md sm:w-28`}
         >
-          <CachedImage
-            type="tmdb"
-            src={
-              title.posterPath
-                ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
-                : '/images/jellyseerr_poster_not_found.png'
-            }
-            alt=""
-            sizes="100vw"
-            style={{ width: '100%', height: 'auto' }}
-            width={600}
-            height={900}
-          />
+          <div
+            className={`${
+              request.type === 'music' ? 'relative pb-[150%]' : ''
+            }`}
+          >
+            <CachedImage
+              type={request.type === 'music' ? 'music' : 'tmdb'}
+              src={
+                request.type === 'music' && isAlbum(title)
+                  ? title.posterPath
+                    ? title.posterPath
+                    : '/images/jellyseerr_poster_not_found_square.png'
+                  : title.posterPath
+                  ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
+                  : '/images/jellyseerr_poster_not_found.png'
+              }
+              alt=""
+              sizes="100vw"
+              style={{
+                width: '100%',
+                height: 'auto',
+                margin: request.type === 'music' ? 'auto' : undefined,
+                position: request.type === 'music' ? 'absolute' : undefined,
+                top: request.type === 'music' ? '50%' : undefined,
+                left: request.type === 'music' ? '50%' : undefined,
+                transform:
+                  request.type === 'music'
+                    ? 'translate(-50%, -50%)'
+                    : undefined,
+                borderRadius: request.type === 'music' ? '0.375rem' : undefined,
+              }}
+              width={600}
+              height={request.type === 'music' ? 600 : 900}
+            />
+          </div>
         </Link>
       </div>
     </>

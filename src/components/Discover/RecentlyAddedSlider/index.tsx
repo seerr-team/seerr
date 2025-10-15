@@ -1,5 +1,5 @@
+import AddedCard from '@app/components/AddedCard';
 import Slider from '@app/components/Slider';
-import TmdbTitleCard from '@app/components/TitleCard/TmdbTitleCard';
 import { Permission, useUser } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
 import type { MediaResultsResponse } from '@server/interfaces/api/mediaInterfaces';
@@ -37,12 +37,13 @@ const RecentlyAddedSlider = () => {
       <Slider
         sliderKey="media"
         isLoading={!media}
-        items={(media?.results ?? []).map((item) => (
-          <TmdbTitleCard
+        items={media?.results.map((item) => (
+          <AddedCard
             key={`media-slider-item-${item.id}`}
             id={item.id}
             tmdbId={item.tmdbId}
             tvdbId={item.tvdbId}
+            mbId={item.mbId}
             type={item.mediaType}
           />
         ))}

@@ -7,12 +7,13 @@ const messages = defineMessages('components.IssueModal', {
   issueVideo: 'Video',
   issueSubtitles: 'Subtitle',
   issueOther: 'Other',
+  issueLyrics: 'Lyrics',
 });
 
 interface IssueOption {
   name: MessageDescriptor;
   issueType: IssueType;
-  mediaType?: 'movie' | 'tv';
+  mediaType?: 'movie' | 'tv' | 'music';
 }
 
 export const issueOptions: IssueOption[] = [
@@ -32,4 +33,27 @@ export const issueOptions: IssueOption[] = [
     name: messages.issueOther,
     issueType: IssueType.OTHER,
   },
+  {
+    name: messages.issueLyrics,
+    issueType: IssueType.LYRICS,
+  },
 ];
+
+export const getIssueOptionsForMediaType = (
+  mediaType: 'movie' | 'tv' | 'music'
+): IssueOption[] => {
+  let options = [...issueOptions];
+
+  if (mediaType === 'movie' || mediaType === 'tv') {
+    options = options.filter((option) => option.issueType !== IssueType.LYRICS);
+  }
+
+  if (mediaType === 'music') {
+    options = options.filter(
+      (option) =>
+        ![IssueType.VIDEO, IssueType.SUBTITLES].includes(option.issueType)
+    );
+  }
+
+  return options;
+};

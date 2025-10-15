@@ -8,6 +8,7 @@ import RequestModal from '@app/components/RequestModal';
 import ErrorCard from '@app/components/TitleCard/ErrorCard';
 import Placeholder from '@app/components/TitleCard/Placeholder';
 import { useIsTouch } from '@app/hooks/useIsTouch';
+import { useProgressiveCovers } from '@app/hooks/useProgressiveCovers';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -31,17 +32,20 @@ import { useToasts } from 'react-toast-notifications';
 import { mutate } from 'swr';
 
 interface TitleCardProps {
-  id: number;
+  id?: number | string;
   image?: string;
   summary?: string;
   year?: string;
   title: string;
+  artist?: string;
+  type?: string;
   userScore?: number;
   mediaType: MediaType;
   status?: MediaStatus;
   canExpand?: boolean;
   inProgress?: boolean;
   isAddedToWatchlist?: number | boolean;
+  needsCoverArt?: boolean;
   mutateParent?: () => void;
 }
 
@@ -61,12 +65,15 @@ const TitleCard = ({
   summary,
   year,
   title,
+  artist,
+  type,
   status,
   mediaType,
   isAddedToWatchlist = false,
   inProgress = false,
   canExpand = false,
   mutateParent,
+  needsCoverArt,
 }: TitleCardProps) => {
   const isTouch = useIsTouch();
   const intl = useIntl();
@@ -82,7 +89,16 @@ const TitleCard = ({
   const [showBlacklistModal, setShowBlacklistModal] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Just to get the year from the date
+  const enhancedItem = useProgressiveCovers([
+    {
+      id: id ?? '',
+      posterPath: image,
+      needsCoverArt: needsCoverArt,
+    },
+  ])[0];
+
+  const displayImage = enhancedItem?.posterPath ?? image;
+
   if (year) {
     year = year.slice(0, 4);
   }
@@ -109,11 +125,16 @@ const TitleCard = ({
   const onClickWatchlistBtn = async (): Promise<void> => {
     setIsUpdating(true);
     try {
-      const response = await axios.post<Watchlist>('/api/v1/watchlist', {
-        tmdbId: id,
-        mediaType,
+      const requestBody = {
+        mediaType: mediaType === 'album' ? 'music' : mediaType,
         title,
-      });
+        ...(mediaType === 'album' ? { mbId: id } : { tmdbId: Number(id) }),
+      };
+
+      const response = await axios.post<Watchlist>(
+        '/api/v1/watchlist',
+        requestBody
+      );
       mutate('/api/v1/discover/watchlist');
       if (response.data) {
         addToast(
@@ -175,8 +196,8 @@ const TitleCard = ({
     if (topNode) {
       try {
         await axios.post('/api/v1/blacklist', {
-          tmdbId: id,
-          mediaType,
+          ...(mediaType === 'album' ? { mbId: id } : { tmdbId: id }),
+          mediaType: mediaType === 'album' ? 'music' : mediaType,
           title,
           user: user?.id,
         });
@@ -258,9 +279,13 @@ const TitleCard = ({
   const showRequestButton = hasPermission(
     [
       Permission.REQUEST,
-      mediaType === 'movie' || mediaType === 'collection'
-        ? Permission.REQUEST_MOVIE
-        : Permission.REQUEST_TV,
+      ...(mediaType === 'movie' || mediaType === 'collection'
+        ? [Permission.REQUEST_MOVIE]
+        : mediaType === 'tv'
+        ? [Permission.REQUEST_TV]
+        : mediaType === 'album'
+        ? [Permission.REQUEST_MUSIC]
+        : []),
     ],
     { type: 'or' }
   );
@@ -276,27 +301,33 @@ const TitleCard = ({
       ref={cardRef}
     >
       <RequestModal
-        tmdbId={id}
+        tmdbId={typeof id === 'number' ? id : undefined}
+        mbId={typeof id === 'string' ? id : undefined}
         show={showRequestModal}
         type={
           mediaType === 'movie'
             ? 'movie'
             : mediaType === 'collection'
             ? 'collection'
-            : 'tv'
+            : mediaType === 'tv'
+            ? 'tv'
+            : 'music'
         }
         onComplete={requestComplete}
         onUpdating={requestUpdating}
         onCancel={closeModal}
       />
       <BlacklistModal
-        tmdbId={id}
+        tmdbId={typeof id === 'number' ? id : undefined}
+        mbId={typeof id === 'string' ? id : undefined}
         type={
           mediaType === 'movie'
             ? 'movie'
             : mediaType === 'collection'
             ? 'collection'
-            : 'tv'
+            : mediaType === 'tv'
+            ? 'tv'
+            : 'music'
         }
         show={showBlacklistModal}
         onCancel={closeBlacklistModal}
@@ -328,22 +359,69 @@ const TitleCard = ({
         tabIndex={0}
       >
         <div className="absolute inset-0 h-full w-full overflow-hidden">
-          <CachedImage
-            type="tmdb"
-            className="absolute inset-0 h-full w-full"
-            alt=""
-            src={
-              image
-                ? `https://image.tmdb.org/t/p/w300_and_h450_face${image}`
-                : `/images/jellyseerr_poster_not_found_logo_top.png`
-            }
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            fill
-          />
+          {mediaType === 'album' ? (
+            <div className="absolute h-full w-full items-center justify-center p-2">
+              <div className="relative aspect-square w-[100%] rounded ring-1 ring-gray-700">
+                <CachedImage
+                  type="music"
+                  className="h-full w-full rounded object-contain"
+                  alt=""
+                  src={
+                    displayImage
+                      ? displayImage
+                      : '/images/jellyseerr_poster_not_found_square.png'
+                  }
+                  fill
+                />
+              </div>
+              <div className="mt-2">
+                <div className="w-full truncate text-center font-bold text-white">
+                  {title}
+                </div>
+                {artist && (
+                  <div className="w-full truncate text-center text-xs text-gray-300">
+                    {artist}
+                  </div>
+                )}
+                {type && (
+                  <div
+                    className="mt-auto overflow-hidden whitespace-normal text-center text-xs text-gray-500"
+                    style={{
+                      WebkitLineClamp: 1,
+                      display: '-webkit-box',
+                      overflow: 'hidden',
+                      WebkitBoxOrient: 'vertical',
+                      position: 'absolute',
+                      bottom: '0.5rem',
+                      left: 0,
+                      right: 0,
+                    }}
+                  >
+                    {type}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <CachedImage
+              type="tmdb"
+              className="absolute inset-0 h-full w-full"
+              alt=""
+              src={
+                displayImage
+                  ? `https://image.tmdb.org/t/p/w300_and_h450_face${displayImage}`
+                  : '/images/jellyseerr_poster_not_found_logo_top.png'
+              }
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              fill
+            />
+          )}
           <div className="absolute left-0 right-0 flex items-center justify-between p-2">
             <div
               className={`pointer-events-none z-40 self-start rounded-full border bg-opacity-80 shadow-md ${
-                mediaType === 'movie' || mediaType === 'collection'
+                mediaType === 'album'
+                  ? 'border-green-500 bg-green-600'
+                  : mediaType === 'movie' || mediaType === 'collection'
                   ? 'border-blue-500 bg-blue-600'
                   : 'border-purple-600 bg-purple-600'
               }`}
@@ -353,6 +431,8 @@ const TitleCard = ({
                   ? intl.formatMessage(globalMessages.movie)
                   : mediaType === 'collection'
                   ? intl.formatMessage(globalMessages.collection)
+                  : mediaType === 'album'
+                  ? intl.formatMessage(globalMessages.music)
                   : intl.formatMessage(globalMessages.tvshow)}
               </div>
             </div>
@@ -440,7 +520,11 @@ const TitleCard = ({
 
           <Transition
             as={Fragment}
-            show={!image || showDetail || showRequestModal}
+            show={
+              mediaType === 'album'
+                ? showDetail || showRequestModal
+                : !image || showDetail || showRequestModal
+            }
             enter="transition-opacity"
             enterFrom="opacity-0"
             enterTo="opacity-100"
@@ -451,7 +535,9 @@ const TitleCard = ({
             <div className="absolute inset-0 overflow-hidden rounded-xl">
               <Link
                 href={
-                  mediaType === 'movie'
+                  mediaType === 'album'
+                    ? `/music/${id}`
+                    : mediaType === 'movie'
                     ? `/movie/${id}`
                     : mediaType === 'collection'
                     ? `/collection/${id}`

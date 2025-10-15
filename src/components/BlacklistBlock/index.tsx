@@ -21,13 +21,15 @@ const messages = defineMessages('component.BlacklistBlock', {
 });
 
 interface BlacklistBlockProps {
-  tmdbId: number;
+  tmdbId?: number;
+  mbId?: string;
   onUpdate?: () => void;
   onDelete?: () => void;
 }
 
 const BlacklistBlock = ({
   tmdbId,
+  mbId,
   onUpdate,
   onDelete,
 }: BlacklistBlockProps) => {
@@ -35,13 +37,28 @@ const BlacklistBlock = ({
   const intl = useIntl();
   const [isUpdating, setIsUpdating] = useState(false);
   const { addToast } = useToasts();
-  const { data } = useSWR<Blacklist>(`/api/v1/blacklist/${tmdbId}`);
 
-  const removeFromBlacklist = async (tmdbId: number, title?: string) => {
+  const { data } = useSWR<Blacklist>(
+    mbId
+      ? `/api/v1/blacklist/music/${mbId}`
+      : tmdbId
+      ? `/api/v1/blacklist/${tmdbId}`
+      : null
+  );
+
+  const removeFromBlacklist = async (
+    tmdbId?: number,
+    mbId?: string,
+    title?: string
+  ) => {
     setIsUpdating(true);
 
     try {
-      await axios.delete('/api/v1/blacklist/' + tmdbId);
+      const url = mbId
+        ? `/api/v1/blacklist/music/${mbId}`
+        : `/api/v1/blacklist/${tmdbId}`;
+
+      await axios.delete(url);
 
       addToast(
         <span>
@@ -113,7 +130,9 @@ const BlacklistBlock = ({
           >
             <Button
               buttonType="danger"
-              onClick={() => removeFromBlacklist(data.tmdbId, data.title)}
+              onClick={() =>
+                removeFromBlacklist(data.tmdbId, data.mbId, data.title)
+              }
               disabled={isUpdating}
             >
               <TrashIcon className="icon-sm" />

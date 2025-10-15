@@ -71,7 +71,9 @@ class EmailAgent
     const mediaType = payload.media
       ? payload.media.mediaType === MediaType.MOVIE
         ? 'movie'
-        : 'series'
+        : payload.media.mediaType === MediaType.TV
+        ? 'series'
+        : 'album'
       : undefined;
     const is4k = payload.request?.is4k;
 
@@ -113,7 +115,11 @@ class EmailAgent
           body = `A request for the following ${mediaType} ${
             is4k ? 'in 4K ' : ''
           }failed to be added to ${
-            payload.media?.mediaType === MediaType.MOVIE ? 'Radarr' : 'Sonarr'
+            payload.media?.mediaType === MediaType.MOVIE
+              ? 'Radarr'
+              : payload.media?.mediaType === MediaType.TV
+              ? 'Sonarr'
+              : 'Lidarr'
           }:`;
           break;
       }
@@ -135,7 +141,11 @@ class EmailAgent
           timestamp: new Date().toTimeString(),
           requestedBy: payload.request.requestedBy.displayName,
           actionUrl: applicationUrl
-            ? `${applicationUrl}/${payload.media?.mediaType}/${payload.media?.tmdbId}`
+            ? `${applicationUrl}/${payload.media?.mediaType}/${
+                payload.media?.mediaType === MediaType.MUSIC
+                  ? payload.media?.mbId
+                  : payload.media?.tmdbId
+              }`
             : undefined,
           applicationUrl,
           applicationTitle,

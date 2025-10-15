@@ -13,22 +13,29 @@ interface OverrideStatus {
 }
 
 const useRequestOverride = (request: MediaRequest): OverrideStatus => {
+  const serviceType =
+    request.type === 'movie'
+      ? 'radarr'
+      : request.type === 'tv'
+      ? 'sonarr'
+      : 'lidarr';
+
   const { data: allServers } = useSWR<ServiceCommonServer[]>(
-    `/api/v1/service/${request.type === 'movie' ? 'radarr' : 'sonarr'}`
+    `/api/v1/service/${serviceType}`
   );
 
   const { data } = useSWR<ServiceCommonServerWithDetails>(
-    `/api/v1/service/${request.type === 'movie' ? 'radarr' : 'sonarr'}/${
-      request.serverId
-    }`
+    `/api/v1/service/${serviceType}/${request.serverId}`
   );
 
   if (!data || !allServers) {
     return {};
   }
 
-  const defaultServer = allServers.find(
-    (server) => server.is4k === request.is4k && server.isDefault
+  const defaultServer = allServers.find((server) =>
+    request.type === 'music'
+      ? server.isDefault
+      : server.is4k === request.is4k && server.isDefault
   );
 
   const activeServer = allServers.find(

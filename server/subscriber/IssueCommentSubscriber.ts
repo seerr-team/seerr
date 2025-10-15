@@ -1,3 +1,5 @@
+import CoverArtArchive from '@server/api/coverartarchive';
+import ListenBrainzAPI from '@server/api/listenbrainz';
 import TheMovieDb from '@server/api/themoviedb';
 import { IssueType, IssueTypeName } from '@server/constants/issue';
 import { MediaType } from '@server/constants/media';
@@ -21,9 +23,11 @@ export class IssueCommentSubscriber
   }
 
   private async sendIssueCommentNotification(entity: IssueComment) {
-    let title: string;
-    let image: string;
+    let title = '';
+    let image = '';
     const tmdb = new TheMovieDb();
+    const listenbrainz = new ListenBrainzAPI();
+    const coverArt = new CoverArtArchive();
 
     try {
       const issue = (
@@ -48,13 +52,19 @@ export class IssueCommentSubscriber
           movie.release_date ? ` (${movie.release_date.slice(0, 4)})` : ''
         }`;
         image = `https://image.tmdb.org/t/p/w600_and_h900_bestv2${movie.poster_path}`;
-      } else {
+      } else if (media.mediaType === MediaType.TV) {
         const tvshow = await tmdb.getTvShow({ tvId: media.tmdbId });
 
         title = `${tvshow.name}${
           tvshow.first_air_date ? ` (${tvshow.first_air_date.slice(0, 4)})` : ''
         }`;
         image = `https://image.tmdb.org/t/p/w600_and_h900_bestv2${tvshow.poster_path}`;
+      } else if (media.mediaType === MediaType.MUSIC && media.mbId) {
+        const album = await listenbrainz.getAlbum(media.mbId);
+        const coverArtResponse = await coverArt.getCoverArt(media.mbId);
+
+        title = `${album.release_group_metadata.release_group.name} by ${album.release_group_metadata.artist.name}`;
+        image = coverArtResponse.images[0]?.thumbnails?.['250'] ?? '';
       }
 
       const [firstComment] = sortBy(issue.comments, 'id');

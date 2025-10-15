@@ -25,8 +25,13 @@ import {
 } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import type { MediaWatchDataResponse } from '@server/interfaces/api/mediaInterfaces';
-import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
+import type {
+  LidarrSettings,
+  RadarrSettings,
+  SonarrSettings,
+} from '@server/lib/settings';
 import type { MovieDetails } from '@server/models/Movie';
+import type { MusicDetails } from '@server/models/Music';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
 import Link from 'next/link';
@@ -63,10 +68,22 @@ const messages = defineMessages('components.ManageSlideOver', {
   playedby: 'Played By',
   movie: 'movie',
   tvshow: 'series',
+  album: 'album',
 });
 
-const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
-  return (movie as MovieDetails).title !== undefined;
+const isMovie = (
+  media: MovieDetails | TvDetails | MusicDetails
+): media is MovieDetails => {
+  return (
+    (media as MovieDetails).title !== undefined &&
+    (media as MusicDetails).artist === undefined
+  );
+};
+
+const isMusic = (
+  media: MovieDetails | TvDetails | MusicDetails
+): media is MusicDetails => {
+  return (media as MusicDetails).artist !== undefined;
 };
 
 interface ManageSlideOverProps {
@@ -86,13 +103,21 @@ interface ManageSlideOverTvProps extends ManageSlideOverProps {
   data: TvDetails;
 }
 
+interface ManageSlideOverMusicProps extends ManageSlideOverProps {
+  mediaType: 'music';
+  data: MusicDetails;
+}
+
 const ManageSlideOver = ({
   show,
   mediaType,
   onClose,
   data,
   revalidate,
-}: ManageSlideOverMovieProps | ManageSlideOverTvProps) => {
+}:
+  | ManageSlideOverMovieProps
+  | ManageSlideOverTvProps
+  | ManageSlideOverMusicProps) => {
   const { user: currentUser, hasPermission } = useUser();
   const intl = useIntl();
   const settings = useSettings();
@@ -108,6 +133,9 @@ const ManageSlideOver = ({
   );
   const { data: sonarrData } = useSWR<SonarrSettings[]>(
     hasPermission(Permission.ADMIN) ? '/api/v1/settings/sonarr' : null
+  );
+  const { data: lidarrData } = useSWR<LidarrSettings[]>(
+    hasPermission(Permission.ADMIN) ? '/api/v1/settings/lidarr' : null
   );
 
   const deleteMedia = async () => {
@@ -136,6 +164,13 @@ const ManageSlideOver = ({
           radarrData?.find(
             (radarr) =>
               radarr.isDefault && radarr.id === data.mediaInfo?.serviceId
+          ) !== undefined
+        );
+      } else if (data.mediaInfo.mediaType === MediaType.MUSIC) {
+        return (
+          lidarrData?.find(
+            (lidarr) =>
+              lidarr.isDefault && lidarr.id === data.mediaInfo?.serviceId
           ) !== undefined
         );
       } else {
@@ -190,11 +225,21 @@ const ManageSlideOver = ({
       show={show}
       title={intl.formatMessage(messages.manageModalTitle, {
         mediaType: intl.formatMessage(
-          mediaType === 'movie' ? globalMessages.movie : globalMessages.tvshow
+          mediaType === 'movie'
+            ? globalMessages.movie
+            : mediaType === 'music'
+            ? globalMessages.album
+            : globalMessages.tvshow
         ),
       })}
       onClose={() => onClose()}
-      subText={isMovie(data) ? data.title : data.name}
+      subText={
+        isMovie(data)
+          ? data.title
+          : isMusic(data)
+          ? `${data.title} - ${data.artist.name}`
+          : data.name
+      }
     >
       <div className="space-y-6">
         {((data?.mediaInfo?.downloadStatus ?? []).length > 0 ||
@@ -404,7 +449,12 @@ const ManageSlideOver = ({
                       <ServerIcon />
                       <span>
                         {intl.formatMessage(messages.openarr, {
-                          arr: mediaType === 'movie' ? 'Radarr' : 'Sonarr',
+                          arr:
+                            mediaType === 'movie'
+                              ? 'Radarr'
+                              : mediaType === 'music'
+                              ? 'Lidarr'
+                              : 'Sonarr',
                         })}
                       </span>
                     </Button>
@@ -425,7 +475,12 @@ const ManageSlideOver = ({
                         <TrashIcon />
                         <span>
                           {intl.formatMessage(messages.removearr, {
-                            arr: mediaType === 'movie' ? 'Radarr' : 'Sonarr',
+                            arr:
+                              mediaType === 'movie'
+                                ? 'Radarr'
+                                : mediaType === 'music'
+                                ? 'Lidarr'
+                                : 'Sonarr',
                           })}
                         </span>
                       </ConfirmButton>
@@ -436,9 +491,16 @@ const ManageSlideOver = ({
                             mediaType: intl.formatMessage(
                               mediaType === 'movie'
                                 ? messages.movie
+                                : mediaType === 'music'
+                                ? messages.album
                                 : messages.tvshow
                             ),
-                            arr: mediaType === 'movie' ? 'Radarr' : 'Sonarr',
+                            arr:
+                              mediaType === 'movie'
+                                ? 'Radarr'
+                                : mediaType === 'music'
+                                ? 'Lidarr'
+                                : 'Sonarr',
                           }
                         )}
                       </div>
@@ -625,9 +687,9 @@ const ManageSlideOver = ({
                     <CheckCircleIcon />
                     <span>
                       {intl.formatMessage(
-                        mediaType === 'movie'
-                          ? messages.markavailable
-                          : messages.markallseasonsavailable
+                        mediaType === 'tv'
+                          ? messages.markallseasonsavailable
+                          : messages.markavailable
                       )}
                     </span>
                   </Button>
@@ -663,7 +725,11 @@ const ManageSlideOver = ({
                   <div className="mt-2 text-xs text-gray-400">
                     {intl.formatMessage(messages.manageModalClearMediaWarning, {
                       mediaType: intl.formatMessage(
-                        mediaType === 'movie' ? messages.movie : messages.tvshow
+                        mediaType === 'movie'
+                          ? messages.movie
+                          : mediaType === 'music'
+                          ? messages.album
+                          : messages.tvshow
                       ),
                       mediaServerName:
                         settings.currentSettings.mediaServerType ===

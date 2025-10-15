@@ -25,6 +25,9 @@ export const messages = defineMessages('components.PermissionEdit', {
   requestTv: 'Request Series',
   requestTvDescription:
     'Grant permission to submit requests for non-4K series.',
+  requestMusic: 'Request Music',
+  requestMusicDescription:
+    'Grant permission to submit requests for music albums.',
   autoapprove: 'Auto-Approve',
   autoapproveDescription:
     'Grant automatic approval for all non-4K media requests.',
@@ -34,6 +37,9 @@ export const messages = defineMessages('components.PermissionEdit', {
   autoapproveSeries: 'Auto-Approve Series',
   autoapproveSeriesDescription:
     'Grant automatic approval for non-4K series requests.',
+  autoapproveMusic: 'Auto-Approve Music',
+  autoapproveMusicDescription:
+    'Grant automatic approval for music album requests.',
   autoapprove4k: 'Auto-Approve 4K',
   autoapprove4kDescription:
     'Grant automatic approval for all 4K media requests.',
@@ -62,6 +68,9 @@ export const messages = defineMessages('components.PermissionEdit', {
   autorequestSeries: 'Auto-Request Series',
   autorequestSeriesDescription:
     'Grant permission to automatically submit requests for non-4K series via Plex Watchlist.',
+  autorequestMusic: 'Auto-Request Music',
+  autorequestMusicDescription:
+    'Grant permission to automatically submit requests for music via Plex Watchlist.',
   viewrequests: 'View Requests',
   viewrequestsDescription:
     'Grant permission to view media requests submitted by other users.',
@@ -182,6 +191,12 @@ export const PermissionEdit = ({
           description: intl.formatMessage(messages.requestTvDescription),
           permission: Permission.REQUEST_TV,
         },
+        {
+          id: 'request-music',
+          name: intl.formatMessage(messages.requestMusic),
+          description: intl.formatMessage(messages.requestMusicDescription),
+          permission: Permission.REQUEST_MUSIC,
+        },
       ],
     },
     {
@@ -219,6 +234,18 @@ export const PermissionEdit = ({
             },
           ],
         },
+        {
+          id: 'autoapprovemusic',
+          name: intl.formatMessage(messages.autoapproveMusic),
+          description: intl.formatMessage(messages.autoapproveMusicDescription),
+          permission: Permission.AUTO_APPROVE_MUSIC,
+          requires: [
+            {
+              permissions: [Permission.REQUEST, Permission.REQUEST_MUSIC],
+              type: 'or',
+            },
+          ],
+        },
       ],
     },
     {
@@ -252,6 +279,18 @@ export const PermissionEdit = ({
           requires: [
             {
               permissions: [Permission.REQUEST, Permission.REQUEST_TV],
+              type: 'or',
+            },
+          ],
+        },
+        {
+          id: 'autorequestmusic',
+          name: intl.formatMessage(messages.autorequestMusic),
+          description: intl.formatMessage(messages.autorequestMusicDescription),
+          permission: Permission.AUTO_REQUEST_MUSIC,
+          requires: [
+            {
+              permissions: [Permission.REQUEST, Permission.REQUEST_MUSIC],
               type: 'or',
             },
           ],

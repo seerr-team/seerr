@@ -52,7 +52,12 @@ const PersonCard = ({
                 <div className="relative h-full w-3/4 overflow-hidden rounded-full ring-1 ring-gray-700">
                   <CachedImage
                     type="tmdb"
-                    src={`https://image.tmdb.org/t/p/w600_and_h900_bestv2${profilePath}`}
+                    src={
+                      // Check if profilePath already contains http(s)
+                      profilePath?.startsWith('http')
+                        ? profilePath
+                        : `https://image.tmdb.org/t/p/w600_and_h900_bestv2${profilePath}`
+                    }
                     alt=""
                     style={{
                       width: '100%',
