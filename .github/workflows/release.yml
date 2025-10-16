@@ -177,8 +177,8 @@ jobs:
         if: ${{ !contains(env.VERSION, '-') }}
         run: |
           docker buildx imagetools create \
-            -t ${{ github.repository }}:latest \
-            ${{ github.repository }}:${{ env.VERSION }}
+            -t seerr/seerr:latest \
+            seerr/seerr:${{ env.VERSION }}
 
           docker buildx imagetools create \
             -t ghcr.io/${{ github.repository }}:latest \
@@ -223,7 +223,7 @@ jobs:
       - name: Sign images
         run: |
           cosign sign --recursive "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}"
-          cosign sign --recursive "${{ github.repository }}@${{ needs.publish.outputs.image_digest }}"
+          cosign sign --recursive "seerr/seerr@${{ needs.publish.outputs.image_digest }}"
 
       - name: Generate SBOMs
         run: |
@@ -231,7 +231,7 @@ jobs:
             "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}"
 
           trivy image --format cyclonedx --output seerr-dockerhub-image-${{ env.VERSION }}.sbom \
-            "${{ github.repository }}@${{ needs.publish.outputs.image_digest }}"
+            "seerr/seerr@${{ needs.publish.outputs.image_digest }}"
 
       - name: Attest SBOMs
         run: |
@@ -243,7 +243,7 @@ jobs:
           cosign attest \
             --type cyclonedx \
             --predicate seerr-dockerhub-image-${{ env.VERSION }}.sbom \
-            "${{ github.repository }}@${{ needs.publish.outputs.image_digest }}"
+            "seerr/seerr@${{ needs.publish.outputs.image_digest }}"
 
       - name: Upload SBOMs
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -271,7 +271,7 @@ jobs:
             --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
             --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
 
-          cosign verify "${{ github.repository }}@${{ needs.publish.outputs.image_digest }}" \
+          cosign verify "seerr/seerr@${{ needs.publish.outputs.image_digest }}" \
             --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
             --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
 
@@ -282,7 +282,7 @@ jobs:
             --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
             --certificate-oidc-issuer "https://token.actions.githubusercontent.com" > /dev/null
 
-          cosign verify-attestation "${{ github.repository }}@${{ needs.publish.outputs.image_digest }}" \
+          cosign verify-attestation "seerr/seerr@${{ needs.publish.outputs.image_digest }}" \
             --type cyclonedx \
             --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
             --certificate-oidc-issuer "https://token.actions.githubusercontent.com" > /dev/null

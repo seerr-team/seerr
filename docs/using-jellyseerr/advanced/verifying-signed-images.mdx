@@ -58,7 +58,7 @@ Verification should always be performed using the image digest (SHA256).
   <TabItem value="docker" label="Docker">
 
 ```bash
-docker buildx imagetools inspect docker.io/seerr-team/seerr:v2.7.4 --format '{{json .Manifest.Digest}}' | tr -d '"'
+docker buildx imagetools inspect ghcr.io/seerr-team/seerr:v2.7.4 --format '{{json .Manifest.Digest}}' | tr -d '"'
 ```
   </TabItem>
 
