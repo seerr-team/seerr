@@ -327,7 +327,20 @@ const sortCredits = (credits: MediaItem[]): MediaItem[] => {
   );
 };
 
-type MediaType = 'all' | 'movie' | 'tv';
+type MediaType =
+  | 'all'
+  | 'movie'
+  | 'tv'
+  | 'album'
+  | 'ep'
+  | 'single'
+  | 'live'
+  | 'compilation'
+  | 'remix'
+  | 'soundtrack'
+  | 'broadcast'
+  | 'demo'
+  | 'other';
 
 const PersonDetails = () => {
   const intl = useIntl();
@@ -540,8 +553,14 @@ const PersonDetails = () => {
   );
 
   const sortedCredits = useMemo(() => {
-    const cast = combinedCredits?.cast ?? [];
-    const crew = combinedCredits?.crew ?? [];
+    const cast =
+      combinedCredits?.cast.filter(
+        (c) => currentMediaType === 'all' || c.mediaType === currentMediaType
+      ) ?? [];
+    const crew =
+      combinedCredits?.crew.filter(
+        (c) => currentMediaType === 'all' || c.mediaType === currentMediaType
+      ) ?? [];
 
     return {
       cast: sortCredits(
@@ -559,7 +578,7 @@ const PersonDetails = () => {
         }))
       ),
     };
-  }, [combinedCredits]);
+  }, [combinedCredits, currentMediaType]);
 
   const personAttributes = useMemo(() => {
     if (!data) return [];
@@ -665,6 +684,13 @@ const PersonDetails = () => {
           {intl.formatMessage(globalMessages.movies)}
         </option>
         <option value="tv">{intl.formatMessage(globalMessages.tvshows)}</option>
+        {albumTypeOrder
+          .filter((type) => albumTypes[type]?.albums.length ?? 0 > 0)
+          .map((type) => (
+            <option value={type}>
+              {intl.formatMessage(messages[albumTypeMessages[type]])}
+            </option>
+          ))}
       </select>
     </div>
   );
@@ -734,7 +760,11 @@ const PersonDetails = () => {
       {data.artist?.typeCounts && (
         <div className="space-y-6">
           {albumTypeOrder
-            .filter((type) => (albumTypes[type]?.albums.length ?? 0) > 0)
+            .filter(
+              (type) =>
+                (albumTypes[type]?.albums.length ?? 0) > 0 &&
+                (currentMediaType === 'all' || type === currentMediaType)
+            )
             .map((type) => (
               <AlbumSection
                 key={`section-${type}`}
