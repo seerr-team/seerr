@@ -2,8 +2,10 @@ import Header from '@app/components/Common/Header';
 import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
+import globalMessages from '@app/i18n/globalMessages';
 import Error from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
+import { CircleStackIcon } from '@heroicons/react/24/outline';
 import type {
   AlbumResult,
   MovieResult,
@@ -11,7 +13,21 @@ import type {
   TvResult,
 } from '@server/models/Search';
 import { useRouter } from 'next/router';
+import { useState } from 'react';
 import { useIntl } from 'react-intl';
+
+type MediaType =
+  | 'all'
+  | 'album'
+  | 'ep'
+  | 'single'
+  | 'live'
+  | 'compilation'
+  | 'remix'
+  | 'soundtrack'
+  | 'broadcast'
+  | 'demo'
+  | 'other';
 
 const messages = defineMessages('components.Search', {
   search: 'Search',
@@ -21,6 +37,7 @@ const messages = defineMessages('components.Search', {
 const Search = () => {
   const intl = useIntl();
   const router = useRouter();
+  const [currentMediaType, setCurrentMediaType] = useState<string>('all');
 
   const {
     isLoadingInitialData,
@@ -42,11 +59,47 @@ const Search = () => {
     return <Error statusCode={500} />;
   }
 
+  const mediaTypePicker = (
+    <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
+      <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
+        <CircleStackIcon className="h-6 w-6" />
+      </span>
+      <select
+        id="mediaType"
+        name="mediaType"
+        onChange={(e) => {
+          setCurrentMediaType(e.target.value as MediaType);
+        }}
+        value={currentMediaType}
+        className="rounded-r-only"
+      >
+        <option value="all">{intl.formatMessage(globalMessages.all)}</option>
+        <option value="movie">
+          {intl.formatMessage(globalMessages.movie)}
+        </option>
+        <option value="tv">{intl.formatMessage(globalMessages.tvshow)}</option>
+        <option value="collection">
+          {intl.formatMessage(globalMessages.collection)}
+        </option>
+        <option value="album">
+          {intl.formatMessage(globalMessages.music)}
+        </option>
+        <option value="person">
+          {intl.formatMessage(globalMessages.person)}
+        </option>
+        <option value="artist">
+          {intl.formatMessage(globalMessages.artist)}
+        </option>
+      </select>
+    </div>
+  );
+
   return (
     <>
       <PageTitle title={intl.formatMessage(messages.search)} />
-      <div className="mt-1 mb-5">
+      <div className="mt-1 mb-5 flex w-full items-center justify-center lg:justify-between">
         <Header>{intl.formatMessage(messages.searchresults)}</Header>
+        <div className="hidden flex-shrink-0 lg:block">{mediaTypePicker}</div>
       </div>
       <ListView
         items={titles}
@@ -56,6 +109,7 @@ const Search = () => {
         }
         isReachingEnd={isReachingEnd}
         onScrollBottom={fetchMore}
+        mediaTypeFilter={currentMediaType}
       />
     </>
   );

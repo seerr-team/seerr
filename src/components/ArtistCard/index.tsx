@@ -1,7 +1,9 @@
 import CachedImage from '@app/components/Common/CachedImage';
+import globalMessages from '@app/i18n/globalMessages';
 import { UserCircleIcon } from '@heroicons/react/24/solid';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useIntl } from 'react-intl';
 
 interface ArtistCardProps {
   artistId: string;
@@ -23,6 +25,7 @@ const ArtistCard = ({
   canExpand = false,
 }: ArtistCardProps) => {
   const [isHovered, setHovered] = useState(false);
+  const intl = useIntl();
 
   return (
     <Link
@@ -51,6 +54,13 @@ const ArtistCard = ({
       >
         <div style={{ paddingBottom: '150%' }}>
           <div className="absolute inset-0 flex h-full w-full flex-col items-center p-2">
+            <div className="absolute left-0 right-0 flex items-center justify-between px-2">
+              <div className="pointer-events-none z-40 self-start rounded-full border border-gray-500 bg-gray-500 bg-opacity-80 shadow-md">
+                <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium uppercase tracking-wider text-white sm:h-5">
+                  {intl.formatMessage(globalMessages.artist)}
+                </div>
+              </div>
+            </div>
             <div className="relative mt-2 mb-4 flex h-1/2 w-full justify-center">
               {artistThumb || profilePath ? (
                 <div className="relative h-full w-3/4 overflow-hidden rounded-full ring-1 ring-gray-700">

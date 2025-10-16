@@ -4,9 +4,14 @@ import ImageFader from '@app/components/Common/ImageFader';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import TitleCard from '@app/components/TitleCard';
+import globalMessages from '@app/i18n/globalMessages';
 import Error from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
-import { ArrowRightCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowRightCircleIcon,
+  CircleStackIcon,
+  XCircleIcon,
+} from '@heroicons/react/24/outline';
 import { MediaStatus } from '@server/constants/media';
 import axios from 'axios';
 import { useRouter } from 'next/router';
@@ -249,10 +254,37 @@ const AlbumSection = ({
   );
 };
 
+type MediaType =
+  | 'all'
+  | 'album'
+  | 'ep'
+  | 'single'
+  | 'live'
+  | 'compilation'
+  | 'remix'
+  | 'soundtrack'
+  | 'broadcast'
+  | 'demo'
+  | 'other';
+
 const ArtistDetails = () => {
   const intl = useIntl();
   const router = useRouter();
   const artistId = router.query.artistId as string;
+  const [currentMediaType, setCurrentMediaType] = useState<string>('all');
+
+  const albumTypeOrder = [
+    'Album',
+    'EP',
+    'Single',
+    'Live',
+    'Compilation',
+    'Remix',
+    'Soundtrack',
+    'Broadcast',
+    'Demo',
+    'Other',
+  ];
 
   const { data, error } = useSWR<ArtistData>(
     artistId ? `/api/v1/artist/${artistId}` : null,
@@ -494,18 +526,31 @@ const ArtistDetails = () => {
     return <Error statusCode={404} />;
   }
 
-  const albumTypeOrder = [
-    'Album',
-    'EP',
-    'Single',
-    'Live',
-    'Compilation',
-    'Remix',
-    'Soundtrack',
-    'Broadcast',
-    'Demo',
-    'Other',
-  ];
+  const mediaTypePicker = (
+    <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
+      <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
+        <CircleStackIcon className="h-6 w-6" />
+      </span>
+      <select
+        id="mediaType"
+        name="mediaType"
+        onChange={(e) => {
+          setCurrentMediaType(e.target.value as MediaType);
+        }}
+        value={currentMediaType}
+        className="rounded-r-only"
+      >
+        <option value="all">{intl.formatMessage(globalMessages.all)}</option>
+        {albumTypeOrder
+          .filter((type) => albumTypes[type]?.albums.length ?? 0 > 0)
+          .map((type) => (
+            <option value={type}>
+              {intl.formatMessage(messages[albumTypeMessages[type]])}
+            </option>
+          ))}
+      </select>
+    </div>
+  );
 
   return (
     <>
@@ -533,7 +578,12 @@ const ArtistDetails = () => {
           </div>
         )}
         <div className="text-center text-gray-300 lg:text-left">
-          <h1 className="text-3xl text-white lg:text-4xl">{artistName}</h1>
+          <div className="flex w-full items-center justify-center lg:justify-between">
+            <h1 className="text-3xl text-white lg:text-4xl">{artistName}</h1>
+            <div className="hidden flex-shrink-0 lg:block">
+              {mediaTypePicker}
+            </div>
+          </div>
           <div className="mt-1 mb-2 space-y-1 text-xs text-white sm:text-sm lg:text-base">
             <div>{personAttributes.join(' | ')}</div>
           </div>
@@ -549,7 +599,11 @@ const ArtistDetails = () => {
 
       <div className="space-y-6">
         {albumTypeOrder
-          .filter((type) => (albumTypes[type]?.albums.length ?? 0) > 0)
+          .filter(
+            (type) =>
+              (albumTypes[type]?.albums.length ?? 0) > 0 &&
+              (currentMediaType === 'all' || type === currentMediaType)
+          )
           .map((type) => (
             <AlbumSection
               key={`section-${type}`}
