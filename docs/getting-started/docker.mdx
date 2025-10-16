@@ -68,6 +68,11 @@ Finally, run the container with the same parameters originally used to create th
 ```bash
 docker run -d ...
 ```
+:::info
+All official Seerr images are cryptographically signed and include a verified [Software Bill of Materials (SBOM)](https://cyclonedx.org/).
+
+To confirm that the container image you are using is authentic and unmodified, please refer to the [Verifying Signed Images](/using-jellyseerr/advanced/verifying-signed-images) guide.
+:::
 
 :::tip
 You may alternatively use a third-party updating mechanism, such as [Watchtower](https://github.com/containrrr/watchtower) or [Ouroboros](https://github.com/pyouroboros/ouroboros), to keep Jellyseerr up-to-date automatically.
