@@ -10,12 +10,12 @@ import TabItem from '@theme/TabItem';
 
 # Verifying Signed Artifacts
 
-Theses artifacts are cryptographically signed using [Sigstore Cosign](https://docs.sigstore.dev/quickstart/quickstart-cosign/):
+These artifacts are cryptographically signed using [Sigstore Cosign](https://docs.sigstore.dev/quickstart/quickstart-cosign/):
 - Container images
 
 This ensures that the images you pull are authentic, tamper-proof, and built by the official Seerr release pipeline.
 
-Aditionnally each container images also includes a CycloneDX SBOM (Software Bill of Materials) attestation, generated with [Trivy](https://aquasecurity.github.io/trivy/), providing transparency about all dependencies included in the image.
+Additionally each container image also includes a CycloneDX SBOM (Software Bill of Materials) attestation, generated with [Trivy](https://aquasecurity.github.io/trivy/), providing transparency about all dependencies included in the image.
 
 ---
 
@@ -25,7 +25,7 @@ You will need the following tools installed:
 
 - [Cosign](https://docs.sigstore.dev/cosign/system_config/installation/)
 
-To verify images :
+To verify images:
 
 - [Docker](https://docs.docker.com/get-docker/) **or**
 - [Podman](https://podman.io/getting-started/installation) (including [Skopeo](https://github.com/containers/skopeo/blob/main/install.md))
@@ -46,7 +46,7 @@ Each image also includes a CycloneDX SBOM (Software Bill of Materials) attestati
 Official Seerr images are available from:
 
 - GitHub Container Registry (GHCR): `ghcr.io/seerr-team/seerr:<tag>`
-- Docker Hub : `seerr/seerr:<tag>`
+- Docker Hub: `seerr/seerr:<tag>`
 
 You can view all available tags on the [Seerr Releases page](https://github.com/seerr-team/seerr/releases).
 
