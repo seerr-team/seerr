@@ -1285,6 +1285,7 @@ discoverRoutes.get('/music/artists', async (req, res, next) => {
       .map((artist) => ({
         artistId: artist.artist_mbid,
         artistName: artist.artist_name,
+        aliases: [],
       }));
 
     interface ArtistImageResults {

@@ -5,7 +5,7 @@ import MetadataArtist from '@server/entity/MetadataArtist';
 import cacheManager from '@server/lib/cache';
 import logger from '@server/logger';
 import { In } from 'typeorm';
-import type { TmdbSearchPersonResponse } from './interfaces';
+import type { TmdbPersonResult, TmdbSearchPersonResponse } from './interfaces';
 
 interface SearchPersonOptions {
   query: string;
@@ -78,7 +78,8 @@ class TmdbPersonMapper extends ExternalAPI {
 
   public async getMapping(
     artistId: string,
-    artistName: string
+    artistName: string,
+    aliases: string[]
   ): Promise<{ personId: number | null; profilePath: string | null }> {
     try {
       const metadata = await getRepository(MetadataArtist).findOne({
@@ -99,7 +100,7 @@ class TmdbPersonMapper extends ExternalAPI {
         return this.createEmptyResponse();
       }
 
-      return await this.fetchMapping(artistId, artistName);
+      return await this.fetchMapping(artistId, artistName, aliases);
     } catch (error) {
       logger.error('Failed to get person mapping', {
         label: 'TmdbPersonMapper',
@@ -112,7 +113,8 @@ class TmdbPersonMapper extends ExternalAPI {
 
   private async fetchMapping(
     artistId: string,
-    artistName: string
+    artistName: string,
+    aliases: string[]
   ): Promise<{ personId: number | null; profilePath: string | null }> {
     try {
       const existingMetadata = await getRepository(MetadataArtist).findOne({
@@ -127,24 +129,6 @@ class TmdbPersonMapper extends ExternalAPI {
         };
       }
 
-      const cleanArtistName = artistName
-        .split(/(?:(?:feat|ft)\.?\s+|&\s*|,\s+)/i)[0]
-        .trim()
-        .replace(/['′]/g, "'");
-
-      const searchResults = await this.get<TmdbSearchPersonResponse>(
-        '/search/person',
-        {
-          params: {
-            query: cleanArtistName,
-            page: '1',
-            include_adult: 'false',
-            language: 'en',
-          },
-        },
-        this.CACHE_TTL
-      );
-
       const normalizeName = (name: string): string => {
         return name
           .toLowerCase()
@@ -155,12 +139,39 @@ class TmdbPersonMapper extends ExternalAPI {
           .trim();
       };
 
-      const exactMatches = searchResults.results.filter((person) => {
-        const normalizedPersonName = normalizeName(person.name);
-        const normalizedArtistName = normalizeName(cleanArtistName);
+      const exactMatches: TmdbPersonResult[] = [];
 
-        return normalizedPersonName === normalizedArtistName;
-      });
+      for (const potentialName of [artistName, ...aliases]) {
+        const cleanArtistName = potentialName
+          .split(/(?:(?:feat|ft)\.?\s+|&\s*|,\s+)/i)[0]
+          .trim()
+          .replace(/['′]/g, "'");
+
+        const searchResults = await this.get<TmdbSearchPersonResponse>(
+          '/search/person',
+          {
+            params: {
+              query: cleanArtistName,
+              page: '1',
+              include_adult: 'false',
+              language: 'en',
+            },
+          },
+          this.CACHE_TTL
+        );
+
+        const localExactMatches = searchResults.results.filter((person) => {
+          const normalizedPersonName = normalizeName(person.name);
+          const normalizedArtistName = normalizeName(cleanArtistName);
+
+          return normalizedPersonName === normalizedArtistName;
+        });
+
+        localExactMatches.forEach((match) => exactMatches.push(match));
+
+        //break out at first to match, don't go through every alias - assuming aliases are in order
+        if (localExactMatches.length > 0) break;
+      }
 
       if (exactMatches.length > 0) {
         const tmdbPersonIds = exactMatches.map((match) => match.id.toString());
@@ -251,7 +262,7 @@ class TmdbPersonMapper extends ExternalAPI {
   }
 
   public async batchGetMappings(
-    artists: { artistId: string; artistName: string }[]
+    artists: { artistId: string; artistName: string; aliases: string[] }[]
   ): Promise<
     Record<string, { personId: number | null; profilePath: string | null }>
   > {
@@ -269,9 +280,13 @@ class TmdbPersonMapper extends ExternalAPI {
       string,
       { personId: number | null; profilePath: string | null }
     > = {};
-    const artistsToFetch: { artistId: string; artistName: string }[] = [];
+    const artistsToFetch: {
+      artistId: string;
+      artistName: string;
+      aliases: string[];
+    }[] = [];
 
-    artists.forEach(({ artistId, artistName }) => {
+    artists.forEach(({ artistId, artistName, aliases }) => {
       const metadata = existingMetadata.find((m) => m.mbArtistId === artistId);
 
       if (metadata?.tmdbPersonId || metadata?.tmdbThumb) {
@@ -284,7 +299,7 @@ class TmdbPersonMapper extends ExternalAPI {
       } else if (metadata && !this.isMetadataStale(metadata)) {
         results[artistId] = this.createEmptyResponse();
       } else {
-        artistsToFetch.push({ artistId, artistName });
+        artistsToFetch.push({ artistId, artistName, aliases });
       }
     });
 
@@ -292,8 +307,8 @@ class TmdbPersonMapper extends ExternalAPI {
       const batchSize = 5;
       for (let i = 0; i < artistsToFetch.length; i += batchSize) {
         const batch = artistsToFetch.slice(i, i + batchSize);
-        const batchPromises = batch.map(({ artistId, artistName }) =>
-          this.fetchMapping(artistId, artistName)
+        const batchPromises = batch.map(({ artistId, artistName, aliases }) =>
+          this.fetchMapping(artistId, artistName, aliases)
             .then((mapping) => {
               results[artistId] = mapping;
               return true;

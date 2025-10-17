@@ -57,7 +57,7 @@ const ArtistCard = ({
             <div className="absolute left-0 right-0 flex items-center justify-between px-2">
               <div className="pointer-events-none z-40 self-start rounded-full border border-gray-500 bg-gray-500 bg-opacity-80 shadow-md">
                 <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium uppercase tracking-wider text-white sm:h-5">
-                  {intl.formatMessage(globalMessages.artist)}
+                  {intl.formatMessage(globalMessages.person)}
                 </div>
               </div>
             </div>

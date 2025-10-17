@@ -87,9 +87,6 @@ const Search = () => {
         <option value="person">
           {intl.formatMessage(globalMessages.person)}
         </option>
-        <option value="artist">
-          {intl.formatMessage(globalMessages.artist)}
-        </option>
       </select>
     </div>
   );

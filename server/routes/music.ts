@@ -1,5 +1,6 @@
 import ListenBrainzAPI from '@server/api/listenbrainz';
 import MusicBrainz from '@server/api/musicbrainz';
+import type { MbArtistDetails } from '@server/api/musicbrainz/interfaces';
 import TheAudioDb from '@server/api/theaudiodb';
 import TmdbPersonMapper from '@server/api/themoviedb/personMapper';
 import { MediaType } from '@server/constants/media';
@@ -43,6 +44,8 @@ musicRoutes.get('/:id', async (req, res, next) => {
       }),
     ]);
 
+    const artistName =
+      albumDetails.release_group_metadata?.artist?.artists[0]?.name;
     const artistId =
       albumDetails.release_group_metadata?.artist?.artists[0]?.artist_mbid;
     const isPerson =
@@ -59,6 +62,7 @@ musicRoutes.get('/:id', async (req, res, next) => {
       metadataArtist,
       trackArtistMetadata,
       artistWikipedia,
+      musicBrainzResults,
     ] = await Promise.allSettled([
       getRepository(MetadataAlbum).findOne({
         where: { mbAlbumId: req.params.id },
@@ -79,6 +83,14 @@ musicRoutes.get('/:id', async (req, res, next) => {
             })
             .catch(() => null)
         : Promise.resolve(null),
+      artistId
+        ? musicbrainz
+            .searchArtist({
+              query: artistName,
+              limit: 20,
+            })
+            .catch(() => [])
+        : Promise.resolve([]),
     ]);
 
     const resolvedMetadataAlbum =
@@ -91,6 +103,18 @@ musicRoutes.get('/:id', async (req, res, next) => {
         : [];
     const resolvedArtistWikipedia =
       artistWikipedia.status === 'fulfilled' ? artistWikipedia.value : null;
+
+    const musicBrainzArtists: MbArtistDetails[] =
+      musicBrainzResults.status === 'fulfilled' ? musicBrainzResults.value : [];
+
+    const matchingArtists = musicBrainzArtists.filter(
+      (artist) => artist.id === artistId
+    );
+
+    const aliases: string[] =
+      matchingArtists.length && matchingArtists[0].aliases
+        ? matchingArtists[0].aliases.map((alias) => alias.name)
+        : [];
 
     const trackArtistsToMap = albumDetails.mediums
       .flatMap((medium) => medium.tracks)
@@ -106,6 +130,7 @@ musicRoutes.get('/:id', async (req, res, next) => {
           .map((artist) => ({
             artistId: artist.artist_mbid,
             artistName: artist.artist_credit_name,
+            aliases: aliases,
           }))
       );
 
@@ -119,7 +144,8 @@ musicRoutes.get('/:id', async (req, res, next) => {
         ? personMapper
             .getMapping(
               artistId,
-              albumDetails.release_group_metadata.artist.artists[0].name
+              albumDetails.release_group_metadata.artist.artists[0].name,
+              aliases
             )
             .catch(() => null)
         : Promise.resolve(null),
@@ -297,6 +323,7 @@ musicRoutes.get('/:id/artist', async (req, res, next) => {
         .map((artist) => ({
           artistId: artist.artist_mbid,
           artistName: artist.name,
+          aliases: [],
         })) ?? [];
 
     type ArtistImageResults = Record<

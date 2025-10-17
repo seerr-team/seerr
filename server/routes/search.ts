@@ -154,6 +154,9 @@ searchRoutes.get('/', async (req, res, next) => {
         .map((artist) => ({
           artistId: artist.id,
           artistName: artist.name,
+          aliases: artist.aliases
+            ? artist.aliases.map((alias) => alias.name)
+            : [],
         }));
 
       const artistsNeedingImages = artistIds.filter((id) => {

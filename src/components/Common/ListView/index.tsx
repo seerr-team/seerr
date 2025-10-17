@@ -65,7 +65,8 @@ const ListView = ({
           if (mediaTypeFilter)
             return (
               (mediaTypeFilter === 'all' && title) ||
-              title?.mediaType === mediaTypeFilter
+              title?.mediaType === mediaTypeFilter ||
+              (mediaTypeFilter === 'person' && title?.mediaType === 'artist')
             );
           return title;
         })
