@@ -11,6 +11,10 @@ Details on how to install Docker can be found on the [official Docker website](h
 Refer to [Configuring Databases](/extending-jellyseerr/database-config#postgresql-options) for details on how to configure your database.
 :::
 
+:::info
+An alternative Docker image is available on Docker Hub for this project. You can find it at [Docker Hub Repository Link](https://hub.docker.com/r/seerr/seerr)
+:::
+
 ## Unix (Linux, macOS)
 :::warning
 Be sure to replace `/path/to/appdata/config` in the below examples with a valid host directory path. If this volume mount is not configured correctly, your Jellyseerr settings/data will not be persisted when the container is recreated (e.g., when updating the image or rebooting your machine).
@@ -71,7 +75,7 @@ docker run -d ...
 :::info
 All official Seerr images are cryptographically signed and include a verified [Software Bill of Materials (SBOM)](https://cyclonedx.org/).
 
-To confirm that the container image you are using is authentic and unmodified, please refer to the [Verifying Signed Images](/using-jellyseerr/advanced/verifying-signed-images) guide.
+To confirm that the container image you are using is authentic and unmodified, please refer to the [Verifying Signed Artifacts](/using-jellyseerr/advanced/verifying-signed-artifacts) guide.
 :::
 
 :::tip

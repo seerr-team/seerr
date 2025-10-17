@@ -71,6 +71,7 @@ class DownloadTracker {
 
   public async resetDownloadTracker() {
     this.radarrServers = {};
+    this.sonarrServers = {};
   }
 
   public updateDownloads() {

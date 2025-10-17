@@ -1,12 +1,36 @@
 ---
-id: verifying-signed-images
-title: Verifying Signed Images
-sidebar_label: Verify Signed Images
-description: Learn how to verify Seerr's signed container images and SBOM attestations using Cosign, Docker, Podman, or Skopeo.
+id: verifying-signed-artifacts
+title: Verifying Signed Artifacts
+sidebar_label: Verify Signed Artifacts
+description: Learn how to verify Seerr's signed artifacts and SBOM attestations.
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+
+# Verifying Signed Artifacts
+
+These artifacts are cryptographically signed using [Sigstore Cosign](https://docs.sigstore.dev/quickstart/quickstart-cosign/):
+- Container images
+
+This ensures that the images you pull are authentic, tamper-proof, and built by the official Seerr release pipeline.
+
+Additionally each container image also includes a CycloneDX SBOM (Software Bill of Materials) attestation, generated with [Trivy](https://aquasecurity.github.io/trivy/), providing transparency about all dependencies included in the image.
+
+---
+
+## Prerequisites
+
+You will need the following tools installed:
+
+- [Cosign](https://docs.sigstore.dev/cosign/system_config/installation/)
+
+To verify images:
+
+- [Docker](https://docs.docker.com/get-docker/) **or**
+- [Podman](https://podman.io/getting-started/installation) (including [Skopeo](https://github.com/containers/skopeo/blob/main/install.md))
+
+---
 
 # Verifying Signed Images
 
@@ -17,42 +41,23 @@ Each image also includes a CycloneDX SBOM (Software Bill of Materials) attestati
 
 ---
 
-## Prerequisites
-
-You will need the following tools installed:
-
-- [Cosign](https://docs.sigstore.dev/cosign/system_config/installation/)
-- [Docker](https://docs.docker.com/get-docker/) **or**
-- [Podman](https://podman.io/getting-started/installation) (including [Skopeo](https://github.com/containers/skopeo/blob/main/install.md))
-
-```bash
-cosign version
-```
-
-If using **Podman**, ensure `skopeo` is available:
-
-```bash
-skopeo --version
-```
-
----
-
-## Image Locations
+### Image Locations
 
 Official Seerr images are available from:
 
 - GitHub Container Registry (GHCR): `ghcr.io/seerr-team/seerr:<tag>`
+- Docker Hub: `seerr/seerr:<tag>`
 
 You can view all available tags on the [Seerr Releases page](https://github.com/seerr-team/seerr/releases).
 
 ---
 
-## Verifying a Specific Release Tag
+### Verifying a Specific Release Tag
 
 Each tagged release (for example `v2.7.4`) is immutable and cryptographically signed.
 Verification should always be performed using the image digest (SHA256).
 
-### Retrieve the Image Digest
+#### Retrieve the Image Digest
 
 <Tabs groupId="verify-methods">
   <TabItem value="docker" label="Docker">
@@ -78,7 +83,7 @@ sha256:abcd1234...
 
 ---
 
-### Verify the Image Signature
+#### Verify the Image Signature
 
 <Tabs groupId="registry-methods">
   <TabItem value="ghcr" label="GitHub Container Registry (GHCR)">
@@ -112,14 +117,14 @@ The following checks were performed:
 
 ---
 
-## Verifying the `latest` Tag
+### Verifying the `latest` Tag
 
 :::warning Latest Tag Warning
 The `latest` tag is **mutable**, meaning it will change with each new release.
 Always verify the digest that `latest` currently points to.
 :::
 
-### Retrieve the Digest for `latest`
+#### Retrieve the Digest for `latest`
 
 <Tabs groupId="verify-methods">
   <TabItem value="docker" label="Docker">
@@ -143,7 +148,7 @@ Example output:
 sha256:abcd1234...
 ```
 
-### Verify the Signature
+#### Verify the Signature
 
 <Tabs groupId="registry-methods">
   <TabItem value="ghcr" label="GHCR">
@@ -171,11 +176,11 @@ The wildcard `v.*` ensures verification works for any versioned release that `la
 
 ---
 
-## Verifying SBOM Attestations
+### Verifying SBOM Attestations
 
 Each image includes a CycloneDX SBOM attestation.
 
-### Verify the Attestation
+#### Verify the Attestation
 
 ```bash
 cosign verify-attestation ghcr.io/seerr-team/seerr@sha256:abcd1234... \
@@ -193,7 +198,7 @@ The following checks were performed:
 - Certificate issued by Fulcio to the expected workflow identity
 :::
 
-### Extract the SBOM for Inspection
+#### Extract the SBOM for Inspection
 
 ```bash
 cosign verify-attestation ghcr.io/seerr-team/seerr@sha256:abcd1234... \
@@ -206,7 +211,7 @@ You can open `sbom.json` in a CycloneDX viewer or analyse it with [Trivy](https:
 
 ---
 
-## Expected Certificate Identity
+### Expected Certificate Identity
 
 The expected certificate identity for all signed Seerr images is:
 
@@ -222,7 +227,7 @@ This confirms that the image was:
 
 ---
 
-## Troubleshooting
+### Troubleshooting
 
 | Issue | Likely Cause | Suggested Fix |
 |-------|---------------|----------------|
@@ -233,7 +238,7 @@ This confirms that the image was:
 
 ---
 
-## Example: Full Verification Flow
+### Example: Full Verification Flow
 
 <Tabs groupId="verify-examples">
   <TabItem value="docker" label="Docker">

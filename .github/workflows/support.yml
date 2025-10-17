@@ -9,14 +9,13 @@ on:
 permissions:
   issues: read
 
-concurrency:
-  group: support-${{ github.event.issue.number }}
-  cancel-in-progress: true
-
 jobs:
   support:
     if: github.event.label.name == 'support' || github.event.action == 'reopened'
     runs-on: ubuntu-24.04
+    concurrency:
+      group: support-${{ github.event.issue.number }}
+      cancel-in-progress: true
     permissions:
       issues: write
     env:
