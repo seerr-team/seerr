@@ -7,8 +7,8 @@ import type { NotificationAgentEmail } from '@server/lib/settings';
 import { getSettings, NotificationAgentKey } from '@server/lib/settings';
 import logger from '@server/logger';
 import type { EmailOptions } from 'email-templates';
-import * as EmailValidator from 'email-validator';
 import path from 'path';
+import validator from 'validator';
 import { Notification, shouldSendAdminNotification } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
 import { BaseAgent } from './agent';
@@ -221,7 +221,7 @@ class EmailAgent
             this.getSettings(),
             payload.notifyUser.settings?.pgpKey
           );
-          if (EmailValidator.validate(payload.notifyUser.email)) {
+          if (validator.isEmail(payload.notifyUser.email)) {
             await email.send(
               this.buildMessage(
                 type,
@@ -283,7 +283,7 @@ class EmailAgent
                 this.getSettings(),
                 user.settings?.pgpKey
               );
-              if (EmailValidator.validate(user.email)) {
+              if (validator.isEmail(user.email)) {
                 await email.send(
                   this.buildMessage(type, payload, user.email, user.displayName)
                 );
