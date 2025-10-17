@@ -10,17 +10,23 @@ interface OverrideStatus {
   profile?: string;
   rootFolder?: string;
   languageProfile?: string;
+  metadataProfile?: string;
 }
 
 const useRequestOverride = (request: MediaRequest): OverrideStatus => {
+  const serviceType =
+    request.type === 'movie'
+      ? 'radarr'
+      : request.type === 'book'
+      ? 'readarr'
+      : 'sonarr';
+
   const { data: allServers } = useSWR<ServiceCommonServer[]>(
-    `/api/v1/service/${request.type === 'movie' ? 'radarr' : 'sonarr'}`
+    `/api/v1/service/${serviceType}`
   );
 
   const { data } = useSWR<ServiceCommonServerWithDetails>(
-    `/api/v1/service/${request.type === 'movie' ? 'radarr' : 'sonarr'}/${
-      request.serverId
-    }`
+    `/api/v1/service/${serviceType}/${request.serverId}`
   );
 
   if (!data || !allServers) {
@@ -28,7 +34,7 @@ const useRequestOverride = (request: MediaRequest): OverrideStatus => {
   }
 
   const defaultServer = allServers.find(
-    (server) => server.is4k === request.is4k && server.isDefault
+    (server) => server.isAlt === request.isAlt && server.isDefault
   );
 
   const activeServer = allServers.find(
@@ -54,6 +60,13 @@ const useRequestOverride = (request: MediaRequest): OverrideStatus => {
       defaultServer?.activeLanguageProfileId !== request.languageProfileId
         ? data.languageProfiles?.find(
             (profile) => profile.id === request.languageProfileId
+          )?.name
+        : undefined,
+    metadataProfile:
+      request.type === 'book' &&
+      defaultServer?.activeMetadataProfileId !== request.metadataProfileId
+        ? data.metadataProfiles?.find(
+            (profile) => profile.id === request.metadataProfileId
           )?.name
         : undefined,
   };

@@ -39,6 +39,7 @@ interface ModalProps {
   backdrop?: string;
   children?: React.ReactNode;
   dialogClass?: string;
+  cache?: 'tmdb' | 'avatar' | 'hardcover' | 'tvdb';
 }
 
 const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
@@ -71,6 +72,7 @@ const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
       cancelButtonProps,
       secondaryButtonProps,
       tertiaryButtonProps,
+      cache = 'tmdb',
     },
     parentRef
   ) => {
@@ -137,7 +139,7 @@ const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
           {backdrop && (
             <div className="absolute top-0 left-0 right-0 z-0 h-64 max-h-full w-full">
               <CachedImage
-                type="tmdb"
+                type={cache}
                 alt=""
                 src={backdrop}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}

@@ -735,7 +735,7 @@ router.get<{ id: string }, UserWatchDataResponse>(
             },
             {
               mediaType: MediaType.MOVIE,
-              ratingKey4k: In(
+              ratingKeyAlt: In(
                 watchHistory
                   .filter((record) => record.media_type === 'movie')
                   .map((record) => record.rating_key)
@@ -751,7 +751,7 @@ router.get<{ id: string }, UserWatchDataResponse>(
             },
             {
               mediaType: MediaType.TV,
-              ratingKey4k: In(
+              ratingKeyAlt: In(
                 watchHistory
                   .filter((record) => record.media_type === 'episode')
                   .map((record) => record.grandparent_rating_key)
@@ -769,8 +769,8 @@ router.get<{ id: string }, UserWatchDataResponse>(
                     (record.media_type === 'movie'
                       ? record.rating_key
                       : record.grandparent_rating_key)) ||
-                (!!media.ratingKey4k &&
-                  parseInt(media.ratingKey4k) ===
+                (!!media.ratingKeyAlt &&
+                  parseInt(media.ratingKeyAlt) ===
                     (record.media_type === 'movie'
                       ? record.rating_key
                       : record.grandparent_rating_key))

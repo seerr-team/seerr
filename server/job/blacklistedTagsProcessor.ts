@@ -173,7 +173,7 @@ class BlacklistedTagProcessor implements RunnableScanner<StatusBase> {
 
     for (const entry of response.results) {
       const blacklistEntry = await blacklistRepository.findOne({
-        where: { tmdbId: entry.id },
+        where: { externalId: entry.id },
       });
 
       if (blacklistEntry) {
@@ -194,7 +194,7 @@ class BlacklistedTagProcessor implements RunnableScanner<StatusBase> {
             blacklistRequest: {
               mediaType,
               title: 'title' in entry ? entry.title : entry.name,
-              tmdbId: entry.id,
+              externalId: entry.id,
               blacklistedTags: `,${keywordId},`,
             },
           },
@@ -209,7 +209,7 @@ class BlacklistedTagProcessor implements RunnableScanner<StatusBase> {
     const mediaRepository = em.getRepository(Media);
     const mediaToRemove = await mediaRepository
       .createQueryBuilder('media')
-      .innerJoinAndSelect(Blacklist, 'blist', 'blist.tmdbId = media.tmdbId')
+      .innerJoinAndSelect(Blacklist, 'blist', 'blist.externalId = media.tmdbId')
       .where(`blist.blacklistedTags IS NOT NULL`)
       .getMany();
 

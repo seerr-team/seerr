@@ -38,7 +38,7 @@ const messages = defineMessages('components.RequestModal', {
 });
 
 interface RequestModalProps extends React.HTMLAttributes<HTMLDivElement> {
-  tmdbId: number;
+  tmdbId?: number;
   is4k?: boolean;
   editRequest?: NonFunctionProperties<MediaRequest>;
   onCancel?: () => void;
@@ -93,7 +93,7 @@ const MovieRequestModal = ({
       const response = await axios.post<MediaRequest>('/api/v1/request', {
         mediaId: data?.id,
         mediaType: 'movie',
-        is4k,
+        isAlt: is4k,
         ...overrideParams,
       });
       mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
@@ -103,7 +103,7 @@ const MovieRequestModal = ({
         if (onComplete) {
           onComplete(
             hasPermission(
-              is4k ? Permission.AUTO_APPROVE_4K : Permission.AUTO_APPROVE
+              is4k ? Permission.AUTO_APPROVE_ALT : Permission.AUTO_APPROVE
             ) ||
               hasPermission(
                 is4k
@@ -277,7 +277,7 @@ const MovieRequestModal = ({
         }
         secondaryButtonType="danger"
         cancelText={intl.formatMessage(globalMessages.close)}
-        backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
+        backdrop={data?.backdropPath}
       >
         {isOwner
           ? intl.formatMessage(messages.pendingapproval)
@@ -288,7 +288,7 @@ const MovieRequestModal = ({
           hasPermission(Permission.MANAGE_REQUESTS)) && (
           <AdvancedRequester
             type="movie"
-            is4k={is4k}
+            isAlt={is4k}
             requestUser={editRequest.requestedBy}
             defaultOverrides={{
               folder: editRequest.rootFolder,
@@ -308,7 +308,7 @@ const MovieRequestModal = ({
   const hasAutoApprove = hasPermission(
     [
       Permission.MANAGE_REQUESTS,
-      is4k ? Permission.AUTO_APPROVE_4K : Permission.AUTO_APPROVE,
+      is4k ? Permission.AUTO_APPROVE_ALT : Permission.AUTO_APPROVE,
       is4k ? Permission.AUTO_APPROVE_4K_MOVIE : Permission.AUTO_APPROVE_MOVIE,
     ],
     { type: 'or' }
@@ -333,7 +333,7 @@ const MovieRequestModal = ({
             )
       }
       okButtonType={'primary'}
-      backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
+      backdrop={data?.backdropPath}
     >
       {hasAutoApprove && !quota?.movie.restricted && (
         <div className="mt-6">
@@ -358,7 +358,7 @@ const MovieRequestModal = ({
         hasPermission(Permission.MANAGE_REQUESTS)) && (
         <AdvancedRequester
           type="movie"
-          is4k={is4k}
+          isAlt={is4k}
           onChange={(overrides) => {
             setRequestOverrides(overrides);
           }}

@@ -48,25 +48,25 @@ const classNames = (...classes: string[]) => {
 };
 
 interface CreateIssueModalProps {
-  mediaType: 'movie' | 'tv';
-  tmdbId?: number;
+  mediaType: 'movie' | 'tv' | 'book';
+  mediaId?: number;
   onCancel?: () => void;
 }
 
 const CreateIssueModal = ({
   onCancel,
   mediaType,
-  tmdbId,
+  mediaId,
 }: CreateIssueModalProps) => {
   const intl = useIntl();
   const settings = useSettings();
   const { hasPermission } = useUser();
   const { addToast } = useToasts();
   const { data, error } = useSWR<MovieDetails | TvDetails>(
-    tmdbId ? `/api/v1/${mediaType}/${tmdbId}` : null
+    mediaId ? `/api/v1/${mediaType}/${mediaId}` : null
   );
 
-  if (!tmdbId) {
+  if (!mediaId) {
     return null;
   }
 
@@ -76,7 +76,7 @@ const CreateIssueModal = ({
         season.status === MediaStatus.AVAILABLE ||
         season.status === MediaStatus.PARTIALLY_AVAILABLE ||
         (settings.currentSettings.series4kEnabled &&
-          hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_TV], {
+          hasPermission([Permission.REQUEST_ALT, Permission.REQUEST_4K_TV], {
             type: 'or',
           }) &&
           (season.status4k === MediaStatus.AVAILABLE ||
@@ -157,7 +157,8 @@ const CreateIssueModal = ({
             onOk={() => handleSubmit()}
             okText={intl.formatMessage(messages.submitissue)}
             loading={!data && !error}
-            backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
+            backdrop={data?.backdropPath}
+            cache={mediaType === 'book' ? 'hardcover' : 'tmdb'}
           >
             {mediaType === 'tv' && data && !isMovie(data) && (
               <>

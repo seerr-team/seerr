@@ -31,6 +31,7 @@ const messages = defineMessages('components.RequestBlock', {
   profilechanged: 'Quality Profile',
   rootfolder: 'Root Folder',
   languageprofile: 'Language Profile',
+  metadataprofile: 'Metadata Profile',
   requestdate: 'Request Date',
   requestedby: 'Requested By',
   lastmodifiedby: 'Last Modified By',
@@ -50,7 +51,7 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
   const intl = useIntl();
   const [isUpdating, setIsUpdating] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const { profile, rootFolder, server, languageProfile } =
+  const { profile, rootFolder, server, languageProfile, metadataProfile } =
     useRequestOverride(request);
 
   const updateRequest = async (type: 'approve' | 'decline'): Promise<void> => {
@@ -80,9 +81,9 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
     <div className="block">
       <RequestModal
         show={showEditModal}
-        tmdbId={request.media.tmdbId}
-        type={request.type}
-        is4k={request.is4k}
+        mediaId={request.media.tmdbId || request.media.hcId}
+        type={request.media.mediaType}
+        isAlt={request.isAlt}
         editRequest={request}
         onCancel={() => setShowEditModal(false)}
         onComplete={() => {
@@ -204,7 +205,7 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
         <div className="mt-2 sm:flex sm:justify-between">
           <div className="sm:flex">
             <div className="mr-6 flex items-center text-sm leading-5">
-              {request.is4k && (
+              {request.isAlt && (
                 <span className="mr-1">
                   <Badge badgeType="warning">4K</Badge>
                 </span>
@@ -283,7 +284,11 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
             </div>
           </div>
         )}
-        {(server || profile || rootFolder || languageProfile) && (
+        {(server ||
+          profile ||
+          rootFolder ||
+          languageProfile ||
+          metadataProfile) && (
           <>
             <div className="mt-4 mb-1 text-sm">
               {intl.formatMessage(messages.requestoverrides)}
@@ -319,6 +324,14 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
                     {intl.formatMessage(messages.languageprofile)}
                   </span>
                   <span>{languageProfile}</span>
+                </li>
+              )}
+              {metadataProfile && (
+                <li className="flex justify-between px-1 py-2">
+                  <span className="mr-2 font-bold">
+                    {intl.formatMessage(messages.metadataprofile)}
+                  </span>
+                  <span>{metadataProfile}</span>
                 </li>
               )}
             </ul>

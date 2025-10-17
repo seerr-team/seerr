@@ -40,9 +40,11 @@ const PermissionOption = ({
     Permission.AUTO_APPROVE,
     Permission.AUTO_APPROVE_MOVIE,
     Permission.AUTO_APPROVE_TV,
-    Permission.AUTO_APPROVE_4K,
+    Permission.AUTO_APPROVE_ALT,
     Permission.AUTO_APPROVE_4K_MOVIE,
     Permission.AUTO_APPROVE_4K_TV,
+    Permission.AUTO_APPROVE_BOOK,
+    Permission.AUTO_APPROVE_AUDIO_BOOK,
   ];
 
   let disabled = false;
@@ -82,10 +84,11 @@ const PermissionOption = ({
         })
       )) ||
     // Request 4K and Auto-Approve 4K require both 4K movie & 4K series requests to be enabled
-    ((option.permission === Permission.REQUEST_4K ||
-      option.permission === Permission.AUTO_APPROVE_4K) &&
+    ((option.permission === Permission.REQUEST_ALT ||
+      option.permission === Permission.AUTO_APPROVE_ALT) &&
       (!settings.currentSettings.movie4kEnabled ||
-        !settings.currentSettings.series4kEnabled)) ||
+        !settings.currentSettings.series4kEnabled ||
+        !settings.currentSettings.bookAudioEnabled)) ||
     // Request 4K Movie and Auto-Approve 4K Movie require 4K movie requests to be enabled
     ((option.permission === Permission.REQUEST_4K_MOVIE ||
       option.permission === Permission.AUTO_APPROVE_4K_MOVIE) &&
@@ -93,7 +96,11 @@ const PermissionOption = ({
     // Request 4K Series and Auto-Approve 4K Series require 4K series requests to be enabled
     ((option.permission === Permission.REQUEST_4K_TV ||
       option.permission === Permission.AUTO_APPROVE_4K_TV) &&
-      !settings.currentSettings.series4kEnabled)
+      !settings.currentSettings.series4kEnabled) ||
+    // Request Audiobooks and Auto-Approve Audiobooks require audiobook requests to be enabled
+    ((option.permission === Permission.REQUEST_AUDIO_BOOK ||
+      option.permission === Permission.AUTO_APPROVE_AUDIO_BOOK) &&
+      !settings.currentSettings.bookAudioEnabled)
   ) {
     disabled = true;
     checked = false;

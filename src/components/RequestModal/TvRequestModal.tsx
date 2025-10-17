@@ -53,7 +53,7 @@ const messages = defineMessages('components.RequestModal', {
 });
 
 interface RequestModalProps extends React.HTMLAttributes<HTMLDivElement> {
-  tmdbId: number;
+  tmdbId?: number;
   onCancel?: () => void;
   onComplete?: (newStatus: MediaStatus) => void;
   onUpdating?: (isUpdating: boolean) => void;
@@ -198,7 +198,7 @@ const TvRequestModal = ({
         mediaId: data?.id,
         tvdbId: tvdbId ?? data?.externalIds.tvdbId,
         mediaType: 'tv',
-        is4k,
+        isAlt: is4k,
         seasons: settings.currentSettings.partialRequestsEnabled
           ? selectedSeasons.sort((a, b) => a - b)
           : getAllSeasons().filter(
@@ -249,7 +249,7 @@ const TvRequestModal = ({
     const requestedSeasons = (data?.mediaInfo?.requests ?? [])
       .filter(
         (request) =>
-          request.is4k === is4k &&
+          request.isAlt === is4k &&
           request.status !== MediaRequestStatus.DECLINED &&
           request.status !== MediaRequestStatus.COMPLETED
       )
@@ -354,13 +354,13 @@ const TvRequestModal = ({
       data?.mediaInfo &&
       (data.mediaInfo.requests || []).filter(
         (request) =>
-          request.is4k === is4k &&
+          request.isAlt === is4k &&
           request.status !== MediaRequestStatus.DECLINED &&
           request.status !== MediaRequestStatus.COMPLETED
       ).length > 0
     ) {
       data.mediaInfo.requests
-        .filter((request) => request.is4k === is4k)
+        .filter((request) => request.isAlt === is4k)
         .forEach((request) => {
           if (!seasonRequest) {
             seasonRequest = request.seasons.find(
@@ -388,7 +388,7 @@ const TvRequestModal = ({
       )}
       modalSubTitle={data.name}
       tmdbId={tmdbId}
-      backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
+      backdrop={data?.backdropPath}
     />
   ) : (
     <Modal
@@ -462,7 +462,7 @@ const TvRequestModal = ({
           ? intl.formatMessage(globalMessages.back)
           : intl.formatMessage(globalMessages.cancel)
       }
-      backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
+      backdrop={data?.backdropPath}
     >
       {editRequest
         ? isOwner
@@ -474,7 +474,7 @@ const TvRequestModal = ({
       {hasPermission(
         [
           Permission.MANAGE_REQUESTS,
-          is4k ? Permission.AUTO_APPROVE_4K : Permission.AUTO_APPROVE,
+          is4k ? Permission.AUTO_APPROVE_ALT : Permission.AUTO_APPROVE,
           is4k ? Permission.AUTO_APPROVE_4K_TV : Permission.AUTO_APPROVE_TV,
         ],
         { type: 'or' }
@@ -722,7 +722,7 @@ const TvRequestModal = ({
         hasPermission(Permission.MANAGE_REQUESTS)) && (
         <AdvancedRequester
           type="tv"
-          is4k={is4k}
+          isAlt={is4k}
           isAnime={data?.keywords.some(
             (keyword) => keyword.id === ANIME_KEYWORD_ID
           )}

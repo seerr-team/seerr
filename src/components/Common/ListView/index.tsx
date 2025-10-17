@@ -1,3 +1,4 @@
+import AuthorCard from '@app/components/AuthorCard';
 import PersonCard from '@app/components/PersonCard';
 import TitleCard from '@app/components/TitleCard';
 import TmdbTitleCard from '@app/components/TitleCard/TmdbTitleCard';
@@ -7,6 +8,8 @@ import globalMessages from '@app/i18n/globalMessages';
 import { MediaStatus } from '@server/constants/media';
 import type { WatchlistItem } from '@server/interfaces/api/discoverInterfaces';
 import type {
+  AuthorResult,
+  BookResult,
   CollectionResult,
   MovieResult,
   PersonResult,
@@ -15,7 +18,14 @@ import type {
 import { useIntl } from 'react-intl';
 
 type ListViewProps = {
-  items?: (TvResult | MovieResult | PersonResult | CollectionResult)[];
+  items?: (
+    | TvResult
+    | MovieResult
+    | PersonResult
+    | CollectionResult
+    | BookResult
+    | AuthorResult
+  )[];
   plexItems?: WatchlistItem[];
   isEmpty?: boolean;
   isLoading?: boolean;
@@ -117,6 +127,34 @@ const ListView = ({
                     inProgress={
                       (title.mediaInfo?.downloadStatus ?? []).length > 0
                     }
+                    canExpand
+                  />
+                );
+                break;
+              case 'book':
+                titleCard = (
+                  <TitleCard
+                    id={title.id}
+                    image={title.posterPath}
+                    status={title.mediaInfo?.status}
+                    summary={title.overview}
+                    title={title.title}
+                    userScore={0}
+                    year={title.releaseDate}
+                    mediaType={title.mediaType}
+                    inProgress={
+                      (title.mediaInfo?.downloadStatus ?? []).length > 0
+                    }
+                    canExpand
+                  />
+                );
+                break;
+              case 'author':
+                titleCard = (
+                  <AuthorCard
+                    authorId={title.id}
+                    name={title.name}
+                    image={title.image}
                     canExpand
                   />
                 );

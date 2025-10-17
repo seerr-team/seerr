@@ -124,6 +124,12 @@ export class User {
   @Column({ nullable: true })
   public tvQuotaDays?: number;
 
+  @Column({ nullable: true })
+  public bookQuotaLimit?: number;
+
+  @Column({ nullable: true })
+  public bookQuotaDays?: number;
+
   @OneToOne(() => UserSettings, (settings) => settings.user, {
     cascade: true,
     eager: true,
@@ -334,6 +340,30 @@ export class User {
         ).reduce((sum: number, req: MediaRequest) => sum + req.seasonCount, 0)
       : 0;
 
+    const bookQuotaLimit = !canBypass
+      ? this.bookQuotaLimit ?? defaultQuotas.book.quotaLimit
+      : 0;
+    const bookQuotaDays = this.bookQuotaDays ?? defaultQuotas.book.quotaDays;
+
+    // Count book requests made during quota period
+    const bookDate = new Date();
+    if (bookQuotaDays) {
+      bookDate.setDate(bookDate.getDate() - bookQuotaDays);
+    }
+
+    const bookQuotaUsed = bookQuotaLimit
+      ? await requestRepository.count({
+          where: {
+            requestedBy: {
+              id: this.id,
+            },
+            createdAt: AfterDate(bookDate),
+            type: MediaType.BOOK,
+            status: Not(MediaRequestStatus.DECLINED),
+          },
+        })
+      : 0;
+
     return {
       movie: {
         days: movieQuotaDays,
@@ -356,6 +386,16 @@ export class User {
           : undefined,
         restricted:
           tvQuotaLimit && tvQuotaLimit - tvQuotaUsed <= 0 ? true : false,
+      },
+      book: {
+        days: bookQuotaDays,
+        limit: bookQuotaLimit,
+        used: bookQuotaUsed,
+        remaining: bookQuotaLimit
+          ? Math.max(0, bookQuotaLimit - bookQuotaUsed)
+          : undefined,
+        restricted:
+          bookQuotaLimit && bookQuotaLimit - bookQuotaUsed <= 0 ? true : false,
       },
     };
   }

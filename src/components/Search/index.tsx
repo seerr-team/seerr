@@ -5,6 +5,8 @@ import useDiscover from '@app/hooks/useDiscover';
 import Error from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import type {
+  AuthorResult,
+  BookResult,
   MovieResult,
   PersonResult,
   TvResult,
@@ -29,10 +31,13 @@ const Search = () => {
     titles,
     fetchMore,
     error,
-  } = useDiscover<MovieResult | TvResult | PersonResult>(
+  } = useDiscover<
+    MovieResult | TvResult | PersonResult | BookResult | AuthorResult
+  >(
     `/api/v1/search`,
     {
       query: router.query.query,
+      type: router.query.type,
     },
     { hideAvailable: false, hideBlacklisted: false }
   );

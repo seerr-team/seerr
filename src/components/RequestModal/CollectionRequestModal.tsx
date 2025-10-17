@@ -32,7 +32,7 @@ const messages = defineMessages('components.RequestModal', {
 });
 
 interface RequestModalProps extends React.HTMLAttributes<HTMLDivElement> {
-  tmdbId: number;
+  tmdbId?: number;
   is4k?: boolean;
   onCancel?: () => void;
   onComplete?: (newStatus: MediaStatus) => void;
@@ -80,7 +80,7 @@ const CollectionRequestModal = ({
           ...(part.mediaInfo?.requests ?? [])
             .filter(
               (request) =>
-                request.is4k === is4k &&
+                request.isAlt === is4k &&
                 request.status !== MediaRequestStatus.DECLINED &&
                 request.status !== MediaRequestStatus.COMPLETED
             )
@@ -94,9 +94,9 @@ const CollectionRequestModal = ({
       .filter(
         (part) =>
           part.mediaInfo &&
-          (part.mediaInfo[is4k ? 'status4k' : 'status'] ===
+          (part.mediaInfo[is4k ? 'statusAlt' : 'status'] ===
             MediaStatus.AVAILABLE ||
-            part.mediaInfo[is4k ? 'status4k' : 'status'] ===
+            part.mediaInfo[is4k ? 'statusAlt' : 'status'] ===
               MediaStatus.PROCESSING) &&
           !requestedParts.includes(part.id)
       )
@@ -171,7 +171,7 @@ const CollectionRequestModal = ({
 
     return (part?.mediaInfo?.requests ?? []).find(
       (request) =>
-        request.is4k === is4k &&
+        request.isAlt === is4k &&
         request.status !== MediaRequestStatus.DECLINED &&
         request.status !== MediaRequestStatus.COMPLETED
     );
@@ -205,7 +205,7 @@ const CollectionRequestModal = ({
           await axios.post<MediaRequest>('/api/v1/request', {
             mediaId: part.id,
             mediaType: 'movie',
-            is4k,
+            isAlt: is4k,
             ...overrideParams,
           });
         })
@@ -251,7 +251,7 @@ const CollectionRequestModal = ({
   const hasAutoApprove = hasPermission(
     [
       Permission.MANAGE_REQUESTS,
-      is4k ? Permission.AUTO_APPROVE_4K : Permission.AUTO_APPROVE,
+      is4k ? Permission.AUTO_APPROVE_ALT : Permission.AUTO_APPROVE,
       is4k ? Permission.AUTO_APPROVE_4K_MOVIE : Permission.AUTO_APPROVE_MOVIE,
     ],
     { type: 'or' }
@@ -288,7 +288,7 @@ const CollectionRequestModal = ({
       }
       okDisabled={selectedParts.length === 0}
       okButtonType={'primary'}
-      backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
+      backdrop={data?.backdropPath}
     >
       {hasAutoApprove && !quota?.movie.restricted && (
         <div className="mt-6">
@@ -370,9 +370,9 @@ const CollectionRequestModal = ({
                       const partRequest = getPartRequest(part.id);
                       const partMedia =
                         part.mediaInfo &&
-                        part.mediaInfo[is4k ? 'status4k' : 'status'] !==
+                        part.mediaInfo[is4k ? 'statusAlt' : 'status'] !==
                           MediaStatus.UNKNOWN &&
-                        part.mediaInfo[is4k ? 'status4k' : 'status'] !==
+                        part.mediaInfo[is4k ? 'statusAlt' : 'status'] !==
                           MediaStatus.DELETED
                           ? part.mediaInfo
                           : undefined;
@@ -490,13 +490,13 @@ const CollectionRequestModal = ({
                             {((!partMedia &&
                               partRequest?.status ===
                                 MediaRequestStatus.APPROVED) ||
-                              partMedia?.[is4k ? 'status4k' : 'status'] ===
+                              partMedia?.[is4k ? 'statusAlt' : 'status'] ===
                                 MediaStatus.PROCESSING) && (
                               <Badge badgeType="primary">
                                 {intl.formatMessage(globalMessages.requested)}
                               </Badge>
                             )}
-                            {partMedia?.[is4k ? 'status4k' : 'status'] ===
+                            {partMedia?.[is4k ? 'statusAlt' : 'status'] ===
                               MediaStatus.AVAILABLE && (
                               <Badge badgeType="success">
                                 {intl.formatMessage(globalMessages.available)}
@@ -521,7 +521,7 @@ const CollectionRequestModal = ({
         hasPermission(Permission.MANAGE_REQUESTS)) && (
         <AdvancedRequester
           type="movie"
-          is4k={is4k}
+          isAlt={is4k}
           onChange={(overrides) => {
             setRequestOverrides(overrides);
           }}

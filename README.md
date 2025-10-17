@@ -1,3 +1,27 @@
+> [!WARNING]
+>
+> ## Make Backups!
+>
+> ### This fork includes book support and is currently in testing
+>
+> ### Requires you to enter a personal API key in the settings page, dont include Bearer
+>
+> #### If coming from jellyseerr, just copy your config over
+>
+> #### If coming from overseerr, please do the following:
+>
+> 1. Install and run the official Jellyseerr release
+> 2. Using the `db` folder and `settings.json` file follow the instructions on [seerr-database-migration tool](https://github.com/pixelhunterX/seerr-database-migration) to migrate
+> 3. Copy the generated `db` folder and `settings.json` file from the migration tool to this fork
+>
+> #### Be aware that once used with this fork, your database wont be compatible with the official jellyseerr without intervention
+>
+> #### Tested using [bookshelf](https://github.com/pennydreadful/bookshelf) with the hardcover tag
+>
+> #### Planning to add Chaptarr support once in beta
+>
+> #### Note: Image caching is forced for hardcover
+
 <div align="center">⚠️ <strong>NOTE:</strong> We are currently in the process of merging Overseerr and Jellyseerr into this unified repository.</div>
 
 <h1 align="center" style="font-size: 4em;">🚧 Seerr</h1>

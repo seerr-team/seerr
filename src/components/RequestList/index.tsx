@@ -48,7 +48,7 @@ type Sort = 'added' | 'modified';
 
 type SortDirection = 'asc' | 'desc';
 
-type MediaType = 'all' | 'movie' | 'tv';
+type MediaType = 'all' | 'movie' | 'tv' | 'book';
 
 const RequestList = () => {
   const router = useRouter();
@@ -190,6 +190,9 @@ const RequestList = () => {
               </option>
               <option value="tv">
                 {intl.formatMessage(globalMessages.tvshows)}
+              </option>
+              <option value="book">
+                {intl.formatMessage(globalMessages.books)}
               </option>
             </select>
           </div>

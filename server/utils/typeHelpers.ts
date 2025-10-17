@@ -1,3 +1,4 @@
+import type { HardcoverBookDetails } from '@server/api/hardcover/interfaces';
 import type {
   TmdbCollectionResult,
   TmdbMovieDetails,
@@ -39,13 +40,31 @@ export const isCollection = (
 };
 
 export const isMovieDetails = (
-  movie: TmdbMovieDetails | TmdbTvDetails | TmdbPersonDetails
+  movie:
+    | TmdbMovieDetails
+    | TmdbTvDetails
+    | TmdbPersonDetails
+    | HardcoverBookDetails
 ): movie is TmdbMovieDetails => {
   return (movie as TmdbMovieDetails).title !== undefined;
 };
 
 export const isTvDetails = (
-  tv: TmdbMovieDetails | TmdbTvDetails | TmdbPersonDetails
+  tv:
+    | TmdbMovieDetails
+    | TmdbTvDetails
+    | TmdbPersonDetails
+    | HardcoverBookDetails
 ): tv is TmdbTvDetails => {
   return (tv as TmdbTvDetails).number_of_seasons !== undefined;
+};
+
+export const isBookDetails = (
+  book:
+    | TmdbMovieDetails
+    | TmdbTvDetails
+    | TmdbPersonDetails
+    | HardcoverBookDetails
+): book is HardcoverBookDetails => {
+  return (book as HardcoverBookDetails).pages !== undefined;
 };

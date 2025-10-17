@@ -153,7 +153,7 @@ const NotificationTypeSelector = ({
             Permission.REQUEST,
             Permission.REQUEST_MOVIE,
             Permission.REQUEST_TV,
-            Permission.REQUEST_4K,
+            Permission.REQUEST_ALT,
             Permission.REQUEST_4K_MOVIE,
             Permission.REQUEST_4K_TV,
           ],
@@ -178,20 +178,20 @@ const NotificationTypeSelector = ({
           // Cannot submit 4K movie requests OR has Auto-Approve perms for 4K movies
           (!settings.currentSettings.movie4kEnabled ||
             !hasPermission(
-              [Permission.REQUEST_4K, Permission.REQUEST_4K_MOVIE],
+              [Permission.REQUEST_ALT, Permission.REQUEST_4K_MOVIE],
               { type: 'or' }
             ) ||
             hasPermission(
-              [Permission.AUTO_APPROVE_4K, Permission.AUTO_APPROVE_4K_MOVIE],
+              [Permission.AUTO_APPROVE_ALT, Permission.AUTO_APPROVE_4K_MOVIE],
               { type: 'or' }
             )) &&
           // Cannot submit 4K series requests OR has Auto-Approve perms for 4K series
           (!settings.currentSettings.series4kEnabled ||
-            !hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_TV], {
+            !hasPermission([Permission.REQUEST_ALT, Permission.REQUEST_4K_TV], {
               type: 'or',
             }) ||
             hasPermission(
-              [Permission.AUTO_APPROVE_4K, Permission.AUTO_APPROVE_4K_TV],
+              [Permission.AUTO_APPROVE_ALT, Permission.AUTO_APPROVE_4K_TV],
               { type: 'or' }
             ))));
 

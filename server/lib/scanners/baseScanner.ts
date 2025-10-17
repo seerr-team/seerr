@@ -24,14 +24,16 @@ export interface RunnableScanner<T> {
 }
 
 export interface MediaIds {
-  tmdbId: number;
+  tmdbId?: number;
   imdbId?: string;
   tvdbId?: number;
+  hcId?: number;
   isHama?: boolean;
 }
 
 interface ProcessOptions {
   is4k?: boolean;
+  isAlt?: boolean;
   mediaAddedAt?: Date;
   ratingKey?: string;
   serviceId?: number;
@@ -59,6 +61,7 @@ class BaseScanner<T> {
   protected scannerName: string;
   protected enable4kMovie = false;
   protected enable4kShow = false;
+  protected enableAudioBook = false;
   protected sessionId: string;
   protected running = false;
   readonly asyncLock = new AsyncLock();
@@ -79,11 +82,12 @@ class BaseScanner<T> {
     this.updateRate = updateRate ?? UPDATE_RATE;
   }
 
-  private async getExisting(tmdbId: number, mediaType: MediaType) {
+  private async getExisting(id: number, mediaType: MediaType) {
     const mediaRepository = getRepository(Media);
 
+    const key = mediaType === MediaType.BOOK ? 'hcId' : 'tmdbId';
     const existing = await mediaRepository.findOne({
-      where: { tmdbId: tmdbId, mediaType },
+      where: { [key]: id, mediaType },
     });
 
     return existing;
@@ -110,8 +114,8 @@ class BaseScanner<T> {
       if (existing) {
         let changedExisting = false;
 
-        if (existing[is4k ? 'status4k' : 'status'] !== MediaStatus.AVAILABLE) {
-          existing[is4k ? 'status4k' : 'status'] = processing
+        if (existing[is4k ? 'statusAlt' : 'status'] !== MediaStatus.AVAILABLE) {
+          existing[is4k ? 'statusAlt' : 'status'] = processing
             ? MediaStatus.PROCESSING
             : MediaStatus.AVAILABLE;
           if (mediaAddedAt) {
@@ -127,36 +131,36 @@ class BaseScanner<T> {
 
         if (
           ratingKey &&
-          existing[is4k ? 'ratingKey4k' : 'ratingKey'] !== ratingKey
+          existing[is4k ? 'ratingKeyAlt' : 'ratingKey'] !== ratingKey
         ) {
-          existing[is4k ? 'ratingKey4k' : 'ratingKey'] = ratingKey;
+          existing[is4k ? 'ratingKeyAlt' : 'ratingKey'] = ratingKey;
           changedExisting = true;
         }
 
         if (
           serviceId !== undefined &&
-          existing[is4k ? 'serviceId4k' : 'serviceId'] !== serviceId
+          existing[is4k ? 'serviceIdAlt' : 'serviceId'] !== serviceId
         ) {
-          existing[is4k ? 'serviceId4k' : 'serviceId'] = serviceId;
+          existing[is4k ? 'serviceIdAlt' : 'serviceId'] = serviceId;
           changedExisting = true;
         }
 
         if (
           externalServiceId !== undefined &&
-          existing[is4k ? 'externalServiceId4k' : 'externalServiceId'] !==
+          existing[is4k ? 'externalServiceIdAlt' : 'externalServiceId'] !==
             externalServiceId
         ) {
-          existing[is4k ? 'externalServiceId4k' : 'externalServiceId'] =
+          existing[is4k ? 'externalServiceIdAlt' : 'externalServiceId'] =
             externalServiceId;
           changedExisting = true;
         }
 
         if (
           externalServiceSlug !== undefined &&
-          existing[is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'] !==
+          existing[is4k ? 'externalServiceSlugAlt' : 'externalServiceSlug'] !==
             externalServiceSlug
         ) {
-          existing[is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'] =
+          existing[is4k ? 'externalServiceSlugAlt' : 'externalServiceSlug'] =
             externalServiceSlug;
           changedExisting = true;
         }
@@ -180,7 +184,7 @@ class BaseScanner<T> {
             : !is4k && processing
             ? MediaStatus.PROCESSING
             : MediaStatus.UNKNOWN;
-        newMedia.status4k =
+        newMedia.statusAlt =
           is4k && this.enable4kMovie && !processing
             ? MediaStatus.AVAILABLE
             : is4k && this.enable4kMovie && processing
@@ -188,11 +192,13 @@ class BaseScanner<T> {
             : MediaStatus.UNKNOWN;
         newMedia.mediaType = MediaType.MOVIE;
         newMedia.serviceId = !is4k ? serviceId : undefined;
-        newMedia.serviceId4k = is4k ? serviceId : undefined;
+        newMedia.serviceIdAlt = is4k ? serviceId : undefined;
         newMedia.externalServiceId = !is4k ? externalServiceId : undefined;
-        newMedia.externalServiceId4k = is4k ? externalServiceId : undefined;
+        newMedia.externalServiceIdAlt = is4k ? externalServiceId : undefined;
         newMedia.externalServiceSlug = !is4k ? externalServiceSlug : undefined;
-        newMedia.externalServiceSlug4k = is4k ? externalServiceSlug : undefined;
+        newMedia.externalServiceSlugAlt = is4k
+          ? externalServiceSlug
+          : undefined;
 
         if (mediaAddedAt) {
           newMedia.mediaAddedAt = mediaAddedAt;
@@ -200,8 +206,132 @@ class BaseScanner<T> {
 
         if (ratingKey) {
           newMedia.ratingKey = !is4k ? ratingKey : undefined;
-          newMedia.ratingKey4k =
+          newMedia.ratingKeyAlt =
             is4k && this.enable4kMovie ? ratingKey : undefined;
+        }
+        await mediaRepository.save(newMedia);
+        this.log(`Saved new media: ${title}`);
+      }
+    });
+  }
+
+  protected async processBook(
+    hcId: number,
+    {
+      isAlt = false,
+      mediaAddedAt,
+      ratingKey,
+      serviceId,
+      externalServiceId,
+      externalServiceSlug,
+      processing = false,
+      title = 'Unknown Title',
+    }: ProcessOptions = {}
+  ): Promise<void> {
+    const mediaRepository = getRepository(Media);
+
+    await this.asyncLock.dispatch(hcId, async () => {
+      const existing = await this.getExisting(hcId, MediaType.BOOK);
+
+      if (existing) {
+        let changedExisting = false;
+
+        if (
+          existing[isAlt ? 'statusAlt' : 'status'] !== MediaStatus.AVAILABLE
+        ) {
+          existing[isAlt ? 'statusAlt' : 'status'] = processing
+            ? MediaStatus.PROCESSING
+            : MediaStatus.AVAILABLE;
+          if (mediaAddedAt) {
+            existing.mediaAddedAt = mediaAddedAt;
+          }
+          changedExisting = true;
+        }
+
+        if (!changedExisting && !existing.mediaAddedAt && mediaAddedAt) {
+          existing.mediaAddedAt = mediaAddedAt;
+          changedExisting = true;
+        }
+
+        if (
+          ratingKey &&
+          existing[isAlt ? 'ratingKeyAlt' : 'ratingKey'] !== ratingKey
+        ) {
+          existing[isAlt ? 'ratingKeyAlt' : 'ratingKey'] = ratingKey;
+          changedExisting = true;
+        }
+
+        if (
+          serviceId !== undefined &&
+          existing[isAlt ? 'serviceIdAlt' : 'serviceId'] !== serviceId
+        ) {
+          existing[isAlt ? 'serviceIdAlt' : 'serviceId'] = serviceId;
+          changedExisting = true;
+        }
+
+        if (
+          externalServiceId !== undefined &&
+          existing[isAlt ? 'externalServiceIdAlt' : 'externalServiceId'] !==
+            externalServiceId
+        ) {
+          existing[isAlt ? 'externalServiceIdAlt' : 'externalServiceId'] =
+            externalServiceId;
+          changedExisting = true;
+        }
+
+        if (
+          externalServiceSlug !== undefined &&
+          existing[isAlt ? 'externalServiceSlugAlt' : 'externalServiceSlug'] !==
+            externalServiceSlug
+        ) {
+          existing[isAlt ? 'externalServiceSlugAlt' : 'externalServiceSlug'] =
+            externalServiceSlug;
+          changedExisting = true;
+        }
+
+        if (changedExisting) {
+          await mediaRepository.save(existing);
+          this.log(
+            `Media for ${title} exists. Changes were detected and the title will be updated.`,
+            'info'
+          );
+        } else {
+          this.log(`Title already exists and no changes detected for ${title}`);
+        }
+      } else {
+        const newMedia = new Media();
+        newMedia.hcId = hcId;
+
+        newMedia.status =
+          !isAlt && !processing
+            ? MediaStatus.AVAILABLE
+            : !isAlt && processing
+            ? MediaStatus.PROCESSING
+            : MediaStatus.UNKNOWN;
+        newMedia.statusAlt =
+          isAlt && this.enableAudioBook && !processing
+            ? MediaStatus.AVAILABLE
+            : isAlt && this.enableAudioBook && processing
+            ? MediaStatus.PROCESSING
+            : MediaStatus.UNKNOWN;
+        newMedia.mediaType = MediaType.BOOK;
+        newMedia.serviceId = !isAlt ? serviceId : undefined;
+        newMedia.serviceIdAlt = isAlt ? serviceId : undefined;
+        newMedia.externalServiceId = !isAlt ? externalServiceId : undefined;
+        newMedia.externalServiceIdAlt = isAlt ? externalServiceId : undefined;
+        newMedia.externalServiceSlug = !isAlt ? externalServiceSlug : undefined;
+        newMedia.externalServiceSlugAlt = isAlt
+          ? externalServiceSlug
+          : undefined;
+
+        if (mediaAddedAt) {
+          newMedia.mediaAddedAt = mediaAddedAt;
+        }
+
+        if (ratingKey) {
+          newMedia.ratingKey = !isAlt ? ratingKey : undefined;
+          newMedia.ratingKeyAlt =
+            isAlt && this.enableAudioBook ? ratingKey : undefined;
         }
         await mediaRepository.save(newMedia);
         this.log(`Saved new media: ${title}`);
@@ -266,9 +396,9 @@ class BaseScanner<T> {
           media &&
           season.episodes4k > 0 &&
           this.enable4kShow &&
-          media.ratingKey4k !== ratingKey
+          media.ratingKeyAlt !== ratingKey
         ) {
-          media.ratingKey4k = ratingKey;
+          media.ratingKeyAlt = ratingKey;
         }
 
         if (existingSeason) {
@@ -394,16 +524,16 @@ class BaseScanner<T> {
         }
 
         if (serviceId !== undefined) {
-          media[is4k ? 'serviceId4k' : 'serviceId'] = serviceId;
+          media[is4k ? 'serviceIdAlt' : 'serviceId'] = serviceId;
         }
 
         if (externalServiceId !== undefined) {
-          media[is4k ? 'externalServiceId4k' : 'externalServiceId'] =
+          media[is4k ? 'externalServiceIdAlt' : 'externalServiceId'] =
             externalServiceId;
         }
 
         if (externalServiceSlug !== undefined) {
-          media[is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'] =
+          media[is4k ? 'externalServiceSlugAlt' : 'externalServiceSlug'] =
             externalServiceSlug;
         }
 
@@ -418,7 +548,7 @@ class BaseScanner<T> {
               season.seasonNumber !== 0
           ).length === 0;
         const shouldStayAvailable4k =
-          media.status4k === MediaStatus.AVAILABLE &&
+          media.statusAlt === MediaStatus.AVAILABLE &&
           newSeasons.filter(
             (season) =>
               season.status4k !== MediaStatus.UNKNOWN &&
@@ -442,7 +572,7 @@ class BaseScanner<T> {
             : media.status === MediaStatus.DELETED
             ? MediaStatus.DELETED
             : MediaStatus.UNKNOWN;
-        media.status4k =
+        media.statusAlt =
           (isAll4kSeasons || shouldStayAvailable4k) && this.enable4kShow
             ? MediaStatus.AVAILABLE
             : this.enable4kShow &&
@@ -452,12 +582,12 @@ class BaseScanner<T> {
                   season.status4k === MediaStatus.AVAILABLE
               )
             ? MediaStatus.PARTIALLY_AVAILABLE
-            : (!seasons.length && media.status4k !== MediaStatus.DELETED) ||
+            : (!seasons.length && media.statusAlt !== MediaStatus.DELETED) ||
               media.seasons.some(
                 (season) => season.status4k === MediaStatus.PROCESSING
               )
             ? MediaStatus.PROCESSING
-            : media.status4k === MediaStatus.DELETED
+            : media.statusAlt === MediaStatus.DELETED
             ? MediaStatus.DELETED
             : MediaStatus.UNKNOWN;
         await mediaRepository.save(media);
@@ -470,11 +600,11 @@ class BaseScanner<T> {
           tvdbId,
           mediaAddedAt,
           serviceId: !is4k ? serviceId : undefined,
-          serviceId4k: is4k ? serviceId : undefined,
+          serviceIdAlt: is4k ? serviceId : undefined,
           externalServiceId: !is4k ? externalServiceId : undefined,
-          externalServiceId4k: is4k ? externalServiceId : undefined,
+          externalServiceIdAlt: is4k ? externalServiceId : undefined,
           externalServiceSlug: !is4k ? externalServiceSlug : undefined,
-          externalServiceSlug4k: is4k ? externalServiceSlug : undefined,
+          externalServiceSlugAlt: is4k ? externalServiceSlug : undefined,
           ratingKey: newSeasons.some(
             (sn) =>
               sn.status === MediaStatus.PARTIALLY_AVAILABLE ||
@@ -482,7 +612,7 @@ class BaseScanner<T> {
           )
             ? ratingKey
             : undefined,
-          ratingKey4k:
+          ratingKeyAlt:
             this.enable4kShow &&
             newSeasons.some(
               (sn) =>
@@ -504,7 +634,7 @@ class BaseScanner<T> {
               )
             ? MediaStatus.PROCESSING
             : MediaStatus.UNKNOWN,
-          status4k:
+          statusAlt:
             isAll4kSeasons && this.enable4kShow
               ? MediaStatus.AVAILABLE
               : this.enable4kShow &&
@@ -551,6 +681,14 @@ class BaseScanner<T> {
     if (this.enable4kShow) {
       this.log(
         'At least one 4K Sonarr server was detected. 4K series detection is now enabled',
+        'info'
+      );
+    }
+
+    this.enableAudioBook = settings.readarr.some((readarr) => readarr.isAudio);
+    if (this.enableAudioBook) {
+      this.log(
+        'At least one Audiobook Readarr server was detected. Audiobook detection is now enabled',
         'info'
       );
     }

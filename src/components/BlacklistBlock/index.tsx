@@ -21,13 +21,15 @@ const messages = defineMessages('component.BlacklistBlock', {
 });
 
 interface BlacklistBlockProps {
-  tmdbId: number;
+  mediaId: number;
+  mediaType: 'movie' | 'tv' | 'book';
   onUpdate?: () => void;
   onDelete?: () => void;
 }
 
 const BlacklistBlock = ({
-  tmdbId,
+  mediaId,
+  mediaType,
   onUpdate,
   onDelete,
 }: BlacklistBlockProps) => {
@@ -35,13 +37,15 @@ const BlacklistBlock = ({
   const intl = useIntl();
   const [isUpdating, setIsUpdating] = useState(false);
   const { addToast } = useToasts();
-  const { data } = useSWR<Blacklist>(`/api/v1/blacklist/${tmdbId}`);
+  const { data } = useSWR<Blacklist>(
+    `/api/v1/blacklist/${mediaType}/${mediaId}`
+  );
 
-  const removeFromBlacklist = async (tmdbId: number, title?: string) => {
+  const removeFromBlacklist = async (mediaId: number, title?: string) => {
     setIsUpdating(true);
 
     try {
-      await axios.delete('/api/v1/blacklist/' + tmdbId);
+      await axios.delete(`/api/v1/blacklist/${mediaType}/${mediaId}`);
 
       addToast(
         <span>
@@ -113,7 +117,7 @@ const BlacklistBlock = ({
           >
             <Button
               buttonType="danger"
-              onClick={() => removeFromBlacklist(data.tmdbId, data.title)}
+              onClick={() => removeFromBlacklist(data.externalId, data.title)}
               disabled={isUpdating}
             >
               <TrashIcon className="icon-sm" />

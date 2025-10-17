@@ -71,49 +71,84 @@ class EmailAgent
     const mediaType = payload.media
       ? payload.media.mediaType === MediaType.MOVIE
         ? 'movie'
+        : payload.media.mediaType === MediaType.BOOK
+        ? 'book'
         : 'series'
       : undefined;
-    const is4k = payload.request?.is4k;
+
+    const isAlt = payload.request?.isAlt;
 
     if (payload.request) {
       let body = '';
 
       switch (type) {
         case Notification.MEDIA_PENDING:
-          body = `A new request for the following ${mediaType} ${
-            is4k ? 'in 4K ' : ''
-          }is pending approval:`;
+          body = `A new request for the following ${
+            isAlt
+              ? payload.media?.mediaType === MediaType.BOOK
+                ? 'audio'
+                : '4K '
+              : ''
+          }${mediaType} is pending approval:`;
           break;
         case Notification.MEDIA_AUTO_REQUESTED:
-          body = `A new request for the following ${mediaType} ${
-            is4k ? 'in 4K ' : ''
-          }was automatically submitted:`;
+          body = `A new request for the following ${
+            isAlt
+              ? payload.media?.mediaType === MediaType.BOOK
+                ? 'audio'
+                : '4K '
+              : ''
+          }${mediaType} was automatically submitted:`;
           break;
         case Notification.MEDIA_APPROVED:
-          body = `Your request for the following ${mediaType} ${
-            is4k ? 'in 4K ' : ''
-          }has been approved:`;
+          body = `Your request for the following ${
+            isAlt
+              ? payload.media?.mediaType === MediaType.BOOK
+                ? 'audio'
+                : '4K '
+              : ''
+          }${mediaType} has been approved:`;
           break;
         case Notification.MEDIA_AUTO_APPROVED:
-          body = `A new request for the following ${mediaType} ${
-            is4k ? 'in 4K ' : ''
-          }has been automatically approved:`;
+          body = `A new request for the following ${
+            isAlt
+              ? payload.media?.mediaType === MediaType.BOOK
+                ? 'audio'
+                : '4K '
+              : ''
+          }${mediaType} has been automatically approved:`;
           break;
         case Notification.MEDIA_AVAILABLE:
-          body = `Your request for the following ${mediaType} ${
-            is4k ? 'in 4K ' : ''
-          }is now available:`;
+          body = `Your request for the following ${
+            isAlt
+              ? payload.media?.mediaType === MediaType.BOOK
+                ? 'audio'
+                : '4K '
+              : ''
+          }${mediaType} is now available:`;
           break;
         case Notification.MEDIA_DECLINED:
-          body = `Your request for the following ${mediaType} ${
-            is4k ? 'in 4K ' : ''
-          }was declined:`;
+          body = `Your request for the following ${
+            isAlt
+              ? payload.media?.mediaType === MediaType.BOOK
+                ? 'audio'
+                : '4K '
+              : ''
+          }${mediaType} was declined:`;
           break;
         case Notification.MEDIA_FAILED:
-          body = `A request for the following ${mediaType} ${
-            is4k ? 'in 4K ' : ''
-          }failed to be added to ${
-            payload.media?.mediaType === MediaType.MOVIE ? 'Radarr' : 'Sonarr'
+          body = `A request for the following ${
+            isAlt
+              ? payload.media?.mediaType === MediaType.BOOK
+                ? 'audio'
+                : '4K '
+              : ''
+          }${mediaType} failed to be added to ${
+            payload.media?.mediaType === MediaType.MOVIE
+              ? 'Radarr'
+              : payload.media?.mediaType === MediaType.BOOK
+              ? 'Readarr'
+              : 'Sonarr'
           }:`;
           break;
       }

@@ -29,6 +29,22 @@ function initTvdbImageProxy() {
   }
   return _tvdbImageProxy;
 }
+let _hardcoverImageProxy: ImageProxy;
+function initHardcoverImageProxy() {
+  if (!_hardcoverImageProxy) {
+    _hardcoverImageProxy = new ImageProxy(
+      'hardcover',
+      'https://assets.hardcover.app',
+      {
+        rateLimitOptions: {
+          maxRequests: 20,
+          maxRPS: 50,
+        },
+      }
+    );
+  }
+  return _hardcoverImageProxy;
+}
 
 router.get('/:type/*', async (req, res) => {
   const imagePath = req.path.replace(/^\/\w+/, '');
@@ -38,6 +54,8 @@ router.get('/:type/*', async (req, res) => {
       imageData = await initTmdbImageProxy().getImage(imagePath);
     } else if (req.params.type === 'tvdb') {
       imageData = await initTvdbImageProxy().getImage(imagePath);
+    } else if (req.params.type === 'hardcover') {
+      imageData = await initHardcoverImageProxy().getImage(imagePath);
     } else {
       logger.error('Unsupported image type', {
         imagePath,

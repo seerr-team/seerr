@@ -1,3 +1,8 @@
+import { getHeader } from '@server/api/hardcover';
+import type {
+  HardcoverAuthorResult,
+  HardcoverBookResult,
+} from '@server/api/hardcover/interfaces';
 import type {
   TmdbCollectionResult,
   TmdbMovieDetails,
@@ -10,7 +15,7 @@ import type {
 import { MediaType as MainMediaType } from '@server/constants/media';
 import type Media from '@server/entity/Media';
 
-export type MediaType = 'tv' | 'movie' | 'person' | 'collection';
+export type MediaType = 'tv' | 'movie' | 'person' | 'collection' | 'book';
 
 interface SearchResult {
   id: number;
@@ -33,6 +38,18 @@ export interface MovieResult extends SearchResult {
   releaseDate: string;
   adult: boolean;
   video: boolean;
+  mediaInfo?: Media;
+}
+
+export interface BookResult {
+  id: number;
+  mediaType: 'book';
+  title: string;
+  overview: string;
+  releaseDate: string;
+  posterPath?: string;
+  backdropPath?: string;
+  position?: number;
   mediaInfo?: Media;
 }
 
@@ -66,7 +83,20 @@ export interface PersonResult {
   knownFor: (MovieResult | TvResult)[];
 }
 
-export type Results = MovieResult | TvResult | PersonResult | CollectionResult;
+export interface AuthorResult {
+  id: number;
+  name: string;
+  image?: string;
+  mediaType: 'author';
+}
+
+export type Results =
+  | MovieResult
+  | TvResult
+  | PersonResult
+  | CollectionResult
+  | BookResult
+  | AuthorResult;
 
 export const mapMovieResult = (
   movieResult: TmdbMovieResult,
@@ -88,6 +118,43 @@ export const mapMovieResult = (
   backdropPath: movieResult.backdrop_path,
   posterPath: movieResult.poster_path,
   mediaInfo: media,
+});
+
+export const mapBookResult = (
+  bookResult: HardcoverBookResult,
+  media?: Media,
+  position?: number
+): BookResult => ({
+  id: bookResult.id,
+  mediaType: 'book',
+  title: bookResult.title,
+  overview: bookResult.description,
+  releaseDate: bookResult.release_date,
+  posterPath: bookResult.image?.url
+    ? bookResult.image.url
+    : `https://assets.hardcover.app/static/covers/cover${
+        (bookResult.id % 9) + 1
+      }.png`,
+  backdropPath: (() => {
+    if (bookResult.cached_tags) {
+      const header = getHeader(bookResult.cached_tags);
+      if (header) {
+        return `https://assets.hardcover.app/static/bookHeaders/${header}.webp`;
+      }
+    }
+    return '';
+  })(),
+  position: position,
+  mediaInfo: media,
+});
+
+export const mapAuthorResult = (
+  authorResult: HardcoverAuthorResult
+): AuthorResult => ({
+  id: authorResult.id,
+  name: authorResult.name,
+  image: authorResult?.image?.url,
+  mediaType: 'author',
 });
 
 export const mapTvResult = (
@@ -150,6 +217,8 @@ export const mapSearchResults = (
     | TmdbTvResult
     | TmdbPersonResult
     | TmdbCollectionResult
+    | HardcoverBookResult
+    | HardcoverAuthorResult
   )[],
   media?: Media[]
 ): Results[] =>
@@ -171,10 +240,21 @@ export const mapSearchResults = (
               req.tmdbId === result.id && req.mediaType === MainMediaType.TV
           )
         );
+      case 'book':
+        return mapBookResult(
+          result,
+          media?.find(
+            (req) =>
+              req.hcId === Number(result.id) &&
+              req.mediaType === MainMediaType.BOOK
+          )
+        );
       case 'collection':
         return mapCollectionResult(result);
-      default:
+      case 'person':
         return mapPersonResult(result);
+      case 'author':
+        return mapAuthorResult(result);
     }
   });
 

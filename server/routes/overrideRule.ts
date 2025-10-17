@@ -32,10 +32,12 @@ overrideRuleRoutes.post<
     language?: string;
     keywords?: string;
     profileId?: number;
+    metadataProfileId?: number;
     rootFolder?: string;
     tags?: string;
     radarrServiceId?: number;
     sonarrServiceId?: number;
+    readarrServiceId?: number;
   }
 >('/', isAuthenticated(Permission.ADMIN), async (req, res, next) => {
   const overrideRuleRepository = getRepository(OverrideRule);
@@ -47,10 +49,12 @@ overrideRuleRoutes.post<
       language: req.body.language,
       keywords: req.body.keywords,
       profileId: req.body.profileId,
+      metadataProfileId: req.body.metadataProfileId,
       rootFolder: req.body.rootFolder,
       tags: req.body.tags,
       radarrServiceId: req.body.radarrServiceId,
       sonarrServiceId: req.body.sonarrServiceId,
+      readarrServiceId: req.body.readarrServiceId,
     });
 
     const newRule = await overrideRuleRepository.save(rule);
@@ -70,10 +74,12 @@ overrideRuleRoutes.put<
     language?: string;
     keywords?: string;
     profileId?: number;
+    metadataProfileId?: number;
     rootFolder?: string;
     tags?: string;
     radarrServiceId?: number;
     sonarrServiceId?: number;
+    readarrServiceId?: number;
   }
 >('/:ruleId', isAuthenticated(Permission.ADMIN), async (req, res, next) => {
   const overrideRuleRepository = getRepository(OverrideRule);
@@ -94,10 +100,12 @@ overrideRuleRoutes.put<
     rule.language = req.body.language;
     rule.keywords = req.body.keywords;
     rule.profileId = req.body.profileId;
+    rule.metadataProfileId = req.body.metadataProfileId;
     rule.rootFolder = req.body.rootFolder;
     rule.tags = req.body.tags;
     rule.radarrServiceId = req.body.radarrServiceId;
     rule.sonarrServiceId = req.body.sonarrServiceId;
+    rule.readarrServiceId = req.body.readarrServiceId;
 
     const newRule = await overrideRuleRepository.save(rule);
 

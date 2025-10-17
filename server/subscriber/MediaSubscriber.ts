@@ -13,7 +13,7 @@ import { EventSubscriber } from 'typeorm';
 
 @EventSubscriber()
 export class MediaSubscriber implements EntitySubscriberInterface<Media> {
-  private async updateChildRequestStatus(event: Media, is4k: boolean) {
+  private async updateChildRequestStatus(event: Media, isAlt: boolean) {
     const requestRepository = getRepository(MediaRequest);
 
     const requests = await requestRepository.find({
@@ -22,7 +22,7 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
 
     for (const request of requests) {
       if (
-        request.is4k === is4k &&
+        request.isAlt === isAlt &&
         request.status === MediaRequestStatus.PENDING
       ) {
         request.status = MediaRequestStatus.APPROVED;
@@ -34,7 +34,7 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
   private async updateRelatedMediaRequest(
     event: Media,
     databaseEvent: Media,
-    is4k: boolean
+    isAlt: boolean
   ) {
     const requestRepository = getRepository(MediaRequest);
     const seasonRequestRepository = getRepository(SeasonRequest);
@@ -46,7 +46,7 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
       where: {
         media: { id: event.id },
         status: MediaRequestStatus.APPROVED,
-        is4k,
+        isAlt,
       },
     });
 
@@ -59,11 +59,12 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
         let shouldComplete = false;
 
         if (
-          (event[request.is4k ? 'status4k' : 'status'] ===
+          (event[request.isAlt ? 'statusAlt' : 'status'] ===
             MediaStatus.AVAILABLE ||
-            event[request.is4k ? 'status4k' : 'status'] ===
+            event[request.isAlt ? 'statusAlt' : 'status'] ===
               MediaStatus.DELETED) &&
-          event.mediaType === MediaType.MOVIE
+          (event.mediaType === MediaType.MOVIE ||
+            event.mediaType === MediaType.BOOK)
         ) {
           shouldComplete = true;
         } else if (event.mediaType === 'tv') {
@@ -83,9 +84,9 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
               }
 
               const currentSeasonStatus =
-                matchingSeason[request.is4k ? 'status4k' : 'status'];
+                matchingSeason[request.isAlt ? 'status4k' : 'status'];
               const previousSeasonStatus =
-                matchingOldSeason?.[request.is4k ? 'status4k' : 'status'];
+                matchingOldSeason?.[request.isAlt ? 'status4k' : 'status'];
 
               const hasStatusChanged =
                 currentSeasonStatus !== previousSeasonStatus;
@@ -134,8 +135,8 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
     }
 
     if (
-      event.entity.status4k === MediaStatus.AVAILABLE &&
-      event.databaseEntity.status4k === MediaStatus.PENDING
+      event.entity.statusAlt === MediaStatus.AVAILABLE &&
+      event.databaseEntity.statusAlt === MediaStatus.PENDING
     ) {
       this.updateChildRequestStatus(event.entity as Media, true);
     }
@@ -188,9 +189,9 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
     }
 
     if (
-      (event.entity.status4k !== event.databaseEntity?.status4k ||
+      (event.entity.statusAlt !== event.databaseEntity?.statusAlt ||
         (event.entity.mediaType === MediaType.TV && seasonStatusCheck(true))) &&
-      validStatuses.includes(event.entity.status4k)
+      validStatuses.includes(event.entity.statusAlt)
     ) {
       this.updateRelatedMediaRequest(
         event.entity as Media,

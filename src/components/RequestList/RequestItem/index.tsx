@@ -21,6 +21,7 @@ import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { NonFunctionProperties } from '@server/interfaces/api/common';
 import type { RequestResultsResponse } from '@server/interfaces/api/requestInterfaces';
+import type { BookDetails } from '@server/models/Book';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
@@ -47,10 +48,19 @@ const messages = defineMessages('components.RequestList.RequestItem', {
   unknowntitle: 'Unknown Title',
   removearr: 'Remove from {arr}',
   profileName: 'Profile',
+  metadataProfileName: 'Metadata Profile',
 });
 
-const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
+const isMovie = (
+  movie: MovieDetails | TvDetails | BookDetails
+): movie is MovieDetails => {
   return (movie as MovieDetails).title !== undefined;
+};
+
+const isBook = (
+  book: MovieDetails | TvDetails | BookDetails
+): book is BookDetails => {
+  return (book as BookDetails).author !== undefined;
 };
 
 interface RequestItemErrorProps {
@@ -71,11 +81,11 @@ const RequestItemError = ({
     mutate('/api/v1/request/count');
   };
 
-  const { mediaUrl: plexUrl, mediaUrl4k: plexUrl4k } = useDeepLinks({
+  const { mediaUrl: plexUrl, mediaUrlAlt: plexUrlAlt } = useDeepLinks({
     mediaUrl: requestData?.media?.mediaUrl,
-    mediaUrl4k: requestData?.media?.mediaUrl4k,
+    mediaUrlAlt: requestData?.media?.mediaUrlAlt,
     iOSPlexUrl: requestData?.media?.iOSPlexUrl,
-    iOSPlexUrl4k: requestData?.media?.iOSPlexUrl4k,
+    iOSPlexUrlAlt: requestData?.media?.iOSPlexUrlAlt,
   });
 
   return (
@@ -134,30 +144,32 @@ const RequestItemError = ({
                   <StatusBadge
                     status={
                       requestData.media[
-                        requestData.is4k ? 'status4k' : 'status'
+                        requestData.isAlt ? 'statusAlt' : 'status'
                       ]
                     }
                     downloadItem={
                       requestData.media[
-                        requestData.is4k ? 'downloadStatus4k' : 'downloadStatus'
+                        requestData.isAlt
+                          ? 'downloadStatusAlt'
+                          : 'downloadStatus'
                       ]
                     }
                     title={intl.formatMessage(messages.unknowntitle)}
                     inProgress={
                       (
                         requestData.media[
-                          requestData.is4k
-                            ? 'downloadStatus4k'
+                          requestData.isAlt
+                            ? 'downloadStatusAlt'
                             : 'downloadStatus'
                         ] ?? []
                       ).length > 0
                     }
-                    is4k={requestData.is4k}
+                    isAlt={requestData.isAlt}
                     mediaType={requestData.type}
-                    plexUrl={requestData.is4k ? plexUrl4k : plexUrl}
+                    plexUrl={requestData.isAlt ? plexUrlAlt : plexUrl}
                     serviceUrl={
-                      requestData.is4k
-                        ? requestData.media.serviceUrl4k
+                      requestData.isAlt
+                        ? requestData.media.serviceUrlAlt
                         : requestData.media.serviceUrl
                     }
                   />
@@ -306,8 +318,10 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
   const url =
     request.type === 'movie'
       ? `/api/v1/movie/${request.media.tmdbId}`
+      : request.type === 'book'
+      ? `/api/v1/book/${request.media.hcId}`
       : `/api/v1/tv/${request.media.tmdbId}`;
-  const { data: title, error } = useSWR<MovieDetails | TvDetails>(
+  const { data: title, error } = useSWR<MovieDetails | TvDetails | BookDetails>(
     inView ? url : null
   );
   const { data: requestData, mutate: revalidate } = useSWR<
@@ -317,7 +331,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
     refreshInterval: refreshIntervalHelper(
       {
         downloadStatus: request.media.downloadStatus,
-        downloadStatus4k: request.media.downloadStatus4k,
+        downloadStatusAlt: request.media.downloadStatusAlt,
       },
       15000
     ),
@@ -344,7 +358,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
   const deleteMediaFile = async () => {
     if (request.media) {
       await axios.delete(
-        `/api/v1/media/${request.media.id}/file?is4k=${request.is4k}`
+        `/api/v1/media/${request.media.id}/file?isAlt=${request.isAlt}`
       );
       await axios.delete(`/api/v1/media/${request.media.id}`);
       revalidateList();
@@ -367,11 +381,11 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
     }
   };
 
-  const { mediaUrl: plexUrl, mediaUrl4k: plexUrl4k } = useDeepLinks({
+  const { mediaUrl: plexUrl, mediaUrlAlt: plexUrlAlt } = useDeepLinks({
     mediaUrl: requestData?.media?.mediaUrl,
-    mediaUrl4k: requestData?.media?.mediaUrl4k,
+    mediaUrlAlt: requestData?.media?.mediaUrlAlt,
     iOSPlexUrl: requestData?.media?.iOSPlexUrl,
-    iOSPlexUrl4k: requestData?.media?.iOSPlexUrl4k,
+    iOSPlexUrlAlt: requestData?.media?.iOSPlexUrlAlt,
   });
 
   if (!title && !error) {
@@ -396,9 +410,9 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
     <>
       <RequestModal
         show={showEditModal}
-        tmdbId={request.media.tmdbId}
+        mediaId={request.media.hcId || request.media.tmdbId}
         type={request.type}
-        is4k={request.is4k}
+        isAlt={request.isAlt}
         editRequest={request}
         onCancel={() => setShowEditModal(false)}
         onComplete={() => {
@@ -410,8 +424,8 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
         {title.backdropPath && (
           <div className="absolute inset-0 z-0 w-full bg-cover bg-center xl:w-2/3">
             <CachedImage
-              type="tmdb"
-              src={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`}
+              type={requestData.type === 'book' ? 'hardcover' : 'tmdb'}
+              src={title.backdropPath}
               alt=""
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               fill
@@ -431,15 +445,17 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
               href={
                 requestData.type === 'movie'
                   ? `/movie/${requestData.media.tmdbId}`
+                  : requestData.type === 'book'
+                  ? `/book/${requestData.media.hcId}`
                   : `/tv/${requestData.media.tmdbId}`
               }
               className="relative h-auto w-12 flex-shrink-0 scale-100 transform-gpu overflow-hidden rounded-md transition duration-300 hover:scale-105"
             >
               <CachedImage
-                type="tmdb"
+                type={requestData.type === 'book' ? 'hardcover' : 'tmdb'}
                 src={
                   title.posterPath
-                    ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
+                    ? title.posterPath
                     : '/images/jellyseerr_poster_not_found.png'
                 }
                 alt=""
@@ -451,7 +467,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
             </Link>
             <div className="flex flex-col justify-center overflow-hidden pl-2 xl:pl-4">
               <div className="pt-0.5 text-xs font-medium text-white sm:pt-1">
-                {(isMovie(title)
+                {(isMovie(title) || isBook(title)
                   ? title.releaseDate
                   : title.firstAirDate
                 )?.slice(0, 4)}
@@ -460,39 +476,43 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                 href={
                   requestData.type === 'movie'
                     ? `/movie/${requestData.media.tmdbId}`
+                    : requestData.type === 'book'
+                    ? `/book/${requestData.media.hcId}`
                     : `/tv/${requestData.media.tmdbId}`
                 }
                 className="mr-2 min-w-0 truncate text-lg font-bold text-white hover:underline xl:text-xl"
               >
-                {isMovie(title) ? title.title : title.name}
+                {isMovie(title) || isBook(title) ? title.title : title.name}
               </Link>
-              {!isMovie(title) && request.seasons.length > 0 && (
-                <div className="card-field">
-                  <span className="card-field-name">
-                    {intl.formatMessage(messages.seasons, {
-                      seasonCount:
-                        (settings.currentSettings.enableSpecialEpisodes
-                          ? title.seasons.length
-                          : title.seasons.filter(
-                              (season) => season.seasonNumber !== 0
-                            ).length) === request.seasons.length
-                          ? 0
-                          : request.seasons.length,
-                    })}
-                  </span>
-                  <div className="hide-scrollbar flex flex-nowrap overflow-x-scroll">
-                    {request.seasons.map((season) => (
-                      <span key={`season-${season.id}`} className="mr-2">
-                        <Badge>
-                          {season.seasonNumber === 0
-                            ? intl.formatMessage(globalMessages.specials)
-                            : season.seasonNumber}
-                        </Badge>
-                      </span>
-                    ))}
+              {!isMovie(title) &&
+                !isBook(title) &&
+                request.seasons.length > 0 && (
+                  <div className="card-field">
+                    <span className="card-field-name">
+                      {intl.formatMessage(messages.seasons, {
+                        seasonCount:
+                          (settings.currentSettings.enableSpecialEpisodes
+                            ? title.seasons.length
+                            : title.seasons.filter(
+                                (season) => season.seasonNumber !== 0
+                              ).length) === request.seasons.length
+                            ? 0
+                            : request.seasons.length,
+                      })}
+                    </span>
+                    <div className="hide-scrollbar flex flex-nowrap overflow-x-scroll">
+                      {request.seasons.map((season) => (
+                        <span key={`season-${season.id}`} className="mr-2">
+                          <Badge>
+                            {season.seasonNumber === 0
+                              ? intl.formatMessage(globalMessages.specials)
+                              : season.seasonNumber}
+                          </Badge>
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           </div>
           <div className="z-10 mt-4 ml-4 flex w-full flex-col justify-center gap-1 overflow-hidden pr-4 text-sm sm:ml-2 sm:mt-0 xl:flex-1 xl:pr-0">
@@ -512,8 +532,9 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                   {intl.formatMessage(globalMessages.failed)}
                 </Badge>
               ) : requestData.status === MediaRequestStatus.PENDING &&
-                requestData.media[requestData.is4k ? 'status4k' : 'status'] ===
-                  MediaStatus.DELETED ? (
+                requestData.media[
+                  requestData.isAlt ? 'statusAlt' : 'status'
+                ] === MediaStatus.DELETED ? (
                 <Badge
                   badgeType="warning"
                   href={`/${requestData.type}/${requestData.media.tmdbId}?manage=1`}
@@ -523,28 +544,34 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
               ) : (
                 <StatusBadge
                   status={
-                    requestData.media[requestData.is4k ? 'status4k' : 'status']
+                    requestData.media[
+                      requestData.isAlt ? 'statusAlt' : 'status'
+                    ]
                   }
                   downloadItem={
                     requestData.media[
-                      requestData.is4k ? 'downloadStatus4k' : 'downloadStatus'
+                      requestData.isAlt ? 'downloadStatusAlt' : 'downloadStatus'
                     ]
                   }
-                  title={isMovie(title) ? title.title : title.name}
+                  title={
+                    isMovie(title) || isBook(title) ? title.title : title.name
+                  }
                   inProgress={
                     (
                       requestData.media[
-                        requestData.is4k ? 'downloadStatus4k' : 'downloadStatus'
+                        requestData.isAlt
+                          ? 'downloadStatusAlt'
+                          : 'downloadStatus'
                       ] ?? []
                     ).length > 0
                   }
-                  is4k={requestData.is4k}
-                  tmdbId={requestData.media.tmdbId}
+                  isAlt={requestData.isAlt}
+                  mediaId={requestData.media.tmdbId || requestData.media.hcId}
                   mediaType={requestData.type}
-                  plexUrl={requestData.is4k ? plexUrl4k : plexUrl}
+                  plexUrl={requestData.isAlt ? plexUrlAlt : plexUrl}
                   serviceUrl={
-                    requestData.is4k
-                      ? requestData.media.serviceUrl4k
+                    requestData.isAlt
+                      ? requestData.media.serviceUrlAlt
                       : requestData.media.serviceUrl
                   }
                 />
@@ -666,6 +693,16 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                 </span>
               </div>
             )}
+            {request.type === 'book' && request.metadataProfileName && (
+              <div className="card-field">
+                <span className="card-field-name">
+                  {intl.formatMessage(messages.metadataProfileName)}
+                </span>
+                <span className="flex truncate text-sm text-gray-300">
+                  {request.metadataProfileName}
+                </span>
+              </div>
+            )}
           </div>
         </div>
         <div className="z-10 mt-4 flex w-full flex-col justify-center space-y-2 pl-4 pr-4 xl:mt-0 xl:w-96 xl:items-end xl:pl-0">
@@ -708,7 +745,12 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                     <TrashIcon />
                     <span>
                       {intl.formatMessage(messages.removearr, {
-                        arr: request.type === 'movie' ? 'Radarr' : 'Sonarr',
+                        arr:
+                          request.type === 'movie'
+                            ? 'Radarr'
+                            : request.type === 'book'
+                            ? 'Readarr'
+                            : 'Sonarr',
                       })}
                     </span>
                   </ConfirmButton>

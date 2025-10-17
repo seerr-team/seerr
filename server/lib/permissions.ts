@@ -9,12 +9,12 @@ export enum Permission {
   AUTO_APPROVE = 128,
   AUTO_APPROVE_MOVIE = 256,
   AUTO_APPROVE_TV = 512,
-  REQUEST_4K = 1024,
+  REQUEST_ALT = 1024,
   REQUEST_4K_MOVIE = 2048,
   REQUEST_4K_TV = 4096,
   REQUEST_ADVANCED = 8192,
   REQUEST_VIEW = 16384,
-  AUTO_APPROVE_4K = 32768,
+  AUTO_APPROVE_ALT = 32768,
   AUTO_APPROVE_4K_MOVIE = 65536,
   AUTO_APPROVE_4K_TV = 131072,
   REQUEST_MOVIE = 262144,
@@ -29,6 +29,10 @@ export enum Permission {
   WATCHLIST_VIEW = 134217728,
   MANAGE_BLACKLIST = 268435456,
   VIEW_BLACKLIST = 1073741824,
+  REQUEST_BOOK = 2147483648,
+  AUTO_APPROVE_BOOK = 4294967296,
+  REQUEST_AUDIO_BOOK = 8589934592,
+  AUTO_APPROVE_AUDIO_BOOK = 17179869184,
 }
 
 export interface PermissionCheckOptions {
@@ -51,24 +55,35 @@ export const hasPermission = (
 ): boolean => {
   let total = 0;
 
-  // If we are not checking any permissions, bail out and return true
   if (permissions === 0) {
     return true;
   }
 
+  if (isNaN(value)) {
+    return false;
+  }
+
+  const bigValue = BigInt(value);
+
   if (Array.isArray(permissions)) {
-    if (value & Permission.ADMIN) {
+    if (bigValue & BigInt(Permission.ADMIN)) {
       return true;
     }
     switch (options.type) {
       case 'and':
-        return permissions.every((permission) => !!(value & permission));
+        return permissions.every(
+          (permission) => !!(bigValue & BigInt(permission))
+        );
       case 'or':
-        return permissions.some((permission) => !!(value & permission));
+        return permissions.some(
+          (permission) => !!(bigValue & BigInt(permission))
+        );
     }
   } else {
     total = permissions;
   }
 
-  return !!(value & Permission.ADMIN) || !!(value & total);
+  return (
+    !!(bigValue & BigInt(Permission.ADMIN)) || !!(bigValue & BigInt(total))
+  );
 };

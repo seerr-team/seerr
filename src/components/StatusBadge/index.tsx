@@ -24,23 +24,23 @@ const messages = defineMessages('components.StatusBadge', {
 interface StatusBadgeProps {
   status?: MediaStatus;
   downloadItem?: DownloadingItem[];
-  is4k?: boolean;
+  isAlt?: boolean;
   inProgress?: boolean;
   plexUrl?: string;
   serviceUrl?: string;
-  tmdbId?: number;
-  mediaType?: 'movie' | 'tv';
+  mediaId?: number;
+  mediaType?: 'movie' | 'tv' | 'book';
   title?: string | string[];
 }
 
 const StatusBadge = ({
   status,
   downloadItem = [],
-  is4k = false,
+  isAlt = false,
   inProgress = false,
   plexUrl,
   serviceUrl,
-  tmdbId,
+  mediaId,
   mediaType,
   title,
 }: StatusBadgeProps) => {
@@ -59,9 +59,9 @@ const StatusBadge = ({
     mediaType &&
     plexUrl &&
     hasPermission(
-      is4k
+      isAlt
         ? [
-            Permission.REQUEST_4K,
+            Permission.REQUEST_ALT,
             mediaType === 'movie'
               ? Permission.REQUEST_4K_MOVIE
               : Permission.REQUEST_4K_TV,
@@ -76,7 +76,7 @@ const StatusBadge = ({
         type: 'or',
       }
     ) &&
-    (!is4k ||
+    (!isAlt ||
       (mediaType === 'movie'
         ? settings.currentSettings.movie4kEnabled
         : settings.currentSettings.series4kEnabled))
@@ -91,17 +91,26 @@ const StatusBadge = ({
           : 'Jellyfin',
     });
   } else if (hasPermission(Permission.MANAGE_REQUESTS)) {
-    if (mediaType && tmdbId) {
-      mediaLink = `/${mediaType}/${tmdbId}?manage=1`;
+    if (mediaType && mediaId) {
+      mediaLink = `/${mediaType}/${mediaId}?manage=1`;
       mediaLinkDescription = intl.formatMessage(messages.managemedia, {
         mediaType: intl.formatMessage(
-          mediaType === 'movie' ? globalMessages.movie : globalMessages.tvshow
+          mediaType === 'movie'
+            ? globalMessages.movie
+            : mediaType === 'book'
+            ? globalMessages.book
+            : globalMessages.tvshow
         ),
       });
     } else if (hasPermission(Permission.ADMIN) && serviceUrl) {
       mediaLink = serviceUrl;
       mediaLinkDescription = intl.formatMessage(messages.openinarr, {
-        arr: mediaType === 'movie' ? 'Radarr' : 'Sonarr',
+        arr:
+          mediaType === 'movie'
+            ? 'Radarr'
+            : mediaType === 'book'
+            ? 'Readarr'
+            : 'Sonarr',
       });
     }
   }
@@ -116,7 +125,7 @@ const StatusBadge = ({
       <DownloadBlock
         downloadItem={downloadItem[0]}
         title={Array.isArray(title) ? title[0] : title}
-        is4k={is4k}
+        isAlt={isAlt}
       />
     ) : (
       <ul>
@@ -128,7 +137,7 @@ const StatusBadge = ({
             <DownloadBlock
               downloadItem={status}
               title={Array.isArray(title) ? title[index] : title}
-              is4k={is4k}
+              isAlt={isAlt}
             />
           </li>
         ))}
@@ -178,7 +187,7 @@ const StatusBadge = ({
             >
               <span>
                 {intl.formatMessage(
-                  is4k ? messages.status4k : messages.status,
+                  isAlt ? messages.status4k : messages.status,
                   {
                     status: inProgress
                       ? intl.formatMessage(globalMessages.processing)
@@ -244,7 +253,7 @@ const StatusBadge = ({
             >
               <span>
                 {intl.formatMessage(
-                  is4k ? messages.status4k : messages.status,
+                  isAlt ? messages.status4k : messages.status,
                   {
                     status: inProgress
                       ? intl.formatMessage(globalMessages.processing)
@@ -310,7 +319,7 @@ const StatusBadge = ({
             >
               <span>
                 {intl.formatMessage(
-                  is4k ? messages.status4k : messages.status,
+                  isAlt ? messages.status4k : messages.status,
                   {
                     status: inProgress
                       ? intl.formatMessage(globalMessages.processing)
@@ -353,7 +362,7 @@ const StatusBadge = ({
       return (
         <Tooltip content={mediaLinkDescription}>
           <Badge badgeType="warning" href={mediaLink}>
-            {intl.formatMessage(is4k ? messages.status4k : messages.status, {
+            {intl.formatMessage(isAlt ? messages.status4k : messages.status, {
               status: intl.formatMessage(globalMessages.pending),
             })}
           </Badge>
@@ -364,7 +373,7 @@ const StatusBadge = ({
       return (
         <Tooltip content={mediaLinkDescription}>
           <Badge badgeType="danger" href={mediaLink}>
-            {intl.formatMessage(is4k ? messages.status4k : messages.status, {
+            {intl.formatMessage(isAlt ? messages.status4k : messages.status, {
               status: intl.formatMessage(globalMessages.blacklisted),
             })}
           </Badge>
@@ -375,7 +384,7 @@ const StatusBadge = ({
       return (
         <Tooltip content={mediaLinkDescription}>
           <Badge badgeType="danger">
-            {intl.formatMessage(is4k ? messages.status4k : messages.status, {
+            {intl.formatMessage(isAlt ? messages.status4k : messages.status, {
               status: intl.formatMessage(globalMessages.deleted),
             })}
           </Badge>

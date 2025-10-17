@@ -6,7 +6,7 @@ const imageLoader: ImageLoader = ({ src }) => src;
 
 export type CachedImageProps = ImageProps & {
   src: string;
-  type: 'tmdb' | 'avatar' | 'tvdb';
+  type: 'tmdb' | 'avatar' | 'hardcover' | 'tvdb';
 };
 
 /**
@@ -35,6 +35,14 @@ const CachedImage = ({ src, type, ...props }: CachedImageProps) => {
   } else if (type === 'avatar') {
     // jellyfin avatar (if any)
     imageUrl = src;
+  } else if (type === 'hardcover') {
+    // force cache for hardcover
+    imageUrl = !src.startsWith('/')
+      ? src.replace(
+          /^https:\/\/assets\.hardcover\.app\//,
+          '/imageproxy/hardcover/'
+        )
+      : src;
   } else {
     return null;
   }

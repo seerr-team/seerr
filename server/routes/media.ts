@@ -1,4 +1,5 @@
 import RadarrAPI from '@server/api/servarr/radarr';
+import ReadarrAPI from '@server/api/servarr/readarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import TautulliAPI from '@server/api/tautulli';
 import TheMovieDb from '@server/api/themoviedb';
@@ -20,6 +21,27 @@ import type { FindOneOptions } from 'typeorm';
 import { In } from 'typeorm';
 
 const mediaRoutes = Router();
+
+mediaRoutes.get<{ mediatype: string; mediaid: string }>(
+  '/lookup/:mediatype/:mediaid',
+  async (req, res, next) => {
+    const mediaRepository = getRepository(Media);
+
+    try {
+      const mediaTypeParam = req.params.mediatype.toLowerCase();
+      const externalId = Number(req.params.mediaid);
+      const key = mediaTypeParam === 'book' ? 'hcId' : 'tmdbId';
+
+      const media = await mediaRepository.findOne({
+        where: { [key]: externalId, mediaType: mediaTypeParam as MediaType },
+      });
+
+      return res.status(200).json({ id: media?.id || null });
+    } catch (e) {
+      next({ status: 500, message: e.message });
+    }
+  }
+);
 
 mediaRoutes.get('/', async (req, res, next) => {
   const mediaRepository = getRepository(Media);
@@ -116,7 +138,7 @@ mediaRoutes.post<
 
     switch (req.params.status) {
       case 'available':
-        media[is4k ? 'status4k' : 'status'] = MediaStatus.AVAILABLE;
+        media[is4k ? 'statusAlt' : 'status'] = MediaStatus.AVAILABLE;
 
         if (media.mediaType === MediaType.TV) {
           const expectedSeasons = req.body.seasons ?? [];
@@ -198,17 +220,22 @@ mediaRoutes.delete(
         where: { id: Number(req.params.id) },
       });
 
-      const is4k = req.query.is4k === 'true';
+      const isAlt = req.query.isAlt === 'true';
       const isMovie = media.mediaType === MediaType.MOVIE;
+      const isBook = media.mediaType === MediaType.BOOK;
 
       let serviceSettings;
       if (isMovie) {
         serviceSettings = settings.radarr.find(
-          (radarr) => radarr.isDefault && radarr.is4k === is4k
+          (radarr) => radarr.isDefault && radarr.is4k === isAlt
+        );
+      } else if (isBook) {
+        serviceSettings = settings.readarr.find(
+          (readarr) => readarr.isDefault && readarr.isAudio === isAlt
         );
       } else {
         serviceSettings = settings.sonarr.find(
-          (sonarr) => sonarr.isDefault && sonarr.is4k === is4k
+          (sonarr) => sonarr.isDefault && sonarr.is4k === isAlt
         );
       }
 
@@ -221,6 +248,10 @@ mediaRoutes.delete(
           serviceSettings = settings.radarr.find(
             (radarr) => radarr.id === media.serviceId
           );
+        } else if (isBook) {
+          serviceSettings = settings.readarr.find(
+            (readarr) => readarr.id === media.serviceId
+          );
         } else {
           serviceSettings = settings.sonarr.find(
             (sonarr) => sonarr.id === media.serviceId
@@ -228,12 +259,15 @@ mediaRoutes.delete(
         }
       }
 
+      const serviceName = isMovie ? 'Radarr' : isBook ? 'Readarr' : 'Sonarr';
+      const serviceType = isAlt ? (isBook ? 'Audiobook' : '4K ') : '';
+
       if (!serviceSettings) {
         logger.warn(
           `There is no default ${
-            is4k ? '4K ' : '' + isMovie ? 'Radarr' : 'Sonarr'
+            serviceType + serviceName
           }/ server configured. Did you set any of your ${
-            is4k ? '4K ' : '' + isMovie ? 'Radarr' : 'Sonarr'
+            serviceType + serviceName
           } servers as default?`,
           {
             label: 'Media Request',
@@ -249,6 +283,11 @@ mediaRoutes.delete(
           apiKey: serviceSettings?.apiKey,
           url: RadarrAPI.buildUrl(serviceSettings, '/api/v3'),
         });
+      } else if (isBook) {
+        service = new ReadarrAPI({
+          apiKey: serviceSettings?.apiKey,
+          url: ReadarrAPI.buildUrl(serviceSettings, '/api/v1'),
+        });
       } else {
         service = new SonarrAPI({
           apiKey: serviceSettings?.apiKey,
@@ -259,13 +298,21 @@ mediaRoutes.delete(
       if (isMovie) {
         await (service as RadarrAPI).removeMovie(
           parseInt(
-            is4k
-              ? (media.externalServiceSlug4k as string)
+            isAlt
+              ? (media.externalServiceSlugAlt as string)
               : (media.externalServiceSlug as string)
           )
         );
+      } else if (isBook) {
+        if (!media.hasHcId()) {
+          throw new Error('Hardcover ID is missing for this media!');
+        }
+        await (service as ReadarrAPI).removeBook(media.hcId);
       } else {
         const tmdb = new TheMovieDb();
+        if (!media.hasTmdbId()) {
+          throw new Error('TMDB ID is missing for this media!');
+        }
         const series = await tmdb.getTvShow({ tvId: media.tmdbId });
         const tvdbId = series.external_ids.tvdb_id ?? media.tvdbId;
         if (!tvdbId) {
@@ -340,12 +387,12 @@ mediaRoutes.get<{ id: string }, MediaWatchDataResponse>(
         };
       }
 
-      if (media.ratingKey4k) {
+      if (media.ratingKeyAlt) {
         const watchStats4k = await tautulli.getMediaWatchStats(
-          media.ratingKey4k
+          media.ratingKeyAlt
         );
         const watchUsers4k = await tautulli.getMediaWatchUsers(
-          media.ratingKey4k
+          media.ratingKeyAlt
         );
 
         const users = await userRepository

@@ -1,5 +1,8 @@
+import Hardcover from '@server/api/hardcover';
+import type { HardcoverSearchMultiResponse } from '@server/api/hardcover/interfaces';
 import TheMovieDb from '@server/api/themoviedb';
 import type { TmdbSearchMultiResponse } from '@server/api/themoviedb/interfaces';
+import { MediaType } from '@server/constants/media';
 import Media from '@server/entity/Media';
 import { findSearchProvider } from '@server/lib/search';
 import logger from '@server/logger';
@@ -11,7 +14,7 @@ const searchRoutes = Router();
 searchRoutes.get('/', async (req, res, next) => {
   const queryString = req.query.query as string;
   const searchProvider = findSearchProvider(queryString.toLowerCase());
-  let results: TmdbSearchMultiResponse;
+  let results: TmdbSearchMultiResponse | HardcoverSearchMultiResponse;
 
   try {
     if (searchProvider) {
@@ -22,6 +25,13 @@ searchRoutes.get('/', async (req, res, next) => {
         id,
         language: (req.query.language as string) ?? req.locale,
         query: queryString,
+      });
+    } else if (req.query.type === MediaType.BOOK) {
+      const hardcover = new Hardcover();
+
+      results = await hardcover.search({
+        query: queryString,
+        page: Number(req.query.page),
       });
     } else {
       const tmdb = new TheMovieDb();
@@ -35,7 +45,8 @@ searchRoutes.get('/', async (req, res, next) => {
 
     const media = await Media.getRelatedMedia(
       req.user,
-      results.results.map((result) => result.id)
+      results.results.map((result) => result.id),
+      req.query.type as MediaType
     );
 
     return res.status(200).json({
