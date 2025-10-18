@@ -12,6 +12,7 @@ import TabItem from '@theme/TabItem';
 
 These artifacts are cryptographically signed using [Sigstore Cosign](https://docs.sigstore.dev/quickstart/quickstart-cosign/):
 - Container images
+- Helm charts
 
 This ensures that the images you pull are authentic, tamper-proof, and built by the official Seerr release pipeline.
 
@@ -27,19 +28,11 @@ You will need the following tools installed:
 
 To verify images:
 
-- [Docker](https://docs.docker.com/get-docker/) **or**
-- [Podman](https://podman.io/getting-started/installation) (including [Skopeo](https://github.com/containers/skopeo/blob/main/install.md))
+- [Docker](https://docs.docker.com/get-docker/) **or** [Podman](https://podman.io/getting-started/installation) (including [Skopeo](https://github.com/containers/skopeo/blob/main/install.md))
 
 ---
 
-# Verifying Signed Images
-
-All Seerr container images published to GitHub Container Registry (GHCR) are cryptographically signed using [Sigstore Cosign](https://docs.sigstore.dev/quickstart/quickstart-cosign/).
-This ensures that the images you pull are authentic, tamper-proof, and built by the official Seerr release pipeline.
-
-Each image also includes a CycloneDX SBOM (Software Bill of Materials) attestation, generated with [Trivy](https://aquasecurity.github.io/trivy/), providing transparency about all dependencies included in the image.
-
----
+## Verifying Signed Images
 
 ### Image Locations
 
@@ -227,17 +220,6 @@ This confirms that the image was:
 
 ---
 
-### Troubleshooting
-
-| Issue | Likely Cause | Suggested Fix |
-|-------|---------------|----------------|
-| `no matching signatures` | Incorrect digest or tag | Retrieve the digest again using Docker or Skopeo |
-| `certificate identity does not match expected` | Workflow reference changed | Ensure your `--certificate-identity` matches this documentation |
-| `cosign: command not found` | Cosign not installed | Install Cosign from the official release |
-| `certificate expired` | Old release | Verify a newer tag or digest |
-
----
-
 ### Example: Full Verification Flow
 
 <Tabs groupId="verify-examples">
@@ -268,6 +250,127 @@ cosign verify ghcr.io/seerr-team/seerr@"$DIGEST" \
 ```
   </TabItem>
 </Tabs>
+
+## Verifying Signed Helm charts
+
+### Helm Chart Locations
+
+Official Seerr helm charts are available from:
+
+- GitHub Container Registry (GHCR): `ghcr.io/seerr-team/seerr/seerr-chart/seerr-chart:<tag>`
+
+You can view all available tags on the [Seerr Releases page](https://github.com/seerr-team/seerr/pkgs/container/seerr%2Fseerr-chart).
+
+---
+
+### Verifying a Specific Release Tag
+
+Each tagged release (for example `3.0.0`) is immutable and cryptographically signed.
+Verification should always be performed using the image digest (SHA256).
+
+#### Retrieve the Helm Chart Digest
+
+<Tabs groupId="verify-methods">
+  <TabItem value="docker" label="Docker">
+
+```bash
+docker buildx imagetools inspect ghcr.io/seerr-team/seerr/seerr-chart:3.0.0 --format '{{json .Manifest.Digest}}' | tr -d '"'
+```
+  </TabItem>
+
+  <TabItem value="podman" label="Podman / Skopeo">
+
+```bash
+skopeo inspect docker://ghcr.io/seerr-team/seerr/seerr-chart:3.0.0 --format '{{.Digest}}'
+```
+  </TabItem>
+</Tabs>
+
+Example output:
+
+```
+sha256:abcd1234...
+```
+
+---
+
+#### Verify the Helm Chart Signature
+
+```bash
+cosign verify ghcr.io/seerr-team/seerr/seerr-chart@sha256:abcd1234... \
+  --certificate-identity "https://github.com/seerr-team/seerr/.github/workflows/helm.yml@refs/heads/main" \
+  --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+```
+
+:::info Successful Verification Example
+Verification for `ghcr.io/seerr-team/seerr/seerr-chart@sha256:abcd1234...`
+
+The following checks were performed:
+
+- Cosign claims validated
+- Signatures verified against the transparency log
+- Certificate issued by Fulcio to the expected workflow identity
+:::
+
+---
+
+### Expected Certificate Identity
+
+The expected certificate identity for all signed Seerr images is:
+
+```
+https://github.com/seerr-team/seerr/.github/workflows/helm.yml@refs/heads/main
+```
+
+This confirms that the image was:
+
+- Built by the official Seerr Release workflow
+- Produced from the seerr-team/seerr repository
+- Signed using GitHub’s OIDC identity via Sigstore Fulcio
+
+---
+
+### Example: Full Verification Flow
+
+<Tabs groupId="verify-examples">
+  <TabItem value="docker" label="Docker">
+
+```bash
+DIGEST=$(docker buildx imagetools inspect ghcr.io/seerr-team/seerr/seerr-chart:3.0.0 --format '{{json .Manifest.Digest}}' | tr -d '"')
+
+cosign verify ghcr.io/seerr-team/seerr/seerr-chart@"$DIGEST" \
+  --certificate-identity-regexp "https://github.com/seerr-team/seerr/.github/workflows/helm.yml@refs/heads/main" \
+  --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+
+cosign verify-attestation ghcr.io/seerr-team/seerr/seerr-chart@"$DIGEST" \
+  --type cyclonedx \
+  --certificate-identity-regexp "https://github.com/seerr-team/seerr/.github/workflows/helm.yml@refs/heads/main" \
+  --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+```
+  </TabItem>
+
+  <TabItem value="podman" label="Podman / Skopeo">
+
+```bash
+DIGEST=$(skopeo inspect docker://ghcr.io/seerr-team/seerr/seerr-chart:3.0.0 --format '{{.Digest}}')
+
+cosign verify ghcr.io/seerr-team/seerr/seerr-chart@"$DIGEST" \
+  --certificate-identity-regexp "https://github.com/seerr-team/seerr/.github/workflows/helm.yml@refs/heads/main" \
+  --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+```
+  </TabItem>
+</Tabs>
+
+---
+
+## Troubleshooting
+
+| Issue | Likely Cause | Suggested Fix |
+|-------|---------------|----------------|
+| `no matching signatures` | Incorrect digest or tag | Retrieve the digest again using Docker or Skopeo |
+| `certificate identity does not match expected` | Workflow reference changed | Ensure your `--certificate-identity` matches this documentation |
+| `cosign: command not found` | Cosign not installed | Install Cosign from the official release |
+| `certificate expired` | Old release | Verify a newer tag or digest |
 
 ---
 
