@@ -412,14 +412,27 @@ const StatusBadge = ({
               </span>
               {inProgress && (
                 <>
-                  {mediaType === 'tv' && downloadItem[0].episode && (
-                    <span className="ml-1">
-                      {intl.formatMessage(messages.seasonepisodenumber, {
-                        seasonNumber: downloadItem[0].episode.seasonNumber,
-                        episodeNumber: downloadItem[0].episode.episodeNumber,
-                      })}
-                    </span>
-                  )}
+                  {mediaType === 'tv' &&
+                    downloadItem[0].episode &&
+                    (downloadItem.length > 1 &&
+                    downloadItem.every(
+                      (item) =>
+                        item.downloadId &&
+                        item.downloadId === downloadItem[0].downloadId
+                    ) ? (
+                      <span className="ml-1">
+                        {intl.formatMessage(messages.seasonnumber, {
+                          seasonNumber: downloadItem[0].episode.seasonNumber,
+                        })}
+                      </span>
+                    ) : (
+                      <span className="ml-1">
+                        {intl.formatMessage(messages.seasonepisodenumber, {
+                          seasonNumber: downloadItem[0].episode.seasonNumber,
+                          episodeNumber: downloadItem[0].episode.episodeNumber,
+                        })}
+                      </span>
+                    ))}
                   <Spinner className="ml-1 h-3 w-3" />
                 </>
               )}
