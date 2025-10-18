@@ -28,7 +28,7 @@ Refer to [https://docs.seerr.dev/getting-started/kubernetes](Seerr kubernetes do
 
 ### Updating to 3.0.0
 
-Nothing has changed; we just rebranded the `jellyseerr` Helm chart to `seerr` 🥳.
+Nothing has changed; we just rebranded the `jellyseerr` Helm chart to `seerr` 🥳 refer to our [Migration guide](https://docs.seerr.dev/migration-guide).
 
 ### Updating to 2.7.0
 
@@ -70,12 +70,20 @@ If `replicaCount` value was used - remove it. Helm update should work fine after
 | nodeSelector | object | `{}` |  |
 | podAnnotations | object | `{}` |  |
 | podLabels | object | `{}` |  |
-| podSecurityContext | object | `{}` |  |
+| podSecurityContext.fsGroup | int | `1000` |  |
+| podSecurityContext.fsGroupChangePolicy | string | `"OnRootMismatch"` |  |
 | probes.livenessProbe | object | `{}` | Configure liveness probe |
 | probes.readinessProbe | object | `{}` | Configure readiness probe |
 | probes.startupProbe | string | `nil` | Configure startup probe |
 | resources | object | `{}` |  |
-| securityContext | object | `{}` |  |
+| securityContext.allowPrivilegeEscalation | bool | `false` |  |
+| securityContext.capabilities.drop[0] | string | `"ALL"` |  |
+| securityContext.privileged | bool | `false` |  |
+| securityContext.readOnlyRootFilesystem | bool | `false` |  |
+| securityContext.runAsGroup | int | `1000` |  |
+| securityContext.runAsNonRoot | bool | `true` |  |
+| securityContext.runAsUser | int | `1000` |  |
+| securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | service.port | int | `80` |  |
 | service.type | string | `"ClusterIP"` |  |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the service account |

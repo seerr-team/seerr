@@ -1,0 +1,34 @@
+---
+title: Migration guide
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+This documentation is for users who want to migrate their existing Overseerr or Jellyseerr instance to Seerr.
+Jellyseerr serves as the codebase for Seerr, but Overseerr users do not need to perform any manual migration steps.
+When you start your Seerr instance, a script automatically detects if your instance is from Overseerr and handles the database migration.
+
+:::warning
+Before doing anything you should backup your existing instance so that you can rollback in case something goes wrong.
+See [Configuring Databases](/using-jellyseerr/backups) for details on how to properly backup your instance.
+:::
+
+## Docker
+Refer to [Seerr Docker Documentation](/getting-started/docker), all of our example have been updated to reflect the below change.
+
+Down your compose stack
+```bash
+docker compose down
+```
+Copy paste the new compose file (don't forget to update the volume path in the new compose file).
+Then, restart all services defined in the Compose file:
+```bash
+docker compose up -d
+```
+
+## Kubernetes
+Refer to [Seerr Kubernetes Documentation](/getting-started/kubernetes), all of our example have been updated to reflect the below change.
+
+As our container image can be run without root permission we have updated the default `securityContext` and `podSecurityContext` to match this.
+Every reference to jellyseerr have been renamed to seerr in manifests.
