@@ -8,6 +8,12 @@ sidebar_position: 5
 This method is not recommended for most users. It is intended for advanced users who are using Kubernetes.
 :::
 
+:::info
+All official Seerr charts are cryptographically signed and include a verified [Software Bill of Materials (SBOM)](https://cyclonedx.org/).
+
+To confirm that the chart you are using is authentic and unmodified, please refer to the [Verifying Signed Artifacts](/using-jellyseerr/advanced/verifying-signed-artifacts#verifying-signed-helm-charts) guide.
+:::
+
 ## Installation
 ```console
 helm install jellyseerr oci://ghcr.io/fallenbagel/jellyseerr/jellyseerr-chart
