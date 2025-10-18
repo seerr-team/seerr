@@ -1,7 +1,7 @@
 ---
 title: Nix Package Manager (Advanced)
 description: Install Jellyseerr using Nix
-sidebar_position: 3
+sidebar_position: 5
 ---
 
 import { JellyseerrVersion, NixpkgVersion } from '@site/src/components/JellyseerrVersion';
@@ -10,6 +10,10 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 # Nix Package Manager (Advanced)
+:::warning
+Third-party installation methods maintained by the community. The Seerr team is not responsible for these packages.
+:::
+
 :::info
 This method is not recommended for most users. It is intended for advanced users who are using Nix as their package manager.
 :::
@@ -63,7 +67,7 @@ export const VersionMismatchWarning = () => {
       </>
     )}
   </Admonition>
-) : null} 
+) : null}
     </>
   );
 };
