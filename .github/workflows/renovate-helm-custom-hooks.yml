@@ -33,7 +33,7 @@ jobs:
       - uses: actions/create-github-app-token@67018539274d69449ef7c02e8e71183d1719ab42 # v2.1.4
         id: app-token
         with:
-          app-id: 1300838
+          app-id: 2138788
           private-key: ${{ secrets.APP_SEERR_HELM_PRIVATE_KEY }}
 
       - name: Set up chart-testing
@@ -105,8 +105,6 @@ jobs:
       - name: Ensure documentation is updated
         if: steps.list-changed.outputs.changed == 'true'
         uses: docker://jnorwood/helm-docs:v1.14.2@sha256:7e562b49ab6b1dbc50c3da8f2dd6ffa8a5c6bba327b1c6335cc15ce29267979c
-        with:
-          args: --chart-search-root .
 
       - name: Commit changes
         if: steps.list-changed.outputs.changed == 'true'
