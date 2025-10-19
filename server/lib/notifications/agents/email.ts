@@ -221,7 +221,9 @@ class EmailAgent
             this.getSettings(),
             payload.notifyUser.settings?.pgpKey
           );
-          if (validator.isEmail(payload.notifyUser.email)) {
+          if (
+            validator.isEmail(payload.notifyUser.email, { require_tld: false })
+          ) {
             await email.send(
               this.buildMessage(
                 type,
@@ -283,7 +285,7 @@ class EmailAgent
                 this.getSettings(),
                 user.settings?.pgpKey
               );
-              if (validator.isEmail(user.email)) {
+              if (validator.isEmail(user.email, { require_tld: false })) {
                 await email.send(
                   this.buildMessage(type, payload, user.email, user.displayName)
                 );
