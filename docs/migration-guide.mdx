@@ -16,18 +16,141 @@ See [Backups](/using-jellyseerr/backups) for details on how to properly backup y
 ## Docker
 Refer to [Seerr Docker Documentation](/getting-started/docker), all of our example have been updated to reflect the below change.
 
-Down your compose stack
-```bash
-docker compose down
-```
-Copy paste the new compose file (don't forget to update the volume path in the new compose file).
-Then, restart all services defined in the Compose file:
-```bash
-docker compose up -d
-```
+Changes :
+- Rename all references from `overseerr` or `jellyseerr` to `seerr`.
+- The container image reference has been updated.
+- The container can now be run as a non-root user (`node` user); remove the `user` directive if you have configured it.
+- The container no longer provides an init process, so you must configure it by adding `init: true` for Docker Compose or `--init` for the Docker CLI.
+
+### Unix
+
+Summary of changes :
+<Tabs groupId="docker-methods" queryString>
+  <TabItem value="docker-compose" label="Docker compose">
+  ```yaml {3-6}
+  ---
+  services:
+    seerr:
+      image: ghcr.io/seerr-team/seerr:latest
+      init: true
+      container_name: seerr
+      environment:
+        - LOG_LEVEL=debug
+        - TZ=Asia/Tashkent
+        - PORT=5055 #optional
+      ports:
+        - 5055:5055
+      volumes:
+        - /path/to/appdata/config:/app/config
+      healthcheck:
+        test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1
+        start_period: 20s
+        timeout: 3s
+        interval: 15s
+        retries: 3
+      restart: unless-stopped
+  ```
+  </TabItem>
+  <TabItem value="docker-cli" label="Docker CLI">
+  ```bash {2-3,10}
+  docker run -d \
+    --name seerr \
+    --init \
+    -e LOG_LEVEL=debug \
+    -e TZ=Asia/Tashkent \
+    -e PORT=5055 \
+    -p 5055:5055 \
+    -v /path/to/appdata/config:/app/config \
+    --restart unless-stopped \
+    ghcr.io/seerr-team/seerr:latest
+  ```
+  </TabItem>
+</Tabs>
+
+### Windows
+Summary of changes :
+<Tabs groupId="docker-methods" queryString>
+  <TabItem value="docker-compose" label="Docker compose">
+  ```yaml {3-6,13,23}
+  ---
+  services:
+    seerr:
+      image: ghcr.io/seerr-team/seerr:latest
+      init: true
+      container_name: seerr
+      environment:
+        - LOG_LEVEL=debug
+        - TZ=Asia/Tashkent
+      ports:
+        - 5055:5055
+      volumes:
+        - seerr-data:/app/config
+      healthcheck:
+        test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1
+        start_period: 20s
+        timeout: 3s
+        interval: 15s
+        retries: 3
+      restart: unless-stopped
+
+  volumes:
+    seerr-data:
+      external: true
+  ```
+  </TabItem>
+  <TabItem value="docker-cli" label="Docker CLI">
+  ```bash {2-3,8,10}
+  docker run -d \
+    --name seerr \
+    --init \
+    -e LOG_LEVEL=debug \
+    -e TZ=Asia/Tashkent \
+    -e PORT=5055 \
+    -p 5055:5055 \
+    -v seerr-data:/app/config \
+    --restart unless-stopped \
+    ghcr.io/seerr-team/seerr:latest
+  ```
+  </TabItem>
+</Tabs>
 
 ## Kubernetes
 Refer to [Seerr Kubernetes Documentation](/getting-started/kubernetes), all of our example have been updated to reflect the below change.
 
-As our container image can be run without root permission we have updated the default `securityContext` and `podSecurityContext` to match this.
-Every reference to jellyseerr has been renamed to seerr in manifests.
+Changes :
+- All references to `jellyseerr` have been renamed to `seerr` in the manifests.
+- The container image reference has been updated.
+- The default `securityContext` and `podSecurityContext` have been updated to support running the container without root permissions.
+
+Summary of changes :
+<Tabs groupId="kubernetes-values" queryString>
+  <TabItem value="old" label="Old values">
+  ```yaml
+  image:
+    repository: fallenbagel/jellyseerr
+  podSecurityContext: {}
+  securityContext: {}
+  ```
+  </TabItem>
+  <TabItem value="new" label="New values">
+  ```yaml
+  image:
+    repository: seerr-team/seerr
+  podSecurityContext:
+    fsGroup: 1000
+    fsGroupChangePolicy: OnRootMismatch
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false
+    runAsNonRoot: true
+    privileged: false
+    runAsUser: 1000
+    runAsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  ```
+  </TabItem>
+</Tabs>
