@@ -15,6 +15,12 @@ Refer to [Configuring Databases](/extending-jellyseerr/database-config#postgresq
 An alternative Docker image is available on Docker Hub for this project. You can find it at [Docker Hub Repository Link](https://hub.docker.com/r/seerr/seerr)
 :::
 
+:::info
+All official Seerr images are cryptographically signed and include a verified [Software Bill of Materials (SBOM)](https://cyclonedx.org/).
+
+To confirm that the container image you are using is authentic and unmodified, please refer to the [Verifying Signed Artifacts](/using-jellyseerr/advanced/verifying-signed-artifacts#verifying-signed-images) guide.
+:::
+
 ## Unix (Linux, macOS)
 :::warning
 Be sure to replace `/path/to/appdata/config` in the below examples with a valid host directory path. If this volume mount is not configured correctly, your Jellyseerr settings/data will not be persisted when the container is recreated (e.g., when updating the image or rebooting your machine).
@@ -72,11 +78,6 @@ Finally, run the container with the same parameters originally used to create th
 ```bash
 docker run -d ...
 ```
-:::info
-All official Seerr images are cryptographically signed and include a verified [Software Bill of Materials (SBOM)](https://cyclonedx.org/).
-
-To confirm that the container image you are using is authentic and unmodified, please refer to the [Verifying Signed Artifacts](/using-jellyseerr/advanced/verifying-signed-artifacts) guide.
-:::
 
 :::tip
 You may alternatively use a third-party updating mechanism, such as [Watchtower](https://github.com/containrrr/watchtower) or [Ouroboros](https://github.com/pyouroboros/ouroboros), to keep Jellyseerr up-to-date automatically.

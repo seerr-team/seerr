@@ -20,6 +20,10 @@ Seerr helm chart for Kubernetes
 
 Kubernetes: `>=1.23.0-0`
 
+## Installation
+
+Refer to [https://docs.seerr.dev/getting-started/kubernetes](Seerr kubernetes documentation)
+
 ## Update Notes
 
 ### Updating to 3.0.0
