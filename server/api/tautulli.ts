@@ -1,3 +1,4 @@
+import { UserType } from '@server/constants/user';
 import type { User } from '@server/entity/User';
 import type { TautulliSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -203,7 +204,12 @@ class TautulliAPI {
 
   public async getUserWatchStats(user: User): Promise<TautulliWatchStats> {
     try {
-      if (!user.plexId) {
+      const userId =
+        user.userType === UserType.PLEX_PROFILE
+          ? user.plexProfileNumericId
+          : user.plexId;
+
+      if (!userId) {
         throw new Error('User does not have an associated Plex ID');
       }
 
@@ -211,7 +217,7 @@ class TautulliAPI {
         await this.axios.get<TautulliWatchStatsResponse>('/api/v2', {
           params: {
             cmd: 'get_user_watch_time_stats',
-            user_id: user.plexId,
+            user_id: userId,
             query_days: 0,
             grouping: 1,
           },
@@ -238,7 +244,12 @@ class TautulliAPI {
     let results: TautulliHistoryRecord[] = [];
 
     try {
-      if (!user.plexId) {
+      const userId =
+        user.userType === UserType.PLEX_PROFILE
+          ? user.plexProfileNumericId
+          : user.plexId;
+
+      if (!userId) {
         throw new Error('User does not have an associated Plex ID');
       }
 
@@ -253,7 +264,7 @@ class TautulliAPI {
               grouping: 1,
               order_column: 'date',
               order_dir: 'desc',
-              user_id: user.plexId,
+              user_id: userId,
               media_type: 'movie,episode',
               length: take,
               start,

@@ -34,22 +34,37 @@ const SetupLogin: React.FC<LoginWithMediaServerProps> = ({
     MediaServerType.NOT_CONFIGURED
   );
   const { user, revalidate } = useUser();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Effect that is triggered when the `authToken` comes back from the Plex OAuth
-  // We take the token and attempt to login. If we get a success message, we will
-  // ask swr to revalidate the user which _shouid_ come back with a valid user.
-
   useEffect(() => {
     const login = async () => {
-      const response = await axios.post('/api/v1/auth/plex', {
-        authToken: authToken,
-      });
+      if (!authToken) return;
 
-      if (response.data?.email) {
-        revalidate();
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await axios.post('/api/v1/auth/plex', {
+          authToken,
+          isSetup: true,
+        });
+
+        if (response.status >= 200 && response.status < 300) {
+          revalidate();
+        }
+      } catch (err) {
+        setError(
+          err.response?.data?.message ||
+            'Failed to connect to Plex. Please try again.'
+        );
+      } finally {
+        setIsLoading(false);
       }
     };
-    if (authToken && mediaServerType == MediaServerType.PLEX) {
+
+    if (authToken && mediaServerType === MediaServerType.PLEX) {
       login();
     }
   }, [authToken, mediaServerType, revalidate]);
@@ -58,7 +73,7 @@ const SetupLogin: React.FC<LoginWithMediaServerProps> = ({
     if (user) {
       onComplete();
     }
-  }, [user, mediaServerType, onComplete]);
+  }, [user, onComplete]);
 
   return (
     <div className="p-4">
@@ -74,14 +89,20 @@ const SetupLogin: React.FC<LoginWithMediaServerProps> = ({
           <FormattedMessage {...messages.signinWithPlex} />
         )}
       </div>
+
+      {error && (
+        <div className="mb-4 rounded bg-red-600 p-3 text-white">{error}</div>
+      )}
+
       {serverType === MediaServerType.PLEX && (
         <>
           <div className="flex justify-center bg-black/30 px-10 py-8">
             <PlexLoginButton
+              isProcessing={isLoading}
               large
-              onAuthToken={(authToken) => {
+              onAuthToken={(token) => {
                 setMediaServerType(MediaServerType.PLEX);
-                setAuthToken(authToken);
+                setAuthToken(token);
               }}
             />
           </div>

@@ -91,6 +91,15 @@ export class User {
   @Column({ type: 'varchar', nullable: true, select: false })
   public plexToken?: string | null;
 
+  @Column({ type: 'varchar', nullable: true })
+  public plexProfileId?: string | null;
+
+  @Column({ type: 'integer', nullable: true })
+  public plexProfileNumericId?: number | null;
+
+  @Column({ type: 'integer', nullable: true })
+  public mainPlexUserId?: number | null;
+
   @Column({ type: 'integer', default: 0 })
   public permissions = 0;
 
