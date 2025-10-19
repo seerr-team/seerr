@@ -2339,8 +2339,12 @@ paths:
                   properties:
                     username:
                       type: string
-                    userId:
-                      type: integer
+                    id:
+                      type: string
+                    thumb:
+                      type: string
+                    email:
+                      type: string
   /settings/jellyfin/sync:
     get:
       summary: Get status of full Jellyfin library sync
