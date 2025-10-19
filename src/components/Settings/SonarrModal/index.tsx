@@ -78,7 +78,7 @@ const messages = defineMessages('components.Settings.SonarrModal', {
   animeTags: 'Anime Tags',
   notagoptions: 'No tags.',
   selecttags: 'Select tags',
-  monitorNewItems: 'Monitor New Items',
+  monitorNewItems: 'Monitor New Seasons',
 });
 
 interface SonarrModalProps {
