@@ -60,7 +60,7 @@ const Search = () => {
   }
 
   const mediaTypePicker = (
-    <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
+    <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 md:flex-grow-0">
       <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
         <CircleStackIcon className="h-6 w-6" />
       </span>
@@ -94,9 +94,11 @@ const Search = () => {
   return (
     <>
       <PageTitle title={intl.formatMessage(messages.search)} />
-      <div className="mt-1 mb-5 flex w-full items-center justify-center lg:justify-between">
+      <div className="mt-1 mb-5 flex w-full flex-col items-center justify-center md:flex-row md:justify-between">
         <Header>{intl.formatMessage(messages.searchresults)}</Header>
-        <div className="hidden flex-shrink-0 lg:block">{mediaTypePicker}</div>
+        <div className="mb-2 flex w-full flex-grow sm:mb-0 sm:mr-2 md:mt-2 md:w-fit md:flex-grow-0">
+          {mediaTypePicker}
+        </div>
       </div>
       <ListView
         items={titles}

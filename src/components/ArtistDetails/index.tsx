@@ -527,7 +527,7 @@ const ArtistDetails = () => {
   }
 
   const mediaTypePicker = (
-    <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
+    <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 md:flex-grow-0">
       <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
         <CircleStackIcon className="h-6 w-6" />
       </span>
@@ -577,10 +577,10 @@ const ArtistDetails = () => {
             />
           </div>
         )}
-        <div className="text-center text-gray-300 lg:text-left">
-          <div className="flex w-full items-center justify-center lg:justify-between">
+        <div className="w-full text-center text-gray-300 lg:text-left">
+          <div className="flex w-full flex-col items-center justify-center md:flex-row md:justify-between">
             <h1 className="text-3xl text-white lg:text-4xl">{artistName}</h1>
-            <div className="hidden flex-shrink-0 lg:block">
+            <div className="mb-2 mt-2 flex w-full flex-grow sm:mb-0 sm:mr-2 md:w-fit md:flex-grow-0">
               {mediaTypePicker}
             </div>
           </div>
