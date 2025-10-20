@@ -37,7 +37,7 @@ authRoutes.get('/me', isAuthenticated(), async (req, res) => {
   const settings = await getSettings();
   if (
     settings.notifications.agents.email.options.userEmailRequired &&
-    !validator.isEmail(user.email)
+    !validator.isEmail(user.email, { require_tld: false })
   ) {
     user.warnings.push('userEmailRequired');
     logger.warn(`User ${user.username} has no valid email address`);

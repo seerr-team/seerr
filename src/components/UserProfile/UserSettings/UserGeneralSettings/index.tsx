@@ -23,6 +23,7 @@ import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
+import validator from 'validator';
 import * as Yup from 'yup';
 
 const messages = defineMessages(
@@ -105,10 +106,18 @@ const UserGeneralSettings = () => {
       user?.id === 1 ||
       (user?.userType !== UserType.JELLYFIN && user?.userType !== UserType.EMBY)
         ? Yup.string()
-            .email(intl.formatMessage(messages.validationemailformat))
+            .test(
+              'email',
+              intl.formatMessage(messages.validationemailformat),
+              (value) =>
+                !value || validator.isEmail(value, { require_tld: false })
+            )
             .required(intl.formatMessage(messages.validationemailrequired))
-        : Yup.string().email(
-            intl.formatMessage(messages.validationemailformat)
+        : Yup.string().test(
+            'email',
+            intl.formatMessage(messages.validationemailformat),
+            (value) =>
+              !value || validator.isEmail(value, { require_tld: false })
           ),
     discordId: Yup.string()
       .nullable()
