@@ -15,9 +15,9 @@ import { ApiError } from '@server/types/error';
 import { getAppVersion } from '@server/utils/appVersion';
 import { getHostname } from '@server/utils/getHostname';
 import axios from 'axios';
-import * as EmailValidator from 'email-validator';
 import { Router } from 'express';
 import net from 'net';
+import validator from 'validator';
 
 const authRoutes = Router();
 
@@ -37,7 +37,7 @@ authRoutes.get('/me', isAuthenticated(), async (req, res) => {
   const settings = await getSettings();
   if (
     settings.notifications.agents.email.options.userEmailRequired &&
-    !EmailValidator.validate(user.email)
+    !validator.isEmail(user.email)
   ) {
     user.warnings.push('userEmailRequired');
     logger.warn(`User ${user.username} has no valid email address`);
