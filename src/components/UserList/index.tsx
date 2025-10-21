@@ -594,10 +594,11 @@ const UserList = () => {
             <Table.TH>{intl.formatMessage(messages.accounttype)}</Table.TH>
             <Table.TH>{intl.formatMessage(messages.role)}</Table.TH>
             <Table.TH>{intl.formatMessage(messages.created)}</Table.TH>
-            <Table.TH className="text-right">
+            <Table.TH className="flex text-right">
               {(data.results ?? []).length > 1 && (
                 <Button
                   buttonType="warning"
+                  className="w-full"
                   onClick={() => setShowBulkEditModal(true)}
                   disabled={selectedUsers.length === 0}
                 >
@@ -715,11 +716,14 @@ const UserList = () => {
                   day: 'numeric',
                 })}
               </Table.TD>
-              <Table.TD alignText="right">
+              <Table.TD
+                alignText="right"
+                className="flex flex-col space-y-1 sm:flex-row sm:space-x-1 sm:space-y-0"
+              >
                 <Button
                   buttonType="warning"
                   disabled={user.id === 1 && currentUser?.id !== 1}
-                  className="mr-2"
+                  className="w-full"
                   onClick={() =>
                     router.push(
                       '/users/[userId]/settings',
@@ -731,6 +735,7 @@ const UserList = () => {
                 </Button>
                 <Button
                   buttonType="danger"
+                  className="w-full"
                   disabled={
                     user.id === 1 ||
                     (currentUser?.id !== 1 &&
