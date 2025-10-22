@@ -77,7 +77,7 @@ const postgresDevConfig: DataSourceOptions = {
   database: process.env.DB_NAME ?? 'seerr',
   ssl: buildSslConfig(),
   synchronize: false,
-  migrationsRun: false,
+  migrationsRun: true,
   logging: boolFromEnv('DB_LOG_QUERIES'),
   entities: ['server/entity/**/*.ts'],
   migrations: ['server/migration/postgres/**/*.ts'],
