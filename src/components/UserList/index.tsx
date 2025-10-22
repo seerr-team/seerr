@@ -750,18 +750,20 @@ const UserList = () => {
             >
               {intl.formatMessage(messages.created)}
             </SortableColumnHeader>
-            <Table.TH className="flex text-right">
-              {(data.results ?? []).length > 1 && (
-                <Button
-                  buttonType="warning"
-                  className="w-full"
-                  onClick={() => setShowBulkEditModal(true)}
-                  disabled={selectedUsers.length === 0}
-                >
-                  <PencilIcon />
-                  <span>{intl.formatMessage(messages.bulkedit)}</span>
-                </Button>
-              )}
+            <Table.TH className="text-right">
+              <div className="flex">
+                {(data.results ?? []).length > 1 && (
+                  <Button
+                    buttonType="warning"
+                    className="w-full"
+                    onClick={() => setShowBulkEditModal(true)}
+                    disabled={selectedUsers.length === 0}
+                  >
+                    <PencilIcon />
+                    <span>{intl.formatMessage(messages.bulkedit)}</span>
+                  </Button>
+                )}
+              </div>
             </Table.TH>
           </tr>
         </thead>
