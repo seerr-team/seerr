@@ -594,9 +594,9 @@ const UserList = () => {
             <Table.TH>{intl.formatMessage(messages.accounttype)}</Table.TH>
             <Table.TH>{intl.formatMessage(messages.role)}</Table.TH>
             <Table.TH>{intl.formatMessage(messages.created)}</Table.TH>
-            <Table.TH className="text-right">
-              <div className="flex">
-                {(data.results ?? []).length > 1 && (
+            <Table.TH className="w-[13rem] text-right sm:w-[14rem]">
+              {(data.results ?? []).length > 1 && (
+                <div className="flex justify-end">
                   <Button
                     buttonType="warning"
                     className="w-full"
@@ -606,8 +606,8 @@ const UserList = () => {
                     <PencilIcon />
                     <span>{intl.formatMessage(messages.bulkedit)}</span>
                   </Button>
-                )}
-              </div>
+                </div>
+              )}
             </Table.TH>
           </tr>
         </thead>
@@ -720,12 +720,12 @@ const UserList = () => {
               </Table.TD>
               <Table.TD
                 alignText="right"
-                className="flex flex-col space-y-1 sm:flex-row sm:space-x-1 sm:space-y-0"
+                className="flex max-w-[13rem] flex-col space-y-1 sm:max-w-[14rem] sm:flex-row sm:space-x-1 sm:space-y-0"
               >
                 <Button
                   buttonType="warning"
                   disabled={user.id === 1 && currentUser?.id !== 1}
-                  className="w-full"
+                  className="flex-1"
                   onClick={() =>
                     router.push(
                       '/users/[userId]/settings',
@@ -737,7 +737,7 @@ const UserList = () => {
                 </Button>
                 <Button
                   buttonType="danger"
-                  className="w-full"
+                  className="flex-1"
                   disabled={
                     user.id === 1 ||
                     (currentUser?.id !== 1 &&
