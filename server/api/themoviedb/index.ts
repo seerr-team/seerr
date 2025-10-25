@@ -533,8 +533,8 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
             originalLanguage && originalLanguage !== 'all'
               ? originalLanguage
               : originalLanguage === 'all'
-              ? undefined
-              : this.originalLanguage,
+                ? undefined
+                : this.originalLanguage,
           // Set our release date values, but check if one is set and not the other,
           // so we can force a past date or a future date. TMDB Requires both values if one is set!
           'primary_release_date.gte':
@@ -627,8 +627,8 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
             originalLanguage && originalLanguage !== 'all'
               ? originalLanguage
               : originalLanguage === 'all'
-              ? undefined
-              : this.originalLanguage,
+                ? undefined
+                : this.originalLanguage,
           include_null_first_air_dates: includeEmptyReleaseDate,
           with_genres: genre,
           with_networks: network,
@@ -755,21 +755,105 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     }
   };
 
+  public getTvPopular = async ({
+    page = 1,
+    language = this.locale,
+  }: {
+    page?: number;
+    language?: string;
+  } = {}): Promise<TmdbSearchTvResponse> => {
+    try {
+      const data = await this.get<TmdbSearchTvResponse>('/tv/popular', {
+        params: {
+          page,
+          language,
+        },
+      });
+
+      return data;
+    } catch (e) {
+      throw new Error(`[TMDB] Failed to fetch popular TV: ${e.message}`);
+    }
+  };
+
+  public getTvTopRated = async ({
+    page = 1,
+    language = this.locale,
+  }: {
+    page?: number;
+    language?: string;
+  } = {}): Promise<TmdbSearchTvResponse> => {
+    try {
+      const data = await this.get<TmdbSearchTvResponse>('/tv/top_rated', {
+        params: {
+          page,
+          language,
+        },
+      });
+
+      return data;
+    } catch (e) {
+      throw new Error(`[TMDB] Failed to fetch top rated TV: ${e.message}`);
+    }
+  };
+
+  public getTvAiringToday = async ({
+    page = 1,
+    language = this.locale,
+  }: {
+    page?: number;
+    language?: string;
+  } = {}): Promise<TmdbSearchTvResponse> => {
+    try {
+      const data = await this.get<TmdbSearchTvResponse>('/tv/airing_today', {
+        params: {
+          page,
+          language,
+        },
+      });
+
+      return data;
+    } catch (e) {
+      throw new Error(`[TMDB] Failed to fetch airing today TV: ${e.message}`);
+    }
+  };
+
+  public getTvOnTheAir = async ({
+    page = 1,
+    language = this.locale,
+  }: {
+    page?: number;
+    language?: string;
+  } = {}): Promise<TmdbSearchTvResponse> => {
+    try {
+      const data = await this.get<TmdbSearchTvResponse>('/tv/on_the_air', {
+        params: {
+          page,
+          language,
+        },
+      });
+
+      return data;
+    } catch (e) {
+      throw new Error(`[TMDB] Failed to fetch on the air TV: ${e.message}`);
+    }
+  };
+
   public async getByExternalId({
     externalId,
     type,
     language = this.locale,
   }:
     | {
-        externalId: string;
-        type: 'imdb';
-        language?: string;
-      }
+      externalId: string;
+      type: 'imdb';
+      language?: string;
+    }
     | {
-        externalId: number;
-        type: 'tvdb';
-        language?: string;
-      }): Promise<TmdbExternalIdResponse> {
+      externalId: number;
+      type: 'tvdb';
+      language?: string;
+    }): Promise<TmdbExternalIdResponse> {
     try {
       const data = await this.get<TmdbExternalIdResponse>(
         `/find/${externalId}`,

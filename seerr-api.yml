@@ -5456,6 +5456,252 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/MovieResult'
+  /discover/movies/studio/{studioId}/trending:
+    get:
+      summary: Discover trending movies by studio
+      description: Returns a list of trending movies for a specific studio.
+      tags:
+        - search
+      security: []
+      parameters:
+        - in: path
+          name: studioId
+          required: true
+          schema:
+            type: string
+            example: '420'
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  studio:
+                    $ref: '#/components/schemas/ProductionCompany'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MovieResult'
+  /discover/movies/studio/{studioId}/new:
+    get:
+      summary: Discover new movies by studio
+      description: Returns a list of recently released movies for a specific studio.
+      tags:
+        - search
+      security: []
+      parameters:
+        - in: path
+          name: studioId
+          required: true
+          schema:
+            type: string
+            example: '420'
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  studio:
+                    $ref: '#/components/schemas/ProductionCompany'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MovieResult'
+  /discover/movies/studio/{studioId}/popular:
+    get:
+      summary: Discover popular movies by studio
+      description: Returns a list of popular movies for a specific studio.
+      tags:
+        - search
+      security: []
+      parameters:
+        - in: path
+          name: studioId
+          required: true
+          schema:
+            type: string
+            example: '420'
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  studio:
+                    $ref: '#/components/schemas/ProductionCompany'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MovieResult'
+  /discover/movies/studio/{studioId}/top-rated:
+    get:
+      summary: Discover top-rated movies by studio
+      description: Returns a list of top-rated movies for a specific studio.
+      tags:
+        - search
+      security: []
+      parameters:
+        - in: path
+          name: studioId
+          required: true
+          schema:
+            type: string
+            example: '420'
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  studio:
+                    $ref: '#/components/schemas/ProductionCompany'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MovieResult'
+  /discover/movies/studio/{studioId}/genre/{genreId}:
+    get:
+      summary: Discover movies by studio and genre
+      description: Returns a list of movies for a specific studio filtered by genre.
+      tags:
+        - search
+      security: []
+      parameters:
+        - in: path
+          name: studioId
+          required: true
+          schema:
+            type: string
+            example: '420'
+        - in: path
+          name: genreId
+          required: true
+          schema:
+            type: string
+            example: '28'
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  studio:
+                    $ref: '#/components/schemas/ProductionCompany'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MovieResult'
   /discover/movies/upcoming:
     get:
       summary: Upcoming movies
@@ -5753,6 +5999,252 @@ paths:
           schema:
             type: string
             example: '1'
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  network:
+                    $ref: '#/components/schemas/Network'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TvResult'
+  /discover/tv/network/{networkId}/trending:
+    get:
+      summary: Discover trending TV shows by network
+      description: Returns a list of trending TV shows for a specific network.
+      tags:
+        - search
+      security: []
+      parameters:
+        - in: path
+          name: networkId
+          required: true
+          schema:
+            type: string
+            example: '213'
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  network:
+                    $ref: '#/components/schemas/Network'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TvResult'
+  /discover/tv/network/{networkId}/new:
+    get:
+      summary: Discover new TV shows by network
+      description: Returns a list of recently aired TV shows for a specific network.
+      tags:
+        - search
+      security: []
+      parameters:
+        - in: path
+          name: networkId
+          required: true
+          schema:
+            type: string
+            example: '213'
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  network:
+                    $ref: '#/components/schemas/Network'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TvResult'
+  /discover/tv/network/{networkId}/popular:
+    get:
+      summary: Discover popular TV shows by network
+      description: Returns a list of popular TV shows for a specific network.
+      tags:
+        - search
+      security: []
+      parameters:
+        - in: path
+          name: networkId
+          required: true
+          schema:
+            type: string
+            example: '213'
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  network:
+                    $ref: '#/components/schemas/Network'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TvResult'
+  /discover/tv/network/{networkId}/top-rated:
+    get:
+      summary: Discover top-rated TV shows by network
+      description: Returns a list of top-rated TV shows for a specific network.
+      tags:
+        - search
+      security: []
+      parameters:
+        - in: path
+          name: networkId
+          required: true
+          schema:
+            type: string
+            example: '213'
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  network:
+                    $ref: '#/components/schemas/Network'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TvResult'
+  /discover/tv/network/{networkId}/genre/{genreId}:
+    get:
+      summary: Discover TV shows by network and genre
+      description: Returns a list of TV shows for a specific network filtered by genre.
+      tags:
+        - search
+      security: []
+      parameters:
+        - in: path
+          name: networkId
+          required: true
+          schema:
+            type: string
+            example: '213'
+        - in: path
+          name: genreId
+          required: true
+          schema:
+            type: string
+            example: '18'
         - in: query
           name: page
           schema:

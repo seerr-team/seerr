@@ -91,7 +91,7 @@ const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
       <Transition.Child
         appear
         as="div"
-        className="fixed top-0 bottom-0 left-0 right-0 z-50 flex h-full w-full items-center justify-center bg-gray-800 bg-opacity-70"
+        className="fixed top-0 bottom-0 left-0 right-0 z-[999] flex h-full w-full items-center justify-center bg-gray-800 bg-opacity-70"
         enter="transition-opacity duration-300"
         enterFrom="opacity-0"
         enterTo="opacity-100"
@@ -183,9 +183,8 @@ const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
           </div>
           {children && (
             <div
-              className={`relative mt-4 text-sm leading-5 text-gray-300 ${
-                !(onCancel || onOk || onSecondary || onTertiary) ? 'mb-3' : ''
-              }`}
+              className={`relative mt-4 text-sm leading-5 text-gray-300 ${!(onCancel || onOk || onSecondary || onTertiary) ? 'mb-3' : ''
+                }`}
             >
               {children}
             </div>

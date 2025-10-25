@@ -33,15 +33,15 @@ export const createTmdbWithRegionLanguage = (user?: User): TheMovieDb => {
     user?.settings?.streamingRegion === 'all'
       ? ''
       : user?.settings?.streamingRegion
-      ? user?.settings?.streamingRegion
-      : settings.main.discoverRegion;
+        ? user?.settings?.streamingRegion
+        : settings.main.discoverRegion;
 
   const originalLanguage =
     user?.settings?.originalLanguage === 'all'
       ? ''
       : user?.settings?.originalLanguage
-      ? user?.settings?.originalLanguage
-      : settings.main.originalLanguage;
+        ? user?.settings?.originalLanguage
+        : settings.main.originalLanguage;
 
   return new TheMovieDb({
     discoverRegion,
@@ -326,6 +326,267 @@ discoverRoutes.get<{ studioId: string }>(
       return next({
         status: 500,
         message: 'Unable to retrieve movies by studio.',
+      });
+    }
+  }
+);
+
+// Studio trending
+discoverRoutes.get<{ studioId: string }>(
+  '/movies/studio/:studioId/trending',
+  async (req, res, next) => {
+    const tmdb = createTmdbWithRegionLanguage(req.user);
+
+    try {
+      const studio = await tmdb.getStudio(Number(req.params.studioId));
+
+      const data = await tmdb.getDiscoverMovies({
+        page: Number(req.query.page) || 1,
+        language: (req.query.language as string) ?? req.locale,
+        studio: req.params.studioId as string,
+        sortBy: 'popularity.desc',
+        primaryReleaseDateLte: new Date().toISOString().split('T')[0],
+      });
+
+      const media = await Media.getRelatedMedia(
+        req.user,
+        data.results.map((result) => result.id)
+      );
+
+      return res.status(200).json({
+        page: data.page,
+        totalPages: data.total_pages,
+        totalResults: data.total_results,
+        studio: mapProductionCompany(studio),
+        results: data.results.map((result) =>
+          mapMovieResult(
+            result,
+            media.find(
+              (med) =>
+                med.tmdbId === result.id && med.mediaType === MediaType.MOVIE
+            )
+          )
+        ),
+      });
+    } catch (e) {
+      logger.debug('Something went wrong retrieving trending movies by studio', {
+        label: 'API',
+        errorMessage: e.message,
+        studioId: req.params.studioId,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to retrieve trending movies by studio.',
+      });
+    }
+  }
+);
+
+// Studio new releases (last 90 days)
+discoverRoutes.get<{ studioId: string }>(
+  '/movies/studio/:studioId/new',
+  async (req, res, next) => {
+    const tmdb = createTmdbWithRegionLanguage(req.user);
+
+    try {
+      const studio = await tmdb.getStudio(Number(req.params.studioId));
+
+      const now = new Date();
+      const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      const dateGte = ninetyDaysAgo.toISOString().split('T')[0];
+      const dateLte = now.toISOString().split('T')[0];
+
+      const data = await tmdb.getDiscoverMovies({
+        page: Number(req.query.page) || 1,
+        language: (req.query.language as string) ?? req.locale,
+        studio: req.params.studioId as string,
+        primaryReleaseDateGte: dateGte,
+        primaryReleaseDateLte: dateLte,
+        sortBy: 'primary_release_date.desc',
+      });
+
+      const media = await Media.getRelatedMedia(
+        req.user,
+        data.results.map((result) => result.id)
+      );
+
+      return res.status(200).json({
+        page: data.page,
+        totalPages: data.total_pages,
+        totalResults: data.total_results,
+        studio: mapProductionCompany(studio),
+        results: data.results.map((result) =>
+          mapMovieResult(
+            result,
+            media.find(
+              (med) =>
+                med.tmdbId === result.id && med.mediaType === MediaType.MOVIE
+            )
+          )
+        ),
+      });
+    } catch (e) {
+      logger.debug('Something went wrong retrieving new movies by studio', {
+        label: 'API',
+        errorMessage: e.message,
+        studioId: req.params.studioId,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to retrieve new movies by studio.',
+      });
+    }
+  }
+);
+
+// Studio popular
+discoverRoutes.get<{ studioId: string }>(
+  '/movies/studio/:studioId/popular',
+  async (req, res, next) => {
+    const tmdb = createTmdbWithRegionLanguage(req.user);
+
+    try {
+      const studio = await tmdb.getStudio(Number(req.params.studioId));
+
+      const data = await tmdb.getDiscoverMovies({
+        page: Number(req.query.page) || 1,
+        language: (req.query.language as string) ?? req.locale,
+        studio: req.params.studioId as string,
+        sortBy: 'popularity.desc',
+      });
+
+      const media = await Media.getRelatedMedia(
+        req.user,
+        data.results.map((result) => result.id)
+      );
+
+      return res.status(200).json({
+        page: data.page,
+        totalPages: data.total_pages,
+        totalResults: data.total_results,
+        studio: mapProductionCompany(studio),
+        results: data.results.map((result) =>
+          mapMovieResult(
+            result,
+            media.find(
+              (med) =>
+                med.tmdbId === result.id && med.mediaType === MediaType.MOVIE
+            )
+          )
+        ),
+      });
+    } catch (e) {
+      logger.debug('Something went wrong retrieving popular movies by studio', {
+        label: 'API',
+        errorMessage: e.message,
+        studioId: req.params.studioId,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to retrieve popular movies by studio.',
+      });
+    }
+  }
+);
+
+// Studio top rated
+discoverRoutes.get<{ studioId: string }>(
+  '/movies/studio/:studioId/top-rated',
+  async (req, res, next) => {
+    const tmdb = createTmdbWithRegionLanguage(req.user);
+
+    try {
+      const studio = await tmdb.getStudio(Number(req.params.studioId));
+
+      const data = await tmdb.getDiscoverMovies({
+        page: Number(req.query.page) || 1,
+        language: (req.query.language as string) ?? req.locale,
+        studio: req.params.studioId as string,
+        sortBy: 'vote_average.desc',
+        voteCountGte: '100',
+      });
+
+      const media = await Media.getRelatedMedia(
+        req.user,
+        data.results.map((result) => result.id)
+      );
+
+      return res.status(200).json({
+        page: data.page,
+        totalPages: data.total_pages,
+        totalResults: data.total_results,
+        studio: mapProductionCompany(studio),
+        results: data.results.map((result) =>
+          mapMovieResult(
+            result,
+            media.find(
+              (med) =>
+                med.tmdbId === result.id && med.mediaType === MediaType.MOVIE
+            )
+          )
+        ),
+      });
+    } catch (e) {
+      logger.debug('Something went wrong retrieving top rated movies by studio', {
+        label: 'API',
+        errorMessage: e.message,
+        studioId: req.params.studioId,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to retrieve top rated movies by studio.',
+      });
+    }
+  }
+);
+
+// Studio by genre
+discoverRoutes.get<{ studioId: string; genreId: string }>(
+  '/movies/studio/:studioId/genre/:genreId',
+  async (req, res, next) => {
+    const tmdb = createTmdbWithRegionLanguage(req.user);
+
+    try {
+      const studio = await tmdb.getStudio(Number(req.params.studioId));
+
+      const data = await tmdb.getDiscoverMovies({
+        page: Number(req.query.page) || 1,
+        language: (req.query.language as string) ?? req.locale,
+        studio: req.params.studioId as string,
+        genre: req.params.genreId,
+        sortBy: 'popularity.desc',
+      });
+
+      const media = await Media.getRelatedMedia(
+        req.user,
+        data.results.map((result) => result.id)
+      );
+
+      return res.status(200).json({
+        page: data.page,
+        totalPages: data.total_pages,
+        totalResults: data.total_results,
+        studio: mapProductionCompany(studio),
+        results: data.results.map((result) =>
+          mapMovieResult(
+            result,
+            media.find(
+              (med) =>
+                med.tmdbId === result.id && med.mediaType === MediaType.MOVIE
+            )
+          )
+        ),
+      });
+    } catch (e) {
+      logger.debug('Something went wrong retrieving movies by studio and genre', {
+        label: 'API',
+        errorMessage: e.message,
+        studioId: req.params.studioId,
+        genreId: req.params.genreId,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to retrieve movies by studio and genre.',
       });
     }
   }
@@ -623,6 +884,268 @@ discoverRoutes.get<{ networkId: string }>(
   }
 );
 
+// Network trending
+discoverRoutes.get<{ networkId: string }>(
+  '/tv/network/:networkId/trending',
+  async (req, res, next) => {
+    const tmdb = createTmdbWithRegionLanguage(req.user);
+
+    try {
+      const network = await tmdb.getNetwork(Number(req.params.networkId));
+
+      // Use discover with popularity sort to simulate trending for this network
+      const data = await tmdb.getDiscoverTv({
+        page: Number(req.query.page) || 1,
+        language: (req.query.language as string) ?? req.locale,
+        network: Number(req.params.networkId),
+        sortBy: 'popularity.desc',
+        // Get recently aired or currently airing shows for more "trending" feel
+        firstAirDateLte: new Date().toISOString().split('T')[0],
+      });
+
+      const media = await Media.getRelatedMedia(
+        req.user,
+        data.results.map((result) => result.id)
+      );
+
+      return res.status(200).json({
+        page: data.page,
+        totalPages: data.total_pages,
+        totalResults: data.total_results,
+        network: mapNetwork(network),
+        results: data.results.map((result) =>
+          mapTvResult(
+            result,
+            media.find(
+              (med) =>
+                med.tmdbId === result.id && med.mediaType === MediaType.TV
+            )
+          )
+        ),
+      });
+    } catch (e) {
+      logger.debug('Something went wrong retrieving trending series by network', {
+        label: 'API',
+        errorMessage: e.message,
+        networkId: req.params.networkId,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to retrieve trending series by network.',
+      });
+    }
+  }
+);// Network new releases (recently aired)
+discoverRoutes.get<{ networkId: string }>(
+  '/tv/network/:networkId/new',
+  async (req, res, next) => {
+    const tmdb = createTmdbWithRegionLanguage(req.user);
+
+    try {
+      const network = await tmdb.getNetwork(Number(req.params.networkId));
+
+      // Get shows that aired in the last 30 days
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const dateGte = thirtyDaysAgo.toISOString().split('T')[0];
+      const dateLte = now.toISOString().split('T')[0];
+
+      const data = await tmdb.getDiscoverTv({
+        page: Number(req.query.page) || 1,
+        language: (req.query.language as string) ?? req.locale,
+        network: Number(req.params.networkId),
+        firstAirDateGte: dateGte,
+        firstAirDateLte: dateLte,
+        sortBy: 'first_air_date.desc',
+      });
+
+      const media = await Media.getRelatedMedia(
+        req.user,
+        data.results.map((result) => result.id)
+      );
+
+      return res.status(200).json({
+        page: data.page,
+        totalPages: data.total_pages,
+        totalResults: data.total_results,
+        network: mapNetwork(network),
+        results: data.results.map((result) =>
+          mapTvResult(
+            result,
+            media.find(
+              (med) =>
+                med.tmdbId === result.id && med.mediaType === MediaType.TV
+            )
+          )
+        ),
+      });
+    } catch (e) {
+      logger.debug('Something went wrong retrieving new series by network', {
+        label: 'API',
+        errorMessage: e.message,
+        networkId: req.params.networkId,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to retrieve new series by network.',
+      });
+    }
+  }
+);
+
+// Network popular
+discoverRoutes.get<{ networkId: string }>(
+  '/tv/network/:networkId/popular',
+  async (req, res, next) => {
+    const tmdb = createTmdbWithRegionLanguage(req.user);
+
+    try {
+      const network = await tmdb.getNetwork(Number(req.params.networkId));
+
+      const data = await tmdb.getDiscoverTv({
+        page: Number(req.query.page) || 1,
+        language: (req.query.language as string) ?? req.locale,
+        network: Number(req.params.networkId),
+        sortBy: 'popularity.desc',
+      });
+
+      const media = await Media.getRelatedMedia(
+        req.user,
+        data.results.map((result) => result.id)
+      );
+
+      return res.status(200).json({
+        page: data.page,
+        totalPages: data.total_pages,
+        totalResults: data.total_results,
+        network: mapNetwork(network),
+        results: data.results.map((result) =>
+          mapTvResult(
+            result,
+            media.find(
+              (med) =>
+                med.tmdbId === result.id && med.mediaType === MediaType.TV
+            )
+          )
+        ),
+      });
+    } catch (e) {
+      logger.debug('Something went wrong retrieving popular series by network', {
+        label: 'API',
+        errorMessage: e.message,
+        networkId: req.params.networkId,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to retrieve popular series by network.',
+      });
+    }
+  }
+);
+
+// Network top rated
+discoverRoutes.get<{ networkId: string }>(
+  '/tv/network/:networkId/top-rated',
+  async (req, res, next) => {
+    const tmdb = createTmdbWithRegionLanguage(req.user);
+
+    try {
+      const network = await tmdb.getNetwork(Number(req.params.networkId));
+
+      const data = await tmdb.getDiscoverTv({
+        page: Number(req.query.page) || 1,
+        language: (req.query.language as string) ?? req.locale,
+        network: Number(req.params.networkId),
+        sortBy: 'vote_average.desc',
+        voteCountGte: '100', // Minimum votes to qualify
+      });
+
+      const media = await Media.getRelatedMedia(
+        req.user,
+        data.results.map((result) => result.id)
+      );
+
+      return res.status(200).json({
+        page: data.page,
+        totalPages: data.total_pages,
+        totalResults: data.total_results,
+        network: mapNetwork(network),
+        results: data.results.map((result) =>
+          mapTvResult(
+            result,
+            media.find(
+              (med) =>
+                med.tmdbId === result.id && med.mediaType === MediaType.TV
+            )
+          )
+        ),
+      });
+    } catch (e) {
+      logger.debug('Something went wrong retrieving top rated series by network', {
+        label: 'API',
+        errorMessage: e.message,
+        networkId: req.params.networkId,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to retrieve top rated series by network.',
+      });
+    }
+  }
+);
+
+// Network by genre
+discoverRoutes.get<{ networkId: string; genreId: string }>(
+  '/tv/network/:networkId/genre/:genreId',
+  async (req, res, next) => {
+    const tmdb = createTmdbWithRegionLanguage(req.user);
+
+    try {
+      const network = await tmdb.getNetwork(Number(req.params.networkId));
+
+      const data = await tmdb.getDiscoverTv({
+        page: Number(req.query.page) || 1,
+        language: (req.query.language as string) ?? req.locale,
+        network: Number(req.params.networkId),
+        genre: req.params.genreId,
+        sortBy: 'popularity.desc',
+      });
+
+      const media = await Media.getRelatedMedia(
+        req.user,
+        data.results.map((result) => result.id)
+      );
+
+      return res.status(200).json({
+        page: data.page,
+        totalPages: data.total_pages,
+        totalResults: data.total_results,
+        network: mapNetwork(network),
+        results: data.results.map((result) =>
+          mapTvResult(
+            result,
+            media.find(
+              (med) =>
+                med.tmdbId === result.id && med.mediaType === MediaType.TV
+            )
+          )
+        ),
+      });
+    } catch (e) {
+      logger.debug('Something went wrong retrieving series by network and genre', {
+        label: 'API',
+        errorMessage: e.message,
+        networkId: req.params.networkId,
+        genreId: req.params.genreId,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to retrieve series by network and genre.',
+      });
+    }
+  }
+);
+
 discoverRoutes.get('/tv/upcoming', async (req, res, next) => {
   const tmdb = createTmdbWithRegionLanguage(req.user);
 
@@ -690,23 +1213,23 @@ discoverRoutes.get('/trending', async (req, res, next) => {
       results: data.results.map((result) =>
         isMovie(result)
           ? mapMovieResult(
-              result,
-              media.find(
-                (med) =>
-                  med.tmdbId === result.id && med.mediaType === MediaType.MOVIE
-              )
+            result,
+            media.find(
+              (med) =>
+                med.tmdbId === result.id && med.mediaType === MediaType.MOVIE
             )
+          )
           : isPerson(result)
-          ? mapPersonResult(result)
-          : isCollection(result)
-          ? mapCollectionResult(result)
-          : mapTvResult(
-              result,
-              media.find(
-                (med) =>
-                  med.tmdbId === result.id && med.mediaType === MediaType.TV
+            ? mapPersonResult(result)
+            : isCollection(result)
+              ? mapCollectionResult(result)
+              : mapTvResult(
+                result,
+                media.find(
+                  (med) =>
+                    med.tmdbId === result.id && med.mediaType === MediaType.TV
+                )
               )
-            )
       ),
     });
   } catch (e) {

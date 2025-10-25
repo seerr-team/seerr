@@ -1,8 +1,8 @@
-import DiscoverNetwork from '@app/components/Discover/DiscoverNetwork';
+import DiscoverNetworkEnhanced from '@app/components/Discover/DiscoverNetworkEnhanced';
 import type { NextPage } from 'next';
 
 const DiscoverTvNetworkPage: NextPage = () => {
-  return <DiscoverNetwork />;
+  return <DiscoverNetworkEnhanced />;
 };
 
 export default DiscoverTvNetworkPage;

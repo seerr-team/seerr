@@ -102,8 +102,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
         }
 
         const response = await axios.get<TmdbGenre[]>(
-          `/api/v1/genres/${
-            slider.type === DiscoverSliderType.TMDB_MOVIE_GENRE ? 'movie' : 'tv'
+          `/api/v1/genres/${slider.type === DiscoverSliderType.TMDB_MOVIE_GENRE ? 'movie' : 'tv'
           }`
         );
 
@@ -302,15 +301,15 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
       initialValues={
         slider
           ? {
-              sliderType: slider.type,
-              title: slider.title,
-              data: slider.data,
-            }
+            sliderType: slider.type,
+            title: slider.title,
+            data: slider.data,
+          }
           : {
-              sliderType: DiscoverSliderType.TMDB_MOVIE_KEYWORD,
-              title: '',
-              data: '',
-            }
+            sliderType: DiscoverSliderType.TMDB_MOVIE_KEYWORD,
+            title: '',
+            data: '',
+          }
       }
       validationSchema={CreateSliderSchema}
       enableReinitialize
@@ -544,21 +543,21 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                   extraParams={
                     activeOption.type ===
                       DiscoverSliderType.TMDB_MOVIE_STREAMING_SERVICES ||
-                    activeOption.type ===
+                      activeOption.type ===
                       DiscoverSliderType.TMDB_TV_STREAMING_SERVICES
                       ? activeOption.params
-                          ?.replace(
-                            '$regionValue',
-                            encodeURIExtraParams(values?.data.split(',')[0])
-                          )
-                          .replace(
-                            '$providersValue',
-                            encodeURIExtraParams(values?.data.split(',')[1])
-                          )
-                      : activeOption.params?.replace(
-                          '$value',
-                          encodeURIExtraParams(values.data)
+                        ?.replace(
+                          '$regionValue',
+                          encodeURIExtraParams(values?.data.split(',')[0])
                         )
+                        .replace(
+                          '$providersValue',
+                          encodeURIExtraParams(values?.data.split(',')[1])
+                        )
+                      : activeOption.params?.replace(
+                        '$value',
+                        encodeURIExtraParams(values.data)
+                      )
                   }
                   onNewTitles={updateResultCount}
                 />

@@ -357,7 +357,7 @@ const Discover = () => {
             break;
           case DiscoverSliderType.TMDB_SEARCH:
             sliderComponent = (
-              <MediaSlider
+                            <MediaSlider
                 sliderKey={`custom-slider-${slider.id}`}
                 title={slider.title ?? ''}
                 url="/api/v1/search"
@@ -372,12 +372,10 @@ const Discover = () => {
                 sliderKey={`custom-slider-${slider.id}`}
                 title={slider.title ?? ''}
                 url="/api/v1/discover/movies"
-                extraParams={`watchRegion=${
-                  slider.data?.split(',')[0]
-                }&watchProviders=${slider.data?.split(',')[1]}`}
-                linkUrl={`/discover/movies?watchRegion=${
-                  slider.data?.split(',')[0]
-                }&watchProviders=${slider.data?.split(',')[1]}`}
+                extraParams={`watchRegion=${slider.data?.split(',')[0]
+                  }&watchProviders=${slider.data?.split(',')[1]}`}
+                linkUrl={`/discover/movies?watchRegion=${slider.data?.split(',')[0]
+                  }&watchProviders=${slider.data?.split(',')[1]}`}
               />
             );
             break;
@@ -387,12 +385,10 @@ const Discover = () => {
                 sliderKey={`custom-slider-${slider.id}`}
                 title={slider.title ?? ''}
                 url="/api/v1/discover/tv"
-                extraParams={`watchRegion=${
-                  slider.data?.split(',')[0]
-                }&watchProviders=${slider.data?.split(',')[1]}`}
-                linkUrl={`/discover/tv?watchRegion=${
-                  slider.data?.split(',')[0]
-                }&watchProviders=${slider.data?.split(',')[1]}`}
+                extraParams={`watchRegion=${slider.data?.split(',')[0]
+                  }&watchProviders=${slider.data?.split(',')[1]}`}
+                linkUrl={`/discover/tv?watchRegion=${slider.data?.split(',')[0]
+                  }&watchProviders=${slider.data?.split(',')[1]}`}
               />
             );
             break;
@@ -426,17 +422,17 @@ const Discover = () => {
                 tempSliders.splice(originalPosition, 1);
                 hasClickedArrows
                   ? tempSliders.splice(
-                      position === 'Above' ? index - 1 : index + 1,
-                      0,
-                      originalItem
-                    )
+                    position === 'Above' ? index - 1 : index + 1,
+                    0,
+                    originalItem
+                  )
                   : tempSliders.splice(
-                      position === 'Above' && index > originalPosition
-                        ? Math.max(index - 1, 0)
-                        : index,
-                      0,
-                      originalItem
-                    );
+                    position === 'Above' && index > originalPosition
+                      ? Math.max(index - 1, 0)
+                      : index,
+                    0,
+                    originalItem
+                  );
 
                 setSliders(tempSliders);
               }}
