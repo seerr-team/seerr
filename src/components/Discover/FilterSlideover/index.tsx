@@ -53,6 +53,8 @@ type FilterSlideoverProps = {
   onClose: () => void;
   type: 'movie' | 'tv';
   currentFilters: FilterOptions;
+  hideStreamingProviders?: boolean;
+  hideGenres?: boolean;
 };
 
 const FilterSlideover = ({
@@ -60,6 +62,8 @@ const FilterSlideover = ({
   onClose,
   type,
   currentFilters,
+  hideStreamingProviders = false,
+  hideGenres = false,
 }: FilterSlideoverProps) => {
   const intl = useIntl();
   const { currentSettings } = useSettings();
@@ -145,17 +149,21 @@ const FilterSlideover = ({
             />
           </>
         )}
-        <span className="text-lg font-semibold">
-          {intl.formatMessage(messages.genres)}
-        </span>
-        <GenreSelector
-          type={type}
-          defaultValue={currentFilters.genre}
-          isMulti
-          onChange={(value) => {
-            updateQueryParams('genre', value?.map((v) => v.value).join(','));
-          }}
-        />
+        {!hideGenres && (
+          <>
+            <span className="text-lg font-semibold">
+              {intl.formatMessage(messages.genres)}
+            </span>
+            <GenreSelector
+              type={type}
+              defaultValue={currentFilters.genre}
+              isMulti
+              onChange={(value) => {
+                updateQueryParams('genre', value?.map((v) => v.value).join(','));
+              }}
+            />
+          </>
+        )}
         {type === 'tv' && (
           <>
             <span className="text-lg font-semibold">
@@ -334,30 +342,34 @@ const FilterSlideover = ({
             })}
           />
         </div>
-        <span className="text-lg font-semibold">
-          {intl.formatMessage(messages.streamingservices)}
-        </span>
-        <WatchProviderSelector
-          type={type}
-          region={currentFilters.watchRegion}
-          activeProviders={
-            currentFilters.watchProviders?.split('|').map((v) => Number(v)) ??
-            []
-          }
-          onChange={(region, providers) => {
-            if (providers.length) {
-              batchUpdateQueryParams({
-                watchRegion: region,
-                watchProviders: providers.join('|'),
-              });
-            } else {
-              batchUpdateQueryParams({
-                watchRegion: undefined,
-                watchProviders: undefined,
-              });
-            }
-          }}
-        />
+        {!hideStreamingProviders && (
+          <>
+            <span className="text-lg font-semibold">
+              {intl.formatMessage(messages.streamingservices)}
+            </span>
+            <WatchProviderSelector
+              type={type}
+              region={currentFilters.watchRegion}
+              activeProviders={
+                currentFilters.watchProviders?.split('|').map((v) => Number(v)) ??
+                []
+              }
+              onChange={(region, providers) => {
+                if (providers.length) {
+                  batchUpdateQueryParams({
+                    watchRegion: region,
+                    watchProviders: providers.join('|'),
+                  });
+                } else {
+                  batchUpdateQueryParams({
+                    watchRegion: undefined,
+                    watchProviders: undefined,
+                  });
+                }
+              }}
+            />
+          </>
+        )}
         <div className="pt-4">
           <Button
             className="w-full"

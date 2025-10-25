@@ -78,7 +78,7 @@ const DiscoverNetworkEnhanced = () => {
                     sliderKey={`network-${networkId}-trending`}
                     title={intl.formatMessage(messages.trending, { network: network?.name || '' })}
                     url={`/api/v1/discover/tv/network/${networkId}/trending`}
-                    linkUrl={`/discover/tv/network/${networkId}`}
+                    linkUrl={`/discover/tv?network=${networkId}&sortBy=popularity.desc`}
                     hideWhenEmpty
                 />
 
@@ -87,7 +87,7 @@ const DiscoverNetworkEnhanced = () => {
                     sliderKey={`network-${networkId}-new`}
                     title={intl.formatMessage(messages.new, { network: network?.name || '' })}
                     url={`/api/v1/discover/tv/network/${networkId}/new`}
-                    linkUrl={`/discover/tv/network/${networkId}`}
+                    linkUrl={`/discover/tv?network=${networkId}&sortBy=first_air_date.desc`}
                     hideWhenEmpty
                 />
 
@@ -96,7 +96,7 @@ const DiscoverNetworkEnhanced = () => {
                     sliderKey={`network-${networkId}-popular`}
                     title={intl.formatMessage(messages.popular, { network: network?.name || '' })}
                     url={`/api/v1/discover/tv/network/${networkId}/popular`}
-                    linkUrl={`/discover/tv/network/${networkId}`}
+                    linkUrl={`/discover/tv?network=${networkId}&sortBy=popularity.desc`}
                 />
 
                 {/* Top Rated Slider */}
@@ -104,7 +104,7 @@ const DiscoverNetworkEnhanced = () => {
                     sliderKey={`network-${networkId}-top-rated`}
                     title={intl.formatMessage(messages.topRated, { network: network?.name || '' })}
                     url={`/api/v1/discover/tv/network/${networkId}/top-rated`}
-                    linkUrl={`/discover/tv/network/${networkId}`}
+                    linkUrl={`/discover/tv?network=${networkId}&sortBy=vote_average.desc`}
                     hideWhenEmpty
                 />
 
@@ -115,7 +115,7 @@ const DiscoverNetworkEnhanced = () => {
                         sliderKey={`network-${networkId}-genre-${genre.id}`}
                         title={`${intl.formatMessage(genre.message)} - ${network?.name || ''}`}
                         url={`/api/v1/discover/tv/network/${networkId}/genre/${genre.id}`}
-                        linkUrl={`/discover/tv/network/${networkId}`}
+                        linkUrl={`/discover/tv?network=${networkId}&genres=${genre.id}`}
                         hideWhenEmpty
                     />
                 ))}
@@ -125,7 +125,7 @@ const DiscoverNetworkEnhanced = () => {
                     sliderKey={`network-${networkId}-all`}
                     title={intl.formatMessage(messages.allShows, { network: network?.name || '' })}
                     url={`/api/v1/discover/tv/network/${networkId}`}
-                    linkUrl={`/discover/tv/network/${networkId}`}
+                    linkUrl={`/discover/tv?network=${networkId}`}
                 />
             </div>
         </>

@@ -119,6 +119,8 @@ const DiscoverMovies = () => {
             currentFilters={preparedFilters}
             onClose={() => setShowFilters(false)}
             show={showFilters}
+            hideStreamingProviders={!!router.query.studio}
+            hideGenres={!!router.query.genres}
           />
           <div className="mb-2 flex flex-grow sm:mb-0 lg:flex-grow-0">
             <Button onClick={() => setShowFilters(true)} className="w-full">
