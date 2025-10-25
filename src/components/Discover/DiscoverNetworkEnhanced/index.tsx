@@ -13,9 +13,14 @@ const messages = defineMessages('components.Discover.DiscoverNetworkEnhanced', {
     networkSeries: '{network} Series',
     trending: 'Trending on {network}',
     new: 'New on {network}',
-    popular: 'Popular on {network}',
     topRated: 'Top Rated on {network}',
     allShows: 'All {network} Shows',
+    seriesSection: 'Series',
+    moviesSection: 'Movies',
+    trendingMovies: 'Trending Movies on {network}',
+    newMovies: 'New Movies on {network}',
+    topRatedMovies: 'Top Rated Movies on {network}',
+    allMovies: 'All {network} Movies',
     drama: 'Drama',
     comedy: 'Comedy',
     action: 'Action & Adventure',
@@ -42,13 +47,22 @@ const DiscoverNetworkEnhanced = () => {
     const title = network?.name || intl.formatMessage(messages.networkSeries, { network: '...' });
 
     // Define common TV genres
-    const genres = [
+    const tvGenres = [
         { id: '18', key: 'drama', message: messages.drama },
         { id: '35', key: 'comedy', message: messages.comedy },
         { id: '10759', key: 'action', message: messages.action },
         { id: '10765', key: 'scifi', message: messages.scifi },
         { id: '80', key: 'crime', message: messages.crime },
         { id: '9648', key: 'mystery', message: messages.mystery },
+    ];
+
+    // Define common movie genres
+    const movieGenres = [
+        { id: '28', key: 'action', message: messages.action },
+        { id: '35', key: 'comedy', message: messages.comedy },
+        { id: '18', key: 'drama', message: messages.drama },
+        { id: '80', key: 'crime', message: messages.crime },
+        { id: '878', key: 'scifi', message: messages.scifi },
     ];
 
     return (
@@ -78,7 +92,7 @@ const DiscoverNetworkEnhanced = () => {
                     sliderKey={`network-${networkId}-trending`}
                     title={intl.formatMessage(messages.trending, { network: network?.name || '' })}
                     url={`/api/v1/discover/tv/network/${networkId}/trending`}
-                    linkUrl={`/discover/tv?network=${networkId}&sortBy=popularity.desc`}
+                    linkUrl={`/discover/tv/network/${networkId}/trending`}
                     hideWhenEmpty
                 />
 
@@ -87,16 +101,8 @@ const DiscoverNetworkEnhanced = () => {
                     sliderKey={`network-${networkId}-new`}
                     title={intl.formatMessage(messages.new, { network: network?.name || '' })}
                     url={`/api/v1/discover/tv/network/${networkId}/new`}
-                    linkUrl={`/discover/tv?network=${networkId}&sortBy=first_air_date.desc`}
+                    linkUrl={`/discover/tv/network/${networkId}/new`}
                     hideWhenEmpty
-                />
-
-                {/* Popular Slider */}
-                <MediaSlider
-                    sliderKey={`network-${networkId}-popular`}
-                    title={intl.formatMessage(messages.popular, { network: network?.name || '' })}
-                    url={`/api/v1/discover/tv/network/${networkId}/popular`}
-                    linkUrl={`/discover/tv?network=${networkId}&sortBy=popularity.desc`}
                 />
 
                 {/* Top Rated Slider */}
@@ -104,18 +110,18 @@ const DiscoverNetworkEnhanced = () => {
                     sliderKey={`network-${networkId}-top-rated`}
                     title={intl.formatMessage(messages.topRated, { network: network?.name || '' })}
                     url={`/api/v1/discover/tv/network/${networkId}/top-rated`}
-                    linkUrl={`/discover/tv?network=${networkId}&sortBy=vote_average.desc`}
+                    linkUrl={`/discover/tv/network/${networkId}/top-rated`}
                     hideWhenEmpty
                 />
 
                 {/* Genre Sliders */}
-                {genres.map((genre) => (
+                {tvGenres.map((genre) => (
                     <MediaSlider
-                        key={`network-${networkId}-genre-${genre.id}`}
-                        sliderKey={`network-${networkId}-genre-${genre.id}`}
+                        key={`network-${networkId}-tv-genre-${genre.id}`}
+                        sliderKey={`network-${networkId}-tv-genre-${genre.id}`}
                         title={`${intl.formatMessage(genre.message)} - ${network?.name || ''}`}
                         url={`/api/v1/discover/tv/network/${networkId}/genre/${genre.id}`}
-                        linkUrl={`/discover/tv?network=${networkId}&genres=${genre.id}`}
+                        linkUrl={`/discover/tv/network/${networkId}/genre/${genre.id}`}
                         hideWhenEmpty
                     />
                 ))}
@@ -126,6 +132,57 @@ const DiscoverNetworkEnhanced = () => {
                     title={intl.formatMessage(messages.allShows, { network: network?.name || '' })}
                     url={`/api/v1/discover/tv/network/${networkId}`}
                     linkUrl={`/discover/tv?network=${networkId}`}
+                />
+
+                {/* Movies Section */}
+                <div className="mt-12 mb-6">
+                    <h2 className="text-2xl font-bold">{intl.formatMessage(messages.moviesSection)}</h2>
+                </div>
+
+                {/* Trending Movies Slider */}
+                <MediaSlider
+                    sliderKey={`network-${networkId}-movies-trending`}
+                    title={intl.formatMessage(messages.trendingMovies, { network: network?.name || '' })}
+                    url={`/api/v1/discover/movies/network/${networkId}/trending`}
+                    linkUrl={`/discover/movies/network/${networkId}/trending`}
+                />
+
+                {/* New Movies Slider */}
+                <MediaSlider
+                    sliderKey={`network-${networkId}-movies-new`}
+                    title={intl.formatMessage(messages.newMovies, { network: network?.name || '' })}
+                    url={`/api/v1/discover/movies/network/${networkId}/new`}
+                    linkUrl={`/discover/movies/network/${networkId}/new`}
+                />
+
+                {/* Top Rated Movies Slider */}
+                <MediaSlider
+                    sliderKey={`network-${networkId}-movies-top-rated`}
+                    title={intl.formatMessage(messages.topRatedMovies, { network: network?.name || '' })}
+                    url={`/api/v1/discover/movies/network/${networkId}/top-rated`}
+                    linkUrl={`/discover/movies/network/${networkId}/top-rated`}
+                    hideWhenEmpty
+                />
+
+                {/* Movie Genre Sliders */}
+                {movieGenres.map((genre) => (
+                    <MediaSlider
+                        key={`network-${networkId}-movie-genre-${genre.id}`}
+                        sliderKey={`network-${networkId}-movie-genre-${genre.id}`}
+                        title={`${intl.formatMessage(genre.message)} Movies - ${network?.name || ''}`}
+                        url={`/api/v1/discover/movies/network/${networkId}/genre/${genre.id}`}
+                        linkUrl={`/discover/movies/network/${networkId}/genre/${genre.id}`}
+                        hideWhenEmpty
+                    />
+                ))}
+
+                {/* All Movies Slider */}
+                <MediaSlider
+                    sliderKey={`network-${networkId}-all-movies`}
+                    title={intl.formatMessage(messages.allMovies, { network: network?.name || '' })}
+                    url={`/api/v1/discover/movies/network/${networkId}`}
+                    linkUrl={`/discover/movies?studio=${networkId}`}
+                    hideWhenEmpty
                 />
             </div>
         </>

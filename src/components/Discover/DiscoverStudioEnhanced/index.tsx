@@ -13,7 +13,6 @@ const messages = defineMessages('components.Discover.DiscoverStudioEnhanced', {
   studioMovies: '{studio} Movies',
   trending: 'Trending from {studio}',
   new: 'New from {studio}',
-  popular: 'Popular from {studio}',
   topRated: 'Top Rated from {studio}',
   allMovies: 'All {studio} Movies',
   action: 'Action',
@@ -82,7 +81,7 @@ const DiscoverStudioEnhanced = () => {
           sliderKey={`studio-${studioId}-trending`}
           title={intl.formatMessage(messages.trending, { studio: studio?.name || '' })}
           url={`/api/v1/discover/movies/studio/${studioId}/trending`}
-          linkUrl={`/discover/movies?studio=${studioId}&sortBy=popularity.desc`}
+          linkUrl={`/discover/movies/studio/${studioId}/trending`}
           hideWhenEmpty
         />
 
@@ -91,16 +90,8 @@ const DiscoverStudioEnhanced = () => {
           sliderKey={`studio-${studioId}-new`}
           title={intl.formatMessage(messages.new, { studio: studio?.name || '' })}
           url={`/api/v1/discover/movies/studio/${studioId}/new`}
-          linkUrl={`/discover/movies?studio=${studioId}&sortBy=primary_release_date.desc`}
+          linkUrl={`/discover/movies/studio/${studioId}/new`}
           hideWhenEmpty
-        />
-
-        {/* Popular Slider */}
-        <MediaSlider
-          sliderKey={`studio-${studioId}-popular`}
-          title={intl.formatMessage(messages.popular, { studio: studio?.name || '' })}
-          url={`/api/v1/discover/movies/studio/${studioId}/popular`}
-          linkUrl={`/discover/movies?studio=${studioId}&sortBy=popularity.desc`}
         />
 
         {/* Top Rated Slider */}
@@ -108,7 +99,7 @@ const DiscoverStudioEnhanced = () => {
           sliderKey={`studio-${studioId}-top-rated`}
           title={intl.formatMessage(messages.topRated, { studio: studio?.name || '' })}
           url={`/api/v1/discover/movies/studio/${studioId}/top-rated`}
-          linkUrl={`/discover/movies?studio=${studioId}&sortBy=vote_average.desc`}
+          linkUrl={`/discover/movies/studio/${studioId}/top-rated`}
           hideWhenEmpty
         />
 
@@ -119,7 +110,7 @@ const DiscoverStudioEnhanced = () => {
             sliderKey={`studio-${studioId}-genre-${genre.id}`}
             title={`${intl.formatMessage(genre.message)} - ${studio?.name || ''}`}
             url={`/api/v1/discover/movies/studio/${studioId}/genre/${genre.id}`}
-            linkUrl={`/discover/movies?studio=${studioId}&genres=${genre.id}`}
+            linkUrl={`/discover/movies/studio/${studioId}/genre/${genre.id}`}
             hideWhenEmpty
           />
         ))}
