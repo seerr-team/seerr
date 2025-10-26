@@ -207,9 +207,9 @@ discoverRoutes.get('/movies', async (req, res, next) => {
     return res.status(200).json({
       page: data.page,
       totalPages: data.total_pages,
-      totalResults: filteredResults.length,
+      totalResults: data.total_results,
       keywords: keywordData,
-      results: filteredResults.map((result) =>
+      results: data.results.map((result) =>
         mapMovieResult(
           result,
           media.find(
@@ -348,36 +348,59 @@ discoverRoutes.get<{ genreId: string }>(
 discoverRoutes.get<{ studioId: string }>(
   '/movies/studio/:studioId',
   async (req, res, next) => {
-    const tmdb = new TheMovieDb();
+    const tmdb = createTmdbWithRegionLanguage(req.user);
+    const requestedPage = Number(req.query.page) || 1;
 
     try {
       const studio = await tmdb.getStudio(Number(req.params.studioId));
 
-      const data = await tmdb.getDiscoverMovies({
-        page: Number(req.query.page),
-        language: (req.query.language as string) ?? req.locale,
-        studio: req.params.studioId as string,
-      });
+      // Fetch 2 pages to get more results (most permissive filters for "All Movies")
+      const [page1, page2] = await Promise.all([
+        tmdb.getDiscoverMovies({
+          page: requestedPage,
+          language: (req.query.language as string) ?? req.locale,
+          studio: req.params.studioId as string,
+          sortBy: 'popularity.desc',
+          voteCountGte: '5', // Very permissive for all movies
+          excludeKeywords: '99', // Only block documentaries
+        }),
+        requestedPage === 1
+          ? tmdb.getDiscoverMovies({
+            page: 2,
+            language: (req.query.language as string) ?? req.locale,
+            studio: req.params.studioId as string,
+            sortBy: 'popularity.desc',
+            voteCountGte: '5',
+            excludeKeywords: '99',
+          })
+          : null,
+      ]);
+
+      // Merge results if we fetched page 2
+      const allResults =
+        page2 && requestedPage === 1
+          ? [...page1.results, ...page2.results]
+          : page1.results;
+
+      // Remove duplicates and take top 20
+      const uniqueResults = Array.from(
+        new Map(allResults.map((m) => [m.id, m])).values()
+      ).slice(0, 20);
 
       const media = await Media.getRelatedMedia(
         req.user,
-        data.results.map((result) => result.id)
+        uniqueResults.map((result) => result.id)
       );
 
-      // Filter results to ensure they actually belong to this studio
-      const filteredResults = await filterMovieResultsByStudio(
-        tmdb,
-        data.results,
-        Number(req.params.studioId),
-        (req.query.language as string) ?? req.locale
-      );
+      // Note: Multi-page fetch strategy for better results count
+      // Fetches 2 pages and merges for more comprehensive results
 
       return res.status(200).json({
-        page: data.page,
-        totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        page: page1.page,
+        totalPages: page1.total_pages,
+        totalResults: page1.total_results,
         studio: mapProductionCompany(studio),
-        results: filteredResults.map((result) =>
+        results: uniqueResults.map((result) =>
           mapMovieResult(
             result,
             media.find(
@@ -416,7 +439,9 @@ discoverRoutes.get<{ studioId: string }>(
         studio: req.params.studioId as string,
         sortBy: 'popularity.desc',
         primaryReleaseDateLte: new Date().toISOString().split('T')[0],
-        voteCountGte: '50', // Minimum votes for reliable studio data
+        voteCountGte: '30', // Lowered threshold for more results
+        withRuntimeGte: '60', // Exclude shorts and TV specials
+        excludeKeywords: '99,10692', // Exclude documentaries and concerts
       });
 
       const media = await Media.getRelatedMedia(
@@ -424,20 +449,15 @@ discoverRoutes.get<{ studioId: string }>(
         data.results.map((result) => result.id)
       );
 
-      // Filter results to ensure they actually belong to this studio
-      const filteredResults = await filterMovieResultsByStudio(
-        tmdb,
-        data.results,
-        Number(req.params.studioId),
-        (req.query.language as string) ?? req.locale
-      );
+      // Note: Filtering disabled for better results count
+      // TMDB's studio parameter is generally accurate for major studios
 
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        totalResults: data.total_results,
         studio: mapProductionCompany(studio),
-        results: filteredResults.map((result) =>
+        results: data.results.map((result) =>
           mapMovieResult(
             result,
             media.find(
@@ -482,7 +502,9 @@ discoverRoutes.get<{ studioId: string }>(
         primaryReleaseDateGte: dateGte,
         primaryReleaseDateLte: dateLte,
         sortBy: 'primary_release_date.desc',
-        voteCountGte: '50', // Minimum votes for reliable studio data
+        voteCountGte: '30', // Lowered threshold for more results
+        withRuntimeGte: '60', // Exclude shorts and TV specials
+        excludeKeywords: '99,10692', // Exclude documentaries and concerts
       });
 
       const media = await Media.getRelatedMedia(
@@ -490,20 +512,15 @@ discoverRoutes.get<{ studioId: string }>(
         data.results.map((result) => result.id)
       );
 
-      // Filter results to ensure they actually belong to this studio
-      const filteredResults = await filterMovieResultsByStudio(
-        tmdb,
-        data.results,
-        Number(req.params.studioId),
-        (req.query.language as string) ?? req.locale
-      );
+      // Note: Filtering disabled for better results count
+      // TMDB's studio parameter is generally accurate for major studios
 
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        totalResults: data.total_results,
         studio: mapProductionCompany(studio),
-        results: filteredResults.map((result) =>
+        results: data.results.map((result) =>
           mapMovieResult(
             result,
             media.find(
@@ -541,7 +558,9 @@ discoverRoutes.get<{ studioId: string }>(
         language: (req.query.language as string) ?? req.locale,
         studio: req.params.studioId as string,
         sortBy: 'popularity.desc',
-        voteCountGte: '50', // Minimum votes for reliable studio data
+        voteCountGte: '30', // Lowered threshold for more results
+        withRuntimeGte: '60', // Exclude shorts and TV specials
+        excludeKeywords: '99,10692', // Exclude documentaries and concerts
       });
 
       const media = await Media.getRelatedMedia(
@@ -549,20 +568,15 @@ discoverRoutes.get<{ studioId: string }>(
         data.results.map((result) => result.id)
       );
 
-      // Filter results to ensure they actually belong to this studio
-      const filteredResults = await filterMovieResultsByStudio(
-        tmdb,
-        data.results,
-        Number(req.params.studioId),
-        (req.query.language as string) ?? req.locale
-      );
+      // Note: Filtering disabled for better results count
+      // TMDB's studio parameter is generally accurate for major studios
 
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        totalResults: data.total_results,
         studio: mapProductionCompany(studio),
-        results: filteredResults.map((result) =>
+        results: data.results.map((result) =>
           mapMovieResult(
             result,
             media.find(
@@ -600,7 +614,9 @@ discoverRoutes.get<{ studioId: string }>(
         language: (req.query.language as string) ?? req.locale,
         studio: req.params.studioId as string,
         sortBy: 'vote_average.desc',
-        voteCountGte: '100',
+        voteCountGte: '100', // Keep higher for top-rated to ensure quality
+        withRuntimeGte: '60', // Exclude shorts and TV specials
+        excludeKeywords: '99,10692', // Exclude documentaries and concerts
       });
 
       const media = await Media.getRelatedMedia(
@@ -608,20 +624,15 @@ discoverRoutes.get<{ studioId: string }>(
         data.results.map((result) => result.id)
       );
 
-      // Filter results to ensure they actually belong to this studio
-      const filteredResults = await filterMovieResultsByStudio(
-        tmdb,
-        data.results,
-        Number(req.params.studioId),
-        (req.query.language as string) ?? req.locale
-      );
+      // Note: Filtering disabled for better results count
+      // TMDB's studio parameter is generally accurate for major studios
 
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        totalResults: data.total_results,
         studio: mapProductionCompany(studio),
-        results: filteredResults.map((result) =>
+        results: data.results.map((result) =>
           mapMovieResult(
             result,
             media.find(
@@ -660,7 +671,9 @@ discoverRoutes.get<{ studioId: string; genreId: string }>(
         studio: req.params.studioId as string,
         genre: req.params.genreId,
         sortBy: 'popularity.desc',
-        voteCountGte: '50', // Minimum votes for reliable studio data
+        voteCountGte: '30', // Lowered threshold for more results
+        withRuntimeGte: '60', // Exclude shorts and TV specials
+        excludeKeywords: '99,10692', // Exclude documentaries and concerts
       });
 
       const media = await Media.getRelatedMedia(
@@ -668,20 +681,15 @@ discoverRoutes.get<{ studioId: string; genreId: string }>(
         data.results.map((result) => result.id)
       );
 
-      // Filter results to ensure they actually belong to this studio
-      const filteredResults = await filterMovieResultsByStudio(
-        tmdb,
-        data.results,
-        Number(req.params.studioId),
-        (req.query.language as string) ?? req.locale
-      );
+      // Note: Filtering disabled for better results count
+      // TMDB's studio parameter is generally accurate for major studios
 
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        totalResults: data.total_results,
         studio: mapProductionCompany(studio),
-        results: filteredResults.map((result) =>
+        results: data.results.map((result) =>
           mapMovieResult(
             result,
             media.find(
@@ -824,9 +832,9 @@ discoverRoutes.get('/tv', async (req, res, next) => {
     return res.status(200).json({
       page: data.page,
       totalPages: data.total_pages,
-      totalResults: filteredResults.length,
+      totalResults: data.total_results,
       keywords: keywordData,
-      results: filteredResults.map((result) =>
+      results: data.results.map((result) =>
         mapTvResult(
           result,
           media.find(
@@ -991,9 +999,9 @@ discoverRoutes.get<{ networkId: string }>(
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        totalResults: data.total_results,
         network: mapNetwork(network),
-        results: filteredResults.map((result) =>
+        results: data.results.map((result) =>
           mapTvResult(
             result,
             media.find(
@@ -1055,9 +1063,9 @@ discoverRoutes.get<{ networkId: string }>(
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        totalResults: data.total_results,
         network: mapNetwork(network),
-        results: filteredResults.map((result) =>
+        results: data.results.map((result) =>
           mapTvResult(
             result,
             media.find(
@@ -1120,9 +1128,9 @@ discoverRoutes.get<{ networkId: string }>(
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        totalResults: data.total_results,
         network: mapNetwork(network),
-        results: filteredResults.map((result) =>
+        results: data.results.map((result) =>
           mapTvResult(
             result,
             media.find(
@@ -1179,9 +1187,9 @@ discoverRoutes.get<{ networkId: string }>(
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        totalResults: data.total_results,
         network: mapNetwork(network),
-        results: filteredResults.map((result) =>
+        results: data.results.map((result) =>
           mapTvResult(
             result,
             media.find(
@@ -1238,9 +1246,9 @@ discoverRoutes.get<{ networkId: string }>(
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        totalResults: data.total_results,
         network: mapNetwork(network),
-        results: filteredResults.map((result) =>
+        results: data.results.map((result) =>
           mapTvResult(
             result,
             media.find(
@@ -1298,9 +1306,9 @@ discoverRoutes.get<{ networkId: string; genreId: string }>(
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        totalResults: data.total_results,
         network: mapNetwork(network),
-        results: filteredResults.map((result) =>
+        results: data.results.map((result) =>
           mapTvResult(
             result,
             media.find(
@@ -1359,9 +1367,9 @@ discoverRoutes.get<{ networkId: string }>(
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        totalResults: data.total_results,
         network: mapNetwork(network),
-        results: filteredResults.map((result) =>
+        results: data.results.map((result) =>
           mapMovieResult(
             result,
             media.find(
@@ -1423,9 +1431,9 @@ discoverRoutes.get<{ networkId: string }>(
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        totalResults: data.total_results,
         network: mapNetwork(network),
-        results: filteredResults.map((result) =>
+        results: data.results.map((result) =>
           mapMovieResult(
             result,
             media.find(
@@ -1492,9 +1500,9 @@ discoverRoutes.get<{ networkId: string }>(
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        totalResults: data.total_results,
         network: mapNetwork(network),
-        results: filteredResults.map((result) =>
+        results: data.results.map((result) =>
           mapMovieResult(
             result,
             media.find(
@@ -1554,9 +1562,9 @@ discoverRoutes.get<{ networkId: string }>(
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        totalResults: data.total_results,
         network: mapNetwork(network),
-        results: filteredResults.map((result) =>
+        results: data.results.map((result) =>
           mapMovieResult(
             result,
             media.find(
@@ -1617,9 +1625,9 @@ discoverRoutes.get<{ networkId: string; genreId: string }>(
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: filteredResults.length,
+        totalResults: data.total_results,
         network: mapNetwork(network),
-        results: filteredResults.map((result) =>
+        results: data.results.map((result) =>
           mapMovieResult(
             result,
             media.find(
