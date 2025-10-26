@@ -59,7 +59,7 @@ export const NETWORK_TO_COMPANY_ID: Record<number, number> = {
     3353: 37154, // Peacock (TV Network) -> Peacock (Production Company)
 
     // Showtime
-    67: 2073, // Showtime (TV Network) -> Showtime Networks (Production Company)
+    67: 9993, // Showtime (TV Network) -> Showtime Networks (Production Company)
 
     // Starz
     318: 10163, // Starz (TV Network) -> Starz Productions (Production Company)
@@ -72,6 +72,9 @@ export const NETWORK_TO_COMPANY_ID: Record<number, number> = {
 
     // BBC
     4: 3166, // BBC One (TV Network) -> BBC Films (Production Company)
+
+    // Nickelodeon
+    13: 2348, // Nickelodeon (TV Network) -> Nickelodeon Movies (Production Company)
 
     // Add more mappings as needed
 };
