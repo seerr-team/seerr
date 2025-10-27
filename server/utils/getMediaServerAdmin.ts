@@ -13,7 +13,6 @@ export const getMediaServerAdmin = async (): Promise<User | undefined> => {
   if (mediaServerType === MediaServerType.PLEX) {
     admin = await userRepository.findOne({
       select: ['id', 'plexToken'],
-      order: { id: 'ASC' },
       where: { id: 1 },
     });
   } else if (
