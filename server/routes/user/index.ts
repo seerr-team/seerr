@@ -23,6 +23,7 @@ import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { getHostname } from '@server/utils/getHostname';
 import { isOwnProfileOrAdmin } from '@server/utils/profileMiddleware';
+import { getMediaServerAdmin } from '@server/utils/getMediaServerAdmin';
 import { Router } from 'express';
 import gravatarUrl from 'gravatar-url';
 import { findIndex, sortBy } from 'lodash';
@@ -591,12 +592,11 @@ router.post(
       const userRepository = getRepository(User);
       const body = req.body as { plexIds: string[] } | undefined;
 
-      // taken from auth.ts
-      const mainUser = await userRepository.findOneOrFail({
-        select: { id: true, plexToken: true },
-        where: { id: 1 },
-      });
-      const mainPlexTv = new PlexTvAPI(mainUser.plexToken ?? '');
+      const admin = await getMediaServerAdmin();
+      if (!admin) {
+        throw new Error('Admin user not found');
+      }
+      const mainPlexTv = new PlexTvAPI(admin.plexToken ?? '');
 
       const plexUsersResponse = await mainPlexTv.getUsers();
       const createdUsers: User[] = [];
@@ -658,12 +658,10 @@ router.post(
       const userRepository = getRepository(User);
       const body = req.body as { jellyfinUserIds: string[] };
 
-      // taken from auth.ts
-      const admin = await userRepository.findOneOrFail({
-        where: { id: 1 },
-        select: ['id', 'jellyfinDeviceId', 'jellyfinUserId'],
-        order: { id: 'ASC' },
-      });
+      const admin = await getMediaServerAdmin();
+      if (!admin) {
+        throw new Error('Admin user not found');
+      }
 
       const hostname = getHostname();
       const jellyfinClient = new JellyfinMainAPI(
@@ -673,12 +671,10 @@ router.post(
       );
       jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
 
-      //const jellyfinUsersResponse = await jellyfinClient.getUsers();
-      const createdUsers: User[] = [];
-
       jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
       const jellyfinUsers = await jellyfinClient.getUsers();
 
+      const createdUsers: User[] = [];
       for (const jellyfinUserId of body.jellyfinUserIds) {
         const jellyfinUser = jellyfinUsers.users.find(
           (user) => user.Id === jellyfinUserId

@@ -30,6 +30,7 @@ import { appDataPath } from '@server/utils/appDataVolume';
 import { getAppVersion } from '@server/utils/appVersion';
 import { dnsCache } from '@server/utils/dnsCache';
 import { getHostname } from '@server/utils/getHostname';
+import { getMediaServerAdmin } from '@server/utils/getMediaServerAdmin';
 import type { DnsEntries, DnsStats } from 'dns-caching';
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
@@ -116,13 +117,12 @@ settingsRoutes.get('/plex', (_req, res) => {
 });
 
 settingsRoutes.post('/plex', async (req, res, next) => {
-  const userRepository = getRepository(User);
   const settings = getSettings();
   try {
-    const admin = await userRepository.findOneOrFail({
-      select: { id: true, plexToken: true },
-      where: { id: 1 },
-    });
+    const admin = await getMediaServerAdmin();
+    if (!admin) {
+      throw new Error('Admin user not found');
+    }
 
     Object.assign(settings.plex, req.body);
 
@@ -153,12 +153,11 @@ settingsRoutes.post('/plex', async (req, res, next) => {
 });
 
 settingsRoutes.get('/plex/devices/servers', async (req, res, next) => {
-  const userRepository = getRepository(User);
   try {
-    const admin = await userRepository.findOneOrFail({
-      select: { id: true, plexToken: true },
-      where: { id: 1 },
-    });
+    const admin = await getMediaServerAdmin();
+    if (!admin) {
+      throw new Error('Admin user not found');
+    }
     const plexTvClient = admin.plexToken
       ? new PlexTvAPI(admin.plexToken)
       : null;
@@ -233,11 +232,10 @@ settingsRoutes.get('/plex/library', async (req, res) => {
   const settings = getSettings();
 
   if (req.query.sync) {
-    const userRepository = getRepository(User);
-    const admin = await userRepository.findOneOrFail({
-      select: { id: true, plexToken: true },
-      where: { id: 1 },
-    });
+    const admin = await getMediaServerAdmin();
+    if (!admin) {
+      throw new Error('Admin user not found');
+    }
     const plexapi = new PlexAPI({ plexToken: admin.plexToken });
 
     await plexapi.syncLibraries();
@@ -274,15 +272,13 @@ settingsRoutes.get('/jellyfin', (_req, res) => {
 });
 
 settingsRoutes.post('/jellyfin', async (req, res, next) => {
-  const userRepository = getRepository(User);
   const settings = getSettings();
 
   try {
-    const admin = await userRepository.findOneOrFail({
-      where: { id: 1 },
-      select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
-      order: { id: 'ASC' },
-    });
+    const admin = await getMediaServerAdmin();
+    if (!admin) {
+      throw new Error('Admin user not found');
+    }
 
     const tempJellyfinSettings = { ...settings.jellyfin, ...req.body };
 
@@ -334,12 +330,11 @@ settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
   const settings = getSettings();
 
   if (req.query.sync) {
-    const userRepository = getRepository(User);
-    const admin = await userRepository.findOneOrFail({
-      select: ['id', 'jellyfinDeviceId', 'jellyfinUserId'],
-      where: { id: 1 },
-      order: { id: 'ASC' },
-    });
+    const admin = await getMediaServerAdmin();
+    if (!admin) {
+      throw new Error('Admin user not found');
+    }
+
     const jellyfinClient = new JellyfinMainAPI(
       getHostname(),
       settings.jellyfin.apiKey,
@@ -396,12 +391,11 @@ settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
 settingsRoutes.get('/jellyfin/users', async (req, res) => {
   const settings = getSettings();
 
-  const userRepository = getRepository(User);
-  const admin = await userRepository.findOneOrFail({
-    select: ['id', 'jellyfinDeviceId', 'jellyfinUserId'],
-    where: { id: 1 },
-    order: { id: 'ASC' },
-  });
+  const admin = await getMediaServerAdmin();
+  if (!admin) {
+    throw new Error('Admin user not found');
+  }
+
   const jellyfinClient = new JellyfinMainAPI(
     getHostname(),
     settings.jellyfin.apiKey,
@@ -472,16 +466,17 @@ settingsRoutes.post('/tautulli', async (req, res, next) => {
 settingsRoutes.get(
   '/plex/users',
   isAuthenticated(Permission.MANAGE_USERS),
-  async (req, res, next) => {
+  async (_req, res, next) => {
     const userRepository = getRepository(User);
     const qb = userRepository.createQueryBuilder('user');
 
     try {
-      const admin = await userRepository.findOneOrFail({
-        select: { id: true, plexToken: true },
-        where: { id: 1 },
-      });
+      const admin = await getMediaServerAdmin();
+      if (!admin) {
+        throw new Error('Admin user not found');
+      }
       const plexApi = new PlexTvAPI(admin.plexToken ?? '');
+
       const plexUsers = (await plexApi.getUsers()).MediaContainer.User.map(
         (user) => user.$
       ).filter((user) => user.email);
@@ -510,7 +505,7 @@ settingsRoutes.get(
         plexUsers.map(async (plexUser) => {
           if (
             !existingUsers.find(
-              (user) =>
+              (user: any) =>
                 user.plexId === parseInt(plexUser.id) ||
                 user.email === plexUser.email.toLowerCase()
             ) &&
