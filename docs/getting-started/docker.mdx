@@ -48,7 +48,7 @@ docker run -d \
   -p 5055:5055 \
   -v /path/to/appdata/config:/app/config \
   --restart unless-stopped \
-  ghcr.io/seerr-team/seerr
+  ghcr.io/seerr-team/seerr:latest
 ```
 
 The argument `-e PORT=5055` is optional.
@@ -72,7 +72,7 @@ docker stop seerr && docker rm seerr
 ```
 Pull the latest image:
 ```bash
-docker pull ghcr.io/seerr-team/seerr
+docker pull ghcr.io/seerr-team/seerr:latest
 ```
 Finally, run the container with the same parameters originally used to create the container:
 ```bash
@@ -166,7 +166,7 @@ docker run -d \
   -p 5055:5055 \
   -v seerr-data:/app/config \
   --restart unless-stopped \
-  ghcr.io/seerr-team/seerr
+  ghcr.io/seerr-team/seerr:latest
 ```
 
 The argument `-e PORT=5055` is optional.
