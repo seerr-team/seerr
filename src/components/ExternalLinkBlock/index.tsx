@@ -12,8 +12,10 @@ import useSettings from '@app/hooks/useSettings';
 import { MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 
+type ExternalLinkType = 'movie' | 'tv' | 'person';
+
 interface ExternalLinkBlockProps {
-  mediaType: 'movie' | 'tv';
+  mediaType: ExternalLinkType;
   tmdbId?: number;
   tvdbId?: number;
   imdbId?: string;
@@ -31,6 +33,10 @@ const ExternalLinkBlock = ({
 }: ExternalLinkBlockProps) => {
   const settings = useSettings();
   const { locale } = useLocale();
+  const isMovie = mediaType === MediaType.MOVIE;
+  const isTv = mediaType === MediaType.TV;
+  const isPerson = mediaType === 'person';
+  const imdbType = isPerson ? 'name' : 'title';
 
   return (
     <div className="flex w-full items-center justify-center space-x-5">
@@ -61,7 +67,7 @@ const ExternalLinkBlock = ({
           <TmdbLogo />
         </a>
       )}
-      {tvdbId && mediaType === MediaType.TV && (
+      {tvdbId && isTv && (
         <a
           href={`http://www.thetvdb.com/?tab=series&id=${tvdbId}`}
           className="w-9 opacity-50 transition duration-300 hover:opacity-100"
@@ -73,7 +79,7 @@ const ExternalLinkBlock = ({
       )}
       {imdbId && (
         <a
-          href={`https://www.imdb.com/title/${imdbId}`}
+          href={`https://www.imdb.com/${imdbType}/${imdbId}`}
           className="w-8 opacity-50 transition duration-300 hover:opacity-100"
           target="_blank"
           rel="noreferrer"
@@ -91,10 +97,10 @@ const ExternalLinkBlock = ({
           <RTLogo />
         </a>
       )}
-      {tmdbId && (
+      {tmdbId && !isPerson && (
         <a
           href={`https://trakt.tv/search/tmdb/${tmdbId}?id_type=${
-            mediaType === 'movie' ? 'movie' : 'show'
+            isMovie ? 'movie' : 'show'
           }`}
           className="w-8 opacity-50 transition duration-300 hover:opacity-100"
           target="_blank"
@@ -103,7 +109,7 @@ const ExternalLinkBlock = ({
           <TraktLogo />
         </a>
       )}
-      {tmdbId && mediaType === MediaType.MOVIE && (
+      {tmdbId && isMovie && (
         <a
           href={`https://letterboxd.com/tmdb/${tmdbId}`}
           className="w-8 opacity-50 transition duration-300 hover:opacity-100"

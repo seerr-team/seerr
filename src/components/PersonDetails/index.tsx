@@ -3,6 +3,7 @@ import CachedImage from '@app/components/Common/CachedImage';
 import ImageFader from '@app/components/Common/ImageFader';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
+import ExternalLinkBlock from '@app/components/ExternalLinkBlock';
 import TitleCard from '@app/components/TitleCard';
 import globalMessages from '@app/i18n/globalMessages';
 import Error from '@app/pages/_error';
@@ -255,9 +256,8 @@ const PersonDetails = () => {
         </div>
       )}
       <div
-        className={`relative z-10 mb-8 mt-4 flex flex-col items-center lg:flex-row ${
-          data.biography ? 'lg:items-start' : ''
-        }`}
+        className={`relative z-10 mb-8 mt-4 flex flex-col items-center lg:flex-row ${data.biography ? 'lg:items-start' : ''
+          }`}
       >
         {data.profilePath && (
           <div className="relative mb-6 mr-0 h-36 w-36 flex-shrink-0 overflow-hidden rounded-full ring-1 ring-gray-700 lg:mb-0 lg:mr-6 lg:h-44 lg:w-44">
@@ -275,6 +275,15 @@ const PersonDetails = () => {
             <h1 className="text-3xl text-white lg:text-4xl">{data.name}</h1>
             <div className="hidden flex-shrink-0 lg:block">
               {mediaTypePicker}
+            </div>
+          </div>
+          <div className="flex w-full items-center justify-center lg:justify-between">
+            <div className="mt-3 mb-3">
+              <ExternalLinkBlock
+                mediaType="person"
+                tmdbId={data.id}
+                imdbId={data.imdbId}
+              />
             </div>
           </div>
           <div className="mb-2 mt-1 space-y-1 text-xs text-white sm:text-sm lg:text-base">
