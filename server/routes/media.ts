@@ -112,7 +112,7 @@ mediaRoutes.post<
       return next({ status: 404, message: 'Media does not exist.' });
     }
 
-    const is4k = Boolean(req.body.is4k);
+    const is4k = String(req.body.is4k) === 'true';
 
     switch (req.params.status) {
       case 'available':
@@ -198,7 +198,7 @@ mediaRoutes.delete(
         where: { id: Number(req.params.id) },
       });
 
-      const is4k = req.query.is4k === 'true';
+      const is4k = String(req.query.is4k) === 'true';
       const isMovie = media.mediaType === MediaType.MOVIE;
 
       let serviceSettings;
@@ -212,18 +212,19 @@ mediaRoutes.delete(
         );
       }
 
+      const specificServiceId = is4k ? media.serviceId4k : media.serviceId;
       if (
-        media.serviceId &&
-        media.serviceId >= 0 &&
-        serviceSettings?.id !== media.serviceId
+        specificServiceId &&
+        specificServiceId >= 0 &&
+        serviceSettings?.id !== specificServiceId
       ) {
         if (isMovie) {
           serviceSettings = settings.radarr.find(
-            (radarr) => radarr.id === media.serviceId
+            (radarr) => radarr.id === specificServiceId
           );
         } else {
           serviceSettings = settings.sonarr.find(
-            (sonarr) => sonarr.id === media.serviceId
+            (sonarr) => sonarr.id === specificServiceId
           );
         }
       }
@@ -257,13 +258,7 @@ mediaRoutes.delete(
       }
 
       if (isMovie) {
-        await (service as RadarrAPI).removeMovie(
-          parseInt(
-            is4k
-              ? (media.externalServiceSlug4k as string)
-              : (media.externalServiceSlug as string)
-          )
-        );
+        await (service as RadarrAPI).removeMovie(media.tmdbId);
       } else {
         const tmdb = new TheMovieDb();
         const series = await tmdb.getTvShow({ tvId: media.tmdbId });
