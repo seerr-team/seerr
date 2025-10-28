@@ -121,6 +121,8 @@ class BlacklistedTagProcessor implements RunnableScanner<StatusBase> {
               page,
               sortBy,
               keywords: tag,
+              includeAdult: true,
+              includeVideo: true,
             });
 
             await this.processResults(response, tag, type, em);
