@@ -112,7 +112,7 @@ mediaRoutes.post<
       return next({ status: 404, message: 'Media does not exist.' });
     }
 
-    const is4k = Boolean(req.body.is4k);
+    const is4k = String(req.body.is4k) === 'true';
 
     switch (req.params.status) {
       case 'available':
@@ -145,16 +145,16 @@ mediaRoutes.post<
             message: 'Only series can be set to be partially available',
           });
         }
-        media.status = MediaStatus.PARTIALLY_AVAILABLE;
+        media[is4k ? 'status4k' : 'status'] = MediaStatus.PARTIALLY_AVAILABLE;
         break;
       case 'processing':
-        media.status = MediaStatus.PROCESSING;
+        media[is4k ? 'status4k' : 'status'] = MediaStatus.PROCESSING;
         break;
       case 'pending':
-        media.status = MediaStatus.PENDING;
+        media[is4k ? 'status4k' : 'status'] = MediaStatus.PENDING;
         break;
       case 'unknown':
-        media.status = MediaStatus.UNKNOWN;
+        media[is4k ? 'status4k' : 'status'] = MediaStatus.UNKNOWN;
     }
 
     await mediaRepository.save(media);
@@ -198,7 +198,7 @@ mediaRoutes.delete(
         where: { id: Number(req.params.id) },
       });
 
-      const is4k = req.query.is4k === 'true';
+      const is4k = String(req.query.is4k) === 'true';
       const isMovie = media.mediaType === MediaType.MOVIE;
 
       let serviceSettings;
@@ -212,18 +212,19 @@ mediaRoutes.delete(
         );
       }
 
+      const specificServiceId = is4k ? media.serviceId4k : media.serviceId;
       if (
-        media.serviceId &&
-        media.serviceId >= 0 &&
-        serviceSettings?.id !== media.serviceId
+        specificServiceId &&
+        specificServiceId >= 0 &&
+        serviceSettings?.id !== specificServiceId
       ) {
         if (isMovie) {
           serviceSettings = settings.radarr.find(
-            (radarr) => radarr.id === media.serviceId
+            (radarr) => radarr.id === specificServiceId
           );
         } else {
           serviceSettings = settings.sonarr.find(
-            (sonarr) => sonarr.id === media.serviceId
+            (sonarr) => sonarr.id === specificServiceId
           );
         }
       }
@@ -257,62 +258,7 @@ mediaRoutes.delete(
       }
 
       if (isMovie) {
-        // First try the requested type, then try the other type (for service switching cases)
-        let movieId = is4k
-          ? media.externalServiceId4k
-          : media.externalServiceId;
-        let actualIs4k = is4k;
-
-        // If movie ID not found in the expected field, check the other field
-        if (!movieId) {
-          movieId = is4k ? media.externalServiceId : media.externalServiceId4k;
-          actualIs4k = !is4k;
-
-          // If found in the other field, we need to use the correct service for that type
-          if (movieId) {
-            const settings = getSettings();
-            // Get the specific service ID that was used for this type
-            const specificServiceId = actualIs4k
-              ? media.serviceId4k
-              : media.serviceId;
-
-            let correctService;
-            if (
-              specificServiceId !== null &&
-              specificServiceId !== undefined &&
-              specificServiceId >= 0
-            ) {
-              // Use the specific service that was used
-              correctService = settings.radarr.find(
-                (radarr) => radarr.id === specificServiceId
-              );
-            } else {
-              // Fallback to default service for that type
-              correctService = settings.radarr.find(
-                (radarr) => radarr.isDefault && radarr.is4k === actualIs4k
-              );
-            }
-
-            if (correctService) {
-              service = new RadarrAPI({
-                apiKey: correctService.apiKey,
-                url: RadarrAPI.buildUrl(correctService, '/api/v3'),
-              });
-            }
-          }
-        }
-
-        if (!movieId) {
-          throw new Error('External service ID not found for movie');
-        }
-
-        // Delete directly using Radarr internal movie ID (more efficient than TMDB lookup)
-        await (service as RadarrAPI)['axios'].delete(`/movie/${movieId}`, {
-          params: {
-            deleteFiles: true,
-            addImportExclusion: false,
-          },
-        });
+        await (service as RadarrAPI).removeMovie(media.tmdbId);
       } else {
         // TV Show deletion with smart service switching
         let seriesId = is4k

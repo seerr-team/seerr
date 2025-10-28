@@ -36,6 +36,7 @@ import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
+import validator from 'validator';
 import * as Yup from 'yup';
 import JellyfinImportModal from './JellyfinImportModal';
 
@@ -210,7 +211,11 @@ const UserList = () => {
     ),
     email: Yup.string()
       .required()
-      .email(intl.formatMessage(messages.validationEmail)),
+      .test(
+        'email',
+        intl.formatMessage(messages.validationEmail),
+        (value) => !value || validator.isEmail(value, { require_tld: false })
+      ),
     password: Yup.lazy((value) =>
       !value
         ? Yup.string()

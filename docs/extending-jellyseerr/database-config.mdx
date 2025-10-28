@@ -20,7 +20,7 @@ DB_LOG_QUERIES="false" # (optional) Whether to log the DB queries for debugging.
 ## PostgreSQL Options
 
 :::caution
-When migrating Postgres from version 17 to 18 in Docker, note that the data mount point has changed. Instead of using `/var/lib/postgresql/data`, the correct mount path is now `/var/lib/postgresql/18/docker`.
+When migrating Postgres from version 17 to 18 in Docker, note that the data mount point has changed. Instead of using `/var/lib/postgresql/data`, the correct mount path is now `/var/lib/postgresql`.
 Refer to the [PostgreSQL Docker documentation](https://hub.docker.com/_/postgres/#pgdata) to learn how to migrate or opt out of this change.
 :::
 
