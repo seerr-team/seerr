@@ -354,17 +354,18 @@ const MovieRequestModal = ({
       okButtonType={'primary'}
       backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
     >
-      {!nonTheatricalReleases?.length && (
-        <div className="mt-6">
-          <Alert
-            title={intl.formatMessage(
-              messages.requestMovieHasNoNonTheatricalRealease
-            )}
-            type="warning"
-          />
-        </div>
-      )}
-      {nonTheatricalInTheFuture && (
+      {settings.currentSettings.warnNonReleased &&
+        !nonTheatricalReleases?.length && (
+          <div className="mt-6">
+            <Alert
+              title={intl.formatMessage(
+                messages.requestMovieHasNoNonTheatricalRealease
+              )}
+              type="warning"
+            />
+          </div>
+        )}
+      {settings.currentSettings.warnNonReleased && nonTheatricalInTheFuture && (
         <div className="mt-6">
           <Alert
             title={intl.formatMessage(

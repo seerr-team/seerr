@@ -78,6 +78,12 @@ Available media will still appear in search results, however, so it is possible 
 
 This setting is **disabled** by default.
 
+## Warn about Non-released
+
+When enabled, Movies or Series that don't have any release (still only in theatres, or not yet released) will show a warning : this prevents requests that can't yet be fulfilled
+
+This setting is **disabled** by default.
+
 ## Hide Blacklisted Items
 
 When enabled, media that has been blacklisted will not appear on the "Discover" home page, for all administrators. This can be useful to hide content that you don't want to see, such as content with specific tags or content that has been manually blacklisted when you have the "Manage Blacklist" permission.

@@ -977,6 +977,8 @@
   "components.Settings.SettingsMain.generalsettingsDescription": "Configure global and default settings for Seerr.",
   "components.Settings.SettingsMain.hideAvailable": "Hide Available Media",
   "components.Settings.SettingsMain.hideAvailableTip": "Hide available media from the discover pages but not search results",
+  "components.Settings.SettingsMain.warnNonReleased": "Warn about request if not yet released",
+  "components.Settings.SettingsMain.warnNonReleasedTip": "When enabled, Movies or Series that don't have any release (still only in theatres) will show a warning : this prevents requests that can't yet be fulfilled",
   "components.Settings.SettingsMain.hideBlacklisted": "Hide Blacklisted Items",
   "components.Settings.SettingsMain.hideBlacklistedTip": "Hide blacklisted items from discover pages for all users with the \"Manage Blacklist\" permission",
   "components.Settings.SettingsMain.locale": "Display Language",
