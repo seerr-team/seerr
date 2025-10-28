@@ -32,7 +32,6 @@ interface SearchOptions {
   query: string;
   page?: number;
   includeAdult?: boolean;
-  includeVideo?: boolean;
   language?: string;
 }
 
@@ -155,17 +154,12 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     query,
     page = 1,
     includeAdult = false,
-    includeVideo = true,
     language = this.locale,
   }: SearchOptions): Promise<TmdbSearchMultiResponse> => {
     try {
       const data = await this.get<TmdbSearchMultiResponse>('/search/multi', {
         params: { query, page, include_adult: includeAdult, language },
       });
-
-      if (!includeVideo) {
-        data.results = data.results.filter((result: any) => !result.video);
-      }
 
       return data;
     } catch (e) {
@@ -182,7 +176,6 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     query,
     page = 1,
     includeAdult = false,
-    includeVideo = true,
     language = this.locale,
     year,
   }: SingleSearchOptions): Promise<TmdbSearchMovieResponse> => {
@@ -196,10 +189,6 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
           primary_release_year: year,
         },
       });
-
-      if (!includeVideo) {
-        data.results = data.results.filter((result: any) => !result.video);
-      }
 
       return data;
     } catch (e) {
