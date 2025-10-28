@@ -35,12 +35,13 @@ jobs:
 
             AI-generated code can often introduce subtle bugs, poor design patterns, or inconsistent styles that make long-term maintenance difficult and reduce overall code quality. For the sake of the project's future stability and readability, we require that all contributions meet our established coding standards and demonstrate clear developer oversight.
 
+            This pull request is also too large for effective human review. Please discuss with us on how to break down these changes into smaller, more focused PRs to ensure a thorough and efficient review process.
             If you'd like to revise and resubmit your changes with careful review and cleanup, we'd be happy to take another look.
         run: |
           retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
           retry gh pr comment "$NUMBER" -R "$GH_REPO" -b "$BODY" || true
           retry gh pr close "$NUMBER" -R "$GH_REPO" || true
-          gh pr lock "$NUMBER" -R "$GH_REPO" -r "off_topic" || true
+          gh pr lock "$NUMBER" -R "$GH_REPO" -r "spam" || true
 
       - name: Reopened or label removed, unlock pull request
         if: github.event.action == 'unlabeled' && github.event.label.name == 'ai-generated'
