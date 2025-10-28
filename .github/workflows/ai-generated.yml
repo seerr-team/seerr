@@ -3,7 +3,7 @@
 name: 'AI-generated pull requests'
 
 on:
-  pull_request:
+  pull_request_target:
     types: [labeled, unlabeled, reopened]
 
 permissions:
