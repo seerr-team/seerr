@@ -62,6 +62,15 @@ Set the default display language for Jellyseerr. Users can override this setting
 
 These settings filter content shown on the "Discover" home page based on regional availability and original language, respectively. The Streaming Region filters the available streaming providers on the media page. Users can override these global settings by configuring these same options in their user settings.
 
+## Blacklist Region and Blacklist Language
+
+These settings control the region and language used specifically for blacklist content scanning. The "Process Blacklisted Tags" job uses these settings to determine which content to scan for blacklisting, independent of the general discover settings.
+
+- **Blacklist Region**: The region used for blacklist content scanning. Leave empty to scan all regions.
+- **Blacklist Language**: The language used for blacklist content scanning. Leave empty to scan all languages.
+
+These settings are separate from the general "Discover Region" and "Discover Language" settings, allowing you to blacklist content from specific regions/languages regardless of what users see in their discover pages.
+
 ## Blacklist Content with Tags and Limit Content Blacklisted per Tag
 
 These settings blacklist any TV shows or movies that have one of the entered tags. The "Process Blacklisted Tags" job adds entries to the blacklist based on the configured blacklisted tags. If a blacklisted tag is removed, any media blacklisted under that tag will be removed from the blacklist when the "Process Blacklisted Tags" job runs.

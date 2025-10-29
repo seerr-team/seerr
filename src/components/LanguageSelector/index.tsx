@@ -34,6 +34,7 @@ interface LanguageSelectorProps {
   serverValue?: string;
   isUserSettings?: boolean;
   isDisabled?: boolean;
+  fieldName?: string;
 }
 
 const LanguageSelector = ({
@@ -42,6 +43,7 @@ const LanguageSelector = ({
   serverValue,
   isUserSettings = false,
   isDisabled,
+  fieldName = 'originalLanguage',
 }: LanguageSelectorProps) => {
   const intl = useIntl();
   const { data: languages } = useSWR<Language[]>('/api/v1/languages');
@@ -151,7 +153,7 @@ const LanguageSelector = ({
             options.option?.value === 'server') ||
           value.every((v) => v.value === 'server')
         ) {
-          return setFieldValue('originalLanguage', '');
+          return setFieldValue(fieldName, '');
         }
 
         if (
@@ -160,11 +162,11 @@ const LanguageSelector = ({
             options.option?.value === 'all') ||
           value.every((v) => v.value === 'all')
         ) {
-          return setFieldValue('originalLanguage', isUserSettings ? 'all' : '');
+          return setFieldValue(fieldName, isUserSettings ? 'all' : '');
         }
 
         setFieldValue(
-          'originalLanguage',
+          fieldName,
           value
             .map((lang) => lang.value)
             .filter((v) => v !== 'all')
