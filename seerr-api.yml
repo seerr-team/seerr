@@ -236,6 +236,9 @@ components:
         hideAvailable:
           type: boolean
           example: false
+        hideRequested:
+          type: boolean
+          example: false
         partialRequestsEnabled:
           type: boolean
           example: false

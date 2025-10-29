@@ -84,6 +84,14 @@ When enabled, media that has been blacklisted will not appear on the "Discover" 
 
 This setting is **disabled** by default.
 
+## Hide Requested Media
+
+When enabled, media that has been requested (but not yet available) will not appear on the "Discover" home page, or in the "Recommended" or "Similar" categories or other links on media detail pages.
+
+Requested media will still appear in search results, however, so it is possible to locate and view hidden items by searching for them by title.
+
+This setting is **disabled** by default.
+
 ## Allow Partial Series Requests
 
 When enabled, users will be able to submit requests for specific seasons of TV series. If disabled, users will only be able to submit requests for all unavailable seasons.
