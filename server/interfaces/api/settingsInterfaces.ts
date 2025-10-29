@@ -30,6 +30,7 @@ export interface PublicSettingsResponse {
   applicationTitle: string;
   applicationUrl: string;
   hideAvailable: boolean;
+  warnNonReleased: boolean;
   hideBlacklisted: boolean;
   localLogin: boolean;
   mediaServerLogin: boolean;
