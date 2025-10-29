@@ -7,7 +7,7 @@ export const SeerrVersion = () => {
     async function fetchVersion() {
       try {
         const response = await fetch(
-          'https://raw.githubusercontent.com/fallenbagel/jellyseerr/main/package.json'
+          'https://raw.githubusercontent.com/seerr-team/seerr/main/package.json'
         );
 
         const data = await response.json();
