@@ -3,9 +3,10 @@
 name: Deploy to GitHub Pages
 
 on:
+  workflow_dispatch:
   push:
     branches:
-      - develop
+      - legacy-jellyseerr
     paths:
       - 'docs/**'
       - 'gen-docs/**'
