@@ -4,7 +4,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    workflow-dispatch:
+    workflow_dispatch:
     branches:
       - legacy-jellyseerr
     paths:
