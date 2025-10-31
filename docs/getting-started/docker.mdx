@@ -1,6 +1,6 @@
 ---
 title: Docker (Recommended)
-description: Install Jellyseerr using Docker
+description: Install Seerr using Docker
 sidebar_position: 1
 ---
 # Docker
@@ -8,7 +8,7 @@ sidebar_position: 1
 This is the recommended method for most users.
 Details on how to install Docker can be found on the [official Docker website](https://docs.docker.com/get-docker/).
 
-Refer to [Configuring Databases](/extending-jellyseerr/database-config#postgresql-options) for details on how to configure your database.
+Refer to [Configuring Databases](/extending-seerr/database-config#postgresql-options) for details on how to configure your database.
 :::
 
 :::info
@@ -23,7 +23,7 @@ To confirm that the container image you are using is authentic and unmodified, p
 
 ## Unix (Linux, macOS)
 :::warning
-Be sure to replace `/path/to/appdata/config` in the below examples with a valid host directory path. If this volume mount is not configured correctly, your Jellyseerr settings/data will not be persisted when the container is recreated (e.g., when updating the image or rebooting your machine).
+Be sure to replace `/path/to/appdata/config` in the below examples with a valid host directory path. If this volume mount is not configured correctly, your Seerr settings/data will not be persisted when the container is recreated (e.g., when updating the image or rebooting your machine).
 
     The `TZ` environment variable value should also be set to the [TZ database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) of your time zone!
 
@@ -40,7 +40,7 @@ For details on the Docker CLI, please [review the official `docker run` document
 
 ```bash
 docker run -d \
-  --name jellyseerr \
+  --name seerr \
   --init \
   -e LOG_LEVEL=debug \
   -e TZ=Asia/Tashkent \
@@ -48,7 +48,7 @@ docker run -d \
   -p 5055:5055 \
   -v /path/to/appdata/config:/app/config \
   --restart unless-stopped \
-  ghcr.io/fallenbagel/jellyseerr:latest
+  ghcr.io/seerr-team/seerr:latest
 ```
 
 The argument `-e PORT=5055` is optional.
@@ -68,11 +68,11 @@ To run the container as a specific user/group, you may optionally add `--user=[ 
 
 Stop and remove the existing container:
 ```bash
-docker stop jellyseerr && docker rm jellyseerr
+docker stop seerr && docker rm seerr
 ```
 Pull the latest image:
 ```bash
-docker pull ghcr.io/fallenbagel/jellyseerr:latest
+docker pull ghcr.io/seerr-team/seerr:latest
 ```
 Finally, run the container with the same parameters originally used to create the container:
 ```bash
@@ -80,7 +80,7 @@ docker run -d ...
 ```
 
 :::tip
-You may alternatively use a third-party updating mechanism, such as [Watchtower](https://github.com/containrrr/watchtower) or [Ouroboros](https://github.com/pyouroboros/ouroboros), to keep Jellyseerr up-to-date automatically.
+You may alternatively use a third-party updating mechanism, such as [Watchtower](https://github.com/containrrr/watchtower) or [Ouroboros](https://github.com/pyouroboros/ouroboros), to keep Seerr up-to-date automatically.
 
 You could also use [diun](https://github.com/crazy-max/diun) to receive notifications when a new image is available.
 :::
@@ -90,14 +90,14 @@ You could also use [diun](https://github.com/crazy-max/diun) to receive notifica
 For details on how to use Docker Compose, please [review the official Compose documentation](https://docs.docker.com/compose/reference/).
 
 #### Installation:
-Define the `jellyseerr` service in your `compose.yaml` as follows:
+Define the `seerr` service in your `compose.yaml` as follows:
 ```yaml
 ---
 services:
-  jellyseerr:
-    image: ghcr.io/fallenbagel/jellyseerr:latest
+  seerr:
+    image: ghcr.io/seerr-team/seerr:latest
     init: true
-    container_name: jellyseerr
+    container_name: seerr
     environment:
       - LOG_LEVEL=debug
       - TZ=Asia/Tashkent
@@ -123,7 +123,7 @@ docker compose up -d
 #### Updating:
 Pull the latest image:
 ```bash
-docker compose pull jellyseerr
+docker compose pull seerr
 ```
 Then, restart all services defined in the Compose file:
 ```bash
@@ -142,31 +142,31 @@ Please refer to the [Docker Desktop for Windows user manual](https://docs.docker
 **WSL2 will need to be installed to prevent DB corruption!** Please see the [Docker Desktop WSL 2 backend documentation](https://docs.docker.com/docker-for-windows/wsl/) for instructions on how to enable WSL2. The commands below will only work with WSL2 installed!
 :::
 
-First, create a volume to store the configuration data for Jellyseerr using using either the Docker CLI:
+First, create a volume to store the configuration data for Seerr using using either the Docker CLI:
 ```bash
-docker volume create jellyseerr-data
+docker volume create seerr-data
 ```
 
 or the Docker Desktop app:
 1. Open the Docker Desktop app
 2. Head to the Volumes tab
 3. Click on the "New Volume" button near the top right
-4. Enter a name for the volume (example: `jellyseerr-data`) and hit "Create"
+4. Enter a name for the volume (example: `seerr-data`) and hit "Create"
 
-Then, create and start the Jellyseerr container:
+Then, create and start the Seerr container:
 <Tabs groupId="docker-methods" queryString>
   <TabItem value="docker-cli" label="Docker CLI">
 ```bash
 docker run -d \
-  --name jellyseerr \
+  --name seerr \
   --init \
   -e LOG_LEVEL=debug \
   -e TZ=Asia/Tashkent \
   -e PORT=5055 \
   -p 5055:5055 \
-  -v jellyseerr-data:/app/config \
+  -v seerr-data:/app/config \
   --restart unless-stopped \
-  ghcr.io/fallenbagel/jellyseerr:latest
+  ghcr.io/seerr-team/seerr:latest
 ```
 
 The argument `-e PORT=5055` is optional.
@@ -183,7 +183,7 @@ If you want to add a healthcheck to the above command, you can add the following
 #### Updating:
 Pull the latest image:
 ```bash
-docker compose pull jellyseerr
+docker compose pull seerr
 ```
 Then, restart all services defined in the Compose file:
 ```bash
@@ -195,17 +195,17 @@ docker compose up -d
 ```yaml
 ---
 services:
-  jellyseerr:
-    image: ghcr.io/fallenbagel/jellyseerr:latest
+  seerr:
+    image: ghcr.io/seerr-team/seerr:latest
     init: true
-    container_name: jellyseerr
+    container_name: seerr
     environment:
       - LOG_LEVEL=debug
       - TZ=Asia/Tashkent
     ports:
       - 5055:5055
     volumes:
-      - jellyseerr-data:/app/config
+      - seerr-data:/app/config
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1
       start_period: 20s
@@ -215,14 +215,14 @@ services:
     restart: unless-stopped
 
 volumes:
-  jellyseerr-data:
+  seerr-data:
     external: true
 ```
 
 #### Updating:
 Pull the latest image:
 ```bash
-docker compose pull jellyseerr
+docker compose pull seerr
 ```
 Then, restart all services defined in the Compose file:
 ```bash
@@ -231,7 +231,7 @@ docker compose up -d
   </TabItem>
 </Tabs>
 
-To access the files inside the volume created above, navigate to `\\wsl$\docker-desktop-data\version-pack-data\community\docker\volumes\jellyseerr-data\_data` using File Explorer.
+To access the files inside the volume created above, navigate to `\\wsl$\docker-desktop-data\version-pack-data\community\docker\volumes\seerr-data\_data` using File Explorer.
 
 :::info
 Docker on Windows works differently than it does on Linux; it runs Docker inside of a stripped-down Linux VM. Volume mounts are exposed to Docker inside this VM via SMB mounts. While this is fine for media, it is unacceptable for the `/app/config` directory because SMB does not support file locking. This will eventually corrupt your database, which can lead to slow behavior and crashes.
