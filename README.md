@@ -7,7 +7,7 @@
 </p>
 <p align="center">
 <a href="https://discord.gg/seerr"><img src="https://img.shields.io/discord/783137440809746482" alt="Discord"></a>
-<a href="https://hub.docker.com/r/fallenbagel/jellyseerr"><img src="https://img.shields.io/docker/pulls/fallenbagel/jellyseerr" alt="Docker pulls"></a>
+<a href="https://hub.docker.com/r/seerr-team/seerr"><img src="https://img.shields.io/docker/pulls/seerr-team/seerr" alt="Docker pulls"></a>
 <a href="http://translate.jellyseerr.dev/engage/jellyseerr/"><img src="http://translate.jellyseerr.dev/widget/jellyseerr/jellyseerr-frontend/svg-badge.svg" alt="Translation status" /></a>
 <a href="https://github.com/seerr-team/seerr/blob/develop/LICENSE"><img alt="GitHub" src="https://img.shields.io/github/license/seerr-team/seerr"></a>
 
@@ -35,12 +35,6 @@ With more features on the way! Check out our [issue tracker](/../../issues) to s
 Check out our documentation for instructions on how to install and run Seerr:
 
 https://docs.seerr.dev/getting-started/
-
-### Packages:
-
-Archlinux: [AUR](https://aur.archlinux.org/packages/jellyseerr)
-
-Nix: [Nixpkg](https://search.nixos.org/packages?channel=unstable&show=jellyseerr)
 
 ## Preview
 
