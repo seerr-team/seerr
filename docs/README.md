@@ -5,9 +5,9 @@ sidebar_position: 1
 
 # Introduction
 
-Welcome to the Jellyseerr Documentation.
+Welcome to the Seerr Documentation.
 
-**Jellyseerr** is a free and open source software application for managing requests for your media library. It integrates with the media server of your choice: [Jellyfin](https://jellyfin.org), [Plex](https://plex.tv), and [Emby](https://emby.media/). In addition, it integrates with your existing services, such as **[Sonarr](https://sonarr.tv/)**, **[Radarr](https://radarr.video/)**.
+**Seerr** is a free and open source software application for managing requests for your media library. It integrates with the media server of your choice: [Jellyfin](https://jellyfin.org), [Plex](https://plex.tv), and [Emby](https://emby.media/). In addition, it integrates with your existing services, such as **[Sonarr](https://sonarr.tv/)**, **[Radarr](https://radarr.video/)**.
 
 ## Features
 
@@ -26,16 +26,10 @@ Welcome to the Jellyseerr Documentation.
 - Easily **Watchlist** or **Blacklist** media.
 - More features to come!
 
-## Motivation
-
-The primary motivation for starting Jellyseerr was to bring Jellyfin and Emby support to Overseerr. However, over time, **Jellyseerr** has evolved into its own distinct application with unique features. Designed as a one-stop shop for media requests, it offers a simple, easy-to-use experience for managing requests on Jellyfin, Emby, and Plex servers.
-
 ## We need your help!
 
-[Jellyseerr](https://github.com/fallenbagel/jellyseerr) is an ambitious project where developers/contributors poured a lot of work into, and that builds on top of [Overseerr](https://github.com/sct/overseerr). And we have a lot more to do as well.
+[Seerr](https://github.com/seerr-team/seerr) is an ambitious project developers/contributors poured a lot of work into, and we still have a lot more to do. Seerr is the result of a collaborative effort between the original Overseerr project and the Jellyseerr fork, created to deliver an excellent request management solution for Plex, Jellyfin and Emby users.
 
-We value your feedback and support in identifying and fixing bugs to make Jellyseerr even better. As an open-source project, we welcome contributions from everyone. While Jellyseerr has diverged from Overseerr and evolved into its own unique application, we still encourage contributions to Overseerr, as it played a crucial role in inspiring what Jellyseerr has become today.
+We value your feedback and support in identifying and fixing bugs to make Seerr even better. As an open-source project, we welcome contributions from everyone. Contribution includes building new features, patching bugs, translating the application, or even just writing documentation.
 
-Contribution includes building new features, patching bugs, translating the application, or even just writing documentation.
-
-If you would like to contribute, please be sure to review our [contribution guidelines](https://github.com/fallenbagel/jellyseerr/blob/develop/CONTRIBUTING.md).
+If you would like to contribute, please be sure to review our [contribution guidelines](https://github.com/seerr-team/seerr/blob/develop/CONTRIBUTING.md).

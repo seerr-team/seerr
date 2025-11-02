@@ -115,7 +115,7 @@ Steps:
 
 1. Make the necessary changes.
 2. Test your changes.
-3. Update the `version` in `charts/jellyseerr-chart/Chart.yaml` following [Semantic Versioning (SemVer)](https://semver.org/).
+3. Update the `version` in `charts/seerr-chart/Chart.yaml` following [Semantic Versioning (SemVer)](https://semver.org/).
 4. Run the `helm-docs` command to regenerate the chart's README.
 
 ### Contributing Code
@@ -162,7 +162,7 @@ If you are adding a new feature that requires a database migration, you will nee
 1. Create a PostgreSQL database or use an existing one:
 
 ```bash
-sudo docker run --name postgres-jellyseerr -e POSTGRES_PASSWORD=postgres -d -p 127.0.0.1:5432:5432/tcp postgres:latest
+sudo docker run --name postgres-seerr -e POSTGRES_PASSWORD=postgres -d -p 127.0.0.1:5432:5432/tcp postgres:latest
 ```
 
 2. Reset the SQLite database and the PostgreSQL database:
@@ -170,8 +170,8 @@ sudo docker run --name postgres-jellyseerr -e POSTGRES_PASSWORD=postgres -d -p 1
 ```bash
 rm config/db/db.*
 rm config/settings.*
-PGPASSWORD=postgres sudo docker exec -it postgres-jellyseerr /usr/bin/psql -h 127.0.0.1 -U postgres -c "DROP DATABASE IF EXISTS jellyseerr;"
-PGPASSWORD=postgres sudo docker exec -it postgres-jellyseerr /usr/bin/psql -h 127.0.0.1 -U postgres -c "CREATE DATABASE jellyseerr;"
+PGPASSWORD=postgres sudo docker exec -it postgres-seerr /usr/bin/psql -h 127.0.0.1 -U postgres -c "DROP DATABASE IF EXISTS seerr;"
+PGPASSWORD=postgres sudo docker exec -it postgres-seerr /usr/bin/psql -h 127.0.0.1 -U postgres -c "CREATE DATABASE seerr;"
 ```
 
 3. Checkout the `develop` branch and create the original database for SQLite and PostgreSQL so that TypeORM can automatically generate the migrations:

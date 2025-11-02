@@ -2339,8 +2339,12 @@ paths:
                   properties:
                     username:
                       type: string
-                    userId:
-                      type: integer
+                    id:
+                      type: string
+                    thumb:
+                      type: string
+                    email:
+                      type: string
   /settings/jellyfin/sync:
     get:
       summary: Get status of full Jellyfin library sync
@@ -6908,6 +6912,10 @@ paths:
                 is4k:
                   type: boolean
                   example: false
+                  description: |
+                    When true, updates the 4K status field (status4k).
+                    When false or not provided, updates the regular status field (status).
+                    This applies to all status values (available, partial, processing, pending, unknown).
       responses:
         '200':
           description: Returned media

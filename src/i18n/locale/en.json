@@ -950,7 +950,7 @@
   "components.Settings.SettingsLogs.level": "Severity",
   "components.Settings.SettingsLogs.logDetails": "Log Details",
   "components.Settings.SettingsLogs.logs": "Logs",
-  "components.Settings.SettingsLogs.logsDescription": "You can also view these logs directly via <code>stdout</code>, or in <code>{appDataPath}/logs/jellyseerr.log</code>.",
+  "components.Settings.SettingsLogs.logsDescription": "You can also view these logs directly via <code>stdout</code>, or in <code>{appDataPath}/logs/seerr.log</code>.",
   "components.Settings.SettingsLogs.message": "Message",
   "components.Settings.SettingsLogs.pauseLogs": "Pause",
   "components.Settings.SettingsLogs.resumeLogs": "Resume",

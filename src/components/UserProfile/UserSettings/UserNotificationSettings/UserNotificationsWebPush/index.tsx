@@ -111,6 +111,11 @@ const UserWebPushSettings = () => {
     try {
       await unsubscribeToPushNotifications(user?.id, endpoint);
 
+      // Delete from backend if endpoint is available
+      if (subEndpoint) {
+        await deletePushSubscriptionFromBackend(subEndpoint);
+      }
+
       localStorage.setItem('pushNotificationsEnabled', 'false');
       setWebPushEnabled(false);
       addToast(intl.formatMessage(messages.webpushhasbeendisabled), {

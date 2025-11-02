@@ -16,6 +16,7 @@ import SlackAgent from '@server/lib/notifications/agents/slack';
 import TelegramAgent from '@server/lib/notifications/agents/telegram';
 import WebhookAgent from '@server/lib/notifications/agents/webhook';
 import WebPushAgent from '@server/lib/notifications/agents/webpush';
+import checkOverseerrMerge from '@server/lib/overseerrMerge';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import clearCookies from '@server/middleware/clearcookies';
@@ -59,7 +60,12 @@ if (!appDataPermissions()) {
 app
   .prepare()
   .then(async () => {
-    const dbConnection = await dataSource.initialize();
+    // Run Overseerr to Seerr migration
+    await checkOverseerrMerge();
+
+    const dbConnection = dataSource.isInitialized
+      ? dataSource
+      : await dataSource.initialize();
 
     // Run migrations in production
     if (process.env.NODE_ENV === 'production') {

@@ -1,9 +1,0 @@
-{
-  "label": "Settings",
-  "position": 1,
-  "link": {
-    "type": "generated-index",
-    "title": "Settings",
-    "description": "Configure Jellyseerr to your liking"
-  }
-}

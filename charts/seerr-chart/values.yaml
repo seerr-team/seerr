@@ -1,6 +1,6 @@
 image:
   registry: ghcr.io
-  repository: fallenbagel/jellyseerr
+  repository: seerr-team/seerr
   pullPolicy: IfNotPresent
   # -- Overrides the image tag whose default is the chart appVersion.
   tag: ''

@@ -20,6 +20,10 @@ Seerr helm chart for Kubernetes
 
 Kubernetes: `>=1.23.0-0`
 
+## Installation
+
+Refer to [https://docs.seerr.dev/getting-started/kubernetes](Seerr kubernetes documentation)
+
 ## Update Notes
 
 ### Updating to 3.0.0
@@ -51,7 +55,7 @@ If `replicaCount` value was used - remove it. Helm update should work fine after
 | fullnameOverride | string | `""` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.registry | string | `"ghcr.io"` |  |
-| image.repository | string | `"fallenbagel/jellyseerr"` |  |
+| image.repository | string | `"seerr-team/seerr"` |  |
 | image.sha | string | `""` |  |
 | image.tag | string | `""` | Overrides the image tag whose default is the chart appVersion. |
 | imagePullSecrets | list | `[]` |  |
