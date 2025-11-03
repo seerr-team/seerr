@@ -36,12 +36,6 @@ Check out our documentation for instructions on how to install and run Seerr:
 
 https://docs.seerr.dev/getting-started/
 
-### Packages:
-
-Archlinux: [AUR](https://aur.archlinux.org/packages/jellyseerr)
-
-Nix: [Nixpkg](https://search.nixos.org/packages?channel=unstable&show=jellyseerr)
-
 ## Preview
 
 <img src="./public/preview.jpg">
