@@ -29,7 +29,7 @@ const messages = defineMessages('components.Settings.SettingsAbout.Releases', {
 });
 
 const REPO_RELEASE_API =
-  'https://api.github.com/repos/fallenbagel/jellyseerr/releases?per_page=20';
+  'https://api.github.com/repos/seerr-team/seerr/releases?per_page=20';
 
 interface GitHubRelease {
   url: string;

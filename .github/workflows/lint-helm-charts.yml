@@ -1,3 +1,5 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Lint and Test Charts
 
 on:
@@ -7,27 +9,48 @@ on:
     paths:
       - '.github/workflows/lint-helm-charts.yml'
       - 'charts/**'
+  push:
+    branches: [develop]
+    paths:
+      - 'charts/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: charts-lint-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
+          persist-credentials: false
+
       - name: Set up Helm
-        uses: azure/setup-helm@v4.2.0
-      - name: Ensure documentation is updated
-        uses: docker://jnorwood/helm-docs:v1.14.2
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@v2.6.1
+        uses: helm/chart-testing-action@0d28d3144d3a25ea2cc349d6e59901c4ff469b3b # v2.7.0
+
+      - name: Ensure documentation is updated
+        uses: docker://jnorwood/helm-docs:v1.14.2@sha256:7e562b49ab6b1dbc50c3da8f2dd6ffa8a5c6bba327b1c6335cc15ce29267979c
+
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
           changed=$(ct list-changed --target-branch ${{ github.event.repository.default_branch }})
           if [[ -n "$changed" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "$changed"
           fi
+
       - name: Run chart-testing
         if: steps.list-changed.outputs.changed == 'true'
         run: ct lint --target-branch ${{ github.event.repository.default_branch }} --validate-maintainers=false

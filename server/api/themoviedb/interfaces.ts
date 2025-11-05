@@ -220,7 +220,7 @@ export interface TmdbTvEpisodeResult {
   show_id: number;
   still_path: string;
   vote_average: number;
-  vote_cuont: number;
+  vote_count: number;
 }
 
 export interface TmdbTvSeasonResult {

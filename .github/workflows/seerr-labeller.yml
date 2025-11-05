@@ -1,0 +1,111 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: 'Seerr Labeller'
+
+on:
+  pull_request_target:
+    types: [labeled, unlabeled, reopened]
+  issues:
+    types: [labeled, unlabeled, reopened]
+
+permissions: {}
+
+jobs:
+  ai-generated-support:
+    if: >
+      github.event_name == 'pull_request_target' &&
+      (github.event.label.name == 'ai-generated' || (github.event.action == 'reopened' && contains(github.event.pull_request.labels.*.name, 'ai-generated')))
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: ai-generated-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    permissions:
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      NUMBER: ${{ github.event.pull_request.number }}
+      PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+    steps:
+      - name: Label added, comment and close pull request
+        if: github.event.action == 'labeled' && github.event.label.name == 'ai-generated'
+        shell: bash
+        env:
+          BODY: >
+            :wave: @${{ env.PR_AUTHOR }}, thank you for your contribution!
+
+            However, this pull request has been closed because it appears to contain a significant amount of AI-generated code without sufficient human review or supervision.
+
+            AI-generated code can often introduce subtle bugs, poor design patterns, or inconsistent styles that make long-term maintenance difficult and reduce overall code quality. For the sake of the project's future stability and readability, we require that all contributions meet our established coding standards and demonstrate clear developer oversight.
+
+            This pull request is also too large for effective human review. Please discuss with us on how to break down these changes into smaller, more focused PRs to ensure a thorough and efficient review process.
+            If you'd like to revise and resubmit your changes with careful review and cleanup, we'd be happy to take another look.
+        run: |
+          retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
+          retry gh pr comment "$NUMBER" -R "$GH_REPO" -b "$BODY" || true
+          retry gh pr close "$NUMBER" -R "$GH_REPO" || true
+          gh pr lock "$NUMBER" -R "$GH_REPO" -r "spam" || true
+
+      - name: Label removed, reopen and unlock pull request
+        if: github.event.action == 'unlabeled' && github.event.label.name == 'ai-generated'
+        shell: bash
+        run: |
+          retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
+          retry gh pr reopen "$NUMBER" -R "$GH_REPO" || true
+          gh pr unlock "$NUMBER" -R "$GH_REPO" || true
+
+      - name: Remove AI-generated label on manual reopen
+        if: github.event.action == 'reopened'
+        shell: bash
+        run: |
+          gh pr edit "$NUMBER" -R "$GH_REPO" --remove-label "ai-generated" || true
+          gh pr unlock "$NUMBER" -R "$GH_REPO" || true
+
+  support:
+    if: >
+      github.event_name == 'issues' &&
+      (github.event.label.name == 'support' ||
+      (github.event.action == 'reopened' && contains(github.event.issue.labels.*.name, 'support')))
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: support-${{ github.event.issue.number }}
+      cancel-in-progress: true
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      NUMBER: ${{ github.event.issue.number }}
+      ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+    steps:
+      - name: Label added, comment and close issue
+        if: github.event.action == 'labeled' && github.event.label.name == 'support'
+        shell: bash
+        env:
+          BODY: >
+            :wave: @${{ env.ISSUE_AUTHOR }}, we use the issue tracker exclusively
+            for bug reports and feature requests. However, this issue appears
+            to be a support request. Please use our support channels
+            to get help with Seerr.
+
+            - [Discord](https://discord.gg/seerr)
+        run: |
+          retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
+          retry gh issue comment "$NUMBER" -R "$GH_REPO" -b "$BODY" || true
+          retry gh issue close "$NUMBER" -R "$GH_REPO" || true
+          gh issue lock "$NUMBER" -R "$GH_REPO" -r "off_topic" || true
+
+      - name: Label removed, reopen and unlock issue
+        if: github.event.action == 'unlabeled' && github.event.label.name == 'support'
+        shell: bash
+        run: |
+          retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
+          retry gh issue reopen "$NUMBER" -R "$GH_REPO" || true
+          gh issue unlock "$NUMBER" -R "$GH_REPO" || true
+
+      - name: Remove support label on manual reopen
+        if: github.event.action == 'reopened'
+        shell: bash
+        run: |
+          gh issue edit "$NUMBER" -R "$GH_REPO" --remove-label "support" || true
+          gh issue unlock "$NUMBER" -R "$GH_REPO" || true

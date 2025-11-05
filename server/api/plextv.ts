@@ -113,7 +113,7 @@ interface MetadataResponse {
       ratingKey: string;
       type: 'movie' | 'show';
       title: string;
-      Guid: {
+      Guid?: {
         id: `imdb://tt${number}` | `tmdb://${number}` | `tvdb://${number}`;
       }[];
     }[];
@@ -312,19 +312,32 @@ class PlexTvAPI extends ExternalAPI {
       const watchlistDetails = await Promise.all(
         (cachedWatchlist?.response.MediaContainer.Metadata ?? []).map(
           async (watchlistItem) => {
-            const detailedResponse = await this.getRolling<MetadataResponse>(
-              `/library/metadata/${watchlistItem.ratingKey}`,
-              {
-                baseURL: 'https://discover.provider.plex.tv',
+            let detailedResponse: MetadataResponse;
+            try {
+              detailedResponse = await this.getRolling<MetadataResponse>(
+                `/library/metadata/${watchlistItem.ratingKey}`,
+                {
+                  baseURL: 'https://discover.provider.plex.tv',
+                }
+              );
+            } catch (e) {
+              if (e.response?.status === 404) {
+                logger.warn(
+                  `Item with ratingKey ${watchlistItem.ratingKey} not found, it may have been removed from the server.`,
+                  { label: 'Plex.TV Metadata API' }
+                );
+                return null;
+              } else {
+                throw e;
               }
-            );
+            }
 
             const metadata = detailedResponse.MediaContainer.Metadata[0];
 
-            const tmdbString = metadata.Guid.find((guid) =>
+            const tmdbString = metadata.Guid?.find((guid) =>
               guid.id.startsWith('tmdb')
             );
-            const tvdbString = metadata.Guid.find((guid) =>
+            const tvdbString = metadata.Guid?.find((guid) =>
               guid.id.startsWith('tvdb')
             );
 
@@ -343,7 +356,9 @@ class PlexTvAPI extends ExternalAPI {
         )
       );
 
-      const filteredList = watchlistDetails.filter((detail) => detail.tmdbId);
+      const filteredList = watchlistDetails.filter(
+        (detail) => detail?.tmdbId
+      ) as PlexWatchlistItem[];
 
       return {
         offset,

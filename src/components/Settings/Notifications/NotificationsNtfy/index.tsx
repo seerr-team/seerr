@@ -19,6 +19,7 @@ const messages = defineMessages(
   'components.Settings.Notifications.NotificationsNtfy',
   {
     agentenabled: 'Enable Agent',
+    embedPoster: 'Embed Poster',
     url: 'Server root URL',
     topic: 'Topic',
     usernamePasswordAuth: 'Username + Password authentication',
@@ -80,6 +81,7 @@ const NotificationsNtfy = () => {
     <Formik
       initialValues={{
         enabled: data?.enabled,
+        embedPoster: data?.embedPoster,
         types: data?.types,
         url: data?.options.url,
         topic: data?.options.topic,
@@ -94,6 +96,7 @@ const NotificationsNtfy = () => {
         try {
           await axios.post('/api/v1/settings/notifications/ntfy', {
             enabled: values.enabled,
+            embedPoster: values.embedPoster,
             types: values.types,
             options: {
               url: values.url,
@@ -186,6 +189,14 @@ const NotificationsNtfy = () => {
               </label>
               <div className="form-input-area">
                 <Field type="checkbox" id="enabled" name="enabled" />
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="embedPoster" className="checkbox-label">
+                {intl.formatMessage(messages.embedPoster)}
+              </label>
+              <div className="form-input-area">
+                <Field type="checkbox" id="embedPoster" name="embedPoster" />
               </div>
             </div>
             <div className="form-row">

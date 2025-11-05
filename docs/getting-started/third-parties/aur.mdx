@@ -1,0 +1,42 @@
+---
+title: AUR (Advanced)
+description: Install Seerr using the Arch User Repository
+sidebar_position: 2
+---
+
+# AUR
+:::warning
+Third-party installation methods are maintained by the community. The Seerr team is not responsible for these packages.
+:::
+
+:::warning
+This method is not recommended for most users. It is intended for advanced users who are using Arch Linux or an Arch-based distribution.
+:::
+
+## Installation
+
+To install Seerr from the AUR, you can use an AUR helper like `yay` or `paru`:
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs groupId="aur-methods" queryString>
+  <TabItem value="yay" label="yay">
+    ```bash
+    yay -S seerr
+    ```
+  </TabItem>
+  <TabItem value="paru" label="paru">
+    ```bash
+    paru -S seerr
+    ```
+  </TabItem>
+</Tabs>
+
+:::info
+After installing Seerr, configure it by visiting the web UI at `http://[address]:5055` and completing the setup steps.
+:::
+
+:::tip
+You can find the environment file at `/etc/conf.d/seerr` and the service file at `/etc/systemd/system/seerr.service`.
+:::

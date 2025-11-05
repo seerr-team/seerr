@@ -76,14 +76,14 @@ class GithubAPI extends ExternalAPI {
     );
   }
 
-  public async getJellyseerrReleases({
+  public async getSeerrReleases({
     take = 20,
   }: {
     take?: number;
   } = {}): Promise<GitHubRelease[]> {
     try {
       const data = await this.get<GitHubRelease[]>(
-        '/repos/fallenbagel/jellyseerr/releases',
+        '/repos/seerr-team/seerr/releases',
         {
           params: {
             per_page: take,
@@ -94,14 +94,14 @@ class GithubAPI extends ExternalAPI {
       return data;
     } catch (e) {
       logger.warn(
-        "Failed to retrieve GitHub releases. This may be an issue on GitHub's end. Jellyseerr can't check if it's on the latest version.",
+        "Failed to retrieve GitHub releases. This may be an issue on GitHub's end. Seerr can't check if it's on the latest version.",
         { label: 'GitHub API', errorMessage: e.message }
       );
       return [];
     }
   }
 
-  public async getJellyseerrCommits({
+  public async getSeerrCommits({
     take = 20,
     branch = 'develop',
   }: {
@@ -110,7 +110,7 @@ class GithubAPI extends ExternalAPI {
   } = {}): Promise<GithubCommit[]> {
     try {
       const data = await this.get<GithubCommit[]>(
-        '/repos/fallenbagel/jellyseerr/commits',
+        '/repos/seerr-team/seerr/commits',
         {
           params: {
             per_page: take,
@@ -122,7 +122,7 @@ class GithubAPI extends ExternalAPI {
       return data;
     } catch (e) {
       logger.warn(
-        "Failed to retrieve GitHub commits. This may be an issue on GitHub's end. Jellyseerr can't check if it's on the latest version.",
+        "Failed to retrieve GitHub commits. This may be an issue on GitHub's end. Seerr can't check if it's on the latest version.",
         { label: 'GitHub API', errorMessage: e.message }
       );
       return [];

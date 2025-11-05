@@ -1,40 +1,5 @@
+import { type AvailableLocale } from '@server/types/languages';
 import React from 'react';
-
-export type AvailableLocale =
-  | 'ar'
-  | 'bg'
-  | 'ca'
-  | 'cs'
-  | 'da'
-  | 'de'
-  | 'en'
-  | 'el'
-  | 'es'
-  | 'es-MX'
-  | 'fi'
-  | 'fr'
-  | 'hr'
-  | 'he'
-  | 'hi'
-  | 'hu'
-  | 'it'
-  | 'ja'
-  | 'ko'
-  | 'lt'
-  | 'nb-NO'
-  | 'nl'
-  | 'pl'
-  | 'pt-BR'
-  | 'pt-PT'
-  | 'ro'
-  | 'ru'
-  | 'sq'
-  | 'sr'
-  | 'sv'
-  | 'tr'
-  | 'uk'
-  | 'zh-CN'
-  | 'zh-TW';
 
 type AvailableLanguageObject = Record<
   string,

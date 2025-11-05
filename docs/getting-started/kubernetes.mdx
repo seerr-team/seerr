@@ -1,21 +1,27 @@
 ---
-title: Kubernetes
+title: Kubernetes (Advanced)
 description: Install Jellyseerr in Kubernetes
-sidebar_position: 5
+sidebar_position: 3
 ---
 # Kubernetes
-:::info
+:::warning
 This method is not recommended for most users. It is intended for advanced users who are using Kubernetes.
+:::
+
+:::info
+All official Seerr charts are cryptographically signed and include a verified [Software Bill of Materials (SBOM)](https://cyclonedx.org/).
+
+To confirm that the chart you are using is authentic and unmodified, please refer to the [Verifying Signed Artifacts](/using-jellyseerr/advanced/verifying-signed-artifacts#verifying-signed-helm-charts) guide.
 :::
 
 ## Installation
 ```console
-helm install jellyseerr oci://ghcr.io/fallenbagel/jellyseerr/jellyseerr-chart
+helm install seerr oci://ghcr.io/seerr-team/seerr/seerr-chart
 ```
-Helm values can be found in the Jellyseerr repository under [charts/jellyseerr-chart/README.md](https://github.com/Fallenbagel/jellyseerr/tree/develop/charts/jellyseerr-chart).
+Helm values can be found in the Jellyseerr repository under [charts/jellyseerr-chart/README.md](https://github.com/fallenbagel/jellyseerr/tree/develop/charts/jellyseerr-chart).
 
 Verify the signature with [cosign](https://docs.sigstore.dev/cosign/system_config/installation/) (replace [tag], with the TAG you want to verify) :
 ```console
-cosign verify ghcr.io/fallenbagel/jellyseerr/jellyseerr-chart:[tag] --certificate-identity=https://github.com/Fallenbagel/jellyseerr/.github/workflows/helm.yml@refs/heads/main --certificate-oidc-issuer=https://token.ac
+cosign verify ghcr.io/seerr-team/seerr/seerr-chart:[tag] --certificate-identity=https://github.com/fallenbagel/jellyseerr/.github/workflows/helm.yml@refs/heads/main --certificate-oidc-issuer=https://token.ac
 tions.githubusercontent.com
 ```

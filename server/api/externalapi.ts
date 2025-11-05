@@ -10,7 +10,7 @@ const DEFAULT_TTL = 300;
 // 10 seconds default rolling buffer (in ms)
 const DEFAULT_ROLLING_BUFFER = 10000;
 
-interface ExternalAPIOptions {
+export interface ExternalAPIOptions {
   nodeCache?: NodeCache;
   headers?: Record<string, unknown>;
   rateLimit?: {
