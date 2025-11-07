@@ -145,7 +145,10 @@ export class MediaRequest {
               mbId: requestBody.mediaId.toString(),
               mediaType: requestBody.mediaType,
             }
-          : { tmdbId: requestBody.mediaId, mediaType: requestBody.mediaType },
+          : {
+              tmdbId: requestBody.mediaId,
+              mediaType: requestBody.mediaType,
+            },
       relations: ['requests'],
     });
 
@@ -226,7 +229,8 @@ export class MediaRequest {
       if (
         (requestBody.mediaType === MediaType.MOVIE ||
           requestBody.mediaType === MediaType.MUSIC) &&
-        existing[0].status !== MediaRequestStatus.DECLINED
+        existing[0].status !== MediaRequestStatus.DECLINED &&
+        existing[0].status !== MediaRequestStatus.COMPLETED
       ) {
         logger.warn('Duplicate request for media blocked', {
           id:
@@ -477,7 +481,7 @@ export class MediaRequest {
       await requestRepository.save(request);
       return request;
     } else {
-      const requestedMediaShow = requestedMedia as Awaited<
+      const tmdbMediaShow = requestedMedia as Awaited<
         ReturnType<typeof tmdb.getTvShow>
       >;
       let requestedSeasons =
@@ -822,9 +826,9 @@ export class MediaRequest {
 
     try {
       const mediaType =
-        this.type === MediaType.MOVIE
+        entity.type === MediaType.MOVIE
           ? 'Movie'
-          : this.type === MediaType.TV
+          : entity.type === MediaType.TV
           ? 'Series'
           : 'Album';
       let event: string | undefined;
@@ -906,7 +910,7 @@ export class MediaRequest {
             },
           ],
         });
-      } else if (this.type === MediaType.MUSIC && media.mbId) {
+      } else if (entity.type === MediaType.MUSIC && media.mbId) {
         const album = await listenbrainz.getAlbum(media.mbId);
         const coverArtResponse = await coverArt.getCoverArt(media.mbId);
         const coverArtUrl =
@@ -921,10 +925,10 @@ export class MediaRequest {
 
         notificationManager.sendNotification(type, {
           media,
-          request: this,
+          request: entity,
           notifyAdmin,
           notifySystem,
-          notifyUser: notifyAdmin ? undefined : this.requestedBy,
+          notifyUser: notifyAdmin ? undefined : entity.requestedBy,
           event,
           subject: `${album.release_group_metadata.release_group.name} by ${album.release_group_metadata.artist.name}`,
           message: truncate(artistWiki?.content ?? '', {
