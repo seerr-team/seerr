@@ -65,8 +65,8 @@ export class Blacklist implements BlacklistItem {
       blacklistRequest: {
         mediaType: MediaType;
         title?: ZodOptional<ZodString>['_output'];
-        tmdbId: ZodNumber['_output'];
-        mbId?: ZodOptional<ZodString>['_output']
+        tmdbId?: ZodNumber['_output'];
+        mbId?: ZodOptional<ZodString>['_output'];
         blacklistedTags?: string;
       };
     },
