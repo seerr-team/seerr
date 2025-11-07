@@ -16,7 +16,7 @@ import type {
   TvResult,
 } from '@server/models/Search';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import useSWRInfinite from 'swr/infinite';
 
 interface MixedResult {
@@ -34,7 +34,7 @@ interface MixedResult {
 
 interface MediaSliderProps {
   title: string;
-  url?: string;
+  url: string;
   linkUrl?: string;
   sliderKey: string;
   hideWhenEmpty?: boolean;
@@ -58,20 +58,13 @@ const MediaSlider = ({
   sliderKey,
   hideWhenEmpty = false,
   onNewTitles,
-  items: passedItems,
   totalItems,
 }: MediaSliderProps) => {
   const settings = useSettings();
   const { hasPermission } = useUser();
-  const [titles, setTitles] = useState<
-    (MovieResult | TvResult | PersonResult | AlbumResult | ArtistResult)[]
-  >([]);
   const { data, error, setSize, size } = useSWRInfinite<MixedResult>(
     (pageIndex: number, previousPageData: MixedResult | null) => {
-      if (
-        !url ||
-        (previousPageData && pageIndex + 1 > previousPageData.totalPages)
-      ) {
+      if (previousPageData && pageIndex + 1 > previousPageData.totalPages) {
         return null;
       }
 
@@ -85,33 +78,19 @@ const MediaSlider = ({
     }
   );
 
-  useEffect(() => {
-    const newTitles =
-      passedItems ??
-      (data ?? []).reduce(
-        (a, v) => [...a, ...v.results],
-        [] as (
-          | MovieResult
-          | TvResult
-          | PersonResult
-          | AlbumResult
-          | ArtistResult
-        )[]
-      );
+  let titles = (data ?? []).reduce(
+    (a, v) => [...a, ...v.results],
+    [] as (MovieResult | TvResult | PersonResult | AlbumResult | ArtistResult)[]
+  );
 
-    if (settings.currentSettings.hideAvailable) {
-      setTitles(
-        newTitles.filter(
-          (i) =>
-            (i.mediaType === 'movie' || i.mediaType === 'tv') &&
-            i.mediaInfo?.status !== MediaStatus.AVAILABLE &&
-            i.mediaInfo?.status !== MediaStatus.PARTIALLY_AVAILABLE
-        )
-      );
-    } else {
-      setTitles(newTitles);
-    }
-  }, [data, passedItems, settings.currentSettings.hideAvailable]);
+  if (settings.currentSettings.hideAvailable) {
+    titles = titles.filter(
+      (i) =>
+        (i.mediaType === 'movie' || i.mediaType === 'tv') &&
+        i.mediaInfo?.status !== MediaStatus.AVAILABLE &&
+        i.mediaInfo?.status !== MediaStatus.PARTIALLY_AVAILABLE
+    );
+  }
 
   if (settings.currentSettings.hideBlacklisted) {
     titles = titles.filter(
@@ -123,7 +102,6 @@ const MediaSlider = ({
 
   useEffect(() => {
     if (
-      !passedItems &&
       titles.length < 24 &&
       size < 5 &&
       (data?.[0]?.totalResults ?? 0) > size * 20
@@ -136,14 +114,9 @@ const MediaSlider = ({
       // at all for our purposes.
       onNewTitles(titles.length);
     }
-  }, [titles, setSize, size, data, onNewTitles, passedItems]);
+  }, [titles, setSize, size, data, onNewTitles]);
 
-  if (
-    hideWhenEmpty &&
-    (!passedItems
-      ? (data?.[0].results ?? []).length === 0
-      : titles.length === 0)
-  ) {
+  if (hideWhenEmpty && (data?.[0].results ?? []).length === 0) {
     return null;
   }
 
@@ -271,7 +244,7 @@ const MediaSlider = ({
       </div>
       <Slider
         sliderKey={sliderKey}
-        isLoading={!passedItems && !data && !error}
+        isLoading={!data && !error}
         isEmpty={false}
         items={finalTitles}
       />

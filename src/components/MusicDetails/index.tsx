@@ -32,7 +32,7 @@ import { IssueStatus } from '@server/constants/issue';
 import { MediaStatus, MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import type { MusicDetails as MusicDetailsType } from '@server/models/Music';
-import type { AlbumResult, ArtistResult } from '@server/models/Search';
+import type { AlbumResult } from '@server/models/Search';
 import axios from 'axios';
 import 'country-flag-icons/3x2/flags.css';
 import Link from 'next/link';
@@ -76,16 +76,6 @@ interface MusicDetailsProps {
 interface ArtistDetails {
   artist: {
     releaseGroups: AlbumResult[];
-    similarArtists: {
-      artists: {
-        tmdbPersonId: number;
-        artist_mbid: string;
-        name: string;
-        type: string;
-        artistThumb: string;
-        score: number;
-      }[];
-    };
     pagination?: {
       totalItems: number;
     };
@@ -766,7 +756,7 @@ const MusicDetails = ({ music }: MusicDetailsProps) => {
         title={intl.formatMessage(messages.discography, {
           artistName: data?.artist.name.split(/[&,]|\sfeat\./)[0].trim() ?? '',
         })}
-        items={artistData?.artist.releaseGroups}
+        url={`/api/v1/music/${data.id}/artist-discography`}
         totalItems={artistData?.artist.pagination?.totalItems}
         linkUrl={`/music/${data.id}/discography`}
         hideWhenEmpty
@@ -775,20 +765,7 @@ const MusicDetails = ({ music }: MusicDetailsProps) => {
       <MediaSlider
         sliderKey="artist-similar"
         title={intl.formatMessage(messages.similarArtists)}
-        items={
-          artistData?.artist.similarArtists.artists.map(
-            (artist): ArtistResult => ({
-              id: artist.artist_mbid,
-              mediaType: 'artist',
-              name: artist.name,
-              type: artist.type as 'Group' | 'Person',
-              artistThumb: artist.artistThumb,
-              score: artist.score,
-              tmdbPersonId: artist.tmdbPersonId,
-              'sort-name': artist.name,
-            })
-          ) ?? []
-        }
+        url={`/api/v1/music/${data.id}/artist-similar`}
         linkUrl={`/music/${data.id}/similar`}
         hideWhenEmpty
       />

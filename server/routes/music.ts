@@ -203,14 +203,8 @@ musicRoutes.get('/:id', async (req, res, next) => {
 musicRoutes.get('/:id/artist', async (req, res, next) => {
   try {
     const listenbrainzApi = new ListenBrainzAPI();
-    const personMapper = new TmdbPersonMapper();
     const theAudioDb = new TheAudioDb();
-    const metadataAlbumRepository = getRepository(MetadataAlbum);
     const metadataArtistRepository = getRepository(MetadataArtist);
-
-    const page = Number(req.query.page) || 1;
-    const pageSize = Number(req.query.pageSize) || 20;
-    const isSlider = req.query.slider === 'true';
 
     const albumData = await listenbrainzApi.getAlbum(req.params.id);
     const artistData = albumData?.release_group_metadata?.artist?.artists?.[0];
@@ -242,6 +236,72 @@ musicRoutes.get('/:id/artist', async (req, res, next) => {
       return res.status(404).json({ status: 404, message: 'Artist not found' });
     }
 
+    const [artistImagesResult] = await Promise.allSettled([
+      !cachedTheAudioDb &&
+      !metadataArtist?.tadbThumb &&
+      !metadataArtist?.tadbCover
+        ? theAudioDb.getArtistImages(artistData.artist_mbid)
+        : Promise.resolve(null),
+    ]);
+
+    const artistImages =
+      artistImagesResult.status === 'fulfilled'
+        ? artistImagesResult.value
+        : null;
+
+    return res.status(200).json({
+      artist: {
+        ...artistDetails,
+        artistThumb:
+          cachedTheAudioDb?.artistThumb ??
+          metadataArtist?.tadbThumb ??
+          artistImages?.artistThumb ??
+          null,
+        artistBackdrop:
+          cachedTheAudioDb?.artistBackground ??
+          metadataArtist?.tadbCover ??
+          artistImages?.artistBackground ??
+          null,
+      },
+    });
+  } catch (error) {
+    logger.error('Something went wrong retrieving artist details', {
+      label: 'Music API',
+      errorMessage: error.message,
+      artistId: req.params.id,
+    });
+    return next({ status: 500, message: 'Unable to retrieve artist details.' });
+  }
+});
+
+musicRoutes.get('/:id/artist-discography', async (req, res, next) => {
+  try {
+    const listenbrainzApi = new ListenBrainzAPI();
+    const metadataAlbumRepository = getRepository(MetadataAlbum);
+
+    const page = Number(req.query.page) || 1;
+    const pageSize = Number(req.query.pageSize) || 20;
+    const isSlider = req.query.slider === 'true';
+
+    const albumData = await listenbrainzApi.getAlbum(req.params.id);
+    const artistData = albumData?.release_group_metadata?.artist?.artists?.[0];
+    const artistType = artistData?.type;
+
+    if (!artistData?.artist_mbid || artistType === 'Other') {
+      return res.status(404).json({
+        status: 404,
+        message: 'Artist details not available for this type',
+      });
+    }
+
+    const artistDetails = await listenbrainzApi.getArtist(
+      artistData.artist_mbid
+    );
+
+    if (!artistDetails) {
+      return res.status(404).json({ status: 404, message: 'Artist not found' });
+    }
+
     const totalReleaseGroups = artistDetails.releaseGroups.length;
     const paginatedReleaseGroups =
       isSlider || page === 1
@@ -252,31 +312,129 @@ musicRoutes.get('/:id/artist', async (req, res, next) => {
           );
 
     const releaseGroupIds = paginatedReleaseGroups.map((rg) => rg.mbid);
-    const similarArtistIds =
-      artistDetails.similarArtists?.artists?.map((a) => a.artist_mbid) ?? [];
 
     const mediaResponses = await Promise.allSettled([
       Media.getRelatedMedia(req.user, releaseGroupIds),
       metadataAlbumRepository.find({
         where: { mbAlbumId: In(releaseGroupIds) },
       }),
-      similarArtistIds.length > 0
-        ? metadataArtistRepository.find({
-            where: { mbArtistId: In(similarArtistIds) },
-          })
-        : Promise.resolve([]),
     ]);
 
     const relatedMedia =
       mediaResponses[0].status === 'fulfilled' ? mediaResponses[0].value : [];
     const albumMetadata =
       mediaResponses[1].status === 'fulfilled' ? mediaResponses[1].value : [];
-    const similarArtistMetadata =
-      mediaResponses[2].status === 'fulfilled' ? mediaResponses[2].value : [];
 
     const albumMetadataMap = new Map(
       albumMetadata.map((metadata) => [metadata.mbAlbumId, metadata])
     );
+
+    const relatedMediaMap = new Map(
+      relatedMedia.map((media) => [media.mbId, media])
+    );
+
+    const transformedReleaseGroups = paginatedReleaseGroups.map(
+      (releaseGroup) => {
+        const metadata = albumMetadataMap.get(releaseGroup.mbid);
+        return {
+          id: releaseGroup.mbid,
+          mediaType: 'album',
+          title: releaseGroup.name,
+          'first-release-date': releaseGroup.date,
+          'artist-credit': [{ name: releaseGroup.artist_credit_name }],
+          'primary-type': releaseGroup.type || 'Other',
+          posterPath: metadata?.caaUrl ?? null,
+          needsCoverArt: !metadata?.caaUrl,
+          mediaInfo: relatedMediaMap.get(releaseGroup.mbid),
+        };
+      }
+    );
+
+    return res.status(200).json({
+      releaseGroups: transformedReleaseGroups,
+      pagination: {
+        page,
+        pageSize,
+        totalItems: totalReleaseGroups,
+        totalPages: Math.ceil(totalReleaseGroups / pageSize),
+      },
+    });
+  } catch (error) {
+    logger.error('Something went wrong retrieving artist discography', {
+      label: 'Music API',
+      errorMessage: error.message,
+      artistId: req.params.id,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to retrieve artist discography.',
+    });
+  }
+});
+
+musicRoutes.get('/:id/artist-similar', async (req, res, next) => {
+  try {
+    const listenbrainzApi = new ListenBrainzAPI();
+    const personMapper = new TmdbPersonMapper();
+    const theAudioDb = new TheAudioDb();
+    const metadataArtistRepository = getRepository(MetadataArtist);
+
+    const page = Number(req.query.page) || 1;
+    const pageSize = Number(req.query.pageSize) || 20;
+
+    const albumData = await listenbrainzApi.getAlbum(req.params.id);
+    const artistData = albumData?.release_group_metadata?.artist?.artists?.[0];
+    const artistType = artistData?.type;
+
+    if (!artistData?.artist_mbid || artistType === 'Other') {
+      return res.status(404).json({
+        status: 404,
+        message: 'Artist details not available for this type',
+      });
+    }
+
+    const artistDetails = await listenbrainzApi.getArtist(
+      artistData.artist_mbid
+    );
+
+    if (!artistDetails) {
+      return res.status(404).json({ status: 404, message: 'Artist not found' });
+    }
+
+    const allSimilarArtists =
+      artistDetails.similarArtists?.artists?.sort(
+        (a, b) => b.score - a.score
+      ) ?? [];
+
+    const totalResults = allSimilarArtists.length;
+    const totalPages = Math.ceil(totalResults / pageSize);
+
+    const paginatedSimilarArtists = allSimilarArtists.slice(
+      (page - 1) * pageSize,
+      page * pageSize
+    );
+
+    const similarArtistIds = paginatedSimilarArtists.map((a) => a.artist_mbid);
+
+    if (similarArtistIds.length === 0) {
+      return res.status(200).json({
+        page,
+        totalPages,
+        totalResults,
+        results: [],
+      });
+    }
+
+    const [similarArtistMetadataResult] = await Promise.allSettled([
+      metadataArtistRepository.find({
+        where: { mbArtistId: In(similarArtistIds) },
+      }),
+    ]);
+
+    const similarArtistMetadata =
+      similarArtistMetadataResult.status === 'fulfilled'
+        ? similarArtistMetadataResult.value
+        : [];
 
     const similarArtistMetadataMap = new Map(
       similarArtistMetadata.map((metadata) => [metadata.mbArtistId, metadata])
@@ -288,8 +446,8 @@ musicRoutes.get('/:id/artist', async (req, res, next) => {
     });
 
     const personArtists =
-      artistDetails.similarArtists?.artists
-        ?.filter((artist) => artist.type === 'Person')
+      paginatedSimilarArtists
+        .filter((artist) => artist.type === 'Person')
         .filter((artist) => {
           const metadata = similarArtistMetadataMap.get(artist.artist_mbid);
           return !metadata?.tmdbPersonId;
@@ -315,11 +473,6 @@ musicRoutes.get('/:id/artist', async (req, res, next) => {
             })
           )
         : Promise.resolve(similarArtistMetadata),
-      !cachedTheAudioDb &&
-      !metadataArtist?.tadbThumb &&
-      !metadataArtist?.tadbCover
-        ? theAudioDb.getArtistImages(artistData.artist_mbid)
-        : Promise.resolve(null),
     ]);
 
     const artistImageResults =
@@ -328,14 +481,6 @@ musicRoutes.get('/:id/artist', async (req, res, next) => {
       artistResponses[1].status === 'fulfilled'
         ? artistResponses[1].value
         : similarArtistMetadata;
-    const artistImagesResult =
-      artistResponses[2].status === 'fulfilled'
-        ? artistResponses[2].value
-        : null;
-
-    const relatedMediaMap = new Map(
-      relatedMedia.map((media) => [media.mbId, media])
-    );
 
     const finalArtistMetadataMap = new Map(
       (updatedArtistMetadata || similarArtistMetadata).map((metadata) => [
@@ -344,80 +489,46 @@ musicRoutes.get('/:id/artist', async (req, res, next) => {
       ])
     );
 
-    const transformedReleaseGroups = paginatedReleaseGroups.map(
-      (releaseGroup) => {
-        const metadata = albumMetadataMap.get(releaseGroup.mbid);
-        return {
-          id: releaseGroup.mbid,
-          mediaType: 'album',
-          title: releaseGroup.name,
-          'first-release-date': releaseGroup.date,
-          'artist-credit': [{ name: releaseGroup.artist_credit_name }],
-          'primary-type': releaseGroup.type || 'Other',
-          posterPath: metadata?.caaUrl ?? null,
-          needsCoverArt: !metadata?.caaUrl,
-          mediaInfo: relatedMediaMap.get(releaseGroup.mbid),
-        };
-      }
-    );
+    const transformedSimilarArtists = paginatedSimilarArtists.map((artist) => {
+      const metadata = finalArtistMetadataMap.get(artist.artist_mbid);
+      const artistImageResult =
+        artistImageResults[
+          artist.artist_mbid as keyof typeof artistImageResults
+        ];
 
-    const transformedSimilarArtists =
-      artistDetails.similarArtists?.artists?.map((artist) => {
-        const metadata = finalArtistMetadataMap.get(artist.artist_mbid);
-        const artistImageResult =
-          artistImageResults[
-            artist.artist_mbid as keyof typeof artistImageResults
-          ];
+      const artistThumb =
+        metadata?.tadbThumb || (artistImageResult?.artistThumb ?? null);
 
-        const artistThumb =
-          metadata?.tadbThumb || (artistImageResult?.artistThumb ?? null);
-
-        const artistBackground =
-          metadata?.tadbCover || (artistImageResult?.artistBackground ?? null);
-
-        return {
-          ...artist,
-          artistThumb: metadata?.tmdbThumb ?? artistThumb,
-          artistBackground: artistBackground,
-          tmdbPersonId: metadata?.tmdbPersonId
-            ? Number(metadata.tmdbPersonId)
-            : null,
-        };
-      }) ?? [];
+      return {
+        id: artist.artist_mbid,
+        mediaType: 'artist',
+        name: artist.name,
+        type: artist.type as 'Group' | 'Person',
+        artistThumb: metadata?.tmdbThumb ?? artistThumb,
+        score: artist.score,
+        tmdbPersonId: metadata?.tmdbPersonId
+          ? Number(metadata.tmdbPersonId)
+          : null,
+        'sort-name': artist.name,
+      };
+    });
 
     return res.status(200).json({
-      artist: {
-        ...artistDetails,
-        artistThumb:
-          cachedTheAudioDb?.artistThumb ??
-          metadataArtist?.tadbThumb ??
-          artistImagesResult?.artistThumb ??
-          null,
-        artistBackdrop:
-          cachedTheAudioDb?.artistBackground ??
-          metadataArtist?.tadbCover ??
-          artistImagesResult?.artistBackground ??
-          null,
-        similarArtists: {
-          ...artistDetails.similarArtists,
-          artists: transformedSimilarArtists,
-        },
-        releaseGroups: transformedReleaseGroups,
-        pagination: {
-          page,
-          pageSize,
-          totalItems: totalReleaseGroups,
-          totalPages: Math.ceil(totalReleaseGroups / pageSize),
-        },
-      },
+      page,
+      totalPages,
+      totalResults,
+      results: transformedSimilarArtists,
     });
   } catch (error) {
-    logger.error('Something went wrong retrieving artist details', {
+    logger.error('Something went wrong retrieving similar artists', {
       label: 'Music API',
       errorMessage: error.message,
       artistId: req.params.id,
     });
-    return next({ status: 500, message: 'Unable to retrieve artist details.' });
+    return next({
+      status: 500,
+      message: 'Unable to retrieve similar artists.',
+    });
   }
 });
 
