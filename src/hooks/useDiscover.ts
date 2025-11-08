@@ -118,7 +118,8 @@ const useDiscover = <
       (i) =>
         (i.mediaType === 'movie' ||
           i.mediaType === 'tv' ||
-          i.mediaType === 'music') &&
+          i.mediaType === 'album' ||
+          i.mediaType === 'artist') &&
         i.mediaInfo?.status !== MediaStatus.AVAILABLE &&
         i.mediaInfo?.status !== MediaStatus.PARTIALLY_AVAILABLE
     );
@@ -131,7 +132,10 @@ const useDiscover = <
   ) {
     titles = titles.filter(
       (i) =>
-        (i.mediaType === 'movie' || i.mediaType === 'tv') &&
+        (i.mediaType === 'movie' ||
+          i.mediaType === 'tv' ||
+          i.mediaType === 'album' ||
+          i.mediaType === 'artist') &&
         i.mediaInfo?.status !== MediaStatus.BLACKLISTED
     );
   }

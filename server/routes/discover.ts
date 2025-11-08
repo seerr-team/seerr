@@ -883,8 +883,6 @@ discoverRoutes.get('/music', async (req, res, next) => {
     }
 
     const freshReleasesData = await listenbrainz.getFreshReleases({
-      offset: 0,
-      count: 20,
       days,
       sort: apiSortField,
     });

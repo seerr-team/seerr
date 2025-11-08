@@ -5,6 +5,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import {
   countActiveFilters,
   prepareFilterValues,
+  type FilterOptions,
 } from '@app/components/Discover/constants';
 import FilterSlideover from '@app/components/Discover/FilterSlideover';
 import useDiscover from '@app/hooks/useDiscover';
@@ -55,10 +56,13 @@ const DiscoverMusic = () => {
     titles,
     fetchMore,
     error,
-  } = useDiscover<AlbumResult>('/api/v1/discover/music', {
-    ...preparedFilters,
-    days: preparedFilters.days ?? '7',
-  });
+  } = useDiscover<AlbumResult, unknown, FilterOptions>(
+    '/api/v1/discover/music',
+    {
+      ...preparedFilters,
+      days: preparedFilters.days ?? '7',
+    }
+  );
 
   if (error) {
     return <Error statusCode={500} />;
