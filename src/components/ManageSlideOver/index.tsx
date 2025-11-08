@@ -136,24 +136,24 @@ const ManageSlideOver = ({
   const isDefaultService = () => {
     // TODO: need to fix this
     return true;
-    if (data.mediaInfo) {
-      if (data.mediaInfo.mediaType === MediaType.MOVIE) {
-        return (
-          radarrData?.find(
-            (radarr) =>
-              radarr.isDefault && radarr.id === data.mediaInfo?.serviceId
-          ) !== undefined
-        );
-      } else {
-        return (
-          sonarrData?.find(
-            (sonarr) =>
-              sonarr.isDefault && sonarr.id === data.mediaInfo?.serviceId
-          ) !== undefined
-        );
-      }
-    }
-    return false;
+    // if (data.mediaInfo) {
+    //   if (data.mediaInfo.mediaType === MediaType.MOVIE) {
+    //     return (
+    //       radarrData?.find(
+    //         (radarr) =>
+    //           radarr.isDefault && radarr.id === data.mediaInfo?.serviceId
+    //       ) !== undefined
+    //     );
+    //   } else {
+    //     return (
+    //       sonarrData?.find(
+    //         (sonarr) =>
+    //           sonarr.isDefault && sonarr.id === data.mediaInfo?.serviceId
+    //       ) !== undefined
+    //     );
+    //   }
+    // }
+    // return false;
   };
 
   const isDefault4kService = () => {
