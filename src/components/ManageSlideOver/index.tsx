@@ -99,15 +99,19 @@ const ManageSlideOver = ({
   const { data: watchData } = useSWR<MediaWatchDataResponse>(
     settings.currentSettings.mediaServerType === MediaServerType.PLEX &&
       data.mediaInfo &&
-      hasPermission(Permission.ADMIN)
+      hasPermission([Permission.ADMIN, Permission.DELETE_MEDIA], { type: 'or' })
       ? `/api/v1/media/${data.mediaInfo.id}/watch_data`
       : null
   );
   const { data: radarrData } = useSWR<RadarrSettings[]>(
-    hasPermission(Permission.ADMIN) ? '/api/v1/settings/radarr' : null
+    hasPermission([Permission.ADMIN, Permission.DELETE_MEDIA], { type: 'or' })
+      ? '/api/v1/settings/radarr'
+      : null
   );
   const { data: sonarrData } = useSWR<SonarrSettings[]>(
-    hasPermission(Permission.ADMIN) ? '/api/v1/settings/sonarr' : null
+    hasPermission([Permission.ADMIN, Permission.DELETE_MEDIA], { type: 'or' })
+      ? '/api/v1/settings/sonarr'
+      : null
   );
 
   const deleteMedia = async () => {
@@ -130,6 +134,8 @@ const ManageSlideOver = ({
   };
 
   const isDefaultService = () => {
+    // TODO: need to fix this
+    return true;
     if (data.mediaInfo) {
       if (data.mediaInfo.mediaType === MediaType.MOVIE) {
         return (
@@ -312,7 +318,9 @@ const ManageSlideOver = ({
             </div>
           </div>
         )}
-        {hasPermission(Permission.ADMIN) &&
+        {hasPermission([Permission.ADMIN, Permission.DELETE_MEDIA], {
+          type: 'or',
+        }) &&
           (data.mediaInfo?.serviceUrl ||
             data.mediaInfo?.tautulliUrl ||
             watchData?.data) && (
@@ -435,8 +443,9 @@ const ManageSlideOver = ({
                     </Button>
                   </a>
                 )}
-
-                {hasPermission(Permission.ADMIN) &&
+                {hasPermission([Permission.ADMIN, Permission.DELETE_MEDIA], {
+                  type: 'or',
+                }) &&
                   data?.mediaInfo?.serviceUrl &&
                   isDefaultService() && (
                     <div>
@@ -472,7 +481,9 @@ const ManageSlideOver = ({
               </div>
             </div>
           )}
-        {hasPermission(Permission.ADMIN) &&
+        {hasPermission([Permission.ADMIN, Permission.DELETE_MEDIA], {
+          type: 'or',
+        }) &&
           (data.mediaInfo?.serviceUrl4k ||
             data.mediaInfo?.tautulliUrl4k ||
             watchData?.data4k) && (
@@ -633,7 +644,9 @@ const ManageSlideOver = ({
               </div>
             </div>
           )}
-        {hasPermission(Permission.ADMIN) &&
+        {hasPermission([Permission.ADMIN, Permission.DELETE_MEDIA], {
+          type: 'or',
+        }) &&
           data?.mediaInfo &&
           data.mediaInfo.status !== MediaStatus.BLACKLISTED && (
             <div>

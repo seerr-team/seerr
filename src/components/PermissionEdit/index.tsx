@@ -17,6 +17,9 @@ export const messages = defineMessages('components.PermissionEdit', {
   managerequests: 'Manage Requests',
   managerequestsDescription:
     'Grant permission to manage media requests. All requests made by a user with this permission will be automatically approved.',
+  deletemedia: 'Delete Media',
+  deletemediaDescription:
+    'Grant permission to delete media from Sonarr and Radarr.',
   request: 'Request',
   requestDescription: 'Grant permission to submit requests for non-4K media.',
   requestMovies: 'Request Movies',
@@ -163,6 +166,12 @@ export const PermissionEdit = ({
           permission: Permission.WATCHLIST_VIEW,
         },
       ],
+    },
+    {
+      id: 'deletemedia',
+      name: intl.formatMessage(messages.deletemedia),
+      description: intl.formatMessage(messages.deletemediaDescription),
+      permission: Permission.DELETE_MEDIA,
     },
     {
       id: 'request',

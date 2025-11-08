@@ -189,7 +189,9 @@ mediaRoutes.delete(
 
 mediaRoutes.delete(
   '/:id/file',
-  isAuthenticated(Permission.MANAGE_REQUESTS),
+  isAuthenticated([Permission.ADMIN, Permission.DELETE_MEDIA], {
+    type: 'or',
+  }),
   async (req, res, next) => {
     try {
       const settings = getSettings();
@@ -282,7 +284,7 @@ mediaRoutes.delete(
 
 mediaRoutes.get<{ id: string }, MediaWatchDataResponse>(
   '/:id/watch_data',
-  isAuthenticated(Permission.ADMIN),
+  isAuthenticated([Permission.ADMIN, Permission.DELETE_MEDIA], { type: 'or' }),
   async (req, res, next) => {
     const settings = getSettings().tautulli;
 
