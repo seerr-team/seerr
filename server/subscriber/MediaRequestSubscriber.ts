@@ -867,7 +867,12 @@ export class MediaRequestSubscriber
         });
 
         if (!media) {
-          throw new Error('Media data not found');
+          logger.error('Media data not found', {
+            label: 'Media Request',
+            requestId: entity.id,
+            mediaId: entity.media.id,
+          });
+          return;
         }
 
         if (media.status === MediaStatus.AVAILABLE) {
@@ -877,9 +882,11 @@ export class MediaRequestSubscriber
             mediaId: entity.media.id,
           });
 
-          const requestRepository = getRepository(MediaRequest);
-          entity.status = MediaRequestStatus.APPROVED;
-          await requestRepository.save(entity);
+          if (entity.status !== MediaRequestStatus.APPROVED) {
+            const requestRepository = getRepository(MediaRequest);
+            entity.status = MediaRequestStatus.APPROVED;
+            await requestRepository.save(entity);
+          }
           return;
         }
 
@@ -1022,21 +1029,24 @@ export class MediaRequestSubscriber
         lidarr
           .addAlbum(addAlbumPayload)
           .then(async (result) => {
-            const updateFields = {
-              externalServiceId: result.id,
-              externalServiceSlug: result.titleSlug,
-              serviceId: lidarrSettings?.id,
-            };
+            const media = await mediaRepository.findOne({
+              where: { id: entity.media.id },
+            });
 
-            await mediaRepository.update({ id: entity.media.id }, updateFields);
+            if (!media) {
+              throw new Error('Media data not found');
+            }
+
+            media.externalServiceId = result.id;
+            media.externalServiceSlug = result.titleSlug;
+            media.serviceId = lidarrSettings?.id;
+            await mediaRepository.save(media);
           })
           .catch(async (error) => {
             const requestRepository = getRepository(MediaRequest);
 
-            await requestRepository.update(
-              { id: entity.id },
-              { status: MediaRequestStatus.FAILED }
-            );
+            entity.status = MediaRequestStatus.FAILED;
+            requestRepository.save(entity);
 
             logger.warn(
               'Something went wrong sending album request to Lidarr, marking status as FAILED',
@@ -1074,6 +1084,7 @@ export class MediaRequestSubscriber
 
   public async updateParentStatus(entity: MediaRequest): Promise<void> {
     const mediaRepository = getRepository(Media);
+
     const media = await mediaRepository.findOne({
       where: { id: entity.media.id },
       relations: { requests: true },
