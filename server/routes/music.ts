@@ -351,13 +351,10 @@ musicRoutes.get('/:id/artist-discography', async (req, res, next) => {
     );
 
     return res.status(200).json({
-      releaseGroups: transformedReleaseGroups,
-      pagination: {
-        page,
-        pageSize,
-        totalItems: totalReleaseGroups,
-        totalPages: Math.ceil(totalReleaseGroups / pageSize),
-      },
+      page,
+      totalPages: Math.ceil(totalReleaseGroups / pageSize),
+      totalResults: totalReleaseGroups,
+      results: transformedReleaseGroups,
     });
   } catch (error) {
     logger.error('Something went wrong retrieving artist discography', {

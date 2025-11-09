@@ -7605,6 +7605,129 @@ paths:
                     type: integer
                   message:
                     type: string
+  /music/{mbId}/artist-discography:
+    get:
+      summary: Get artist discography
+      description: Returns a paginated list of release groups for the album's primary artist.
+      tags:
+        - music
+      parameters:
+        - in: path
+          name: mbId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: number
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: number
+            default: 20
+        - in: query
+          name: slider
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Artist discography
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                  totalPages:
+                    type: number
+                  totalResults:
+                    type: number
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        primary-type:
+                          type: string
+                        posterPath:
+                          type: string
+                          nullable: true
+                        needsCoverArt:
+                          type: boolean
+                        mediaInfo:
+                          type: object
+                          nullable: true
+        '404':
+          description: Artist not found
+        '500':
+          description: Internal server error
+  /music/{mbId}/artist-similar:
+    get:
+      summary: Get similar artists
+      description: Returns a paginated list of similar artists for the album's primary artist.
+      tags:
+        - music
+      parameters:
+        - in: path
+          name: mbId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: number
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: number
+            default: 20
+      responses:
+        '200':
+          description: Similar artists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        type:
+                          type: string
+                        artistThumb:
+                          type: string
+                          nullable: true
+                        score:
+                          type: number
+                        tmdbPersonId:
+                          type: number
+                          nullable: true
+                  page:
+                    type: number
+                  totalPages:
+                    type: number
+                  totalResults:
+                    type: number
+        '404':
+          description: Artist not found
+        '500':
+          description: Internal server error
   /media:
     get:
       summary: Get media
