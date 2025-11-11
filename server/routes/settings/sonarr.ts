@@ -6,12 +6,6 @@ import { Router } from 'express';
 
 const sonarrRoutes = Router();
 
-sonarrRoutes.get('/', (_req, res) => {
-  const settings = getSettings();
-
-  res.status(200).json(settings.sonarr);
-});
-
 sonarrRoutes.post('/', async (req, res) => {
   const settings = getSettings();
 

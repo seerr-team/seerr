@@ -6,12 +6,6 @@ import { Router } from 'express';
 
 const radarrRoutes = Router();
 
-radarrRoutes.get('/', (_req, res) => {
-  const settings = getSettings();
-
-  res.status(200).json(settings.radarr);
-});
-
 radarrRoutes.post('/', async (req, res) => {
   const settings = getSettings();
 
