@@ -56,7 +56,7 @@ export const verifyPushSubscription = async (
     );
 
     return expectedServerKey === currentServerKey && data.endpoint === endpoint;
-  } catch {
+  } catch (error) {
     return false;
   }
 };
@@ -74,10 +74,23 @@ export const verifyAndResubscribePushSubscription = async (
   if (currentSettings.enablePushRegistration) {
     try {
       // Unsubscribe from the backend to clear the existing push subscription (keys and endpoint)
-      await unsubscribeToPushNotifications(userId);
+      const oldEndpoint = await unsubscribeToPushNotifications(userId);
 
       // Subscribe again to generate a fresh push subscription with updated keys and endpoint
       await subscribeToPushNotifications(userId, currentSettings);
+
+      if (oldEndpoint && userId) {
+        try {
+          await axios.delete(
+            `/api/v1/user/${userId}/pushSubscription/${encodeURIComponent(
+              oldEndpoint
+            )}`
+          );
+        } catch (error) {
+          // Ignore errors when deleting old endpoint (it might not exist)
+          // This is expected when the endpoint was already cleaned up
+        }
+      }
 
       return true;
     } catch (error) {
@@ -136,24 +149,26 @@ export const subscribeToPushNotifications = async (
 export const unsubscribeToPushNotifications = async (
   userId: number | undefined,
   endpoint?: string
-) => {
+): Promise<string | null> => {
   if (!('serviceWorker' in navigator) || !userId) {
-    return;
+    return null;
   }
 
   try {
     const { subscription } = await getPushSubscription();
 
     if (!subscription) {
-      return false;
+      return null;
     }
 
     const { endpoint: currentEndpoint } = subscription.toJSON();
 
     if (!endpoint || endpoint === currentEndpoint) {
       await subscription.unsubscribe();
-      return true;
+      return currentEndpoint ?? null;
     }
+
+    return null;
   } catch (error) {
     throw new Error(
       `Issue unsubscribing to push notifications: ${error.message}`

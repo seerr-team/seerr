@@ -109,11 +109,16 @@ const UserWebPushSettings = () => {
   // Deletes/disables corresponding push subscription from database
   const disablePushNotifications = async (endpoint?: string) => {
     try {
-      await unsubscribeToPushNotifications(user?.id, endpoint);
+      const unsubscribedEndpoint = await unsubscribeToPushNotifications(
+        user?.id,
+        endpoint
+      );
 
       // Delete from backend if endpoint is available
-      if (subEndpoint) {
-        await deletePushSubscriptionFromBackend(subEndpoint);
+      const endpointToDelete = unsubscribedEndpoint || subEndpoint || endpoint;
+
+      if (endpointToDelete) {
+        await deletePushSubscriptionFromBackend(endpointToDelete);
       }
 
       localStorage.setItem('pushNotificationsEnabled', 'false');
