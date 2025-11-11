@@ -13,7 +13,7 @@ WORKDIR /app
 FROM base AS prod-deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store CI=true pnpm install --prod --frozen-lockfile
 
-FROM base as build
+FROM base AS build
 
 RUN \
   case "${TARGETPLATFORM}" in \
