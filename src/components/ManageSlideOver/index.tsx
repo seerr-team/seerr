@@ -479,9 +479,7 @@ const ManageSlideOver = ({
               </div>
             </div>
           )}
-        {hasPermission([Permission.ADMIN], {
-          type: 'or',
-        }) &&
+        {hasPermission(Permission.ADMIN) &&
           (data.mediaInfo?.serviceUrl4k ||
             data.mediaInfo?.tautulliUrl4k ||
             watchData?.data4k) && (
@@ -642,9 +640,7 @@ const ManageSlideOver = ({
               </div>
             </div>
           )}
-        {hasPermission([Permission.ADMIN], {
-          type: 'or',
-        }) &&
+        {hasPermission(Permission.ADMIN) &&
           data?.mediaInfo &&
           data.mediaInfo.status !== MediaStatus.BLACKLISTED && (
             <div>
