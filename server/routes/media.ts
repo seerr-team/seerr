@@ -165,7 +165,9 @@ mediaRoutes.post<
 
 mediaRoutes.delete(
   '/:id',
-  isAuthenticated(Permission.MANAGE_REQUESTS),
+  isAuthenticated([Permission.ADMIN, Permission.DELETE_MEDIA], {
+    type: 'or',
+  }),
   async (req, res, next) => {
     try {
       const mediaRepository = getRepository(Media);

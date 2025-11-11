@@ -6843,7 +6843,7 @@ paths:
   /media/{mediaId}:
     delete:
       summary: Delete media item
-      description: Removes a media item. The `MANAGE_REQUESTS` permission is required to perform this action.
+      description: Removes a media item. The `MANAGE_REQUESTS` or `DELETE_MEDIA` permission is required to perform this action.
       tags:
         - media
       parameters:
