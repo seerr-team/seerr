@@ -1,7 +1,10 @@
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
 
-  extends: ['docker:enableMajor', 'docker:pinDigests'],
+  extends: [
+    'docker:enableMajor',
+    'docker:pinDigests'
+  ],
 
   packageRules: [
     {

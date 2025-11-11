@@ -134,26 +134,24 @@ const ManageSlideOver = ({
   };
 
   const isDefaultService = () => {
-    // TODO: need to fix this
-    return true;
-    // if (data.mediaInfo) {
-    //   if (data.mediaInfo.mediaType === MediaType.MOVIE) {
-    //     return (
-    //       radarrData?.find(
-    //         (radarr) =>
-    //           radarr.isDefault && radarr.id === data.mediaInfo?.serviceId
-    //       ) !== undefined
-    //     );
-    //   } else {
-    //     return (
-    //       sonarrData?.find(
-    //         (sonarr) =>
-    //           sonarr.isDefault && sonarr.id === data.mediaInfo?.serviceId
-    //       ) !== undefined
-    //     );
-    //   }
-    // }
-    // return false;
+    if (data.mediaInfo) {
+      if (data.mediaInfo.mediaType === MediaType.MOVIE) {
+        return (
+          radarrData?.find(
+            (radarr) =>
+              radarr.isDefault && radarr.id === data.mediaInfo?.serviceId
+          ) !== undefined
+        );
+      } else {
+        return (
+          sonarrData?.find(
+            (sonarr) =>
+              sonarr.isDefault && sonarr.id === data.mediaInfo?.serviceId
+          ) !== undefined
+        );
+      }
+    }
+    return false;
   };
 
   const isDefault4kService = () => {
@@ -481,7 +479,7 @@ const ManageSlideOver = ({
               </div>
             </div>
           )}
-        {hasPermission([Permission.ADMIN, Permission.DELETE_MEDIA], {
+        {hasPermission([Permission.ADMIN], {
           type: 'or',
         }) &&
           (data.mediaInfo?.serviceUrl4k ||
@@ -644,7 +642,7 @@ const ManageSlideOver = ({
               </div>
             </div>
           )}
-        {hasPermission([Permission.ADMIN, Permission.DELETE_MEDIA], {
+        {hasPermission([Permission.ADMIN], {
           type: 'or',
         }) &&
           data?.mediaInfo &&
