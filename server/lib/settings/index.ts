@@ -121,6 +121,15 @@ export interface ProxySettings {
   bypassLocalAddresses: boolean;
 }
 
+interface FilterSettings {
+  filterSearch: boolean;
+  filterTrending: boolean;
+  filterSimilarSeries: boolean;
+  filterTvRecommendations: boolean;
+  filterSimilarMovies: boolean;
+  filterMovieRecommendations: boolean;
+}
+
 export interface MainSettings {
   apiKey: string;
   applicationTitle: string;
@@ -146,6 +155,7 @@ export interface MainSettings {
   enableSpecialEpisodes: boolean;
   locale: string;
   youtubeUrl: string;
+  filters: FilterSettings;
 }
 
 export interface ProxySettings {
@@ -177,7 +187,7 @@ interface PublicSettings {
   initialized: boolean;
 }
 
-interface FullPublicSettings extends PublicSettings {
+export interface FullPublicSettings extends PublicSettings {
   applicationTitle: string;
   applicationUrl: string;
   hideAvailable: boolean;
@@ -203,6 +213,7 @@ interface FullPublicSettings extends PublicSettings {
   userEmailRequired: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  filters: FilterSettings;
 }
 
 export interface NotificationAgentConfig {
@@ -403,6 +414,14 @@ class Settings {
         enableSpecialEpisodes: false,
         locale: 'en',
         youtubeUrl: '',
+        filters: {
+          filterSearch: false,
+          filterTrending: false,
+          filterSimilarSeries: false,
+          filterTvRecommendations: false,
+          filterSimilarMovies: false,
+          filterMovieRecommendations: false,
+        },
       },
       plex: {
         name: '',
@@ -697,6 +716,7 @@ class Settings {
         this.data.notifications.agents.email.options.userEmailRequired,
       newPlexLogin: this.data.main.newPlexLogin,
       youtubeUrl: this.data.main.youtubeUrl,
+      filters: this.data.main.filters,
     };
   }
 

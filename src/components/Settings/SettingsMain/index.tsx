@@ -6,11 +6,13 @@ import SensitiveInput from '@app/components/Common/SensitiveInput';
 import LanguageSelector from '@app/components/LanguageSelector';
 import RegionSelector from '@app/components/RegionSelector';
 import CopyButton from '@app/components/Settings/CopyButton';
+import LibraryItem from '@app/components/Settings/LibraryItem';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import { availableLanguages } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import type { FilterItem } from '@app/types/filters';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
@@ -70,7 +72,22 @@ const messages = defineMessages('components.Settings.SettingsMain', {
     'Base URL for YouTube videos if a self-hosted YouTube instance is used.',
   validationUrl: 'You must provide a valid URL',
   validationUrlTrailingSlash: 'URL must not end in a trailing slash',
+  filterSearch: 'Search',
+  filterTrending: 'Trending',
+  filterSimilarSeries: 'Similar Series',
+  filterTvRecommendations: 'Tv Recommendations',
+  filterSimilarMovies: 'Similar Movies',
+  filterMovieRecommendations: 'Movie Recommendations',
 });
+
+const filters: FilterItem[] = [
+  { key: 'filterSearch', name: 'Search' },
+  { key: 'filterTrending', name: 'Trending' },
+  { key: 'filterSimilarSeries', name: 'Similar Series' },
+  { key: 'filterSimilarMovies', name: 'Similar Movies' },
+  { key: 'filterTvRecommendations', name: 'TV Recommendations' },
+  { key: 'filterMovieRecommendations', name: 'Movie Recommendations' },
+];
 
 const SettingsMain = () => {
   const { addToast } = useToasts();
@@ -175,6 +192,13 @@ const SettingsMain = () => {
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
+            filterSearch: data?.filters?.filterSearch,
+            filterTrending: data?.filters?.filterTrending,
+            filterSimilarSeries: data?.filters?.filterSimilarSeries,
+            filterTvRecommendations: data?.filters?.filterTvRecommendations,
+            filterSimilarMovies: data?.filters?.filterSimilarMovies,
+            filterMovieRecommendations:
+              data?.filters?.filterMovieRecommendations,
           }}
           enableReinitialize
           validationSchema={MainSettingsSchema}
@@ -195,6 +219,14 @@ const SettingsMain = () => {
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
+                filters: {
+                  filterSearch: values.filterSearch,
+                  filterTrending: values.filterTrending,
+                  filterSimilarSeries: values.filterSimilarSeries,
+                  filterTvRecommendations: values.filterTvRecommendations,
+                  filterSimilarMovies: values.filterSimilarMovies,
+                  filterMovieRecommendations: values.filterMovieRecommendations,
+                },
               });
               mutate('/api/v1/settings/public');
               mutate('/api/v1/status');
@@ -383,6 +415,31 @@ const SettingsMain = () => {
                     </div>
                   </div>
                 </div>
+                <div
+                  role="group"
+                  aria-labelledby="group-label"
+                  className="form-group"
+                >
+                  <span id="group-label" className="group-label">
+                    Filter by Original Language
+                    <span className="label-tip">
+                      Filter content by their original language. This will take
+                      the values from the Discover Language setting.
+                    </span>
+                  </span>
+
+                  <ul className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
+                    {filters.map(({ key, name }) => (
+                      <LibraryItem
+                        key={`setting-library-${key}`}
+                        name={name}
+                        isEnabled={values[key] ?? false}
+                        onToggle={() => setFieldValue(key, !values[key])}
+                      />
+                    ))}
+                  </ul>
+                </div>
+
                 <div className="form-row">
                   <label htmlFor="streamingRegion" className="text-label">
                     <span>{intl.formatMessage(messages.streamingRegion)}</span>
