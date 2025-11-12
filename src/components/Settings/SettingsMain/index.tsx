@@ -72,12 +72,6 @@ const messages = defineMessages('components.Settings.SettingsMain', {
     'Base URL for YouTube videos if a self-hosted YouTube instance is used.',
   validationUrl: 'You must provide a valid URL',
   validationUrlTrailingSlash: 'URL must not end in a trailing slash',
-  filterSearch: 'Search',
-  filterTrending: 'Trending',
-  filterSimilarSeries: 'Similar Series',
-  filterTvRecommendations: 'Tv Recommendations',
-  filterSimilarMovies: 'Similar Movies',
-  filterMovieRecommendations: 'Movie Recommendations',
 });
 
 const filters: FilterItem[] = [
@@ -87,6 +81,13 @@ const filters: FilterItem[] = [
   { key: 'filterSimilarMovies', name: 'Similar Movies' },
   { key: 'filterTvRecommendations', name: 'TV Recommendations' },
   { key: 'filterMovieRecommendations', name: 'Movie Recommendations' },
+  { key: 'filterTvUpcoming', name: 'Upcoming Series' },
+  { key: 'filterUpcomingMovies', name: 'Upcoming Movies' },
+  { key: 'filterDiscoverMovies', name: 'Discover Movies' },
+  { key: 'filterTvDiscover', name: 'Discover Series' },
+  { key: 'filterPopularMovies', name: 'Popular Movies' },
+  { key: 'filterTvPopular', name: 'Popular Series' },
+  { key: 'filterCustomSliders', name: 'Custom Sliders' },
 ];
 
 const SettingsMain = () => {
@@ -199,6 +200,13 @@ const SettingsMain = () => {
             filterSimilarMovies: data?.filters?.filterSimilarMovies,
             filterMovieRecommendations:
               data?.filters?.filterMovieRecommendations,
+            filterTvUpcoming: data?.filters?.filterTvUpcoming,
+            filterUpcomingMovies: data?.filters?.filterUpcomingMovies,
+            filterDiscoverMovies: data?.filters?.filterDiscoverMovies,
+            filterTvDiscover: data?.filters?.filterTvDiscover,
+            filterPopularMovies: data?.filters?.filterPopularMovies,
+            filterTvPopular: data?.filters?.filterTvPopular,
+            filterCustomSliders: data?.filters?.filterCustomSliders,
           }}
           enableReinitialize
           validationSchema={MainSettingsSchema}
@@ -226,6 +234,13 @@ const SettingsMain = () => {
                   filterTvRecommendations: values.filterTvRecommendations,
                   filterSimilarMovies: values.filterSimilarMovies,
                   filterMovieRecommendations: values.filterMovieRecommendations,
+                  filterTvUpcoming: values.filterTvUpcoming,
+                  filterUpcomingMovies: values.filterUpcomingMovies,
+                  filterDiscoverMovies: values.filterDiscoverMovies,
+                  filterTvDiscover: values.filterTvDiscover,
+                  filterPopularMovies: values.filterPopularMovies,
+                  filterTvPopular: values.filterTvPopular,
+                  filterCustomSliders: values.filterCustomSliders,
                 },
               });
               mutate('/api/v1/settings/public');

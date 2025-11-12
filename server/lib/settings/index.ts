@@ -128,6 +128,13 @@ interface FilterSettings {
   filterTvRecommendations: boolean;
   filterSimilarMovies: boolean;
   filterMovieRecommendations: boolean;
+  filterTvUpcoming: boolean;
+  filterUpcomingMovies: boolean;
+  filterDiscoverMovies: boolean;
+  filterTvDiscover: boolean;
+  filterPopularMovies: boolean;
+  filterTvPopular: boolean;
+  filterCustomSliders: boolean;
 }
 
 export interface MainSettings {
@@ -421,6 +428,13 @@ class Settings {
           filterTvRecommendations: false,
           filterSimilarMovies: false,
           filterMovieRecommendations: false,
+          filterTvUpcoming: false,
+          filterUpcomingMovies: false,
+          filterDiscoverMovies: false,
+          filterTvDiscover: false,
+          filterPopularMovies: false,
+          filterTvPopular: false,
+          filterCustomSliders: false,
         },
       },
       plex: {

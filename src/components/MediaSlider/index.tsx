@@ -104,6 +104,36 @@ const MediaSlider = ({
       return FilterByLanguage.TRENDING;
     }
 
+    if (sliderKey === 'popular-movies') {
+      isMovies = true;
+      isSeries = false;
+      return FilterByLanguage.POPULAR_MOVIES;
+    }
+
+    if (sliderKey === 'upcoming') {
+      isMovies = true;
+      isSeries = false;
+      return FilterByLanguage.UPCOMING_MOVIES;
+    }
+
+    if (sliderKey === 'popular-tv') {
+      isMovies = false;
+      isSeries = true;
+      return FilterByLanguage.TV_POPULAR;
+    }
+
+    if (sliderKey === 'upcoming-tv') {
+      isMovies = false;
+      isSeries = true;
+      return FilterByLanguage.TV_UPCOMING;
+    }
+
+    if (sliderKey === 'custom') {
+      isMovies = true;
+      isSeries = true;
+      return FilterByLanguage.CUSTOM_SLIDERS;
+    }
+
     return undefined;
   };
 

@@ -5,6 +5,13 @@ export enum FilterByLanguage {
   TV_RECOMMENDATIONS = 'filterTvRecommendations',
   SIMILAR_MOVIES = 'filterSimilarMovies',
   MOVIE_RECOMMENDATIONS = 'filterMovieRecommendations',
+  TV_UPCOMING = 'filterTvUpcoming',
+  UPCOMING_MOVIES = 'filterUpcomingMovies',
+  DISCOVER_MOVIES = 'filterDiscoverMovies',
+  TV_DISCOVER = 'filterTvDiscover',
+  POPULAR_MOVIES = 'filterPopularMovies',
+  TV_POPULAR = 'filterTvPopular',
+  CUSTOM_SLIDERS = 'filterCustomSliders',
 }
 
 type FilterKey =
@@ -13,7 +20,14 @@ type FilterKey =
   | 'filterSimilarSeries'
   | 'filterSimilarMovies'
   | 'filterTvRecommendations'
-  | 'filterMovieRecommendations';
+  | 'filterMovieRecommendations'
+  | 'filterTvUpcoming'
+  | 'filterUpcomingMovies'
+  | 'filterDiscoverMovies'
+  | 'filterTvDiscover'
+  | 'filterPopularMovies'
+  | 'filterTvPopular'
+  | 'filterCustomSliders';
 
 export interface FilterItem {
   key: FilterKey;

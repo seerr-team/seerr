@@ -9,8 +9,10 @@ import {
 } from '@app/components/Discover/constants';
 import FilterSlideover from '@app/components/Discover/FilterSlideover';
 import useDiscover from '@app/hooks/useDiscover';
+import useFilterByLanguages from '@app/hooks/useFilterByLanguages';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import Error from '@app/pages/_error';
+import { FilterByLanguage } from '@app/types/filters';
 import defineMessages from '@app/utils/defineMessages';
 import { BarsArrowDownIcon, FunnelIcon } from '@heroicons/react/24/solid';
 import type { SortOptions as TMDBSortOptions } from '@server/api/themoviedb';
@@ -61,6 +63,13 @@ const DiscoverTv = () => {
     error,
   } = useDiscover<TvResult, never, FilterOptions>('/api/v1/discover/tv', {
     ...preparedFilters,
+  });
+
+  const filteredTitles = useFilterByLanguages({
+    titles,
+    movie: false,
+    tv: true,
+    key: FilterByLanguage.TV_DISCOVER,
   });
 
   if (error) {
@@ -131,11 +140,12 @@ const DiscoverTv = () => {
         </div>
       </div>
       <ListView
-        items={titles}
+        items={filteredTitles}
         isEmpty={isEmpty}
         isReachingEnd={isReachingEnd}
         isLoading={
-          isLoadingInitialData || (isLoadingMore && (titles?.length ?? 0) > 0)
+          isLoadingInitialData ||
+          (isLoadingMore && (filteredTitles?.length ?? 0) > 0)
         }
         onScrollBottom={fetchMore}
       />
