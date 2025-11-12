@@ -15,6 +15,9 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store CI=true pnpm install --prod --
 
 FROM base AS build
 
+ARG COMMIT_TAG
+ENV COMMIT_TAG=${COMMIT_TAG}
+
 RUN \
   case "${TARGETPLATFORM}" in \
   'linux/arm64' | 'linux/arm/v7') \
