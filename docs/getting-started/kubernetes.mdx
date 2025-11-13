@@ -22,6 +22,6 @@ Helm values can be found in the Seerr repository under [charts/seerr-chart/READM
 
 Verify the signature with [cosign](https://docs.sigstore.dev/cosign/system_config/installation/) (replace [tag], with the TAG you want to verify) :
 ```console
-cosign verify ghcr.io/seerr-team/seerr/seerr-chart:[tag] --certificate-identity=https://github.com/fallenbagel/jellyseerr/.github/workflows/helm.yml@refs/heads/main --certificate-oidc-issuer=https://token.ac
+cosign verify ghcr.io/seerr-team/seerr/seerr-chart:[tag] --certificate-identity=https://github.com/seerr-team/seerr/.github/workflows/helm.yml@refs/heads/main --certificate-oidc-issuer=https://token.ac
 tions.githubusercontent.com
 ```
