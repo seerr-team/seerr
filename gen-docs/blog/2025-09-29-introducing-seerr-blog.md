@@ -2,7 +2,7 @@
 title: Welcome to the Seerr Blog
 description: The official Seerr blog for release notes, technical updates, and community news.
 slug: welcome
-authors: [fallenbagel, gauthier-th]
+authors: [fallenbagel, gauthier-th, M0NsTeRRR, TheCatLady, sct, OwsleyJr, 0xSysR3ll, sudo-kraken]
 tags: [announcement, seerr, blog]
 image: https://raw.githubusercontent.com/seerr-team/seerr/refs/heads/develop/gen-docs/static/img/logo.svg
 hide_table_of_contents: false

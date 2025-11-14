@@ -1,8 +1,8 @@
 fallenbagel:
   name: Fallenbagel
   page: true
-  title: Developer & Maintainer of Seerr
-  description: Core Maintainer & Developer of Seerr | Full-Stack Software Engineer | MSc Software Engineering Candidate.
+  title: Maintainer of Seerr
+  description: Maintainer of Seerr | Full-Stack Software Engineer | MSc Software Engineering Candidate
   url: https://github.com/fallenbagel
   image_url: https://github.com/fallenbagel.png
   email: hello@fallenbagel.com
@@ -12,10 +12,70 @@ fallenbagel:
 gauthier-th:
   name: Gauthier
   page: true
-  title: Co-Developer & Co-Maintainer of Seerr
-  description: Co-Maintainer & Developer of Seerr | PhD Student in AI at ICB, Dijon
+  title: Maintainer of Seerr
+  description: Maintainer of Seerr | PhD Student in AI at ICB, Dijon
   url: https://gauthierth.fr
   image_url: https://github.com/gauthier-th.png
   email: mail@gauthierth.fr
   socials:
     github: gauthier-th
+
+M0NsTeRRR:
+  name: Ludovic Ortega
+  page: true
+  title: Maintainer of Seerr
+  description: Maintainer of Seerr
+  url: https://github.com/M0NsTeRRR
+  image_url: https://github.com/M0NsTeRRR.png
+  socials:
+    github: M0NsTeRRR
+
+TheCatLady:
+  name: TheCatLady
+  page: true
+  title: Maintainer of Seerr
+  description: Maintainer of Seerr
+  url: https://github.com/TheCatLady
+  image_url: https://github.com/TheCatLady.png
+  socials:
+    github: TheCatLady
+
+sct:
+  name: sct
+  page: true
+  title: Maintainer of Seerr
+  description: Maintainer of Seerr
+  url: https://github.com/sct
+  image_url: https://github.com/sct.png
+  socials:
+    github: sct
+
+OwsleyJr:
+  name: OwsleyJr
+  page: true
+  title: Maintainer of Seerr
+  description: Maintainer of Seerr
+  url: https://github.com/OwsleyJr
+  image_url: https://github.com/OwsleyJr.png
+  socials:
+    github: OwsleyJr
+
+0xSysR3ll:
+  name: 0xSysR3ll
+  page: true
+  title: Maintainer of Seerr
+  description: Maintainer of Seerr
+  url: https://github.com/0xSysR3ll
+  image_url: https://github.com/0xSysR3ll.png
+  socials:
+    github: 0xSysR3ll
+
+sudo-kraken:
+  name: sudo-kraken
+  page: true
+  title: Maintainer of Seerr
+  description: Maintainer of Seerr
+  url: https://github.com/sudo-kraken
+  image_url: https://github.com/sudo-kraken.png
+  socials:
+    github: sudo-kraken
