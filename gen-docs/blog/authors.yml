@@ -24,9 +24,10 @@ M0NsTeRRR:
   name: Ludovic Ortega
   page: true
   title: Maintainer of Seerr
-  description: Maintainer of Seerr
+  description: Maintainer of Seerr | NetOps/NetDev Engineer
   url: https://github.com/M0NsTeRRR
   image_url: https://github.com/M0NsTeRRR.png
+  email: ludovic.ortega@adminafk.fr
   socials:
     github: M0NsTeRRR
 
@@ -41,20 +42,21 @@ TheCatLady:
     github: TheCatLady
 
 sct:
-  name: sct
+  name: Ryan Cohen
   page: true
   title: Maintainer of Seerr
-  description: Maintainer of Seerr
+  description: Maintainer of Seerr | Software Engineer
   url: https://github.com/sct
   image_url: https://github.com/sct.png
+  email: ryan@sct.dev
   socials:
     github: sct
 
 OwsleyJr:
-  name: OwsleyJr
+  name: Brandon Cohen
   page: true
   title: Maintainer of Seerr
-  description: Maintainer of Seerr
+  description: Maintainer of Seerr | Software Developer
   url: https://github.com/OwsleyJr
   image_url: https://github.com/OwsleyJr.png
   socials:
@@ -64,17 +66,17 @@ OwsleyJr:
   name: 0xSysR3ll
   page: true
   title: Maintainer of Seerr
-  description: Maintainer of Seerr
+  description: Maintainer of Seerr | DevSecOps & Network Engineer
   url: https://github.com/0xSysR3ll
   image_url: https://github.com/0xSysR3ll.png
   socials:
     github: 0xSysR3ll
 
 sudo-kraken:
-  name: sudo-kraken
+  name: Joe Harrison
   page: true
   title: Maintainer of Seerr
-  description: Maintainer of Seerr
+  description: Maintainer of Seerr | Principal Site Reliability Developer
   url: https://github.com/sudo-kraken
   image_url: https://github.com/sudo-kraken.png
   socials:
