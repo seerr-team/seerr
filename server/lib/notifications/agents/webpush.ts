@@ -188,19 +188,30 @@ class WebPushAgent
           notificationPayload
         );
       } catch (e) {
+        const statusCode = (e as any).statusCode || (e as any).status;
+        const isPermanentFailure = statusCode === 410 || statusCode === 404;
+
         logger.error(
-          'Error sending web push notification; removing subscription',
+          isPermanentFailure
+            ? 'Error sending web push notification; removing invalid subscription'
+            : 'Error sending web push notification (transient error, keeping subscription)',
           {
             label: 'Notifications',
             recipient: pushSub.user.displayName,
             type: Notification[type],
             subject: payload.subject,
-            errorMessage: e.message,
+            errorMessage: (e as Error).message || String(e),
+            statusCode: statusCode || 'unknown',
+            errorBody: (e as any).body || (e as any).response?.body,
+            endpoint: pushSub.endpoint.substring(0, 50) + '...',
           }
         );
 
-        // Failed to send notification so we need to remove the subscription
-        userPushSubRepository.remove(pushSub);
+        // Only remove subscription for permanent failures
+        // Transient errors should not remove the subscription
+        if (isPermanentFailure) {
+          await userPushSubRepository.remove(pushSub);
+        }
       }
     };
 
