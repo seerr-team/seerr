@@ -23,6 +23,20 @@ Changes :
 - The container can now be run as a non-root user (`node` user); remove the `user` directive if you have configured it.
 - The container no longer provides an init process, so you must configure it by adding `init: true` for Docker Compose or `--init` for the Docker CLI.
 
+:::info
+**Config folder permissions**: Since the container now runs as the `node` user (UID 1000), you must ensure your config folder has the correct permissions. The `node` user must have read and write access to the `/app/config` directory.
+
+If you're migrating from a previous installation, you may need to update the ownership of your config folder:
+```bash
+sudo chown -R 1000:1000 /path/to/appdata/config
+```
+
+Alternatively, you can use `chmod` to grant permissions:
+```bash
+sudo chmod -R 755 /path/to/appdata/config
+```
+:::
+
 ### Unix
 
 Summary of changes :
