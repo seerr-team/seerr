@@ -1,83 +1,19 @@
 fallenbagel:
   name: Fallenbagel
   page: true
-  title: Maintainer of Seerr
-  description: Maintainer of Seerr | Full-Stack Software Engineer | MSc Software Engineering Candidate
+  title: Developer & Maintainer of Jellyseerr
+  description: Core Maintainer & Developer of Jellyseerr | Full-Stack Software Engineer | MSc Software Engineering Candidate.
   url: https://github.com/fallenbagel
   image_url: https://github.com/fallenbagel.png
   email: hello@fallenbagel.com
   socials:
-    github: fallenbagel
-
 gauthier-th:
   name: Gauthier
   page: true
-  title: Maintainer of Seerr
-  description: Maintainer of Seerr | PhD Student in AI at ICB, Dijon
+  title: Co-Developer & Co-Maintainer of Jellyseerr
+  description: Co-Maintainer & Developer of Jellyseerr | PhD Student in AI at ICB, Dijon
   url: https://gauthierth.fr
   image_url: https://github.com/gauthier-th.png
   email: mail@gauthierth.fr
   socials:
     github: gauthier-th
-
-M0NsTeRRR:
-  name: Ludovic Ortega
-  page: true
-  title: Maintainer of Seerr
-  description: Maintainer of Seerr | NetOps/NetDev Engineer
-  url: https://github.com/M0NsTeRRR
-  image_url: https://github.com/M0NsTeRRR.png
-  email: ludovic.ortega@adminafk.fr
-  socials:
-    github: M0NsTeRRR
-
-TheCatLady:
-  name: TheCatLady
-  page: true
-  title: Maintainer of Seerr
-  description: Maintainer of Seerr
-  url: https://github.com/TheCatLady
-  image_url: https://github.com/TheCatLady.png
-  socials:
-    github: TheCatLady
-
-sct:
-  name: Ryan Cohen
-  page: true
-  title: Maintainer of Seerr
-  description: Maintainer of Seerr | Software Engineer
-  url: https://github.com/sct
-  image_url: https://github.com/sct.png
-  email: ryan@sct.dev
-  socials:
-    github: sct
-
-OwsleyJr:
-  name: Brandon Cohen
-  page: true
-  title: Maintainer of Seerr
-  description: Maintainer of Seerr | Software Developer
-  url: https://github.com/OwsleyJr
-  image_url: https://github.com/OwsleyJr.png
-  socials:
-    github: OwsleyJr
-
-0xSysR3ll:
-  name: 0xSysR3ll
-  page: true
-  title: Maintainer of Seerr
-  description: Maintainer of Seerr | DevSecOps & Network Engineer
-  url: https://github.com/0xSysR3ll
-  image_url: https://github.com/0xSysR3ll.png
-  socials:
-    github: 0xSysR3ll
-
-sudo-kraken:
-  name: Joe Harrison
-  page: true
-  title: Maintainer of Seerr
-  description: Maintainer of Seerr | Principal Site Reliability Developer
-  url: https://github.com/sudo-kraken
-  image_url: https://github.com/sudo-kraken.png
-  socials:
-    github: sudo-kraken
