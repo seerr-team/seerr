@@ -7,6 +7,8 @@ fallenbagel:
   image_url: https://github.com/fallenbagel.png
   email: hello@fallenbagel.com
   socials:
+    github: fallenbagel
+
 gauthier-th:
   name: Gauthier
   page: true
