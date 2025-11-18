@@ -24,6 +24,21 @@ interface PushNotificationPayload {
   isAdmin?: boolean;
 }
 
+interface WebPushError extends Error {
+  statusCode?: number;
+  status?: number;
+  body?: string | unknown;
+  response?: {
+    body?: string | unknown;
+  };
+  errors?: {
+    statusCode?: number;
+    status?: number;
+    message?: string;
+    body?: string | unknown;
+  }[];
+}
+
 class WebPushAgent
   extends BaseAgent<NotificationAgentConfig>
   implements NotificationAgent
@@ -188,7 +203,34 @@ class WebPushAgent
           notificationPayload
         );
       } catch (e) {
-        const statusCode = (e as any).statusCode || (e as any).status;
+        // Extract status code from error or nested errors (for AggregateError)
+        const webPushError = e as WebPushError;
+        let statusCode = webPushError.statusCode || webPushError.status;
+        let errorMessage = webPushError.message || String(e);
+        let errorBody = webPushError.body || webPushError.response?.body;
+
+        // Handle AggregateError - check nested errors for status codes
+        if (e instanceof AggregateError || webPushError.errors) {
+          const errors = webPushError.errors || [];
+          for (const nestedError of errors) {
+            const nestedStatusCode =
+              nestedError?.statusCode || nestedError?.status;
+            if (nestedStatusCode) {
+              statusCode = nestedStatusCode;
+            }
+            if (nestedError?.message && !errorMessage) {
+              errorMessage = nestedError.message;
+            }
+            if (nestedError?.body && !errorBody) {
+              errorBody = nestedError.body;
+            }
+          }
+        }
+
+        // Permanent failure status codes per RFC 8030:
+        // - 410 Gone: Subscription expired/invalid (Section 6.2)
+        // - 404 Not Found: Subscription expired (Section 7.3)
+        // All other errors (429 rate limiting, network issues, etc.) are transient
         const isPermanentFailure = statusCode === 410 || statusCode === 404;
 
         logger.error(
@@ -200,15 +242,13 @@ class WebPushAgent
             recipient: pushSub.user.displayName,
             type: Notification[type],
             subject: payload.subject,
-            errorMessage: (e as Error).message || String(e),
+            errorMessage,
             statusCode: statusCode || 'unknown',
-            errorBody: (e as any).body || (e as any).response?.body,
-            endpoint: pushSub.endpoint.substring(0, 50) + '...',
           }
         );
 
         // Only remove subscription for permanent failures
-        // Transient errors should not remove the subscription
+        // Transient errors (rate limiting, network issues, etc.) should not remove the subscription
         if (isPermanentFailure) {
           await userPushSubRepository.remove(pushSub);
         }
