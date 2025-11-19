@@ -582,6 +582,21 @@ components:
               type: string
               enum: [tvdb, tmdb]
               example: 'tvdb'
+    MetadataTestRequest:
+      type: object
+      properties:
+        tmdb:
+          type: boolean
+          example: true
+        tvdb:
+          type: boolean
+          example: true
+    MetadataTestResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: 'Successfully connected to TVDB'
     TautulliSettings:
       type: object
       properties:
@@ -2571,25 +2586,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                tmdb:
-                  type: boolean
-                  example: true
-                tvdb:
-                  type: boolean
-                  example: true
+              $ref: '#/components/schemas/MetadataTestRequest'
       responses:
         '200':
           description: Succesfully connected to TVDB
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Successfully connected to TVDB'
+                $ref: '#/components/schemas/MetadataTestResponse'
   /settings/tautulli:
     get:
       summary: Get Tautulli settings
