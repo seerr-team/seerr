@@ -680,7 +680,7 @@ components:
         - is4k
         - minimumAvailability
         - isDefault
-    RadarrTestRequest:
+    ServarrTestRequest:
       type: object
       properties:
         hostname:
@@ -702,7 +702,7 @@ components:
         - port
         - apiKey
         - useSsl
-    RadarrTestResponse:
+    ServarrTestResponse:
       type: object
       properties:
         profiles:
@@ -2698,14 +2698,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RadarrTestRequest'
+              $ref: '#/components/schemas/ServarrTestRequest'
       responses:
         '200':
           description: Succesfully connected to Radarr instance
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RadarrTestResponse'
+                $ref: '#/components/schemas/ServarrTestResponse'
   /settings/radarr/{radarrId}:
     put:
       summary: Update Radarr instance
@@ -2817,39 +2817,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                hostname:
-                  type: string
-                  example: '127.0.0.1'
-                port:
-                  type: integer
-                  example: 8989
-                apiKey:
-                  type: string
-                  example: yourapikey
-                useSsl:
-                  type: boolean
-                  example: false
-                baseUrl:
-                  type: string
-              required:
-                - hostname
-                - port
-                - apiKey
-                - useSsl
+              $ref: '#/components/schemas/ServarrTestRequest'
       responses:
         '200':
           description: Succesfully connected to Sonarr instance
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  profiles:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/ServiceProfile'
+                $ref: '#/components/schemas/ServarrTestResponse'
   /settings/sonarr/{sonarrId}:
     put:
       summary: Update Sonarr instance
