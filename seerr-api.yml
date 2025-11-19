@@ -500,6 +500,17 @@ components:
         - provides
         - owned
         - connection
+    JellyfinUser:
+      type: object
+      properties:
+        username:
+          type: string
+        id:
+          type: string
+        thumb:
+          type: string
+        email:
+          type: string
     JellyfinLibrary:
       type: object
       properties:
@@ -2366,16 +2377,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    username:
-                      type: string
-                    id:
-                      type: string
-                    thumb:
-                      type: string
-                    email:
-                      type: string
+                  $ref: '#/components/schemas/JellyfinUser'
   /settings/jellyfin/sync:
     get:
       summary: Get status of full Jellyfin library sync
