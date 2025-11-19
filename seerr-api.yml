@@ -52,14 +52,14 @@ components:
       type: object
       properties:
         tmdbId:
-          type: number
+          type: integer
           example: 1
         title:
           type: string
         media:
           $ref: '#/components/schemas/MediaInfo'
         userId:
-          type: number
+          type: integer
           example: 1
     Watchlist:
       type: object
@@ -69,7 +69,7 @@ components:
           example: 1
           readOnly: true
         tmdbId:
-          type: number
+          type: integer
           example: 1
         ratingKey:
           type: string
@@ -116,7 +116,7 @@ components:
           example: 1
           readOnly: true
         permissions:
-          type: number
+          type: integer
           example: 0
         avatar:
           type: string
@@ -130,7 +130,7 @@ components:
           example: '2020-09-02T05:02:23.000Z'
           readOnly: true
         requestCount:
-          type: number
+          type: integer
           example: 5
           readOnly: true
       required:
@@ -169,42 +169,42 @@ components:
           nullable: true
           example: 'en'
         movieQuotaLimit:
-          type: number
+          type: integer
           nullable: true
           description: 'Maximum number of movie requests allowed'
           example: 10
         movieQuotaDays:
-          type: number
+          type: integer
           nullable: true
           description: 'Time period in days for movie quota'
           example: 30
         tvQuotaLimit:
-          type: number
+          type: integer
           nullable: true
           description: 'Maximum number of TV requests allowed'
           example: 5
         tvQuotaDays:
-          type: number
+          type: integer
           nullable: true
           description: 'Time period in days for TV quota'
           example: 14
         globalMovieQuotaDays:
-          type: number
+          type: integer
           nullable: true
           description: 'Global movie quota days setting'
           example: 30
         globalMovieQuotaLimit:
-          type: number
+          type: integer
           nullable: true
           description: 'Global movie quota limit setting'
           example: 10
         globalTvQuotaLimit:
-          type: number
+          type: integer
           nullable: true
           description: 'Global TV quota limit setting'
           example: 5
         globalTvQuotaDays:
-          type: number
+          type: integer
           nullable: true
           description: 'Global TV quota days setting'
           example: 14
@@ -243,13 +243,13 @@ components:
           type: boolean
           example: true
         mediaServerType:
-          type: number
+          type: integer
           example: 1
         newPlexLogin:
           type: boolean
           example: true
         defaultPermissions:
-          type: number
+          type: integer
           example: 32
         enableSpecialEpisodes:
           type: boolean
@@ -276,7 +276,7 @@ components:
               type: string
               example: ''
             port:
-              type: number
+              type: integer
               example: 8080
             useSsl:
               type: boolean
@@ -300,10 +300,10 @@ components:
               type: boolean
               example: false
             forceMinTtl:
-              type: number
+              type: integer
               example: 0
             forceMaxTtl:
-              type: number
+              type: integer
               example: -1
     PlexLibrary:
       type: object
@@ -335,7 +335,7 @@ components:
           type: string
           example: '127.0.0.1'
         port:
-          type: number
+          type: integer
           example: 32400
         useSsl:
           type: boolean
@@ -364,7 +364,7 @@ components:
           type: string
           example: '127.0.0.1'
         port:
-          type: number
+          type: integer
           example: 32400
         uri:
           type: string
@@ -373,7 +373,7 @@ components:
           type: boolean
           example: true
         status:
-          type: number
+          type: integer
           example: 200
         message:
           type: string
@@ -541,7 +541,7 @@ components:
           nullable: true
           example: 'tautulli.example.com'
         port:
-          type: number
+          type: integer
           nullable: true
           example: 8181
         useSsl:
@@ -557,7 +557,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 0
           readOnly: true
         name:
@@ -567,7 +567,7 @@ components:
           type: string
           example: '127.0.0.1'
         port:
-          type: number
+          type: integer
           example: 7878
         apiKey:
           type: string
@@ -578,7 +578,7 @@ components:
         baseUrl:
           type: string
         activeProfileId:
-          type: number
+          type: integer
           example: 1
         activeProfileName:
           type: string
@@ -620,7 +620,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 0
           readOnly: true
         name:
@@ -630,7 +630,7 @@ components:
           type: string
           example: '127.0.0.1'
         port:
-          type: number
+          type: integer
           example: 8989
         apiKey:
           type: string
@@ -641,7 +641,7 @@ components:
         baseUrl:
           type: string
         activeProfileId:
-          type: number
+          type: integer
           example: 1
         activeProfileName:
           type: string
@@ -650,13 +650,13 @@ components:
           type: string
           example: '/tv/'
         activeLanguageProfileId:
-          type: number
+          type: integer
           example: 1
         activeAnimeProfileId:
-          type: number
+          type: integer
           nullable: true
         activeAnimeLanguageProfileId:
-          type: number
+          type: integer
           nullable: true
         activeAnimeProfileName:
           type: string
@@ -699,7 +699,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 1
         label:
           type: string
@@ -718,7 +718,7 @@ components:
         - title
       properties:
         id:
-          type: number
+          type: integer
           example: 1234
         mediaType:
           type: string
@@ -730,13 +730,13 @@ components:
         backdropPath:
           type: string
         voteCount:
-          type: number
+          type: integer
         voteAverage:
           type: number
         genreIds:
           type: array
           items:
-            type: number
+            type: integer
         overview:
           type: string
           example: 'Overview of the movie'
@@ -763,7 +763,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 1234
         mediaType:
           type: string
@@ -775,13 +775,13 @@ components:
         backdropPath:
           type: string
         voteCount:
-          type: number
+          type: integer
         voteAverage:
           type: number
         genreIds:
           type: array
           items:
-            type: number
+            type: integer
         overview:
           type: string
           example: 'Overview of the movie'
@@ -806,7 +806,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 12345
         profilePath:
           type: string
@@ -826,7 +826,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 1
         name:
           type: string
@@ -835,7 +835,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 1
         logo_path:
           type: string
@@ -846,7 +846,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 1
         logoPath:
           type: string
@@ -859,7 +859,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 1
         logoPath:
           type: string
@@ -881,7 +881,7 @@ components:
           type: string
           example: Trailer for some movie (1978)
         size:
-          type: number
+          type: integer
           example: 1080
         type:
           type: string
@@ -902,7 +902,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 123
           readOnly: true
         imdbId:
@@ -983,7 +983,7 @@ components:
                           type: string
                           example: '2017-07-12T00:00:00.000Z'
                         type:
-                          type: number
+                          type: integer
                           example: 1
         revenue:
           type: number
@@ -1005,7 +1005,7 @@ components:
         voteAverage:
           type: number
         voteCount:
-          type: number
+          type: integer
         credits:
           type: object
           properties:
@@ -1021,7 +1021,7 @@ components:
           type: object
           properties:
             id:
-              type: number
+              type: integer
               example: 1
             name:
               type: string
@@ -1042,39 +1042,39 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
         name:
           type: string
         airDate:
           type: string
           nullable: true
         episodeNumber:
-          type: number
+          type: integer
         overview:
           type: string
         productionCode:
           type: string
         seasonNumber:
-          type: number
+          type: integer
         showId:
-          type: number
+          type: integer
         stillPath:
           type: string
           nullable: true
         voteAverage:
           type: number
         voteCount:
-          type: number
+          type: integer
     Season:
       type: object
       properties:
         id:
-          type: number
+          type: integer
         airDate:
           type: string
           nullable: true
         episodeCount:
-          type: number
+          type: integer
         name:
           type: string
         overview:
@@ -1082,7 +1082,7 @@ components:
         posterPath:
           type: string
         seasonNumber:
-          type: number
+          type: integer
         episodes:
           type: array
           items:
@@ -1091,7 +1091,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 123
         backdropPath:
           type: string
@@ -1117,11 +1117,11 @@ components:
             type: object
             properties:
               id:
-                type: number
+                type: integer
               name:
                 type: string
               gender:
-                type: number
+                type: integer
               profilePath:
                 type: string
                 nullable: true
@@ -1156,9 +1156,9 @@ components:
           items:
             $ref: '#/components/schemas/ProductionCompany'
         numberOfEpisodes:
-          type: number
+          type: integer
         numberOfSeason:
-          type: number
+          type: integer
         originCountry:
           type: array
           items:
@@ -1201,7 +1201,7 @@ components:
         voteAverage:
           type: number
         voteCount:
-          type: number
+          type: integer
         credits:
           type: object
           properties:
@@ -1229,11 +1229,11 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 123
           readOnly: true
         status:
-          type: number
+          type: integer
           example: 0
           description: Status of the request. 1 = PENDING APPROVAL, 2 = APPROVED, 3 = DECLINED
           readOnly: true
@@ -1258,9 +1258,9 @@ components:
           type: boolean
           example: false
         serverId:
-          type: number
+          type: integer
         profileId:
-          type: number
+          type: integer
         rootFolder:
           type: string
       required:
@@ -1270,17 +1270,17 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           readOnly: true
         tmdbId:
-          type: number
+          type: integer
           readOnly: true
         tvdbId:
-          type: number
+          type: integer
           readOnly: true
           nullable: true
         status:
-          type: number
+          type: integer
           example: 0
           description: Availability of the media. 1 = `UNKNOWN`, 2 = `PENDING`, 3 = `PROCESSING`, 4 = `PARTIALLY_AVAILABLE`, 5 = `AVAILABLE`, 6 = `DELETED`
         requests:
@@ -1300,10 +1300,10 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 123
         castId:
-          type: number
+          type: integer
           example: 1
         character:
           type: string
@@ -1311,12 +1311,12 @@ components:
         creditId:
           type: string
         gender:
-          type: number
+          type: integer
         name:
           type: string
           example: Some Persons Name
         order:
-          type: number
+          type: integer
         profilePath:
           type: string
           nullable: true
@@ -1324,12 +1324,12 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 123
         creditId:
           type: string
         gender:
-          type: number
+          type: integer
         name:
           type: string
           example: Some Persons Name
@@ -1359,10 +1359,10 @@ components:
           type: string
           nullable: true
         tvdbId:
-          type: number
+          type: integer
           nullable: true
         tvrageId:
-          type: number
+          type: integer
           nullable: true
         twitterId:
           type: string
@@ -1371,7 +1371,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 1
         name:
           type: string
@@ -1380,13 +1380,13 @@ components:
       type: object
       properties:
         page:
-          type: number
+          type: integer
           example: 1
         pages:
-          type: number
+          type: integer
           example: 10
         results:
-          type: number
+          type: integer
           example: 100
     DiscordSettings:
       type: object
@@ -1395,7 +1395,7 @@ components:
           type: boolean
           example: false
         types:
-          type: number
+          type: integer
           example: 2
         options:
           type: object
@@ -1417,7 +1417,7 @@ components:
           type: boolean
           example: false
         types:
-          type: number
+          type: integer
           example: 2
         options:
           type: object
@@ -1431,7 +1431,7 @@ components:
           type: boolean
           example: false
         types:
-          type: number
+          type: integer
           example: 2
     WebhookSettings:
       type: object
@@ -1440,7 +1440,7 @@ components:
           type: boolean
           example: false
         types:
-          type: number
+          type: integer
           example: 2
         options:
           type: object
@@ -1461,7 +1461,7 @@ components:
           type: boolean
           example: false
         types:
-          type: number
+          type: integer
           example: 2
         options:
           type: object
@@ -1483,7 +1483,7 @@ components:
           type: boolean
           example: false
         types:
-          type: number
+          type: integer
           example: 2
         options:
           type: object
@@ -1500,7 +1500,7 @@ components:
           type: boolean
           example: false
         types:
-          type: number
+          type: integer
           example: 2
         options:
           type: object
@@ -1518,7 +1518,7 @@ components:
           type: boolean
           example: false
         types:
-          type: number
+          type: integer
           example: 2
         options:
           type: object
@@ -1534,7 +1534,7 @@ components:
           type: boolean
           example: false
         types:
-          type: number
+          type: integer
           example: 2
         options:
           type: object
@@ -1560,7 +1560,7 @@ components:
           type: boolean
           example: false
         types:
-          type: number
+          type: integer
           example: 2
         options:
           type: object
@@ -1575,7 +1575,7 @@ components:
               type: string
               example: 127.0.0.1
             smtpPort:
-              type: number
+              type: integer
               example: 465
             secure:
               type: boolean
@@ -1620,7 +1620,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 1
         name:
           type: string
@@ -1652,12 +1652,12 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 1
         originalLanguage:
           type: string
         episodeCount:
-          type: number
+          type: integer
         overview:
           type: string
         originCountry:
@@ -1667,7 +1667,7 @@ components:
         originalName:
           type: string
         voteCount:
-          type: number
+          type: integer
         name:
           type: string
         mediaType:
@@ -1685,7 +1685,7 @@ components:
         genreIds:
           type: array
           items:
-            type: number
+            type: integer
         posterPath:
           type: string
         originalTitle:
@@ -1706,12 +1706,12 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 1
         originalLanguage:
           type: string
         episodeCount:
-          type: number
+          type: integer
         overview:
           type: string
         originCountry:
@@ -1721,7 +1721,7 @@ components:
         originalName:
           type: string
         voteCount:
-          type: number
+          type: integer
         name:
           type: string
         mediaType:
@@ -1739,7 +1739,7 @@ components:
         genreIds:
           type: array
           items:
-            type: number
+            type: integer
         posterPath:
           type: string
         originalTitle:
@@ -1762,7 +1762,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 1
         name:
           type: string
@@ -1784,7 +1784,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 123
         name:
           type: string
@@ -1810,7 +1810,7 @@ components:
           type: string
           example: covid 25
         seasonCount:
-          type: number
+          type: integer
           example: 1
         status:
           type: string
@@ -1844,20 +1844,20 @@ components:
             type: object
             properties:
               seasonNumber:
-                type: number
+                type: integer
                 example: 1
               monitored:
                 type: boolean
                 example: true
         year:
-          type: number
+          type: integer
           example: 2015
         path:
           type: string
         profileId:
-          type: number
+          type: integer
         languageProfileId:
-          type: number
+          type: integer
         seasonFolder:
           type: boolean
         monitored:
@@ -1867,12 +1867,12 @@ components:
         runtime:
           type: number
         tvdbId:
-          type: number
+          type: integer
           example: 12345
         tvRageId:
-          type: number
+          type: integer
         tvMazeId:
-          type: number
+          type: integer
         firstAired:
           type: string
         lastInfoSync:
@@ -1904,13 +1904,13 @@ components:
             type: object
             properties:
               votes:
-                type: number
+                type: integer
               value:
-                type: number
+                type: integer
         qualityProfileId:
-          type: number
+          type: integer
         id:
-          type: number
+          type: integer
           nullable: true
         rootFolderPath:
           type: string
@@ -1942,7 +1942,7 @@ components:
         discordEnabled:
           type: boolean
         discordEnabledTypes:
-          type: number
+          type: integer
           nullable: true
         discordId:
           type: string
@@ -1977,21 +1977,21 @@ components:
       type: object
       properties:
         discord:
-          type: number
+          type: integer
         email:
-          type: number
+          type: integer
         pushbullet:
-          type: number
+          type: integer
         pushover:
-          type: number
+          type: integer
         slack:
-          type: number
+          type: integer
         telegram:
-          type: number
+          type: integer
         webhook:
-          type: number
+          type: integer
         webpush:
-          type: number
+          type: integer
     WatchProviders:
       type: array
       items:
@@ -2012,21 +2012,21 @@ components:
       type: object
       properties:
         displayPriority:
-          type: number
+          type: integer
         logoPath:
           type: string
         id:
-          type: number
+          type: integer
         name:
           type: string
     Issue:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 1
         issueType:
-          type: number
+          type: integer
           example: 1
         media:
           $ref: '#/components/schemas/MediaInfo'
@@ -2042,7 +2042,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 1
         user:
           $ref: '#/components/schemas/User'
@@ -2053,10 +2053,10 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: integer
           example: 1
         type:
-          type: number
+          type: integer
           example: 1
         title:
           type: string
@@ -2099,7 +2099,7 @@ components:
           example: 'Some material may be inappropriate for children under 13.'
           nullable: true
         order:
-          type: number
+          type: integer
           example: 3
           nullable: true
       required:
@@ -2157,7 +2157,7 @@ paths:
                   updateAvailable:
                     type: boolean
                   commitsBehind:
-                    type: number
+                    type: integer
                   restartRequired:
                     type: boolean
   /status/appdata:
@@ -2366,7 +2366,7 @@ paths:
                     type: number
                     example: 0
                   total:
-                    type: number
+                    type: integer
                     example: 100
                   currentLibrary:
                     $ref: '#/components/schemas/JellyfinLibrary'
@@ -2406,7 +2406,7 @@ paths:
                     type: number
                     example: 0
                   total:
-                    type: number
+                    type: integer
                     example: 100
                   currentLibrary:
                     $ref: '#/components/schemas/JellyfinLibrary'
@@ -2496,7 +2496,7 @@ paths:
                     type: number
                     example: 0
                   total:
-                    type: number
+                    type: integer
                     example: 100
                   currentLibrary:
                     $ref: '#/components/schemas/PlexLibrary'
@@ -2536,7 +2536,7 @@ paths:
                     type: number
                     example: 0
                   total:
-                    type: number
+                    type: integer
                     example: 100
                   currentLibrary:
                     $ref: '#/components/schemas/PlexLibrary'
@@ -2731,7 +2731,7 @@ paths:
                   type: string
                   example: '127.0.0.1'
                 port:
-                  type: number
+                  type: integer
                   example: 7878
                 apiKey:
                   type: string
@@ -2875,7 +2875,7 @@ paths:
                   type: string
                   example: '127.0.0.1'
                 port:
-                  type: number
+                  type: integer
                   example: 8989
                 apiKey:
                   type: string
@@ -3077,19 +3077,19 @@ paths:
                         type: object
                         properties:
                           size:
-                            type: number
+                            type: integer
                             example: 123456
                           imageCount:
-                            type: number
+                            type: integer
                             example: 123
                       avatar:
                         type: object
                         properties:
                           size:
-                            type: number
+                            type: integer
                             example: 123456
                           imageCount:
-                            type: number
+                            type: integer
                             example: 123
                   dnsCache:
                     type: object
@@ -3098,25 +3098,25 @@ paths:
                         type: object
                         properties:
                           size:
-                            type: number
+                            type: integer
                             example: 1
                           maxSize:
-                            type: number
+                            type: integer
                             example: 500
                           hits:
-                            type: number
+                            type: integer
                             example: 19
                           misses:
-                            type: number
+                            type: integer
                             example: 1
                           failures:
-                            type: number
+                            type: integer
                             example: 0
                           ipv4Fallbacks:
-                            type: number
+                            type: integer
                             example: 0
                           hitRate:
-                            type: number
+                            type: integer
                             example: 0.95
                       entries:
                         type: array
@@ -3127,31 +3127,31 @@ paths:
                               type: object
                               properties:
                                 ipv4:
-                                  type: number
+                                  type: integer
                                   example: 1
                                 ipv6:
-                                  type: number
+                                  type: integer
                                   example: 1
                             activeAddress:
                               type: string
                               example: 127.0.0.1
                             family:
-                              type: number
+                              type: integer
                               example: 4
                             age:
-                              type: number
+                              type: integer
                               example: 10
                             ttl:
-                              type: number
+                              type: integer
                               example: 10
                             networkErrors:
-                              type: number
+                              type: integer
                               example: 0
                             hits:
-                              type: number
+                              type: integer
                               example: 1
                             misses:
-                              type: number
+                              type: integer
                               example: 1
                   apiCaches:
                     type: array
@@ -3168,15 +3168,15 @@ paths:
                           type: object
                           properties:
                             hits:
-                              type: number
+                              type: integer
                             misses:
-                              type: number
+                              type: integer
                             keys:
-                              type: number
+                              type: integer
                             ksize:
-                              type: number
+                              type: integer
                             vsize:
-                              type: number
+                              type: integer
   /settings/cache/{cacheId}/flush:
     post:
       summary: Flush a specific cache
@@ -3217,13 +3217,13 @@ paths:
         - in: query
           name: take
           schema:
-            type: number
+            type: integer
             nullable: true
             example: 25
         - in: query
           name: skip
           schema:
-            type: number
+            type: integer
             nullable: true
             example: 0
         - in: query
@@ -3800,7 +3800,7 @@ paths:
           name: sliderId
           required: true
           schema:
-            type: number
+            type: integer
       requestBody:
         required: true
         content:
@@ -3812,7 +3812,7 @@ paths:
                   type: string
                   example: 'Slider Title'
                 type:
-                  type: number
+                  type: integer
                   example: 1
                 data:
                   type: string
@@ -3834,7 +3834,7 @@ paths:
           name: sliderId
           required: true
           schema:
-            type: number
+            type: integer
       responses:
         '200':
           description: Slider successfully deleted
@@ -3860,7 +3860,7 @@ paths:
                   type: string
                   example: 'New Slider'
                 type:
-                  type: number
+                  type: integer
                   example: 1
                 data:
                   type: string
@@ -3899,10 +3899,10 @@ paths:
                     type: string
                     example: '1.0.0'
                   totalRequests:
-                    type: number
+                    type: integer
                     example: 100
                   totalMediaItems:
-                    type: number
+                    type: integer
                     example: 100
                   tz:
                     type: string
@@ -3980,7 +3980,7 @@ paths:
                 email:
                   type: string
                 serverType:
-                  type: number
+                  type: integer
               required:
                 - username
                 - password
@@ -4104,13 +4104,13 @@ paths:
         - in: query
           name: take
           schema:
-            type: number
+            type: integer
             nullable: true
             example: 20
         - in: query
           name: skip
           schema:
-            type: number
+            type: integer
             nullable: true
             example: 0
         - in: query
@@ -4162,7 +4162,7 @@ paths:
                 username:
                   type: string
                 permissions:
-                  type: number
+                  type: integer
       responses:
         '201':
           description: The created user
@@ -4298,7 +4298,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       responses:
         '200':
           description: User web push notification settings in JSON
@@ -4327,7 +4327,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
         - in: path
           name: endpoint
           required: true
@@ -4359,7 +4359,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
         - in: path
           name: endpoint
           required: true
@@ -4380,7 +4380,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       responses:
         '200':
           description: Users details in JSON
@@ -4401,7 +4401,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       requestBody:
         required: true
         content:
@@ -4425,7 +4425,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       responses:
         '200':
           description: User successfully deleted
@@ -4445,17 +4445,17 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
         - in: query
           name: take
           schema:
-            type: number
+            type: integer
             nullable: true
             example: 20
         - in: query
           name: skip
           schema:
-            type: number
+            type: integer
             nullable: true
             example: 0
       responses:
@@ -4484,7 +4484,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       responses:
         '200':
           description: User quota details in JSON
@@ -4497,16 +4497,16 @@ paths:
                     type: object
                     properties:
                       days:
-                        type: number
+                        type: integer
                         example: 7
                       limit:
-                        type: number
+                        type: integer
                         example: 10
                       used:
-                        type: number
+                        type: integer
                         example: 6
                       remaining:
-                        type: number
+                        type: integer
                         example: 4
                       restricted:
                         type: boolean
@@ -4515,16 +4515,16 @@ paths:
                     type: object
                     properties:
                       days:
-                        type: number
+                        type: integer
                         example: 7
                       limit:
-                        type: number
+                        type: integer
                         example: 10
                       used:
-                        type: number
+                        type: integer
                         example: 6
                       remaining:
-                        type: number
+                        type: integer
                         example: 4
                       restricted:
                         type: boolean
@@ -4539,13 +4539,13 @@ paths:
         - in: query
           name: take
           schema:
-            type: number
+            type: integer
             nullable: true
             example: 25
         - in: query
           name: skip
           schema:
-            type: number
+            type: integer
             nullable: true
             example: 0
         - in: query
@@ -4581,7 +4581,7 @@ paths:
                           type: string
                           example: 2024-04-21T01:55:44.000Z
                         id:
-                          type: number
+                          type: integer
                           example: 1
                         mediaType:
                           type: string
@@ -4590,7 +4590,7 @@ paths:
                           type: string
                           example: Dune
                         tmdbId:
-                          type: number
+                          type: integer
                           example: 438631
     post:
       summary: Add media to blacklist
@@ -4686,11 +4686,11 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
       responses:
@@ -4702,18 +4702,18 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                   totalPages:
-                    type: number
+                    type: integer
                   totalResults:
-                    type: number
+                    type: integer
                   results:
                     type: array
                     items:
                       type: object
                       properties:
                         tmdbId:
-                          type: number
+                          type: integer
                           example: 1
                         ratingKey:
                           type: string
@@ -4732,7 +4732,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       responses:
         '200':
           description: User general settings returned
@@ -4750,7 +4750,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       requestBody:
         required: true
         content:
@@ -4775,7 +4775,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       responses:
         '200':
           description: User password page information returned
@@ -4797,7 +4797,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       requestBody:
         required: true
         content:
@@ -4826,7 +4826,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       requestBody:
         required: true
         content:
@@ -4855,7 +4855,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       responses:
         '204':
           description: Unlinking account succeeded
@@ -4874,7 +4874,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       requestBody:
         required: true
         content:
@@ -4905,7 +4905,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       responses:
         '204':
           description: Unlinking account succeeded
@@ -4924,7 +4924,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       responses:
         '200':
           description: User notification settings returned
@@ -4942,7 +4942,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       requestBody:
         required: true
         content:
@@ -4967,7 +4967,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       responses:
         '200':
           description: User permission settings returned
@@ -4977,7 +4977,7 @@ paths:
                 type: object
                 properties:
                   permissions:
-                    type: number
+                    type: integer
                     example: 2
     post:
       summary: Update permission settings for a user
@@ -4989,7 +4989,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       requestBody:
         required: true
         content:
@@ -4998,7 +4998,7 @@ paths:
               type: object
               properties:
                 permissions:
-                  type: number
+                  type: integer
               required:
                 - permissions
       responses:
@@ -5010,7 +5010,7 @@ paths:
                 type: object
                 properties:
                   permissions:
-                    type: number
+                    type: integer
                     example: 2
   /user/{userId}/watch_data:
     get:
@@ -5026,7 +5026,7 @@ paths:
           name: userId
           required: true
           schema:
-            type: number
+            type: integer
       responses:
         '200':
           description: Users
@@ -5040,7 +5040,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/MediaInfo'
                   playCount:
-                    type: number
+                    type: integer
   /search:
     get:
       summary: Search for movies, TV shows, or people
@@ -5057,7 +5057,7 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -5074,13 +5074,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   results:
                     type: array
@@ -5105,7 +5105,7 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
       responses:
@@ -5117,13 +5117,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   results:
                     type: array
@@ -5145,7 +5145,7 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
       responses:
@@ -5157,13 +5157,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   results:
                     type: array
@@ -5179,7 +5179,7 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -5195,7 +5195,7 @@ paths:
         - in: query
           name: studio
           schema:
-            type: number
+            type: integer
             example: 1
         - in: query
           name: keywords
@@ -5246,12 +5246,12 @@ paths:
         - in: query
           name: voteCountGte
           schema:
-            type: number
+            type: integer
             example: 7
         - in: query
           name: voteCountLte
           schema:
-            type: number
+            type: integer
             example: 10
         - in: query
           name: watchRegion
@@ -5303,13 +5303,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   results:
                     type: array
@@ -5331,7 +5331,7 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -5348,13 +5348,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   genre:
                     $ref: '#/components/schemas/Genre'
@@ -5378,7 +5378,7 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -5395,13 +5395,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   language:
                     $ref: '#/components/schemas/SpokenLanguage'
@@ -5425,7 +5425,7 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -5442,13 +5442,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   studio:
                     $ref: '#/components/schemas/ProductionCompany'
@@ -5466,7 +5466,7 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -5483,13 +5483,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   results:
                     type: array
@@ -5505,7 +5505,7 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -5521,7 +5521,7 @@ paths:
         - in: query
           name: network
           schema:
-            type: number
+            type: integer
             example: 1
         - in: query
           name: keywords
@@ -5572,12 +5572,12 @@ paths:
         - in: query
           name: voteCountGte
           schema:
-            type: number
+            type: integer
             example: 7
         - in: query
           name: voteCountLte
           schema:
-            type: number
+            type: integer
             example: 10
         - in: query
           name: watchRegion
@@ -5634,13 +5634,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   results:
                     type: array
@@ -5662,7 +5662,7 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -5679,13 +5679,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   language:
                     $ref: '#/components/schemas/SpokenLanguage'
@@ -5709,7 +5709,7 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -5726,13 +5726,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   genre:
                     $ref: '#/components/schemas/Genre'
@@ -5756,7 +5756,7 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -5773,13 +5773,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   network:
                     $ref: '#/components/schemas/Network'
@@ -5797,7 +5797,7 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -5814,13 +5814,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   results:
                     type: array
@@ -5836,7 +5836,7 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -5853,13 +5853,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   results:
                     type: array
@@ -5879,12 +5879,12 @@ paths:
           name: keywordId
           required: true
           schema:
-            type: number
+            type: integer
             example: 207317
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -5901,13 +5901,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   results:
                     type: array
@@ -5936,7 +5936,7 @@ paths:
                   type: object
                   properties:
                     id:
-                      type: number
+                      type: integer
                       example: 1
                     backdrops:
                       type: array
@@ -5968,7 +5968,7 @@ paths:
                   type: object
                   properties:
                     id:
-                      type: number
+                      type: integer
                       example: 1
                     backdrops:
                       type: array
@@ -5986,7 +5986,7 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
       responses:
@@ -5998,18 +5998,18 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                   totalPages:
-                    type: number
+                    type: integer
                   totalResults:
-                    type: number
+                    type: integer
                   results:
                     type: array
                     items:
                       type: object
                       properties:
                         tmdbId:
-                          type: number
+                          type: integer
                           example: 1
                         ratingKey:
                           type: string
@@ -6030,13 +6030,13 @@ paths:
         - in: query
           name: take
           schema:
-            type: number
+            type: integer
             nullable: true
             example: 20
         - in: query
           name: skip
           schema:
-            type: number
+            type: integer
             nullable: true
             example: 0
         - in: query
@@ -6072,7 +6072,7 @@ paths:
         - in: query
           name: requestedBy
           schema:
-            type: number
+            type: integer
             nullable: true
             example: 1
         - in: query
@@ -6116,16 +6116,16 @@ paths:
                   enum: [movie, tv]
                   example: movie
                 mediaId:
-                  type: number
+                  type: integer
                   example: 123
                 tvdbId:
-                  type: number
+                  type: integer
                   example: 123
                 seasons:
                   oneOf:
                     - type: array
                       items:
-                        type: number
+                        type: integer
                         minimum: 0
                     - type: string
                       enum: [all]
@@ -6133,15 +6133,15 @@ paths:
                   type: boolean
                   example: false
                 serverId:
-                  type: number
+                  type: integer
                 profileId:
-                  type: number
+                  type: integer
                 rootFolder:
                   type: string
                 languageProfileId:
-                  type: number
+                  type: integer
                 userId:
-                  type: number
+                  type: integer
                   nullable: true
               required:
                 - mediaType
@@ -6169,23 +6169,23 @@ paths:
                 type: object
                 properties:
                   total:
-                    type: number
+                    type: integer
                   movie:
-                    type: number
+                    type: integer
                   tv:
-                    type: number
+                    type: integer
                   pending:
-                    type: number
+                    type: integer
                   approved:
-                    type: number
+                    type: integer
                   declined:
-                    type: number
+                    type: integer
                   processing:
-                    type: number
+                    type: integer
                   available:
-                    type: number
+                    type: integer
                   completed:
-                    type: number
+                    type: integer
   /request/{requestId}:
     get:
       summary: Get MediaRequest
@@ -6233,21 +6233,21 @@ paths:
                 seasons:
                   type: array
                   items:
-                    type: number
+                    type: integer
                     minimum: 0
                 is4k:
                   type: boolean
                   example: false
                 serverId:
-                  type: number
+                  type: integer
                 profileId:
-                  type: number
+                  type: integer
                 rootFolder:
                   type: string
                 languageProfileId:
-                  type: number
+                  type: integer
                 userId:
-                  type: number
+                  type: integer
                   nullable: true
               required:
                 - mediaType
@@ -6340,7 +6340,7 @@ paths:
           name: movieId
           required: true
           schema:
-            type: number
+            type: integer
             example: 337401
         - in: query
           name: language
@@ -6365,12 +6365,12 @@ paths:
           name: movieId
           required: true
           schema:
-            type: number
+            type: integer
             example: 337401
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -6387,13 +6387,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   results:
                     type: array
@@ -6410,12 +6410,12 @@ paths:
           name: movieId
           required: true
           schema:
-            type: number
+            type: integer
             example: 337401
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -6432,13 +6432,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   results:
                     type: array
@@ -6455,7 +6455,7 @@ paths:
           name: movieId
           required: true
           schema:
-            type: number
+            type: integer
             example: 337401
       responses:
         '200':
@@ -6469,7 +6469,7 @@ paths:
                     type: string
                     example: Mulan
                   year:
-                    type: number
+                    type: integer
                     example: 2020
                   url:
                     type: string
@@ -6497,7 +6497,7 @@ paths:
           name: movieId
           required: true
           schema:
-            type: number
+            type: integer
             example: 337401
       responses:
         '200':
@@ -6514,7 +6514,7 @@ paths:
                         type: string
                         example: Mulan
                       year:
-                        type: number
+                        type: integer
                         example: 2020
                       url:
                         type: string
@@ -6554,7 +6554,7 @@ paths:
           name: tvId
           required: true
           schema:
-            type: number
+            type: integer
             example: 76479
         - in: query
           name: language
@@ -6579,13 +6579,13 @@ paths:
           name: tvId
           required: true
           schema:
-            type: number
+            type: integer
             example: 76479
         - in: path
           name: seasonNumber
           required: true
           schema:
-            type: number
+            type: integer
             example: 123456
         - in: query
           name: language
@@ -6610,12 +6610,12 @@ paths:
           name: tvId
           required: true
           schema:
-            type: number
+            type: integer
             example: 76479
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -6632,13 +6632,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   results:
                     type: array
@@ -6655,12 +6655,12 @@ paths:
           name: tvId
           required: true
           schema:
-            type: number
+            type: integer
             example: 76479
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
             example: 1
             default: 1
         - in: query
@@ -6677,13 +6677,13 @@ paths:
                 type: object
                 properties:
                   page:
-                    type: number
+                    type: integer
                     example: 1
                   totalPages:
-                    type: number
+                    type: integer
                     example: 20
                   totalResults:
-                    type: number
+                    type: integer
                     example: 200
                   results:
                     type: array
@@ -6700,7 +6700,7 @@ paths:
           name: tvId
           required: true
           schema:
-            type: number
+            type: integer
             example: 76479
       responses:
         '200':
@@ -6714,7 +6714,7 @@ paths:
                     type: string
                     example: The Boys
                   year:
-                    type: number
+                    type: integer
                     example: 2019
                   url:
                     type: string
@@ -6736,7 +6736,7 @@ paths:
           name: personId
           required: true
           schema:
-            type: number
+            type: integer
             example: 287
         - in: query
           name: language
@@ -6761,7 +6761,7 @@ paths:
           name: personId
           required: true
           schema:
-            type: number
+            type: integer
             example: 287
         - in: query
           name: language
@@ -6785,7 +6785,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/CreditCrew'
                   id:
-                    type: number
+                    type: integer
   /media:
     get:
       summary: Get media
@@ -6796,13 +6796,13 @@ paths:
         - in: query
           name: take
           schema:
-            type: number
+            type: integer
             nullable: true
             example: 20
         - in: query
           name: skip
           schema:
-            type: number
+            type: integer
             nullable: true
             example: 0
         - in: query
@@ -6952,11 +6952,11 @@ paths:
                     type: object
                     properties:
                       playCount7Days:
-                        type: number
+                        type: integer
                       playCount30Days:
-                        type: number
+                        type: integer
                       playCount:
-                        type: number
+                        type: integer
                       users:
                         type: array
                         items:
@@ -6965,11 +6965,11 @@ paths:
                     type: object
                     properties:
                       playCount7Days:
-                        type: number
+                        type: integer
                       playCount30Days:
-                        type: number
+                        type: integer
                       playCount:
-                        type: number
+                        type: integer
                       users:
                         type: array
                         items:
@@ -6985,7 +6985,7 @@ paths:
           name: collectionId
           required: true
           schema:
-            type: number
+            type: integer
             example: 537982
         - in: query
           name: language
@@ -7025,7 +7025,7 @@ paths:
           name: radarrId
           required: true
           schema:
-            type: number
+            type: integer
             example: 0
       responses:
         '200':
@@ -7065,7 +7065,7 @@ paths:
           name: sonarrId
           required: true
           schema:
-            type: number
+            type: integer
             example: 0
       responses:
         '200':
@@ -7090,7 +7090,7 @@ paths:
           name: tmdbId
           required: true
           schema:
-            type: number
+            type: integer
             example: 0
       responses:
         '200':
@@ -7159,7 +7159,7 @@ paths:
           name: studioId
           required: true
           schema:
-            type: number
+            type: integer
             example: 2
       responses:
         '200':
@@ -7179,7 +7179,7 @@ paths:
           name: networkId
           required: true
           schema:
-            type: number
+            type: integer
             example: 1
       responses:
         '200':
@@ -7211,7 +7211,7 @@ paths:
                   type: object
                   properties:
                     id:
-                      type: number
+                      type: integer
                       example: 10751
                     name:
                       type: string
@@ -7239,7 +7239,7 @@ paths:
                   type: object
                   properties:
                     id:
-                      type: number
+                      type: integer
                       example: 18
                     name:
                       type: string
@@ -7271,13 +7271,13 @@ paths:
         - in: query
           name: take
           schema:
-            type: number
+            type: integer
             nullable: true
             example: 20
         - in: query
           name: skip
           schema:
-            type: number
+            type: integer
             nullable: true
             example: 0
         - in: query
@@ -7295,7 +7295,7 @@ paths:
         - in: query
           name: requestedBy
           schema:
-            type: number
+            type: integer
             nullable: true
             example: 1
       responses:
@@ -7326,11 +7326,11 @@ paths:
               type: object
               properties:
                 issueType:
-                  type: number
+                  type: integer
                 message:
                   type: string
                 mediaId:
-                  type: number
+                  type: integer
       responses:
         '201':
           description: Succesfully created the issue
@@ -7355,19 +7355,19 @@ paths:
                 type: object
                 properties:
                   total:
-                    type: number
+                    type: integer
                   video:
-                    type: number
+                    type: integer
                   audio:
-                    type: number
+                    type: integer
                   subtitles:
-                    type: number
+                    type: integer
                   others:
-                    type: number
+                    type: integer
                   open:
-                    type: number
+                    type: integer
                   closed:
-                    type: number
+                    type: integer
   /issue/{issueId}:
     get:
       summary: Get issue
@@ -7380,7 +7380,7 @@ paths:
           name: issueId
           required: true
           schema:
-            type: number
+            type: integer
             example: 1
       responses:
         '200':
@@ -7417,7 +7417,7 @@ paths:
           name: issueId
           required: true
           schema:
-            type: number
+            type: integer
             example: 1
       requestBody:
         required: true
@@ -7547,7 +7547,7 @@ paths:
           name: keywordId
           required: true
           schema:
-            type: number
+            type: integer
             example: 1
       responses:
         '200':
@@ -7653,7 +7653,7 @@ paths:
                 type: object
                 properties:
                   status:
-                    type: number
+                    type: integer
                     example: 500
                   message:
                     type: string
@@ -7682,7 +7682,7 @@ paths:
                 type: object
                 properties:
                   status:
-                    type: number
+                    type: integer
                     example: 500
                   message:
                     type: string
@@ -7727,7 +7727,7 @@ paths:
           name: ruleId
           required: true
           schema:
-            type: number
+            type: integer
       responses:
         '200':
           description: 'Values were successfully updated'
@@ -7747,7 +7747,7 @@ paths:
           name: ruleId
           required: true
           schema:
-            type: number
+            type: integer
       responses:
         '200':
           description: Override rule successfully deleted
