@@ -331,21 +331,6 @@ components:
             forceMaxTtl:
               type: integer
               example: -1
-    PlexLibrary:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-          example: Movies
-        enabled:
-          type: boolean
-          example: false
-      required:
-        - id
-        - name
-        - enabled
     PlexSettings:
       type: object
       properties:
@@ -370,7 +355,7 @@ components:
           type: array
           readOnly: true
           items:
-            $ref: '#/components/schemas/PlexLibrary'
+            $ref: '#/components/schemas/MediaLibrary'
         webAppUrl:
           type: string
           nullable: true
@@ -511,7 +496,7 @@ components:
           type: string
         email:
           type: string
-    JellyfinLibrary:
+    MediaLibrary:
       type: object
       properties:
         id:
@@ -526,7 +511,7 @@ components:
         - id
         - name
         - enabled
-    JellyfinSyncRequest:
+    MediaLibrarySyncRequest:
       type: object
       properties:
         cancel:
@@ -535,7 +520,7 @@ components:
         start:
           type: boolean
           example: false
-    JellyfinSyncStatus:
+    MediaLibrarySyncStatus:
       type: object
       properties:
         running:
@@ -548,11 +533,11 @@ components:
           type: integer
           example: 100
         currentLibrary:
-          $ref: '#/components/schemas/JellyfinLibrary'
+          $ref: '#/components/schemas/MediaLibrary'
         libraries:
           type: array
           items:
-            $ref: '#/components/schemas/JellyfinLibrary'
+            $ref: '#/components/schemas/MediaLibrary'
     JellyfinSettings:
       type: object
       properties:
@@ -579,7 +564,7 @@ components:
           type: array
           readOnly: true
           items:
-            $ref: '#/components/schemas/JellyfinLibrary'
+            $ref: '#/components/schemas/MediaLibrary'
         serverID:
           type: string
           readOnly: true
@@ -2361,7 +2346,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/JellyfinLibrary'
+                  $ref: '#/components/schemas/MediaLibrary'
   /settings/jellyfin/users:
     get:
       summary: Get Jellyfin Users
@@ -2390,7 +2375,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JellyfinSyncStatus'
+                $ref: '#/components/schemas/MediaLibrarySyncStatus'
     post:
       summary: Start full Jellyfin library sync
       description: Runs a full Jellyfin library sync and returns the progress in a JSON array.
@@ -2400,14 +2385,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JellyfinSyncRequest'
+              $ref: '#/components/schemas/MediaLibrarySyncRequest'
       responses:
         '200':
           description: Status of Jellyfin sync
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JellyfinSyncStatus'
+                $ref: '#/components/schemas/MediaLibrarySyncStatus'
   /settings/plex:
     get:
       summary: Get Plex settings
@@ -2468,7 +2453,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/PlexLibrary'
+                  $ref: '#/components/schemas/MediaLibrary'
   /settings/plex/sync:
     get:
       summary: Get status of full Plex library scan
@@ -2481,23 +2466,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  running:
-                    type: boolean
-                    example: false
-                  progress:
-                    type: number
-                    example: 0
-                  total:
-                    type: integer
-                    example: 100
-                  currentLibrary:
-                    $ref: '#/components/schemas/PlexLibrary'
-                  libraries:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/PlexLibrary'
+                $ref: '#/components/schemas/MediaLibrarySyncStatus'
     post:
       summary: Start full Plex library scan
       description: Runs a full Plex library scan and returns the progress in a JSON array.
@@ -2507,37 +2476,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                cancel:
-                  type: boolean
-                  example: false
-                start:
-                  type: boolean
-                  example: false
+              $ref: '#/components/schemas/MediaLibrarySyncRequest'
       responses:
         '200':
           description: Status of Plex scan
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  running:
-                    type: boolean
-                    example: false
-                  progress:
-                    type: number
-                    example: 0
-                  total:
-                    type: integer
-                    example: 100
-                  currentLibrary:
-                    $ref: '#/components/schemas/PlexLibrary'
-                  libraries:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/PlexLibrary'
+                $ref: '#/components/schemas/MediaLibrarySyncStatus'
   /settings/plex/devices/servers:
     get:
       summary: Gets the user's available Plex servers
