@@ -5,10 +5,10 @@ export class InitialMigration1734786061496 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `CREATE TABLE "blacklist" ("id" SERIAL NOT NULL, "mediaType" character varying NOT NULL, "title" character varying, "tmdbId" integer NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "userId" integer, "mediaId" integer, CONSTRAINT "UQ_6bbafa28411e6046421991ea21c" UNIQUE ("tmdbId"), CONSTRAINT "REL_62b7ade94540f9f8d8bede54b9" UNIQUE ("mediaId"), CONSTRAINT "PK_04dc42a96bf0914cda31b579702" PRIMARY KEY ("id"))`
+      `CREATE TABLE "blocklist" ("id" SERIAL NOT NULL, "mediaType" character varying NOT NULL, "title" character varying, "tmdbId" integer NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "userId" integer, "mediaId" integer, CONSTRAINT "UQ_6bbafa28411e6046421991ea21c" UNIQUE ("tmdbId"), CONSTRAINT "REL_62b7ade94540f9f8d8bede54b9" UNIQUE ("mediaId"), CONSTRAINT "PK_04dc42a96bf0914cda31b579702" PRIMARY KEY ("id"))`
     );
     await queryRunner.query(
-      `CREATE INDEX "IDX_6bbafa28411e6046421991ea21" ON "blacklist" ("tmdbId") `
+      `CREATE INDEX "IDX_6bbafa28411e6046421991ea21" ON "blocklist" ("tmdbId") `
     );
     await queryRunner.query(
       `CREATE TABLE "season_request" ("id" SERIAL NOT NULL, "seasonNumber" integer NOT NULL, "status" integer NOT NULL DEFAULT '1', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "requestId" integer, CONSTRAINT "PK_4811e502081543bf620f1fa4328" PRIMARY KEY ("id"))`
@@ -62,10 +62,10 @@ export class InitialMigration1734786061496 implements MigrationInterface {
       `CREATE INDEX "IDX_28c5d1d16da7908c97c9bc2f74" ON "session" ("expiredAt") `
     );
     await queryRunner.query(
-      `ALTER TABLE "blacklist" ADD CONSTRAINT "FK_53c1ab62c3e5875bc3ac474823e" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+      `ALTER TABLE "blocklist" ADD CONSTRAINT "FK_53c1ab62c3e5875bc3ac474823e" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
     );
     await queryRunner.query(
-      `ALTER TABLE "blacklist" ADD CONSTRAINT "FK_62b7ade94540f9f8d8bede54b99" FOREIGN KEY ("mediaId") REFERENCES "media"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
+      `ALTER TABLE "blocklist" ADD CONSTRAINT "FK_62b7ade94540f9f8d8bede54b99" FOREIGN KEY ("mediaId") REFERENCES "media"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
     );
     await queryRunner.query(
       `ALTER TABLE "season_request" ADD CONSTRAINT "FK_6f14737e346d6b27d8e50d2157a" FOREIGN KEY ("requestId") REFERENCES "media_request"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
@@ -155,10 +155,10 @@ export class InitialMigration1734786061496 implements MigrationInterface {
       `ALTER TABLE "season_request" DROP CONSTRAINT "FK_6f14737e346d6b27d8e50d2157a"`
     );
     await queryRunner.query(
-      `ALTER TABLE "blacklist" DROP CONSTRAINT "FK_62b7ade94540f9f8d8bede54b99"`
+      `ALTER TABLE "blocklist" DROP CONSTRAINT "FK_62b7ade94540f9f8d8bede54b99"`
     );
     await queryRunner.query(
-      `ALTER TABLE "blacklist" DROP CONSTRAINT "FK_53c1ab62c3e5875bc3ac474823e"`
+      `ALTER TABLE "blocklist" DROP CONSTRAINT "FK_53c1ab62c3e5875bc3ac474823e"`
     );
     await queryRunner.query(
       `DROP INDEX "public"."IDX_28c5d1d16da7908c97c9bc2f74"`
@@ -190,6 +190,6 @@ export class InitialMigration1734786061496 implements MigrationInterface {
     await queryRunner.query(
       `DROP INDEX "public"."IDX_6bbafa28411e6046421991ea21"`
     );
-    await queryRunner.query(`DROP TABLE "blacklist"`);
+    await queryRunner.query(`DROP TABLE "blocklist"`);
   }
 }

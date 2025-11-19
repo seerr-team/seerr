@@ -23,10 +23,10 @@ Welcome to the Seerr Documentation.
 - Localization into other languages.
 - Support for **PostgreSQL** and **SQLite** databases.
 - Support for various notification agents.
-- Easily **Watchlist** or **Blacklist** media.
+- Easily **Watchlist** or **Blocklist** media.
 - More features to come!
 
-## We need your help!
+## We need your help
 
 [Seerr](https://github.com/seerr-team/seerr) is an ambitious project developers/contributors poured a lot of work into, and we still have a lot more to do. Seerr is the result of a collaborative effort between the original Overseerr project and the Jellyseerr fork, created to deliver an excellent request management solution for Plex, Jellyfin and Emby users.
 

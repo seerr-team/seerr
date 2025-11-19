@@ -2,31 +2,31 @@ import Badge from '@app/components/Common/Badge';
 import Tooltip from '@app/components/Common/Tooltip';
 import defineMessages from '@app/utils/defineMessages';
 import { TagIcon } from '@heroicons/react/20/solid';
-import type { BlacklistItem } from '@server/interfaces/api/blacklistInterfaces';
+import type { BlocklistItem } from '@server/interfaces/api/blocklistInterfaces';
 import type { Keyword } from '@server/models/common';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.Settings', {
-  blacklistedTagsText: 'Blacklisted Tags',
+  blocklistedTagsText: 'Blocklisted Tags',
 });
 
-interface BlacklistedTagsBadgeProps {
-  data: BlacklistItem;
+interface BlocklistedTagsBadgeProps {
+  data: BlocklistItem;
 }
 
-const BlacklistedTagsBadge = ({ data }: BlacklistedTagsBadgeProps) => {
-  const [tagNamesBlacklistedFor, setTagNamesBlacklistedFor] =
+const BlocklistedTagsBadge = ({ data }: BlocklistedTagsBadgeProps) => {
+  const [tagNamesBlocklistedFor, setTagNamesBlocklistedFor] =
     useState<string>('Loading...');
   const intl = useIntl();
 
   useEffect(() => {
-    if (!data.blacklistedTags) {
+    if (!data.blocklistedTags) {
       return;
     }
 
-    const keywordIds = data.blacklistedTags.slice(1, -1).split(',');
+    const keywordIds = data.blocklistedTags.slice(1, -1).split(',');
     Promise.all(
       keywordIds.map(async (keywordId) => {
         const { data } = await axios.get<Keyword | null>(
@@ -35,13 +35,13 @@ const BlacklistedTagsBadge = ({ data }: BlacklistedTagsBadgeProps) => {
         return data?.name || `[Invalid: ${keywordId}]`;
       })
     ).then((keywords) => {
-      setTagNamesBlacklistedFor(keywords.join(', '));
+      setTagNamesBlocklistedFor(keywords.join(', '));
     });
-  }, [data.blacklistedTags]);
+  }, [data.blocklistedTags]);
 
   return (
     <Tooltip
-      content={tagNamesBlacklistedFor}
+      content={tagNamesBlocklistedFor}
       tooltipConfig={{ followCursor: false }}
     >
       <Badge
@@ -49,10 +49,10 @@ const BlacklistedTagsBadge = ({ data }: BlacklistedTagsBadgeProps) => {
         className="items-center border border-red-500 !text-red-400"
       >
         <TagIcon className="mr-1 h-4" />
-        {intl.formatMessage(messages.blacklistedTagsText)}
+        {intl.formatMessage(messages.blocklistedTagsText)}
       </Badge>
     </Tooltip>
   );
 };
 
-export default BlacklistedTagsBadge;
+export default BlocklistedTagsBadge;

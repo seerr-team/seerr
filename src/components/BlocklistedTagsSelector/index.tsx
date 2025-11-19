@@ -26,19 +26,19 @@ import { components } from 'react-select';
 import AsyncSelect from 'react-select/async';
 
 const messages = defineMessages('components.Settings', {
-  copyBlacklistedTags: 'Copied blacklisted tags to clipboard.',
-  copyBlacklistedTagsTip: 'Copy blacklisted tag configuration',
-  copyBlacklistedTagsEmpty: 'Nothing to copy',
-  importBlacklistedTagsTip: 'Import blacklisted tag configuration',
-  clearBlacklistedTagsConfirm:
-    'Are you sure you want to clear the blacklisted tags?',
+  copyBlocklistedTags: 'Copied blocklisted tags to clipboard.',
+  copyBlocklistedTagsTip: 'Copy blocklisted tag configuration',
+  copyBlocklistedTagsEmpty: 'Nothing to copy',
+  importBlocklistedTagsTip: 'Import blocklisted tag configuration',
+  clearBlocklistedTagsConfirm:
+    'Are you sure you want to clear the blocklisted tags?',
   yes: 'Yes',
   no: 'No',
   searchKeywords: 'Search keywords…',
   starttyping: 'Starting typing to search.',
   nooptions: 'No results.',
-  blacklistedTagImportTitle: 'Import Blacklisted Tag Configuration',
-  blacklistedTagImportInstructions: 'Paste blacklist tag configuration below.',
+  blocklistedTagImportTitle: 'Import Blocklisted Tag Configuration',
+  blocklistedTagImportInstructions: 'Paste blocklist tag configuration below.',
   valueRequired: 'You must provide a value.',
   noSpecialCharacters:
     'Configuration must be a comma delimited list of TMDB keyword ids, and must not start or end with a comma.',
@@ -50,13 +50,13 @@ type SingleVal = {
   value: number;
 };
 
-type BlacklistedTagsSelectorProps = {
+type BlocklistedTagsSelectorProps = {
   defaultValue?: string;
 };
 
-const BlacklistedTagsSelector = ({
+const BlocklistedTagsSelector = ({
   defaultValue,
-}: BlacklistedTagsSelectorProps) => {
+}: BlocklistedTagsSelectorProps) => {
   const { setFieldValue } = useFormikContext();
   const [value, setValue] = useState<string | undefined>(defaultValue);
   const intl = useIntl();
@@ -68,7 +68,7 @@ const BlacklistedTagsSelector = ({
       const strVal = value?.map((v) => v.value).join(',');
       setSelectorValue(value);
       setValue(strVal);
-      setFieldValue('blacklistedTags', strVal);
+      setFieldValue('blocklistedTags', strVal);
     },
     [setSelectorValue, setValue, setFieldValue]
   );
@@ -91,15 +91,15 @@ const BlacklistedTagsSelector = ({
       <CopyButton
         textToCopy={value ?? ''}
         disabled={copyDisabled}
-        toastMessage={intl.formatMessage(messages.copyBlacklistedTags)}
+        toastMessage={intl.formatMessage(messages.copyBlocklistedTags)}
         tooltipContent={intl.formatMessage(
           copyDisabled
-            ? messages.copyBlacklistedTagsEmpty
-            : messages.copyBlacklistedTagsTip
+            ? messages.copyBlocklistedTagsEmpty
+            : messages.copyBlocklistedTagsTip
         )}
         tooltipConfig={{ followCursor: false }}
       />
-      <BlacklistedTagsImportButton setSelector={update} />
+      <BlocklistedTagsImportButton setSelector={update} />
     </>
   );
 };
@@ -162,7 +162,7 @@ const ControlledKeywordSelector = ({
 
   return (
     <AsyncSelect
-      key={`keyword-select-blacklistedTags`}
+      key={`keyword-select-blocklistedTags`}
       inputId="data"
       isMulti
       className="react-select-container"
@@ -181,13 +181,13 @@ const ControlledKeywordSelector = ({
   );
 };
 
-type BlacklistedTagsImportButtonProps = {
+type BlocklistedTagsImportButtonProps = {
   setSelector: (value: MultiValue<SingleVal>) => void;
 };
 
-const BlacklistedTagsImportButton = ({
+const BlocklistedTagsImportButton = ({
   setSelector,
-}: BlacklistedTagsImportButtonProps) => {
+}: BlocklistedTagsImportButtonProps) => {
   const [show, setShow] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const intl = useIntl();
@@ -218,17 +218,17 @@ const BlacklistedTagsImportButton = ({
         show={show}
       >
         <Modal
-          title={intl.formatMessage(messages.blacklistedTagImportTitle)}
+          title={intl.formatMessage(messages.blocklistedTagImportTitle)}
           okText="Confirm"
           onOk={onConfirm}
           onCancel={() => setShow(false)}
         >
-          <BlacklistedTagImportForm ref={formRef} setSelector={setSelector} />
+          <BlocklistedTagImportForm ref={formRef} setSelector={setSelector} />
         </Modal>
       </Transition>
 
       <Tooltip
-        content={intl.formatMessage(messages.importBlacklistedTagsTip)}
+        content={intl.formatMessage(messages.importBlocklistedTagsTip)}
         tooltipConfig={{ followCursor: false }}
       >
         <button className="input-action" onClick={onClick} type="button">
@@ -239,11 +239,11 @@ const BlacklistedTagsImportButton = ({
   );
 };
 
-type BlacklistedTagImportFormProps = BlacklistedTagsImportButtonProps;
+type BlocklistedTagImportFormProps = BlocklistedTagsImportButtonProps;
 
-const BlacklistedTagImportForm = forwardRef<
+const BlocklistedTagImportForm = forwardRef<
   Partial<HTMLFormElement>,
-  BlacklistedTagImportFormProps
+  BlocklistedTagImportFormProps
 >((props, ref) => {
   const { setSelector } = props;
   const intl = useIntl();
@@ -306,7 +306,7 @@ const BlacklistedTagImportForm = forwardRef<
     <form onSubmit={handleSubmit}>
       <div>
         <label htmlFor="value">
-          {intl.formatMessage(messages.blacklistedTagImportInstructions)}
+          {intl.formatMessage(messages.blocklistedTagImportInstructions)}
         </label>
         <textarea
           id="value"
@@ -392,7 +392,7 @@ const VerifyClearIndicator = <
         show={show}
       >
         <Modal
-          subTitle={intl.formatMessage(messages.clearBlacklistedTagsConfirm)}
+          subTitle={intl.formatMessage(messages.clearBlocklistedTagsConfirm)}
           okText={intl.formatMessage(messages.yes)}
           cancelText={intl.formatMessage(messages.no)}
           onOk={clearValue}
@@ -406,4 +406,4 @@ const VerifyClearIndicator = <
   );
 };
 
-export default BlacklistedTagsSelector;
+export default BlocklistedTagsSelector;

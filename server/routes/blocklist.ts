@@ -1,8 +1,8 @@
 import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
-import { Blacklist } from '@server/entity/Blacklist';
+import { Blocklist } from '@server/entity/Blocklist';
 import Media from '@server/entity/Media';
-import type { BlacklistResultsResponse } from '@server/interfaces/api/blacklistInterfaces';
+import type { BlocklistResultsResponse } from '@server/interfaces/api/blocklistInterfaces';
 import { Permission } from '@server/lib/permissions';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
@@ -10,53 +10,53 @@ import { Router } from 'express';
 import { EntityNotFoundError, QueryFailedError } from 'typeorm';
 import { z } from 'zod';
 
-const blacklistRoutes = Router();
+const blocklistRoutes = Router();
 
-export const blacklistAdd = z.object({
+export const blocklistAdd = z.object({
   tmdbId: z.coerce.number(),
   mediaType: z.nativeEnum(MediaType),
   title: z.coerce.string().optional(),
   user: z.coerce.number(),
 });
 
-const blacklistGet = z.object({
+const blocklistGet = z.object({
   take: z.coerce.number().int().positive().default(25),
   skip: z.coerce.number().int().nonnegative().default(0),
   search: z.string().optional(),
-  filter: z.enum(['all', 'manual', 'blacklistedTags']).optional(),
+  filter: z.enum(['all', 'manual', 'blocklistedTags']).optional(),
 });
 
-blacklistRoutes.get(
+blocklistRoutes.get(
   '/',
-  isAuthenticated([Permission.MANAGE_BLACKLIST, Permission.VIEW_BLACKLIST], {
+  isAuthenticated([Permission.MANAGE_BLOCKLIST, Permission.VIEW_BLOCKLIST], {
     type: 'or',
   }),
   async (req, res, next) => {
-    const { take, skip, search, filter } = blacklistGet.parse(req.query);
+    const { take, skip, search, filter } = blocklistGet.parse(req.query);
 
     try {
-      let query = getRepository(Blacklist)
-        .createQueryBuilder('blacklist')
-        .leftJoinAndSelect('blacklist.user', 'user')
+      let query = getRepository(Blocklist)
+        .createQueryBuilder('blocklist')
+        .leftJoinAndSelect('blocklist.user', 'user')
         .where('1 = 1'); // Allow use of andWhere later
 
       switch (filter) {
         case 'manual':
-          query = query.andWhere('blacklist.blacklistedTags IS NULL');
+          query = query.andWhere('blocklist.blocklistedTags IS NULL');
           break;
-        case 'blacklistedTags':
-          query = query.andWhere('blacklist.blacklistedTags IS NOT NULL');
+        case 'blocklistedTags':
+          query = query.andWhere('blocklist.blocklistedTags IS NOT NULL');
           break;
       }
 
       if (search) {
-        query = query.andWhere('blacklist.title like :title', {
+        query = query.andWhere('blocklist.title like :title', {
           title: `%${search}%`,
         });
       }
 
-      const [blacklistedItems, itemsCount] = await query
-        .orderBy('blacklist.createdAt', 'DESC')
+      const [blocklistedItems, itemsCount] = await query
+        .orderBy('blocklist.createdAt', 'DESC')
         .take(take)
         .skip(skip)
         .getManyAndCount();
@@ -68,35 +68,35 @@ blacklistRoutes.get(
           results: itemsCount,
           page: Math.ceil(skip / take) + 1,
         },
-        results: blacklistedItems,
-      } as BlacklistResultsResponse);
+        results: blocklistedItems,
+      } as BlocklistResultsResponse);
     } catch (error) {
-      logger.error('Something went wrong while retrieving blacklisted items', {
-        label: 'Blacklist',
+      logger.error('Something went wrong while retrieving blocklisted items', {
+        label: 'Blocklist',
         errorMessage: error.message,
       });
       return next({
         status: 500,
-        message: 'Unable to retrieve blacklisted items.',
+        message: 'Unable to retrieve blocklisted items.',
       });
     }
   }
 );
 
-blacklistRoutes.get(
+blocklistRoutes.get(
   '/:id',
-  isAuthenticated([Permission.MANAGE_BLACKLIST], {
+  isAuthenticated([Permission.MANAGE_BLOCKLIST], {
     type: 'or',
   }),
   async (req, res, next) => {
     try {
-      const blacklisteRepository = getRepository(Blacklist);
+      const blocklisteRepository = getRepository(Blocklist);
 
-      const blacklistItem = await blacklisteRepository.findOneOrFail({
+      const blocklistItem = await blocklisteRepository.findOneOrFail({
         where: { tmdbId: Number(req.params.id) },
       });
 
-      return res.status(200).send(blacklistItem);
+      return res.status(200).send(blocklistItem);
     } catch (e) {
       if (e instanceof EntityNotFoundError) {
         return next({
@@ -109,17 +109,17 @@ blacklistRoutes.get(
   }
 );
 
-blacklistRoutes.post(
+blocklistRoutes.post(
   '/',
-  isAuthenticated([Permission.MANAGE_BLACKLIST], {
+  isAuthenticated([Permission.MANAGE_BLOCKLIST], {
     type: 'or',
   }),
   async (req, res, next) => {
     try {
-      const values = blacklistAdd.parse(req.body);
+      const values = blocklistAdd.parse(req.body);
 
-      await Blacklist.addToBlacklist({
-        blacklistRequest: values,
+      await Blocklist.addToBlocklist({
+        blocklistRequest: values,
       });
 
       return res.status(201).send();
@@ -131,12 +131,12 @@ blacklistRoutes.post(
       if (error instanceof QueryFailedError) {
         switch (error.driverError.errno) {
           case 19:
-            return next({ status: 412, message: 'Item already blacklisted' });
+            return next({ status: 412, message: 'Item already blocklisted' });
           default:
-            logger.warn('Something wrong with data blacklist', {
+            logger.warn('Something wrong with data blocklist', {
               tmdbId: req.body.tmdbId,
               mediaType: req.body.mediaType,
-              label: 'Blacklist',
+              label: 'Blocklist',
             });
             return next({ status: 409, message: 'Something wrong' });
         }
@@ -147,20 +147,20 @@ blacklistRoutes.post(
   }
 );
 
-blacklistRoutes.delete(
+blocklistRoutes.delete(
   '/:id',
-  isAuthenticated([Permission.MANAGE_BLACKLIST], {
+  isAuthenticated([Permission.MANAGE_BLOCKLIST], {
     type: 'or',
   }),
   async (req, res, next) => {
     try {
-      const blacklisteRepository = getRepository(Blacklist);
+      const blocklisteRepository = getRepository(Blocklist);
 
-      const blacklistItem = await blacklisteRepository.findOneOrFail({
+      const blocklistItem = await blocklisteRepository.findOneOrFail({
         where: { tmdbId: Number(req.params.id) },
       });
 
-      await blacklisteRepository.remove(blacklistItem);
+      await blocklisteRepository.remove(blocklistItem);
 
       const mediaRepository = getRepository(Media);
 
@@ -183,4 +183,4 @@ blacklistRoutes.delete(
   }
 );
 
-export default blacklistRoutes;
+export default blocklistRoutes;

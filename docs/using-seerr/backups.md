@@ -13,7 +13,7 @@ These settings are stored in the `settings.json` file located in the Seerr data 
 
 ## User Data  
 
-Apart from the settings, all other data—including user accounts, media requests, blacklist etc. are stored in the database (either SQLite or PostgreSQL).
+Apart from the settings, all other data—including user accounts, media requests, blocklist etc. are stored in the database (either SQLite or PostgreSQL).
 
 # Backup
 

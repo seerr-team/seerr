@@ -78,13 +78,13 @@ export const messages = defineMessages('components.PermissionEdit', {
   viewwatchlists: 'View {mediaServerName} Watchlists',
   viewwatchlistsDescription:
     "Grant permission to view other users' {mediaServerName} Watchlists.",
-  manageblacklist: 'Manage Blacklist',
-  manageblacklistDescription: 'Grant permission to manage blacklisted media.',
-  blacklistedItems: 'Blacklist media.',
-  blacklistedItemsDescription: 'Grant permission to blacklist media.',
-  viewblacklistedItems: 'View blacklisted media.',
-  viewblacklistedItemsDescription:
-    'Grant permission to view blacklisted media.',
+  manageblocklist: 'Manage Blocklist',
+  manageblocklistDescription: 'Grant permission to manage blocklisted media.',
+  blocklistedItems: 'Blocklist media.',
+  blocklistedItemsDescription: 'Grant permission to blocklist media.',
+  viewblocklistedItems: 'View blocklisted media.',
+  viewblocklistedItemsDescription:
+    'Grant permission to view blocklisted media.',
 });
 
 interface PermissionEditProps {
@@ -340,18 +340,18 @@ export const PermissionEdit = ({
       ],
     },
     {
-      id: 'manageblacklist',
-      name: intl.formatMessage(messages.manageblacklist),
-      description: intl.formatMessage(messages.manageblacklistDescription),
-      permission: Permission.MANAGE_BLACKLIST,
+      id: 'manageblocklist',
+      name: intl.formatMessage(messages.manageblocklist),
+      description: intl.formatMessage(messages.manageblocklistDescription),
+      permission: Permission.MANAGE_BLOCKLIST,
       children: [
         {
-          id: 'viewblacklisteditems',
-          name: intl.formatMessage(messages.viewblacklistedItems),
+          id: 'viewblocklisteditems',
+          name: intl.formatMessage(messages.viewblocklistedItems),
           description: intl.formatMessage(
-            messages.viewblacklistedItemsDescription
+            messages.viewblocklistedItemsDescription
           ),
-          permission: Permission.VIEW_BLACKLIST,
+          permission: Permission.VIEW_BLOCKLIST,
         },
       ],
     },
