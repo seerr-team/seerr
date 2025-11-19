@@ -62,6 +62,18 @@ components:
           type: integer
         restartRequired:
           type: boolean
+    AppDataStatus:
+      type: object
+      properties:
+        appData:
+          type: boolean
+          example: true
+        appDataPath:
+          type: string
+          example: /app/config
+        appDataPermissions:
+          type: boolean
+          example: true
     Blacklist:
       type: object
       properties:
@@ -2175,17 +2187,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  appData:
-                    type: boolean
-                    example: true
-                  appDataPath:
-                    type: string
-                    example: /app/config
-                  appDataPermissions:
-                    type: boolean
-                    example: true
+                $ref: '#/components/schemas/AppDataStatus'
   /settings/main:
     get:
       summary: Get main settings
