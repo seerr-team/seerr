@@ -47,8 +47,8 @@ const MediaSlider = ({
   const settings = useSettings();
   const { hasPermission } = useUser();
 
-  let isSeries = url.includes('tv');
-  let isMovies = url.includes('movie');
+  let isSeries = !sliderKey ? url.includes('tv') : true;
+  let isMovies = !sliderKey ? url.includes('movie') : true;
 
   const { data, error, setSize, size } = useSWRInfinite<MixedResult>(
     (pageIndex: number, previousPageData: MixedResult | null) => {
