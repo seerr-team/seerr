@@ -515,6 +515,33 @@ components:
         - id
         - name
         - enabled
+    JellyfinSyncRequest:
+      type: object
+      properties:
+        cancel:
+          type: boolean
+          example: false
+        start:
+          type: boolean
+          example: false
+    JellyfinSyncStatus:
+      type: object
+      properties:
+        running:
+          type: boolean
+          example: false
+        progress:
+          type: number
+          example: 0
+        total:
+          type: integer
+          example: 100
+        currentLibrary:
+          $ref: '#/components/schemas/JellyfinLibrary'
+        libraries:
+          type: array
+          items:
+            $ref: '#/components/schemas/JellyfinLibrary'
     JellyfinSettings:
       type: object
       properties:
@@ -2361,23 +2388,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  running:
-                    type: boolean
-                    example: false
-                  progress:
-                    type: number
-                    example: 0
-                  total:
-                    type: integer
-                    example: 100
-                  currentLibrary:
-                    $ref: '#/components/schemas/JellyfinLibrary'
-                  libraries:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/JellyfinLibrary'
+                $ref: '#/components/schemas/JellyfinSyncStatus'
     post:
       summary: Start full Jellyfin library sync
       description: Runs a full Jellyfin library sync and returns the progress in a JSON array.
@@ -2387,37 +2398,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                cancel:
-                  type: boolean
-                  example: false
-                start:
-                  type: boolean
-                  example: false
+              $ref: '#/components/schemas/JellyfinSyncRequest'
       responses:
         '200':
           description: Status of Jellyfin sync
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  running:
-                    type: boolean
-                    example: false
-                  progress:
-                    type: number
-                    example: 0
-                  total:
-                    type: integer
-                    example: 100
-                  currentLibrary:
-                    $ref: '#/components/schemas/JellyfinLibrary'
-                  libraries:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/JellyfinLibrary'
+                $ref: '#/components/schemas/JellyfinSyncStatus'
   /settings/plex:
     get:
       summary: Get Plex settings
