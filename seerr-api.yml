@@ -48,6 +48,20 @@ servers:
 
 components:
   schemas:
+    SeerrStatus:
+      type: object
+      properties:
+        version:
+          type: string
+          example: 1.0.0
+        commitTag:
+          type: string
+        updateAvailable:
+          type: boolean
+        commitsBehind:
+          type: integer
+        restartRequired:
+          type: boolean
     Blacklist:
       type: object
       properties:
@@ -2147,19 +2161,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  version:
-                    type: string
-                    example: 1.0.0
-                  commitTag:
-                    type: string
-                  updateAvailable:
-                    type: boolean
-                  commitsBehind:
-                    type: integer
-                  restartRequired:
-                    type: boolean
+                $ref: '#/components/schemas/SeerrStatus'
   /status/appdata:
     get:
       summary: Get application data volume status
