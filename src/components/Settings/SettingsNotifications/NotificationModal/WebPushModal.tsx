@@ -17,7 +17,7 @@ const messages = defineMessages(
     instanceName: 'Name',
     embedPoster: 'Embed Poster',
     webPushHttpsRequirement:
-      'In order to receive web push notifications, Jellyseerr must be served over HTTPS.',
+      'In order to receive web push notifications, Seerr must be served over HTTPS.',
   }
 );
 

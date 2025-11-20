@@ -6,6 +6,7 @@ import { Session } from '@server/entity/Session';
 import { User } from '@server/entity/User';
 import { startJobs } from '@server/job/schedule';
 import notificationManager from '@server/lib/notifications';
+import checkOverseerrMerge from '@server/lib/overseerrMerge';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import clearCookies from '@server/middleware/clearcookies';
@@ -33,23 +34,28 @@ import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 
-const API_SPEC_PATH = path.join(__dirname, '../jellyseerr-api.yml');
+const API_SPEC_PATH = path.join(__dirname, '../seerr-api.yml');
 
-logger.info(`Starting Jellyseerr version ${getAppVersion()}`);
+logger.info(`Starting Seerr version ${getAppVersion()}`);
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
 if (!appDataPermissions()) {
   logger.error(
-    'Something went wrong while checking config folder! Please ensure the config folder is set up properly.\nhttps://docs.jellyseerr.dev/getting-started'
+    'Something went wrong while checking config folder! Please ensure the config folder is set up properly.\nhttps://docs.seerr.dev/getting-started'
   );
 }
 
 app
   .prepare()
   .then(async () => {
-    const dbConnection = await dataSource.initialize();
+    // Run Overseerr to Seerr migration
+    await checkOverseerrMerge();
+
+    const dbConnection = dataSource.isInitialized
+      ? dataSource
+      : await dataSource.initialize();
 
     // Run migrations in production
     if (process.env.NODE_ENV === 'production') {

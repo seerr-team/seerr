@@ -1,6 +1,6 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: Jellyseerr CI
+name: Seerr CI
 
 on:
   pull_request:
@@ -14,6 +14,9 @@ on:
 permissions:
   contents: read
 
+env:
+  DOCKER_HUB: seerr/seerr
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -23,15 +26,15 @@ jobs:
     name: Lint & Test Build
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    container: node:22-alpine
+    container: node:22.20.0-alpine3.22@sha256:dbcedd8aeab47fbc0f4dd4bffa55b7c3c729a707875968d467aaaea42d6225af
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
 
       - name: Pnpm Setup
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
 
       - name: Get pnpm store directory
         shell: sh
@@ -39,7 +42,7 @@ jobs:
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - name: Setup pnpm cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ env.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -48,7 +51,7 @@ jobs:
 
       - name: Install dependencies
         env:
-          HUSKY: 0
+          CI: true
         run: pnpm install
 
       - name: Lint
@@ -75,7 +78,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
 
@@ -84,10 +87,10 @@ jobs:
         run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
 
       - name: Warm cache (no push) — ${{ matrix.platform }}
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
           context: .
           file: ./Dockerfile
@@ -111,7 +114,7 @@ jobs:
       id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
 
@@ -120,16 +123,16 @@ jobs:
         run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -137,10 +140,10 @@ jobs:
 
       - name: Extract metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
         with:
           images: |
-            ${{ github.repository }}
+            ${{ env.DOCKER_HUB }}
             ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=develop
@@ -149,7 +152,7 @@ jobs:
             org.opencontainers.image.created=${{ steps.ts.outputs.TIMESTAMP }}
 
       - name: Build & Push (multi-arch, single tag)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
           context: .
           file: ./Dockerfile
@@ -173,20 +176,36 @@ jobs:
     if: always() && github.event_name != 'pull_request' && !contains(github.event.head_commit.message, '[skip ci]')
     runs-on: ubuntu-24.04
     steps:
-      - name: Combine Job Status
+      - name: Determine Workflow Status
         id: status
         run: |
-          failures=(neutral, skipped, timed_out, action_required)
-          if [[ ${array[@]} =~ ${{ needs.publish.result }} ]]; then
-            echo "status=failure" >> $GITHUB_OUTPUT
-          else
-            echo "status=${{ needs.publish.result }}" >> $GITHUB_OUTPUT
-          fi
+          case "${{ needs.publish.result }}" in
+            success)   echo "status=Success"   >> $GITHUB_OUTPUT; echo "colour=3066993"  >> $GITHUB_OUTPUT ;;
+            failure)   echo "status=Failure"   >> $GITHUB_OUTPUT; echo "colour=15158332" >> $GITHUB_OUTPUT ;;
+            cancelled) echo "status=Cancelled" >> $GITHUB_OUTPUT; echo "colour=10181046" >> $GITHUB_OUTPUT ;;
+            *)         echo "status=Skipped"   >> $GITHUB_OUTPUT; echo "colour=9807270"  >> $GITHUB_OUTPUT ;;
+          esac
 
-      - name: Post Status to Discord
-        uses: sarisia/actions-status-discord@v1
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          status: ${{ steps.status.outputs.status }}
-          title: ${{ github.workflow }}
-          nofail: true
+      - name: Send Discord notification
+        shell: bash
+        run: |
+          WEBHOOK="${{ secrets.DISCORD_WEBHOOK }}"
+
+          PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "${{ steps.status.outputs.status }}: ${{ github.workflow }}",
+              "color": ${{ steps.status.outputs.colour }},
+              "fields": [
+                { "name": "Repository",   "value": "[${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})", "inline": true },
+                { "name": "Ref",          "value": "${{ github.ref }}", "inline": true },
+                { "name": "Event",        "value": "${{ github.event_name }}", "inline": true },
+                { "name": "Triggered by", "value": "${{ github.actor }}", "inline": true },
+                { "name": "Workflow",     "value": "[${{ github.workflow }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})", "inline": true }
+              ],
+            }]
+          }
+          EOF
+          )
+
+          curl -sS -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK" || true

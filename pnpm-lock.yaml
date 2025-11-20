@@ -89,9 +89,6 @@ importers:
       email-templates:
         specifier: 12.0.1
         version: 12.0.1(@babel/core@7.24.7)(encoding@0.1.13)(handlebars@4.7.8)(mustache@4.2.0)(pug@3.0.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(underscore@1.13.7)
-      email-validator:
-        specifier: 2.0.4
-        version: 2.0.4
       express:
         specifier: 4.21.2
         version: 4.21.2
@@ -230,6 +227,9 @@ importers:
       undici:
         specifier: ^7.3.0
         version: 7.3.0
+      validator:
+        specifier: ^13.15.15
+        version: 13.15.15
       web-push:
         specifier: 3.5.0
         version: 3.5.0
@@ -324,6 +324,9 @@ importers:
       '@types/swagger-ui-express':
         specifier: 4.1.3
         version: 4.1.3
+      '@types/validator':
+        specifier: ^13.15.3
+        version: 13.15.3
       '@types/web-push':
         specifier: 3.3.2
         version: 3.3.2
@@ -3340,6 +3343,9 @@ packages:
   '@types/unist@2.0.10':
     resolution: {integrity: sha512-IfYcSBWE3hLpBg8+X2SEa8LVkJdJEkT2Ese2aaLs3ptGdVtABxndrMaxuFlQ1qdFf9Q5rDvDpxI3WwgvKFAsQA==}
 
+  '@types/validator@13.15.3':
+    resolution: {integrity: sha512-7bcUmDyS6PN3EuD9SlGGOxM77F8WLVsrwkxyWxKnxzmXoequ6c7741QBrANq6htVRGOITJ7z72mTP6Z4XyuG+Q==}
+
   '@types/web-push@3.3.2':
     resolution: {integrity: sha512-JxWGVL/m7mWTIg4mRYO+A6s0jPmBkr4iJr39DqJpRJAc+jrPiEe1/asmkwerzRon8ZZDxaZJpsxpv0Z18Wo9gw==}
 
@@ -4734,10 +4740,6 @@ packages:
   email-templates@12.0.1:
     resolution: {integrity: sha512-849pjBFVUAWWTa3HqhDjxlXHaSWmxf4CZOlZ9iVkrSAbQ8YCYi+7KiKqt35L6F20WhSViWX7lmMjno6zBv2rNQ==}
     engines: {node: '>=14'}
-
-  email-validator@2.0.4:
-    resolution: {integrity: sha512-gYCwo7kh5S3IDyZPLZf6hSS0MnZT8QmJFqYvbqlDZSbwdZlY6QZWxJ4i/6UhITOJ4XzyI647Bm2MXKCLqnJ4nQ==}
-    engines: {node: '>4.0'}
 
   emoji-regex@10.3.0:
     resolution: {integrity: sha512-QpLs9D9v9kArv4lfDEgg1X/gN5XLnf/A6l9cs8SPZLRZR3ZkY9+kwIQTxm+fsSej5UMYGE8fdoaZVIBlqG0XTw==}
@@ -9049,6 +9051,10 @@ packages:
   validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
 
+  validator@13.15.15:
+    resolution: {integrity: sha512-BgWVbCI72aIQy937xbawcs+hrVaN/CZ2UwutgaJ36hGqRrLNM+f5LUT/YPRbo8IV/ASeFzXszezV+y2+rq3l8A==}
+    engines: {node: '>= 0.10'}
+
   vary@1.1.2:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
@@ -13256,6 +13262,8 @@ snapshots:
 
   '@types/unist@2.0.10': {}
 
+  '@types/validator@13.15.3': {}
+
   '@types/web-push@3.3.2':
     dependencies:
       '@types/node': 22.10.5
@@ -14936,8 +14944,6 @@ snapshots:
       - velocityjs
       - walrus
       - whiskers
-
-  email-validator@2.0.4: {}
 
   emoji-regex@10.3.0: {}
 
@@ -20047,6 +20053,8 @@ snapshots:
     dependencies:
       spdx-correct: 3.2.0
       spdx-expression-parse: 3.0.1
+
+  validator@13.15.15: {}
 
   vary@1.1.2: {}
 

@@ -21,8 +21,7 @@ const messages = defineMessages(
     telegramBotUsernameTip:
       'Allow users to also start a chat with your bot and configure their own notifications',
     telegramBotAPI: 'Bot Authorization Token',
-    telegramBotApiTip:
-      '<CreateBotLink>Create a bot</CreateBotLink> for use with Jellyseerr',
+    telegramBotApiTip: '<CreateBotLink>Create a bot</CreateBotLink> for use with Seerr',
     telegramChatId: 'Chat ID',
     telegramChatIdTip:
       'Start a chat with your bot, add <GetIdBotLink>@get_id_bot</GetIdBotLink>, and issue the <code>/my_id</code> command',

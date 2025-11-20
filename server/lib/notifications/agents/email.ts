@@ -10,8 +10,8 @@ import PreparedEmail from '@server/lib/email';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import type { EmailOptions } from 'email-templates';
-import * as EmailValidator from 'email-validator';
 import path from 'path';
+import validator from 'validator';
 import { Notification, shouldSendAdminNotification } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
 import { BaseAgent } from './agent';
@@ -213,7 +213,9 @@ class EmailAgent
             this.getSettings() as NotificationAgentEmail,
             payload.notifyUser.settings?.pgpKey
           );
-          if (EmailValidator.validate(payload.notifyUser.email)) {
+          if (
+            validator.isEmail(payload.notifyUser.email, { require_tld: false })
+          ) {
             await email.send(
               this.buildMessage(
                 type,
@@ -275,7 +277,7 @@ class EmailAgent
                 this.getSettings() as NotificationAgentEmail,
                 user.settings?.pgpKey
               );
-              if (EmailValidator.validate(user.email)) {
+              if (validator.isEmail(user.email, { require_tld: false })) {
                 await email.send(
                   this.buildMessage(type, payload, user.email, user.displayName)
                 );

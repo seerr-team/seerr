@@ -151,7 +151,7 @@ const IssueItem = ({ issue }: IssueItemProps) => {
               src={
                 title.posterPath
                   ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
-                  : '/images/jellyseerr_poster_not_found.png'
+                  : '/images/seerr_poster_not_found.png'
               }
               alt=""
               sizes="100vw"

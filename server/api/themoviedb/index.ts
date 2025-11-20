@@ -73,6 +73,7 @@ export interface TmdbCertificationResponse {
 interface DiscoverMovieOptions {
   page?: number;
   includeAdult?: boolean;
+  includeVideo?: boolean;
   language?: string;
   primaryReleaseDateGte?: string;
   primaryReleaseDateLte?: string;
@@ -490,6 +491,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     sortBy = 'popularity.desc',
     page = 1,
     includeAdult = false,
+    includeVideo = true,
     language = this.locale,
     primaryReleaseDateGte,
     primaryReleaseDateLte,
@@ -527,6 +529,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
           sort_by: sortBy,
           page,
           include_adult: includeAdult,
+          include_video: includeVideo,
           language,
           region: this.discoverRegion || '',
           with_original_language:

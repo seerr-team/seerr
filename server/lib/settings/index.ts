@@ -41,7 +41,7 @@ class Settings {
       vapidPublic: '',
       main: {
         apiKey: '',
-        applicationTitle: 'Jellyseerr',
+        applicationTitle: 'Seerr',
         applicationUrl: '',
         cacheImages: false,
         defaultPermissions: Permission.REQUEST,
@@ -112,7 +112,7 @@ class Settings {
               ignoreTls: false,
               requireTls: false,
               allowSelfSigned: false,
-              senderName: 'Jellyseerr',
+              senderName: 'Seerr',
             },
           },
           discord: {
@@ -469,9 +469,13 @@ class Settings {
    * This will load settings from file unless an optional argument of the object structure
    * is passed in.
    * @param overrideSettings If passed in, will override all existing settings with these
+   * @param raw If true, will load the settings without running migrations or generating missing
    * values
    */
-  public async load(overrideSettings?: AllSettings): Promise<Settings> {
+  public async load(
+    overrideSettings?: AllSettings,
+    raw = false
+  ): Promise<Settings> {
     if (overrideSettings) {
       this.data = overrideSettings;
       return this;
@@ -484,10 +488,12 @@ class Settings {
       await this.save();
     }
 
-    if (data) {
+    if (data && !raw) {
       const parsedJson = JSON.parse(data);
       const migratedData = await runMigrations(parsedJson, SETTINGS_PATH);
       this.data = merge(this.data, migratedData);
+    } else if (data) {
+      this.data = JSON.parse(data);
     }
 
     // generate keys and ids if it's missing

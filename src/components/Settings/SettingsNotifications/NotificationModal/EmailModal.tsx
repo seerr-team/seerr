@@ -7,6 +7,7 @@ import defineMessages from '@app/utils/defineMessages';
 import type { NotificationAgentEmail } from '@server/interfaces/settings';
 import { Field, Form, Formik } from 'formik';
 import { useIntl } from 'react-intl';
+import validator from 'validator';
 import * as Yup from 'yup';
 
 const messages = defineMessages(
@@ -82,7 +83,11 @@ const EmailModal = ({
             .required(intl.formatMessage(messages.emailValidation)),
           otherwise: Yup.string().nullable(),
         })
-        .email(intl.formatMessage(messages.emailValidation)),
+        .test(
+          'email',
+          intl.formatMessage(messages.emailValidation),
+          (value) => !value || validator.isEmail(value, { require_tld: false })
+        ),
       smtpHost: Yup.string().when('enabled', {
         is: true,
         then: Yup.string()

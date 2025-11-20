@@ -341,9 +341,11 @@ export class MediaRequestSubscriber
             mediaId: entity.media.id,
           });
 
-          const requestRepository = getRepository(MediaRequest);
-          entity.status = MediaRequestStatus.APPROVED;
-          await requestRepository.save(entity);
+          if (entity.status !== MediaRequestStatus.APPROVED) {
+            const requestRepository = getRepository(MediaRequest);
+            entity.status = MediaRequestStatus.APPROVED;
+            await requestRepository.save(entity);
+          }
           return;
         }
 
@@ -505,9 +507,11 @@ export class MediaRequestSubscriber
             mediaId: entity.media.id,
           });
 
-          const requestRepository = getRepository(MediaRequest);
-          entity.status = MediaRequestStatus.APPROVED;
-          await requestRepository.save(entity);
+          if (entity.status !== MediaRequestStatus.APPROVED) {
+            const requestRepository = getRepository(MediaRequest);
+            entity.status = MediaRequestStatus.APPROVED;
+            await requestRepository.save(entity);
+          }
           return;
         }
 

@@ -295,7 +295,7 @@ const WebhookModal = ({
               {values.supportVariables && (
                 <div className="mt-2">
                   <Link
-                    href="https://docs.jellyseerr.dev/using-jellyseerr/notifications/webhook#template-variables"
+                    href="https://docs.seerr.dev/using-seerr/notifications/webhook#template-variables"
                     passHref
                     legacyBehavior
                   >

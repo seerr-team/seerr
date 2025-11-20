@@ -130,7 +130,7 @@ class WatchlistSync {
 
         switch (e.constructor) {
           // During watchlist sync, these errors aren't necessarily
-          // a problem with Jellyseerr. Since we are auto syncing these constantly, it's
+          // a problem with Seerr. Since we are auto syncing these constantly, it's
           // possible they are unexpectedly at their quota limit, for example. So we'll
           // instead log these as debug messages.
           case RequestPermissionError:

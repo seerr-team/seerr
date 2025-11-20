@@ -20,14 +20,14 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
   network: 'Network',
   networksettings: 'Network Settings',
   networksettingsDescription:
-    'Configure network settings for your Jellyseerr instance.',
+    'Configure network settings for your Seerr instance.',
   csrfProtection: 'Enable CSRF Protection',
   csrfProtectionTip: 'Set external API access to read-only (requires HTTPS)',
   csrfProtectionHoverTip:
     'Do NOT enable this setting unless you understand what you are doing!',
   trustProxy: 'Enable Proxy Support',
   trustProxyTip:
-    'Allow Jellyseerr to correctly register client IP addresses behind a proxy',
+    'Allow Seerr to correctly register client IP addresses behind a proxy',
   proxyEnabled: 'HTTP(S) Proxy',
   proxyHostname: 'Proxy Hostname',
   proxyPort: 'Proxy Port',
@@ -44,7 +44,7 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
   docs: 'documentation',
   forceIpv4First: 'Force IPv4 Resolution First',
   forceIpv4FirstTip:
-    'Force Jellyseerr to resolve IPv4 addresses first instead of IPv6',
+    'Force Seerr to resolve IPv4 addresses first instead of IPv6',
   dnsCache: 'DNS Cache',
   dnsCacheTip:
     'Enable caching of DNS lookups to optimize performance and avoid making unnecessary API calls',
