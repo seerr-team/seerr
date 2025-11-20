@@ -270,6 +270,13 @@ components:
           type: string
       required:
         - email
+    ResetPasswordByGuidRequest:
+      type: object
+      properties:
+        password:
+          type: string
+      required:
+        - password
     ResetPasswordResponse:
       type: object
       properties:
@@ -4051,28 +4058,19 @@ paths:
           schema:
             type: string
             example: '9afef5a7-ec89-4d5f-9397-261e96970b50'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordByGuidRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: 'ok'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                password:
-                  type: string
-              required:
-                - password
+                $ref: '#/components/schemas/ResetPasswordResponse'
   /user:
     get:
       summary: Get all users
