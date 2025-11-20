@@ -263,6 +263,19 @@ components:
           nullable: true
           description: 'Enable watchlist sync for TV'
           example: false
+    ResetPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+      required:
+        - email
+    ResetPasswordResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: 'ok'
     LogoutResponse:
       type: object
       properties:
@@ -4011,28 +4024,19 @@ paths:
       security: []
       tags:
         - users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: 'ok'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                email:
-                  type: string
-              required:
-                - email
+                $ref: '#/components/schemas/ResetPasswordResponse'
   /auth/reset-password/{guid}:
     post:
       summary: Reset the password for a user
