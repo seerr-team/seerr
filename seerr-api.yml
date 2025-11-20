@@ -263,6 +263,12 @@ components:
           nullable: true
           description: 'Enable watchlist sync for TV'
           example: false
+    LogoutResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: 'ok'
     MainSettings:
       type: object
       properties:
@@ -3997,11 +4003,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: 'ok'
+                $ref: '#/components/schemas/LogoutResponse'
   /auth/reset-password:
     post:
       summary: Send a reset password email
