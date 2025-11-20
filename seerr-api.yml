@@ -393,6 +393,19 @@ components:
         status:
           type: string
           example: 'ok'
+    PermissionSettings:
+      type: object
+      properties:
+        permissions:
+          type: integer
+          example: 2
+    UpdatePermissionSettingsRequest:
+      type: object
+      properties:
+        permissions:
+          type: integer
+      required:
+        - permissions
     PushSubscription:
       type: object
       properties:
@@ -4960,11 +4973,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  permissions:
-                    type: integer
-                    example: 2
+                $ref: '#/components/schemas/PermissionSettings'
     post:
       summary: Update permission settings for a user
       description: Updates and returns permission settings for a specific user. Requires `MANAGE_USERS` permission if editing other users.
@@ -4981,23 +4990,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                permissions:
-                  type: integer
-              required:
-                - permissions
+              $ref: '#/components/schemas/UpdatePermissionSettingsRequest'
       responses:
         '200':
           description: Updated user general settings returned
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  permissions:
-                    type: integer
-                    example: 2
+                $ref: '#/components/schemas/PermissionSettings'
   /user/{userId}/watch_data:
     get:
       summary: Get watch data
