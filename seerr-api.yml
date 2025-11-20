@@ -450,6 +450,21 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ApiCache'
+    LogItem:
+      type: object
+      properties:
+        label:
+          type: string
+          example: server
+        level:
+          type: string
+          example: info
+        message:
+          type: string
+          example: Server ready on port 5055
+        timestamp:
+          type: string
+          example: '2020-12-15T16:20:00.069Z'
     PlexSettings:
       type: object
       properties:
@@ -3180,20 +3195,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    label:
-                      type: string
-                      example: server
-                    level:
-                      type: string
-                      example: info
-                    message:
-                      type: string
-                      example: Server ready on port 5055
-                    timestamp:
-                      type: string
-                      example: '2020-12-15T16:20:00.069Z'
+                  $ref: '#/components/schemas/LogItem'
   /settings/notifications/email:
     get:
       summary: Get email notification settings
