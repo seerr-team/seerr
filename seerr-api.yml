@@ -62,6 +62,25 @@ components:
           type: integer
         restartRequired:
           type: boolean
+    ServerStats:
+      type: object
+      properties:
+        version:
+          type: string
+          example: '1.0.0'
+        totalRequests:
+          type: integer
+          example: 100
+        totalMediaItems:
+          type: integer
+          example: 100
+        tz:
+          type: string
+          nullable: true
+          example: Asia/Tokyo
+        appDataPath:
+          type: string
+          example: /app/config
     AppDataStatus:
       type: object
       properties:
@@ -3864,24 +3883,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  version:
-                    type: string
-                    example: '1.0.0'
-                  totalRequests:
-                    type: integer
-                    example: 100
-                  totalMediaItems:
-                    type: integer
-                    example: 100
-                  tz:
-                    type: string
-                    nullable: true
-                    example: Asia/Tokyo
-                  appDataPath:
-                    type: string
-                    example: /app/config
+                $ref: '#/components/schemas/ServerStats'
   /auth/me:
     get:
       summary: Get logged-in user
