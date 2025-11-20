@@ -331,6 +331,125 @@ components:
             forceMaxTtl:
               type: integer
               example: -1
+    ImageCacheStats:
+      type: object
+      properties:
+        size:
+          type: integer
+          example: 123456
+        imageCount:
+          type: integer
+          example: 123
+    ImageCache:
+      type: object
+      properties:
+        tmdb:
+          $ref: '#/components/schemas/ImageCacheStats'
+        avatar:
+          $ref: '#/components/schemas/ImageCacheStats'
+    DnsCacheStats:
+      type: object
+      properties:
+        size:
+          type: integer
+          example: 1
+        maxSize:
+          type: integer
+          example: 500
+        hits:
+          type: integer
+          example: 19
+        misses:
+          type: integer
+          example: 1
+        failures:
+          type: integer
+          example: 0
+        ipv4Fallbacks:
+          type: integer
+          example: 0
+        hitRate:
+          type: number
+          example: 0.95
+    DnsCacheEntryAddresses:
+      type: object
+      properties:
+        ipv4:
+          type: integer
+          example: 1
+        ipv6:
+          type: integer
+          example: 1
+    DnsCacheEntry:
+      type: object
+      properties:
+        addresses:
+          $ref: '#/components/schemas/DnsCacheEntryAddresses'
+        activeAddress:
+          type: string
+          example: 127.0.0.1
+        family:
+          type: integer
+          example: 4
+        age:
+          type: integer
+          example: 10
+        ttl:
+          type: integer
+          example: 10
+        networkErrors:
+          type: integer
+          example: 0
+        hits:
+          type: integer
+          example: 1
+        misses:
+          type: integer
+          example: 1
+    DnsCache:
+      type: object
+      properties:
+        stats:
+          $ref: '#/components/schemas/DnsCacheStats'
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/DnsCacheEntry'
+    ApiCacheStats:
+      type: object
+      properties:
+        hits:
+          type: integer
+        misses:
+          type: integer
+        keys:
+          type: integer
+        ksize:
+          type: integer
+        vsize:
+          type: integer
+    ApiCache:
+      type: object
+      properties:
+        id:
+          type: string
+          example: cache-id
+        name:
+          type: string
+          example: cache name
+        stats:
+          $ref: '#/components/schemas/ApiCacheStats'
+    CacheResponse:
+      type: object
+      properties:
+        imageCache:
+          $ref: '#/components/schemas/ImageCache'
+        dnsCache:
+          $ref: '#/components/schemas/DnsCache'
+        apiCaches:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiCache'
     PlexSettings:
       type: object
       properties:
@@ -2197,7 +2316,6 @@ components:
           nullable: true
       required:
         - certification
-
     CertificationResponse:
       type: object
       properties:
@@ -2991,115 +3109,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  imageCache:
-                    type: object
-                    properties:
-                      tmdb:
-                        type: object
-                        properties:
-                          size:
-                            type: integer
-                            example: 123456
-                          imageCount:
-                            type: integer
-                            example: 123
-                      avatar:
-                        type: object
-                        properties:
-                          size:
-                            type: integer
-                            example: 123456
-                          imageCount:
-                            type: integer
-                            example: 123
-                  dnsCache:
-                    type: object
-                    properties:
-                      stats:
-                        type: object
-                        properties:
-                          size:
-                            type: integer
-                            example: 1
-                          maxSize:
-                            type: integer
-                            example: 500
-                          hits:
-                            type: integer
-                            example: 19
-                          misses:
-                            type: integer
-                            example: 1
-                          failures:
-                            type: integer
-                            example: 0
-                          ipv4Fallbacks:
-                            type: integer
-                            example: 0
-                          hitRate:
-                            type: integer
-                            example: 0.95
-                      entries:
-                        type: array
-                        additionalProperties:
-                          type: object
-                          properties:
-                            addresses:
-                              type: object
-                              properties:
-                                ipv4:
-                                  type: integer
-                                  example: 1
-                                ipv6:
-                                  type: integer
-                                  example: 1
-                            activeAddress:
-                              type: string
-                              example: 127.0.0.1
-                            family:
-                              type: integer
-                              example: 4
-                            age:
-                              type: integer
-                              example: 10
-                            ttl:
-                              type: integer
-                              example: 10
-                            networkErrors:
-                              type: integer
-                              example: 0
-                            hits:
-                              type: integer
-                              example: 1
-                            misses:
-                              type: integer
-                              example: 1
-                  apiCaches:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                          example: cache-id
-                        name:
-                          type: string
-                          example: cache name
-                        stats:
-                          type: object
-                          properties:
-                            hits:
-                              type: integer
-                            misses:
-                              type: integer
-                            keys:
-                              type: integer
-                            ksize:
-                              type: integer
-                            vsize:
-                              type: integer
+                $ref: '#/components/schemas/CacheResponse'
   /settings/cache/{cacheId}/flush:
     post:
       summary: Flush a specific cache
