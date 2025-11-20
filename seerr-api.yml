@@ -1311,7 +1311,7 @@ components:
         watchProviders:
           type: array
           items:
-            $ref: '#/components/schemas/WatchProviders'
+            $ref: '#/components/schemas/WatchProvider'
     Episode:
       type: object
       properties:
@@ -1498,7 +1498,7 @@ components:
         watchProviders:
           type: array
           items:
-            $ref: '#/components/schemas/WatchProviders'
+            $ref: '#/components/schemas/WatchProvider'
     MediaRequest:
       type: object
       properties:
@@ -2273,22 +2273,20 @@ components:
           type: integer
         webpush:
           type: integer
-    WatchProviders:
-      type: array
-      items:
-        type: object
-        properties:
-          iso_3166_1:
-            type: string
-          link:
-            type: string
-          buy:
-            type: array
-            items:
-              $ref: '#/components/schemas/WatchProviderDetails'
-          flatrate:
-            items:
-              $ref: '#/components/schemas/WatchProviderDetails'
+    WatchProvider:
+      type: object
+      properties:
+        iso_3166_1:
+          type: string
+        link:
+          type: string
+        buy:
+          type: array
+          items:
+            $ref: '#/components/schemas/WatchProviderDetails'
+        flatrate:
+          items:
+            $ref: '#/components/schemas/WatchProviderDetails'
     WatchProviderDetails:
       type: object
       properties:
