@@ -93,7 +93,7 @@ components:
         appDataPermissions:
           type: boolean
           example: true
-    Blacklist:
+    PostBlacklistRequest:
       type: object
       properties:
         tmdbId:
@@ -106,6 +106,38 @@ components:
         userId:
           type: integer
           example: 1
+    BlacklistItem:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        createdAt:
+          type: string
+          example: 2024-04-21T01:55:44.000Z
+        id:
+          type: integer
+          example: 1
+        mediaType:
+          type: string
+          example: movie
+        title:
+          type: string
+          example: Dune
+        tmdbId:
+          type: integer
+          example: 438631
+        blacklistedTags:
+          type: string
+          example: 'horror,thriller,naughty'
+    GetBlacklistResponse:
+      type: object
+      properties:
+        pageInfo:
+          $ref: '#/components/schemas/PageInfo'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BlacklistItem'
     Watchlist:
       type: object
       properties:
@@ -4534,32 +4566,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  pageInfo:
-                    $ref: '#/components/schemas/PageInfo'
-                  results:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        user:
-                          $ref: '#/components/schemas/User'
-                        createdAt:
-                          type: string
-                          example: 2024-04-21T01:55:44.000Z
-                        id:
-                          type: integer
-                          example: 1
-                        mediaType:
-                          type: string
-                          example: movie
-                        title:
-                          type: string
-                          example: Dune
-                        tmdbId:
-                          type: integer
-                          example: 438631
+                $ref: '#/components/schemas/GetBlacklistResponse'
     post:
       summary: Add media to blacklist
       tags:
@@ -4569,7 +4576,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Blacklist'
+              $ref: '#/components/schemas/PostBlacklistRequest'
       responses:
         '201':
           description: Item succesfully blacklisted
