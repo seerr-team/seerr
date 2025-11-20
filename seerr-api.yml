@@ -764,6 +764,27 @@ components:
         externalUrl:
           type: string
           nullable: true
+    Region:
+      type: object
+      properties:
+        iso_3166_1:
+          type: string
+          example: US
+        english_name:
+          type: string
+          example: United States of America
+    Language:
+      type: object
+      properties:
+        iso_639_1:
+          type: string
+          example: en
+        english_name:
+          type: string
+          example: English
+        name:
+          type: string
+          example: English
     RadarrSettings:
       type: object
       properties:
@@ -7045,14 +7066,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    iso_3166_1:
-                      type: string
-                      example: US
-                    english_name:
-                      type: string
-                      example: United States of America
+                  $ref: '#/components/schemas/Region'
   /languages:
     get:
       summary: Languages supported by TMDB
@@ -7067,17 +7081,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    iso_639_1:
-                      type: string
-                      example: en
-                    english_name:
-                      type: string
-                      example: English
-                    name:
-                      type: string
-                      example: English
+                  $ref: '#/components/schemas/Language'
   /studio/{studioId}:
     get:
       summary: Get movie studio details
