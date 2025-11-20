@@ -7142,17 +7142,10 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                      example: 10751
-                    name:
-                      type: string
-                      example: Family
+                  $ref: '#/components/schemas/Genre'
   /genres/tv:
     get:
-      summary: Get list of official TMDB movie genres
+      summary: Get list of official TMDB tv genres
       description: Returns a list of genres in a JSON array.
       tags:
         - tmdb
@@ -7170,14 +7163,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                      example: 18
-                    name:
-                      type: string
-                      example: Drama
+                  $ref: '#/components/schemas/Genre'
   /backdrops:
     get:
       summary: Get backdrops of trending items
