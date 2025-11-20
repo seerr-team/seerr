@@ -263,7 +263,6 @@ components:
           nullable: true
           description: 'Enable watchlist sync for TV'
           example: false
-
     GetUsersResponse:
       type: object
       properties:
@@ -318,6 +317,17 @@ components:
         status:
           type: string
           example: 'ok'
+    PushSubscription:
+      type: object
+      properties:
+        endpoint:
+          type: string
+        p256dh:
+          type: string
+        auth:
+          type: string
+        userAgent:
+          type: string
     MainSettings:
       type: object
       properties:
@@ -4289,16 +4299,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  endpoint:
-                    type: string
-                  p256dh:
-                    type: string
-                  auth:
-                    type: string
-                  userAgent:
-                    type: string
+                type: array
+                items:
+                  $ref: '#/components/schemas/PushSubscription'
   /user/{userId}/pushSubscription/{endpoint}:
     get:
       summary: Get web push notification settings for a user
@@ -4323,16 +4326,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  endpoint:
-                    type: string
-                  p256dh:
-                    type: string
-                  auth:
-                    type: string
-                  userAgent:
-                    type: string
+                $ref: '#/components/schemas/PushSubscription'
     delete:
       summary: Delete user push subscription by key
       description: Deletes the user push subscription with the provided key.
