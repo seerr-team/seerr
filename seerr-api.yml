@@ -1071,6 +1071,19 @@ components:
         name:
           type: string
           example: Adventure
+    GenreSliderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        backdrops:
+          type: array
+          items:
+            type: string
+        name:
+          type: string
+          example: Genre Name
     Company:
       type: object
       properties:
@@ -5872,18 +5885,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                      example: 1
-                    backdrops:
-                      type: array
-                      items:
-                        type: string
-                    name:
-                      type: string
-                      example: Genre Name
+                  $ref: '#/components/schemas/GenreSliderItem'
   /discover/genreslider/tv:
     get:
       summary: Get genre slider data for TV series
@@ -5904,18 +5906,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                      example: 1
-                    backdrops:
-                      type: array
-                      items:
-                        type: string
-                    name:
-                      type: string
-                      example: Genre Name
+                  $ref: '#/components/schemas/GenreSliderItem'
   /discover/watchlist:
     get:
       summary: Get the Plex watchlist.
