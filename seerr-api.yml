@@ -1583,6 +1583,40 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WatchProvider'
+    Quota:
+      type: object
+      properties:
+        days:
+          type: integer
+          example: 7
+        limit:
+          type: integer
+          example: 10
+        used:
+          type: integer
+          example: 6
+        remaining:
+          type: integer
+          example: 4
+        restricted:
+          type: boolean
+          example: false
+    UserQuota:
+      type: object
+      properties:
+        movie:
+          $ref: '#/components/schemas/Quota'
+        tv:
+          $ref: '#/components/schemas/Quota'
+    GetUserRequestsResponse:
+      type: object
+      properties:
+        pageInfo:
+          $ref: '#/components/schemas/PageInfo'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaRequest'
     MediaRequest:
       type: object
       properties:
@@ -4442,14 +4476,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  pageInfo:
-                    $ref: '#/components/schemas/PageInfo'
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/MediaRequest'
+                $ref: '#/components/schemas/GetUserRequestsResponse'
   /user/{userId}/quota:
     get:
       summary: Get quotas for a specific user
@@ -4469,44 +4496,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  movie:
-                    type: object
-                    properties:
-                      days:
-                        type: integer
-                        example: 7
-                      limit:
-                        type: integer
-                        example: 10
-                      used:
-                        type: integer
-                        example: 6
-                      remaining:
-                        type: integer
-                        example: 4
-                      restricted:
-                        type: boolean
-                        example: false
-                  tv:
-                    type: object
-                    properties:
-                      days:
-                        type: integer
-                        example: 7
-                      limit:
-                        type: integer
-                        example: 10
-                      used:
-                        type: integer
-                        example: 6
-                      remaining:
-                        type: integer
-                        example: 4
-                      restricted:
-                        type: boolean
-                        example: false
+                $ref: '#/components/schemas/UserQuota'
   /blacklist:
     get:
       summary: Returns blacklisted items
