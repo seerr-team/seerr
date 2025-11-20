@@ -1256,6 +1256,57 @@ components:
             oneOf:
               - $ref: '#/components/schemas/MovieResult'
               - $ref: '#/components/schemas/TvResult'
+    SearchResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        totalPages:
+          type: integer
+          example: 20
+        totalResults:
+          type: integer
+          example: 200
+        results:
+          type: array
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/MovieResult'
+              - $ref: '#/components/schemas/TvResult'
+              - $ref: '#/components/schemas/PersonResult'
+    KeywordSearchResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        totalPages:
+          type: integer
+          example: 20
+        totalResults:
+          type: integer
+          example: 200
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Keyword'
+    CompanySearchResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        totalPages:
+          type: integer
+          example: 20
+        totalResults:
+          type: integer
+          example: 200
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Company'
     Genre:
       type: object
       properties:
@@ -5057,24 +5108,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  results:
-                    type: array
-                    items:
-                      anyOf:
-                        - $ref: '#/components/schemas/MovieResult'
-                        - $ref: '#/components/schemas/TvResult'
-                        - $ref: '#/components/schemas/PersonResult'
+                $ref: '#/components/schemas/SearchResponse'
   /search/keyword:
     get:
       summary: Search for keywords
@@ -5100,21 +5134,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Keyword'
+                $ref: '#/components/schemas/KeywordSearchResponse'
   /search/company:
     get:
       summary: Search for companies
@@ -5140,21 +5160,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Company'
+                $ref: '#/components/schemas/CompanySearchResponse'
   /discover/movies:
     get:
       summary: Discover movies
