@@ -2416,7 +2416,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MainSettings'
+                $ref: '#/components/schemas/NetworkSettings'
     post:
       summary: Update network settings
       description: Updates network settings with the provided values.
