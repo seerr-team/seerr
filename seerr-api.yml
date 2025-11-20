@@ -351,6 +351,22 @@ components:
             type: integer
         permissions:
           type: integer
+    PasswordPageInfo:
+      type: object
+      properties:
+        hasPassword:
+          type: boolean
+          example: true
+    UpdatePasswordRequest:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+          nullable: true
+        newPassword:
+          type: string
+      required:
+        - newPassword
     ResetPasswordRequest:
       type: object
       properties:
@@ -4764,11 +4780,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  hasPassword:
-                    type: boolean
-                    example: true
+                $ref: '#/components/schemas/PasswordPageInfo'
     post:
       summary: Update password for a user
       description: Updates a user's password. Requires `MANAGE_USERS` permission if editing other users.
@@ -4785,15 +4797,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                currentPassword:
-                  type: string
-                  nullable: true
-                newPassword:
-                  type: string
-              required:
-                - newPassword
+              $ref: '#/components/schemas/UpdatePasswordRequest'
       responses:
         '204':
           description: User password updated
