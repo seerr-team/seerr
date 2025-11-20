@@ -1751,6 +1751,13 @@ components:
               type: string
             sound:
               type: string
+    PushoverSound:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
     GotifySettings:
       type: object
       properties:
@@ -3403,12 +3410,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    name:
-                      type: string
-                    description:
-                      type: string
+                  $ref: '#/components/schemas/PushoverSound'
   /settings/notifications/gotify:
     get:
       summary: Get Gotify notification settings
