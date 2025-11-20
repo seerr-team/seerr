@@ -263,6 +263,35 @@ components:
           nullable: true
           description: 'Enable watchlist sync for TV'
           example: false
+
+    GetUsersResponse:
+      type: object
+      properties:
+        pageInfo:
+          $ref: '#/components/schemas/PageInfo'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    CreateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          example: 'hey@itsme.com'
+        username:
+          type: string
+        permissions:
+          type: integer
+    UpdateUsersRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+        permissions:
+          type: integer
     ResetPasswordRequest:
       type: object
       properties:
@@ -4112,14 +4141,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  pageInfo:
-                    $ref: '#/components/schemas/PageInfo'
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/GetUsersResponse'
     post:
       summary: Create new user
       description: |
@@ -4131,15 +4153,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                  example: 'hey@itsme.com'
-                username:
-                  type: string
-                permissions:
-                  type: integer
+              $ref: '#/components/schemas/CreateUserRequest'
       responses:
         '201':
           description: The created user
@@ -4160,14 +4174,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                ids:
-                  type: array
-                  items:
-                    type: integer
-                permissions:
-                  type: integer
+              $ref: '#/components/schemas/UpdateUsersRequest'
       responses:
         '200':
           description: Successfully updated user details
