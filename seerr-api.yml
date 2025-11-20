@@ -154,6 +154,9 @@ components:
           type: string
         title:
           type: string
+        mediaType:
+          type: string
+          example: movie
         media:
           $ref: '#/components/schemas/MediaInfo'
         createdAt:
@@ -166,6 +169,31 @@ components:
           readOnly: true
         requestedBy:
           $ref: '#/components/schemas/User'
+    WatchlistItem:
+      type: object
+      properties:
+        tmdbId:
+          type: integer
+          example: 1
+        ratingKey:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+    WatchlistResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+        totalPages:
+          type: integer
+        totalResults:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/WatchlistItem'
     User:
       type: object
       properties:
@@ -4674,28 +4702,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                  totalPages:
-                    type: integer
-                  totalResults:
-                    type: integer
-                  results:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        tmdbId:
-                          type: integer
-                          example: 1
-                        ratingKey:
-                          type: string
-                        type:
-                          type: string
-                        title:
-                          type: string
+                $ref: '#/components/schemas/WatchlistResponse'
   /user/{userId}/settings/main:
     get:
       summary: Get general settings for a user
