@@ -622,13 +622,26 @@ components:
     JellyfinUser:
       type: object
       properties:
-        username:
-          type: string
         id:
+          type: string
+        username:
           type: string
         thumb:
           type: string
         email:
+          type: string
+    PlexUser:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+        thumb:
           type: string
     MediaLibrary:
       type: object
@@ -2694,18 +2707,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    title:
-                      type: string
-                    username:
-                      type: string
-                    email:
-                      type: string
-                    thumb:
-                      type: string
+                  $ref: '#/components/schemas/PlexUser'
   /settings/metadatas:
     get:
       summary: Get Metadata settings
