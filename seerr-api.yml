@@ -1896,6 +1896,47 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MediaRequest'
+    SeasonsAll:
+      type: string
+      enum:
+        - all
+    PostRequest:
+      type: object
+      properties:
+        mediaType:
+          type: string
+          enum: [movie, tv]
+          example: movie
+        mediaId:
+          type: integer
+          example: 123
+        tvdbId:
+          type: integer
+          example: 123
+        seasons:
+          oneOf:
+            - type: array
+              items:
+                type: integer
+                minimum: 0
+            - $ref: '#/components/schemas/SeasonsAll'
+        is4k:
+          type: boolean
+          example: false
+        serverId:
+          type: integer
+        profileId:
+          type: integer
+        rootFolder:
+          type: string
+        languageProfileId:
+          type: integer
+        userId:
+          type: integer
+          nullable: true
+      required:
+        - mediaType
+        - mediaId
     RequestsCounts:
       type: object
       properties:
@@ -6120,43 +6161,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                mediaType:
-                  type: string
-                  enum: [movie, tv]
-                  example: movie
-                mediaId:
-                  type: integer
-                  example: 123
-                tvdbId:
-                  type: integer
-                  example: 123
-                seasons:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                        minimum: 0
-                    - type: string
-                      enum: [all]
-                is4k:
-                  type: boolean
-                  example: false
-                serverId:
-                  type: integer
-                profileId:
-                  type: integer
-                rootFolder:
-                  type: string
-                languageProfileId:
-                  type: integer
-                userId:
-                  type: integer
-                  nullable: true
-              required:
-                - mediaType
-                - mediaId
+              $ref: '#/components/schemas/PostRequest'
       responses:
         '201':
           description: Succesfully created the request
