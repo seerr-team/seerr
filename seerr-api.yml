@@ -2482,6 +2482,12 @@ components:
         name:
           type: string
           example: 'anime'
+    KeywordError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: 'Unable to retrieve keyword data.'
     SpokenLanguage:
       type: object
       properties:
@@ -7302,11 +7308,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Unable to retrieve keyword data.'
+                $ref: '#/components/schemas/KeywordError'
   /watchproviders/regions:
     get:
       summary: Get watch provider regions
