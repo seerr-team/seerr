@@ -1994,12 +1994,19 @@ components:
       type: object
       properties:
         page:
+          description: The current page number.
           type: integer
           example: 1
+        pageSize:
+          description: The number of results per page.
+          type: integer
+          example: 20
         pages:
+          description: The total number of pages of results.
           type: integer
           example: 10
         results:
+          description: The total number of results.
           type: integer
           example: 100
     DiscordSettings:
