@@ -2738,6 +2738,15 @@ components:
           type: integer
         name:
           type: string
+    UserWatchData:
+      type: object
+      properties:
+        recentlyWatched:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaInfo'
+        playCount:
+          type: integer
     Issue:
       type: object
       properties:
@@ -5287,14 +5296,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  recentlyWatched:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/MediaInfo'
-                  playCount:
-                    type: integer
+                $ref: '#/components/schemas/UserWatchData'
   /search:
     get:
       summary: Search for movies, TV shows, or people
