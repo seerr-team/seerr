@@ -2473,6 +2473,19 @@ components:
           type: string
         mediaInfo:
           $ref: '#/components/schemas/MediaInfo'
+    CombinedCredits:
+      type: object
+      properties:
+        cast:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreditCast'
+        crew:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreditCrew'
+        id:
+          type: integer
     Keyword:
       type: object
       properties:
@@ -6622,18 +6635,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  cast:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/CreditCast'
-                  crew:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/CreditCrew'
-                  id:
-                    type: integer
+                $ref: '#/components/schemas/CombinedCredits'
   /media:
     get:
       summary: Get media
