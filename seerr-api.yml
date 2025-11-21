@@ -1839,6 +1839,27 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MediaRequest'
+    RequestsCounts:
+      type: object
+      properties:
+        total:
+          type: integer
+        movie:
+          type: integer
+        tv:
+          type: integer
+        pending:
+          type: integer
+        approved:
+          type: integer
+        declined:
+          type: integer
+        processing:
+          type: integer
+        available:
+          type: integer
+        completed:
+          type: integer
     MediaRequest:
       type: object
       properties:
@@ -6014,26 +6035,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  total:
-                    type: integer
-                  movie:
-                    type: integer
-                  tv:
-                    type: integer
-                  pending:
-                    type: integer
-                  approved:
-                    type: integer
-                  declined:
-                    type: integer
-                  processing:
-                    type: integer
-                  available:
-                    type: integer
-                  completed:
-                    type: integer
+                $ref: '#/components/schemas/RequestsCounts'
   /request/{requestId}:
     get:
       summary: Get MediaRequest
