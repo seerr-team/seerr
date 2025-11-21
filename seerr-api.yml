@@ -181,19 +181,6 @@ components:
           type: string
         title:
           type: string
-    WatchlistResponse:
-      type: object
-      properties:
-        page:
-          type: integer
-        totalPages:
-          type: integer
-        totalResults:
-          type: integer
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/WatchlistItem'
     User:
       type: object
       properties:
@@ -1256,7 +1243,7 @@ components:
             oneOf:
               - $ref: '#/components/schemas/MovieResult'
               - $ref: '#/components/schemas/TvResult'
-    SearchResponse:
+    PaginatedResponse:
       type: object
       properties:
         page:
@@ -1268,45 +1255,140 @@ components:
         totalResults:
           type: integer
           example: 200
-        results:
-          type: array
-          items:
-            anyOf:
-              - $ref: '#/components/schemas/MovieResult'
-              - $ref: '#/components/schemas/TvResult'
-              - $ref: '#/components/schemas/PersonResult'
-    KeywordSearchResponse:
-      type: object
-      properties:
-        page:
-          type: integer
-          example: 1
-        totalPages:
-          type: integer
-          example: 20
-        totalResults:
-          type: integer
-          example: 200
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Keyword'
-    CompanySearchResponse:
-      type: object
-      properties:
-        page:
-          type: integer
-          example: 1
-        totalPages:
-          type: integer
-          example: 20
-        totalResults:
-          type: integer
-          example: 200
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Company'
+    PaginatedSearchResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            results:
+              type: array
+              items:
+                anyOf:
+                  - $ref: '#/components/schemas/MovieResult'
+                  - $ref: '#/components/schemas/TvResult'
+                  - $ref: '#/components/schemas/PersonResult'
+    PaginatedKeywordSearchResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/Keyword'
+    PaginatedCompanySearchResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/Company'
+    PaginatedMoviesResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/MovieResult'
+    PaginatedDiscoverMoviesByGenreResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            genre:
+              $ref: '#/components/schemas/Genre'
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/MovieResult'
+    PaginatedDiscoverMoviesByLanguageResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            language:
+              $ref: '#/components/schemas/SpokenLanguage'
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/MovieResult'
+    PaginatedDiscoverMoviesByStudioResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            studio:
+              $ref: '#/components/schemas/ProductionCompany'
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/MovieResult'
+    PaginatedTvResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/TvResult'
+    PaginatedDiscoverTvByGenreResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            genre:
+              $ref: '#/components/schemas/Genre'
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/TvResult'
+    PaginatedDiscoverTvByLanguageResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            language:
+              $ref: '#/components/schemas/SpokenLanguage'
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/TvResult'
+    PaginatedDiscoverTvByNetworkResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            network:
+              $ref: '#/components/schemas/Network'
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/TvResult'
+    PaginatedDiscoverTrendingResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            results:
+              type: array
+              items:
+                anyOf:
+                  - $ref: '#/components/schemas/MovieResult'
+                  - $ref: '#/components/schemas/TvResult'
+    PaginatedWatchlistResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/WatchlistItem'
     Genre:
       type: object
       properties:
@@ -4782,7 +4864,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WatchlistResponse'
+                $ref: '#/components/schemas/PaginatedWatchlistResponse'
   /user/{userId}/settings/main:
     get:
       summary: Get general settings for a user
@@ -5108,7 +5190,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SearchResponse'
+                $ref: '#/components/schemas/PaginatedSearchResponse'
   /search/keyword:
     get:
       summary: Search for keywords
@@ -5134,7 +5216,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/KeywordSearchResponse'
+                $ref: '#/components/schemas/PaginatedKeywordSearchResponse'
   /search/company:
     get:
       summary: Search for companies
@@ -5160,7 +5242,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CompanySearchResponse'
+                $ref: '#/components/schemas/PaginatedCompanySearchResponse'
   /discover/movies:
     get:
       summary: Discover movies
@@ -5292,21 +5374,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/MovieResult'
+                $ref: '#/components/schemas/PaginatedMoviesResponse'
   /discover/movies/genre/{genreId}:
     get:
       summary: Discover movies by genre
@@ -5337,23 +5405,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  genre:
-                    $ref: '#/components/schemas/Genre'
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/MovieResult'
+                $ref: '#/components/schemas/PaginatedDiscoverMoviesByGenreResponse'
   /discover/movies/language/{language}:
     get:
       summary: Discover movies by original language
@@ -5384,23 +5436,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  language:
-                    $ref: '#/components/schemas/SpokenLanguage'
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/MovieResult'
+                $ref: '#/components/schemas/PaginatedDiscoverMoviesByLanguageResponse'
   /discover/movies/studio/{studioId}:
     get:
       summary: Discover movies by studio
@@ -5431,23 +5467,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  studio:
-                    $ref: '#/components/schemas/ProductionCompany'
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/MovieResult'
+                $ref: '#/components/schemas/PaginatedDiscoverMoviesByStudioResponse'
   /discover/movies/upcoming:
     get:
       summary: Upcoming movies
@@ -5472,21 +5492,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/MovieResult'
+                $ref: '#/components/schemas/PaginatedMoviesResponse'
   /discover/tv:
     get:
       summary: Discover TV shows
@@ -5623,21 +5629,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/TvResult'
+                $ref: '#/components/schemas/PaginatedTvResponse'
   /discover/tv/language/{language}:
     get:
       summary: Discover TV shows by original language
@@ -5668,23 +5660,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  language:
-                    $ref: '#/components/schemas/SpokenLanguage'
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/TvResult'
+                $ref: '#/components/schemas/PaginatedDiscoverTvByLanguageResponse'
   /discover/tv/genre/{genreId}:
     get:
       summary: Discover TV shows by genre
@@ -5715,23 +5691,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  genre:
-                    $ref: '#/components/schemas/Genre'
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/TvResult'
+                $ref: '#/components/schemas/PaginatedDiscoverTvByGenreResponse'
   /discover/tv/network/{networkId}:
     get:
       summary: Discover TV shows by network
@@ -5762,23 +5722,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  network:
-                    $ref: '#/components/schemas/Network'
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/TvResult'
+                $ref: '#/components/schemas/PaginatedDiscoverTvByNetworkResponse'
   /discover/tv/upcoming:
     get:
       summary: Discover Upcoming TV shows
@@ -5803,21 +5747,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/TvResult'
+                $ref: '#/components/schemas/PaginatedTvResponse'
   /discover/trending:
     get:
       summary: Trending movies and TV
@@ -5842,24 +5772,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  results:
-                    type: array
-                    items:
-                      anyOf:
-                        - $ref: '#/components/schemas/MovieResult'
-                        - $ref: '#/components/schemas/TvResult'
-                        - $ref: '#/components/schemas/PersonResult'
+                $ref: '#/components/schemas/PaginatedDiscoverTrendingResponse'
   /discover/keyword/{keywordId}/movies:
     get:
       summary: Get movies from keyword
@@ -5890,21 +5803,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/MovieResult'
+                $ref: '#/components/schemas/PaginatedMoviesResponse'
   /discover/genreslider/movie:
     get:
       summary: Get genre slider data for movies
@@ -5965,28 +5864,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                  totalPages:
-                    type: integer
-                  totalResults:
-                    type: integer
-                  results:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        tmdbId:
-                          type: integer
-                          example: 1
-                        ratingKey:
-                          type: string
-                        type:
-                          type: string
-                        title:
-                          type: string
+                $ref: '#/components/schemas/PaginatedWatchlistResponse'
   /request:
     get:
       summary: Get all requests
@@ -6354,21 +6232,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/MovieResult'
+                $ref: '#/components/schemas/PaginatedMoviesResponse'
   /movie/{movieId}/similar:
     get:
       summary: Get similar movies
@@ -6399,21 +6263,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/MovieResult'
+                $ref: '#/components/schemas/PaginatedMoviesResponse'
   /movie/{movieId}/ratings:
     get:
       summary: Get movie ratings
@@ -6599,21 +6449,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/TvResult'
+                $ref: '#/components/schemas/PaginatedTvResponse'
   /tv/{tvId}/similar:
     get:
       summary: Get similar TV series
@@ -6644,21 +6480,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  totalPages:
-                    type: integer
-                    example: 20
-                  totalResults:
-                    type: integer
-                    example: 200
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/TvResult'
+                $ref: '#/components/schemas/PaginatedTvResponse'
   /tv/{tvId}/ratings:
     get:
       summary: Get TV ratings
