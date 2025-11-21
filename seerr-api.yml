@@ -1008,6 +1008,13 @@ components:
         - is4k
         - minimumAvailability
         - isDefault
+    RadarrServiceResponse:
+      type: object
+      properties:
+        server:
+          $ref: '#/components/schemas/RadarrSettings'
+        profiles:
+          $ref: '#/components/schemas/ServiceProfile'
     ServarrTestRequest:
       type: object
       properties:
@@ -6797,12 +6804,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  server:
-                    $ref: '#/components/schemas/RadarrSettings'
-                  profiles:
-                    $ref: '#/components/schemas/ServiceProfile'
+                $ref: '#/components/schemas/RadarrServiceResponse'
   /service/sonarr:
     get:
       summary: Get non-sensitive Sonarr server list
