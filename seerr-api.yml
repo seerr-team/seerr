@@ -2867,6 +2867,15 @@ components:
             - certification: 'PG'
               meaning: 'Some material may not be suitable for children under 10.'
               order: 2
+    CertificationError:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 500
+        message:
+          type: string
+          example: Unable to retrieve movie certifications.
   securitySchemes:
     cookieAuth:
       type: apiKey
@@ -7392,14 +7401,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: integer
-                    example: 500
-                  message:
-                    type: string
-                    example: Unable to retrieve movie certifications.
+                $ref: '#/components/schemas/CertificationError'
   /certifications/tv:
     get:
       summary: Get TV certifications
@@ -7421,14 +7423,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: integer
-                    example: 500
-                  message:
-                    type: string
-                    example: Unable to retrieve TV certifications.
+                $ref: '#/components/schemas/CertificationError'
   /overrideRule:
     get:
       summary: Get override rules
