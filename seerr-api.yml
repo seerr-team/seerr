@@ -1805,6 +1805,49 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WatchProvider'
+    Ratings:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Mulan
+        year:
+          type: integer
+          example: 2020
+        url:
+          type: string
+          example: 'http://www.rottentomatoes.com/m/mulan_2020/'
+        criticsScore:
+          type: number
+          example: 85
+        criticsRating:
+          type: string
+          enum: ['Rotten', 'Fresh', 'Certified Fresh']
+        audienceScore:
+          type: number
+          example: 65
+        audienceRating:
+          type: string
+          enum: ['Spilled', 'Upright']
+    IMDbRatings:
+      type: object
+      properties:
+        title:
+          type: string
+          example: I am Legend
+        url:
+          type: string
+          example: 'https://www.imdb.com/title/tt0480249'
+        criticsScore:
+          type: number
+          example: 6.5
+    CombinedMovieRatings:
+      type: object
+      properties:
+        rt:
+          $ref: '#/components/schemas/Ratings'
+        imdb:
+          $ref: '#/components/schemas/IMDbRatings'
     Quota:
       type: object
       properties:
@@ -6285,29 +6328,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  title:
-                    type: string
-                    example: Mulan
-                  year:
-                    type: integer
-                    example: 2020
-                  url:
-                    type: string
-                    example: 'http://www.rottentomatoes.com/m/mulan_2020/'
-                  criticsScore:
-                    type: number
-                    example: 85
-                  criticsRating:
-                    type: string
-                    enum: ['Rotten', 'Fresh', 'Certified Fresh']
-                  audienceScore:
-                    type: number
-                    example: 65
-                  audienceRating:
-                    type: string
-                    enum: ['Spilled', 'Upright']
+                $ref: '#/components/schemas/Ratings'
   /movie/{movieId}/ratingscombined:
     get:
       summary: Get RT and IMDB movie ratings combined
@@ -6327,44 +6348,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  rt:
-                    type: object
-                    properties:
-                      title:
-                        type: string
-                        example: Mulan
-                      year:
-                        type: integer
-                        example: 2020
-                      url:
-                        type: string
-                        example: 'http://www.rottentomatoes.com/m/mulan_2020/'
-                      criticsScore:
-                        type: number
-                        example: 85
-                      criticsRating:
-                        type: string
-                        enum: ['Rotten', 'Fresh', 'Certified Fresh']
-                      audienceScore:
-                        type: number
-                        example: 65
-                      audienceRating:
-                        type: string
-                        enum: ['Spilled', 'Upright']
-                  imdb:
-                    type: object
-                    properties:
-                      title:
-                        type: string
-                        example: I am Legend
-                      url:
-                        type: string
-                        example: 'https://www.imdb.com/title/tt0480249'
-                      criticsScore:
-                        type: number
-                        example: 6.5
+                $ref: '#/components/schemas/CombinedMovieRatings'
   /tv/{tvId}:
     get:
       summary: Get TV details
@@ -6502,23 +6486,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  title:
-                    type: string
-                    example: The Boys
-                  year:
-                    type: integer
-                    example: 2019
-                  url:
-                    type: string
-                    example: 'http://www.rottentomatoes.com/m/mulan_2020/'
-                  criticsScore:
-                    type: number
-                    example: 85
-                  criticsRating:
-                    type: string
-                    enum: ['Rotten', 'Fresh']
+                $ref: '#/components/schemas/Ratings'
   /person/{personId}:
     get:
       summary: Get person details
