@@ -2514,7 +2514,7 @@ components:
         name:
           type: string
           example: 'English'
-    Collection:
+    MediaCollection:
       type: object
       properties:
         id:
@@ -6814,7 +6814,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/MediaCollection'
   /service/radarr:
     get:
       summary: Get non-sensitive Radarr server list
