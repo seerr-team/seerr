@@ -288,6 +288,7 @@ const MovieRequestModal = ({
           hasPermission(Permission.MANAGE_REQUESTS)) && (
           <AdvancedRequester
             type="movie"
+            tmdbId={tmdbId}
             is4k={is4k}
             requestUser={editRequest.requestedBy}
             defaultOverrides={{
@@ -357,6 +358,7 @@ const MovieRequestModal = ({
       {(hasPermission(Permission.REQUEST_ADVANCED) ||
         hasPermission(Permission.MANAGE_REQUESTS)) && (
         <AdvancedRequester
+          tmdbId={tmdbId}
           type="movie"
           is4k={is4k}
           onChange={(overrides) => {

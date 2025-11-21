@@ -7755,6 +7755,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OverrideRule'
+  /overrideRule/advancedRequest:
+    post:
+      summary: Advanced override rule request
+      description: Processes an advanced override rule request.
+      tags:
+        - overriderule
+      responses:
+        '200':
+          description: Advanced override rule request processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rootFolder:
+                    type: string
+                    nullable: true
+                  profileId:
+                    type: number
+                    nullable: true
+                  tags:
+                    type: array
+                    items:
+                      type: number
+                    nullable: true
+
 security:
   - cookieAuth: []
   - apiKey: []
