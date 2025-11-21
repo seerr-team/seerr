@@ -2747,6 +2747,26 @@ components:
             $ref: '#/components/schemas/MediaInfo'
         playCount:
           type: integer
+    MediaWatchData:
+      type: object
+      properties:
+        playCount7Days:
+          type: integer
+        playCount30Days:
+          type: integer
+        playCount:
+          type: integer
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    MediaWatchCombinedData:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/MediaWatchData'
+        data4k:
+          $ref: '#/components/schemas/MediaWatchData'
     Issue:
       type: object
       properties:
@@ -6767,34 +6787,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      playCount7Days:
-                        type: integer
-                      playCount30Days:
-                        type: integer
-                      playCount:
-                        type: integer
-                      users:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/User'
-                  data4k:
-                    type: object
-                    properties:
-                      playCount7Days:
-                        type: integer
-                      playCount30Days:
-                        type: integer
-                      playCount:
-                        type: integer
-                      users:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/MediaWatchCombinedData'
   /collection/{collectionId}:
     get:
       summary: Get collection details
