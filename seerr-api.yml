@@ -1830,7 +1830,7 @@ components:
           $ref: '#/components/schemas/Quota'
         tv:
           $ref: '#/components/schemas/Quota'
-    GetUserRequestsResponse:
+    GetRequestsResponse:
       type: object
       properties:
         pageInfo:
@@ -4705,7 +4705,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetUserRequestsResponse'
+                $ref: '#/components/schemas/GetRequestsResponse'
   /user/{userId}/quota:
     get:
       summary: Get quotas for a specific user
@@ -5943,14 +5943,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  pageInfo:
-                    $ref: '#/components/schemas/PageInfo'
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/MediaRequest'
+                $ref: '#/components/schemas/GetRequestsResponse'
     post:
       summary: Create new request
       description: |
@@ -7106,7 +7099,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Issue'
-
   /issue/count:
     get:
       summary: Gets issue counts
@@ -7523,6 +7515,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OverrideRule'
+
 security:
   - cookieAuth: []
   - apiKey: []
