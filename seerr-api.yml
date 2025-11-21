@@ -129,7 +129,7 @@ components:
         blacklistedTags:
           type: string
           example: 'horror,thriller,naughty'
-    GetBlacklistResponse:
+    BlacklistPage:
       type: object
       properties:
         pageInfo:
@@ -310,7 +310,7 @@ components:
           nullable: true
           description: 'Enable watchlist sync for TV'
           example: false
-    GetUsersResponse:
+    UsersPage:
       type: object
       properties:
         pageInfo:
@@ -1873,7 +1873,7 @@ components:
           $ref: '#/components/schemas/Quota'
         tv:
           $ref: '#/components/schemas/Quota'
-    GetRequestsResponse:
+    MediaRequestsPage:
       type: object
       properties:
         pageInfo:
@@ -4478,7 +4478,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetUsersResponse'
+                $ref: '#/components/schemas/UsersPage'
     post:
       summary: Create new user
       description: |
@@ -4769,7 +4769,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetRequestsResponse'
+                $ref: '#/components/schemas/MediaRequestsPage'
   /user/{userId}/quota:
     get:
       summary: Get quotas for a specific user
@@ -4827,7 +4827,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetBlacklistResponse'
+                $ref: '#/components/schemas/BlacklistPage'
     post:
       summary: Add media to blacklist
       tags:
@@ -6007,7 +6007,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetRequestsResponse'
+                $ref: '#/components/schemas/MediaRequestsPage'
     post:
       summary: Create new request
       description: |
