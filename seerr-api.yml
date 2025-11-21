@@ -1974,6 +1974,15 @@ components:
           type: string
           example: '2020-09-12T10:00:27.000Z'
           readOnly: true
+    MediaInfoPage:
+      type: object
+      properties:
+        pageInfo:
+          $ref: '#/components/schemas/PageInfo'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaInfo'
     Cast:
       type: object
       properties:
@@ -6594,14 +6603,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  pageInfo:
-                    $ref: '#/components/schemas/PageInfo'
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/MediaInfo'
+                $ref: '#/components/schemas/MediaInfoPage'
   /media/{mediaId}:
     delete:
       summary: Delete media item
