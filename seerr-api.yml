@@ -2760,6 +2760,23 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Issue'
+    IssuesCounts:
+      type: object
+      properties:
+        total:
+          type: integer
+        video:
+          type: integer
+        audio:
+          type: integer
+        subtitles:
+          type: integer
+        others:
+          type: integer
+        open:
+          type: integer
+        closed:
+          type: integer
     IssueComment:
       type: object
       properties:
@@ -7090,22 +7107,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  total:
-                    type: integer
-                  video:
-                    type: integer
-                  audio:
-                    type: integer
-                  subtitles:
-                    type: integer
-                  others:
-                    type: integer
-                  open:
-                    type: integer
-                  closed:
-                    type: integer
+                $ref: '#/components/schemas/IssuesCounts'
   /issue/{issueId}:
     get:
       summary: Get issue
