@@ -2751,6 +2751,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/IssueComment'
+    IssuesPage:
+      type: object
+      properties:
+        pageInfo:
+          $ref: '#/components/schemas/PageInfo'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Issue'
     IssueComment:
       type: object
       properties:
@@ -7041,14 +7050,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  pageInfo:
-                    $ref: '#/components/schemas/PageInfo'
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Issue'
+                $ref: '#/components/schemas/IssuesPage'
     post:
       summary: Create new issue
       description: |
