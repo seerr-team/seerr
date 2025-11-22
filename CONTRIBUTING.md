@@ -151,9 +151,9 @@ When adding new UI text, please try to adhere to the following guidelines:
 
 ## Translation
 
-We use [Weblate](https://jellyseerr.borgcube.de/projects/jellyseerr/jellyseerr-frontend/) for our translations, and your help with localizing Seerr would be greatly appreciated! If your language is not listed below, please [open a feature request](/../../issues/new/choose).
+We use [Weblate](https://translate.seerr.dev/projects/seerr/seerr-frontend/) for our translations, and your help with localizing Seerr would be greatly appreciated! If your language is not listed below, please [open a feature request](/../../issues/new/choose).
 
-<a href="https://jellyseerr.borgcube.de/engage/jellysseerr/"><img src="https://jellyseerr.borgcube.de/widget/jellyseerr/multi-auto.svg" alt="Translation status" /></a>
+<a href="https://translate.seerr.dev/engage/seerr/"><img src="https://translate.seerr.dev/widget/seerr/multi-auto.svg" alt="Translation status" /></a>
 
 ## Migrations
 
