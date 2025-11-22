@@ -12,13 +12,13 @@ function boolFromEnv(envVar: string, defaultVal = false) {
   return defaultVal;
 }
 
-function stringOrReadFileFromEnv(envVar: string): Buffer | string | undefined {
+function stringOrReadFileFromEnv(envVar: string): string | undefined {
   if (process.env[envVar]) {
     return process.env[envVar];
   }
   const filePath = process.env[`${envVar}_FILE`];
   if (filePath) {
-    return fs.readFileSync(filePath);
+    return fs.readFileSync(filePath, 'utf-8');
   }
   return undefined;
 }
@@ -72,8 +72,8 @@ const postgresDevConfig: DataSourceOptions = {
   port: process.env.DB_SOCKET_PATH
     ? undefined
     : parseInt(process.env.DB_PORT ?? '5432'),
-  username: process.env.DB_USER,
-  password: process.env.DB_PASS,
+  username: stringOrReadFileFromEnv('DB_USER')?.trim(),
+  password: stringOrReadFileFromEnv('DB_PASS')?.trim(),
   database: process.env.DB_NAME ?? 'seerr',
   ssl: buildSslConfig(),
   synchronize: false,
@@ -90,9 +90,9 @@ const postgresProdConfig: DataSourceOptions = {
   port: process.env.DB_SOCKET_PATH
     ? undefined
     : parseInt(process.env.DB_PORT ?? '5432'),
-  username: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME ?? 'seerr',
+  username: stringOrReadFileFromEnv('DB_USER')?.trim(),
+  password: stringOrReadFileFromEnv('DB_PASS')?.trim(),
+  database: stringOrReadFileFromEnv('DB_NAME')?.trim() ?? 'seerr',
   ssl: buildSslConfig(),
   synchronize: false,
   migrationsRun: false,
