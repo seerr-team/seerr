@@ -6725,6 +6725,66 @@ paths:
                   criticsRating:
                     type: string
                     enum: ['Rotten', 'Fresh']
+  /tv/{tvId}/ratingscombined:
+    get:
+      summary: Get RT and IMDB TV ratings combined
+      description: Returns ratings from RottenTomatoes and IMDB based on the provided tvId in a JSON object.
+      tags:
+        - tv
+      parameters:
+        - in: path
+          name: tvId
+          required: true
+          schema:
+            type: number
+            example: 76479
+      responses:
+        '200':
+          description: Ratings returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rt:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        example: The Boys
+                      year:
+                        type: number
+                        example: 2019
+                      url:
+                        type: string
+                        example: 'http://www.rottentomatoes.com/tv/the_boys/'
+                      criticsScore:
+                        type: number
+                        example: 96
+                      criticsRating:
+                        type: string
+                        enum: ['Rotten', 'Fresh', 'Certified Fresh']
+                      audienceScore:
+                        type: number
+                        example: 94
+                      audienceRating:
+                        type: string
+                        enum: ['Spilled', 'Upright']
+                  imdb:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        example: The Boys
+                      url:
+                        type: string
+                        example: 'https://www.imdb.com/title/tt1190634'
+                      criticsScore:
+                        type: number
+                        example: 8.7
+                      votes:
+                        type: number
+                        example: 382000
   /person/{personId}:
     get:
       summary: Get person details
