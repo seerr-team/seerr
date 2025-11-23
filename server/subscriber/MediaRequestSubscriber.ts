@@ -420,13 +420,32 @@ export class MediaRequestSubscriber
           mediaId: entity.media.id,
         });
       } catch (e) {
-        logger.error('Something went wrong sending request to Radarr', {
-          label: 'Media Request',
-          errorMessage: e.message,
-          requestId: entity.id,
-          mediaId: entity.media.id,
+        const requestRepository = getRepository(MediaRequest);
+        const mediaRepository = getRepository(Media);
+        const media = await mediaRepository.findOne({
+          where: { id: entity.media.id },
         });
-        throw new Error(e.message);
+
+        if (media) {
+          entity.status = MediaRequestStatus.FAILED;
+          await requestRepository.save(entity);
+
+          logger.warn(
+            'Failed to send movie request to Radarr due to connection or configuration error, marking status as FAILED',
+            {
+              label: 'Media Request',
+              requestId: entity.id,
+              mediaId: entity.media.id,
+              errorMessage: e.message,
+            }
+          );
+
+          MediaRequest.sendNotification(
+            entity,
+            media,
+            Notification.MEDIA_FAILED
+          );
+        }
       }
     }
   }
@@ -727,13 +746,32 @@ export class MediaRequestSubscriber
           mediaId: entity.media.id,
         });
       } catch (e) {
-        logger.error('Something went wrong sending request to Sonarr', {
-          label: 'Media Request',
-          errorMessage: e.message,
-          requestId: entity.id,
-          mediaId: entity.media.id,
+        const requestRepository = getRepository(MediaRequest);
+        const mediaRepository = getRepository(Media);
+        const media = await mediaRepository.findOne({
+          where: { id: entity.media.id },
         });
-        throw new Error(e.message);
+
+        if (media) {
+          entity.status = MediaRequestStatus.FAILED;
+          await requestRepository.save(entity);
+
+          logger.warn(
+            'Failed to send series request to Sonarr due to connection or configuration error, marking status as FAILED',
+            {
+              label: 'Media Request',
+              requestId: entity.id,
+              mediaId: entity.media.id,
+              errorMessage: e.message,
+            }
+          );
+
+          MediaRequest.sendNotification(
+            entity,
+            media,
+            Notification.MEDIA_FAILED
+          );
+        }
       }
     }
   }
