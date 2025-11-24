@@ -202,7 +202,7 @@ export class MediaRequest {
     }
 
     // Apply overrides if the user is not an admin or has the "advanced request" permission
-    const useOverrides = !user.hasPermission([Permission.MANAGE_REQUESTS], {
+    const useOverrides = !requestUser.hasPermission([Permission.MANAGE_REQUESTS], {
       type: 'or',
     });
 
@@ -337,7 +337,7 @@ export class MediaRequest {
         media,
         requestedBy: requestUser,
         // If the user is an admin or has the "auto approve" permission, automatically approve the request
-        status: user.hasPermission(
+        status: requestUser.hasPermission(
           [
             requestBody.is4k
               ? Permission.AUTO_APPROVE_4K
@@ -447,7 +447,7 @@ export class MediaRequest {
         media,
         requestedBy: requestUser,
         // If the user is an admin or has the "auto approve" permission, automatically approve the request
-        status: user.hasPermission(
+        status: requestUser.hasPermission(
           [
             requestBody.is4k
               ? Permission.AUTO_APPROVE_4K
@@ -485,7 +485,7 @@ export class MediaRequest {
           (sn) =>
             new SeasonRequest({
               seasonNumber: sn,
-              status: user.hasPermission(
+              status: requestUser.hasPermission(
                 [
                   requestBody.is4k
                     ? Permission.AUTO_APPROVE_4K
