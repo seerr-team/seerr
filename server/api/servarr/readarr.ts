@@ -256,6 +256,9 @@ class ReadarrAPI extends ServarrBase<{ bookId: number }> {
           'Book is already monitored in Readarr. Skipping add and returning success',
           { label: 'Readarr' }
         );
+        if (options.searchNow) {
+          this.searchBook(book.id);
+        }
         return book;
       }
 
@@ -299,6 +302,10 @@ class ReadarrAPI extends ServarrBase<{ bookId: number }> {
           label: 'Readarr',
           book: data,
         });
+
+        if (options.searchNow) {
+          this.searchBook(data.id);
+        }
       } else {
         logger.error('Failed to add book to Readarr', {
           label: 'Readarr',
