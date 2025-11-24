@@ -12,8 +12,10 @@ type Url = string | UrlObject;
 interface SearchObject {
   searchValue: string;
   searchOpen: boolean;
+  searchType: string;
   setIsOpen: Dispatch<SetStateAction<boolean>>;
   setSearchValue: Dispatch<SetStateAction<string>>;
+  setSearchType: Dispatch<SetStateAction<string>>;
   clear: () => void;
 }
 
@@ -24,6 +26,37 @@ const useSearchInput = (): SearchObject => {
   const [searchValue, debouncedValue, setSearchValue] = useDebouncedState(
     (router.query.query as string) ?? ''
   );
+  const [searchType, setSearchType] = useState<string>(
+    isBookRoute(router.pathname) ? 'hardcover' : 'tmdb'
+  );
+
+  /**
+   * This effect syncs the searchType state with the current route
+   *
+   * When navigating to pages other than /search, the search type
+   * automatically updates to match the page content (hardcover for books,
+   * tmdb for movies/tv)
+   */
+  useEffect(() => {
+    if (!router.pathname.startsWith('/search')) {
+      setSearchType(isBookRoute(router.pathname) ? 'hardcover' : 'tmdb');
+    }
+  }, [router.pathname]);
+
+  /**
+   * This effect syncs the searchType state with URL query parameter
+   *
+   * When on the /search page, keep searchType in sync with the URL type param
+   * to handle direct navigation
+   */
+  useEffect(() => {
+    if (router.pathname.startsWith('/search') && router.query.type) {
+      const queryType = router.query.type as string;
+      if (queryType === 'hardcover' || queryType === 'tmdb') {
+        setSearchType(queryType);
+      }
+    }
+  }, [router.query.type, router.pathname]);
 
   /**
    * This effect handles routing when the debounced search input
@@ -40,6 +73,7 @@ const useSearchInput = (): SearchObject => {
           query: {
             ...router.query,
             query: debouncedValue,
+            type: searchType,
           },
         });
       } else {
@@ -49,13 +83,13 @@ const useSearchInput = (): SearchObject => {
             pathname: '/search',
             query: {
               query: debouncedValue,
-              ...(isBookRoute(router.pathname) ? { type: 'book' } : {}),
+              type: searchType,
             },
           })
           .then(() => window.scrollTo(0, 0));
       }
     }
-  }, [debouncedValue]);
+  }, [debouncedValue, searchType]);
 
   /**
    * This effect is handling behavior when the search input is closed.
@@ -118,8 +152,10 @@ const useSearchInput = (): SearchObject => {
   return {
     searchValue,
     searchOpen,
+    searchType,
     setIsOpen,
     setSearchValue,
+    setSearchType,
     clear,
   };
 };

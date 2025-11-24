@@ -26,7 +26,7 @@ searchRoutes.get('/', async (req, res, next) => {
         language: (req.query.language as string) ?? req.locale,
         query: queryString,
       });
-    } else if (req.query.type === MediaType.BOOK) {
+    } else if (req.query.type === 'hardcover') {
       const hardcover = new Hardcover();
 
       results = await hardcover.search({
@@ -46,7 +46,7 @@ searchRoutes.get('/', async (req, res, next) => {
     const media = await Media.getRelatedMedia(
       req.user,
       results.results.map((result) => result.id),
-      req.query.type as MediaType
+      req.query.type === 'hardcover' ? MediaType.BOOK : undefined
     );
 
     return res.status(200).json({
