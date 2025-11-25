@@ -225,6 +225,26 @@ router.post<
       return res.status(204).send();
     }
 
+    // Clean up old subscriptions from the same device (userAgent) for this user
+    // iOS can silently refresh endpoints, leaving stale subscriptions in the database
+    if (req.body.userAgent) {
+      const staleSubscriptions = await userPushSubRepository.find({
+        relations: { user: true },
+        where: {
+          userAgent: req.body.userAgent,
+          user: { id: req.user?.id },
+        },
+      });
+
+      if (staleSubscriptions.length > 0) {
+        await userPushSubRepository.remove(staleSubscriptions);
+        logger.debug(
+          `Removed ${staleSubscriptions.length} stale push subscription(s) from same device.`,
+          { label: 'API' }
+        );
+      }
+    }
+
     const userPushSubscription = new UserPushSubscription({
       auth: req.body.auth,
       endpoint: req.body.endpoint,
