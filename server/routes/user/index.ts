@@ -190,14 +190,36 @@ router.post<
   try {
     const userPushSubRepository = getRepository(UserPushSubscription);
 
-    const existingSubs = await userPushSubRepository.find({
+    const existingByAuth = await userPushSubRepository.findOne({
       relations: { user: true },
       where: { auth: req.body.auth, user: { id: req.user?.id } },
     });
 
-    if (existingSubs.length > 0) {
+    if (existingByAuth) {
       logger.debug(
         'User push subscription already exists. Skipping registration.',
+        { label: 'API' }
+      );
+      return res.status(204).send();
+    }
+
+    // iOS can refresh auth keys but keep same endpoint
+    const existingByEndpoint = await userPushSubRepository.findOne({
+      relations: { user: true },
+      where: { endpoint: req.body.endpoint, user: { id: req.user?.id } },
+    });
+
+    if (existingByEndpoint) {
+      // Update existing subscription with new keys
+      existingByEndpoint.auth = req.body.auth;
+      existingByEndpoint.p256dh = req.body.p256dh;
+      existingByEndpoint.userAgent = req.body.userAgent;
+      existingByEndpoint.createdAt = new Date();
+
+      await userPushSubRepository.save(existingByEndpoint);
+
+      logger.debug(
+        'Updated existing push subscription with new keys for same endpoint.',
         { label: 'API' }
       );
       return res.status(204).send();
@@ -211,7 +233,7 @@ router.post<
       user: req.user,
     });
 
-    userPushSubRepository.save(userPushSubscription);
+    await userPushSubRepository.save(userPushSubscription);
 
     return res.status(204).send();
   } catch (e) {
