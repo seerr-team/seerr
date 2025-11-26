@@ -3,6 +3,7 @@ import SensitiveInput from '@app/components/Common/SensitiveInput';
 import useSettings from '@app/hooks/useSettings';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/solid';
 import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType, ServerType } from '@server/constants/server';
 import axios from 'axios';
@@ -22,6 +23,7 @@ const messages = defineMessages('components.Login', {
   noadminerror: 'No admin user found on the server.',
   credentialerror: 'The username or password is incorrect.',
   invalidurlerror: 'Unable to connect to {mediaServerName} server.',
+  tipUsernameHasTrailingWhitespace: 'The username ends with whitespace',
   signingin: 'Signing In…',
   signin: 'Sign In',
   forgotpassword: 'Forgot Password?',
@@ -108,7 +110,7 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
           }
         }}
       >
-        {({ errors, touched, isSubmitting, isValid }) => {
+        {({ errors, touched, values, isSubmitting, isValid }) => {
           return (
             <>
               <Form data-form-type="login">
@@ -130,6 +132,14 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
                         data-form-type="username"
                       />
                     </div>
+                    {touched.username && values.username.match(/\s$/) && (
+                      <div className="warning label-tip flex items-center">
+                        <ExclamationTriangleIcon className="mr-1 h-4 w-4" />
+                        {intl.formatMessage(
+                          messages.tipUsernameHasTrailingWhitespace
+                        )}
+                      </div>
+                    )}
                     {errors.username && touched.username && (
                       <div className="error">{errors.username}</div>
                     )}
