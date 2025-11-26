@@ -1,5 +1,6 @@
 import Button from '@app/components/Common/Button';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
+import UsernameInput from '@app/components/Login/UsernameInput';
 import useSettings from '@app/hooks/useSettings';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
@@ -120,16 +121,15 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
                   </h2>
 
                   <div className="mb-4 mt-1">
-                    <div className="form-input-field">
-                      <Field
-                        id="username"
-                        name="username"
-                        type="text"
-                        placeholder={intl.formatMessage(messages.username)}
-                        className="!bg-gray-700/80 placeholder:text-gray-400"
-                        data-form-type="username"
-                      />
-                    </div>
+                    <Field
+                      id="username"
+                      name="username"
+                      type="text"
+                      placeholder={intl.formatMessage(messages.username)}
+                      className="!bg-gray-700/80 placeholder:text-gray-400"
+                      data-form-type="username"
+                      component={UsernameInput}
+                    />
                     {errors.username && touched.username && (
                       <div className="error">{errors.username}</div>
                     )}
