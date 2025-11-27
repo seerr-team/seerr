@@ -60,7 +60,7 @@ export class FixIssueTimestamps1746811308203 implements MigrationInterface {
         USING "updatedAt" AT TIME ZONE 'UTC'
       `);
     await queryRunner.query(`
-        ALTER TABLE "blocklist"
+        ALTER TABLE "blacklist"
         ALTER COLUMN "createdAt" TYPE TIMESTAMP WITH TIME ZONE
         USING "createdAt" AT TIME ZONE 'UTC'
       `);
@@ -168,7 +168,7 @@ export class FixIssueTimestamps1746811308203 implements MigrationInterface {
         USING "createdAt" AT TIME ZONE 'UTC'
       `);
     await queryRunner.query(`
-        ALTER TABLE "blocklist"
+        ALTER TABLE "blacklist"
         ALTER COLUMN "createdAt" TYPE TIMESTAMP
         USING "createdAt" AT TIME ZONE 'UTC'
       `);

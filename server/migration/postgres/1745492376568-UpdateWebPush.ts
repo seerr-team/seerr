@@ -5,13 +5,13 @@ export class UpdateWebPush1745492376568 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "blocklist" RENAME COLUMN "blocklistedtags" TO "blocklistedTags"`
+      `ALTER TABLE "blacklist" RENAME COLUMN "blacklistedtags" TO "blacklistedTags"`
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "blocklist" RENAME COLUMN "blocklistedTags" TO "blocklistedtags"`
+      `ALTER TABLE "blacklist" RENAME COLUMN "blacklistedTags" TO "blacklistedtags"`
     );
   }
 }
