@@ -34,7 +34,7 @@ With more features on the way! Check out our [issue tracker](/../../issues) to s
 
 For instructions on how to install and run **Jellyseerr**, please refer to the official documentation:
 
-<https://docs.seerr.dev/getting-started/>
+https://docs.seerr.dev/getting-started/
 
 > [!IMPORTANT]
 > **Seerr is not officially released yet.**  
@@ -67,7 +67,7 @@ For migration assistance, beta testing questions, or troubleshooting, please joi
 
 ## API Documentation
 
-You can access the API documentation from your local Seerr install at <http://localhost:5055/api-docs>
+You can access the API documentation from your local Seerr install at http://localhost:5055/api-docs
 
 ## Community
 
