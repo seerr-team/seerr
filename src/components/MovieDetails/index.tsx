@@ -46,6 +46,7 @@ import {
 import {
   ChevronDoubleDownIcon,
   ChevronDoubleUpIcon,
+  StarIcon as StarIconSolid,
 } from '@heroicons/react/24/solid';
 import { type RatingResponse } from '@server/api/ratings';
 import { IssueStatus } from '@server/constants/issue';
@@ -131,6 +132,9 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   const [isBlacklistUpdating, setIsBlacklistUpdating] =
     useState<boolean>(false);
   const [showBlacklistModal, setShowBlacklistModal] = useState(false);
+  const [isPlexWatchlistUpdating, setIsPlexWatchlistUpdating] =
+    useState<boolean>(false);
+  const [togglePlexWatchlist, setTogglePlexWatchlist] = useState<boolean>(true);
   const { addToast } = useToasts();
 
   const {
@@ -152,6 +156,13 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     `/api/v1/movie/${router.query.movieId}/ratingscombined`
   );
 
+  // Check Plex watchlist status for Plex users
+  const { data: plexWatchlistData } = useSWR<{ isOnWatchlist: boolean }>(
+    user?.userType === UserType.PLEX && data?.id
+      ? `/api/v1/plex-watchlist/status/${data.id}`
+      : null
+  );
+
   const sortedCrew = useMemo(
     () => sortCrewPriority(data?.credits.crew ?? []),
     [data]
@@ -160,6 +171,12 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   useEffect(() => {
     setShowManager(router.query.manage == '1' ? true : false);
   }, [router.query.manage]);
+
+  useEffect(() => {
+    if (plexWatchlistData?.isOnWatchlist !== undefined) {
+      setTogglePlexWatchlist(!plexWatchlistData.isOnWatchlist);
+    }
+  }, [plexWatchlistData]);
 
   const closeBlacklistModal = useCallback(
     () => setShowBlacklistModal(false),
@@ -377,6 +394,64 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     } finally {
       setIsUpdating(false);
       setToggleWatchlist((prevState) => !prevState);
+    }
+  };
+
+  const onClickPlexWatchlistBtn = async (): Promise<void> => {
+    setIsPlexWatchlistUpdating(true);
+    try {
+      const response = await axios.post('/api/v1/plex-watchlist', {
+        tmdbId: data?.id,
+        mediaType: 'movie',
+        title: data?.title,
+      });
+
+      if (response.status === 201) {
+        addToast(
+          <span>
+            {intl.formatMessage(messages.watchlistSuccess, {
+              title: data?.title,
+              strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+            })}
+          </span>,
+          { appearance: 'success', autoDismiss: true }
+        );
+      }
+    } catch (e) {
+      addToast(intl.formatMessage(messages.watchlistError), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    } finally {
+      setIsPlexWatchlistUpdating(false);
+      setTogglePlexWatchlist((prevState) => !prevState);
+    }
+  };
+
+  const onClickDeletePlexWatchlistBtn = async (): Promise<void> => {
+    setIsPlexWatchlistUpdating(true);
+    try {
+      const response = await axios.delete(`/api/v1/plex-watchlist/${data?.id}`);
+
+      if (response.status === 204) {
+        addToast(
+          <span>
+            {intl.formatMessage(messages.watchlistDeleted, {
+              title: data?.title,
+              strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+            })}
+          </span>,
+          { appearance: 'info', autoDismiss: true }
+        );
+      }
+    } catch (e) {
+      addToast(intl.formatMessage(messages.watchlistError), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    } finally {
+      setIsPlexWatchlistUpdating(false);
+      setTogglePlexWatchlist((prevState) => !prevState);
     }
   };
 
@@ -609,6 +684,49 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                       onClick={onClickDeleteWatchlistBtn}
                     >
                       {isUpdating ? <Spinner /> : <MinusCircleIcon />}
+                    </Button>
+                  </Tooltip>
+                )}
+              </>
+            )}
+          {data?.mediaInfo?.status !== MediaStatus.BLACKLISTED &&
+            user?.userType === UserType.PLEX && (
+              <>
+                {togglePlexWatchlist ? (
+                  <Tooltip
+                    content={intl.formatMessage(
+                      globalMessages.addToPlexWatchlist
+                    )}
+                  >
+                    <Button
+                      buttonType={'ghost'}
+                      className="z-40 mr-2"
+                      buttonSize={'md'}
+                      onClick={onClickPlexWatchlistBtn}
+                    >
+                      {isPlexWatchlistUpdating ? (
+                        <Spinner />
+                      ) : (
+                        <StarIcon className={'text-amber-300'} />
+                      )}
+                    </Button>
+                  </Tooltip>
+                ) : (
+                  <Tooltip
+                    content={intl.formatMessage(
+                      globalMessages.removeFromPlexWatchlist
+                    )}
+                  >
+                    <Button
+                      className="z-40 mr-2"
+                      buttonSize={'md'}
+                      onClick={onClickDeletePlexWatchlistBtn}
+                    >
+                      {isPlexWatchlistUpdating ? (
+                        <Spinner />
+                      ) : (
+                        <StarIconSolid className={'text-amber-300'} />
+                      )}
                     </Button>
                   </Tooltip>
                 )}

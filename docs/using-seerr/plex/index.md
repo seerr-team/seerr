@@ -10,6 +10,7 @@ Seerr provides integration features that connect with your Plex media server to 
 
 ## Available Features
 
+- **Plex Watchlist Management** - Add or remove movies and TV shows from your Plex watchlist directly within Seerr
 - [Watchlist Auto Request](./plex/watchlist-auto-request) - Automatically request media from your Plex Watchlist
 - More features coming soon!
 

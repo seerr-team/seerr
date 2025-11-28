@@ -67,6 +67,8 @@ const globalMessages = defineMessages('i18n', {
     '<strong>{title}</strong> was successfully removed from the Blacklist.',
   addToBlacklist: 'Add to Blacklist',
   removefromBlacklist: 'Remove from Blacklist',
+  addToPlexWatchlist: 'Add to Plex Watchlist',
+  removeFromPlexWatchlist: 'Remove from Plex Watchlist',
   specials: 'Specials',
 });
 
