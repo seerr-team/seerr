@@ -2,6 +2,7 @@ import type { PlexDevice } from '@server/interfaces/api/plexInterfaces';
 import cacheManager from '@server/lib/cache';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import axios from 'axios';
 import { randomUUID } from 'node:crypto';
 import xml2js from 'xml2js';
 import ExternalAPI from './externalapi';
@@ -131,6 +132,39 @@ export interface PlexWatchlistItem {
 export interface PlexWatchlistCache {
   etag: string;
   response: WatchlistResponse;
+}
+
+interface DiscoverSearchResponse {
+  MediaContainer: {
+    SearchResults?: {
+      SearchResult?: {
+        Metadata?: {
+          ratingKey: string;
+          guid: string;
+          type: 'movie' | 'show';
+          title: string;
+          year?: number;
+          Guid?: {
+            id: string;
+          }[];
+        }[];
+      }[];
+    }[];
+  };
+}
+
+interface DiscoverMetadataResponse {
+  MediaContainer: {
+    Metadata?: {
+      ratingKey: string;
+      guid: string;
+      type: 'movie' | 'show';
+      title: string;
+      Guid?: {
+        id: string;
+      }[];
+    }[];
+  };
 }
 
 class PlexTvAPI extends ExternalAPI {
@@ -395,6 +429,361 @@ class PlexTvAPI extends ExternalAPI {
         label: 'Plex Refresh Token',
         errorMessage: e.message,
       });
+    }
+  }
+
+  /**
+   * Search Plex Discover for a movie or TV show by title
+   */
+  public async searchDiscover({
+    query,
+    type,
+  }: {
+    query: string;
+    type: 'movie' | 'show';
+  }): Promise<DiscoverSearchResponse> {
+    try {
+      const response = await this.axios.get<DiscoverSearchResponse>(
+        '/library/search',
+        {
+          baseURL: 'https://discover.provider.plex.tv',
+          params: {
+            query,
+            searchTypes: type === 'movie' ? 'movies' : 'tv',
+            limit: 30,
+            searchProviders: 'discover',
+            includeMetadata: 1,
+            includeGuids: 1,
+          },
+          headers: {
+            Accept: 'application/json',
+          },
+        }
+      );
+      return response.data;
+    } catch (e) {
+      logger.error('Failed to search Plex Discover', {
+        label: 'Plex.TV API',
+        errorMessage: e.message,
+        query,
+        type,
+      });
+      throw e;
+    }
+  }
+
+  /**
+   * Get metadata for a specific ratingKey from Plex Discover
+   */
+  public async getDiscoverMetadata(
+    ratingKey: string
+  ): Promise<DiscoverMetadataResponse> {
+    try {
+      const response = await this.axios.get<DiscoverMetadataResponse>(
+        `/library/metadata/${ratingKey}`,
+        {
+          baseURL: 'https://discover.provider.plex.tv',
+        }
+      );
+      return response.data;
+    } catch (e) {
+      logger.error('Failed to get Plex Discover metadata', {
+        label: 'Plex.TV API',
+        errorMessage: e.message,
+        ratingKey,
+      });
+      throw e;
+    }
+  }
+
+  /**
+   * Find the Plex ratingKey for a given TMDB ID by searching Plex Discover
+   * This is needed because Plex's watchlist API uses their internal ratingKey,
+   * not TMDB IDs directly.
+   */
+  public async findPlexRatingKeyByTmdbId({
+    tmdbId,
+    title,
+    type,
+    year,
+  }: {
+    tmdbId: number;
+    title: string;
+    type: 'movie' | 'show';
+    year?: number;
+  }): Promise<string | null> {
+    try {
+      // Search for the title
+      const searchResponse = await this.searchDiscover({
+        query: title,
+        type,
+      });
+
+      // Look through search results for matching TMDB ID
+      const searchResults =
+        searchResponse.MediaContainer?.SearchResults?.[0]?.SearchResult;
+
+      if (!searchResults) {
+        logger.warn('No search results found in Plex Discover', {
+          label: 'Plex.TV API',
+          title,
+          tmdbId,
+        });
+        return null;
+      }
+
+      // Flatten all metadata from search results
+      const allMetadata = searchResults.flatMap(
+        (result) => result.Metadata || []
+      );
+
+      // Search results don't include Guid array, so we need to fetch metadata for each item
+      // to get the external IDs (TMDB, IMDB, etc.)
+      for (const item of allMetadata) {
+        try {
+          // Fetch detailed metadata which includes the Guid array
+          const detailedMetadata = await this.getDiscoverMetadata(
+            item.ratingKey
+          );
+          const metadata = detailedMetadata.MediaContainer.Metadata?.[0];
+
+          if (!metadata) continue;
+
+          // Check if this item has the matching TMDB ID
+          const tmdbGuid = metadata.Guid?.find((guid) =>
+            guid.id.startsWith('tmdb://')
+          );
+
+          if (tmdbGuid) {
+            const itemTmdbId = parseInt(tmdbGuid.id.replace('tmdb://', ''), 10);
+            if (itemTmdbId === tmdbId) {
+              // Extract ratingKey from guid (e.g., plex://movie/5d776c -> 5d776c)
+              // This matches Python PlexAPI: item.guid.rsplit('/', 1)[-1]
+              const ratingKey = metadata.guid.split('/').pop();
+              if (ratingKey) {
+                logger.info('Found match by TMDB ID', {
+                  label: 'Plex.TV API',
+                  extractedRatingKey: ratingKey,
+                  itemGuid: metadata.guid,
+                  tmdbId,
+                });
+                return ratingKey;
+              }
+            }
+          }
+        } catch (e) {
+          logger.warn('Failed to fetch metadata for item', {
+            label: 'Plex.TV API',
+            ratingKey: item.ratingKey,
+            errorMessage: e.message,
+          });
+          // Continue to next item
+          continue;
+        }
+      }
+
+      // If no exact TMDB match, try to match by title and year
+      for (const item of allMetadata) {
+        if (
+          item.title.toLowerCase() === title.toLowerCase() &&
+          (!year || item.year === year)
+        ) {
+          // Extract ratingKey from guid (e.g., plex://movie/5d776c -> 5d776c)
+          const ratingKey = item.guid.split('/').pop();
+          if (ratingKey) {
+            logger.info('Found Plex ratingKey by title match', {
+              label: 'Plex.TV API',
+              tmdbId,
+              extractedRatingKey: ratingKey,
+              title: item.title,
+            });
+            return ratingKey;
+          }
+        }
+      }
+
+      logger.warn('Could not find Plex ratingKey for TMDB ID', {
+        label: 'Plex.TV API',
+        tmdbId,
+        title,
+      });
+      return null;
+    } catch (e) {
+      logger.error('Error finding Plex ratingKey', {
+        label: 'Plex.TV API',
+        errorMessage: e.message,
+        tmdbId,
+        title,
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Add an item to the user's Plex watchlist
+   * @param ratingKey - The Plex ratingKey (extracted from guid, e.g., 5d776c2296b655001fe27228)
+   */
+  public async addToWatchlist(ratingKey: string): Promise<void> {
+    try {
+      // Use a fresh axios instance without any inherited configuration
+      // The ExternalAPI's default headers (Content-Type, Accept) cause Plex to return 500 errors
+      await axios.put(
+        `https://discover.provider.plex.tv/actions/addToWatchlist?ratingKey=${ratingKey}`,
+        null,
+        {
+          headers: {
+            'X-Plex-Token': this.authToken,
+          },
+        }
+      );
+
+      // Invalidate the watchlist cache
+      const watchlistCache = cacheManager.getCache('plexwatchlist');
+      watchlistCache.data.del(this.authToken);
+
+      logger.info('Added item to Plex watchlist', {
+        label: 'Plex.TV API',
+        ratingKey,
+      });
+    } catch (e) {
+      logger.error('Failed to add item to Plex watchlist', {
+        label: 'Plex.TV API',
+        errorMessage: e.message,
+        ratingKey,
+        responseStatus: e.response?.status,
+        responseData: e.response?.data,
+      });
+      throw e;
+    }
+  }
+
+  /**
+   * Remove an item from the user's Plex watchlist
+   */
+  public async removeFromWatchlist(ratingKey: string): Promise<void> {
+    try {
+      // Use a fresh axios instance without any inherited configuration
+      await axios.put(
+        `https://discover.provider.plex.tv/actions/removeFromWatchlist?ratingKey=${ratingKey}`,
+        null,
+        {
+          headers: {
+            'X-Plex-Token': this.authToken,
+          },
+        }
+      );
+
+      // Invalidate the watchlist cache
+      const watchlistCache = cacheManager.getCache('plexwatchlist');
+      watchlistCache.data.del(this.authToken);
+
+      logger.info('Removed item from Plex watchlist', {
+        label: 'Plex.TV API',
+        ratingKey,
+      });
+    } catch (e) {
+      logger.error('Failed to remove item from Plex watchlist', {
+        label: 'Plex.TV API',
+        errorMessage: e.message,
+        ratingKey,
+        responseStatus: e.response?.status,
+        responseData: e.response?.data,
+      });
+      throw e;
+    }
+  }
+
+  /**
+   * Add an item to watchlist by TMDB ID (convenience method)
+   * This handles the lookup of Plex ratingKey from TMDB ID
+   */
+  public async addToWatchlistByTmdbId({
+    tmdbId,
+    title,
+    type,
+    year,
+  }: {
+    tmdbId: number;
+    title: string;
+    type: 'movie' | 'show';
+    year?: number;
+  }): Promise<boolean> {
+    // First check if it's already on the watchlist
+    const isAlreadyOnWatchlist = await this.isOnWatchlist(tmdbId);
+    if (isAlreadyOnWatchlist) {
+      logger.warn('Item is already on watchlist', {
+        label: 'Plex.TV API',
+        tmdbId,
+        title,
+      });
+      // Return false to indicate it wasn't added (because it's already there)
+      return false;
+    }
+
+    const ratingKey = await this.findPlexRatingKeyByTmdbId({
+      tmdbId,
+      title,
+      type,
+      year,
+    });
+
+    if (!ratingKey) {
+      logger.error('Cannot add to watchlist: ratingKey not found', {
+        label: 'Plex.TV API',
+        tmdbId,
+        title,
+      });
+      return false;
+    }
+
+    await this.addToWatchlist(ratingKey);
+    return true;
+  }
+
+  /**
+   * Remove an item from watchlist by TMDB ID (convenience method)
+   * This finds the item in the current watchlist and removes it
+   */
+  public async removeFromWatchlistByTmdbId(tmdbId: number): Promise<boolean> {
+    try {
+      // Get the current watchlist to find the ratingKey
+      const watchlist = await this.getWatchlist({ size: 200 });
+      const item = watchlist.items.find((i) => i.tmdbId === tmdbId);
+
+      if (!item) {
+        logger.warn('Item not found in watchlist', {
+          label: 'Plex.TV API',
+          tmdbId,
+        });
+        return false;
+      }
+
+      await this.removeFromWatchlist(item.ratingKey);
+      return true;
+    } catch (e) {
+      logger.error('Failed to remove from watchlist by TMDB ID', {
+        label: 'Plex.TV API',
+        errorMessage: e.message,
+        tmdbId,
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Check if an item is on the user's Plex watchlist
+   */
+  public async isOnWatchlist(tmdbId: number): Promise<boolean> {
+    try {
+      const watchlist = await this.getWatchlist({ size: 200 });
+      return watchlist.items.some((item) => item.tmdbId === tmdbId);
+    } catch (e) {
+      logger.error('Failed to check watchlist status', {
+        label: 'Plex.TV API',
+        errorMessage: e.message,
+        tmdbId,
+      });
+      return false;
     }
   }
 }

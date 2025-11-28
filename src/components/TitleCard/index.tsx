@@ -133,6 +133,8 @@ const TitleCard = ({
     } finally {
       setIsUpdating(false);
       setToggleWatchlist((prevState) => !prevState);
+      mutate(`/api/v1/user/${user?.id}/watchlist`);
+      mutate('/api/v1/discover/watchlist');
     }
   };
 
@@ -142,7 +144,6 @@ const TitleCard = ({
       const response = await axios.delete<Watchlist>(
         `/api/v1/watchlist/${id}?mediaType=${mediaType}`
       );
-
       if (response.status === 204) {
         addToast(
           <span>
@@ -161,6 +162,7 @@ const TitleCard = ({
       });
     } finally {
       setIsUpdating(false);
+      mutate(`/api/v1/user/${user?.id}/watchlist`);
       mutate('/api/v1/discover/watchlist');
       if (mutateParent) {
         mutateParent();
