@@ -18,11 +18,11 @@ const checkOverseerrMerge = async (): Promise<boolean> => {
     [1613412948344, 'ServerTypeEnum1613412948344'],
     [1613670041760, 'AddJellyfinDeviceId1613670041760'],
     [1682608634546, 'AddWatchlists1682608634546'],
-    [1699901142442, 'AddBlocklist1699901142442'],
+    [1699901142442, 'AddBlacklist1699901142442'],
     [1727907530757, 'AddUserSettingsStreamingRegion1727907530757'],
     [1734287582736, 'AddTelegramMessageThreadId1734287582736'],
     [1734805733535, 'AddOverrideRules1734805733535'],
-    [1737320080282, 'AddBlocklistTagsColumn1737320080282'],
+    [1737320080282, 'AddBlacklistTagsColumn1737320080282'],
     [1743023610704, 'UpdateWebPush1743023610704'],
     [1743107645301, 'AddUserAvatarCacheFields1743107645301'],
     [1745492372230, 'UpdateWebPush1745492372230'],
@@ -89,7 +89,7 @@ const checkOverseerrMerge = async (): Promise<boolean> => {
     await dbConnection.query('PRAGMA foreign_keys=ON');
   }
 
-  // MediaStatus.Blocklisted was added before MediaStatus.Deleted in Jellyseerr
+  // MediaStatus.Blacklisted was added before MediaStatus.Deleted in Jellyseerr
   try {
     const mediaRepository = getRepository(Media);
     const mediaToUpdate = await mediaRepository.find({ where: { status: 6 } });
@@ -105,7 +105,7 @@ const checkOverseerrMerge = async (): Promise<boolean> => {
       await mediaRepository.save(media);
     }
   } catch (error) {
-    logger.error('Failed to update Media status from Blocklisted to Deleted', {
+    logger.error('Failed to update Media status from Blacklisted to Deleted', {
       label: 'Seerr Migration',
       error: error.message,
     });
@@ -160,10 +160,10 @@ class SeerrMigration1759769291608 implements MigrationInterface {
       `ALTER TABLE "temporary_user_push_subscription" RENAME TO "user_push_subscription"`
     );
     await queryRunner.query(
-      `CREATE TABLE "blocklist" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "mediaType" varchar NOT NULL, "title" varchar, "tmdbId" integer NOT NULL, "blocklistedTags" varchar, "createdAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "userId" integer, "mediaId" integer, CONSTRAINT "UQ_6bbafa28411e6046421991ea21c" UNIQUE ("tmdbId"), CONSTRAINT "REL_62b7ade94540f9f8d8bede54b9" UNIQUE ("mediaId"))`
+      `CREATE TABLE "blacklist" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "mediaType" varchar NOT NULL, "title" varchar, "tmdbId" integer NOT NULL, "blacklistedTags" varchar, "createdAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "userId" integer, "mediaId" integer, CONSTRAINT "UQ_6bbafa28411e6046421991ea21c" UNIQUE ("tmdbId"), CONSTRAINT "REL_62b7ade94540f9f8d8bede54b9" UNIQUE ("mediaId"))`
     );
     await queryRunner.query(
-      `CREATE INDEX "IDX_6bbafa28411e6046421991ea21" ON "blocklist" ("tmdbId") `
+      `CREATE INDEX "IDX_6bbafa28411e6046421991ea21" ON "blacklist" ("tmdbId") `
     );
     await queryRunner.query(
       `CREATE TABLE "override_rule" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "radarrServiceId" integer, "sonarrServiceId" integer, "users" varchar, "genre" varchar, "language" varchar, "keywords" varchar, "profileId" integer, "rootFolder" varchar, "tags" varchar, "createdAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "updatedAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP))`
@@ -320,17 +320,17 @@ class SeerrMigration1759769291608 implements MigrationInterface {
     );
     await queryRunner.query(`DROP INDEX "IDX_6bbafa28411e6046421991ea21"`);
     await queryRunner.query(
-      `CREATE TABLE "temporary_blocklist" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "mediaType" varchar NOT NULL, "title" varchar, "tmdbId" integer NOT NULL, "blocklistedTags" varchar, "createdAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "userId" integer, "mediaId" integer, CONSTRAINT "UQ_6bbafa28411e6046421991ea21c" UNIQUE ("tmdbId"), CONSTRAINT "REL_62b7ade94540f9f8d8bede54b9" UNIQUE ("mediaId"), CONSTRAINT "FK_53c1ab62c3e5875bc3ac474823e" FOREIGN KEY ("userId") REFERENCES "user" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION, CONSTRAINT "FK_62b7ade94540f9f8d8bede54b99" FOREIGN KEY ("mediaId") REFERENCES "media" ("id") ON DELETE CASCADE ON UPDATE NO ACTION)`
+      `CREATE TABLE "temporary_blacklist" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "mediaType" varchar NOT NULL, "title" varchar, "tmdbId" integer NOT NULL, "blacklistedTags" varchar, "createdAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "userId" integer, "mediaId" integer, CONSTRAINT "UQ_6bbafa28411e6046421991ea21c" UNIQUE ("tmdbId"), CONSTRAINT "REL_62b7ade94540f9f8d8bede54b9" UNIQUE ("mediaId"), CONSTRAINT "FK_53c1ab62c3e5875bc3ac474823e" FOREIGN KEY ("userId") REFERENCES "user" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION, CONSTRAINT "FK_62b7ade94540f9f8d8bede54b99" FOREIGN KEY ("mediaId") REFERENCES "media" ("id") ON DELETE CASCADE ON UPDATE NO ACTION)`
     );
     await queryRunner.query(
-      `INSERT INTO "temporary_blocklist"("id", "mediaType", "title", "tmdbId", "blocklistedTags", "createdAt", "userId", "mediaId") SELECT "id", "mediaType", "title", "tmdbId", "blocklistedTags", "createdAt", "userId", "mediaId" FROM "blocklist"`
+      `INSERT INTO "temporary_blacklist"("id", "mediaType", "title", "tmdbId", "blacklistedTags", "createdAt", "userId", "mediaId") SELECT "id", "mediaType", "title", "tmdbId", "blacklistedTags", "createdAt", "userId", "mediaId" FROM "blacklist"`
     );
-    await queryRunner.query(`DROP TABLE "blocklist"`);
+    await queryRunner.query(`DROP TABLE "blacklist"`);
     await queryRunner.query(
-      `ALTER TABLE "temporary_blocklist" RENAME TO "blocklist"`
+      `ALTER TABLE "temporary_blacklist" RENAME TO "blacklist"`
     );
     await queryRunner.query(
-      `CREATE INDEX "IDX_6bbafa28411e6046421991ea21" ON "blocklist" ("tmdbId") `
+      `CREATE INDEX "IDX_6bbafa28411e6046421991ea21" ON "blacklist" ("tmdbId") `
     );
     await queryRunner.query(`DROP INDEX "IDX_939f205946256cc0d2a1ac51a8"`);
     await queryRunner.query(
@@ -365,17 +365,17 @@ class SeerrMigration1759769291608 implements MigrationInterface {
     );
     await queryRunner.query(`DROP INDEX "IDX_6bbafa28411e6046421991ea21"`);
     await queryRunner.query(
-      `ALTER TABLE "blocklist" RENAME TO "temporary_blocklist"`
+      `ALTER TABLE "blacklist" RENAME TO "temporary_blacklist"`
     );
     await queryRunner.query(
-      `CREATE TABLE "blocklist" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "mediaType" varchar NOT NULL, "title" varchar, "tmdbId" integer NOT NULL, "blocklistedTags" varchar, "createdAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "userId" integer, "mediaId" integer, CONSTRAINT "UQ_6bbafa28411e6046421991ea21c" UNIQUE ("tmdbId"), CONSTRAINT "REL_62b7ade94540f9f8d8bede54b9" UNIQUE ("mediaId"))`
+      `CREATE TABLE "blacklist" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "mediaType" varchar NOT NULL, "title" varchar, "tmdbId" integer NOT NULL, "blacklistedTags" varchar, "createdAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "userId" integer, "mediaId" integer, CONSTRAINT "UQ_6bbafa28411e6046421991ea21c" UNIQUE ("tmdbId"), CONSTRAINT "REL_62b7ade94540f9f8d8bede54b9" UNIQUE ("mediaId"))`
     );
     await queryRunner.query(
-      `INSERT INTO "blocklist"("id", "mediaType", "title", "tmdbId", "blocklistedTags", "createdAt", "userId", "mediaId") SELECT "id", "mediaType", "title", "tmdbId", "blocklistedTags", "createdAt", "userId", "mediaId" FROM "temporary_blocklist"`
+      `INSERT INTO "blacklist"("id", "mediaType", "title", "tmdbId", "blacklistedTags", "createdAt", "userId", "mediaId") SELECT "id", "mediaType", "title", "tmdbId", "blacklistedTags", "createdAt", "userId", "mediaId" FROM "temporary_blacklist"`
     );
-    await queryRunner.query(`DROP TABLE "temporary_blocklist"`);
+    await queryRunner.query(`DROP TABLE "temporary_blacklist"`);
     await queryRunner.query(
-      `CREATE INDEX "IDX_6bbafa28411e6046421991ea21" ON "blocklist" ("tmdbId") `
+      `CREATE INDEX "IDX_6bbafa28411e6046421991ea21" ON "blacklist" ("tmdbId") `
     );
     await queryRunner.query(
       `ALTER TABLE "discover_slider" RENAME TO "temporary_discover_slider"`
@@ -525,7 +525,7 @@ class SeerrMigration1759769291608 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE "watchlist"`);
     await queryRunner.query(`DROP TABLE "override_rule"`);
     await queryRunner.query(`DROP INDEX "IDX_6bbafa28411e6046421991ea21"`);
-    await queryRunner.query(`DROP TABLE "blocklist"`);
+    await queryRunner.query(`DROP TABLE "blacklist"`);
     await queryRunner.query(
       `ALTER TABLE "user_push_subscription" RENAME TO "temporary_user_push_subscription"`
     );
