@@ -20,14 +20,13 @@ import TabItem from '@theme/TabItem';
 
 ## Unix (Linux, macOS)
 ### Installation
-1. Assuming you want the working directory to be `/opt/seerr/seerr`, create the directory and navigate to it:
+1. Assuming you want the working directory to be `/opt/seerr`, create the directory and navigate to it:
 ```bash
 sudo mkdir -p /opt/seerr && cd /opt/seerr
 ```
 2. Clone the Seerr repository and checkout the main branch:
 ```bash
-git clone https://github.com/seerr-team/seerr.git
-cd seerr
+git clone https://github.com/seerr-team/seerr.git .
 git checkout main
 ```
 3. Install the dependencies:
@@ -81,7 +80,7 @@ EnvironmentFile=/etc/seerr/seerr.conf
 Environment=NODE_ENV=production
 Type=exec
 Restart=on-failure
-WorkingDirectory=/opt/seerr/seerr
+WorkingDirectory=/opt/seerr
 ExecStart=/usr/bin/node dist/index.js
 
 [Install]
