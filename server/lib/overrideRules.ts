@@ -135,7 +135,6 @@ async function overrideRules({
     if (prioritizedRule.tags) {
       tags = [
         ...new Set([
-          ...(tags || []),
           ...prioritizedRule.tags.split(',').map((tag) => Number(tag)),
         ]),
       ];
