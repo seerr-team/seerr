@@ -25,7 +25,7 @@ import { getHostname } from '@server/utils/getHostname';
 import { Router } from 'express';
 import gravatarUrl from 'gravatar-url';
 import { findIndex, sortBy } from 'lodash';
-import { In } from 'typeorm';
+import { In, Not } from 'typeorm';
 import userSettingsRoutes from './usersettings';
 
 const router = Router();
@@ -227,12 +227,16 @@ router.post<
 
     // Clean up old subscriptions from the same device (userAgent) for this user
     // iOS can silently refresh endpoints, leaving stale subscriptions in the database
+    // Only clean up if we're creating a new subscription (not updating an existing one)
     if (req.body.userAgent) {
       const staleSubscriptions = await userPushSubRepository.find({
         relations: { user: true },
         where: {
           userAgent: req.body.userAgent,
           user: { id: req.user?.id },
+          // Only remove subscriptions with different endpoints (stale ones)
+          // Keep subscriptions that might be from different browsers/tabs
+          endpoint: Not(req.body.endpoint),
         },
       });
 
