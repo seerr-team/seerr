@@ -214,7 +214,6 @@ router.post<
       existingByEndpoint.auth = req.body.auth;
       existingByEndpoint.p256dh = req.body.p256dh;
       existingByEndpoint.userAgent = req.body.userAgent;
-      existingByEndpoint.createdAt = new Date();
 
       await userPushSubRepository.save(existingByEndpoint);
 
