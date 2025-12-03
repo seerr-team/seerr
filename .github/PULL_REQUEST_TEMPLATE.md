@@ -3,7 +3,7 @@
     your pull request. Please fill in each section below to help us better prioritize your pull request. Thanks!
 -->
 
-## Description
+#### Description
 
 <!--- Describe your changes in detail -->
 <!--- Why is this change required? What problem does it solve? -->
@@ -11,15 +11,15 @@
 
 - Fixes #XXXX
 
-## How Has This Been Tested?
+#### How Has This Been Tested?
 
 <!--- Please describe in detail how you tested your changes. -->
 <!--- Include details of your testing environment, and the tests you ran to -->
 <!--- see how your change affects other areas of the code, etc. -->
 
-## Screenshots / Logs (if applicable)
+#### Screenshots / Logs (if applicable)
 
-## Checklist:
+#### Checklist:
 
 <!--- Go over all the following points, and put an `x` in all the boxes that apply. -->
 <!--- If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
