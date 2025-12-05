@@ -11,6 +11,9 @@ on:
 permissions:
   contents: read
 
+env:
+  DOCKER_HUB: seerr/seerr
+
 concurrency:
   group: preview-${{ github.ref }}
   cancel-in-progress: true
@@ -115,7 +118,7 @@ jobs:
         uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
         with:
           images: |
-            ${{ github.repository }}
+            ${{ env.DOCKER_HUB }}
             ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=preview-${{ steps.ver.outputs.version }}
