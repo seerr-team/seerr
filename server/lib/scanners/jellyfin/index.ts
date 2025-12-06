@@ -1,5 +1,8 @@
 import animeList from '@server/api/animelist';
-import type { JellyfinLibraryItem } from '@server/api/jellyfin';
+import type {
+  JellyfinLibraryItem,
+  JellyfinLibraryItemExtended,
+} from '@server/api/jellyfin';
 import JellyfinAPI from '@server/api/jellyfin';
 import { getMetadataProvider } from '@server/api/metadata';
 import TheMovieDb from '@server/api/themoviedb';
@@ -374,9 +377,10 @@ class JellyfinScanner {
             ) ?? []
           ).length;
 
+          const jellyfinSeasons = await this.jfClient.getSeasons(Id);
+
           for (const season of seasons) {
-            const JellyfinSeasons = await this.jfClient.getSeasons(Id);
-            const matchedJellyfinSeason = JellyfinSeasons.find((md) => {
+            const matchedJellyfinSeason = jellyfinSeasons.find((md) => {
               if (tvdbSeasonFromAnidb) {
                 // In AniDB we don't have the concept of seasons,
                 // we have multiple shows with only Season 1 (and sometimes a season with index 0 for specials).
@@ -398,9 +402,11 @@ class JellyfinScanner {
             // Check if we found the matching season and it has all the available episodes
             if (matchedJellyfinSeason) {
               // If we have a matched Jellyfin season, get its children metadata so we can check details
+              // When 4K detection is enabled, request media info to avoid extra API calls
               const episodes = await this.jfClient.getEpisodes(
                 Id,
-                matchedJellyfinSeason.Id
+                matchedJellyfinSeason.Id,
+                this.enable4kShow ? { includeMediaInfo: true } : undefined
               );
 
               //Get count of episodes that are HD and 4K
@@ -424,11 +430,12 @@ class JellyfinScanner {
                 if (!this.enable4kShow) {
                   totalStandard += episodeCount;
                 } else {
-                  const ExtendedEpisodeData = await this.jfClient.getItemData(
-                    episode.Id
-                  );
+                  // MediaSources field is included in response when includeMediaInfo is true
+                  // We iterate all MediaSources to detect if episode has both standard AND 4K versions
+                  const extendedEpisode =
+                    episode as JellyfinLibraryItemExtended;
 
-                  ExtendedEpisodeData?.MediaSources?.some((MediaSource) => {
+                  extendedEpisode?.MediaSources?.some((MediaSource) => {
                     return MediaSource.MediaStreams.some((MediaStream) => {
                       if (MediaStream.Type === 'Video') {
                         if ((MediaStream.Width ?? 0) >= 2000) {

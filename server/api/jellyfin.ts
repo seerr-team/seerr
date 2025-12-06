@@ -417,11 +417,13 @@ class JellyfinAPI extends ExternalAPI {
 
   public async getEpisodes(
     seriesID: string,
-    seasonID: string
+    seasonID: string,
+    options?: { includeMediaInfo?: boolean }
   ): Promise<JellyfinLibraryItem[]> {
     try {
+      const fields = options?.includeMediaInfo ? '&fields=MediaSources' : '';
       const episodeResponse = await this.get<any>(
-        `/Shows/${seriesID}/Episodes?seasonId=${seasonID}`
+        `/Shows/${seriesID}/Episodes?seasonId=${seasonID}${fields}`
       );
 
       return episodeResponse.Items.filter(
