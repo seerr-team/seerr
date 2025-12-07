@@ -86,6 +86,10 @@ export const verifyAndResubscribePushSubscription = async (
   userId: number | undefined,
   currentSettings: PublicSettingsResponse
 ): Promise<boolean> => {
+  if (!userId) {
+    return false;
+  }
+
   const isValid = await verifyPushSubscription(userId, currentSettings);
 
   if (isValid) {
