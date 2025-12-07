@@ -204,34 +204,14 @@ router.post<
       return res.status(204).send();
     }
 
-    // iOS can refresh auth keys but keep same endpoint
-    const existingByEndpoint = await userPushSubRepository.findOne({
-      relations: { user: true },
-      where: { endpoint: req.body.endpoint, user: { id: req.user?.id } },
-    });
-
-    if (existingByEndpoint) {
-      // Update existing subscription with new keys
-      existingByEndpoint.auth = req.body.auth;
-      existingByEndpoint.p256dh = req.body.p256dh;
-      existingByEndpoint.userAgent = req.body.userAgent;
-
-      await userPushSubRepository.save(existingByEndpoint);
-
-      logger.debug(
-        'Updated existing push subscription with new keys for same endpoint.',
-        { label: 'API' }
-      );
-      return res.status(204).send();
-    }
-
     // This prevents race conditions where two requests both pass the checks
     await dataSource.transaction(
       async (transactionalEntityManager: EntityManager) => {
         const transactionalRepo =
           transactionalEntityManager.getRepository(UserPushSubscription);
 
-        const finalCheck = await transactionalRepo.findOne({
+        // Check for existing subscription by auth or endpoint within transaction
+        const existingSubscription = await transactionalRepo.findOne({
           relations: { user: true },
           where: [
             { auth: req.body.auth, user: { id: req.user?.id } },
@@ -239,7 +219,25 @@ router.post<
           ],
         });
 
-        if (finalCheck) {
+        if (existingSubscription) {
+          // If endpoint matches but auth is different, update with new keys (iOS refresh case)
+          if (
+            existingSubscription.endpoint === req.body.endpoint &&
+            existingSubscription.auth !== req.body.auth
+          ) {
+            existingSubscription.auth = req.body.auth;
+            existingSubscription.p256dh = req.body.p256dh;
+            existingSubscription.userAgent = req.body.userAgent;
+
+            await transactionalRepo.save(existingSubscription);
+
+            logger.debug(
+              'Updated existing push subscription with new keys for same endpoint.',
+              { label: 'API' }
+            );
+            return;
+          }
+
           logger.debug(
             'Duplicate subscription detected. Skipping registration.',
             { label: 'API' }
