@@ -44,6 +44,7 @@ const messages = defineMessages('components.Discover.CreateSlider', {
   searchStudios: 'Search studios…',
   starttyping: 'Starting typing to search.',
   nooptions: 'No results.',
+  providetmdblistid: 'Provide a TMDB List ID',
 });
 
 type CreateSliderProps = {
@@ -295,6 +296,13 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
       params: 'watchRegion=$regionValue&watchProviders=$providersValue',
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
     },
+    {
+      type: DiscoverSliderType.TMDB_LIST,
+      title: intl.formatMessage(sliderTitles.tmdbList),
+      dataUrl: '/api/v1/discover/list/$value',
+      titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
+      dataPlaceholderText: intl.formatMessage(messages.providetmdblistid),
+    },
   ];
 
   return (
@@ -467,6 +475,18 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                 onChange={(region, providers) => {
                   setFieldValue('data', `${region},${providers.join('|')}`);
                 }}
+              />
+            );
+            break;
+          case DiscoverSliderType.TMDB_LIST:
+            dataInput = (
+              <Field
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                name="data"
+                id="data"
+                placeholder={activeOption?.dataPlaceholderText}
               />
             );
             break;
