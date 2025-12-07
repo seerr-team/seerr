@@ -31,12 +31,6 @@ interface WebPushError extends Error {
   response?: {
     body?: string | unknown;
   };
-  errors?: {
-    statusCode?: number;
-    status?: number;
-    message?: string;
-    body?: string | unknown;
-  }[];
 }
 
 class WebPushAgent
@@ -203,34 +197,11 @@ class WebPushAgent
           notificationPayload
         );
       } catch (e) {
-        // Extract status code from error or nested errors (for AggregateError)
         const webPushError = e as WebPushError;
-        let statusCode = webPushError.statusCode || webPushError.status;
-        let errorMessage = webPushError.message || String(e);
-        let errorBody = webPushError.body || webPushError.response?.body;
+        const statusCode = webPushError.statusCode || webPushError.status;
+        const errorMessage = webPushError.message || String(e);
 
-        // Handle AggregateError - check nested errors for status codes
-        if (e instanceof AggregateError || webPushError.errors) {
-          const errors = webPushError.errors || [];
-          for (const nestedError of errors) {
-            const nestedStatusCode =
-              nestedError?.statusCode || nestedError?.status;
-            if (nestedStatusCode) {
-              statusCode = nestedStatusCode;
-            }
-            if (nestedError?.message && !errorMessage) {
-              errorMessage = nestedError.message;
-            }
-            if (nestedError?.body && !errorBody) {
-              errorBody = nestedError.body;
-            }
-          }
-        }
-
-        // Permanent failure status codes per RFC 8030:
-        // - 410 Gone: Subscription expired/invalid (Section 6.2)
-        // - 404 Not Found: Subscription expired (Section 7.3)
-        // All other errors (429 rate limiting, network issues, etc.) are transient
+        // RFC 8030: 410/404 are permanent failures, others are transient
         const isPermanentFailure = statusCode === 410 || statusCode === 404;
 
         logger.error(
@@ -247,8 +218,6 @@ class WebPushAgent
           }
         );
 
-        // Only remove subscription for permanent failures
-        // Transient errors (rate limiting, network issues, etc.) should not remove the subscription
         if (isPermanentFailure) {
           await userPushSubRepository.remove(pushSub);
         }
