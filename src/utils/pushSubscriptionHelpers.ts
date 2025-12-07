@@ -32,16 +32,26 @@ export const verifyPushSubscription = async (
     return false;
   }
 
+  let hasBackendSubscriptions = false;
+  try {
+    const { data: backendSubscriptions } = await axios.get<
+      UserPushSubscription[]
+    >(`/api/v1/user/${userId}/pushSubscriptions`);
+    hasBackendSubscriptions = backendSubscriptions.length > 0;
+  } catch {
+    hasBackendSubscriptions = false;
+  }
+
   try {
     const { subscription } = await getPushSubscription();
 
     if (!subscription) {
-      return false;
+      return hasBackendSubscriptions;
     }
 
     const appServerKey = subscription.options?.applicationServerKey;
     if (!(appServerKey instanceof ArrayBuffer)) {
-      return false;
+      return hasBackendSubscriptions;
     }
 
     const currentServerKey = new Uint8Array(appServerKey).toString();
@@ -49,15 +59,26 @@ export const verifyPushSubscription = async (
       currentSettings.vapidPublic
     ).toString();
 
+    if (currentServerKey !== expectedServerKey) {
+      return hasBackendSubscriptions;
+    }
+
     const endpoint = subscription.endpoint;
 
-    const { data } = await axios.get<UserPushSubscription>(
-      `/api/v1/user/${userId}/pushSubscription/${encodeURIComponent(endpoint)}`
-    );
+    try {
+      const { data } = await axios.get<UserPushSubscription>(
+        `/api/v1/user/${userId}/pushSubscription/${encodeURIComponent(
+          endpoint
+        )}`
+      );
 
-    return expectedServerKey === currentServerKey && data.endpoint === endpoint;
+      return data.endpoint === endpoint;
+    } catch {
+      // iOS endpoint refresh: browser has new endpoint but backend has old one
+      return hasBackendSubscriptions;
+    }
   } catch (error) {
-    return false;
+    return hasBackendSubscriptions;
   }
 };
 
@@ -69,6 +90,18 @@ export const verifyAndResubscribePushSubscription = async (
 
   if (isValid) {
     return true;
+  }
+
+  try {
+    const { data: backendSubscriptions } = await axios.get<
+      UserPushSubscription[]
+    >(`/api/v1/user/${userId}/pushSubscriptions`);
+
+    if (backendSubscriptions.length > 0) {
+      return true;
+    }
+  } catch {
+    // Continue with resubscribe logic
   }
 
   if (currentSettings.enablePushRegistration) {
