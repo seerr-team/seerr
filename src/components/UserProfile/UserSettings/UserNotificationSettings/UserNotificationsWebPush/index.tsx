@@ -120,12 +120,22 @@ const UserWebPushSettings = () => {
       if (endpointToDelete) {
         await deletePushSubscriptionFromBackend(endpointToDelete);
       } else if (dataDevices && dataDevices.length > 0) {
+        let hasFailures = false;
+
         for (const device of dataDevices) {
           try {
             await deletePushSubscriptionFromBackend(device.endpoint);
           } catch (error) {
-            // Continue deleting other subscriptions even if one fails
+            hasFailures = true;
           }
+        }
+
+        if (hasFailures) {
+          addToast(intl.formatMessage(messages.disablingwebpusherror), {
+            autoDismiss: true,
+            appearance: 'error',
+          });
+          return;
         }
       }
 
