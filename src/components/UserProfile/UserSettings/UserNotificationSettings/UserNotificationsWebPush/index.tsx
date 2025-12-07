@@ -163,12 +163,15 @@ const UserWebPushSettings = () => {
     const verifyWebPush = async () => {
       const enabled = await verifyPushSubscription(user?.id, currentSettings);
       setWebPushEnabled(enabled);
+      if (enabled) {
+        localStorage.setItem('pushNotificationsEnabled', 'true');
+      }
     };
 
     if (user?.id) {
       verifyWebPush();
     }
-  }, [user?.id, currentSettings]);
+  }, [user?.id, currentSettings, dataDevices]);
 
   useEffect(() => {
     const getSubscriptionEndpoint = async () => {
