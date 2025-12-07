@@ -163,9 +163,10 @@ const UserWebPushSettings = () => {
     const verifyWebPush = async () => {
       const enabled = await verifyPushSubscription(user?.id, currentSettings);
       setWebPushEnabled(enabled);
-      if (enabled) {
-        localStorage.setItem('pushNotificationsEnabled', 'true');
-      }
+      localStorage.setItem(
+        'pushNotificationsEnabled',
+        enabled ? 'true' : 'false'
+      );
     };
 
     if (user?.id) {
