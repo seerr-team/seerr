@@ -116,7 +116,7 @@ export const verifyAndResubscribePushSubscription = async (
       // Subscribe again to generate a fresh push subscription with updated keys and endpoint
       await subscribeToPushNotifications(userId, currentSettings);
 
-      if (oldEndpoint && userId) {
+      if (oldEndpoint) {
         try {
           await axios.delete(
             `/api/v1/user/${userId}/pushSubscription/${encodeURIComponent(
