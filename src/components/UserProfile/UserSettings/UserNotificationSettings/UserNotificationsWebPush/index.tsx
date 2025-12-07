@@ -172,6 +172,7 @@ const UserWebPushSettings = () => {
         autoDismiss: true,
         appearance: 'error',
       });
+      throw error;
     } finally {
       revalidateDevices();
     }
