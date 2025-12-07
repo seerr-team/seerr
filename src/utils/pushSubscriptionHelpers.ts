@@ -36,14 +36,7 @@ export const verifyPushSubscription = async (
     const { subscription } = await getPushSubscription();
 
     if (!subscription) {
-      try {
-        const { data: backendSubscriptions } = await axios.get<
-          UserPushSubscription[]
-        >(`/api/v1/user/${userId}/pushSubscriptions`);
-        return backendSubscriptions.length > 0;
-      } catch {
-        return false;
-      }
+      return false;
     }
 
     const appServerKey = subscription.options?.applicationServerKey;
