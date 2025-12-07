@@ -119,6 +119,14 @@ const UserWebPushSettings = () => {
 
       if (endpointToDelete) {
         await deletePushSubscriptionFromBackend(endpointToDelete);
+      } else if (dataDevices && dataDevices.length > 0) {
+        for (const device of dataDevices) {
+          try {
+            await deletePushSubscriptionFromBackend(device.endpoint);
+          } catch (error) {
+            // Continue deleting other subscriptions even if one fails
+          }
+        }
       }
 
       localStorage.setItem('pushNotificationsEnabled', 'false');
