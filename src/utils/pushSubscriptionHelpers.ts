@@ -32,26 +32,23 @@ export const verifyPushSubscription = async (
     return false;
   }
 
-  let hasBackendSubscriptions = false;
-  try {
-    const { data: backendSubscriptions } = await axios.get<
-      UserPushSubscription[]
-    >(`/api/v1/user/${userId}/pushSubscriptions`);
-    hasBackendSubscriptions = backendSubscriptions.length > 0;
-  } catch {
-    hasBackendSubscriptions = false;
-  }
-
   try {
     const { subscription } = await getPushSubscription();
 
     if (!subscription) {
-      return hasBackendSubscriptions;
+      try {
+        const { data: backendSubscriptions } = await axios.get<
+          UserPushSubscription[]
+        >(`/api/v1/user/${userId}/pushSubscriptions`);
+        return backendSubscriptions.length > 0;
+      } catch {
+        return false;
+      }
     }
 
     const appServerKey = subscription.options?.applicationServerKey;
     if (!(appServerKey instanceof ArrayBuffer)) {
-      return hasBackendSubscriptions;
+      return false;
     }
 
     const currentServerKey = new Uint8Array(appServerKey).toString();
@@ -60,7 +57,7 @@ export const verifyPushSubscription = async (
     ).toString();
 
     if (currentServerKey !== expectedServerKey) {
-      return hasBackendSubscriptions;
+      return false;
     }
 
     const endpoint = subscription.endpoint;
@@ -74,11 +71,10 @@ export const verifyPushSubscription = async (
 
       return data.endpoint === endpoint;
     } catch {
-      // iOS endpoint refresh: browser has new endpoint but backend has old one
-      return hasBackendSubscriptions;
+      return false;
     }
   } catch (error) {
-    return hasBackendSubscriptions;
+    return false;
   }
 };
 
