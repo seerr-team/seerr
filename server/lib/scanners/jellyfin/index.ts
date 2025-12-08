@@ -1,8 +1,5 @@
 import animeList from '@server/api/animelist';
-import type {
-  JellyfinLibraryItem,
-  JellyfinLibraryItemExtended,
-} from '@server/api/jellyfin';
+import type { JellyfinLibraryItem } from '@server/api/jellyfin';
 import JellyfinAPI from '@server/api/jellyfin';
 import { getMetadataProvider } from '@server/api/metadata';
 import TheMovieDb from '@server/api/themoviedb';
@@ -401,41 +398,52 @@ class JellyfinScanner {
 
             // Check if we found the matching season and it has all the available episodes
             if (matchedJellyfinSeason) {
-              // If we have a matched Jellyfin season, get its children metadata so we can check details
-              // When 4K detection is enabled, request media info to avoid extra API calls
-              const episodes = await this.jfClient.getEpisodes(
-                Id,
-                matchedJellyfinSeason.Id,
-                this.enable4kShow ? { includeMediaInfo: true } : undefined
-              );
-
-              //Get count of episodes that are HD and 4K
               let totalStandard = 0;
               let total4k = 0;
 
-              //use for loop to make sure this loop _completes_ in full
-              //before the next section
-              for (const episode of episodes) {
-                let episodeCount = 1;
+              if (!this.enable4kShow) {
+                const episodes = await this.jfClient.getEpisodes(
+                  Id,
+                  matchedJellyfinSeason.Id
+                );
 
-                // count number of combined episodes
-                if (
-                  episode.IndexNumber !== undefined &&
-                  episode.IndexNumberEnd !== undefined
-                ) {
-                  episodeCount =
-                    episode.IndexNumberEnd - episode.IndexNumber + 1;
-                }
+                for (const episode of episodes) {
+                  let episodeCount = 1;
 
-                if (!this.enable4kShow) {
+                  // count number of combined episodes
+                  if (
+                    episode.IndexNumber !== undefined &&
+                    episode.IndexNumberEnd !== undefined
+                  ) {
+                    episodeCount =
+                      episode.IndexNumberEnd - episode.IndexNumber + 1;
+                  }
+
                   totalStandard += episodeCount;
-                } else {
+                }
+              } else {
+                // 4K detection enabled - request media info to check resolution
+                const episodes = await this.jfClient.getEpisodes(
+                  Id,
+                  matchedJellyfinSeason.Id,
+                  { includeMediaInfo: true }
+                );
+
+                for (const episode of episodes) {
+                  let episodeCount = 1;
+
+                  // count number of combined episodes
+                  if (
+                    episode.IndexNumber !== undefined &&
+                    episode.IndexNumberEnd !== undefined
+                  ) {
+                    episodeCount =
+                      episode.IndexNumberEnd - episode.IndexNumber + 1;
+                  }
+
                   // MediaSources field is included in response when includeMediaInfo is true
                   // We iterate all MediaSources to detect if episode has both standard AND 4K versions
-                  const extendedEpisode =
-                    episode as JellyfinLibraryItemExtended;
-
-                  extendedEpisode?.MediaSources?.some((MediaSource) => {
+                  episode.MediaSources?.some((MediaSource) => {
                     return MediaSource.MediaStreams.some((MediaStream) => {
                       if (MediaStream.Type === 'Video') {
                         if ((MediaStream.Width ?? 0) >= 2000) {

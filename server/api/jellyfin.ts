@@ -418,12 +418,27 @@ class JellyfinAPI extends ExternalAPI {
   public async getEpisodes(
     seriesID: string,
     seasonID: string,
+    options: { includeMediaInfo: true }
+  ): Promise<JellyfinLibraryItemExtended[]>;
+  public async getEpisodes(
+    seriesID: string,
+    seasonID: string,
+    options?: { includeMediaInfo?: false }
+  ): Promise<JellyfinLibraryItem[]>;
+  public async getEpisodes(
+    seriesID: string,
+    seasonID: string,
     options?: { includeMediaInfo?: boolean }
-  ): Promise<JellyfinLibraryItem[]> {
+  ): Promise<JellyfinLibraryItem[] | JellyfinLibraryItemExtended[]> {
     try {
-      const fields = options?.includeMediaInfo ? '&fields=MediaSources' : '';
       const episodeResponse = await this.get<any>(
-        `/Shows/${seriesID}/Episodes?seasonId=${seasonID}${fields}`
+        `/Shows/${seriesID}/Episodes`,
+        {
+          params: {
+            seasonId: seasonID,
+            ...(options?.includeMediaInfo && { fields: 'MediaSources' }),
+          },
+        }
       );
 
       return episodeResponse.Items.filter(
