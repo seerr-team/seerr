@@ -114,33 +114,27 @@ const UserWebPushSettings = () => {
         endpoint
       );
 
-      // Delete from backend if endpoint is available
+      localStorage.setItem('pushNotificationsEnabled', 'false');
+      setWebPushEnabled(false);
+
       const endpointToDelete = unsubscribedEndpoint || subEndpoint || endpoint;
+      const endpointsToDelete: string[] = endpointToDelete
+        ? [endpointToDelete]
+        : dataDevices?.map((device: { endpoint: string }) => device.endpoint) ??
+          [];
 
-      if (endpointToDelete) {
-        await deletePushSubscriptionFromBackend(endpointToDelete);
-      } else if (dataDevices && dataDevices.length > 0) {
-        let hasFailures = false;
-
-        for (const device of dataDevices) {
-          try {
-            await deletePushSubscriptionFromBackend(device.endpoint);
-          } catch (error) {
-            hasFailures = true;
-          }
-        }
-
-        if (hasFailures) {
-          addToast(intl.formatMessage(messages.disablingwebpusherror), {
-            autoDismiss: true,
-            appearance: 'error',
-          });
-          return;
+      for (const ep of endpointsToDelete) {
+        try {
+          await axios.delete(
+            `/api/v1/user/${user?.id}/pushSubscription/${encodeURIComponent(
+              ep
+            )}`
+          );
+        } catch {
+          // Ignore individual deletion failures - backend cleanup is best effort
         }
       }
 
-      localStorage.setItem('pushNotificationsEnabled', 'false');
-      setWebPushEnabled(false);
       addToast(intl.formatMessage(messages.webpushhasbeendisabled), {
         autoDismiss: true,
         appearance: 'success',
@@ -181,17 +175,19 @@ const UserWebPushSettings = () => {
   useEffect(() => {
     const verifyWebPush = async () => {
       const enabled = await verifyPushSubscription(user?.id, currentSettings);
-      setWebPushEnabled(enabled);
+      const hasBackendSubscriptions = dataDevices && dataDevices.length > 0;
+      const isEnabled = enabled || hasBackendSubscriptions;
+      setWebPushEnabled(isEnabled);
       localStorage.setItem(
         'pushNotificationsEnabled',
-        enabled ? 'true' : 'false'
+        isEnabled ? 'true' : 'false'
       );
     };
 
     if (user?.id) {
       verifyWebPush();
     }
-  }, [user?.id, currentSettings]);
+  }, [user?.id, currentSettings, dataDevices]);
 
   useEffect(() => {
     const getSubscriptionEndpoint = async () => {
