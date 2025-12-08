@@ -121,6 +121,10 @@ const JellyfinQuickConnectModal = ({
   );
 
   const initiateQuickConnect = useCallback(async () => {
+    if (pollingInterval.current) {
+      clearInterval(pollingInterval.current);
+    }
+
     setIsLoading(true);
     setHasError(false);
     setIsExpired(false);
