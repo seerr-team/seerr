@@ -117,21 +117,17 @@ const UserWebPushSettings = () => {
       localStorage.setItem('pushNotificationsEnabled', 'false');
       setWebPushEnabled(false);
 
+      // Only delete the current browser's subscription, not all devices
       const endpointToDelete = unsubscribedEndpoint || subEndpoint || endpoint;
-      const endpointsToDelete: string[] = endpointToDelete
-        ? [endpointToDelete]
-        : dataDevices?.map((device: { endpoint: string }) => device.endpoint) ??
-          [];
-
-      for (const ep of endpointsToDelete) {
+      if (endpointToDelete) {
         try {
           await axios.delete(
             `/api/v1/user/${user?.id}/pushSubscription/${encodeURIComponent(
-              ep
+              endpointToDelete
             )}`
           );
         } catch {
-          // Ignore individual deletion failures - backend cleanup is best effort
+          // Ignore deletion failures - backend cleanup is best effort
         }
       }
 
@@ -174,19 +170,17 @@ const UserWebPushSettings = () => {
   useEffect(() => {
     const verifyWebPush = async () => {
       const enabled = await verifyPushSubscription(user?.id, currentSettings);
-      const hasBackendSubscriptions = dataDevices && dataDevices.length > 0;
-      const isEnabled = enabled || hasBackendSubscriptions;
-      setWebPushEnabled(isEnabled);
+      setWebPushEnabled(enabled);
       localStorage.setItem(
         'pushNotificationsEnabled',
-        isEnabled ? 'true' : 'false'
+        enabled ? 'true' : 'false'
       );
     };
 
     if (user?.id) {
       verifyWebPush();
     }
-  }, [user?.id, currentSettings, dataDevices]);
+  }, [user?.id, currentSettings]);
 
   useEffect(() => {
     const getSubscriptionEndpoint = async () => {
