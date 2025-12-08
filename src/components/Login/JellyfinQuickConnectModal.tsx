@@ -41,6 +41,7 @@ const JellyfinQuickConnectModal = ({
   const [isExpired, setIsExpired] = useState(false);
   const pollingInterval = useRef<NodeJS.Timeout>();
   const isMounted = useRef(true);
+  const hasInitiated = useRef(false);
 
   useEffect(() => {
     isMounted.current = true;
@@ -149,8 +150,12 @@ const JellyfinQuickConnectModal = ({
   }, [startPolling, onError, intl]);
 
   useEffect(() => {
-    initiateQuickConnect();
-  }, [initiateQuickConnect]);
+    if (!hasInitiated.current) {
+      hasInitiated.current = true;
+      initiateQuickConnect();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleTryAgain = () => {
     initiateQuickConnect();
