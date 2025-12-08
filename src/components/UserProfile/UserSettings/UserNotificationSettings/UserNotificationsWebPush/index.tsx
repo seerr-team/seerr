@@ -170,10 +170,30 @@ const UserWebPushSettings = () => {
   useEffect(() => {
     const verifyWebPush = async () => {
       const enabled = await verifyPushSubscription(user?.id, currentSettings);
-      setWebPushEnabled(enabled);
+      let isEnabled = enabled;
+
+      if (!enabled && 'serviceWorker' in navigator) {
+        const { subscription } = await getPushSubscription();
+        if (subscription) {
+          isEnabled = true;
+        }
+      }
+
+      if (!isEnabled && dataDevices && dataDevices.length > 0) {
+        const currentUserAgent = navigator.userAgent;
+        const hasMatchingDevice = dataDevices.some(
+          (device) => device.userAgent === currentUserAgent
+        );
+
+        if (hasMatchingDevice || dataDevices.length === 1) {
+          isEnabled = true;
+        }
+      }
+
+      setWebPushEnabled(isEnabled);
       localStorage.setItem(
         'pushNotificationsEnabled',
-        enabled ? 'true' : 'false'
+        isEnabled ? 'true' : 'false'
       );
     };
 
