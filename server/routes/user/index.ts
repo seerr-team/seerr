@@ -189,21 +189,6 @@ router.post<
   }
 >('/registerPushSubscription', async (req, res, next) => {
   try {
-    const userPushSubRepository = getRepository(UserPushSubscription);
-
-    const existingByAuth = await userPushSubRepository.findOne({
-      relations: { user: true },
-      where: { auth: req.body.auth, user: { id: req.user?.id } },
-    });
-
-    if (existingByAuth) {
-      logger.debug(
-        'User push subscription already exists. Skipping registration.',
-        { label: 'API' }
-      );
-      return res.status(204).send();
-    }
-
     // This prevents race conditions where two requests both pass the checks
     await dataSource.transaction(
       async (transactionalEntityManager: EntityManager) => {
