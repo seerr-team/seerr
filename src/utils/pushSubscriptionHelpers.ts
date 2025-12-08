@@ -73,18 +73,21 @@ export const verifyAndResubscribePushSubscription = async (
     return false;
   }
 
+  const { subscription } = await getPushSubscription();
   const isValid = await verifyPushSubscription(userId, currentSettings);
 
   if (isValid) {
     return true;
   }
 
+  if (subscription) {
+    return false;
+  }
+
   if (currentSettings.enablePushRegistration) {
     try {
-      // Unsubscribe from the backend to clear the existing push subscription (keys and endpoint)
       const oldEndpoint = await unsubscribeToPushNotifications(userId);
 
-      // Subscribe again to generate a fresh push subscription with updated keys and endpoint
       await subscribeToPushNotifications(userId, currentSettings);
 
       if (oldEndpoint) {
@@ -96,7 +99,6 @@ export const verifyAndResubscribePushSubscription = async (
           );
         } catch (error) {
           // Ignore errors when deleting old endpoint (it might not exist)
-          // This is expected when the endpoint was already cleaned up
         }
       }
 
