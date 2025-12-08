@@ -55,18 +55,12 @@ export const verifyPushSubscription = async (
 
     const endpoint = subscription.endpoint;
 
-    try {
-      const { data } = await axios.get<UserPushSubscription>(
-        `/api/v1/user/${userId}/pushSubscription/${encodeURIComponent(
-          endpoint
-        )}`
-      );
+    const { data } = await axios.get<UserPushSubscription>(
+      `/api/v1/user/${userId}/pushSubscription/${encodeURIComponent(endpoint)}`
+    );
 
-      return data.endpoint === endpoint;
-    } catch {
-      return false;
-    }
-  } catch (error) {
+    return data.endpoint === endpoint;
+  } catch {
     return false;
   }
 };
@@ -83,18 +77,6 @@ export const verifyAndResubscribePushSubscription = async (
 
   if (isValid) {
     return true;
-  }
-
-  try {
-    const { data: backendSubscriptions } = await axios.get<
-      UserPushSubscription[]
-    >(`/api/v1/user/${userId}/pushSubscriptions`);
-
-    if (backendSubscriptions.length > 0) {
-      return true;
-    }
-  } catch {
-    // Continue with resubscribe logic
   }
 
   if (currentSettings.enablePushRegistration) {
