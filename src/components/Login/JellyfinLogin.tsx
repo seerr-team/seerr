@@ -1,12 +1,17 @@
 import Button from '@app/components/Common/Button';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
+import JellyfinQuickConnectModal from '@app/components/Login/JellyfinQuickConnectModal';
 import useSettings from '@app/hooks/useSettings';
 import defineMessages from '@app/utils/defineMessages';
-import { ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowLeftOnRectangleIcon,
+  QrCodeIcon,
+} from '@heroicons/react/24/outline';
 import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType, ServerType } from '@server/constants/server';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
+import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import * as Yup from 'yup';
@@ -25,6 +30,8 @@ const messages = defineMessages('components.Login', {
   signingin: 'Signing In…',
   signin: 'Sign In',
   forgotpassword: 'Forgot Password?',
+  quickconnect: 'Quick Connect',
+  quickconnecterror: 'Quick Connect failed. Please try again.',
 });
 
 interface JellyfinLoginProps {
@@ -39,6 +46,7 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
   const toasts = useToasts();
   const intl = useIntl();
   const settings = useSettings();
+  const [showQuickConnect, setShowQuickConnect] = useState(false);
 
   const mediaServerFormatValues = {
     mediaServerName:
@@ -194,6 +202,36 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
           );
         }}
       </Formik>
+      {
+        <div className="mt-4">
+          <Button
+            buttonType="ghost"
+            type="button"
+            onClick={() => setShowQuickConnect(true)}
+            className="w-full"
+          >
+            <QrCodeIcon />
+            <span>{intl.formatMessage(messages.quickconnect)}</span>
+          </Button>
+        </div>
+      }
+
+      {showQuickConnect && (
+        <JellyfinQuickConnectModal
+          onClose={() => setShowQuickConnect(false)}
+          onAuthenticated={() => {
+            setShowQuickConnect(false);
+            revalidate();
+          }}
+          onError={(error) => {
+            toasts.addToast(error, {
+              autoDismiss: true,
+              appearance: 'error',
+            });
+          }}
+          mediaServerName={mediaServerFormatValues.mediaServerName}
+        />
+      )}
     </div>
   );
 };

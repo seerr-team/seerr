@@ -3984,6 +3984,85 @@ paths:
               required:
                 - username
                 - password
+  /auth/jellyfin/quickconnect/initiate:
+    post:
+      summary: Initiate Jellyfin Quick Connect
+      description: Initiates a Quick Connect session and returns a code for the user to authorize on their Jellyfin server.
+      security: []
+      tags:
+        - auth
+      responses:
+        '200':
+          description: Quick Connect session initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: '123456'
+                  secret:
+                    type: string
+                    example: 'abc123def456'
+        '500':
+          description: Failed to initiate Quick Connect
+  /auth/jellyfin/quickconnect/check:
+    get:
+      summary: Check Quick Connect authorization status
+      description: Checks if the Quick Connect code has been authorized by the user.
+      security: []
+      tags:
+        - auth
+      parameters:
+        - in: query
+          name: secret
+          required: true
+          schema:
+            type: string
+          description: The secret returned from the initiate endpoint
+      responses:
+        '200':
+          description: Authorization status returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authenticated:
+                    type: boolean
+                    example: false
+        '404':
+          description: Quick Connect session not found or expired
+  /auth/jellyfin/quickconnect/authenticate:
+    post:
+      summary: Authenticate with Quick Connect
+      description: Completes the Quick Connect authentication flow and creates a user session.
+      security: []
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                secret:
+                  type: string
+              required:
+                - secret
+      responses:
+        '200':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '403':
+          description: Quick Connect not authorized or access denied
+        '500':
+          description: Authentication failed
   /auth/local:
     post:
       summary: Sign in using a local account
