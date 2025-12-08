@@ -16,6 +16,7 @@ const messages = defineMessages('components.Login.JellyfinQuickConnectModal', {
   expiredMessage: 'This Quick Connect code has expired. Please try again.',
   error: 'Error',
   errorMessage: 'Failed to initiate Quick Connect. Please try again.',
+  authorizationFailed: 'Quick Connect authorization failed.',
   cancel: 'Cancel',
   tryAgain: 'Try Again',
 });
@@ -68,7 +69,7 @@ const JellyfinQuickConnectModal = ({
 
         switch (error?.response?.data?.message) {
           case ApiErrorCode.InvalidCredentials:
-            errorMessage = 'Quick Connect authorization failed';
+            errorMessage = intl.formatMessage(messages.authorizationFailed);
             break;
         }
 
