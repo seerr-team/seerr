@@ -58,7 +58,9 @@ export const useUser = ({
   initialData,
 }: { id?: number; initialData?: User } = {}): UserHookResponse => {
   const router = useRouter();
-  const isAuthPage = /^\/(login|setup|resetpassword)/.test(router.pathname);
+  const isAuthPage = /^\/(login|setup|resetpassword(?:\/|$))/.test(
+    router.pathname
+  );
 
   const {
     data,
@@ -66,7 +68,7 @@ export const useUser = ({
     mutate: revalidate,
   } = useSWR<User>(id ? `/api/v1/user/${id}` : `/api/v1/auth/me`, {
     fallbackData: initialData,
-    refreshInterval: 30000,
+    refreshInterval: !isAuthPage ? 30000 : 0,
     revalidateOnFocus: !isAuthPage,
     revalidateOnMount: !isAuthPage,
     revalidateOnReconnect: !isAuthPage,
