@@ -112,6 +112,10 @@ export interface JellyfinLibraryItemExtended extends JellyfinLibraryItem {
   DateCreated?: string;
 }
 
+type EpisodeReturn<T> = T extends { includeMediaInfo: true }
+  ? JellyfinLibraryItemExtended[]
+  : JellyfinLibraryItem[];
+
 export interface JellyfinItemsReponse {
   Items: JellyfinLibraryItemExtended[];
   TotalRecordCount: number;
@@ -415,21 +419,13 @@ class JellyfinAPI extends ExternalAPI {
     }
   }
 
-  public async getEpisodes(
+  public async getEpisodes<
+    T extends { includeMediaInfo?: boolean } | undefined = undefined
+  >(
     seriesID: string,
     seasonID: string,
-    options: { includeMediaInfo: true }
-  ): Promise<JellyfinLibraryItemExtended[]>;
-  public async getEpisodes(
-    seriesID: string,
-    seasonID: string,
-    options?: { includeMediaInfo?: false }
-  ): Promise<JellyfinLibraryItem[]>;
-  public async getEpisodes(
-    seriesID: string,
-    seasonID: string,
-    options?: { includeMediaInfo?: boolean }
-  ): Promise<JellyfinLibraryItem[] | JellyfinLibraryItemExtended[]> {
+    options?: T
+  ): Promise<EpisodeReturn<T>> {
     try {
       const episodeResponse = await this.get<any>(
         `/Shows/${seriesID}/Episodes`,
