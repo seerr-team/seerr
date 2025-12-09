@@ -2,6 +2,7 @@ import { UserType } from '@server/constants/user';
 import type { PermissionCheckOptions } from '@server/lib/permissions';
 import { hasPermission, Permission } from '@server/lib/permissions';
 import type { NotificationAgentKey } from '@server/lib/settings';
+import { useRouter } from 'next/router';
 import type { MutatorCallback } from 'swr';
 import useSWR from 'swr';
 
@@ -56,6 +57,9 @@ export const useUser = ({
   id,
   initialData,
 }: { id?: number; initialData?: User } = {}): UserHookResponse => {
+  const router = useRouter();
+  const isAuthPage = /^\/(login|setup|resetpassword)/.test(router.pathname);
+
   const {
     data,
     error,
@@ -63,6 +67,9 @@ export const useUser = ({
   } = useSWR<User>(id ? `/api/v1/user/${id}` : `/api/v1/auth/me`, {
     fallbackData: initialData,
     refreshInterval: 30000,
+    revalidateOnFocus: !isAuthPage,
+    revalidateOnMount: !isAuthPage,
+    revalidateOnReconnect: !isAuthPage,
     errorRetryInterval: 30000,
     shouldRetryOnError: false,
   });
