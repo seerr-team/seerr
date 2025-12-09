@@ -191,19 +191,19 @@ If you are using Firefox, the domain you need to whitelist is `push.services.moz
     ```
 If this command fails (which is unlikely), use this equivalent:
     ```bash
-    pihole pihole -f && pihole restartdns
+    pihole -f && pihole restartdns
     ```
 5. Then restart your Seerr instance and try to enable the web push notifications again.
 
 
 ### Option 2: You are using Brave browser
 
-Brave is a "De-Googled" browser. So by default or if you refused a prompt in the past, it cuts the access to the FCM (Firebase Cloud Messaging) service, whish is mandatory for the web push notifications on Chromium based browsers.
+Brave is a "De-Googled" browser. So by default or if you refused a prompt in the past, it cuts the access to the FCM (Firebase Cloud Messaging) service, which is mandatory for the web push notifications on Chromium based browsers.
 
 1. Open Brave and paste this address in the url bar: `brave://settings/privacy`
 2. Look for the option: "Use Google services for push messaging"
 3. Activate this option
-4. Relaunch Brave completly
+4. Relaunch Brave completely
 5. You should now see the notifications prompt appearing instead of an error message.
 
 If you still encounter issues, please reach out on our support channels.
