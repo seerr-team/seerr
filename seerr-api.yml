@@ -4638,6 +4638,126 @@ paths:
       responses:
         '204':
           description: Succesfully removed media item
+  /blacklist:
+    get:
+      summary: Returns blocklisted items
+      description: |
+        **DEPRECATED**: Use `/blocklist` instead. This endpoint will be deprecated soon.
+      deprecated: true
+      tags:
+        - blocklist
+      parameters:
+        - in: query
+          name: take
+          schema:
+            type: number
+            nullable: true
+            example: 25
+        - in: query
+          name: skip
+          schema:
+            type: number
+            nullable: true
+            example: 0
+        - in: query
+          name: search
+          schema:
+            type: string
+            nullable: true
+            example: dune
+        - in: query
+          name: filter
+          schema:
+            type: string
+            enum: [all, manual, blocklistedTags]
+            default: manual
+      responses:
+        '200':
+          description: Blocklisted items returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pageInfo:
+                    $ref: '#/components/schemas/PageInfo'
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        user:
+                          $ref: '#/components/schemas/User'
+                        createdAt:
+                          type: string
+                          example: 2024-04-21T01:55:44.000Z
+                        id:
+                          type: number
+                          example: 1
+                        mediaType:
+                          type: string
+                          example: movie
+                        title:
+                          type: string
+                          example: Dune
+                        tmdbId:
+                          type: number
+                          example: 438631
+    post:
+      summary: Add media to blocklist
+      description: |
+        **DEPRECATED**: Use `/blocklist` instead. This endpoint will be deprecated soon.
+      deprecated: true
+      tags:
+        - blocklist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Blocklist'
+      responses:
+        '201':
+          description: Item succesfully blocklisted
+        '412':
+          description: Item has already been blocklisted
+  /blacklist/{tmdbId}:
+    get:
+      summary: Get media from blocklist
+      description: |
+        **DEPRECATED**: Use `/blocklist/{tmdbId}` instead. This endpoint will be deprecated soon.
+      deprecated: true
+      tags:
+        - blocklist
+      parameters:
+        - in: path
+          name: tmdbId
+          description: tmdbId ID
+          required: true
+          example: '1'
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Blocklist details in JSON
+    delete:
+      summary: Remove media from blocklist
+      description: |
+        **DEPRECATED**: Use `/blocklist/{tmdbId}` instead. This endpoint will be deprecated soon.
+      deprecated: true
+      tags:
+        - blocklist
+      parameters:
+        - in: path
+          name: tmdbId
+          description: tmdbId ID
+          required: true
+          example: '1'
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Succesfully removed media item
   /watchlist:
     post:
       summary: Add media to watchlist
