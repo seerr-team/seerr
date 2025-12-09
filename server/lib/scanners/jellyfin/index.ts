@@ -1,6 +1,6 @@
 import animeList from '@server/api/animelist';
-import type { JellyfinLibraryItem } from '@server/api/jellyfin';
-import JellyfinAPI from '@server/api/jellyfin';
+import type { JellyfinLibraryItem } from '@server/api/jellyfinMain';
+import JellyfinMainAPI from '@server/api/jellyfinMain';
 import { getMetadataProvider } from '@server/api/metadata';
 import TheMovieDb from '@server/api/themoviedb';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
@@ -13,22 +13,20 @@ import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import Season from '@server/entity/Season';
-import { User } from '@server/entity/User';
+import type { StatusBase } from '@server/lib/scanners/baseScanner';
 import type { Library } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import AsyncLock from '@server/utils/asyncLock';
 import { getHostname } from '@server/utils/getHostname';
+import { getMediaServerAdmin } from '@server/utils/getMediaServerAdmin';
 import { randomUUID as uuid } from 'crypto';
 import { uniqWith } from 'lodash';
 
 const BUNDLE_SIZE = 20;
 const UPDATE_RATE = 4 * 1000;
 
-interface SyncStatus {
-  running: boolean;
-  progress: number;
-  total: number;
+interface SyncStatus extends StatusBase {
   currentLibrary: Library;
   libraries: Library[];
 }
@@ -36,7 +34,7 @@ interface SyncStatus {
 class JellyfinScanner {
   private sessionId: string;
   private tmdb: TheMovieDb;
-  private jfClient: JellyfinAPI;
+  private jfClient: JellyfinMainAPI;
   private items: JellyfinLibraryItem[] = [];
   private progress = 0;
   private libraries: Library[];
@@ -752,18 +750,14 @@ class JellyfinScanner {
     });
     try {
       this.running = true;
-      const userRepository = getRepository(User);
-      const admin = await userRepository.findOne({
-        where: { id: 1 },
-        select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
-        order: { id: 'ASC' },
-      });
+
+      const admin = await getMediaServerAdmin();
 
       if (!admin) {
         return this.log('No admin configured. Jellyfin sync skipped.', 'warn');
       }
 
-      this.jfClient = new JellyfinAPI(
+      this.jfClient = new JellyfinMainAPI(
         getHostname(),
         settings.jellyfin.apiKey,
         admin.jellyfinDeviceId
