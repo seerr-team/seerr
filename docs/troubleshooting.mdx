@@ -176,16 +176,16 @@ This process should restore your admin privileges while preserving your settings
 
 ## Failed to enable web push notifications
 
-### Option 1: You are using pihole
+### Option 1: You are using Pi-hole
 
-When using pihole, you need to whitelist the proper domains in order for the queries to not be intercepted and blocked by pihole.
+When using Pi-hole, you need to whitelist the proper domains in order for the queries to not be intercepted and blocked by Pi-hole.
 If you are using a chromium based browser (eg: Chrome, Brave, Edge...), the domain you need to whitelist is `fcm.googleapis.com`
 If you are using Firefox, the domain you need to whitelist is `push.services.mozilla.com`
 
-1. Log into your pihole through the admin interface, then click on Domains situated under GROUP MANAGEMENT.
+1. Log into your Pi-hole through the admin interface, then click on Domains situated under GROUP MANAGEMENT.
 2. Add the domain corresponding to your browser in the `Domain to be added` field and then click on Add to allowed domains.
 3. Now in order for those changes to be used you need to flush your current dns cache.
-4. You can do so by using this command line in your pihole terminal:
+4. You can do so by using this command line in your Pi-hole terminal:
     ```bash
     pihole restartdns
     ```
