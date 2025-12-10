@@ -251,15 +251,15 @@ class JellyfinScanner
         }
       }
 
-      let tvdbSeasonFromAnidb: number | undefined;
+      let tmdbSeasonFromAnidb: number | undefined;
       if (!tvShow && metadata.ProviderIds.AniDB) {
         const anidbId = Number(metadata.ProviderIds.AniDB);
         const result = animeList.getFromAnidbId(anidbId);
-        tvdbSeasonFromAnidb = result?.tvdbSeason;
-        if (result?.tvdbId) {
+        tmdbSeasonFromAnidb = result?.tmdbseason;
+        if (result?.tmdbtv) {
           try {
-            tvShow = await this.tmdb.getShowByTvdbId({
-              tvdbId: result.tvdbId,
+            tvShow = await this.tmdb.getTvShow({
+              tvId: result.tmdbtv,
             });
           } catch {
             this.log('Unable to find AniDB ID for this title.', 'debug', {
@@ -268,7 +268,7 @@ class JellyfinScanner
           }
         }
         // With AniDB we can have mixed libraries with movies in a "show" library
-        else if (result?.imdbId || result?.tmdbId) {
+        else if (result?.tmdbId || result?.imdbId) {
           await this.processJellyfinMovie(jellyfinitem);
           return;
         }
@@ -287,13 +287,13 @@ class JellyfinScanner
 
         for (const season of filteredSeasons) {
           const matchedJellyfinSeason = jellyfinSeasons.find((md) => {
-            if (tvdbSeasonFromAnidb) {
+            if (tmdbSeasonFromAnidb) {
               // In AniDB we don't have the concept of seasons,
               // we have multiple shows with only Season 1 (and sometimes a season with index 0 for specials).
               // We use tvdbSeasonFromAnidb to check if we are on the correct TMDB season and
               // md.IndexNumber === 1 to be sure to find the correct season on jellyfin
               return (
-                tvdbSeasonFromAnidb === season.season_number &&
+                tmdbSeasonFromAnidb === season.season_number &&
                 md.IndexNumber === 1
               );
             } else {
@@ -377,7 +377,7 @@ class JellyfinScanner
 
             // With AniDB we can have multiple shows for one season, so we need to save
             // the episode from all the jellyfin entries to get the total
-            if (tvdbSeasonFromAnidb) {
+            if (tmdbSeasonFromAnidb) {
               let show = this.processedAnidbSeason.get(tvShow.id);
 
               if (!show) {
