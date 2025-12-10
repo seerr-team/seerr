@@ -3,6 +3,8 @@ import { menuMessages } from '@app/components/Layout/Sidebar';
 import useClickOutside from '@app/hooks/useClickOutside';
 import { Permission, useUser } from '@app/hooks/useUser';
 import { Transition } from '@headlessui/react';
+import { CalendarDaysIcon } from '@heroicons/react/24/outline';
+import { CalendarDaysIcon as FilledCalendarDaysIcon } from '@heroicons/react/24/solid';
 import {
   ClockIcon,
   CogIcon,
@@ -99,6 +101,14 @@ const MobileMenu = ({
       svgIconSelected: <FilledClockIcon className="h-6 w-6" />,
       activeRegExp: /^\/requests/,
     },
+{
+  href: '/calendar',
+  content: intl.formatMessage(menuMessages.calendar),
+  svgIcon: <CalendarDaysIcon className="h-6 w-6" />,
+  svgIconSelected: <FilledCalendarDaysIcon className="h-6 w-6" />,
+  activeRegExp: /^\/calendar/,
+},
+
     {
       href: '/blacklist',
       content: intl.formatMessage(menuMessages.blacklist),
