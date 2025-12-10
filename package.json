@@ -39,6 +39,10 @@
     "@formatjs/intl-pluralrules": "5.4.6",
     "@formatjs/intl-utils": "3.8.4",
     "@formatjs/swc-plugin-experimental": "^0.4.0",
+    "@fullcalendar/daygrid": "^6.1.19",
+    "@fullcalendar/interaction": "^6.1.19",
+    "@fullcalendar/react": "^6.1.19",
+    "@fullcalendar/timegrid": "^6.1.19",
     "@headlessui/react": "1.7.12",
     "@heroicons/react": "2.2.0",
     "@supercharge/request-ip": "1.2.0",
@@ -103,7 +107,7 @@
     "swagger-ui-express": "4.6.2",
     "swr": "2.3.7",
     "tailwind-merge": "^2.6.0",
-    "typeorm": "0.3.12",
+    "typeorm": "0.3.11",
     "ua-parser-js": "^1.0.35",
     "undici": "^7.16.0",
     "validator": "^13.15.23",
@@ -177,7 +181,7 @@
     "typescript": "4.9.5"
   },
   "engines": {
-    "node": "^22.0.0",
+    "node": "^22.0.0 || ^25.0.0",
     "pnpm": "^10.0.0"
   },
   "overrides": {

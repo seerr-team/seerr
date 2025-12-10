@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getSonarrUpcoming } from '../../lib/sonarr';
-import { getRadarrUpcoming } from '../../lib/radarr';
+import { getSonarrUpcoming } from '@app/lib/sonarr';
+import { getRadarrUpcoming } from '@app/lib/radarr';
 
 
 
@@ -22,7 +22,7 @@ type Event = {
 function groupTvEpisodes(episodes: Event[]): Event[] {
   const grouped: { [key: string]: Event[] } = {};
 
-  for (const ep of episodes) {	
+  for (const ep of episodes) {
     const dateOnly = ep.start.split('T')[0]; // Strip time
     const key = `${ep.title}_${dateOnly}`;
     if (!grouped[key]) grouped[key] = [];

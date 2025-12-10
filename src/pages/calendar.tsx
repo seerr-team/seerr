@@ -52,6 +52,7 @@ const popupRef = useRef<HTMLDivElement>(null);
     return match ? parseInt(match[1], 10) : '';
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getEventClass = (_event?: any) => 'event-neutral';
 
 
@@ -183,7 +184,9 @@ useEffect(() => {
   customButtons={{
     customFilter: {
       text: '',
-      click: () => {},
+      click: () => {
+        // TODO: Implement filter functionality
+      },
     },
   }}
   fixedWeekCount={false}
