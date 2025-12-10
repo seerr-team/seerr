@@ -48,11 +48,11 @@ interface AnimeList {
 
 export interface AnidbItem {
   tvdbId?: number;
-  tmdbtv?: number;
+  tmdbTv?: number;
   tmdbId?: number;
   imdbId?: string;
   tvdbSeason?: number;
-  tmdbseason?: number;
+  tmdbSeason?: number;
 }
 
 class AnimeListMapping {
@@ -101,11 +101,11 @@ class AnimeListMapping {
         this.mapping[anidbId] = {
           // for season 0 ignore tvdbid, because this must be movie/OVA
           tvdbId: anime.$.defaulttvdbseason === '0' ? undefined : tvdbId,
-          tmdbtv: tmdbtv,
+          tmdbTv: tmdbtv,
           tmdbId: tmdbId,
           imdbId: imdbIds[0], // this is used for one AniDB -> one imdb movie mapping
           tvdbSeason: Number(anime.$.defaulttvdbseason),
-          tmdbseason: Number(anime.$.tmdbseason),
+          tmdbSeason: Number(anime.$.tmdbseason),
         };
 
         if (tvdbId) {

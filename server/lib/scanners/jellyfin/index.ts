@@ -255,11 +255,11 @@ class JellyfinScanner
       if (!tvShow && metadata.ProviderIds.AniDB) {
         const anidbId = Number(metadata.ProviderIds.AniDB);
         const result = animeList.getFromAnidbId(anidbId);
-        tmdbSeasonFromAnidb = result?.tmdbseason;
-        if (result?.tmdbtv) {
+        tmdbSeasonFromAnidb = result?.tmdbSeason;
+        if (result?.tmdbTv) {
           try {
             tvShow = await this.tmdb.getTvShow({
-              tvId: result.tmdbtv,
+              tvId: result.tmdbTv,
             });
           } catch {
             this.log('Unable to find AniDB ID for this title.', 'debug', {
