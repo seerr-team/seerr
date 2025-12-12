@@ -449,6 +449,11 @@ requestRoutes.put<{ requestId: string }>(
         where: {
           id: Number(req.params.requestId),
         },
+        relations: {
+          seasons: true,
+          media: true,
+          requestedBy: true,
+        },
       });
 
       if (!request) {
@@ -550,11 +555,25 @@ requestRoutes.put<{ requestId: string }>(
           (sn) => !request.seasons.map((s) => s.seasonNumber).includes(sn)
         );
 
+        const quota = await requestUser.getQuota();
+
         request.seasons = request.seasons.filter((rs) =>
           filteredSeasons.includes(rs.seasonNumber)
         );
 
         if (newSeasons.length > 0) {
+          if (!req.user?.hasPermission(Permission.MANAGE_REQUESTS)) {
+            if (
+              (quota?.tv?.limit ?? 0) > 0 &&
+              newSeasons.length > (quota?.tv?.remaining ?? 0)
+            ) {
+              return next({
+                status: 403,
+                message: 'Request exceeds series quota limit.',
+              });
+            }
+          }
+
           logger.debug('Adding new seasons to request', {
             label: 'Media Request',
             newSeasons,
