@@ -35,6 +35,7 @@ interface ProcessOptions {
   mediaAddedAt?: Date;
   ratingKey?: string;
   jellyfinMediaId?: string;
+  imdbId?: string;
   serviceId?: number;
   externalServiceId?: number;
   externalServiceSlug?: string;
@@ -97,6 +98,7 @@ class BaseScanner<T> {
       mediaAddedAt,
       ratingKey,
       jellyfinMediaId,
+      imdbId,
       serviceId,
       externalServiceId,
       externalServiceSlug,
@@ -185,6 +187,7 @@ class BaseScanner<T> {
       } else {
         const newMedia = new Media();
         newMedia.tmdbId = tmdbId;
+        newMedia.imdbId = imdbId;
 
         newMedia.status =
           !is4k && !processing
@@ -277,7 +280,7 @@ class BaseScanner<T> {
           (es) => es.seasonNumber === season.seasonNumber
         );
 
-        // We update the rating keys in the seasons loop because we need episode counts
+        // We update the rating keys and jellyfinMediaId in the seasons loop because we need episode counts
         if (media && season.episodes > 0 && media.ratingKey !== ratingKey) {
           media.ratingKey = ratingKey;
         }

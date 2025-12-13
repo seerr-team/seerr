@@ -70,7 +70,7 @@ class JellyfinScanner
       imdbId = result?.imdbId;
     }
 
-    if (imdbId && isNaN(tmdbId)) {
+    if (imdbId && !tmdbId) {
       const tmdbMovie = await this.tmdb.getMediaByImdbId({
         imdbId: imdbId,
       });
@@ -123,7 +123,7 @@ class JellyfinScanner
       const extracted = await this.extractMovieIds(jellyfinitem);
       if (!extracted) return;
 
-      const { tmdbId, metadata } = extracted;
+      const { tmdbId, imdbId, metadata } = extracted;
 
       const has4k = metadata.MediaSources?.some((MediaSource) => {
         return MediaSource.MediaStreams.filter(
@@ -150,6 +150,7 @@ class JellyfinScanner
           is4k: false,
           mediaAddedAt,
           jellyfinMediaId: metadata.Id,
+          imdbId,
           title: metadata.Name,
         });
       }
