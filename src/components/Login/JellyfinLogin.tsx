@@ -209,19 +209,18 @@ const JellyfinLogin = ({ revalidate, serverType }: JellyfinLoginProps) => {
           );
         }}
       </Formik>
-      {
-        <div className="mt-4">
-          <Button
-            buttonType="ghost"
-            type="button"
-            onClick={() => setShowQuickConnect(true)}
-            className="w-full"
-          >
-            <QrCodeIcon />
-            <span>{intl.formatMessage(messages.quickconnect)}</span>
-          </Button>
-        </div>
-      }
+
+      <div className="mt-4">
+        <Button
+          buttonType="ghost"
+          type="button"
+          onClick={() => setShowQuickConnect(true)}
+          className="w-full"
+        >
+          <QrCodeIcon />
+          <span>{intl.formatMessage(messages.quickconnect)}</span>
+        </Button>
+      </div>
 
       {showQuickConnect && (
         <JellyfinQuickConnectModal

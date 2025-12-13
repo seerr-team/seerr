@@ -36,7 +36,7 @@ const JellyfinQuickConnectModal = ({
 
   const authenticate = useCallback(
     async (secret: string) => {
-      await axios.post('/api/v1/auth/jellyfin/quickconnect', {
+      await axios.post('/api/v1/auth/jellyfin/quickconnect/authenticate', {
         secret,
       });
       onAuthenticated();

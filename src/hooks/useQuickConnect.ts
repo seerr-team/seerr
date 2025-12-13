@@ -60,7 +60,7 @@ export const useQuickConnect = ({
         if (!isMounted.current) return;
 
         const errMsg =
-          error?.response?.data?.errorMessage ||
+          error?.response?.data?.message ||
           intl.formatMessage(messages.errorMessage);
         setErrorMessage(errMsg);
         setHasError(true);
