@@ -4992,6 +4992,38 @@ paths:
           description: Unlink request invalid
         '404':
           description: User does not exist
+  /user/{userId}/settings/linked-accounts/jellyfin/quickconnect:
+    post:
+      summary: Link Jellyfin/Emby account with Quick Connect
+      description: Links a Jellyfin/Emby account to the user's profile using Quick Connect authentication
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                secret:
+                  type: string
+              required:
+                - secret
+      responses:
+        '204':
+          description: Account successfully linked
+        '401':
+          description: Unauthorized
+        '422':
+          description: Account already linked
+        '500':
+          description: Server error
   /user/{userId}/settings/notifications:
     get:
       summary: Get notification settings for a user
