@@ -147,6 +147,11 @@ class BaseScanner<T> {
           changedExisting = true;
         }
 
+        if (imdbId && !existing.imdbId) {
+          existing.imdbId = imdbId;
+          changedExisting = true;
+        }
+
         if (
           serviceId !== undefined &&
           existing[is4k ? 'serviceId4k' : 'serviceId'] !== serviceId
