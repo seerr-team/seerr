@@ -624,10 +624,16 @@ authRoutes.post('/jellyfin/quickconnect/initiate', async (req, res, next) => {
 authRoutes.get('/jellyfin/quickconnect/check', async (req, res, next) => {
   const secret = req.query.secret as string;
 
-  if (!secret || typeof secret !== 'string') {
+  if (
+    !secret ||
+    typeof secret !== 'string' ||
+    secret.length < 8 ||
+    secret.length > 128 ||
+    !/^[A-Za-z0-9]+$/.test(secret)
+  ) {
     return next({
       status: 400,
-      message: 'Secret required',
+      message: 'Invalid secret',
     });
   }
 
