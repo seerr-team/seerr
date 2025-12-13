@@ -160,6 +160,7 @@ class JellyfinScanner
           is4k: true,
           mediaAddedAt,
           jellyfinMediaId: metadata.Id,
+          imdbId,
           title: metadata.Name,
         });
       }
@@ -340,19 +341,32 @@ class JellyfinScanner
                     episode.IndexNumberEnd - episode.IndexNumber + 1;
                 }
 
-                // MediaSources field is included in response when includeMediaInfo is true
-                // We iterate all MediaSources to detect if episode has both standard AND 4K versions
-                episode.MediaSources?.some((MediaSource) => {
-                  return MediaSource.MediaStreams.some((MediaStream) => {
-                    if (MediaStream.Type === 'Video') {
-                      if ((MediaStream.Width ?? 0) >= 2000) {
-                        total4k += episodeCount;
-                      } else {
-                        totalStandard += episodeCount;
-                      }
-                    }
-                  });
-                });
+                const has4k = episode.MediaSources?.some((MediaSource) =>
+                  MediaSource.MediaStreams.some(
+                    (MediaStream) =>
+                      MediaStream.Type === 'Video' &&
+                      (MediaStream.Width ?? 0) > 2000
+                  )
+                );
+
+                const hasStandard = episode.MediaSources?.some((MediaSource) =>
+                  MediaSource.MediaStreams.some(
+                    (MediaStream) =>
+                      MediaStream.Type === 'Video' &&
+                      (MediaStream.Width ?? 0) <= 2000
+                  )
+                );
+
+                // Count in both if episode has both versions
+                // TODO: Make this more robust in the future
+                // Currently, this detection is based solely on file resolution, not which
+                // Radarr/Sonarr instance the file came from. If a 4K request results in
+                // 1080p files (no 4K release available yet), those files will be counted
+                // as "standard" even though they're in the 4K library. This can cause
+                // non-4K users to see content as "available" when they can't access it.
+                // See issue https://github.com/seerr-team/seerr/issues/1744 for details.
+                if (hasStandard) totalStandard += episodeCount;
+                if (has4k) total4k += episodeCount;
               }
             }
 
