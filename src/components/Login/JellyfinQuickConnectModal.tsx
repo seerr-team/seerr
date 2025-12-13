@@ -1,10 +1,10 @@
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import Modal from '@app/components/Common/Modal';
+import { useQuickConnect } from '@app/hooks/useQuickConnect';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
-import { ApiErrorCode } from '@server/constants/error';
 import axios from 'axios';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback } from 'react';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.Login.JellyfinQuickConnectModal', {
@@ -15,8 +15,6 @@ const messages = defineMessages('components.Login.JellyfinQuickConnectModal', {
   expired: 'Code Expired',
   expiredMessage: 'This Quick Connect code has expired. Please try again.',
   error: 'Error',
-  errorMessage: 'Failed to initiate Quick Connect. Please try again.',
-  authorizationFailed: 'Quick Connect authorization failed.',
   cancel: 'Cancel',
   tryAgain: 'Try Again',
 });
@@ -35,130 +33,39 @@ const JellyfinQuickConnectModal = ({
   mediaServerName,
 }: JellyfinQuickConnectModalProps) => {
   const intl = useIntl();
-  const [code, setCode] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const [isExpired, setIsExpired] = useState(false);
-  const pollingInterval = useRef<NodeJS.Timeout>();
-  const isMounted = useRef(true);
-  const hasInitiated = useRef(false);
 
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-      if (pollingInterval.current) {
-        clearInterval(pollingInterval.current);
-      }
-    };
-  }, []);
-
-  const authenticateWithQuickConnect = useCallback(
+  const authenticate = useCallback(
     async (secret: string) => {
-      try {
-        await axios.post('/api/v1/auth/jellyfin/quickconnect/authenticate', {
-          secret,
-        });
-        if (!isMounted.current) return;
-
-        onAuthenticated();
-        onClose();
-      } catch (error) {
-        if (!isMounted.current) return;
-
-        let errorMessage = intl.formatMessage(messages.errorMessage);
-
-        switch (error?.response?.data?.message) {
-          case ApiErrorCode.InvalidCredentials:
-            errorMessage = intl.formatMessage(messages.authorizationFailed);
-            break;
-        }
-
-        onError(errorMessage);
-        onClose();
-      }
+      await axios.post('/api/v1/auth/jellyfin/quickconnect', {
+        secret,
+      });
+      onAuthenticated();
+      onClose();
     },
-    [onAuthenticated, onClose, onError, intl]
+    [onAuthenticated, onClose]
   );
 
-  const startPolling = useCallback(
-    (secret: string) => {
-      pollingInterval.current = setInterval(async () => {
-        try {
-          const response = await axios.get(
-            '/api/v1/auth/jellyfin/quickconnect/check',
-            {
-              params: { secret },
-            }
-          );
-
-          if (!isMounted.current) {
-            if (pollingInterval.current) {
-              clearInterval(pollingInterval.current);
-            }
-            return;
-          }
-
-          if (response.data.authenticated) {
-            if (pollingInterval.current) {
-              clearInterval(pollingInterval.current);
-            }
-
-            await authenticateWithQuickConnect(secret);
-          }
-        } catch (error) {
-          if (!isMounted.current) return;
-
-          if (error?.response?.status === 404) {
-            if (pollingInterval.current) {
-              clearInterval(pollingInterval.current);
-            }
-            setIsExpired(true);
-          }
-        }
-      }, 2000);
+  const {
+    code,
+    isLoading,
+    hasError,
+    isExpired,
+    errorMessage,
+    initiateQuickConnect,
+    cleanup,
+  } = useQuickConnect({
+    show: true,
+    onSuccess: () => {
+      onAuthenticated();
+      onClose();
     },
-    [authenticateWithQuickConnect]
-  );
+    onError,
+    authenticate,
+  });
 
-  const initiateQuickConnect = useCallback(async () => {
-    if (pollingInterval.current) {
-      clearInterval(pollingInterval.current);
-    }
-
-    setIsLoading(true);
-    setHasError(false);
-    setIsExpired(false);
-
-    try {
-      const response = await axios.post(
-        '/api/v1/auth/jellyfin/quickconnect/initiate'
-      );
-      if (!isMounted.current) return;
-
-      setCode(response.data.code);
-      setIsLoading(false);
-
-      startPolling(response.data.secret);
-    } catch (error) {
-      if (!isMounted.current) return;
-
-      setHasError(true);
-      setIsLoading(false);
-      onError(intl.formatMessage(messages.errorMessage));
-    }
-  }, [startPolling, onError, intl]);
-
-  useEffect(() => {
-    if (!hasInitiated.current) {
-      hasInitiated.current = true;
-      initiateQuickConnect();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleTryAgain = () => {
-    initiateQuickConnect();
+  const handleClose = () => {
+    cleanup();
+    onClose();
   };
 
   return (
@@ -174,14 +81,14 @@ const JellyfinQuickConnectModal = ({
       leaveTo="opacity-0"
     >
       <Modal
-        onCancel={onClose}
+        onCancel={handleClose}
         title={intl.formatMessage(messages.title)}
         subTitle={intl.formatMessage(messages.subtitle)}
         cancelText={intl.formatMessage(messages.cancel)}
         {...(hasError || isExpired
           ? {
               okText: intl.formatMessage(messages.tryAgain),
-              onOk: handleTryAgain,
+              onOk: initiateQuickConnect,
             }
           : {})}
       >
@@ -222,9 +129,7 @@ const JellyfinQuickConnectModal = ({
               <h3 className="text-lg font-semibold text-red-500">
                 {intl.formatMessage(messages.error)}
               </h3>
-              <p className="mt-2 text-gray-300">
-                {intl.formatMessage(messages.errorMessage)}
-              </p>
+              <p className="mt-2 text-gray-300">{errorMessage}</p>
             </div>
           </div>
         )}

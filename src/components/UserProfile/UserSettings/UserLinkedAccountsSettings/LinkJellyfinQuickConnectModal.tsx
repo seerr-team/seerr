@@ -1,13 +1,14 @@
 import Alert from '@app/components/Common/Alert';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import Modal from '@app/components/Common/Modal';
+import { useQuickConnect } from '@app/hooks/useQuickConnect';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import { MediaServerType } from '@server/constants/server';
 import axios from 'axios';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback } from 'react';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages(
@@ -20,7 +21,6 @@ const messages = defineMessages(
     expired: 'Code Expired',
     expiredMessage: 'This Quick Connect code has expired. Please try again.',
     error: 'Error',
-    errorMessage: 'Failed to initiate Quick Connect. Please try again.',
     usePassword: 'Use Password Instead',
     tryAgain: 'Try Again',
     errorExists: 'This account is already linked',
@@ -43,137 +43,43 @@ const LinkJellyfinQuickConnectModal = ({
   const intl = useIntl();
   const settings = useSettings();
   const { user } = useUser();
-  const [code, setCode] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const [isExpired, setIsExpired] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const pollingInterval = useRef<NodeJS.Timeout>();
-  const isMounted = useRef(true);
-  const hasInitiated = useRef(false);
 
   const mediaServerName =
     settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
       ? 'Jellyfin'
       : 'Emby';
 
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-      if (pollingInterval.current) {
-        clearInterval(pollingInterval.current);
-      }
-    };
-  }, []);
-
-  const linkWithQuickConnect = useCallback(
+  const authenticate = useCallback(
     async (secret: string) => {
-      try {
-        await axios.post(
-          `/api/v1/user/${user?.id}/settings/linked-accounts/jellyfin/quickconnect`,
-          { secret }
-        );
-        if (!isMounted.current) return;
-
-        onSave();
-        onClose();
-      } catch (error) {
-        if (!isMounted.current) return;
-
-        let errorMessage = intl.formatMessage(messages.errorMessage);
-        if (error?.response?.status === 422) {
-          errorMessage = intl.formatMessage(messages.errorExists);
-        }
-
-        setError(errorMessage);
-        setHasError(true);
-        if (pollingInterval.current) {
-          clearInterval(pollingInterval.current);
-        }
-      }
-    },
-    [user, onSave, onClose, intl]
-  );
-
-  const startPolling = useCallback(
-    (secret: string) => {
-      pollingInterval.current = setInterval(async () => {
-        try {
-          const response = await axios.get(
-            `/api/v1/auth/jellyfin/quickconnect/check`,
-            {
-              params: { secret },
-            }
-          );
-
-          if (!isMounted.current) {
-            if (pollingInterval.current) {
-              clearInterval(pollingInterval.current);
-            }
-            return;
-          }
-
-          if (response.data.authenticated) {
-            if (pollingInterval.current) {
-              clearInterval(pollingInterval.current);
-            }
-            await linkWithQuickConnect(secret);
-          }
-        } catch (error) {
-          if (!isMounted.current) return;
-
-          if (error?.response?.status === 404) {
-            if (pollingInterval.current) {
-              clearInterval(pollingInterval.current);
-            }
-            setIsExpired(true);
-          }
-        }
-      }, 2000);
-    },
-    [linkWithQuickConnect]
-  );
-
-  const initiateQuickConnect = useCallback(async () => {
-    if (pollingInterval.current) {
-      clearInterval(pollingInterval.current);
-    }
-
-    setIsLoading(true);
-    setHasError(false);
-    setIsExpired(false);
-    setError(null);
-
-    try {
-      const response = await axios.post(
-        `/api/v1/auth/jellyfin/quickconnect/initiate`
+      await axios.post(
+        `/api/v1/user/${user?.id}/settings/linked-accounts/jellyfin/quickconnect`,
+        { secret }
       );
-      if (!isMounted.current) return;
+      onSave();
+      onClose();
+    },
+    [user, onSave, onClose]
+  );
 
-      setCode(response.data.code);
-      setIsLoading(false);
-      startPolling(response.data.secret);
-    } catch (error) {
-      if (!isMounted.current) return;
-
-      setHasError(true);
-      setIsLoading(false);
-      setError(intl.formatMessage(messages.errorMessage));
-    }
-  }, [startPolling, intl]);
-
-  useEffect(() => {
-    if (show && !hasInitiated.current) {
-      hasInitiated.current = true;
-      initiateQuickConnect();
-    }
-  }, [show, initiateQuickConnect]);
+  const {
+    code,
+    isLoading,
+    hasError,
+    isExpired,
+    errorMessage,
+    initiateQuickConnect,
+    cleanup,
+  } = useQuickConnect({
+    show: true,
+    onSuccess: () => {
+      onSave();
+      onClose();
+    },
+    authenticate,
+  });
 
   const handleSwitchToPassword = () => {
-    if (pollingInterval.current) {
-      clearInterval(pollingInterval.current);
-    }
+    cleanup();
     onClose();
     onSwitchToPassword();
   };
@@ -203,9 +109,9 @@ const LinkJellyfinQuickConnectModal = ({
           : {})}
         dialogClass="sm:max-w-lg"
       >
-        {error && (
+        {errorMessage && (
           <div className="mb-4">
-            <Alert type="error">{error}</Alert>
+            <Alert type="error">{errorMessage}</Alert>
           </div>
         )}
 
@@ -244,7 +150,7 @@ const LinkJellyfinQuickConnectModal = ({
               <h3 className="text-lg font-semibold text-red-500">
                 {intl.formatMessage(messages.error)}
               </h3>
-              <p className="mt-2 text-gray-300">{error}</p>
+              <p className="mt-2 text-gray-300">{errorMessage}</p>
             </div>
           </div>
         )}
