@@ -554,6 +554,17 @@ userSettingsRoutes.post<{ secret: string }>(
       return res.status(401).json({ code: ApiErrorCode.Unauthorized });
     }
 
+    const secret = req.body.secret;
+    if (
+      !secret ||
+      typeof secret !== 'string' ||
+      secret.length < 8 ||
+      secret.length > 128 ||
+      !/^[A-Fa-f0-9]+$/.test(secret)
+    ) {
+      return res.status(400).json({ message: 'Invalid secret format' });
+    }
+
     if (
       settings.main.mediaServerType !== MediaServerType.JELLYFIN &&
       settings.main.mediaServerType !== MediaServerType.EMBY
@@ -567,9 +578,7 @@ userSettingsRoutes.post<{ secret: string }>(
     const jellyfinServer = new JellyfinAPI(hostname);
 
     try {
-      const account = await jellyfinServer.authenticateQuickConnect(
-        req.body.secret
-      );
+      const account = await jellyfinServer.authenticateQuickConnect(secret);
 
       if (
         await userRepository.exist({
