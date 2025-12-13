@@ -280,7 +280,12 @@ class JellyfinScanner
 
         const processableSeasons: ProcessableSeason[] = [];
 
-        for (const season of seasons) {
+        const settings = getSettings();
+        const filteredSeasons = settings.main.enableSpecialEpisodes
+          ? seasons
+          : seasons.filter((sn) => sn.season_number !== 0);
+
+        for (const season of filteredSeasons) {
           const matchedJellyfinSeason = jellyfinSeasons.find((md) => {
             if (tvdbSeasonFromAnidb) {
               // In AniDB we don't have the concept of seasons,
