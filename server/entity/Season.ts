@@ -33,9 +33,8 @@ class Season {
 
   @OneToMany(() => Episode, (episode) => episode.season, {
     cascade: true,
-    eager: true,
   })
-  public episodes: Episode[];
+  public episodes?: Episode[];
 
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
