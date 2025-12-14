@@ -22,6 +22,17 @@ This is typically not needed. Please refer to your webhook provider's documentat
 
 This value will be sent as an `Authorization` HTTP header.
 
+### Custom Headers (optional)
+
+You can add additional custom HTTP headers to be sent with each webhook request. This is useful for API keys, custom authentication schemes, or any other headers your webhook endpoint requires.
+
+- Click "Add Header" to add a new header
+- Enter the header name and value
+
+:::info
+If you set an `Authorization` header here, it will only be used if the Authorization Header field above is empty (the Authorization Header field takes precedence)
+:::
+
 ### JSON Payload
 
 Customize the JSON payload to suit your needs. Seerr provides several [template variables](#template-variables) for use in the payload, which will be replaced with the relevant data when the notifications are triggered.
