@@ -196,16 +196,33 @@ class WebhookAgent
     }
 
     try {
+      const headers: Record<string, string> = {};
+
+      if (settings.options.authHeader) {
+        headers.Authorization = settings.options.authHeader;
+      }
+
+      if (
+        settings.options.customHeaders &&
+        settings.options.customHeaders.length > 0
+      ) {
+        settings.options.customHeaders.forEach((header) => {
+          if (header.key && header.value) {
+            // Don't override Authorization header if it's already set via authHeader
+            if (
+              header.key.toLowerCase() !== 'authorization' ||
+              !settings.options.authHeader
+            ) {
+              headers[header.key] = header.value;
+            }
+          }
+        });
+      }
+
       await axios.post(
         webhookUrl,
         this.buildPayload(type, payload),
-        settings.options.authHeader
-          ? {
-              headers: {
-                Authorization: settings.options.authHeader,
-              },
-            }
-          : undefined
+        Object.keys(headers).length > 0 ? { headers } : undefined
       );
 
       return true;

@@ -5,7 +5,12 @@ import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
-import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowDownOnSquareIcon,
+  BeakerIcon,
+  PlusIcon,
+  TrashIcon,
+} from '@heroicons/react/24/outline';
 import {
   ArrowPathIcon,
   QuestionMarkCircleIcon,
@@ -80,6 +85,15 @@ const messages = defineMessages(
     supportVariablesTip:
       'Available variables are documented in the webhook template variables section',
     authheader: 'Authorization Header',
+    customHeaders: 'Custom Headers',
+    customHeadersTip:
+      'Add custom HTTP headers to include with webhook requests',
+    customHeadersAdd: 'Add Header',
+    customHeadersRemove: 'Remove',
+    customHeadersKey: 'Header Name',
+    customHeadersValue: 'Header Value',
+    customHeadersKeyRequired: 'Header name is required',
+    customHeadersValueRequired: 'Header value is required',
     validationJsonPayloadRequired: 'You must provide a valid JSON payload',
     webhooksettingssaved: 'Webhook notification settings saved successfully!',
     webhooksettingsfailed: 'Webhook notification settings failed to save.',
@@ -125,6 +139,8 @@ const NotificationsWebhook = () => {
 
     supportVariables: Yup.boolean(),
 
+    customHeaders: Yup.array(),
+
     jsonPayload: Yup.string()
       .when('enabled', {
         is: true,
@@ -159,6 +175,7 @@ const NotificationsWebhook = () => {
         webhookUrl: data.options.webhookUrl,
         jsonPayload: data.options.jsonPayload,
         authHeader: data.options.authHeader,
+        customHeaders: data.options.customHeaders ?? [],
         supportVariables: data.options.supportVariables ?? false,
       }}
       validationSchema={NotificationsWebhookSchema}
@@ -171,6 +188,9 @@ const NotificationsWebhook = () => {
               webhookUrl: values.webhookUrl,
               jsonPayload: JSON.stringify(values.jsonPayload),
               authHeader: values.authHeader,
+              customHeaders: values.customHeaders.filter(
+                (h: { key: string; value: string }) => h.key && h.value
+              ),
               supportVariables: values.supportVariables,
             },
           });
@@ -229,6 +249,9 @@ const NotificationsWebhook = () => {
                 webhookUrl: values.webhookUrl,
                 jsonPayload: JSON.stringify(values.jsonPayload),
                 authHeader: values.authHeader,
+                customHeaders: values.customHeaders.filter(
+                  (h: { key: string; value: string }) => h.key && h.value
+                ),
                 supportVariables: values.supportVariables ?? false,
               },
             });
@@ -341,6 +364,81 @@ const NotificationsWebhook = () => {
               <div className="form-input-area">
                 <div className="form-input-field">
                   <Field id="authHeader" name="authHeader" type="text" />
+                </div>
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="customHeaders" className="text-label">
+                {intl.formatMessage(messages.customHeaders)}
+                <span className="label-tip">
+                  {intl.formatMessage(messages.customHeadersTip)}
+                </span>
+              </label>
+              <div className="form-input-area">
+                <div className="space-y-2">
+                  {values.customHeaders.map(
+                    (header: { key: string; value: string }, index: number) => (
+                      <div key={index} className="flex gap-2">
+                        <div className="flex-1">
+                          <div className="form-input-field">
+                            <Field
+                              name={`customHeaders.${index}.key`}
+                              type="text"
+                              placeholder={intl.formatMessage(
+                                messages.customHeadersKey
+                              )}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="form-input-field">
+                            <Field
+                              name={`customHeaders.${index}.value`}
+                              type="text"
+                              placeholder={intl.formatMessage(
+                                messages.customHeadersValue
+                              )}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center">
+                          <Button
+                            buttonType="danger"
+                            buttonSize="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              const newHeaders = values.customHeaders.filter(
+                                (
+                                  _: { key: string; value: string },
+                                  i: number
+                                ) => i !== index
+                              );
+                              setFieldValue('customHeaders', newHeaders);
+                            }}
+                            title={intl.formatMessage(
+                              messages.customHeadersRemove
+                            )}
+                          >
+                            <TrashIcon />
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  )}
+                  <Button
+                    buttonType="default"
+                    buttonSize="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setFieldValue('customHeaders', [
+                        ...values.customHeaders,
+                        { key: '', value: '' },
+                      ]);
+                    }}
+                  >
+                    <PlusIcon />
+                    <span>{intl.formatMessage(messages.customHeadersAdd)}</span>
+                  </Button>
                 </div>
               </div>
             </div>

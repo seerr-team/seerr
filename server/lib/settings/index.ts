@@ -277,6 +277,7 @@ export interface NotificationAgentWebhook extends NotificationAgentConfig {
     webhookUrl: string;
     jsonPayload: string;
     authHeader?: string;
+    customHeaders?: { key: string; value: string }[];
     supportVariables?: boolean;
   };
 }
