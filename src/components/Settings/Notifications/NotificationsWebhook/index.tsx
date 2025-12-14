@@ -92,8 +92,7 @@ const messages = defineMessages(
     customHeadersRemove: 'Remove',
     customHeadersKey: 'Header Name',
     customHeadersValue: 'Header Value',
-    customHeadersKeyRequired: 'Header name is required',
-    customHeadersValueRequired: 'Header value is required',
+    customHeadersIncomplete: 'All headers must have both name and value',
     validationJsonPayloadRequired: 'You must provide a valid JSON payload',
     webhooksettingssaved: 'Webhook notification settings saved successfully!',
     webhooksettingsfailed: 'Webhook notification settings failed to save.',
@@ -139,7 +138,25 @@ const NotificationsWebhook = () => {
 
     supportVariables: Yup.boolean(),
 
-    customHeaders: Yup.array(),
+    customHeaders: Yup.array()
+      .of(
+        Yup.object().shape({
+          key: Yup.string(),
+          value: Yup.string(),
+        })
+      )
+      .test(
+        'complete-headers',
+        intl.formatMessage(messages.customHeadersIncomplete),
+        function (headers) {
+          if (!headers || headers.length === 0) return true;
+          return headers.every(
+            (header) =>
+              (!header.key || !header.key.trim()) ===
+              (!header.value || !header.value.trim())
+          );
+        }
+      ),
 
     jsonPayload: Yup.string()
       .when('enabled', {
@@ -440,6 +457,11 @@ const NotificationsWebhook = () => {
                     <span>{intl.formatMessage(messages.customHeadersAdd)}</span>
                   </Button>
                 </div>
+                {errors.customHeaders &&
+                  touched.customHeaders &&
+                  typeof errors.customHeaders === 'string' && (
+                    <div className="error">{errors.customHeaders}</div>
+                  )}
               </div>
             </div>
             <div className="form-row">
