@@ -683,6 +683,7 @@
   "components.Settings.Notifications.NotificationsWebhook.authheader": "Authorization Header",
   "components.Settings.Notifications.NotificationsWebhook.customHeaders": "Custom Headers",
   "components.Settings.Notifications.NotificationsWebhook.customHeadersAdd": "Add Header",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersAuthConflict": "Cannot use both Authorization Header and custom Authorization header. Please remove one.",
   "components.Settings.Notifications.NotificationsWebhook.customHeadersIncomplete": "All headers must have both name and value",
   "components.Settings.Notifications.NotificationsWebhook.customHeadersKey": "Header Name",
   "components.Settings.Notifications.NotificationsWebhook.customHeadersRemove": "Remove",

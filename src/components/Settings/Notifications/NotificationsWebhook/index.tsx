@@ -93,6 +93,8 @@ const messages = defineMessages(
     customHeadersKey: 'Header Name',
     customHeadersValue: 'Header Value',
     customHeadersIncomplete: 'All headers must have both name and value',
+    customHeadersAuthConflict:
+      'Cannot use both Authorization Header and custom Authorization header. Please remove one.',
     validationJsonPayloadRequired: 'You must provide a valid JSON payload',
     webhooksettingssaved: 'Webhook notification settings saved successfully!',
     webhooksettingsfailed: 'Webhook notification settings failed to save.',
@@ -155,6 +157,23 @@ const NotificationsWebhook = () => {
               (!header.key || !header.key.trim()) ===
               (!header.value || !header.value.trim())
           );
+        }
+      )
+      .test(
+        'auth-conflict',
+        intl.formatMessage(messages.customHeadersAuthConflict),
+        function (headers) {
+          const { authHeader } = this.parent;
+          if (!authHeader || !headers || headers.length === 0) return true;
+
+          const hasCustomAuthHeader = headers.some(
+            (header) =>
+              header.key &&
+              header.value &&
+              header.key.toLowerCase() === 'authorization'
+          );
+
+          return !hasCustomAuthHeader;
         }
       ),
 
