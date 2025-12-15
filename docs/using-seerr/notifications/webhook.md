@@ -29,8 +29,8 @@ You can add additional custom HTTP headers to be sent with each webhook request.
 - Click "Add Header" to add a new header
 - Enter the header name and value
 
-:::info
-If you set an `Authorization` header here, it will only be used if the Authorization Header field above is empty (the Authorization Header field takes precedence)
+:::warning
+You cannot configure both the **Authorization Header** field and a custom `Authorization` header in Custom Headers at the same time. You must choose one method.
 :::
 
 ### JSON Payload
