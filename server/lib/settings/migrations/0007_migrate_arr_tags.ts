@@ -47,7 +47,9 @@ const migrationArrTags = async (settings: any): Promise<AllSettings> => {
               .normalize('NFD')
               .replace(/[\u0300-\u036f]/g, '')
               .replace(/\s+/g, '-')
-              .replace(/[^a-z0-9-]/gi, ''),
+              .replace(/[^a-z0-9-]/gi, '')
+              .replace(/-+/g, '-')
+              .replace(/^-|-$/g, ''),
         });
       }
     } catch (error) {
@@ -87,7 +89,9 @@ const migrationArrTags = async (settings: any): Promise<AllSettings> => {
               .normalize('NFD')
               .replace(/[\u0300-\u036f]/g, '')
               .replace(/\s+/g, '-')
-              .replace(/[^a-z0-9-]/gi, ''),
+              .replace(/[^a-z0-9-]/gi, '')
+              .replace(/-+/g, '-')
+              .replace(/^-|-$/g, ''),
         });
       }
     } catch (error) {
