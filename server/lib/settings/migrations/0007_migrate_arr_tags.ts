@@ -30,15 +30,24 @@ const migrationArrTags = async (settings: any): Promise<AllSettings> => {
       });
       const radarrTags = await radarr.getTags();
       for (const user of users) {
-        const userTag = radarrTags.find((v) =>
-          v.label.startsWith(user.id + ' - ')
+        const userTag = radarrTags.find(
+          (v) =>
+            v.label.startsWith(user.id + ' - ') ||
+            v.label.startsWith(user.id + '-')
         );
         if (!userTag) {
           continue;
         }
         await radarr.renameTag({
           id: userTag.id,
-          label: userTag.label.replace(`${user.id} - `, `${user.id}-`),
+          label:
+            user.id +
+            '-' +
+            user.displayName
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/\s+/g, '-')
+              .replace(/[^a-z0-9-]/gi, ''),
         });
       }
     } catch (error) {
@@ -61,15 +70,24 @@ const migrationArrTags = async (settings: any): Promise<AllSettings> => {
       });
       const sonarrTags = await sonarr.getTags();
       for (const user of users) {
-        const userTag = sonarrTags.find((v) =>
-          v.label.startsWith(user.id + ' - ')
+        const userTag = sonarrTags.find(
+          (v) =>
+            v.label.startsWith(user.id + ' - ') ||
+            v.label.startsWith(user.id + '-')
         );
         if (!userTag) {
           continue;
         }
         await sonarr.renameTag({
           id: userTag.id,
-          label: userTag.label.replace(`${user.id} - `, `${user.id}-`),
+          label:
+            user.id +
+            '-' +
+            user.displayName
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/\s+/g, '-')
+              .replace(/[^a-z0-9-]/gi, ''),
         });
       }
     } catch (error) {

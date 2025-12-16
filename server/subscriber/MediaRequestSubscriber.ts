@@ -310,11 +310,23 @@ export class MediaRequestSubscriber
               mediaId: entity.media.id,
               userId: entity.requestedBy.id,
               newTag:
-                entity.requestedBy.id + '-' + entity.requestedBy.displayName,
+                entity.requestedBy.id +
+                '-' +
+                entity.requestedBy.displayName
+                  .normalize('NFD')
+                  .replace(/[\u0300-\u036f]/g, '')
+                  .replace(/\s+/g, '-')
+                  .replace(/[^a-z0-9-]/gi, ''),
             });
             userTag = await radarr.createTag({
               label:
-                entity.requestedBy.id + '-' + entity.requestedBy.displayName,
+                entity.requestedBy.id +
+                '-' +
+                entity.requestedBy.displayName
+                  .normalize('NFD')
+                  .replace(/[\u0300-\u036f]/g, '')
+                  .replace(/\s+/g, '-')
+                  .replace(/[^a-z0-9-]/gi, ''),
             });
           }
           if (userTag.id) {
@@ -631,11 +643,23 @@ export class MediaRequestSubscriber
               mediaId: entity.media.id,
               userId: entity.requestedBy.id,
               newTag:
-                entity.requestedBy.id + '-' + entity.requestedBy.displayName,
+                entity.requestedBy.id +
+                '-' +
+                entity.requestedBy.displayName
+                  .normalize('NFD')
+                  .replace(/[\u0300-\u036f]/g, '')
+                  .replace(/\s+/g, '-')
+                  .replace(/[^a-z0-9-]/gi, ''),
             });
             userTag = await sonarr.createTag({
               label:
-                entity.requestedBy.id + '-' + entity.requestedBy.displayName,
+                entity.requestedBy.id +
+                '-' +
+                entity.requestedBy.displayName
+                  .normalize('NFD')
+                  .replace(/[\u0300-\u036f]/g, '')
+                  .replace(/\s+/g, '-')
+                  .replace(/[^a-z0-9-]/gi, ''),
             });
           }
           if (userTag.id) {
