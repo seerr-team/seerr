@@ -107,6 +107,7 @@ class BaseScanner<T> {
     }: ProcessOptions = {}
   ): Promise<void> {
     const mediaRepository = getRepository(Media);
+    const settings = getSettings();
 
     await this.asyncLock.dispatch(tmdbId, async () => {
       const existing = await this.getExisting(tmdbId, MediaType.MOVIE);
@@ -114,7 +115,11 @@ class BaseScanner<T> {
       if (existing) {
         let changedExisting = false;
 
-        if (existing[is4k ? 'status4k' : 'status'] !== MediaStatus.AVAILABLE) {
+        // Only update status if not prioritizing Radarr/Sonarr
+        if (
+          !settings.main.prioritizeRadarrSonarr &&
+          existing[is4k ? 'status4k' : 'status'] !== MediaStatus.AVAILABLE
+        ) {
           existing[is4k ? 'status4k' : 'status'] = processing
             ? MediaStatus.PROCESSING
             : MediaStatus.AVAILABLE;
@@ -124,7 +129,14 @@ class BaseScanner<T> {
           changedExisting = true;
         }
 
-        if (!changedExisting && !existing.mediaAddedAt && mediaAddedAt) {
+        // Only update mediaAddedAt if not prioritizing Radarr/Sonarr
+        // (otherwise Plex/Jellyfin could set wrong dates)
+        if (
+          !settings.main.prioritizeRadarrSonarr &&
+          !changedExisting &&
+          !existing.mediaAddedAt &&
+          mediaAddedAt
+        ) {
           existing.mediaAddedAt = mediaAddedAt;
           changedExisting = true;
         }
@@ -190,6 +202,15 @@ class BaseScanner<T> {
           this.log(`Title already exists and no changes detected for ${title}`);
         }
       } else {
+        // Skip creating new media when prioritizing Radarr/Sonarr
+        if (settings.main.prioritizeRadarrSonarr) {
+          this.log(
+            `Skipping creation of new media for ${title} (Radarr/Sonarr priority mode enabled)`,
+            'debug'
+          );
+          return;
+        }
+
         const newMedia = new Media();
         newMedia.tmdbId = tmdbId;
         newMedia.imdbId = imdbId;
@@ -262,6 +283,7 @@ class BaseScanner<T> {
     }: ProcessOptions = {}
   ): Promise<void> {
     const mediaRepository = getRepository(Media);
+    const settings = getSettings();
 
     await this.asyncLock.dispatch(tmdbId, async () => {
       const media = await this.getExisting(tmdbId, MediaType.TV);
@@ -320,56 +342,64 @@ class BaseScanner<T> {
           // Here we update seasons if they already exist.
           // If the season is already marked as available, we
           // force it to stay available (to avoid competing scanners)
-          existingSeason.status =
-            (season.totalEpisodes === season.episodes && season.episodes > 0) ||
-            existingSeason.status === MediaStatus.AVAILABLE
-              ? MediaStatus.AVAILABLE
-              : season.episodes > 0
-              ? MediaStatus.PARTIALLY_AVAILABLE
-              : !season.is4kOverride &&
-                season.processing &&
-                existingSeason.status !== MediaStatus.DELETED
-              ? MediaStatus.PROCESSING
-              : existingSeason.status;
+          // Skip status updates when prioritizing Radarr/Sonarr
+          if (!settings.main.prioritizeRadarrSonarr) {
+            existingSeason.status =
+              (season.totalEpisodes === season.episodes &&
+                season.episodes > 0) ||
+              existingSeason.status === MediaStatus.AVAILABLE
+                ? MediaStatus.AVAILABLE
+                : season.episodes > 0
+                ? MediaStatus.PARTIALLY_AVAILABLE
+                : !season.is4kOverride &&
+                  season.processing &&
+                  existingSeason.status !== MediaStatus.DELETED
+                ? MediaStatus.PROCESSING
+                : existingSeason.status;
 
-          // Same thing here, except we only do updates if 4k is enabled
-          existingSeason.status4k =
-            (this.enable4kShow &&
-              season.episodes4k === season.totalEpisodes &&
-              season.episodes4k > 0) ||
-            existingSeason.status4k === MediaStatus.AVAILABLE
-              ? MediaStatus.AVAILABLE
-              : this.enable4kShow && season.episodes4k > 0
-              ? MediaStatus.PARTIALLY_AVAILABLE
-              : season.is4kOverride &&
-                season.processing &&
-                existingSeason.status4k !== MediaStatus.DELETED
-              ? MediaStatus.PROCESSING
-              : existingSeason.status4k;
+            // Same thing here, except we only do updates if 4k is enabled
+            existingSeason.status4k =
+              (this.enable4kShow &&
+                season.episodes4k === season.totalEpisodes &&
+                season.episodes4k > 0) ||
+              existingSeason.status4k === MediaStatus.AVAILABLE
+                ? MediaStatus.AVAILABLE
+                : this.enable4kShow && season.episodes4k > 0
+                ? MediaStatus.PARTIALLY_AVAILABLE
+                : season.is4kOverride &&
+                  season.processing &&
+                  existingSeason.status4k !== MediaStatus.DELETED
+                ? MediaStatus.PROCESSING
+                : existingSeason.status4k;
+          }
         } else {
-          newSeasons.push(
-            new Season({
-              seasonNumber: season.seasonNumber,
-              status:
-                season.totalEpisodes === season.episodes && season.episodes > 0
-                  ? MediaStatus.AVAILABLE
-                  : season.episodes > 0
-                  ? MediaStatus.PARTIALLY_AVAILABLE
-                  : !season.is4kOverride && season.processing
-                  ? MediaStatus.PROCESSING
-                  : MediaStatus.UNKNOWN,
-              status4k:
-                this.enable4kShow &&
-                season.totalEpisodes === season.episodes4k &&
-                season.episodes4k > 0
-                  ? MediaStatus.AVAILABLE
-                  : this.enable4kShow && season.episodes4k > 0
-                  ? MediaStatus.PARTIALLY_AVAILABLE
-                  : season.is4kOverride && season.processing
-                  ? MediaStatus.PROCESSING
-                  : MediaStatus.UNKNOWN,
-            })
-          );
+          // Skip creating new seasons when prioritizing Radarr/Sonarr
+          if (!settings.main.prioritizeRadarrSonarr) {
+            newSeasons.push(
+              new Season({
+                seasonNumber: season.seasonNumber,
+                status:
+                  season.totalEpisodes === season.episodes &&
+                  season.episodes > 0
+                    ? MediaStatus.AVAILABLE
+                    : season.episodes > 0
+                    ? MediaStatus.PARTIALLY_AVAILABLE
+                    : !season.is4kOverride && season.processing
+                    ? MediaStatus.PROCESSING
+                    : MediaStatus.UNKNOWN,
+                status4k:
+                  this.enable4kShow &&
+                  season.totalEpisodes === season.episodes4k &&
+                  season.episodes4k > 0
+                    ? MediaStatus.AVAILABLE
+                    : this.enable4kShow && season.episodes4k > 0
+                    ? MediaStatus.PARTIALLY_AVAILABLE
+                    : season.is4kOverride && season.processing
+                    ? MediaStatus.PROCESSING
+                    : MediaStatus.UNKNOWN,
+              })
+            );
+          }
         }
       }
 
@@ -419,7 +449,8 @@ class BaseScanner<T> {
           );
           media.lastSeasonChange = new Date();
 
-          if (mediaAddedAt) {
+          // Only update mediaAddedAt if not prioritizing Radarr/Sonarr
+          if (!settings.main.prioritizeRadarrSonarr && mediaAddedAt) {
             media.mediaAddedAt = mediaAddedAt;
           }
         }
@@ -434,7 +465,12 @@ class BaseScanner<T> {
           media.lastSeasonChange = new Date();
         }
 
-        if (!media.mediaAddedAt && mediaAddedAt) {
+        // Only update mediaAddedAt if not prioritizing Radarr/Sonarr
+        if (
+          !settings.main.prioritizeRadarrSonarr &&
+          !media.mediaAddedAt &&
+          mediaAddedAt
+        ) {
           media.mediaAddedAt = mediaAddedAt;
         }
 
@@ -470,44 +506,57 @@ class BaseScanner<T> {
               season.status4k !== MediaStatus.DELETED &&
               season.seasonNumber !== 0
           ).length === 0;
-        media.status =
-          isAllStandardSeasons || shouldStayAvailable
-            ? MediaStatus.AVAILABLE
-            : media.seasons.some(
-                (season) =>
-                  season.status === MediaStatus.PARTIALLY_AVAILABLE ||
-                  season.status === MediaStatus.AVAILABLE
-              )
-            ? MediaStatus.PARTIALLY_AVAILABLE
-            : (!seasons.length && media.status !== MediaStatus.DELETED) ||
-              media.seasons.some(
-                (season) => season.status === MediaStatus.PROCESSING
-              )
-            ? MediaStatus.PROCESSING
-            : media.status === MediaStatus.DELETED
-            ? MediaStatus.DELETED
-            : MediaStatus.UNKNOWN;
-        media.status4k =
-          (isAll4kSeasons || shouldStayAvailable4k) && this.enable4kShow
-            ? MediaStatus.AVAILABLE
-            : this.enable4kShow &&
-              media.seasons.some(
-                (season) =>
-                  season.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
-                  season.status4k === MediaStatus.AVAILABLE
-              )
-            ? MediaStatus.PARTIALLY_AVAILABLE
-            : (!seasons.length && media.status4k !== MediaStatus.DELETED) ||
-              media.seasons.some(
-                (season) => season.status4k === MediaStatus.PROCESSING
-              )
-            ? MediaStatus.PROCESSING
-            : media.status4k === MediaStatus.DELETED
-            ? MediaStatus.DELETED
-            : MediaStatus.UNKNOWN;
+
+        // Only update media status if not prioritizing Radarr/Sonarr
+        if (!settings.main.prioritizeRadarrSonarr) {
+          media.status =
+            isAllStandardSeasons || shouldStayAvailable
+              ? MediaStatus.AVAILABLE
+              : media.seasons.some(
+                  (season) =>
+                    season.status === MediaStatus.PARTIALLY_AVAILABLE ||
+                    season.status === MediaStatus.AVAILABLE
+                )
+              ? MediaStatus.PARTIALLY_AVAILABLE
+              : (!seasons.length && media.status !== MediaStatus.DELETED) ||
+                media.seasons.some(
+                  (season) => season.status === MediaStatus.PROCESSING
+                )
+              ? MediaStatus.PROCESSING
+              : media.status === MediaStatus.DELETED
+              ? MediaStatus.DELETED
+              : MediaStatus.UNKNOWN;
+          media.status4k =
+            (isAll4kSeasons || shouldStayAvailable4k) && this.enable4kShow
+              ? MediaStatus.AVAILABLE
+              : this.enable4kShow &&
+                media.seasons.some(
+                  (season) =>
+                    season.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
+                    season.status4k === MediaStatus.AVAILABLE
+                )
+              ? MediaStatus.PARTIALLY_AVAILABLE
+              : (!seasons.length && media.status4k !== MediaStatus.DELETED) ||
+                media.seasons.some(
+                  (season) => season.status4k === MediaStatus.PROCESSING
+                )
+              ? MediaStatus.PROCESSING
+              : media.status4k === MediaStatus.DELETED
+              ? MediaStatus.DELETED
+              : MediaStatus.UNKNOWN;
+        }
         await mediaRepository.save(media);
         this.log(`Updating existing title: ${title}`);
       } else {
+        // Skip creating new media when prioritizing Radarr/Sonarr
+        if (settings.main.prioritizeRadarrSonarr) {
+          this.log(
+            `Skipping creation of new show for ${title} (Radarr/Sonarr priority mode enabled)`,
+            'debug'
+          );
+          return;
+        }
+
         const newMedia = new Media({
           mediaType: MediaType.TV,
           seasons: newSeasons,

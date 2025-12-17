@@ -70,6 +70,9 @@ const messages = defineMessages('components.Settings.SettingsMain', {
     'Base URL for YouTube videos if a self-hosted YouTube instance is used.',
   validationUrl: 'You must provide a valid URL',
   validationUrlTrailingSlash: 'URL must not end in a trailing slash',
+  prioritizeRadarrSonarr: 'Use Radarr/Sonarr for Availability',
+  prioritizeRadarrSonarrTip:
+    'When enabled, media availability will be determined by Radarr/Sonarr, ignoring Plex/Jellyfin/Emby.',
 });
 
 const SettingsMain = () => {
@@ -175,6 +178,7 @@ const SettingsMain = () => {
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
+            prioritizeRadarrSonarr: data?.prioritizeRadarrSonarr,
           }}
           enableReinitialize
           validationSchema={MainSettingsSchema}
@@ -195,6 +199,7 @@ const SettingsMain = () => {
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
+                prioritizeRadarrSonarr: values.prioritizeRadarrSonarr,
               });
               mutate('/api/v1/settings/public');
               mutate('/api/v1/status');
@@ -484,6 +489,33 @@ const SettingsMain = () => {
                         setFieldValue(
                           'hideBlacklisted',
                           !values.hideBlacklisted
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="prioritizeRadarrSonarr"
+                    className="checkbox-label"
+                  >
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.prioritizeRadarrSonarr)}
+                    </span>
+                    <SettingsBadge badgeType="advanced" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.prioritizeRadarrSonarrTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="prioritizeRadarrSonarr"
+                      name="prioritizeRadarrSonarr"
+                      onChange={() => {
+                        setFieldValue(
+                          'prioritizeRadarrSonarr',
+                          !values.prioritizeRadarrSonarr
                         );
                       }}
                     />
