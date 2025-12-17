@@ -689,29 +689,37 @@ class AvailabilitySync {
       media[is4k ? 'status4k' : 'status'] = settings.main.prioritizeRadarrSonarr
         ? MediaStatus.UNKNOWN
         : MediaStatus.DELETED;
-      media[is4k ? 'serviceId4k' : 'serviceId'] = isMediaProcessing
-        ? media[is4k ? 'serviceId4k' : 'serviceId']
-        : null;
+
+      // When prioritizing Radarr/Sonarr, always clear metadata since the item
+      // doesn't exist in Radarr/Sonarr (even if there's a pending request)
+      // Otherwise, only clear if not processing
+      const shouldClearMetadata =
+        settings.main.prioritizeRadarrSonarr || !isMediaProcessing;
+
+      media[is4k ? 'serviceId4k' : 'serviceId'] = shouldClearMetadata
+        ? null
+        : media[is4k ? 'serviceId4k' : 'serviceId'];
       media[is4k ? 'externalServiceId4k' : 'externalServiceId'] =
-        isMediaProcessing
-          ? media[is4k ? 'externalServiceId4k' : 'externalServiceId']
-          : null;
+        shouldClearMetadata
+          ? null
+          : media[is4k ? 'externalServiceId4k' : 'externalServiceId'];
       media[is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'] =
-        isMediaProcessing
-          ? media[is4k ? 'externalServiceSlug4k' : 'externalServiceSlug']
-          : null;
+        shouldClearMetadata
+          ? null
+          : media[is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'];
+
       if (mediaServerType === MediaServerType.PLEX) {
-        media[is4k ? 'ratingKey4k' : 'ratingKey'] = isMediaProcessing
-          ? media[is4k ? 'ratingKey4k' : 'ratingKey']
-          : null;
+        media[is4k ? 'ratingKey4k' : 'ratingKey'] = shouldClearMetadata
+          ? null
+          : media[is4k ? 'ratingKey4k' : 'ratingKey'];
       } else if (
         mediaServerType === MediaServerType.JELLYFIN ||
         mediaServerType === MediaServerType.EMBY
       ) {
         media[is4k ? 'jellyfinMediaId4k' : 'jellyfinMediaId'] =
-          isMediaProcessing
-            ? media[is4k ? 'jellyfinMediaId4k' : 'jellyfinMediaId']
-            : null;
+          shouldClearMetadata
+            ? null
+            : media[is4k ? 'jellyfinMediaId4k' : 'jellyfinMediaId'];
       }
       const newStatus = settings.main.prioritizeRadarrSonarr
         ? 'unknown'

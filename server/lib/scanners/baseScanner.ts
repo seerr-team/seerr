@@ -109,15 +109,21 @@ class BaseScanner<T> {
     const mediaRepository = getRepository(Media);
     const settings = getSettings();
 
+    // Skip status updates ONLY when prioritizing Radarr/Sonarr AND this is from a media server
+    // (ratingKey/jellyfinMediaId indicates Plex/Jellyfin scanner; Radarr/Sonarr don't provide these)
+    const isFromMediaServer =
+      ratingKey !== undefined || jellyfinMediaId !== undefined;
+    const shouldSkipStatusUpdate =
+      settings.main.prioritizeRadarrSonarr && isFromMediaServer;
+
     await this.asyncLock.dispatch(tmdbId, async () => {
       const existing = await this.getExisting(tmdbId, MediaType.MOVIE);
 
       if (existing) {
         let changedExisting = false;
 
-        // Only update status if not prioritizing Radarr/Sonarr
         if (
-          !settings.main.prioritizeRadarrSonarr &&
+          !shouldSkipStatusUpdate &&
           existing[is4k ? 'status4k' : 'status'] !== MediaStatus.AVAILABLE
         ) {
           existing[is4k ? 'status4k' : 'status'] = processing
@@ -129,10 +135,10 @@ class BaseScanner<T> {
           changedExisting = true;
         }
 
-        // Only update mediaAddedAt if not prioritizing Radarr/Sonarr
-        // (otherwise Plex/Jellyfin could set wrong dates)
+        // Only update mediaAddedAt if not from Plex when prioritizing Radarr/Sonarr
+        // (otherwise Plex could set wrong dates)
         if (
-          !settings.main.prioritizeRadarrSonarr &&
+          !shouldSkipStatusUpdate &&
           !changedExisting &&
           !existing.mediaAddedAt &&
           mediaAddedAt
@@ -202,8 +208,8 @@ class BaseScanner<T> {
           this.log(`Title already exists and no changes detected for ${title}`);
         }
       } else {
-        // Skip creating new media when prioritizing Radarr/Sonarr
-        if (settings.main.prioritizeRadarrSonarr) {
+        // Skip creating new media when prioritizing Radarr/Sonarr AND this is from a media server
+        if (shouldSkipStatusUpdate) {
           this.log(
             `Skipping creation of new media for ${title} (Radarr/Sonarr priority mode enabled)`,
             'debug'
@@ -285,6 +291,13 @@ class BaseScanner<T> {
     const mediaRepository = getRepository(Media);
     const settings = getSettings();
 
+    // Skip status updates ONLY when prioritizing Radarr/Sonarr AND this is from a media server
+    // (ratingKey/jellyfinMediaId indicates Plex/Jellyfin scanner; Radarr/Sonarr don't provide these)
+    const isFromMediaServer =
+      ratingKey !== undefined || jellyfinMediaId !== undefined;
+    const shouldSkipStatusUpdate =
+      settings.main.prioritizeRadarrSonarr && isFromMediaServer;
+
     await this.asyncLock.dispatch(tmdbId, async () => {
       const media = await this.getExisting(tmdbId, MediaType.TV);
 
@@ -342,8 +355,8 @@ class BaseScanner<T> {
           // Here we update seasons if they already exist.
           // If the season is already marked as available, we
           // force it to stay available (to avoid competing scanners)
-          // Skip status updates when prioritizing Radarr/Sonarr
-          if (!settings.main.prioritizeRadarrSonarr) {
+          // Skip status updates when from Plex and prioritizing Radarr/Sonarr
+          if (!shouldSkipStatusUpdate) {
             existingSeason.status =
               (season.totalEpisodes === season.episodes &&
                 season.episodes > 0) ||
@@ -373,8 +386,8 @@ class BaseScanner<T> {
                 : existingSeason.status4k;
           }
         } else {
-          // Skip creating new seasons when prioritizing Radarr/Sonarr
-          if (!settings.main.prioritizeRadarrSonarr) {
+          // Skip creating new seasons when from Plex and prioritizing Radarr/Sonarr
+          if (!shouldSkipStatusUpdate) {
             newSeasons.push(
               new Season({
                 seasonNumber: season.seasonNumber,
@@ -449,8 +462,8 @@ class BaseScanner<T> {
           );
           media.lastSeasonChange = new Date();
 
-          // Only update mediaAddedAt if not prioritizing Radarr/Sonarr
-          if (!settings.main.prioritizeRadarrSonarr && mediaAddedAt) {
+          // Only update mediaAddedAt if not from Plex when prioritizing Radarr/Sonarr
+          if (!shouldSkipStatusUpdate && mediaAddedAt) {
             media.mediaAddedAt = mediaAddedAt;
           }
         }
@@ -465,12 +478,8 @@ class BaseScanner<T> {
           media.lastSeasonChange = new Date();
         }
 
-        // Only update mediaAddedAt if not prioritizing Radarr/Sonarr
-        if (
-          !settings.main.prioritizeRadarrSonarr &&
-          !media.mediaAddedAt &&
-          mediaAddedAt
-        ) {
+        // Only update mediaAddedAt if not from Plex when prioritizing Radarr/Sonarr
+        if (!shouldSkipStatusUpdate && !media.mediaAddedAt && mediaAddedAt) {
           media.mediaAddedAt = mediaAddedAt;
         }
 
@@ -507,8 +516,8 @@ class BaseScanner<T> {
               season.seasonNumber !== 0
           ).length === 0;
 
-        // Only update media status if not prioritizing Radarr/Sonarr
-        if (!settings.main.prioritizeRadarrSonarr) {
+        // Only update media status if not from Plex when prioritizing Radarr/Sonarr
+        if (!shouldSkipStatusUpdate) {
           media.status =
             isAllStandardSeasons || shouldStayAvailable
               ? MediaStatus.AVAILABLE
@@ -548,8 +557,8 @@ class BaseScanner<T> {
         await mediaRepository.save(media);
         this.log(`Updating existing title: ${title}`);
       } else {
-        // Skip creating new media when prioritizing Radarr/Sonarr
-        if (settings.main.prioritizeRadarrSonarr) {
+        // Skip creating new media when prioritizing Radarr/Sonarr AND this is from a media server
+        if (shouldSkipStatusUpdate) {
           this.log(
             `Skipping creation of new show for ${title} (Radarr/Sonarr priority mode enabled)`,
             'debug'
