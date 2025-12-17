@@ -191,10 +191,12 @@ const UserWebPushSettings = () => {
       }
 
       setWebPushEnabled(isEnabled);
-      localStorage.setItem(
-        'pushNotificationsEnabled',
-        isEnabled ? 'true' : 'false'
-      );
+      if (localStorage.getItem('pushNotificationsEnabled') === null) {
+        localStorage.setItem(
+          'pushNotificationsEnabled',
+          isEnabled ? 'true' : 'false'
+        );
+      }
     };
 
     if (user?.id) {
