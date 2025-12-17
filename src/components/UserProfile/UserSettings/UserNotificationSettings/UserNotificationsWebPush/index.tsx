@@ -185,7 +185,7 @@ const UserWebPushSettings = () => {
           (device) => device.userAgent === currentUserAgent
         );
 
-        if (hasMatchingDevice || dataDevices.length === 1) {
+        if (hasMatchingDevice) {
           isEnabled = true;
         }
       }
