@@ -28,7 +28,7 @@ Changes :
 
 If you're migrating from a previous installation, you may need to update the ownership of your config folder:
 ```bash
-sudo chown -R 1000:1000 /path/to/appdata/config
+docker run --rm -v /path/to/appdata/config:/data alpine chown -R 1000:1000 /data
 ```
 
 This ensures the `node` user (UID 1000) owns the config directory and can read and write to it.
