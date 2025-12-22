@@ -67,12 +67,18 @@ export const hasPermission = (
   userPermissionValue: number,
   options: PermissionCheckOptions = { type: 'and' }
 ): boolean => {
+  // If we are not checking any permissions, bail out and return true
+  // This handles isAuthenticated() called with no arguments (any logged-in user)
+  if (permissions === 0) {
+    return true;
+  }
+
   // Normalize permissions to an array
   const requiredPermissions: Permission[] = Array.isArray(permissions)
     ? permissions
     : [permissions];
 
-  // If we're not checking any permissions at all, return true
+  // If we're checking an empty array, return true
   if (requiredPermissions.length === 0) {
     return true;
   }
