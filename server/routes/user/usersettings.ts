@@ -684,6 +684,16 @@ userSettingsRoutes.get<{ id: string }, { permissions?: number }>(
   }
 );
 
+// Auto-approve permission bits that the owner can modify on themselves
+// This allows admins to opt out of auto-approval for third-party tool integration
+const AUTO_APPROVE_BITS =
+  Permission.AUTO_APPROVE |
+  Permission.AUTO_APPROVE_MOVIE |
+  Permission.AUTO_APPROVE_TV |
+  Permission.AUTO_APPROVE_4K |
+  Permission.AUTO_APPROVE_4K_MOVIE |
+  Permission.AUTO_APPROVE_4K_TV;
+
 userSettingsRoutes.post<
   { id: string },
   { permissions?: number },
@@ -703,7 +713,20 @@ userSettingsRoutes.post<
         return next({ status: 404, message: 'User not found.' });
       }
 
-      // "Owner" user permissions cannot be modified, and users cannot set their own permissions
+      // Special case: Owner (ID 1) can modify their OWN auto-approve permissions
+      // This allows admins to opt out of auto-approval if desired
+      if (user.id === 1 && req.user?.id === 1) {
+        // Only allow changes to auto-approve bits, preserve all other permissions
+        const currentNonAutoApprove = user.permissions & ~AUTO_APPROVE_BITS;
+        const newAutoApprove = req.body.permissions & AUTO_APPROVE_BITS;
+        user.permissions = currentNonAutoApprove | newAutoApprove;
+
+        await userRepository.save(user);
+        return res.status(200).json({ permissions: user.permissions });
+      }
+
+      // "Owner" user permissions cannot be modified by others,
+      // and users cannot set their own permissions (except owner for auto-approve above)
       if (user.id === 1 || req.user?.id === user.id) {
         return next({
           status: 403,
