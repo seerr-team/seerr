@@ -320,12 +320,14 @@ const SettingsMetadata = () => {
 
               addToast(intl.formatMessage(messages.metadataSettingsSaved), {
                 appearance: 'success',
+                autoDismiss: true,
               });
             } catch (e) {
               addToast(
                 intl.formatMessage(messages.failedToSaveMetadataSettings),
                 {
                   appearance: 'error',
+                  autoDismiss: true,
                 }
               );
             }
@@ -422,6 +424,7 @@ const SettingsMetadata = () => {
                                 ),
                                 {
                                   appearance: 'success',
+                                  autoDismiss: true,
                                 }
                               );
                             }
