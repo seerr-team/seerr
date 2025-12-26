@@ -42,6 +42,7 @@ export interface TmdbCollectionResult {
 
 export interface TmdbPersonResult {
   id: number;
+  known_for_department: string;
   name: string;
   popularity: number;
   profile_path?: string;
@@ -462,6 +463,10 @@ export interface TmdbCompany {
 
 export interface TmdbCompanySearchResponse extends TmdbPaginatedResponse {
   results: TmdbCompany[];
+}
+
+export interface TmdbSearchPersonResponse extends TmdbPaginatedResponse {
+  results: TmdbPersonResult[];
 }
 
 export interface TmdbWatchProviderRegion {

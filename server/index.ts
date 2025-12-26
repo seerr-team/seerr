@@ -22,7 +22,9 @@ import logger from '@server/logger';
 import clearCookies from '@server/middleware/clearcookies';
 import routes from '@server/routes';
 import avatarproxy from '@server/routes/avatarproxy';
-import imageproxy from '@server/routes/imageproxy';
+import caaproxy from '@server/routes/caaproxy';
+import tadbproxy from '@server/routes/tadbproxy';
+import tmdbproxy from '@server/routes/tmdbproxy';
 import { appDataPermissions } from '@server/utils/appDataVolume';
 import { getAppVersion } from '@server/utils/appVersion';
 import createCustomProxyAgent from '@server/utils/customProxyAgent';
@@ -235,8 +237,10 @@ app
     server.use('/api/v1', routes);
 
     // Do not set cookies so CDNs can cache them
-    server.use('/imageproxy', clearCookies, imageproxy);
+    server.use('/tmdbproxy', clearCookies, tmdbproxy);
     server.use('/avatarproxy', clearCookies, avatarproxy);
+    server.use('/caaproxy', clearCookies, caaproxy);
+    server.use('/tadbproxy', clearCookies, tadbproxy);
 
     server.get('*', (req, res) => handle(req, res));
     server.use(

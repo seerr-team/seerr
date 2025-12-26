@@ -1,3 +1,4 @@
+import ArtistCard from '@app/components/ArtistCard';
 import ShowMoreCard from '@app/components/MediaSlider/ShowMoreCard';
 import PersonCard from '@app/components/PersonCard';
 import Slider from '@app/components/Slider';
@@ -8,6 +9,8 @@ import { ArrowRightCircleIcon } from '@heroicons/react/24/outline';
 import { MediaStatus } from '@server/constants/media';
 import { Permission } from '@server/lib/permissions';
 import type {
+  AlbumResult,
+  ArtistResult,
   MovieResult,
   PersonResult,
   TvResult,
@@ -20,7 +23,13 @@ interface MixedResult {
   page: number;
   totalResults: number;
   totalPages: number;
-  results: (TvResult | MovieResult | PersonResult)[];
+  results: (
+    | MovieResult
+    | TvResult
+    | PersonResult
+    | AlbumResult
+    | ArtistResult
+  )[];
 }
 
 interface MediaSliderProps {
@@ -31,6 +40,14 @@ interface MediaSliderProps {
   hideWhenEmpty?: boolean;
   extraParams?: string;
   onNewTitles?: (titleCount: number) => void;
+  items?: (
+    | MovieResult
+    | TvResult
+    | PersonResult
+    | AlbumResult
+    | ArtistResult
+  )[];
+  totalItems?: number;
 }
 
 const MediaSlider = ({
@@ -41,6 +58,7 @@ const MediaSlider = ({
   sliderKey,
   hideWhenEmpty = false,
   onNewTitles,
+  totalItems,
 }: MediaSliderProps) => {
   const settings = useSettings();
   const { hasPermission } = useUser();
@@ -62,7 +80,7 @@ const MediaSlider = ({
 
   let titles = (data ?? []).reduce(
     (a, v) => [...a, ...v.results],
-    [] as (MovieResult | TvResult | PersonResult)[]
+    [] as (MovieResult | TvResult | PersonResult | AlbumResult | ArtistResult)[]
   );
 
   if (settings.currentSettings.hideAvailable) {
@@ -112,7 +130,7 @@ const MediaSlider = ({
     .filter((title) => {
       if (!blacklistVisibility)
         return (
-          (title as TvResult | MovieResult).mediaInfo?.status !==
+          (title as TvResult | MovieResult | AlbumResult).mediaInfo?.status !==
           MediaStatus.BLACKLISTED
         );
       return title;
@@ -159,17 +177,52 @@ const MediaSlider = ({
               profilePath={title.profilePath}
             />
           );
+        case 'album':
+          return (
+            <TitleCard
+              key={title.id}
+              id={title.id}
+              isAddedToWatchlist={title.mediaInfo?.watchlists?.length ?? 0}
+              image={title.posterPath}
+              status={title.mediaInfo?.status}
+              title={title.title}
+              year={title['first-release-date']?.split('-')[0]}
+              mediaType={title.mediaType}
+              artist={title['artist-credit']?.[0]?.name}
+              type={title['primary-type']}
+              inProgress={(title.mediaInfo?.downloadStatus ?? []).length > 0}
+              needsCoverArt={title.needsCoverArt}
+            />
+          );
+        case 'artist':
+          return title.tmdbPersonId ? (
+            <PersonCard
+              key={title.id}
+              personId={title.tmdbPersonId}
+              name={title.name}
+              profilePath={title.artistThumb ?? undefined}
+            />
+          ) : (
+            <ArtistCard
+              key={title.id}
+              artistId={title.id}
+              name={title.name}
+              artistThumb={title.artistThumb}
+            />
+          );
       }
     });
 
-  if (linkUrl && titles.length > 20) {
+  if (linkUrl && (totalItems ? totalItems > 20 : titles.length > 20)) {
     finalTitles.push(
       <ShowMoreCard
         url={linkUrl}
         posters={titles
           .slice(20, 24)
           .map((title) =>
-            title.mediaType !== 'person' ? title.posterPath : undefined
+            title.mediaType !== 'person' && title.mediaType !== 'album'
+              ? (title as MovieResult | TvResult).posterPath
+              : undefined
           )}
       />
     );

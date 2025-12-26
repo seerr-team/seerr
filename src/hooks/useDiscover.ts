@@ -11,7 +11,7 @@ export interface BaseSearchResult<T> {
 }
 
 interface BaseMedia {
-  id: number;
+  id: number | string;
   mediaType: string;
   mediaInfo?: {
     status: MediaStatus;
@@ -86,7 +86,7 @@ const useDiscover = <
     }
   );
 
-  const resultIds: Set<number> = new Set<number>();
+  const resultIds: Set<string | number> = new Set<string | number>();
 
   const isLoadingInitialData = !data && !error;
   const isLoadingMore =
@@ -116,7 +116,10 @@ const useDiscover = <
   if (settings.currentSettings.hideAvailable && hideAvailable) {
     titles = titles.filter(
       (i) =>
-        (i.mediaType === 'movie' || i.mediaType === 'tv') &&
+        (i.mediaType === 'movie' ||
+          i.mediaType === 'tv' ||
+          i.mediaType === 'album' ||
+          i.mediaType === 'artist') &&
         i.mediaInfo?.status !== MediaStatus.AVAILABLE &&
         i.mediaInfo?.status !== MediaStatus.PARTIALLY_AVAILABLE
     );
@@ -129,7 +132,10 @@ const useDiscover = <
   ) {
     titles = titles.filter(
       (i) =>
-        (i.mediaType === 'movie' || i.mediaType === 'tv') &&
+        (i.mediaType === 'movie' ||
+          i.mediaType === 'tv' ||
+          i.mediaType === 'album' ||
+          i.mediaType === 'artist') &&
         i.mediaInfo?.status !== MediaStatus.BLACKLISTED
     );
   }

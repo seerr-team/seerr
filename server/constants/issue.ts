@@ -3,6 +3,7 @@ export enum IssueType {
   AUDIO = 2,
   SUBTITLES = 3,
   OTHER = 4,
+  LYRICS = 5,
 }
 
 export enum IssueStatus {
@@ -15,4 +16,5 @@ export const IssueTypeName = {
   [IssueType.VIDEO]: 'Video',
   [IssueType.SUBTITLES]: 'Subtitle',
   [IssueType.OTHER]: 'Other',
+  [IssueType.LYRICS]: 'Lyrics',
 };

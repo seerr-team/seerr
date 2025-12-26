@@ -1,11 +1,16 @@
+import MusicBrainz from '@server/api/musicbrainz';
+import type {
+  MbAlbumResult,
+  MbArtistResult,
+} from '@server/api/musicbrainz/interfaces';
 import TheMovieDb from '@server/api/themoviedb';
 import type {
+  TmdbCollectionResult,
   TmdbMovieDetails,
   TmdbMovieResult,
   TmdbPersonDetails,
   TmdbPersonResult,
   TmdbSearchMovieResponse,
-  TmdbSearchMultiResponse,
   TmdbSearchTvResponse,
   TmdbTvDetails,
   TmdbTvResult,
@@ -21,6 +26,19 @@ import {
   isTvDetails,
 } from '@server/utils/typeHelpers';
 
+export type CombinedSearchResponse = {
+  page: number;
+  total_pages: number;
+  total_results: number;
+  results: (
+    | MbArtistResult
+    | MbAlbumResult
+    | TmdbMovieResult
+    | TmdbTvResult
+    | TmdbPersonResult
+    | TmdbCollectionResult
+  )[];
+};
 interface SearchProvider {
   pattern: RegExp;
   search: ({
@@ -31,7 +49,7 @@ interface SearchProvider {
     id: string;
     language?: string;
     query?: string;
-  }) => Promise<TmdbSearchMultiResponse>;
+  }) => Promise<CombinedSearchResponse>;
 }
 
 const searchProviders: SearchProvider[] = [];
@@ -212,5 +230,41 @@ searchProviders.push({
       total_results: results.length,
       results,
     };
+  },
+});
+
+searchProviders.push({
+  pattern: new RegExp(/(?<=musicbrainz:)/),
+  search: async ({ query }) => {
+    const musicbrainz = new MusicBrainz();
+
+    try {
+      const albumResults = await musicbrainz.searchAlbum({
+        query: query || '',
+        limit: 20,
+      });
+
+      const results: CombinedSearchResponse['results'] = albumResults.map(
+        (album) =>
+          ({
+            ...album,
+            media_type: 'album',
+          } as MbAlbumResult)
+      );
+
+      return {
+        page: 1,
+        total_pages: 1,
+        total_results: results.length,
+        results,
+      };
+    } catch (e) {
+      return {
+        page: 1,
+        total_pages: 1,
+        total_results: 0,
+        results: [],
+      };
+    }
   },
 });

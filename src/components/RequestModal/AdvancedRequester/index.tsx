@@ -50,7 +50,7 @@ export type RequestOverrides = {
 };
 
 interface AdvancedRequesterProps {
-  type: 'movie' | 'tv';
+  type: 'movie' | 'tv' | 'music';
   is4k: boolean;
   isAnime?: boolean;
   defaultOverrides?: RequestOverrides;
@@ -69,7 +69,9 @@ const AdvancedRequester = ({
   const intl = useIntl();
   const { user: currentUser, hasPermission: currentHasPermission } = useUser();
   const { data, error } = useSWR<ServiceCommonServer[]>(
-    `/api/v1/service/${type === 'movie' ? 'radarr' : 'sonarr'}`,
+    `/api/v1/service/${
+      type === 'movie' ? 'radarr' : type === 'tv' ? 'sonarr' : 'lidarr'
+    }`,
     {
       refreshInterval: 0,
       refreshWhenHidden: false,
@@ -101,7 +103,7 @@ const AdvancedRequester = ({
     useSWR<ServiceCommonServerWithDetails>(
       selectedServer !== null
         ? `/api/v1/service/${
-            type === 'movie' ? 'radarr' : 'sonarr'
+            type === 'movie' ? 'radarr' : type === 'tv' ? 'sonarr' : 'lidarr'
           }/${selectedServer}`
         : null,
       {
@@ -135,7 +137,9 @@ const AdvancedRequester = ({
                 Permission.REQUEST,
                 type === 'movie'
                   ? Permission.REQUEST_MOVIE
-                  : Permission.REQUEST_TV,
+                  : type === 'tv'
+                  ? Permission.REQUEST_TV
+                  : Permission.REQUEST_MUSIC,
               ],
           user.permissions,
           { type: 'or' }
@@ -154,7 +158,7 @@ const AdvancedRequester = ({
 
   useEffect(() => {
     let defaultServer = data?.find(
-      (server) => server.isDefault && is4k === server.is4k
+      (server) => server.isDefault && (type === 'music' || is4k === server.is4k)
     );
 
     if (!defaultServer && (data ?? []).length > 0) {
@@ -295,7 +299,8 @@ const AdvancedRequester = ({
   if (
     (!data ||
       selectedServer === null ||
-      (data.filter((server) => server.is4k === is4k).length < 2 &&
+      (data.filter((server) => type === 'music' || server.is4k === is4k)
+        .length < 2 &&
         (!serverData ||
           (serverData.profiles.length < 2 &&
             serverData.rootFolders.length < 2 &&
@@ -314,7 +319,9 @@ const AdvancedRequester = ({
       <div className="rounded-md">
         {!!data && selectedServer !== null && (
           <div className="flex flex-col md:flex-row">
-            {data.filter((server) => server.is4k === is4k).length > 1 && (
+            {((type === 'music' && data.length > 1) ||
+              (type !== 'music' &&
+                data.filter((server) => server.is4k === is4k).length > 1)) && (
               <div className="mb-3 w-full flex-shrink-0 flex-grow last:pr-0 md:w-1/4 md:pr-4">
                 <label htmlFor="server">
                   {intl.formatMessage(messages.destinationserver)}
@@ -327,26 +334,25 @@ const AdvancedRequester = ({
                   onBlur={(e) => setSelectedServer(Number(e.target.value))}
                   className="border-gray-700 bg-gray-800"
                 >
-                  {data
-                    .filter((server) => server.is4k === is4k)
-                    .map((server) => (
-                      <option
-                        key={`server-list-${server.id}`}
-                        value={server.id}
-                      >
-                        {server.isDefault
-                          ? intl.formatMessage(messages.default, {
-                              name: server.name,
-                            })
-                          : server.name}
-                      </option>
-                    ))}
+                  {(type === 'music'
+                    ? data
+                    : data.filter((server) => server.is4k === is4k)
+                  ).map((server) => (
+                    <option key={`server-list-${server.id}`} value={server.id}>
+                      {server.isDefault
+                        ? intl.formatMessage(messages.default, {
+                            name: server.name,
+                          })
+                        : server.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             )}
             {(isValidating ||
               !serverData ||
-              serverData.profiles.length > 1) && (
+              (serverData.profiles.length > 1 &&
+                (!serverData.server.isDefault || type !== 'music'))) && (
               <div className="mb-3 w-full flex-shrink-0 flex-grow last:pr-0 md:w-1/4 md:pr-4">
                 <label htmlFor="profile">
                   {intl.formatMessage(messages.qualityprofile)}
