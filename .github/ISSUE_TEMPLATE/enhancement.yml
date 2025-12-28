@@ -28,6 +28,14 @@ body:
       label: Additional Context
       description: Provide any additional information or screenshots that may be relevant or helpful.
   - type: checkboxes
+    id: search-existing
+    attributes:
+      label: Search Existing Issues
+      description: Have you searched existing issues to see if this feature has already been requested?
+      options:
+        - label: Yes, I have searched existing issues.
+          required: true
+  - type: checkboxes
     id: terms
     attributes:
       label: Code of Conduct

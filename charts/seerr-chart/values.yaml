@@ -50,16 +50,22 @@ serviceAccount:
 podAnnotations: {}
 podLabels: {}
 
-podSecurityContext: {}
-# fsGroup: 2000
+podSecurityContext:
+  fsGroup: 1000
+  fsGroupChangePolicy: OnRootMismatch
 
-securityContext: {}
-# capabilities:
-#   drop:
-#   - ALL
-# readOnlyRootFilesystem: true
-# runAsNonRoot: true
-# runAsUser: 1000
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  privileged: false
+  runAsUser: 1000
+  runAsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
 
 service:
   type: ClusterIP

@@ -92,8 +92,7 @@ const SearchByNameModal = ({
                 <CachedImage
                   type="tvdb"
                   src={
-                    item.remotePoster ??
-                    '/images/jellyseerr_poster_not_found.png'
+                    item.remotePoster ?? '/images/seerr_poster_not_found.png'
                   }
                   alt={item.title}
                   className="w-100 h-auto rounded-md"

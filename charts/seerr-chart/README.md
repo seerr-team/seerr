@@ -1,6 +1,6 @@
 # seerr-chart
 
-![Version: 3.0.0](https://img.shields.io/badge/Version-3.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.7.3](https://img.shields.io/badge/AppVersion-2.7.3-informational?style=flat-square)
+![Version: 3.0.0](https://img.shields.io/badge/Version-3.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.0.0](https://img.shields.io/badge/AppVersion-3.0.0-informational?style=flat-square)
 
 Seerr helm chart for Kubernetes
 
@@ -22,13 +22,13 @@ Kubernetes: `>=1.23.0-0`
 
 ## Installation
 
-Refer to [https://docs.seerr.dev/getting-started/kubernetes](Seerr kubernetes documentation)
+Refer to [Seerr kubernetes documentation](https://docs.seerr.dev/getting-started/kubernetes)
 
 ## Update Notes
 
 ### Updating to 3.0.0
 
-Nothing has changed; we just rebranded the `jellyseerr` Helm chart to `seerr` 🥳.
+Nothing has changed; we just rebranded the `jellyseerr` Helm chart to `seerr` 🥳 refer to our [Migration guide](https://docs.seerr.dev/migration-guide).
 
 ### Updating to 2.7.0
 
@@ -70,12 +70,20 @@ If `replicaCount` value was used - remove it. Helm update should work fine after
 | nodeSelector | object | `{}` |  |
 | podAnnotations | object | `{}` |  |
 | podLabels | object | `{}` |  |
-| podSecurityContext | object | `{}` |  |
+| podSecurityContext.fsGroup | int | `1000` |  |
+| podSecurityContext.fsGroupChangePolicy | string | `"OnRootMismatch"` |  |
 | probes.livenessProbe | object | `{}` | Configure liveness probe |
 | probes.readinessProbe | object | `{}` | Configure readiness probe |
 | probes.startupProbe | string | `nil` | Configure startup probe |
 | resources | object | `{}` |  |
-| securityContext | object | `{}` |  |
+| securityContext.allowPrivilegeEscalation | bool | `false` |  |
+| securityContext.capabilities.drop[0] | string | `"ALL"` |  |
+| securityContext.privileged | bool | `false` |  |
+| securityContext.readOnlyRootFilesystem | bool | `false` |  |
+| securityContext.runAsGroup | int | `1000` |  |
+| securityContext.runAsNonRoot | bool | `true` |  |
+| securityContext.runAsUser | int | `1000` |  |
+| securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | service.port | int | `80` |  |
 | service.type | string | `"ClusterIP"` |  |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the service account |

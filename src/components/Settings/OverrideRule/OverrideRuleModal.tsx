@@ -337,7 +337,13 @@ const OverrideRuleModal = ({
                   <div className="form-input-area">
                     <div className="form-input-field">
                       <GenreSelector
-                        type={values.radarrServiceId ? 'movie' : 'tv'}
+                        type={
+                          values.radarrServiceId != null
+                            ? 'movie'
+                            : values.sonarrServiceId != null
+                            ? 'tv'
+                            : 'tv'
+                        }
                         defaultValue={values.genre}
                         isMulti
                         isDisabled={!isValidated || isTesting}

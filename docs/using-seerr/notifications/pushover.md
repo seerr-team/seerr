@@ -16,7 +16,7 @@ User notifications are separate from system notifications, and the available not
 
 ### Application/API Token
 
-[Register an application](https://pushover.net/apps/build) and enter the API token in this field. (You can use one of the [official icons in our GitHub repository](https://github.com/fallenbagel/jellyseerr/tree/develop/public) when configuring the application.)
+[Register an application](https://pushover.net/apps/build) and enter the API token in this field. (You can use one of the [official icons in our GitHub repository](https://github.com/seerr-team/seerr/tree/develop/public) when configuring the application.)
 
 For more details on registering applications or the API token, please see the [Pushover API documentation](https://pushover.net/api#registration).
 
