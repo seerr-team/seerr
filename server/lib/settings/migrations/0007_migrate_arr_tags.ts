@@ -13,9 +13,7 @@ const migrationArrTags = async (settings: any): Promise<AllSettings> => {
   }
 
   const userRepository = getRepository(User);
-  const users = await userRepository.find({
-    select: ['id', 'displayName'],
-  });
+  const users = await userRepository.find();
 
   let errorOccurred = false;
 
