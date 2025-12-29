@@ -114,6 +114,67 @@ interface TautulliInfoResponse {
   };
 }
 
+interface TautulliActivitySession {
+  thumb?: string | null;
+  full_title?: string | null;
+  title?: string | null;
+  media_type?: string | null;
+  year?: number | null;
+  progress_percent?: number | null;
+  state?: string | null;
+  transcode_decision?: string | null;
+}
+
+interface TautulliActivityData {
+  stream_count: number;
+  sessions: TautulliActivitySession[];
+}
+
+interface TautulliActivityResponse {
+  response: {
+    result: string;
+    message?: string;
+    data?: Partial<TautulliActivityData>;
+  };
+}
+
+interface TautulliPlaysByDateSeries {
+  name?: string;
+  label?: string;
+  data: number[];
+}
+
+interface TautulliPlaysByDateData {
+  categories: string[];
+  series: TautulliPlaysByDateSeries[];
+}
+
+interface TautulliPlaysByDateResponse {
+  response: {
+    result: string;
+    message?: string;
+    data?: TautulliPlaysByDateData;
+  };
+}
+
+interface TautulliHomeStatsRow {
+  title?: string;
+  year?: number;
+  thumb?: string | null;
+  total_plays?: number;
+  users_watched?: number;
+}
+
+interface TautulliHomeStatsResponse {
+  response: {
+    result: string;
+    message?: string;
+    data?: {
+      rows?: TautulliHomeStatsRow[];
+    };
+  };
+}
+
 class TautulliAPI {
   private axios: AxiosInstance;
 
@@ -125,6 +186,115 @@ class TautulliAPI {
       params: { apikey: settings.apiKey },
     });
     this.axios.interceptors.request.use(requestInterceptorFunction);
+  }
+
+  public async getActivity(): Promise<TautulliActivityData> {
+    try {
+      const res = await this.axios.get<TautulliActivityResponse>('/api/v2', {
+        params: { cmd: 'get_activity' },
+      });
+
+      const data = res.data.response.data;
+
+      return {
+        stream_count: data?.stream_count ?? 0,
+        sessions: Array.isArray(data?.sessions) ? data?.sessions ?? [] : [],
+      };
+    } catch (e) {
+      logger.error('Something went wrong fetching Tautulli activity', {
+        label: 'Tautulli API',
+        errorMessage: e.message,
+      });
+      throw new Error(`[Tautulli] Failed to fetch activity: ${e.message}`);
+    }
+  }
+
+  public async getPlaysByDate(
+    timeRange: number
+  ): Promise<TautulliPlaysByDateData> {
+    try {
+      const res = await this.axios.get<TautulliPlaysByDateResponse>('/api/v2', {
+        params: {
+          cmd: 'get_plays_by_date',
+          time_range: timeRange,
+        },
+      });
+
+      const data = res.data.response.data;
+      return {
+        categories: data?.categories ?? [],
+        series: data?.series ?? [],
+      };
+    } catch (e) {
+      logger.error(
+        'Something went wrong fetching plays by date from Tautulli',
+        {
+          label: 'Tautulli API',
+          errorMessage: e.message,
+        }
+      );
+      throw new Error(`[Tautulli] Failed to fetch plays by date: ${e.message}`);
+    }
+  }
+
+  public async getPopular(timeRange: number): Promise<{
+    movies: {
+      title: string;
+      year?: number;
+      thumb: string | null;
+      plays?: number;
+    }[];
+    tv: {
+      title: string;
+      year?: number;
+      thumb: string | null;
+      plays?: number;
+    }[];
+  }> {
+    try {
+      const [moviesRes, tvRes] = await Promise.all([
+        this.axios.get<TautulliHomeStatsResponse>('/api/v2', {
+          params: {
+            cmd: 'get_home_stats',
+            stat_id: 'popular_movies',
+            stats_count: 10,
+            time_range: timeRange,
+          },
+        }),
+        this.axios.get<TautulliHomeStatsResponse>('/api/v2', {
+          params: {
+            cmd: 'get_home_stats',
+            stat_id: 'popular_tv',
+            stats_count: 10,
+            time_range: timeRange,
+          },
+        }),
+      ]);
+
+      const mapItems = (rows?: TautulliHomeStatsRow[]) =>
+        (rows ?? [])
+          .map((item) => ({
+            title: item.title ?? '',
+            year: item.year ?? undefined,
+            thumb: item.thumb ?? null,
+            plays: item.total_plays ?? item.users_watched ?? undefined,
+          }))
+          .filter((item) => item.title);
+
+      return {
+        movies: mapItems(moviesRes.data.response.data?.rows),
+        tv: mapItems(tvRes.data.response.data?.rows),
+      };
+    } catch (e) {
+      logger.error(
+        'Something went wrong fetching popular media from Tautulli',
+        {
+          label: 'Tautulli API',
+          errorMessage: e.message,
+        }
+      );
+      throw new Error(`[Tautulli] Failed to fetch popular media: ${e.message}`);
+    }
   }
 
   public async getInfo(): Promise<TautulliInfo> {

@@ -48,6 +48,15 @@ export interface PublicSettingsResponse {
   emailEnabled: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  activityEnabled: boolean;
+  activityBannerUrl?: string;
+  activityPopularDays: number;
+  activityHeroTagline: string;
+  activityHeroTitle: string;
+  activityHeroBody: string;
+  activityAnnouncementEnabled: boolean;
+  activityAnnouncements: { id: string; title: string; body: string }[];
+  activityFeedbackEnabled: boolean;
 }
 
 export interface CacheItem {

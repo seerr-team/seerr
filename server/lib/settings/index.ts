@@ -58,6 +58,25 @@ export interface TautulliSettings {
   externalUrl?: string;
 }
 
+export interface ActivityAnnouncement {
+  id: string;
+  title: string;
+  body: string;
+}
+
+export interface ActivitySettings {
+  enabled: boolean;
+  bannerUrl?: string;
+  popularDays: number;
+  heroTagline: string;
+  heroTitle: string;
+  heroBody: string;
+  announcementEnabled: boolean;
+  announcements: ActivityAnnouncement[];
+  feedbackEnabled: boolean;
+  feedbackWebhookUrl?: string;
+}
+
 export interface DVRSettings {
   id: number;
   name: string;
@@ -203,6 +222,15 @@ interface FullPublicSettings extends PublicSettings {
   userEmailRequired: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  activityEnabled: boolean;
+  activityBannerUrl?: string;
+  activityPopularDays: number;
+  activityHeroTagline: string;
+  activityHeroTitle: string;
+  activityHeroBody: string;
+  activityAnnouncementEnabled: boolean;
+  activityAnnouncements: ActivityAnnouncement[];
+  activityFeedbackEnabled: boolean;
 }
 
 export interface NotificationAgentConfig {
@@ -356,6 +384,7 @@ export interface AllSettings {
   plex: PlexSettings;
   jellyfin: JellyfinSettings;
   tautulli: TautulliSettings;
+  activity: ActivitySettings;
   radarr: RadarrSettings[];
   sonarr: SonarrSettings[];
   public: PublicSettings;
@@ -424,6 +453,18 @@ class Settings {
         apiKey: '',
       },
       tautulli: {},
+      activity: {
+        enabled: false,
+        bannerUrl: '',
+        popularDays: 30,
+        heroTagline: '',
+        heroTitle: '',
+        heroBody: '',
+        announcementEnabled: false,
+        announcements: [],
+        feedbackEnabled: true,
+        feedbackWebhookUrl: '',
+      },
       metadataSettings: {
         tv: MetadataProviderType.TMDB,
         anime: MetadataProviderType.TMDB,
@@ -633,6 +674,14 @@ class Settings {
     this.data.tautulli = data;
   }
 
+  get activity(): ActivitySettings {
+    return this.data.activity;
+  }
+
+  set activity(data: ActivitySettings) {
+    this.data.activity = data;
+  }
+
   get metadataSettings(): MetadataSettings {
     return this.data.metadataSettings;
   }
@@ -697,6 +746,15 @@ class Settings {
         this.data.notifications.agents.email.options.userEmailRequired,
       newPlexLogin: this.data.main.newPlexLogin,
       youtubeUrl: this.data.main.youtubeUrl,
+      activityEnabled: this.data.activity.enabled,
+      activityBannerUrl: this.data.activity.bannerUrl,
+      activityPopularDays: this.data.activity.popularDays,
+      activityHeroTagline: this.data.activity.heroTagline,
+      activityHeroTitle: this.data.activity.heroTitle,
+      activityHeroBody: this.data.activity.heroBody,
+      activityAnnouncementEnabled: this.data.activity.announcementEnabled,
+      activityAnnouncements: this.data.activity.announcements,
+      activityFeedbackEnabled: this.data.activity.feedbackEnabled,
     };
   }
 

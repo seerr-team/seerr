@@ -249,6 +249,15 @@ CoreApp.getInitialProps = async (initialProps) => {
     emailEnabled: false,
     newPlexLogin: true,
     youtubeUrl: '',
+    activityEnabled: false,
+    activityBannerUrl: '',
+    activityPopularDays: 30,
+    activityHeroTagline: '',
+    activityHeroTitle: '',
+    activityHeroBody: '',
+    activityAnnouncementEnabled: false,
+    activityAnnouncements: [],
+    activityFeedbackEnabled: true,
   };
 
   if (ctx.res) {

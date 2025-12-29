@@ -40,6 +40,8 @@ tags:
     description: Collection of media to watch later
   - name: blacklist
     description: Blacklisted media from discovery page.
+  - name: activity
+    description: Endpoints for the Activity dashboard (Plex + Tautulli).
 servers:
   - url: '{server}/api/v1'
     variables:
@@ -551,6 +553,95 @@ components:
           type: string
           nullable: true
         externalUrl:
+          type: string
+          nullable: true
+    ActivityAnnouncement:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 'announcement-1'
+        title:
+          type: string
+          example: 'Director of the Month'
+        body:
+          type: string
+          example: 'This month we are featuring...'
+    ActivitySettings:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          example: false
+        bannerUrl:
+          type: string
+          nullable: true
+          example: '/activity-banner.jpg'
+        popularDays:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 365
+          example: 30
+        heroTagline:
+          type: string
+          example: 'Welcome to Seerr'
+        heroTitle:
+          type: string
+          example: 'Dashboard'
+        heroBody:
+          type: string
+          example: "See what's playing, explore popular picks, and request new media."
+        announcementEnabled:
+          type: boolean
+          example: false
+        announcements:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityAnnouncement'
+        feedbackEnabled:
+          type: boolean
+          example: true
+        feedbackWebhookUrl:
+          type: string
+          nullable: true
+          format: uri
+          example: 'https://example.com/webhook'
+    DashboardFeedbackRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - comment
+            - error
+            - collection
+          example: comment
+        message:
+          type: string
+          example: 'Love the dashboard!'
+      required:
+        - message
+    DashboardFeedbackEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum:
+            - comment
+            - error
+            - collection
+        message:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        userEmail:
+          type: string
+          nullable: true
+        userName:
           type: string
           nullable: true
     RadarrSettings:
@@ -2184,6 +2275,470 @@ paths:
                   appDataPermissions:
                     type: boolean
                     example: true
+  /activity/status:
+    get:
+      summary: Get activity server status
+      description: Returns media server status used by the Activity page (Plex only).
+      tags:
+        - activity
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  online:
+                    type: boolean
+                  serverName:
+                    type: string
+                    nullable: true
+                  version:
+                    type: string
+                    nullable: true
+  /activity/sessions:
+    get:
+      summary: Get active sessions
+      description: Returns active Plex sessions from Tautulli (if configured).
+      tags:
+        - activity
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  streamCount:
+                    type: integer
+                    format: int32
+                  sessions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        mediaType:
+                          type: string
+                        thumb:
+                          type: string
+                          nullable: true
+                        year:
+                          type: integer
+                          format: int32
+                          nullable: true
+                        progressPercent:
+                          type: number
+                          format: double
+                          nullable: true
+                        state:
+                          type: string
+                          nullable: true
+                        transcodeDecision:
+                          type: string
+                          nullable: true
+  /activity/history:
+    get:
+      summary: Get activity history
+      description: Returns play history grouped by date from Tautulli (if configured).
+      tags:
+        - activity
+      parameters:
+        - in: query
+          name: mode
+          required: false
+          schema:
+            type: string
+            enum:
+              - week
+              - month
+            default: week
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  playsByDate:
+                    type: object
+                    properties:
+                      categories:
+                        type: array
+                        items:
+                          type: string
+                      series:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              nullable: true
+                            label:
+                              type: string
+                              nullable: true
+                            data:
+                              type: array
+                              items:
+                                type: integer
+                                format: int32
+  /activity/popular:
+    get:
+      summary: Get popular titles
+      description: Returns popular movies and series from Tautulli (if configured).
+      tags:
+        - activity
+      parameters:
+        - in: query
+          name: days
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 30
+            minimum: 1
+            maximum: 365
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  movies:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        year:
+                          type: integer
+                          format: int32
+                          nullable: true
+                        thumb:
+                          type: string
+                          nullable: true
+                        plays:
+                          type: integer
+                          format: int32
+                          nullable: true
+                  tv:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        year:
+                          type: integer
+                          format: int32
+                          nullable: true
+                        thumb:
+                          type: string
+                          nullable: true
+                        plays:
+                          type: integer
+                          format: int32
+                          nullable: true
+  /activity/poster:
+    get:
+      summary: Proxy Plex artwork
+      description: Proxies Plex image paths for the Activity page.
+      tags:
+        - activity
+      parameters:
+        - in: query
+          name: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+  /activity/feedback:
+    post:
+      summary: Submit dashboard feedback
+      description: Submit feedback from the Dashboard page.
+      tags:
+        - activity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardFeedbackRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+    get:
+      summary: Get dashboard feedback
+      description: Returns recent feedback submissions (admin only).
+      tags:
+        - activity
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DashboardFeedbackEntry'
+  /dashboard/status:
+    get:
+      summary: Get dashboard server status
+      description: Returns media server status used by the Dashboard page (Plex only).
+      tags:
+        - activity
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  online:
+                    type: boolean
+                  serverName:
+                    type: string
+                    nullable: true
+                  version:
+                    type: string
+                    nullable: true
+  /dashboard/sessions:
+    get:
+      summary: Get active sessions
+      description: Returns active Plex sessions from Tautulli (if configured).
+      tags:
+        - activity
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  streamCount:
+                    type: integer
+                    format: int32
+                  sessions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        mediaType:
+                          type: string
+                        thumb:
+                          type: string
+                          nullable: true
+                        year:
+                          type: integer
+                          format: int32
+                          nullable: true
+                        progressPercent:
+                          type: number
+                          format: double
+                          nullable: true
+                        state:
+                          type: string
+                          nullable: true
+                        transcodeDecision:
+                          type: string
+                          nullable: true
+  /dashboard/history:
+    get:
+      summary: Get dashboard history
+      description: Returns play history grouped by date from Tautulli (if configured).
+      tags:
+        - activity
+      parameters:
+        - in: query
+          name: mode
+          required: false
+          schema:
+            type: string
+            enum:
+              - week
+              - month
+            default: week
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  playsByDate:
+                    type: object
+                    properties:
+                      categories:
+                        type: array
+                        items:
+                          type: string
+                      series:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              nullable: true
+                            label:
+                              type: string
+                              nullable: true
+                            data:
+                              type: array
+                              items:
+                                type: integer
+                                format: int32
+  /dashboard/popular:
+    get:
+      summary: Get popular titles
+      description: Returns popular movies and series from Tautulli (if configured).
+      tags:
+        - activity
+      parameters:
+        - in: query
+          name: days
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 30
+            minimum: 1
+            maximum: 365
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  movies:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        year:
+                          type: integer
+                          format: int32
+                          nullable: true
+                        thumb:
+                          type: string
+                          nullable: true
+                        plays:
+                          type: integer
+                          format: int32
+                          nullable: true
+                  tv:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        year:
+                          type: integer
+                          format: int32
+                          nullable: true
+                        thumb:
+                          type: string
+                          nullable: true
+                        plays:
+                          type: integer
+                          format: int32
+                          nullable: true
+  /dashboard/poster:
+    get:
+      summary: Proxy Plex artwork
+      description: Proxies Plex image paths for the Dashboard page.
+      tags:
+        - activity
+      parameters:
+        - in: query
+          name: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+  /dashboard/feedback:
+    post:
+      summary: Submit dashboard feedback
+      description: Submit feedback from the Dashboard page.
+      tags:
+        - activity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardFeedbackRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+    get:
+      summary: Get dashboard feedback
+      description: Returns recent feedback submissions (admin only).
+      tags:
+        - activity
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DashboardFeedbackEntry'
   /settings/main:
     get:
       summary: Get main settings
@@ -2681,6 +3236,68 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TautulliSettings'
+  /settings/activity:
+    get:
+      summary: Get dashboard settings
+      description: Retrieves current dashboard settings.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivitySettings'
+    post:
+      summary: Update dashboard settings
+      description: Updates dashboard settings with the provided values.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivitySettings'
+      responses:
+        '200':
+          description: 'Values were successfully updated'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivitySettings'
+  /settings/dashboard:
+    get:
+      summary: Get dashboard settings
+      description: Retrieves current dashboard settings.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivitySettings'
+    post:
+      summary: Update dashboard settings
+      description: Updates dashboard settings with the provided values.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivitySettings'
+      responses:
+        '200':
+          description: 'Values were successfully updated'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivitySettings'
   /settings/radarr:
     get:
       summary: Get Radarr settings

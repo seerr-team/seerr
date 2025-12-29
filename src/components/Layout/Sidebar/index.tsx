@@ -2,10 +2,12 @@ import Badge from '@app/components/Common/Badge';
 import UserWarnings from '@app/components/Layout/UserWarnings';
 import VersionStatus from '@app/components/Layout/VersionStatus';
 import useClickOutside from '@app/hooks/useClickOutside';
+import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import {
+  ChartBarIcon,
   ClockIcon,
   CogIcon,
   ExclamationTriangleIcon,
@@ -16,6 +18,7 @@ import {
   UsersIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
+import { MediaServerType } from '@server/constants/server';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -24,6 +27,7 @@ import { useIntl } from 'react-intl';
 
 export const menuMessages = defineMessages('components.Layout.Sidebar', {
   dashboard: 'Discover',
+  activity: 'Dashboard',
   browsemovies: 'Movies',
   browsetv: 'Series',
   requests: 'Requests',
@@ -59,6 +63,12 @@ const SidebarLinks: SidebarLinkProps[] = [
     messagesKey: 'dashboard',
     svgIcon: <SparklesIcon className="mr-3 h-6 w-6" />,
     activeRegExp: /^\/(discover\/?)?$/,
+  },
+  {
+    href: '/dashboard',
+    messagesKey: 'activity',
+    svgIcon: <ChartBarIcon className="mr-3 h-6 w-6" />,
+    activeRegExp: /^\/(dashboard|activity)/,
   },
   {
     href: '/discover/movies',
@@ -131,7 +141,12 @@ const Sidebar = ({
   const router = useRouter();
   const intl = useIntl();
   const { hasPermission } = useUser();
+  const settings = useSettings();
   useClickOutside(navRef, () => setClosed());
+
+  const showDashboardLink =
+    settings.currentSettings.activityEnabled &&
+    settings.currentSettings.mediaServerType === MediaServerType.PLEX;
 
   useEffect(() => {
     if (openIssuesCount) {
@@ -198,13 +213,17 @@ const Sidebar = ({
                       </span>
                     </div>
                     <nav className="mt-10 flex-1 space-y-4 px-4">
-                      {SidebarLinks.filter((link) =>
-                        link.requiredPermission
+                      {SidebarLinks.filter((link) => {
+                        if (link.href === '/dashboard' && !showDashboardLink) {
+                          return false;
+                        }
+
+                        return link.requiredPermission
                           ? hasPermission(link.requiredPermission, {
                               type: link.permissionType ?? 'and',
                             })
-                          : true
-                      ).map((sidebarLink) => {
+                          : true;
+                      }).map((sidebarLink) => {
                         return (
                           <Link
                             key={`mobile-${sidebarLink.messagesKey}`}
@@ -267,13 +286,17 @@ const Sidebar = ({
                 </span>
               </div>
               <nav className="mt-8 flex-1 space-y-4 px-4">
-                {SidebarLinks.filter((link) =>
-                  link.requiredPermission
+                {SidebarLinks.filter((link) => {
+                  if (link.href === '/dashboard' && !showDashboardLink) {
+                    return false;
+                  }
+
+                  return link.requiredPermission
                     ? hasPermission(link.requiredPermission, {
                         type: link.permissionType ?? 'and',
                       })
-                    : true
-                ).map((sidebarLink) => {
+                    : true;
+                }).map((sidebarLink) => {
                   return (
                     <Link
                       key={`desktop-${sidebarLink.messagesKey}`}
