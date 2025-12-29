@@ -145,7 +145,7 @@ class ServiceAvailabilityChecker {
           logger.debug(
             `Found series (TVDB: ${tvdbid}) in ${
               sonarrSettings.is4k ? '4K' : 'Standard'
-            } Sonarr instance (name: ${sonarrSettings.name}`,
+            } Sonarr instance (name: ${sonarrSettings.name})`,
             {
               label: 'Service Availability',
               sonarrId: sonarrSettings.id,
