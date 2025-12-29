@@ -158,10 +158,10 @@ class ServiceAvailabilityChecker {
       }
     }
 
-    const allSeasonNumbers = new Set({
+    const allSeasonNumbers = new Set([
       ...standardSeasons.keys(),
       ...seasons4k.keys(),
-    });
+    ]);
 
     result.seasons = Array.from(allSeasonNumbers).map((seasonNumber) => ({
       seasonNumber,
