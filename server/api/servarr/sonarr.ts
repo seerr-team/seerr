@@ -222,7 +222,9 @@ class SonarrAPI extends ServarrBase<{
                 requestedSeasons: options.seasons,
                 seasonsToSearch,
               });
-              this.searchSeasons(newSeriesResponse.data.id, seasonsToSearch);
+              this.searchSeasons(newSeriesResponse.data.id, seasonsToSearch, {
+                seriesType: newSeriesResponse.data.seriesType,
+              });
             } else {
               logger.debug(
                 'All requested seasons appear fully downloaded, skipping search',
@@ -294,7 +296,9 @@ class SonarrAPI extends ServarrBase<{
               requestedSeasons: options.seasons,
               seasonsToSearch,
             });
-            this.searchSeasons(createdSeriesResponse.data.id, seasonsToSearch);
+            this.searchSeasons(createdSeriesResponse.data.id, seasonsToSearch, {
+              seriesType: createdSeriesResponse.data.seriesType,
+            });
           } else {
             logger.debug(
               'All requested seasons appear fully downloaded, skipping search',
@@ -370,13 +374,19 @@ class SonarrAPI extends ServarrBase<{
 
   public async searchSeasons(
     seriesId: number,
-    seasonNumbers: number[]
+    seasonNumbers: number[],
+    options?: { seriesType?: SonarrSeries['seriesType'] }
   ): Promise<void> {
     const uniqueSeasonNumbers = Array.from(new Set(seasonNumbers)).filter(
       (sn) => Number.isInteger(sn) && sn >= 0
     );
 
     if (uniqueSeasonNumbers.length === 0) {
+      return;
+    }
+
+    if (options?.seriesType === 'anime') {
+      await this.searchAnimeSeasons(seriesId, uniqueSeasonNumbers);
       return;
     }
 
@@ -402,6 +412,69 @@ class SonarrAPI extends ServarrBase<{
           errorMessage: e.message,
           seriesId,
           seasonNumbers: uniqueSeasonNumbers,
+        }
+      );
+    }
+  }
+
+  private async searchAnimeSeasons(
+    seriesId: number,
+    seasonNumbers: number[]
+  ): Promise<void> {
+    try {
+      const episodeIds: number[] = [];
+
+      for (const seasonNumber of seasonNumbers) {
+        const response = await this.axios.get<EpisodeResult[]>('/episode', {
+          params: {
+            seriesId,
+            seasonNumber,
+          },
+        });
+
+        for (const episode of response.data) {
+          if (episode.monitored && !episode.hasFile) {
+            episodeIds.push(episode.id);
+          }
+        }
+      }
+
+      const uniqueEpisodeIds = Array.from(new Set(episodeIds));
+
+      if (uniqueEpisodeIds.length === 0) {
+        logger.debug(
+          'No missing monitored episodes found for requested anime seasons, skipping search',
+          {
+            label: 'Sonarr API',
+            seriesId,
+            seasonNumbers,
+          }
+        );
+        return;
+      }
+
+      logger.info('Executing anime episode search command.', {
+        label: 'Sonarr API',
+        seriesId,
+        seasonNumbers,
+        episodeCount: uniqueEpisodeIds.length,
+      });
+
+      const chunkSize = 100;
+
+      for (let i = 0; i < uniqueEpisodeIds.length; i += chunkSize) {
+        await this.runCommand('EpisodeSearch', {
+          episodeIds: uniqueEpisodeIds.slice(i, i + chunkSize),
+        });
+      }
+    } catch (e) {
+      logger.error(
+        'Something went wrong while executing Sonarr anime episode search.',
+        {
+          label: 'Sonarr API',
+          errorMessage: e.message,
+          seriesId,
+          seasonNumbers,
         }
       );
     }
