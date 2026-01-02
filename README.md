@@ -46,7 +46,7 @@ The documentation linked above is for running the **latest Jellyseerr** release.
 > If you are migrating from **Overseerr** to **Seerr** for beta testing, **do not follow the Jellyseerr latest setup guide**.
 
 Instead, follow the dedicated migration guide:
-👉 https://github.com/seerr-team/seerr/blob/develop/docs/migration-guide.mdx
+https://github.com/seerr-team/seerr/blob/develop/docs/migration-guide.mdx
 
 > [!DANGER]
 > **DO NOT run Jellyseerr (latest) using an existing Overseerr database.**  
