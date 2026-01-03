@@ -109,15 +109,28 @@ const UserWebPushSettings = () => {
   // Deletes/disables corresponding push subscription from database
   const disablePushNotifications = async (endpoint?: string) => {
     try {
-      await unsubscribeToPushNotifications(user?.id, endpoint);
-
-      // Delete from backend if endpoint is available
-      if (subEndpoint) {
-        await deletePushSubscriptionFromBackend(subEndpoint);
-      }
+      const unsubscribedEndpoint = await unsubscribeToPushNotifications(
+        user?.id,
+        endpoint
+      );
 
       localStorage.setItem('pushNotificationsEnabled', 'false');
       setWebPushEnabled(false);
+
+      // Only delete the current browser's subscription, not all devices
+      const endpointToDelete = unsubscribedEndpoint || subEndpoint || endpoint;
+      if (endpointToDelete) {
+        try {
+          await axios.delete(
+            `/api/v1/user/${user?.id}/pushSubscription/${encodeURIComponent(
+              endpointToDelete
+            )}`
+          );
+        } catch {
+          // Ignore deletion failures - backend cleanup is best effort
+        }
+      }
+
       addToast(intl.formatMessage(messages.webpushhasbeendisabled), {
         autoDismiss: true,
         appearance: 'success',
@@ -157,7 +170,33 @@ const UserWebPushSettings = () => {
   useEffect(() => {
     const verifyWebPush = async () => {
       const enabled = await verifyPushSubscription(user?.id, currentSettings);
-      setWebPushEnabled(enabled);
+      let isEnabled = enabled;
+
+      if (!enabled && 'serviceWorker' in navigator) {
+        const { subscription } = await getPushSubscription();
+        if (subscription) {
+          isEnabled = true;
+        }
+      }
+
+      if (!isEnabled && dataDevices && dataDevices.length > 0) {
+        const currentUserAgent = navigator.userAgent;
+        const hasMatchingDevice = dataDevices.some(
+          (device) => device.userAgent === currentUserAgent
+        );
+
+        if (hasMatchingDevice) {
+          isEnabled = true;
+        }
+      }
+
+      setWebPushEnabled(isEnabled);
+      if (localStorage.getItem('pushNotificationsEnabled') === null) {
+        localStorage.setItem(
+          'pushNotificationsEnabled',
+          isEnabled ? 'true' : 'false'
+        );
+      }
     };
 
     if (user?.id) {
