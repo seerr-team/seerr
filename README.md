@@ -48,7 +48,7 @@ The documentation linked above is for running the **latest Jellyseerr** release.
 Instead, follow the dedicated migration guide:
 https://github.com/seerr-team/seerr/blob/develop/docs/migration-guide.mdx
 
-> [!DANGER]
+> [!CAUTION]
 > **DO NOT run Jellyseerr (latest) using an existing Overseerr database.**  
 > Doing so **will cause database corruption and/or irreversible data loss**.
 
