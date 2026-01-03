@@ -24,6 +24,15 @@ interface PushNotificationPayload {
   isAdmin?: boolean;
 }
 
+interface WebPushError extends Error {
+  statusCode?: number;
+  status?: number;
+  body?: string | unknown;
+  response?: {
+    body?: string | unknown;
+  };
+}
+
 class WebPushAgent
   extends BaseAgent<NotificationAgentConfig>
   implements NotificationAgent
@@ -188,19 +197,30 @@ class WebPushAgent
           notificationPayload
         );
       } catch (e) {
+        const webPushError = e as WebPushError;
+        const statusCode = webPushError.statusCode || webPushError.status;
+        const errorMessage = webPushError.message || String(e);
+
+        // RFC 8030: 410/404 are permanent failures, others are transient
+        const isPermanentFailure = statusCode === 410 || statusCode === 404;
+
         logger.error(
-          'Error sending web push notification; removing subscription',
+          isPermanentFailure
+            ? 'Error sending web push notification; removing invalid subscription'
+            : 'Error sending web push notification (transient error, keeping subscription)',
           {
             label: 'Notifications',
             recipient: pushSub.user.displayName,
             type: Notification[type],
             subject: payload.subject,
-            errorMessage: e.message,
+            errorMessage,
+            statusCode: statusCode || 'unknown',
           }
         );
 
-        // Failed to send notification so we need to remove the subscription
-        userPushSubRepository.remove(pushSub);
+        if (isPermanentFailure) {
+          await userPushSubRepository.remove(pushSub);
+        }
       }
     };
 
