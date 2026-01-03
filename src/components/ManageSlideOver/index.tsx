@@ -41,7 +41,6 @@ const filterDuplicateDownloads = (
 
   const seen = new Set<string>();
   return items.filter((item) => {
-    if (!item.downloadId) return true;
     if (seen.has(item.downloadId)) return false;
     seen.add(item.downloadId);
     return true;
