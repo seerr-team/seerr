@@ -45,12 +45,12 @@ The documentation linked above is for running the **latest Jellyseerr** release.
 > [!WARNING]
 > If you are migrating from **Overseerr** to **Seerr** for beta testing, **do not follow the Jellyseerr latest setup guide**.
 
-Instead, follow the dedicated migration guide:
+Instead, follow the dedicated migration guide (with `:develop` tag):
 https://github.com/seerr-team/seerr/blob/develop/docs/migration-guide.mdx
 
 > [!CAUTION]
-> **DO NOT run Jellyseerr (latest) using an existing Overseerr database.**  
-> Doing so **will cause database corruption and/or irreversible data loss**.
+> **DO NOT run Jellyseerr (latest) using an existing Overseerr database. This includes third-party images with `seerr:latest` (as it points to jellyseerr 2.7.3 and not seerr.**  
+> Doing so **may cause database corruption and/or irreversible data loss and/or weird unintended behaviour**. 
 
 For migration assistance, beta testing questions, or troubleshooting, please join our **Discord** and ask for support there.
 
