@@ -9,6 +9,7 @@ import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import { User } from '@server/entity/User';
 import { UserPushSubscription } from '@server/entity/UserPushSubscription';
+import { UserSettings } from '@server/entity/UserSettings';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { WatchlistResponse } from '@server/interfaces/api/discoverInterfaces';
 import type {
@@ -437,7 +438,12 @@ export const canMakePermissionsChange = (
 router.put<
   Record<string, never>,
   Partial<User>[],
-  { ids: string[]; permissions: number }
+  {
+    ids: string[];
+    permissions: number;
+    maxMovieRating?: string;
+    maxTvRating?: string;
+  }
 >('/', isAuthenticated(Permission.MANAGE_USERS), async (req, res, next) => {
   try {
     const isOwner = req.user?.id === 1;
@@ -457,14 +463,29 @@ router.put<
           isOwner ? req.body.ids : req.body.ids.filter((id) => Number(id) !== 1)
         ),
       },
+      relations: ['settings'],
     });
 
     const updatedUsers = await Promise.all(
       users.map(async (user) => {
-        return userRepository.save(<User>{
-          ...user,
-          ...{ permissions: req.body.permissions },
-        });
+        // Update permissions
+        user.permissions = req.body.permissions;
+
+        // Update content ratings if provided
+        if (req.body.maxMovieRating !== undefined) {
+          if (!user.settings) {
+            user.settings = new UserSettings();
+          }
+          user.settings.maxMovieRating = req.body.maxMovieRating || undefined;
+        }
+        if (req.body.maxTvRating !== undefined) {
+          if (!user.settings) {
+            user.settings = new UserSettings();
+          }
+          user.settings.maxTvRating = req.body.maxTvRating || undefined;
+        }
+
+        return userRepository.save(user);
       })
     );
 

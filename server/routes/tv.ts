@@ -10,6 +10,7 @@ import { Watchlist } from '@server/entity/Watchlist';
 import logger from '@server/logger';
 import { mapTvResult } from '@server/models/Search';
 import { mapSeasonWithEpisodes, mapTvDetails } from '@server/models/Tv';
+import { filterTvByRating } from '@server/utils/contentFiltering';
 import { Router } from 'express';
 
 const tvRoutes = Router();
@@ -113,11 +114,13 @@ tvRoutes.get('/:id/recommendations', async (req, res, next) => {
       results.results.map((result) => result.id)
     );
 
+    const filteredResults = await filterTvByRating(results.results, req.user);
+
     return res.status(200).json({
       page: results.page,
       totalPages: results.total_pages,
-      totalResults: results.total_results,
-      results: results.results.map((result) =>
+      totalResults: filteredResults.length,
+      results: filteredResults.map((result) =>
         mapTvResult(
           result,
           media.find(
@@ -154,11 +157,13 @@ tvRoutes.get('/:id/similar', async (req, res, next) => {
       results.results.map((result) => result.id)
     );
 
+    const filteredResults = await filterTvByRating(results.results, req.user);
+
     return res.status(200).json({
       page: results.page,
       totalPages: results.total_pages,
-      totalResults: results.total_results,
-      results: results.results.map((result) =>
+      totalResults: filteredResults.length,
+      results: filteredResults.map((result) =>
         mapTvResult(
           result,
           media.find(

@@ -9,7 +9,7 @@ import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
-import { Form, Formik } from 'formik';
+import { Field, Form, Formik } from 'formik';
 import { useRouter } from 'next/router';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
@@ -22,6 +22,13 @@ const messages = defineMessages(
     toastSettingsFailure: 'Something went wrong while saving settings.',
     permissions: 'Permissions',
     unauthorizedDescription: 'You cannot modify your own permissions.',
+    contentFiltering: 'Content Filtering',
+    maxMovieRating: 'Maximum Movie Rating',
+    maxMovieRatingTip:
+      'Restrict content to this rating or lower (e.g., PG-13 allows G, PG, PG-13)',
+    maxTvRating: 'Maximum TV Rating',
+    maxTvRatingTip:
+      'Restrict TV content to this rating or lower (e.g., TV-PG allows TV-Y, TV-Y7, TV-G, TV-PG)',
   }
 );
 
@@ -37,9 +44,11 @@ const UserPermissions = () => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR<{ permissions?: number }>(
-    user ? `/api/v1/user/${user?.id}/settings/permissions` : null
-  );
+  } = useSWR<{
+    permissions?: number;
+    maxMovieRating?: string;
+    maxTvRating?: string;
+  }>(user ? `/api/v1/user/${user?.id}/settings/permissions` : null);
 
   if (!data && !error) {
     return <LoadingSpinner />;
@@ -80,12 +89,16 @@ const UserPermissions = () => {
       <Formik
         initialValues={{
           currentPermissions: data?.permissions,
+          maxMovieRating: data?.maxMovieRating ?? '',
+          maxTvRating: data?.maxTvRating ?? '',
         }}
         enableReinitialize
         onSubmit={async (values) => {
           try {
             await axios.post(`/api/v1/user/${user?.id}/settings/permissions`, {
               permissions: values.currentPermissions ?? 0,
+              maxMovieRating: values.maxMovieRating || undefined,
+              maxTvRating: values.maxTvRating || undefined,
             });
 
             addToast(intl.formatMessage(messages.toastSettingsSuccess), {
@@ -115,6 +128,64 @@ const UserPermissions = () => {
                     setFieldValue('currentPermissions', newPermission)
                   }
                 />
+              </div>
+              <div className="mt-8 mb-6">
+                <h3 className="heading">
+                  {intl.formatMessage(messages.contentFiltering)}
+                </h3>
+              </div>
+              <div className="section">
+                <div className="form-row">
+                  <label htmlFor="maxMovieRating" className="text-label">
+                    <span>{intl.formatMessage(messages.maxMovieRating)}</span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.maxMovieRatingTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <Field
+                        as="select"
+                        id="maxMovieRating"
+                        name="maxMovieRating"
+                      >
+                        <option value="">No Restriction</option>
+                        <option value="G">G - General Audiences</option>
+                        <option value="PG">PG - Parental Guidance</option>
+                        <option value="PG-13">
+                          PG-13 - Parents Strongly Cautioned
+                        </option>
+                        <option value="R">R - Restricted</option>
+                        <option value="NC-17">NC-17 - Adults Only</option>
+                        <option value="NR">NR - Allow Unrated</option>
+                      </Field>
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="maxTvRating" className="text-label">
+                    <span>{intl.formatMessage(messages.maxTvRating)}</span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.maxTvRatingTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <Field as="select" id="maxTvRating" name="maxTvRating">
+                        <option value="">No Restriction</option>
+                        <option value="TV-Y">TV-Y - All Children</option>
+                        <option value="TV-Y7">TV-Y7 - Children 7+</option>
+                        <option value="TV-G">TV-G - General Audiences</option>
+                        <option value="TV-PG">TV-PG - Parental Guidance</option>
+                        <option value="TV-14">
+                          TV-14 - Parents Strongly Cautioned
+                        </option>
+                        <option value="TV-MA">TV-MA - Mature Audiences</option>
+                        <option value="NR">NR - Allow Unrated</option>
+                      </Field>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className="actions">
                 <div className="flex justify-end">

@@ -4,6 +4,11 @@ import Media from '@server/entity/Media';
 import { findSearchProvider } from '@server/lib/search';
 import logger from '@server/logger';
 import { mapSearchResults } from '@server/models/Search';
+import {
+  filterMoviesByRating,
+  filterTvByRating,
+} from '@server/utils/contentFiltering';
+import { isMovie } from '@server/utils/typeHelpers';
 import { Router } from 'express';
 
 const searchRoutes = Router();
@@ -38,11 +43,26 @@ searchRoutes.get('/', async (req, res, next) => {
       results.results.map((result) => result.id)
     );
 
+    // Apply content filtering based on user's rating restrictions
+    const filteredResults = [];
+    for (const result of results.results) {
+      if (isMovie(result)) {
+        const filtered = await filterMoviesByRating([result], req.user);
+        if (filtered.length > 0) filteredResults.push(result);
+      } else if (result.media_type === 'tv') {
+        const filtered = await filterTvByRating([result], req.user);
+        if (filtered.length > 0) filteredResults.push(result);
+      } else {
+        // Keep persons and collections
+        filteredResults.push(result);
+      }
+    }
+
     return res.status(200).json({
       page: results.page,
       totalPages: results.total_pages,
-      totalResults: results.total_results,
-      results: mapSearchResults(results.results, media),
+      totalResults: filteredResults.length,
+      results: mapSearchResults(filteredResults, media),
     });
   } catch (e) {
     logger.debug('Something went wrong retrieving search results', {
