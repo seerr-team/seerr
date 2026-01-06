@@ -29,6 +29,16 @@ import type {
 } from 'typeorm';
 import { EventSubscriber } from 'typeorm';
 
+const sanitizeDisplayName = (displayName: string): string => {
+  return displayName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/gi, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+};
+
 @EventSubscriber()
 export class MediaRequestSubscriber
   implements EntitySubscriberInterface<MediaRequest>
@@ -310,11 +320,15 @@ export class MediaRequestSubscriber
               mediaId: entity.media.id,
               userId: entity.requestedBy.id,
               newTag:
-                entity.requestedBy.id + '-' + entity.requestedBy.displayName,
+                entity.requestedBy.id +
+                '-' +
+                sanitizeDisplayName(entity.requestedBy.displayName),
             });
             userTag = await radarr.createTag({
               label:
-                entity.requestedBy.id + '-' + entity.requestedBy.displayName,
+                entity.requestedBy.id +
+                '-' +
+                sanitizeDisplayName(entity.requestedBy.displayName),
             });
           }
           if (userTag.id) {
@@ -631,11 +645,15 @@ export class MediaRequestSubscriber
               mediaId: entity.media.id,
               userId: entity.requestedBy.id,
               newTag:
-                entity.requestedBy.id + '-' + entity.requestedBy.displayName,
+                entity.requestedBy.id +
+                '-' +
+                sanitizeDisplayName(entity.requestedBy.displayName),
             });
             userTag = await sonarr.createTag({
               label:
-                entity.requestedBy.id + '-' + entity.requestedBy.displayName,
+                entity.requestedBy.id +
+                '-' +
+                sanitizeDisplayName(entity.requestedBy.displayName),
             });
           }
           if (userTag.id) {
