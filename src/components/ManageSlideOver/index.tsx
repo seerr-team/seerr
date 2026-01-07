@@ -25,6 +25,7 @@ import {
 } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import type { MediaWatchDataResponse } from '@server/interfaces/api/mediaInterfaces';
+import type { DownloadingItem } from '@server/lib/downloadtracker';
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
@@ -32,6 +33,17 @@ import axios from 'axios';
 import Link from 'next/link';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
+
+const filterDuplicateDownloads = (
+  items: DownloadingItem[] = []
+): DownloadingItem[] => {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.downloadId)) return false;
+    seen.add(item.downloadId);
+    return true;
+  });
+};
 
 const messages = defineMessages('components.ManageSlideOver', {
   manageModalTitle: 'Manage {mediaType}',
@@ -230,26 +242,30 @@ const ManageSlideOver = ({
             </h3>
             <div className="overflow-hidden rounded-md border border-gray-700 shadow">
               <ul>
-                {data.mediaInfo?.downloadStatus?.map((status, index) => (
-                  <Tooltip
-                    key={`dl-status-${status.externalId}-${index}`}
-                    content={status.title}
-                  >
-                    <li className="border-b border-gray-700 last:border-b-0">
-                      <DownloadBlock downloadItem={status} />
-                    </li>
-                  </Tooltip>
-                ))}
-                {data.mediaInfo?.downloadStatus4k?.map((status, index) => (
-                  <Tooltip
-                    key={`dl-status-${status.externalId}-${index}`}
-                    content={status.title}
-                  >
-                    <li className="border-b border-gray-700 last:border-b-0">
-                      <DownloadBlock downloadItem={status} is4k />
-                    </li>
-                  </Tooltip>
-                ))}
+                {filterDuplicateDownloads(data.mediaInfo?.downloadStatus).map(
+                  (status, index) => (
+                    <Tooltip
+                      key={`dl-status-${status.externalId}-${index}`}
+                      content={status.title}
+                    >
+                      <li className="border-b border-gray-700 last:border-b-0">
+                        <DownloadBlock downloadItem={status} />
+                      </li>
+                    </Tooltip>
+                  )
+                )}
+                {filterDuplicateDownloads(data.mediaInfo?.downloadStatus4k).map(
+                  (status, index) => (
+                    <Tooltip
+                      key={`dl-status-4k-${status.externalId}-${index}`}
+                      content={status.title}
+                    >
+                      <li className="border-b border-gray-700 last:border-b-0">
+                        <DownloadBlock downloadItem={status} is4k />
+                      </li>
+                    </Tooltip>
+                  )
+                )}
               </ul>
             </div>
           </div>
