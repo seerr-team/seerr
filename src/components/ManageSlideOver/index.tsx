@@ -35,10 +35,8 @@ import { useIntl } from 'react-intl';
 import useSWR from 'swr';
 
 const filterDuplicateDownloads = (
-  items: DownloadingItem[] | undefined
+  items: DownloadingItem[] = []
 ): DownloadingItem[] => {
-  if (!items || items.length === 0) return [];
-
   const seen = new Set<string>();
   return items.filter((item) => {
     if (seen.has(item.downloadId)) return false;
