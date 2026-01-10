@@ -28,7 +28,8 @@ const LoginWithPlex = ({ onComplete }: LoginWithPlexProps) => {
       const response = await axios.post('/api/v1/auth/plex', { authToken });
 
       if (response.data?.id) {
-        revalidate();
+        const { data: user } = await axios.get('/api/v1/auth/me');
+        revalidate(user, false);
       }
     };
     if (authToken) {
