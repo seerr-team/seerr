@@ -31,11 +31,11 @@ You cannot leave this field blank.
 
 ### Display Language
 
-Users can override the [global display language](/using-seerr/settings/general#display-language) to use Seerr in their preferred language.
+Users can override the [global display language](/docs/using-seerr/settings/general.md#display-language) to use Seerr in their preferred language.
 
 ### Discover Region & Discover Language
 
-Users can override the [global filter settings](/using-seerr/settings/general#discover-region-discover-language--streaming-region) to suit their own preferences.
+Users can override the [global filter settings](/docs/using-seerr/settings/general.md#discover-region-discover-language--streaming-region) to suit their own preferences.
 
 ### Movie Request Limit & Series Request Limit
 
@@ -55,7 +55,7 @@ Passwords must be a minimum of 8 characters long.
 
 ## Notifications
 
-Users can configure their personal notification settings here. Please see [Notifications](/using-seerr/notifications/) for details on configuring and enabling notifications.
+Users can configure their personal notification settings here. Please see [Notifications](/docs/using-seerr/notifications/) for details on configuring and enabling notifications.
 
 ## Permissions
 
