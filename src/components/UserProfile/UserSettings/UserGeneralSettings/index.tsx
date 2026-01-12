@@ -5,6 +5,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import LanguageSelector from '@app/components/LanguageSelector';
 import QuotaSelector from '@app/components/QuotaSelector';
 import RegionSelector from '@app/components/RegionSelector';
+import MergeUserModal from '@app/components/UserProfile/UserSettings/UserGeneralSettings/MergeUserModal';
 import { availableLanguages } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
@@ -12,7 +13,11 @@ import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
-import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
+import { Transition } from '@headlessui/react';
+import {
+  ArrowDownOnSquareIcon,
+  ArrowsRightLeftIcon,
+} from '@heroicons/react/24/outline';
 import { ApiErrorCode } from '@server/constants/error';
 import type { UserSettingsGeneralResponse } from '@server/interfaces/api/userSettingsInterfaces';
 import type { AvailableLocale } from '@server/types/languages';
@@ -73,6 +78,9 @@ const messages = defineMessages(
     plexwatchlistsyncseries: 'Auto-Request Series',
     plexwatchlistsyncseriestip:
       'Automatically request series on your <PlexWatchlistSupportLink>Plex Watchlist</PlexWatchlistSupportLink>',
+    mergeuser: 'Merge User',
+    mergeuserdescription:
+      'Transfer all requests, issues, and watchlist items to another user and delete this account.',
   }
 );
 
@@ -82,6 +90,7 @@ const UserGeneralSettings = () => {
   const { locale, setLocale } = useLocale();
   const [movieQuotaEnabled, setMovieQuotaEnabled] = useState(false);
   const [tvQuotaEnabled, setTvQuotaEnabled] = useState(false);
+  const [showMergeModal, setShowMergeModal] = useState(false);
   const router = useRouter();
   const {
     user,
@@ -635,6 +644,27 @@ const UserGeneralSettings = () => {
                     </div>
                   </div>
                 )}
+              {/* Merge User Section - Only show for admins viewing other non-admin users */}
+              {currentHasPermission(Permission.MANAGE_USERS) &&
+                user &&
+                user.id !== 1 &&
+                user.id !== currentUser?.id &&
+                !hasPermission(Permission.ADMIN) && (
+                  <div className="mt-10 border-t border-gray-700 pt-10">
+                    <h3 className="heading text-red-500">Danger Zone</h3>
+                    <p className="description mb-4 text-gray-400">
+                      {intl.formatMessage(messages.mergeuserdescription)}
+                    </p>
+                    <Button
+                      buttonType="danger"
+                      type="button"
+                      onClick={() => setShowMergeModal(true)}
+                    >
+                      <ArrowsRightLeftIcon />
+                      <span>{intl.formatMessage(messages.mergeuser)}</span>
+                    </Button>
+                  </div>
+                )}
               <div className="actions">
                 <div className="flex justify-end">
                   <span className="ml-3 inline-flex rounded-md shadow-sm">
@@ -657,6 +687,29 @@ const UserGeneralSettings = () => {
           );
         }}
       </Formik>
+
+      {/* Merge Modal - Outside form to prevent form submission issues */}
+      <Transition
+        as="div"
+        enter="transition-opacity duration-300"
+        enterFrom="opacity-0"
+        enterTo="opacity-100"
+        leave="transition-opacity duration-300"
+        leaveFrom="opacity-100"
+        leaveTo="opacity-0"
+        show={showMergeModal}
+      >
+        {user && (
+          <MergeUserModal
+            user={user}
+            onCancel={() => setShowMergeModal(false)}
+            onComplete={() => {
+              setShowMergeModal(false);
+              router.push('/users');
+            }}
+          />
+        )}
+      </Transition>
     </>
   );
 };
