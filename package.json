@@ -2,7 +2,7 @@
   "name": "seerr",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@10.24.0",
+  "packageManager": "pnpm@10.27.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "postinstall": "next telemetry disable",
