@@ -67,6 +67,9 @@ const messages = defineMessages('components.Settings.SonarrModal', {
   syncEnabled: 'Enable Scan',
   externalUrl: 'External URL',
   enableSearch: 'Enable Automatic Search',
+  tagRequestsNoID: 'No ID in tag',
+  tagRequestsNoIDInfo:
+    'Do not prefix the tag with user ID. Tag Requests must be enable for this to work.',
   tagRequests: 'Tag Requests',
   tagRequestsInfo:
     "Automatically add an additional tag with the requester's user ID & display name",
@@ -247,6 +250,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
           syncEnabled: sonarr?.syncEnabled ?? false,
           enableSearch: !sonarr?.preventSearch,
           tagRequests: sonarr?.tagRequests ?? false,
+          tagRequestsNoID: sonarr?.tagRequestsNoID ?? false,
         }}
         validationSchema={SonarrSettingsSchema}
         onSubmit={async (values) => {
@@ -290,6 +294,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
               syncEnabled: values.syncEnabled,
               preventSearch: !values.enableSearch,
               tagRequests: values.tagRequests,
+              tagRequestsNoID: values.tagRequestsNoID,
             };
             if (!sonarr) {
               await axios.post('/api/v1/settings/sonarr', submission);
@@ -1028,6 +1033,21 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                       type="checkbox"
                       id="tagRequests"
                       name="tagRequests"
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="tagRequestsNoID" className="checkbox-label">
+                    {intl.formatMessage(messages.tagRequestsNoID)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.tagRequestsNoIDInfo)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="tagRequestsNoID"
+                      name="tagRequestsNoID"
                     />
                   </div>
                 </div>

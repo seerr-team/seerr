@@ -76,6 +76,7 @@ export interface DVRSettings {
   syncEnabled: boolean;
   preventSearch: boolean;
   tagRequests: boolean;
+  tagRequestsNoID: boolean;
   overrideRule: number[];
 }
 
