@@ -303,46 +303,84 @@ export class MediaRequestSubscriber
 
         if (radarrSettings.tagRequests) {
           const radarrTags = await radarr.getTags();
-          // old tags had space around the hyphen
-          let userTag = radarrTags.find((v) =>
-            v.label.startsWith(entity.requestedBy.id + ' - ')
-          );
-          // new tags do not have spaces around the hyphen, since spaces are not allowed anymore
-          if (!userTag) {
-            userTag = radarrTags.find((v) =>
-              v.label.startsWith(entity.requestedBy.id + '-')
+          // We do not want to append user ID to tag
+          if (radarrSettings.tagRequestsNoID) {
+            let userTag = radarrTags.find((v) =>
+              v.label.startsWith(
+                sanitizeDisplayName(
+                  entity.requestedBy.displayName.toLowerCase()
+                )
+              )
             );
-          }
-          if (!userTag) {
-            logger.info(`Requester has no active tag. Creating new`, {
-              label: 'Media Request',
-              requestId: entity.id,
-              mediaId: entity.media.id,
-              userId: entity.requestedBy.id,
-              newTag:
-                entity.requestedBy.id +
-                '-' +
-                sanitizeDisplayName(entity.requestedBy.displayName),
-            });
-            userTag = await radarr.createTag({
-              label:
-                entity.requestedBy.id +
-                '-' +
-                sanitizeDisplayName(entity.requestedBy.displayName),
-            });
-          }
-          if (userTag.id) {
-            if (!tags?.find((v) => v === userTag?.id)) {
-              tags?.push(userTag.id);
+            if (!userTag) {
+              logger.info(`Requester has no active tag. Creating new`, {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+                userId: entity.requestedBy.id,
+                newTag: sanitizeDisplayName(entity.requestedBy.displayName),
+              });
+              userTag = await radarr.createTag({
+                label: sanitizeDisplayName(entity.requestedBy.displayName),
+              });
+            }
+            if (userTag.id) {
+              if (!tags?.find((v) => v === userTag?.id)) {
+                tags?.push(userTag.id);
+              }
+            } else {
+              logger.warn(`Requester has no tag and failed to add one`, {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+                userId: entity.requestedBy.id,
+                radarrServer:
+                  radarrSettings.hostname + ':' + radarrSettings.port,
+              });
             }
           } else {
-            logger.warn(`Requester has no tag and failed to add one`, {
-              label: 'Media Request',
-              requestId: entity.id,
-              mediaId: entity.media.id,
-              userId: entity.requestedBy.id,
-              radarrServer: radarrSettings.hostname + ':' + radarrSettings.port,
-            });
+            // old tags had space around the hyphen
+            let userTag = radarrTags.find((v) =>
+              v.label.startsWith(entity.requestedBy.id + ' - ')
+            );
+            // new tags do not have spaces around the hyphen, since spaces are not allowed anymore
+            if (!userTag) {
+              userTag = radarrTags.find((v) =>
+                v.label.startsWith(entity.requestedBy.id + '-')
+              );
+            }
+            if (!userTag) {
+              logger.info(`Requester has no active tag. Creating new`, {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+                userId: entity.requestedBy.id,
+                newTag:
+                  entity.requestedBy.id +
+                  '-' +
+                  sanitizeDisplayName(entity.requestedBy.displayName),
+              });
+              userTag = await radarr.createTag({
+                label:
+                  entity.requestedBy.id +
+                  '-' +
+                  sanitizeDisplayName(entity.requestedBy.displayName),
+              });
+            }
+            if (userTag.id) {
+              if (!tags?.find((v) => v === userTag?.id)) {
+                tags?.push(userTag.id);
+              }
+            } else {
+              logger.warn(`Requester has no tag and failed to add one`, {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+                userId: entity.requestedBy.id,
+                radarrServer:
+                  radarrSettings.hostname + ':' + radarrSettings.port,
+              });
+            }
           }
         }
 
@@ -628,46 +666,83 @@ export class MediaRequestSubscriber
 
         if (sonarrSettings.tagRequests) {
           const sonarrTags = await sonarr.getTags();
-          // old tags had space around the hyphen
-          let userTag = sonarrTags.find((v) =>
-            v.label.startsWith(entity.requestedBy.id + ' - ')
-          );
-          // new tags do not have spaces around the hyphen, since spaces are not allowed anymore
-          if (!userTag) {
-            userTag = sonarrTags.find((v) =>
-              v.label.startsWith(entity.requestedBy.id + '-')
+          if (sonarrSettings.tagRequestsNoID) {
+            let userTag = sonarrTags.find((v) =>
+              v.label.startsWith(
+                sanitizeDisplayName(
+                  entity.requestedBy.displayName.toLowerCase()
+                )
+              )
             );
-          }
-          if (!userTag) {
-            logger.info(`Requester has no active tag. Creating new`, {
-              label: 'Media Request',
-              requestId: entity.id,
-              mediaId: entity.media.id,
-              userId: entity.requestedBy.id,
-              newTag:
-                entity.requestedBy.id +
-                '-' +
-                sanitizeDisplayName(entity.requestedBy.displayName),
-            });
-            userTag = await sonarr.createTag({
-              label:
-                entity.requestedBy.id +
-                '-' +
-                sanitizeDisplayName(entity.requestedBy.displayName),
-            });
-          }
-          if (userTag.id) {
-            if (!tags?.find((v) => v === userTag?.id)) {
-              tags?.push(userTag.id);
+            if (!userTag) {
+              logger.info(`Requester has no active tag. Creating new`, {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+                userId: entity.requestedBy.id,
+                newTag: sanitizeDisplayName(entity.requestedBy.displayName),
+              });
+              userTag = await sonarr.createTag({
+                label: sanitizeDisplayName(entity.requestedBy.displayName),
+              });
+            }
+            if (userTag.id) {
+              if (!tags?.find((v) => v === userTag?.id)) {
+                tags?.push(userTag.id);
+              }
+            } else {
+              logger.warn(`Requester has no tag and failed to add one`, {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+                userId: entity.requestedBy.id,
+                sonarrServer:
+                  sonarrSettings.hostname + ':' + sonarrSettings.port,
+              });
             }
           } else {
-            logger.warn(`Requester has no tag and failed to add one`, {
-              label: 'Media Request',
-              requestId: entity.id,
-              mediaId: entity.media.id,
-              userId: entity.requestedBy.id,
-              sonarrServer: sonarrSettings.hostname + ':' + sonarrSettings.port,
-            });
+            // old tags had space around the hyphen
+            let userTag = sonarrTags.find((v) =>
+              v.label.startsWith(entity.requestedBy.id + ' - ')
+            );
+            // new tags do not have spaces around the hyphen, since spaces are not allowed anymore
+            if (!userTag) {
+              userTag = sonarrTags.find((v) =>
+                v.label.startsWith(entity.requestedBy.id + '-')
+              );
+            }
+            if (!userTag) {
+              logger.info(`Requester has no active tag. Creating new`, {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+                userId: entity.requestedBy.id,
+                newTag:
+                  entity.requestedBy.id +
+                  '-' +
+                  sanitizeDisplayName(entity.requestedBy.displayName),
+              });
+              userTag = await sonarr.createTag({
+                label:
+                  entity.requestedBy.id +
+                  '-' +
+                  sanitizeDisplayName(entity.requestedBy.displayName),
+              });
+            }
+            if (userTag.id) {
+              if (!tags?.find((v) => v === userTag?.id)) {
+                tags?.push(userTag.id);
+              }
+            } else {
+              logger.warn(`Requester has no tag and failed to add one`, {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+                userId: entity.requestedBy.id,
+                sonarrServer:
+                  sonarrSettings.hostname + ':' + sonarrSettings.port,
+              });
+            }
           }
         }
 
