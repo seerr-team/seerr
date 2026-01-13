@@ -118,6 +118,21 @@ class AvailabilitySync {
           throw new Error('Job aborted');
         }
 
+        if (
+          media.mediaType === 'movie' &&
+          media.status4k === MediaStatus.AVAILABLE
+        ) {
+          logger.debug(
+            `Processing movie [TMDB ID ${media.tmdbId}] with 4K status AVAILABLE`,
+            {
+              label: 'AvailabilitySync',
+              ratingKey: media.ratingKey,
+              ratingKey4k: media.ratingKey4k,
+              externalServiceId4k: media.externalServiceId4k,
+            }
+          );
+        }
+
         // Check plex, radarr, and sonarr for that specific media and
         // if unavailable, then we change the status accordingly.
         // If a non-4k or 4k version exists in at least one of the instances, we will only update that specific version
@@ -137,11 +152,35 @@ class AvailabilitySync {
           const existsInRadarr = await this.mediaExistsInRadarr(media, false);
           const existsInRadarr4k = await this.mediaExistsInRadarr(media, true);
 
+          if (media.status4k === MediaStatus.AVAILABLE) {
+            logger.debug(
+              `Radarr check results for movie [TMDB ID ${media.tmdbId}]`,
+              {
+                label: 'AvailabilitySync',
+                existsInRadarr,
+                existsInRadarr4k,
+              }
+            );
+          }
+
           // plex
           if (mediaServerType === MediaServerType.PLEX) {
             const { existsInPlex } = await this.mediaExistsInPlex(media, false);
             const { existsInPlex: existsInPlex4k } =
               await this.mediaExistsInPlex(media, true);
+
+            if (media.status4k === MediaStatus.AVAILABLE) {
+              logger.debug(
+                `Plex check results for movie [TMDB ID ${media.tmdbId}]`,
+                {
+                  label: 'AvailabilitySync',
+                  existsInPlex,
+                  existsInPlex4k,
+                  ratingKey: media.ratingKey,
+                  ratingKey4k: media.ratingKey4k,
+                }
+              );
+            }
 
             if (existsInPlex || existsInRadarr) {
               movieExists = true;
@@ -149,6 +188,8 @@ class AvailabilitySync {
                 `The non-4K movie [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
                 {
                   label: 'AvailabilitySync',
+                  existsInPlex,
+                  existsInRadarr,
                 }
               );
             }
@@ -159,6 +200,18 @@ class AvailabilitySync {
                 `The 4K movie [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
                 {
                   label: 'AvailabilitySync',
+                  existsInPlex4k,
+                  existsInRadarr4k,
+                }
+              );
+            } else {
+              logger.debug(
+                `4K movie [TMDB ID ${media.tmdbId}] not found in Plex or Radarr - will be marked as deleted`,
+                {
+                  label: 'AvailabilitySync',
+                  existsInPlex4k,
+                  existsInRadarr4k,
+                  ratingKey4k: media.ratingKey4k,
                 }
               );
             }
@@ -666,6 +719,16 @@ class AvailabilitySync {
   ): Promise<boolean> {
     let existsInRadarr = false;
 
+    if (is4k && media.status4k === MediaStatus.AVAILABLE) {
+      logger.debug(
+        `Checking if 4K movie [TMDB ID ${media.tmdbId}] exists in Radarr`,
+        {
+          label: 'AvailabilitySync',
+          externalServiceId4k: media.externalServiceId4k,
+        }
+      );
+    }
+
     // Check for availability in all of the available radarr servers
     // If any find the media, we will assume the media exists
     for (const server of this.radarrServers.filter(
@@ -697,6 +760,18 @@ class AvailabilitySync {
           const is4kMovie =
             resolution?.length === 2 && Number(resolution[0]) >= 2000;
           existsInRadarr = is4k ? is4kMovie : !is4kMovie;
+
+          if (is4k && media.status4k === MediaStatus.AVAILABLE) {
+            logger.debug(
+              `Radarr movie found for 4K movie [TMDB ID ${media.tmdbId}]`,
+              {
+                label: 'AvailabilitySync',
+                hasFile: radarr.hasFile,
+                resolution: radarr?.movieFile?.mediaInfo?.resolution,
+                is4kMovie,
+              }
+            );
+          }
         }
       } catch (ex) {
         if (!ex.message.includes('404')) {
@@ -712,6 +787,17 @@ class AvailabilitySync {
           );
         }
       }
+    }
+
+    if (is4k && media.status4k === MediaStatus.AVAILABLE) {
+      logger.debug(
+        `Radarr check result for 4K movie [TMDB ID ${media.tmdbId}]: ${
+          existsInRadarr ? 'EXISTS' : 'NOT FOUND'
+        }`,
+        {
+          label: 'AvailabilitySync',
+        }
+      );
     }
 
     return existsInRadarr;
@@ -848,6 +934,20 @@ class AvailabilitySync {
     let existsInPlex = false;
     let preventSeasonSearch = false;
 
+    if (
+      is4k &&
+      media.mediaType === 'movie' &&
+      media.status4k === MediaStatus.AVAILABLE
+    ) {
+      logger.debug(
+        `Checking if 4K movie [TMDB ID ${media.tmdbId}] exists in Plex`,
+        {
+          label: 'AvailabilitySync',
+          ratingKey4k,
+        }
+      );
+    }
+
     // Check each plex instance to see if the media still exists
     // If found, we will assume the media exists and prevent removal
     // We can use the cache we built when we fetched the series with mediaExistsInPlex
@@ -861,6 +961,28 @@ class AvailabilitySync {
           this.plexSeasonsCache[ratingKey] =
             await this.plexClient?.getChildrenMetadata(ratingKey);
         }
+
+        if (
+          plexMedia &&
+          media.mediaType === 'movie' &&
+          media.status4k === MediaStatus.AVAILABLE
+        ) {
+          const mediaDetails = plexMedia.Media?.map((m) => ({
+            width: m.width,
+            height: m.height,
+            videoResolution: m.videoResolution,
+            is4kByWidth: (m.width ?? 0) >= 2000,
+          }));
+
+          logger.debug(
+            `Plex metadata for non-4K movie [TMDB ID ${media.tmdbId}] using ratingKey`,
+            {
+              label: 'AvailabilitySync',
+              ratingKey,
+              mediaDetails,
+            }
+          );
+        }
       }
 
       if (ratingKey4k && is4k) {
@@ -870,10 +992,58 @@ class AvailabilitySync {
           this.plexSeasonsCache[ratingKey4k] =
             await this.plexClient?.getChildrenMetadata(ratingKey4k);
         }
+
+        if (plexMedia) {
+          if (
+            media.mediaType === 'movie' &&
+            media.status4k === MediaStatus.AVAILABLE
+          ) {
+            const mediaDetails = plexMedia.Media?.map((m) => ({
+              width: m.width,
+              height: m.height,
+              videoResolution: m.videoResolution,
+              is4kByWidth: (m.width ?? 0) >= 2000,
+            }));
+
+            const has4kByWidth = plexMedia.Media?.some(
+              (mediaItem) => (mediaItem.width ?? 0) >= 2000
+            );
+            const hasNon4kByWidth = plexMedia.Media?.some(
+              (mediaItem) =>
+                (mediaItem.width ?? 0) < 2000 && (mediaItem.width ?? 0) > 0
+            );
+
+            logger.debug(
+              `Plex metadata for 4K movie [TMDB ID ${media.tmdbId}] using ratingKey4k`,
+              {
+                label: 'AvailabilitySync',
+                ratingKey,
+                ratingKey4k,
+                has4kByWidth,
+                hasNon4kByWidth,
+                mediaDetails,
+              }
+            );
+          }
+        }
       }
 
       if (plexMedia) {
         existsInPlex = true;
+      } else {
+        if (
+          is4k &&
+          media.mediaType === 'movie' &&
+          media.status4k === MediaStatus.AVAILABLE
+        ) {
+          logger.debug(
+            `No Plex metadata found for 4K movie [TMDB ID ${media.tmdbId}] using ratingKey4k`,
+            {
+              label: 'AvailabilitySync',
+              ratingKey4k,
+            }
+          );
+        }
       }
     } catch (ex) {
       if (!ex.message.includes('404')) {
