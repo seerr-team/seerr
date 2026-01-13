@@ -881,21 +881,27 @@ class AvailabilitySync {
             await this.plexClient?.getChildrenMetadata(ratingKey4k);
         }
 
-        if (plexMedia && media.mediaType === 'movie') {
-          const has4kByWidth = plexMedia.Media?.some(
-            (mediaItem) => (mediaItem.width ?? 0) >= 2000
-          );
-
-          if (is4k) {
-            if (ratingKey === ratingKey4k || !has4kByWidth) {
-              plexMedia = undefined;
-            }
-          } else {
-            const hasNon4kByWidth = plexMedia.Media?.some(
-              (mediaItem) =>
-                (mediaItem.width ?? 0) < 2000 && (mediaItem.width ?? 0) > 0
+        if (plexMedia) {
+          if (media.mediaType === 'movie') {
+            const has4kByWidth = plexMedia.Media?.some(
+              (mediaItem) => (mediaItem.width ?? 0) >= 2000
             );
-            if (!hasNon4kByWidth && has4kByWidth) {
+
+            if (is4k) {
+              if (ratingKey === ratingKey4k || !has4kByWidth) {
+                plexMedia = undefined;
+              }
+            } else {
+              const hasNon4kByWidth = plexMedia.Media?.some(
+                (mediaItem) =>
+                  (mediaItem.width ?? 0) < 2000 && (mediaItem.width ?? 0) > 0
+              );
+              if (!hasNon4kByWidth && has4kByWidth) {
+                plexMedia = undefined;
+              }
+            }
+          } else if (media.mediaType === 'tv' && is4k) {
+            if (ratingKey === ratingKey4k) {
               plexMedia = undefined;
             }
           }
