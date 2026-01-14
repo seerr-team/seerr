@@ -816,6 +816,24 @@ class AvailabilitySync {
           this.plexSeasonsCache[ratingKey4k] =
             await this.plexClient?.getChildrenMetadata(ratingKey4k);
         }
+
+        if (plexMedia) {
+          // For 4K: ratingKey4k must be different from ratingKey
+          if (ratingKey === ratingKey4k) {
+            plexMedia = undefined;
+          }
+
+          // For movies: verify it actually has 4K resolution
+          if (
+            media.mediaType === 'movie' &&
+            plexMedia &&
+            !plexMedia.Media?.some(
+              (mediaItem) => (mediaItem.width ?? 0) >= 2000
+            )
+          ) {
+            plexMedia = undefined;
+          }
+        }
       }
 
       if (plexMedia) {
