@@ -120,8 +120,8 @@ const SettingsNetwork = () => {
                 trustProxy: values.trustProxy,
                 dnsCache: {
                   enabled: values.dnsCacheEnabled,
-                  forceMinTtl: values.dnsCacheForceMinTtl,
-                  forceMaxTtl: values.dnsCacheForceMaxTtl,
+                  forceMinTtl: Number(values.dnsCacheForceMinTtl),
+                  forceMaxTtl: Number(values.dnsCacheForceMaxTtl),
                 },
                 proxy: {
                   enabled: values.proxyEnabled,
