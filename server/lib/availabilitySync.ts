@@ -818,20 +818,46 @@ class AvailabilitySync {
         }
 
         if (plexMedia) {
-          // For 4K: ratingKey4k must be different from ratingKey
           if (ratingKey === ratingKey4k) {
             plexMedia = undefined;
           }
 
-          // For movies: verify it actually has 4K resolution
           if (
-            media.mediaType === 'movie' &&
             plexMedia &&
+            media.mediaType === 'movie' &&
             !plexMedia.Media?.some(
               (mediaItem) => (mediaItem.width ?? 0) >= 2000
             )
           ) {
             plexMedia = undefined;
+          }
+
+          if (plexMedia && media.mediaType === 'tv') {
+            const cachedSeasons = this.plexSeasonsCache[ratingKey4k];
+            if (cachedSeasons?.length) {
+              let has4kInAnySeason = false;
+              for (const season of cachedSeasons) {
+                try {
+                  const episodes = await this.plexClient?.getChildrenMetadata(
+                    season.ratingKey
+                  );
+                  const has4kEpisode = episodes?.some((episode) =>
+                    episode.Media?.some(
+                      (mediaItem) => (mediaItem.width ?? 0) >= 2000
+                    )
+                  );
+                  if (has4kEpisode) {
+                    has4kInAnySeason = true;
+                    break;
+                  }
+                } catch {
+                  // If we can't fetch episodes for a season, continue checking other seasons
+                }
+              }
+              if (!has4kInAnySeason) {
+                plexMedia = undefined;
+              }
+            }
           }
         }
       }
