@@ -1022,6 +1022,8 @@
   "components.Settings.SettingsNetwork.toastSettingsSuccess": "Settings saved successfully!",
   "components.Settings.SettingsNetwork.trustProxy": "Enable Proxy Support",
   "components.Settings.SettingsNetwork.trustProxyTip": "Allow Seerr to correctly register client IP addresses behind a proxy",
+  "components.Settings.SettingsNetwork.validationDnsCacheMaxTtl": "You must provide a valid maximum TTL",
+  "components.Settings.SettingsNetwork.validationDnsCacheMinTtl": "You must provide a valid minimum TTL",
   "components.Settings.SettingsNetwork.validationProxyPort": "You must provide a valid port",
   "components.Settings.SettingsUsers.atLeastOneAuth": "At least one authentication method must be selected.",
   "components.Settings.SettingsUsers.defaultPermissions": "Default Permissions",
