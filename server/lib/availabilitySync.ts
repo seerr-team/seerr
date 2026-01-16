@@ -139,28 +139,55 @@ class AvailabilitySync {
 
           // plex
           if (mediaServerType === MediaServerType.PLEX) {
-            const { existsInPlex } = await this.mediaExistsInPlex(media, false);
-            const { existsInPlex: existsInPlex4k } =
-              await this.mediaExistsInPlex(media, true);
+            if (settings.main.prioritizeRadarrSonarr) {
+              // When prioritizing Radarr/Sonarr, use ONLY Radarr availability
+              if (existsInRadarr) {
+                movieExists = true;
+                logger.info(
+                  `The non-4K movie [TMDB ID ${media.tmdbId}] still exists in Radarr. Preventing removal.`,
+                  {
+                    label: 'AvailabilitySync',
+                  }
+                );
+              }
 
-            if (existsInPlex || existsInRadarr) {
-              movieExists = true;
-              logger.info(
-                `The non-4K movie [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
-                {
-                  label: 'AvailabilitySync',
-                }
+              if (existsInRadarr4k) {
+                movieExists4k = true;
+                logger.info(
+                  `The 4K movie [TMDB ID ${media.tmdbId}] still exists in Radarr. Preventing removal.`,
+                  {
+                    label: 'AvailabilitySync',
+                  }
+                );
+              }
+            } else {
+              // Original OR logic: check both Plex AND Radarr
+              const { existsInPlex } = await this.mediaExistsInPlex(
+                media,
+                false
               );
-            }
+              const { existsInPlex: existsInPlex4k } =
+                await this.mediaExistsInPlex(media, true);
 
-            if (existsInPlex4k || existsInRadarr4k) {
-              movieExists4k = true;
-              logger.info(
-                `The 4K movie [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
-                {
-                  label: 'AvailabilitySync',
-                }
-              );
+              if (existsInPlex || existsInRadarr) {
+                movieExists = true;
+                logger.info(
+                  `The non-4K movie [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
+                  {
+                    label: 'AvailabilitySync',
+                  }
+                );
+              }
+
+              if (existsInPlex4k || existsInRadarr4k) {
+                movieExists4k = true;
+                logger.info(
+                  `The 4K movie [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
+                  {
+                    label: 'AvailabilitySync',
+                  }
+                );
+              }
             }
           }
 
@@ -169,31 +196,55 @@ class AvailabilitySync {
             mediaServerType === MediaServerType.JELLYFIN ||
             mediaServerType === MediaServerType.EMBY
           ) {
-            const { existsInJellyfin } = await this.mediaExistsInJellyfin(
-              media,
-              false
-            );
-            const { existsInJellyfin: existsInJellyfin4k } =
-              await this.mediaExistsInJellyfin(media, true);
+            if (settings.main.prioritizeRadarrSonarr) {
+              // When prioritizing Radarr/Sonarr, use ONLY Radarr availability
+              if (existsInRadarr) {
+                movieExists = true;
+                logger.info(
+                  `The non-4K movie [TMDB ID ${media.tmdbId}] still exists in Radarr. Preventing removal.`,
+                  {
+                    label: 'AvailabilitySync',
+                  }
+                );
+              }
 
-            if (existsInJellyfin || existsInRadarr) {
-              movieExists = true;
-              logger.info(
-                `The non-4K movie [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
-                {
-                  label: 'AvailabilitySync',
-                }
+              if (existsInRadarr4k) {
+                movieExists4k = true;
+                logger.info(
+                  `The 4K movie [TMDB ID ${media.tmdbId}] still exists in Radarr. Preventing removal.`,
+                  {
+                    label: 'AvailabilitySync',
+                  }
+                );
+              }
+            } else {
+              // Original OR logic: check both Jellyfin AND Radarr
+              const { existsInJellyfin } = await this.mediaExistsInJellyfin(
+                media,
+                false
               );
-            }
+              const { existsInJellyfin: existsInJellyfin4k } =
+                await this.mediaExistsInJellyfin(media, true);
 
-            if (existsInJellyfin4k || existsInRadarr4k) {
-              movieExists4k = true;
-              logger.info(
-                `The 4K movie [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
-                {
-                  label: 'AvailabilitySync',
-                }
-              );
+              if (existsInJellyfin || existsInRadarr) {
+                movieExists = true;
+                logger.info(
+                  `The non-4K movie [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
+                  {
+                    label: 'AvailabilitySync',
+                  }
+                );
+              }
+
+              if (existsInJellyfin4k || existsInRadarr4k) {
+                movieExists4k = true;
+                logger.info(
+                  `The 4K movie [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
+                  {
+                    label: 'AvailabilitySync',
+                  }
+                );
+              }
             }
           }
 
@@ -212,25 +263,13 @@ class AvailabilitySync {
           let showExists = false;
           let showExists4k = false;
 
-          //plex
+          // Initialize season maps
+          let plexSeasonsMap = new Map<number, boolean>();
+          let plexSeasonsMap4k = new Map<number, boolean>();
+          let jellyfinSeasonsMap = new Map<number, boolean>();
+          let jellyfinSeasonsMap4k = new Map<number, boolean>();
 
-          const { existsInPlex, seasonsMap: plexSeasonsMap = new Map() } =
-            await this.mediaExistsInPlex(media, false);
-          const {
-            existsInPlex: existsInPlex4k,
-            seasonsMap: plexSeasonsMap4k = new Map(),
-          } = await this.mediaExistsInPlex(media, true);
-
-          //jellyfin
-          const {
-            existsInJellyfin,
-            seasonsMap: jellyfinSeasonsMap = new Map(),
-          } = await this.mediaExistsInJellyfin(media, false);
-          const {
-            existsInJellyfin: existsInJellyfin4k,
-            seasonsMap: jellyfinSeasonsMap4k = new Map(),
-          } = await this.mediaExistsInJellyfin(media, true);
-
+          // Always check Sonarr first
           const { existsInSonarr, seasonsMap: sonarrSeasonsMap } =
             await this.mediaExistsInSonarr(media, false);
           const {
@@ -240,26 +279,60 @@ class AvailabilitySync {
 
           //plex
           if (mediaServerType === MediaServerType.PLEX) {
-            if (existsInPlex || existsInSonarr) {
-              showExists = true;
-              logger.info(
-                `The non-4K show [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
-                {
-                  label: 'AvailabilitySync',
-                }
-              );
-            }
-          }
+            if (settings.main.prioritizeRadarrSonarr) {
+              // When prioritizing Radarr/Sonarr, use ONLY Sonarr availability
+              if (existsInSonarr) {
+                showExists = true;
+                logger.info(
+                  `The non-4K show [TMDB ID ${media.tmdbId}] still exists in Sonarr. Preventing removal.`,
+                  {
+                    label: 'AvailabilitySync',
+                  }
+                );
+              }
 
-          if (mediaServerType === MediaServerType.PLEX) {
-            if (existsInPlex4k || existsInSonarr4k) {
-              showExists4k = true;
-              logger.info(
-                `The 4K show [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
-                {
-                  label: 'AvailabilitySync',
-                }
-              );
+              if (existsInSonarr4k) {
+                showExists4k = true;
+                logger.info(
+                  `The 4K show [TMDB ID ${media.tmdbId}] still exists in Sonarr. Preventing removal.`,
+                  {
+                    label: 'AvailabilitySync',
+                  }
+                );
+              }
+            } else {
+              // Original OR logic: check both Plex AND Sonarr
+              const {
+                existsInPlex,
+                seasonsMap: plexSeasonsMapResult = new Map(),
+              } = await this.mediaExistsInPlex(media, false);
+              const {
+                existsInPlex: existsInPlex4k,
+                seasonsMap: plexSeasonsMap4kResult = new Map(),
+              } = await this.mediaExistsInPlex(media, true);
+
+              plexSeasonsMap = plexSeasonsMapResult;
+              plexSeasonsMap4k = plexSeasonsMap4kResult;
+
+              if (existsInPlex || existsInSonarr) {
+                showExists = true;
+                logger.info(
+                  `The non-4K show [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
+                  {
+                    label: 'AvailabilitySync',
+                  }
+                );
+              }
+
+              if (existsInPlex4k || existsInSonarr4k) {
+                showExists4k = true;
+                logger.info(
+                  `The 4K show [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
+                  {
+                    label: 'AvailabilitySync',
+                  }
+                );
+              }
             }
           }
 
@@ -268,29 +341,60 @@ class AvailabilitySync {
             mediaServerType === MediaServerType.JELLYFIN ||
             mediaServerType === MediaServerType.EMBY
           ) {
-            if (existsInJellyfin || existsInSonarr) {
-              showExists = true;
-              logger.info(
-                `The non-4K show [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
-                {
-                  label: 'AvailabilitySync',
-                }
-              );
-            }
-          }
+            if (settings.main.prioritizeRadarrSonarr) {
+              // When prioritizing Radarr/Sonarr, use ONLY Sonarr availability
+              if (existsInSonarr) {
+                showExists = true;
+                logger.info(
+                  `The non-4K show [TMDB ID ${media.tmdbId}] still exists in Sonarr. Preventing removal.`,
+                  {
+                    label: 'AvailabilitySync',
+                  }
+                );
+              }
 
-          if (
-            mediaServerType === MediaServerType.JELLYFIN ||
-            mediaServerType === MediaServerType.EMBY
-          ) {
-            if (existsInJellyfin4k || existsInSonarr4k) {
-              showExists4k = true;
-              logger.info(
-                `The 4K show [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
-                {
-                  label: 'AvailabilitySync',
-                }
-              );
+              if (existsInSonarr4k) {
+                showExists4k = true;
+                logger.info(
+                  `The 4K show [TMDB ID ${media.tmdbId}] still exists in Sonarr. Preventing removal.`,
+                  {
+                    label: 'AvailabilitySync',
+                  }
+                );
+              }
+            } else {
+              // Original OR logic: check both Jellyfin AND Sonarr
+              const {
+                existsInJellyfin,
+                seasonsMap: jellyfinSeasonsMapResult = new Map(),
+              } = await this.mediaExistsInJellyfin(media, false);
+              const {
+                existsInJellyfin: existsInJellyfin4k,
+                seasonsMap: jellyfinSeasonsMap4kResult = new Map(),
+              } = await this.mediaExistsInJellyfin(media, true);
+
+              jellyfinSeasonsMap = jellyfinSeasonsMapResult;
+              jellyfinSeasonsMap4k = jellyfinSeasonsMap4kResult;
+
+              if (existsInJellyfin || existsInSonarr) {
+                showExists = true;
+                logger.info(
+                  `The non-4K show [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
+                  {
+                    label: 'AvailabilitySync',
+                  }
+                );
+              }
+
+              if (existsInJellyfin4k || existsInSonarr4k) {
+                showExists4k = true;
+                logger.info(
+                  `The 4K show [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
+                  {
+                    label: 'AvailabilitySync',
+                  }
+                );
+              }
             }
           }
 
@@ -315,40 +419,64 @@ class AvailabilitySync {
           const finalSeasons: Map<number, boolean> = new Map();
 
           if (mediaServerType === MediaServerType.PLEX) {
-            plexSeasonsMap.forEach((value, key) => {
-              finalSeasons.set(key, value);
-            });
-
-            filteredSeasonsMap.forEach((value, key) => {
-              if (!finalSeasons.has(key)) {
+            if (settings.main.prioritizeRadarrSonarr) {
+              // When prioritizing Radarr/Sonarr, use ONLY Sonarr season data
+              filteredSeasonsMap.forEach((value, key) => {
                 finalSeasons.set(key, value);
-              }
-            });
+              });
 
-            sonarrSeasonsMap.forEach((value, key) => {
-              if (!finalSeasons.has(key)) {
+              sonarrSeasonsMap.forEach((value, key) => {
                 finalSeasons.set(key, value);
-              }
-            });
+              });
+            } else {
+              // Original logic: Plex seasons take priority
+              plexSeasonsMap.forEach((value, key) => {
+                finalSeasons.set(key, value);
+              });
+
+              filteredSeasonsMap.forEach((value, key) => {
+                if (!finalSeasons.has(key)) {
+                  finalSeasons.set(key, value);
+                }
+              });
+
+              sonarrSeasonsMap.forEach((value, key) => {
+                if (!finalSeasons.has(key)) {
+                  finalSeasons.set(key, value);
+                }
+              });
+            }
           } else if (
             mediaServerType === MediaServerType.JELLYFIN ||
             mediaServerType === MediaServerType.EMBY
           ) {
-            jellyfinSeasonsMap.forEach((value, key) => {
-              finalSeasons.set(key, value);
-            });
-
-            filteredSeasonsMap.forEach((value, key) => {
-              if (!finalSeasons.has(key)) {
+            if (settings.main.prioritizeRadarrSonarr) {
+              // When prioritizing Radarr/Sonarr, use ONLY Sonarr season data
+              filteredSeasonsMap.forEach((value, key) => {
                 finalSeasons.set(key, value);
-              }
-            });
+              });
 
-            sonarrSeasonsMap.forEach((value, key) => {
-              if (!finalSeasons.has(key)) {
+              sonarrSeasonsMap.forEach((value, key) => {
                 finalSeasons.set(key, value);
-              }
-            });
+              });
+            } else {
+              // Original logic: Jellyfin seasons take priority
+              jellyfinSeasonsMap.forEach((value, key) => {
+                finalSeasons.set(key, value);
+              });
+
+              filteredSeasonsMap.forEach((value, key) => {
+                if (!finalSeasons.has(key)) {
+                  finalSeasons.set(key, value);
+                }
+              });
+
+              sonarrSeasonsMap.forEach((value, key) => {
+                if (!finalSeasons.has(key)) {
+                  finalSeasons.set(key, value);
+                }
+              });
+            }
           }
 
           const filteredSeasonsMap4k: Map<number, boolean> = new Map();
@@ -367,40 +495,64 @@ class AvailabilitySync {
           const finalSeasons4k: Map<number, boolean> = new Map();
 
           if (mediaServerType === MediaServerType.PLEX) {
-            plexSeasonsMap4k.forEach((value, key) => {
-              finalSeasons4k.set(key, value);
-            });
-
-            filteredSeasonsMap4k.forEach((value, key) => {
-              if (!finalSeasons4k.has(key)) {
+            if (settings.main.prioritizeRadarrSonarr) {
+              // When prioritizing Radarr/Sonarr, use ONLY Sonarr season data
+              filteredSeasonsMap4k.forEach((value, key) => {
                 finalSeasons4k.set(key, value);
-              }
-            });
+              });
 
-            sonarrSeasonsMap4k.forEach((value, key) => {
-              if (!finalSeasons4k.has(key)) {
+              sonarrSeasonsMap4k.forEach((value, key) => {
                 finalSeasons4k.set(key, value);
-              }
-            });
+              });
+            } else {
+              // Original logic: Plex seasons take priority
+              plexSeasonsMap4k.forEach((value, key) => {
+                finalSeasons4k.set(key, value);
+              });
+
+              filteredSeasonsMap4k.forEach((value, key) => {
+                if (!finalSeasons4k.has(key)) {
+                  finalSeasons4k.set(key, value);
+                }
+              });
+
+              sonarrSeasonsMap4k.forEach((value, key) => {
+                if (!finalSeasons4k.has(key)) {
+                  finalSeasons4k.set(key, value);
+                }
+              });
+            }
           } else if (
             mediaServerType === MediaServerType.JELLYFIN ||
             mediaServerType === MediaServerType.EMBY
           ) {
-            jellyfinSeasonsMap4k.forEach((value, key) => {
-              finalSeasons4k.set(key, value);
-            });
-
-            filteredSeasonsMap4k.forEach((value, key) => {
-              if (!finalSeasons4k.has(key)) {
+            if (settings.main.prioritizeRadarrSonarr) {
+              // When prioritizing Radarr/Sonarr, use ONLY Sonarr season data
+              filteredSeasonsMap4k.forEach((value, key) => {
                 finalSeasons4k.set(key, value);
-              }
-            });
+              });
 
-            sonarrSeasonsMap4k.forEach((value, key) => {
-              if (!finalSeasons4k.has(key)) {
+              sonarrSeasonsMap4k.forEach((value, key) => {
                 finalSeasons4k.set(key, value);
-              }
-            });
+              });
+            } else {
+              // Original logic: Jellyfin seasons take priority
+              jellyfinSeasonsMap4k.forEach((value, key) => {
+                finalSeasons4k.set(key, value);
+              });
+
+              filteredSeasonsMap4k.forEach((value, key) => {
+                if (!finalSeasons4k.has(key)) {
+                  finalSeasons4k.set(key, value);
+                }
+              });
+
+              sonarrSeasonsMap4k.forEach((value, key) => {
+                if (!finalSeasons4k.has(key)) {
+                  finalSeasons4k.set(key, value);
+                }
+              });
+            }
           }
 
           if (
@@ -501,6 +653,7 @@ class AvailabilitySync {
     mediaServerType: MediaServerType
   ): Promise<void> {
     const mediaRepository = getRepository(Media);
+    const settings = getSettings();
 
     try {
       // If media type is tv, check if a season is processing
@@ -530,46 +683,65 @@ class AvailabilitySync {
         }
       }
 
-      // Set the non-4K or 4K media to deleted
-      // and change related columns to null if media
-      // is not processing
-      media[is4k ? 'status4k' : 'status'] = MediaStatus.DELETED;
-      media[is4k ? 'serviceId4k' : 'serviceId'] = isMediaProcessing
-        ? media[is4k ? 'serviceId4k' : 'serviceId']
-        : null;
+      // When prioritizing Radarr/Sonarr, set status to UNKNOWN instead of DELETED
+      // (placeholder files were never legitimate, so they're not "deleted")
+      // Otherwise use DELETED (natural Seerr flow for removed media)
+      media[is4k ? 'status4k' : 'status'] = settings.main.prioritizeRadarrSonarr
+        ? MediaStatus.UNKNOWN
+        : MediaStatus.DELETED;
+
+      // When prioritizing Radarr/Sonarr, always clear metadata since the item
+      // doesn't exist in Radarr/Sonarr (even if there's a pending request)
+      // Otherwise, only clear if not processing
+      const shouldClearMetadata =
+        settings.main.prioritizeRadarrSonarr || !isMediaProcessing;
+
+      media[is4k ? 'serviceId4k' : 'serviceId'] = shouldClearMetadata
+        ? null
+        : media[is4k ? 'serviceId4k' : 'serviceId'];
       media[is4k ? 'externalServiceId4k' : 'externalServiceId'] =
-        isMediaProcessing
-          ? media[is4k ? 'externalServiceId4k' : 'externalServiceId']
-          : null;
+        shouldClearMetadata
+          ? null
+          : media[is4k ? 'externalServiceId4k' : 'externalServiceId'];
       media[is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'] =
-        isMediaProcessing
-          ? media[is4k ? 'externalServiceSlug4k' : 'externalServiceSlug']
-          : null;
+        shouldClearMetadata
+          ? null
+          : media[is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'];
+
       if (mediaServerType === MediaServerType.PLEX) {
-        media[is4k ? 'ratingKey4k' : 'ratingKey'] = isMediaProcessing
-          ? media[is4k ? 'ratingKey4k' : 'ratingKey']
-          : null;
+        media[is4k ? 'ratingKey4k' : 'ratingKey'] = shouldClearMetadata
+          ? null
+          : media[is4k ? 'ratingKey4k' : 'ratingKey'];
       } else if (
         mediaServerType === MediaServerType.JELLYFIN ||
         mediaServerType === MediaServerType.EMBY
       ) {
         media[is4k ? 'jellyfinMediaId4k' : 'jellyfinMediaId'] =
-          isMediaProcessing
-            ? media[is4k ? 'jellyfinMediaId4k' : 'jellyfinMediaId']
-            : null;
+          shouldClearMetadata
+            ? null
+            : media[is4k ? 'jellyfinMediaId4k' : 'jellyfinMediaId'];
       }
+      const newStatus = settings.main.prioritizeRadarrSonarr
+        ? 'unknown'
+        : 'deleted';
+      const searchLocation = settings.main.prioritizeRadarrSonarr
+        ? media.mediaType === 'movie'
+          ? 'Radarr'
+          : 'Sonarr'
+        : `${media.mediaType === 'movie' ? 'Radarr' : 'Sonarr'} and ${
+            mediaServerType === MediaServerType.PLEX
+              ? 'Plex'
+              : mediaServerType === MediaServerType.JELLYFIN
+              ? 'Jellyfin'
+              : 'Emby'
+          }`;
+
       logger.info(
         `The ${is4k ? '4K' : 'non-4K'} ${
           media.mediaType === 'movie' ? 'movie' : 'show'
-        } [TMDB ID ${media.tmdbId}] was not found in any ${
-          media.mediaType === 'movie' ? 'Radarr' : 'Sonarr'
-        } and ${
-          mediaServerType === MediaServerType.PLEX
-            ? 'plex'
-            : mediaServerType === MediaServerType.JELLYFIN
-            ? 'jellyfin'
-            : 'emby'
-        } instance. Status will be changed to deleted.`,
+        } [TMDB ID ${
+          media.tmdbId
+        }] was not found in ${searchLocation}. Status will be changed to ${newStatus}.`,
         { label: 'AvailabilitySync' }
       );
 
@@ -594,6 +766,7 @@ class AvailabilitySync {
     mediaServerType: MediaServerType
   ): Promise<void> {
     const mediaRepository = getRepository(Media);
+    const settings = getSettings();
 
     // Filter out only the values that are false
     // (media that should be deleted)
@@ -608,9 +781,14 @@ class AvailabilitySync {
     // let isSeasonRemoved = false;
 
     try {
+      // When prioritizing Radarr/Sonarr, set status to UNKNOWN instead of DELETED
+      const removalStatus = settings.main.prioritizeRadarrSonarr
+        ? MediaStatus.UNKNOWN
+        : MediaStatus.DELETED;
+
       for (const mediaSeason of media.seasons) {
         if (seasonsPendingRemoval.has(mediaSeason.seasonNumber)) {
-          mediaSeason[is4k ? 'status4k' : 'status'] = MediaStatus.DELETED;
+          mediaSeason[is4k ? 'status4k' : 'status'] = removalStatus;
         }
       }
 
@@ -633,18 +811,25 @@ class AvailabilitySync {
       media.lastSeasonChange = new Date();
       await mediaRepository.save(media);
 
+      const newStatus = settings.main.prioritizeRadarrSonarr
+        ? 'unknown'
+        : 'deleted';
+      const searchLocation = settings.main.prioritizeRadarrSonarr
+        ? media.mediaType === 'tv'
+          ? 'Sonarr'
+          : 'Radarr'
+        : `${media.mediaType === 'tv' ? 'Sonarr' : 'Radarr'} and ${
+            mediaServerType === MediaServerType.PLEX
+              ? 'Plex'
+              : mediaServerType === MediaServerType.JELLYFIN
+              ? 'Jellyfin'
+              : 'Emby'
+          }`;
+
       logger.info(
         `The ${is4k ? '4K' : 'non-4K'} season(s) [${seasonKeys}] [TMDB ID ${
           media.tmdbId
-        }] was not found in any ${
-          media.mediaType === 'tv' ? 'Sonarr' : 'Radarr'
-        } and ${
-          mediaServerType === MediaServerType.PLEX
-            ? 'plex'
-            : mediaServerType === MediaServerType.JELLYFIN
-            ? 'jellyfin'
-            : 'emby'
-        } instance. Status will be changed to deleted.`,
+        }] was not found in ${searchLocation}. Status will be changed to ${newStatus}.`,
         { label: 'AvailabilitySync' }
       );
     } catch (ex) {
