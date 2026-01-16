@@ -377,6 +377,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           webAppUrl: data?.webAppUrl,
         }}
         validationSchema={PlexSettingsSchema}
+        validateOnMount={true}
         onSubmit={async (values) => {
           let toastId: string | null = null;
           try {
@@ -423,6 +424,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           values,
           handleSubmit,
           setFieldValue,
+          setValues,
           isSubmitting,
           isValid,
         }) => {
@@ -445,9 +447,12 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                           availablePresets[Number(e.target.value)];
 
                         if (targPreset) {
-                          setFieldValue('hostname', targPreset.address);
-                          setFieldValue('port', targPreset.port);
-                          setFieldValue('useSsl', targPreset.ssl);
+                          setValues({
+                            ...values,
+                            hostname: targPreset.address,
+                            port: targPreset.port,
+                            useSsl: targPreset.ssl,
+                          });
                         }
                       }}
                     >
