@@ -11,7 +11,8 @@ export let requestInterceptorFunction: (
 ) => InternalAxiosRequestConfig;
 
 export default async function createCustomProxyAgent(
-  proxySettings: ProxySettings
+  proxySettings: ProxySettings,
+  forceIpv4First?: boolean
 ) {
   const defaultAgent = new Agent({ keepAliveTimeout: 5000 });
 
@@ -78,6 +79,7 @@ export default async function createCustomProxyAgent(
       maxFreeSockets: 10,
       timeout: 5000,
       scheduling: 'lifo' as const,
+      family: forceIpv4First ? 4 : undefined,
     };
     axios.defaults.httpAgent = new HttpProxyAgent(proxyUrl, agentOptions);
     axios.defaults.httpsAgent = new HttpsProxyAgent(proxyUrl, agentOptions);
