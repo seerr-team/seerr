@@ -209,6 +209,34 @@ class SonarrAPI extends ServarrBase<{
             series: newSeriesResponse.data,
           });
 
+          try {
+            const episodes = await this.getEpisodes(newSeriesResponse.data.id);
+            const episodeIdsToMonitor = episodes
+              .filter(
+                (ep) =>
+                  options.seasons.includes(ep.seasonNumber) && !ep.monitored
+              )
+              .map((ep) => ep.id);
+
+            if (episodeIdsToMonitor.length > 0) {
+              logger.debug(
+                'Re-monitoring unmonitored episodes for requested seasons.',
+                {
+                  label: 'Sonarr',
+                  seriesId: newSeriesResponse.data.id,
+                  episodeCount: episodeIdsToMonitor.length,
+                }
+              );
+              await this.monitorEpisodes(episodeIdsToMonitor);
+            }
+          } catch (e) {
+            logger.warn('Failed to re-monitor episodes', {
+              label: 'Sonarr',
+              errorMessage: e.message,
+              seriesId: newSeriesResponse.data.id,
+            });
+          }
+
           if (options.searchNow) {
             this.searchSeries(newSeriesResponse.data.id);
           }
@@ -315,6 +343,38 @@ class SonarrAPI extends ServarrBase<{
           seriesId,
         }
       );
+    }
+  }
+
+  public async getEpisodes(seriesId: number): Promise<EpisodeResult[]> {
+    try {
+      const response = await this.axios.get<EpisodeResult[]>('/episode', {
+        params: { seriesId },
+      });
+      return response.data;
+    } catch (e) {
+      logger.error('Failed to retrieve episodes', {
+        label: 'Sonarr API',
+        errorMessage: e.message,
+        seriesId,
+      });
+      throw new Error('Failed to get episodes');
+    }
+  }
+
+  public async monitorEpisodes(episodeIds: number[]): Promise<void> {
+    try {
+      await this.axios.put('/episode/monitor', {
+        episodeIds,
+        monitored: true,
+      });
+    } catch (e) {
+      logger.error('Failed to monitor episodes', {
+        label: 'Sonarr API',
+        errorMessage: e.message,
+        episodeIds,
+      });
+      throw new Error('Failed to monitor episodes');
     }
   }
 
