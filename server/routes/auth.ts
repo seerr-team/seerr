@@ -626,76 +626,6 @@ authRoutes.post('/local', async (req, res, next) => {
       });
     }
 
-    const mainUser = await userRepository.findOneOrFail({
-      select: { id: true, plexToken: true, plexId: true },
-      where: { id: 1 },
-    });
-    const mainPlexTv = new PlexTvAPI(mainUser.plexToken ?? '');
-
-    if (!user.plexId) {
-      try {
-        const plexUsersResponse = await mainPlexTv.getUsers();
-        const account = plexUsersResponse.MediaContainer.User.find(
-          (account) =>
-            account.$.email &&
-            account.$.email.toLowerCase() === user.email.toLowerCase()
-        )?.$;
-
-        if (
-          account &&
-          (await mainPlexTv.checkUserAccess(parseInt(account.id)))
-        ) {
-          logger.info(
-            'Found matching Plex user; updating user with Plex data',
-            {
-              label: 'API',
-              ip: req.ip,
-              email: body.email,
-              userId: user.id,
-              plexId: account.id,
-              plexUsername: account.username,
-            }
-          );
-
-          user.plexId = parseInt(account.id);
-          user.avatar = account.thumb;
-          user.email = account.email;
-          user.plexUsername = account.username;
-          user.userType = UserType.PLEX;
-
-          await userRepository.save(user);
-        }
-      } catch (e) {
-        logger.error('Something went wrong fetching Plex users', {
-          label: 'API',
-          errorMessage: e.message,
-        });
-      }
-    }
-
-    if (
-      user.plexId &&
-      user.plexId !== mainUser.plexId &&
-      !(await mainPlexTv.checkUserAccess(user.plexId))
-    ) {
-      logger.warn(
-        'Failed sign-in attempt from Plex user without access to the media server',
-        {
-          label: 'API',
-          account: {
-            ip: req.ip,
-            email: body.email,
-            userId: user.id,
-            plexId: user.plexId,
-          },
-        }
-      );
-      return next({
-        status: 403,
-        message: 'Access denied.',
-      });
-    }
-
     // Set logged in session
     if (user && req.session) {
       req.session.userId = user.id;
@@ -775,7 +705,7 @@ authRoutes.post('/logout', async (req, res, next) => {
         });
         return next({ status: 500, message: 'Failed to destroy session.' });
       }
-      logger.info('Successfully logged out user', {
+      logger.debug('Successfully logged out user', {
         label: 'Auth',
         userId,
       });

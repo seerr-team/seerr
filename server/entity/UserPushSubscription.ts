@@ -1,8 +1,15 @@
 import { DbAwareColumn } from '@server/utils/DbColumnHelper';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
 import { User } from './User';
 
 @Entity()
+@Unique(['endpoint', 'user'])
 export class UserPushSubscription {
   @PrimaryGeneratedColumn()
   public id: number;

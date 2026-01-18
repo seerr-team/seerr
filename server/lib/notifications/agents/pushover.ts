@@ -38,7 +38,17 @@ class PushoverAgent
   implements NotificationAgent
 {
   public shouldSend(): boolean {
-    return true;
+    const settings = this.getSettings();
+
+    if (
+      settings.enabled &&
+      settings.options.accessToken &&
+      settings.options.userToken
+    ) {
+      return true;
+    }
+
+    return false;
   }
 
   private async getImagePayload(

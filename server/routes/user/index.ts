@@ -4,7 +4,7 @@ import TautulliAPI from '@server/api/tautulli';
 import { MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
-import { getRepository } from '@server/datasource';
+import dataSource, { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import { User } from '@server/entity/User';
@@ -25,7 +25,8 @@ import { getHostname } from '@server/utils/getHostname';
 import { Router } from 'express';
 import gravatarUrl from 'gravatar-url';
 import { findIndex, sortBy } from 'lodash';
-import { In } from 'typeorm';
+import type { EntityManager } from 'typeorm';
+import { In, Not } from 'typeorm';
 import userSettingsRoutes from './usersettings';
 
 const router = Router();
@@ -188,30 +189,82 @@ router.post<
   }
 >('/registerPushSubscription', async (req, res, next) => {
   try {
-    const userPushSubRepository = getRepository(UserPushSubscription);
+    // This prevents race conditions where two requests both pass the checks
+    await dataSource.transaction(
+      async (transactionalEntityManager: EntityManager) => {
+        const transactionalRepo =
+          transactionalEntityManager.getRepository(UserPushSubscription);
 
-    const existingSubs = await userPushSubRepository.find({
-      relations: { user: true },
-      where: { auth: req.body.auth, user: { id: req.user?.id } },
-    });
+        // Check for existing subscription by auth or endpoint within transaction
+        const existingSubscription = await transactionalRepo.findOne({
+          relations: { user: true },
+          where: [
+            { auth: req.body.auth, user: { id: req.user?.id } },
+            { endpoint: req.body.endpoint, user: { id: req.user?.id } },
+          ],
+        });
 
-    if (existingSubs.length > 0) {
-      logger.debug(
-        'User push subscription already exists. Skipping registration.',
-        { label: 'API' }
-      );
-      return res.status(204).send();
-    }
+        if (existingSubscription) {
+          // If endpoint matches but auth is different, update with new keys (iOS refresh case)
+          if (
+            existingSubscription.endpoint === req.body.endpoint &&
+            existingSubscription.auth !== req.body.auth
+          ) {
+            existingSubscription.auth = req.body.auth;
+            existingSubscription.p256dh = req.body.p256dh;
+            existingSubscription.userAgent = req.body.userAgent;
 
-    const userPushSubscription = new UserPushSubscription({
-      auth: req.body.auth,
-      endpoint: req.body.endpoint,
-      p256dh: req.body.p256dh,
-      userAgent: req.body.userAgent,
-      user: req.user,
-    });
+            await transactionalRepo.save(existingSubscription);
 
-    userPushSubRepository.save(userPushSubscription);
+            logger.debug(
+              'Updated existing push subscription with new keys for same endpoint.',
+              { label: 'API' }
+            );
+            return;
+          }
+
+          logger.debug(
+            'Duplicate subscription detected. Skipping registration.',
+            { label: 'API' }
+          );
+          return;
+        }
+
+        // Clean up old subscriptions from the same device (userAgent) for this user
+        // iOS can silently refresh endpoints, leaving stale subscriptions in the database
+        // Only clean up if we're creating a new subscription (not updating an existing one)
+        if (req.body.userAgent) {
+          const staleSubscriptions = await transactionalRepo.find({
+            relations: { user: true },
+            where: {
+              userAgent: req.body.userAgent,
+              user: { id: req.user?.id },
+              // Only remove subscriptions with different endpoints (stale ones)
+              // Keep subscriptions that might be from different browsers/tabs
+              endpoint: Not(req.body.endpoint),
+            },
+          });
+
+          if (staleSubscriptions.length > 0) {
+            await transactionalRepo.remove(staleSubscriptions);
+            logger.debug(
+              `Removed ${staleSubscriptions.length} stale push subscription(s) from same device.`,
+              { label: 'API' }
+            );
+          }
+        }
+
+        const userPushSubscription = new UserPushSubscription({
+          auth: req.body.auth,
+          endpoint: req.body.endpoint,
+          p256dh: req.body.p256dh,
+          userAgent: req.body.userAgent,
+          user: req.user,
+        });
+
+        await transactionalRepo.save(userPushSubscription);
+      }
+    );
 
     return res.status(204).send();
   } catch (e) {

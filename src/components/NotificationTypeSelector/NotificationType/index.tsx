@@ -46,7 +46,7 @@ const NotificationType = ({
           />
         </div>
         <div className="ml-3 text-sm leading-6">
-          <label htmlFor={option.id} className="block">
+          <label htmlFor={option.id} className="block" aria-label={option.name}>
             <div className="flex flex-col">
               <span className="font-medium text-white">{option.name}</span>
               <span className="font-normal text-gray-400">

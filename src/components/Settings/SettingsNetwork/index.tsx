@@ -38,6 +38,8 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
   proxyBypassFilterTip:
     "Use ',' as a separator, and '*.' as a wildcard for subdomains",
   proxyBypassLocalAddresses: 'Bypass Proxy for Local Addresses',
+  validationDnsCacheMinTtl: 'You must provide a valid minimum TTL',
+  validationDnsCacheMaxTtl: 'You must provide a valid maximum TTL',
   validationProxyPort: 'You must provide a valid port',
   networkDisclaimer:
     'Network parameters from your container/system should be used instead of these settings. See the {docs} for more information.',
@@ -64,6 +66,20 @@ const SettingsNetwork = () => {
   } = useSWR<NetworkSettings>('/api/v1/settings/network');
 
   const NetworkSettingsSchema = Yup.object().shape({
+    dnsCacheForceMinTtl: Yup.number().when('dnsCacheEnabled', {
+      is: true,
+      then: Yup.number()
+        .typeError(intl.formatMessage(messages.validationDnsCacheMinTtl))
+        .required(intl.formatMessage(messages.validationDnsCacheMinTtl))
+        .min(0),
+    }),
+    dnsCacheForceMaxTtl: Yup.number().when('dnsCacheEnabled', {
+      is: true,
+      then: Yup.number()
+        .typeError(intl.formatMessage(messages.validationDnsCacheMaxTtl))
+        .required(intl.formatMessage(messages.validationDnsCacheMaxTtl))
+        .min(0),
+    }),
     proxyPort: Yup.number().when('proxyEnabled', {
       is: (proxyEnabled: boolean) => proxyEnabled,
       then: Yup.number().required(
@@ -120,8 +136,8 @@ const SettingsNetwork = () => {
                 trustProxy: values.trustProxy,
                 dnsCache: {
                   enabled: values.dnsCacheEnabled,
-                  forceMinTtl: values.dnsCacheForceMinTtl,
-                  forceMaxTtl: values.dnsCacheForceMaxTtl,
+                  forceMinTtl: Number(values.dnsCacheForceMinTtl),
+                  forceMaxTtl: Number(values.dnsCacheForceMaxTtl),
                 },
                 proxy: {
                   enabled: values.proxyEnabled,
@@ -281,7 +297,7 @@ const SettingsNetwork = () => {
                             <Field
                               id="dnsCacheForceMinTtl"
                               name="dnsCacheForceMinTtl"
-                              type="text"
+                              type="number"
                             />
                           </div>
                           {errors.dnsCacheForceMinTtl &&
@@ -305,7 +321,7 @@ const SettingsNetwork = () => {
                             <Field
                               id="dnsCacheForceMaxTtl"
                               name="dnsCacheForceMaxTtl"
-                              type="text"
+                              type="number"
                             />
                           </div>
                           {errors.dnsCacheForceMaxTtl &&
@@ -375,7 +391,7 @@ const SettingsNetwork = () => {
                             <Field
                               id="proxyPort"
                               name="proxyPort"
-                              type="text"
+                              type="number"
                             />
                           </div>
                           {errors.proxyPort &&

@@ -865,6 +865,8 @@
   "components.Settings.SettingsNetwork.toastSettingsSuccess": "Settings saved successfully!",
   "components.Settings.SettingsNetwork.trustProxy": "Enable Proxy Support",
   "components.Settings.SettingsNetwork.trustProxyTip": "Allow Seerr to correctly register client IP addresses behind a proxy",
+  "components.Settings.SettingsNetwork.validationDnsCacheMaxTtl": "You must provide a valid maximum TTL",
+  "components.Settings.SettingsNetwork.validationDnsCacheMinTtl": "You must provide a valid minimum TTL",
   "components.Settings.SettingsNetwork.validationProxyPort": "You must provide a valid port",
   "components.Settings.SettingsNotifications.NotificationInstanceDropdown.createNotificationInstance": "Create Notification Instance",
   "components.Settings.SettingsNotifications.NotificationInstanceList.instanceDefault": "Default",

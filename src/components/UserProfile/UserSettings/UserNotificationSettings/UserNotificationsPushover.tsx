@@ -50,7 +50,12 @@ const UserPushoverSettings = () => {
   const { data: soundsData } = useSWR<PushoverSound[]>(
     data?.pushoverApplicationToken
       ? `/api/v1/settings/notifications/pushover/sounds?token=${data.pushoverApplicationToken}`
-      : null
+      : null,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      shouldRetryOnError: false,
+    }
   );
 
   const UserNotificationsPushoverSchema = Yup.object().shape({
