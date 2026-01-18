@@ -332,6 +332,11 @@ class BaseScanner<T> {
                 season.processing &&
                 existingSeason.status !== MediaStatus.DELETED
               ? MediaStatus.PROCESSING
+              : !season.is4kOverride &&
+                !season.processing &&
+                season.episodes === 0 &&
+                existingSeason.status === MediaStatus.PROCESSING
+              ? MediaStatus.UNKNOWN
               : existingSeason.status;
 
           // Same thing here, except we only do updates if 4k is enabled
@@ -347,6 +352,11 @@ class BaseScanner<T> {
                 season.processing &&
                 existingSeason.status4k !== MediaStatus.DELETED
               ? MediaStatus.PROCESSING
+              : season.is4kOverride &&
+                !season.processing &&
+                season.episodes4k === 0 &&
+                existingSeason.status4k === MediaStatus.PROCESSING
+              ? MediaStatus.UNKNOWN
               : existingSeason.status4k;
         } else {
           newSeasons.push(
