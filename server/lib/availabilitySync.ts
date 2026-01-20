@@ -646,7 +646,6 @@ class AvailabilitySync {
         }
       } catch (ex) {
         if (!ex.message.includes('404')) {
-          existsInRadarr = true;
           logger.debug(
             `Failure retrieving the ${is4k ? '4K' : 'non-4K'} movie [TMDB ID ${
               media.tmdbId
@@ -700,7 +699,6 @@ class AvailabilitySync {
         }
       } catch (ex) {
         if (!ex.message.includes('404')) {
-          existsInSonarr = true;
           preventSeasonSearch = true;
           logger.debug(
             `Failure retrieving the ${is4k ? '4K' : 'non-4K'} show [TMDB ID ${
@@ -820,10 +818,21 @@ class AvailabilitySync {
 
       if (plexMedia) {
         existsInPlex = true;
+        logger.debug(
+          `Found ${is4k ? '4K' : 'non-4K'} ${
+            media.mediaType === 'tv' ? 'show' : 'movie'
+          } [TMDB ID ${media.tmdbId}] in Plex`,
+          {
+            ratingKey: is4k ? ratingKey4k : ratingKey,
+            plexTitle: plexMedia.title,
+            plexRatingKey: plexMedia.ratingKey,
+            plexGuid: plexMedia.guid,
+            label: 'Availability Sync',
+          }
+        );
       }
     } catch (ex) {
       if (!ex.message.includes('404')) {
-        existsInPlex = true;
         preventSeasonSearch = true;
         logger.debug(
           `Failure retrieving the ${is4k ? '4K' : 'non-4K'} ${
