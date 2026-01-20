@@ -333,7 +333,9 @@ export class MediaRequest {
       await mediaRepository.save(media);
 
       if (!media.id) {
-        throw new Error('Failed to save media before creating request.');
+        throw new Error(
+          `Failed to save media before creating request. Media type: ${requestBody.mediaType}, TMDB ID: ${requestBody.mediaId}, persisted media id: ${media.id}`
+        );
       }
 
       const request = new MediaRequest({
@@ -448,7 +450,9 @@ export class MediaRequest {
       await mediaRepository.save(media);
 
       if (!media.id) {
-        throw new Error('Failed to save media before creating request.');
+        throw new Error(
+          `Failed to save media before creating request. Media type: TV, TMDB ID: ${requestBody.mediaId}, is4k: ${requestBody.is4k}`
+        );
       }
 
       const request = new MediaRequest({
