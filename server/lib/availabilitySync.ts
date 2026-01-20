@@ -725,7 +725,7 @@ class AvailabilitySync {
           sonarr.statistics.episodeFileCount > 0
         ) {
           try {
-            const episodes = await sonarrAPI.getEpisodesBySeriesId(serviceId);
+            const episodes = await sonarrAPI.getEpisodes(serviceId);
             this.sonarrEpisodesCache[`${server.id}-${serviceId}`] = episodes;
           } catch (err) {
             logger.error('Failed to fetch episodes for caching', {
