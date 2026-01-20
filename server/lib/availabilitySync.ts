@@ -143,7 +143,9 @@ class AvailabilitySync {
             const { existsInPlex: existsInPlex4k } =
               await this.mediaExistsInPlex(media, true);
 
-            if (existsInPlex || existsInRadarr) {
+            // Media must exist in Plex to be considered available
+            // If it exists in Radarr but not in Plex, it should be marked as deleted
+            if (existsInPlex) {
               movieExists = true;
               logger.info(
                 `The non-4K movie [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
@@ -153,7 +155,7 @@ class AvailabilitySync {
               );
             }
 
-            if (existsInPlex4k || existsInRadarr4k) {
+            if (existsInPlex4k) {
               movieExists4k = true;
               logger.info(
                 `The 4K movie [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
@@ -240,7 +242,9 @@ class AvailabilitySync {
 
           //plex
           if (mediaServerType === MediaServerType.PLEX) {
-            if (existsInPlex || existsInSonarr) {
+            // Media must exist in Plex to be considered available
+            // If it exists in Sonarr but not in Plex, it should be marked as deleted
+            if (existsInPlex) {
               showExists = true;
               logger.info(
                 `The non-4K show [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
@@ -252,7 +256,7 @@ class AvailabilitySync {
           }
 
           if (mediaServerType === MediaServerType.PLEX) {
-            if (existsInPlex4k || existsInSonarr4k) {
+            if (existsInPlex4k) {
               showExists4k = true;
               logger.info(
                 `The 4K show [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
@@ -611,6 +615,21 @@ class AvailabilitySync {
     is4k: boolean
   ): Promise<boolean> {
     let existsInRadarr = false;
+    const externalServiceId = is4k
+      ? media.externalServiceId4k
+      : media.externalServiceId;
+
+    if (!externalServiceId) {
+      logger.debug(
+        `Skipping Radarr check for ${is4k ? '4K' : 'non-4K'} movie [TMDB ID ${
+          media.tmdbId
+        }] - no externalServiceId available`,
+        {
+          label: 'Availability Sync',
+        }
+      );
+      return false;
+    }
 
     // Check for availability in all of the available radarr servers
     // If any find the media, we will assume the media exists
@@ -637,21 +656,63 @@ class AvailabilitySync {
           });
         }
 
-        if (radarr && radarr.hasFile) {
-          const resolution =
-            radarr?.movieFile?.mediaInfo?.resolution?.split('x');
-          const is4kMovie =
-            resolution?.length === 2 && Number(resolution[0]) >= 2000;
-          existsInRadarr = is4k ? is4kMovie : !is4kMovie;
+        if (radarr) {
+          if (radarr.hasFile) {
+            const resolution =
+              radarr?.movieFile?.mediaInfo?.resolution?.split('x');
+            const is4kMovie =
+              resolution?.length === 2 && Number(resolution[0]) >= 2000;
+            const matches4k = is4k ? is4kMovie : !is4kMovie;
+            if (matches4k) {
+              existsInRadarr = true;
+              logger.debug(
+                `Found ${is4k ? '4K' : 'non-4K'} movie [TMDB ID ${
+                  media.tmdbId
+                }] in Radarr`,
+                {
+                  radarrId: radarr.id,
+                  radarrTitle: radarr.title,
+                  hasFile: radarr.hasFile,
+                  externalServiceId: externalServiceId,
+                  label: 'Availability Sync',
+                }
+              );
+            } else {
+              logger.debug(
+                `Movie [TMDB ID ${media.tmdbId}] found in Radarr but resolution doesn't match (is4k: ${is4k}, movie resolution: ${radarr?.movieFile?.mediaInfo?.resolution})`,
+                {
+                  label: 'Availability Sync',
+                }
+              );
+            }
+          } else {
+            logger.debug(
+              `Movie [TMDB ID ${media.tmdbId}] found in Radarr but has no file`,
+              {
+                radarrId: radarr.id,
+                radarrTitle: radarr.title,
+                externalServiceId: externalServiceId,
+                label: 'Availability Sync',
+              }
+            );
+          }
         }
       } catch (ex) {
-        if (!ex.message.includes('404')) {
+        if (ex.message.includes('404')) {
+          logger.debug(
+            `Movie [TMDB ID ${media.tmdbId}] not found in Radarr (404) - externalServiceId may be stale: ${externalServiceId}`,
+            {
+              label: 'Availability Sync',
+            }
+          );
+        } else {
           logger.debug(
             `Failure retrieving the ${is4k ? '4K' : 'non-4K'} movie [TMDB ID ${
               media.tmdbId
             }] from Radarr.`,
             {
               errorMessage: ex.message,
+              externalServiceId: externalServiceId,
               label: 'Availability Sync',
             }
           );
@@ -797,42 +858,66 @@ class AvailabilitySync {
     // We can use the cache we built when we fetched the series with mediaExistsInPlex
     try {
       let plexMedia: PlexMetadata | undefined;
+      const currentRatingKey = is4k ? ratingKey4k : ratingKey;
 
-      if (ratingKey && !is4k) {
-        plexMedia = await this.plexClient?.getMetadata(ratingKey);
-
-        if (media.mediaType === 'tv') {
-          this.plexSeasonsCache[ratingKey] =
-            await this.plexClient?.getChildrenMetadata(ratingKey);
-        }
-      }
-
-      if (ratingKey4k && is4k) {
-        plexMedia = await this.plexClient?.getMetadata(ratingKey4k);
-
-        if (media.mediaType === 'tv') {
-          this.plexSeasonsCache[ratingKey4k] =
-            await this.plexClient?.getChildrenMetadata(ratingKey4k);
-        }
-      }
-
-      if (plexMedia) {
-        existsInPlex = true;
+      if (!currentRatingKey) {
         logger.debug(
-          `Found ${is4k ? '4K' : 'non-4K'} ${
+          `Skipping Plex check for ${is4k ? '4K' : 'non-4K'} ${
             media.mediaType === 'tv' ? 'show' : 'movie'
-          } [TMDB ID ${media.tmdbId}] in Plex`,
+          } [TMDB ID ${media.tmdbId}] - no ratingKey available`,
           {
-            ratingKey: is4k ? ratingKey4k : ratingKey,
-            plexTitle: plexMedia.title,
-            plexRatingKey: plexMedia.ratingKey,
-            plexGuid: plexMedia.guid,
             label: 'Availability Sync',
           }
         );
+      } else {
+        if (ratingKey && !is4k) {
+          plexMedia = await this.plexClient?.getMetadata(ratingKey);
+
+          if (media.mediaType === 'tv') {
+            this.plexSeasonsCache[ratingKey] =
+              await this.plexClient?.getChildrenMetadata(ratingKey);
+          }
+        }
+
+        if (ratingKey4k && is4k) {
+          plexMedia = await this.plexClient?.getMetadata(ratingKey4k);
+
+          if (media.mediaType === 'tv') {
+            this.plexSeasonsCache[ratingKey4k] =
+              await this.plexClient?.getChildrenMetadata(ratingKey4k);
+          }
+        }
+
+        if (plexMedia) {
+          existsInPlex = true;
+          logger.debug(
+            `Found ${is4k ? '4K' : 'non-4K'} ${
+              media.mediaType === 'tv' ? 'show' : 'movie'
+            } [TMDB ID ${media.tmdbId}] in Plex`,
+            {
+              ratingKey: is4k ? ratingKey4k : ratingKey,
+              plexTitle: plexMedia.title,
+              plexRatingKey: plexMedia.ratingKey,
+              plexGuid: plexMedia.guid,
+              label: 'Availability Sync',
+            }
+          );
+        }
       }
     } catch (ex) {
-      if (!ex.message.includes('404')) {
+      if (ex.message.includes('404')) {
+        logger.debug(
+          `Media ${is4k ? '4K' : 'non-4K'} ${
+            media.mediaType === 'tv' ? 'show' : 'movie'
+          } [TMDB ID ${
+            media.tmdbId
+          }] not found in Plex (404) - ratingKey may be stale`,
+          {
+            ratingKey: is4k ? ratingKey4k : ratingKey,
+            label: 'Availability Sync',
+          }
+        );
+      } else {
         preventSeasonSearch = true;
         logger.debug(
           `Failure retrieving the ${is4k ? '4K' : 'non-4K'} ${
