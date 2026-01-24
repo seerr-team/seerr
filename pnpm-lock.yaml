@@ -32,6 +32,9 @@ importers:
       '@heroicons/react':
         specifier: 2.2.0
         version: 2.2.0(react@18.3.1)
+      '@seerr-team/react-tailwindcss-datepicker':
+        specifier: ^1.3.4
+        version: 1.3.4(dayjs@1.11.19)(react@18.3.1)
       '@supercharge/request-ip':
         specifier: 1.2.0
         version: 1.2.0
@@ -179,9 +182,6 @@ importers:
       react-spring:
         specifier: 9.7.1
         version: 9.7.1(@react-three/fiber@8.16.8(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react-native@0.74.2(@babel/core@7.24.7)(@babel/preset-env@7.24.7(@babel/core@7.24.7))(@types/react@18.3.3)(encoding@0.1.13)(react@18.3.1))(react@18.3.1)(three@0.165.0))(konva@9.3.12)(react-dom@18.3.1(react@18.3.1))(react-konva@18.2.10(@types/react@18.3.3)(konva@9.3.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-native@0.74.2(@babel/core@7.24.7)(@babel/preset-env@7.24.7(@babel/core@7.24.7))(@types/react@18.3.3)(encoding@0.1.13)(react@18.3.1))(react-zdog@1.2.2)(react@18.3.1)(three@0.165.0)(zdog@1.1.3)
-      react-tailwindcss-datepicker-sct:
-        specifier: 1.3.4
-        version: 1.3.4(dayjs@1.11.19)(react@18.3.1)
       react-toast-notifications:
         specifier: 2.5.1
         version: 2.5.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2991,6 +2991,12 @@ packages:
 
   '@rushstack/eslint-patch@1.10.3':
     resolution: {integrity: sha512-qC/xYId4NMebE6w/V33Fh9gWxLgURiNYgVNObbJl2LZv0GUUItCcCqC5axQSwRaAgaxl2mELq1rMzlswaQ0Zxg==}
+
+  '@seerr-team/react-tailwindcss-datepicker@1.3.4':
+    resolution: {integrity: sha512-KZrnl6WL1lvUnAG4RZIkReJ+E0vSpOtMEuatobMqiWAa5Y+Z3d0ZcOOJWHoeRNtF19sIzzBkuLyhFNFlNtXg3A==}
+    peerDependencies:
+      dayjs: ^1.11.6
+      react: ^17.0.2 || ^18.2.0
 
   '@selderee/plugin-htmlparser2@0.11.0':
     resolution: {integrity: sha512-P33hHGdldxGabLFjPPpaTxVolMrzrcegejx+0GxjrIb9Zv48D8yAIA/QTDR2dFl7Uz7urX8aX6+5bCZslr+gWQ==}
@@ -7948,12 +7954,6 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
-
-  react-tailwindcss-datepicker-sct@1.3.4:
-    resolution: {integrity: sha512-QlLekGZDbmW2DPGS33c4gfIxkk4gcgu4sRzBIm4/mZxfHuo7J+GR6SBVNIb5Xh8aCLlGtgyLqD+o0UmOVFIc4w==}
-    peerDependencies:
-      dayjs: ^1.11.6
-      react: ^17.0.2 || ^18.2.0
 
   react-toast-notifications@2.5.1:
     resolution: {integrity: sha512-eYuuiSPGLyuMHojRH2U7CbENvFHsvNia39pLM/s10KipIoNs14T7RIJk4aU2N+l++OsSgtJqnFObx9bpwLMU5A==}
@@ -13178,6 +13178,11 @@ snapshots:
       - supports-color
 
   '@rushstack/eslint-patch@1.10.3': {}
+
+  '@seerr-team/react-tailwindcss-datepicker@1.3.4(dayjs@1.11.19)(react@18.3.1)':
+    dependencies:
+      dayjs: 1.11.19
+      react: 18.3.1
 
   '@selderee/plugin-htmlparser2@0.11.0':
     dependencies:
@@ -19184,11 +19189,6 @@ snapshots:
       - react-zdog
       - three
       - zdog
-
-  react-tailwindcss-datepicker-sct@1.3.4(dayjs@1.11.19)(react@18.3.1):
-    dependencies:
-      dayjs: 1.11.19
-      react: 18.3.1
 
   react-toast-notifications@2.5.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
