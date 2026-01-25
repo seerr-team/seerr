@@ -5,7 +5,6 @@
   "packageManager": "pnpm@10.24.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "postinstall": "node postinstall-win.js",
     "dev": "nodemon -e ts --watch server --watch seerr-api.yml -e .json,.ts,.yml -x ts-node -r tsconfig-paths/register --files --project server/tsconfig.json server/index.ts",
     "build:server": "tsc --project server/tsconfig.json && copyfiles -u 2 server/templates/**/*.{html,pug} dist/templates && tsc-alias -p server/tsconfig.json",
     "build:next": "next build",
@@ -103,7 +102,7 @@
     "swagger-ui-express": "4.6.2",
     "swr": "2.3.7",
     "tailwind-merge": "^2.6.0",
-    "typeorm": "0.3.12",
+    "typeorm": "0.3.28",
     "ua-parser-js": "^1.0.35",
     "undici": "^7.16.0",
     "validator": "^13.15.23",
