@@ -612,6 +612,9 @@ class AvailabilitySync {
   ): Promise<boolean> {
     let existsInRadarr = false;
 
+    const has4kServer = this.radarrServers.some((s) => s.is4k);
+    const hasNon4kServer = this.radarrServers.some((s) => !s.is4k);
+
     // Check for availability in all of the available radarr servers
     // If any find the media, we will assume the media exists
     for (const server of this.radarrServers.filter(
@@ -642,7 +645,14 @@ class AvailabilitySync {
             radarr?.movieFile?.mediaInfo?.resolution?.split('x');
           const is4kMovie =
             resolution?.length === 2 && Number(resolution[0]) >= 2000;
-          existsInRadarr = is4k ? is4kMovie : !is4kMovie;
+
+          if (has4kServer && hasNon4kServer) {
+            // Both server types then use resolution to distinguish
+            existsInRadarr = is4k ? is4kMovie : !is4kMovie;
+          } else {
+            // One server type and if file exists, count it
+            existsInRadarr = true;
+          }
         }
       } catch (ex) {
         if (!ex.message.includes('404')) {
@@ -658,6 +668,8 @@ class AvailabilitySync {
           );
         }
       }
+
+      if (existsInRadarr) break;
     }
 
     return existsInRadarr;
