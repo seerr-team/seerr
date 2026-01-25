@@ -67,6 +67,7 @@
     "express-session": "1.18.2",
     "formik": "^2.4.9",
     "gravatar-url": "3.1.0",
+    "handlebars": "^4.7.8",
     "http-proxy-agent": "^7.0.2",
     "https-proxy-agent": "^7.0.6",
     "lodash": "4.17.21",

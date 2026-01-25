@@ -110,6 +110,9 @@ importers:
       gravatar-url:
         specifier: 3.1.0
         version: 3.1.0
+      handlebars:
+        specifier: ^4.7.8
+        version: 4.7.8
       http-proxy-agent:
         specifier: ^7.0.2
         version: 7.0.2
@@ -16434,7 +16437,6 @@ snapshots:
       wordwrap: 1.0.0
     optionalDependencies:
       uglify-js: 3.18.0
-    optional: true
 
   har-schema@2.0.0: {}
 
@@ -20843,8 +20845,7 @@ snapshots:
 
   word-wrap@1.2.5: {}
 
-  wordwrap@1.0.0:
-    optional: true
+  wordwrap@1.0.0: {}
 
   wrap-ansi@6.2.0:
     dependencies:
