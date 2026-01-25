@@ -612,6 +612,24 @@ class AvailabilitySync {
   ): Promise<boolean> {
     let existsInRadarr = false;
 
+    const has4kServer = this.radarrServers.some((s) => s.is4k);
+    const hasNon4kServer = this.radarrServers.some((s) => !s.is4k);
+
+    logger.debug(
+      `Checking Radarr for ${is4k ? '4K' : 'non-4K'} movie [TMDB ID ${
+        media.tmdbId
+      }]`,
+      {
+        label: 'AvailabilitySync',
+        has4kServer,
+        hasNon4kServer,
+        externalServiceId: media.externalServiceId,
+        externalServiceId4k: media.externalServiceId4k,
+        serversToCheck: this.radarrServers.filter((s) => s.is4k === is4k)
+          .length,
+      }
+    );
+
     // Check for availability in all of the available radarr servers
     // If any find the media, we will assume the media exists
     for (const server of this.radarrServers.filter(
@@ -642,7 +660,55 @@ class AvailabilitySync {
             radarr?.movieFile?.mediaInfo?.resolution?.split('x');
           const is4kMovie =
             resolution?.length === 2 && Number(resolution[0]) >= 2000;
-          existsInRadarr = is4k ? is4kMovie : !is4kMovie;
+
+          logger.debug(
+            `Radarr file found for movie [TMDB ID ${media.tmdbId}]`,
+            {
+              label: 'AvailabilitySync',
+              serverId: server.id,
+              serverIs4k: server.is4k,
+              hasFile: radarr.hasFile,
+              resolution: radarr?.movieFile?.mediaInfo?.resolution,
+              parsedWidth: resolution?.[0],
+              is4kMovie,
+              checkingFor: is4k ? '4K' : 'non-4K',
+            }
+          );
+
+          if (has4kServer && hasNon4kServer) {
+            // User has both server types so use resolution to distinguish
+            // This handles the case where same content exists in both qualities
+            existsInRadarr = is4k ? is4kMovie : !is4kMovie;
+            logger.debug(
+              `Dual-server setup: using resolution check for movie [TMDB ID ${media.tmdbId}]`,
+              {
+                label: 'AvailabilitySync',
+                is4kMovie,
+                is4kCheck: is4k,
+                existsInRadarr,
+              }
+            );
+          } else {
+            // User only has one server type so if file exists, count it
+            // Don't penalize users whose Radarr upgrades to 4K on a non-4K server
+            existsInRadarr = true;
+            logger.debug(
+              `Single-server setup: file exists, marking as available for movie [TMDB ID ${media.tmdbId}]`,
+              {
+                label: 'AvailabilitySync',
+                is4kMovie,
+                is4kCheck: is4k,
+                existsInRadarr,
+              }
+            );
+          }
+        } else {
+          logger.debug(`Radarr response for movie [TMDB ID ${media.tmdbId}]`, {
+            label: 'AvailabilitySync',
+            serverId: server.id,
+            found: !!radarr,
+            hasFile: radarr?.hasFile ?? false,
+          });
         }
       } catch (ex) {
         if (!ex.message.includes('404')) {
