@@ -119,8 +119,11 @@ const checkOverseerrMerge = async (): Promise<boolean> => {
   if (settings.main.applicationTitle === 'Overseerr') {
     settings.main.applicationTitle = 'Seerr';
   }
-  if (settings.notifications.agents.email.options.senderName === 'Overseerr') {
-    settings.notifications.agents.email.options.senderName = 'Seerr';
+  if (
+    settings.notification.agentTemplates.email.options.senderName ===
+    'Overseerr'
+  ) {
+    settings.notification.agentTemplates.email.options.senderName = 'Seerr';
   }
 
   // Save the updated settings

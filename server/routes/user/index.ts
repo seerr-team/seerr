@@ -149,7 +149,7 @@ router.post(
 
       if (
         !passedExplicitPassword &&
-        !settings.notifications.agents.email.enabled
+        !settings.fullPublicSettings.emailEnabled
       ) {
         throw new Error('Email notifications must be enabled');
       }

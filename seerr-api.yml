@@ -1388,213 +1388,300 @@ components:
         results:
           type: number
           example: 100
-    DiscordSettings:
+    NotificationInstance:
       type: object
       properties:
         enabled:
           type: boolean
           example: false
+        embedPoster:
+          type: boolean
+          example: true
         types:
           type: number
-          example: 2
+          example: 0
+        name:
+          type: string
+        agent:
+          type: string
+          enum:
+            [
+              'discord',
+              'email',
+              'gotify',
+              'ntfy',
+              'lunasea',
+              'pushbullet',
+              'pushover',
+              'slack',
+              'telegram',
+              'webhook',
+              'webpush',
+            ]
+        default:
+          type: boolean
+          example: false
         options:
           type: object
-          properties:
-            botUsername:
-              type: string
-            botAvatarUrl:
-              type: string
-            webhookUrl:
-              type: string
-            webhookRoleId:
-              type: string
-            enableMentions:
-              type: boolean
-    SlackSettings:
+    NotificationAgentTemplates:
       type: object
       properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-        options:
+        discord:
           type: object
           properties:
-            webhookUrl:
-              type: string
-    WebPushSettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-    WebhookSettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-        options:
-          type: object
-          properties:
-            webhookUrl:
-              type: string
-            authHeader:
-              type: string
-            jsonPayload:
-              type: string
-            supportVariables:
+            enabled:
               type: boolean
               example: false
-    TelegramSettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-        options:
-          type: object
-          properties:
-            botUsername:
-              type: string
-            botAPI:
-              type: string
-            chatId:
-              type: string
-            messageThreadId:
-              type: string
-            sendSilently:
+            embedPoster:
               type: boolean
-    PushbulletSettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-        options:
-          type: object
-          properties:
-            accessToken:
-              type: string
-            channelTag:
-              type: string
-              nullable: true
-    PushoverSettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-        options:
-          type: object
-          properties:
-            accessToken:
-              type: string
-            userToken:
-              type: string
-            sound:
-              type: string
-    GotifySettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-        options:
-          type: object
-          properties:
-            url:
-              type: string
-            token:
-              type: string
-    NtfySettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-        options:
-          type: object
-          properties:
-            url:
-              type: string
-            topic:
-              type: string
-            authMethodUsernamePassword:
-              type: boolean
-            username:
-              type: string
-            password:
-              type: string
-            authMethodToken:
-              type: boolean
-            token:
-              type: string
-    NotificationEmailSettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          example: false
-        types:
-          type: number
-          example: 2
-        options:
-          type: object
-          properties:
-            emailFrom:
-              type: string
-              example: no-reply@example.com
-            senderName:
-              type: string
-              example: Seerr
-            smtpHost:
-              type: string
-              example: 127.0.0.1
-            smtpPort:
+              example: true
+            types:
               type: number
-              example: 465
-            secure:
+              example: 2
+            options:
+              type: object
+              properties:
+                botUsername:
+                  type: string
+                botAvatarUrl:
+                  type: string
+                webhookUrl:
+                  type: string
+                webhookRoleId:
+                  type: string
+                enableMentions:
+                  type: boolean
+        slack:
+          type: object
+          properties:
+            enabled:
               type: boolean
               example: false
-            ignoreTls:
+            embedPoster:
+              type: boolean
+              example: true
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                webhookUrl:
+                  type: string
+        webpush:
+          type: object
+          properties:
+            enabled:
               type: boolean
               example: false
-            requireTls:
+            embedPoster:
+              type: boolean
+              example: true
+            types:
+              type: number
+              example: 2
+        webhook:
+          type: object
+          properties:
+            enabled:
               type: boolean
               example: false
-            authUser:
-              type: string
-              nullable: true
-            authPass:
-              type: string
-              nullable: true
-            allowSelfSigned:
+            embedPoster:
+              type: boolean
+              example: true
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                webhookUrl:
+                  type: string
+                authHeader:
+                  type: string
+                jsonPayload:
+                  type: string
+                supportVariables:
+                  type: boolean
+                  example: false
+        telegram:
+          type: object
+          properties:
+            enabled:
               type: boolean
               example: false
+            embedPoster:
+              type: boolean
+              example: true
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                botUsername:
+                  type: string
+                botAPI:
+                  type: string
+                chatId:
+                  type: string
+                messageThreadId:
+                  type: string
+                sendSilently:
+                  type: boolean
+        pushbullet:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            embedPoster:
+              type: boolean
+              example: true
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                accessToken:
+                  type: string
+                channelTag:
+                  type: string
+                  nullable: true
+        pushover:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            embedPoster:
+              type: boolean
+              example: true
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                accessToken:
+                  type: string
+                userToken:
+                  type: string
+                sound:
+                  type: string
+        gotify:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            embedPoster:
+              type: boolean
+              example: true
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                url:
+                  type: string
+                token:
+                  type: string
+        ntfy:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            embedPoster:
+              type: boolean
+              example: true
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                url:
+                  type: string
+                topic:
+                  type: string
+                authMethodUsernamePassword:
+                  type: boolean
+                username:
+                  type: string
+                password:
+                  type: string
+                authMethodToken:
+                  type: boolean
+                token:
+                  type: string
+        lunasea:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            embedPoster:
+              type: boolean
+              example: true
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                webhookUrl:
+                  type: string
+                profileName:
+                  type: string
+        email:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              example: false
+            embedPoster:
+              type: boolean
+              example: true
+            types:
+              type: number
+              example: 2
+            options:
+              type: object
+              properties:
+                emailFrom:
+                  type: string
+                  example: no-reply@example.com
+                senderName:
+                  type: string
+                  example: Jellyseerr
+                smtpHost:
+                  type: string
+                  example: 127.0.0.1
+                smtpPort:
+                  type: number
+                  example: 465
+                secure:
+                  type: boolean
+                  example: false
+                ignoreTls:
+                  type: boolean
+                  example: false
+                requireTls:
+                  type: boolean
+                  example: false
+                authUser:
+                  type: string
+                  nullable: true
+                authPass:
+                  type: string
+                  nullable: true
+                allowSelfSigned:
+                  type: boolean
+                  example: false
     Job:
       type: object
       properties:
@@ -3261,233 +3348,50 @@ paths:
                     timestamp:
                       type: string
                       example: '2020-12-15T16:20:00.069Z'
-  /settings/notifications/email:
+  /settings/notification:
     get:
-      summary: Get email notification settings
-      description: Returns current email notification settings in a JSON object.
-      tags:
-        - settings
-      responses:
-        '200':
-          description: Returned email settings
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NotificationEmailSettings'
-    post:
-      summary: Update email notification settings
-      description: Updates email notification settings with provided values
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NotificationEmailSettings'
-      responses:
-        '200':
-          description: 'Values were sucessfully updated'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NotificationEmailSettings'
-  /settings/notifications/email/test:
-    post:
-      summary: Test email settings
-      description: Sends a test notification to the email agent.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NotificationEmailSettings'
-      responses:
-        '204':
-          description: Test notification attempted
-  /settings/notifications/discord:
-    get:
-      summary: Get Discord notification settings
-      description: Returns current Discord notification settings in a JSON object.
-      tags:
-        - settings
-      responses:
-        '200':
-          description: Returned Discord settings
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DiscordSettings'
-    post:
-      summary: Update Discord notification settings
-      description: Updates Discord notification settings with the provided values.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DiscordSettings'
-      responses:
-        '200':
-          description: 'Values were sucessfully updated'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DiscordSettings'
-  /settings/notifications/discord/test:
-    post:
-      summary: Test Discord settings
-      description: Sends a test notification to the Discord agent.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DiscordSettings'
-      responses:
-        '204':
-          description: Test notification attempted
-  /settings/notifications/pushbullet:
-    get:
-      summary: Get Pushbullet notification settings
-      description: Returns current Pushbullet notification settings in a JSON object.
-      tags:
-        - settings
-      responses:
-        '200':
-          description: Returned Pushbullet settings
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PushbulletSettings'
-    post:
-      summary: Update Pushbullet notification settings
-      description: Update Pushbullet notification settings with the provided values.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PushbulletSettings'
-      responses:
-        '200':
-          description: 'Values were sucessfully updated'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PushbulletSettings'
-  /settings/notifications/pushbullet/test:
-    post:
-      summary: Test Pushbullet settings
-      description: Sends a test notification to the Pushbullet agent.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PushbulletSettings'
-      responses:
-        '204':
-          description: Test notification attempted
-  /settings/notifications/pushover:
-    get:
-      summary: Get Pushover notification settings
-      description: Returns current Pushover notification settings in a JSON object.
-      tags:
-        - settings
-      responses:
-        '200':
-          description: Returned Pushover settings
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PushoverSettings'
-    post:
-      summary: Update Pushover notification settings
-      description: Update Pushover notification settings with the provided values.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PushoverSettings'
-      responses:
-        '200':
-          description: 'Values were sucessfully updated'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PushoverSettings'
-  /settings/notifications/pushover/test:
-    post:
-      summary: Test Pushover settings
-      description: Sends a test notification to the Pushover agent.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PushoverSettings'
-      responses:
-        '204':
-          description: Test notification attempted
-  /settings/notifications/pushover/sounds:
-    get:
-      summary: Get Pushover sounds
-      description: Returns valid Pushover sound options in a JSON array.
+      summary: Get all notification instance settings
+      description: Returns all current notification instance settings in a JSON object.
       tags:
         - settings
       parameters:
         - in: query
-          name: token
-          required: true
+          name: take
+          schema:
+            type: number
+            nullable: true
+            example: 20
+        - in: query
+          name: skip
+          schema:
+            type: number
+            nullable: true
+            example: 0
+        - in: query
+          name: sort
           schema:
             type: string
-            nullable: false
+            enum: [id, name, agent]
+            default: id
       responses:
         '200':
-          description: Returned Pushover settings
+          description: Returned all notification settings
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    name:
-                      type: string
-                    description:
-                      type: string
-  /settings/notifications/gotify:
-    get:
-      summary: Get Gotify notification settings
-      description: Returns current Gotify notification settings in a JSON object.
-      tags:
-        - settings
-      responses:
-        '200':
-          description: Returned Gotify settings
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GotifySettings'
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NotificationInstance'
+                  agentTemplates:
+                    $ref: '#/components/schemas/NotificationAgentTemplates'
+                  pageInfo:
+                    $ref: '#/components/schemas/PageInfo'
     post:
-      summary: Update Gotify notification settings
-      description: Update Gotify notification settings with the provided values.
+      summary: Add a notification instance
+      description: Add a notification instance with the provided values.
       tags:
         - settings
       requestBody:
@@ -3495,18 +3399,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GotifySettings'
+              $ref: '#/components/schemas/NotificationInstance'
       responses:
         '200':
-          description: 'Values were sucessfully updated'
+          description: 'Notification instance was sucessfully added'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GotifySettings'
-  /settings/notifications/gotify/test:
+                $ref: '#/components/schemas/NotificationInstance'
+  /settings/notification/test:
     post:
-      summary: Test Gotify settings
-      description: Sends a test notification to the Gotify agent.
+      summary: Test given notification instance settings
+      description: Sends a test notification from the given instance settings.
       tags:
         - settings
       requestBody:
@@ -3514,240 +3418,70 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GotifySettings'
+              $ref: '#/components/schemas/NotificationInstance'
       responses:
         '204':
           description: Test notification attempted
-  /settings/notifications/ntfy:
+  /settings/notification/{instanceId}:
     get:
-      summary: Get ntfy.sh notification settings
-      description: Returns current ntfy.sh notification settings in a JSON object.
+      summary: Get given notification instance settings
+      description: Returns current notification settings in a JSON object.
       tags:
         - settings
+      parameters:
+        - in: path
+          name: instanceId
+          required: true
+          schema:
+            type: number
+            example: 0
       responses:
         '200':
-          description: Returned ntfy.sh settings
+          description: Returned notification settings
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NtfySettings'
+                $ref: '#/components/schemas/NotificationInstance'
     post:
-      summary: Update ntfy.sh notification settings
-      description: Update ntfy.sh notification settings with the provided values.
+      summary: Add or update given notification instance settings
+      description: Add or Update given notification instance settings with the provided values.
       tags:
         - settings
+      parameters:
+        - in: path
+          name: instanceId
+          required: true
+          schema:
+            type: number
+            example: 0
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NtfySettings'
+              $ref: '#/components/schemas/NotificationInstance'
       responses:
         '200':
-          description: 'Values were sucessfully updated'
+          description: 'Notification instance was sucessfully added or updated'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NtfySettings'
-  /settings/notifications/ntfy/test:
-    post:
-      summary: Test ntfy.sh settings
-      description: Sends a test notification to the ntfy.sh agent.
+                $ref: '#/components/schemas/NotificationInstance'
+    delete:
+      summary: Delete given notification instance
+      description: Delete given notification instance.
       tags:
         - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NtfySettings'
-      responses:
-        '204':
-          description: Test notification attempted
-  /settings/notifications/slack:
-    get:
-      summary: Get Slack notification settings
-      description: Returns current Slack notification settings in a JSON object.
-      tags:
-        - settings
+      parameters:
+        - in: path
+          name: instanceId
+          required: true
+          schema:
+            type: number
+            example: 0
       responses:
         '200':
-          description: Returned slack settings
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SlackSettings'
-    post:
-      summary: Update Slack notification settings
-      description: Updates Slack notification settings with the provided values.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SlackSettings'
-      responses:
-        '200':
-          description: 'Values were sucessfully updated'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SlackSettings'
-  /settings/notifications/slack/test:
-    post:
-      summary: Test Slack settings
-      description: Sends a test notification to the Slack agent.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SlackSettings'
-      responses:
-        '204':
-          description: Test notification attempted
-  /settings/notifications/telegram:
-    get:
-      summary: Get Telegram notification settings
-      description: Returns current Telegram notification settings in a JSON object.
-      tags:
-        - settings
-      responses:
-        '200':
-          description: Returned Telegram settings
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TelegramSettings'
-    post:
-      summary: Update Telegram notification settings
-      description: Update Telegram notification settings with the provided values.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TelegramSettings'
-      responses:
-        '200':
-          description: 'Values were sucessfully updated'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TelegramSettings'
-  /settings/notifications/telegram/test:
-    post:
-      summary: Test Telegram settings
-      description: Sends a test notification to the Telegram agent.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TelegramSettings'
-      responses:
-        '204':
-          description: Test notification attempted
-  /settings/notifications/webpush:
-    get:
-      summary: Get Web Push notification settings
-      description: Returns current Web Push notification settings in a JSON object.
-      tags:
-        - settings
-      responses:
-        '200':
-          description: Returned web push settings
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WebPushSettings'
-    post:
-      summary: Update Web Push notification settings
-      description: Updates Web Push notification settings with the provided values.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/WebPushSettings'
-      responses:
-        '200':
-          description: 'Values were sucessfully updated'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WebPushSettings'
-  /settings/notifications/webpush/test:
-    post:
-      summary: Test Web Push settings
-      description: Sends a test notification to the Web Push agent.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/WebPushSettings'
-      responses:
-        '204':
-          description: Test notification attempted
-  /settings/notifications/webhook:
-    get:
-      summary: Get webhook notification settings
-      description: Returns current webhook notification settings in a JSON object.
-      tags:
-        - settings
-      responses:
-        '200':
-          description: Returned webhook settings
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WebhookSettings'
-    post:
-      summary: Update webhook notification settings
-      description: Updates webhook notification settings with the provided values.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/WebhookSettings'
-      responses:
-        '200':
-          description: 'Values were sucessfully updated'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WebhookSettings'
-  /settings/notifications/webhook/test:
-    post:
-      summary: Test webhook settings
-      description: Sends a test notification to the webhook agent.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/WebhookSettings'
-      responses:
-        '204':
-          description: Test notification attempted
+          description: 'Notification instance was sucessfully deleted'
   /settings/discover:
     get:
       summary: Get all discover sliders

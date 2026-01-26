@@ -1,5 +1,5 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
-import type { NotificationAgentGotify } from '@server/lib/settings';
+import type { NotificationAgentGotify } from '@server/interfaces/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
@@ -18,16 +18,6 @@ class GotifyAgent
   extends BaseAgent<NotificationAgentGotify>
   implements NotificationAgent
 {
-  protected getSettings(): NotificationAgentGotify {
-    if (this.settings) {
-      return this.settings;
-    }
-
-    const settings = getSettings();
-
-    return settings.notifications.agents.gotify;
-  }
-
   public shouldSend(): boolean {
     const settings = this.getSettings();
 
@@ -48,7 +38,7 @@ class GotifyAgent
     payload: NotificationPayload
   ): GotifyPayload {
     const { applicationUrl, applicationTitle } = getSettings().main;
-    const settings = this.getSettings();
+    const settings = this.getSettings() as NotificationAgentGotify;
     const priority = settings.options.priority ?? 1;
 
     const title = payload.event

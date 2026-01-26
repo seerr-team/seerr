@@ -36,8 +36,7 @@ For instructions on how to install and run **Jellyseerr**, please refer to the o
 
 https://docs.seerr.dev/getting-started/
 
-> [!IMPORTANT]
-> **Seerr is not officially released yet.**  
+> [!IMPORTANT] > **Seerr is not officially released yet.**  
 > The project is currently available **only on the `develop` branch** and is intended for **beta testing only**.
 
 The documentation linked above is for running the **latest Jellyseerr** release.
@@ -48,9 +47,8 @@ The documentation linked above is for running the **latest Jellyseerr** release.
 Instead, follow the dedicated migration guide (with `:develop` tag):
 https://github.com/seerr-team/seerr/blob/develop/docs/migration-guide.mdx
 
-> [!CAUTION]
-> **DO NOT run Jellyseerr (latest) using an existing Overseerr database. This includes third-party images with `seerr:latest` (as it points to jellyseerr 2.7.3 and not seerr.**  
-> Doing so **may cause database corruption and/or irreversible data loss and/or weird unintended behaviour**. 
+> [!CAUTION] > **DO NOT run Jellyseerr (latest) using an existing Overseerr database. This includes third-party images with `seerr:latest` (as it points to jellyseerr 2.7.3 and not seerr.**  
+> Doing so **may cause database corruption and/or irreversible data loss and/or weird unintended behaviour**.
 
 For migration assistance, beta testing questions, or troubleshooting, please join our **Discord** and ask for support there.
 

@@ -12,7 +12,10 @@ import Media from '@server/entity/Media';
 import MediaRequest from '@server/entity/MediaRequest';
 import type Season from '@server/entity/Season';
 import { User } from '@server/entity/User';
-import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
+import type {
+  RadarrSettings,
+  SonarrSettings,
+} from '@server/interfaces/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { getHostname } from '@server/utils/getHostname';

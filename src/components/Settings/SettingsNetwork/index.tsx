@@ -6,7 +6,7 @@ import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
-import type { NetworkSettings } from '@server/lib/settings';
+import type { NetworkSettings } from '@server/interfaces/settings';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useIntl } from 'react-intl';

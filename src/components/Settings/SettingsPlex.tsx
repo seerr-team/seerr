@@ -16,7 +16,10 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/solid';
 import type { PlexDevice } from '@server/interfaces/api/plexInterfaces';
-import type { PlexSettings, TautulliSettings } from '@server/lib/settings';
+import type {
+  PlexSettings,
+  TautulliSettings,
+} from '@server/interfaces/settings';
 import axios from 'axios';
 import { Field, Formik } from 'formik';
 import { orderBy } from 'lodash';

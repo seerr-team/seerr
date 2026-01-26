@@ -1,4 +1,4 @@
-import type { ProxySettings } from '@server/lib/settings';
+import type { ProxySettings } from '@server/interfaces/settings';
 import logger from '@server/logger';
 import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { HttpProxyAgent } from 'http-proxy-agent';

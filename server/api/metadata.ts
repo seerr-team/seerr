@@ -1,7 +1,8 @@
 import type { TvShowProvider } from '@server/api/provider';
 import TheMovieDb from '@server/api/themoviedb';
 import Tvdb from '@server/api/tvdb';
-import { getSettings, MetadataProviderType } from '@server/lib/settings';
+import { MetadataProviderType } from '@server/interfaces/settings';
+import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 
 export const getMetadataProvider = async (

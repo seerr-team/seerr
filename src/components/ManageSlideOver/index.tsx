@@ -25,8 +25,11 @@ import {
 } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import type { MediaWatchDataResponse } from '@server/interfaces/api/mediaInterfaces';
+import type {
+  RadarrSettings,
+  SonarrSettings,
+} from '@server/interfaces/settings';
 import type { DownloadingItem } from '@server/lib/downloadtracker';
-import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
