@@ -1558,6 +1558,7 @@
   "i18n.deleting": "Deleting…",
   "i18n.delimitedlist": "{a}, {b}",
   "i18n.edit": "Edit",
+  "i18n.error": "Something went wrong. Please try again.",
   "i18n.experimental": "Experimental",
   "i18n.failed": "Failed",
   "i18n.import": "Import",

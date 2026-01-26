@@ -1,4 +1,8 @@
+import globalMessages from '@app/i18n/globalMessages';
 import { MediaStatus } from '@server/constants/media';
+import { useEffect } from 'react';
+import { useIntl } from 'react-intl';
+import { useToasts } from 'react-toast-notifications';
 import useSWRInfinite from 'swr/infinite';
 import useSettings from './useSettings';
 import { Permission, useUser } from './useUser';
@@ -58,6 +62,8 @@ const useDiscover = <
 ): DiscoverResult<T, S> => {
   const settings = useSettings();
   const { hasPermission } = useUser();
+  const { addToast } = useToasts();
+  const intl = useIntl();
   const { data, error, size, setSize, isValidating, mutate } = useSWRInfinite<
     BaseSearchResult<T> & S
   >(
@@ -140,6 +146,16 @@ const useDiscover = <
     (!!data && (data[data?.length - 1]?.results.length ?? 0) < 20) ||
     (!!data && (data[data?.length - 1]?.totalResults ?? 0) <= size * 20) ||
     (!!data && (data[data?.length - 1]?.totalResults ?? 0) < 41);
+
+  useEffect(() => {
+    if (error && titles.length) {
+      addToast(intl.formatMessage(globalMessages.error), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+      console.error('Error while fetching discover titles:', error);
+    }
+  }, [data, error]);
 
   return {
     isLoadingInitialData,
