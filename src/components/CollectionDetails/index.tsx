@@ -134,7 +134,10 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
       type: 'or',
     }) &&
     data.parts.filter(
-      (part) => !part.mediaInfo || part.mediaInfo.status === MediaStatus.UNKNOWN
+      (part) =>
+        !part.mediaInfo ||
+        part.mediaInfo.status === MediaStatus.DELETED ||
+        part.mediaInfo.status === MediaStatus.UNKNOWN
     ).length > 0;
 
   const hasRequestable4k =
@@ -144,7 +147,9 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
     }) &&
     data.parts.filter(
       (part) =>
-        !part.mediaInfo || part.mediaInfo.status4k === MediaStatus.UNKNOWN
+        !part.mediaInfo ||
+        part.mediaInfo.status4k === MediaStatus.DELETED ||
+        part.mediaInfo.status4k === MediaStatus.UNKNOWN
     ).length > 0;
 
   const collectionAttributes: React.ReactNode[] = [];
