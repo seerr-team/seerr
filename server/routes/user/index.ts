@@ -28,6 +28,7 @@ import { findIndex, sortBy } from 'lodash';
 import type { EntityManager } from 'typeorm';
 import { In, Not } from 'typeorm';
 import userSettingsRoutes from './usersettings';
+import { normalizeJellyfinGuid } from '@server/utils/jellyfin';
 
 const router = Router();
 
@@ -675,10 +676,16 @@ router.post(
       jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
       const jellyfinUsers = await jellyfinClient.getUsers();
 
-      for (const jellyfinUserId of body.jellyfinUserIds) {
-        const jellyfinUser = jellyfinUsers.users.find(
-          (user) => user.Id === jellyfinUserId
-        );
+      const jellyfinUsersById = new Map(
+        jellyfinUsers.users.map((user) => [
+          normalizeJellyfinGuid(user.Id),
+          user,
+        ])
+      );
+
+      for (const rawJellyfinUserId of body.jellyfinUserIds) {
+        const jellyfinUserId = normalizeJellyfinGuid(rawJellyfinUserId);
+        const jellyfinUser = jellyfinUsersById.get(jellyfinUserId);
 
         const user = await userRepository.findOne({
           select: ['id', 'jellyfinUserId'],
