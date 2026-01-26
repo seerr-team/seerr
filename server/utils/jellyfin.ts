@@ -13,13 +13,3 @@ export function normalizeJellyfinGuid(
 
   return normalized;
 }
-
-export function jellyfinGuidsEqual(
-  a?: string | null,
-  b?: string | null
-): boolean {
-  const na = normalizeJellyfinGuid(a);
-  const nb = normalizeJellyfinGuid(b);
-
-  return !!na && na === nb;
-}
