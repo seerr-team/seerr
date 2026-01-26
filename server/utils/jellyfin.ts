@@ -1,7 +1,7 @@
 export function normalizeJellyfinGuid(
   value: string | null | undefined
 ): string | null {
-  if (!value || typeof value !== 'string') {
+  if (!value) {
     return null;
   }
 
