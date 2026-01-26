@@ -22,13 +22,13 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { getHostname } from '@server/utils/getHostname';
+import { normalizeJellyfinGuid } from '@server/utils/jellyfin';
 import { Router } from 'express';
 import gravatarUrl from 'gravatar-url';
 import { findIndex, sortBy } from 'lodash';
 import type { EntityManager } from 'typeorm';
 import { In, Not } from 'typeorm';
 import userSettingsRoutes from './usersettings';
-import { normalizeJellyfinGuid } from '@server/utils/jellyfin';
 
 const router = Router();
 
@@ -685,6 +685,10 @@ router.post(
 
       for (const rawJellyfinUserId of body.jellyfinUserIds) {
         const jellyfinUserId = normalizeJellyfinGuid(rawJellyfinUserId);
+        if (!jellyfinUserId) {
+          continue;
+        }
+
         const jellyfinUser = jellyfinUsersById.get(jellyfinUserId);
 
         const user = await userRepository.findOne({
