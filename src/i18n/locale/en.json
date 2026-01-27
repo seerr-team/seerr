@@ -520,6 +520,8 @@
   "components.RequestModal.AdvancedRequester.default": "{name} (Default)",
   "components.RequestModal.AdvancedRequester.destinationserver": "Destination Server",
   "components.RequestModal.AdvancedRequester.folder": "{path} ({space})",
+  "components.RequestModal.AdvancedRequester.ignoreQuotaDescription": "This request will not count against the user's quota limits. Use with caution.",
+  "components.RequestModal.AdvancedRequester.ignoreQuotaTitle": "Bypass User Quota",
   "components.RequestModal.AdvancedRequester.languageprofile": "Language Profile",
   "components.RequestModal.AdvancedRequester.notagoptions": "No tags.",
   "components.RequestModal.AdvancedRequester.qualityprofile": "Quality Profile",

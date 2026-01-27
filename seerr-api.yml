@@ -1263,6 +1263,10 @@ components:
           type: number
         rootFolder:
           type: string
+        ignoreQuota:
+          type: boolean
+          example: false
+          description: If true, this request will not count against the user's quota. Requires MANAGE_REQUESTS permission.
       required:
         - id
         - status
@@ -6143,6 +6147,10 @@ paths:
                 userId:
                   type: number
                   nullable: true
+                ignoreQuota:
+                  type: boolean
+                  example: false
+                  description: If true, this request will not count against the user's quota. Requires MANAGE_REQUESTS permission.
               required:
                 - mediaType
                 - mediaId
