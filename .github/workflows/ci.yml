@@ -26,6 +26,9 @@ jobs:
     name: Lint & Test Build
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
     container: node:22.22.0-alpine3.22@sha256:0c49915657c1c77c64c8af4d91d2f13fe96853bbd957993ed00dd592cbecc284
     steps:
       - name: Checkout
@@ -61,15 +64,61 @@ jobs:
         run: pnpm format:check
 
       - name: i18n Check
-        run: |
-          cp src/i18n/locale/en.json src/i18n/locale/en.json.bak
-          pnpm i18n:extract
-          if ! cmp -s src/i18n/locale/en.json src/i18n/locale/en.json.bak; then
-            echo "i18n messages are out of sync. Please run 'pnpm i18n:extract' and commit the changes."
-            rm src/i18n/locale/en.json.bak
-            exit 1
-          fi
-          rm src/i18n/locale/en.json.bak
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            const fs = require('fs');
+            const labelName = 'i18n-out-of-sync';
+
+            execSync('cp src/i18n/locale/en.json src/i18n/locale/en.json.bak');
+            execSync('pnpm i18n:extract');
+
+            const original = fs.readFileSync('src/i18n/locale/en.json.bak', 'utf8');
+            const extracted = fs.readFileSync('src/i18n/locale/en.json', 'utf8');
+            fs.unlinkSync('src/i18n/locale/en.json.bak');
+
+            const checkFailed = original !== extracted;
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+
+            const hasLabel = pr.labels.some(label => label.name === labelName);
+
+            if (checkFailed && !hasLabel) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: [labelName],
+              });
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `The i18n check failed because translation messages are out of sync.
+            This usually happens when you've added or modified translation strings in your code but haven't updated the translation file.
+
+            Please run \`pnpm i18n:extract\` and commit the changes.`,
+              });
+            } else if (!checkFailed && hasLabel) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: labelName,
+              });
+            }
+
+            if (checkFailed) {
+              console.error('i18n messages are out of sync. Please run \'pnpm i18n:extract\' and commit the changes.');
+              process.exit(1);
+            }
 
       - name: Build
         run: pnpm build
