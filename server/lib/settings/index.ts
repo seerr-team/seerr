@@ -70,6 +70,7 @@ export interface DVRSettings {
   activeProfileName: string;
   activeDirectory: string;
   tags: number[];
+  exemptTags: number[];
   is4k: boolean;
   isDefault: boolean;
   externalUrl?: string;

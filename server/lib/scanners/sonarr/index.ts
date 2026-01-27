@@ -83,6 +83,21 @@ class SonarrScanner
   }
 
   private async processSonarrSeries(sonarrSeries: SonarrSeries) {
+    // Check if series has exempt tags and skip if it does
+    if (this.currentServer.exemptTags?.length > 0) {
+      const hasExemptTag = sonarrSeries.tags.some((tag) =>
+        this.currentServer.exemptTags.includes(tag)
+      );
+      if (hasExemptTag) {
+        this.log('Series has exempt tag. Skipping item.', 'debug', {
+          title: sonarrSeries.title,
+          seriesTags: sonarrSeries.tags,
+          exemptTags: this.currentServer.exemptTags,
+        });
+        return;
+      }
+    }
+
     try {
       const mediaRepository = getRepository(Media);
       const server4k = this.enable4kShow && this.currentServer.is4k;

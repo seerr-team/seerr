@@ -90,6 +90,21 @@ class RadarrScanner
       return;
     }
 
+    // Check if movie has exempt tags and skip if it does
+    if (this.currentServer.exemptTags?.length > 0) {
+      const hasExemptTag = radarrMovie.tags.some((tag) =>
+        this.currentServer.exemptTags.includes(tag)
+      );
+      if (hasExemptTag) {
+        this.log('Movie has exempt tag. Skipping item.', 'debug', {
+          title: radarrMovie.title,
+          movieTags: radarrMovie.tags,
+          exemptTags: this.currentServer.exemptTags,
+        });
+        return;
+      }
+    }
+
     try {
       const server4k = this.enable4kMovie && this.currentServer.is4k;
       await this.processMovie(radarrMovie.tmdbId, {

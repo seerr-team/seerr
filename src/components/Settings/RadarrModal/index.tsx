@@ -1,6 +1,7 @@
 import Modal from '@app/components/Common/Modal';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import type { RadarrTestResponse } from '@app/components/Settings/SettingsServices';
+import TagSelect from '@app/components/Settings/TagSelect';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -10,14 +11,8 @@ import axios from 'axios';
 import { Field, Formik } from 'formik';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
-import Select from 'react-select';
 import { useToasts } from 'react-toast-notifications';
 import * as Yup from 'yup';
-
-type OptionType = {
-  value: number;
-  label: string;
-};
 
 const messages = defineMessages('components.Settings.RadarrModal', {
   createradarr: 'Add New Radarr Server',
@@ -59,6 +54,9 @@ const messages = defineMessages('components.Settings.RadarrModal', {
   loadingTags: 'Loading tags…',
   testFirstTags: 'Test connection to load tags',
   tags: 'Tags',
+  exemptTags: 'Exempt Tags',
+  exemptTagsInfo:
+    'Tags to exclude from sync (content with these tags will be ignored)',
   enableSearch: 'Enable Automatic Search',
   tagRequests: 'Tag Requests',
   tagRequestsInfo:
@@ -225,6 +223,7 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
           rootFolder: radarr?.activeDirectory,
           minimumAvailability: radarr?.minimumAvailability ?? 'released',
           tags: radarr?.tags ?? [],
+          exemptTags: radarr?.exemptTags ?? [],
           isDefault: radarr?.isDefault ?? false,
           is4k: radarr?.is4k ?? false,
           externalUrl: radarr?.externalUrl,
@@ -252,6 +251,7 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
               is4k: values.is4k,
               minimumAvailability: values.minimumAvailability,
               tags: values.tags,
+              exemptTags: values.exemptTags,
               isDefault: values.isDefault,
               externalUrl: values.externalUrl,
               syncEnabled: values.syncEnabled,
@@ -610,63 +610,33 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                       )}
                   </div>
                 </div>
-                <div className="form-row">
-                  <label htmlFor="tags" className="text-label">
-                    {intl.formatMessage(messages.tags)}
-                  </label>
-                  <div className="form-input-area">
-                    <Select<OptionType, true>
-                      options={
-                        isValidated
-                          ? testResponse.tags.map((tag) => ({
-                              label: tag.label,
-                              value: tag.id,
-                            }))
-                          : []
-                      }
-                      isMulti
-                      isDisabled={!isValidated || isTesting}
-                      placeholder={
-                        !isValidated
-                          ? intl.formatMessage(messages.testFirstTags)
-                          : isTesting
-                          ? intl.formatMessage(messages.loadingTags)
-                          : intl.formatMessage(messages.selecttags)
-                      }
-                      className="react-select-container"
-                      classNamePrefix="react-select"
-                      value={
-                        values.tags
-                          .map((tagId) => {
-                            const foundTag = testResponse.tags.find(
-                              (tag) => tag.id === tagId
-                            );
-
-                            if (!foundTag) {
-                              return undefined;
-                            }
-
-                            return {
-                              value: foundTag.id,
-                              label: foundTag.label,
-                            };
-                          })
-                          .filter(
-                            (option) => option !== undefined
-                          ) as OptionType[]
-                      }
-                      onChange={(value) => {
-                        setFieldValue(
-                          'tags',
-                          value.map((option) => option.value)
-                        );
-                      }}
-                      noOptionsMessage={() =>
-                        intl.formatMessage(messages.notagoptions)
-                      }
-                    />
-                  </div>
-                </div>
+                <TagSelect
+                  fieldName="tags"
+                  label={intl.formatMessage(messages.tags)}
+                  values={values.tags}
+                  onFieldChange={setFieldValue}
+                  tags={testResponse.tags}
+                  isValidated={isValidated}
+                  isTesting={isTesting}
+                  testFirstMessage={intl.formatMessage(messages.testFirstTags)}
+                  loadingMessage={intl.formatMessage(messages.loadingTags)}
+                  selectMessage={intl.formatMessage(messages.selecttags)}
+                  noOptionsMessage={intl.formatMessage(messages.notagoptions)}
+                />
+                <TagSelect
+                  fieldName="exemptTags"
+                  label={intl.formatMessage(messages.exemptTags)}
+                  labelTip={intl.formatMessage(messages.exemptTagsInfo)}
+                  values={values.exemptTags}
+                  onFieldChange={setFieldValue}
+                  tags={testResponse.tags}
+                  isValidated={isValidated}
+                  isTesting={isTesting}
+                  testFirstMessage={intl.formatMessage(messages.testFirstTags)}
+                  loadingMessage={intl.formatMessage(messages.loadingTags)}
+                  selectMessage={intl.formatMessage(messages.selecttags)}
+                  noOptionsMessage={intl.formatMessage(messages.notagoptions)}
+                />
                 <div className="form-row">
                   <label htmlFor="externalUrl" className="text-label">
                     {intl.formatMessage(messages.externalUrl)}

@@ -604,6 +604,19 @@ components:
         preventSearch:
           type: boolean
           example: false
+        tags:
+          type: array
+          items:
+            type: number
+          example: [1, 2, 3]
+        exemptTags:
+          type: array
+          items:
+            type: number
+          example: [4, 5]
+        tagRequests:
+          type: boolean
+          example: false
       required:
         - name
         - hostname
@@ -681,6 +694,19 @@ components:
           type: boolean
           example: false
         preventSearch:
+          type: boolean
+          example: false
+        tags:
+          type: array
+          items:
+            type: number
+          example: [1, 2, 3]
+        exemptTags:
+          type: array
+          items:
+            type: number
+          example: [4, 5]
+        tagRequests:
           type: boolean
           example: false
       required:
