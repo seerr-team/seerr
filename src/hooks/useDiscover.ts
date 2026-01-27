@@ -155,7 +155,7 @@ const useDiscover = <
       });
       console.error('Error while fetching discover titles:', error);
     }
-  }, [data, error]);
+  }, [data, error, addToast, intl, titles.length]);
 
   return {
     isLoadingInitialData,
