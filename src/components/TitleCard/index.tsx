@@ -66,6 +66,7 @@ const TitleCard = ({
   isAddedToWatchlist = false,
   inProgress = false,
   canExpand = false,
+  userScore,
   mutateParent,
 }: TitleCardProps) => {
   const isTouch = useIsTouch();
@@ -422,6 +423,15 @@ const TitleCard = ({
                 </div>
               </div>
             )}
+            <div
+              className={
+                'pointer-events-none z-40 rounded-full border border-blue-500 bg-blue-600 bg-opacity-80 shadow-md'
+              }
+            >
+              <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium uppercase tracking-wider text-white sm:h-5">
+                {userScore?.toFixed(1)}
+              </div>
+            </div>
           </div>
           <Transition
             as={Fragment}

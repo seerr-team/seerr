@@ -7,6 +7,7 @@ type MultiRangeSliderProps = {
   max: number;
   defaultMinValue?: number;
   defaultMaxValue?: number;
+  step?: number;
   subText?: string;
   onUpdateMin: (min: number) => void;
   onUpdateMax: (max: number) => void;
@@ -15,6 +16,7 @@ type MultiRangeSliderProps = {
 const MultiRangeSlider = ({
   min,
   max,
+  step = 1,
   defaultMinValue,
   defaultMaxValue,
   subText,
@@ -63,6 +65,7 @@ const MultiRangeSlider = ({
           min={min}
           max={max}
           value={valueMin}
+          step={step}
           className={`pointer-events-none absolute h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-700 ${
             valueMin >= valueMax && valueMin !== min ? 'z-30' : 'z-10'
           }`}
@@ -82,7 +85,7 @@ const MultiRangeSlider = ({
           min={min}
           max={max}
           value={valueMax}
-          step="1"
+          step={step}
           className={`pointer-events-none absolute top-0 left-0 right-0 z-20 h-2 w-full cursor-pointer appearance-none rounded-lg bg-transparent`}
           onChange={(e) => {
             const value = Number(e.target.value);

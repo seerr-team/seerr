@@ -262,6 +262,7 @@ const FilterSlideover = ({
           <MultiRangeSlider
             min={1}
             max={10}
+            step={0.1}
             defaultMaxValue={
               currentFilters.voteAverageLte
                 ? Number(currentFilters.voteAverageLte)
