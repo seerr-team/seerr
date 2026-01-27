@@ -60,6 +60,17 @@ jobs:
       - name: Formatting
         run: pnpm format:check
 
+      - name: i18n Check
+        run: |
+          cp src/i18n/locale/en.json src/i18n/locale/en.json.bak
+          pnpm i18n:extract
+          if ! cmp -s src/i18n/locale/en.json src/i18n/locale/en.json.bak; then
+            echo "i18n messages are out of sync. Please run 'pnpm i18n:extract' and commit the changes."
+            rm src/i18n/locale/en.json.bak
+            exit 1
+          fi
+          rm src/i18n/locale/en.json.bak
+
       - name: Build
         run: pnpm build
 
