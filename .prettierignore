@@ -4,15 +4,16 @@ dist/
 config/
 pnpm-lock.yaml
 cypress/config/settings.cypress.json
+.github
+.vscode
 
 # assets
-src/assets/
-public/
-!public/sw.js
 docs/
-!/public/
-/public/*
-!/public/sw.js
+public/*
+!public/sw.js
 
 # helm charts
 **/charts
+
+# Prettier breaks GitHub alert syntax in markdown
+*.md

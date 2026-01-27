@@ -350,7 +350,7 @@ const UserWebPushSettings = () => {
           );
         }}
       </Formik>
-      <div className="mt-10 mb-6">
+      <div className="mb-6 mt-10">
         <h3 className="heading">
           {intl.formatMessage(messages.managedevices)}
         </h3>

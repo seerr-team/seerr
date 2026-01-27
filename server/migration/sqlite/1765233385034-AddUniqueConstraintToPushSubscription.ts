@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddUniqueConstraintToPushSubscription1765233385034
-  implements MigrationInterface
-{
+export class AddUniqueConstraintToPushSubscription1765233385034 implements MigrationInterface {
   name = 'AddUniqueConstraintToPushSubscription1765233385034';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

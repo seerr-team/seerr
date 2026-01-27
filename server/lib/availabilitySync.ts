@@ -513,8 +513,8 @@ class AvailabilitySync {
           mediaServerType === MediaServerType.PLEX
             ? 'plex'
             : mediaServerType === MediaServerType.JELLYFIN
-            ? 'jellyfin'
-            : 'emby'
+              ? 'jellyfin'
+              : 'emby'
         } instance. Status will be changed to deleted.`,
         { label: 'AvailabilitySync' }
       );
@@ -588,8 +588,8 @@ class AvailabilitySync {
           mediaServerType === MediaServerType.PLEX
             ? 'plex'
             : mediaServerType === MediaServerType.JELLYFIN
-            ? 'jellyfin'
-            : 'emby'
+              ? 'jellyfin'
+              : 'emby'
         } instance. Status will be changed to deleted.`,
         { label: 'AvailabilitySync' }
       );

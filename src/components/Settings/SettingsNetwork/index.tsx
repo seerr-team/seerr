@@ -284,7 +284,7 @@ const SettingsNetwork = () => {
                 </div>
                 {values.dnsCacheEnabled && (
                   <>
-                    <div className="mr-2 ml-4">
+                    <div className="ml-4 mr-2">
                       <div className="form-row">
                         <label
                           htmlFor="dnsCacheForceMinTtl"
@@ -357,7 +357,7 @@ const SettingsNetwork = () => {
                 </div>
                 {values.proxyEnabled && (
                   <>
-                    <div className="mr-2 ml-4">
+                    <div className="ml-4 mr-2">
                       <div className="form-row">
                         <label
                           htmlFor="proxyHostname"

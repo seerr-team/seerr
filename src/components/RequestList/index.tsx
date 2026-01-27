@@ -79,8 +79,8 @@ const RequestList = () => {
       router.pathname.startsWith('/profile')
         ? `&requestedBy=${currentUser?.id}`
         : router.query.userId
-        ? `&requestedBy=${router.query.userId}`
-        : ''
+          ? `&requestedBy=${router.query.userId}`
+          : ''
     }`
   );
 

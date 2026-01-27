@@ -74,10 +74,10 @@ const UserSettings = ({ children }: UserSettingsProps) => {
       route: data?.emailEnabled
         ? '/settings/notifications/email'
         : data?.webPushEnabled
-        ? '/settings/notifications/webpush'
-        : data?.discordEnabled
-        ? '/settings/notifications/discord'
-        : '/settings/notifications/pushbullet',
+          ? '/settings/notifications/webpush'
+          : data?.discordEnabled
+            ? '/settings/notifications/discord'
+            : '/settings/notifications/pushbullet',
       regex: /\/settings\/notifications/,
     },
     {

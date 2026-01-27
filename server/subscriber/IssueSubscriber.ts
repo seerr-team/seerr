@@ -67,16 +67,16 @@ export class IssueSubscriber implements EntitySubscriberInterface<Issue> {
                   : ''
               }Issue Reported`
             : type === Notification.ISSUE_RESOLVED
-            ? `${
-                entity.issueType !== IssueType.OTHER
-                  ? `${IssueTypeName[entity.issueType]} `
-                  : ''
-              }Issue Resolved`
-            : `${
-                entity.issueType !== IssueType.OTHER
-                  ? `${IssueTypeName[entity.issueType]} `
-                  : ''
-              }Issue Reopened`,
+              ? `${
+                  entity.issueType !== IssueType.OTHER
+                    ? `${IssueTypeName[entity.issueType]} `
+                    : ''
+                }Issue Resolved`
+              : `${
+                  entity.issueType !== IssueType.OTHER
+                    ? `${IssueTypeName[entity.issueType]} `
+                    : ''
+                }Issue Reopened`,
         subject: title,
         message: firstComment.message,
         issue: entity,

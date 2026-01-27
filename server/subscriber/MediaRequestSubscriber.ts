@@ -40,9 +40,7 @@ const sanitizeDisplayName = (displayName: string): string => {
 };
 
 @EventSubscriber()
-export class MediaRequestSubscriber
-  implements EntitySubscriberInterface<MediaRequest>
-{
+export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRequest> {
   private async notifyAvailableMovie(
     entity: MediaRequest,
     event?: UpdateEvent<MediaRequest>
@@ -573,8 +571,8 @@ export class MediaRequestSubscriber
               ? [...sonarrSettings.animeTags]
               : []
             : sonarrSettings.tags
-            ? [...sonarrSettings.tags]
-            : [];
+              ? [...sonarrSettings.tags]
+              : [];
 
         if (
           entity.rootFolder &&

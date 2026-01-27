@@ -128,8 +128,8 @@ class WebPushAgent
     const actionUrl = payload.issue
       ? `/issues/${payload.issue.id}`
       : payload.media
-      ? `/${payload.media.mediaType}/${payload.media.tmdbId}`
-      : undefined;
+        ? `/${payload.media.mediaType}/${payload.media.tmdbId}`
+        : undefined;
 
     const actionUrlTitle = actionUrl
       ? `View ${payload.issue ? 'Issue' : 'Media'}`

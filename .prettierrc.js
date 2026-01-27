@@ -1,5 +1,5 @@
 module.exports = {
-  plugins: [require('./merged-prettier-plugin.js')],
+  plugins: ['prettier-plugin-organize-imports', 'prettier-plugin-tailwindcss'],
   singleQuote: true,
   trailingComma: 'es5',
   overrides: [

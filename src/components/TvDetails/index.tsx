@@ -227,8 +227,8 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   const discoverRegion = user?.settings?.discoverRegion
     ? user.settings.discoverRegion
     : settings.currentSettings.discoverRegion
-    ? settings.currentSettings.discoverRegion
-    : 'US';
+      ? settings.currentSettings.discoverRegion
+      : 'US';
   const seriesAttributes: React.ReactNode[] = [];
 
   const contentRating = data.contentRatings.results.find(
@@ -320,8 +320,8 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   const streamingRegion = user?.settings?.streamingRegion
     ? user.settings.streamingRegion
     : settings.currentSettings.streamingRegion
-    ? settings.currentSettings.streamingRegion
-    : 'US';
+      ? settings.currentSettings.streamingRegion
+      : 'US';
   const streamingProviders =
     data?.watchProviders?.find(
       (provider) => provider.iso_3166_1 === streamingRegion
@@ -849,7 +849,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                         <Disclosure.Button
                           className={`mt-2 flex w-full items-center justify-between space-x-2 border-gray-700 bg-gray-800 px-4 py-2 text-gray-200 ${
                             open
-                              ? 'rounded-t-md border-t border-l border-r'
+                              ? 'rounded-t-md border-l border-r border-t'
                               : 'rounded-md border'
                           }`}
                         >

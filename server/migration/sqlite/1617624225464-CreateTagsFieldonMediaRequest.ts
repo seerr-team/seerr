@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateTagsFieldonMediaRequest1617624225464
-  implements MigrationInterface
-{
+export class CreateTagsFieldonMediaRequest1617624225464 implements MigrationInterface {
   name = 'CreateTagsFieldonMediaRequest1617624225464';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

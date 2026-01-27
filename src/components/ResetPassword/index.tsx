@@ -62,7 +62,7 @@ const ResetPassword = () => {
           '/images/rotate6.jpg',
         ]}
       />
-      <div className="absolute top-4 right-4 z-50">
+      <div className="absolute right-4 top-4 z-50">
         <LanguagePicker />
       </div>
       <div className="relative z-40 mt-10 flex flex-col items-center px-4 sm:mx-auto sm:w-full sm:max-w-md">
@@ -122,7 +122,7 @@ const ResetPassword = () => {
                         >
                           {intl.formatMessage(messages.password)}
                         </label>
-                        <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0">
+                        <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
                           <div className="form-input-field">
                             <SensitiveInput
                               as="field"
@@ -145,7 +145,7 @@ const ResetPassword = () => {
                         >
                           {intl.formatMessage(messages.confirmpassword)}
                         </label>
-                        <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0">
+                        <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
                           <div className="form-input-field">
                             <SensitiveInput
                               as="field"

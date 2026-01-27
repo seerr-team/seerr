@@ -87,8 +87,8 @@ const StatusBadge = ({
         settings.currentSettings.mediaServerType === MediaServerType.EMBY
           ? 'Emby'
           : settings.currentSettings.mediaServerType === MediaServerType.PLEX
-          ? 'Plex'
-          : 'Jellyfin',
+            ? 'Plex'
+            : 'Jellyfin',
     });
   } else if (hasPermission(Permission.MANAGE_REQUESTS)) {
     if (mediaType && tmdbId) {
@@ -137,15 +137,13 @@ const StatusBadge = ({
 
   const badgeDownloadProgress = (
     <div
-      className={`
-      absolute top-0 left-0 z-10 flex h-full bg-opacity-80 ${
+      className={`absolute left-0 top-0 z-10 flex h-full bg-opacity-80 ${
         status === MediaStatus.DELETED
           ? 'bg-red-600'
           : status === MediaStatus.PROCESSING
-          ? 'bg-indigo-500'
-          : 'bg-green-500'
-      } transition-all duration-200 ease-in-out
-    `}
+            ? 'bg-indigo-500'
+            : 'bg-green-500'
+      } transition-all duration-200 ease-in-out`}
       style={{
         width: `${
           downloadItem ? calculateDownloadProgress(downloadItem[0]) : 0

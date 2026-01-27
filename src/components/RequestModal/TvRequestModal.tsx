@@ -408,8 +408,8 @@ const TvRequestModal = ({
             ? messages.pending4krequest
             : messages.pendingrequest
           : is4k
-          ? messages.requestseries4ktitle
-          : messages.requestseriestitle
+            ? messages.requestseries4ktitle
+            : messages.requestseriestitle
       )}
       subTitle={data?.name}
       okText={
@@ -417,33 +417,33 @@ const TvRequestModal = ({
           ? selectedSeasons.length === 0
             ? intl.formatMessage(messages.cancel)
             : hasPermission(Permission.MANAGE_REQUESTS)
-            ? intl.formatMessage(messages.approve)
-            : intl.formatMessage(messages.edit)
+              ? intl.formatMessage(messages.approve)
+              : intl.formatMessage(messages.edit)
           : getAllRequestedSeasons().length >= getAllSeasons().length
-          ? intl.formatMessage(messages.alreadyrequested)
-          : !settings.currentSettings.partialRequestsEnabled
-          ? intl.formatMessage(
-              is4k ? globalMessages.request4k : globalMessages.request
-            )
-          : selectedSeasons.length === 0
-          ? intl.formatMessage(messages.selectseason)
-          : intl.formatMessage(
-              is4k ? messages.requestseasons4k : messages.requestseasons,
-              {
-                seasonCount: selectedSeasons.length,
-              }
-            )
+            ? intl.formatMessage(messages.alreadyrequested)
+            : !settings.currentSettings.partialRequestsEnabled
+              ? intl.formatMessage(
+                  is4k ? globalMessages.request4k : globalMessages.request
+                )
+              : selectedSeasons.length === 0
+                ? intl.formatMessage(messages.selectseason)
+                : intl.formatMessage(
+                    is4k ? messages.requestseasons4k : messages.requestseasons,
+                    {
+                      seasonCount: selectedSeasons.length,
+                    }
+                  )
       }
       okDisabled={
         editRequest
           ? false
           : !settings.currentSettings.partialRequestsEnabled &&
-            quota?.tv.limit &&
-            unrequestedSeasons.length > quota.tv.limit
-          ? true
-          : getAllRequestedSeasons().length >= getAllSeasons().length ||
-            (settings.currentSettings.partialRequestsEnabled &&
-              selectedSeasons.length === 0)
+              quota?.tv.limit &&
+              unrequestedSeasons.length > quota.tv.limit
+            ? true
+            : getAllRequestedSeasons().length >= getAllSeasons().length ||
+              (settings.currentSettings.partialRequestsEnabled &&
+                selectedSeasons.length === 0)
       }
       okButtonType={
         editRequest
@@ -451,16 +451,16 @@ const TvRequestModal = ({
             selectedSeasons.length === 0
             ? 'danger'
             : hasPermission(Permission.MANAGE_REQUESTS)
-            ? 'success'
-            : 'primary'
+              ? 'success'
+              : 'primary'
           : 'primary'
       }
       cancelText={
         editRequest
           ? intl.formatMessage(globalMessages.close)
           : tvdbId
-          ? intl.formatMessage(globalMessages.back)
-          : intl.formatMessage(globalMessages.cancel)
+            ? intl.formatMessage(globalMessages.back)
+            : intl.formatMessage(globalMessages.cancel)
       }
       backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
     >

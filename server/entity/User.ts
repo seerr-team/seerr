@@ -271,7 +271,7 @@ export class User {
     });
 
     const movieQuotaLimit = !canBypass
-      ? this.movieQuotaLimit ?? defaultQuotas.movie.quotaLimit
+      ? (this.movieQuotaLimit ?? defaultQuotas.movie.quotaLimit)
       : 0;
     const movieQuotaDays = this.movieQuotaDays ?? defaultQuotas.movie.quotaDays;
 
@@ -295,7 +295,7 @@ export class User {
       : 0;
 
     const tvQuotaLimit = !canBypass
-      ? this.tvQuotaLimit ?? defaultQuotas.tv.quotaLimit
+      ? (this.tvQuotaLimit ?? defaultQuotas.tv.quotaLimit)
       : 0;
     const tvQuotaDays = this.tvQuotaDays ?? defaultQuotas.tv.quotaDays;
 

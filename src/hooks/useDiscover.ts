@@ -50,7 +50,7 @@ export const encodeURIExtraParams = (string: string): string => {
 const useDiscover = <
   T extends BaseMedia,
   S = Record<string, never>,
-  O = Record<string, unknown>
+  O = Record<string, unknown>,
 >(
   endpoint: string,
   options?: O,

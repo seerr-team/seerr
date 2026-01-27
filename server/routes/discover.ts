@@ -33,15 +33,15 @@ export const createTmdbWithRegionLanguage = (user?: User): TheMovieDb => {
     user?.settings?.streamingRegion === 'all'
       ? ''
       : user?.settings?.streamingRegion
-      ? user?.settings?.streamingRegion
-      : settings.main.discoverRegion;
+        ? user?.settings?.streamingRegion
+        : settings.main.discoverRegion;
 
   const originalLanguage =
     user?.settings?.originalLanguage === 'all'
       ? ''
       : user?.settings?.originalLanguage
-      ? user?.settings?.originalLanguage
-      : settings.main.originalLanguage;
+        ? user?.settings?.originalLanguage
+        : settings.main.originalLanguage;
 
   return new TheMovieDb({
     discoverRegion,
@@ -697,16 +697,16 @@ discoverRoutes.get('/trending', async (req, res, next) => {
               )
             )
           : isPerson(result)
-          ? mapPersonResult(result)
-          : isCollection(result)
-          ? mapCollectionResult(result)
-          : mapTvResult(
-              result,
-              media.find(
-                (med) =>
-                  med.tmdbId === result.id && med.mediaType === MediaType.TV
-              )
-            )
+            ? mapPersonResult(result)
+            : isCollection(result)
+              ? mapCollectionResult(result)
+              : mapTvResult(
+                  result,
+                  media.find(
+                    (med) =>
+                      med.tmdbId === result.id && med.mediaType === MediaType.TV
+                  )
+                )
       ),
     });
   } catch (e) {

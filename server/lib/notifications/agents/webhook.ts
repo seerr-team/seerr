@@ -122,7 +122,7 @@ class WebhookAgent
             `{{${keymapKey}}}`,
             typeof keymapValue === 'function'
               ? keymapValue(payload, type)
-              : get(payload, keymapValue) ?? ''
+              : (get(payload, keymapValue) ?? '')
           );
         });
       } else if (finalPayload[key] && typeof finalPayload[key] === 'object') {
@@ -186,8 +186,8 @@ class WebhookAgent
           type === Notification.TEST_NOTIFICATION
             ? 'test'
             : typeof keymapValue === 'function'
-            ? keymapValue(payload, type)
-            : get(payload, keymapValue) || 'test';
+              ? keymapValue(payload, type)
+              : get(payload, keymapValue) || 'test';
         webhookUrl = webhookUrl.replace(
           new RegExp(`{{${keymapKey}}}`, 'g'),
           encodeURIComponent(variableValue)

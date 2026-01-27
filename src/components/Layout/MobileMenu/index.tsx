@@ -179,7 +179,7 @@ const MobileMenu = ({
         leave="transition duration-500"
         leaveFrom="opacity-100 -translate-y-full"
         leaveTo="opacity-0 translate-y-0"
-        className="absolute top-0 left-0 right-0 flex w-full -translate-y-full flex-col space-y-6 border-t border-gray-600 bg-gray-900 bg-opacity-90 px-6 py-6 font-semibold text-gray-100 backdrop-blur"
+        className="absolute left-0 right-0 top-0 flex w-full -translate-y-full flex-col space-y-6 border-t border-gray-600 bg-gray-900 bg-opacity-90 px-6 py-6 font-semibold text-gray-100 backdrop-blur"
       >
         {filteredLinks.map((link) => {
           const isActive = router.pathname.match(link.activeRegExp);
@@ -249,7 +249,7 @@ const MobileMenu = ({
                   {link.href === '/requests' &&
                     pendingRequestsCount > 0 &&
                     hasPermission(Permission.MANAGE_REQUESTS) && (
-                      <div className="absolute left-3 bottom-3">
+                      <div className="absolute bottom-3 left-3">
                         <Badge
                           className={`bg-gradient-to-br ${
                             router.pathname.match(link.activeRegExp)
@@ -257,7 +257,7 @@ const MobileMenu = ({
                               : 'border-indigo-500 from-indigo-600 to-purple-600'
                           } flex ${
                             pendingRequestsCount > 99 ? 'w-6' : 'w-4'
-                          } h-4  items-center justify-center !px-[5px] !py-[7px] text-[8px]`}
+                          } h-4 items-center justify-center !px-[5px] !py-[7px] text-[8px]`}
                         >
                           {pendingRequestsCount > 99
                             ? '99+'

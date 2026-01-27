@@ -536,13 +536,13 @@ const UserList = () => {
                       mediaServerName: 'Emby',
                     })
                   : settings.currentSettings.mediaServerType ===
-                    MediaServerType.PLEX
-                  ? intl.formatMessage(messages.importfrommediaserver, {
-                      mediaServerName: 'Plex',
-                    })
-                  : intl.formatMessage(messages.importfrommediaserver, {
-                      mediaServerName: 'Jellyfin',
-                    })}
+                      MediaServerType.PLEX
+                    ? intl.formatMessage(messages.importfrommediaserver, {
+                        mediaServerName: 'Plex',
+                      })
+                    : intl.formatMessage(messages.importfrommediaserver, {
+                        mediaServerName: 'Jellyfin',
+                      })}
               </span>
             </Button>
           </div>
@@ -705,8 +705,8 @@ const UserList = () => {
                 {user.id === 1
                   ? intl.formatMessage(messages.owner)
                   : hasPermission(Permission.ADMIN, user.permissions)
-                  ? intl.formatMessage(messages.admin)
-                  : intl.formatMessage(messages.user)}
+                    ? intl.formatMessage(messages.admin)
+                    : intl.formatMessage(messages.user)}
               </Table.TD>
               <Table.TD>
                 {intl.formatDate(user.createdAt, {
