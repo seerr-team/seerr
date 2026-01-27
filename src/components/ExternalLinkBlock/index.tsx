@@ -12,8 +12,10 @@ import useSettings from '@app/hooks/useSettings';
 import { MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 
+type ExternalLinkType = 'movie' | 'tv' | 'person';
+
 interface ExternalLinkBlockProps {
-  mediaType: 'movie' | 'tv';
+  mediaType: ExternalLinkType;
   tmdbId?: number;
   tvdbId?: number;
   imdbId?: string;
@@ -71,9 +73,19 @@ const ExternalLinkBlock = ({
           <TvdbLogo />
         </a>
       )}
-      {imdbId && (
+      {imdbId && mediaType !== 'person' && (
         <a
           href={`https://www.imdb.com/title/${imdbId}`}
+          className="w-8 opacity-50 transition duration-300 hover:opacity-100"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <ImdbLogo />
+        </a>
+      )}
+      {imdbId && mediaType === 'person' && (
+        <a
+          href={`https://www.imdb.com/name/${imdbId}`}
           className="w-8 opacity-50 transition duration-300 hover:opacity-100"
           target="_blank"
           rel="noreferrer"
@@ -91,7 +103,7 @@ const ExternalLinkBlock = ({
           <RTLogo />
         </a>
       )}
-      {tmdbId && (
+      {tmdbId && mediaType !== 'person' && (
         <a
           href={`https://trakt.tv/search/tmdb/${tmdbId}?id_type=${
             mediaType === 'movie' ? 'movie' : 'show'
