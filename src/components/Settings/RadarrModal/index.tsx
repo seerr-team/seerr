@@ -524,14 +524,17 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                             : intl.formatMessage(messages.selectQualityProfile)}
                         </option>
                         {testResponse.profiles.length > 0 &&
-                          testResponse.profiles.map((profile) => (
-                            <option
-                              key={`loaded-profile-${profile.id}`}
-                              value={profile.id}
-                            >
-                              {profile.name}
-                            </option>
-                          ))}
+                          testResponse.profiles
+                            .slice()
+                            .sort((a, b) => a.name.localeCompare(b.name))
+                            .map((profile) => (
+                              <option
+                                key={`loaded-profile-${profile.id}`}
+                                value={profile.id}
+                              >
+                                {profile.name}
+                              </option>
+                            ))}
                       </Field>
                     </div>
                     {errors.activeProfileId &&
