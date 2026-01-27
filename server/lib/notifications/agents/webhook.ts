@@ -5,7 +5,7 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
 import { get } from 'lodash';
-import { hasNotificationType, Notification } from '..';
+import { Notification, hasNotificationType } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
 import { BaseAgent } from './agent';
 
