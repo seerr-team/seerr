@@ -27,5 +27,11 @@ module.exports = {
         rangeEnd: 0,
       },
     },
+    {
+      files: 'public/offline.html',
+      options: {
+        rangeEnd: 0,
+      },
+    },
   ],
 };

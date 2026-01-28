@@ -8,6 +8,7 @@ cypress/config/settings.cypress.json
 .vscode
 
 # assets
+src/assets/
 docs/
 public/*
 !public/sw.js
