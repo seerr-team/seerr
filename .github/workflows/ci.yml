@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 env:
   DOCKER_HUB: seerr/seerr
@@ -26,9 +27,6 @@ jobs:
     name: Lint & Test Build
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      pull-requests: write
     container: node:22.22.0-alpine3.22@sha256:0c49915657c1c77c64c8af4d91d2f13fe96853bbd957993ed00dd592cbecc284
     steps:
       - name: Checkout
@@ -64,7 +62,6 @@ jobs:
         run: pnpm format:check
 
       - name: i18n Check
-        if: github.event_name == 'pull_request'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
         with:
           script: |
