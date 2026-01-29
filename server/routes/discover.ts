@@ -673,10 +673,41 @@ discoverRoutes.get('/trending', async (req, res, next) => {
   const tmdb = createTmdbWithRegionLanguage(req.user);
 
   try {
-    const data = await tmdb.getAllTrending({
-      page: Number(req.query.page),
-      language: (req.query.language as string) ?? req.locale,
-    });
+    const mediaType = (req.query.mediaType as 'all' | 'movie' | 'tv') ?? 'all';
+    const timeWindow =
+      (req.query.timeWindow as 'day' | 'week') === 'week' ? 'week' : 'day';
+    const language = (req.query.language as string) ?? req.locale;
+    const page = Number(req.query.page);
+
+    const trendingFetchers = {
+      movie: async () => ({
+        data: await tmdb.getMovieTrending({ page, language, timeWindow }),
+        mapper: mapMovieResult,
+        type: MediaType.MOVIE,
+      }),
+      tv: async () => ({
+        data: await tmdb.getTvTrending({ page, language, timeWindow }),
+        mapper: mapTvResult,
+        type: MediaType.TV,
+      }),
+      all: async () => ({
+        data: await tmdb.getAllTrending({ page, language, timeWindow }),
+        mapper: (result: any, media?: Media) => {
+          if (isMovie(result)) {
+            return mapMovieResult(result, media);
+          } else if (isPerson(result)) {
+            return mapPersonResult(result);
+          } else if (isCollection(result)) {
+            return mapCollectionResult(result);
+          } else {
+            return mapTvResult(result, media);
+          }
+        },
+        type: null,
+      }),
+    } as const;
+
+    const { data, mapper, type } = await trendingFetchers[mediaType]();
 
     const media = await Media.getRelatedMedia(
       req.user,
@@ -687,27 +718,16 @@ discoverRoutes.get('/trending', async (req, res, next) => {
       page: data.page,
       totalPages: data.total_pages,
       totalResults: data.total_results,
-      results: data.results.map((result) =>
-        isMovie(result)
-          ? mapMovieResult(
-              result,
-              media.find(
-                (med) =>
-                  med.tmdbId === result.id && med.mediaType === MediaType.MOVIE
-              )
-            )
-          : isPerson(result)
-            ? mapPersonResult(result)
-            : isCollection(result)
-              ? mapCollectionResult(result)
-              : mapTvResult(
-                  result,
-                  media.find(
-                    (med) =>
-                      med.tmdbId === result.id && med.mediaType === MediaType.TV
-                  )
-                )
-      ),
+      results: data.results.map((result) => {
+        // - If "type" is set (case: "movie" or "tv"), the mediaType must also match.
+        // - If "type" is not set (case: "all"), only filter by tmdbId.
+        const selectedMedia = media.find(
+          (med) =>
+            med.tmdbId === result.id && (type ? med.mediaType === type : true)
+        );
+
+        return mapper(result, selectedMedia);
+      }),
     });
   } catch (e) {
     logger.debug('Something went wrong retrieving trending items', {

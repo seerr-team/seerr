@@ -5844,6 +5844,23 @@ paths:
           schema:
             type: string
             example: en
+        - in: query
+          name: mediaType
+          schema:
+            type: string
+            enum:
+              - all
+              - movie
+              - tv
+            default: all
+        - in: query
+          name: timeWindow
+          schema:
+            type: string
+            enum:
+              - day
+              - week
+            default: day
       responses:
         '200':
           description: Results
