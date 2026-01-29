@@ -66,26 +66,19 @@ jobs:
         with:
           script: |
             const { execSync } = require('child_process');
-            const fs = require('fs');
             const labelName = 'i18n-out-of-sync';
-
-            execSync('cp src/i18n/locale/en.json src/i18n/locale/en.json.bak');
-            execSync('pnpm i18n:extract');
-
-            const original = fs.readFileSync('src/i18n/locale/en.json.bak', 'utf8');
-            const extracted = fs.readFileSync('src/i18n/locale/en.json', 'utf8');
-            fs.unlinkSync('src/i18n/locale/en.json.bak');
-
-            const checkFailed = original !== extracted;
-
+            let checkFailed = false;
+            try {
+              execSync('node bin/check-i18n.js', { stdio: 'inherit' });
+            } catch {
+              checkFailed = true;
+            }
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.issue.number,
             });
-
             const hasLabel = pr.labels.some(label => label.name === labelName);
-
             if (checkFailed && !hasLabel) {
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
@@ -93,7 +86,6 @@ jobs:
                 issue_number: context.issue.number,
                 labels: [labelName],
               });
-
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -111,12 +103,7 @@ jobs:
                 name: labelName,
               });
             }
-
-            if (checkFailed) {
-              console.error('i18n messages are out of sync. Please run \'pnpm i18n:extract\' and commit the changes.');
-              process.exit(1);
-            }
-
+            if (checkFailed) process.exit(1);
       - name: Build
         run: pnpm build
 
