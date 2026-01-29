@@ -21,6 +21,7 @@ import {
   AfterUpdate,
   Column,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -341,7 +342,6 @@ export class MediaRequest {
       const request = new MediaRequest({
         type: MediaType.MOVIE,
         media,
-        mediaId: media.id,
         requestedBy: requestUser,
         // If the user is an admin or has the "auto approve" permission, automatically approve the request
         status: user.hasPermission(
@@ -458,7 +458,6 @@ export class MediaRequest {
       const request = new MediaRequest({
         type: MediaType.TV,
         media,
-        mediaId: media.id,
         requestedBy: requestUser,
         // If the user is an admin or has the "auto approve" permission, automatically approve the request
         status: user.hasPermission(
@@ -533,10 +532,8 @@ export class MediaRequest {
     eager: true,
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'mediaId' })
   public media: Media;
-
-  @Column({ name: 'mediaId', nullable: true })
-  public mediaId: number;
 
   @ManyToOne(() => User, (user) => user.requests, {
     eager: true,
