@@ -24,6 +24,7 @@ export type NotificationAgentTypes = Record<NotificationAgentKey, number>;
 export interface UserSettingsNotificationsResponse {
   emailEnabled?: boolean;
   pgpKey?: string;
+  notifyEmail?: string;
   discordEnabled?: boolean;
   discordEnabledTypes?: number;
   discordId?: string;

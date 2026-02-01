@@ -12,11 +12,12 @@ import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import type { UserSettingsNotificationsResponse } from '@server/interfaces/api/userSettingsInterfaces';
 import axios from 'axios';
-import { Form, Formik } from 'formik';
+import { Field, Form, Formik } from 'formik';
 import { useRouter } from 'next/router';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
+import validator from 'validator';
 import * as Yup from 'yup';
 
 const messages = defineMessages(
@@ -27,6 +28,10 @@ const messages = defineMessages(
     pgpPublicKey: 'PGP Public Key',
     pgpPublicKeyTip:
       'Encrypt email messages using <OpenPgpLink>OpenPGP</OpenPgpLink>',
+    notifyEmail: 'Custom Notify Email address',
+    notifyEmailTip:
+      "Email address to send notifications to if you don't want to send notifications to their login Email",
+    validationEmail: 'You must provide a valid email address',
     validationPgpPublicKey: 'You must provide a valid PGP public key',
   }
 );
@@ -51,6 +56,14 @@ const UserEmailSettings = () => {
         /-----BEGIN PGP PUBLIC KEY BLOCK-----.+-----END PGP PUBLIC KEY BLOCK-----/s,
         intl.formatMessage(messages.validationPgpPublicKey)
       ),
+    notifyEmail: Yup.string()
+      .nullable()
+      .notRequired()
+      .test(
+        'email',
+        intl.formatMessage(messages.validationEmail),
+        (value) => !value || validator.isEmail(value, { require_tld: false })
+      ),
   });
 
   if (!data && !error) {
@@ -61,6 +74,7 @@ const UserEmailSettings = () => {
     <Formik
       initialValues={{
         pgpKey: data?.pgpKey,
+        notifyEmail: data?.notifyEmail,
         types: data?.notificationTypes.email ?? ALL_NOTIFICATIONS,
       }}
       validationSchema={UserNotificationsEmailSchema}
@@ -69,6 +83,7 @@ const UserEmailSettings = () => {
         try {
           await axios.post(`/api/v1/user/${user?.id}/settings/notifications`, {
             pgpKey: values.pgpKey,
+            notifyEmail: values.notifyEmail || null,
             discordId: data?.discordId,
             pushbulletAccessToken: data?.pushbulletAccessToken,
             pushoverApplicationToken: data?.pushoverApplicationToken,
@@ -131,6 +146,37 @@ const UserEmailSettings = () => {
                   touched.pgpKey &&
                   typeof errors.pgpKey === 'string' && (
                     <div className="error">{errors.pgpKey}</div>
+                  )}
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="notifyEmail" className="text-label">
+                <span className="mr-2">
+                  {intl.formatMessage(messages.notifyEmail)}
+                </span>
+                <SettingsBadge badgeType="advanced" />
+                <span className="label-tip">
+                  {intl.formatMessage(messages.notifyEmailTip)}
+                </span>
+              </label>
+              <div className="form-input-area">
+                <div className="form-input-field">
+                  <Field
+                    id="notifyEmail"
+                    name="notifyEmail"
+                    type="text"
+                    inputMode="email"
+                    autoComplete="off"
+                    data-form-type="other"
+                    data-1pignore="true"
+                    data-lpignore="true"
+                    data-bwignore="true"
+                  />
+                </div>
+                {errors.notifyEmail &&
+                  touched.notifyEmail &&
+                  typeof errors.notifyEmail === 'string' && (
+                    <div className="error">{errors.notifyEmail}</div>
                   )}
               </div>
             </div>
