@@ -562,6 +562,7 @@ userSettingsRoutes.get<{ id: string }, UserSettingsNotificationsResponse>(
       return res.status(200).json({
         emailEnabled: settings.email.enabled,
         pgpKey: user.settings?.pgpKey,
+        notifyEmail: user.settings?.notifyEmail,
         discordEnabled:
           settings?.discord.enabled && settings.discord.options.enableMentions,
         discordEnabledTypes:
@@ -614,6 +615,7 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
         user.settings = new UserSettings({
           user: req.user,
           pgpKey: req.body.pgpKey,
+          notifyEmail: req.body.notifyEmail,
           discordId: req.body.discordId,
           pushbulletAccessToken: req.body.pushbulletAccessToken,
           pushoverApplicationToken: req.body.pushoverApplicationToken,
@@ -625,6 +627,7 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
         });
       } else {
         user.settings.pgpKey = req.body.pgpKey;
+        user.settings.notifyEmail = req.body.notifyEmail;
         user.settings.discordId = req.body.discordId;
         user.settings.pushbulletAccessToken = req.body.pushbulletAccessToken;
         user.settings.pushoverApplicationToken =
@@ -646,6 +649,7 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
 
       return res.status(200).json({
         pgpKey: user.settings.pgpKey,
+        notifyEmail: user.settings.notifyEmail,
         discordId: user.settings.discordId,
         pushbulletAccessToken: user.settings.pushbulletAccessToken,
         pushoverApplicationToken: user.settings.pushoverApplicationToken,
