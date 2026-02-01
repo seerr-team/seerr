@@ -215,20 +215,24 @@ class EmailAgent
           type: Notification[type],
           subject: payload.subject,
         });
-
         try {
           const email = new PreparedEmail(
             this.getSettings(),
             payload.notifyUser.settings?.pgpKey
           );
           if (
-            validator.isEmail(payload.notifyUser.email, { require_tld: false })
+            validator.isEmail(
+              payload.notifyUser.settings?.notifyEmail ||
+                payload.notifyUser.email,
+              { require_tld: false }
+            )
           ) {
             await email.send(
               this.buildMessage(
                 type,
                 payload,
-                payload.notifyUser.email,
+                payload.notifyUser.settings?.notifyEmail ||
+                  payload.notifyUser.email,
                 payload.notifyUser.displayName
               )
             );
