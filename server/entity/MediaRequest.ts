@@ -332,16 +332,9 @@ export class MediaRequest {
     if (requestBody.mediaType === MediaType.MOVIE) {
       await mediaRepository.save(media);
 
-      if (!media.id) {
-        throw new Error(
-          `Failed to save media before creating request. Media type: ${requestBody.mediaType}, TMDB ID: ${requestBody.mediaId}, persisted media id: ${media.id}`
-        );
-      }
-
       const request = new MediaRequest({
         type: MediaType.MOVIE,
         media,
-        mediaId: media.id,
         requestedBy: requestUser,
         // If the user is an admin or has the "auto approve" permission, automatically approve the request
         status: user.hasPermission(
@@ -449,16 +442,9 @@ export class MediaRequest {
 
       await mediaRepository.save(media);
 
-      if (!media.id) {
-        throw new Error(
-          `Failed to save media before creating request. Media type: TV, TMDB ID: ${requestBody.mediaId}, is4k: ${requestBody.is4k}`
-        );
-      }
-
       const request = new MediaRequest({
         type: MediaType.TV,
         media,
-        mediaId: media.id,
         requestedBy: requestUser,
         // If the user is an admin or has the "auto approve" permission, automatically approve the request
         status: user.hasPermission(
@@ -534,9 +520,6 @@ export class MediaRequest {
     onDelete: 'CASCADE',
   })
   public media: Media;
-
-  @Column({ name: 'mediaId', nullable: true })
-  public mediaId: number;
 
   @ManyToOne(() => User, (user) => user.requests, {
     eager: true,
