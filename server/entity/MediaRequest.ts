@@ -375,14 +375,6 @@ export class MediaRequest {
       });
 
       await requestRepository.save(request);
-
-      // Force mediaId to be set
-      // This is a workaround for TypeORM relation mapping issue
-      await requestRepository.query(
-        `UPDATE media_request SET "mediaId" = $1 WHERE id = $2`,
-        [media.id, request.id]
-      );
-
       return request;
     } else {
       const tmdbMediaShow = tmdbMedia as Awaited<
@@ -514,14 +506,6 @@ export class MediaRequest {
       });
 
       await requestRepository.save(request);
-
-      // Force mediaId to be set
-      // This is a workaround for TypeORM relation mapping issue
-      await requestRepository.query(
-        `UPDATE media_request SET "mediaId" = $1 WHERE id = $2`,
-        [media.id, request.id]
-      );
-
       return request;
     }
   }
@@ -538,6 +522,9 @@ export class MediaRequest {
   })
   @JoinColumn({ name: 'mediaId' })
   public media: Media;
+
+  @Column({ name: 'mediaId', insert: false, update: false })
+  public mediaId: number;
 
   @ManyToOne(() => User, (user) => user.requests, {
     eager: true,
