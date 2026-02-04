@@ -336,6 +336,7 @@ export class MediaRequest {
       const request = new MediaRequest({
         type: MediaType.MOVIE,
         media,
+        mediaId: media.id,
         requestedBy: requestUser,
         // If the user is an admin or has the "auto approve" permission, automatically approve the request
         status: user.hasPermission(
@@ -446,6 +447,7 @@ export class MediaRequest {
       const request = new MediaRequest({
         type: MediaType.TV,
         media,
+        mediaId: media.id,
         requestedBy: requestUser,
         // If the user is an admin or has the "auto approve" permission, automatically approve the request
         status: user.hasPermission(
@@ -523,7 +525,7 @@ export class MediaRequest {
   @JoinColumn({ name: 'mediaId' })
   public media: Media;
 
-  @Column({ name: 'mediaId', insert: false, update: false })
+  @Column({ name: 'mediaId', nullable: true })
   public mediaId: number;
 
   @ManyToOne(() => User, (user) => user.requests, {
