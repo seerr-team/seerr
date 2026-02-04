@@ -21,12 +21,10 @@ import {
   AfterUpdate,
   Column,
   Entity,
-  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   RelationCount,
-  RelationId,
 } from 'typeorm';
 import Media from './Media';
 import SeasonRequest from './SeasonRequest';
@@ -334,9 +332,17 @@ export class MediaRequest {
     if (requestBody.mediaType === MediaType.MOVIE) {
       await mediaRepository.save(media);
 
+      logger.debug('Media saved', {
+        label: 'Media Request',
+        mediaType: MediaType.MOVIE,
+        mediaId: media.id,
+        mediaTmdbId: media.tmdbId,
+        mediaHasId: !!media.id,
+      });
+
       const request = new MediaRequest({
         type: MediaType.MOVIE,
-        media: { id: media.id } as Media,
+        media,
         requestedBy: requestUser,
         // If the user is an admin or has the "auto approve" permission, automatically approve the request
         status: user.hasPermission(
@@ -375,7 +381,43 @@ export class MediaRequest {
         isAutoRequest: options.isAutoRequest ?? false,
       });
 
+      logger.debug('Request object before save', {
+        label: 'Media Request',
+        mediaType: MediaType.MOVIE,
+        hasMediaObject: !!request.media,
+        mediaObjectId: request.media?.id,
+        requestMediaIdProperty: (request as any).mediaId,
+        requestKeys: Object.keys(request),
+        requestType: request.type,
+        requestStatus: request.status,
+        requestIs4k: request.is4k,
+        requestServerId: request.serverId,
+        requestProfileId: request.profileId,
+      });
+
       await requestRepository.save(request);
+
+      logger.debug('Request saved', {
+        label: 'Media Request',
+        mediaType: MediaType.MOVIE,
+        requestId: request.id,
+        requestMediaIdAfterSave: (request as any).mediaId,
+      });
+
+      const rawResult = await requestRepository.query(
+        'SELECT id, "mediaId", type, status, "createdAt" FROM media_request WHERE id = $1',
+        [request.id]
+      );
+
+      logger.debug('Request verified from DB (raw query)', {
+        label: 'Media Request',
+        mediaType: MediaType.MOVIE,
+        requestId: request.id,
+        rawDbResult: rawResult[0],
+        mediaIdInDB: rawResult[0]?.mediaId,
+        mediaIdIsNull: rawResult[0]?.mediaId === null,
+      });
+
       return request;
     } else {
       const tmdbMediaShow = tmdbMedia as Awaited<
@@ -444,9 +486,17 @@ export class MediaRequest {
 
       await mediaRepository.save(media);
 
+      logger.debug('Media saved', {
+        label: 'Media Request',
+        mediaId: media.id,
+        mediaType: MediaType.TV,
+        mediaTmdbId: media.tmdbId,
+        mediaHasId: !!media.id,
+      });
+
       const request = new MediaRequest({
         type: MediaType.TV,
-        media: { id: media.id } as Media,
+        media,
         requestedBy: requestUser,
         // If the user is an admin or has the "auto approve" permission, automatically approve the request
         status: user.hasPermission(
@@ -506,7 +556,42 @@ export class MediaRequest {
         isAutoRequest: options.isAutoRequest ?? false,
       });
 
+      logger.debug('Request object before save', {
+        label: 'Media Request',
+        mediaType: MediaType.TV,
+        hasMediaObject: !!request.media,
+        mediaObjectId: request.media?.id,
+        requestMediaIdProperty: (request as any).mediaId,
+        requestKeys: Object.keys(request),
+        seasonCount: request.seasons.length,
+        requestStatus: request.status,
+        requestServerId: request.serverId,
+        requestProfileId: request.profileId,
+      });
+
       await requestRepository.save(request);
+
+      logger.debug('Request saved', {
+        label: 'Media Request',
+        mediaType: MediaType.TV,
+        requestId: request.id,
+        requestMediaIdAfterSave: (request as any).mediaId,
+      });
+
+      const rawResult = await requestRepository.query(
+        'SELECT id, "mediaId", type, status, "createdAt" FROM media_request WHERE id = $1',
+        [request.id]
+      );
+
+      logger.debug('Request verified from DB (raw query)', {
+        label: 'Media Request',
+        mediaType: MediaType.TV,
+        requestId: request.id,
+        rawDbResult: rawResult[0],
+        mediaIdInDB: rawResult[0]?.mediaId,
+        mediaIdIsNull: rawResult[0]?.mediaId === null,
+      });
+
       return request;
     }
   }
@@ -521,11 +606,7 @@ export class MediaRequest {
     eager: true,
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'mediaId' })
   public media: Media;
-
-  @RelationId((request: MediaRequest) => request.media)
-  public mediaId: number;
 
   @ManyToOne(() => User, (user) => user.requests, {
     eager: true,
