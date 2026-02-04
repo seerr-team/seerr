@@ -88,7 +88,6 @@ jobs:
   test:
     name: Lint & Test Build
     if: github.event_name == 'pull_request'
-    needs: i18n
     runs-on: ubuntu-24.04
     container: node:22.22.0-alpine3.22@sha256:0c49915657c1c77c64c8af4d91d2f13fe96853bbd957993ed00dd592cbecc284
     steps:
