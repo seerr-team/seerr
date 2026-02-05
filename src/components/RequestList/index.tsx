@@ -5,7 +5,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import Tooltip from '@app/components/Common/Tooltip';
 import RequestItem from '@app/components/RequestList/RequestItem';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
-import { useUser } from '@app/hooks/useUser';
+import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
@@ -59,7 +59,7 @@ const RequestList = () => {
   const { user } = useUser({
     id: Number(router.query.userId),
   });
-  const { user: currentUser } = useUser();
+  const { user: currentUser, hasPermission } = useUser();
   const [currentFilter, setCurrentFilter] = useState<Filter>(Filter.PENDING);
   const [currentSort, setCurrentSort] = useState<Sort>('added');
   const [currentMediaType, setCurrentMediaType] = useState<string>('all');
@@ -294,7 +294,9 @@ const RequestList = () => {
 
       {data.serviceErrors &&
         (data.serviceErrors.radarr.length > 0 ||
-          data.serviceErrors.sonarr.length > 0) && (
+          data.serviceErrors.sonarr.length > 0) &&
+        (hasPermission(Permission.MANAGE_REQUESTS) ||
+          hasPermission(Permission.REQUEST_ADVANCED)) && (
           <div className="service-error-banner">
             <ExclamationTriangleIcon className="h-5 w-5 flex-shrink-0" />
             <span>
