@@ -8,6 +8,7 @@ import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -30,6 +31,8 @@ const messages = defineMessages('components.RequestList', {
   sortAdded: 'Most Recent',
   sortModified: 'Last Modified',
   sortDirection: 'Toggle Sort Direction',
+  unableToConnect:
+    'Unable to connect to {services}. Some information may be unavailable.',
 });
 
 enum Filter {
@@ -288,6 +291,23 @@ const RequestList = () => {
           </div>
         </div>
       </div>
+
+      {data.serviceErrors &&
+        (data.serviceErrors.radarr.length > 0 ||
+          data.serviceErrors.sonarr.length > 0) && (
+          <div className="service-error-banner">
+            <ExclamationTriangleIcon className="h-5 w-5 flex-shrink-0" />
+            <span>
+              {intl.formatMessage(messages.unableToConnect, {
+                services: [
+                  ...data.serviceErrors.radarr.map((s) => s.name),
+                  ...data.serviceErrors.sonarr.map((s) => s.name),
+                ].join(', '),
+              })}
+            </span>
+          </div>
+        )}
+
       {data.results.map((request) => {
         return (
           <div className="py-2" key={`request-list-${request.id}`}>

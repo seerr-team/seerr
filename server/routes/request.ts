@@ -275,6 +275,24 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
           page: Math.ceil(skip / pageSize) + 1,
         },
         results: mappedRequests,
+        serviceErrors: {
+          radarr: radarrServers
+            .filter((s) => !s.profiles)
+            .map((s) => ({
+              id: s.id,
+              name:
+                settings.radarr.find((r) => r.id === s.id)?.name ||
+                `Radarr ${s.id}`,
+            })),
+          sonarr: sonarrServers
+            .filter((s) => !s.profiles)
+            .map((s) => ({
+              id: s.id,
+              name:
+                settings.sonarr.find((r) => r.id === s.id)?.name ||
+                `Sonarr ${s.id}`,
+            })),
+        },
       });
     } catch (e) {
       next({ status: 500, message: e.message });
