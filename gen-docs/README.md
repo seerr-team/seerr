@@ -7,7 +7,7 @@ Seerr docs will be available at [docs.seerr.dev](https://docs.seerr.dev).
 ### Installation
 
 ```
-$ pnpm
+$ pnpm install
 ```
 
 ### Local Development
