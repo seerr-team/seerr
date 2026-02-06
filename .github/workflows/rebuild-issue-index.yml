@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Rebuild Issue Index
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  build-index:
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: read
+      actions: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: "22"
+
+      - name: Cache embedding model
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: ~/.cache/huggingface
+          key: hf-model-${{ vars.EMBEDDING_MODEL }}
+
+      - name: Install dependencies
+        working-directory: bin/duplicate-detector
+        run: npm ci
+
+      - name: Build issue index
+        working-directory: bin/duplicate-detector
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          INDEX_PATH: issue_index.json
+        run: node build-index.mjs
+
+      - name: Upload index artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: issue-index
+          path: bin/duplicate-detector/issue_index.json
+          retention-days: 7

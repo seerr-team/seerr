@@ -1,0 +1,13 @@
+{
+  "name": "duplicate-detector",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build-index": "node build-index.mjs",
+    "detect": "node detect.mjs"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.8.1"
+  }
+}
