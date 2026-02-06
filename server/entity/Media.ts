@@ -4,6 +4,7 @@ import { MediaStatus, MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import { Blacklist } from '@server/entity/Blacklist';
+import { RecentSearches } from '@server/entity/RecentSearches';
 import type { User } from '@server/entity/User';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { DownloadingItem } from '@server/lib/downloadtracker';
@@ -113,6 +114,9 @@ class Media {
 
   @OneToMany(() => Watchlist, (watchlist) => watchlist.media)
   public watchlists: null | Watchlist[];
+
+  @OneToMany(() => RecentSearches, (recentSearches) => recentSearches.media)
+  public recentSearches: null | RecentSearches[];
 
   @OneToMany(() => Season, (season) => season.media, {
     cascade: true,

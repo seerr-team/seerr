@@ -51,6 +51,7 @@ import { type RatingResponse } from '@server/api/ratings';
 import { IssueStatus } from '@server/constants/issue';
 import { MediaStatus, MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
+import type { RecentSearches } from '@server/entity/RecentSearches';
 import type { MovieDetails as MovieDetailsType } from '@server/models/Movie';
 import axios from 'axios';
 import { countries } from 'country-flag-icons';
@@ -61,7 +62,7 @@ import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 
 const messages = defineMessages('components.MovieDetails', {
   originaltitle: 'Original Title',
@@ -106,6 +107,8 @@ const messages = defineMessages('components.MovieDetails', {
   watchlistError: 'Something went wrong. Please try again.',
   removefromwatchlist: 'Remove From Watchlist',
   addtowatchlist: 'Add To Watchlist',
+  recentsearchSuccess:
+    '<strong>{title}</strong> added to recent searches successfully!',
 });
 
 interface MovieDetailsProps {
@@ -156,6 +159,40 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     () => sortCrewPriority(data?.credits.crew ?? []),
     [data]
   );
+
+  useEffect(() => {
+    const addToRecentSearch = async () => {
+      try {
+        const response = await axios.post<RecentSearches>(
+          '/api/v1/recentsearches',
+          {
+            tmdbId: movie?.id,
+            mediaType: MediaType.MOVIE,
+            title: movie?.title,
+          }
+        );
+        mutate('/api/v1/discover/recentsearches');
+        if (response.data) {
+          addToast(
+            <span>
+              {intl.formatMessage(messages.recentsearchSuccess, {
+                title: movie?.title,
+                strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+              })}
+            </span>,
+            { appearance: 'success', autoDismiss: true }
+          );
+        }
+      } catch (e) {
+        addToast(intl.formatMessage(messages.watchlistError), {
+          appearance: 'error',
+          autoDismiss: true,
+        });
+      }
+    };
+
+    addToRecentSearch();
+  }, []);
 
   useEffect(() => {
     setShowManager(router.query.manage == '1' ? true : false);

@@ -40,6 +40,8 @@ tags:
     description: Collection of media to watch later
   - name: blacklist
     description: Blacklisted media from discovery page.
+  - name: recentsearches
+    description: Collection of media searched
 servers:
   - url: '{server}/api/v1'
     variables:
@@ -62,6 +64,34 @@ components:
           type: number
           example: 1
     Watchlist:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          readOnly: true
+        tmdbId:
+          type: number
+          example: 1
+        ratingKey:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        media:
+          $ref: '#/components/schemas/MediaInfo'
+        createdAt:
+          type: string
+          example: '2020-09-12T10:00:27.000Z'
+          readOnly: true
+        updatedAt:
+          type: string
+          example: '2020-09-12T10:00:27.000Z'
+          readOnly: true
+        requestedBy:
+          $ref: '#/components/schemas/User'
+    Recentsearches:
       type: object
       properties:
         id:
@@ -4673,6 +4703,32 @@ paths:
       responses:
         '204':
           description: Succesfully removed watchlist item
+  /recentsearches:
+    post:
+      summary: Add media to recent searches
+      tags:
+        - recentsearches
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Recentsearches'
+      responses:
+        '200':
+          description: Recentsearches data returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recentsearches'
+    delete:
+      summary: Clear recent searches list
+      description: Clears recent searches list.
+      tags:
+        - recentsearches
+      responses:
+        '204':
+          description: Succesfully cleared recent searches list
   /user/{userId}/watchlist:
     get:
       summary: Get the Plex watchlist for a specific user
@@ -5992,6 +6048,46 @@ paths:
       responses:
         '200':
           description: Watchlist data returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                  totalPages:
+                    type: number
+                  totalResults:
+                    type: number
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tmdbId:
+                          type: number
+                          example: 1
+                        ratingKey:
+                          type: string
+                        type:
+                          type: string
+                        title:
+                          type: string
+  /discover/recentsearches:
+    get:
+      summary: Get the recent searches titles.
+      tags:
+        - search
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+      responses:
+        '200':
+          description: Recent searches data returned
           content:
             application/json:
               schema:
