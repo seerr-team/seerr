@@ -105,6 +105,10 @@
     @apply relative mb-4 mt-6 flex;
   }
 
+  .service-error-banner {
+    @apply mb-2 flex items-center gap-2 rounded-md border border-yellow-500 bg-yellow-500 bg-opacity-20 px-3 py-2 text-sm text-yellow-200;
+  }
+
   .slider-title {
     @apply inline-flex items-center text-xl font-bold leading-7 text-gray-300 sm:truncate sm:text-2xl sm:leading-9;
   }

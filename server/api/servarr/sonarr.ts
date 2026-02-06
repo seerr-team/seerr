@@ -111,8 +111,16 @@ class SonarrAPI extends ServarrBase<{
   episodeId: number;
   episode: EpisodeResult;
 }> {
-  constructor({ url, apiKey }: { url: string; apiKey: string }) {
-    super({ url, apiKey, apiName: 'Sonarr', cacheName: 'sonarr' });
+  constructor({
+    url,
+    apiKey,
+    timeout,
+  }: {
+    url: string;
+    apiKey: string;
+    timeout?: number;
+  }) {
+    super({ url, apiKey, apiName: 'Sonarr', cacheName: 'sonarr', timeout });
   }
 
   public async getSeries(): Promise<SonarrSeries[]> {

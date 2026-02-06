@@ -92,11 +92,13 @@ class ServarrBase<QueueItemAppendT> extends ExternalAPI {
     apiKey,
     cacheName,
     apiName,
+    timeout = 5000,
   }: {
     url: string;
     apiKey: string;
     cacheName: AvailableCacheIds;
     apiName: string;
+    timeout?: number;
   }) {
     super(
       url,
@@ -105,6 +107,7 @@ class ServarrBase<QueueItemAppendT> extends ExternalAPI {
       },
       {
         nodeCache: cacheManager.getCache(cacheName).data,
+        timeout,
       }
     );
 
