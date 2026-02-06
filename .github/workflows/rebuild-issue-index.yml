@@ -8,6 +8,9 @@ on:
 
 permissions: {}
 
+env:
+  EMBEDDING_MODEL: ${{ vars.EMBEDDING_MODEL }}
+
 jobs:
   build-index:
     runs-on: ubuntu-24.04

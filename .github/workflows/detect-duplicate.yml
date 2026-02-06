@@ -8,6 +8,7 @@ on:
 permissions: {}
 
 env:
+  EMBEDDING_MODEL: ${{ vars.EMBEDDING_MODEL }}
   GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
 
 jobs:
