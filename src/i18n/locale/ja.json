@@ -1591,7 +1591,7 @@
   "components.Settings.Notifications.NotificationsPushbullet.accessTokenTip": "",
   "components.Settings.SettingsLogs.copiedLogMessage": "",
   "components.Settings.is4k": "",
-  "component.BlacklistBlock.blacklistdate": "",
+  "component.BlacklistBlock.blacklistdate": "ブラックリスト登録日",
   "component.BlacklistBlock.blacklistedby": "",
   "component.BlacklistModal.blacklisting": "",
   "components.Blacklist.blacklistNotFoundError": "",
