@@ -303,10 +303,10 @@
   "components.RequestBlock.rootfolder": "Stammordner",
   "components.RequestBlock.seasons": "{seasonCount, plural, one {Staffel} other {Staffeln}}",
   "components.RequestBlock.server": "Zielserver",
-  "components.RequestButton.approve4krequests": "Genehmige {requestCount, plural, one {4K Anfrage} other {{requestCount} 4K Anfragen}}",
+  "components.RequestButton.approve4krequests": "Genehmige {requestCount, plural, one {4K Anfrage} other {{requestCount} 4K Requests}}",
   "components.RequestButton.approverequest": "Anfrage genehmigen",
   "components.RequestButton.approverequest4k": "4K Anfrage genehmigen",
-  "components.RequestButton.approverequests": "Genehmige {requestCount, plural, one {Anfrage} other {{requestCount} Anfragen}}",
+  "components.RequestButton.approverequests": "Genehmige {requestCount, plural, one {Anfrage} other {{requestCount} Requests}}",
   "components.RequestButton.decline4krequests": "Lehne {requestCount, plural, one {4K Anfrage} other {{requestCount} 4K Anfragen}} ab",
   "components.RequestButton.declinerequest": "Anfrage ablehnen",
   "components.RequestButton.declinerequest4k": "4K Anfrage ablehnen",
@@ -1598,5 +1598,6 @@
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.created": "Erstellt",
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.engine": "Engine",
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.type": "typ",
-  "i18n.deleted": "Gelöscht"
+  "i18n.deleted": "Gelöscht",
+  "components.Settings.SettingsJobsCache.editJobScheduleSelectorDays": "Alle {jobScheduleDays, plural, ein {day} andere {{jobScheduleDays} days}}"
 }
