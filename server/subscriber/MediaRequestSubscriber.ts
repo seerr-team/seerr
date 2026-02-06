@@ -399,8 +399,10 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           .catch(async () => {
             const requestRepository = getRepository(MediaRequest);
 
-            entity.status = MediaRequestStatus.FAILED;
-            requestRepository.save(entity);
+            if (entity.status !== MediaRequestStatus.FAILED) {
+              entity.status = MediaRequestStatus.FAILED;
+              await requestRepository.save(entity);
+            }
 
             logger.warn(
               'Something went wrong sending movie request to Radarr, marking status as FAILED',
@@ -503,7 +505,6 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
         const media = await mediaRepository.findOne({
           where: { id: entity.media.id },
-          relations: { requests: true },
         });
 
         if (!media) {
@@ -690,7 +691,6 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
             // We grab media again here to make sure we have the latest version of it
             const media = await mediaRepository.findOne({
               where: { id: entity.media.id },
-              relations: { requests: true },
             });
 
             if (!media) {
@@ -709,8 +709,10 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           .catch(async () => {
             const requestRepository = getRepository(MediaRequest);
 
-            entity.status = MediaRequestStatus.FAILED;
-            requestRepository.save(entity);
+            if (entity.status !== MediaRequestStatus.FAILED) {
+              entity.status = MediaRequestStatus.FAILED;
+              await requestRepository.save(entity);
+            }
 
             logger.warn(
               'Something went wrong sending series request to Sonarr, marking status as FAILED',
@@ -758,7 +760,6 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     const mediaRepository = getRepository(Media);
     const media = await mediaRepository.findOne({
       where: { id: entity.media.id },
-      relations: { requests: true },
     });
     if (!media) {
       logger.error('Media data not found', {
@@ -768,26 +769,46 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       });
       return;
     }
+
+    const statusKey = entity.is4k ? 'status4k' : 'status';
     const seasonRequestRepository = getRepository(SeasonRequest);
+
     if (
       entity.status === MediaRequestStatus.APPROVED &&
       // Do not update the status if the item is already partially available or available
-      media[entity.is4k ? 'status4k' : 'status'] !== MediaStatus.AVAILABLE &&
-      media[entity.is4k ? 'status4k' : 'status'] !==
-        MediaStatus.PARTIALLY_AVAILABLE &&
-      media[entity.is4k ? 'status4k' : 'status'] !== MediaStatus.PROCESSING
+      media[statusKey] !== MediaStatus.AVAILABLE &&
+      media[statusKey] !== MediaStatus.PARTIALLY_AVAILABLE &&
+      media[statusKey] !== MediaStatus.PROCESSING
     ) {
-      media[entity.is4k ? 'status4k' : 'status'] = MediaStatus.PROCESSING;
-      mediaRepository.save(media);
+      logger.debug(
+        'updateParentStatus: updating media status to PROCESSING via direct update',
+        {
+          label: 'Media Request',
+          requestId: entity.id,
+          mediaId: media.id,
+          statusKey,
+          previousStatus: media[statusKey],
+        }
+      );
+      media[statusKey] = MediaStatus.PROCESSING;
+      await mediaRepository.save(media);
     }
 
     if (
       media.mediaType === MediaType.MOVIE &&
       entity.status === MediaRequestStatus.DECLINED &&
-      media[entity.is4k ? 'status4k' : 'status'] !== MediaStatus.DELETED
+      media[statusKey] !== MediaStatus.DELETED
     ) {
-      media[entity.is4k ? 'status4k' : 'status'] = MediaStatus.UNKNOWN;
-      mediaRepository.save(media);
+      logger.debug(
+        'updateParentStatus: setting declined movie status to UNKNOWN',
+        {
+          label: 'Media Request',
+          requestId: entity.id,
+          mediaId: media.id,
+        }
+      );
+      media[statusKey] = MediaStatus.UNKNOWN;
+      await mediaRepository.save(media);
     }
 
     /**
@@ -799,14 +820,30 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     if (
       media.mediaType === MediaType.TV &&
       entity.status === MediaRequestStatus.DECLINED &&
-      media.requests.filter(
-        (request) => request.status === MediaRequestStatus.PENDING
-      ).length === 0 &&
-      media[entity.is4k ? 'status4k' : 'status'] === MediaStatus.PENDING &&
-      media[entity.is4k ? 'status4k' : 'status'] !== MediaStatus.DELETED
+      media[statusKey] === MediaStatus.PENDING
     ) {
-      media[entity.is4k ? 'status4k' : 'status'] = MediaStatus.UNKNOWN;
-      mediaRepository.save(media);
+      const requestRepository = getRepository(MediaRequest);
+      const pendingCount = await requestRepository.count({
+        where: { media: { id: media.id }, status: MediaRequestStatus.PENDING },
+      });
+
+      logger.debug('updateParentStatus: TV declined check', {
+        label: 'Media Request',
+        requestId: entity.id,
+        mediaId: media.id,
+        pendingCount,
+      });
+
+      if (pendingCount === 0) {
+        // Re-fetch media without requests to avoid cascade issues
+        const freshMedia = await mediaRepository.findOne({
+          where: { id: media.id },
+        });
+        if (freshMedia) {
+          freshMedia[statusKey] = MediaStatus.UNKNOWN;
+          await mediaRepository.save(freshMedia);
+        }
+      }
     }
 
     // Approve child seasons if parent is approved
@@ -815,6 +852,12 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       entity.status === MediaRequestStatus.APPROVED
     ) {
       entity.seasons.forEach((season) => {
+        logger.debug('updateParentStatus: approving season request', {
+          label: 'Media Request',
+          requestId: entity.id,
+          seasonRequestId: season.id,
+          seasonNumber: season.seasonNumber,
+        });
         season.status = MediaRequestStatus.APPROVED;
         seasonRequestRepository.save(season);
       });
@@ -832,21 +875,39 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
     if (!fullMedia) return;
 
-    if (
+    const needsStatusUpdate =
       !fullMedia.requests.some((request) => !request.is4k) &&
-      fullMedia.status !== MediaStatus.AVAILABLE
-    ) {
-      fullMedia.status = MediaStatus.UNKNOWN;
-    }
+      fullMedia.status !== MediaStatus.AVAILABLE;
 
-    if (
+    const needs4kStatusUpdate =
       !fullMedia.requests.some((request) => request.is4k) &&
-      fullMedia.status4k !== MediaStatus.AVAILABLE
-    ) {
-      fullMedia.status4k = MediaStatus.UNKNOWN;
-    }
+      fullMedia.status4k !== MediaStatus.AVAILABLE;
 
-    await manager.save(fullMedia);
+    if (needsStatusUpdate || needs4kStatusUpdate) {
+      // Re-fetch WITHOUT requests to avoid cascade issues on save
+      const cleanMedia = await manager.findOneOrFail(Media, {
+        where: { id: entity.media.id },
+      });
+
+      if (needsStatusUpdate) {
+        logger.debug('handleRemoveParentUpdate: setting status to UNKNOWN', {
+          label: 'Media Request',
+          requestId: entity.id,
+          mediaId: cleanMedia.id,
+        });
+        cleanMedia.status = MediaStatus.UNKNOWN;
+      }
+      if (needs4kStatusUpdate) {
+        logger.debug('handleRemoveParentUpdate: setting status4k to UNKNOWN', {
+          label: 'Media Request',
+          requestId: entity.id,
+          mediaId: cleanMedia.id,
+        });
+        cleanMedia.status4k = MediaStatus.UNKNOWN;
+      }
+
+      await manager.save(cleanMedia);
+    }
   }
 
   public afterUpdate(event: UpdateEvent<MediaRequest>): void {
