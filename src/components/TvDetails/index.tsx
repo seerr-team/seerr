@@ -1313,6 +1313,9 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                 imdbId={data.externalIds.imdbId}
                 rtUrl={ratingData?.url}
                 mediaUrl={plexUrl ?? plexUrl4k}
+                customLinks={settings.currentSettings.customMovieLinks}
+                title={data.name}
+                releaseDate={data.firstAirDate}
               />
             </div>
           </div>

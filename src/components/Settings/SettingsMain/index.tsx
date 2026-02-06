@@ -6,6 +6,7 @@ import SensitiveInput from '@app/components/Common/SensitiveInput';
 import LanguageSelector from '@app/components/LanguageSelector';
 import RegionSelector from '@app/components/RegionSelector';
 import CopyButton from '@app/components/Settings/CopyButton';
+import CustomMovieLinkInput from '@app/components/Settings/CustomMovieLinkInput';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import { availableLanguages } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
@@ -15,6 +16,7 @@ import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import { ArrowPathIcon } from '@heroicons/react/24/solid';
+import type { CustomMovieLink } from '@server/interfaces/api/settingsInterfaces';
 import type { UserSettingsGeneralResponse } from '@server/interfaces/api/userSettingsInterfaces';
 import type { MainSettings } from '@server/lib/settings';
 import type { AvailableLocale } from '@server/types/languages';
@@ -62,6 +64,11 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   validationApplicationTitle: 'You must provide an application title',
   validationApplicationUrl: 'You must provide a valid URL',
   validationApplicationUrlTrailingSlash: 'URL must not end in a trailing slash',
+  customMovieLinksTip:
+    'You can use the following placeholders: {TMDB_ID}, {IMDB_ID}, {TITLE} and {YEAR}',
+  customMovieLinks: 'Custom Movie Links',
+  customMovieLinkAdd: 'Add Link',
+  validationCustomMovieLinksInvalidURL: 'You must provide a valid URL',
   partialRequestsEnabled: 'Allow Partial Series Requests',
   enableSpecialEpisodes: 'Allow Special Episodes Requests',
   locale: 'Display Language',
@@ -119,6 +126,20 @@ const SettingsMain = () => {
         intl.formatMessage(messages.validationUrlTrailingSlash),
         (value) => !value || !value.endsWith('/')
       ),
+    customMovieLinks: Yup.array().of(
+      Yup.object().test(
+        'valid-custom-link-url',
+        intl.formatMessage(messages.validationCustomMovieLinksInvalidURL),
+        (value) => {
+          if (value && value.url) {
+            const re =
+              /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/={}]*))?$/i;
+            return (value.url as string).match(re) !== null;
+          }
+          return false;
+        }
+      )
+    ),
   });
 
   const regenerate = async () => {
@@ -175,6 +196,8 @@ const SettingsMain = () => {
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
+            customMovieLinks:
+              data?.customMovieLinks || ([] as CustomMovieLink[]),
           }}
           enableReinitialize
           validationSchema={MainSettingsSchema}
@@ -195,6 +218,7 @@ const SettingsMain = () => {
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
+                customMovieLinks: values.customMovieLinks,
               });
               mutate('/api/v1/settings/public');
               mutate('/api/v1/status');
@@ -556,6 +580,61 @@ const SettingsMain = () => {
                       typeof errors.youtubeUrl === 'string' && (
                         <div className="error">{errors.youtubeUrl}</div>
                       )}
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="links" className="text-label">
+                    {intl.formatMessage(messages.customMovieLinks)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.customMovieLinksTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    {(values.customMovieLinks as CustomMovieLink[])?.map(
+                      (linkData, index) => (
+                        <>
+                          <CustomMovieLinkInput
+                            className={index > 0 ? 'pt-2' : ''}
+                            data={linkData}
+                            onChange={(newData) => {
+                              const updatedLinks = [...values.customMovieLinks];
+                              updatedLinks[index] = newData;
+                              setFieldValue('customMovieLinks', updatedLinks);
+                            }}
+                            onDelete={() => {
+                              const updatedLinks = [...values.customMovieLinks];
+                              updatedLinks.splice(index, 1);
+                              setFieldValue('customMovieLinks', updatedLinks);
+                            }}
+                          />
+
+                          {errors.customMovieLinks &&
+                            Array.isArray(errors.customMovieLinks) &&
+                            errors.customMovieLinks.length > index &&
+                            errors.customMovieLinks[index] && (
+                              <div className="error">
+                                {errors.customMovieLinks[index] as string}
+                              </div>
+                            )}
+                        </>
+                      )
+                    )}
+
+                    <button
+                      type="button"
+                      className="mt-2 text-blue-500"
+                      onClick={() => {
+                        setFieldValue('customMovieLinks', [
+                          ...values.customMovieLinks,
+                          {
+                            text: '',
+                            url: '',
+                          },
+                        ]);
+                      }}
+                    >
+                      {intl.formatMessage(messages.customMovieLinkAdd)}
+                    </button>
                   </div>
                 </div>
                 <div className="actions">

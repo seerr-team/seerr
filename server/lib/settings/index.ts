@@ -1,4 +1,5 @@
 import { MediaServerType } from '@server/constants/server';
+import type { CustomMovieLink } from '@server/interfaces/api/settingsInterfaces';
 import { Permission } from '@server/lib/permissions';
 import { runMigrations } from '@server/lib/settings/migrator';
 import { randomUUID } from 'crypto';
@@ -146,6 +147,7 @@ export interface MainSettings {
   enableSpecialEpisodes: boolean;
   locale: string;
   youtubeUrl: string;
+  customMovieLinks: CustomMovieLink[];
 }
 
 export interface ProxySettings {
@@ -203,6 +205,7 @@ interface FullPublicSettings extends PublicSettings {
   userEmailRequired: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  customMovieLinks: CustomMovieLink[];
 }
 
 export interface NotificationAgentConfig {
@@ -403,6 +406,7 @@ class Settings {
         enableSpecialEpisodes: false,
         locale: 'en',
         youtubeUrl: '',
+        customMovieLinks: [],
       },
       plex: {
         name: '',
@@ -697,6 +701,7 @@ class Settings {
         this.data.notifications.agents.email.options.userEmailRequired,
       newPlexLogin: this.data.main.newPlexLogin,
       youtubeUrl: this.data.main.youtubeUrl,
+      customMovieLinks: this.data.main.customMovieLinks,
     };
   }
 

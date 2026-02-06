@@ -1,5 +1,8 @@
 import { MediaServerType } from '@server/constants/server';
-import type { PublicSettingsResponse } from '@server/interfaces/api/settingsInterfaces';
+import type {
+  CustomMovieLink,
+  PublicSettingsResponse,
+} from '@server/interfaces/api/settingsInterfaces';
 import React from 'react';
 import useSWR from 'swr';
 
@@ -31,6 +34,7 @@ const defaultSettings = {
   emailEnabled: false,
   newPlexLogin: true,
   youtubeUrl: '',
+  customMovieLinks: [] as CustomMovieLink[],
 };
 
 export const SettingsContext = React.createContext<SettingsContextProps>({
