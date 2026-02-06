@@ -1588,5 +1588,16 @@
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.webpushhasbeendisabled": "",
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.webpushhasbeenenabled": "",
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.webpushsettingsfailed": "",
-  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.webpushsettingssaved": ""
+  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.webpushsettingssaved": "",
+  "components.Selector.CertificationSelector.errorLoading": "Kon certificaten niet laden",
+  "components.Selector.CertificationSelector.minRating": "Minimum beoordeling",
+  "components.Settings.Notifications.NotificationsNtfy.tokenAuth": "Tokenauthenticatie",
+  "components.Settings.Notifications.NotificationsNtfy.usernamePasswordAuth": "Gebruikersnaam + Wachtwoord authenticatie",
+  "components.Selector.CertificationSelector.maxRating": "Maximum beoordeling",
+  "components.Settings.Notifications.NotificationsNtfy.ntfysettingsfailed": "Ntfy notificatie-instellingen konden niet worden opgeslagen.",
+  "components.Settings.Notifications.NotificationsNtfy.ntfysettingssaved": "Ntfy notificatie-instellingen succesvol opgeslagen!",
+  "components.Settings.Notifications.NotificationsNtfy.topic": "Onderwerp",
+  "components.Settings.Notifications.NotificationsNtfy.username": "Gebruikersnaam",
+  "components.Settings.Notifications.NotificationsNtfy.validationNtfyTopic": "Je moet een onderwerp invullen",
+  "components.Settings.Notifications.NotificationsNtfy.validationNtfyUrl": "Je moet een geldige URL invullen"
 }
