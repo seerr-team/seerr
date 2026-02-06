@@ -39,6 +39,13 @@ For details on the Docker CLI, please [review the official `docker run` document
 #### Installation:
 
 ```bash
+# Create the appdata folder
+mkdir /path/to/appdata/config
+# Chown the folder as the container runs as the `node` user (UID 1000).
+chown -R 1000:1000 /path/to/appdata/config
+```
+
+```bash
 docker run -d \
   --name seerr \
   --init \
@@ -48,19 +55,15 @@ docker run -d \
   -p 5055:5055 \
   -v /path/to/appdata/config:/app/config \
   --restart unless-stopped \
-  ghcr.io/seerr-team/seerr:latest
-```
-
-The argument `-e PORT=5055` is optional.
-
-If you want to add a healthcheck to the above command, you can add the following flags :
-```
   --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1" \
   --health-start-period 20s \
   --health-timeout 3s \
   --health-interval 15s \
   --health-retries 3 \
+  ghcr.io/seerr-team/seerr:latest
 ```
+
+The argument `-e PORT=5055` is optional.
 
 To run the container as a specific user/group, you may optionally add `--user=[ user | user:group | uid | uid:gid | user:gid | uid:group ]` to the above command.
 
@@ -115,6 +118,13 @@ services:
     restart: unless-stopped
 ```
 
+```bash
+# Create the appdata folder
+mkdir /path/to/appdata/config
+# Chown the folder as the container runs as the `node` user (UID 1000).
+chown -R 1000:1000 /path/to/appdata/config
+```
+
 Then, start all services defined in the Compose file:
 ```bash
 docker compose up -d
@@ -166,19 +176,15 @@ docker run -d \
   -p 5055:5055 \
   -v seerr-data:/app/config \
   --restart unless-stopped \
-  ghcr.io/seerr-team/seerr:latest
-```
-
-The argument `-e PORT=5055` is optional.
-
-If you want to add a healthcheck to the above command, you can add the following flags :
-```
   --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1" \
   --health-start-period 20s \
   --health-timeout 3s \
   --health-interval 15s \
   --health-retries 3 \
+  ghcr.io/seerr-team/seerr:latest
 ```
+
+The argument `-e PORT=5055` is optional.
 
 #### Updating:
 Pull the latest image:
