@@ -360,7 +360,11 @@ const TvRequestModal = ({
       ).length > 0
     ) {
       data.mediaInfo.requests
-        .filter((request) => request.is4k === is4k)
+        .filter(
+          (request) =>
+            request.is4k === is4k &&
+            request.status !== MediaRequestStatus.DECLINED
+        )
         .forEach((request) => {
           if (!seasonRequest) {
             seasonRequest = request.seasons.find(
