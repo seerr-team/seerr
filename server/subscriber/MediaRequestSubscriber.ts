@@ -397,11 +397,22 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
             await mediaRepository.save(media);
           })
           .catch(async () => {
-            const requestRepository = getRepository(MediaRequest);
+            try {
+              const requestRepository = getRepository(MediaRequest);
 
-            if (entity.status !== MediaRequestStatus.FAILED) {
-              entity.status = MediaRequestStatus.FAILED;
-              await requestRepository.save(entity);
+              if (entity.status !== MediaRequestStatus.FAILED) {
+                entity.status = MediaRequestStatus.FAILED;
+                await requestRepository.save(entity);
+              }
+            } catch (saveError) {
+              logger.error('Failed to mark request as FAILED', {
+                label: 'Media Request',
+                requestId: entity.id,
+                errorMessage:
+                  saveError instanceof Error
+                    ? saveError.message
+                    : String(saveError),
+              });
             }
 
             logger.warn(
@@ -707,11 +718,22 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
             await mediaRepository.save(media);
           })
           .catch(async () => {
-            const requestRepository = getRepository(MediaRequest);
+            try {
+              const requestRepository = getRepository(MediaRequest);
 
-            if (entity.status !== MediaRequestStatus.FAILED) {
-              entity.status = MediaRequestStatus.FAILED;
-              await requestRepository.save(entity);
+              if (entity.status !== MediaRequestStatus.FAILED) {
+                entity.status = MediaRequestStatus.FAILED;
+                await requestRepository.save(entity);
+              }
+            } catch (saveError) {
+              logger.error('Failed to mark request as FAILED', {
+                label: 'Media Request',
+                requestId: entity.id,
+                errorMessage:
+                  saveError instanceof Error
+                    ? saveError.message
+                    : String(saveError),
+              });
             }
 
             logger.warn(
@@ -893,7 +915,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       logger.error('Error in afterUpdate subscriber', {
         label: 'Media Request',
         requestId: (event.entity as MediaRequest).id,
-        errorMessage: e.message,
+        errorMessage: e instanceof Error ? e.message : String(e),
       });
     }
   }
@@ -911,7 +933,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       logger.error('Error in afterInsert subscriber', {
         label: 'Media Request',
         requestId: (event.entity as MediaRequest).id,
-        errorMessage: e.message,
+        errorMessage: e instanceof Error ? e.message : String(e),
       });
     }
   }
