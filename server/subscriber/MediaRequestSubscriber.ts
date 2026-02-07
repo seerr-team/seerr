@@ -806,7 +806,11 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     ) {
       const requestRepository = getRepository(MediaRequest);
       const pendingCount = await requestRepository.count({
-        where: { media: { id: media.id }, status: MediaRequestStatus.PENDING },
+        where: {
+          media: { id: media.id },
+          status: MediaRequestStatus.PENDING,
+          is4k: entity.is4k,
+        },
       });
 
       if (pendingCount === 0) {
@@ -842,8 +846,6 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       relations: { requests: true },
     });
 
-    if (!fullMedia) return;
-
     const needsStatusUpdate =
       !fullMedia.requests.some((request) => !request.is4k) &&
       fullMedia.status !== MediaStatus.AVAILABLE;
@@ -869,35 +871,49 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     }
   }
 
-  public afterUpdate(event: UpdateEvent<MediaRequest>): void {
+  public async afterUpdate(event: UpdateEvent<MediaRequest>): Promise<void> {
     if (!event.entity) {
       return;
     }
 
-    this.sendToRadarr(event.entity as MediaRequest);
-    this.sendToSonarr(event.entity as MediaRequest);
+    try {
+      await this.sendToRadarr(event.entity as MediaRequest);
+      await this.sendToSonarr(event.entity as MediaRequest);
+      await this.updateParentStatus(event.entity as MediaRequest);
 
-    this.updateParentStatus(event.entity as MediaRequest);
-
-    if (event.entity.status === MediaRequestStatus.COMPLETED) {
-      if (event.entity.media.mediaType === MediaType.MOVIE) {
-        this.notifyAvailableMovie(event.entity as MediaRequest, event);
+      if (event.entity.status === MediaRequestStatus.COMPLETED) {
+        if (event.entity.media.mediaType === MediaType.MOVIE) {
+          await this.notifyAvailableMovie(event.entity as MediaRequest, event);
+        }
+        if (event.entity.media.mediaType === MediaType.TV) {
+          await this.notifyAvailableSeries(event.entity as MediaRequest, event);
+        }
       }
-      if (event.entity.media.mediaType === MediaType.TV) {
-        this.notifyAvailableSeries(event.entity as MediaRequest, event);
-      }
+    } catch (e) {
+      logger.error('Error in afterUpdate subscriber', {
+        label: 'Media Request',
+        requestId: (event.entity as MediaRequest).id,
+        errorMessage: e.message,
+      });
     }
   }
 
-  public afterInsert(event: InsertEvent<MediaRequest>): void {
+  public async afterInsert(event: InsertEvent<MediaRequest>): Promise<void> {
     if (!event.entity) {
       return;
     }
 
-    this.sendToRadarr(event.entity as MediaRequest);
-    this.sendToSonarr(event.entity as MediaRequest);
-
-    this.updateParentStatus(event.entity as MediaRequest);
+    try {
+      await this.sendToRadarr(event.entity as MediaRequest);
+      await this.sendToSonarr(event.entity as MediaRequest);
+      await this.updateParentStatus(event.entity as MediaRequest);
+    } catch (e) {
+      logger.error('Error in afterInsert subscriber', {
+        label: 'Media Request',
+        requestId: (event.entity as MediaRequest).id,
+        errorMessage: e.message,
+      });
+    }
   }
 
   public async afterRemove(event: RemoveEvent<MediaRequest>): Promise<void> {
