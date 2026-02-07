@@ -1939,7 +1939,7 @@ components:
         pgpKey:
           type: string
           nullable: true
-        notifyEmil:
+        notifyEmail:
           type: string
           nullable: true
         discordEnabled:
