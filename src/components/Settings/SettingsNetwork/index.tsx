@@ -29,6 +29,8 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
   trustProxyTip:
     'Allow Seerr to correctly register client IP addresses behind a proxy',
   proxyEnabled: 'HTTP(S) Proxy',
+  proxyEnabledTip:
+    'Send ALL outgoing HTTP/HTTPS requests through a proxy server (host/port). Does NOT enable HTTPS, SSL, or certificate configuration.',
   proxyHostname: 'Proxy Hostname',
   proxyPort: 'Proxy Port',
   proxySsl: 'Use SSL For Proxy',
@@ -321,7 +323,7 @@ const SettingsNetwork = () => {
                             id="dnsCacheForceMaxTtl"
                             name="dnsCacheForceMaxTtl"
                             type="text"
-                            inputMode="numeric"
+                            inputMode="decimal"
                             className="short"
                           />
                         </div>
@@ -343,6 +345,9 @@ const SettingsNetwork = () => {
                     </span>
                     <SettingsBadge badgeType="advanced" className="mr-2" />
                     <SettingsBadge badgeType="restartRequired" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.proxyEnabledTip)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <Field
@@ -387,13 +392,13 @@ const SettingsNetwork = () => {
                           {intl.formatMessage(messages.proxyPort)}
                         </label>
                         <div className="form-input-area">
-                          <div className="form-input-field">
-                            <Field
-                              id="proxyPort"
-                              name="proxyPort"
-                              type="number"
-                            />
-                          </div>
+                          <Field
+                            id="proxyPort"
+                            name="proxyPort"
+                            type="text"
+                            inputMode="numeric"
+                            className="short"
+                          />
                           {errors.proxyPort &&
                             touched.proxyPort &&
                             typeof errors.proxyPort === 'string' && (

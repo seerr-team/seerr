@@ -1016,6 +1016,7 @@
   "components.Settings.SettingsNetwork.proxyBypassFilterTip": "Use ',' as a separator, and '*.' as a wildcard for subdomains",
   "components.Settings.SettingsNetwork.proxyBypassLocalAddresses": "Bypass Proxy for Local Addresses",
   "components.Settings.SettingsNetwork.proxyEnabled": "HTTP(S) Proxy",
+  "components.Settings.SettingsNetwork.proxyEnabledTip": "Send ALL outgoing HTTP/HTTPS requests through a proxy server (host/port). Does NOT enable HTTPS, SSL, or certificate configuration.",
   "components.Settings.SettingsNetwork.proxyHostname": "Proxy Hostname",
   "components.Settings.SettingsNetwork.proxyPassword": "Proxy Password",
   "components.Settings.SettingsNetwork.proxyPort": "Proxy Port",
