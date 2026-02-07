@@ -27,7 +27,7 @@ import type {
   RemoveEvent,
   UpdateEvent,
 } from 'typeorm';
-import { EventSubscriber } from 'typeorm';
+import { EventSubscriber, Not } from 'typeorm';
 
 const sanitizeDisplayName = (displayName: string): string => {
   return displayName
@@ -815,6 +815,19 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       await mediaRepository.save(media);
     }
 
+    logger.debug('updateParentStatus: checking TV declined conditions', {
+      label: 'Media Request',
+      requestId: entity.id,
+      mediaId: media.id,
+      mediaType: media.mediaType,
+      entityStatus: entity.status,
+      mediaStatus: media[statusKey],
+      statusKey,
+      isMediaTypeTv: media.mediaType === MediaType.TV,
+      isDeclined: entity.status === MediaRequestStatus.DECLINED,
+      isPending: media[statusKey] === MediaStatus.PENDING,
+    });
+
     /**
      * If the media type is TV, and we are declining a request,
      * we must check if its the only pending request and that
@@ -832,7 +845,16 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           media: { id: media.id },
           status: MediaRequestStatus.PENDING,
           is4k: entity.is4k,
+          id: Not(entity.id),
         },
+      });
+
+      logger.debug('updateParentStatus: TV declined pending count result', {
+        label: 'Media Request',
+        requestId: entity.id,
+        mediaId: media.id,
+        pendingCount,
+        entityIs4k: entity.is4k,
       });
 
       if (pendingCount === 0) {
@@ -840,7 +862,20 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         const freshMedia = await mediaRepository.findOne({
           where: { id: media.id },
         });
+        logger.debug('updateParentStatus: TV declined resetting to UNKNOWN', {
+          label: 'Media Request',
+          requestId: entity.id,
+          mediaId: media.id,
+          freshMediaFound: !!freshMedia,
+          freshMediaStatus: freshMedia?.[statusKey],
+        });
         if (freshMedia) {
+          logger.debug('updateParentStatus: setting media status to UNKNOWN', {
+            label: 'Media Request',
+            requestId: entity.id,
+            mediaId: media.id,
+            statusKey,
+          });
           freshMedia[statusKey] = MediaStatus.UNKNOWN;
           await mediaRepository.save(freshMedia);
         }
