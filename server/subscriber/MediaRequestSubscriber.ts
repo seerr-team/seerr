@@ -780,16 +780,6 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       media[statusKey] !== MediaStatus.PARTIALLY_AVAILABLE &&
       media[statusKey] !== MediaStatus.PROCESSING
     ) {
-      logger.debug(
-        'updateParentStatus: updating media status to PROCESSING via direct update',
-        {
-          label: 'Media Request',
-          requestId: entity.id,
-          mediaId: media.id,
-          statusKey,
-          previousStatus: media[statusKey],
-        }
-      );
       media[statusKey] = MediaStatus.PROCESSING;
       await mediaRepository.save(media);
     }
@@ -799,14 +789,6 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       entity.status === MediaRequestStatus.DECLINED &&
       media[statusKey] !== MediaStatus.DELETED
     ) {
-      logger.debug(
-        'updateParentStatus: setting declined movie status to UNKNOWN',
-        {
-          label: 'Media Request',
-          requestId: entity.id,
-          mediaId: media.id,
-        }
-      );
       media[statusKey] = MediaStatus.UNKNOWN;
       await mediaRepository.save(media);
     }
@@ -827,13 +809,6 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         where: { media: { id: media.id }, status: MediaRequestStatus.PENDING },
       });
 
-      logger.debug('updateParentStatus: TV declined check', {
-        label: 'Media Request',
-        requestId: entity.id,
-        mediaId: media.id,
-        pendingCount,
-      });
-
       if (pendingCount === 0) {
         // Re-fetch media without requests to avoid cascade issues
         const freshMedia = await mediaRepository.findOne({
@@ -852,12 +827,6 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       entity.status === MediaRequestStatus.APPROVED
     ) {
       entity.seasons.forEach((season) => {
-        logger.debug('updateParentStatus: approving season request', {
-          label: 'Media Request',
-          requestId: entity.id,
-          seasonRequestId: season.id,
-          seasonNumber: season.seasonNumber,
-        });
         season.status = MediaRequestStatus.APPROVED;
         seasonRequestRepository.save(season);
       });
@@ -890,19 +859,9 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       });
 
       if (needsStatusUpdate) {
-        logger.debug('handleRemoveParentUpdate: setting status to UNKNOWN', {
-          label: 'Media Request',
-          requestId: entity.id,
-          mediaId: cleanMedia.id,
-        });
         cleanMedia.status = MediaStatus.UNKNOWN;
       }
       if (needs4kStatusUpdate) {
-        logger.debug('handleRemoveParentUpdate: setting status4k to UNKNOWN', {
-          label: 'Media Request',
-          requestId: entity.id,
-          mediaId: cleanMedia.id,
-        });
         cleanMedia.status4k = MediaStatus.UNKNOWN;
       }
 
