@@ -78,7 +78,7 @@ const SettingsNetwork = () => {
       then: Yup.number()
         .typeError(intl.formatMessage(messages.validationDnsCacheMaxTtl))
         .required(intl.formatMessage(messages.validationDnsCacheMaxTtl))
-        .min(0),
+        .min(-1),
     }),
     proxyPort: Yup.number().when('proxyEnabled', {
       is: (proxyEnabled: boolean) => proxyEnabled,
@@ -288,50 +288,50 @@ const SettingsNetwork = () => {
                       <div className="form-row">
                         <label
                           htmlFor="dnsCacheForceMinTtl"
-                          className="checkbox-label"
+                          className="text-label"
                         >
                           {intl.formatMessage(messages.dnsCacheForceMinTtl)}
                         </label>
                         <div className="form-input-area">
-                          <div className="form-input-field">
-                            <Field
-                              id="dnsCacheForceMinTtl"
-                              name="dnsCacheForceMinTtl"
-                              type="number"
-                            />
-                          </div>
-                          {errors.dnsCacheForceMinTtl &&
-                            touched.dnsCacheForceMinTtl &&
-                            typeof errors.dnsCacheForceMinTtl === 'string' && (
-                              <div className="error">
-                                {errors.dnsCacheForceMinTtl}
-                              </div>
-                            )}
+                          <Field
+                            id="dnsCacheForceMinTtl"
+                            name="dnsCacheForceMinTtl"
+                            type="text"
+                            inputMode="numeric"
+                            className="short"
+                          />
                         </div>
+                        {errors.dnsCacheForceMinTtl &&
+                          touched.dnsCacheForceMinTtl &&
+                          typeof errors.dnsCacheForceMinTtl === 'string' && (
+                            <div className="error">
+                              {errors.dnsCacheForceMinTtl}
+                            </div>
+                          )}
                       </div>
                       <div className="form-row">
                         <label
                           htmlFor="dnsCacheForceMaxTtl"
-                          className="checkbox-label"
+                          className="text-label"
                         >
                           {intl.formatMessage(messages.dnsCacheForceMaxTtl)}
                         </label>
                         <div className="form-input-area">
-                          <div className="form-input-field">
-                            <Field
-                              id="dnsCacheForceMaxTtl"
-                              name="dnsCacheForceMaxTtl"
-                              type="number"
-                            />
-                          </div>
-                          {errors.dnsCacheForceMaxTtl &&
-                            touched.dnsCacheForceMaxTtl &&
-                            typeof errors.dnsCacheForceMaxTtl === 'string' && (
-                              <div className="error">
-                                {errors.dnsCacheForceMaxTtl}
-                              </div>
-                            )}
+                          <Field
+                            id="dnsCacheForceMaxTtl"
+                            name="dnsCacheForceMaxTtl"
+                            type="text"
+                            inputMode="numeric"
+                            className="short"
+                          />
                         </div>
+                        {errors.dnsCacheForceMaxTtl &&
+                          touched.dnsCacheForceMaxTtl &&
+                          typeof errors.dnsCacheForceMaxTtl === 'string' && (
+                            <div className="error">
+                              {errors.dnsCacheForceMaxTtl}
+                            </div>
+                          )}
                       </div>
                     </div>
                   </>

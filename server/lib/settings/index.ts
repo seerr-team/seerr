@@ -203,6 +203,7 @@ interface FullPublicSettings extends PublicSettings {
   userEmailRequired: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  dnsCacheEnabled: boolean;
 }
 
 export interface NotificationAgentConfig {
@@ -697,6 +698,7 @@ class Settings {
         this.data.notifications.agents.email.options.userEmailRequired,
       newPlexLogin: this.data.main.newPlexLogin,
       youtubeUrl: this.data.main.youtubeUrl,
+      dnsCacheEnabled: this.data.network.dnsCache.enabled,
     };
   }
 

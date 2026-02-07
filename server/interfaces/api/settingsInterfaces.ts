@@ -48,6 +48,7 @@ export interface PublicSettingsResponse {
   emailEnabled: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  dnsCacheEnabled: boolean;
 }
 
 export interface CacheItem {

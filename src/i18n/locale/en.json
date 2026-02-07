@@ -890,6 +890,7 @@
   "components.Settings.SettingsJobsCache.dnsCacheDescription": "Seerr caches DNS lookups to optimize performance and avoid making unnecessary API calls.",
   "components.Settings.SettingsJobsCache.dnsCacheGlobalStats": "Global DNS Cache Stats",
   "components.Settings.SettingsJobsCache.dnsCacheGlobalStatsDescription": "These stats are aggregated across all DNS cache entries.",
+  "components.Settings.SettingsJobsCache.dnsNoCacheEntries": "No DNS lookups have been cached yet.",
   "components.Settings.SettingsJobsCache.dnscacheactiveaddress": "Active Address",
   "components.Settings.SettingsJobsCache.dnscacheage": "Age",
   "components.Settings.SettingsJobsCache.dnscacheflushed": "{hostname} dns cache flushed.",
