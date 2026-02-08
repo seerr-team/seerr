@@ -1,5 +1,6 @@
 import { IssueType, IssueTypeName } from '@server/constants/issue';
 import { MediaType } from '@server/constants/media';
+import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import PreparedEmail from '@server/lib/email';
@@ -49,8 +50,32 @@ class EmailAgent
     recipientName?: string
   ): EmailOptions | undefined {
     const settings = getSettings();
-    const { applicationUrl, applicationTitle } = settings.main;
+    const { applicationUrl, applicationTitle, mediaServerType } = settings.main;
     const { embedPoster } = settings.notifications.agents.email;
+
+    function getAvailableMediaServerName() {
+      if (mediaServerType === MediaServerType.EMBY) {
+        return 'Emby';
+      }
+
+      if (mediaServerType === MediaServerType.PLEX) {
+        return 'Plex';
+      }
+
+      return 'Jellyfin';
+    }
+
+    const mediaServerName = getAvailableMediaServerName();
+
+    function getAvailableMediaServerUrl(): string | undefined {
+      const wants4k = payload.request?.is4k;
+      const url4k = (payload.media as any)?.mediaUrl4k as string | undefined;
+      const url = (payload.media as any)?.mediaUrl as string | undefined;
+
+      return (wants4k ? (url4k ?? url) : (url ?? url4k)) || undefined;
+    }
+
+    const mediaServerUrl = getAvailableMediaServerUrl();
 
     if (type === Notification.TEST_NOTIFICATION) {
       return {
@@ -141,6 +166,10 @@ class EmailAgent
           applicationTitle,
           recipientName,
           recipientEmail,
+          mediaServerActionUrl: mediaServerUrl
+            ? `${mediaServerUrl}`
+            : undefined,
+          mediaServerName,
         },
       };
     } else if (payload.issue) {

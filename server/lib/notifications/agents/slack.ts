@@ -1,4 +1,5 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
+import { MediaServerType } from '@server/constants/server';
 import type { NotificationAgentSlack } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -64,8 +65,28 @@ class SlackAgent
     payload: NotificationPayload
   ): SlackBlockEmbed {
     const settings = getSettings();
-    const { applicationUrl, applicationTitle } = settings.main;
+    const { applicationUrl, applicationTitle, mediaServerType } = settings.main;
     const { embedPoster } = settings.notifications.agents.slack;
+
+    function getAvailableMediaServerName() {
+      if (mediaServerType === MediaServerType.EMBY) {
+        return 'Emby';
+      }
+
+      if (mediaServerType === MediaServerType.PLEX) {
+        return 'Plex';
+      }
+
+      return 'Jellyfin';
+    }
+
+    function getAvailableMediaServerUrl(): string | undefined {
+      const wants4k = payload.request?.is4k;
+      const url4k = (payload.media as any)?.mediaUrl4k as string | undefined;
+      const url = (payload.media as any)?.mediaUrl as string | undefined;
+
+      return (wants4k ? (url4k ?? url) : (url ?? url4k)) || undefined;
+    }
 
     const fields: EmbedField[] = [];
 
@@ -204,6 +225,28 @@ class SlackAgent
           },
         ],
       });
+    }
+
+    if (!payload.issue) {
+      const mediaServerName = getAvailableMediaServerName();
+      const mediaServerUrl = getAvailableMediaServerUrl();
+
+      if (mediaServerUrl) {
+        blocks.push({
+          type: 'actions',
+          elements: [
+            {
+              action_id: 'open-in-mediaServer',
+              type: 'button',
+              url: mediaServerUrl,
+              text: {
+                type: 'plain_text',
+                text: `Play on ${mediaServerName}`,
+              },
+            },
+          ],
+        });
+      }
     }
 
     return {
