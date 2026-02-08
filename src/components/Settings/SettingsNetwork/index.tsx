@@ -84,9 +84,12 @@ const SettingsNetwork = () => {
     }),
     proxyPort: Yup.number().when('proxyEnabled', {
       is: (proxyEnabled: boolean) => proxyEnabled,
-      then: Yup.number().required(
-        intl.formatMessage(messages.validationProxyPort)
-      ),
+      then: Yup.number()
+        .typeError(intl.formatMessage(messages.validationProxyPort))
+        .integer(intl.formatMessage(messages.validationProxyPort))
+        .min(1, intl.formatMessage(messages.validationProxyPort))
+        .max(65535, intl.formatMessage(messages.validationProxyPort))
+        .required(intl.formatMessage(messages.validationProxyPort)),
     }),
   });
 
