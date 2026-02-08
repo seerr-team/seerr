@@ -11,7 +11,7 @@ import { CogIcon, UserIcon } from '@heroicons/react/24/solid';
 import axios from 'axios';
 import type { LinkProps } from 'next/link';
 import Link from 'next/link';
-import { forwardRef, Fragment } from 'react';
+import { Fragment, forwardRef } from 'react';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.Layout.UserDropdown', {

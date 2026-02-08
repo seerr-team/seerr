@@ -329,7 +329,7 @@ const BlacklistedTagImportForm = forwardRef<
 const VerifyClearIndicator = <
   Option,
   IsMuti extends boolean,
-  Group extends GroupBase<Option>
+  Group extends GroupBase<Option>,
 >(
   props: ClearIndicatorProps<Option, IsMuti, Group>
 ) => {

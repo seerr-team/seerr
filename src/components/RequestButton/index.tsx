@@ -79,15 +79,16 @@ const RequestButton = ({
   // Current user's pending request, or the first pending request
   const activeRequest = useMemo(() => {
     return activeRequests && activeRequests.length > 0
-      ? activeRequests.find((request) => request.requestedBy.id === user?.id) ??
-          activeRequests[0]
+      ? (activeRequests.find(
+          (request) => request.requestedBy.id === user?.id
+        ) ?? activeRequests[0])
       : undefined;
   }, [activeRequests, user]);
   const active4kRequest = useMemo(() => {
     return active4kRequests && active4kRequests.length > 0
-      ? active4kRequests.find(
+      ? (active4kRequests.find(
           (request) => request.requestedBy.id === user?.id
-        ) ?? active4kRequests[0]
+        ) ?? active4kRequests[0])
       : undefined;
   }, [active4kRequests, user]);
 

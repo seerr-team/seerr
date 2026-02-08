@@ -97,7 +97,10 @@ app
 
     // Register HTTP proxy
     if (settings.network.proxy.enabled) {
-      await createCustomProxyAgent(settings.network.proxy);
+      await createCustomProxyAgent(
+        settings.network.proxy,
+        settings.network.forceIpv4First
+      );
     }
 
     // Migrate library types

@@ -92,6 +92,14 @@ body:
       label: Additional Context
       description: Please provide any additional information that may be relevant or helpful.
   - type: checkboxes
+    id: search-existing
+    attributes:
+      label: Search Existing Issues
+      description: Have you searched existing issues to see if this bug has already been reported?
+      options:
+        - label: Yes, I have searched existing issues.
+          required: true
+  - type: checkboxes
     id: terms
     attributes:
       label: Code of Conduct

@@ -60,12 +60,12 @@
 
 .table-of-contents__link--active,
 a:not(
-    .card,
-    .menu__link,
-    .menu__link--sublist,
-    .menu__link--sublist-item,
-    .table-of-contents__link
-  ) {
+  .card,
+  .menu__link,
+  .menu__link--sublist,
+  .menu__link--sublist-item,
+  .table-of-contents__link
+) {
   /* color: #793ae8; */
   color: #6366f1;
 }

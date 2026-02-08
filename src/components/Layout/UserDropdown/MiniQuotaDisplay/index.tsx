@@ -39,7 +39,7 @@ const MiniQuotaDisplay = ({ userId }: MiniQuotaDisplayProps) => {
               {intl.formatMessage(messages.movierequests)}
             </div>
             <div className="flex h-full items-center space-x-2 text-gray-200">
-              {data?.movie.limit ?? 0 > 0 ? (
+              {(data?.movie.limit ?? 0) > 0 ? (
                 <>
                   <ProgressCircle
                     className="h-8 w-8"
@@ -67,7 +67,7 @@ const MiniQuotaDisplay = ({ userId }: MiniQuotaDisplayProps) => {
               {intl.formatMessage(messages.seriesrequests)}
             </div>
             <div className="flex h-full items-center space-x-2 text-gray-200">
-              {data?.tv.limit ?? 0 > 0 ? (
+              {(data?.tv.limit ?? 0) > 0 ? (
                 <>
                   <ProgressCircle
                     className="h-8 w-8"

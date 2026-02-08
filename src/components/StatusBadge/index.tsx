@@ -87,8 +87,8 @@ const StatusBadge = ({
         settings.currentSettings.mediaServerType === MediaServerType.EMBY
           ? 'Emby'
           : settings.currentSettings.mediaServerType === MediaServerType.PLEX
-          ? 'Plex'
-          : 'Jellyfin',
+            ? 'Plex'
+            : 'Jellyfin',
     });
   } else if (hasPermission(Permission.MANAGE_REQUESTS)) {
     if (mediaType && tmdbId) {
@@ -137,11 +137,13 @@ const StatusBadge = ({
 
   const badgeDownloadProgress = (
     <div
-      className={`
-      absolute top-0 left-0 z-10 flex h-full bg-opacity-80 ${
-        status === MediaStatus.PROCESSING ? 'bg-indigo-500' : 'bg-green-500'
-      } transition-all duration-200 ease-in-out
-    `}
+      className={`absolute left-0 top-0 z-10 flex h-full bg-opacity-80 ${
+        status === MediaStatus.DELETED
+          ? 'bg-red-600'
+          : status === MediaStatus.PROCESSING
+            ? 'bg-indigo-500'
+            : 'bg-green-500'
+      } transition-all duration-200 ease-in-out`}
       style={{
         width: `${
           downloadItem ? calculateDownloadProgress(downloadItem[0]) : 0
@@ -373,11 +375,66 @@ const StatusBadge = ({
 
     case MediaStatus.DELETED:
       return (
-        <Tooltip content={mediaLinkDescription}>
-          <Badge badgeType="danger">
-            {intl.formatMessage(is4k ? messages.status4k : messages.status, {
-              status: intl.formatMessage(globalMessages.deleted),
-            })}
+        <Tooltip
+          content={inProgress ? tooltipContent : mediaLinkDescription}
+          className={`${
+            inProgress && 'hidden max-h-96 w-96 overflow-y-auto sm:block'
+          }`}
+          tooltipConfig={{
+            ...(inProgress && { interactive: true, delayHide: 100 }),
+          }}
+        >
+          <Badge
+            badgeType="danger"
+            href={mediaLink}
+            className={`${
+              inProgress &&
+              'relative !bg-gray-700 !bg-opacity-80 !px-0 hover:!bg-gray-700'
+            } overflow-hidden`}
+          >
+            {inProgress && badgeDownloadProgress}
+            <div
+              className={`relative z-20 flex items-center ${
+                inProgress && 'px-2'
+              }`}
+            >
+              <span>
+                {intl.formatMessage(
+                  is4k ? messages.status4k : messages.status,
+                  {
+                    status: inProgress
+                      ? intl.formatMessage(globalMessages.processing)
+                      : intl.formatMessage(globalMessages.deleted),
+                  }
+                )}
+              </span>
+              {inProgress && (
+                <>
+                  {mediaType === 'tv' &&
+                    downloadItem[0].episode &&
+                    (downloadItem.length > 1 &&
+                    downloadItem.every(
+                      (item) =>
+                        item.downloadId &&
+                        item.downloadId === downloadItem[0].downloadId
+                    ) ? (
+                      <span className="ml-1">
+                        {intl.formatMessage(messages.seasonnumber, {
+                          seasonNumber: downloadItem[0].episode.seasonNumber,
+                        })}
+                      </span>
+                    ) : (
+                      <span className="ml-1">
+                        {intl.formatMessage(messages.seasonepisodenumber, {
+                          seasonNumber: downloadItem[0].episode.seasonNumber,
+                          episodeNumber: downloadItem[0].episode.episodeNumber,
+                        })}
+                      </span>
+                    ))}
+                  <Spinner className="ml-1 h-3 w-3" />
+                </>
+              )}
+            </div>
           </Badge>
         </Tooltip>
       );

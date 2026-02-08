@@ -69,7 +69,7 @@ const SettingsAbout = () => {
             <p className="text-sm leading-5 text-gray-100">
               {intl.formatMessage(messages.betawarning)}
             </p>
-            <p className="mt-3 text-sm leading-5 md:mt-0 md:ml-6">
+            <p className="mt-3 text-sm leading-5 md:ml-6 md:mt-0">
               <a
                 href="http://github.com/seerr-team/seerr"
                 className="whitespace-nowrap font-medium text-gray-100 transition duration-150 ease-in-out hover:text-white"

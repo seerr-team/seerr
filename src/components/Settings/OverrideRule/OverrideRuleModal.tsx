@@ -210,8 +210,8 @@ const OverrideRuleModal = ({
                 isSubmitting
                   ? intl.formatMessage(globalMessages.saving)
                   : rule
-                  ? intl.formatMessage(globalMessages.save)
-                  : intl.formatMessage(messages.create)
+                    ? intl.formatMessage(globalMessages.save)
+                    : intl.formatMessage(messages.create)
               }
               okDisabled={
                 isSubmitting ||
@@ -341,8 +341,8 @@ const OverrideRuleModal = ({
                           values.radarrServiceId != null
                             ? 'movie'
                             : values.sonarrServiceId != null
-                            ? 'tv'
-                            : 'tv'
+                              ? 'tv'
+                              : 'tv'
                         }
                         defaultValue={values.genre}
                         isMulti

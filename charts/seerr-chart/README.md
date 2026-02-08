@@ -1,6 +1,6 @@
 # seerr-chart
 
-![Version: 3.0.0](https://img.shields.io/badge/Version-3.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.7.3](https://img.shields.io/badge/AppVersion-2.7.3-informational?style=flat-square)
+![Version: 3.0.0](https://img.shields.io/badge/Version-3.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.0.0](https://img.shields.io/badge/AppVersion-3.0.0-informational?style=flat-square)
 
 Seerr helm chart for Kubernetes
 
@@ -22,7 +22,7 @@ Kubernetes: `>=1.23.0-0`
 
 ## Installation
 
-Refer to [https://docs.seerr.dev/getting-started/kubernetes](Seerr kubernetes documentation)
+Refer to [Seerr kubernetes documentation](https://docs.seerr.dev/getting-started/kubernetes)
 
 ## Update Notes
 

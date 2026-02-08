@@ -307,9 +307,8 @@ CoreApp.getInitialProps = async (initialProps) => {
   }
 
   // Run the default getInitialProps for the main nextjs initialProps
-  const appInitialProps: AppInitialProps = await App.getInitialProps(
-    initialProps
-  );
+  const appInitialProps: AppInitialProps =
+    await App.getInitialProps(initialProps);
 
   const locale = user?.settings?.locale
     ? user.settings.locale

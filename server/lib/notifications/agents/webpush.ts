@@ -5,7 +5,7 @@ import MediaRequest from '@server/entity/MediaRequest';
 import { User } from '@server/entity/User';
 import { UserPushSubscription } from '@server/entity/UserPushSubscription';
 import type { NotificationAgentConfig } from '@server/lib/settings';
-import { getSettings, NotificationAgentKey } from '@server/lib/settings';
+import { NotificationAgentKey, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import webpush from 'web-push';
 import { Notification, shouldSendAdminNotification } from '..';
@@ -22,6 +22,15 @@ interface PushNotificationPayload {
   requestId?: number;
   pendingRequestsCount?: number;
   isAdmin?: boolean;
+}
+
+interface WebPushError extends Error {
+  statusCode?: number;
+  status?: number;
+  body?: string | unknown;
+  response?: {
+    body?: string | unknown;
+  };
 }
 
 class WebPushAgent
@@ -119,8 +128,8 @@ class WebPushAgent
     const actionUrl = payload.issue
       ? `/issues/${payload.issue.id}`
       : payload.media
-      ? `/${payload.media.mediaType}/${payload.media.tmdbId}`
-      : undefined;
+        ? `/${payload.media.mediaType}/${payload.media.tmdbId}`
+        : undefined;
 
     const actionUrlTitle = actionUrl
       ? `View ${payload.issue ? 'Issue' : 'Media'}`
@@ -188,19 +197,30 @@ class WebPushAgent
           notificationPayload
         );
       } catch (e) {
+        const webPushError = e as WebPushError;
+        const statusCode = webPushError.statusCode || webPushError.status;
+        const errorMessage = webPushError.message || String(e);
+
+        // RFC 8030: 410/404 are permanent failures, others are transient
+        const isPermanentFailure = statusCode === 410 || statusCode === 404;
+
         logger.error(
-          'Error sending web push notification; removing subscription',
+          isPermanentFailure
+            ? 'Error sending web push notification; removing invalid subscription'
+            : 'Error sending web push notification (transient error, keeping subscription)',
           {
             label: 'Notifications',
             recipient: pushSub.user.displayName,
             type: Notification[type],
             subject: payload.subject,
-            errorMessage: e.message,
+            errorMessage,
+            statusCode: statusCode || 'unknown',
           }
         );
 
-        // Failed to send notification so we need to remove the subscription
-        userPushSubRepository.remove(pushSub);
+        if (isPermanentFailure) {
+          await userPushSubRepository.remove(pushSub);
+        }
       }
     };
 

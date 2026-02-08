@@ -8,7 +8,7 @@
 <p align="center">
 <a href="https://discord.gg/seerr"><img src="https://img.shields.io/discord/783137440809746482" alt="Discord"></a>
 <a href="https://hub.docker.com/r/seerr/seerr"><img src="https://img.shields.io/docker/pulls/seerr/seerr" alt="Docker pulls"></a>
-<a href="https://translate.seerr.dev/engage/seerr/"><img src="https://translate.seerr.dev/widget/seerr/seerr-frontend/svg-badge.svg" alt="Translation status" /></a>
+<a href="https://translate.seerr.dev/engage/seerr/"><img src="https://translate.seerr.dev/widget/seerr/svg-badge.svg" alt="Translation status" /></a>
 <a href="https://github.com/seerr-team/seerr/blob/develop/LICENSE"><img alt="GitHub" src="https://img.shields.io/github/license/seerr-team/seerr"></a>
 
 **Seerr** is a free and open source software application for managing requests for your media library. It integrates with the media server of your choice: [Jellyfin](https://jellyfin.org), [Plex](https://plex.tv), and [Emby](https://emby.media/). In addition, it integrates with your existing services, such as **[Sonarr](https://sonarr.tv/)**, **[Radarr](https://radarr.video/)**.
@@ -32,9 +32,27 @@ With more features on the way! Check out our [issue tracker](/../../issues) to s
 
 ## Getting Started
 
-Check out our documentation for instructions on how to install and run Seerr:
+For instructions on how to install and run **Jellyseerr**, please refer to the official documentation:
 
 https://docs.seerr.dev/getting-started/
+
+> [!IMPORTANT]
+> **Seerr is not officially released yet.**  
+> The project is currently available **only on the `develop` branch** and is intended for **beta testing only**.
+
+The documentation linked above is for running the **latest Jellyseerr** release.
+
+> [!WARNING]
+> If you are migrating from **Overseerr** to **Seerr** for beta testing, **do not follow the Jellyseerr latest setup guide**.
+
+Instead, follow the dedicated migration guide (with `:develop` tag):
+https://github.com/seerr-team/seerr/blob/develop/docs/migration-guide.mdx
+
+> [!CAUTION]
+> **DO NOT run Jellyseerr (latest) using an existing Overseerr database. This includes third-party images with `seerr:latest` (as it points to jellyseerr 2.7.3 and not seerr.**  
+> Doing so **may cause database corruption and/or irreversible data loss and/or weird unintended behaviour**. 
+
+For migration assistance, beta testing questions, or troubleshooting, please join our **Discord** and ask for support there.
 
 ## Preview
 

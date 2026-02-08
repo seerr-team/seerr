@@ -278,13 +278,13 @@ const CollectionRequestModal = ({
         isUpdating
           ? intl.formatMessage(globalMessages.requesting)
           : selectedParts.length === 0
-          ? intl.formatMessage(messages.selectmovies)
-          : intl.formatMessage(
-              is4k ? messages.requestmovies4k : messages.requestmovies,
-              {
-                count: selectedParts.length,
-              }
-            )
+            ? intl.formatMessage(messages.selectmovies)
+            : intl.formatMessage(
+                is4k ? messages.requestmovies4k : messages.requestmovies,
+                {
+                  count: selectedParts.length,
+                }
+              )
       }
       okDisabled={selectedParts.length === 0}
       okButtonType={'primary'}

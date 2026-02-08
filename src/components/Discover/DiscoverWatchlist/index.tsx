@@ -37,8 +37,8 @@ const DiscoverWatchlist = () => {
       router.pathname.startsWith('/profile')
         ? `user/${currentUser?.id}`
         : router.query.userId
-        ? `user/${router.query.userId}`
-        : 'discover'
+          ? `user/${router.query.userId}`
+          : 'discover'
     }/watchlist`
   );
 
@@ -55,7 +55,7 @@ const DiscoverWatchlist = () => {
       <PageTitle
         title={[title, router.query.userId ? user?.displayName : '']}
       />
-      <div className="mt-1 mb-5">
+      <div className="mb-5 mt-1">
         <Header
           subtext={
             router.query.userId ? (

@@ -96,7 +96,7 @@ const Layout = ({ children }: LayoutProps) => {
             WebkitBackdropFilter: isScrolled ? 'blur(5px)' : undefined,
           }}
         >
-          <div className="flex flex-1 items-center justify-between px-4 md:pr-4 md:pl-4">
+          <div className="flex flex-1 items-center justify-between px-4 md:pl-4 md:pr-4">
             <button
               className={`mr-2 hidden text-white sm:block ${
                 isScrolled ? 'opacity-90' : 'opacity-70'

@@ -300,7 +300,6 @@ class AvailabilitySync {
           // Sonarr finds that season, we will change the final seasons value
           // to true.
           const filteredSeasonsMap: Map<number, boolean> = new Map();
-
           media.seasons
             .filter(
               (season) =>
@@ -311,48 +310,7 @@ class AvailabilitySync {
               filteredSeasonsMap.set(season.seasonNumber, false)
             );
 
-          // non-4k
-          const finalSeasons: Map<number, boolean> = new Map();
-
-          if (mediaServerType === MediaServerType.PLEX) {
-            plexSeasonsMap.forEach((value, key) => {
-              finalSeasons.set(key, value);
-            });
-
-            filteredSeasonsMap.forEach((value, key) => {
-              if (!finalSeasons.has(key)) {
-                finalSeasons.set(key, value);
-              }
-            });
-
-            sonarrSeasonsMap.forEach((value, key) => {
-              if (!finalSeasons.has(key)) {
-                finalSeasons.set(key, value);
-              }
-            });
-          } else if (
-            mediaServerType === MediaServerType.JELLYFIN ||
-            mediaServerType === MediaServerType.EMBY
-          ) {
-            jellyfinSeasonsMap.forEach((value, key) => {
-              finalSeasons.set(key, value);
-            });
-
-            filteredSeasonsMap.forEach((value, key) => {
-              if (!finalSeasons.has(key)) {
-                finalSeasons.set(key, value);
-              }
-            });
-
-            sonarrSeasonsMap.forEach((value, key) => {
-              if (!finalSeasons.has(key)) {
-                finalSeasons.set(key, value);
-              }
-            });
-          }
-
           const filteredSeasonsMap4k: Map<number, boolean> = new Map();
-
           media.seasons
             .filter(
               (season) =>
@@ -363,44 +321,32 @@ class AvailabilitySync {
               filteredSeasonsMap4k.set(season.seasonNumber, false)
             );
 
-          // 4k
-          const finalSeasons4k: Map<number, boolean> = new Map();
+          let finalSeasons: Map<number, boolean>;
+          let finalSeasons4k: Map<number, boolean>;
 
           if (mediaServerType === MediaServerType.PLEX) {
-            plexSeasonsMap4k.forEach((value, key) => {
-              finalSeasons4k.set(key, value);
-            });
-
-            filteredSeasonsMap4k.forEach((value, key) => {
-              if (!finalSeasons4k.has(key)) {
-                finalSeasons4k.set(key, value);
-              }
-            });
-
-            sonarrSeasonsMap4k.forEach((value, key) => {
-              if (!finalSeasons4k.has(key)) {
-                finalSeasons4k.set(key, value);
-              }
-            });
-          } else if (
-            mediaServerType === MediaServerType.JELLYFIN ||
-            mediaServerType === MediaServerType.EMBY
-          ) {
-            jellyfinSeasonsMap4k.forEach((value, key) => {
-              finalSeasons4k.set(key, value);
-            });
-
-            filteredSeasonsMap4k.forEach((value, key) => {
-              if (!finalSeasons4k.has(key)) {
-                finalSeasons4k.set(key, value);
-              }
-            });
-
-            sonarrSeasonsMap4k.forEach((value, key) => {
-              if (!finalSeasons4k.has(key)) {
-                finalSeasons4k.set(key, value);
-              }
-            });
+            finalSeasons = new Map([
+              ...filteredSeasonsMap,
+              ...plexSeasonsMap,
+              ...sonarrSeasonsMap,
+            ]);
+            finalSeasons4k = new Map([
+              ...filteredSeasonsMap4k,
+              ...plexSeasonsMap4k,
+              ...sonarrSeasonsMap4k,
+            ]);
+          } else {
+            // Jellyfin/Emby
+            finalSeasons = new Map([
+              ...filteredSeasonsMap,
+              ...jellyfinSeasonsMap,
+              ...sonarrSeasonsMap,
+            ]);
+            finalSeasons4k = new Map([
+              ...filteredSeasonsMap4k,
+              ...jellyfinSeasonsMap4k,
+              ...sonarrSeasonsMap4k,
+            ]);
           }
 
           if (
@@ -567,8 +513,8 @@ class AvailabilitySync {
           mediaServerType === MediaServerType.PLEX
             ? 'plex'
             : mediaServerType === MediaServerType.JELLYFIN
-            ? 'jellyfin'
-            : 'emby'
+              ? 'jellyfin'
+              : 'emby'
         } instance. Status will be changed to deleted.`,
         { label: 'AvailabilitySync' }
       );
@@ -642,8 +588,8 @@ class AvailabilitySync {
           mediaServerType === MediaServerType.PLEX
             ? 'plex'
             : mediaServerType === MediaServerType.JELLYFIN
-            ? 'jellyfin'
-            : 'emby'
+              ? 'jellyfin'
+              : 'emby'
         } instance. Status will be changed to deleted.`,
         { label: 'AvailabilitySync' }
       );
@@ -665,6 +611,13 @@ class AvailabilitySync {
     is4k: boolean
   ): Promise<boolean> {
     let existsInRadarr = false;
+
+    const hasSameServerInBothModes = this.radarrServers.some((a) =>
+      this.radarrServers.some(
+        (b) =>
+          a.is4k !== b.is4k && a.hostname === b.hostname && a.port === b.port
+      )
+    );
 
     // Check for availability in all of the available radarr servers
     // If any find the media, we will assume the media exists
@@ -696,7 +649,14 @@ class AvailabilitySync {
             radarr?.movieFile?.mediaInfo?.resolution?.split('x');
           const is4kMovie =
             resolution?.length === 2 && Number(resolution[0]) >= 2000;
-          existsInRadarr = is4k ? is4kMovie : !is4kMovie;
+
+          if (hasSameServerInBothModes && resolution?.length === 2) {
+            // Same server in both modes then use resolution to distinguish
+            existsInRadarr = is4k ? is4kMovie : !is4kMovie;
+          } else {
+            // One server type and if file exists, count it
+            existsInRadarr = true;
+          }
         }
       } catch (ex) {
         if (!ex.message.includes('404')) {
@@ -712,6 +672,8 @@ class AvailabilitySync {
           );
         }
       }
+
+      if (existsInRadarr) break;
     }
 
     return existsInRadarr;
@@ -870,6 +832,50 @@ class AvailabilitySync {
           this.plexSeasonsCache[ratingKey4k] =
             await this.plexClient?.getChildrenMetadata(ratingKey4k);
         }
+
+        if (plexMedia) {
+          if (ratingKey === ratingKey4k) {
+            plexMedia = undefined;
+          }
+
+          if (
+            plexMedia &&
+            media.mediaType === 'movie' &&
+            !plexMedia.Media?.some(
+              (mediaItem) => (mediaItem.width ?? 0) >= 2000
+            )
+          ) {
+            plexMedia = undefined;
+          }
+
+          if (plexMedia && media.mediaType === 'tv') {
+            const cachedSeasons = this.plexSeasonsCache[ratingKey4k];
+            if (cachedSeasons?.length) {
+              let has4kInAnySeason = false;
+              for (const season of cachedSeasons) {
+                try {
+                  const episodes = await this.plexClient?.getChildrenMetadata(
+                    season.ratingKey
+                  );
+                  const has4kEpisode = episodes?.some((episode) =>
+                    episode.Media?.some(
+                      (mediaItem) => (mediaItem.width ?? 0) >= 2000
+                    )
+                  );
+                  if (has4kEpisode) {
+                    has4kInAnySeason = true;
+                    break;
+                  }
+                } catch {
+                  // If we can't fetch episodes for a season, continue checking other seasons
+                }
+              }
+              if (!has4kInAnySeason) {
+                plexMedia = undefined;
+              }
+            }
+          }
+        }
       }
 
       if (plexMedia) {
@@ -993,8 +999,8 @@ class AvailabilitySync {
         existsInJellyfin = true;
       }
     } catch (ex) {
-      if (!ex.message.includes('404' || '500')) {
-        existsInJellyfin = false;
+      if (!ex.message.includes('404') && !ex.message.includes('500')) {
+        existsInJellyfin = true;
         preventSeasonSearch = true;
         logger.debug(
           `Failure retrieving the ${is4k ? '4K' : 'non-4K'} ${

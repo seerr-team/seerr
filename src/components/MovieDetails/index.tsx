@@ -249,8 +249,8 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   const discoverRegion = user?.settings?.discoverRegion
     ? user.settings.discoverRegion
     : settings.currentSettings.discoverRegion
-    ? settings.currentSettings.discoverRegion
-    : 'US';
+      ? settings.currentSettings.discoverRegion
+      : 'US';
 
   const releases = data.releases.results.find(
     (r) => r.iso_3166_1 === discoverRegion
@@ -309,8 +309,8 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   const streamingRegion = user?.settings?.streamingRegion
     ? user.settings.streamingRegion
     : settings.currentSettings.streamingRegion
-    ? settings.currentSettings.streamingRegion
-    : 'US';
+      ? settings.currentSettings.streamingRegion
+      : 'US';
   const streamingProviders =
     data?.watchProviders?.find(
       (provider) => provider.iso_3166_1 === streamingRegion

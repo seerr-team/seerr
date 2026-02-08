@@ -76,9 +76,8 @@ const TitleCard = ({
   const [showDetail, setShowDetail] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const { addToast } = useToasts();
-  const [toggleWatchlist, setToggleWatchlist] = useState<boolean>(
-    !isAddedToWatchlist
-  );
+  const [toggleWatchlist, setToggleWatchlist] =
+    useState<boolean>(!isAddedToWatchlist);
   const [showBlacklistModal, setShowBlacklistModal] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -284,8 +283,8 @@ const TitleCard = ({
           mediaType === 'movie'
             ? 'movie'
             : mediaType === 'collection'
-            ? 'collection'
-            : 'tv'
+              ? 'collection'
+              : 'tv'
         }
         onComplete={requestComplete}
         onUpdating={requestUpdating}
@@ -297,8 +296,8 @@ const TitleCard = ({
           mediaType === 'movie'
             ? 'movie'
             : mediaType === 'collection'
-            ? 'collection'
-            : 'tv'
+              ? 'collection'
+              : 'tv'
         }
         show={showBlacklistModal}
         onCancel={closeBlacklistModal}
@@ -354,8 +353,8 @@ const TitleCard = ({
                 {mediaType === 'movie'
                   ? intl.formatMessage(globalMessages.movie)
                   : mediaType === 'collection'
-                  ? intl.formatMessage(globalMessages.collection)
-                  : intl.formatMessage(globalMessages.tvshow)}
+                    ? intl.formatMessage(globalMessages.collection)
+                    : intl.formatMessage(globalMessages.tvshow)}
               </div>
             </div>
             {showDetail && currentStatus !== MediaStatus.BLACKLISTED && (
@@ -456,8 +455,8 @@ const TitleCard = ({
                   mediaType === 'movie'
                     ? `/movie/${id}`
                     : mediaType === 'collection'
-                    ? `/collection/${id}`
-                    : `/tv/${id}`
+                      ? `/collection/${id}`
+                      : `/tv/${id}`
                 }
                 className="absolute inset-0 h-full w-full cursor-pointer overflow-hidden text-left"
                 style={{

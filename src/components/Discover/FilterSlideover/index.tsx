@@ -19,8 +19,8 @@ import {
 } from '@app/hooks/useUpdateQueryParams';
 import defineMessages from '@app/utils/defineMessages';
 import { XCircleIcon } from '@heroicons/react/24/outline';
+import Datepicker from '@seerr-team/react-tailwindcss-datepicker';
 import { useIntl } from 'react-intl';
-import Datepicker from 'react-tailwindcss-datepicker-sct';
 
 const messages = defineMessages('components.Discover.FilterSlideover', {
   filters: 'Filters',

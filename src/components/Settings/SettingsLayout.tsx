@@ -102,8 +102,8 @@ const SettingsLayout = ({ children }: SettingsLayoutProps) => {
         settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
           ? 'Jellyfin'
           : settings.currentSettings.mediaServerType === MediaServerType.EMBY
-          ? 'Emby'
-          : undefined,
+            ? 'Emby'
+            : undefined,
     });
   }
 };
