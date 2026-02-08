@@ -111,7 +111,7 @@ plexWatchlistRoutes.post('/', async (req, res, next) => {
       return next({
         status: 400,
         message: 'Invalid request data',
-        errors: error.errors,
+        errors: error.issues,
       });
     }
 
