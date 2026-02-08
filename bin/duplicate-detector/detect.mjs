@@ -22,7 +22,7 @@ const SIMILARITY_THRESHOLD = 0.55;
 const TOP_K = 5;
 const MAX_COMMENT_CANDIDATES = 3;
 const MODEL_NAME = process.env.EMBEDDING_MODEL || 'Xenova/all-MiniLM-L6-v2';
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 const INDEX_PATH = 'issue_index.json';
 const LABEL_NAME = 'possible-duplicate';
 

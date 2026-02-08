@@ -9,6 +9,7 @@ permissions: {}
 
 env:
   EMBEDDING_MODEL: ${{ vars.EMBEDDING_MODEL }}
+  GROQ_MODEL: ${{ vars.GROQ_MODEL }}
   GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
 
 jobs:
@@ -62,6 +63,7 @@ jobs:
 
       - name: Detect duplicates
         working-directory: bin/duplicate-detector
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
