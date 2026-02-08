@@ -45,11 +45,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: Install dependencies
-        working-directory: bin/duplicate-detector
-        env:
-          CI: true
-        run: pnpm install --frozen-lockfile
 
       - name: Cache embedding model
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
@@ -59,7 +54,9 @@ jobs:
 
       - name: Install dependencies
         working-directory: bin/duplicate-detector
-        run: npm ci
+        env:
+          CI: true
+        run: pnpm install --frozen-lockfile
 
       - name: Download issue index
         uses: dawidd6/action-download-artifact@5c98f0b039f36ef966fdb7dfa9779262785ecb05 # v14
