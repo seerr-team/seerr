@@ -1,5 +1,6 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { MediaStatus } from '@server/constants/media';
+import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import type { NotificationAgentTelegram } from '@server/lib/settings';
@@ -66,8 +67,28 @@ class TelegramAgent
     payload: NotificationPayload
   ): Partial<TelegramMessagePayload | TelegramPhotoPayload> {
     const settings = getSettings();
-    const { applicationUrl, applicationTitle } = settings.main;
+    const { applicationUrl, applicationTitle, mediaServerType } = settings.main;
     const { embedPoster } = settings.notifications.agents.telegram;
+
+    function getAvailableMediaServerName() {
+      if (mediaServerType === MediaServerType.EMBY) {
+        return 'Emby';
+      }
+
+      if (mediaServerType === MediaServerType.PLEX) {
+        return 'Plex';
+      }
+
+      return 'Jellyfin';
+    }
+
+    function getAvailableMediaServerUrl(): string | undefined {
+      const wants4k = payload.request?.is4k;
+      const url4k = (payload.media as any)?.mediaUrl4k as string | undefined;
+      const url = (payload.media as any)?.mediaUrl as string | undefined;
+
+      return (wants4k ? (url4k ?? url) : (url ?? url4k)) || undefined;
+    }
 
     /* eslint-disable no-useless-escape */
     let message = `\*${this.escapeText(
@@ -141,6 +162,15 @@ class TelegramAgent
       message += `\n\n\[View ${
         payload.issue ? 'Issue' : 'Media'
       } in ${this.escapeText(applicationTitle)}\]\(${url}\)`;
+    }
+
+    if (!payload.issue) {
+      const mediaServerName = getAvailableMediaServerName();
+      const mediaServerUrl = getAvailableMediaServerUrl();
+
+      if (mediaServerUrl) {
+        message += `\n\[Play on ${this.escapeText(mediaServerName)}\]\(${mediaServerUrl}\)`;
+      }
     }
     /* eslint-enable */
 
