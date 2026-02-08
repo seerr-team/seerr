@@ -644,9 +644,7 @@ const SettingsJobs = () => {
               </thead>
               <Table.TBody>
                 {(() => {
-                  const dnsEntries = cacheData?.dnsCache?.entries;
-
-                  if (dnsEntries == null) {
+                  if (!cacheData) {
                     return (
                       <tr>
                         <Table.TD colSpan={6} alignText="center">
@@ -656,7 +654,9 @@ const SettingsJobs = () => {
                     );
                   }
 
-                  const entries = Object.entries(dnsEntries);
+                  const entries = Object.entries(
+                    cacheData.dnsCache?.entries ?? {}
+                  );
 
                   if (entries.length === 0) {
                     return (
@@ -701,13 +701,13 @@ const SettingsJobs = () => {
             </p>
           </div>
           <div className="section">
-            {cacheData?.dnsCache?.stats == null ? (
+            {!cacheData ? (
               <LoadingSpinner />
             ) : (
               <Table>
                 <thead>
                   <tr>
-                    {Object.entries(cacheData.dnsCache.stats)
+                    {Object.entries(cacheData.dnsCache?.stats ?? {})
                       .filter(([statName]) => statName !== 'maxSize')
                       .map(([statName]) => (
                         <Table.TH key={`dns-stat-header-${statName}`}>
@@ -720,7 +720,7 @@ const SettingsJobs = () => {
                 </thead>
                 <Table.TBody>
                   <tr>
-                    {Object.entries(cacheData.dnsCache.stats)
+                    {Object.entries(cacheData.dnsCache?.stats ?? {})
                       .filter(([statName]) => statName !== 'maxSize')
                       .map(([statName, statValue]) => (
                         <Table.TD key={`dns-stat-${statName}`}>

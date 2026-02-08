@@ -326,7 +326,7 @@ const SettingsNetwork = () => {
                             id="dnsCacheForceMaxTtl"
                             name="dnsCacheForceMaxTtl"
                             type="text"
-                            inputMode="decimal"
+                            inputMode="text"
                             className="short"
                           />
                         </div>
