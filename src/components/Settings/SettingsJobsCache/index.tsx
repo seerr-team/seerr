@@ -643,36 +643,52 @@ const SettingsJobs = () => {
                 </tr>
               </thead>
               <Table.TBody>
-                {Object.keys(cacheData?.dnsCache?.entries || {}).length > 0 ? (
-                  Object.entries(cacheData?.dnsCache.entries || {}).map(
-                    ([hostname, data]) => (
-                      <tr key={`cache-list-${hostname}`}>
-                        <Table.TD>{hostname}</Table.TD>
-                        <Table.TD>{data.activeAddress}</Table.TD>
-                        <Table.TD>{intl.formatNumber(data.hits)}</Table.TD>
-                        <Table.TD>{intl.formatNumber(data.misses)}</Table.TD>
-                        <Table.TD>{formatAge(data.age)}</Table.TD>
-                        <Table.TD alignText="right">
-                          <Button
-                            buttonType="danger"
-                            onClick={() => flushDnsCache(hostname)}
-                          >
-                            <TrashIcon />
-                            <span>
-                              {intl.formatMessage(messages.flushdnscache)}
-                            </span>
-                          </Button>
+                {(() => {
+                  const dnsEntries = cacheData?.dnsCache?.entries;
+
+                  if (dnsEntries == null) {
+                    return (
+                      <tr>
+                        <Table.TD colSpan={6} alignText="center">
+                          <LoadingSpinner />
                         </Table.TD>
                       </tr>
-                    )
-                  )
-                ) : (
-                  <tr>
-                    <Table.TD colSpan={6} alignText="center">
-                      {intl.formatMessage(messages.dnsNoCacheEntries)}
-                    </Table.TD>
-                  </tr>
-                )}
+                    );
+                  }
+
+                  const entries = Object.entries(dnsEntries);
+
+                  if (entries.length === 0) {
+                    return (
+                      <tr>
+                        <Table.TD colSpan={6} alignText="center">
+                          {intl.formatMessage(messages.dnsNoCacheEntries)}
+                        </Table.TD>
+                      </tr>
+                    );
+                  }
+
+                  return entries.map(([hostname, data]) => (
+                    <tr key={`cache-list-${hostname}`}>
+                      <Table.TD>{hostname}</Table.TD>
+                      <Table.TD>{data.activeAddress}</Table.TD>
+                      <Table.TD>{intl.formatNumber(data.hits)}</Table.TD>
+                      <Table.TD>{intl.formatNumber(data.misses)}</Table.TD>
+                      <Table.TD>{formatAge(data.age)}</Table.TD>
+                      <Table.TD alignText="right">
+                        <Button
+                          buttonType="danger"
+                          onClick={() => flushDnsCache(hostname)}
+                        >
+                          <TrashIcon />
+                          <span>
+                            {intl.formatMessage(messages.flushdnscache)}
+                          </span>
+                        </Button>
+                      </Table.TD>
+                    </tr>
+                  ));
+                })()}
               </Table.TBody>
             </Table>
           </div>
@@ -685,37 +701,41 @@ const SettingsJobs = () => {
             </p>
           </div>
           <div className="section">
-            <Table>
-              <thead>
-                <tr>
-                  {Object.entries(cacheData?.dnsCache.stats || {})
-                    .filter(([statName]) => statName !== 'maxSize')
-                    .map(([statName]) => (
-                      <Table.TH key={`dns-stat-header-${statName}`}>
-                        {messages[statName]
-                          ? intl.formatMessage(messages[statName])
-                          : statName}
-                      </Table.TH>
-                    ))}
-                </tr>
-              </thead>
-              <Table.TBody>
-                <tr>
-                  {Object.entries(cacheData?.dnsCache.stats || {})
-                    .filter(([statName]) => statName !== 'maxSize')
-                    .map(([statName, statValue]) => (
-                      <Table.TD key={`dns-stat-${statName}`}>
-                        {statName === 'hitRate'
-                          ? intl.formatNumber(statValue, {
-                              style: 'percent',
-                              maximumFractionDigits: 2,
-                            })
-                          : intl.formatNumber(statValue)}
-                      </Table.TD>
-                    ))}
-                </tr>
-              </Table.TBody>
-            </Table>
+            {cacheData?.dnsCache?.stats == null ? (
+              <LoadingSpinner />
+            ) : (
+              <Table>
+                <thead>
+                  <tr>
+                    {Object.entries(cacheData.dnsCache.stats)
+                      .filter(([statName]) => statName !== 'maxSize')
+                      .map(([statName]) => (
+                        <Table.TH key={`dns-stat-header-${statName}`}>
+                          {messages[statName]
+                            ? intl.formatMessage(messages[statName])
+                            : statName}
+                        </Table.TH>
+                      ))}
+                  </tr>
+                </thead>
+                <Table.TBody>
+                  <tr>
+                    {Object.entries(cacheData.dnsCache.stats)
+                      .filter(([statName]) => statName !== 'maxSize')
+                      .map(([statName, statValue]) => (
+                        <Table.TD key={`dns-stat-${statName}`}>
+                          {statName === 'hitRate'
+                            ? intl.formatNumber(statValue, {
+                                style: 'percent',
+                                maximumFractionDigits: 2,
+                              })
+                            : intl.formatNumber(statValue)}
+                        </Table.TD>
+                      ))}
+                  </tr>
+                </Table.TBody>
+              </Table>
+            )}
           </div>
         </>
       )}
