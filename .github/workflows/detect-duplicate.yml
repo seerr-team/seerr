@@ -1,0 +1,72 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Duplicate Issue Detector
+
+on:
+  issues:
+    types: [opened]
+
+permissions: {}
+
+env:
+  EMBEDDING_MODEL: ${{ vars.EMBEDDING_MODEL }}
+  GROQ_MODEL: ${{ vars.GROQ_MODEL }}
+  GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+
+jobs:
+  detect-duplicate:
+    runs-on: ubuntu-24.04
+    if: ${{ !github.event.issue.pull_request }}
+    permissions:
+      issues: write
+      actions: read
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: 'package.json'
+
+      - name: Cache embedding model
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: ~/.cache/huggingface
+          key: hf-model-${{ vars.EMBEDDING_MODEL }}
+
+      - name: Install dependencies
+        working-directory: bin/duplicate-detector
+        run: npm ci
+
+      - name: Download issue index
+        uses: dawidd6/action-download-artifact@5c98f0b039f36ef966fdb7dfa9779262785ecb05 # v14
+        with:
+          name: issue-index
+          workflow: rebuild-issue-index.yml
+          path: bin/duplicate-detector
+          search_artifacts: true
+          if_no_artifact_found: warn
+
+      - name: Build index if missing
+        working-directory: bin/duplicate-detector
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          INDEX_PATH: issue_index.json
+        run: |
+          if [ ! -f issue_index.json ]; then
+            echo "No index found — building from scratch..."
+            node build-index.mjs
+          fi
+
+      - name: Detect duplicates
+        working-directory: bin/duplicate-detector
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          INDEX_PATH: issue_index.json
+        run: node detect.mjs
