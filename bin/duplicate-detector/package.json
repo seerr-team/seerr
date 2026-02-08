@@ -3,11 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.17.1",
   "scripts": {
     "build-index": "node build-index.mjs",
     "detect": "node detect.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.8.1"
+  },
+  "engines": {
+    "node": ">=22.0"
   }
 }
