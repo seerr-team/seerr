@@ -795,6 +795,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
     const statusKey = entity.is4k ? 'status4k' : 'status';
     const seasonRequestRepository = getRepository(SeasonRequest);
+    const requestRepository = getRepository(MediaRequest);
 
     if (
       entity.status === MediaRequestStatus.APPROVED &&
@@ -867,9 +868,28 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           (s) => s.seasonNumber === seasonRequest.seasonNumber
         );
 
-        if (season) {
-          season[statusKey] = MediaStatus.UNKNOWN;
-          await seasonRepository.save(season);
+        if (season && season[statusKey] == MediaStatus.PENDING) {
+          const otherActiveRequests = await requestRepository
+            .createQueryBuilder('request')
+            .leftJoinAndSelect('request.seasons', 'season')
+            .where('request.mediaId = :mediaId', { mediaId: media.id })
+            .andWhere('request.id != :requestId', { requestId: entity.id })
+            .andWhere('request.is4k = :is4k', { is4k: entity.is4k })
+            .andWhere('request.status NOT IN (:...statuses)', {
+              statuses: [
+                MediaRequestStatus.DECLINED,
+                MediaRequestStatus.COMPLETED,
+              ],
+            })
+            .andWhere('season.seasonNumber = :seasonNumber', {
+              seasonNumber: season.seasonNumber,
+            })
+            .getCount();
+
+          if (otherActiveRequests === 0) {
+            season[statusKey] = MediaStatus.UNKNOWN;
+            await seasonRepository.save(season);
+          }
         }
       }
     }

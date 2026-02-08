@@ -363,7 +363,8 @@ const TvRequestModal = ({
         .filter(
           (request) =>
             request.is4k === is4k &&
-            request.status !== MediaRequestStatus.DECLINED
+            request.status !== MediaRequestStatus.DECLINED &&
+            request.status !== MediaRequestStatus.COMPLETED
         )
         .forEach((request) => {
           if (!seasonRequest) {
