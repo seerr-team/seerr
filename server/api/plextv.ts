@@ -443,10 +443,10 @@ class PlexTvAPI extends ExternalAPI {
     type: 'movie' | 'show';
   }): Promise<DiscoverSearchResponse> {
     try {
-      const response = await this.axios.get<DiscoverSearchResponse>(
-        '/library/search',
+      // Use standalone axios to make the hardcoded host explicit for static analysis
+      const response = await axios.get<DiscoverSearchResponse>(
+        'https://discover.provider.plex.tv/library/search',
         {
-          baseURL: 'https://discover.provider.plex.tv',
           params: {
             query,
             searchTypes: type === 'movie' ? 'movies' : 'tv',
@@ -456,6 +456,7 @@ class PlexTvAPI extends ExternalAPI {
             includeGuids: 1,
           },
           headers: {
+            'X-Plex-Token': this.authToken,
             Accept: 'application/json',
           },
         }
@@ -478,11 +479,19 @@ class PlexTvAPI extends ExternalAPI {
   public async getDiscoverMetadata(
     ratingKey: string
   ): Promise<DiscoverMetadataResponse> {
+    // Validate ratingKey format (Plex rating keys are alphanumeric hex strings)
+    if (!/^[a-zA-Z0-9]+$/.test(ratingKey)) {
+      throw new Error(`Invalid ratingKey format: ${ratingKey}`);
+    }
+
     try {
-      const response = await this.axios.get<DiscoverMetadataResponse>(
-        `/library/metadata/${ratingKey}`,
+      // Use standalone axios to make the hardcoded host explicit for static analysis
+      const response = await axios.get<DiscoverMetadataResponse>(
+        `https://discover.provider.plex.tv/library/metadata/${encodeURIComponent(ratingKey)}`,
         {
-          baseURL: 'https://discover.provider.plex.tv',
+          headers: {
+            'X-Plex-Token': this.authToken,
+          },
         }
       );
       return response.data;
@@ -628,9 +637,10 @@ class PlexTvAPI extends ExternalAPI {
       // Use a fresh axios instance without any inherited configuration
       // The ExternalAPI's default headers (Content-Type, Accept) cause Plex to return 500 errors
       await axios.put(
-        `https://discover.provider.plex.tv/actions/addToWatchlist?ratingKey=${ratingKey}`,
+        'https://discover.provider.plex.tv/actions/addToWatchlist',
         null,
         {
+          params: { ratingKey },
           headers: {
             'X-Plex-Token': this.authToken,
           },
@@ -664,9 +674,10 @@ class PlexTvAPI extends ExternalAPI {
     try {
       // Use a fresh axios instance without any inherited configuration
       await axios.put(
-        `https://discover.provider.plex.tv/actions/removeFromWatchlist?ratingKey=${ratingKey}`,
+        'https://discover.provider.plex.tv/actions/removeFromWatchlist',
         null,
         {
+          params: { ratingKey },
           headers: {
             'X-Plex-Token': this.authToken,
           },
