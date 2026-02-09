@@ -67,6 +67,7 @@ jobs:
       - name: i18n Check
         shell: bash
         env:
+          I18N_LABEL: i18n-out-of-sync
           BODY: |
             The i18n check failed because translation messages are out of sync.
 
@@ -75,16 +76,16 @@ jobs:
             Please run `pnpm i18n:extract` and commit the changes.
         run: |
           retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
-          node bin/check-i18n.js
-          check_failed=$?
-          if [ $check_failed -eq 1 ]; then
-            retry gh pr edit "$NUMBER" -R "$GH_REPO" --add-label "i18n-out-of-sync" || true
-            retry gh pr comment "$NUMBER" -R "$GH_REPO" -b "$BODY" || true
+          check_failed=0; node bin/check-i18n.js || check_failed=$?
+          pr_labels=$(gh pr view "$NUMBER" -R "$GH_REPO" --json labels -q '.labels[].name' 2>/dev/null) || true
+          has_label=0
+          while IFS= read -r name; do [ -n "$name" ] && [ "$name" = "$I18N_LABEL" ] && has_label=1 && break; done <<< "$pr_labels"
+          if [ "$check_failed" -eq 1 ]; then
+            [ "$has_label" -eq 0 ] && { retry gh pr edit "$NUMBER" -R "$GH_REPO" --add-label "$I18N_LABEL" || true; retry gh pr comment "$NUMBER" -R "$GH_REPO" -b "$BODY" || true; }
           else
-            retry gh pr edit "$NUMBER" -R "$GH_REPO" --remove-label "i18n-out-of-sync" || true
+            [ "$has_label" -eq 1 ] && retry gh pr edit "$NUMBER" -R "$GH_REPO" --remove-label "$I18N_LABEL" || true
           fi
           exit $check_failed
-
   test:
     name: Lint & Test Build
     if: github.event_name == 'pull_request'
