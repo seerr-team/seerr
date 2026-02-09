@@ -1599,5 +1599,11 @@
   "components.Settings.yes": "Bai",
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.deletesubscription": "Ezabatu harpidetza",
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.device": "Gailua",
-  "i18n.completed": "Osatuta"
+  "i18n.completed": "Osatuta",
+  "components.Settings.SettingsAbout.aboutseerr": "",
+  "components.Settings.SettingsAbout.contribute": "",
+  "components.Settings.SettingsAbout.supportseerr": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMaxTtl": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMinTtl": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.activesubscription": ""
 }

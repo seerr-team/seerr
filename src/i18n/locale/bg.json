@@ -1599,5 +1599,11 @@
   "components.Settings.save": "",
   "components.UserProfile.UserSettings.LinkJellyfinModal.title": "",
   "components.UserProfile.UserSettings.UserGeneralSettings.streamingRegion": "",
-  "components.UserProfile.UserSettings.UserGeneralSettings.streamingRegionTip": ""
+  "components.UserProfile.UserSettings.UserGeneralSettings.streamingRegionTip": "",
+  "components.Settings.SettingsAbout.aboutseerr": "",
+  "components.Settings.SettingsAbout.contribute": "",
+  "components.Settings.SettingsAbout.supportseerr": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMaxTtl": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMinTtl": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.activesubscription": ""
 }

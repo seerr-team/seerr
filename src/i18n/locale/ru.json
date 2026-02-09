@@ -1599,5 +1599,11 @@
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.webpushsettingsfailed": "",
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.webpushsettingssaved": "",
   "i18n.completed": "",
-  "i18n.deleted": ""
+  "i18n.deleted": "",
+  "components.Settings.SettingsAbout.aboutseerr": "",
+  "components.Settings.SettingsAbout.contribute": "",
+  "components.Settings.SettingsAbout.supportseerr": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMaxTtl": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMinTtl": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.activesubscription": ""
 }

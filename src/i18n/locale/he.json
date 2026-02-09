@@ -1599,5 +1599,11 @@
   "components.Settings.SettingsAbout.Releases.latestversion": "",
   "components.Settings.SettingsJobsCache.canceljob": "",
   "components.Settings.SettingsJobsCache.command": "",
-  "components.Settings.SettingsUsers.defaultPermissions": ""
+  "components.Settings.SettingsUsers.defaultPermissions": "",
+  "components.Settings.SettingsAbout.aboutseerr": "",
+  "components.Settings.SettingsAbout.contribute": "",
+  "components.Settings.SettingsAbout.supportseerr": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMaxTtl": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMinTtl": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.activesubscription": ""
 }

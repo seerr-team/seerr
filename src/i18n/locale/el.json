@@ -1599,5 +1599,11 @@
   "components.Blacklist.blacklistdate": "",
   "components.Blacklist.blacklistedby": "",
   "components.Blacklist.blacklistsettings": "",
-  "components.Settings.SettingsJobsCache.usersavatars": ""
+  "components.Settings.SettingsJobsCache.usersavatars": "",
+  "components.Settings.SettingsAbout.aboutseerr": "",
+  "components.Settings.SettingsAbout.contribute": "",
+  "components.Settings.SettingsAbout.supportseerr": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMaxTtl": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMinTtl": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.activesubscription": ""
 }

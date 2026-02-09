@@ -1599,5 +1599,11 @@
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.engine": "Engine",
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.type": "typ",
   "i18n.deleted": "Gelöscht",
-  "components.Settings.SettingsJobsCache.editJobScheduleSelectorDays": "Alle {jobScheduleDays, plural, ein {day} andere {{jobScheduleDays} days}}"
+  "components.Settings.SettingsJobsCache.editJobScheduleSelectorDays": "Alle {jobScheduleDays, plural, ein {day} andere {{jobScheduleDays} days}}",
+  "components.Settings.SettingsAbout.aboutseerr": "",
+  "components.Settings.SettingsAbout.contribute": "",
+  "components.Settings.SettingsAbout.supportseerr": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMaxTtl": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMinTtl": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.activesubscription": ""
 }
