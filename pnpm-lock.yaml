@@ -136,6 +136,9 @@ importers:
       nodemailer:
         specifier: 10.2.1
         version: 10.2.1
+      openid-client:
+        specifier: ^6.8.2
+        version: 6.8.9
       openpgp:
         specifier: 6.3.0
         version: 6.3.0
@@ -4835,6 +4838,9 @@ packages:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
     hasBin: true
 
+  jose@6.2.15:
+    resolution: {integrity: sha512-qdF6ewcZARtef63fJ9AKKZPgxw+t7USH6HLXYcD4CrdmSvDp79rpJSPFEKc90QBeGS63u1KQtN2MZQHC0yDIzA==}
+
   js-stringify@1.0.2:
     resolution: {integrity: sha512-rtS5ATOo2Q5k1G+DADISilDA6lv79zIiwFd6CcjuIxGKLFm5C+RLImRscVap9k55i+MOZwgliw+NejvkLuGD5g==}
 
@@ -5493,6 +5499,9 @@ packages:
   nth-check@2.1.1:
     resolution: {integrity: sha512-lqjrjmaOoAnWfMmBPL+XNnynZh2+swxiX3WUE0s4yEHI6m+AwrK2UZOimIRl3X/4QctVqS8AiZjFqyOGrMXb/w==}
 
+  oauth4webapi@3.8.8:
+    resolution: {integrity: sha512-8N28E+a/oxfXWBgOMt+ZP/JUf/XR+IFbvkAEPP3gznXOMv9BpAAwiIj0TFNz3tGTPc0ZQ8zmWBNgN1nAys0gng==}
+
   object-assign@4.1.1:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
     engines: {node: '>=0.10.0'}
@@ -5557,6 +5566,9 @@ packages:
   open@10.2.0:
     resolution: {integrity: sha512-YgBpdJHPyQ2UE5x+hlSXcnejzAvD0b22U2OuAP+8OnlJT+PjWPxtgmGqKKc+RgTM63U9gN0YzrYc71R2WT/hTA==}
     engines: {node: '>=18'}
+
+  openid-client@6.8.9:
+    resolution: {integrity: sha512-6mXMRNJxDOf6BflEWLXul1UwzLFz++9Ofz1PYwPwwsJsyXBsbfkO+Jo255SW1qnFNLYz4EJWHz42X4OJJrya/g==}
 
   openpgp@6.3.0:
     resolution: {integrity: sha512-pLzCU8IgyKXPSO11eeharQkQ4GzOKNWhXq79pQarIRZEMt1/ssyr+MIuWBv1mNoenJLg04gvPx+fi4gcKZ4bag==}
@@ -12311,6 +12323,8 @@ snapshots:
 
   jiti@2.6.1: {}
 
+  jose@6.2.15: {}
+
   js-stringify@1.0.2: {}
 
   js-tokens@4.0.0: {}
@@ -13094,6 +13108,8 @@ snapshots:
     dependencies:
       boolbase: 1.0.0
 
+  oauth4webapi@3.8.8: {}
+
   object-assign@4.1.1: {}
 
   object-hash@3.0.0: {}
@@ -13171,6 +13187,11 @@ snapshots:
       is-inside-container: 1.0.0
       wsl-utils: 0.1.0
     optional: true
+
+  openid-client@6.8.9:
+    dependencies:
+      jose: 6.2.15
+      oauth4webapi: 3.8.8
 
   openpgp@6.3.0: {}
 
