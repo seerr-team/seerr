@@ -282,6 +282,20 @@ components:
         - issuerUrl
         - clientId
         - clientSecret
+    PublicOidcProvider:
+      type: object
+      readOnly: true
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        logo:
+          type: string
+      required:
+        - slug
+        - name
+        - logo
     OidcSettings:
       type: object
       properties:
@@ -289,6 +303,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/OidcProvider'
+    LinkedAccount:
+      type: object
+      properties:
+        id:
+          type: number
+        username:
+          type: string
+        provider:
+          $ref: '#/components/schemas/PublicOidcProvider'
     NetworkSettings:
       type: object
       properties:
@@ -5028,6 +5051,29 @@ paths:
       responses:
         '204':
           description: User password updated
+  /user/{userId}/settings/linked-accounts:
+    get:
+      summary: Lists the user's linked OpenID Connect accounts
+      description: Lists the user's linked OpenID Connect accounts
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: List of linked accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LinkedAccount'
+        '403':
+          description: Invalid credentials
   /user/{userId}/settings/linked-accounts/plex:
     post:
       summary: Link the provided Plex account to the current user
@@ -5126,6 +5172,28 @@ paths:
           description: Unlink request invalid
         '404':
           description: User does not exist
+  /user/{userId}/settings/linked-accounts/{acctId}:
+    delete:
+      summary: Remove a linked account for a user
+      description: Removes the linked account with the given ID for a specific user. Requires `MANAGE_USERS` permission if editing other users.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+        - in: path
+          name: acctId
+          required: true
+          schema:
+            type: number
+      responses:
+        '204':
+          description: Unlinking account succeeded
+        '404':
+          description: User or linked account does not exist
   /user/{userId}/settings/notifications:
     get:
       summary: Get notification settings for a user

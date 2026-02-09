@@ -25,6 +25,7 @@ import {
   RelationCount,
 } from 'typeorm';
 import Issue from './Issue';
+import { LinkedAccount } from './LinkedAccount';
 import { MediaRequest } from './MediaRequest';
 import SeasonRequest from './SeasonRequest';
 import { UserPushSubscription } from './UserPushSubscription';
@@ -90,6 +91,9 @@ export class User {
 
   @Column({ type: 'varchar', nullable: true, select: false })
   public plexToken?: string | null;
+
+  @OneToMany(() => LinkedAccount, (link) => link.user)
+  public linkedAccounts: LinkedAccount[];
 
   @Column({ type: 'integer', default: 0 })
   public permissions = 0;
