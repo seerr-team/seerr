@@ -1599,5 +1599,11 @@
   "components.Settings.noSpecialCharacters": "La configuration doit être une liste d'identifiants de mots-clés TMDB délimités par des virgules, et ne doit ni commencer ni se terminer par une virgule.",
   "components.Settings.SettingsNetwork.dnsCacheHoverTip": "N'activez PAS ceci si vous rencontrez des problèmes avec la résolution DNS",
   "components.Settings.animeMetadataProvider": "Fournisseur de métadonnées pour les animés",
-  "components.Settings.SettingsJobsCache.editJobScheduleSelectorDays": "Tous les {jobScheduleDays, plural, one {jour} other {{jobScheduleDays} jours}}"
+  "components.Settings.SettingsJobsCache.editJobScheduleSelectorDays": "Tous les {jobScheduleDays, plural, one {jour} other {{jobScheduleDays} jours}}",
+  "components.Settings.SettingsAbout.aboutseerr": "",
+  "components.Settings.SettingsAbout.contribute": "",
+  "components.Settings.SettingsAbout.supportseerr": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMaxTtl": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMinTtl": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.activesubscription": ""
 }

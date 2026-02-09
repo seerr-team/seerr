@@ -1599,5 +1599,11 @@
   "components.Settings.SettingsMain.enableSpecialEpisodes": "",
   "components.Settings.SettingsMain.streamingRegion": "",
   "components.Settings.SettingsMain.streamingRegionTip": "",
-  "i18n.blacklistError": ""
+  "i18n.blacklistError": "",
+  "components.Settings.SettingsAbout.aboutseerr": "",
+  "components.Settings.SettingsAbout.contribute": "",
+  "components.Settings.SettingsAbout.supportseerr": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMaxTtl": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMinTtl": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.activesubscription": ""
 }

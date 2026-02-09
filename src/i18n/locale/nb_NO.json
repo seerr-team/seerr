@@ -1599,5 +1599,11 @@
   "components.Discover.FilterSlideover.voteCount": "",
   "components.Settings.SettingsMain.toastSettingsSuccess": "",
   "components.Setup.back": "",
-  "components.Setup.configemby": ""
+  "components.Setup.configemby": "",
+  "components.Settings.SettingsAbout.aboutseerr": "",
+  "components.Settings.SettingsAbout.contribute": "",
+  "components.Settings.SettingsAbout.supportseerr": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMaxTtl": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMinTtl": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.activesubscription": ""
 }

@@ -1599,5 +1599,11 @@
   "components.Settings.Notifications.NotificationsNtfy.topic": "Onderwerp",
   "components.Settings.Notifications.NotificationsNtfy.username": "Gebruikersnaam",
   "components.Settings.Notifications.NotificationsNtfy.validationNtfyTopic": "Je moet een onderwerp invullen",
-  "components.Settings.Notifications.NotificationsNtfy.validationNtfyUrl": "Je moet een geldige URL invullen"
+  "components.Settings.Notifications.NotificationsNtfy.validationNtfyUrl": "Je moet een geldige URL invullen",
+  "components.Settings.SettingsAbout.aboutseerr": "",
+  "components.Settings.SettingsAbout.contribute": "",
+  "components.Settings.SettingsAbout.supportseerr": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMaxTtl": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMinTtl": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.activesubscription": ""
 }
