@@ -4128,6 +4128,69 @@ paths:
               required:
                 - email
                 - password
+  /auth/oidc/login/{slug}:
+    get:
+      summary: Initiate OpenID Connect login
+      description: Initiates the OpenID Connect authorization code flow with PKCE for the specified provider. Returns a redirect URL to the provider's authorization endpoint.
+      security: []
+      tags:
+        - auth
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+          description: Provider slug
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  redirectUrl:
+                    type: string
+        '403':
+          description: OpenID Connect sign-in is disabled or provider not found
+  /auth/oidc/callback/{slug}:
+    get:
+      summary: Handle OpenID Connect callback
+      description: Handles the authorization code callback from the OpenID Connect provider. Exchanges the code for tokens, validates claims, and either logs in an existing user, links the account to the currently logged-in user, or creates a new user if allowed.
+      security: []
+      tags:
+        - auth
+      x-allow-unknown-query-parameters: true
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+          description: Provider slug
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: 'ok'
+                  to:
+                    type: string
+                    example: '/'
+        '400':
+          description: Invalid token response or unable to create new user account
+        '403':
+          description: OpenID Connect sign-in is disabled or insufficient permissions
+        '409':
+          description: A user with this email address already exists
+        '500':
+          description: An unknown error occurred
   /auth/logout:
     post:
       summary: Sign out and clear session cookie

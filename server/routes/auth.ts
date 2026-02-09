@@ -4,6 +4,7 @@ import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType, ServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
+import { LinkedAccount } from '@server/entity/LinkedAccount';
 import { User } from '@server/entity/User';
 import { startJobs } from '@server/job/schedule';
 import { Permission } from '@server/lib/permissions';
@@ -15,8 +16,10 @@ import { ApiError } from '@server/types/error';
 import { getAppVersion } from '@server/utils/appVersion';
 import { getHostname } from '@server/utils/getHostname';
 import axios from 'axios';
-import { Router } from 'express';
+import { Router, type Request } from 'express';
+import gravatarUrl from 'gravatar-url';
 import net from 'net';
+import * as openIdClient from 'openid-client';
 import validator from 'validator';
 
 const authRoutes = Router();
@@ -642,6 +645,265 @@ authRoutes.post('/local', async (req, res, next) => {
     return next({
       status: 500,
       message: 'Unable to authenticate.',
+    });
+  }
+});
+
+function getOidcRedirectUrl(req: Request) {
+  const settings = getSettings();
+
+  const callbackUrl = new URL(
+    `/login`,
+    settings.main.applicationUrl || `${req.protocol}://${req.headers.host}`
+  );
+  return callbackUrl;
+}
+
+authRoutes.get('/oidc/login/:slug', async (req, res, next) => {
+  const settings = getSettings();
+  const provider = settings.oidc.providers.find(
+    (p) => p.slug === req.params.slug
+  );
+
+  if (!settings.main.oidcLogin || !provider) {
+    return next({
+      status: 403,
+      message: 'OpenID Connect sign-in is disabled.',
+    });
+  }
+
+  const config = await openIdClient.discovery(
+    new URL(provider.issuerUrl),
+    provider.clientId,
+    provider.clientSecret
+  );
+
+  const code_verifier = openIdClient.randomPKCECodeVerifier();
+  const code_challenge =
+    await openIdClient.calculatePKCECodeChallenge(code_verifier);
+  res.cookie('oidc-code-verifier', code_verifier, {
+    maxAge: 60000,
+    httpOnly: true,
+    secure: req.protocol === 'https',
+  });
+
+  const callbackUrl = getOidcRedirectUrl(req);
+
+  const parameters: Record<string, string> = {
+    redirect_uri: callbackUrl.toString(),
+    scope: provider.scopes ?? 'openid profile email',
+    code_challenge,
+    code_challenge_method: 'S256',
+  };
+
+  /**
+   * We cannot be sure the server supports PKCE so we're going to use state too.
+   * Use of PKCE is backwards compatible even if the AS doesn't support it which
+   * is why we're using it regardless. Like PKCE, random state must be generated
+   * for every redirect to the authorization_endpoint.
+   */
+  if (!config.serverMetadata().supportsPKCE()) {
+    const state = openIdClient.randomState();
+    parameters.state = state;
+    res.cookie('oidc-state', state, {
+      maxAge: 60000,
+      httpOnly: true,
+      secure: req.protocol === 'https',
+    });
+  }
+
+  const redirectUrl = openIdClient.buildAuthorizationUrl(config, parameters);
+
+  return res.status(200).json({
+    redirectUrl,
+  });
+});
+
+authRoutes.get('/oidc/callback/:slug', async (req, res, next) => {
+  const settings = getSettings();
+  const provider = settings.oidc.providers.find(
+    (p) => p.slug === req.params.slug
+  );
+
+  if (!settings.main.oidcLogin || !provider) {
+    return next({
+      status: 403,
+      message: 'OpenID Connect sign-in is disabled',
+    });
+  }
+
+  try {
+    const config = await openIdClient.discovery(
+      new URL(provider.issuerUrl),
+      provider.clientId,
+      provider.clientSecret
+    );
+
+    const pkceCodeVerifier = req.cookies['oidc-code-verifier'];
+    const expectedState = req.cookies['oidc-state'];
+
+    const redirectUrl = getOidcRedirectUrl(req);
+    redirectUrl.search = `?${req.url.split('?')[1] ?? ''}`;
+
+    const tokens = await openIdClient.authorizationCodeGrant(
+      config,
+      redirectUrl,
+      {
+        pkceCodeVerifier,
+        expectedState,
+      }
+    );
+
+    const claims = tokens.claims();
+    if (claims == null) {
+      logger.info('Failed OIDC login attempt', {
+        cause:
+          'Missing ID token in response. Provider does not support OpenID Connect.',
+        ip: req.ip,
+        provider: provider.name,
+      });
+
+      return next({
+        status: 400,
+        message: 'Invalid token response',
+      });
+    }
+
+    const requiredClaims = (provider.requiredClaims ?? '')
+      .split(' ')
+      .filter((s) => !!s);
+
+    const userInfo = await openIdClient.fetchUserInfo(
+      config,
+      tokens.access_token,
+      claims.sub
+    );
+
+    const fullUserInfo = { ...claims, ...userInfo };
+
+    // Validate that user meets required claims
+    const hasRequiredClaims = requiredClaims.every((claim) => {
+      const value = userInfo[claim];
+      return value === true;
+    });
+
+    if (!hasRequiredClaims) {
+      logger.info('Failed OIDC login attempt', {
+        cause: 'Failed to validate required claims',
+        ip: req.ip,
+        requiredClaims: provider.requiredClaims,
+      });
+      return next({
+        status: 403,
+        message: 'Insufficient permissions',
+      });
+    }
+
+    // Map identifier to linked account
+    const userRepository = getRepository(User);
+    const linkedAccountsRepository = getRepository(LinkedAccount);
+
+    const linkedAccount = await linkedAccountsRepository.findOne({
+      relations: {
+        user: true,
+      },
+      where: {
+        provider: provider.slug,
+        sub: fullUserInfo.sub,
+      },
+    });
+    let user = linkedAccount?.user;
+
+    // If there is already a user logged in, and no linked account, link the account.
+    if (req.user != null && linkedAccount == null) {
+      const linkedAccount = new LinkedAccount({
+        user: req.user,
+        provider: provider.slug,
+        sub: fullUserInfo.sub,
+        username: fullUserInfo.preferred_username ?? req.user.displayName,
+      });
+
+      await linkedAccountsRepository.save(linkedAccount);
+      return res
+        .status(200)
+        .json({ status: 'ok', to: '/profile/settings/linked-accounts' });
+    }
+
+    // Create user if one doesn't already exist
+    if (!user && fullUserInfo.email != null && provider.newUserLogin) {
+      // Check if a user with this email already exists
+      const existingUser = await userRepository.findOne({
+        where: { email: fullUserInfo.email },
+      });
+
+      if (existingUser) {
+        // If a user with the email exists, throw a 409 Conflict error
+        return next({
+          status: 409,
+          message: 'A user with this email address already exists.',
+        });
+      }
+
+      logger.info(`Creating user for ${fullUserInfo.email}`, {
+        ip: req.ip,
+        email: fullUserInfo.email,
+      });
+
+      const avatar =
+        fullUserInfo.picture ??
+        gravatarUrl(fullUserInfo.email, { default: 'mm', size: 200 });
+      user = new User({
+        avatar: avatar,
+        username: fullUserInfo.preferred_username,
+        email: fullUserInfo.email,
+        permissions: settings.main.defaultPermissions,
+        plexToken: '',
+        userType: UserType.LOCAL,
+      });
+      await userRepository.save(user);
+
+      const linkedAccount = new LinkedAccount({
+        user,
+        provider: provider.slug,
+        sub: fullUserInfo.sub,
+        username: fullUserInfo.preferred_username ?? fullUserInfo.email,
+      });
+      await linkedAccountsRepository.save(linkedAccount);
+
+      user.linkedAccounts = [linkedAccount];
+      await userRepository.save(user);
+    }
+
+    if (!user) {
+      logger.debug('Failed OIDC sign-up attempt', {
+        cause: provider.newUserLogin
+          ? 'User did not have an account, and was missing an associated email address.'
+          : 'User did not have an account, and new user login was disabled.',
+      });
+      return next({
+        status: 400,
+        message: provider.newUserLogin
+          ? 'Unable to create new user account (missing email address)'
+          : 'Unable to create new user account (new user login is disabled)',
+      });
+    }
+
+    // Set logged in session and return
+    if (req.session) {
+      req.session.userId = user.id;
+    }
+
+    // Success!
+    return res.status(200).json({ status: 'ok', to: '/' });
+  } catch (error) {
+    logger.error('Failed OIDC login attempt', {
+      cause: 'Unknown error',
+      ip: req.ip,
+      error,
+    });
+    return next({
+      status: 500,
+      message: 'An unknown error occurred',
     });
   }
 });

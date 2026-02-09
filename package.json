@@ -74,6 +74,7 @@
     "node-gyp": "9.3.1",
     "node-schedule": "2.1.1",
     "nodemailer": "7.0.12",
+    "openid-client": "^6.8.2",
     "openpgp": "6.3.0",
     "pg": "8.17.2",
     "pug": "3.0.3",
