@@ -83,6 +83,8 @@ const useDiscover = <
     {
       initialSize: 3,
       revalidateFirstPage: false,
+      dedupingInterval: 30000,
+      revalidateOnFocus: false,
     }
   );
 

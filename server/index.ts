@@ -165,12 +165,15 @@ app
       try {
         const descriptor = Object.getOwnPropertyDescriptor(req, 'ip');
         if (descriptor?.writable === true) {
-          (req as any).ip = getClientIp(req) ?? '';
+          Object.defineProperty(req, 'ip', {
+            ...descriptor,
+            value: getClientIp(req) ?? '',
+          });
         }
       } catch (e) {
         logger.error('Failed to attach the ip to the request', {
           label: 'Middleware',
-          message: e.message,
+          message: (e as Error).message,
         });
       } finally {
         next();

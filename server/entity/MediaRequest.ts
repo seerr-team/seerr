@@ -21,6 +21,7 @@ import {
   AfterUpdate,
   Column,
   Entity,
+  Index,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -513,6 +514,7 @@ export class MediaRequest {
   public id: number;
 
   @Column({ type: 'integer' })
+  @Index()
   public status: MediaRequestStatus;
 
   @ManyToOne(() => Media, (media) => media.requests, {

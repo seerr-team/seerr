@@ -19,7 +19,7 @@ import type {
   WatchProviderDetails,
 } from '@server/models/common';
 import axios from 'axios';
-import { orderBy } from 'lodash';
+import orderBy from 'lodash/orderBy';
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import type { MultiValue, SingleValue } from 'react-select';
