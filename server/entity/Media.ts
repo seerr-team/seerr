@@ -26,6 +26,7 @@ import { MediaRequest } from './MediaRequest';
 import Season from './Season';
 
 @Entity()
+@Index(['tmdbId', 'mediaType'])
 class Media {
   public static async getRelatedMedia(
     user: User | undefined,
@@ -101,9 +102,11 @@ class Media {
   public imdbId?: string;
 
   @Column({ type: 'int', default: MediaStatus.UNKNOWN })
+  @Index()
   public status: MediaStatus;
 
   @Column({ type: 'int', default: MediaStatus.UNKNOWN })
+  @Index()
   public status4k: MediaStatus;
 
   @OneToMany(() => MediaRequest, (request) => request.media, {
