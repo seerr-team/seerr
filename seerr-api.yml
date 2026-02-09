@@ -254,6 +254,41 @@ components:
         enableSpecialEpisodes:
           type: boolean
           example: false
+    OidcProvider:
+      type: object
+      properties:
+        slug:
+          type: string
+          readOnly: true
+        name:
+          type: string
+        issuerUrl:
+          type: string
+        clientId:
+          type: string
+        clientSecret:
+          type: string
+        logo:
+          type: string
+        requiredClaims:
+          type: string
+        scopes:
+          type: string
+        newUserLogin:
+          type: boolean
+      required:
+        - slug
+        - name
+        - issuerUrl
+        - clientId
+        - clientSecret
+    OidcSettings:
+      type: object
+      properties:
+        providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/OidcProvider'
     NetworkSettings:
       type: object
       properties:
@@ -2215,6 +2250,64 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MainSettings'
+  /settings/oidc:
+    get:
+      summary: Get OpenID Connect settings
+      description: Retrieves all OpenID Connect settings in a JSON object.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcSettings'
+  /settings/oidc/{provider}:
+    put:
+      summary: Update OpenID Connect provider
+      description: Updates an existing OpenID Connect provider with the provided values.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+          description: Provider slug
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OidcProvider'
+      responses:
+        '200':
+          description: 'Radarr instance updated'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RadarrSettings'
+    delete:
+      summary: Delete OpenID Connect provider
+      description: Deletes an existing OpenID Connect provider based on the provider slug parameter.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+          description: Provider slug
+      responses:
+        '200':
+          description: 'OpenID Connect provider deleted'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcSettings'
   /settings/network:
     get:
       summary: Get network settings
