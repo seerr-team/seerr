@@ -612,7 +612,7 @@ const SettingsJobs = () => {
           </Table.TBody>
         </Table>
       </div>
-      {settings.currentSettings.dnsCacheEnabled && (
+      {cacheData?.dnsCache != null && (
         <>
           <div>
             <h3 className="heading">{intl.formatMessage(messages.dnsCache)}</h3>

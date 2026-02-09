@@ -31,7 +31,6 @@ const defaultSettings = {
   emailEnabled: false,
   newPlexLogin: true,
   youtubeUrl: '',
-  dnsCacheEnabled: false,
 };
 
 export const SettingsContext = React.createContext<SettingsContextProps>({
