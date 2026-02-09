@@ -4,6 +4,7 @@ import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType, ServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
+import { LinkedAccount } from '@server/entity/LinkedAccount';
 import { User } from '@server/entity/User';
 import { startJobs } from '@server/job/schedule';
 import { Permission } from '@server/lib/permissions';
@@ -15,8 +16,10 @@ import { ApiError } from '@server/types/error';
 import { getAppVersion } from '@server/utils/appVersion';
 import { getHostname } from '@server/utils/getHostname';
 import axios from 'axios';
-import { Router } from 'express';
+import { Router, type Request } from 'express';
+import gravatarUrl from 'gravatar-url';
 import net from 'net';
+import * as openIdClient from 'openid-client';
 import validator from 'validator';
 import { z } from 'zod';
 
@@ -824,6 +827,358 @@ authRoutes.post('/local', async (req, res, next) => {
     });
   }
 });
+
+const getOidcRedirectUrl = (req: Request) => {
+  const returnUrl =
+    typeof req.query.returnUrl === 'string' ? req.query.returnUrl : '/login';
+  return new URL(
+    returnUrl,
+    getSettings().main.applicationUrl || `${req.protocol}://${req.headers.host}`
+  );
+};
+
+authRoutes.get('/oidc/login/:slug', async (req, res, next) => {
+  const settings = getSettings();
+  const provider = settings.oidc.providers.find(
+    (p) => p.slug === req.params.slug
+  );
+
+  if (!settings.main.oidcLogin || !provider) {
+    return next({
+      status: 403,
+      error: ApiErrorCode.Unauthorized,
+    });
+  }
+
+  let config: openIdClient.Configuration;
+  try {
+    config = await openIdClient.discovery(
+      new URL(provider.issuerUrl),
+      provider.clientId,
+      provider.clientSecret,
+      undefined,
+      {
+        execute:
+          process.env.OIDC_ALLOW_INSECURE === 'true'
+            ? [openIdClient.allowInsecureRequests]
+            : [],
+      }
+    );
+  } catch (error) {
+    logger.error('Failed OIDC provider discovery', {
+      label: 'Auth',
+      provider: provider.name,
+      ip: req.ip,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    return next({
+      status: 500,
+      error: ApiErrorCode.OidcProviderDiscoveryFailed,
+    });
+  }
+
+  const code_verifier = openIdClient.randomPKCECodeVerifier();
+  const code_challenge =
+    await openIdClient.calculatePKCECodeChallenge(code_verifier);
+  res.cookie('oidc-code-verifier', code_verifier, {
+    maxAge: 60000,
+    httpOnly: true,
+    secure: req.protocol === 'https',
+  });
+
+  const callbackUrl = getOidcRedirectUrl(req);
+
+  const parameters: Record<string, string> = {
+    redirect_uri: callbackUrl.toString(),
+    scope: provider.scopes ?? 'openid profile email',
+    code_challenge,
+    code_challenge_method: 'S256',
+  };
+
+  /**
+   * We cannot be sure the server supports PKCE so we're going to use state too.
+   * Use of PKCE is backwards compatible even if the AS doesn't support it which
+   * is why we're using it regardless. Like PKCE, random state must be generated
+   * for every redirect to the authorization_endpoint.
+   */
+  if (!config.serverMetadata().supportsPKCE()) {
+    const state = openIdClient.randomState();
+    parameters.state = state;
+    res.cookie('oidc-state', state, {
+      maxAge: 60000,
+      httpOnly: true,
+      secure: req.protocol === 'https',
+    });
+  }
+
+  let redirectUrl: URL;
+  try {
+    redirectUrl = openIdClient.buildAuthorizationUrl(config, parameters);
+  } catch (error) {
+    logger.error('Failed to build OIDC authorization URL', {
+      label: 'Auth',
+      provider: provider.name,
+      ip: req.ip,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    return next({
+      status: 500,
+      error: ApiErrorCode.OidcAuthorizationFailed,
+    });
+  }
+
+  return res.status(200).json({
+    redirectUrl,
+  });
+});
+
+authRoutes.post(
+  '/oidc/callback/:slug',
+  async (
+    req: Request<{ slug: string }, never, { callbackUrl: string }>,
+    res,
+    next
+  ) => {
+    const settings = getSettings();
+    const provider = settings.oidc.providers.find(
+      (p) => p.slug === req.params.slug
+    );
+
+    if (!settings.main.oidcLogin || !provider) {
+      return next({
+        status: 403,
+        error: ApiErrorCode.Unauthorized,
+      });
+    }
+
+    let config: openIdClient.Configuration;
+    try {
+      config = await openIdClient.discovery(
+        new URL(provider.issuerUrl),
+        provider.clientId,
+        provider.clientSecret,
+        undefined,
+        {
+          execute:
+            process.env.OIDC_ALLOW_INSECURE === 'true'
+              ? [openIdClient.allowInsecureRequests]
+              : [],
+        }
+      );
+    } catch (error) {
+      logger.error('Failed OIDC provider discovery', {
+        label: 'Auth',
+        provider: provider.name,
+        ip: req.ip,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return next({
+        status: 500,
+        error: ApiErrorCode.OidcProviderDiscoveryFailed,
+      });
+    }
+
+    const pkceCodeVerifier = req.cookies['oidc-code-verifier'];
+    const expectedState = req.cookies['oidc-state'];
+
+    const redirectUrl = new URL(req.body.callbackUrl);
+
+    let tokens: openIdClient.TokenEndpointResponse &
+      openIdClient.TokenEndpointResponseHelpers;
+    try {
+      tokens = await openIdClient.authorizationCodeGrant(config, redirectUrl, {
+        pkceCodeVerifier,
+        expectedState,
+      });
+    } catch (error) {
+      logger.error('Failed OIDC authorization code grant', {
+        label: 'Auth',
+        provider: provider.name,
+        ip: req.ip,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return next({
+        status: 500,
+        error: ApiErrorCode.OidcAuthorizationFailed,
+      });
+    }
+
+    const claims = tokens.claims();
+    if (claims == null) {
+      logger.info('Failed OIDC login attempt', {
+        cause:
+          'Missing ID token in response. Provider does not support OpenID Connect.',
+        ip: req.ip,
+        provider: provider.name,
+      });
+
+      return next({
+        status: 500,
+        error: ApiErrorCode.OidcAuthorizationFailed,
+      });
+    }
+
+    const requiredClaims = (provider.requiredClaims ?? '')
+      .split(' ')
+      .filter((s) => !!s);
+
+    let fullUserInfo: openIdClient.IDToken & openIdClient.UserInfoResponse =
+      claims;
+
+    if (config.serverMetadata().userinfo_endpoint) {
+      try {
+        const userInfo = await openIdClient.fetchUserInfo(
+          config,
+          tokens.access_token,
+          claims.sub
+        );
+        fullUserInfo = { ...claims, ...userInfo };
+      } catch (error) {
+        logger.error('Failed to fetch OIDC user info', {
+          label: 'Auth',
+          provider: provider.name,
+          ip: req.ip,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return next({
+          status: 500,
+          error: ApiErrorCode.OidcAuthorizationFailed,
+        });
+      }
+    }
+
+    // Validate that user meets required claims
+    const hasRequiredClaims = requiredClaims.every((claim) => {
+      const value = fullUserInfo[claim];
+      return value === true;
+    });
+
+    if (!hasRequiredClaims) {
+      logger.info('Failed OIDC login attempt', {
+        cause: 'Failed to validate required claims',
+        ip: req.ip,
+        requiredClaims: provider.requiredClaims,
+      });
+      return next({
+        status: 403,
+        error: ApiErrorCode.Unauthorized,
+      });
+    }
+
+    // Map identifier to linked account
+    const userRepository = getRepository(User);
+    const linkedAccountsRepository = getRepository(LinkedAccount);
+
+    const linkedAccount = await linkedAccountsRepository.findOne({
+      relations: {
+        user: true,
+      },
+      where: {
+        provider: provider.slug,
+        sub: fullUserInfo.sub,
+      },
+    });
+    let user = linkedAccount?.user;
+
+    // If there is already a user logged in, handle account linking
+    if (req.user != null) {
+      // Check if this OIDC account is already linked to a different user
+      if (linkedAccount != null && linkedAccount.user.id !== req.user.id) {
+        logger.warn('Failed OIDC account linking attempt', {
+          cause: 'Account is already linked to a different user',
+          ip: req.ip,
+          provider: provider.slug,
+          currentUserId: req.user.id,
+          linkedUserId: linkedAccount.user.id,
+        });
+        return next({
+          status: 409,
+          error: ApiErrorCode.OidcAccountAlreadyLinked,
+        });
+      }
+
+      // If no linked account exists, link the account
+      if (linkedAccount == null) {
+        const newLinkedAccount = new LinkedAccount({
+          user: req.user,
+          provider: provider.slug,
+          sub: fullUserInfo.sub,
+          username: fullUserInfo.preferred_username ?? req.user.displayName,
+        });
+
+        await linkedAccountsRepository.save(newLinkedAccount);
+      }
+
+      return res.sendStatus(204);
+    }
+
+    // Create user if one doesn't already exist
+    if (!user && fullUserInfo.email != null && provider.newUserLogin) {
+      // Check if a user with this email already exists
+      const existingUser = await userRepository.findOne({
+        where: { email: fullUserInfo.email },
+      });
+
+      if (existingUser) {
+        return next({
+          status: 403,
+          error: ApiErrorCode.Unauthorized,
+        });
+      }
+
+      logger.info(`Creating user for ${fullUserInfo.email}`, {
+        ip: req.ip,
+        email: fullUserInfo.email,
+      });
+
+      const avatar =
+        fullUserInfo.picture ??
+        gravatarUrl(fullUserInfo.email, { default: 'mm', size: 200 });
+      user = new User({
+        avatar: avatar,
+        username: fullUserInfo.preferred_username,
+        email: fullUserInfo.email,
+        permissions: settings.main.defaultPermissions,
+        plexToken: '',
+        userType: UserType.LOCAL,
+      });
+      await userRepository.save(user);
+
+      const linkedAccount = new LinkedAccount({
+        user,
+        provider: provider.slug,
+        sub: fullUserInfo.sub,
+        username: fullUserInfo.preferred_username ?? fullUserInfo.email,
+      });
+      await linkedAccountsRepository.save(linkedAccount);
+
+      user.linkedAccounts = [linkedAccount];
+      await userRepository.save(user);
+    }
+
+    if (!user) {
+      logger.debug('Failed OIDC sign-up attempt', {
+        cause: provider.newUserLogin
+          ? 'User did not have an account, and was missing an associated email address.'
+          : 'User did not have an account, and new user login was disabled.',
+      });
+      return next({
+        status: provider.newUserLogin ? 400 : 403,
+        error: provider.newUserLogin
+          ? ApiErrorCode.OidcMissingEmail
+          : ApiErrorCode.Unauthorized,
+      });
+    }
+
+    // Set logged in session and return
+    if (req.session) {
+      req.session.userId = user.id;
+    }
+
+    // Success!
+    return res.sendStatus(204);
+  }
+);
 
 authRoutes.post('/logout', async (req, res, next) => {
   try {

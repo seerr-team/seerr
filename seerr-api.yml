@@ -4142,6 +4142,111 @@ paths:
               required:
                 - email
                 - password
+  /auth/oidc/login/{slug}:
+    get:
+      summary: Initiate OpenID Connect login
+      description: Initiates the OpenID Connect authorization code flow with PKCE for the specified provider. Returns a redirect URL to the provider's authorization endpoint.
+      security: []
+      tags:
+        - auth
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+          description: Provider slug
+        - in: query
+          name: returnUrl
+          required: false
+          allowReserved: true
+          schema:
+            type: string
+            format: uri
+          description: URL to redirect to after login. Defaults to /login if not specified.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  redirectUrl:
+                    type: string
+        '403':
+          description: OpenID Connect sign-in is disabled or provider not found
+  /auth/oidc/callback/{slug}:
+    post:
+      summary: Handle OpenID Connect callback
+      description: Handles the authorization code callback from the OpenID Connect provider. Exchanges the code for tokens, validates claims, and either logs in an existing user, links the account to the currently logged-in user, or creates a new user if allowed.
+      security: []
+      tags:
+        - auth
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+          description: Provider slug
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - callbackUrl
+              properties:
+                callbackUrl:
+                  type: string
+                  format: uri
+                  description: The full callback URL including the authorization code and any other parameters returned by the OIDC provider (e.g. https://example.com/login?code=xxx).
+                  example: 'https://example.com/login?code=xxx'
+      responses:
+        '204':
+          description: Authentication successful. No response body.
+        '400':
+          description: Unable to create account (e.g. missing email address)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: 'OIDC_MISSING_EMAIL'
+        '403':
+          description: OpenID Connect sign-in is disabled, provider not found, or user does not meet required claims
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: 'UNAUTHORIZED'
+        '409':
+          description: The OIDC account is already linked to a different user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: 'OIDC_ACCOUNT_ALREADY_LINKED'
+        '500':
+          description: An error occurred (e.g. provider discovery failed, authorization failed)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: 'OIDC_AUTHORIZATION_FAILED'
   /auth/logout:
     post:
       summary: Sign out and clear session cookie
