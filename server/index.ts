@@ -270,7 +270,12 @@ app
     server.get('*path', (req, res) => handle(req, res));
     server.use(
       (
-        err: { status: number; message: string; errors: string[] },
+        err: {
+          status: number;
+          message: string;
+          errors: string[];
+          error?: string;
+        },
         _req: Request,
         res: Response,
         next: NextFunction
@@ -282,6 +287,7 @@ app
         res.status(err.status || 500).json({
           message: err.message,
           errors: err.errors,
+          ...(err.error != null && { error: err.error }),
         });
       }
     );
