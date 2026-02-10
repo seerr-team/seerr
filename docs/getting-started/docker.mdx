@@ -13,6 +13,12 @@ Refer to [Configuring Databases](/extending-seerr/database-config#postgresql-opt
 
 :::info
 An alternative Docker image is available on Docker Hub for this project. You can find it at [Docker Hub Repository Link](https://hub.docker.com/r/seerr/seerr)
+
+Our Docker images are available with the following tags:
+
+- `latest`: Always points to the most recent stable release.
+- Version tags (e.g., `v3.0.0`): For specific stable versions.
+- `develop`: Rolling release/nightly builds for using the latest changes (use with caution).
 :::
 
 :::info
@@ -139,9 +145,6 @@ Then, restart all services defined in the Compose file:
 ```bash
 docker compose up -d
 ```
-:::tip
-You may alternatively use a third-party mechanism like [dockge](https://github.com/louislam/dockge) to manage your docker compose files.
-:::
   </TabItem>
 </Tabs>
 
