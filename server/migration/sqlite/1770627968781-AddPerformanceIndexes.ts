@@ -4,7 +4,9 @@ export class AddPerformanceIndexes1770627968781 implements MigrationInterface {
   name = 'AddPerformanceIndexes1770627968781';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX "UQ_6427d07d9a171a3a1ab87480005"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "UQ_6427d07d9a171a3a1ab87480005"`
+    );
     await queryRunner.query(
       `CREATE TABLE "temporary_user_push_subscription" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "endpoint" varchar NOT NULL, "p256dh" varchar NOT NULL, "auth" varchar NOT NULL, "userId" integer, "userAgent" varchar, "createdAt" datetime DEFAULT (datetime('now')), CONSTRAINT "UQ_f90ab5a4ed54905a4bb51a7148b" UNIQUE ("auth"), CONSTRAINT "FK_03f7958328e311761b0de675fbe" FOREIGN KEY ("userId") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION)`
     );
@@ -15,7 +17,9 @@ export class AddPerformanceIndexes1770627968781 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "temporary_user_push_subscription" RENAME TO "user_push_subscription"`
     );
-    await queryRunner.query(`DROP INDEX "IDX_939f205946256cc0d2a1ac51a8"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_939f205946256cc0d2a1ac51a8"`
+    );
     await queryRunner.query(
       `CREATE TABLE "temporary_watchlist" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "ratingKey" varchar NOT NULL, "mediaType" varchar NOT NULL, "title" varchar NOT NULL, "tmdbId" integer NOT NULL, "createdAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "updatedAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "requestedById" integer, "mediaId" integer, CONSTRAINT "UNIQUE_USER_DB" UNIQUE ("tmdbId", "requestedById"), CONSTRAINT "FK_6641da8d831b93dfcb429f8b8bc" FOREIGN KEY ("mediaId") REFERENCES "media" ("id") ON DELETE CASCADE ON UPDATE NO ACTION, CONSTRAINT "FK_ae34e6b153a90672eb9dc4857d7" FOREIGN KEY ("requestedById") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION)`
     );
@@ -95,7 +99,9 @@ export class AddPerformanceIndexes1770627968781 implements MigrationInterface {
     );
     await queryRunner.query(`DROP TABLE "user"`);
     await queryRunner.query(`ALTER TABLE "temporary_user" RENAME TO "user"`);
-    await queryRunner.query(`DROP INDEX "IDX_6bbafa28411e6046421991ea21"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_6bbafa28411e6046421991ea21"`
+    );
     await queryRunner.query(
       `CREATE TABLE "temporary_blacklist" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "mediaType" varchar NOT NULL, "title" varchar, "tmdbId" integer NOT NULL, "createdAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "userId" integer, "mediaId" integer, "blacklistedTags" varchar, CONSTRAINT "UQ_5f933c8ed6ad2c31739e6b94886" UNIQUE ("tmdbId"), CONSTRAINT "UQ_e49b27917899e01d7aca6b0b15c" UNIQUE ("mediaId"), CONSTRAINT "FK_53c1ab62c3e5875bc3ac474823e" FOREIGN KEY ("userId") REFERENCES "user" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION, CONSTRAINT "FK_62b7ade94540f9f8d8bede54b99" FOREIGN KEY ("mediaId") REFERENCES "media" ("id") ON DELETE CASCADE ON UPDATE NO ACTION)`
     );
@@ -119,9 +125,15 @@ export class AddPerformanceIndexes1770627968781 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "temporary_season" RENAME TO "season"`
     );
-    await queryRunner.query(`DROP INDEX "IDX_7157aad07c73f6a6ae3bbd5ef5"`);
-    await queryRunner.query(`DROP INDEX "IDX_41a289eb1fa489c1bc6f38d9c3"`);
-    await queryRunner.query(`DROP INDEX "IDX_7ff2d11f6a83cb52386eaebe74"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_7157aad07c73f6a6ae3bbd5ef5"`
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_41a289eb1fa489c1bc6f38d9c3"`
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_7ff2d11f6a83cb52386eaebe74"`
+    );
     await queryRunner.query(
       `CREATE TABLE "temporary_media" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "mediaType" varchar NOT NULL, "tmdbId" integer NOT NULL, "tvdbId" integer, "imdbId" varchar, "status" integer NOT NULL DEFAULT (1), "status4k" integer NOT NULL DEFAULT (1), "createdAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "updatedAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "lastSeasonChange" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "mediaAddedAt" datetime DEFAULT (CURRENT_TIMESTAMP), "serviceId" integer, "serviceId4k" integer, "externalServiceId" integer, "externalServiceId4k" integer, "externalServiceSlug" varchar, "externalServiceSlug4k" varchar, "ratingKey" varchar, "ratingKey4k" varchar, "jellyfinMediaId" varchar, "jellyfinMediaId4k" varchar, CONSTRAINT "UQ_41a289eb1fa489c1bc6f38d9c3c" UNIQUE ("tvdbId"))`
     );
@@ -184,10 +196,18 @@ export class AddPerformanceIndexes1770627968781 implements MigrationInterface {
       `INSERT INTO "user_push_subscription"("id", "endpoint", "p256dh", "auth", "userId", "userAgent", "createdAt") SELECT "id", "endpoint", "p256dh", "auth", "userId", "userAgent", "createdAt" FROM "temporary_user_push_subscription"`
     );
     await queryRunner.query(`DROP TABLE "temporary_user_push_subscription"`);
-    await queryRunner.query(`DROP INDEX "IDX_f8233358694d1677a67899b90a"`);
-    await queryRunner.query(`DROP INDEX "IDX_5d6218de4f547909391a5c1347"`);
-    await queryRunner.query(`DROP INDEX "IDX_c730c2d67f271a372c39a07b7e"`);
-    await queryRunner.query(`DROP INDEX "IDX_4c696e8ed36ae34fe18abe59d2"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_f8233358694d1677a67899b90a"`
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_5d6218de4f547909391a5c1347"`
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_c730c2d67f271a372c39a07b7e"`
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_4c696e8ed36ae34fe18abe59d2"`
+    );
     await queryRunner.query(
       `ALTER TABLE "discover_slider" RENAME TO "temporary_discover_slider"`
     );
@@ -198,9 +218,15 @@ export class AddPerformanceIndexes1770627968781 implements MigrationInterface {
       `INSERT INTO "discover_slider"("id", "type", "order", "isBuiltIn", "enabled", "title", "data", "createdAt", "updatedAt") SELECT "id", "type", "order", "isBuiltIn", "enabled", "title", "data", "createdAt", "updatedAt" FROM "temporary_discover_slider"`
     );
     await queryRunner.query(`DROP TABLE "temporary_discover_slider"`);
-    await queryRunner.query(`DROP INDEX "IDX_7ff2d11f6a83cb52386eaebe74"`);
-    await queryRunner.query(`DROP INDEX "IDX_41a289eb1fa489c1bc6f38d9c3"`);
-    await queryRunner.query(`DROP INDEX "IDX_7157aad07c73f6a6ae3bbd5ef5"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_7ff2d11f6a83cb52386eaebe74"`
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_41a289eb1fa489c1bc6f38d9c3"`
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_7157aad07c73f6a6ae3bbd5ef5"`
+    );
     await queryRunner.query(`ALTER TABLE "media" RENAME TO "temporary_media"`);
     await queryRunner.query(
       `CREATE TABLE "media" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "mediaType" varchar NOT NULL, "tmdbId" integer NOT NULL, "tvdbId" integer, "imdbId" varchar, "status" integer NOT NULL DEFAULT (1), "status4k" integer NOT NULL DEFAULT (1), "createdAt" datetime NOT NULL DEFAULT (datetime('now')), "updatedAt" datetime NOT NULL DEFAULT (datetime('now')), "lastSeasonChange" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "mediaAddedAt" datetime DEFAULT (CURRENT_TIMESTAMP), "serviceId" integer, "serviceId4k" integer, "externalServiceId" integer, "externalServiceId4k" integer, "externalServiceSlug" varchar, "externalServiceSlug4k" varchar, "ratingKey" varchar, "ratingKey4k" varchar, "jellyfinMediaId" varchar, "jellyfinMediaId4k" varchar, CONSTRAINT "UQ_41a289eb1fa489c1bc6f38d9c3c" UNIQUE ("tvdbId"))`
@@ -228,7 +254,9 @@ export class AddPerformanceIndexes1770627968781 implements MigrationInterface {
       `INSERT INTO "season"("id", "seasonNumber", "status", "createdAt", "updatedAt", "mediaId", "status4k") SELECT "id", "seasonNumber", "status", "createdAt", "updatedAt", "mediaId", "status4k" FROM "temporary_season"`
     );
     await queryRunner.query(`DROP TABLE "temporary_season"`);
-    await queryRunner.query(`DROP INDEX "IDX_6bbafa28411e6046421991ea21"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_6bbafa28411e6046421991ea21"`
+    );
     await queryRunner.query(
       `ALTER TABLE "blacklist" RENAME TO "temporary_blacklist"`
     );
@@ -308,7 +336,9 @@ export class AddPerformanceIndexes1770627968781 implements MigrationInterface {
       `INSERT INTO "issue_comment"("id", "message", "createdAt", "updatedAt", "userId", "issueId") SELECT "id", "message", "createdAt", "updatedAt", "userId", "issueId" FROM "temporary_issue_comment"`
     );
     await queryRunner.query(`DROP TABLE "temporary_issue_comment"`);
-    await queryRunner.query(`DROP INDEX "IDX_939f205946256cc0d2a1ac51a8"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_939f205946256cc0d2a1ac51a8"`
+    );
     await queryRunner.query(
       `ALTER TABLE "watchlist" RENAME TO "temporary_watchlist"`
     );
