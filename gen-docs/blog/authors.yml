@@ -24,6 +24,6 @@ seerr-team:
   name: Seerr Team
   title: The team behind Seerr, formerly known as the Jellyseerr and Overseerr teams.
   url: https://seerr.dev
-  image_url: https://raw.githubusercontent.com/seerr-team/seerr/refs/heads/develop/public/os_icon.svg
+  image_url: https://github.com/seerr-team.png
   socials:
     github: seerr-team
