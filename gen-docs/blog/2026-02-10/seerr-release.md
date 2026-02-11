@@ -28,7 +28,7 @@ Seerr brings several features that were previously available in Jellyseerr but m
 * **Helm chart included**: Enables easier installation and maintenance in Kubernetes environments.
 * **ntfy.sh notifications**: Support for sending notifications via ntfy.sh.
 * **Disable special seasons:** Adds a setting to prevent special seasons from being shown or requested.
-* **New languages** : Turkish and Basque
+* **New languages**: Turkish and Basque
 
 ## What's new since the previous Jellyseerr release
 
