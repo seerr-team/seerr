@@ -64,7 +64,7 @@ const config: Config = {
     navbar: {
       logo: {
         alt: 'Seerr',
-        src: 'img/logo.svg',
+        src: 'img/logo_full.svg',
       },
       items: [
         {
