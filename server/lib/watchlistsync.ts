@@ -3,6 +3,7 @@ import { MediaStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import {
+  BlacklistedMediaError,
   DuplicateMediaRequestError,
   MediaRequest,
   NoSeasonsAvailableError,
@@ -143,6 +144,9 @@ class WatchlistSync {
               mediaTitle: mediaItem.title,
               errorMessage: e.message,
             });
+            break;
+          // Blacklisted media should be silently ignored during watchlist sync to avoid spam
+          case BlacklistedMediaError:
             break;
           default:
             logger.error('Failed to create media request from watchlist', {
