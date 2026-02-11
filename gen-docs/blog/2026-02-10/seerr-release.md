@@ -75,7 +75,7 @@ This new version also brings additional metadata to Jellyfin-managed collections
 
 ### Dynamic Placeholders in Webhook URLs
 
-Webhook notifications are now more powerful and adaptable with **dynamic placeholder support in webhook URLs**. This allows Seerr to automatically replace placeholders in the webhook UR with real values at runtime.
+Webhook notifications are now more powerful and adaptable with **dynamic placeholder support in webhook URLs**. This allows Seerr to automatically replace placeholders in the webhook URL with real values at runtime.
 
 For example, you can include the requester's username directly in your webhook URL to better integrate with third-party services or user-specific endpoints.
 
