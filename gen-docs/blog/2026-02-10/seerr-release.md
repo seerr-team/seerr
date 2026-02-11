@@ -1,6 +1,6 @@
 ---
 title: "Seerr Release: Unifying Overseerr and Jellyseerr"
-description: "Overseerr and Jellyseerr are merging into an unified project: Seerr"
+description: "Overseerr and Jellyseerr are merging into a unified project: Seerr"
 slug: seerr-release
 authors: [seerr-team]
 image: https://raw.githubusercontent.com/seerr-team/seerr/refs/heads/develop/gen-docs/static/img/logo_full.svg
