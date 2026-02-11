@@ -73,6 +73,11 @@ const config: Config = {
           position: 'right',
         },
         {
+          href: 'https://discord.gg/seerr',
+          label: 'Discord',
+          position: 'right',
+        },
+        {
           href: 'https://github.com/seerr-team/seerr',
           label: 'GitHub',
           position: 'right',
