@@ -21,7 +21,7 @@ Seerr brings several features that were previously available in Jellyseerr but m
 
 * **Alternative media solution:** Added support for Jellyfin and Emby in addition to the existing Plex integration.
 * **PostgreSQL support**: In addition to SQLite, you can now opt in to using a PostgreSQL database.
-* **Blacklist for movies, series, and tags**: Allows permitted users to hide movies, series, or tags from regular users.
+* **Blocklist for movies, series, and tags**: Allows permitted users to hide movies, series, or tags from regular users.
 * **Override rules**: Adjust default request settings based on conditions such as user, tag, or other criteria.
 * **TVDB metadata**: Option to use TheTVDB metadata for series (as in Sonarr) instead of TMDB.
 * **DNS caching**: Reduces lookup times and external requests, especially useful when using systems like Pi-Hole/Adguard Home.
