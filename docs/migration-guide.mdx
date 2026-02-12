@@ -5,6 +5,10 @@ title: Migration guide
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+:::important
+Read our [release announcement](/blog/seerr-release) to learn what Seerr means for Jellyseerr and Overseerr users.
+:::
+
 Whether you come from Overseerr or Jellyseerr, you don't need to perform any manual migration steps, your instance will automatically be migrated to Seerr.
 This migration will run automatically the first time you start your instance using the Seerr codebase (Docker image or source build or Kubernetes, etc.).
 An additional migration will happen for Overseerr users, to migrate their configuration to the new codebase.
@@ -25,6 +29,19 @@ Some methods are currently not maintained, but this does not mean they are perma
 
 ## Docker
 Refer to [Seerr Docker Documentation](/getting-started/docker), all of our examples have been updated to reflect the below change.
+
+:::info
+Seerr provides a secure, fully featured image with everything you need included.
+We sincerely appreciate the past contributions from third-party maintainers, which helped enhance this image and its capabilities.
+To maintain consistency and security, we encourage everyone to use the features available in the official Seerr image.
+If you feel something is missing, please submit a feature request—your feedback is always welcome!
+
+Our Docker images are available with the following tags:
+
+- `latest`: Always points to the most recent stable release.
+- Version tags (e.g., `v3.0.0`): For specific stable versions.
+- `develop`: Rolling release/nightly builds for using the latest changes (use with caution).
+:::
 
 Changes :
 - Renamed all references from `overseerr` or `jellyseerr` to `seerr`.
