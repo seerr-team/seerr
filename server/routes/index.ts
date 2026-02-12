@@ -13,9 +13,9 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { checkUser, isAuthenticated } from '@server/middleware/auth';
 import deprecatedRoute from '@server/middleware/deprecation';
+import { mapWatchProviderDetails } from '@server/models/common';
 import { mapProductionCompany } from '@server/models/Movie';
 import { mapNetwork } from '@server/models/Tv';
-import { mapWatchProviderDetails } from '@server/models/common';
 import overrideRuleRoutes from '@server/routes/overrideRule';
 import settingsRoutes from '@server/routes/settings';
 import watchlistRoutes from '@server/routes/watchlist';
@@ -159,7 +159,7 @@ router.use(
   deprecatedRoute({
     oldPath: '/api/v1/blacklist',
     newPath: '/api/v1/blocklist',
-    sunsetDate: '2025-06-01',
+    sunsetDate: '2026-06-01',
   }),
   blocklistRoutes
 );

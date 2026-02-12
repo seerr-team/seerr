@@ -4534,7 +4534,7 @@ paths:
       summary: Returns blocklisted items
       description: Returns list of all blocklisted media
       tags:
-        - settings
+        - blocklist
       parameters:
         - in: query
           name: take
