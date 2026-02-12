@@ -29,6 +29,8 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
   trustProxyTip:
     'Allow Seerr to correctly register client IP addresses behind a proxy',
   proxyEnabled: 'HTTP(S) Proxy',
+  proxyEnabledTip:
+    'Send ALL outgoing HTTP/HTTPS requests through a proxy server (host/port). Does NOT enable HTTPS, SSL, or certificate configuration.',
   proxyHostname: 'Proxy Hostname',
   proxyPort: 'Proxy Port',
   proxySsl: 'Use SSL For Proxy',
@@ -78,13 +80,16 @@ const SettingsNetwork = () => {
       then: Yup.number()
         .typeError(intl.formatMessage(messages.validationDnsCacheMaxTtl))
         .required(intl.formatMessage(messages.validationDnsCacheMaxTtl))
-        .min(0),
+        .min(-1),
     }),
     proxyPort: Yup.number().when('proxyEnabled', {
       is: (proxyEnabled: boolean) => proxyEnabled,
-      then: Yup.number().required(
-        intl.formatMessage(messages.validationProxyPort)
-      ),
+      then: Yup.number()
+        .typeError(intl.formatMessage(messages.validationProxyPort))
+        .integer(intl.formatMessage(messages.validationProxyPort))
+        .min(1, intl.formatMessage(messages.validationProxyPort))
+        .max(65535, intl.formatMessage(messages.validationProxyPort))
+        .required(intl.formatMessage(messages.validationProxyPort)),
     }),
   });
 
@@ -288,50 +293,50 @@ const SettingsNetwork = () => {
                       <div className="form-row">
                         <label
                           htmlFor="dnsCacheForceMinTtl"
-                          className="checkbox-label"
+                          className="text-label"
                         >
                           {intl.formatMessage(messages.dnsCacheForceMinTtl)}
                         </label>
                         <div className="form-input-area">
-                          <div className="form-input-field">
-                            <Field
-                              id="dnsCacheForceMinTtl"
-                              name="dnsCacheForceMinTtl"
-                              type="number"
-                            />
-                          </div>
-                          {errors.dnsCacheForceMinTtl &&
-                            touched.dnsCacheForceMinTtl &&
-                            typeof errors.dnsCacheForceMinTtl === 'string' && (
-                              <div className="error">
-                                {errors.dnsCacheForceMinTtl}
-                              </div>
-                            )}
+                          <Field
+                            id="dnsCacheForceMinTtl"
+                            name="dnsCacheForceMinTtl"
+                            type="text"
+                            inputMode="numeric"
+                            className="short"
+                          />
                         </div>
+                        {errors.dnsCacheForceMinTtl &&
+                          touched.dnsCacheForceMinTtl &&
+                          typeof errors.dnsCacheForceMinTtl === 'string' && (
+                            <div className="error">
+                              {errors.dnsCacheForceMinTtl}
+                            </div>
+                          )}
                       </div>
                       <div className="form-row">
                         <label
                           htmlFor="dnsCacheForceMaxTtl"
-                          className="checkbox-label"
+                          className="text-label"
                         >
                           {intl.formatMessage(messages.dnsCacheForceMaxTtl)}
                         </label>
                         <div className="form-input-area">
-                          <div className="form-input-field">
-                            <Field
-                              id="dnsCacheForceMaxTtl"
-                              name="dnsCacheForceMaxTtl"
-                              type="number"
-                            />
-                          </div>
-                          {errors.dnsCacheForceMaxTtl &&
-                            touched.dnsCacheForceMaxTtl &&
-                            typeof errors.dnsCacheForceMaxTtl === 'string' && (
-                              <div className="error">
-                                {errors.dnsCacheForceMaxTtl}
-                              </div>
-                            )}
+                          <Field
+                            id="dnsCacheForceMaxTtl"
+                            name="dnsCacheForceMaxTtl"
+                            type="text"
+                            inputMode="text"
+                            className="short"
+                          />
                         </div>
+                        {errors.dnsCacheForceMaxTtl &&
+                          touched.dnsCacheForceMaxTtl &&
+                          typeof errors.dnsCacheForceMaxTtl === 'string' && (
+                            <div className="error">
+                              {errors.dnsCacheForceMaxTtl}
+                            </div>
+                          )}
                       </div>
                     </div>
                   </>
@@ -343,6 +348,9 @@ const SettingsNetwork = () => {
                     </span>
                     <SettingsBadge badgeType="advanced" className="mr-2" />
                     <SettingsBadge badgeType="restartRequired" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.proxyEnabledTip)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <Field
@@ -387,13 +395,13 @@ const SettingsNetwork = () => {
                           {intl.formatMessage(messages.proxyPort)}
                         </label>
                         <div className="form-input-area">
-                          <div className="form-input-field">
-                            <Field
-                              id="proxyPort"
-                              name="proxyPort"
-                              type="number"
-                            />
-                          </div>
+                          <Field
+                            id="proxyPort"
+                            name="proxyPort"
+                            type="text"
+                            inputMode="numeric"
+                            className="short"
+                          />
                           {errors.proxyPort &&
                             touched.proxyPort &&
                             typeof errors.proxyPort === 'string' && (
