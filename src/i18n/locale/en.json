@@ -984,6 +984,8 @@
   "components.Settings.SettingsMain.originallanguage": "Discover Language",
   "components.Settings.SettingsMain.originallanguageTip": "Filter content by original language",
   "components.Settings.SettingsMain.partialRequestsEnabled": "Allow Partial Series Requests",
+  "components.Settings.SettingsMain.separate4kButton": "Show Separate 4K Request Button",
+  "components.Settings.SettingsMain.separate4kButtonTip": "Display 4K request button separately instead of in dropdown for better discoverability",
   "components.Settings.SettingsMain.streamingRegion": "Streaming Region",
   "components.Settings.SettingsMain.streamingRegionTip": "Show streaming sites by regional availability",
   "components.Settings.SettingsMain.toastApiKeyFailure": "Something went wrong while generating a new API key.",

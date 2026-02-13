@@ -146,6 +146,7 @@ export interface MainSettings {
   enableSpecialEpisodes: boolean;
   locale: string;
   youtubeUrl: string;
+  separate4kButton: boolean;
 }
 
 export interface ProxySettings {
@@ -203,6 +204,7 @@ interface FullPublicSettings extends PublicSettings {
   userEmailRequired: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  separate4kButton: boolean;
 }
 
 export interface NotificationAgentConfig {
@@ -402,6 +404,7 @@ class Settings {
         partialRequestsEnabled: true,
         enableSpecialEpisodes: false,
         locale: 'en',
+        separate4kButton: false,
         youtubeUrl: '',
       },
       plex: {
@@ -697,6 +700,7 @@ class Settings {
         this.data.notifications.agents.email.options.userEmailRequired,
       newPlexLogin: this.data.main.newPlexLogin,
       youtubeUrl: this.data.main.youtubeUrl,
+      separate4kButton: this.data.main.separate4kButton,
     };
   }
 
