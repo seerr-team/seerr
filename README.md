@@ -40,7 +40,7 @@ https://docs.seerr.dev/getting-started/
 
 <img src="./public/preview.jpg" alt="Seerr application preview" />
 
-## Seerr merger from Overseerr and Jellyseerr
+## Migrating from Overseerr/Jellyseerr to Seerr
 
 Read our [release announcement](https://docs.seerr.dev/blog/seerr-release) to learn what Seerr means for Jellyseerr and Overseerr users.
 
