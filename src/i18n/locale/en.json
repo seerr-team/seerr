@@ -416,6 +416,8 @@
   "components.PermissionEdit.blacklistedItemsDescription": "Grant permission to blacklist media.",
   "components.PermissionEdit.createissues": "Report Issues",
   "components.PermissionEdit.createissuesDescription": "Grant permission to report media issues.",
+  "components.PermissionEdit.deletemedia": "Delete Media",
+  "components.PermissionEdit.deletemediaDescription": "Grant permission to delete media from Sonarr and Radarr.",
   "components.PermissionEdit.manageblacklist": "Manage Blacklist",
   "components.PermissionEdit.manageblacklistDescription": "Grant permission to manage blacklisted media.",
   "components.PermissionEdit.manageissues": "Manage Issues",

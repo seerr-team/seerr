@@ -72,5 +72,7 @@ tsconfig.tsbuildinfo
 # Config Cache Directory
 config/cache
 
+# Allow server directory for Telescope find_files
+!/server
 # Docker compose
 compose.override.yaml

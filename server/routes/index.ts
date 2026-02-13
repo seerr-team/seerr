@@ -146,6 +146,24 @@ router.get(
     }
   }
 );
+
+router.get(
+  '/settings/radarr',
+  isAuthenticated([Permission.ADMIN, Permission.DELETE_MEDIA], { type: 'or' }),
+  (_req, res) => {
+    const settings = getSettings();
+    return res.status(200).json(settings.radarr);
+  }
+);
+
+router.get(
+  '/settings/sonarr',
+  isAuthenticated([Permission.ADMIN, Permission.DELETE_MEDIA], { type: 'or' }),
+  (_req, res) => {
+    const settings = getSettings();
+    return res.status(200).json(settings.sonarr);
+  }
+);
 router.use('/settings', isAuthenticated(Permission.ADMIN), settingsRoutes);
 router.use('/search', isAuthenticated(), searchRoutes);
 router.use('/discover', isAuthenticated(), discoverRoutes);

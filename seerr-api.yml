@@ -6843,7 +6843,7 @@ paths:
   /media/{mediaId}:
     delete:
       summary: Delete media item
-      description: Removes a media item. The `MANAGE_REQUESTS` permission is required to perform this action.
+      description: Removes a media item. The `MANAGE_REQUESTS` or `DELETE_MEDIA` permission is required to perform this action.
       tags:
         - media
       parameters:
@@ -6860,7 +6860,7 @@ paths:
   /media/{mediaId}/file:
     delete:
       summary: Delete media file
-      description: Removes a media file from radarr/sonarr. The `ADMIN` permission is required to perform this action.
+      description: Removes a media file from radarr/sonarr. The `ADMIN` or `DELETE_MEDIA` permission is required to perform this action.
       tags:
         - media
       parameters:
@@ -6929,7 +6929,7 @@ paths:
       description: |
         Returns play count, play duration, and users who have watched the media.
 
-        Requires the `ADMIN` permission.
+        Requires the `ADMIN` or `DELETE_MEDIA` permission.
       tags:
         - media
       parameters:
