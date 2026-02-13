@@ -38,7 +38,7 @@ https://docs.seerr.dev/getting-started/
 
 ## Preview
 
-<img src="./public/preview.jpg">
+<img src="./public/preview.jpg" alt="Seerr application preview" />
 
 ## Seerr merger from Overseerr and Jellyseerr
 

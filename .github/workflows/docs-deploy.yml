@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - legacy-jellyseerr
+      - seerr
     paths:
       - 'docs/**'
       - 'gen-docs/**'
