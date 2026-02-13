@@ -828,7 +828,6 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       entity.status === MediaRequestStatus.DECLINED &&
       media[statusKey] === MediaStatus.PENDING
     ) {
-      const requestRepository = getRepository(MediaRequest);
       const pendingCount = await requestRepository.count({
         where: {
           media: { id: media.id },
@@ -868,7 +867,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           (s) => s.seasonNumber === seasonRequest.seasonNumber
         );
 
-        if (season && season[statusKey] == MediaStatus.PENDING) {
+        if (season && season[statusKey] === MediaStatus.PENDING) {
           const otherActiveRequests = await requestRepository
             .createQueryBuilder('request')
             .leftJoinAndSelect('request.seasons', 'season')
