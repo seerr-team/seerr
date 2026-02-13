@@ -1,4 +1,5 @@
-import { MediaType } from '@server/constants/media';
+import TheMovieDb from '@server/api/themoviedb';
+import { MediaStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { Blacklist } from '@server/entity/Blacklist';
 import Media from '@server/entity/Media';
@@ -118,8 +119,20 @@ blacklistRoutes.post(
     try {
       const values = blacklistAdd.parse(req.body);
 
+      const existingBlacklist = await getRepository(Blacklist).findOne({
+        where: { tmdbId: values.tmdbId },
+      });
+
+      if (existingBlacklist) {
+        return next({ status: 412, message: 'Item already blacklisted' });
+      }
+
       await Blacklist.addToBlacklist({
-        blacklistRequest: values,
+        blacklistRequest: {
+          tmdbId: values.tmdbId,
+          mediaType: values.mediaType as MediaType,
+          title: values.title,
+        },
       });
 
       return res.status(201).send();
@@ -143,6 +156,127 @@ blacklistRoutes.post(
       }
 
       return next({ status: 500, message: error.message });
+    }
+  }
+);
+
+blacklistRoutes.post(
+  '/collection/:id',
+  isAuthenticated([Permission.MANAGE_BLACKLIST], {
+    type: 'or',
+  }),
+  async (req, res, next) => {
+    try {
+      const tmdb = new TheMovieDb();
+      const collection = await tmdb.getCollection({
+        collectionId: Number(req.params.id),
+        language: req.locale,
+      });
+
+      const blacklistRepository = getRepository(Blacklist);
+      const mediaRepository = getRepository(Media);
+
+      // Blacklist all movies in the collection
+      await Promise.all(
+        collection.parts.map(async (part) => {
+          const existingBlacklist = await blacklistRepository.findOne({
+            where: { tmdbId: part.id },
+          });
+
+          if (existingBlacklist) {
+            return;
+          }
+
+          const blacklist = new Blacklist({
+            tmdbId: part.id,
+            mediaType: MediaType.MOVIE,
+            title: part.title,
+            user: req.user,
+          });
+
+          await blacklistRepository.save(blacklist);
+
+          let media = await mediaRepository.findOne({
+            where: { tmdbId: part.id },
+          });
+
+          if (!media) {
+            media = new Media({
+              tmdbId: part.id,
+              status: MediaStatus.BLACKLISTED,
+              status4k: MediaStatus.BLACKLISTED,
+              mediaType: MediaType.MOVIE,
+              blacklist: Promise.resolve(blacklist),
+            });
+          } else {
+            media.status = MediaStatus.BLACKLISTED;
+            media.status4k = MediaStatus.BLACKLISTED;
+            media.blacklist = Promise.resolve(blacklist);
+          }
+
+          await mediaRepository.save(media);
+        })
+      );
+
+      return res.status(201).send();
+    } catch (e) {
+      logger.error('Error blacklisting collection', {
+        label: 'Blacklist',
+        errorMessage: e.message,
+        collectionId: req.params.id,
+      });
+      return next({ status: 500, message: e.message });
+    }
+  }
+);
+
+blacklistRoutes.delete(
+  '/collection/:id',
+  isAuthenticated([Permission.MANAGE_BLACKLIST], {
+    type: 'or',
+  }),
+  async (req, res, next) => {
+    try {
+      const tmdb = new TheMovieDb();
+      const collection = await tmdb.getCollection({
+        collectionId: Number(req.params.id),
+        language: req.locale,
+      });
+
+      const blacklistRepository = getRepository(Blacklist);
+      const mediaRepository = getRepository(Media);
+
+      // Remove all movies in the collection from blacklist
+      await Promise.all(
+        collection.parts.map(async (part) => {
+          const blacklistItem = await blacklistRepository.findOne({
+            where: { tmdbId: part.id },
+          });
+
+          if (blacklistItem) {
+            await blacklistRepository.remove(blacklistItem);
+
+            const mediaItem = await mediaRepository.findOne({
+              where: { tmdbId: part.id },
+            });
+
+            if (mediaItem) {
+              mediaItem.status = MediaStatus.UNKNOWN;
+              mediaItem.status4k = MediaStatus.UNKNOWN;
+              await mediaRepository.save(mediaItem);
+            }
+          }
+        })
+      );
+
+      return res.status(204).send();
+    } catch (e) {
+      logger.error('Error unblacklisting collection', {
+        label: 'Blacklist',
+        errorMessage: e.message,
+        collectionId: req.params.id,
+      });
+      return next({ status: 500, message: e.message });
     }
   }
 );

@@ -4638,6 +4638,49 @@ paths:
       responses:
         '204':
           description: Succesfully removed media item
+  /blacklist/collection/{collectionId}:
+    post:
+      summary: Add collection to blacklist
+      description: Adds all movies in a collection to the blacklist
+      tags:
+        - blacklist
+      parameters:
+        - in: path
+          name: collectionId
+          description: Collection ID
+          required: true
+          example: '1424991'
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Successfully added collection to blacklist
+        '500':
+          description: Error adding collection to blacklist
+    delete:
+      summary: Remove collection from blacklist
+      description: Removes all movies in a collection from the blacklist
+      tags:
+        - blacklist
+      parameters:
+        - in: path
+          name: collectionId
+          description: Collection ID
+          required: true
+          example: '1424991'
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successfully removed collection from blacklist
+        '500':
+          description: Error removing collection from blacklist
   /watchlist:
     post:
       summary: Add media to watchlist
