@@ -6,11 +6,13 @@ import SensitiveInput from '@app/components/Common/SensitiveInput';
 import LanguageSelector from '@app/components/LanguageSelector';
 import RegionSelector from '@app/components/RegionSelector';
 import CopyButton from '@app/components/Settings/CopyButton';
+import LibraryItem from '@app/components/Settings/LibraryItem';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import { availableLanguages } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import type { FilterItem } from '@app/types/filters';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
@@ -71,6 +73,22 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   validationUrl: 'You must provide a valid URL',
   validationUrlTrailingSlash: 'URL must not end in a trailing slash',
 });
+
+const filters: FilterItem[] = [
+  { key: 'filterSearch', name: 'Search' },
+  { key: 'filterTrending', name: 'Trending' },
+  { key: 'filterSimilarSeries', name: 'Similar Series' },
+  { key: 'filterSimilarMovies', name: 'Similar Movies' },
+  { key: 'filterTvRecommendations', name: 'TV Recommendations' },
+  { key: 'filterMovieRecommendations', name: 'Movie Recommendations' },
+  { key: 'filterTvUpcoming', name: 'Upcoming Series' },
+  { key: 'filterUpcomingMovies', name: 'Upcoming Movies' },
+  { key: 'filterDiscoverMovies', name: 'Discover Movies' },
+  { key: 'filterTvDiscover', name: 'Discover Series' },
+  { key: 'filterPopularMovies', name: 'Popular Movies' },
+  { key: 'filterTvPopular', name: 'Popular Series' },
+  { key: 'filterCustomSliders', name: 'Custom Sliders' },
+];
 
 const SettingsMain = () => {
   const { addToast } = useToasts();
@@ -175,6 +193,20 @@ const SettingsMain = () => {
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
+            filterSearch: data?.filters?.filterSearch,
+            filterTrending: data?.filters?.filterTrending,
+            filterSimilarSeries: data?.filters?.filterSimilarSeries,
+            filterTvRecommendations: data?.filters?.filterTvRecommendations,
+            filterSimilarMovies: data?.filters?.filterSimilarMovies,
+            filterMovieRecommendations:
+              data?.filters?.filterMovieRecommendations,
+            filterTvUpcoming: data?.filters?.filterTvUpcoming,
+            filterUpcomingMovies: data?.filters?.filterUpcomingMovies,
+            filterDiscoverMovies: data?.filters?.filterDiscoverMovies,
+            filterTvDiscover: data?.filters?.filterTvDiscover,
+            filterPopularMovies: data?.filters?.filterPopularMovies,
+            filterTvPopular: data?.filters?.filterTvPopular,
+            filterCustomSliders: data?.filters?.filterCustomSliders,
           }}
           enableReinitialize
           validationSchema={MainSettingsSchema}
@@ -195,6 +227,21 @@ const SettingsMain = () => {
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
+                filters: {
+                  filterSearch: values.filterSearch,
+                  filterTrending: values.filterTrending,
+                  filterSimilarSeries: values.filterSimilarSeries,
+                  filterTvRecommendations: values.filterTvRecommendations,
+                  filterSimilarMovies: values.filterSimilarMovies,
+                  filterMovieRecommendations: values.filterMovieRecommendations,
+                  filterTvUpcoming: values.filterTvUpcoming,
+                  filterUpcomingMovies: values.filterUpcomingMovies,
+                  filterDiscoverMovies: values.filterDiscoverMovies,
+                  filterTvDiscover: values.filterTvDiscover,
+                  filterPopularMovies: values.filterPopularMovies,
+                  filterTvPopular: values.filterTvPopular,
+                  filterCustomSliders: values.filterCustomSliders,
+                },
               });
               mutate('/api/v1/settings/public');
               mutate('/api/v1/status');
@@ -383,6 +430,31 @@ const SettingsMain = () => {
                     </div>
                   </div>
                 </div>
+                <div
+                  role="group"
+                  aria-labelledby="group-label"
+                  className="form-group"
+                >
+                  <span id="group-label" className="group-label">
+                    Filter by Original Language
+                    <span className="label-tip">
+                      Filter content by their original language. This will take
+                      the values from the Discover Language setting.
+                    </span>
+                  </span>
+
+                  <ul className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
+                    {filters.map(({ key, name }) => (
+                      <LibraryItem
+                        key={`setting-library-${key}`}
+                        name={name}
+                        isEnabled={values[key] ?? false}
+                        onToggle={() => setFieldValue(key, !values[key])}
+                      />
+                    ))}
+                  </ul>
+                </div>
+
                 <div className="form-row">
                   <label htmlFor="streamingRegion" className="text-label">
                     <span>{intl.formatMessage(messages.streamingRegion)}</span>

@@ -2,7 +2,9 @@ import Header from '@app/components/Common/Header';
 import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
+import useFilterByLanguages from '@app/hooks/useFilterByLanguages';
 import Error from '@app/pages/_error';
+import { FilterByLanguage } from '@app/types/filters';
 import defineMessages from '@app/utils/defineMessages';
 import type { TvResult } from '@server/models/Search';
 import { useIntl } from 'react-intl';
@@ -24,6 +26,13 @@ const DiscoverTvUpcoming = () => {
     error,
   } = useDiscover<TvResult>('/api/v1/discover/tv/upcoming');
 
+  const filteredTitles = useFilterByLanguages({
+    titles,
+    movie: false,
+    tv: true,
+    key: FilterByLanguage.TV_UPCOMING,
+  });
+
   if (error) {
     return <Error statusCode={500} />;
   }
@@ -35,11 +44,12 @@ const DiscoverTvUpcoming = () => {
         <Header>{intl.formatMessage(messages.upcomingtv)}</Header>
       </div>
       <ListView
-        items={titles}
+        items={filteredTitles}
         isEmpty={isEmpty}
         isReachingEnd={isReachingEnd}
         isLoading={
-          isLoadingInitialData || (isLoadingMore && (titles?.length ?? 0) > 0)
+          isLoadingInitialData ||
+          (isLoadingMore && (filteredTitles?.length ?? 0) > 0)
         }
         onScrollBottom={fetchMore}
       />
