@@ -8,7 +8,7 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
-interface BlacklistModalProps {
+interface BlocklistModalProps {
   tmdbId: number;
   type: 'movie' | 'tv' | 'collection';
   show: boolean;
@@ -17,8 +17,8 @@ interface BlacklistModalProps {
   isUpdating?: boolean;
 }
 
-const messages = defineMessages('component.BlacklistModal', {
-  blacklisting: 'Blacklisting',
+const messages = defineMessages('component.BlocklistModal', {
+  blocklisting: 'Blocklisting',
 });
 
 const isMovie = (
@@ -28,14 +28,14 @@ const isMovie = (
   return (movie as MovieDetails).title !== undefined;
 };
 
-const BlacklistModal = ({
+const BlocklistModal = ({
   tmdbId,
   type,
   show,
   onComplete,
   onCancel,
   isUpdating,
-}: BlacklistModalProps) => {
+}: BlocklistModalProps) => {
   const intl = useIntl();
   const [data, setData] = useState<TvDetails | MovieDetails | null>(null);
   const [error, setError] = useState(null);
@@ -67,7 +67,7 @@ const BlacklistModal = ({
       <Modal
         loading={!data && !error}
         backgroundClickable
-        title={`${intl.formatMessage(globalMessages.blacklist)} ${
+        title={`${intl.formatMessage(globalMessages.blocklist)} ${
           isMovie(data)
             ? intl.formatMessage(globalMessages.movie)
             : intl.formatMessage(globalMessages.tvshow)
@@ -77,8 +77,8 @@ const BlacklistModal = ({
         onOk={onComplete}
         okText={
           isUpdating
-            ? intl.formatMessage(messages.blacklisting)
-            : intl.formatMessage(globalMessages.blacklist)
+            ? intl.formatMessage(messages.blocklisting)
+            : intl.formatMessage(globalMessages.blocklist)
         }
         okButtonType="danger"
         okDisabled={isUpdating}
@@ -88,4 +88,4 @@ const BlacklistModal = ({
   );
 };
 
-export default BlacklistModal;
+export default BlocklistModal;

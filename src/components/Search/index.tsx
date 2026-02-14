@@ -34,7 +34,7 @@ const Search = () => {
     {
       query: router.query.query,
     },
-    { hideAvailable: false, hideBlacklisted: false }
+    { hideAvailable: false, hideBlocklisted: false }
   );
 
   if (error) {

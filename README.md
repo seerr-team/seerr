@@ -26,7 +26,7 @@
 - Granular permission system.
 - Support for various notification agents.
 - Mobile-friendly design, for when you need to approve requests on the go!
-- Support for watchlisting & blacklisting media.
+- Support for watchlisting & blocklisting media.
 
 With more features on the way! Check out our [issue tracker](/../../issues) to see the features which have already been requested.
 
