@@ -9,7 +9,7 @@ interface LibraryItemProps {
 const LibraryItem = ({ isEnabled, name, onToggle }: LibraryItemProps) => {
   return (
     <li className="col-span-1 flex rounded-md shadow-sm">
-      <div className="flex flex-1 items-center justify-between truncate rounded-md border-t border-b border-r border-gray-700 bg-gray-600">
+      <div className="flex flex-1 items-center justify-between truncate rounded-md border-b border-r border-t border-gray-700 bg-gray-600">
         <div className="flex-1 cursor-default truncate px-4 py-6 text-sm leading-5">
           {name}
         </div>

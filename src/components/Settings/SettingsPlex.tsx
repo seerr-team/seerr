@@ -30,7 +30,7 @@ const messages = defineMessages('components.Settings', {
   plex: 'Plex',
   plexsettings: 'Plex Settings',
   plexsettingsDescription:
-    'Configure the settings for your Plex server. Jellyseerr scans your Plex libraries to determine content availability.',
+    'Configure the settings for your Plex server. Seerr scans your Plex libraries to determine content availability.',
   serverpreset: 'Server',
   serverLocal: 'local',
   serverRemote: 'remote',
@@ -51,12 +51,12 @@ const messages = defineMessages('components.Settings', {
   enablessl: 'Use SSL',
   plexlibraries: 'Plex Libraries',
   plexlibrariesDescription:
-    'The libraries Jellyseerr scans for titles. Set up and save your Plex connection settings, then click the button below if no libraries are listed.',
+    'The libraries Seerr scans for titles. Set up and save your Plex connection settings, then click the button below if no libraries are listed.',
   scanning: 'Syncing…',
   scan: 'Sync Libraries',
   manualscan: 'Manual Library Scan',
   manualscanDescription:
-    "Normally, this will only be run once every 24 hours. Jellyseerr will check your Plex server's recently added more aggressively. If this is your first time configuring Plex, a one-time full manual library scan is recommended!",
+    "Normally, this will only be run once every 24 hours. Seerr will check your Plex server's recently added more aggressively. If this is your first time configuring Plex, a one-time full manual library scan is recommended!",
   notrunning: 'Not Running',
   currentlibrary: 'Current Library: {name}',
   librariesRemaining: 'Libraries Remaining: {count}',
@@ -69,7 +69,7 @@ const messages = defineMessages('components.Settings', {
     'Optionally direct users to the web app on your server instead of the "hosted" web app',
   tautulliSettings: 'Tautulli Settings',
   tautulliSettingsDescription:
-    'Optionally configure the settings for your Tautulli server. Jellyseerr fetches watch history data for your Plex media from Tautulli.',
+    'Optionally configure the settings for your Tautulli server. Seerr fetches watch history data for your Plex media from Tautulli.',
   urlBase: 'URL Base',
   tautulliApiKey: 'API Key',
   externalUrl: 'External URL',
@@ -377,6 +377,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           webAppUrl: data?.webAppUrl,
         }}
         validationSchema={PlexSettingsSchema}
+        validateOnMount={true}
         onSubmit={async (values) => {
           let toastId: string | null = null;
           try {
@@ -423,6 +424,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           values,
           handleSubmit,
           setFieldValue,
+          setValues,
           isSubmitting,
           isValid,
         }) => {
@@ -445,9 +447,12 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                           availablePresets[Number(e.target.value)];
 
                         if (targPreset) {
-                          setFieldValue('hostname', targPreset.address);
-                          setFieldValue('port', targPreset.port);
-                          setFieldValue('useSsl', targPreset.ssl);
+                          setValues({
+                            ...values,
+                            hostname: targPreset.address,
+                            port: targPreset.port,
+                            useSsl: targPreset.ssl,
+                          });
                         }
                       }}
                     >
@@ -475,12 +480,12 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                                 ? intl.formatMessage(messages.serverLocal)
                                 : intl.formatMessage(messages.serverRemote)
                             }]${
-                            server.ssl
-                              ? ` [${intl.formatMessage(
-                                  messages.serverSecure
-                                )}]`
-                              : ''
-                          }
+                              server.ssl
+                                ? ` [${intl.formatMessage(
+                                    messages.serverSecure
+                                  )}]`
+                                : ''
+                            }
                             ${server.status ? '' : '(' + server.message + ')'}
                           `}
                         </option>
@@ -618,7 +623,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           );
         }}
       </Formik>
-      <div className="mt-10 mb-6">
+      <div className="mb-6 mt-10">
         <h3 className="heading">
           {intl.formatMessage(messages.plexlibraries)}
         </h3>
@@ -652,7 +657,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           ))}
         </ul>
       </div>
-      <div className="mt-10 mb-6">
+      <div className="mb-6 mt-10">
         <h3 className="heading">{intl.formatMessage(messages.manualscan)}</h3>
         <p className="description">
           {intl.formatMessage(messages.manualscanDescription)}
@@ -729,7 +734,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
       </div>
       {!onComplete && (
         <>
-          <div className="mt-10 mb-6">
+          <div className="mb-6 mt-10">
             <h3 className="heading">
               {intl.formatMessage(messages.tautulliSettings)}
             </h3>

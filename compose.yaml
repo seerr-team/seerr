@@ -1,5 +1,5 @@
 services:
-  jellyseerr:
+  seerr:
     build:
       context: .
       dockerfile: Dockerfile.local

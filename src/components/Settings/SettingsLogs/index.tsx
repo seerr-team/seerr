@@ -35,7 +35,7 @@ import useSWR from 'swr';
 const messages = defineMessages('components.Settings.SettingsLogs', {
   logs: 'Logs',
   logsDescription:
-    'You can also view these logs directly via <code>stdout</code>, or in <code>{appDataPath}/logs/jellyseerr.log</code>.',
+    'You can also view these logs directly via <code>stdout</code>, or in <code>{appDataPath}/logs/seerr.log</code>.',
   time: 'Timestamp',
   level: 'Severity',
   label: 'Label',
@@ -193,10 +193,10 @@ const SettingsLogs = () => {
                         activeLog.log?.level === 'error'
                           ? 'danger'
                           : activeLog.log?.level === 'warn'
-                          ? 'warning'
-                          : activeLog.log?.level === 'info'
-                          ? 'success'
-                          : 'default'
+                            ? 'warning'
+                            : activeLog.log?.level === 'info'
+                              ? 'success'
+                              : 'default'
                       }
                     >
                       {activeLog.log?.level.toUpperCase()}
@@ -344,10 +344,10 @@ const SettingsLogs = () => {
                           row.level === 'error'
                             ? 'danger'
                             : row.level === 'warn'
-                            ? 'warning'
-                            : row.level === 'info'
-                            ? 'success'
-                            : 'default'
+                              ? 'warning'
+                              : row.level === 'info'
+                                ? 'success'
+                                : 'default'
                         }
                       >
                         {row.level.toUpperCase()}
@@ -426,7 +426,7 @@ const SettingsLogs = () => {
                         intl.formatMessage(globalMessages.showingresults, {
                           from: pageIndex * currentPageSize + 1,
                           to:
-                            data?.results.length ?? 0 < currentPageSize
+                            (data?.results.length ?? 0 < currentPageSize)
                               ? pageIndex * currentPageSize +
                                 (data?.results.length ?? 0)
                               : (pageIndex + 1) * currentPageSize,

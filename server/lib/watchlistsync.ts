@@ -3,6 +3,7 @@ import { MediaStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import {
+  BlocklistedMediaError,
   DuplicateMediaRequestError,
   MediaRequest,
   NoSeasonsAvailableError,
@@ -130,7 +131,7 @@ class WatchlistSync {
 
         switch (e.constructor) {
           // During watchlist sync, these errors aren't necessarily
-          // a problem with Jellyseerr. Since we are auto syncing these constantly, it's
+          // a problem with Seerr. Since we are auto syncing these constantly, it's
           // possible they are unexpectedly at their quota limit, for example. So we'll
           // instead log these as debug messages.
           case RequestPermissionError:
@@ -143,6 +144,9 @@ class WatchlistSync {
               mediaTitle: mediaItem.title,
               errorMessage: e.message,
             });
+            break;
+          // Blocklisted media should be silently ignored during watchlist sync to avoid spam
+          case BlocklistedMediaError:
             break;
           default:
             logger.error('Failed to create media request from watchlist', {

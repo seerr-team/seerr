@@ -3,7 +3,7 @@ import type { NotificationAgentNtfy } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
-import { hasNotificationType, Notification } from '..';
+import { Notification, hasNotificationType } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
 import { BaseAgent } from './agent';
 
@@ -22,7 +22,9 @@ class NtfyAgent
   }
 
   private buildPayload(type: Notification, payload: NotificationPayload) {
-    const { applicationUrl } = getSettings().main;
+    const settings = getSettings();
+    const { applicationUrl } = settings.main;
+    const { embedPoster } = settings.notifications.agents.ntfy;
 
     const topic = this.getSettings().options.topic;
     const priority = 3;
@@ -72,7 +74,7 @@ class NtfyAgent
       message += `\n\n**${extra.name}**\n${extra.value}`;
     }
 
-    const attach = payload.image;
+    const attach = embedPoster ? payload.image : undefined;
 
     let click;
     if (applicationUrl && payload.media) {

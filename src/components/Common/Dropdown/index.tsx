@@ -57,7 +57,7 @@ const DropdownItems = ({
     >
       <Menu.Items
         className={[
-          'absolute right-0 z-40 mt-2 -mr-1 w-56 origin-top-right rounded-md p-1 shadow-lg',
+          'absolute right-0 z-40 -mr-1 mt-2 w-56 origin-top-right rounded-md p-1 shadow-lg',
           dropdownType === 'ghost'
             ? 'border border-gray-700 bg-gray-800 bg-opacity-80 backdrop-blur'
             : 'bg-indigo-600',

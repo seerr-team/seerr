@@ -1,0 +1,69 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Check Docs Links
+
+on:
+  pull_request:
+    branches:
+      - '*'
+    paths:
+      - 'docs/**'
+      - 'gen-docs/**'
+      - '.github/workflows/docs-link-check.yml'
+  push:
+    branches:
+      - develop
+    paths:
+      - 'docs/**'
+      - 'gen-docs/**'
+      - '.github/workflows/docs-link-check.yml'
+  schedule:
+    - cron: '50 7 * * 5'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-link-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  link-check:
+    name: Verify external links in Markdown and MDX
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run Lychee link checker
+        uses: lycheeverse/lychee-action@a8c4c7cb88f0c7386610c35eb25108e448569cb0 # v2.7.0
+        with:
+          fail: false
+          args: >-
+            --verbose
+            --no-progress
+            --accept 200..204,300..304,307,308,404,429,999
+            --exclude '^file://'
+            --exclude '^https?://(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|\[::\])'
+            --exclude '^https?://support\.discord\.com'
+            './docs/**/*.md'
+            './docs/**/*.mdx'
+            './gen-docs/**/*.md'
+            './gen-docs/**/*.mdx'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Lychee report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: lychee-report
+          path: |
+            lychee/out.md
+            lychee/results.json
+          if-no-files-found: ignore

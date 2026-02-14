@@ -1,4 +1,5 @@
 import ExternalAPI from '@server/api/externalapi';
+import type { TvShowProvider } from '@server/api/provider';
 import cacheManager from '@server/lib/cache';
 import { getSettings } from '@server/lib/settings';
 import { sortBy } from 'lodash';
@@ -72,6 +73,7 @@ export interface TmdbCertificationResponse {
 interface DiscoverMovieOptions {
   page?: number;
   includeAdult?: boolean;
+  includeVideo?: boolean;
   language?: string;
   primaryReleaseDateGte?: string;
   primaryReleaseDateLte?: string;
@@ -85,6 +87,7 @@ interface DiscoverMovieOptions {
   genre?: string;
   studio?: string;
   keywords?: string;
+  excludeKeywords?: string;
   sortBy?: SortOptions;
   watchRegion?: string;
   watchProviders?: string;
@@ -110,6 +113,7 @@ interface DiscoverTvOptions {
   genre?: string;
   network?: number;
   keywords?: string;
+  excludeKeywords?: string;
   sortBy?: SortOptions;
   watchRegion?: string;
   watchProviders?: string;
@@ -120,7 +124,7 @@ interface DiscoverTvOptions {
   certificationCountry?: string;
 }
 
-class TheMovieDb extends ExternalAPI {
+class TheMovieDb extends ExternalAPI implements TvShowProvider {
   private locale: string;
   private discoverRegion?: string;
   private originalLanguage?: string;
@@ -341,6 +345,13 @@ class TheMovieDb extends ExternalAPI {
         }
       );
 
+      data.episodes = data.episodes.map((episode) => {
+        if (episode.still_path) {
+          episode.still_path = `https://image.tmdb.org/t/p/original/${episode.still_path}`;
+        }
+        return episode;
+      });
+
       return data;
     } catch (e) {
       throw new Error(`[TMDB] Failed to fetch TV show details: ${e.message}`);
@@ -480,6 +491,7 @@ class TheMovieDb extends ExternalAPI {
     sortBy = 'popularity.desc',
     page = 1,
     includeAdult = false,
+    includeVideo = true,
     language = this.locale,
     primaryReleaseDateGte,
     primaryReleaseDateLte,
@@ -487,6 +499,7 @@ class TheMovieDb extends ExternalAPI {
     genre,
     studio,
     keywords,
+    excludeKeywords,
     withRuntimeGte,
     withRuntimeLte,
     voteAverageGte,
@@ -516,14 +529,15 @@ class TheMovieDb extends ExternalAPI {
           sort_by: sortBy,
           page,
           include_adult: includeAdult,
+          include_video: includeVideo,
           language,
           region: this.discoverRegion || '',
           with_original_language:
             originalLanguage && originalLanguage !== 'all'
               ? originalLanguage
               : originalLanguage === 'all'
-              ? undefined
-              : this.originalLanguage,
+                ? undefined
+                : this.originalLanguage,
           // Set our release date values, but check if one is set and not the other,
           // so we can force a past date or a future date. TMDB Requires both values if one is set!
           'primary_release_date.gte':
@@ -537,6 +551,7 @@ class TheMovieDb extends ExternalAPI {
           with_genres: genre,
           with_companies: studio,
           with_keywords: keywords,
+          without_keywords: excludeKeywords,
           'with_runtime.gte': withRuntimeGte,
           'with_runtime.lte': withRuntimeLte,
           'vote_average.gte': voteAverageGte,
@@ -569,6 +584,7 @@ class TheMovieDb extends ExternalAPI {
     genre,
     network,
     keywords,
+    excludeKeywords,
     withRuntimeGte,
     withRuntimeLte,
     voteAverageGte,
@@ -614,12 +630,13 @@ class TheMovieDb extends ExternalAPI {
             originalLanguage && originalLanguage !== 'all'
               ? originalLanguage
               : originalLanguage === 'all'
-              ? undefined
-              : this.originalLanguage,
+                ? undefined
+                : this.originalLanguage,
           include_null_first_air_dates: includeEmptyReleaseDate,
           with_genres: genre,
           with_networks: network,
           with_keywords: keywords,
+          without_keywords: excludeKeywords,
           'with_runtime.gte': withRuntimeGte,
           'with_runtime.lte': withRuntimeLte,
           'vote_average.gte': voteAverageGte,

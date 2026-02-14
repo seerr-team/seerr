@@ -1,0 +1,181 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Renovate Helm Hooks
+
+on:
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - 'charts/**'
+
+permissions: {}
+
+concurrency:
+  group: renovate-helm-hooks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  renovate-post-run:
+    name: Renovate Bump Chart Version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.actor == 'renovate[bot]'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        id: app-token
+        with:
+          app-id: 2138788
+          private-key: ${{ secrets.APP_SEERR_HELM_PRIVATE_KEY }}
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
+
+      - name: Run chart-testing (list-changed)
+        id: list-changed
+        run: |
+          changed="$(ct list-changed --target-branch ${TARGET_BRANCH})"
+          if [[ -n "$changed" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "changed_list=${changed//$'\n'/ }" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          TARGET_BRANCH: ${{ github.event.repository.default_branch }}
+
+      - name: Bump chart version
+        if: steps.list-changed.outputs.changed == 'true'
+        env:
+          CHART: ${{ steps.list-changed.outputs.changed_list }}
+        run: |
+          if [[ ! -d "${CHART}" ]]; then
+            echo "${CHART} directory not found"
+            exit 0
+          fi
+
+          # Extract current appVersion and chart version from Chart.yaml
+          APP_VERSION=$(grep -e "^appVersion:" "$CHART/Chart.yaml" | cut -d ":" -f 2 | tr -d '[:space:]' | tr -d '"')
+          CHART_VERSION=$(grep -e "^version:" "$CHART/Chart.yaml" | cut -d ":" -f 2 | tr -d '[:space:]' | tr -d '"')
+
+          # Extract major, minor and patch versions of appVersion
+          APP_MAJOR_VERSION=$(printf '%s' "$APP_VERSION" | cut -d "." -f 1)
+          APP_MINOR_VERSION=$(printf '%s' "$APP_VERSION" | cut -d "." -f 2)
+          APP_PATCH_VERSION=$(printf '%s' "$APP_VERSION" | cut -d "." -f 3)
+
+          # Extract major, minor and patch versions of chart version
+          CHART_MAJOR_VERSION=$(printf '%s' "$CHART_VERSION" | cut -d "." -f 1)
+          CHART_MINOR_VERSION=$(printf '%s' "$CHART_VERSION" | cut -d "." -f 2)
+          CHART_PATCH_VERSION=$(printf '%s' "$CHART_VERSION" | cut -d "." -f 3)
+
+          # Get previous appVersion from the base commit of the pull request
+          BASE_COMMIT=$(git merge-base origin/main HEAD)
+          PREV_APP_VERSION=$(git show "$BASE_COMMIT":"$CHART/Chart.yaml" | grep -e "^appVersion:" | cut -d ":" -f 2 | tr -d '[:space:]' | tr -d '"')
+
+          # Extract major, minor and patch versions of previous appVersion
+          PREV_APP_MAJOR_VERSION=$(printf '%s' "$PREV_APP_VERSION" | cut -d "." -f 1)
+          PREV_APP_MINOR_VERSION=$(printf '%s' "$PREV_APP_VERSION" | cut -d "." -f 2)
+          PREV_APP_PATCH_VERSION=$(printf '%s' "$PREV_APP_VERSION" | cut -d "." -f 3)
+
+          # Check if the major, minor, or patch version of appVersion has changed
+          if [[ "$APP_MAJOR_VERSION" != "$PREV_APP_MAJOR_VERSION" ]]; then
+            # Bump major version of the chart and reset minor and patch versions to 0
+            CHART_MAJOR_VERSION=$((CHART_MAJOR_VERSION+1))
+            CHART_MINOR_VERSION=0
+            CHART_PATCH_VERSION=0
+          elif [[ "$APP_MINOR_VERSION" != "$PREV_APP_MINOR_VERSION" ]]; then
+            # Bump minor version of the chart and reset patch version to 0
+            CHART_MINOR_VERSION=$((CHART_MINOR_VERSION+1))
+            CHART_PATCH_VERSION=0
+          elif [[ "$APP_PATCH_VERSION" != "$PREV_APP_PATCH_VERSION" ]]; then
+            # Bump patch version of the chart
+            CHART_PATCH_VERSION=$((CHART_PATCH_VERSION+1))
+          fi
+
+          # Update the chart version in Chart.yaml
+          CHART_NEW_VERSION="${CHART_MAJOR_VERSION}.${CHART_MINOR_VERSION}.${CHART_PATCH_VERSION}"
+          sed -i "s/^version:.*/version: ${CHART_NEW_VERSION}/" "$CHART/Chart.yaml"
+
+      - name: Ensure documentation is updated
+        if: steps.list-changed.outputs.changed == 'true'
+        uses: docker://jnorwood/helm-docs:v1.14.2@sha256:7e562b49ab6b1dbc50c3da8f2dd6ffa8a5c6bba327b1c6335cc15ce29267979c
+
+      - name: Commit changes
+        if: steps.list-changed.outputs.changed == 'true'
+        env:
+          CHART: ${{ steps.list-changed.outputs.changed_list }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+        run: |
+          # Define the target directory
+          TARGET_DIR="$CHART"
+
+          # Fetch deleted files in the target directory
+          DELETED_FILES=$(git diff --diff-filter=D --name-only HEAD -- "$TARGET_DIR")
+
+          # Fetch added/modified files in the target directory
+          MODIFIED_FILES=$(git diff --diff-filter=ACM --name-only HEAD -- "$TARGET_DIR")
+
+          # Create a temporary file for JSON output
+          FILE_CHANGES_JSON_FILE=$(mktemp)
+
+          # Initialize JSON structure in the file
+          echo '{ "deletions": [], "additions": [] }' > "$FILE_CHANGES_JSON_FILE"
+
+          # Add deletions
+          for file in $DELETED_FILES; do
+            jq --arg path "$file" '.deletions += [{"path": $path}]' "$FILE_CHANGES_JSON_FILE" > "$FILE_CHANGES_JSON_FILE.tmp"
+            mv "$FILE_CHANGES_JSON_FILE.tmp" "$FILE_CHANGES_JSON_FILE"
+          done
+
+          # Add additions (new or modified files)
+          for file in $MODIFIED_FILES; do
+            BASE64_CONTENT=$(base64 -w 0 <"$file")  # Encode file content
+            jq --arg path "$file" --arg content "$BASE64_CONTENT" \
+              '.additions += [{"path": $path, "contents": $content}]' "$FILE_CHANGES_JSON_FILE" > "$FILE_CHANGES_JSON_FILE.tmp"
+            mv "$FILE_CHANGES_JSON_FILE.tmp" "$FILE_CHANGES_JSON_FILE"
+          done
+
+          # Create a temporary file for the final JSON payload
+          JSON_PAYLOAD_FILE=$(mktemp)
+
+          # Construct the final JSON using jq and store it in a file
+          jq -n --arg repo "$GITHUB_REPOSITORY" \
+                --arg branch "$GITHUB_HEAD_REF" \
+                --arg message "fix: post upgrade changes from renovate" \
+                --arg expectedOid "$GITHUB_SHA" \
+                --slurpfile fileChanges "$FILE_CHANGES_JSON_FILE" \
+                '{
+                  query: "mutation ($input: CreateCommitOnBranchInput!) {
+                    createCommitOnBranch(input: $input) {
+                      commit {
+                        url
+                      }
+                    }
+                  }",
+                  variables: {
+                    input: {
+                      branch: {
+                        repositoryNameWithOwner: $repo,
+                        branchName: $branch
+                      },
+                      message: { headline: $message },
+                      fileChanges: $fileChanges[0],
+                      expectedHeadOid: $expectedOid
+                    }
+                  }
+                }' > "$JSON_PAYLOAD_FILE"
+
+          # Call GitHub API
+          curl https://api.github.com/graphql -f \
+               -sSf -H "Authorization: Bearer $GITHUB_TOKEN" \
+               --data "@$JSON_PAYLOAD_FILE"
+
+          # Clean up temporary files
+          rm "$FILE_CHANGES_JSON_FILE" "$JSON_PAYLOAD_FILE"

@@ -1,136 +1,345 @@
-name: Jellyseer Release
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Seerr Release
 
-on: workflow_dispatch
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOCKER_HUB: seerr/seerr
 
 jobs:
-  semantic-release:
-    name: Tag and release latest version
-    runs-on: ubuntu-22.04
-    env:
-      HUSKY: 0
+  changelog:
+    name: Generate changelog
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      release_body: ${{ steps.git-cliff.outputs.content }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           fetch-depth: 0
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+          persist-credentials: false
+
+      - name: Generate changelog
+        id: git-cliff
+        uses: orhun/git-cliff-action@e16f179f0be49ecdfe63753837f20b9531642772 # v4.7.0
         with:
-          node-version: 22
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+          config: .github/cliff.toml
+          args: -vv --current
+        env:
+          OUTPUT: CHANGELOG.md
+          GITHUB_REPO: ${{ github.repository }}
+
+  create-draft-release:
+    name: Create draft release
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    needs: changelog
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Draft Release
+        run: gh release create ${GITHUB_REF_NAME} -t "Release ${GITHUB_REF_NAME}" -n "${RELEASE_BODY}" --draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_BODY: ${{ needs.changelog.outputs.release_body }}
+
+  build:
+    name: Build (${{ matrix.arch }})
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux/amd64
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    env:
+      VERSION: ${{ github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Commit timestamp
+        id: ts
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Warm cache [${{ matrix.platform }}]
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ matrix.platform }}
+          push: false
+          build-args: |
+            COMMIT_TAG=${{ github.sha }}
+            BUILD_VERSION=${{ env.VERSION }}
+            SOURCE_DATE_EPOCH=${{ steps.ts.outputs.TIMESTAMP }}
+          cache-from: type=gha,scope=${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
+          provenance: false
+
+  publish:
+    name: Publish multi-arch manifests
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_digest: ${{ steps.digests.outputs.IMAGE_DIGEST }}
+    env:
+      VERSION: ${{ github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Commit timestamp
+        id: ts
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
+
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GH_TOKEN }}
-      - name: Pnpm Setup
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-      - name: Get pnpm store directory
-        shell: sh
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      - name: Install dependencies
-        run: pnpm install
-      - name: Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: npx semantic-release
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-  # build-snap:
-  #   name: Build Snap Package (${{ matrix.architecture }})
-  #   needs: semantic-release
-  #   runs-on: ubuntu-22.04
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       architecture:
-  #         - amd64
-  #         - arm64
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #     - name: Switch to main branch
-  #       run: git checkout main
-  #     - name: Pull latest changes
-  #       run: git pull
-  #     - name: Prepare
-  #       id: prepare
-  #       run: |
-  #         git fetch --prune --tags
-  #         if [[ $GITHUB_REF == refs/tags/* || $GITHUB_REF == refs/heads/master ]]; then
-  #           echo "RELEASE=stable" >> $GITHUB_OUTPUT
-  #         else
-  #           echo "RELEASE=edge" >> $GITHUB_OUTPUT
-  #         fi
-  #     - name: Set Up QEMU
-  #       uses: docker/setup-qemu-action@v3
-  #       with:
-  #         image: tonistiigi/binfmt@sha256:df15403e06a03c2f461c1f7938b171fda34a5849eb63a70e2a2109ed5a778bde
-  #     - name: Build Snap Package
-  #       uses: diddlesnaps/snapcraft-multiarch-action@v1
-  #       id: build
-  #       with:
-  #         architecture: ${{ matrix.architecture }}
-  #     - name: Upload Snap Package
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: jellyseerr-snap-package-${{ matrix.architecture }}
-  #         path: ${{ steps.build.outputs.snap }}
-  #     - name: Review Snap Package
-  #       uses: diddlesnaps/snapcraft-review-tools-action@v1
-  #       with:
-  #         snap: ${{ steps.build.outputs.snap }}
-  #     - name: Publish Snap Package
-  #       uses: snapcore/action-publish@v1
-  #       env:
-  #         SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAP_LOGIN }}
-  #       with:
-  #         snap: ${{ steps.build.outputs.snap }}
-  #         release: ${{ steps.prepare.outputs.RELEASE }}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
+        with:
+          images: |
+            ${{ env.DOCKER_HUB }}
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ env.VERSION }}
+          labels: |
+            org.opencontainers.image.created=${{ steps.ts.outputs.TIMESTAMP }}
+
+      - name: Build & Push (multi-arch)
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            COMMIT_TAG=${{ github.sha }}
+            BUILD_VERSION=${{ env.VERSION }}
+            SOURCE_DATE_EPOCH=${{ steps.ts.outputs.TIMESTAMP }}
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: |
+            type=gha,scope=linux/amd64
+            type=gha,scope=linux/arm64
+          cache-to: type=gha,mode=max
+          provenance: false
+
+      - name: Resolve manifest digest
+        id: digests
+        run: |
+          DIGEST=$(docker buildx imagetools inspect "${{ env.DOCKER_HUB }}:${{ env.VERSION }}" --format '{{json .Manifest.Digest}}' | tr -d '"')
+          echo "IMAGE_DIGEST=$DIGEST" >> $GITHUB_OUTPUT
+
+      - name: Also tag :latest (non-pre-release only)
+        shell: bash
+        if: ${{ !contains(env.VERSION, '-') }}
+        run: |
+          docker buildx imagetools create \
+            -t ${{ env.DOCKER_HUB }}:latest \
+            ${{ env.DOCKER_HUB }}:${{ env.VERSION }}
+
+          docker buildx imagetools create \
+            -t ghcr.io/${{ github.repository }}:latest \
+            ghcr.io/${{ github.repository }}:${{ env.VERSION }}
+
+  sign:
+    name: Sign images and create SBOM attestations
+    needs: publish
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    env:
+      VERSION: ${{ github.ref_name }}
+      COSIGN_YES: 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@3fb12ec12f41e471780db15c232d5dd185dcb514 # v0.2.5
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sign images
+        run: |
+          cosign sign --recursive "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}"
+          cosign sign --recursive "${{ env.DOCKER_HUB }}@${{ needs.publish.outputs.image_digest }}"
+
+      - name: Generate SBOMs
+        run: |
+          trivy image --format cyclonedx --output seerr-ghcr-image-${{ env.VERSION }}.sbom \
+            "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}"
+
+          trivy image --format cyclonedx --output seerr-dockerhub-image-${{ env.VERSION }}.sbom \
+            "${{ env.DOCKER_HUB }}@${{ needs.publish.outputs.image_digest }}"
+
+      - name: Attest SBOMs
+        run: |
+          cosign attest \
+            --type cyclonedx \
+            --predicate seerr-ghcr-image-${{ env.VERSION }}.sbom \
+            "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}"
+
+          cosign attest \
+            --type cyclonedx \
+            --predicate seerr-dockerhub-image-${{ env.VERSION }}.sbom \
+            "${{ env.DOCKER_HUB }}@${{ needs.publish.outputs.image_digest }}"
+
+      - name: Upload SBOMs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sboms-${{ env.VERSION }}
+          path: '*.sbom'
+          if-no-files-found: error
+          retention-days: 1
+
+  verify:
+    name: Verify signatures and attestations
+    needs: [publish, sign]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ github.ref_name }}
+    steps:
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+
+      - name: Verify signatures
+        run: |
+          cosign verify "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}" \
+            --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+
+          cosign verify "${{ env.DOCKER_HUB }}@${{ needs.publish.outputs.image_digest }}" \
+            --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+
+      - name: Verify attestations
+        run: |
+          cosign verify-attestation "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}" \
+            --type cyclonedx \
+            --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" > /dev/null
+
+          cosign verify-attestation "${{ env.DOCKER_HUB }}@${{ needs.publish.outputs.image_digest }}" \
+            --type cyclonedx \
+            --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" > /dev/null
+
+  publish-release:
+    name: Publish release
+    needs: [create-draft-release, verify]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ github.ref_name }}
+    steps:
+      - name: Publish release
+        run: gh release edit "${{ env.VERSION }}" --draft=false --repo "${{ github.repository }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   discord:
     name: Send Discord Notification
-    needs: semantic-release
+    needs: publish-release
     if: always()
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - name: Get Build Job Status
-        uses: technote-space/workflow-conclusion-action@v3
-      - name: Combine Job Status
+      - name: Determine status
         id: status
         run: |
-          failures=(neutral, skipped, timed_out, action_required)
-          if [[ ${array[@]} =~ $WORKFLOW_CONCLUSION ]]; then
-            echo "status=failure" >> $GITHUB_OUTPUT
-          else
-            echo "status=$WORKFLOW_CONCLUSION" >> $GITHUB_OUTPUT
-          fi
-      - name: Post Status to Discord
-        uses: sarisia/actions-status-discord@v1
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          status: ${{ steps.status.outputs.status }}
-          title: ${{ github.workflow }}
-          nofail: true
+          case "${{ needs.publish-release.result }}" in
+            success)   echo "status=Success"   >> $GITHUB_OUTPUT; echo "colour=3066993"  >> $GITHUB_OUTPUT ;;
+            failure)   echo "status=Failure"   >> $GITHUB_OUTPUT; echo "colour=15158332" >> $GITHUB_OUTPUT ;;
+            cancelled) echo "status=Cancelled" >> $GITHUB_OUTPUT; echo "colour=10181046" >> $GITHUB_OUTPUT ;;
+            *)         echo "status=Skipped"   >> $GITHUB_OUTPUT; echo "colour=9807270"  >> $GITHUB_OUTPUT ;;
+          esac
+
+      - name: Send notification
+        run: |
+          WEBHOOK="${{ secrets.DISCORD_WEBHOOK }}"
+
+          PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "${{ steps.status.outputs.status }}: ${{ github.workflow }}",
+              "color": ${{ steps.status.outputs.colour }},
+              "fields": [
+                { "name": "Repository",   "value": "[${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})", "inline": true },
+                { "name": "Ref",          "value": "${{ github.ref }}", "inline": true },
+                { "name": "Event",        "value": "${{ github.event_name }}", "inline": true },
+                { "name": "Triggered by", "value": "${{ github.actor }}", "inline": true },
+                { "name": "Workflow",     "value": "[${{ github.workflow }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})", "inline": true }
+              ]
+            }]
+          }
+          EOF
+          )
+
+          curl -sS -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK" || true

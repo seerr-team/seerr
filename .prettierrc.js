@@ -1,5 +1,5 @@
 module.exports = {
-  plugins: [require('./merged-prettier-plugin.js')],
+  plugins: ['prettier-plugin-organize-imports', 'prettier-plugin-tailwindcss'],
   singleQuote: true,
   trailingComma: 'es5',
   overrides: [
@@ -19,6 +19,18 @@ module.exports = {
       files: 'charts/**',
       options: {
         rangeEnd: 0, // default: Infinity
+      },
+    },
+    {
+      files: 'cypress/config/settings.cypress.json',
+      options: {
+        rangeEnd: 0,
+      },
+    },
+    {
+      files: 'public/offline.html',
+      options: {
+        rangeEnd: 0,
       },
     },
   ],

@@ -13,7 +13,7 @@ export type ButtonType =
 // Helper type to override types (overrides onClick)
 type MergeElementProps<
   T extends React.ElementType,
-  P extends Record<string, unknown>
+  P extends Record<string, unknown>,
 > = Omit<React.ComponentProps<T>, keyof P> & P;
 
 type ElementTypes = 'button' | 'a';

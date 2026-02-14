@@ -68,7 +68,7 @@ const CollectionRequestModal = ({
 
   const getAllParts = (): number[] => {
     return (data?.parts ?? [])
-      .filter((part) => part.mediaInfo?.status !== MediaStatus.BLACKLISTED)
+      .filter((part) => part.mediaInfo?.status !== MediaStatus.BLOCKLISTED)
       .map((part) => part.id);
   };
 
@@ -257,8 +257,8 @@ const CollectionRequestModal = ({
     { type: 'or' }
   );
 
-  const blacklistVisibility = hasPermission(
-    [Permission.MANAGE_BLACKLIST, Permission.VIEW_BLACKLIST],
+  const blocklistVisibility = hasPermission(
+    [Permission.MANAGE_BLOCKLIST, Permission.VIEW_BLOCKLIST],
     { type: 'or' }
   );
 
@@ -278,13 +278,13 @@ const CollectionRequestModal = ({
         isUpdating
           ? intl.formatMessage(globalMessages.requesting)
           : selectedParts.length === 0
-          ? intl.formatMessage(messages.selectmovies)
-          : intl.formatMessage(
-              is4k ? messages.requestmovies4k : messages.requestmovies,
-              {
-                count: selectedParts.length,
-              }
-            )
+            ? intl.formatMessage(messages.selectmovies)
+            : intl.formatMessage(
+                is4k ? messages.requestmovies4k : messages.requestmovies,
+                {
+                  count: selectedParts.length,
+                }
+              )
       }
       okDisabled={selectedParts.length === 0}
       okButtonType={'primary'}
@@ -360,9 +360,9 @@ const CollectionRequestModal = ({
                 <tbody className="divide-y divide-gray-700">
                   {data?.parts
                     .filter((part) => {
-                      if (!blacklistVisibility)
+                      if (!blocklistVisibility)
                         return (
-                          part.mediaInfo?.status !== MediaStatus.BLACKLISTED
+                          part.mediaInfo?.status !== MediaStatus.BLOCKLISTED
                         );
                       return part;
                     })
@@ -381,7 +381,7 @@ const CollectionRequestModal = ({
                         <tr key={`part-${part.id}`}>
                           <td
                             className={`whitespace-nowrap px-4 py-4 text-sm font-medium leading-5 text-gray-100 ${
-                              partMedia?.status === MediaStatus.BLACKLISTED &&
+                              partMedia?.status === MediaStatus.BLOCKLISTED &&
                               'pointer-events-none opacity-50'
                             }`}
                           >
@@ -391,7 +391,7 @@ const CollectionRequestModal = ({
                               aria-checked={
                                 (!!partMedia &&
                                   partMedia.status !==
-                                    MediaStatus.BLACKLISTED) ||
+                                    MediaStatus.BLOCKLISTED) ||
                                 isSelectedPart(part.id)
                               }
                               onClick={() => togglePart(part.id)}
@@ -403,7 +403,7 @@ const CollectionRequestModal = ({
                               className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none ${
                                 (!!partMedia &&
                                   partMedia.status !==
-                                    MediaStatus.BLACKLISTED) ||
+                                    MediaStatus.BLOCKLISTED) ||
                                 partRequest ||
                                 (quota?.movie.limit &&
                                   currentlyRemaining <= 0 &&
@@ -417,7 +417,7 @@ const CollectionRequestModal = ({
                                 className={`${
                                   (!!partMedia &&
                                     partMedia.status !==
-                                      MediaStatus.BLACKLISTED) ||
+                                      MediaStatus.BLOCKLISTED) ||
                                   partRequest ||
                                   isSelectedPart(part.id)
                                     ? 'bg-indigo-500'
@@ -429,7 +429,7 @@ const CollectionRequestModal = ({
                                 className={`${
                                   (!!partMedia &&
                                     partMedia.status !==
-                                      MediaStatus.BLACKLISTED) ||
+                                      MediaStatus.BLOCKLISTED) ||
                                   partRequest ||
                                   isSelectedPart(part.id)
                                     ? 'translate-x-5'
@@ -440,7 +440,7 @@ const CollectionRequestModal = ({
                           </td>
                           <td
                             className={`flex items-center px-1 py-4 text-sm font-medium leading-5 text-gray-100 md:px-6 ${
-                              partMedia?.status === MediaStatus.BLACKLISTED &&
+                              partMedia?.status === MediaStatus.BLOCKLISTED &&
                               'pointer-events-none opacity-50'
                             }`}
                           >
@@ -450,7 +450,7 @@ const CollectionRequestModal = ({
                                 src={
                                   part.posterPath
                                     ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${part.posterPath}`
-                                    : '/images/jellyseerr_poster_not_found.png'
+                                    : '/images/seerr_poster_not_found.png'
                                 }
                                 alt=""
                                 sizes="100vw"
@@ -502,9 +502,9 @@ const CollectionRequestModal = ({
                                 {intl.formatMessage(globalMessages.available)}
                               </Badge>
                             )}
-                            {partMedia?.status === MediaStatus.BLACKLISTED && (
+                            {partMedia?.status === MediaStatus.BLOCKLISTED && (
                               <Badge badgeType="danger">
-                                {intl.formatMessage(globalMessages.blacklisted)}
+                                {intl.formatMessage(globalMessages.blocklisted)}
                               </Badge>
                             )}
                           </td>

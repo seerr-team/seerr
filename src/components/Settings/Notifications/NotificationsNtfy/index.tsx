@@ -19,6 +19,7 @@ const messages = defineMessages(
   'components.Settings.Notifications.NotificationsNtfy',
   {
     agentenabled: 'Enable Agent',
+    embedPoster: 'Embed Poster',
     url: 'Server root URL',
     topic: 'Topic',
     usernamePasswordAuth: 'Username + Password authentication',
@@ -80,6 +81,7 @@ const NotificationsNtfy = () => {
     <Formik
       initialValues={{
         enabled: data?.enabled,
+        embedPoster: data?.embedPoster,
         types: data?.types,
         url: data?.options.url,
         topic: data?.options.topic,
@@ -94,6 +96,7 @@ const NotificationsNtfy = () => {
         try {
           await axios.post('/api/v1/settings/notifications/ntfy', {
             enabled: values.enabled,
+            embedPoster: values.embedPoster,
             types: values.types,
             options: {
               url: values.url,
@@ -189,6 +192,14 @@ const NotificationsNtfy = () => {
               </div>
             </div>
             <div className="form-row">
+              <label htmlFor="embedPoster" className="checkbox-label">
+                {intl.formatMessage(messages.embedPoster)}
+              </label>
+              <div className="form-input-area">
+                <Field type="checkbox" id="embedPoster" name="embedPoster" />
+              </div>
+            </div>
+            <div className="form-row">
               <label htmlFor="url" className="text-label">
                 {intl.formatMessage(messages.url)}
                 <span className="label-required">*</span>
@@ -245,7 +256,7 @@ const NotificationsNtfy = () => {
               </div>
             </div>
             {values.authMethodUsernamePassword && (
-              <div className="mr-2 ml-4">
+              <div className="ml-4 mr-2">
                 <div className="form-row">
                   <label htmlFor="username" className="text-label">
                     {intl.formatMessage(messages.username)}
@@ -291,7 +302,7 @@ const NotificationsNtfy = () => {
               </div>
             </div>
             {values.authMethodToken && (
-              <div className="form-row mr-2 ml-4">
+              <div className="form-row ml-4 mr-2">
                 <label htmlFor="token" className="text-label">
                   {intl.formatMessage(messages.token)}
                 </label>

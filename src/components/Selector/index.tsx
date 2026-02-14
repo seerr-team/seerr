@@ -12,7 +12,6 @@ import type {
   TmdbGenre,
   TmdbKeywordSearchResponse,
 } from '@server/api/themoviedb/interfaces';
-import type { GenreSliderItem } from '@server/interfaces/api/discoverInterfaces';
 import type { UserResultsResponse } from '@server/interfaces/api/userInterfaces';
 import type {
   Keyword,
@@ -20,7 +19,7 @@ import type {
   WatchProviderDetails,
 } from '@server/models/common';
 import axios from 'axios';
-import { orderBy } from 'lodash';
+import orderBy from 'lodash/orderBy';
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import type { MultiValue, SingleValue } from 'react-select';
@@ -185,9 +184,7 @@ export const GenreSelector = ({
   }, [defaultValue, type]);
 
   const loadGenreOptions = async (inputValue: string) => {
-    const results = await axios.get<GenreSliderItem[]>(
-      `/api/v1/discover/genreslider/${type}`
-    );
+    const results = await axios.get<TmdbGenre[]>(`/api/v1/genres/${type}`);
 
     return results.data
       .map((result) => ({
@@ -201,7 +198,7 @@ export const GenreSelector = ({
 
   return (
     <AsyncSelect
-      key={`genre-select-${defaultDataValue}`}
+      key={`genre-select-${type}-${defaultDataValue}`}
       className="react-select-container"
       classNamePrefix="react-select"
       defaultValue={isMulti ? defaultDataValue : defaultDataValue?.[0]}
@@ -391,8 +388,8 @@ export const WatchProviderSelector = ({
     region
       ? region
       : currentSettings.discoverRegion
-      ? currentSettings.discoverRegion
-      : 'US'
+        ? currentSettings.discoverRegion
+        : 'US'
   );
   const [activeProvider, setActiveProvider] = useState<number[]>(
     activeProviders ?? []
@@ -479,7 +476,7 @@ export const WatchProviderSelector = ({
                       />
                     </div>
                     {isActive && (
-                      <div className="pointer-events-none absolute -top-1 -left-1 flex items-center justify-center text-indigo-100 opacity-90">
+                      <div className="pointer-events-none absolute -left-1 -top-1 flex items-center justify-center text-indigo-100 opacity-90">
                         <CheckCircleIcon className="h-6 w-6" />
                       </div>
                     )}
@@ -522,7 +519,7 @@ export const WatchProviderSelector = ({
                         />
                       </div>
                       {isActive && (
-                        <div className="pointer-events-none absolute -top-1 -left-1 flex items-center justify-center text-indigo-100 opacity-90">
+                        <div className="pointer-events-none absolute -left-1 -top-1 flex items-center justify-center text-indigo-100 opacity-90">
                           <CheckCircleIcon className="h-6 w-6" />
                         </div>
                       )}

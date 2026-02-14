@@ -2,12 +2,12 @@ import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import type { NotificationAgentDiscord } from '@server/lib/settings';
-import { getSettings, NotificationAgentKey } from '@server/lib/settings';
+import { NotificationAgentKey, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
 import {
-  hasNotificationType,
   Notification,
+  hasNotificationType,
   shouldSendAdminNotification,
 } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
@@ -109,7 +109,9 @@ class DiscordAgent
     type: Notification,
     payload: NotificationPayload
   ): DiscordRichEmbed {
-    const { applicationUrl } = getSettings().main;
+    const settings = getSettings();
+    const { applicationUrl } = settings.main;
+    const { embedPoster } = settings.notifications.agents.discord;
 
     const appUrl =
       applicationUrl || `http://localhost:${process.env.port || 5055}`;
@@ -207,8 +209,8 @@ class DiscordAgent
       ? payload.issue
         ? `${applicationUrl}/issues/${payload.issue.id}`
         : payload.media
-        ? `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`
-        : undefined
+          ? `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`
+          : undefined
       : undefined;
 
     return {
@@ -223,9 +225,11 @@ class DiscordAgent
           }
         : undefined,
       fields,
-      thumbnail: {
-        url: payload.image,
-      },
+      thumbnail: embedPoster
+        ? {
+            url: payload.image,
+          }
+        : undefined,
     };
   }
 

@@ -5,7 +5,6 @@ import PageTitle from '@app/components/Common/PageTitle';
 import LanguageSelector from '@app/components/LanguageSelector';
 import QuotaSelector from '@app/components/QuotaSelector';
 import RegionSelector from '@app/components/RegionSelector';
-import type { AvailableLocale } from '@app/context/LanguageContext';
 import { availableLanguages } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
@@ -16,6 +15,7 @@ import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import { ApiErrorCode } from '@server/constants/error';
 import type { UserSettingsGeneralResponse } from '@server/interfaces/api/userSettingsInterfaces';
+import type { AvailableLocale } from '@server/types/languages';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useRouter } from 'next/router';
@@ -23,6 +23,7 @@ import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
+import validator from 'validator';
 import * as Yup from 'yup';
 
 const messages = defineMessages(
@@ -105,10 +106,18 @@ const UserGeneralSettings = () => {
       user?.id === 1 ||
       (user?.userType !== UserType.JELLYFIN && user?.userType !== UserType.EMBY)
         ? Yup.string()
-            .email(intl.formatMessage(messages.validationemailformat))
+            .test(
+              'email',
+              intl.formatMessage(messages.validationemailformat),
+              (value) =>
+                !value || validator.isEmail(value, { require_tld: false })
+            )
             .required(intl.formatMessage(messages.validationemailrequired))
-        : Yup.string().email(
-            intl.formatMessage(messages.validationemailformat)
+        : Yup.string().test(
+            'email',
+            intl.formatMessage(messages.validationemailformat),
+            (value) =>
+              !value || validator.isEmail(value, { require_tld: false })
           ),
     discordId: Yup.string()
       .nullable()
@@ -276,8 +285,8 @@ const UserGeneralSettings = () => {
                     {user?.id === 1
                       ? intl.formatMessage(messages.owner)
                       : hasPermission(Permission.ADMIN)
-                      ? intl.formatMessage(messages.admin)
-                      : intl.formatMessage(messages.user)}
+                        ? intl.formatMessage(messages.admin)
+                        : intl.formatMessage(messages.user)}
                   </div>
                 </div>
               </div>

@@ -20,15 +20,17 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
   network: 'Network',
   networksettings: 'Network Settings',
   networksettingsDescription:
-    'Configure network settings for your Jellyseerr instance.',
+    'Configure network settings for your Seerr instance.',
   csrfProtection: 'Enable CSRF Protection',
   csrfProtectionTip: 'Set external API access to read-only (requires HTTPS)',
   csrfProtectionHoverTip:
     'Do NOT enable this setting unless you understand what you are doing!',
   trustProxy: 'Enable Proxy Support',
   trustProxyTip:
-    'Allow Jellyseerr to correctly register client IP addresses behind a proxy',
+    'Allow Seerr to correctly register client IP addresses behind a proxy',
   proxyEnabled: 'HTTP(S) Proxy',
+  proxyEnabledTip:
+    'Send ALL outgoing HTTP/HTTPS requests through a proxy server (host/port). Does NOT enable HTTPS, SSL, or certificate configuration.',
   proxyHostname: 'Proxy Hostname',
   proxyPort: 'Proxy Port',
   proxySsl: 'Use SSL For Proxy',
@@ -38,13 +40,22 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
   proxyBypassFilterTip:
     "Use ',' as a separator, and '*.' as a wildcard for subdomains",
   proxyBypassLocalAddresses: 'Bypass Proxy for Local Addresses',
+  validationDnsCacheMinTtl: 'You must provide a valid minimum TTL',
+  validationDnsCacheMaxTtl: 'You must provide a valid maximum TTL',
   validationProxyPort: 'You must provide a valid port',
   networkDisclaimer:
     'Network parameters from your container/system should be used instead of these settings. See the {docs} for more information.',
   docs: 'documentation',
   forceIpv4First: 'Force IPv4 Resolution First',
   forceIpv4FirstTip:
-    'Force Jellyseerr to resolve IPv4 addresses first instead of IPv6',
+    'Force Seerr to resolve IPv4 addresses first instead of IPv6',
+  dnsCache: 'DNS Cache',
+  dnsCacheTip:
+    'Enable caching of DNS lookups to optimize performance and avoid making unnecessary API calls',
+  dnsCacheHoverTip:
+    'Do NOT enable this if you are experiencing issues with DNS lookups',
+  dnsCacheForceMinTtl: 'DNS Cache Minimum TTL',
+  dnsCacheForceMaxTtl: 'DNS Cache Maximum TTL',
 });
 
 const SettingsNetwork = () => {
@@ -57,11 +68,28 @@ const SettingsNetwork = () => {
   } = useSWR<NetworkSettings>('/api/v1/settings/network');
 
   const NetworkSettingsSchema = Yup.object().shape({
+    dnsCacheForceMinTtl: Yup.number().when('dnsCacheEnabled', {
+      is: true,
+      then: Yup.number()
+        .typeError(intl.formatMessage(messages.validationDnsCacheMinTtl))
+        .required(intl.formatMessage(messages.validationDnsCacheMinTtl))
+        .min(0),
+    }),
+    dnsCacheForceMaxTtl: Yup.number().when('dnsCacheEnabled', {
+      is: true,
+      then: Yup.number()
+        .typeError(intl.formatMessage(messages.validationDnsCacheMaxTtl))
+        .required(intl.formatMessage(messages.validationDnsCacheMaxTtl))
+        .min(-1),
+    }),
     proxyPort: Yup.number().when('proxyEnabled', {
       is: (proxyEnabled: boolean) => proxyEnabled,
-      then: Yup.number().required(
-        intl.formatMessage(messages.validationProxyPort)
-      ),
+      then: Yup.number()
+        .typeError(intl.formatMessage(messages.validationProxyPort))
+        .integer(intl.formatMessage(messages.validationProxyPort))
+        .min(1, intl.formatMessage(messages.validationProxyPort))
+        .max(65535, intl.formatMessage(messages.validationProxyPort))
+        .required(intl.formatMessage(messages.validationProxyPort)),
     }),
   });
 
@@ -90,6 +118,9 @@ const SettingsNetwork = () => {
           initialValues={{
             csrfProtection: data?.csrfProtection,
             forceIpv4First: data?.forceIpv4First,
+            dnsCacheEnabled: data?.dnsCache.enabled,
+            dnsCacheForceMinTtl: data?.dnsCache.forceMinTtl,
+            dnsCacheForceMaxTtl: data?.dnsCache.forceMaxTtl,
             trustProxy: data?.trustProxy,
             proxyEnabled: data?.proxy?.enabled,
             proxyHostname: data?.proxy?.hostname,
@@ -108,10 +139,15 @@ const SettingsNetwork = () => {
                 csrfProtection: values.csrfProtection,
                 forceIpv4First: values.forceIpv4First,
                 trustProxy: values.trustProxy,
+                dnsCache: {
+                  enabled: values.dnsCacheEnabled,
+                  forceMinTtl: Number(values.dnsCacheForceMinTtl),
+                  forceMaxTtl: Number(values.dnsCacheForceMaxTtl),
+                },
                 proxy: {
                   enabled: values.proxyEnabled,
                   hostname: values.proxyHostname,
-                  port: values.proxyPort,
+                  port: Number(values.proxyPort),
                   useSsl: values.proxySsl,
                   user: values.proxyUser,
                   password: values.proxyPassword,
@@ -222,12 +258,99 @@ const SettingsNetwork = () => {
                   </div>
                 </div>
                 <div className="form-row">
+                  <label htmlFor="dnsCacheEnabled" className="checkbox-label">
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.dnsCache)}
+                    </span>
+                    <SettingsBadge badgeType="advanced" className="mr-2" />
+                    <SettingsBadge badgeType="restartRequired" />
+                    <SettingsBadge badgeType="experimental" className="mr-2" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.dnsCacheTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Tooltip
+                      content={intl.formatMessage(messages.dnsCacheHoverTip)}
+                    >
+                      <Field
+                        type="checkbox"
+                        id="dnsCacheEnabled"
+                        name="dnsCacheEnabled"
+                        onChange={() => {
+                          setFieldValue(
+                            'dnsCacheEnabled',
+                            !values.dnsCacheEnabled
+                          );
+                        }}
+                      />
+                    </Tooltip>
+                  </div>
+                </div>
+                {values.dnsCacheEnabled && (
+                  <>
+                    <div className="ml-4 mr-2">
+                      <div className="form-row">
+                        <label
+                          htmlFor="dnsCacheForceMinTtl"
+                          className="text-label"
+                        >
+                          {intl.formatMessage(messages.dnsCacheForceMinTtl)}
+                        </label>
+                        <div className="form-input-area">
+                          <Field
+                            id="dnsCacheForceMinTtl"
+                            name="dnsCacheForceMinTtl"
+                            type="text"
+                            inputMode="numeric"
+                            className="short"
+                          />
+                        </div>
+                        {errors.dnsCacheForceMinTtl &&
+                          touched.dnsCacheForceMinTtl &&
+                          typeof errors.dnsCacheForceMinTtl === 'string' && (
+                            <div className="error">
+                              {errors.dnsCacheForceMinTtl}
+                            </div>
+                          )}
+                      </div>
+                      <div className="form-row">
+                        <label
+                          htmlFor="dnsCacheForceMaxTtl"
+                          className="text-label"
+                        >
+                          {intl.formatMessage(messages.dnsCacheForceMaxTtl)}
+                        </label>
+                        <div className="form-input-area">
+                          <Field
+                            id="dnsCacheForceMaxTtl"
+                            name="dnsCacheForceMaxTtl"
+                            type="text"
+                            inputMode="text"
+                            className="short"
+                          />
+                        </div>
+                        {errors.dnsCacheForceMaxTtl &&
+                          touched.dnsCacheForceMaxTtl &&
+                          typeof errors.dnsCacheForceMaxTtl === 'string' && (
+                            <div className="error">
+                              {errors.dnsCacheForceMaxTtl}
+                            </div>
+                          )}
+                      </div>
+                    </div>
+                  </>
+                )}
+                <div className="form-row">
                   <label htmlFor="proxyEnabled" className="checkbox-label">
                     <span className="mr-2">
                       {intl.formatMessage(messages.proxyEnabled)}
                     </span>
                     <SettingsBadge badgeType="advanced" className="mr-2" />
                     <SettingsBadge badgeType="restartRequired" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.proxyEnabledTip)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <Field
@@ -242,7 +365,7 @@ const SettingsNetwork = () => {
                 </div>
                 {values.proxyEnabled && (
                   <>
-                    <div className="mr-2 ml-4">
+                    <div className="ml-4 mr-2">
                       <div className="form-row">
                         <label
                           htmlFor="proxyHostname"
@@ -272,13 +395,13 @@ const SettingsNetwork = () => {
                           {intl.formatMessage(messages.proxyPort)}
                         </label>
                         <div className="form-input-area">
-                          <div className="form-input-field">
-                            <Field
-                              id="proxyPort"
-                              name="proxyPort"
-                              type="text"
-                            />
-                          </div>
+                          <Field
+                            id="proxyPort"
+                            name="proxyPort"
+                            type="text"
+                            inputMode="numeric"
+                            className="short"
+                          />
                           {errors.proxyPort &&
                             touched.proxyPort &&
                             typeof errors.proxyPort === 'string' && (

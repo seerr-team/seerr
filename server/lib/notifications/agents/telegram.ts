@@ -3,12 +3,12 @@ import { MediaStatus } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import type { NotificationAgentTelegram } from '@server/lib/settings';
-import { getSettings, NotificationAgentKey } from '@server/lib/settings';
+import { NotificationAgentKey, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
 import {
-  hasNotificationType,
   Notification,
+  hasNotificationType,
   shouldSendAdminNotification,
 } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
@@ -65,7 +65,9 @@ class TelegramAgent
     type: Notification,
     payload: NotificationPayload
   ): Partial<TelegramMessagePayload | TelegramPhotoPayload> {
-    const { applicationUrl, applicationTitle } = getSettings().main;
+    const settings = getSettings();
+    const { applicationUrl, applicationTitle } = settings.main;
+    const { embedPoster } = settings.notifications.agents.telegram;
 
     /* eslint-disable no-useless-escape */
     let message = `\*${this.escapeText(
@@ -131,8 +133,8 @@ class TelegramAgent
       ? payload.issue
         ? `${applicationUrl}/issues/${payload.issue.id}`
         : payload.media
-        ? `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`
-        : undefined
+          ? `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`
+          : undefined
       : undefined;
 
     if (url) {
@@ -142,7 +144,7 @@ class TelegramAgent
     }
     /* eslint-enable */
 
-    return payload.image
+    return embedPoster && payload.image
       ? {
           photo: payload.image,
           caption: message,
@@ -160,7 +162,7 @@ class TelegramAgent
   ): Promise<boolean> {
     const settings = this.getSettings();
     const endpoint = `${this.baseUrl}bot${settings.options.botAPI}/${
-      payload.image ? 'sendPhoto' : 'sendMessage'
+      settings.embedPoster && payload.image ? 'sendPhoto' : 'sendMessage'
     }`;
     const notificationPayload = this.getNotificationPayload(type, payload);
 

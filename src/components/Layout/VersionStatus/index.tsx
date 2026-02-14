@@ -11,8 +11,8 @@ import { useIntl } from 'react-intl';
 import useSWR from 'swr';
 
 const messages = defineMessages('components.Layout.VersionStatus', {
-  streamdevelop: 'Jellyseerr Develop',
-  streamstable: 'Jellyseerr Stable',
+  streamdevelop: 'Seerr Develop',
+  streamstable: 'Seerr Stable',
   outofdate: 'Out of Date',
   commitsbehind:
     '{commitsBehind} {commitsBehind, plural, one {commit} other {commits}} behind',
@@ -36,8 +36,8 @@ const VersionStatus = ({ onClick }: VersionStatusProps) => {
     data.commitTag === 'local'
       ? 'Keep it up! 👍'
       : data.version.startsWith('develop-')
-      ? intl.formatMessage(messages.streamdevelop)
-      : intl.formatMessage(messages.streamstable);
+        ? intl.formatMessage(messages.streamdevelop)
+        : intl.formatMessage(messages.streamstable);
 
   return (
     <Link

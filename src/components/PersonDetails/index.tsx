@@ -241,7 +241,7 @@ const PersonDetails = () => {
     <>
       <PageTitle title={data.name} />
       {(sortedCrew || sortedCast) && (
-        <div className="absolute top-0 left-0 right-0 z-0 h-96">
+        <div className="absolute left-0 right-0 top-0 z-0 h-96">
           <ImageFader
             isDarker
             backgroundImages={[...(sortedCast ?? []), ...(sortedCrew ?? [])]
@@ -255,7 +255,7 @@ const PersonDetails = () => {
         </div>
       )}
       <div
-        className={`relative z-10 mt-4 mb-8 flex flex-col items-center lg:flex-row ${
+        className={`relative z-10 mb-8 mt-4 flex flex-col items-center lg:flex-row ${
           data.biography ? 'lg:items-start' : ''
         }`}
       >
@@ -277,7 +277,7 @@ const PersonDetails = () => {
               {mediaTypePicker}
             </div>
           </div>
-          <div className="mt-1 mb-2 space-y-1 text-xs text-white sm:text-sm lg:text-base">
+          <div className="mb-2 mt-1 space-y-1 text-xs text-white sm:text-sm lg:text-base">
             <div>{personAttributes.join(' | ')}</div>
             {(data.alsoKnownAs ?? []).length > 0 && (
               <div>
@@ -292,6 +292,7 @@ const PersonDetails = () => {
               </div>
             )}
           </div>
+          <div className="lg:hidden">{mediaTypePicker}</div>
           {data.biography && (
             <div className="relative text-left">
               {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
@@ -314,7 +315,6 @@ const PersonDetails = () => {
           )}
         </div>
       </div>
-      <div className="lg:hidden">{mediaTypePicker}</div>
       {data.knownForDepartment === 'Acting' ? [cast, crew] : [crew, cast]}
       {isLoading && <LoadingSpinner />}
     </>

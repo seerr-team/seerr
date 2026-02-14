@@ -3,7 +3,7 @@ import type { NotificationAgentSlack } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
-import { hasNotificationType, Notification } from '..';
+import { Notification, hasNotificationType } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
 import { BaseAgent } from './agent';
 
@@ -63,7 +63,9 @@ class SlackAgent
     type: Notification,
     payload: NotificationPayload
   ): SlackBlockEmbed {
-    const { applicationUrl, applicationTitle } = getSettings().main;
+    const settings = getSettings();
+    const { applicationUrl, applicationTitle } = settings.main;
+    const { embedPoster } = settings.notifications.agents.slack;
 
     const fields: EmbedField[] = [];
 
@@ -159,13 +161,14 @@ class SlackAgent
           type: 'mrkdwn',
           text: payload.message,
         },
-        accessory: payload.image
-          ? {
-              type: 'image',
-              image_url: payload.image,
-              alt_text: payload.subject,
-            }
-          : undefined,
+        accessory:
+          embedPoster && payload.image
+            ? {
+                type: 'image',
+                image_url: payload.image,
+                alt_text: payload.subject,
+              }
+            : undefined,
       });
     }
 
@@ -180,8 +183,8 @@ class SlackAgent
       ? payload.issue
         ? `${applicationUrl}/issues/${payload.issue.id}`
         : payload.media
-        ? `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`
-        : undefined
+          ? `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`
+          : undefined
       : undefined;
 
     if (url) {
@@ -189,7 +192,7 @@ class SlackAgent
         type: 'actions',
         elements: [
           {
-            action_id: 'open-in-jellyseerr',
+            action_id: 'open-in-seerr',
             type: 'button',
             url,
             text: {

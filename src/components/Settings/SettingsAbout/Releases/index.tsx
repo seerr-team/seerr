@@ -29,7 +29,7 @@ const messages = defineMessages('components.Settings.SettingsAbout.Releases', {
 });
 
 const REPO_RELEASE_API =
-  'https://api.github.com/repos/fallenbagel/jellyseerr/releases?per_page=20';
+  'https://api.github.com/repos/seerr-team/seerr/releases?per_page=20';
 
 interface GitHubRelease {
   url: string;
@@ -61,7 +61,7 @@ const Release = ({ currentVersion, release, isLatest }: ReleaseProps) => {
   const [isModalOpen, setModalOpen] = useState(false);
 
   return (
-    <div className="flex w-full flex-col space-y-3 rounded-md bg-gray-800 px-4 py-2 shadow-md ring-1 ring-gray-700 sm:flex-row sm:space-y-0 sm:space-x-3">
+    <div className="flex w-full flex-col space-y-3 rounded-md bg-gray-800 px-4 py-2 shadow-md ring-1 ring-gray-700 sm:flex-row sm:space-x-3 sm:space-y-0">
       <Transition
         as={Fragment}
         enter="transition-opacity duration-300"

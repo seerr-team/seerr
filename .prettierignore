@@ -2,13 +2,19 @@
 .next/
 dist/
 config/
-CHANGELOG.md
 pnpm-lock.yaml
+cypress/config/settings.cypress.json
+.github
+.vscode
 
 # assets
 src/assets/
-public/
 docs/
+public/*
+!public/sw.js
 
 # helm charts
 **/charts
+
+# Prettier breaks GitHub alert syntax in markdown
+*.md

@@ -111,8 +111,16 @@ class SonarrAPI extends ServarrBase<{
   episodeId: number;
   episode: EpisodeResult;
 }> {
-  constructor({ url, apiKey }: { url: string; apiKey: string }) {
-    super({ url, apiKey, apiName: 'Sonarr', cacheName: 'sonarr' });
+  constructor({
+    url,
+    apiKey,
+    timeout,
+  }: {
+    url: string;
+    apiKey: string;
+    timeout?: number;
+  }) {
+    super({ url, apiKey, apiName: 'Sonarr', cacheName: 'sonarr', timeout });
   }
 
   public async getSeries(): Promise<SonarrSeries[]> {
@@ -209,6 +217,34 @@ class SonarrAPI extends ServarrBase<{
             series: newSeriesResponse.data,
           });
 
+          try {
+            const episodes = await this.getEpisodes(newSeriesResponse.data.id);
+            const episodeIdsToMonitor = episodes
+              .filter(
+                (ep) =>
+                  options.seasons.includes(ep.seasonNumber) && !ep.monitored
+              )
+              .map((ep) => ep.id);
+
+            if (episodeIdsToMonitor.length > 0) {
+              logger.debug(
+                'Re-monitoring unmonitored episodes for requested seasons.',
+                {
+                  label: 'Sonarr',
+                  seriesId: newSeriesResponse.data.id,
+                  episodeCount: episodeIdsToMonitor.length,
+                }
+              );
+              await this.monitorEpisodes(episodeIdsToMonitor);
+            }
+          } catch (e) {
+            logger.warn('Failed to re-monitor episodes', {
+              label: 'Sonarr',
+              errorMessage: e.message,
+              seriesId: newSeriesResponse.data.id,
+            });
+          }
+
           if (options.searchNow) {
             this.searchSeries(newSeriesResponse.data.id);
           }
@@ -257,7 +293,7 @@ class SonarrAPI extends ServarrBase<{
           series: createdSeriesResponse.data,
         });
       } else {
-        logger.error('Failed to add movie to Sonarr', {
+        logger.error('Failed to add series to Sonarr', {
           label: 'Sonarr',
           options,
         });
@@ -318,6 +354,38 @@ class SonarrAPI extends ServarrBase<{
     }
   }
 
+  public async getEpisodes(seriesId: number): Promise<EpisodeResult[]> {
+    try {
+      const response = await this.axios.get<EpisodeResult[]>('/episode', {
+        params: { seriesId },
+      });
+      return response.data;
+    } catch (e) {
+      logger.error('Failed to retrieve episodes', {
+        label: 'Sonarr API',
+        errorMessage: e.message,
+        seriesId,
+      });
+      throw new Error('Failed to get episodes');
+    }
+  }
+
+  public async monitorEpisodes(episodeIds: number[]): Promise<void> {
+    try {
+      await this.axios.put('/episode/monitor', {
+        episodeIds,
+        monitored: true,
+      });
+    } catch (e) {
+      logger.error('Failed to monitor episodes', {
+        label: 'Sonarr API',
+        errorMessage: e.message,
+        episodeIds,
+      });
+      throw new Error('Failed to monitor episodes');
+    }
+  }
+
   private buildSeasonList(
     seasons: number[],
     existingSeasons?: SonarrSeason[]
@@ -342,7 +410,7 @@ class SonarrAPI extends ServarrBase<{
 
     return newSeasons;
   }
-  public removeSerie = async (serieId: number): Promise<void> => {
+  public removeSeries = async (serieId: number): Promise<void> => {
     try {
       const { id, title } = await this.getSeriesByTvdbId(serieId);
       await this.axios.delete(`/series/${id}`, {
@@ -351,9 +419,9 @@ class SonarrAPI extends ServarrBase<{
           addImportExclusion: false,
         },
       });
-      logger.info(`[Radarr] Removed serie ${title}`);
+      logger.info(`[Sonarr] Removed series ${title}`);
     } catch (e) {
-      throw new Error(`[Radarr] Failed to remove serie: ${e.message}`);
+      throw new Error(`[Sonarr] Failed to remove series: ${e.message}`);
     }
   };
 

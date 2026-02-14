@@ -1,4 +1,6 @@
-name: Jellyseerr CI
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Seerr CI
 
 on:
   pull_request:
@@ -7,166 +9,267 @@ on:
   push:
     branches:
       - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOCKER_HUB: seerr/seerr
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
-    name: Lint & Test Build
+  i18n:
+    name: i18n Check
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    container: node:22-alpine
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      NUMBER: ${{ github.event.pull_request.number }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-      - name: Pnpm Setup
-        uses: pnpm/action-setup@v4
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
-          version: 9
+          persist-credentials: false
+
+      - name: Pnpm Setup
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: 'package.json'
+
       - name: Get pnpm store directory
-        shell: sh
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
       - name: Setup pnpm cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ env.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
+
       - name: Install dependencies
         env:
-          HUSKY: 0
+          CI: true
         run: pnpm install
+
+      - name: i18n Check
+        shell: bash
+        env:
+          I18N_LABEL: i18n-out-of-sync
+          BODY: |
+            The i18n check failed because translation messages are out of sync.
+
+            This usually happens when you've added or modified translation strings in your code but haven't updated the translation file.
+
+            Please run `pnpm i18n:extract` and commit the changes.
+        run: |
+          retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
+          check_failed=0; node bin/check-i18n.js || check_failed=$?
+          pr_labels=$(gh pr view "$NUMBER" -R "$GH_REPO" --json labels -q '.labels[].name' 2>/dev/null) || true
+          has_label=0
+          while IFS= read -r name; do [ -n "$name" ] && [ "$name" = "$I18N_LABEL" ] && has_label=1 && break; done <<< "$pr_labels"
+          if [ "$check_failed" -eq 1 ]; then
+            [ "$has_label" -eq 0 ] && { retry gh pr edit "$NUMBER" -R "$GH_REPO" --add-label "$I18N_LABEL" || true; retry gh pr comment "$NUMBER" -R "$GH_REPO" -b "$BODY" || true; }
+          else
+            [ "$has_label" -eq 1 ] && retry gh pr edit "$NUMBER" -R "$GH_REPO" --remove-label "$I18N_LABEL" || true
+          fi
+          exit $check_failed
+  test:
+    name: Lint & Test Build
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    container: node:22.22.0-alpine3.22@sha256:0c49915657c1c77c64c8af4d91d2f13fe96853bbd957993ed00dd592cbecc284
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Pnpm Setup
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
+
+      - name: Get pnpm store directory
+        shell: sh
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        env:
+          CI: true
+        run: pnpm install
+
       - name: Lint
         run: pnpm lint
+
       - name: Formatting
         run: pnpm format:check
+
       - name: Build
         run: pnpm build
 
   build:
-    name: Build & Publish Docker Images
+    name: Build (per-arch, native runners)
     if: github.ref == 'refs/heads/develop' && !contains(github.event.head_commit.message, '[skip ci]')
     strategy:
       matrix:
         include:
           - runner: ubuntu-24.04
             platform: linux/amd64
+            arch: amd64
           - runner: ubuntu-24.04-arm
             platform: linux/arm64
+            arch: arm64
     runs-on: ${{ matrix.runner }}
-    outputs:
-      digest-amd64: ${{ steps.set_outputs.outputs.digest-amd64 }}
-      digest-arm64: ${{ steps.set_outputs.outputs.digest-arm64 }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Commit timestamp
+        id: ts
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set lower case owner name
-        run: |
-          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
-        env:
-          OWNER: ${{ github.repository_owner }}
-      - name: Docker metadata
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: |
-            fallenbagel/jellyseerr
-            ghcr.io/${{ env.OWNER_LC }}/jellyseerr
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix=,suffix=,format=short
-      - name: Build and push by digest
-        id: build
-        uses: docker/build-push-action@v5
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Warm cache (no push) — ${{ matrix.platform }}
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
           context: .
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
-          push: true
+          push: false
           build-args: |
             COMMIT_TAG=${{ github.sha }}
             BUILD_VERSION=develop
-            BUILD_DATE=${{ github.event.repository.updated_at }}
-          outputs: |
-            type=image,push-by-digest=true,name=fallenbagel/jellyseerr,push=true
-            type=image,push-by-digest=true,name=ghcr.io/${{ env.OWNER_LC }}/jellyseerr,push=true
+            SOURCE_DATE_EPOCH=${{ steps.ts.outputs.TIMESTAMP }}
           cache-from: type=gha,scope=${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
           provenance: false
-      - name: Set outputs
-        id: set_outputs
-        run: |
-          platform="${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}"
-          echo "digest-${platform}=${{ steps.build.outputs.digest }}" >> $GITHUB_OUTPUT
 
-  merge_and_push:
-    name: Create and Push Multi-arch Manifest
+  publish:
+    name: Publish multi-arch image
     needs: build
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Commit timestamp
+        id: ts
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
+
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set lower case owner name
-        run: |
-          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
-        env:
-          OWNER: ${{ github.repository_owner }}
-      - name: Create and push manifest
-        run: |
-          docker manifest create fallenbagel/jellyseerr:develop \
-            --amend fallenbagel/jellyseerr@${{ needs.build.outputs.digest-amd64 }} \
-            --amend fallenbagel/jellyseerr@${{ needs.build.outputs.digest-arm64 }}
-          docker manifest push fallenbagel/jellyseerr:develop
 
-          # GHCR manifest
-          docker manifest create ghcr.io/${{ env.OWNER_LC }}/jellyseerr:develop \
-            --amend ghcr.io/${{ env.OWNER_LC }}/jellyseerr@${{ needs.build.outputs.digest-amd64 }} \
-            --amend ghcr.io/${{ env.OWNER_LC }}/jellyseerr@${{ needs.build.outputs.digest-arm64 }}
-          docker manifest push ghcr.io/${{ env.OWNER_LC }}/jellyseerr:develop
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
+        with:
+          images: |
+            ${{ env.DOCKER_HUB }}
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=develop
+            type=sha
+          labels: |
+            org.opencontainers.image.created=${{ steps.ts.outputs.TIMESTAMP }}
+
+      - name: Build & Push (multi-arch, single tag)
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            COMMIT_TAG=${{ github.sha }}
+            BUILD_VERSION=develop
+            SOURCE_DATE_EPOCH=${{ steps.ts.outputs.TIMESTAMP }}
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: |
+            type=gha,scope=linux/amd64
+            type=gha,scope=linux/arm64
+          cache-to: type=gha,mode=max
+          provenance: false
 
   discord:
     name: Send Discord Notification
-    needs: merge_and_push
+    needs: publish
     if: always() && github.event_name != 'pull_request' && !contains(github.event.head_commit.message, '[skip ci]')
     runs-on: ubuntu-24.04
     steps:
-      - name: Get Build Job Status
-        uses: technote-space/workflow-conclusion-action@v3
-      - name: Combine Job Status
+      - name: Determine Workflow Status
         id: status
         run: |
-          failures=(neutral, skipped, timed_out, action_required)
-          if [[ ${array[@]} =~ $WORKFLOW_CONCLUSION ]]; then
-            echo "status=failure" >> $GITHUB_OUTPUT
-          else
-            echo "status=$WORKFLOW_CONCLUSION" >> $GITHUB_OUTPUT
-          fi
-      - name: Post Status to Discord
-        uses: sarisia/actions-status-discord@v1
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          status: ${{ steps.status.outputs.status }}
-          title: ${{ github.workflow }}
-          nofail: true
+          case "${{ needs.publish.result }}" in
+            success)   echo "status=Success"   >> $GITHUB_OUTPUT; echo "colour=3066993"  >> $GITHUB_OUTPUT ;;
+            failure)   echo "status=Failure"   >> $GITHUB_OUTPUT; echo "colour=15158332" >> $GITHUB_OUTPUT ;;
+            cancelled) echo "status=Cancelled" >> $GITHUB_OUTPUT; echo "colour=10181046" >> $GITHUB_OUTPUT ;;
+            *)         echo "status=Skipped"   >> $GITHUB_OUTPUT; echo "colour=9807270"  >> $GITHUB_OUTPUT ;;
+          esac
+
+      - name: Send Discord notification
+        shell: bash
+        run: |
+          WEBHOOK="${{ secrets.DISCORD_WEBHOOK }}"
+
+          PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "${{ steps.status.outputs.status }}: ${{ github.workflow }}",
+              "color": ${{ steps.status.outputs.colour }},
+              "fields": [
+                { "name": "Repository",   "value": "[${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})", "inline": true },
+                { "name": "Ref",          "value": "${{ github.ref }}", "inline": true },
+                { "name": "Event",        "value": "${{ github.event_name }}", "inline": true },
+                { "name": "Triggered by", "value": "${{ github.actor }}", "inline": true },
+                { "name": "Workflow",     "value": "[${{ github.workflow }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})", "inline": true }
+              ],
+            }]
+          }
+          EOF
+          )
+
+          curl -sS -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK" || true

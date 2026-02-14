@@ -22,6 +22,7 @@ import type {
 import type { JobId } from '@server/lib/settings';
 import axios from 'axios';
 import cronstrue from 'cronstrue/i18n';
+import { formatDuration, intervalToDuration } from 'date-fns';
 import { Fragment, useReducer, useState } from 'react';
 import type { MessageDescriptor } from 'react-intl';
 import { FormattedRelativeTime, useIntl } from 'react-intl';
@@ -34,7 +35,7 @@ const messages: { [messageName: string]: MessageDescriptor } = defineMessages(
     jobsandcache: 'Jobs & Cache',
     jobs: 'Jobs',
     jobsDescription:
-      'Jellyseerr performs certain maintenance tasks as regularly-scheduled jobs, but they can also be manually triggered below. Manually running a job will not alter its schedule.',
+      'Seerr performs certain maintenance tasks as regularly-scheduled jobs, but they can also be manually triggered below. Manually running a job will not alter its schedule.',
     jobname: 'Job Name',
     jobtype: 'Type',
     nextexecution: 'Next Execution',
@@ -46,7 +47,7 @@ const messages: { [messageName: string]: MessageDescriptor } = defineMessages(
     command: 'Command',
     cache: 'Cache',
     cacheDescription:
-      'Jellyseerr caches requests to external API endpoints to optimize performance and avoid making unnecessary API calls.',
+      'Seerr caches requests to external API endpoints to optimize performance and avoid making unnecessary API calls.',
     cacheflushed: '{cachename} cache flushed.',
     cachename: 'Cache Name',
     cachehits: 'Hits',
@@ -55,6 +56,26 @@ const messages: { [messageName: string]: MessageDescriptor } = defineMessages(
     cacheksize: 'Key Size',
     cachevsize: 'Value Size',
     flushcache: 'Flush Cache',
+    dnsCache: 'DNS Cache',
+    dnsCacheDescription:
+      'Seerr caches DNS lookups to optimize performance and avoid making unnecessary API calls.',
+    dnscacheflushed: '{hostname} dns cache flushed.',
+    dnscachename: 'Hostname',
+    dnscacheactiveaddress: 'Active Address',
+    dnscachehits: 'Hits',
+    dnscachemisses: 'Misses',
+    dnscacheage: 'Age',
+    flushdnscache: 'Flush DNS Cache',
+    dnsCacheGlobalStats: 'Global DNS Cache Stats',
+    dnsCacheGlobalStatsDescription:
+      'These stats are aggregated across all DNS cache entries.',
+    dnsNoCacheEntries: 'No DNS lookups have been cached yet.',
+    size: 'Size',
+    hits: 'Hits',
+    misses: 'Misses',
+    failures: 'Failures',
+    ipv4Fallbacks: 'IPv4 Fallbacks',
+    hitRate: 'Hit Rate',
     unknownJob: 'Unknown Job',
     'plex-recently-added-scan': 'Plex Recently Added Scan',
     'plex-full-scan': 'Plex Full Library Scan',
@@ -68,7 +89,7 @@ const messages: { [messageName: string]: MessageDescriptor } = defineMessages(
     'download-sync': 'Download Sync',
     'download-sync-reset': 'Download Sync Reset',
     'image-cache-cleanup': 'Image Cache Cleanup',
-    'process-blacklisted-tags': 'Process Blacklisted Tags',
+    'process-blocklisted-tags': 'Process Blocklisted Tags',
     editJobSchedule: 'Modify Job',
     jobScheduleEditSaved: 'Job edited successfully!',
     jobScheduleEditFailed: 'Something went wrong while saving the job.',
@@ -84,7 +105,7 @@ const messages: { [messageName: string]: MessageDescriptor } = defineMessages(
       'Every {jobScheduleSeconds, plural, one {second} other {{jobScheduleSeconds} seconds}}',
     imagecache: 'Image Cache',
     imagecacheDescription:
-      'When enabled in settings, Jellyseerr will proxy and cache images from pre-configured external sources. Cached images are saved into your config folder. You can find the files in <code>{appDataPath}/cache/images</code>.',
+      'When enabled in settings, Seerr will proxy and cache images from pre-configured external sources. Cached images are saved into your config folder. You can find the files in <code>{appDataPath}/cache/images</code>.',
     imagecachecount: 'Images Cached',
     imagecachesize: 'Total Cache Size',
     usersavatars: "Users' Avatars",
@@ -242,6 +263,18 @@ const SettingsJobs = () => {
     cacheRevalidate();
   };
 
+  const flushDnsCache = async (hostname: string) => {
+    await axios.post(`/api/v1/settings/cache/dns/${hostname}/flush`);
+    addToast(
+      intl.formatMessage(messages.dnscacheflushed, { hostname: hostname }),
+      {
+        appearance: 'success',
+        autoDismiss: true,
+      }
+    );
+    cacheRevalidate();
+  };
+
   const scheduleJob = async () => {
     const jobScheduleCron = ['0', '0', '*', '*', '*', '*'];
 
@@ -285,6 +318,18 @@ const SettingsJobs = () => {
     }
   };
 
+  const formatAge = (milliseconds: number): string => {
+    const duration = intervalToDuration({
+      start: 0,
+      end: milliseconds,
+    });
+
+    return formatDuration(duration, {
+      format: ['minutes', 'seconds'],
+      zero: false,
+    });
+  };
+
   return (
     <>
       <PageTitle
@@ -320,7 +365,7 @@ const SettingsJobs = () => {
                 <label className="text-label">
                   {intl.formatMessage(messages.editJobScheduleCurrent)}
                 </label>
-                <div className="form-input-area mt-2 mb-1">
+                <div className="form-input-area mb-1 mt-2">
                   <div>
                     {jobModalState.job &&
                       cronstrue.toString(jobModalState.job.cronSchedule, {
@@ -567,6 +612,133 @@ const SettingsJobs = () => {
           </Table.TBody>
         </Table>
       </div>
+      {cacheData?.dnsCache != null && (
+        <>
+          <div>
+            <h3 className="heading">{intl.formatMessage(messages.dnsCache)}</h3>
+            <p className="description">
+              {intl.formatMessage(messages.dnsCacheDescription)}
+            </p>
+          </div>
+          <div className="section">
+            <Table>
+              <thead>
+                <tr>
+                  <Table.TH>
+                    {intl.formatMessage(messages.dnscachename)}
+                  </Table.TH>
+                  <Table.TH>
+                    {intl.formatMessage(messages.dnscacheactiveaddress)}
+                  </Table.TH>
+                  <Table.TH>
+                    {intl.formatMessage(messages.dnscachehits)}
+                  </Table.TH>
+                  <Table.TH>
+                    {intl.formatMessage(messages.dnscachemisses)}
+                  </Table.TH>
+                  <Table.TH>
+                    {intl.formatMessage(messages.dnscacheage)}
+                  </Table.TH>
+                  <Table.TH></Table.TH>
+                </tr>
+              </thead>
+              <Table.TBody>
+                {(() => {
+                  if (!cacheData) {
+                    return (
+                      <tr>
+                        <Table.TD colSpan={6} alignText="center">
+                          <LoadingSpinner />
+                        </Table.TD>
+                      </tr>
+                    );
+                  }
+
+                  const entries = Object.entries(
+                    cacheData.dnsCache?.entries ?? {}
+                  );
+
+                  if (entries.length === 0) {
+                    return (
+                      <tr>
+                        <Table.TD colSpan={6} alignText="center">
+                          {intl.formatMessage(messages.dnsNoCacheEntries)}
+                        </Table.TD>
+                      </tr>
+                    );
+                  }
+
+                  return entries.map(([hostname, data]) => (
+                    <tr key={`cache-list-${hostname}`}>
+                      <Table.TD>{hostname}</Table.TD>
+                      <Table.TD>{data.activeAddress}</Table.TD>
+                      <Table.TD>{intl.formatNumber(data.hits)}</Table.TD>
+                      <Table.TD>{intl.formatNumber(data.misses)}</Table.TD>
+                      <Table.TD>{formatAge(data.age)}</Table.TD>
+                      <Table.TD alignText="right">
+                        <Button
+                          buttonType="danger"
+                          onClick={() => flushDnsCache(hostname)}
+                        >
+                          <TrashIcon />
+                          <span>
+                            {intl.formatMessage(messages.flushdnscache)}
+                          </span>
+                        </Button>
+                      </Table.TD>
+                    </tr>
+                  ));
+                })()}
+              </Table.TBody>
+            </Table>
+          </div>
+          <div>
+            <h3 className="heading">
+              {intl.formatMessage(messages.dnsCacheGlobalStats)}
+            </h3>
+            <p className="description">
+              {intl.formatMessage(messages.dnsCacheGlobalStatsDescription)}
+            </p>
+          </div>
+          <div className="section">
+            {!cacheData ? (
+              <LoadingSpinner />
+            ) : (
+              <Table>
+                <thead>
+                  <tr>
+                    {Object.entries(cacheData.dnsCache?.stats ?? {})
+                      .filter(([statName]) => statName !== 'maxSize')
+                      .map(([statName]) => (
+                        <Table.TH key={`dns-stat-header-${statName}`}>
+                          {messages[statName]
+                            ? intl.formatMessage(messages[statName])
+                            : statName}
+                        </Table.TH>
+                      ))}
+                  </tr>
+                </thead>
+                <Table.TBody>
+                  <tr>
+                    {Object.entries(cacheData.dnsCache?.stats ?? {})
+                      .filter(([statName]) => statName !== 'maxSize')
+                      .map(([statName, statValue]) => (
+                        <Table.TD key={`dns-stat-${statName}`}>
+                          {statName === 'hitRate'
+                            ? intl.formatNumber(statValue, {
+                                style: 'percent',
+                                maximumFractionDigits: 2,
+                              })
+                            : intl.formatNumber(statValue)}
+                        </Table.TD>
+                      ))}
+                  </tr>
+                </Table.TBody>
+              </Table>
+            )}
+          </div>
+        </>
+      )}
       <div className="break-words">
         <h3 className="heading">{intl.formatMessage(messages.imagecache)}</h3>
         <p className="description">

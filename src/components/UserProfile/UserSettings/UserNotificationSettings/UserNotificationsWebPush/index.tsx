@@ -9,17 +9,22 @@ import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import {
+  getPushSubscription,
+  subscribeToPushNotifications,
+  unsubscribeToPushNotifications,
+  verifyPushSubscription,
+} from '@app/utils/pushSubscriptionHelpers';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import {
   CloudArrowDownIcon,
   CloudArrowUpIcon,
 } from '@heroicons/react/24/solid';
-import type { UserPushSubscription } from '@server/entity/UserPushSubscription';
 import type { UserSettingsNotificationsResponse } from '@server/interfaces/api/userSettingsInterfaces';
 import axios from 'axios';
 import { Form, Formik } from 'formik';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
@@ -53,6 +58,7 @@ const UserWebPushSettings = () => {
   const { user } = useUser({ id: Number(router.query.userId) });
   const { currentSettings } = useSettings();
   const [webPushEnabled, setWebPushEnabled] = useState(false);
+  const [subEndpoint, setSubEndpoint] = useState<string | null>(null);
   const {
     data,
     error,
@@ -72,141 +78,166 @@ const UserWebPushSettings = () => {
 
   // Subscribes to the push manager
   // Will only add to the database if subscribing for the first time
-  const enablePushNotifications = () => {
-    if ('serviceWorker' in navigator && user?.id) {
-      navigator.serviceWorker
-        .getRegistration('/sw.js')
-        .then(async (registration) => {
-          if (currentSettings.enablePushRegistration) {
-            const sub = await registration?.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: currentSettings.vapidPublic,
-            });
-            const parsedSub = JSON.parse(JSON.stringify(sub));
+  const enablePushNotifications = async () => {
+    try {
+      const isSubscribed = await subscribeToPushNotifications(
+        user?.id,
+        currentSettings
+      );
 
-            if (parsedSub.keys.p256dh && parsedSub.keys.auth) {
-              await axios.post('/api/v1/user/registerPushSubscription', {
-                endpoint: parsedSub.endpoint,
-                p256dh: parsedSub.keys.p256dh,
-                auth: parsedSub.keys.auth,
-                userAgent: navigator.userAgent,
-              });
-              setWebPushEnabled(true);
-              addToast(intl.formatMessage(messages.webpushhasbeenenabled), {
-                appearance: 'success',
-                autoDismiss: true,
-              });
-            }
-          }
-        })
-        .catch(function () {
-          addToast(intl.formatMessage(messages.enablingwebpusherror), {
-            autoDismiss: true,
-            appearance: 'error',
-          });
-        })
-        .finally(function () {
-          revalidateDevices();
+      if (isSubscribed) {
+        localStorage.setItem('pushNotificationsEnabled', 'true');
+        setWebPushEnabled(true);
+        addToast(intl.formatMessage(messages.webpushhasbeenenabled), {
+          appearance: 'success',
+          autoDismiss: true,
         });
+      } else {
+        throw new Error('Subscription failed');
+      }
+    } catch (error) {
+      addToast(intl.formatMessage(messages.enablingwebpusherror), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    } finally {
+      revalidateDevices();
     }
   };
 
   // Unsubscribes from the push manager
   // Deletes/disables corresponding push subscription from database
   const disablePushNotifications = async (endpoint?: string) => {
-    if ('serviceWorker' in navigator && user?.id) {
-      navigator.serviceWorker.getRegistration('/sw.js').then((registration) => {
-        registration?.pushManager
-          .getSubscription()
-          .then(async (subscription) => {
-            const parsedSub = JSON.parse(JSON.stringify(subscription));
+    try {
+      const unsubscribedEndpoint = await unsubscribeToPushNotifications(
+        user?.id,
+        endpoint
+      );
 
-            await axios.delete(
-              `/api/v1/user/${user.id}/pushSubscription/${encodeURIComponent(
-                endpoint ?? parsedSub.endpoint
-              )}`
-            );
+      localStorage.setItem('pushNotificationsEnabled', 'false');
+      setWebPushEnabled(false);
 
-            if (
-              subscription &&
-              (endpoint === parsedSub.endpoint || !endpoint)
-            ) {
-              subscription.unsubscribe();
-              setWebPushEnabled(false);
-            }
-            addToast(
-              intl.formatMessage(
-                endpoint
-                  ? messages.subscriptiondeleted
-                  : messages.webpushhasbeendisabled
-              ),
-              {
-                autoDismiss: true,
-                appearance: 'success',
-              }
-            );
-          })
-          .catch(function () {
-            addToast(
-              intl.formatMessage(
-                endpoint
-                  ? messages.subscriptiondeleteerror
-                  : messages.disablingwebpusherror
-              ),
-              {
-                autoDismiss: true,
-                appearance: 'error',
-              }
-            );
-          })
-          .finally(function () {
-            revalidateDevices();
-          });
+      // Only delete the current browser's subscription, not all devices
+      const endpointToDelete = unsubscribedEndpoint || subEndpoint || endpoint;
+      if (endpointToDelete) {
+        try {
+          await axios.delete(
+            `/api/v1/user/${user?.id}/pushSubscription/${encodeURIComponent(
+              endpointToDelete
+            )}`
+          );
+        } catch {
+          // Ignore deletion failures - backend cleanup is best effort
+        }
+      }
+
+      addToast(intl.formatMessage(messages.webpushhasbeendisabled), {
+        autoDismiss: true,
+        appearance: 'success',
       });
+    } catch (error) {
+      addToast(intl.formatMessage(messages.disablingwebpusherror), {
+        autoDismiss: true,
+        appearance: 'error',
+      });
+    } finally {
+      revalidateDevices();
     }
   };
 
-  // Checks our current subscription on page load
-  // Will set the web push state to true if subscribed
-  useEffect(() => {
-    if ('serviceWorker' in navigator && user?.id) {
-      navigator.serviceWorker
-        .getRegistration('/sw.js')
-        .then(async (registration) => {
-          await registration?.pushManager
-            .getSubscription()
-            .then(async (subscription) => {
-              if (subscription) {
-                const parsedKey = JSON.parse(JSON.stringify(subscription));
-                const currentUserPushSub =
-                  await axios.get<UserPushSubscription>(
-                    `/api/v1/user/${
-                      user.id
-                    }/pushSubscription/${encodeURIComponent(
-                      parsedKey.endpoint
-                    )}`
-                  );
+  const deletePushSubscriptionFromBackend = async (endpoint: string) => {
+    try {
+      await axios.delete(
+        `/api/v1/user/${user?.id}/pushSubscription/${encodeURIComponent(
+          endpoint
+        )}`
+      );
 
-                if (currentUserPushSub.data.endpoint !== parsedKey.endpoint) {
-                  return;
-                }
-
-                setWebPushEnabled(true);
-              } else {
-                setWebPushEnabled(false);
-              }
-            });
-        })
-        .catch(function (error) {
-          setWebPushEnabled(false);
-          // eslint-disable-next-line no-console
-          console.log(
-            '[SW] Failure retrieving push manager subscription, error:',
-            error
-          );
-        });
+      addToast(intl.formatMessage(messages.subscriptiondeleted), {
+        autoDismiss: true,
+        appearance: 'success',
+      });
+    } catch (error) {
+      addToast(intl.formatMessage(messages.subscriptiondeleteerror), {
+        autoDismiss: true,
+        appearance: 'error',
+      });
+    } finally {
+      revalidateDevices();
     }
-  }, [user?.id]);
+  };
+
+  useEffect(() => {
+    const verifyWebPush = async () => {
+      const enabled = await verifyPushSubscription(user?.id, currentSettings);
+      let isEnabled = enabled;
+
+      if (!enabled && 'serviceWorker' in navigator) {
+        const { subscription } = await getPushSubscription();
+        if (subscription) {
+          isEnabled = true;
+        }
+      }
+
+      if (!isEnabled && dataDevices && dataDevices.length > 0) {
+        const currentUserAgent = navigator.userAgent;
+        const hasMatchingDevice = dataDevices.some(
+          (device) => device.userAgent === currentUserAgent
+        );
+
+        if (hasMatchingDevice) {
+          isEnabled = true;
+        }
+      }
+
+      setWebPushEnabled(isEnabled);
+      if (localStorage.getItem('pushNotificationsEnabled') === null) {
+        localStorage.setItem(
+          'pushNotificationsEnabled',
+          isEnabled ? 'true' : 'false'
+        );
+      }
+    };
+
+    if (user?.id) {
+      verifyWebPush();
+    }
+  }, [user?.id, currentSettings, dataDevices]);
+
+  useEffect(() => {
+    const getSubscriptionEndpoint = async () => {
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        const { subscription } = await getPushSubscription();
+
+        if (subscription) {
+          setSubEndpoint(subscription.endpoint);
+        } else {
+          setSubEndpoint(null);
+        }
+      }
+    };
+
+    getSubscriptionEndpoint();
+  }, [webPushEnabled]);
+
+  const sortedDevices = useMemo(() => {
+    if (!dataDevices || !subEndpoint) {
+      return dataDevices;
+    }
+
+    return [...dataDevices].sort((a, b) => {
+      if (a.endpoint === subEndpoint) {
+        return -1;
+      }
+      if (b.endpoint === subEndpoint) {
+        return 1;
+      }
+
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
+  }, [dataDevices, subEndpoint]);
 
   if (!data && !error) {
     return <LoadingSpinner />;
@@ -319,27 +350,23 @@ const UserWebPushSettings = () => {
           );
         }}
       </Formik>
-      <div className="mt-10 mb-6">
+      <div className="mb-6 mt-10">
         <h3 className="heading">
           {intl.formatMessage(messages.managedevices)}
         </h3>
         <div className="section">
-          {dataDevices?.length ? (
-            dataDevices
-              ?.sort((a, b) => {
-                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-                return dateB - dateA;
-              })
-              .map((device, index) => (
-                <div className="py-2" key={`device-list-${index}`}>
-                  <DeviceItem
-                    key={index}
-                    disablePushNotifications={disablePushNotifications}
-                    device={device}
-                  />
-                </div>
-              ))
+          {sortedDevices?.length ? (
+            sortedDevices.map((device) => (
+              <div className="py-2" key={`device-list-${device.endpoint}`}>
+                <DeviceItem
+                  deletePushSubscriptionFromBackend={
+                    deletePushSubscriptionFromBackend
+                  }
+                  device={device}
+                  subEndpoint={subEndpoint}
+                />
+              </div>
+            ))
           ) : (
             <>
               <Alert

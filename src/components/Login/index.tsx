@@ -85,19 +85,19 @@ const Login = () => {
     settings.currentSettings.mediaServerType === MediaServerType.PLEX
       ? 'Plex'
       : settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
-      ? 'Jellyfin'
-      : settings.currentSettings.mediaServerType === MediaServerType.EMBY
-      ? 'Emby'
-      : undefined;
+        ? 'Jellyfin'
+        : settings.currentSettings.mediaServerType === MediaServerType.EMBY
+          ? 'Emby'
+          : undefined;
 
   const MediaServerLogo =
     settings.currentSettings.mediaServerType === MediaServerType.PLEX
       ? PlexLogo
       : settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
-      ? JellyfinLogo
-      : settings.currentSettings.mediaServerType === MediaServerType.EMBY
-      ? EmbyLogo
-      : undefined;
+        ? JellyfinLogo
+        : settings.currentSettings.mediaServerType === MediaServerType.EMBY
+          ? EmbyLogo
+          : undefined;
 
   const isJellyfin =
     settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN ||
@@ -122,8 +122,8 @@ const Login = () => {
         settings.currentSettings.localLogin &&
         (mediaServerLogin ? (
           <Button
-            key="jellyseerr"
-            data-testid="jellyseerr-login-button"
+            key="seerr"
+            data-testid="seerr-login-button"
             className="flex-1 bg-transparent"
             onClick={() => setMediaServerLogin(false)}
           >
@@ -159,7 +159,7 @@ const Login = () => {
           ) ?? []
         }
       />
-      <div className="absolute top-4 right-4 z-50">
+      <div className="absolute right-4 top-4 z-50">
         <LanguagePicker />
       </div>
       <div className="relative z-40 mt-10 flex flex-col items-center px-4 sm:mx-auto sm:w-full sm:max-w-md">

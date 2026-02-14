@@ -18,6 +18,7 @@ const messages = defineMessages('components.Settings', {
   menuLogs: 'Logs',
   menuJobs: 'Jobs & Cache',
   menuAbout: 'About',
+  menuMetadataProviders: 'Metadata Providers',
 });
 
 type SettingsLayoutProps = {
@@ -60,6 +61,11 @@ const SettingsLayout = ({ children }: SettingsLayoutProps) => {
       regex: /^\/settings\/network/,
     },
     {
+      text: intl.formatMessage(messages.menuMetadataProviders),
+      route: '/settings/metadata',
+      regex: /^\/settings\/metadata/,
+    },
+    {
       text: intl.formatMessage(messages.menuNotifications),
       route: '/settings/notifications/email',
       regex: /^\/settings\/notifications/,
@@ -96,8 +102,8 @@ const SettingsLayout = ({ children }: SettingsLayoutProps) => {
         settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
           ? 'Jellyfin'
           : settings.currentSettings.mediaServerType === MediaServerType.EMBY
-          ? 'Emby'
-          : undefined,
+            ? 'Emby'
+            : undefined,
     });
   }
 };

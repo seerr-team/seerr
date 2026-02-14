@@ -1,5 +1,6 @@
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
+import CachedImage from '@app/components/Common/CachedImage';
 import Tooltip from '@app/components/Common/Tooltip';
 import RequestModal from '@app/components/RequestModal';
 import useRequestOverride from '@app/hooks/useRequestOverride';
@@ -95,36 +96,58 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
         <div className="flex items-center justify-between">
           <div className="mr-6 min-w-0 flex-1 flex-col items-center text-sm leading-5">
             <div className="white mb-1 flex flex-nowrap">
-              <Tooltip content={intl.formatMessage(messages.requestedby)}>
-                <UserIcon className="mr-1.5 h-5 w-5 min-w-0 flex-shrink-0" />
-              </Tooltip>
-              <span className="w-40 truncate md:w-auto">
+              <span className="flex w-40 items-center truncate md:w-auto">
+                <Tooltip content={intl.formatMessage(messages.requestedby)}>
+                  <UserIcon className="mr-1.5 h-5 w-5 min-w-0 flex-shrink-0" />
+                </Tooltip>
                 <Link
                   href={
                     request.requestedBy.id === user?.id
                       ? '/profile'
                       : `/users/${request.requestedBy.id}`
                   }
-                  className="font-semibold text-gray-100 transition duration-300 hover:text-white hover:underline"
+                  className="flex items-center font-semibold text-gray-100 transition duration-300 hover:text-white hover:underline"
                 >
+                  <span className="avatar-sm">
+                    <CachedImage
+                      type="avatar"
+                      src={request.requestedBy.avatar}
+                      alt=""
+                      className="avatar-sm object-cover"
+                      width={20}
+                      height={20}
+                    />
+                  </span>
                   {request.requestedBy.displayName}
                 </Link>
               </span>
             </div>
             {request.modifiedBy && (
               <div className="flex flex-nowrap">
-                <Tooltip content={intl.formatMessage(messages.lastmodifiedby)}>
-                  <EyeIcon className="mr-1.5 h-5 w-5 flex-shrink-0" />
-                </Tooltip>
-                <span className="w-40 truncate md:w-auto">
+                <span className="flex w-40 items-center truncate md:w-auto">
+                  <Tooltip
+                    content={intl.formatMessage(messages.lastmodifiedby)}
+                  >
+                    <EyeIcon className="mr-1.5 h-5 w-5 flex-shrink-0" />
+                  </Tooltip>
                   <Link
                     href={
                       request.modifiedBy.id === user?.id
                         ? '/profile'
                         : `/users/${request.modifiedBy.id}`
                     }
-                    className="font-semibold text-gray-100 transition duration-300 hover:text-white hover:underline"
+                    className="flex items-center font-semibold text-gray-100 transition duration-300 hover:text-white hover:underline"
                   >
+                    <span className="avatar-sm">
+                      <CachedImage
+                        type="avatar"
+                        src={request.modifiedBy.avatar}
+                        alt=""
+                        className="avatar-sm object-cover"
+                        width={20}
+                        height={20}
+                      />
+                    </span>
                     {request.modifiedBy.displayName}
                   </Link>
                 </span>
@@ -262,7 +285,7 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
         )}
         {(server || profile || rootFolder || languageProfile) && (
           <>
-            <div className="mt-4 mb-1 text-sm">
+            <div className="mb-1 mt-4 text-sm">
               {intl.formatMessage(messages.requestoverrides)}
             </div>
             <ul className="divide-y divide-gray-700 rounded-md bg-gray-800 px-2 text-xs">
