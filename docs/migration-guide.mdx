@@ -5,17 +5,43 @@ title: Migration guide
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+:::important
+Read our [release announcement](/blog/seerr-release) to learn what Seerr means for Jellyseerr and Overseerr users.
+:::
+
 Whether you come from Overseerr or Jellyseerr, you don't need to perform any manual migration steps, your instance will automatically be migrated to Seerr.
 This migration will run automatically the first time you start your instance using the Seerr codebase (Docker image or source build or Kubernetes, etc.).
 An additional migration will happen for Overseerr users, to migrate their configuration to the new codebase.
 
-:::warning
+:::danger
 Before doing anything you should backup your existing instance so that you can rollback in case something goes wrong.
 See [Backups](/using-seerr/backups) for details on how to properly backup your instance.
 :::
 
+:::warning
+Installation methods are now divided into two categories: official and third-party methods.
+The Seerr team is only responsible for official installation methods, while third-party methods are maintained by the community.
+Some methods are currently not maintained, but this does not mean they are permanently discontinued. The community may restore and support them if they choose to do so.
+
+- **Unraid app:** Not maintained
+- **Snap package:** Not maintained
+:::
+
 ## Docker
 Refer to [Seerr Docker Documentation](/getting-started/docker), all of our examples have been updated to reflect the below change.
+
+:::info
+Seerr provides a secure, fully featured image with everything you need included.
+We sincerely appreciate the past contributions from third-party maintainers, which helped enhance this image and its capabilities.
+To maintain consistency and security, we encourage everyone to use the features available in the official Seerr image.
+If you feel something is missing, please submit a feature request—your feedback is always welcome!
+
+Our Docker images are available with the following tags:
+
+- `latest`: Always points to the most recent stable release.
+- Version tags (e.g., `v3.0.0`): For specific stable versions.
+- `develop`: Rolling release/nightly builds for using the latest changes (use with caution).
+:::
 
 Changes :
 - Renamed all references from `overseerr` or `jellyseerr` to `seerr`.
@@ -23,8 +49,9 @@ Changes :
 - The container can now be run as a non-root user (`node` user); remove the `user` directive if you have configured it.
 - The container no longer provides an init process, so you must configure it by adding `init: true` for Docker Compose or `--init` for the Docker CLI.
 
+#### Config folder permissions
 :::info
-**Config folder permissions**: Since the container now runs as the `node` user (UID 1000), you must ensure your config folder has the correct permissions. The `node` user must have read and write access to the `/app/config` directory.
+Since the container now runs as the `node` user (UID 1000), you must ensure your config folder has the correct permissions. The `node` user must have read and write access to the `/app/config` directory.
 
 If you're migrating from a previous installation, you may need to update the ownership of your config folder:
 ```bash
@@ -126,6 +153,12 @@ Summary of changes :
   </TabItem>
 </Tabs>
 
+
+## Build From Source
+Refer to [Seerr Build From Source Documentation](/getting-started/buildfromsource), all of our examples have been updated to reflect the below change.
+
+Install from scratch by following the documentation, restore your data as described in [Backups](/using-seerr/backups), and then start Seerr. No additional steps are required.
+
 ## Kubernetes
 Refer to [Seerr Kubernetes Documentation](/getting-started/kubernetes), all of our examples have been updated to reflect the below change.
 
@@ -166,3 +199,15 @@ Summary of changes :
   ```
   </TabItem>
 </Tabs>
+
+### Nix (Third-party installation methods)
+
+Waiting for https://github.com/NixOS/nixpkgs/pull/450096 and https://github.com/NixOS/nixpkgs/pull/450093
+
+### AUR (Third-party installation methods)
+
+See https://aur.archlinux.org/packages/seerr
+
+### TrueNAS (Third-party installation methods)
+
+Waiting for https://github.com/truenas/apps/issues/3374

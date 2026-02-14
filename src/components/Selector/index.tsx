@@ -19,7 +19,7 @@ import type {
   WatchProviderDetails,
 } from '@server/models/common';
 import axios from 'axios';
-import { orderBy } from 'lodash';
+import orderBy from 'lodash/orderBy';
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import type { MultiValue, SingleValue } from 'react-select';
@@ -388,8 +388,8 @@ export const WatchProviderSelector = ({
     region
       ? region
       : currentSettings.discoverRegion
-      ? currentSettings.discoverRegion
-      : 'US'
+        ? currentSettings.discoverRegion
+        : 'US'
   );
   const [activeProvider, setActiveProvider] = useState<number[]>(
     activeProviders ?? []
@@ -476,7 +476,7 @@ export const WatchProviderSelector = ({
                       />
                     </div>
                     {isActive && (
-                      <div className="pointer-events-none absolute -top-1 -left-1 flex items-center justify-center text-indigo-100 opacity-90">
+                      <div className="pointer-events-none absolute -left-1 -top-1 flex items-center justify-center text-indigo-100 opacity-90">
                         <CheckCircleIcon className="h-6 w-6" />
                       </div>
                     )}
@@ -519,7 +519,7 @@ export const WatchProviderSelector = ({
                         />
                       </div>
                       {isActive && (
-                        <div className="pointer-events-none absolute -top-1 -left-1 flex items-center justify-center text-indigo-100 opacity-90">
+                        <div className="pointer-events-none absolute -left-1 -top-1 flex items-center justify-center text-indigo-100 opacity-90">
                           <CheckCircleIcon className="h-6 w-6" />
                         </div>
                       )}

@@ -1,6 +1,6 @@
-<div align="center">⚠️ <strong>NOTE:</strong> We are currently in the process of merging Overseerr and Jellyseerr into this unified repository.</div>
-
-<h1 align="center" style="font-size: 4em;">🚧 Seerr</h1>
+<p align="center">
+<img src="./public/logo_full.svg" alt="Seerr" style="margin: 20px 0;">
+</p>
 <p align="center">
 <img src="https://github.com/seerr-team/seerr/actions/workflows/release.yml/badge.svg" alt="Seerr Release" />
 <img src="https://github.com/seerr-team/seerr/actions/workflows/ci.yml/badge.svg" alt="Seerr CI">
@@ -26,7 +26,7 @@
 - Granular permission system.
 - Support for various notification agents.
 - Mobile-friendly design, for when you need to approve requests on the go!
-- Support for watchlisting & blacklisting media.
+- Support for watchlisting & blocklisting media.
 
 With more features on the way! Check out our [issue tracker](/../../issues) to see the features which have already been requested.
 
@@ -38,7 +38,13 @@ https://docs.seerr.dev/getting-started/
 
 ## Preview
 
-<img src="./public/preview.jpg">
+<img src="./public/preview.jpg" alt="Seerr application preview" />
+
+## Migrating from Overseerr/Jellyseerr to Seerr
+
+Read our [release announcement](https://docs.seerr.dev/blog/seerr-release) to learn what Seerr means for Jellyseerr and Overseerr users.
+
+Please follow our [migration guide](https://docs.seerr.dev/migration-guide) for detailed instructions on migrating from Overseerr or Jellyseerr.
 
 ## Support
 

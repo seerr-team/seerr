@@ -110,8 +110,8 @@ const PullToRefresh = () => {
           pullDownIconLocation < pullDownStopThreshold && pullDownInitThreshold
             ? pullDownIconLocation
             : pullDownInitThreshold
-            ? pullDownStopThreshold
-            : '',
+              ? pullDownStopThreshold
+              : '',
       }}
     >
       <div

@@ -3,7 +3,7 @@ import SonarrAPI from '@server/api/servarr/sonarr';
 import { MediaStatus, MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
-import { Blacklist } from '@server/entity/Blacklist';
+import { Blocklist } from '@server/entity/Blocklist';
 import type { User } from '@server/entity/User';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { DownloadingItem } from '@server/lib/downloadtracker';
@@ -26,6 +26,7 @@ import { MediaRequest } from './MediaRequest';
 import Season from './Season';
 
 @Entity()
+@Index(['tmdbId', 'mediaType'])
 class Media {
   public static async getRelatedMedia(
     user: User | undefined,
@@ -101,9 +102,11 @@ class Media {
   public imdbId?: string;
 
   @Column({ type: 'int', default: MediaStatus.UNKNOWN })
+  @Index()
   public status: MediaStatus;
 
   @Column({ type: 'int', default: MediaStatus.UNKNOWN })
+  @Index()
   public status4k: MediaStatus;
 
   @OneToMany(() => MediaRequest, (request) => request.media, {
@@ -123,8 +126,8 @@ class Media {
   @OneToMany(() => Issue, (issue) => issue.media, { cascade: true })
   public issues: Issue[];
 
-  @OneToOne(() => Blacklist, (blacklist) => blacklist.media)
-  public blacklist: Promise<Blacklist>;
+  @OneToOne(() => Blocklist, (blocklist) => blocklist.media)
+  public blocklist: Promise<Blocklist>;
 
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;

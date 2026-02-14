@@ -5,7 +5,7 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
 import { get } from 'lodash';
-import { hasNotificationType, Notification } from '..';
+import { Notification, hasNotificationType } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
 import { BaseAgent } from './agent';
 
@@ -122,7 +122,7 @@ class WebhookAgent
             `{{${keymapKey}}}`,
             typeof keymapValue === 'function'
               ? keymapValue(payload, type)
-              : get(payload, keymapValue) ?? ''
+              : (get(payload, keymapValue) ?? '')
           );
         });
       } else if (finalPayload[key] && typeof finalPayload[key] === 'object') {
@@ -186,8 +186,8 @@ class WebhookAgent
           type === Notification.TEST_NOTIFICATION
             ? 'test'
             : typeof keymapValue === 'function'
-            ? keymapValue(payload, type)
-            : get(payload, keymapValue) || 'test';
+              ? keymapValue(payload, type)
+              : get(payload, keymapValue) || 'test';
         webhookUrl = webhookUrl.replace(
           new RegExp(`{{${keymapKey}}}`, 'g'),
           encodeURIComponent(variableValue)

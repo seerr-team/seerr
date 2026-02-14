@@ -21,7 +21,7 @@ export const mapSounds = (sounds: {
       ({
         name,
         description,
-      } as PushoverSound)
+      }) as PushoverSound
   );
 
 class PushoverAPI extends ExternalAPI {

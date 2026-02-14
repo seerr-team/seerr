@@ -130,7 +130,7 @@ const UserProfile = () => {
     <>
       <PageTitle title={user.displayName} />
       {Object.keys(availableTitles).length > 0 && (
-        <div className="absolute left-0 right-0 -top-16 z-0 h-96">
+        <div className="absolute -top-16 left-0 right-0 z-0 h-96">
           <ImageFader
             key={user.id}
             isDarker

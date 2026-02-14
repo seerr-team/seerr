@@ -377,6 +377,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           webAppUrl: data?.webAppUrl,
         }}
         validationSchema={PlexSettingsSchema}
+        validateOnMount={true}
         onSubmit={async (values) => {
           let toastId: string | null = null;
           try {
@@ -423,6 +424,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           values,
           handleSubmit,
           setFieldValue,
+          setValues,
           isSubmitting,
           isValid,
         }) => {
@@ -445,9 +447,12 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                           availablePresets[Number(e.target.value)];
 
                         if (targPreset) {
-                          setFieldValue('hostname', targPreset.address);
-                          setFieldValue('port', targPreset.port);
-                          setFieldValue('useSsl', targPreset.ssl);
+                          setValues({
+                            ...values,
+                            hostname: targPreset.address,
+                            port: targPreset.port,
+                            useSsl: targPreset.ssl,
+                          });
                         }
                       }}
                     >
@@ -475,12 +480,12 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                                 ? intl.formatMessage(messages.serverLocal)
                                 : intl.formatMessage(messages.serverRemote)
                             }]${
-                            server.ssl
-                              ? ` [${intl.formatMessage(
-                                  messages.serverSecure
-                                )}]`
-                              : ''
-                          }
+                              server.ssl
+                                ? ` [${intl.formatMessage(
+                                    messages.serverSecure
+                                  )}]`
+                                : ''
+                            }
                             ${server.status ? '' : '(' + server.message + ')'}
                           `}
                         </option>
@@ -618,7 +623,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           );
         }}
       </Formik>
-      <div className="mt-10 mb-6">
+      <div className="mb-6 mt-10">
         <h3 className="heading">
           {intl.formatMessage(messages.plexlibraries)}
         </h3>
@@ -652,7 +657,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           ))}
         </ul>
       </div>
-      <div className="mt-10 mb-6">
+      <div className="mb-6 mt-10">
         <h3 className="heading">{intl.formatMessage(messages.manualscan)}</h3>
         <p className="description">
           {intl.formatMessage(messages.manualscanDescription)}
@@ -729,7 +734,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
       </div>
       {!onComplete && (
         <>
-          <div className="mt-10 mb-6">
+          <div className="mb-6 mt-10">
             <h3 className="heading">
               {intl.formatMessage(messages.tautulliSettings)}
             </h3>

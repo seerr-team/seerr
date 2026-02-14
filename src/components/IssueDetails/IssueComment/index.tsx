@@ -101,7 +101,7 @@ const IssueComment = ({
           {(isActiveUser || hasPermission(Permission.MANAGE_ISSUES)) && (
             <Menu
               as="div"
-              className="absolute top-2 right-1 z-40 inline-block text-left"
+              className="absolute right-1 top-2 z-40 inline-block text-left"
             >
               {({ open }) => (
                 <>
