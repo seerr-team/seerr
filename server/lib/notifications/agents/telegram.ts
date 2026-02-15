@@ -78,7 +78,9 @@ class TelegramAgent
    * @private
    */
   private escapeText(text: string | undefined): string {
-    return text ? text.replace(/[_*[\]()~>#+=|{}.!-]/gi, (x) => '\\' + x) : '';
+    return text
+      ? text.replace(/[_*[\]()~`\\>#+=|{}.!-]/gi, (x) => '\\' + x)
+      : '';
   }
 
   /**
