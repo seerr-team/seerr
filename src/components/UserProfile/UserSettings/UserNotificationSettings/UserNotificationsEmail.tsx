@@ -30,7 +30,7 @@ const messages = defineMessages(
       'Encrypt email messages using <OpenPgpLink>OpenPGP</OpenPgpLink>',
     notifyEmail: 'Custom Notify Email address',
     notifyEmailTip:
-      "Email address to send notifications to if you don't want to send notifications to their login Email",
+      "Email address to send notifications to if you don't want to send notifications to your login email",
     validationEmail: 'You must provide a valid email address',
     validationPgpPublicKey: 'You must provide a valid PGP public key',
   }
