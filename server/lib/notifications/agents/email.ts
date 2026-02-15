@@ -46,6 +46,15 @@ class EmailAgent
     return false;
   }
 
+  /**
+   *
+   * @param type Type of notification being sent
+   * @param payload Notification context
+   * @param recipientEmail The recipient's email address
+   * @param recipientName The recipient's name
+   * @returns Email options to be used by the email creator, or undefined if it's not applicable
+   * @private
+   */
   private buildMessage(
     type: Notification,
     payload: NotificationPayload,
@@ -204,6 +213,12 @@ class EmailAgent
     return undefined;
   }
 
+  /**
+   *
+   * @param type The type of notification being sent
+   * @param payload Notification context
+   * @returns True if the notification has successfully sent, else returns False
+   */
   public async send(
     type: Notification,
     payload: NotificationPayload
