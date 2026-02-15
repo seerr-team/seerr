@@ -42,7 +42,7 @@ class TelegramAgent
   private baseUrl = 'https://api.telegram.org/';
 
   /**
-   * Returns this agent's  notification settings.
+   * Returns this agent's notification settings.
    * Uses a cached copy when available.
    * @protected
    */
