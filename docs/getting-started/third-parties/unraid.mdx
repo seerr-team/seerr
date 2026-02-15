@@ -1,3 +1,9 @@
+---
+title: Unraid (Advanced)
+description: Install Seerr using Unraid
+sidebar_position: 3
+---
+
 # Unraid
 
 :::warning
@@ -5,7 +11,7 @@ This is a third-party installation method maintained by the community.
 The Seerr team is not responsible for this method. If you encounter issues, please ask for help on [Discord](https://discord.gg/seerr).
 :::
 
-Since there is no official Unraid Community Applications template for Seerr yet, you can install Seerr manually using Unraid's Docker UI.
+If an official Unraid Community Applications template for Seerr isn't available in your catalog, you can install Seerr manually using Unraid's Docker UI.
 
 ## Fresh Installation
 
@@ -26,7 +32,7 @@ Navigate to the **Docker** tab in Unraid and click **Add Container**. Fill in th
 |---|---|
 | **Name** | `seerr` |
 | **Repository** | `ghcr.io/seerr-team/seerr:latest` |
-| **Registry URL** | `https://ghcr.io` |
+| **Registry URL** (optional) | `https://ghcr.io` |
 | **Icon URL** | `https://raw.githubusercontent.com/seerr-team/seerr/develop/public/android-chrome-512x512.png` |
 | **WebUI** | `http://[IP]:[PORT:5055]` |
 | **Extra Parameters** | `--init` |
@@ -78,7 +84,7 @@ Seerr will automatically migrate your existing Overseerr or Jellyseerr data on f
 Before starting, back up your existing appdata folder so you can roll back if something goes wrong:
 
 ```bash
-cp -r /mnt/user/appdata/overseerr /mnt/user/appdata/overseerr-backup
+cp -a /mnt/user/appdata/overseerr /mnt/user/appdata/overseerr-backup
 ```
 
 See [Backups](/using-seerr/backups) for more details.
