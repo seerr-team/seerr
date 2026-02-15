@@ -9,4 +9,4 @@ if [ "$#" -ne 1 ]; then
 fi
 
 # Update package.json, commit the file and create a tag
-npm version $1 -m "chore: update version to v$1" --sign-git-tag
+npm version "$1" -m "chore: update version to v$1" --sign-git-tag
