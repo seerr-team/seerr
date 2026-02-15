@@ -34,8 +34,8 @@ export function getAvailableMediaServerUrl(payload: {
   };
 }): string | undefined {
   const wants4k = payload.request?.is4k;
-  const url4k = (payload.media as any)?.mediaUrl4k as string | undefined;
-  const url = (payload.media as any)?.mediaUrl as string | undefined;
+  const url4k = payload.media?.mediaUrl4k;
+  const url = payload.media?.mediaUrl;
 
   return (wants4k ? (url4k ?? url) : (url ?? url4k)) || undefined;
 }
