@@ -65,6 +65,13 @@ class TelegramAgent
     return text ? text.replace(/[_*[\]()~>#+=|{}.!-]/gi, (x) => '\\' + x) : '';
   }
 
+  /**
+   *
+   * @param type The type of notification being sent
+   * @param payload Notification context
+   * @returns Telegram Notification Payload
+   * @private
+   */
   private getNotificationPayload(
     type: Notification,
     payload: NotificationPayload
@@ -169,6 +176,12 @@ class TelegramAgent
         };
   }
 
+  /**
+   *
+   * @param type The type of notification being sent
+   * @param payload Notification payload
+   * @returns True if the notification was sent successfully, else returns false
+   */
   public async send(
     type: Notification,
     payload: NotificationPayload

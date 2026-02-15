@@ -63,6 +63,12 @@ class SlackAgent
     return settings.notifications.agents.slack;
   }
 
+  /**
+   *
+   * @param type The type of notification being sent
+   * @param payload Notification context
+   * @returns The Slack embed payload
+   */
   public buildEmbed(
     type: Notification,
     payload: NotificationPayload
@@ -247,6 +253,12 @@ class SlackAgent
     return false;
   }
 
+  /**
+   *
+   * @param type The type of notification being sent
+   * @param payload Notification context
+   * @returns True if the notification was sent successfully, else returns False
+   */
   public async send(
     type: Notification,
     payload: NotificationPayload
