@@ -168,9 +168,7 @@ class EmailAgent
           applicationTitle,
           recipientName,
           recipientEmail,
-          mediaServerActionUrl: mediaServerUrl
-            ? `${mediaServerUrl}`
-            : undefined,
+          mediaServerActionUrl: mediaServerUrl,
           mediaServerName,
         },
       };
