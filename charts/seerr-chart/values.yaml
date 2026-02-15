@@ -74,8 +74,6 @@ service:
 # -- Creating PVC to store configuration
 config:
   persistence:
-    # -- Set to true to enable Persistance
-    enabled: true
     # -- Size of persistent disk
     size: 5Gi
     # -- Annotations for PVCs
@@ -89,6 +87,7 @@ config:
     # Can be used to bind to existing volumes.
     volumeName: ''
     # -- Specify an existing `PersistentVolumeClaim` to use
+    # -- Above values are ignored if this value exists
     # existingClaim: ""
 
 ingress:
