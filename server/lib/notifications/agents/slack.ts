@@ -1,8 +1,11 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
-import { MediaServerType } from '@server/constants/server';
 import type { NotificationAgentSlack } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import {
+  getAvailableMediaServerName,
+  getAvailableMediaServerUrl,
+} from '@server/utils/mediaServerHelper';
 import axios from 'axios';
 import { Notification, hasNotificationType } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
@@ -67,26 +70,6 @@ class SlackAgent
     const settings = getSettings();
     const { applicationUrl, applicationTitle, mediaServerType } = settings.main;
     const { embedPoster } = settings.notifications.agents.slack;
-
-    function getAvailableMediaServerName() {
-      if (mediaServerType === MediaServerType.EMBY) {
-        return 'Emby';
-      }
-
-      if (mediaServerType === MediaServerType.PLEX) {
-        return 'Plex';
-      }
-
-      return 'Jellyfin';
-    }
-
-    function getAvailableMediaServerUrl(): string | undefined {
-      const wants4k = payload.request?.is4k;
-      const url4k = (payload.media as any)?.mediaUrl4k as string | undefined;
-      const url = (payload.media as any)?.mediaUrl as string | undefined;
-
-      return (wants4k ? (url4k ?? url) : (url ?? url4k)) || undefined;
-    }
 
     const fields: EmbedField[] = [];
 
@@ -228,8 +211,8 @@ class SlackAgent
     }
 
     if (!payload.issue) {
-      const mediaServerName = getAvailableMediaServerName();
-      const mediaServerUrl = getAvailableMediaServerUrl();
+      const mediaServerName = getAvailableMediaServerName(mediaServerType);
+      const mediaServerUrl = getAvailableMediaServerUrl(payload);
 
       if (mediaServerUrl) {
         blocks.push({
