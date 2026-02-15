@@ -53,6 +53,11 @@ class SlackAgent
   extends BaseAgent<NotificationAgentSlack>
   implements NotificationAgent
 {
+  /**
+   * Returns this agent's notification settings
+   * Uses a cached copy when available
+   * @protected
+   */
   protected getSettings(): NotificationAgentSlack {
     if (this.settings) {
       return this.settings;
@@ -64,7 +69,10 @@ class SlackAgent
   }
 
   /**
+   * Builds the Slack Embed for the Slack notification that will be sent
    *
+   * For all notifications it has a button to take you to the media in Seerr
+   * For request notifications it includes a button that links to the media in the chosen media server
    * @param type The type of notification being sent
    * @param payload Notification context
    * @returns The Slack embed payload
@@ -243,6 +251,10 @@ class SlackAgent
     };
   }
 
+  /**
+   * Determines whether this agent is able to send Slack notifications
+   * Returns true only if the agent is enabled and a webhook URL is configured
+   */
   public shouldSend(): boolean {
     const settings = this.getSettings();
 
@@ -254,10 +266,14 @@ class SlackAgent
   }
 
   /**
+   * Sends a Slack notification to the configured Slack webhook
+   *
+   * Returns true when notifications are skipped, disabled/type not enabled, or when the webhook call succeeds
+   * Returns false only when the webhook call fails
    *
    * @param type The type of notification being sent
    * @param payload Notification context
-   * @returns True if the notification was sent successfully, else returns False
+   * @returns True if the notification was sent successfully, otherwise False
    */
   public async send(
     type: Notification,

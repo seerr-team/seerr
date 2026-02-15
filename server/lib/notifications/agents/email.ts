@@ -21,6 +21,11 @@ class EmailAgent
   extends BaseAgent<NotificationAgentEmail>
   implements NotificationAgent
 {
+  /**
+   * Returns this agents notification settings
+   * Uses a cached copy when available
+   * @protected
+   */
   protected getSettings(): NotificationAgentEmail {
     if (this.settings) {
       return this.settings;
@@ -31,6 +36,10 @@ class EmailAgent
     return settings.notifications.agents.email;
   }
 
+  /**
+   * Determines whether this agent is able to send email notifications
+   * Returns true only if the agent is enabled and the required SMTP settings are configured
+   */
   public shouldSend(): boolean {
     const settings = this.getSettings();
 
@@ -47,12 +56,15 @@ class EmailAgent
   }
 
   /**
+   * Builds the email payload for an email notification
    *
+   * For all notifications it has a button to take you to the media in Seerr
+   * For request notifications it includes a button that links to the media in the chosen media server
    * @param type Type of notification being sent
    * @param payload Notification context
    * @param recipientEmail The recipient's email address
    * @param recipientName The recipient's name
-   * @returns Email options to be used by the email creator, or undefined if it's not applicable
+   * @returns Email notification payload
    * @private
    */
   private buildMessage(
@@ -214,7 +226,9 @@ class EmailAgent
   }
 
   /**
+   * Sends an email notification to the recipients in the payload.
    *
+   * Respects per-user notification settings, and it validates the email address before sending the notification
    * @param type The type of notification being sent
    * @param payload Notification context
    * @returns True if the notification has successfully sent, else returns False
