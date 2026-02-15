@@ -7,7 +7,7 @@ import { MediaStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { Watchlist } from '@server/entity/Watchlist';
-import { getSettings, MetadataProviderType } from '@server/lib/settings';
+import { MetadataProviderType, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { mapTvResult } from '@server/models/Search';
 import { mapSeasonWithEpisodes, mapTvDetails } from '@server/models/Tv';
