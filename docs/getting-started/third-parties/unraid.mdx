@@ -1,27 +1,122 @@
----
-title: Unraid (Advanced)
-description: Install Seerr using Unraid
-sidebar_position: 3
----
-
 # Unraid
+
+:::warning
+This is a third-party installation method maintained by the community.
+The Seerr team is not responsible for this method. If you encounter issues, please ask for help on [Discord](https://discord.gg/seerr).
+:::
+
+Since there is no official Unraid Community Applications template for Seerr yet, you can install Seerr manually using Unraid's Docker UI.
+
+## Fresh Installation
+
+### 1. Create the config directory
+
+Open the Unraid terminal and run:
+
+```bash
+mkdir -p /mnt/user/appdata/seerr
+chown -R 1000:1000 /mnt/user/appdata/seerr
+```
+
+### 2. Add the Docker container
+
+Navigate to the **Docker** tab in Unraid and click **Add Container**. Fill in the following:
+
+| Field | Value |
+|---|---|
+| **Name** | `seerr` |
+| **Repository** | `ghcr.io/seerr-team/seerr:latest` |
+| **Registry URL** | `https://ghcr.io` |
+| **Icon URL** | `https://raw.githubusercontent.com/seerr-team/seerr/develop/public/android-chrome-512x512.png` |
+| **WebUI** | `http://[IP]:[PORT:5055]` |
+| **Extra Parameters** | `--init` |
+| **Network Type** | `bridge` |
+| **Privileged** | `Off` |
+
+Then click **Add another Path, Port, Variable** to add:
+
+**Port:**
+| Field | Value |
+|---|---|
+| Container Port | `5055` |
+| Host Port | `5055` |
+| Connection Type | `TCP` |
+
+**Path:**
+| Field | Value |
+|---|---|
+| Container Path | `/app/config` |
+| Host Path | `/mnt/user/appdata/seerr` |
+
+**Variable:**
+| Field | Value |
+|---|---|
+| Key | `TZ` |
+| Value | Your [TZ database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) (e.g., `America/New_York`) |
+
+**Variable (optional):**
+| Field | Value |
+|---|---|
+| Key | `LOG_LEVEL` |
+| Value | `info` |
+
+Click **Apply** to create and start the container.
+
+### 3. Access Seerr
+
+Open the WebUI at `http://<your-unraid-ip>:5055` and follow the setup wizard.
+
+:::info
+The `--init` flag in **Extra Parameters** is required. Seerr does not include its own init process, so `--init` ensures proper signal handling and clean container shutdowns.
+:::
+
+## Migrating from Overseerr or Jellyseerr
+
+Seerr will automatically migrate your existing Overseerr or Jellyseerr data on first startup. No manual database migration is needed.
+
 :::danger
-This method has not yet been updated for Seerr and is awaiting a community contribution.
-Feel free to open a pull request on GitHub to update this installation method.
+Before starting, back up your existing appdata folder so you can roll back if something goes wrong:
+
+```bash
+cp -r /mnt/user/appdata/overseerr /mnt/user/appdata/overseerr-backup
+```
+
+See [Backups](/using-seerr/backups) for more details.
 :::
 
-<!--
-:::warning
-Third-party installation methods are maintained by the community. The Seerr team is not responsible for these packages.
+### 1. Stop and remove the old container
+
+In the Unraid **Docker** tab, click the Overseerr (or Jellyseerr) container icon, then **Stop**, then **Remove**. Do not delete the appdata folder.
+
+### 2. Fix config folder permissions
+
+Seerr runs as the `node` user (UID 1000) instead of root. Update ownership of your existing config folder:
+
+```bash
+docker run --rm -v /mnt/user/appdata/overseerr:/data alpine chown -R 1000:1000 /data
+```
+
+For Jellyseerr users, replace `overseerr` with `jellyseerr` in the path above.
+
+### 3. Add the Seerr container
+
+Follow the same steps as the [Fresh Installation](#fresh-installation) above, with one difference: set the **Host Path** to your existing config folder instead of creating a new one:
+
+| Field | Value |
+|---|---|
+| Container Path | `/app/config` |
+| Host Path | `/mnt/user/appdata/overseerr` |
+
+For Jellyseerr users, use `/mnt/user/appdata/jellyseerr`.
+
+### 4. Start and verify
+
+Click **Apply** to start the container. Check the container logs to confirm the automatic migration completed successfully.
+
+:::tip
+If you are using a reverse proxy (such as SWAG or Nginx Proxy Manager), update your proxy configuration to point to the new container name `seerr`. The default port remains `5055`.
 :::
 
-:::warning
-This method is not recommended for most users. It is intended for advanced users who are using Unraid.
-:::
+## Updating
 
-1. Ensure you have the **Community Applications** plugin installed.
-2. Inside the **Community Applications** app store, search for **Seerr**.
-3. Click the **Install Button**.
-4. On the following **Add Container** screen, make changes to the **Host Port** and **Host Path 1** \(Appdata\) as needed.
-5. Click apply and access "Seerr" at your `<ServerIP:HostPort>` in a web browser.
--->
+To update Seerr, click the container icon in the Unraid Docker tab and select **Force Update**, or use an automated tool such as [Watchtower](https://containrrr.dev/watchtower/) to keep the image up to date.
