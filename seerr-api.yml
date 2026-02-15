@@ -1941,6 +1941,7 @@ components:
           nullable: true
         notifyEmail:
           type: string
+          format: email
           nullable: true
         discordEnabled:
           type: boolean

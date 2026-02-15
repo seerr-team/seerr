@@ -1478,7 +1478,7 @@
   "components.UserProfile.UserSettings.UserNotificationSettings.notifications": "Notifications",
   "components.UserProfile.UserSettings.UserNotificationSettings.notificationsettings": "Notification Settings",
   "components.UserProfile.UserSettings.UserNotificationSettings.notifyEmail": "Custom Notify Email address",
-  "components.UserProfile.UserSettings.UserNotificationSettings.notifyEmailTip": "Email address to send notifications to if you don't want to send notifications to their login Email",
+  "components.UserProfile.UserSettings.UserNotificationSettings.notifyEmailTip": "Email address to send notifications to if you don't want to send notifications to your login email",
   "components.UserProfile.UserSettings.UserNotificationSettings.pgpPublicKey": "PGP Public Key",
   "components.UserProfile.UserSettings.UserNotificationSettings.pgpPublicKeyTip": "Encrypt email messages using <OpenPgpLink>OpenPGP</OpenPgpLink>",
   "components.UserProfile.UserSettings.UserNotificationSettings.pushbulletAccessToken": "Access Token",
