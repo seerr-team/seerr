@@ -191,22 +191,19 @@ class SlackAgent
           : undefined
       : undefined;
 
+    const actionElements: Element[] = [];
+
     if (url) {
-      blocks.push({
-        type: 'actions',
-        elements: [
-          {
-            action_id: 'open-in-seerr',
-            type: 'button',
-            url,
-            text: {
-              type: 'plain_text',
-              text: `View ${
-                payload.issue ? 'Issue' : 'Media'
-              } in ${applicationTitle}`,
-            },
-          },
-        ],
+      actionElements.push({
+        action_id: 'open-in-seerr',
+        type: 'button',
+        url,
+        text: {
+          type: 'plain_text',
+          text: `View ${
+            payload.issue ? 'Issue' : 'Media'
+          } in ${applicationTitle}`,
+        },
       });
     }
 
@@ -215,21 +212,23 @@ class SlackAgent
       const mediaServerUrl = getAvailableMediaServerUrl(payload);
 
       if (mediaServerUrl) {
-        blocks.push({
-          type: 'actions',
-          elements: [
-            {
-              action_id: 'open-in-mediaServer',
-              type: 'button',
-              url: mediaServerUrl,
-              text: {
-                type: 'plain_text',
-                text: `Play on ${mediaServerName}`,
-              },
-            },
-          ],
+        actionElements.push({
+          action_id: 'open-in-mediaServer',
+          type: 'button',
+          url: mediaServerUrl,
+          text: {
+            type: 'plain_text',
+            text: `Play on ${mediaServerName}`,
+          },
         });
       }
+    }
+
+    if (actionElements.length > 0) {
+      blocks.push({
+        type: 'actions',
+        elements: actionElements,
+      });
     }
 
     return {
