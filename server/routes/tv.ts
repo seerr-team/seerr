@@ -85,7 +85,7 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
 
     const availableMap: Record<number, boolean> = {};
 
-    const settings = await getSettings();
+    const settings = getSettings();
     const shouldTrackEpisodes =
       settings.main.enableEpisodeAvailability &&
       (settings.metadataSettings.tv === MetadataProviderType.TVDB ||
