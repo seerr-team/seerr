@@ -45,6 +45,10 @@ class AvailabilitySync {
     this.sonarrEpisodesCache = {};
     this.radarrServers = settings.radarr.filter((server) => server.syncEnabled);
     this.sonarrServers = settings.sonarr.filter((server) => server.syncEnabled);
+    const shouldTrackEpisodes =
+      settings.main.enableEpisodeAvailability &&
+      (settings.metadataSettings.tv === MetadataProviderType.TVDB ||
+        settings.metadataSettings.anime === MetadataProviderType.TVDB);
 
     try {
       logger.info(`Starting availability sync...`, {
@@ -239,11 +243,11 @@ class AvailabilitySync {
           } = await this.mediaExistsInJellyfin(media, true);
 
           const { existsInSonarr, seasonsMap: sonarrSeasonsMap } =
-            await this.mediaExistsInSonarr(media, false);
+            await this.mediaExistsInSonarr(media, false, shouldTrackEpisodes);
           const {
             existsInSonarr: existsInSonarr4k,
             seasonsMap: sonarrSeasonsMap4k,
-          } = await this.mediaExistsInSonarr(media, true);
+          } = await this.mediaExistsInSonarr(media, true, shouldTrackEpisodes);
 
           //plex
           if (mediaServerType === MediaServerType.PLEX) {
@@ -679,16 +683,11 @@ class AvailabilitySync {
 
   private async mediaExistsInSonarr(
     media: Media,
-    is4k: boolean
+    is4k: boolean,
+    shouldTrackEpisodes: boolean
   ): Promise<{ existsInSonarr: boolean; seasonsMap: Map<number, boolean> }> {
     let existsInSonarr = false;
     let preventSeasonSearch = false;
-
-    const settings = getSettings();
-    const shouldTrackEpisodes =
-      settings.main.enableEpisodeAvailability &&
-      (settings.metadataSettings.tv === MetadataProviderType.TVDB ||
-        settings.metadataSettings.anime === MetadataProviderType.TVDB);
 
     // Check for availability in all of the available sonarr servers
     // If any find the media, we will assume the media exists
@@ -773,7 +772,8 @@ class AvailabilitySync {
         const seasonExists = await this.seasonExistsInSonarr(
           media,
           season,
-          is4k
+          is4k,
+          shouldTrackEpisodes
         );
 
         if (seasonExists) {
@@ -788,16 +788,11 @@ class AvailabilitySync {
   private async seasonExistsInSonarr(
     media: Media,
     season: Season,
-    is4k: boolean
+    is4k: boolean,
+    shouldTrackEpisodes: boolean
   ): Promise<boolean> {
     let seasonExists = false;
     const episodeRepository = getRepository(Episode);
-
-    const settings = getSettings();
-    const shouldTrackEpisodes =
-      settings.main.enableEpisodeAvailability &&
-      (settings.metadataSettings.tv === MetadataProviderType.TVDB ||
-        settings.metadataSettings.anime === MetadataProviderType.TVDB);
 
     // Check each sonarr instance to see if the media still exists
     // If found, we will assume the media exists and prevent removal
@@ -847,49 +842,49 @@ class AvailabilitySync {
 
           if (episodes) {
             try {
-              for (const ep of episodes) {
-                if (ep.seasonNumber === season.seasonNumber) {
-                  const existingEpisode = await episodeRepository.findOne({
-                    where: {
-                      episodeNumber: ep.episodeNumber,
-                      season: { id: season.id },
-                    },
-                    relations: ['season'],
-                  });
+              const seasonEpisodes = episodes.filter(
+                (ep) => ep.seasonNumber === season.seasonNumber
+              );
+              if (seasonEpisodes.length === 0) {
+                continue;
+              }
 
-                  if (existingEpisode) {
-                    existingEpisode[is4k ? 'status4k' : 'status'] = ep.hasFile
+              const existingEpisodes = await episodeRepository.find({
+                where: { season: { id: season.id } },
+                relations: ['season'],
+              });
+              const existingByNumber = new Map(
+                existingEpisodes.map((e) => [e.episodeNumber, e])
+              );
+
+              const toSave: Episode[] = [];
+              for (const ep of seasonEpisodes) {
+                const existingEpisode = existingByNumber.get(ep.episodeNumber);
+                if (existingEpisode) {
+                  existingEpisode[is4k ? 'status4k' : 'status'] = ep.hasFile
+                    ? MediaStatus.AVAILABLE
+                    : MediaStatus.UNKNOWN;
+                  toSave.push(existingEpisode);
+                } else {
+                  const newEpisode = new Episode();
+                  newEpisode.episodeNumber = ep.episodeNumber;
+                  newEpisode.status = is4k
+                    ? MediaStatus.UNKNOWN
+                    : ep.hasFile
                       ? MediaStatus.AVAILABLE
                       : MediaStatus.UNKNOWN;
-                    await episodeRepository.save(existingEpisode);
-                  } else {
-                    const newEpisode = new Episode();
-                    newEpisode.episodeNumber = ep.episodeNumber;
-                    newEpisode.status = is4k
-                      ? MediaStatus.UNKNOWN
-                      : ep.hasFile
-                        ? MediaStatus.AVAILABLE
-                        : MediaStatus.UNKNOWN;
-                    newEpisode.status4k = is4k
-                      ? ep.hasFile
-                        ? MediaStatus.AVAILABLE
-                        : MediaStatus.UNKNOWN
-                      : MediaStatus.UNKNOWN;
-                    newEpisode.season = Promise.resolve(season);
-
-                    try {
-                      await episodeRepository.save(newEpisode);
-                    } catch (saveError) {
-                      logger.error('Failed to save new episode', {
-                        label: 'Availability Sync',
-                        errorMessage: saveError.message,
-                        tvId: media.tmdbId,
-                        seasonNumber: season.seasonNumber,
-                        episodeNumber: ep.episodeNumber,
-                      });
-                    }
-                  }
+                  newEpisode.status4k = is4k
+                    ? ep.hasFile
+                      ? MediaStatus.AVAILABLE
+                      : MediaStatus.UNKNOWN
+                    : MediaStatus.UNKNOWN;
+                  newEpisode.season = Promise.resolve(season);
+                  toSave.push(newEpisode);
                 }
+              }
+
+              if (toSave.length > 0) {
+                await episodeRepository.save(toSave);
               }
             } catch (err) {
               logger.error('Failed to update episode availability', {
