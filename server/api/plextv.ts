@@ -483,6 +483,9 @@ class PlexTvAPI extends ExternalAPI {
         `/library/metadata/${ratingKey}`,
         {
           baseURL: 'https://discover.provider.plex.tv',
+          headers: {
+            Accept: 'application/json',
+          },
         }
       );
       return response.data;
