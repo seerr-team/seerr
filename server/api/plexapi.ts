@@ -27,13 +27,6 @@ export interface PlexLibraryItem {
   Media: Media[];
 }
 
-interface PlexLibraryResponse {
-  MediaContainer: {
-    totalSize: number;
-    Metadata: PlexLibraryItem[];
-  };
-}
-
 interface PlexLibraryResponseRaw {
   MediaContainer: {
     totalSize?: number;
