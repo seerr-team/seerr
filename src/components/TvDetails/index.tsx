@@ -35,10 +35,7 @@ import { sortCrewPriority } from '@app/utils/creditHelpers';
 import defineMessages from '@app/utils/defineMessages';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
 import { Disclosure, Transition } from '@headlessui/react';
-import {
-  ChevronDownIcon,
-  StarIcon as StarIconOutline,
-} from '@heroicons/react/24/outline';
+import { ChevronDownIcon, StarIcon } from '@heroicons/react/24/outline';
 import {
   ArrowRightCircleIcon,
   CogIcon,
@@ -47,7 +44,7 @@ import {
   FilmIcon,
   MinusCircleIcon,
   PlayIcon,
-  StarIcon,
+  StarIcon as StarIconSolid,
 } from '@heroicons/react/24/solid';
 import type { RTRating } from '@server/api/rating/rottentomatoes';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
@@ -709,7 +706,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                       {isUpdating ? (
                         <Spinner />
                       ) : (
-                        <StarIcon className={'text-amber-300'} />
+                        <StarIconSolid className={'text-amber-300'} />
                       )}
                     </Button>
                   </Tooltip>
@@ -746,7 +743,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                       {isPlexWatchlistUpdating ? (
                         <Spinner />
                       ) : (
-                        <StarIconOutline className={'text-amber-300'} />
+                        <StarIcon className={'text-amber-300'} />
                       )}
                     </Button>
                   </Tooltip>
@@ -764,7 +761,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                       {isPlexWatchlistUpdating ? (
                         <Spinner />
                       ) : (
-                        <StarIcon className={'text-amber-300'} />
+                        <StarIconSolid className={'text-amber-300'} />
                       )}
                     </Button>
                   </Tooltip>
