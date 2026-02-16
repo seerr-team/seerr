@@ -25,7 +25,7 @@ Open the Unraid terminal and run:
 
 ```bash
 mkdir -p /mnt/user/appdata/seerr
-chown -R 1000:1000 /mnt/user/appdata/seerr
+chown -R 99:100 /mnt/user/appdata/seerr
 ```
 
 ### 2. Add the Docker container
@@ -39,7 +39,7 @@ Navigate to the **Docker** tab in Unraid and click **Add Container**. Fill in th
 | **Registry URL** (optional) | `https://ghcr.io` |
 | **Icon URL** | `https://raw.githubusercontent.com/seerr-team/seerr/develop/public/android-chrome-512x512.png` |
 | **WebUI** | `http://[IP]:[PORT:5055]` |
-| **Extra Parameters** | `--init` |
+| **Extra Parameters** | `--init --user 99:100` |
 | **Network Type** | `bridge` |
 | **Privileged** | `Off` |
 
@@ -77,5 +77,6 @@ Click **Apply** to create and start the container.
 Open the WebUI at `http://<your-unraid-ip>:5055` and follow the setup wizard.
 
 :::info
-The `--init` flag in **Extra Parameters** is required. Seerr does not include its own init process, so `--init` ensures proper signal handling and clean container shutdowns.
+The `--init` flag in **Extra Parameters** is required. Seerr does not include its own init process, so `--init` ensures proper signal handling and clean container shutdowns. 
+The `--user 99:100` flag in **Extra Parameters** is required. The user that Unraid is `nobody`.
 :::
