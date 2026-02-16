@@ -169,9 +169,7 @@ const SettingsMain = () => {
             discoverRegion: data?.discoverRegion,
             originalLanguage: data?.originalLanguage,
             streamingRegion: data?.streamingRegion ?? 'US',
-            blacklistedTags: data?.blacklistedTags,
-            blacklistedTagsLimit: data?.blacklistedTagsLimit || 50,
-            streamingRegion: data?.streamingRegion || 'US',
+
             blocklistedTags: data?.blocklistedTags,
             blocklistedTagsLimit: data?.blocklistedTagsLimit || 50,
             partialRequestsEnabled: data?.partialRequestsEnabled,
