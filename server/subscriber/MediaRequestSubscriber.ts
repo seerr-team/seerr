@@ -948,6 +948,15 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     try {
       await this.sendToRadarr(event.entity as MediaRequest);
       await this.sendToSonarr(event.entity as MediaRequest);
+    } catch (e) {
+      logger.error('Error while sending to *arr in afterUpdate subscriber', {
+        label: 'Media Request',
+        requestId: (event.entity as MediaRequest).id,
+        errorMessage: e instanceof Error ? e.message : String(e),
+      });
+    }
+
+    try {
       await this.updateParentStatus(event.entity as MediaRequest);
 
       if (event.entity.status === MediaRequestStatus.COMPLETED) {
@@ -959,11 +968,14 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         }
       }
     } catch (e) {
-      logger.error('Error in afterUpdate subscriber', {
-        label: 'Media Request',
-        requestId: (event.entity as MediaRequest).id,
-        errorMessage: e instanceof Error ? e.message : String(e),
-      });
+      logger.error(
+        'Error while updating parent status in afterUpdate subscriber',
+        {
+          label: 'Media Request',
+          requestId: (event.entity as MediaRequest).id,
+          errorMessage: e instanceof Error ? e.message : String(e),
+        }
+      );
     }
   }
 
@@ -975,13 +987,25 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     try {
       await this.sendToRadarr(event.entity as MediaRequest);
       await this.sendToSonarr(event.entity as MediaRequest);
-      await this.updateParentStatus(event.entity as MediaRequest);
     } catch (e) {
-      logger.error('Error in afterInsert subscriber', {
+      logger.error('Error while sending to *arr in afterInsert subscriber', {
         label: 'Media Request',
         requestId: (event.entity as MediaRequest).id,
         errorMessage: e instanceof Error ? e.message : String(e),
       });
+    }
+
+    try {
+      await this.updateParentStatus(event.entity as MediaRequest);
+    } catch (e) {
+      logger.error(
+        'Error while updating parent status in afterInsert subscriber',
+        {
+          label: 'Media Request',
+          requestId: (event.entity as MediaRequest).id,
+          errorMessage: e instanceof Error ? e.message : String(e),
+        }
+      );
     }
   }
 
