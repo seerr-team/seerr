@@ -260,13 +260,16 @@ class WebPushAgent
           shouldSendAdminNotification(type, user, payload)
       );
 
-      const allSubs = await userPushSubRepository
-        .createQueryBuilder('pushSub')
-        .leftJoinAndSelect('pushSub.user', 'user')
-        .where('pushSub.userId IN (:...users)', {
-          users: manageUsers.map((user) => user.id),
-        })
-        .getMany();
+      const allSubs =
+        manageUsers.length > 0
+          ? await userPushSubRepository
+              .createQueryBuilder('pushSub')
+              .leftJoinAndSelect('pushSub.user', 'user')
+              .where('pushSub.userId IN (:...users)', {
+                users: manageUsers.map((user) => user.id),
+              })
+              .getMany()
+          : [];
 
       // We only want to send the custom notification when type is approved or declined
       // Otherwise, default to the normal notification

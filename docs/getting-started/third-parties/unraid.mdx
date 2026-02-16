@@ -5,12 +5,7 @@ sidebar_position: 3
 ---
 
 # Unraid
-:::danger
-This method has not yet been updated for Seerr and is awaiting a community contribution.
-Feel free to open a pull request on GitHub to update this installation method.
-:::
 
-<!--
 :::warning
 Third-party installation methods are maintained by the community. The Seerr team is not responsible for these packages.
 :::
@@ -19,9 +14,68 @@ Third-party installation methods are maintained by the community. The Seerr team
 This method is not recommended for most users. It is intended for advanced users who are using Unraid.
 :::
 
-1. Ensure you have the **Community Applications** plugin installed.
-2. Inside the **Community Applications** app store, search for **Seerr**.
-3. Click the **Install Button**.
-4. On the following **Add Container** screen, make changes to the **Host Port** and **Host Path 1** \(Appdata\) as needed.
-5. Click apply and access "Seerr" at your `<ServerIP:HostPort>` in a web browser.
--->
+
+If an official Unraid Community Applications template for Seerr isn't available in your catalog, you can install Seerr manually using Unraid's Docker UI.
+
+## Fresh Installation
+
+### 1. Create the config directory
+
+Open the Unraid terminal and run:
+
+```bash
+mkdir -p /mnt/user/appdata/seerr
+chown -R 1000:1000 /mnt/user/appdata/seerr
+```
+
+### 2. Add the Docker container
+
+Navigate to the **Docker** tab in Unraid and click **Add Container**. Fill in the following:
+
+| Field | Value |
+|---|---|
+| **Name** | `seerr` |
+| **Repository** | `ghcr.io/seerr-team/seerr:latest` |
+| **Registry URL** (optional) | `https://ghcr.io` |
+| **Icon URL** | `https://raw.githubusercontent.com/seerr-team/seerr/develop/public/android-chrome-512x512.png` |
+| **WebUI** | `http://[IP]:[PORT:5055]` |
+| **Extra Parameters** | `--init` |
+| **Network Type** | `bridge` |
+| **Privileged** | `Off` |
+
+Then click **Add another Path, Port, Variable** to add:
+
+**Port:**
+| Field | Value |
+|---|---|
+| Container Port | `5055` |
+| Host Port | `5055` |
+| Connection Type | `TCP` |
+
+**Path:**
+| Field | Value |
+|---|---|
+| Container Path | `/app/config` |
+| Host Path | `/mnt/user/appdata/seerr` |
+
+**Variable:**
+| Field | Value |
+|---|---|
+| Key | `TZ` |
+| Value | Your [TZ database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) (e.g., `America/New_York`) |
+
+**Variable (optional):**
+| Field | Value |
+|---|---|
+| Key | `LOG_LEVEL` |
+| Value | `info` |
+
+Click **Apply** to create and start the container.
+
+### 3. Access Seerr
+
+Open the WebUI at `http://<your-unraid-ip>:5055` and follow the setup wizard.
+
+:::info
+The `--init` flag in **Extra Parameters** is required. Seerr does not include its own init process, so `--init` ensures proper signal handling and clean container shutdowns.
+:::

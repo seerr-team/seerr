@@ -6,7 +6,7 @@ import type {
 } from '@server/api/themoviedb/interfaces';
 import { MediaType } from '@server/constants/media';
 import dataSource from '@server/datasource';
-import { Blacklist } from '@server/entity/Blacklist';
+import { Blocklist } from '@server/entity/Blocklist';
 import Media from '@server/entity/Media';
 import type {
   RunnableScanner,
@@ -20,7 +20,7 @@ import type { EntityManager } from 'typeorm';
 const TMDB_API_DELAY_MS = 250;
 class AbortTransaction extends Error {}
 
-class BlacklistedTagProcessor implements RunnableScanner<StatusBase> {
+class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
   private running = false;
   private progress = 0;
   private total = 0;
@@ -30,12 +30,12 @@ class BlacklistedTagProcessor implements RunnableScanner<StatusBase> {
 
     try {
       await dataSource.transaction(async (em) => {
-        await this.cleanBlacklist(em);
-        await this.createBlacklistEntries(em);
+        await this.cleanBlocklist(em);
+        await this.createBlocklistEntries(em);
       });
     } catch (err) {
       if (err instanceof AbortTransaction) {
-        logger.info('Aborting job: Process Blacklisted Tags', {
+        logger.info('Aborting job: Process Blocklisted Tags', {
           label: 'Jobs',
         });
       } else {
@@ -64,37 +64,37 @@ class BlacklistedTagProcessor implements RunnableScanner<StatusBase> {
     this.cancel();
   }
 
-  private async createBlacklistEntries(em: EntityManager) {
+  private async createBlocklistEntries(em: EntityManager) {
     const tmdb = createTmdbWithRegionLanguage();
 
     const settings = getSettings();
-    const blacklistedTags = settings.main.blacklistedTags;
-    const blacklistedTagsArr = blacklistedTags.split(',');
+    const blocklistedTags = settings.main.blocklistedTags;
+    const blocklistedTagsArr = blocklistedTags.split(',');
 
-    const pageLimit = settings.main.blacklistedTagsLimit;
+    const pageLimit = settings.main.blocklistedTagsLimit;
     const invalidKeywords = new Set<string>();
 
-    if (blacklistedTags.length === 0) {
+    if (blocklistedTags.length === 0) {
       return;
     }
 
     // The maximum number of queries we're expected to execute
     this.total =
-      2 * blacklistedTagsArr.length * pageLimit * SortOptionsIterable.length;
+      2 * blocklistedTagsArr.length * pageLimit * SortOptionsIterable.length;
 
     for (const type of [MediaType.MOVIE, MediaType.TV]) {
       const getDiscover =
         type === MediaType.MOVIE ? tmdb.getDiscoverMovies : tmdb.getDiscoverTv;
 
       // Iterate for each tag
-      for (const tag of blacklistedTagsArr) {
+      for (const tag of blocklistedTagsArr) {
         const keywordDetails = await tmdb.getKeywordDetails({
           keywordId: Number(tag),
         });
 
         if (keywordDetails === null) {
-          logger.warn('Skipping invalid keyword in blacklisted tags', {
-            label: 'Blacklisted Tags Processor',
+          logger.warn('Skipping invalid keyword in blocklisted tags', {
+            label: 'Blocklisted Tags Processor',
             keywordId: tag,
           });
           invalidKeywords.add(tag);
@@ -134,8 +134,8 @@ class BlacklistedTagProcessor implements RunnableScanner<StatusBase> {
               queryMax = response.total_pages;
             }
           } catch (error) {
-            logger.error('Error processing keyword in blacklisted tags', {
-              label: 'Blacklisted Tags Processor',
+            logger.error('Error processing keyword in blocklisted tags', {
+              label: 'Blocklisted Tags Processor',
               keywordId: tag,
               errorMessage: error.message,
             });
@@ -145,19 +145,19 @@ class BlacklistedTagProcessor implements RunnableScanner<StatusBase> {
     }
 
     if (invalidKeywords.size > 0) {
-      const currentTags = blacklistedTagsArr.filter(
+      const currentTags = blocklistedTagsArr.filter(
         (tag) => !invalidKeywords.has(tag)
       );
       const cleanedTags = currentTags.join(',');
 
-      if (cleanedTags !== blacklistedTags) {
-        settings.main.blacklistedTags = cleanedTags;
+      if (cleanedTags !== blocklistedTags) {
+        settings.main.blocklistedTags = cleanedTags;
         await settings.save();
 
         logger.info('Cleaned up invalid keywords from settings', {
-          label: 'Blacklisted Tags Processor',
+          label: 'Blocklisted Tags Processor',
           removedKeywords: Array.from(invalidKeywords),
-          newBlacklistedTags: cleanedTags,
+          newBlocklistedTags: cleanedTags,
         });
       }
     }
@@ -169,33 +169,33 @@ class BlacklistedTagProcessor implements RunnableScanner<StatusBase> {
     mediaType: MediaType,
     em: EntityManager
   ) {
-    const blacklistRepository = em.getRepository(Blacklist);
+    const blocklistRepository = em.getRepository(Blocklist);
 
     for (const entry of response.results) {
-      const blacklistEntry = await blacklistRepository.findOne({
+      const blocklistEntry = await blocklistRepository.findOne({
         where: { tmdbId: entry.id },
       });
 
-      if (blacklistEntry) {
-        // Don't mark manual blacklists with tags
-        // If media wasn't previously blacklisted for this tag, add the tag to the media's blacklist
+      if (blocklistEntry) {
+        // Don't mark manual blocklists with tags
+        // If media wasn't previously blocklisted for this tag, add the tag to the media's blocklist
         if (
-          blacklistEntry.blacklistedTags &&
-          !blacklistEntry.blacklistedTags.includes(`,${keywordId},`)
+          blocklistEntry.blocklistedTags &&
+          !blocklistEntry.blocklistedTags.includes(`,${keywordId},`)
         ) {
-          await blacklistRepository.update(blacklistEntry.id, {
-            blacklistedTags: `${blacklistEntry.blacklistedTags}${keywordId},`,
+          await blocklistRepository.update(blocklistEntry.id, {
+            blocklistedTags: `${blocklistEntry.blocklistedTags}${keywordId},`,
           });
         }
       } else {
-        // Media wasn't previously blacklisted, add it to the blacklist
-        await Blacklist.addToBlacklist(
+        // Media wasn't previously blocklisted, add it to the blocklist
+        await Blocklist.addToBlocklist(
           {
-            blacklistRequest: {
+            blocklistRequest: {
               mediaType,
               title: 'title' in entry ? entry.title : entry.name,
               tmdbId: entry.id,
-              blacklistedTags: `,${keywordId},`,
+              blocklistedTags: `,${keywordId},`,
             },
           },
           em
@@ -204,22 +204,22 @@ class BlacklistedTagProcessor implements RunnableScanner<StatusBase> {
     }
   }
 
-  private async cleanBlacklist(em: EntityManager) {
-    // Remove blacklist and media entries blacklisted by tags
+  private async cleanBlocklist(em: EntityManager) {
+    // Remove blocklist and media entries blocklisted by tags
     const mediaRepository = em.getRepository(Media);
     const mediaToRemove = await mediaRepository
       .createQueryBuilder('media')
-      .innerJoinAndSelect(Blacklist, 'blist', 'blist.tmdbId = media.tmdbId')
-      .where(`blist.blacklistedTags IS NOT NULL`)
+      .innerJoinAndSelect(Blocklist, 'blist', 'blist.tmdbId = media.tmdbId')
+      .where(`blist.blocklistedTags IS NOT NULL`)
       .getMany();
 
     // Batch removes so the query doesn't get too large
     for (let i = 0; i < mediaToRemove.length; i += 500) {
-      await mediaRepository.remove(mediaToRemove.slice(i, i + 500)); // This also deletes the blacklist entries via cascading
+      await mediaRepository.remove(mediaToRemove.slice(i, i + 500)); // This also deletes the blocklist entries via cascading
     }
   }
 }
 
-const blacklistedTagsProcessor = new BlacklistedTagProcessor();
+const blocklistedTagsProcessor = new BlocklistedTagProcessor();
 
-export default blacklistedTagsProcessor;
+export default blocklistedTagsProcessor;

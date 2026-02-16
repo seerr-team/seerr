@@ -4,7 +4,7 @@ import RTFresh from '@app/assets/rt_fresh.svg';
 import RTRotten from '@app/assets/rt_rotten.svg';
 import Spinner from '@app/assets/spinner.svg';
 import TmdbLogo from '@app/assets/tmdb_logo.svg';
-import BlacklistModal from '@app/components/BlacklistModal';
+import BlocklistModal from '@app/components/BlocklistModal';
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
@@ -127,9 +127,9 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   const [toggleWatchlist, setToggleWatchlist] = useState<boolean>(
     !tv?.onUserWatchlist
   );
-  const [isBlacklistUpdating, setIsBlacklistUpdating] =
+  const [isBlocklistUpdating, setIsBlocklistUpdating] =
     useState<boolean>(false);
-  const [showBlacklistModal, setShowBlacklistModal] = useState(false);
+  const [showBlocklistModal, setShowBlocklistModal] = useState(false);
   const [isPlexWatchlistUpdating, setIsPlexWatchlistUpdating] =
     useState<boolean>(false);
   const [togglePlexWatchlist, setTogglePlexWatchlist] = useState<boolean>(true);
@@ -176,8 +176,8 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     }
   }, [plexWatchlistData]);
 
-  const closeBlacklistModal = useCallback(
-    () => setShowBlacklistModal(false),
+  const closeBlocklistModal = useCallback(
+    () => setShowBlocklistModal(false),
     []
   );
 
@@ -488,10 +488,10 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   };
 
   const onClickHideItemBtn = async (): Promise<void> => {
-    setIsBlacklistUpdating(true);
+    setIsBlocklistUpdating(true);
 
     try {
-      const res = await axios.post('/api/v1/blacklist', {
+      const res = await axios.post('/api/v1/blocklist', {
         tmdbId: tv?.id,
         mediaType: 'tv',
         title: tv?.name,
@@ -501,7 +501,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
       if (res.status === 201) {
         addToast(
           <span>
-            {intl.formatMessage(globalMessages.blacklistSuccess, {
+            {intl.formatMessage(globalMessages.blocklistSuccess, {
               title: tv?.name,
               strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
             })}
@@ -515,7 +515,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
       if (e?.response?.status === 412) {
         addToast(
           <span>
-            {intl.formatMessage(globalMessages.blacklistDuplicateError, {
+            {intl.formatMessage(globalMessages.blocklistDuplicateError, {
               title: tv?.name,
               strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
             })}
@@ -523,18 +523,18 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
           { appearance: 'info', autoDismiss: true }
         );
       } else {
-        addToast(intl.formatMessage(globalMessages.blacklistError), {
+        addToast(intl.formatMessage(globalMessages.blocklistError), {
           appearance: 'error',
           autoDismiss: true,
         });
       }
     }
 
-    setIsBlacklistUpdating(false);
-    closeBlacklistModal();
+    setIsBlocklistUpdating(false);
+    closeBlocklistModal();
   };
 
-  const showHideButton = hasPermission([Permission.MANAGE_BLACKLIST], {
+  const showHideButton = hasPermission([Permission.MANAGE_BLOCKLIST], {
     type: 'or',
   });
 
@@ -565,13 +565,13 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
         </div>
       )}
       <PageTitle title={data.name} />
-      <BlacklistModal
+      <BlocklistModal
         tmdbId={data.id}
         type="tv"
-        show={showBlacklistModal}
-        onCancel={closeBlacklistModal}
+        show={showBlocklistModal}
+        onCancel={closeBlocklistModal}
         onComplete={onClickHideItemBtn}
-        isUpdating={isBlacklistUpdating}
+        isUpdating={isBlocklistUpdating}
       />
       <IssueModal
         onCancel={() => setShowIssueModal(false)}
@@ -684,21 +684,21 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
             data?.mediaInfo?.status !== MediaStatus.AVAILABLE &&
             data?.mediaInfo?.status !== MediaStatus.PARTIALLY_AVAILABLE &&
             data?.mediaInfo?.status !== MediaStatus.PENDING &&
-            data?.mediaInfo?.status !== MediaStatus.BLACKLISTED && (
+            data?.mediaInfo?.status !== MediaStatus.BLOCKLISTED && (
               <Tooltip
-                content={intl.formatMessage(globalMessages.addToBlacklist)}
+                content={intl.formatMessage(globalMessages.addToBlocklist)}
               >
                 <Button
                   buttonType={'ghost'}
                   className="z-40 mr-2"
                   buttonSize={'md'}
-                  onClick={() => setShowBlacklistModal(true)}
+                  onClick={() => setShowBlocklistModal(true)}
                 >
                   <EyeSlashIcon />
                 </Button>
               </Tooltip>
             )}
-          {data?.mediaInfo?.status !== MediaStatus.BLACKLISTED &&
+          {data?.mediaInfo?.status !== MediaStatus.BLOCKLISTED &&
             user?.userType !== UserType.PLEX && (
               <>
                 {toggleWatchlist ? (
@@ -733,7 +733,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                 )}
               </>
             )}
-          {data?.mediaInfo?.status !== MediaStatus.BLACKLISTED &&
+          {data?.mediaInfo?.status !== MediaStatus.BLOCKLISTED &&
             user?.userType === UserType.PLEX && (
               <>
                 {togglePlexWatchlist ? (

@@ -1,4 +1,4 @@
-import BlacklistedTagsBadge from '@app/components/BlacklistedTagsBadge';
+import BlocklistedTagsBadge from '@app/components/BlocklistedTagsBadge';
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
@@ -7,7 +7,7 @@ import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { CalendarIcon, TrashIcon, UserIcon } from '@heroicons/react/24/solid';
-import type { Blacklist } from '@server/entity/Blacklist';
+import type { Blocklist } from '@server/entity/Blocklist';
 import axios from 'axios';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -15,37 +15,37 @@ import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
-const messages = defineMessages('component.BlacklistBlock', {
-  blacklistedby: 'Blacklisted By',
-  blacklistdate: 'Blacklisted date',
+const messages = defineMessages('component.BlocklistBlock', {
+  blocklistedby: 'Blocklisted By',
+  blocklistdate: 'Blocklisted date',
 });
 
-interface BlacklistBlockProps {
+interface BlocklistBlockProps {
   tmdbId: number;
   onUpdate?: () => void;
   onDelete?: () => void;
 }
 
-const BlacklistBlock = ({
+const BlocklistBlock = ({
   tmdbId,
   onUpdate,
   onDelete,
-}: BlacklistBlockProps) => {
+}: BlocklistBlockProps) => {
   const { user } = useUser();
   const intl = useIntl();
   const [isUpdating, setIsUpdating] = useState(false);
   const { addToast } = useToasts();
-  const { data } = useSWR<Blacklist>(`/api/v1/blacklist/${tmdbId}`);
+  const { data } = useSWR<Blocklist>(`/api/v1/blocklist/${tmdbId}`);
 
-  const removeFromBlacklist = async (tmdbId: number, title?: string) => {
+  const removeFromBlocklist = async (tmdbId: number, title?: string) => {
     setIsUpdating(true);
 
     try {
-      await axios.delete('/api/v1/blacklist/' + tmdbId);
+      await axios.delete('/api/v1/blocklist/' + tmdbId);
 
       addToast(
         <span>
-          {intl.formatMessage(globalMessages.removeFromBlacklistSuccess, {
+          {intl.formatMessage(globalMessages.removeFromBlocklistSuccess, {
             title,
             strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
           })}
@@ -53,7 +53,7 @@ const BlacklistBlock = ({
         { appearance: 'success', autoDismiss: true }
       );
     } catch {
-      addToast(intl.formatMessage(globalMessages.blacklistError), {
+      addToast(intl.formatMessage(globalMessages.blocklistError), {
         appearance: 'error',
         autoDismiss: true,
       });
@@ -80,7 +80,7 @@ const BlacklistBlock = ({
           <div className="white mb-1 flex flex-nowrap">
             {data.user ? (
               <>
-                <Tooltip content={intl.formatMessage(messages.blacklistedby)}>
+                <Tooltip content={intl.formatMessage(messages.blocklistedby)}>
                   <UserIcon className="mr-1.5 h-5 w-5 min-w-0 flex-shrink-0" />
                 </Tooltip>
                 <span className="w-40 truncate md:w-auto">
@@ -97,23 +97,23 @@ const BlacklistBlock = ({
                   </Link>
                 </span>
               </>
-            ) : data.blacklistedTags ? (
+            ) : data.blocklistedTags ? (
               <>
                 <span className="w-40 truncate md:w-auto">
-                  {intl.formatMessage(messages.blacklistedby)}:&nbsp;
+                  {intl.formatMessage(messages.blocklistedby)}:&nbsp;
                 </span>
-                <BlacklistedTagsBadge data={data} />
+                <BlocklistedTagsBadge data={data} />
               </>
             ) : null}
           </div>
         </div>
         <div className="ml-2 flex flex-shrink-0 flex-wrap">
           <Tooltip
-            content={intl.formatMessage(globalMessages.removefromBlacklist)}
+            content={intl.formatMessage(globalMessages.removefromBlocklist)}
           >
             <Button
               buttonType="danger"
-              onClick={() => removeFromBlacklist(data.tmdbId, data.title)}
+              onClick={() => removeFromBlocklist(data.tmdbId, data.title)}
               disabled={isUpdating}
             >
               <TrashIcon className="icon-sm" />
@@ -125,12 +125,12 @@ const BlacklistBlock = ({
         <div className="sm:flex">
           <div className="mr-6 flex items-center text-sm leading-5">
             <Badge badgeType="danger">
-              {intl.formatMessage(globalMessages.blacklisted)}
+              {intl.formatMessage(globalMessages.blocklisted)}
             </Badge>
           </div>
         </div>
         <div className="mt-2 flex items-center text-sm leading-5 sm:mt-0">
-          <Tooltip content={intl.formatMessage(messages.blacklistdate)}>
+          <Tooltip content={intl.formatMessage(messages.blocklistdate)}>
             <CalendarIcon className="mr-1.5 h-5 w-5 flex-shrink-0" />
           </Tooltip>
           <span>
@@ -146,4 +146,4 @@ const BlacklistBlock = ({
   );
 };
 
-export default BlacklistBlock;
+export default BlocklistBlock;

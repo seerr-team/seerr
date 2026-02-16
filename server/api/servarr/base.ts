@@ -92,7 +92,7 @@ class ServarrBase<QueueItemAppendT> extends ExternalAPI {
     apiKey,
     cacheName,
     apiName,
-    timeout = 5000,
+    timeout = 10000,
   }: {
     url: string;
     apiKey: string;

@@ -54,7 +54,7 @@ const useDiscover = <
 >(
   endpoint: string,
   options?: O,
-  { hideAvailable = true, hideBlacklisted = true } = {}
+  { hideAvailable = true, hideBlocklisted = true } = {}
 ): DiscoverResult<T, S> => {
   const settings = useSettings();
   const { hasPermission } = useUser();
@@ -83,6 +83,8 @@ const useDiscover = <
     {
       initialSize: 3,
       revalidateFirstPage: false,
+      dedupingInterval: 30000,
+      revalidateOnFocus: false,
     }
   );
 
@@ -123,14 +125,14 @@ const useDiscover = <
   }
 
   if (
-    settings.currentSettings.hideBlacklisted &&
-    hideBlacklisted &&
-    hasPermission(Permission.MANAGE_BLACKLIST)
+    settings.currentSettings.hideBlocklisted &&
+    hideBlocklisted &&
+    hasPermission(Permission.MANAGE_BLOCKLIST)
   ) {
     titles = titles.filter(
       (i) =>
         (i.mediaType === 'movie' || i.mediaType === 'tv') &&
-        i.mediaInfo?.status !== MediaStatus.BLACKLISTED
+        i.mediaInfo?.status !== MediaStatus.BLOCKLISTED
     );
   }
 

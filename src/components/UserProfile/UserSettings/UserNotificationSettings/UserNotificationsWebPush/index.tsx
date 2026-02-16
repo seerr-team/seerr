@@ -202,7 +202,7 @@ const UserWebPushSettings = () => {
     if (user?.id) {
       verifyWebPush();
     }
-  }, [user?.id, currentSettings]);
+  }, [user?.id, currentSettings, dataDevices]);
 
   useEffect(() => {
     const getSubscriptionEndpoint = async () => {

@@ -13,7 +13,7 @@ const defaultSettings = {
   applicationTitle: 'Seerr',
   applicationUrl: '',
   hideAvailable: false,
-  hideBlacklisted: false,
+  hideBlocklisted: false,
   localLogin: true,
   mediaServerLogin: true,
   movie4kEnabled: false,

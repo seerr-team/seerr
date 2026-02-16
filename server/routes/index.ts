@@ -12,6 +12,7 @@ import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { checkUser, isAuthenticated } from '@server/middleware/auth';
+import deprecatedRoute from '@server/middleware/deprecation';
 import { mapProductionCompany } from '@server/models/Movie';
 import { mapNetwork } from '@server/models/Tv';
 import { mapWatchProviderDetails } from '@server/models/common';
@@ -29,7 +30,7 @@ import restartFlag from '@server/utils/restartFlag';
 import { isPerson } from '@server/utils/typeHelpers';
 import { Router } from 'express';
 import authRoutes from './auth';
-import blacklistRoutes from './blacklist';
+import blocklistRoutes from './blocklist';
 import collectionRoutes from './collection';
 import discoverRoutes, { createTmdbWithRegionLanguage } from './discover';
 import issueRoutes from './issue';
@@ -153,7 +154,17 @@ router.use('/discover', isAuthenticated(), discoverRoutes);
 router.use('/request', isAuthenticated(), requestRoutes);
 router.use('/watchlist', isAuthenticated(), watchlistRoutes);
 router.use('/plex-watchlist', isAuthenticated(), plexWatchlistRoutes);
-router.use('/blacklist', isAuthenticated(), blacklistRoutes);
+router.use('/blocklist', isAuthenticated(), blocklistRoutes);
+router.use(
+  '/blacklist',
+  isAuthenticated(),
+  deprecatedRoute({
+    oldPath: '/api/v1/blacklist',
+    newPath: '/api/v1/blocklist',
+    sunsetDate: '2026-06-01',
+  }),
+  blocklistRoutes
+);
 router.use('/movie', isAuthenticated(), movieRoutes);
 router.use('/tv', isAuthenticated(), tvRoutes);
 router.use('/media', isAuthenticated(), mediaRoutes);

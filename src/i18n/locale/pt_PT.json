@@ -1599,5 +1599,11 @@
   "i18n.specials": "",
   "components.Login.port": "",
   "components.TvDetails.play": "",
-  "components.Settings.SettingsUsers.atLeastOneAuth": ""
+  "components.Settings.SettingsUsers.atLeastOneAuth": "",
+  "components.Settings.SettingsAbout.supportseerr": "",
+  "components.Settings.SettingsAbout.aboutseerr": "",
+  "components.Settings.SettingsAbout.contribute": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMaxTtl": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMinTtl": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.activesubscription": ""
 }

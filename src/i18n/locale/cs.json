@@ -1599,5 +1599,11 @@
   "i18n.deleted": "",
   "components.DiscoverTvUpcoming.upcomingtv": "",
   "components.Settings.SettingsNetwork.docs": "",
-  "component.BlacklistModal.blacklisting": ""
+  "component.BlacklistModal.blacklisting": "",
+  "components.Settings.SettingsAbout.aboutseerr": "",
+  "components.Settings.SettingsAbout.contribute": "",
+  "components.Settings.SettingsAbout.supportseerr": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMaxTtl": "",
+  "components.Settings.SettingsNetwork.validationDnsCacheMinTtl": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.activesubscription": ""
 }

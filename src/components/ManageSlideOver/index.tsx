@@ -1,4 +1,4 @@
-import BlacklistBlock from '@app/components/BlacklistBlock';
+import BlocklistBlock from '@app/components/BlocklistBlock';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import ConfirmButton from '@app/components/Common/ConfirmButton';
@@ -314,13 +314,13 @@ const ManageSlideOver = ({
             </div>
           </div>
         )}
-        {data.mediaInfo?.status === MediaStatus.BLACKLISTED && (
+        {data.mediaInfo?.status === MediaStatus.BLOCKLISTED && (
           <div>
             <h3 className="mb-2 text-xl font-bold">
-              {intl.formatMessage(globalMessages.blacklist)}
+              {intl.formatMessage(globalMessages.blocklist)}
             </h3>
             <div className="overflow-hidden rounded-md border border-gray-700 shadow">
-              <BlacklistBlock
+              <BlocklistBlock
                 tmdbId={data.mediaInfo.tmdbId}
                 onUpdate={() => revalidate()}
                 onDelete={() => onClose()}
@@ -651,7 +651,7 @@ const ManageSlideOver = ({
           )}
         {hasPermission(Permission.ADMIN) &&
           data?.mediaInfo &&
-          data.mediaInfo.status !== MediaStatus.BLACKLISTED && (
+          data.mediaInfo.status !== MediaStatus.BLOCKLISTED && (
             <div>
               <h3 className="mb-2 text-xl font-bold">
                 {intl.formatMessage(messages.manageModalAdvanced)}
