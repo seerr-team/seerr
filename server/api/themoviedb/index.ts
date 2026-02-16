@@ -487,6 +487,51 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     }
   }
 
+  private filterResults<T>(results: T[]): T[] {
+    const isMultiRegion =
+      this.discoverRegion && this.discoverRegion.includes('|');
+    const targetRegions =
+      isMultiRegion && this.discoverRegion
+        ? this.discoverRegion.split('|')
+        : [];
+    const targetLanguage =
+      this.originalLanguage && this.originalLanguage !== 'all'
+        ? this.originalLanguage
+        : null;
+
+    if (!isMultiRegion && !targetLanguage) {
+      return results;
+    }
+
+    return results.filter((result) => {
+      const item = result as unknown as {
+        origin_country?: string[];
+        original_language?: string;
+      };
+
+      // Filter by Language if set
+      if (targetLanguage && item.original_language) {
+        if (item.original_language !== targetLanguage) {
+          return false;
+        }
+      }
+
+      // Filter by Region if multi-region is set
+      if (isMultiRegion) {
+        // Logic Rule:
+        // If origin_country is present (TV Shows, usually), strictly filter.
+        // If origin_country is missing (Movies, often), include it to avoid over-filtering.
+        if (item.origin_country && Array.isArray(item.origin_country)) {
+          return item.origin_country.some((country) =>
+            targetRegions.includes(country)
+          );
+        }
+      }
+
+      return true;
+    });
+  }
+
   public getDiscoverMovies = async ({
     sortBy = 'popularity.desc',
     page = 1,
@@ -524,6 +569,8 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
         .toISOString()
         .split('T')[0];
 
+      const isMultiRegion = this.discoverRegion?.includes('|');
+
       const data = await this.get<TmdbSearchMovieResponse>('/discover/movie', {
         params: {
           sort_by: sortBy,
@@ -531,7 +578,8 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
           include_adult: includeAdult,
           include_video: includeVideo,
           language,
-          region: this.discoverRegion || '',
+          region: isMultiRegion ? undefined : this.discoverRegion || '',
+          with_origin_country: isMultiRegion ? this.discoverRegion : undefined,
           with_original_language:
             originalLanguage && originalLanguage !== 'all'
               ? originalLanguage
@@ -610,12 +658,15 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
         .toISOString()
         .split('T')[0];
 
+      const isMultiRegion = this.discoverRegion?.includes('|');
+
       const data = await this.get<TmdbSearchTvResponse>('/discover/tv', {
         params: {
           sort_by: sortBy,
           page,
           language,
-          region: this.discoverRegion || '',
+          region: isMultiRegion ? undefined : this.discoverRegion || '',
+          with_origin_country: isMultiRegion ? this.discoverRegion : undefined,
           // Set our release date values, but check if one is set and not the other,
           // so we can force a past date or a future date. TMDB Requires both values if one is set!
           'first_air_date.gte':
@@ -679,6 +730,8 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
         }
       );
 
+      data.results = this.filterResults(data.results);
+
       return data;
     } catch (e) {
       throw new Error(`[TMDB] Failed to fetch upcoming movies: ${e.message}`);
@@ -706,6 +759,8 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
         }
       );
 
+      data.results = this.filterResults(data.results);
+
       return data;
     } catch (e) {
       throw new Error(`[TMDB] Failed to fetch all trending: ${e.message}`);
@@ -729,9 +784,11 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
         }
       );
 
+      data.results = this.filterResults(data.results);
+
       return data;
     } catch (e) {
-      throw new Error(`[TMDB] Failed to fetch all trending: ${e.message}`);
+      throw new Error(`[TMDB] Failed to fetch trending movies: ${e.message}`);
     }
   };
 
@@ -752,9 +809,11 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
         }
       );
 
+      data.results = this.filterResults(data.results);
+
       return data;
     } catch (e) {
-      throw new Error(`[TMDB] Failed to fetch all trending: ${e.message}`);
+      throw new Error(`[TMDB] Failed to fetch trending TV shows: ${e.message}`);
     }
   };
 
