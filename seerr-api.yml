@@ -577,21 +577,9 @@ components:
           example: false
         baseUrl:
           type: string
-        activeProfileId:
-          type: number
-          example: 1
-        activeProfileName:
-          type: string
-          example: 720p/1080p
-        activeDirectory:
-          type: string
-          example: '/movies'
         is4k:
           type: boolean
           example: false
-        minimumAvailability:
-          type: string
-          example: 'In Cinema'
         isDefault:
           type: boolean
           example: false
@@ -610,11 +598,7 @@ components:
         - port
         - apiKey
         - useSsl
-        - activeProfileId
-        - activeProfileName
-        - activeDirectory
         - is4k
-        - minimumAvailability
         - isDefault
     SonarrSettings:
       type: object
@@ -640,31 +624,6 @@ components:
           example: false
         baseUrl:
           type: string
-        activeProfileId:
-          type: number
-          example: 1
-        activeProfileName:
-          type: string
-          example: 720p/1080p
-        activeDirectory:
-          type: string
-          example: '/tv/'
-        activeLanguageProfileId:
-          type: number
-          example: 1
-        activeAnimeProfileId:
-          type: number
-          nullable: true
-        activeAnimeLanguageProfileId:
-          type: number
-          nullable: true
-        activeAnimeProfileName:
-          type: string
-          example: 720p/1080p
-          nullable: true
-        activeAnimeDirectory:
-          type: string
-          nullable: true
         is4k:
           type: boolean
           example: false
@@ -689,9 +648,6 @@ components:
         - port
         - apiKey
         - useSsl
-        - activeProfileId
-        - activeProfileName
-        - activeDirectory
         - is4k
         - enableSeasonFolders
         - isDefault
@@ -2083,11 +2039,138 @@ components:
           type: string
         native_name:
           type: string
-    OverrideRule:
+    RoutingRule:
       type: object
       properties:
         id:
+          type: number
+          readOnly: true
+        name:
           type: string
+          example: 'Anime Content'
+        serviceType:
+          type: string
+          enum:
+            - radarr
+            - sonarr
+        is4k:
+          type: boolean
+        priority:
+          type: number
+        users:
+          type: string
+          nullable: true
+          description: Comma-separated user IDs
+        genres:
+          type: string
+          nullable: true
+          description: Comma-separated genre IDs
+        languages:
+          type: string
+          nullable: true
+          description: Pipe-separated language codes (e.g. "ja|ko")
+        keywords:
+          type: string
+          nullable: true
+          description: Comma-separated keyword IDs
+        targetServiceId:
+          type: number
+          description: ID of the target Radarr/Sonarr instance
+        activeProfileId:
+          type: number
+          nullable: true
+        rootFolder:
+          type: string
+          nullable: true
+        minimumAvailability:
+          type: string
+          nullable: true
+          enum:
+            - announced
+            - inCinemas
+            - released
+            - null
+        seriesType:
+          type: string
+          nullable: true
+          enum:
+            - standard
+            - daily
+            - anime
+            - null
+        tags:
+          type: string
+          nullable: true
+          description: Comma-separated tag IDs
+        isFallback:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+    RoutingRuleRequest:
+      type: object
+      required:
+        - name
+        - serviceType
+        - targetServiceId
+      properties:
+        name:
+          type: string
+        serviceType:
+          type: string
+          enum:
+            - radarr
+            - sonarr
+        is4k:
+          type: boolean
+        priority:
+          type: number
+        users:
+          type: string
+          nullable: true
+        genres:
+          type: string
+          nullable: true
+        languages:
+          type: string
+          nullable: true
+        keywords:
+          type: string
+          nullable: true
+        targetServiceId:
+          type: number
+        activeProfileId:
+          type: number
+          nullable: true
+        minimumAvailability:
+          type: string
+          nullable: true
+          enum:
+            - announced
+            - inCinemas
+            - released
+            - null
+        rootFolder:
+          type: string
+          nullable: true
+        seriesType:
+          type: string
+          nullable: true
+          enum:
+            - standard
+            - daily
+            - anime
+            - null
+        tags:
+          type: string
+          nullable: true
+        isFallback:
+          type: boolean
     Certification:
       type: object
       properties:
@@ -7807,41 +7890,72 @@ paths:
                   message:
                     type: string
                     example: Unable to retrieve TV certifications.
-  /overrideRule:
+  /routingRule:
     get:
-      summary: Get override rules
-      description: Returns a list of all override rules with their conditions and settings
+      summary: Get all routing rules
+      description: Returns all routing rules ordered by priority (highest first).
       tags:
-        - overriderule
+        - settings
       responses:
         '200':
-          description: Override rules returned
+          description: Routing rules returned
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/OverrideRule'
+                  $ref: '#/components/schemas/RoutingRule'
     post:
-      summary: Create override rule
-      description: Creates a new Override Rule from the request body.
+      summary: Create a new routing rule
+      description: Creates a new routing rule. Priority is auto-assigned (highest existing + 10).
       tags:
-        - overriderule
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoutingRuleRequest'
       responses:
-        '200':
-          description: 'Values were successfully created'
+        '201':
+          description: Routing rule created
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/OverrideRule'
-  /overrideRule/{ruleId}:
+                $ref: '#/components/schemas/RoutingRule'
+
+  /routingRule/{ruleId}:
     put:
-      summary: Update override rule
-      description: Updates an Override Rule from the request body.
+      summary: Update a routing rule
+      description: Updates an existing routing rule by ID.
       tags:
-        - overriderule
+        - settings
+      parameters:
+        - in: path
+          name: ruleId
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoutingRuleRequest'
+      responses:
+        '200':
+          description: Routing rule updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutingRule'
+        '404':
+          description: Routing rule not found
+    delete:
+      summary: Delete a routing rule
+      description: Deletes a routing rule by ID.
+      tags:
+        - settings
       parameters:
         - in: path
           name: ruleId
@@ -7850,31 +7964,42 @@ paths:
             type: number
       responses:
         '200':
-          description: 'Values were successfully updated'
+          description: Routing rule deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutingRule'
+        '404':
+          description: Routing rule not found
+
+  /routingRule/reorder:
+    post:
+      summary: Reorder routing rules
+      description: Bulk update priorities by providing an ordered list of rule IDs (highest priority first).
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ruleIds
+              properties:
+                ruleIds:
+                  type: array
+                  items:
+                    type: number
+      responses:
+        '200':
+          description: Rules reordered
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/OverrideRule'
-    delete:
-      summary: Delete override rule by ID
-      description: Deletes the override rule with the provided ruleId.
-      tags:
-        - overriderule
-      parameters:
-        - in: path
-          name: ruleId
-          required: true
-          schema:
-            type: number
-      responses:
-        '200':
-          description: Override rule successfully deleted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OverrideRule'
+                  $ref: '#/components/schemas/RoutingRule'
 security:
   - cookieAuth: []
   - apiKey: []
