@@ -78,5 +78,5 @@ Open the WebUI at `http://<your-unraid-ip>:5055` and follow the setup wizard.
 
 :::info
 The `--init` flag in **Extra Parameters** is required. Seerr does not include its own init process, so `--init` ensures proper signal handling and clean container shutdowns. 
-The `--user 99:100` flag in **Extra Parameters** is required. The user that Unraid is `nobody`.
+The `--user 99:100` flag in Extra Parameters ensures the container runs with the correct permissions. In Unraid, the default user account is nobody (ID 99) and the default group is users (ID 100). Using this flag prevents "Permission Denied" errors when the container tries to read or write to your shares.
 :::
