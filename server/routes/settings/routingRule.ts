@@ -331,6 +331,19 @@ routingRuleRoutes.post(
     try {
       const { ruleIds } = req.body as { ruleIds: number[] };
 
+      const MAX_RULE_IDS = 1000;
+
+      if (!Array.isArray(ruleIds)) {
+        return next({ status: 400, message: 'ruleIds must be an array.' });
+      }
+
+      if (ruleIds.length > MAX_RULE_IDS) {
+        return next({
+          status: 400,
+          message: `Too many ruleIds provided. Maximum allowed is ${MAX_RULE_IDS}.`,
+        });
+      }
+
       const rules = await routingRuleRepository.findBy({ id: In(ruleIds) });
       const fallbackIds = new Set(
         rules.filter((r) => r.isFallback).map((r) => r.id)
