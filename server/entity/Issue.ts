@@ -5,6 +5,7 @@ import {
   AfterLoad,
   Column,
   Entity,
+  Index,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -19,6 +20,7 @@ class Issue {
   public id: number;
 
   @Column({ type: 'int' })
+  @Index()
   public issueType: IssueType;
 
   @Column({ type: 'int', default: IssueStatus.OPEN })
@@ -34,12 +36,14 @@ class Issue {
     eager: true,
     onDelete: 'CASCADE',
   })
+  @Index()
   public media: Media;
 
   @ManyToOne(() => User, (user) => user.createdIssues, {
     eager: true,
     onDelete: 'CASCADE',
   })
+  @Index()
   public createdBy: User;
 
   @ManyToOne(() => User, {
@@ -47,6 +51,7 @@ class Issue {
     onDelete: 'CASCADE',
     nullable: true,
   })
+  @Index()
   public modifiedBy?: User;
 
   @OneToMany(() => IssueComment, (comment) => comment.issue, {

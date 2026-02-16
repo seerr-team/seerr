@@ -1,6 +1,12 @@
 import { MediaRequestStatus } from '@server/constants/media';
 import { DbAwareColumn } from '@server/utils/DbColumnHelper';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { MediaRequest } from './MediaRequest';
 
 @Entity()
@@ -17,6 +23,7 @@ class SeasonRequest {
   @ManyToOne(() => MediaRequest, (request) => request.seasons, {
     onDelete: 'CASCADE',
   })
+  @Index()
   public request: MediaRequest;
 
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
