@@ -2,7 +2,7 @@ import ExternalAPI from '@server/api/externalapi';
 import type { TvShowProvider } from '@server/api/provider';
 import cacheManager from '@server/lib/cache';
 import { getSettings } from '@server/lib/settings';
-import { sortBy } from 'lodash';
+import { sortBy, uniqBy } from 'lodash';
 import type {
   TmdbCollection,
   TmdbCompanySearchResponse,
@@ -571,48 +571,99 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
 
       const isMultiRegion = this.discoverRegion?.includes('|');
 
-      const data = await this.get<TmdbSearchMovieResponse>('/discover/movie', {
-        params: {
-          sort_by: sortBy,
+      const buildParams = (region?: string) => ({
+        sort_by: sortBy,
+        page,
+        include_adult: includeAdult,
+        include_video: includeVideo,
+        language,
+        region: isMultiRegion ? undefined : region || '',
+        with_origin_country: isMultiRegion ? region : undefined,
+        with_original_language:
+          originalLanguage && originalLanguage !== 'all'
+            ? originalLanguage
+            : originalLanguage === 'all'
+            ? undefined
+            : this.originalLanguage,
+        // Set our release date values, but check if one is set and not the other,
+        // so we can force a past date or a future date. TMDB Requires both values if one is set!
+        'primary_release_date.gte':
+          !primaryReleaseDateGte && primaryReleaseDateLte
+            ? defaultPastDate
+            : primaryReleaseDateGte,
+        'primary_release_date.lte':
+          !primaryReleaseDateLte && primaryReleaseDateGte
+            ? defaultFutureDate
+            : primaryReleaseDateLte,
+        with_genres: genre,
+        with_companies: studio,
+        with_keywords: keywords,
+        without_keywords: excludeKeywords,
+        'with_runtime.gte': withRuntimeGte,
+        'with_runtime.lte': withRuntimeLte,
+        'vote_average.gte': voteAverageGte,
+        'vote_average.lte': voteAverageLte,
+        'vote_count.gte': voteCountGte,
+        'vote_count.lte': voteCountLte,
+        watch_region: watchRegion,
+        with_watch_providers: watchProviders,
+        certification: certification,
+        'certification.gte': certificationGte,
+        'certification.lte': certificationLte,
+        certification_country: certificationCountry,
+      });
+
+      if (isMultiRegion && this.discoverRegion) {
+        const regions = this.discoverRegion.split('|');
+        const requests = regions.map((region) =>
+          this.get<TmdbSearchMovieResponse>('/discover/movie', {
+            params: buildParams(region),
+          })
+        );
+
+        const responses = await Promise.all(requests);
+
+        const combinedResults = responses.flatMap((r) => r.results);
+        const uniqueResults = uniqBy(combinedResults, 'id');
+
+        // Re-sort the combined results
+        const [sortKey, sortOrder] = sortBy.split('.');
+        const sortedResults = sortKey
+          ? uniqBy(
+              responses
+                .flatMap((r) => r.results)
+                .sort((a, b) => {
+                  let aValue = (a as any)[sortKey];
+                  let bValue = (b as any)[sortKey];
+
+                  if (
+                    sortKey === 'release_date' ||
+                    sortKey === 'primary_release_date'
+                  ) {
+                    aValue = new Date(aValue).getTime();
+                    bValue = new Date(bValue).getTime();
+                  }
+
+                  if (sortOrder === 'asc') {
+                    return aValue > bValue ? 1 : -1;
+                  } else {
+                    return aValue < bValue ? 1 : -1;
+                  }
+                }),
+              'id'
+            )
+          : uniqueResults;
+
+        return {
           page,
-          include_adult: includeAdult,
-          include_video: includeVideo,
-          language,
-          region: isMultiRegion ? undefined : this.discoverRegion || '',
-          with_origin_country: isMultiRegion ? this.discoverRegion : undefined,
-          with_original_language:
-            originalLanguage && originalLanguage !== 'all'
-              ? originalLanguage
-              : originalLanguage === 'all'
-                ? undefined
-                : this.originalLanguage,
-          // Set our release date values, but check if one is set and not the other,
-          // so we can force a past date or a future date. TMDB Requires both values if one is set!
-          'primary_release_date.gte':
-            !primaryReleaseDateGte && primaryReleaseDateLte
-              ? defaultPastDate
-              : primaryReleaseDateGte,
-          'primary_release_date.lte':
-            !primaryReleaseDateLte && primaryReleaseDateGte
-              ? defaultFutureDate
-              : primaryReleaseDateLte,
-          with_genres: genre,
-          with_companies: studio,
-          with_keywords: keywords,
-          without_keywords: excludeKeywords,
-          'with_runtime.gte': withRuntimeGte,
-          'with_runtime.lte': withRuntimeLte,
-          'vote_average.gte': voteAverageGte,
-          'vote_average.lte': voteAverageLte,
-          'vote_count.gte': voteCountGte,
-          'vote_count.lte': voteCountLte,
-          watch_region: watchRegion,
-          with_watch_providers: watchProviders,
-          certification: certification,
-          'certification.gte': certificationGte,
-          'certification.lte': certificationLte,
-          certification_country: certificationCountry,
-        },
+          results: sortedResults, // Pagination is complex with merged results, returning merged page
+          total_pages: Math.max(...responses.map((r) => r.total_pages)),
+          total_results: responses.reduce((acc, r) => acc + r.total_results, 0),
+        };
+      }
+
+      const data = await this.get<TmdbSearchMovieResponse>('/discover/movie', {
+        params: buildParams(this.discoverRegion),
       });
 
       return data;
@@ -660,48 +711,96 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
 
       const isMultiRegion = this.discoverRegion?.includes('|');
 
-      const data = await this.get<TmdbSearchTvResponse>('/discover/tv', {
-        params: {
-          sort_by: sortBy,
+      const buildParams = (region?: string) => ({
+        sort_by: sortBy,
+        page,
+        language,
+        region: isMultiRegion ? undefined : region || '',
+        with_origin_country: isMultiRegion ? region : undefined,
+        // Set our release date values, but check if one is set and not the other,
+        // so we can force a past date or a future date. TMDB Requires both values if one is set!
+        'first_air_date.gte':
+          !firstAirDateGte && firstAirDateLte
+            ? defaultPastDate
+            : firstAirDateGte,
+        'first_air_date.lte':
+          !firstAirDateLte && firstAirDateGte
+            ? defaultFutureDate
+            : firstAirDateLte,
+        with_original_language:
+          originalLanguage && originalLanguage !== 'all'
+            ? originalLanguage
+            : originalLanguage === 'all'
+            ? undefined
+            : this.originalLanguage,
+        include_null_first_air_dates: includeEmptyReleaseDate,
+        with_genres: genre,
+        with_networks: network,
+        with_keywords: keywords,
+        without_keywords: excludeKeywords,
+        'with_runtime.gte': withRuntimeGte,
+        'with_runtime.lte': withRuntimeLte,
+        'vote_average.gte': voteAverageGte,
+        'vote_average.lte': voteAverageLte,
+        'vote_count.gte': voteCountGte,
+        'vote_count.lte': voteCountLte,
+        with_watch_providers: watchProviders,
+        watch_region: watchRegion,
+        with_status: withStatus,
+        certification: certification,
+        'certification.gte': certificationGte,
+        'certification.lte': certificationLte,
+        certification_country: certificationCountry,
+      });
+
+      if (isMultiRegion && this.discoverRegion) {
+        const regions = this.discoverRegion.split('|');
+        const requests = regions.map((region) =>
+          this.get<TmdbSearchTvResponse>('/discover/tv', {
+            params: buildParams(region),
+          })
+        );
+
+        const responses = await Promise.all(requests);
+
+        const combinedResults = responses.flatMap((r) => r.results);
+        const uniqueResults = uniqBy(combinedResults, 'id');
+
+        // Re-sort the combined results
+        const [sortKey, sortOrder] = sortBy.split('.');
+        const sortedResults = sortKey
+          ? uniqBy(
+              responses
+                .flatMap((r) => r.results)
+                .sort((a, b) => {
+                  let aValue = (a as any)[sortKey];
+                  let bValue = (b as any)[sortKey];
+
+                  if (sortKey === 'first_air_date') {
+                    aValue = new Date(aValue).getTime();
+                    bValue = new Date(bValue).getTime();
+                  }
+
+                  if (sortOrder === 'asc') {
+                    return aValue > bValue ? 1 : -1;
+                  } else {
+                    return aValue < bValue ? 1 : -1;
+                  }
+                }),
+              'id'
+            )
+          : uniqueResults;
+
+        return {
           page,
-          language,
-          region: isMultiRegion ? undefined : this.discoverRegion || '',
-          with_origin_country: isMultiRegion ? this.discoverRegion : undefined,
-          // Set our release date values, but check if one is set and not the other,
-          // so we can force a past date or a future date. TMDB Requires both values if one is set!
-          'first_air_date.gte':
-            !firstAirDateGte && firstAirDateLte
-              ? defaultPastDate
-              : firstAirDateGte,
-          'first_air_date.lte':
-            !firstAirDateLte && firstAirDateGte
-              ? defaultFutureDate
-              : firstAirDateLte,
-          with_original_language:
-            originalLanguage && originalLanguage !== 'all'
-              ? originalLanguage
-              : originalLanguage === 'all'
-                ? undefined
-                : this.originalLanguage,
-          include_null_first_air_dates: includeEmptyReleaseDate,
-          with_genres: genre,
-          with_networks: network,
-          with_keywords: keywords,
-          without_keywords: excludeKeywords,
-          'with_runtime.gte': withRuntimeGte,
-          'with_runtime.lte': withRuntimeLte,
-          'vote_average.gte': voteAverageGte,
-          'vote_average.lte': voteAverageLte,
-          'vote_count.gte': voteCountGte,
-          'vote_count.lte': voteCountLte,
-          with_watch_providers: watchProviders,
-          watch_region: watchRegion,
-          with_status: withStatus,
-          certification: certification,
-          'certification.gte': certificationGte,
-          'certification.lte': certificationLte,
-          certification_country: certificationCountry,
-        },
+          results: sortedResults, // Pagination is complex with merged results, returning merged page
+          total_pages: Math.max(...responses.map((r) => r.total_pages)),
+          total_results: responses.reduce((acc, r) => acc + r.total_results, 0),
+        };
+      }
+
+      const data = await this.get<TmdbSearchTvResponse>('/discover/tv', {
+        params: buildParams(this.discoverRegion),
       });
 
       return data;
