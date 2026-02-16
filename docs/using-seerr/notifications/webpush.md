@@ -16,8 +16,12 @@ To set up web push notifications, simply enable the agent in **Settings → Noti
 Web push notifications require a secure connection to your Seerr instance. Refer to the [Reverse Proxy](/extending-seerr/reverse-proxy) documentation for more information.
 :::
 
-You and your users now have the option to enable web push notifications by going to your **User Profile → Edit Settings → Notifications → Web Push → Enable web push**. Here you can also customize the notifications you'd like to receive.
+You and your users have the option to enable web push notifications by going to your **User Profile → Edit Settings → Notifications → Web Push → Enable web push**. Here you can also customize the notifications you'd like to receive.
+
+:::info[Mobile Users]
+For Web Push notifications to work on mobile you need to add Seerr to your home screen as progressive web app (PWA). 
+:::
 
 :::info[iOS Users]
-For Web Push notifications to work on iOS you need to [add Seerr to your home screen](https://support.apple.com/guide/iphone/open-as-web-app-iphea86e5236/26/ios/26). Further, you may need to enable the Safari notifications feature flag by going to **Settings → Safari → Advanced → Feature Flags** and enabling "Notifications".
+On iOS you may need to enable the Safari notifications feature flag by going to **Settings → Safari → Advanced → Feature Flags** and enabling "Notifications".
 :::
