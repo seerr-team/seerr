@@ -81,6 +81,7 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
     const season = await metadataProvider.getTvSeason({
       tvId: Number(req.params.id),
       seasonNumber: Number(req.params.seasonNumber),
+      language: (req.query.language as string) ?? req.locale,
     });
 
     const availableMap: Record<number, boolean> = {};
