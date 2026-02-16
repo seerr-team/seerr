@@ -418,6 +418,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
           </span>,
           { appearance: 'success', autoDismiss: true }
         );
+        setTogglePlexWatchlist(false);
       }
     } catch (e) {
       addToast(intl.formatMessage(messages.watchlistError), {
@@ -426,7 +427,6 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
       });
     } finally {
       setIsPlexWatchlistUpdating(false);
-      setTogglePlexWatchlist((prevState) => !prevState);
     }
   };
 
@@ -445,6 +445,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
           </span>,
           { appearance: 'info', autoDismiss: true }
         );
+        setTogglePlexWatchlist(true);
       }
     } catch (e) {
       addToast(intl.formatMessage(messages.watchlistError), {
@@ -453,7 +454,6 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
       });
     } finally {
       setIsPlexWatchlistUpdating(false);
-      setTogglePlexWatchlist((prevState) => !prevState);
     }
   };
 

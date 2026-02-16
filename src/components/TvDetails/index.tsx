@@ -450,6 +450,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
           </span>,
           { appearance: 'success', autoDismiss: true }
         );
+        setTogglePlexWatchlist(false);
       }
     } catch (e) {
       addToast(intl.formatMessage(messages.watchlistError), {
@@ -458,7 +459,6 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
       });
     } finally {
       setIsPlexWatchlistUpdating(false);
-      setTogglePlexWatchlist((prevState) => !prevState);
     }
   };
 
@@ -477,6 +477,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
           </span>,
           { appearance: 'info', autoDismiss: true }
         );
+        setTogglePlexWatchlist(true);
       }
     } catch (e) {
       addToast(intl.formatMessage(messages.watchlistError), {
@@ -485,7 +486,6 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
       });
     } finally {
       setIsPlexWatchlistUpdating(false);
-      setTogglePlexWatchlist((prevState) => !prevState);
     }
   };
 
