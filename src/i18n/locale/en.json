@@ -1100,6 +1100,8 @@
   "components.Settings.SonarrModal.validationNameRequired": "You must provide a server name",
   "components.Settings.SonarrModal.validationPortRequired": "You must provide a valid port number",
   "components.Settings.addInstance": "Add Instance",
+  "components.Settings.addRadarr": "Add Radarr",
+  "components.Settings.addSonarr": "Add Sonarr",
   "components.Settings.address": "Address",
   "components.Settings.advancedTooltip": "Incorrectly configuring this setting may result in broken functionality",
   "components.Settings.allChosenProvidersAreOperational": "All chosen metadata providers are operational",
