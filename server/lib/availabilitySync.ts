@@ -516,13 +516,16 @@ class AvailabilitySync {
             : null;
       }
       logger.info(
-        `The ${is4k ? '4K' : 'non-4K'} ${media.mediaType === 'movie' ? 'movie' : 'show'
-        } [TMDB ID ${media.tmdbId}] was not found in any ${media.mediaType === 'movie' ? 'Radarr' : 'Sonarr'
-        } and ${mediaServerType === MediaServerType.PLEX
-          ? 'plex'
-          : mediaServerType === MediaServerType.JELLYFIN
-            ? 'jellyfin'
-            : 'emby'
+        `The ${is4k ? '4K' : 'non-4K'} ${
+          media.mediaType === 'movie' ? 'movie' : 'show'
+        } [TMDB ID ${media.tmdbId}] was not found in any ${
+          media.mediaType === 'movie' ? 'Radarr' : 'Sonarr'
+        } and ${
+          mediaServerType === MediaServerType.PLEX
+            ? 'plex'
+            : mediaServerType === MediaServerType.JELLYFIN
+              ? 'jellyfin'
+              : 'emby'
         } instance. Status will be changed to deleted.`,
         { label: 'AvailabilitySync' }
       );
@@ -530,7 +533,8 @@ class AvailabilitySync {
       await mediaRepository.save(media);
     } catch (ex) {
       logger.debug(
-        `Failure updating the ${is4k ? '4K' : 'non-4K'} ${media.mediaType === 'tv' ? 'show' : 'movie'
+        `Failure updating the ${is4k ? '4K' : 'non-4K'} ${
+          media.mediaType === 'tv' ? 'show' : 'movie'
         } [TMDB ID ${media.tmdbId}].`,
         {
           errorMessage: ex.message,
@@ -587,19 +591,23 @@ class AvailabilitySync {
       await mediaRepository.save(media);
 
       logger.info(
-        `The ${is4k ? '4K' : 'non-4K'} season(s) [${seasonKeys}] [TMDB ID ${media.tmdbId
-        }] was not found in any ${media.mediaType === 'tv' ? 'Sonarr' : 'Radarr'
-        } and ${mediaServerType === MediaServerType.PLEX
-          ? 'plex'
-          : mediaServerType === MediaServerType.JELLYFIN
-            ? 'jellyfin'
-            : 'emby'
+        `The ${is4k ? '4K' : 'non-4K'} season(s) [${seasonKeys}] [TMDB ID ${
+          media.tmdbId
+        }] was not found in any ${
+          media.mediaType === 'tv' ? 'Sonarr' : 'Radarr'
+        } and ${
+          mediaServerType === MediaServerType.PLEX
+            ? 'plex'
+            : mediaServerType === MediaServerType.JELLYFIN
+              ? 'jellyfin'
+              : 'emby'
         } instance. Status will be changed to deleted.`,
         { label: 'AvailabilitySync' }
       );
     } catch (ex) {
       logger.debug(
-        `Failure updating the ${is4k ? '4K' : 'non-4K'
+        `Failure updating the ${
+          is4k ? '4K' : 'non-4K'
         } season(s) [${seasonKeys}], TMDB ID ${media.tmdbId}.`,
         {
           errorMessage: ex.message,
@@ -665,7 +673,8 @@ class AvailabilitySync {
         if (!ex.message.includes('404')) {
           existsInRadarr = true;
           logger.debug(
-            `Failure retrieving the ${is4k ? '4K' : 'non-4K'} movie [TMDB ID ${media.tmdbId
+            `Failure retrieving the ${is4k ? '4K' : 'non-4K'} movie [TMDB ID ${
+              media.tmdbId
             }] from Radarr.`,
             {
               errorMessage: ex.message,
@@ -744,7 +753,8 @@ class AvailabilitySync {
           existsInSonarr = true;
           preventSeasonSearch = true;
           logger.debug(
-            `Failure retrieving the ${is4k ? '4K' : 'non-4K'} show [TMDB ID ${media.tmdbId
+            `Failure retrieving the ${is4k ? '4K' : 'non-4K'} show [TMDB ID ${
+              media.tmdbId
             }] from Sonarr.`,
             {
               errorMessage: ex.message,
@@ -765,7 +775,7 @@ class AvailabilitySync {
         (season) =>
           season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
           season[is4k ? 'status4k' : 'status'] ===
-          MediaStatus.PARTIALLY_AVAILABLE
+            MediaStatus.PARTIALLY_AVAILABLE
       );
 
       for (const season of filteredSeasons) {
@@ -886,6 +896,7 @@ class AvailabilitySync {
               if (toSave.length > 0) {
                 await episodeRepository.save(toSave);
               }
+              break;
             } catch (err) {
               logger.error('Failed to update episode availability', {
                 label: 'Availability Sync',
@@ -989,7 +1000,8 @@ class AvailabilitySync {
         existsInPlex = true;
         preventSeasonSearch = true;
         logger.debug(
-          `Failure retrieving the ${is4k ? '4K' : 'non-4K'} ${media.mediaType === 'tv' ? 'show' : 'movie'
+          `Failure retrieving the ${is4k ? '4K' : 'non-4K'} ${
+            media.mediaType === 'tv' ? 'show' : 'movie'
           } [TMDB ID ${media.tmdbId}] from Plex.`,
           {
             errorMessage: ex.message,
@@ -1010,7 +1022,7 @@ class AvailabilitySync {
           (season) =>
             season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
             season[is4k ? 'status4k' : 'status'] ===
-            MediaStatus.PARTIALLY_AVAILABLE
+              MediaStatus.PARTIALLY_AVAILABLE
         );
 
         for (const season of filteredSeasons) {
@@ -1105,7 +1117,8 @@ class AvailabilitySync {
         existsInJellyfin = true;
         preventSeasonSearch = true;
         logger.debug(
-          `Failure retrieving the ${is4k ? '4K' : 'non-4K'} ${media.mediaType === 'tv' ? 'show' : 'movie'
+          `Failure retrieving the ${is4k ? '4K' : 'non-4K'} ${
+            media.mediaType === 'tv' ? 'show' : 'movie'
           } [TMDB ID ${media.tmdbId}] from Jellyfin.`,
           {
             errorMessage: ex.message,
@@ -1126,7 +1139,7 @@ class AvailabilitySync {
           (season) =>
             season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
             season[is4k ? 'status4k' : 'status'] ===
-            MediaStatus.PARTIALLY_AVAILABLE
+              MediaStatus.PARTIALLY_AVAILABLE
         );
 
         for (const season of filteredSeasons) {
