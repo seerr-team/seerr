@@ -86,7 +86,7 @@ config:
     # -- Name of the permanent volume to reference in the claim.
     # Can be used to bind to existing volumes.
     volumeName: ''
-    # -- Specify an existing `PersistentVolumeClaim` to use. Default PVC not created if this value exists
+    # -- Specify an existing `PersistentVolumeClaim` to use. If this value is provided, the default PVC will not be created
     existingClaim: ''
 
 ingress:

@@ -1,6 +1,6 @@
 # seerr-chart
 
-![Version: 3.0.3](https://img.shields.io/badge/Version-3.0.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v3.0.1](https://img.shields.io/badge/AppVersion-v3.0.1-informational?style=flat-square)
+![Version: 3.1.0](https://img.shields.io/badge/Version-3.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v3.0.1](https://img.shields.io/badge/AppVersion-v3.0.1-informational?style=flat-square)
 
 Seerr helm chart for Kubernetes
 
@@ -47,7 +47,7 @@ If `replicaCount` value was used - remove it. Helm update should work fine after
 | config | object | `{"persistence":{"accessModes":["ReadWriteOnce"],"annotations":{},"existingClaim":"","name":"","size":"5Gi","volumeName":""}}` | Creating PVC to store configuration |
 | config.persistence.accessModes | list | `["ReadWriteOnce"]` | Access modes of persistent disk |
 | config.persistence.annotations | object | `{}` | Annotations for PVCs |
-| config.persistence.existingClaim | string | `""` | Specify an existing `PersistentVolumeClaim` to use. Default PVC not created if this value exists |
+| config.persistence.existingClaim | string | `""` | Specify an existing `PersistentVolumeClaim` to use. If this value is provided, the default PVC will not be created |
 | config.persistence.name | string | `""` | Config name |
 | config.persistence.size | string | `"5Gi"` | Size of persistent disk |
 | config.persistence.volumeName | string | `""` | Name of the permanent volume to reference in the claim. Can be used to bind to existing volumes. |
