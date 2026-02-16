@@ -634,6 +634,7 @@ class PlexTvAPI extends ExternalAPI {
           headers: {
             'X-Plex-Token': this.authToken,
           },
+          timeout: 10000,
         }
       );
 
@@ -670,6 +671,7 @@ class PlexTvAPI extends ExternalAPI {
           headers: {
             'X-Plex-Token': this.authToken,
           },
+          timeout: 10000,
         }
       );
 
@@ -746,9 +748,8 @@ class PlexTvAPI extends ExternalAPI {
    */
   public async removeFromWatchlistByTmdbId(tmdbId: number): Promise<boolean> {
     try {
-      // Get the current watchlist to find the ratingKey
-      const watchlist = await this.getWatchlist({ size: 200 });
-      const item = watchlist.items.find((i) => i.tmdbId === tmdbId);
+      // Paginate through the watchlist to find the item's ratingKey
+      const item = await this.findWatchlistItem((i) => i.tmdbId === tmdbId);
 
       if (!item) {
         logger.warn('Item not found in watchlist', {
@@ -775,8 +776,8 @@ class PlexTvAPI extends ExternalAPI {
    */
   public async isOnWatchlist(tmdbId: number): Promise<boolean> {
     try {
-      const watchlist = await this.getWatchlist({ size: 200 });
-      return watchlist.items.some((item) => item.tmdbId === tmdbId);
+      const item = await this.findWatchlistItem((i) => i.tmdbId === tmdbId);
+      return !!item;
     } catch (e) {
       logger.error('Failed to check watchlist status', {
         label: 'Plex.TV API',
@@ -785,6 +786,29 @@ class PlexTvAPI extends ExternalAPI {
       });
       return false;
     }
+  }
+
+  /**
+   * Paginate through the watchlist to find an item matching the predicate.
+   * Uses the default page size to stay within Plex API limits.
+   */
+  private async findWatchlistItem(
+    predicate: (item: PlexWatchlistItem) => boolean
+  ): Promise<PlexWatchlistItem | undefined> {
+    let offset = 0;
+    const size = 20;
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const page = await this.getWatchlist({ offset, size });
+      const found = page.items.find(predicate);
+      if (found) return found;
+
+      offset += size;
+      if (offset >= page.totalSize) break;
+    }
+
+    return undefined;
   }
 }
 

@@ -132,7 +132,6 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   const [showBlocklistModal, setShowBlocklistModal] = useState(false);
   const [isPlexWatchlistUpdating, setIsPlexWatchlistUpdating] =
     useState<boolean>(false);
-  const [togglePlexWatchlist, setTogglePlexWatchlist] = useState<boolean>(true);
   const { addToast } = useToasts();
 
   const {
@@ -155,7 +154,9 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   );
 
   // Check Plex watchlist status for Plex users
-  const { data: plexWatchlistData } = useSWR<{ isOnWatchlist: boolean }>(
+  const { data: plexWatchlistData, mutate: mutatePlexWatchlist } = useSWR<{
+    isOnWatchlist: boolean;
+  }>(
     user?.userType === UserType.PLEX && data?.id
       ? `/api/v1/plex-watchlist/status/${data.id}`
       : null
@@ -169,12 +170,6 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   useEffect(() => {
     setShowManager(router.query.manage == '1');
   }, [router.query.manage]);
-
-  useEffect(() => {
-    if (plexWatchlistData?.isOnWatchlist !== undefined) {
-      setTogglePlexWatchlist(!plexWatchlistData.isOnWatchlist);
-    }
-  }, [plexWatchlistData]);
 
   const closeBlocklistModal = useCallback(
     () => setShowBlocklistModal(false),
@@ -448,7 +443,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
           </span>,
           { appearance: 'success', autoDismiss: true }
         );
-        setTogglePlexWatchlist(false);
+        mutatePlexWatchlist({ isOnWatchlist: true }, false);
       }
     } catch (e) {
       addToast(intl.formatMessage(messages.watchlistError), {
@@ -475,7 +470,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
           </span>,
           { appearance: 'info', autoDismiss: true }
         );
-        setTogglePlexWatchlist(true);
+        mutatePlexWatchlist({ isOnWatchlist: false }, false);
       }
     } catch (e) {
       addToast(intl.formatMessage(messages.watchlistError), {
@@ -736,7 +731,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
           {data?.mediaInfo?.status !== MediaStatus.BLOCKLISTED &&
             user?.userType === UserType.PLEX && (
               <>
-                {togglePlexWatchlist ? (
+                {!plexWatchlistData?.isOnWatchlist ? (
                   <Tooltip
                     content={intl.formatMessage(
                       globalMessages.addToPlexWatchlist
