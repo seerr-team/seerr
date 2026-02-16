@@ -1,5 +1,11 @@
 import { DbAwareColumn } from '@server/utils/DbColumnHelper';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import Issue from './Issue';
 import { User } from './User';
 
@@ -12,11 +18,13 @@ class IssueComment {
     eager: true,
     onDelete: 'CASCADE',
   })
+  @Index()
   public user: User;
 
   @ManyToOne(() => Issue, (issue) => issue.comments, {
     onDelete: 'CASCADE',
   })
+  @Index()
   public issue: Issue;
 
   @Column({ type: 'text' })
