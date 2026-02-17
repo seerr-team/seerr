@@ -21,6 +21,14 @@ If an official Unraid Community Applications template for Seerr isn't available 
 
 ### 1. Create the config directory
 
+:::note
+Seerr is now rootless. Unraid typically runs Docker containers as `nobody:users` (UID 99, GID 100), but Seerr now runs internally as UID 1000, GID 1000. This creates a permission mismatch.
+:::
+
+:::info
+**If migrating**: Copy your existing Jellyseerr/Overseerr config files (e.g., from `/mnt/user/appdata/overseerr/` or `/mnt/user/appdata/jellyseerr`) to `/mnt/user/appdata/seerr`, then apply the permissions below
+:::
+
 Open the Unraid terminal and run:
 
 ```bash
