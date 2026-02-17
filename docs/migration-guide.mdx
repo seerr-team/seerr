@@ -210,7 +210,42 @@ See https://aur.archlinux.org/packages/seerr
 
 ### TrueNAS
 
-Waiting for https://github.com/truenas/apps/issues/3374
+Refer to [Seerr TrueNAS Documentation](/getting-started/third-parties/truenas), all of our examples have been updated to reflect the below change.
+
+<Tabs groupId="truenas-migration" queryString>
+  <TabItem value="hostpath" label="Host Path">
+    **This guide describes how to migrate from Host Path storage (not ixVolume).**
+    1. Stop Jellyseerr/Overseerr
+    2. Install Seerr and use the same Host Path storage that was used by Jellyseerr/Overseerr
+    3. Start Seerr app
+    4. Delete Jellyseerr/Overseerr app
+  </TabItem>
+  <TabItem value="ixvolume" label="ixVolume">
+    **This guide describes how to migrate from ixVolume storage (not Host Path).**
+    1. Stop Jellyseerr/Overseerr
+    2. Create a dataset for Seerr
+        If your apps normally store data under something like:
+        ```
+        /mnt/storage/<app-name>
+        ```
+        then create a dataset named:
+        ```
+        storage/seerr
+        ```
+        resulting in:
+        ```
+        /mnt/storage/seerr
+        ```
+    3. Copy ixVolume Data
+        Open System Settings → Shell, or SSH into your TrueNAS server as root and run :
+        ```bash
+        rsync -av /mnt/.ix-apps/app_mounts/jellyseerr/ /mnt/storage/seerr/
+        ```
+    4. Install Seerr and use the same Host Path storage that was created before (`/mnt/storage/seerr/config` in our example)
+    5. Start Seerr app
+    6. Delete Jellyseerr/Overseerr app
+  </TabItem>
+</Tabs>
 
 ### Unraid
 
