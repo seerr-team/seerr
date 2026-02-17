@@ -1,6 +1,6 @@
 name: ✨ Feature Request
 description: Suggest an idea
-labels: ['enhancement', 'awaiting triage']
+labels: ['awaiting triage']
 type: feature
 body:
   - type: markdown
