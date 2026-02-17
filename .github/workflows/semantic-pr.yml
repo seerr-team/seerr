@@ -17,7 +17,11 @@ concurrency:
 jobs:
   main:
     name: Validate PR Title
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: write
     permissions:
       pull-requests: read
     steps:
