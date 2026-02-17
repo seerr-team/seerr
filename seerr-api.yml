@@ -148,6 +148,8 @@ components:
         email:
           type: string
           example: 'user@example.com'
+        appriseTags:
+          type: string
         discordId:
           type: string
           nullable: true
@@ -1388,6 +1390,22 @@ components:
         results:
           type: number
           example: 100
+    AppriseSettings:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          example: false
+        types:
+          type: number
+          example: 2
+        options:
+          type: object
+          properties:
+            url:
+              type: string
+            apiToken:
+              type: string
     DiscordSettings:
       type: object
       properties:
@@ -1938,6 +1956,11 @@ components:
           type: boolean
         pgpKey:
           type: string
+          nullable: true
+        appriseEnabled:
+          type: boolean
+        appriseEnabledTypes:
+          type: number
           nullable: true
         discordEnabled:
           type: boolean
@@ -3304,6 +3327,52 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NotificationEmailSettings'
+      responses:
+        '204':
+          description: Test notification attempted
+  /settings/notifications/apprise:
+    get:
+      summary: Get Apprise notification settings
+      description: Returns current Apprise notification settings in a JSON object.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: Returned Apprise settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppriseSettings'
+    post:
+      summary: Update Apprise notification settings
+      description: Updates Apprise notification settings with the provided values.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppriseSettings'
+      responses:
+        '200':
+          description: 'Values were successfully updated'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppriseSettings'
+  /settings/notifications/apprise/test:
+    post:
+      summary: Test Apprise settings
+      description: Sends a test notification to the Apprise agent.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppriseSettings'
       responses:
         '204':
           description: Test notification attempted

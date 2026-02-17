@@ -1,18 +1,13 @@
 import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
-import SensitiveInput from '@app/components/Common/SensitiveInput';
-import NotificationTypeSelector, {
-  ALL_NOTIFICATIONS,
-} from '@app/components/NotificationTypeSelector';
-import { OpenPgpLink } from '@app/components/Settings/Notifications/NotificationsEmail';
-import SettingsBadge from '@app/components/Settings/SettingsBadge';
+import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import type { UserSettingsNotificationsResponse } from '@server/interfaces/api/userSettingsInterfaces';
 import axios from 'axios';
-import { Form, Formik } from 'formik';
+import { Field, Form, Formik } from 'formik';
 import { useRouter } from 'next/router';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
@@ -22,16 +17,15 @@ import * as Yup from 'yup';
 const messages = defineMessages(
   'components.UserProfile.UserSettings.UserNotificationSettings',
   {
-    emailsettingssaved: 'Email notification settings saved successfully!',
-    emailsettingsfailed: 'Email notification settings failed to save.',
-    pgpPublicKey: 'PGP Public Key',
-    pgpPublicKeyTip:
-      'Encrypt email messages using <OpenPgpLink>OpenPGP</OpenPgpLink>',
-    validationPgpPublicKey: 'You must provide a valid PGP public key',
+    apprisesettingssaved: 'Apprise notification settings saved successfully!',
+    apprisesettingsfailed: 'Apprise notification settings failed to save.',
+    appriseTags: 'Apprise Tags',
+    appriseTagsTip:
+      'The tag(s) that lines up to what yo have configure in your Apprise instance',
   }
 );
 
-const UserEmailSettings = () => {
+const UserNotificationsApprise = () => {
   const intl = useIntl();
   const { addToast } = useToasts();
   const router = useRouter();
@@ -44,13 +38,14 @@ const UserEmailSettings = () => {
     user ? `/api/v1/user/${user?.id}/settings/notifications` : null
   );
 
-  const UserNotificationsEmailSchema = Yup.object().shape({
-    pgpKey: Yup.string()
-      .nullable()
-      .matches(
-        /-----BEGIN PGP PUBLIC KEY BLOCK-----.+-----END PGP PUBLIC KEY BLOCK-----/s,
-        intl.formatMessage(messages.validationPgpPublicKey)
-      ),
+  const UserNotificationsAppriseSchema = Yup.object().shape({
+    appriseTags: Yup.string().when('types', {
+      is: (types: string) => !!types,
+      then: Yup.string()
+        .nullable()
+        .required(intl.formatMessage(messages.appriseTags)),
+      otherwise: Yup.string().nullable(),
+    }),
   });
 
   if (!data && !error) {
@@ -60,16 +55,18 @@ const UserEmailSettings = () => {
   return (
     <Formik
       initialValues={{
-        pgpKey: data?.pgpKey,
-        types: data?.notificationTypes.email ?? ALL_NOTIFICATIONS,
+        appriseTags: data?.appriseTags,
+        types:
+          (data?.appriseEnabledTypes ?? 0) &
+          (data?.notificationTypes.apprise ?? 0),
       }}
-      validationSchema={UserNotificationsEmailSchema}
+      validationSchema={UserNotificationsAppriseSchema}
       enableReinitialize
       onSubmit={async (values) => {
         try {
           await axios.post(`/api/v1/user/${user?.id}/settings/notifications`, {
-            pgpKey: values.pgpKey,
-            appriseTags: data?.appriseTags,
+            pgpKey: data?.pgpKey,
+            appriseTags: values.appriseTags,
             discordId: data?.discordId,
             pushbulletAccessToken: data?.pushbulletAccessToken,
             pushoverApplicationToken: data?.pushoverApplicationToken,
@@ -77,15 +74,15 @@ const UserEmailSettings = () => {
             telegramChatId: data?.telegramChatId,
             telegramSendSilently: data?.telegramSendSilently,
             notificationTypes: {
-              email: values.types,
+              apprise: values.types,
             },
           });
-          addToast(intl.formatMessage(messages.emailsettingssaved), {
+          addToast(intl.formatMessage(messages.apprisesettingssaved), {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch {
-          addToast(intl.formatMessage(messages.emailsettingsfailed), {
+        } catch (e) {
+          addToast(intl.formatMessage(messages.apprisesettingsfailed), {
             appearance: 'error',
             autoDismiss: true,
           });
@@ -106,32 +103,25 @@ const UserEmailSettings = () => {
         return (
           <Form className="section">
             <div className="form-row">
-              <label htmlFor="pgpKey" className="text-label">
+              <label htmlFor="appriseTags" className="text-label">
                 <span className="mr-2">
-                  {intl.formatMessage(messages.pgpPublicKey)}
+                  {intl.formatMessage(messages.appriseTags)}
+                  {!!data?.appriseEnabledTypes && (
+                    <span className="label-required">*</span>
+                  )}
                 </span>
-                <SettingsBadge badgeType="advanced" />
                 <span className="label-tip">
-                  {intl.formatMessage(messages.pgpPublicKeyTip, {
-                    OpenPgpLink: OpenPgpLink,
-                  })}
+                  {intl.formatMessage(messages.appriseTagsTip)}
                 </span>
               </label>
               <div className="form-input-area">
                 <div className="form-input-field">
-                  <SensitiveInput
-                    as="field"
-                    type="textarea"
-                    id="pgpKey"
-                    name="pgpKey"
-                    rows="10"
-                    className="font-mono text-xs"
-                  />
+                  <Field id="appriseTags" name="appriseTags" type="text" />
                 </div>
-                {errors.pgpKey &&
-                  touched.pgpKey &&
-                  typeof errors.pgpKey === 'string' && (
-                    <div className="error">{errors.pgpKey}</div>
+                {errors.appriseTags &&
+                  touched.appriseTags &&
+                  typeof errors.appriseTags === 'object' && (
+                    <div className="error">{errors.appriseTags}</div>
                   )}
               </div>
             </div>
@@ -173,4 +163,4 @@ const UserEmailSettings = () => {
   );
 };
 
-export default UserEmailSettings;
+export default UserNotificationsApprise;

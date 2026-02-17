@@ -43,6 +43,9 @@ export class UserSettings {
   public pgpKey?: string;
 
   @Column({ nullable: true })
+  public appriseTags?: string;
+
+  @Column({ nullable: true })
   public discordId?: string;
 
   @Column({ nullable: true })
@@ -79,6 +82,7 @@ export class UserSettings {
       from: (value: string | null): Partial<NotificationAgentTypes> => {
         const defaultTypes = {
           email: ALL_NOTIFICATIONS,
+          apprise: 0,
           discord: 0,
           pushbullet: 0,
           pushover: 0,

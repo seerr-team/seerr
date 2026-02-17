@@ -10,7 +10,7 @@ import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
-import { CloudIcon, EnvelopeIcon } from '@heroicons/react/24/solid';
+import { BoltIcon, CloudIcon, EnvelopeIcon } from '@heroicons/react/24/solid';
 import type { UserSettingsNotificationsResponse } from '@server/interfaces/api/userSettingsInterfaces';
 import { useRouter } from 'next/router';
 import { useIntl } from 'react-intl';
@@ -110,6 +110,18 @@ const UserNotificationSettings = ({
       route: '/settings/notifications/telegram',
       regex: /\/settings\/notifications\/telegram/,
       hidden: !data?.telegramEnabled || !data?.telegramBotUsername,
+    },
+    {
+      text: 'Apprise',
+      content: (
+        <span className="flex items-center">
+          <BoltIcon className="mr-2 h-4" />
+          Apprise
+        </span>
+      ),
+      route: '/settings/notifications/apprise',
+      regex: /\/settings\/notifications\/apprise/,
+      hidden: !data?.appriseEnabled,
     },
   ];
 

@@ -21,6 +21,7 @@ const messages = defineMessages('components.Settings', {
   email: 'Email',
   webhook: 'Webhook',
   webpush: 'Web Push',
+  apprise: 'Apprise',
 });
 
 type SettingsNotificationsProps = {
@@ -140,6 +141,17 @@ const SettingsNotifications = ({ children }: SettingsNotificationsProps) => {
       ),
       route: '/settings/notifications/webhook',
       regex: /^\/settings\/notifications\/webhook/,
+    },
+    {
+      text: intl.formatMessage(messages.apprise),
+      content: (
+        <span className="flex items-center">
+          <BoltIcon className="mr-2 h-4" />
+          {intl.formatMessage(messages.apprise)}
+        </span>
+      ),
+      route: '/settings/notifications/apprise',
+      regex: /^\/settings\/notifications\/apprise/,
     },
   ];
 
