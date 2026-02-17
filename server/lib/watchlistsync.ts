@@ -70,22 +70,28 @@ class WatchlistSync {
       response.items.map((i) => i.tmdbId)
     );
 
+    const watchlistTmdbIds = response.items.map((i) => i.tmdbId);
+
     const requestRepository = getRepository(MediaRequest);
-    const existingAutoRequests = await requestRepository.find({
-      where: {
-        requestedBy: { id: user.id },
-        isAutoRequest: true,
-      },
-      relations: ['media'],
-    });
+    const existingAutoRequests = await requestRepository
+      .createQueryBuilder('request')
+      .leftJoinAndSelect('request.media', 'media')
+      .where('request.requestedBy = :userId', { userId: user.id })
+      .andWhere('request.isAutoRequest = true')
+      .andWhere('media.tmdbId IN (:...tmdbIds)', { tmdbIds: watchlistTmdbIds })
+      .getMany();
 
     const autoRequestedTmdbIds = new Set(
-      existingAutoRequests.map((r) => r.media.tmdbId)
+      existingAutoRequests
+        .filter((r) => r.media != null)
+        .map((r) => `${r.media.mediaType}:${r.media.tmdbId}`)
     );
 
     const unavailableItems = response.items.filter(
       (i) =>
-        !autoRequestedTmdbIds.has(i.tmdbId) &&
+        !autoRequestedTmdbIds.has(
+          `${i.type === 'show' ? MediaType.TV : MediaType.MOVIE}:${i.tmdbId}`
+        ) &&
         !mediaItems.find(
           (m) =>
             m.tmdbId === i.tmdbId &&
