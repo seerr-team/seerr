@@ -32,6 +32,18 @@ function initTvdbImageProxy() {
 
 router.get('/:type/*', async (req, res) => {
   const imagePath = req.path.replace(/^\/\w+/, '');
+
+  if (
+    !imagePath.startsWith('/') ||
+    imagePath.startsWith('//') ||
+    imagePath.includes('://')
+  ) {
+    logger.error('Invalid image path detected', {
+      imagePath: imagePath.slice(0, 200),
+    });
+    return res.status(400).send('Invalid image path');
+  }
+
   try {
     let imageData;
     if (req.params.type === 'tmdb') {
