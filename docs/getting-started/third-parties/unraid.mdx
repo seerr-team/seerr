@@ -51,7 +51,7 @@ You have two options to avoid permission issues caused by Unraid running contain
   chown -R 99:100 /mnt/user/appdata/seerr
   ```
 
-  Explaination : Do not change host ownership and instead run the container as Unraid's `nobody:users` by adding the extra Docker parameter `--user 99:100` when creating the container. This runs the container process with Unraid's default UID/GID and avoids permission errors accessing your shares.
+  Explanation : Do not change host ownership and instead run the container as Unraid's `nobody:users` by adding the extra Docker parameter `--user 99:100` when creating the container. This runs the container process with Unraid's default UID/GID and avoids permission errors accessing your shares.
 
 :::warning
 Do not use both approaches at the same time, either change the host folder ownership to `1000:1000` or run the container with `--user 99:100`. Mixing both can create confusing ownership and permission states.
