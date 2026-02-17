@@ -11,7 +11,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: semantic-pr-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
