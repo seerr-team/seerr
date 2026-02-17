@@ -122,7 +122,7 @@
     "@types/cookie-parser": "1.4.10",
     "@types/country-flag-icons": "1.2.2",
     "@types/csurf": "1.11.5",
-    "@types/email-templates": "8.0.4",
+    "@types/email-templates": "10.0.4",
     "@types/express": "4.17.17",
     "@types/express-session": "1.18.2",
     "@types/lodash": "4.17.21",
