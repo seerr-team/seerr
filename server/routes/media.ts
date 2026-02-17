@@ -175,18 +175,15 @@ mediaRoutes.delete(
       });
 
       if (media.status === MediaStatus.BLOCKLISTED) {
-        media.serviceId = null;
-        media.serviceId4k = null;
-        media.externalServiceId = null;
-        media.externalServiceId4k = null;
-        media.externalServiceSlug = null;
-        media.externalServiceSlug4k = null;
-        media.ratingKey = null;
-        media.ratingKey4k = null;
-        media.jellyfinMediaId = null;
-        media.jellyfinMediaId4k = null;
+        const updatePayload: Record<string, null> = {};
 
-        await mediaRepository.save(media);
+        for (const column of mediaRepository.metadata.columns) {
+          if (column.isNullable && !column.isPrimary) {
+            updatePayload[column.propertyName] = null;
+          }
+        }
+
+        await mediaRepository.update(media.id, updatePayload);
       } else {
         await mediaRepository.remove(media);
       }
