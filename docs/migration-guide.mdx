@@ -229,6 +229,10 @@ cp -a /mnt/user/appdata/overseerr /mnt/user/appdata/overseerr-backup
 ```bash
 chown -R 1000:1000 /mnt/user/appdata/overseerr
 ```
+:::info
+**If migrating**: See [Seerr Unraid Documentation](/getting-started/third-parties/unraid) for alternative method for permissions if you prefer not to change host folder ownership.
+:::
+
 For Jellyseerr users, replace `overseerr` with `jellyseerr` in the path above.
 
 4. Add a new container in the Unraid **Docker** tab. Click **Add Container** and fill in the following:
