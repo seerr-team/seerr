@@ -4,7 +4,11 @@ export function isValidURL(value: unknown) {
     if (value === undefined || value === null || value === '') {
       return true;
     } else if (typeof value === 'string') {
-      url = new URL(value);
+      const normalized = value.trim();
+      if (normalized === '') {
+        return true;
+      }
+      url = new URL(normalized);
     } else if (value instanceof URL) {
       url = value;
     } else {
