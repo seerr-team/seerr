@@ -10,7 +10,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: semantic-pr-${{ github.ref }}
+  group: semantic-pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
