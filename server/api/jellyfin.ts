@@ -8,7 +8,7 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { ApiError } from '@server/types/error';
 import { getAppVersion } from '@server/utils/appVersion';
-import * as EmailValidator from 'email-validator';
+import validator from 'validator';
 
 export interface JellyfinUserResponse {
   Name: string;
@@ -185,7 +185,7 @@ class JellyfinAPI extends ExternalAPI {
     if (
       getSettings().main.mediaServerType === MediaServerType.EMBY &&
       Username &&
-      EmailValidator.validate(Username)
+      validator.isEmail(Username, { require_tld: false })
     ) {
       try {
         const connectApi = new EmbyConnectAPI({
