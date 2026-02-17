@@ -17,7 +17,7 @@
 
 - Full Jellyfin/Emby/Plex integration including authentication with user import & management.
 - Support for **PostgreSQL** and **SQLite** databases.
-- Supports Movies, Shows and Mixed Libraries.
+- Supports Movies, Shows, and Mixed Libraries.
 - Ability to change email addresses for SMTP purposes.
 - Easy integration with your existing services. Currently, Seerr supports Sonarr and Radarr. More to come!
 - Jellyfin/Emby/Plex library scan, to keep track of the titles which are already available.
