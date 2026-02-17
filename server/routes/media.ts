@@ -174,7 +174,22 @@ mediaRoutes.delete(
         where: { id: Number(req.params.id) },
       });
 
-      await mediaRepository.remove(media);
+      if (media.status === MediaStatus.BLOCKLISTED) {
+        media.serviceId = null;
+        media.serviceId4k = null;
+        media.externalServiceId = null;
+        media.externalServiceId4k = null;
+        media.externalServiceSlug = null;
+        media.externalServiceSlug4k = null;
+        media.ratingKey = null;
+        media.ratingKey4k = null;
+        media.jellyfinMediaId = null;
+        media.jellyfinMediaId4k = null;
+
+        await mediaRepository.save(media);
+      } else {
+        await mediaRepository.remove(media);
+      }
 
       return res.status(204).send();
     } catch (e) {
