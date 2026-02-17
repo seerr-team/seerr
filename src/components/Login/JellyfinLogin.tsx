@@ -46,8 +46,8 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
       serverType === MediaServerType.JELLYFIN
         ? ServerType.JELLYFIN
         : serverType === MediaServerType.EMBY
-        ? ServerType.EMBY
-        : 'Media Server',
+          ? ServerType.EMBY
+          : 'Media Server',
   };
 
   const LoginSchema = Yup.object().shape({
@@ -114,13 +114,13 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
             <>
               <Form data-form-type="login">
                 <div>
-                  <h2 className="mb-6 -mt-1 text-center text-lg font-bold text-neutral-200">
+                  <h2 className="-mt-1 mb-6 text-center text-lg font-bold text-neutral-200">
                     {intl.formatMessage(messages.loginwithapp, {
                       appName: mediaServerFormatValues.mediaServerName,
                     })}
                   </h2>
 
-                  <div className="mt-1 mb-4">
+                  <div className="mb-4 mt-1">
                     <div className="form-input-field">
                       <Field
                         id="username"
@@ -138,7 +138,7 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
                     )}
                   </div>
 
-                  <div className="mt-1 mb-2">
+                  <div className="mb-2 mt-1">
                     <div className="form-input-field">
                       <SensitiveInput
                         as="field"

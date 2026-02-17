@@ -106,6 +106,7 @@ export interface JellyfinLibraryItemExtended extends JellyfinLibraryItem {
     Tmdb?: string;
     Imdb?: string;
     Tvdb?: string;
+    AniDB?: string;
   };
   MediaSources?: JellyfinMediaSource[];
   Width?: number;
@@ -113,6 +114,10 @@ export interface JellyfinLibraryItemExtended extends JellyfinLibraryItem {
   IsHD?: boolean;
   DateCreated?: string;
 }
+
+type EpisodeReturn<T> = T extends { includeMediaInfo: true }
+  ? JellyfinLibraryItemExtended[]
+  : JellyfinLibraryItem[];
 
 export interface JellyfinItemsReponse {
   Items: JellyfinLibraryItemExtended[];
@@ -134,13 +139,13 @@ class JellyfinAPI extends ExternalAPI {
     const safeDeviceId =
       deviceId && deviceId.length > 0
         ? deviceId
-        : Buffer.from('BOT_jellyseerr').toString('base64');
+        : Buffer.from('BOT_seerr').toString('base64');
 
     let authHeaderVal: string;
     if (authToken) {
-      authHeaderVal = `MediaBrowser Client="Jellyseerr", Device="Jellyseerr", DeviceId="${safeDeviceId}", Version="${getAppVersion()}", Token="${authToken}"`;
+      authHeaderVal = `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="${safeDeviceId}", Version="${getAppVersion()}", Token="${authToken}"`;
     } else {
-      authHeaderVal = `MediaBrowser Client="Jellyseerr", Device="Jellyseerr", DeviceId="${safeDeviceId}", Version="${getAppVersion()}"`;
+      authHeaderVal = `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="${safeDeviceId}", Version="${getAppVersion()}"`;
     }
 
     super(
@@ -148,7 +153,7 @@ class JellyfinAPI extends ExternalAPI {
       {},
       {
         headers: {
-          'X-Emby-Authorization': authHeaderVal,
+          Authorization: authHeaderVal,
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
@@ -443,13 +448,22 @@ class JellyfinAPI extends ExternalAPI {
     }
   }
 
-  public async getEpisodes(
+  public async getEpisodes<
+    T extends { includeMediaInfo?: boolean } | undefined = undefined,
+  >(
     seriesID: string,
-    seasonID: string
-  ): Promise<JellyfinLibraryItem[]> {
+    seasonID: string,
+    options?: T
+  ): Promise<EpisodeReturn<T>> {
     try {
       const episodeResponse = await this.get<any>(
-        `/Shows/${seriesID}/Episodes?seasonId=${seasonID}`
+        `/Shows/${seriesID}/Episodes`,
+        {
+          params: {
+            seasonId: seasonID,
+            ...(options?.includeMediaInfo && { fields: 'MediaSources' }),
+          },
+        }
       );
 
       return episodeResponse.Items.filter(

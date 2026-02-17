@@ -5,7 +5,7 @@ import RTRotten from '@app/assets/rt_rotten.svg';
 import ImdbLogo from '@app/assets/services/imdb.svg';
 import Spinner from '@app/assets/spinner.svg';
 import TmdbLogo from '@app/assets/tmdb_logo.svg';
-import BlacklistModal from '@app/components/BlacklistModal';
+import BlocklistModal from '@app/components/BlocklistModal';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
@@ -128,9 +128,9 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   const [toggleWatchlist, setToggleWatchlist] = useState<boolean>(
     !movie?.onUserWatchlist
   );
-  const [isBlacklistUpdating, setIsBlacklistUpdating] =
+  const [isBlocklistUpdating, setIsBlocklistUpdating] =
     useState<boolean>(false);
-  const [showBlacklistModal, setShowBlacklistModal] = useState(false);
+  const [showBlocklistModal, setShowBlocklistModal] = useState(false);
   const { addToast } = useToasts();
 
   const {
@@ -161,8 +161,8 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     setShowManager(router.query.manage == '1' ? true : false);
   }, [router.query.manage]);
 
-  const closeBlacklistModal = useCallback(
-    () => setShowBlacklistModal(false),
+  const closeBlocklistModal = useCallback(
+    () => setShowBlocklistModal(false),
     []
   );
 
@@ -232,8 +232,8 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   const discoverRegion = user?.settings?.discoverRegion
     ? user.settings.discoverRegion
     : settings.currentSettings.discoverRegion
-    ? settings.currentSettings.discoverRegion
-    : 'US';
+      ? settings.currentSettings.discoverRegion
+      : 'US';
 
   const releases = data.releases.results.find(
     (r) => r.iso_3166_1 === discoverRegion
@@ -292,8 +292,8 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   const streamingRegion = user?.settings?.streamingRegion
     ? user.settings.streamingRegion
     : settings.currentSettings.streamingRegion
-    ? settings.currentSettings.streamingRegion
-    : 'US';
+      ? settings.currentSettings.streamingRegion
+      : 'US';
   const streamingProviders =
     data?.watchProviders?.find(
       (provider) => provider.iso_3166_1 === streamingRegion
@@ -381,10 +381,10 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   };
 
   const onClickHideItemBtn = async (): Promise<void> => {
-    setIsBlacklistUpdating(true);
+    setIsBlocklistUpdating(true);
 
     try {
-      await axios.post('/api/v1/blacklist', {
+      await axios.post('/api/v1/blocklist', {
         tmdbId: movie?.id,
         mediaType: 'movie',
         title: movie?.title,
@@ -393,7 +393,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
 
       addToast(
         <span>
-          {intl.formatMessage(globalMessages.blacklistSuccess, {
+          {intl.formatMessage(globalMessages.blocklistSuccess, {
             title: movie?.title,
             strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
           })}
@@ -406,7 +406,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
       if (e?.response?.status === 412) {
         addToast(
           <span>
-            {intl.formatMessage(globalMessages.blacklistDuplicateError, {
+            {intl.formatMessage(globalMessages.blocklistDuplicateError, {
               title: movie?.title,
               strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
             })}
@@ -414,18 +414,18 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
           { appearance: 'info', autoDismiss: true }
         );
       } else {
-        addToast(intl.formatMessage(globalMessages.blacklistError), {
+        addToast(intl.formatMessage(globalMessages.blocklistError), {
           appearance: 'error',
           autoDismiss: true,
         });
       }
     }
 
-    setIsBlacklistUpdating(false);
-    closeBlacklistModal();
+    setIsBlocklistUpdating(false);
+    closeBlocklistModal();
   };
 
-  const showHideButton = hasPermission([Permission.MANAGE_BLACKLIST], {
+  const showHideButton = hasPermission([Permission.MANAGE_BLOCKLIST], {
     type: 'or',
   });
 
@@ -475,13 +475,13 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
         revalidate={() => revalidate()}
         show={showManager}
       />
-      <BlacklistModal
+      <BlocklistModal
         tmdbId={data.id}
         type="movie"
-        show={showBlacklistModal}
-        onCancel={closeBlacklistModal}
+        show={showBlocklistModal}
+        onCancel={closeBlocklistModal}
         onComplete={onClickHideItemBtn}
-        isUpdating={isBlacklistUpdating}
+        isUpdating={isBlocklistUpdating}
       />
       <div className="media-header">
         <div className="media-poster">
@@ -490,7 +490,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
             src={
               data.posterPath
                 ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.posterPath}`
-                : '/images/jellyseerr_poster_not_found.png'
+                : '/images/seerr_poster_not_found.png'
             }
             alt=""
             sizes="100vw"
@@ -565,21 +565,21 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
             data?.mediaInfo?.status !== MediaStatus.AVAILABLE &&
             data?.mediaInfo?.status !== MediaStatus.PARTIALLY_AVAILABLE &&
             data?.mediaInfo?.status !== MediaStatus.PENDING &&
-            data?.mediaInfo?.status !== MediaStatus.BLACKLISTED && (
+            data?.mediaInfo?.status !== MediaStatus.BLOCKLISTED && (
               <Tooltip
-                content={intl.formatMessage(globalMessages.addToBlacklist)}
+                content={intl.formatMessage(globalMessages.addToBlocklist)}
               >
                 <Button
                   buttonType={'ghost'}
                   className="z-40 mr-2"
                   buttonSize={'md'}
-                  onClick={() => setShowBlacklistModal(true)}
+                  onClick={() => setShowBlocklistModal(true)}
                 >
                   <EyeSlashIcon />
                 </Button>
               </Tooltip>
             )}
-          {data?.mediaInfo?.status !== MediaStatus.BLACKLISTED &&
+          {data?.mediaInfo?.status !== MediaStatus.BLOCKLISTED &&
             user?.userType !== UserType.PLEX && (
               <>
                 {toggleWatchlist ? (

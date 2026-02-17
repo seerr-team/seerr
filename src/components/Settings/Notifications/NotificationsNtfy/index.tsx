@@ -256,7 +256,7 @@ const NotificationsNtfy = () => {
               </div>
             </div>
             {values.authMethodUsernamePassword && (
-              <div className="mr-2 ml-4">
+              <div className="ml-4 mr-2">
                 <div className="form-row">
                   <label htmlFor="username" className="text-label">
                     {intl.formatMessage(messages.username)}
@@ -302,7 +302,7 @@ const NotificationsNtfy = () => {
               </div>
             </div>
             {values.authMethodToken && (
-              <div className="form-row mr-2 ml-4">
+              <div className="form-row ml-4 mr-2">
                 <label htmlFor="token" className="text-label">
                   {intl.formatMessage(messages.token)}
                 </label>

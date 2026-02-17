@@ -36,6 +36,7 @@ import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
+import validator from 'validator';
 import * as Yup from 'yup';
 import JellyfinImportModal from './JellyfinImportModal';
 
@@ -210,7 +211,11 @@ const UserList = () => {
     ),
     email: Yup.string()
       .required()
-      .email(intl.formatMessage(messages.validationEmail)),
+      .test(
+        'email',
+        intl.formatMessage(messages.validationEmail),
+        (value) => !value || validator.isEmail(value, { require_tld: false })
+      ),
     password: Yup.lazy((value) =>
       !value
         ? Yup.string()
@@ -531,13 +536,13 @@ const UserList = () => {
                       mediaServerName: 'Emby',
                     })
                   : settings.currentSettings.mediaServerType ===
-                    MediaServerType.PLEX
-                  ? intl.formatMessage(messages.importfrommediaserver, {
-                      mediaServerName: 'Plex',
-                    })
-                  : intl.formatMessage(messages.importfrommediaserver, {
-                      mediaServerName: 'Jellyfin',
-                    })}
+                      MediaServerType.PLEX
+                    ? intl.formatMessage(messages.importfrommediaserver, {
+                        mediaServerName: 'Plex',
+                      })
+                    : intl.formatMessage(messages.importfrommediaserver, {
+                        mediaServerName: 'Jellyfin',
+                      })}
               </span>
             </Button>
           </div>
@@ -700,8 +705,8 @@ const UserList = () => {
                 {user.id === 1
                   ? intl.formatMessage(messages.owner)
                   : hasPermission(Permission.ADMIN, user.permissions)
-                  ? intl.formatMessage(messages.admin)
-                  : intl.formatMessage(messages.user)}
+                    ? intl.formatMessage(messages.admin)
+                    : intl.formatMessage(messages.user)}
               </Table.TD>
               <Table.TD>
                 {intl.formatDate(user.createdAt, {

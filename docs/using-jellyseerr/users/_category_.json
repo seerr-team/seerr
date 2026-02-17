@@ -1,9 +1,0 @@
-{
-  "label": "Users",
-  "position": 2,
-  "link": {
-    "type": "generated-index",
-    "title": "Users",
-    "description": "Configure your Jellyseerr users"
-  }
-}

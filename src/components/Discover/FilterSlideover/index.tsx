@@ -19,8 +19,8 @@ import {
 } from '@app/hooks/useUpdateQueryParams';
 import defineMessages from '@app/utils/defineMessages';
 import { XCircleIcon } from '@heroicons/react/24/outline';
+import Datepicker from '@seerr-team/react-tailwindcss-datepicker';
 import { useIntl } from 'react-intl';
-import Datepicker from 'react-tailwindcss-datepicker-sct';
 
 const messages = defineMessages('components.Discover.FilterSlideover', {
   filters: 'Filters',
@@ -33,6 +33,7 @@ const messages = defineMessages('components.Discover.FilterSlideover', {
   studio: 'Studio',
   genres: 'Genres',
   keywords: 'Keywords',
+  excludeKeywords: 'Exclude Keywords',
   originalLanguage: 'Original Language',
   runtimeText: '{minValue}-{maxValue} minute runtime',
   ratingText: 'Ratings between {minValue} and {maxValue}',
@@ -179,6 +180,19 @@ const FilterSlideover = ({
           isMulti
           onChange={(value) => {
             updateQueryParams('keywords', value?.map((v) => v.value).join(','));
+          }}
+        />
+        <span className="text-lg font-semibold">
+          {intl.formatMessage(messages.excludeKeywords)}
+        </span>
+        <KeywordSelector
+          defaultValue={currentFilters.excludeKeywords}
+          isMulti
+          onChange={(value) => {
+            updateQueryParams(
+              'excludeKeywords',
+              value?.map((v) => v.value).join(',')
+            );
           }}
         />
         <span className="text-lg font-semibold">

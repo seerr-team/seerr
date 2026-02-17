@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
+import validator from 'validator';
 import * as Yup from 'yup';
 
 const messages = defineMessages('components.Settings.Notifications', {
@@ -77,7 +78,11 @@ const NotificationsEmail = () => {
             .required(intl.formatMessage(messages.validationEmail)),
           otherwise: Yup.string().nullable(),
         })
-        .email(intl.formatMessage(messages.validationEmail)),
+        .test(
+          'email',
+          intl.formatMessage(messages.validationEmail),
+          (value) => !value || validator.isEmail(value, { require_tld: false })
+        ),
       smtpHost: Yup.string().when('enabled', {
         is: true,
         then: Yup.string()
@@ -131,10 +136,10 @@ const NotificationsEmail = () => {
         encryption: data.options.secure
           ? 'implicit'
           : data.options.requireTls
-          ? 'opportunistic'
-          : data.options.ignoreTls
-          ? 'none'
-          : 'default',
+            ? 'opportunistic'
+            : data.options.ignoreTls
+              ? 'none'
+              : 'default',
         authUser: data.options.authUser,
         authPass: data.options.authPass,
         allowSelfSigned: data.options.allowSelfSigned,

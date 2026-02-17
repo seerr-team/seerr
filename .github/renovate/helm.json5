@@ -1,0 +1,24 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+
+  packageRules: [
+    {
+      matchManagers: ['helm-values'],
+      matchFileNames: ['charts/*/values.yaml'],
+      minimumReleaseAge: '0',
+      pinDigests: false,
+    },
+  ],
+
+  customManagers: [
+    {
+      customType: 'regex',
+      description: 'Update appVersion in Chart.yaml to match Docker image',
+      fileMatch: ['(^|/)Chart\\.yaml$'],
+      matchStrings: [
+        "#\\s+renovate:\\s+image=(?<depName>\\S*)\nappVersion:\\s+'(?<currentValue>\\S*)'",
+      ],
+      datasourceTemplate: 'docker',
+    },
+  ],
+}

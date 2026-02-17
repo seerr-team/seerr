@@ -10,6 +10,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
+import validator from 'validator';
 import * as Yup from 'yup';
 
 const messages = defineMessages('components.ResetPassword', {
@@ -29,7 +30,11 @@ const ResetPassword = () => {
 
   const ResetSchema = Yup.object().shape({
     email: Yup.string()
-      .email(intl.formatMessage(messages.validationemailrequired))
+      .test(
+        'email',
+        intl.formatMessage(messages.validationemailrequired),
+        (value) => !value || validator.isEmail(value, { require_tld: false })
+      )
       .required(intl.formatMessage(messages.validationemailrequired)),
   });
 
@@ -47,7 +52,7 @@ const ResetPassword = () => {
           '/images/rotate6.jpg',
         ]}
       />
-      <div className="absolute top-4 right-4 z-50">
+      <div className="absolute right-4 top-4 z-50">
         <LanguagePicker />
       </div>
       <div className="relative z-40 mt-10 flex flex-col items-center px-4 sm:mx-auto sm:w-full sm:max-w-md">
@@ -107,7 +112,7 @@ const ResetPassword = () => {
                         >
                           {intl.formatMessage(messages.email)}
                         </label>
-                        <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0">
+                        <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
                           <div className="form-input-field">
                             <Field
                               id="email"

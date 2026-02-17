@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddResetPasswordGuidAndExpiryDate1612482778137
-  implements MigrationInterface
-{
+export class AddResetPasswordGuidAndExpiryDate1612482778137 implements MigrationInterface {
   name = 'AddResetPasswordGuidAndExpiryDate1612482778137';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

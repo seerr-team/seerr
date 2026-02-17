@@ -232,7 +232,7 @@ const IssueDetails = () => {
             src={
               data.posterPath
                 ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.posterPath}`
-                : '/images/jellyseerr_poster_not_found.png'
+                : '/images/seerr_poster_not_found.png'
             }
             alt=""
             sizes="100vw"
@@ -370,7 +370,7 @@ const IssueDetails = () => {
                 </span>
               </div>
             </div>
-            <div className="mt-4 mb-6 flex flex-col space-y-2">
+            <div className="mb-6 mt-4 flex flex-col space-y-2">
               {issueData?.media.mediaUrl && (
                 <Button
                   as="a"
@@ -388,13 +388,13 @@ const IssueDetails = () => {
                           mediaServerName: 'Emby',
                         })
                       : settings.currentSettings.mediaServerType ===
-                        MediaServerType.PLEX
-                      ? intl.formatMessage(messages.playonplex, {
-                          mediaServerName: 'Plex',
-                        })
-                      : intl.formatMessage(messages.playonplex, {
-                          mediaServerName: 'Jellyfin',
-                        })}
+                          MediaServerType.PLEX
+                        ? intl.formatMessage(messages.playonplex, {
+                            mediaServerName: 'Plex',
+                          })
+                        : intl.formatMessage(messages.playonplex, {
+                            mediaServerName: 'Jellyfin',
+                          })}
                   </span>
                 </Button>
               )}
@@ -436,13 +436,13 @@ const IssueDetails = () => {
                           mediaServerName: 'Emby',
                         })
                       : settings.currentSettings.mediaServerType ===
-                        MediaServerType.PLEX
-                      ? intl.formatMessage(messages.play4konplex, {
-                          mediaServerName: 'Plex',
-                        })
-                      : intl.formatMessage(messages.play4konplex, {
-                          mediaServerName: 'Jellyfin',
-                        })}
+                          MediaServerType.PLEX
+                        ? intl.formatMessage(messages.play4konplex, {
+                            mediaServerName: 'Plex',
+                          })
+                        : intl.formatMessage(messages.play4konplex, {
+                            mediaServerName: 'Jellyfin',
+                          })}
                   </span>
                 </Button>
               )}
@@ -483,7 +483,7 @@ const IssueDetails = () => {
               />
             ))}
             {otherComments.length === 0 && (
-              <div className="mt-4 mb-10 text-gray-400">
+              <div className="mb-10 mt-4 text-gray-400">
                 <span>{intl.formatMessage(messages.nocomments)}</span>
               </div>
             )}
@@ -636,7 +636,7 @@ const IssueDetails = () => {
               </span>
             </div>
           </div>
-          <div className="mt-4 mb-6 flex flex-col space-y-2">
+          <div className="mb-6 mt-4 flex flex-col space-y-2">
             {issueData?.media.mediaUrl && (
               <Button
                 as="a"
@@ -654,13 +654,13 @@ const IssueDetails = () => {
                         mediaServerName: 'Emby',
                       })
                     : settings.currentSettings.mediaServerType ===
-                      MediaServerType.PLEX
-                    ? intl.formatMessage(messages.playonplex, {
-                        mediaServerName: 'Plex',
-                      })
-                    : intl.formatMessage(messages.playonplex, {
-                        mediaServerName: 'Jellyfin',
-                      })}
+                        MediaServerType.PLEX
+                      ? intl.formatMessage(messages.playonplex, {
+                          mediaServerName: 'Plex',
+                        })
+                      : intl.formatMessage(messages.playonplex, {
+                          mediaServerName: 'Jellyfin',
+                        })}
                 </span>
               </Button>
             )}
@@ -701,13 +701,13 @@ const IssueDetails = () => {
                         mediaServerName: 'Emby',
                       })
                     : settings.currentSettings.mediaServerType ===
-                      MediaServerType.PLEX
-                    ? intl.formatMessage(messages.play4konplex, {
-                        mediaServerName: 'Plex',
-                      })
-                    : intl.formatMessage(messages.play4konplex, {
-                        mediaServerName: 'Jellyfin',
-                      })}
+                        MediaServerType.PLEX
+                      ? intl.formatMessage(messages.play4konplex, {
+                          mediaServerName: 'Plex',
+                        })
+                      : intl.formatMessage(messages.play4konplex, {
+                          mediaServerName: 'Jellyfin',
+                        })}
                 </span>
               </Button>
             )}

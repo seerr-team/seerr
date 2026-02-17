@@ -1,14 +1,26 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Release Charts
 
 on:
   push:
     branches:
       - develop
+    paths:
+      - 'charts/**'
+      - '.github/workflows/release-charts.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: helm-charts
+  cancel-in-progress: true
 
 jobs:
   package-helm-chart:
     name: Package helm chart
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: read
@@ -16,18 +28,19 @@ jobs:
       has_artifacts: ${{ steps.check-artifacts.outputs.has_artifacts }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install helm
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
 
       - name: Install Oras
-        uses: oras-project/setup-oras@v1
+        uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6 # v1.2.4
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -42,16 +55,11 @@ jobs:
               # get current version
               current_version=$(grep '^version:' "$chart_path/Chart.yaml" | awk '{print $2}')
               # try to get current release version
-              set +e
-              oras discover ghcr.io/${GITHUB_REPOSITORY@L}/${chart_name}:${current_version}
-              oras_exit_code=$?
-              set -e
-
-              if [ $oras_exit_code -ne 0 ]; then
+              if oras manifest fetch "ghcr.io/${{ github.repository }}/${chart_name}:${current_version}" >/dev/null 2>&1; then
+                echo "No version change for $chart_name. Skipping."
+              else
                 helm dependency build "$chart_path"
                 helm package "$chart_path" --destination ./.cr-release-packages
-              else
-                echo "No version change for $chart_name. Skipping."
               fi
             else
               echo "Skipping $chart_name: Not a valid Helm chart"
@@ -61,14 +69,14 @@ jobs:
       - name: Check if artifacts exist
         id: check-artifacts
         run: |
-          if ls .cr-release-packages/* >/dev/null 2>&1; then
+          if ls .cr-release-packages/*.tgz >/dev/null 2>&1; then
             echo "has_artifacts=true" >> $GITHUB_OUTPUT
           else
             echo "has_artifacts=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: steps.check-artifacts.outputs.has_artifacts == 'true'
         with:
           name: artifacts
@@ -77,35 +85,36 @@ jobs:
 
   publish:
     name: Publish to ghcr.io
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
-      packages: write # needed for pushing to github registry
-      id-token: write # needed for signing the images with GitHub OIDC Token
+      packages: write
+      id-token: write
     needs: [package-helm-chart]
     if: needs.package-helm-chart.outputs.has_artifacts == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install helm
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
 
       - name: Install Oras
-        uses: oras-project/setup-oras@v1
+        uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6 # v1.2.4
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v3
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
 
       - name: Downloads artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           name: artifacts
           path: .cr-release-packages/
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -119,17 +128,59 @@ jobs:
             # push chart to OCI
             chart_release_file=$(basename "$chart_path")
             chart_name=${chart_release_file%-*}
-            helm push ${chart_path} oci://ghcr.io/${GITHUB_REPOSITORY@L} |& tee helm-push-output.log
+            helm push ${chart_path} oci://ghcr.io/${{ github.repository }} |& tee helm-push-output.log
             chart_digest=$(awk -F "[, ]+" '/Digest/{print $NF}' < helm-push-output.log)
             # sign chart
-            cosign sign "ghcr.io/${GITHUB_REPOSITORY@L}/${chart_name}@${chart_digest}"
+            cosign sign "ghcr.io/${{ github.repository }}/${chart_name}@${chart_digest}"
             # push artifacthub-repo.yml to OCI
             oras push \
-              ghcr.io/${GITHUB_REPOSITORY@L}/${chart_name}:artifacthub.io \
+              ghcr.io/${{ github.repository }}/${chart_name}:artifacthub.io \
               --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
               charts/$chart_name/artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml \
               |& tee oras-push-output.log
             artifacthub_digest=$(grep "Digest:" oras-push-output.log | awk '{print $2}')
             # sign artifacthub-repo.yml
-            cosign sign "ghcr.io/${GITHUB_REPOSITORY@L}/${chart_name}:artifacthub.io@${artifacthub_digest}"
+            cosign sign "ghcr.io/${{ github.repository }}/${chart_name}:artifacthub.io@${artifacthub_digest}"
+          done
+
+  verify:
+    name: Verify signatures for each chart tag
+    needs: [publish]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+
+      - name: Downloads artifacts
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: artifacts
+          path: .cr-release-packages/
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify signatures for each chart tag
+        run: |
+          for chart_path in $(find .cr-release-packages -name '*.tgz' -print); do
+            chart_release_file=$(basename "$chart_path")
+            chart_name=${chart_release_file%-*}
+            version=${chart_release_file#$chart_name-}
+            version=${version%.tgz}
+
+            cosign verify "ghcr.io/${{ github.repository }}/${chart_name}:${version}" \
+              --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
+              --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
           done

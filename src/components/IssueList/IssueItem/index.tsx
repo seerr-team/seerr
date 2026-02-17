@@ -151,7 +151,7 @@ const IssueItem = ({ issue }: IssueItemProps) => {
               src={
                 title.posterPath
                   ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
-                  : '/images/jellyseerr_poster_not_found.png'
+                  : '/images/seerr_poster_not_found.png'
               }
               alt=""
               sizes="100vw"
@@ -216,7 +216,7 @@ const IssueItem = ({ issue }: IssueItemProps) => {
             )}
           </div>
         </div>
-        <div className="z-10 mt-4 ml-4 flex w-full flex-col justify-center overflow-hidden pr-4 text-sm sm:ml-2 sm:mt-0 xl:flex-1 xl:pr-0">
+        <div className="z-10 ml-4 mt-4 flex w-full flex-col justify-center overflow-hidden pr-4 text-sm sm:ml-2 sm:mt-0 xl:flex-1 xl:pr-0">
           <div className="card-field">
             <span className="card-field-name">
               {intl.formatMessage(messages.issuestatus)}

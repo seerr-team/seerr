@@ -1,11 +1,11 @@
 {
-  "name": "jellyseerr",
+  "name": "seerr",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.24.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "postinstall": "node postinstall-win.js",
-    "dev": "nodemon -e ts --watch server --watch jellyseerr-api.yml -e .json,.ts,.yml -x ts-node -r tsconfig-paths/register --files --project server/tsconfig.json server/index.ts",
+    "dev": "nodemon -e ts --watch server --watch seerr-api.yml -e .json,.ts,.yml -x ts-node -r tsconfig-paths/register --files --project server/tsconfig.json server/index.ts",
     "build:server": "tsc --project server/tsconfig.json && copyfiles -u 2 server/templates/**/*.{html,pug} dist/templates && tsc-alias -p server/tsconfig.json",
     "build:next": "next build",
     "build": "pnpm build:next && pnpm build:server",
@@ -16,174 +16,165 @@
     "migration:generate": "ts-node -r tsconfig-paths/register --project server/tsconfig.json ./node_modules/typeorm/cli.js migration:generate -d server/datasource.ts",
     "migration:create": "ts-node -r tsconfig-paths/register --project server/tsconfig.json ./node_modules/typeorm/cli.js migration:create -d server/datasource.ts",
     "migration:run": "ts-node -r tsconfig-paths/register --project server/tsconfig.json ./node_modules/typeorm/cli.js migration:run -d server/datasource.ts",
-    "format": "prettier --loglevel warn --write --cache .",
+    "format": "prettier --log-level warn --write --cache .",
     "format:check": "prettier --check --cache .",
     "typecheck": "pnpm typecheck:server && pnpm typecheck:client",
     "typecheck:server": "tsc --project server/tsconfig.json --noEmit",
     "typecheck:client": "tsc --noEmit",
-    "prepare": "husky install",
+    "prepare": "node bin/prepare.js",
     "cypress:open": "cypress open",
     "cypress:prepare": "ts-node -r tsconfig-paths/register --files --project server/tsconfig.json server/scripts/prepareTestDb.ts",
     "cypress:build": "pnpm build && pnpm cypress:prepare"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/fallenbagel/jellyseerr.git"
+    "url": "https://github.com/seerr-team/seerr.git"
   },
   "license": "MIT",
   "dependencies": {
-    "@dr.pogodin/csurf": "^1.14.1",
-    "@formatjs/intl-displaynames": "6.2.6",
+    "@dr.pogodin/csurf": "^1.16.6",
+    "@formatjs/intl-displaynames": "6.8.13",
     "@formatjs/intl-locale": "3.1.1",
-    "@formatjs/intl-pluralrules": "5.1.10",
+    "@formatjs/intl-pluralrules": "5.4.6",
     "@formatjs/intl-utils": "3.8.4",
-    "@formatjs/swc-plugin-experimental": "^0.4.0",
     "@headlessui/react": "1.7.12",
-    "@heroicons/react": "2.0.16",
+    "@heroicons/react": "2.2.0",
+    "@seerr-team/react-tailwindcss-datepicker": "^1.3.4",
     "@supercharge/request-ip": "1.2.0",
     "@svgr/webpack": "6.5.1",
-    "@tanem/react-nprogress": "5.0.30",
+    "@tanem/react-nprogress": "5.0.56",
     "@types/ua-parser-js": "^0.7.36",
     "@types/wink-jaro-distance": "^2.0.2",
-    "ace-builds": "1.15.2",
-    "axios": "1.10.0",
-    "axios-rate-limit": "1.3.0",
-    "bcrypt": "5.1.0",
-    "bowser": "2.11.0",
+    "ace-builds": "1.43.4",
+    "axios": "1.13.3",
+    "axios-rate-limit": "1.4.0",
+    "bcrypt": "6.0.0",
+    "bowser": "2.13.1",
     "connect-typeorm": "1.1.4",
     "cookie-parser": "1.4.7",
     "copy-to-clipboard": "3.3.3",
-    "country-flag-icons": "1.5.5",
+    "country-flag-icons": "1.6.4",
     "cronstrue": "2.23.0",
     "date-fns": "2.29.3",
-    "dayjs": "1.11.7",
-    "dns-caching": "^0.2.5",
-    "email-templates": "12.0.1",
-    "email-validator": "2.0.4",
+    "dns-caching": "^0.2.7",
+    "email-templates": "12.0.3",
     "express": "4.21.2",
     "express-openapi-validator": "4.13.8",
     "express-rate-limit": "6.7.0",
-    "express-session": "1.17.3",
-    "formik": "^2.4.6",
+    "express-session": "1.18.2",
+    "formik": "^2.4.9",
     "gravatar-url": "3.1.0",
     "http-proxy-agent": "^7.0.2",
     "https-proxy-agent": "^7.0.6",
-    "lodash": "4.17.21",
+    "lodash": "4.17.23",
     "mime": "3",
-    "next": "^14.2.25",
+    "next": "^14.2.35",
     "node-cache": "5.1.2",
     "node-gyp": "9.3.1",
     "node-schedule": "2.1.1",
-    "nodemailer": "6.10.0",
-    "openpgp": "5.11.2",
-    "pg": "8.11.0",
-    "plex-api": "5.3.2",
+    "nodemailer": "7.0.12",
+    "openpgp": "6.3.0",
+    "pg": "8.17.2",
     "pug": "3.0.3",
     "react": "^18.3.1",
     "react-ace": "10.1.0",
     "react-animate-height": "2.1.2",
-    "react-aria": "3.23.0",
+    "react-aria": "3.44.0",
     "react-dom": "^18.3.1",
     "react-intersection-observer": "9.4.3",
     "react-intl": "^6.6.8",
     "react-markdown": "8.0.5",
     "react-popper-tooltip": "4.4.2",
-    "react-select": "5.7.0",
+    "react-select": "5.10.2",
     "react-spring": "9.7.1",
-    "react-tailwindcss-datepicker-sct": "1.3.4",
     "react-toast-notifications": "2.5.1",
     "react-transition-group": "^4.4.5",
     "react-truncate-markup": "5.1.2",
     "react-use-clipboard": "1.0.9",
     "reflect-metadata": "0.1.13",
     "secure-random-password": "0.2.3",
-    "semver": "7.7.1",
+    "semver": "7.7.3",
     "sharp": "^0.33.4",
     "sqlite3": "5.1.7",
     "swagger-ui-express": "4.6.2",
-    "swr": "2.2.5",
+    "swr": "2.3.8",
     "tailwind-merge": "^2.6.0",
-    "typeorm": "0.3.12",
+    "typeorm": "0.3.28",
     "ua-parser-js": "^1.0.35",
-    "undici": "^7.3.0",
-    "web-push": "3.5.0",
+    "undici": "^7.18.2",
+    "validator": "^13.15.23",
+    "web-push": "3.6.7",
     "wink-jaro-distance": "^2.0.0",
-    "winston": "3.8.2",
+    "winston": "3.19.0",
     "winston-daily-rotate-file": "4.7.1",
-    "xml2js": "0.4.23",
+    "xml2js": "0.5.0",
     "yamljs": "0.3.0",
     "yup": "0.32.11",
-    "zod": "3.24.2"
+    "zod": "4.3.6"
   },
   "devDependencies": {
-    "@codedependant/semantic-release-docker": "^5.1.0",
     "@commitlint/cli": "17.4.4",
     "@commitlint/config-conventional": "17.4.4",
-    "@semantic-release/changelog": "6.0.3",
-    "@semantic-release/git": "10.0.1",
-    "@tailwindcss/aspect-ratio": "0.4.2",
-    "@tailwindcss/forms": "0.5.10",
-    "@tailwindcss/typography": "0.5.16",
-    "@types/bcrypt": "5.0.0",
-    "@types/cookie-parser": "1.4.3",
-    "@types/country-flag-icons": "1.2.0",
-    "@types/csurf": "1.11.2",
+    "@tailwindcss/aspect-ratio": "^0.4.2",
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.16",
+    "@types/bcrypt": "6.0.0",
+    "@types/cookie-parser": "1.4.10",
+    "@types/country-flag-icons": "1.2.2",
+    "@types/csurf": "1.11.5",
     "@types/email-templates": "8.0.4",
     "@types/express": "4.17.17",
-    "@types/express-session": "1.17.6",
-    "@types/lodash": "4.14.191",
+    "@types/express-session": "1.18.2",
+    "@types/lodash": "4.17.21",
     "@types/mime": "3",
     "@types/node": "22.10.5",
-    "@types/node-schedule": "2.1.0",
-    "@types/nodemailer": "6.4.7",
+    "@types/node-schedule": "2.1.8",
+    "@types/nodemailer": "7",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@types/react-transition-group": "4.4.5",
+    "@types/react-transition-group": "4.4.12",
     "@types/secure-random-password": "0.2.1",
-    "@types/semver": "7.3.13",
-    "@types/swagger-ui-express": "4.1.3",
-    "@types/web-push": "3.3.2",
-    "@types/xml2js": "0.4.11",
+    "@types/semver": "7.7.1",
+    "@types/swagger-ui-express": "4.1.8",
+    "@types/validator": "^13.15.10",
+    "@types/web-push": "3.6.4",
+    "@types/xml2js": "0.4.14",
     "@types/yamljs": "0.2.31",
     "@types/yup": "0.29.14",
-    "@typescript-eslint/eslint-plugin": "5.54.0",
-    "@typescript-eslint/parser": "5.54.0",
-    "autoprefixer": "10.4.13",
-    "commitizen": "4.3.0",
+    "@typescript-eslint/eslint-plugin": "7.18.0",
+    "@typescript-eslint/parser": "7.18.0",
+    "autoprefixer": "^10.4.23",
+    "baseline-browser-mapping": "^2.8.32",
+    "commitizen": "4.3.1",
     "copyfiles": "2.4.1",
     "cy-mobile-commands": "0.3.0",
-    "cypress": "14.1.0",
+    "cypress": "14.5.4",
     "cz-conventional-changelog": "3.3.0",
-    "eslint": "8.35.0",
-    "eslint-config-next": "^14.2.4",
+    "eslint": "8.57.1",
+    "eslint-config-next": "^14.2.35",
     "eslint-config-prettier": "8.6.0",
     "eslint-plugin-formatjs": "4.9.0",
-    "eslint-plugin-jsx-a11y": "6.7.1",
-    "eslint-plugin-no-relative-import-paths": "1.5.2",
+    "eslint-plugin-jsx-a11y": "6.10.2",
+    "eslint-plugin-no-relative-import-paths": "1.6.1",
     "eslint-plugin-prettier": "4.2.1",
-    "eslint-plugin-react": "7.32.2",
+    "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "4.6.0",
     "husky": "8.0.3",
     "lint-staged": "13.1.2",
-    "nodemon": "3.1.9",
-    "postcss": "8.4.31",
-    "prettier": "2.8.4",
-    "prettier-plugin-organize-imports": "3.2.2",
-    "prettier-plugin-tailwindcss": "0.2.3",
-    "semantic-release": "24.2.7",
-    "tailwindcss": "3.2.7",
-    "ts-node": "10.9.1",
-    "tsc-alias": "1.8.2",
-    "tsconfig-paths": "4.1.2",
-    "typescript": "4.9.5"
+    "nodemon": "3.1.11",
+    "postcss": "^8.5.6",
+    "prettier": "3.8.1",
+    "prettier-plugin-organize-imports": "4.3.0",
+    "prettier-plugin-tailwindcss": "0.6.14",
+    "tailwindcss": "3.4.19",
+    "ts-node": "10.9.2",
+    "tsc-alias": "1.8.16",
+    "tsconfig-paths": "4.2.0",
+    "typescript": "5.4.5"
   },
   "engines": {
     "node": "^22.0.0",
-    "pnpm": "^9.0.0"
-  },
-  "overrides": {
-    "sqlite3/node-gyp": "8.4.1",
-    "@types/express-session": "1.17.6"
+    "pnpm": "^10.0.0"
   },
   "config": {
     "commitizen": {
@@ -204,84 +195,17 @@
       "@commitlint/config-conventional"
     ]
   },
-  "release": {
-    "plugins": [
-      "@semantic-release/commit-analyzer",
-      "@semantic-release/release-notes-generator",
-      [
-        "@semantic-release/changelog",
-        {
-          "changelogFile": "CHANGELOG.md"
-        }
-      ],
-      "@semantic-release/npm",
-      [
-        "@semantic-release/git",
-        {
-          "assets": [
-            "package.json",
-            "CHANGELOG.md"
-          ],
-          "message": "chore(release): ${nextRelease.version}"
-        }
-      ],
-      [
-        "@codedependant/semantic-release-docker",
-        {
-          "dockerArgs": {
-            "COMMIT_TAG": "$GIT_SHA"
-          },
-          "dockerLogin": false,
-          "dockerProject": "fallenbagel",
-          "dockerImage": "jellyseerr",
-          "dockerTags": [
-            "latest",
-            "{{major}}",
-            "{{major}}.{{minor}}",
-            "{{major}}.{{minor}}.{{patch}}"
-          ],
-          "dockerPlatform": [
-            "linux/amd64",
-            "linux/arm64"
-          ]
-        }
-      ],
-      [
-        "@codedependant/semantic-release-docker",
-        {
-          "dockerArgs": {
-            "COMMIT_TAG": "$GIT_SHA"
-          },
-          "dockerLogin": false,
-          "dockerRegistry": "ghcr.io",
-          "dockerProject": "fallenbagel",
-          "dockerImage": "jellyseerr",
-          "dockerTags": [
-            "latest",
-            "{{major}}",
-            "{{major}}.{{minor}}",
-            "{{major}}.{{minor}}.{{patch}}"
-          ],
-          "dockerPlatform": [
-            "linux/amd64",
-            "linux/arm64"
-          ]
-        }
-      ],
-      [
-        "@semantic-release/github",
-        {
-          "addReleases": "bottom"
-        }
-      ]
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@swc/core",
+      "bcrypt",
+      "cypress",
+      "sharp",
+      "sqlite3"
     ],
-    "branches": [
-      "main"
-    ],
-    "npmPublish": false,
-    "publish": [
-      "@codedependant/semantic-release-docker",
-      "@semantic-release/github"
-    ]
+    "overrides": {
+      "sqlite3>node-gyp": "8.4.1",
+      "@types/express-session": "1.18.2"
+    }
   }
 }

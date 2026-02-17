@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddTelegramSettingsToUserSettings1614334195680
-  implements MigrationInterface
-{
+export class AddTelegramSettingsToUserSettings1614334195680 implements MigrationInterface {
   name = 'AddTelegramSettingsToUserSettings1614334195680';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

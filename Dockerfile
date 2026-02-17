@@ -1,9 +1,22 @@
-FROM node:22-alpine AS BUILD_IMAGE
-
-WORKDIR /app
-
+FROM node:22.22.0-alpine3.22@sha256:0c49915657c1c77c64c8af4d91d2f13fe96853bbd957993ed00dd592cbecc284 AS base
+ARG SOURCE_DATE_EPOCH
 ARG TARGETPLATFORM
 ENV TARGETPLATFORM=${TARGETPLATFORM:-linux/amd64}
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+COPY . ./app
+WORKDIR /app
+
+FROM base AS prod-deps
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store CI=true pnpm install --prod --frozen-lockfile
+
+FROM base AS build
+
+ARG COMMIT_TAG
+ENV COMMIT_TAG=${COMMIT_TAG}
 
 RUN \
   case "${TARGETPLATFORM}" in \
@@ -14,52 +27,32 @@ RUN \
   ;; \
   esac
 
-RUN npm install --global pnpm@9
-
-COPY package.json pnpm-lock.yaml postinstall-win.js ./
-RUN CYPRESS_INSTALL_BINARY=0 pnpm install --frozen-lockfile
-
-COPY . ./
-
-ARG COMMIT_TAG
-ENV COMMIT_TAG=${COMMIT_TAG}
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store CYPRESS_INSTALL_BINARY=0 pnpm install --frozen-lockfile
 
 RUN pnpm build
 
-# remove development dependencies
-RUN pnpm prune --prod --ignore-scripts
+RUN rm -rf .next/cache
 
-RUN rm -rf src server .next/cache charts gen-docs docs
+FROM node:22.22.0-alpine3.22@sha256:0c49915657c1c77c64c8af4d91d2f13fe96853bbd957993ed00dd592cbecc284
+ARG SOURCE_DATE_EPOCH
+ARG COMMIT_TAG
+ENV NODE_ENV=production
+ENV COMMIT_TAG=${COMMIT_TAG}
 
-RUN touch config/DOCKER
+RUN apk add --no-cache tzdata
 
-RUN echo "{\"commitTag\": \"${COMMIT_TAG}\"}" > committag.json
-
-
-FROM node:22-alpine
-
-# OCI Meta information
-ARG BUILD_DATE
-ARG BUILD_VERSION
-LABEL \
-  org.opencontainers.image.authors="Fallenbagel" \
-  org.opencontainers.image.source="https://github.com/fallenbagel/jellyseerr" \
-  org.opencontainers.image.created=${BUILD_DATE} \
-  org.opencontainers.image.version=${BUILD_VERSION} \
-  org.opencontainers.image.title="Jellyseerr" \
-  org.opencontainers.image.description="Open-source media request and discovery manager for Jellyfin, Plex, and Emby." \
-  org.opencontainers.image.licenses="MIT"
+USER node:node
 
 WORKDIR /app
 
-RUN apk add --no-cache tzdata tini && rm -rf /tmp/*
+COPY --chown=node:node . .
+COPY --chown=node:node --from=prod-deps /app/node_modules ./node_modules
+COPY --chown=node:node --from=build /app/.next ./.next
+COPY --chown=node:node --from=build /app/dist ./dist
 
-RUN npm install -g pnpm@9
-
-# copy from build image
-COPY --from=BUILD_IMAGE /app ./
-
-ENTRYPOINT [ "/sbin/tini", "--" ]
-CMD [ "pnpm", "start" ]
+RUN touch config/DOCKER && \
+  echo "{\"commitTag\": \"${COMMIT_TAG}\"}" > committag.json
 
 EXPOSE 5055
+
+CMD [ "npm", "start" ]

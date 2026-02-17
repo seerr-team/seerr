@@ -14,6 +14,7 @@ const DEFAULT_ROLLING_BUFFER = 10000;
 export interface ExternalAPIOptions {
   nodeCache?: NodeCache;
   headers?: Record<string, unknown>;
+  timeout?: number;
   rateLimit?: {
     maxRPS: number;
     maxRequests: number;
@@ -33,6 +34,7 @@ class ExternalAPI {
     this.axios = axios.create({
       baseURL: baseUrl,
       params,
+      timeout: options.timeout,
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',

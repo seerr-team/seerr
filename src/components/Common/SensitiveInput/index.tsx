@@ -35,8 +35,8 @@ const SensitiveInput = ({ as = 'input', ...props }: SensitiveInputProps) => {
           isHidden
             ? 'password'
             : props.type !== 'password'
-            ? props.type ?? 'text'
-            : 'text'
+              ? (props.type ?? 'text')
+              : 'text'
         }
       />
       <button

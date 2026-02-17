@@ -37,7 +37,6 @@ docs export-ignore
 *ignore export-ignore
 *.md export-ignore
 
-.all-contributorsrc export-ignore
 .editorconfig export-ignore
 Dockerfile.local export-ignore
 compose.yaml export-ignore

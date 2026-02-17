@@ -134,7 +134,10 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
       type: 'or',
     }) &&
     data.parts.filter(
-      (part) => !part.mediaInfo || part.mediaInfo.status === MediaStatus.UNKNOWN
+      (part) =>
+        !part.mediaInfo ||
+        part.mediaInfo.status === MediaStatus.DELETED ||
+        part.mediaInfo.status === MediaStatus.UNKNOWN
     ).length > 0;
 
   const hasRequestable4k =
@@ -144,7 +147,9 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
     }) &&
     data.parts.filter(
       (part) =>
-        !part.mediaInfo || part.mediaInfo.status4k === MediaStatus.UNKNOWN
+        !part.mediaInfo ||
+        part.mediaInfo.status4k === MediaStatus.DELETED ||
+        part.mediaInfo.status4k === MediaStatus.UNKNOWN
     ).length > 0;
 
   const collectionAttributes: React.ReactNode[] = [];
@@ -183,8 +188,8 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
     );
   }
 
-  const blacklistVisibility = hasPermission(
-    [Permission.MANAGE_BLACKLIST, Permission.VIEW_BLACKLIST],
+  const blocklistVisibility = hasPermission(
+    [Permission.MANAGE_BLOCKLIST, Permission.VIEW_BLOCKLIST],
     { type: 'or' }
   );
 
@@ -233,7 +238,7 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
             src={
               data.posterPath
                 ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.posterPath}`
-                : '/images/jellyseerr_poster_not_found.png'
+                : '/images/seerr_poster_not_found.png'
             }
             alt=""
             sizes="100vw"
@@ -344,8 +349,8 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
         isEmpty={data.parts.length === 0}
         items={data.parts
           .filter((title) => {
-            if (!blacklistVisibility)
-              return title.mediaInfo?.status !== MediaStatus.BLACKLISTED;
+            if (!blocklistVisibility)
+              return title.mediaInfo?.status !== MediaStatus.BLOCKLISTED;
             return title;
           })
           .map((title) => (

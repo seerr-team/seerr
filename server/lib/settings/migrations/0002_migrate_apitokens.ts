@@ -8,7 +8,7 @@ import { getHostname } from '@server/utils/getHostname';
 const migrateApiTokens = async (settings: any): Promise<AllSettings> => {
   const mediaServerType = settings.main.mediaServerType;
   if (
-    !settings.jellyfin.apiKey &&
+    !settings.jellyfin?.apiKey &&
     (mediaServerType === MediaServerType.JELLYFIN ||
       mediaServerType === MediaServerType.EMBY)
   ) {
@@ -28,7 +28,7 @@ const migrateApiTokens = async (settings: any): Promise<AllSettings> => {
     );
     jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
     try {
-      const apiKey = await jellyfinClient.createApiToken('Jellyseerr');
+      const apiKey = await jellyfinClient.createApiToken('Seerr');
       settings.jellyfin.apiKey = apiKey;
     } catch {
       throw new Error(

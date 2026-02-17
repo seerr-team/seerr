@@ -238,23 +238,23 @@ const MovieRequestModal = ({
           hasPermission(Permission.MANAGE_REQUESTS)
             ? updateRequest(true)
             : hasPermission(Permission.REQUEST_ADVANCED)
-            ? updateRequest()
-            : cancelRequest()
+              ? updateRequest()
+              : cancelRequest()
         }
         okDisabled={isUpdating}
         okText={
           hasPermission(Permission.MANAGE_REQUESTS)
             ? intl.formatMessage(messages.approve)
             : hasPermission(Permission.REQUEST_ADVANCED)
-            ? intl.formatMessage(messages.edit)
-            : intl.formatMessage(messages.cancel)
+              ? intl.formatMessage(messages.edit)
+              : intl.formatMessage(messages.cancel)
         }
         okButtonType={
           hasPermission(Permission.MANAGE_REQUESTS)
             ? 'success'
             : hasPermission(Permission.REQUEST_ADVANCED)
-            ? 'primary'
-            : 'danger'
+              ? 'primary'
+              : 'danger'
         }
         onSecondary={
           isOwner &&

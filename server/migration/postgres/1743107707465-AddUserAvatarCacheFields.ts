@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddUserAvatarCacheFields1743107707465
-  implements MigrationInterface
-{
+export class AddUserAvatarCacheFields1743107707465 implements MigrationInterface {
   name = 'AddUserAvatarCacheFields1743107707465';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

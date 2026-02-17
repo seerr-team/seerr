@@ -10,10 +10,10 @@ export interface SettingsContextProps {
 
 const defaultSettings = {
   initialized: false,
-  applicationTitle: 'Jellyseerr',
+  applicationTitle: 'Seerr',
   applicationUrl: '',
   hideAvailable: false,
-  hideBlacklisted: false,
+  hideBlocklisted: false,
   localLogin: true,
   mediaServerLogin: true,
   movie4kEnabled: false,

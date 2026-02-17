@@ -132,15 +132,15 @@ export interface MainSettings {
     tv: Quota;
   };
   hideAvailable: boolean;
-  hideBlacklisted: boolean;
+  hideBlocklisted: boolean;
   localLogin: boolean;
   mediaServerLogin: boolean;
   newPlexLogin: boolean;
   discoverRegion: string;
   streamingRegion: string;
   originalLanguage: string;
-  blacklistedTags: string;
-  blacklistedTagsLimit: number;
+  blocklistedTags: string;
+  blocklistedTagsLimit: number;
   mediaServerType: number;
   partialRequestsEnabled: boolean;
   enableSpecialEpisodes: boolean;
@@ -181,7 +181,7 @@ interface FullPublicSettings extends PublicSettings {
   applicationTitle: string;
   applicationUrl: string;
   hideAvailable: boolean;
-  hideBlacklisted: boolean;
+  hideBlocklisted: boolean;
   localLogin: boolean;
   mediaServerLogin: boolean;
   movie4kEnabled: boolean;
@@ -346,7 +346,7 @@ export type JobId =
   | 'jellyfin-full-scan'
   | 'image-cache-cleanup'
   | 'availability-sync'
-  | 'process-blacklisted-tags';
+  | 'process-blocklisted-tags';
 
 export interface AllSettings {
   clientId: string;
@@ -363,6 +363,7 @@ export interface AllSettings {
   jobs: Record<JobId, JobSettings>;
   network: NetworkSettings;
   metadataSettings: MetadataSettings;
+  migrations: string[];
 }
 
 const SETTINGS_PATH = process.env.CONFIG_DIRECTORY
@@ -379,7 +380,7 @@ class Settings {
       vapidPublic: '',
       main: {
         apiKey: '',
-        applicationTitle: 'Jellyseerr',
+        applicationTitle: 'Seerr',
         applicationUrl: '',
         cacheImages: false,
         defaultPermissions: Permission.REQUEST,
@@ -388,15 +389,15 @@ class Settings {
           tv: {},
         },
         hideAvailable: false,
-        hideBlacklisted: false,
+        hideBlocklisted: false,
         localLogin: true,
         mediaServerLogin: true,
         newPlexLogin: true,
         discoverRegion: '',
         streamingRegion: '',
         originalLanguage: '',
-        blacklistedTags: '',
-        blacklistedTagsLimit: 50,
+        blocklistedTags: '',
+        blocklistedTagsLimit: 50,
         mediaServerType: MediaServerType.NOT_CONFIGURED,
         partialRequestsEnabled: true,
         enableSpecialEpisodes: false,
@@ -446,7 +447,7 @@ class Settings {
               ignoreTls: false,
               requireTls: false,
               allowSelfSigned: false,
-              senderName: 'Jellyseerr',
+              senderName: 'Seerr',
             },
           },
           discord: {
@@ -569,7 +570,7 @@ class Settings {
         'image-cache-cleanup': {
           schedule: '0 0 5 * * *',
         },
-        'process-blacklisted-tags': {
+        'process-blocklisted-tags': {
           schedule: '0 30 1 */7 * *',
         },
       },
@@ -593,6 +594,7 @@ class Settings {
           forceMaxTtl: -1,
         },
       },
+      migrations: [],
     };
     if (initialSettings) {
       this.data = merge(this.data, initialSettings);
@@ -669,7 +671,7 @@ class Settings {
       applicationTitle: this.data.main.applicationTitle,
       applicationUrl: this.data.main.applicationUrl,
       hideAvailable: this.data.main.hideAvailable,
-      hideBlacklisted: this.data.main.hideBlacklisted,
+      hideBlocklisted: this.data.main.hideBlocklisted,
       localLogin: this.data.main.localLogin,
       mediaServerLogin: this.data.main.mediaServerLogin,
       jellyfinExternalHost: this.data.jellyfin.externalHostname,
@@ -722,6 +724,14 @@ class Settings {
     this.data.network = data;
   }
 
+  get migrations(): string[] {
+    return this.data.migrations;
+  }
+
+  set migrations(data: string[]) {
+    this.data.migrations = data;
+  }
+
   get clientId(): string {
     return this.data.clientId;
   }
@@ -754,9 +764,13 @@ class Settings {
    * This will load settings from file unless an optional argument of the object structure
    * is passed in.
    * @param overrideSettings If passed in, will override all existing settings with these
+   * @param raw If true, will load the settings without running migrations or generating missing
    * values
    */
-  public async load(overrideSettings?: AllSettings): Promise<Settings> {
+  public async load(
+    overrideSettings?: AllSettings,
+    raw = false
+  ): Promise<Settings> {
     if (overrideSettings) {
       this.data = overrideSettings;
       return this;
@@ -769,10 +783,12 @@ class Settings {
       await this.save();
     }
 
-    if (data) {
+    if (data && !raw) {
       const parsedJson = JSON.parse(data);
       const migratedData = await runMigrations(parsedJson, SETTINGS_PATH);
       this.data = merge(this.data, migratedData);
+    } else if (data) {
+      this.data = JSON.parse(data);
     }
 
     // generate keys and ids if it's missing
