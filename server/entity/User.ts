@@ -39,7 +39,7 @@ export class User {
     return users.map((u) => u.filter(showFiltered));
   }
 
-  static readonly filteredFields: string[] = ['email', 'plexId'];
+  static readonly filteredFields: string[] = ['email', 'plexId', 'password'];
 
   public displayName: string;
 
