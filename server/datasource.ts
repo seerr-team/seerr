@@ -38,6 +38,17 @@ function buildSslConfig(): TlsOptions | undefined {
   };
 }
 
+const testConfig: DataSourceOptions = {
+  type: 'sqlite',
+  database: ':memory:',
+  synchronize: true,
+  dropSchema: true,
+  logging: boolFromEnv('DB_LOG_QUERIES'),
+  entities: ['server/entity/**/*.ts'],
+  migrations: ['server/migration/sqlite/**/*.ts'],
+  subscribers: ['server/subscriber/**/*.ts'],
+};
+
 const devConfig: DataSourceOptions = {
   type: 'sqlite',
   database: process.env.CONFIG_DIRECTORY
@@ -105,7 +116,9 @@ const postgresProdConfig: DataSourceOptions = {
 export const isPgsql = process.env.DB_TYPE === 'postgres';
 
 function getDataSource(): DataSourceOptions {
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'test') {
+    return testConfig;
+  } else if (process.env.NODE_ENV === 'production') {
     return isPgsql ? postgresProdConfig : prodConfig;
   } else {
     return isPgsql ? postgresDevConfig : devConfig;
