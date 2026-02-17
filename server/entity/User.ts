@@ -70,7 +70,7 @@ export class User {
   @Column({ nullable: true, select: false })
   public resetPasswordGuid?: string;
 
-  @Column({ type: 'date', nullable: true })
+  @DbAwareColumn({ type: 'datetime', nullable: true })
   public recoveryLinkExpirationDate?: Date | null;
 
   @Column({ type: 'integer', default: UserType.PLEX })
