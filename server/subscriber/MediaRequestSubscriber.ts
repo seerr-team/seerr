@@ -307,31 +307,25 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
             radarrSettings.tagRequestsFormat ??
             TagRequestsFormat.USERID_USERNAME;
 
-          let tagLabel: string;
-          let tagStartsWith: string;
-
+          let tagLabel =
+            entity.requestedBy.id +
+            '-' +
+            sanitizeDisplayName(entity.requestedBy.displayName);
+          // new tags do not have spaces around the hyphen, since spaces are not allowed anymore
+          // note: this can theoretically collide if a USERNAME-format tag starts with this user's id
+          let userTag = radarrTags.find((v) =>
+            v.label.startsWith(entity.requestedBy.id + '-')
+          );
           if (tagFormat === TagRequestsFormat.USERID) {
             tagLabel = String(entity.requestedBy.id);
-            tagStartsWith = String(entity.requestedBy.id);
+            userTag = radarrTags.find((v) => v.label === tagLabel);
           } else if (tagFormat === TagRequestsFormat.USERNAME) {
             tagLabel = sanitizeDisplayName(
               entity.requestedBy.displayName.toLowerCase()
             );
-            tagStartsWith = tagLabel;
-          } else {
-            // TagRequestsFormat.USERID_USERNAME (default)
-            tagLabel =
-              entity.requestedBy.id +
-              '-' +
-              sanitizeDisplayName(entity.requestedBy.displayName);
-            tagStartsWith = String(entity.requestedBy.id) + '-';
-          }
-
-          let userTag = radarrTags.find((v) =>
-            v.label.startsWith(tagStartsWith)
-          );
-          // legacy: old tags had spaces around the hyphen for userid-username format
-          if (!userTag && tagFormat === TagRequestsFormat.USERID_USERNAME) {
+            userTag = radarrTags.find((v) => v.label === tagLabel);
+          } else if (!userTag) {
+            // old tags had space around the hyphen
             userTag = radarrTags.find((v) =>
               v.label.startsWith(entity.requestedBy.id + ' - ')
             );
@@ -659,31 +653,25 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
             sonarrSettings.tagRequestsFormat ??
             TagRequestsFormat.USERID_USERNAME;
 
-          let tagLabel: string;
-          let tagStartsWith: string;
-
+          let tagLabel =
+            entity.requestedBy.id +
+            '-' +
+            sanitizeDisplayName(entity.requestedBy.displayName);
+          // new tags do not have spaces around the hyphen, since spaces are not allowed anymore
+          // note: this can theoretically collide if a USERNAME-format tag starts with this user's id
+          let userTag = sonarrTags.find((v) =>
+            v.label.startsWith(entity.requestedBy.id + '-')
+          );
           if (tagFormat === TagRequestsFormat.USERID) {
             tagLabel = String(entity.requestedBy.id);
-            tagStartsWith = String(entity.requestedBy.id);
+            userTag = sonarrTags.find((v) => v.label === tagLabel);
           } else if (tagFormat === TagRequestsFormat.USERNAME) {
             tagLabel = sanitizeDisplayName(
               entity.requestedBy.displayName.toLowerCase()
             );
-            tagStartsWith = tagLabel;
-          } else {
-            // TagRequestsFormat.USERID_USERNAME (default)
-            tagLabel =
-              entity.requestedBy.id +
-              '-' +
-              sanitizeDisplayName(entity.requestedBy.displayName);
-            tagStartsWith = String(entity.requestedBy.id) + '-';
-          }
-
-          let userTag = sonarrTags.find((v) =>
-            v.label.startsWith(tagStartsWith)
-          );
-          // legacy: old tags had spaces around the hyphen for userid-username format
-          if (!userTag && tagFormat === TagRequestsFormat.USERID_USERNAME) {
+            userTag = sonarrTags.find((v) => v.label === tagLabel);
+          } else if (!userTag) {
+            // old tags had space around the hyphen
             userTag = sonarrTags.find((v) =>
               v.label.startsWith(entity.requestedBy.id + ' - ')
             );
