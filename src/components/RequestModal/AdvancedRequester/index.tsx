@@ -100,9 +100,8 @@ const AdvancedRequester = ({
   const { data: serverData, isValidating } =
     useSWR<ServiceCommonServerWithDetails>(
       selectedServer !== null
-        ? `/api/v1/service/${
-            type === 'movie' ? 'radarr' : 'sonarr'
-          }/${selectedServer}`
+        ? `/api/v1/service/${type === 'movie' ? 'radarr' : 'sonarr'
+        }/${selectedServer}`
         : null,
       {
         refreshInterval: 0,
@@ -126,17 +125,17 @@ const AdvancedRequester = ({
         hasPermission(
           is4k
             ? [
-                Permission.REQUEST_4K,
-                type === 'movie'
-                  ? Permission.REQUEST_4K_MOVIE
-                  : Permission.REQUEST_4K_TV,
-              ]
+              Permission.REQUEST_4K,
+              type === 'movie'
+                ? Permission.REQUEST_4K_MOVIE
+                : Permission.REQUEST_4K_TV,
+            ]
             : [
-                Permission.REQUEST,
-                type === 'movie'
-                  ? Permission.REQUEST_MOVIE
-                  : Permission.REQUEST_TV,
-              ],
+              Permission.REQUEST,
+              type === 'movie'
+                ? Permission.REQUEST_MOVIE
+                : Permission.REQUEST_TV,
+            ],
           user.permissions,
           { type: 'or' }
         )
@@ -154,8 +153,18 @@ const AdvancedRequester = ({
 
   useEffect(() => {
     let defaultServer = data?.find(
-      (server) => server.isDefault && is4k === server.is4k
+      (server) =>
+        isAnime
+          ? server.isDefaultForAnime && is4k === server.is4k
+          : server.isDefault && is4k === server.is4k
     );
+
+    // Fall back to the regular default if no anime-specific default is configured
+    if (!defaultServer && isAnime) {
+      defaultServer = data?.find(
+        (server) => server.isDefault && is4k === server.is4k
+      );
+    }
 
     if (!defaultServer && (data ?? []).length > 0) {
       defaultServer = data?.[0];
@@ -168,7 +177,7 @@ const AdvancedRequester = ({
     ) {
       setSelectedServer(defaultServer.id);
     }
-  }, [data]);
+  }, [data, isAnime]);
 
   useEffect(() => {
     if (serverData) {
@@ -336,8 +345,8 @@ const AdvancedRequester = ({
                       >
                         {server.isDefault
                           ? intl.formatMessage(messages.default, {
-                              name: server.name,
-                            })
+                            name: server.name,
+                          })
                           : server.name}
                       </option>
                     ))}
@@ -347,100 +356,100 @@ const AdvancedRequester = ({
             {(isValidating ||
               !serverData ||
               serverData.profiles.length > 1) && (
-              <div className="mb-3 w-full flex-shrink-0 flex-grow last:pr-0 md:w-1/4 md:pr-4">
-                <label htmlFor="profile">
-                  {intl.formatMessage(messages.qualityprofile)}
-                </label>
-                <select
-                  id="profile"
-                  name="profile"
-                  value={selectedProfile}
-                  onChange={(e) => setSelectedProfile(Number(e.target.value))}
-                  onBlur={(e) => setSelectedProfile(Number(e.target.value))}
-                  className="border-gray-700 bg-gray-800"
-                  disabled={isValidating || !serverData}
-                >
-                  {(isValidating || !serverData) && (
-                    <option value="">
-                      {intl.formatMessage(globalMessages.loading)}
-                    </option>
-                  )}
-                  {!isValidating &&
-                    serverData &&
-                    serverData.profiles.map((profile) => (
-                      <option
-                        key={`profile-list${profile.id}`}
-                        value={profile.id}
-                      >
-                        {isAnime &&
-                        serverData.server.activeAnimeProfileId === profile.id
-                          ? intl.formatMessage(messages.default, {
+                <div className="mb-3 w-full flex-shrink-0 flex-grow last:pr-0 md:w-1/4 md:pr-4">
+                  <label htmlFor="profile">
+                    {intl.formatMessage(messages.qualityprofile)}
+                  </label>
+                  <select
+                    id="profile"
+                    name="profile"
+                    value={selectedProfile}
+                    onChange={(e) => setSelectedProfile(Number(e.target.value))}
+                    onBlur={(e) => setSelectedProfile(Number(e.target.value))}
+                    className="border-gray-700 bg-gray-800"
+                    disabled={isValidating || !serverData}
+                  >
+                    {(isValidating || !serverData) && (
+                      <option value="">
+                        {intl.formatMessage(globalMessages.loading)}
+                      </option>
+                    )}
+                    {!isValidating &&
+                      serverData &&
+                      serverData.profiles.map((profile) => (
+                        <option
+                          key={`profile-list${profile.id}`}
+                          value={profile.id}
+                        >
+                          {isAnime &&
+                            serverData.server.activeAnimeProfileId === profile.id
+                            ? intl.formatMessage(messages.default, {
                               name: profile.name,
                             })
-                          : !isAnime &&
+                            : !isAnime &&
                               serverData.server.activeProfileId === profile.id
-                            ? intl.formatMessage(messages.default, {
+                              ? intl.formatMessage(messages.default, {
                                 name: profile.name,
                               })
-                            : profile.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-            )}
+                              : profile.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
             {(isValidating ||
               !serverData ||
               serverData.rootFolders.length > 1) && (
-              <div className="mb-3 w-full flex-shrink-0 flex-grow last:pr-0 md:w-1/4 md:pr-4">
-                <label htmlFor="folder">
-                  {intl.formatMessage(messages.rootfolder)}
-                </label>
-                <select
-                  id="folder"
-                  name="folder"
-                  value={selectedFolder}
-                  onChange={(e) => setSelectedFolder(e.target.value)}
-                  onBlur={(e) => setSelectedFolder(e.target.value)}
-                  className="border-gray-700 bg-gray-800"
-                  disabled={isValidating || !serverData}
-                >
-                  {(isValidating || !serverData) && (
-                    <option value="">
-                      {intl.formatMessage(globalMessages.loading)}
-                    </option>
-                  )}
-                  {!isValidating &&
-                    serverData &&
-                    serverData.rootFolders.map((folder) => (
-                      <option
-                        key={`folder-list${folder.id}`}
-                        value={folder.path}
-                      >
-                        {isAnime &&
-                        serverData.server.activeAnimeDirectory === folder.path
-                          ? intl.formatMessage(messages.default, {
+                <div className="mb-3 w-full flex-shrink-0 flex-grow last:pr-0 md:w-1/4 md:pr-4">
+                  <label htmlFor="folder">
+                    {intl.formatMessage(messages.rootfolder)}
+                  </label>
+                  <select
+                    id="folder"
+                    name="folder"
+                    value={selectedFolder}
+                    onChange={(e) => setSelectedFolder(e.target.value)}
+                    onBlur={(e) => setSelectedFolder(e.target.value)}
+                    className="border-gray-700 bg-gray-800"
+                    disabled={isValidating || !serverData}
+                  >
+                    {(isValidating || !serverData) && (
+                      <option value="">
+                        {intl.formatMessage(globalMessages.loading)}
+                      </option>
+                    )}
+                    {!isValidating &&
+                      serverData &&
+                      serverData.rootFolders.map((folder) => (
+                        <option
+                          key={`folder-list${folder.id}`}
+                          value={folder.path}
+                        >
+                          {isAnime &&
+                            serverData.server.activeAnimeDirectory === folder.path
+                            ? intl.formatMessage(messages.default, {
                               name: intl.formatMessage(messages.folder, {
                                 path: folder.path,
                                 space: formatBytes(folder.freeSpace ?? 0),
                               }),
                             })
-                          : !isAnime &&
+                            : !isAnime &&
                               serverData.server.activeDirectory === folder.path
-                            ? intl.formatMessage(messages.default, {
+                              ? intl.formatMessage(messages.default, {
                                 name: intl.formatMessage(messages.folder, {
                                   path: folder.path,
                                   space: formatBytes(folder.freeSpace ?? 0),
                                 }),
                               })
-                            : intl.formatMessage(messages.folder, {
+                              : intl.formatMessage(messages.folder, {
                                 path: folder.path,
                                 space: formatBytes(folder.freeSpace ?? 0),
                               })}
-                      </option>
-                    ))}
-                </select>
-              </div>
-            )}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
             {type === 'tv' &&
               (isValidating ||
                 !serverData ||
@@ -475,17 +484,17 @@ const AdvancedRequester = ({
                           value={language.id}
                         >
                           {isAnime &&
-                          serverData.server.activeAnimeLanguageProfileId ===
+                            serverData.server.activeAnimeLanguageProfileId ===
                             language.id
                             ? intl.formatMessage(messages.default, {
+                              name: language.name,
+                            })
+                            : !isAnime &&
+                              serverData.server.activeLanguageProfileId ===
+                              language.id
+                              ? intl.formatMessage(messages.default, {
                                 name: language.name,
                               })
-                            : !isAnime &&
-                                serverData.server.activeLanguageProfileId ===
-                                  language.id
-                              ? intl.formatMessage(messages.default, {
-                                  name: language.name,
-                                })
                               : language.name}
                         </option>
                       ))}
@@ -574,10 +583,10 @@ const AdvancedRequester = ({
                           </span>
                           {selectedUser.displayName.toLowerCase() !==
                             selectedUser.email && (
-                            <span className="ml-1 truncate text-gray-400">
-                              ({selectedUser.email})
-                            </span>
-                          )}
+                              <span className="ml-1 truncate text-gray-400">
+                                ({selectedUser.email})
+                              </span>
+                            )}
                         </span>
                         <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500">
                           <ChevronDownIcon className="h-5 w-5" />
@@ -603,16 +612,14 @@ const AdvancedRequester = ({
                           <Listbox.Option key={user.id} value={user}>
                             {({ selected, active }) => (
                               <div
-                                className={`${
-                                  active
+                                className={`${active
                                     ? 'bg-indigo-600 text-white'
                                     : 'text-gray-300'
-                                } relative cursor-default select-none py-2 pl-8 pr-4`}
+                                  } relative cursor-default select-none py-2 pl-8 pr-4`}
                               >
                                 <span
-                                  className={`${
-                                    selected ? 'font-semibold' : 'font-normal'
-                                  } flex items-center`}
+                                  className={`${selected ? 'font-semibold' : 'font-normal'
+                                    } flex items-center`}
                                 >
                                   <CachedImage
                                     type="avatar"
@@ -627,16 +634,15 @@ const AdvancedRequester = ({
                                   </span>
                                   {user.displayName.toLowerCase() !==
                                     user.email && (
-                                    <span className="ml-1 truncate text-gray-400">
-                                      ({user.email})
-                                    </span>
-                                  )}
+                                      <span className="ml-1 truncate text-gray-400">
+                                        ({user.email})
+                                      </span>
+                                    )}
                                 </span>
                                 {selected && (
                                   <span
-                                    className={`${
-                                      active ? 'text-white' : 'text-indigo-600'
-                                    } absolute inset-y-0 left-0 flex items-center pl-1.5`}
+                                    className={`${active ? 'text-white' : 'text-indigo-600'
+                                      } absolute inset-y-0 left-0 flex items-center pl-1.5`}
                                   >
                                     <CheckIcon className="h-5 w-5" />
                                   </span>

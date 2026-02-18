@@ -30,6 +30,15 @@ sonarrRoutes.post('/', async (req, res) => {
       });
   }
 
+  // If we are setting this as the default for anime, clear any previous anime defaults for the same type
+  if (req.body.isDefaultForAnime) {
+    settings.sonarr
+      .filter((sonarrInstance) => sonarrInstance.is4k === req.body.is4k)
+      .forEach((sonarrInstance) => {
+        sonarrInstance.isDefaultForAnime = false;
+      });
+  }
+
   settings.sonarr = [...settings.sonarr, newSonarr];
   await settings.save();
 
@@ -94,6 +103,15 @@ sonarrRoutes.put<{ id: string }>('/:id', async (req, res) => {
       .filter((sonarrInstance) => sonarrInstance.is4k === req.body.is4k)
       .forEach((sonarrInstance) => {
         sonarrInstance.isDefault = false;
+      });
+  }
+
+  // If we are setting this as the default for anime, clear any previous anime defaults for the same type
+  if (req.body.isDefaultForAnime) {
+    settings.sonarr
+      .filter((sonarrInstance) => sonarrInstance.is4k === req.body.is4k)
+      .forEach((sonarrInstance) => {
+        sonarrInstance.isDefaultForAnime = false;
       });
   }
 

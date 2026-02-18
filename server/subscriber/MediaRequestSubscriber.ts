@@ -80,9 +80,8 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         notifyAdmin: false,
         notifySystem: true,
         notifyUser: entity.requestedBy,
-        subject: `${movie.title}${
-          movie.release_date ? ` (${movie.release_date.slice(0, 4)})` : ''
-        }`,
+        subject: `${movie.title}${movie.release_date ? ` (${movie.release_date.slice(0, 4)})` : ''
+          }`,
         message: truncate(movie.overview, {
           length: 500,
           separator: /\s/,
@@ -148,9 +147,8 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
       notificationManager.sendNotification(Notification.MEDIA_AVAILABLE, {
         event: `${entity.is4k ? '4K ' : ''}Series Request Now Available`,
-        subject: `${tv.name}${
-          tv.first_air_date ? ` (${tv.first_air_date.slice(0, 4)})` : ''
-        }`,
+        subject: `${tv.name}${tv.first_air_date ? ` (${tv.first_air_date.slice(0, 4)})` : ''
+          }`,
         message: truncate(tv.overview, {
           length: 500,
           separator: /\s/,
@@ -224,10 +222,8 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
         if (!radarrSettings) {
           logger.warn(
-            `There is no default ${
-              entity.is4k ? '4K ' : ''
-            }Radarr server configured. Did you set any of your ${
-              entity.is4k ? '4K ' : ''
+            `There is no default ${entity.is4k ? '4K ' : ''
+            }Radarr server configured. Did you set any of your ${entity.is4k ? '4K ' : ''
             }Radarr servers as default?`,
             {
               label: 'Media Request',
@@ -477,13 +473,61 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           return;
         }
 
+        const media = await mediaRepository.findOne({
+          where: { id: entity.media.id },
+        });
+
+        if (!media) {
+          throw new Error('Media data not found');
+        }
+
+        // Fetch series data early so we can use it for anime detection during server selection
+        const tmdb = new TheMovieDb();
+        const series = await tmdb.getTvShow({ tvId: media.tmdbId });
+        const tvdbId = series.external_ids.tvdb_id ?? media.tvdbId;
+
+        if (!tvdbId) {
+          const requestRepository = getRepository(MediaRequest);
+          await mediaRepository.remove(media);
+          await requestRepository.remove(entity);
+          throw new Error('TVDB ID not found');
+        }
+
+        const isAnime = series.keywords.results.some(
+          (keyword) => keyword.id === ANIME_KEYWORD_ID
+        );
+
+        // Start with the standard default server for this tier (4K or non-4K)
         let sonarrSettings = settings.sonarr.find(
           (sonarr) => sonarr.isDefault && sonarr.is4k === entity.is4k
         );
 
+        // If the show is anime and there is a dedicated anime-default server, use it
+        // (only when no explicit server override is present on the request)
+        const hasExplicitServerOverride =
+          entity.serverId !== null && entity.serverId >= 0;
+
+        if (!hasExplicitServerOverride && isAnime) {
+          const animeDefaultServer = settings.sonarr.find(
+            (sonarr) =>
+              sonarr.isDefaultForAnime && sonarr.is4k === entity.is4k
+          );
+          if (animeDefaultServer) {
+            sonarrSettings = animeDefaultServer;
+            logger.info(
+              `Routing anime request to dedicated anime server: ${animeDefaultServer.name}`,
+              {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+              }
+            );
+          }
+        }
+
+        // Explicit server override always wins (admin/user picked a specific server)
         if (
-          entity.serverId !== null &&
-          entity.serverId >= 0 &&
+          hasExplicitServerOverride &&
           sonarrSettings?.id !== entity.serverId
         ) {
           sonarrSettings = settings.sonarr.find(
@@ -501,10 +545,8 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
         if (!sonarrSettings) {
           logger.warn(
-            `There is no default ${
-              entity.is4k ? '4K ' : ''
-            }Sonarr server configured. Did you set any of your ${
-              entity.is4k ? '4K ' : ''
+            `There is no default ${entity.is4k ? '4K ' : ''
+            }Sonarr server configured. Did you set any of your ${entity.is4k ? '4K ' : ''
             }Sonarr servers as default?`,
             {
               label: 'Media Request',
@@ -513,14 +555,6 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
             }
           );
           return;
-        }
-
-        const media = await mediaRepository.findOne({
-          where: { id: entity.media.id },
-        });
-
-        if (!media) {
-          throw new Error('Media data not found');
         }
 
         if (
@@ -540,20 +574,10 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           return;
         }
 
-        const tmdb = new TheMovieDb();
         const sonarr = new SonarrAPI({
           apiKey: sonarrSettings.apiKey,
           url: SonarrAPI.buildUrl(sonarrSettings, '/api/v3'),
         });
-        const series = await tmdb.getTvShow({ tvId: media.tmdbId });
-        const tvdbId = series.external_ids.tvdb_id ?? media.tvdbId;
-
-        if (!tvdbId) {
-          const requestRepository = getRepository(MediaRequest);
-          await mediaRepository.remove(media);
-          await requestRepository.remove(entity);
-          throw new Error('TVDB ID not found');
-        }
 
         let seriesType: SonarrSeries['seriesType'] = 'standard';
 

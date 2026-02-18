@@ -6,6 +6,7 @@ export interface ServiceCommonServer {
   name: string;
   is4k: boolean;
   isDefault: boolean;
+  isDefaultForAnime: boolean;
   activeProfileId: number;
   activeDirectory: string;
   activeLanguageProfileId?: number;
