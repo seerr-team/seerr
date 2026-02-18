@@ -175,15 +175,8 @@ mediaRoutes.delete(
       });
 
       if (media.status === MediaStatus.BLOCKLISTED) {
-        const updatePayload: Record<string, null> = {};
-
-        for (const column of mediaRepository.metadata.columns) {
-          if (column.isNullable && !column.isPrimary) {
-            updatePayload[column.propertyName] = null;
-          }
-        }
-
-        await mediaRepository.update(media.id, updatePayload);
+        media.resetServiceData();
+        await mediaRepository.save(media);
       } else {
         await mediaRepository.remove(media);
       }
