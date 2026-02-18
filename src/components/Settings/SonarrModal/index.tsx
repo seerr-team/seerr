@@ -5,6 +5,7 @@ import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
 import { Transition } from '@headlessui/react';
+import { TagRequestsFormat } from '@server/constants/server';
 import type { SonarrSettings } from '@server/lib/settings';
 import axios from 'axios';
 import { Field, Formik } from 'formik';
@@ -251,7 +252,8 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
           syncEnabled: sonarr?.syncEnabled ?? false,
           enableSearch: !sonarr?.preventSearch,
           tagRequests: sonarr?.tagRequests ?? false,
-          tagRequestsFormat: sonarr?.tagRequestsFormat ?? 'userid-username',
+          tagRequestsFormat:
+            sonarr?.tagRequestsFormat ?? TagRequestsFormat.USERID_USERNAME,
         }}
         validationSchema={SonarrSettingsSchema}
         onSubmit={async (values) => {
@@ -1050,15 +1052,15 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                           name="tagRequestsFormat"
                           className="rounded-only"
                         >
-                          <option value="userid">
+                          <option value={TagRequestsFormat.USERID}>
                             {intl.formatMessage(messages.tagFormatUserId)}
                           </option>
-                          <option value="userid-username">
+                          <option value={TagRequestsFormat.USERID_USERNAME}>
                             {intl.formatMessage(
                               messages.tagFormatUserIdUsername
                             )}
                           </option>
-                          <option value="username">
+                          <option value={TagRequestsFormat.USERNAME}>
                             {intl.formatMessage(messages.tagFormatUsername)}
                           </option>
                         </Field>

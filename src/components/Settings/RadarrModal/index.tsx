@@ -5,6 +5,7 @@ import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
 import { Transition } from '@headlessui/react';
+import { TagRequestsFormat } from '@server/constants/server';
 import type { RadarrSettings } from '@server/lib/settings';
 import axios from 'axios';
 import { Field, Formik } from 'formik';
@@ -235,7 +236,8 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
           syncEnabled: radarr?.syncEnabled ?? false,
           enableSearch: !radarr?.preventSearch,
           tagRequests: radarr?.tagRequests ?? false,
-          tagRequestsFormat: radarr?.tagRequestsFormat ?? 'userid-username',
+          tagRequestsFormat:
+            radarr?.tagRequestsFormat ?? TagRequestsFormat.USERID_USERNAME,
         }}
         validationSchema={RadarrSettingsSchema}
         onSubmit={async (values) => {
@@ -749,15 +751,15 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                           name="tagRequestsFormat"
                           className="rounded-only"
                         >
-                          <option value="userid">
+                          <option value={TagRequestsFormat.USERID}>
                             {intl.formatMessage(messages.tagFormatUserId)}
                           </option>
-                          <option value="userid-username">
+                          <option value={TagRequestsFormat.USERID_USERNAME}>
                             {intl.formatMessage(
                               messages.tagFormatUserIdUsername
                             )}
                           </option>
-                          <option value="username">
+                          <option value={TagRequestsFormat.USERNAME}>
                             {intl.formatMessage(messages.tagFormatUsername)}
                           </option>
                         </Field>

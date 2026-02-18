@@ -12,6 +12,7 @@ import {
   MediaStatus,
   MediaType,
 } from '@server/constants/media';
+import { TagRequestsFormat } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
@@ -303,21 +304,22 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         if (radarrSettings.tagRequests) {
           const radarrTags = await radarr.getTags();
           const tagFormat =
-            radarrSettings.tagRequestsFormat ?? 'userid-username';
+            radarrSettings.tagRequestsFormat ??
+            TagRequestsFormat.USERID_USERNAME;
 
           let tagLabel: string;
           let tagStartsWith: string;
 
-          if (tagFormat === 'userid') {
+          if (tagFormat === TagRequestsFormat.USERID) {
             tagLabel = String(entity.requestedBy.id);
             tagStartsWith = String(entity.requestedBy.id);
-          } else if (tagFormat === 'username') {
+          } else if (tagFormat === TagRequestsFormat.USERNAME) {
             tagLabel = sanitizeDisplayName(
               entity.requestedBy.displayName.toLowerCase()
             );
             tagStartsWith = tagLabel;
           } else {
-            // 'userid-username' (default)
+            // TagRequestsFormat.USERID_USERNAME (default)
             tagLabel =
               entity.requestedBy.id +
               '-' +
@@ -329,7 +331,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
             v.label.startsWith(tagStartsWith)
           );
           // legacy: old tags had spaces around the hyphen for userid-username format
-          if (!userTag && tagFormat === 'userid-username') {
+          if (!userTag && tagFormat === TagRequestsFormat.USERID_USERNAME) {
             userTag = radarrTags.find((v) =>
               v.label.startsWith(entity.requestedBy.id + ' - ')
             );
@@ -654,21 +656,22 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         if (sonarrSettings.tagRequests) {
           const sonarrTags = await sonarr.getTags();
           const tagFormat =
-            sonarrSettings.tagRequestsFormat ?? 'userid-username';
+            sonarrSettings.tagRequestsFormat ??
+            TagRequestsFormat.USERID_USERNAME;
 
           let tagLabel: string;
           let tagStartsWith: string;
 
-          if (tagFormat === 'userid') {
+          if (tagFormat === TagRequestsFormat.USERID) {
             tagLabel = String(entity.requestedBy.id);
             tagStartsWith = String(entity.requestedBy.id);
-          } else if (tagFormat === 'username') {
+          } else if (tagFormat === TagRequestsFormat.USERNAME) {
             tagLabel = sanitizeDisplayName(
               entity.requestedBy.displayName.toLowerCase()
             );
             tagStartsWith = tagLabel;
           } else {
-            // 'userid-username' (default)
+            // TagRequestsFormat.USERID_USERNAME (default)
             tagLabel =
               entity.requestedBy.id +
               '-' +
@@ -680,7 +683,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
             v.label.startsWith(tagStartsWith)
           );
           // legacy: old tags had spaces around the hyphen for userid-username format
-          if (!userTag && tagFormat === 'userid-username') {
+          if (!userTag && tagFormat === TagRequestsFormat.USERID_USERNAME) {
             userTag = sonarrTags.find((v) =>
               v.label.startsWith(entity.requestedBy.id + ' - ')
             );

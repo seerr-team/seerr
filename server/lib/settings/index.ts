@@ -1,4 +1,4 @@
-import { MediaServerType } from '@server/constants/server';
+import { MediaServerType, TagRequestsFormat } from '@server/constants/server';
 import { Permission } from '@server/lib/permissions';
 import { runMigrations } from '@server/lib/settings/migrator';
 import { randomUUID } from 'crypto';
@@ -6,6 +6,7 @@ import fs from 'fs/promises';
 import { merge } from 'lodash';
 import path from 'path';
 import webpush from 'web-push';
+export { TagRequestsFormat };
 
 export interface Library {
   id: string;
@@ -76,7 +77,7 @@ export interface DVRSettings {
   syncEnabled: boolean;
   preventSearch: boolean;
   tagRequests: boolean;
-  tagRequestsFormat: 'userid' | 'userid-username' | 'username';
+  tagRequestsFormat: TagRequestsFormat;
   overrideRule: number[];
 }
 
