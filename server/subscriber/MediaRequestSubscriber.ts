@@ -546,13 +546,36 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           url: SonarrAPI.buildUrl(sonarrSettings, '/api/v3'),
         });
         const series = await tmdb.getTvShow({ tvId: media.tmdbId });
-        const tvdbId = series.external_ids.tvdb_id ?? media.tvdbId;
+        let tvdbId = series.external_ids.tvdb_id ?? media.tvdbId;
 
         if (!tvdbId) {
-          const requestRepository = getRepository(MediaRequest);
-          await mediaRepository.remove(media);
-          await requestRepository.remove(entity);
-          throw new Error('TVDB ID not found');
+          const sonarrSeries = await sonarr.getSeriesByTmdbId(media.tmdbId);
+
+          if (sonarrSeries?.tvdbId) {
+            tvdbId = sonarrSeries.tvdbId;
+            logger.info(
+              `Resolved TVDB ID via Sonarr lookup for TMDB ID ${media.tmdbId}`,
+              {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+                tvdbId,
+              }
+            );
+          }
+        }
+
+        if (!tvdbId) {
+          logger.warn(
+            'No TVDB ID found via TMDB or Sonarr, marking request as FAILED',
+            {
+              label: 'Media Request',
+              requestId: entity.id,
+              mediaId: entity.media.id,
+              tmdbId: media.tmdbId,
+            }
+          );
+          return;
         }
 
         let seriesType: SonarrSeries['seriesType'] = 'standard';

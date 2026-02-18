@@ -189,6 +189,23 @@ class SonarrAPI extends ServarrBase<{
     }
   }
 
+  public async getSeriesByTmdbId(tmdbId: number): Promise<SonarrSeries | null> {
+    try {
+      const response = await this.axios.get<SonarrSeries[]>('/series/lookup', {
+        params: { term: `tmdb:${tmdbId}` },
+      });
+
+      return response.data[0] ?? null;
+    } catch (e) {
+      logger.debug('Could not find series by TMDB ID in Sonarr', {
+        label: 'Sonarr API',
+        errorMessage: e.message,
+        tmdbId,
+      });
+      return null;
+    }
+  }
+
   public async addSeries(options: AddSeriesOptions): Promise<SonarrSeries> {
     try {
       const series = await this.getSeriesByTvdbId(options.tvdbid);
