@@ -72,8 +72,8 @@ const messages = defineMessages('components.Settings.SonarrModal', {
   tagRequestsInfo:
     "Automatically add an additional tag with the requester's user ID and/or display name",
   tagRequestsFormat: 'Tag Format',
-  tagFormatUserId: 'User ID',
-  tagFormatUserIdUsername: 'User ID - Username',
+  tagFormatUserId: 'UserID',
+  tagFormatUserIdUsername: 'UserID-Username',
   tagFormatUsername: 'Username',
   validationApplicationUrl: 'You must provide a valid URL',
   validationApplicationUrlTrailingSlash: 'URL must not end in a trailing slash',
