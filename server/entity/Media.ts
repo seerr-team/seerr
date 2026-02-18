@@ -206,6 +206,19 @@ class Media {
     Object.assign(this, init);
   }
 
+  public resetServiceData(): void {
+    this.serviceId = null;
+    this.serviceId4k = null;
+    this.externalServiceId = null;
+    this.externalServiceId4k = null;
+    this.externalServiceSlug = null;
+    this.externalServiceSlug4k = null;
+    this.ratingKey = null;
+    this.ratingKey4k = null;
+    this.jellyfinMediaId = null;
+    this.jellyfinMediaId4k = null;
+  }
+
   @AfterLoad()
   public setPlexUrls(): void {
     const { machineId, webAppUrl } = getSettings().plex;
