@@ -129,7 +129,7 @@ jobs:
 
   build:
     name: Build (per-arch, native runners)
-    if: github.ref == 'refs/heads/develop' && !contains(github.event.head_commit.message, '[skip ci]')
+    if: github.ref == 'refs/heads/develop'
     strategy:
       matrix:
         include:
@@ -237,7 +237,7 @@ jobs:
   discord:
     name: Send Discord Notification
     needs: publish
-    if: always() && github.event_name != 'pull_request' && !contains(github.event.head_commit.message, '[skip ci]')
+    if: always() && github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     steps:
       - name: Determine Workflow Status
