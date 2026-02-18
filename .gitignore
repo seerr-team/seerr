@@ -74,3 +74,4 @@ config/cache
 
 # Docker compose
 compose.override.yaml
+CLAUDE.md

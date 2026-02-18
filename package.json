@@ -22,9 +22,11 @@
     "typecheck:server": "tsc --project server/tsconfig.json --noEmit",
     "typecheck:client": "tsc --noEmit",
     "prepare": "node bin/prepare.js",
+    "mcp:stdio": "ts-node -r tsconfig-paths/register --files --project server/tsconfig.json server/mcp/stdio.ts",
     "cypress:open": "cypress open",
     "cypress:prepare": "ts-node -r tsconfig-paths/register --files --project server/tsconfig.json server/scripts/prepareTestDb.ts",
-    "cypress:build": "pnpm build && pnpm cypress:prepare"
+    "cypress:build": "pnpm build && pnpm cypress:prepare",
+    "test:mcp": "vitest run --config vitest.config.ts"
   },
   "repository": {
     "type": "git",
@@ -39,6 +41,7 @@
     "@formatjs/intl-utils": "3.8.4",
     "@headlessui/react": "1.7.12",
     "@heroicons/react": "2.2.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "@seerr-team/react-tailwindcss-datepicker": "^1.3.4",
     "@supercharge/request-ip": "1.2.0",
     "@svgr/webpack": "6.5.1",
@@ -143,6 +146,7 @@
     "@types/yup": "0.29.14",
     "@typescript-eslint/eslint-plugin": "7.18.0",
     "@typescript-eslint/parser": "7.18.0",
+    "@vitest/coverage-v8": "^4.0.18",
     "autoprefixer": "^10.4.23",
     "baseline-browser-mapping": "^2.8.32",
     "commitizen": "4.3.1",
@@ -170,7 +174,9 @@
     "ts-node": "10.9.2",
     "tsc-alias": "1.8.16",
     "tsconfig-paths": "4.2.0",
-    "typescript": "5.4.5"
+    "typescript": "5.4.5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.0.18"
   },
   "engines": {
     "node": "^22.0.0",
