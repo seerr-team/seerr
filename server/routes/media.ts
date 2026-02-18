@@ -174,7 +174,12 @@ mediaRoutes.delete(
         where: { id: Number(req.params.id) },
       });
 
-      await mediaRepository.remove(media);
+      if (media.status === MediaStatus.BLOCKLISTED) {
+        media.resetServiceData();
+        await mediaRepository.save(media);
+      } else {
+        await mediaRepository.remove(media);
+      }
 
       return res.status(204).send();
     } catch (e) {

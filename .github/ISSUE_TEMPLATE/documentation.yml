@@ -1,0 +1,63 @@
+name: 📚 Documentation
+description: Report a docs problem or suggest a docs improvement
+title: "[Docs]: "
+labels: ["documentation", "awaiting triage"]
+type: task
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve the docs!
+
+        Use this template for documentation issues (typos, unclear steps, missing info, outdated screenshots).
+        For app bugs or feature ideas, please use the other templates.
+  - type: input
+    id: doc-location
+    attributes:
+      label: Page / Location
+      description: Link to the docs page or the file/path (e.g. https://docs.seerr.dev/... or README.md)
+      placeholder: "https://docs.seerr.dev/..."
+    validations:
+      required: true
+  - type: dropdown
+    id: doc-area
+    attributes:
+      label: Docs Area
+      options:
+        - docs site
+        - migration guide
+        - README / repo docs
+        - API / integrations
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What’s wrong / missing?
+      description: Describe the issue in the docs.
+    validations:
+      required: true
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: Suggested change
+      description: If you know what should be changed, describe it (or paste proposed wording).
+    validations:
+      required: false
+  - type: checkboxes
+    id: search-existing
+    attributes:
+      label: Search Existing Issues
+      description: Have you searched existing issues to see if this has already been reported?
+      options:
+        - label: Yes, I have searched existing issues.
+          required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our Code of Conduct.
+      options:
+        - label: I agree to follow Seerr's [Code of Conduct](https://github.com/seerr-team/seerr/blob/develop/CODE_OF_CONDUCT.md).
+          required: true

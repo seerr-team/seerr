@@ -9,7 +9,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: close-stale-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
