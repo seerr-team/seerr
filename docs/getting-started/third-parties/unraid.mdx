@@ -14,34 +14,33 @@ Third-party installation methods are maintained by the community. The Seerr team
 :::
 
 :::warning
-This manual method is not recommended for most users. It is intended for advanced users who are using Unraid.
+This method is not recommended for most users. It is intended for advanced users who are using Unraid.
 :::
+
+## Template installation
 
 Several templates from Unraid Community are available right now
 - [Unraid Community Apps](https://unraid.net/community/apps#community-apps-iframe)
 
 In case you still want to do it manually, please follow the instructions below.
 
-## Fresh Installation
-
-### 1. Create the config directory
-
-:::note
-Seerr is now rootless. Unraid typically runs Docker containers as `nobody:users` (UID 99, GID 100), but Seerr now runs internally as UID 1000, GID 1000. This creates a permission mismatch.
-:::
-
-:::info
-**If migrating**: Copy your existing Jellyseerr/Overseerr config files (e.g., from `/mnt/user/appdata/overseerr/` or `/mnt/user/appdata/jellyseerr`) to `/mnt/user/appdata/seerr`, then apply the permissions below
-:::
-
-Open the Unraid terminal and run:
-
-```bash
-mkdir -p /mnt/user/appdata/seerr
-```
+## Manual Installation
 
 <Tabs groupId="unraid-permissions" queryString>
   <TabItem value="recommended" label="Recommended">
+
+  ### 1. Create the config directory
+
+  :::note
+  Seerr is now rootless. Unraid typically runs containers as `nobody:users` (UID 99, GID 100) while Seerr runs as UID 1000, GID 1000. Recommended: change the host folder ownership so Seerr runs with its native UID/GID.
+  :::
+
+  Open the Unraid terminal and run:
+
+  ```bash
+  mkdir -p /mnt/user/appdata/seerr
+  ```
+
   Change ownership of the config folder on the host so Seerr runs with its native UID/GID:
 
   ```bash
@@ -50,18 +49,22 @@ mkdir -p /mnt/user/appdata/seerr
 
   ### 2. Add the Docker container
 
+  :::info
+  The `--init` flag in **Extra Parameters** is required. Seerr does not include its own init process, so `--init` ensures proper signal handling and clean container shutdowns.
+  :::
+
   Navigate to the **Docker** tab in Unraid and click **Add Container**. Fill in the following:
 
-  | Field | Value
+  | Field | Value |
   |---|---|
   | **Name** | `seerr` |
   | **Repository** | `ghcr.io/seerr-team/seerr:latest` |
   | **Registry URL** (optional) | `https://ghcr.io` |
   | **Icon URL** | `https://raw.githubusercontent.com/seerr-team/seerr/develop/public/android-chrome-512x512.png` |
-  | **WebUI** | `http://[IP]:[PORT:5055]` ||
+  | **WebUI** | `http://[IP]:[PORT:5055]` |
   | **Extra Parameters** | `--init` |
-  | **Network Type** | `bridge` ||
-  | **Privileged** | `Off` ||
+  | **Network Type** | `bridge` |
+  | **Privileged** | `Off` |
 
   Then click **Add another Path, Port, Variable** to add:
 
@@ -96,19 +99,35 @@ mkdir -p /mnt/user/appdata/seerr
 
   Open the WebUI at `http://<your-unraid-ip>:5055` and follow the setup wizard.
 
-  :::info
-  The `--init` flag in **Extra Parameters** is required. Seerr does not include its own init process, so `--init` ensures proper signal handling and clean container shutdowns.
-  :::
-
   </TabItem>
   <TabItem value="alternative" label="Alternative">
-  Keep current host ownership and instead run the container as Unraid's `nobody:users` by adding the extra Docker parameter `--user 99:100` when creating the container. This runs the container process with Unraid's default UID/GID and avoids permission errors accessing your shares.
+
+
+  ### 1. Create the config directory
+
+  :::note
+  Keep current host ownership and run the container as Unraid's `nobody:users` (UID 99, GID 100). This avoids changing host permissions while allowing the container to access your shares.
+  :::
+
+  Open the Unraid terminal and run:
+
+  ```bash
+  mkdir -p /mnt/user/appdata/seerr
+  ```
+
+  Change ownership of the config folder on the host so Seerr runs with Unraid native UID/GID:
 
   ```bash
   chown -R 99:100 /mnt/user/appdata/seerr
   ```
 
   ### 2. Add the Docker container
+
+  :::info
+  The `--init` flag in **Extra Parameters** is required. Seerr does not include its own init process, so `--init` ensures proper signal handling and clean container shutdowns.
+
+  The `--user 99:100` parameter runs the container process with Unraid's default UID/GID and avoids permission errors accessing your shares without changing host folder ownership.
+  :::
 
   Navigate to the **Docker** tab in Unraid and click **Add Container**. Fill in the following:
 
@@ -155,12 +174,6 @@ mkdir -p /mnt/user/appdata/seerr
   ### 3. Access Seerr
 
   Open the WebUI at `http://<your-unraid-ip>:5055` and follow the setup wizard.
-
-  :::info
-  The `--init` flag in **Extra Parameters** is required. Seerr does not include its own init process, so `--init` ensures proper signal handling and clean container shutdowns.
-
-  The `--user 99:100` parameter runs the container process with Unraid's default UID/GID and avoids permission errors accessing your shares without changing host folder ownership.
-  :::
 
   </TabItem>
 </Tabs>
