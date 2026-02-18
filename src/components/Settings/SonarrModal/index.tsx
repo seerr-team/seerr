@@ -67,12 +67,13 @@ const messages = defineMessages('components.Settings.SonarrModal', {
   syncEnabled: 'Enable Scan',
   externalUrl: 'External URL',
   enableSearch: 'Enable Automatic Search',
-  tagRequestsNoID: 'No ID in tag',
-  tagRequestsNoIDInfo:
-    'Do not prefix the tag with user ID. Tag Requests must be enable for this to work.',
   tagRequests: 'Tag Requests',
   tagRequestsInfo:
-    "Automatically add an additional tag with the requester's user ID & display name",
+    "Automatically add an additional tag with the requester's user ID and/or display name",
+  tagRequestsFormat: 'Tag Format',
+  tagFormatUserId: 'User ID',
+  tagFormatUserIdUsername: 'User ID - Username',
+  tagFormatUsername: 'Username',
   validationApplicationUrl: 'You must provide a valid URL',
   validationApplicationUrlTrailingSlash: 'URL must not end in a trailing slash',
   validationBaseUrlLeadingSlash: 'Base URL must have a leading slash',
@@ -250,7 +251,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
           syncEnabled: sonarr?.syncEnabled ?? false,
           enableSearch: !sonarr?.preventSearch,
           tagRequests: sonarr?.tagRequests ?? false,
-          tagRequestsNoID: sonarr?.tagRequestsNoID ?? false,
+          tagRequestsFormat: sonarr?.tagRequestsFormat ?? 'userid-username',
         }}
         validationSchema={SonarrSettingsSchema}
         onSubmit={async (values) => {
@@ -294,7 +295,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
               syncEnabled: values.syncEnabled,
               preventSearch: !values.enableSearch,
               tagRequests: values.tagRequests,
-              tagRequestsNoID: values.tagRequestsNoID,
+              tagRequestsFormat: values.tagRequestsFormat,
             };
             if (!sonarr) {
               await axios.post('/api/v1/settings/sonarr', submission);
@@ -1036,21 +1037,35 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                     />
                   </div>
                 </div>
-                <div className="form-row">
-                  <label htmlFor="tagRequestsNoID" className="checkbox-label">
-                    {intl.formatMessage(messages.tagRequestsNoID)}
-                    <span className="label-tip">
-                      {intl.formatMessage(messages.tagRequestsNoIDInfo)}
-                    </span>
-                  </label>
-                  <div className="form-input-area">
-                    <Field
-                      type="checkbox"
-                      id="tagRequestsNoID"
-                      name="tagRequestsNoID"
-                    />
+                {values.tagRequests && (
+                  <div className="form-row pl-8">
+                    <label htmlFor="tagRequestsFormat" className="text-label">
+                      {intl.formatMessage(messages.tagRequestsFormat)}
+                    </label>
+                    <div className="form-input-area">
+                      <div className="form-input-field">
+                        <Field
+                          as="select"
+                          id="tagRequestsFormat"
+                          name="tagRequestsFormat"
+                          className="rounded-only"
+                        >
+                          <option value="userid">
+                            {intl.formatMessage(messages.tagFormatUserId)}
+                          </option>
+                          <option value="userid-username">
+                            {intl.formatMessage(
+                              messages.tagFormatUserIdUsername
+                            )}
+                          </option>
+                          <option value="username">
+                            {intl.formatMessage(messages.tagFormatUsername)}
+                          </option>
+                        </Field>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </Modal>
           );
