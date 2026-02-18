@@ -78,7 +78,7 @@ jobs:
       - name: Commit updated files
         run: |
           git add .
-          git commit -m 'chore: prepare for release'
+          git commit -m 'chore(release): prepare ${TAG_VERSION}'
           git push
 
       - name: Create git tag
