@@ -77,7 +77,7 @@ jobs:
 
       - name: Commit updated files
         run: |
-          git add .
+          git add package.json
           git commit -m 'chore(release): prepare ${TAG_VERSION}'
           git push
 
