@@ -89,7 +89,12 @@ Seerr logs are located at `/var/packages/seerr/var/config/logs` and can be acces
 
 ### Port Conflicts
 
-Seerr uses port 5055. If this port is already in use by another application, you will need to identify and remove the conflicting service before Seerr can start.
+Seerr uses port 5055. If this port is already in use:
+
+- **Docker containers**: Remap the conflicting container to a different port
+- **Other packages**: The conflicting package will need to be uninstalled as Seerr's port cannot be changed
+
+SynoCommunity ensures there are no port conflicts with other SynoCommunity packages or official Synology packages.
 
 ### Package Won't Start
 
