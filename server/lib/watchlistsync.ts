@@ -45,7 +45,7 @@ class WatchlistSync {
         [
           Permission.AUTO_REQUEST,
           Permission.AUTO_REQUEST_MOVIE,
-          Permission.AUTO_APPROVE_TV,
+          Permission.AUTO_REQUEST_TV,
         ],
         { type: 'or' }
       )
