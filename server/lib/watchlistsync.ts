@@ -70,13 +70,33 @@ class WatchlistSync {
       response.items.map((i) => i.tmdbId)
     );
 
+    const watchlistTmdbIds = response.items.map((i) => i.tmdbId);
+
+    const requestRepository = getRepository(MediaRequest);
+    const existingAutoRequests = await requestRepository
+      .createQueryBuilder('request')
+      .leftJoinAndSelect('request.media', 'media')
+      .where('request.requestedBy = :userId', { userId: user.id })
+      .andWhere('request.isAutoRequest = true')
+      .andWhere('media.tmdbId IN (:...tmdbIds)', { tmdbIds: watchlistTmdbIds })
+      .getMany();
+
+    const autoRequestedTmdbIds = new Set(
+      existingAutoRequests
+        .filter((r) => r.media != null)
+        .map((r) => `${r.media.mediaType}:${r.media.tmdbId}`)
+    );
+
     const unavailableItems = response.items.filter(
-      // If we can find watchlist items in our database that are also available, we should exclude them
       (i) =>
+        !autoRequestedTmdbIds.has(
+          `${i.type === 'show' ? MediaType.TV : MediaType.MOVIE}:${i.tmdbId}`
+        ) &&
         !mediaItems.find(
           (m) =>
             m.tmdbId === i.tmdbId &&
-            ((m.status !== MediaStatus.UNKNOWN && m.mediaType === 'movie') ||
+            (m.status === MediaStatus.BLOCKLISTED ||
+              (m.status !== MediaStatus.UNKNOWN && m.mediaType === 'movie') ||
               (m.mediaType === 'tv' && m.status === MediaStatus.AVAILABLE))
         )
     );

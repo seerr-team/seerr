@@ -520,12 +520,14 @@ export class MediaRequest {
     eager: true,
     onDelete: 'CASCADE',
   })
+  @Index()
   public media: Media;
 
   @ManyToOne(() => User, (user) => user.requests, {
     eager: true,
     onDelete: 'CASCADE',
   })
+  @Index()
   public requestedBy: User;
 
   @ManyToOne(() => User, {
@@ -534,6 +536,7 @@ export class MediaRequest {
     eager: true,
     onDelete: 'SET NULL',
   })
+  @Index()
   public modifiedBy?: User;
 
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })

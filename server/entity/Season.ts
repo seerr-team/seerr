@@ -1,6 +1,12 @@
 import { MediaStatus } from '@server/constants/media';
 import { DbAwareColumn } from '@server/utils/DbColumnHelper';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import Media from './Media';
 
 @Entity()
@@ -20,6 +26,7 @@ class Season {
   @ManyToOne(() => Media, (media) => media.seasons, {
     onDelete: 'CASCADE',
   })
+  @Index()
   public media: Promise<Media>;
 
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })

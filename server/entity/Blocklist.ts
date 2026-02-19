@@ -36,6 +36,7 @@ export class Blocklist implements BlocklistItem {
   @ManyToOne(() => User, (user) => user.id, {
     eager: true,
   })
+  @Index()
   user?: User;
 
   @OneToOne(() => Media, (media) => media.blocklist, {
