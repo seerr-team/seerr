@@ -1,6 +1,12 @@
+import { getMetadataProvider } from '@server/api/metadata';
 import type { SonarrSeries } from '@server/api/servarr/sonarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
-import type { TmdbTvDetails } from '@server/api/themoviedb/interfaces';
+import TheMovieDb from '@server/api/themoviedb';
+import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
+import type {
+  TmdbKeyword,
+  TmdbTvDetails,
+} from '@server/api/themoviedb/interfaces';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import type {
@@ -102,6 +108,15 @@ class SonarrScanner
       }
 
       const tmdbId = tvShow.id;
+      const metadataProvider = tvShow.keywords?.results?.some(
+        (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
+      )
+        ? await getMetadataProvider('anime')
+        : await getMetadataProvider('tv');
+
+      if (!(metadataProvider instanceof TheMovieDb)) {
+        tvShow = await metadataProvider.getTvShow({ tvId: tmdbId });
+      }
       const settings = getSettings();
 
       const filteredSeasons = sonarrSeries.seasons.filter(
