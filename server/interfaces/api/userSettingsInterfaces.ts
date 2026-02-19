@@ -7,6 +7,7 @@ export interface UserSettingsGeneralResponse {
   locale?: string;
   discoverRegion?: string;
   streamingRegion?: string;
+  excludedWatchProviders?: string;
   originalLanguage?: string;
   movieQuotaLimit?: number;
   movieQuotaDays?: number;
