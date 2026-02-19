@@ -61,6 +61,7 @@ export interface TautulliSettings {
 export interface DVRSettings {
   id: number;
   name: string;
+  requestLabel?: string;
   hostname: string;
   port: number;
   apiKey: string;
