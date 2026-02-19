@@ -13,10 +13,11 @@ import {
 import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type Media from '@server/entity/Media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
+import type { ServiceCommonServer } from '@server/interfaces/api/serviceInterfaces';
 import axios from 'axios';
 import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { mutate } from 'swr';
+import useSWR, { mutate } from 'swr';
 
 const messages = defineMessages('components.RequestButton', {
   viewrequest: 'View Request',
@@ -67,6 +68,15 @@ const RequestButton = ({
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showRequest4kModal, setShowRequest4kModal] = useState(false);
   const [editRequest, setEditRequest] = useState(false);
+  const is4kRequestsEnabled =
+    mediaType === 'movie'
+      ? settings.currentSettings.movie4kEnabled
+      : settings.currentSettings.series4kEnabled;
+  const { data: requestServers } = useSWR<ServiceCommonServer[]>(
+    is4kRequestsEnabled
+      ? `/api/v1/service/${mediaType === 'movie' ? 'radarr' : 'sonarr'}`
+      : null
+  );
 
   // All pending requests
   const activeRequests = media?.requests.filter(
@@ -267,6 +277,61 @@ const RequestButton = ({
     }
   }
 
+  // Build localized request button text with optional server label suffix
+  const getRequestLabel = (is4kServer: boolean): string | undefined => {
+    if (!is4kRequestsEnabled) {
+      return undefined;
+    }
+
+    const defaultServer = requestServers?.find(
+      (server) => server.isDefault && server.is4k === is4kServer
+    );
+
+    const customLabel = defaultServer?.requestLabel?.trim();
+    if (customLabel) {
+      return customLabel;
+    }
+
+    return undefined;
+  };
+
+  const primaryRequestLabel = getRequestLabel(false);
+  const is4kRequestLabel = getRequestLabel(true);
+  const requestBaseText = intl.formatMessage(globalMessages.request);
+  const requestMoreBaseText = intl.formatMessage(messages.requestmore);
+
+  const primaryRequestText = useMemo(
+    () =>
+      primaryRequestLabel
+        ? `${requestBaseText} ${primaryRequestLabel}`
+        : requestBaseText,
+    [primaryRequestLabel, requestBaseText]
+  );
+
+  const is4kRequestText = useMemo(
+    () =>
+      is4kRequestLabel
+        ? `${requestBaseText} ${is4kRequestLabel}`
+        : intl.formatMessage(globalMessages.request4k),
+    [is4kRequestLabel, requestBaseText, intl]
+  );
+
+  const primaryRequestMoreText = useMemo(
+    () =>
+      primaryRequestLabel
+        ? `${requestMoreBaseText} ${primaryRequestLabel}`
+        : requestMoreBaseText,
+    [primaryRequestLabel, requestMoreBaseText]
+  );
+
+  const is4kRequestMoreText = useMemo(
+    () =>
+      is4kRequestLabel
+        ? `${requestMoreBaseText} ${is4kRequestLabel}`
+        : intl.formatMessage(messages.requestmore4k),
+    [is4kRequestLabel, requestMoreBaseText, intl]
+  );
+
   // Standard request button
   if (
     (!media ||
@@ -284,7 +349,7 @@ const RequestButton = ({
   ) {
     buttons.push({
       id: 'request',
-      text: intl.formatMessage(globalMessages.request),
+      text: primaryRequestText,
       action: () => {
         setEditRequest(false);
         setShowRequestModal(true);
@@ -303,7 +368,7 @@ const RequestButton = ({
   ) {
     buttons.push({
       id: 'request-more',
-      text: intl.formatMessage(messages.requestmore),
+      text: primaryRequestMoreText,
       action: () => {
         setEditRequest(false);
         setShowRequestModal(true);
@@ -326,12 +391,11 @@ const RequestButton = ({
       ],
       { type: 'or' }
     ) &&
-    ((settings.currentSettings.movie4kEnabled && mediaType === 'movie') ||
-      (settings.currentSettings.series4kEnabled && mediaType === 'tv'))
+    is4kRequestsEnabled
   ) {
     buttons.push({
       id: 'request4k',
-      text: intl.formatMessage(globalMessages.request4k),
+      text: is4kRequestText,
       action: () => {
         setEditRequest(false);
         setShowRequest4kModal(true);
@@ -347,11 +411,11 @@ const RequestButton = ({
     media &&
     media.status4k !== MediaStatus.BLOCKLISTED &&
     !is4kShowComplete &&
-    settings.currentSettings.series4kEnabled
+    is4kRequestsEnabled
   ) {
     buttons.push({
       id: 'request-more-4k',
-      text: intl.formatMessage(messages.requestmore4k),
+      text: is4kRequestMoreText,
       action: () => {
         setEditRequest(false);
         setShowRequest4kModal(true);
