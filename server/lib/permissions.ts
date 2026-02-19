@@ -91,7 +91,7 @@ export const hasPermission = (
     );
 
     // If there's NO auto-approve permission in the list, admin bypasses
-    if (!includesAutoApprove && (userPermissionValue & Permission.ADMIN)) {
+    if (!includesAutoApprove && userPermissionValue & Permission.ADMIN) {
       return true;
     }
 
@@ -111,7 +111,10 @@ export const hasPermission = (
   // Handle single permission
   const singlePerm = requiredPermissions[0];
   // If it's NOT an auto-approve permission, let admin pass automatically
-  if (!isAutoApprovePermission(singlePerm) && (userPermissionValue & Permission.ADMIN)) {
+  if (
+    !isAutoApprovePermission(singlePerm) &&
+    userPermissionValue & Permission.ADMIN
+  ) {
     return true;
   }
 
