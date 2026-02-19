@@ -1,8 +1,6 @@
 {
   "components.Settings.SonarrModal.ssl": "Usar SSL",
   "components.Settings.SonarrModal.servername": "Nombre del Servidor",
-  "components.Settings.SonarrModal.requestButtonLabel": "Etiqueta del botón de solicitud",
-  "components.Settings.SonarrModal.requestButtonLabelPlaceholder": "en 4K",
   "components.Settings.SonarrModal.server4k": "Servidor 4K",
   "components.Settings.SonarrModal.selectRootFolder": "Selecciona la carpeta raíz",
   "components.Settings.SonarrModal.selectQualityProfile": "Selecciona un perfil de calidad",
@@ -32,8 +30,6 @@
   "components.Settings.RadarrModal.toastRadarrTestFailure": "Error al connectar al Radarr.",
   "components.Settings.RadarrModal.ssl": "Usar SSL",
   "components.Settings.RadarrModal.servername": "Nombre del Servidor",
-  "components.Settings.RadarrModal.requestButtonLabel": "Etiqueta del botón de solicitud",
-  "components.Settings.RadarrModal.requestButtonLabelPlaceholder": "en 4K",
   "components.Settings.RadarrModal.server4k": "Servidor 4K",
   "components.Settings.RadarrModal.selectRootFolder": "Selecciona la carpeta raíz",
   "components.Settings.RadarrModal.selectQualityProfile": "Selecciona un perfil de calidad",
