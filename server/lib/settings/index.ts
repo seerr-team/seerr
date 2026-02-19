@@ -138,6 +138,7 @@ export interface MainSettings {
   newPlexLogin: boolean;
   discoverRegion: string;
   streamingRegion: string;
+  excludedWatchProviders: string;
   originalLanguage: string;
   blocklistedTags: string;
   blocklistedTagsLimit: number;
@@ -188,6 +189,7 @@ interface FullPublicSettings extends PublicSettings {
   series4kEnabled: boolean;
   discoverRegion: string;
   streamingRegion: string;
+  excludedWatchProviders: string;
   originalLanguage: string;
   mediaServerType: number;
   jellyfinExternalHost?: string;
@@ -395,6 +397,7 @@ class Settings {
         newPlexLogin: true,
         discoverRegion: '',
         streamingRegion: '',
+        excludedWatchProviders: '',
         originalLanguage: '',
         blocklistedTags: '',
         blocklistedTagsLimit: 50,
@@ -684,6 +687,7 @@ class Settings {
       ),
       discoverRegion: this.data.main.discoverRegion,
       streamingRegion: this.data.main.streamingRegion,
+      excludedWatchProviders: this.data.main.excludedWatchProviders,
       originalLanguage: this.data.main.originalLanguage,
       mediaServerType: this.main.mediaServerType,
       partialRequestsEnabled: this.data.main.partialRequestsEnabled,

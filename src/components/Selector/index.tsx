@@ -372,6 +372,7 @@ type WatchProviderSelectorProps = {
   type: 'movie' | 'tv';
   region?: string;
   activeProviders?: number[];
+  hideRegionSelector?: boolean;
   onChange: (region: string, value: number[]) => void;
 };
 
@@ -380,6 +381,7 @@ export const WatchProviderSelector = ({
   onChange,
   region,
   activeProviders,
+  hideRegionSelector,
 }: WatchProviderSelectorProps) => {
   const intl = useIntl();
   const { currentSettings } = useSettings();
@@ -427,18 +429,20 @@ export const WatchProviderSelector = ({
 
   return (
     <>
-      <RegionSelector
-        value={watchRegion}
-        name="watchRegion"
-        onChange={(_name, value) => {
-          if (value !== watchRegion) {
-            setActiveProvider([]);
-          }
-          setWatchRegion(value);
-        }}
-        disableAll
-        watchProviders
-      />
+      {!hideRegionSelector && (
+        <RegionSelector
+          value={watchRegion}
+          name="watchRegion"
+          onChange={(_name, value) => {
+            if (value !== watchRegion) {
+              setActiveProvider([]);
+            }
+            setWatchRegion(value);
+          }}
+          disableAll
+          watchProviders
+        />
+      )}
       {isLoading ? (
         <SmallLoadingSpinner />
       ) : (

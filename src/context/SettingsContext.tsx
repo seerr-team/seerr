@@ -20,6 +20,7 @@ const defaultSettings = {
   series4kEnabled: false,
   discoverRegion: '',
   streamingRegion: '',
+  excludedWatchProviders: '',
   originalLanguage: '',
   mediaServerType: MediaServerType.NOT_CONFIGURED,
   partialRequestsEnabled: true,

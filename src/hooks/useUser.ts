@@ -32,6 +32,7 @@ export interface UserSettings {
   discordId?: string;
   discoverRegion?: string;
   streamingRegion?: string;
+  excludedWatchProviders?: string;
   originalLanguage?: string;
   locale?: string;
   notificationTypes: Partial<NotificationAgentTypes>;

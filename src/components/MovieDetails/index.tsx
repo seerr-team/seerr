@@ -298,6 +298,14 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     data?.watchProviders?.find(
       (provider) => provider.iso_3166_1 === streamingRegion
     )?.flatrate ?? [];
+  const excludedWatchProviders = (
+    user?.settings?.excludedWatchProviders ??
+    settings.currentSettings.excludedWatchProviders ??
+    ''
+  )
+    .split('|')
+    .filter(Boolean)
+    .map(Number);
 
   function getAvailableMediaServerName() {
     if (settings.currentSettings.mediaServerType === MediaServerType.EMBY) {
@@ -1064,10 +1072,15 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                 <span>{intl.formatMessage(messages.streamingproviders)}</span>
                 <span className="media-fact-value flex flex-row flex-wrap gap-5">
                   {streamingProviders.map((p) => {
+                    const isExcluded = excludedWatchProviders.includes(p.id);
                     return (
                       <Tooltip content={p.name}>
                         <span
-                          className="opacity-50 transition duration-300 hover:opacity-100"
+                          className={`relative transition duration-300 ${
+                            isExcluded
+                              ? 'opacity-100'
+                              : 'opacity-50 hover:opacity-100'
+                          }`}
                           key={`provider-${p.id}`}
                         >
                           <CachedImage
@@ -1076,8 +1089,11 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                             alt={p.name}
                             width={32}
                             height={32}
-                            className="rounded-md"
+                            className={`rounded-md ${isExcluded ? 'ring-2 ring-indigo-500' : ''}`}
                           />
+                          {isExcluded && (
+                            <span className="absolute -right-1 -top-1 flex h-3 w-3 items-center justify-center rounded-full bg-indigo-500" />
+                          )}
                         </span>
                       </Tooltip>
                     );
