@@ -122,7 +122,7 @@ Steps:
 
 - If you are taking on an existing bug or feature ticket, please comment on the [issue](/../../issues) to avoid multiple people working on the same thing.
 - All commits **must** follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
-  - Pull requests with commits not following this standard will **not** be merged.
+  - Pull requests with titles or commits not following this standard will **not** be merged. PR titles are automatically checked for compliance.
 - Please make meaningful commits, or squash them prior to opening a pull request.
   - Do not squash commits once people have begun reviewing your changes.
 - Always rebase your commit to the latest `develop` branch. Do **not** merge `develop` into your branch.
