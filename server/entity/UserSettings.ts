@@ -83,6 +83,9 @@ export class UserSettings {
   @Column({ default: false })
   public blockUnrated?: boolean; // Block content with no rating (NR, unrated)
 
+  @Column({ default: false })
+  public blockAdult?: boolean; // Block adult content (TMDB adult flag)
+
   @Column({
     type: 'text',
     nullable: true,

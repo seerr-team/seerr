@@ -31,6 +31,9 @@ const messages = defineMessages(
     blockunrated: 'Block Unrated Content',
     blockunratedTip:
       'Block content that has no rating (NR, Unrated). When disabled, unrated content is allowed through.',
+    blockadult: 'Block Adult Content',
+    blockadultTip:
+      'Block content flagged as adult by TMDB. This is separate from content ratings and covers explicit/pornographic content.',
     toastSettingsSuccess: 'Parental control settings saved successfully!',
     toastSettingsFailure: 'Something went wrong while saving settings.',
   }
@@ -99,6 +102,7 @@ const UserParentalControlsSettings = () => {
           maxMovieRating: data?.maxMovieRating ?? '',
           maxTvRating: data?.maxTvRating ?? '',
           blockUnrated: data?.blockUnrated ?? false,
+          blockAdult: data?.blockAdult ?? false,
         }}
         enableReinitialize
         onSubmit={async (values) => {
@@ -109,6 +113,7 @@ const UserParentalControlsSettings = () => {
                 maxMovieRating: values.maxMovieRating || undefined,
                 maxTvRating: values.maxTvRating || undefined,
                 blockUnrated: values.blockUnrated,
+                blockAdult: values.blockAdult,
               }
             );
 
@@ -183,6 +188,22 @@ const UserParentalControlsSettings = () => {
                     type="checkbox"
                     id="blockUnrated"
                     name="blockUnrated"
+                    className="rounded-md"
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="blockAdult" className="checkbox-label">
+                  <span>{intl.formatMessage(messages.blockadult)}</span>
+                  <span className="label-tip">
+                    {intl.formatMessage(messages.blockadultTip)}
+                  </span>
+                </label>
+                <div className="form-input-area">
+                  <Field
+                    type="checkbox"
+                    id="blockAdult"
+                    name="blockAdult"
                     className="rounded-md"
                   />
                 </div>

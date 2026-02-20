@@ -749,6 +749,7 @@ userSettingsRoutes.get<{ id: string }, UserSettingsParentalControlsResponse>(
         maxMovieRating: user.settings?.maxMovieRating ?? undefined,
         maxTvRating: user.settings?.maxTvRating ?? undefined,
         blockUnrated: user.settings?.blockUnrated ?? false,
+        blockAdult: user.settings?.blockAdult ?? false,
       });
     } catch (e) {
       next({ status: 500, message: e.message });
@@ -799,11 +800,13 @@ userSettingsRoutes.post<
           maxMovieRating: req.body.maxMovieRating || undefined,
           maxTvRating: req.body.maxTvRating || undefined,
           blockUnrated: req.body.blockUnrated ?? false,
+          blockAdult: req.body.blockAdult ?? false,
         });
       } else {
         user.settings.maxMovieRating = req.body.maxMovieRating || undefined;
         user.settings.maxTvRating = req.body.maxTvRating || undefined;
         user.settings.blockUnrated = req.body.blockUnrated ?? false;
+        user.settings.blockAdult = req.body.blockAdult ?? false;
       }
 
       await userRepository.save(user);
@@ -812,6 +815,7 @@ userSettingsRoutes.post<
         maxMovieRating: user.settings.maxMovieRating,
         maxTvRating: user.settings.maxTvRating,
         blockUnrated: user.settings.blockUnrated ?? false,
+        blockAdult: user.settings.blockAdult ?? false,
       });
     } catch (e) {
       next({ status: 500, message: e.message });

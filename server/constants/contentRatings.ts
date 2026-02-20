@@ -28,6 +28,7 @@ export interface UserContentRatingLimits {
   maxMovieRating?: string;
   maxTvRating?: string;
   blockUnrated?: boolean;
+  blockAdult?: boolean;
 }
 
 /**

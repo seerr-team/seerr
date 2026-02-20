@@ -24,6 +24,7 @@ export interface UserSettingsParentalControlsResponse {
   maxMovieRating?: string;
   maxTvRating?: string;
   blockUnrated?: boolean;
+  blockAdult?: boolean;
 }
 
 export type NotificationAgentTypes = Record<NotificationAgentKey, number>;

@@ -9,6 +9,7 @@ import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import { User } from '@server/entity/User';
 import { UserPushSubscription } from '@server/entity/UserPushSubscription';
+import { UserSettings } from '@server/entity/UserSettings';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { WatchlistResponse } from '@server/interfaces/api/discoverInterfaces';
 import type {
@@ -17,7 +18,7 @@ import type {
   UserResultsResponse,
   UserWatchDataResponse,
 } from '@server/interfaces/api/userInterfaces';
-import { Permission, hasPermission } from '@server/lib/permissions';
+import { hasPermission, Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
@@ -437,7 +438,14 @@ export const canMakePermissionsChange = (
 router.put<
   Record<string, never>,
   Partial<User>[],
-  { ids: string[]; permissions: number }
+  {
+    ids: string[];
+    permissions: number;
+    maxMovieRating?: string;
+    maxTvRating?: string;
+    blockUnrated?: boolean;
+    blockAdult?: boolean;
+  }
 >('/', isAuthenticated(Permission.MANAGE_USERS), async (req, res, next) => {
   try {
     const isOwner = req.user?.id === 1;
@@ -457,14 +465,40 @@ router.put<
           isOwner ? req.body.ids : req.body.ids.filter((id) => Number(id) !== 1)
         ),
       },
+      relations: ['settings'],
     });
 
     const updatedUsers = await Promise.all(
       users.map(async (user) => {
-        return userRepository.save(<User>{
-          ...user,
-          ...{ permissions: req.body.permissions },
-        });
+        // Update permissions
+        user.permissions = req.body.permissions;
+
+        // Update parental controls if provided
+        if (
+          req.body.maxMovieRating !== undefined ||
+          req.body.maxTvRating !== undefined ||
+          req.body.blockUnrated !== undefined ||
+          req.body.blockAdult !== undefined
+        ) {
+          if (!user.settings) {
+            user.settings = new UserSettings({ user });
+          }
+          const settings = user.settings;
+          if (req.body.maxMovieRating !== undefined) {
+            settings.maxMovieRating = req.body.maxMovieRating || undefined;
+          }
+          if (req.body.maxTvRating !== undefined) {
+            settings.maxTvRating = req.body.maxTvRating || undefined;
+          }
+          if (req.body.blockUnrated !== undefined) {
+            settings.blockUnrated = req.body.blockUnrated;
+          }
+          if (req.body.blockAdult !== undefined) {
+            settings.blockAdult = req.body.blockAdult;
+          }
+        }
+
+        return userRepository.save(user);
       })
     );
 
