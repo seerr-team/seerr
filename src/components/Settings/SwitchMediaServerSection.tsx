@@ -1,6 +1,7 @@
 import ConfirmButton from '@app/components/Common/ConfirmButton';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
+import defineMessages from '@app/utils/defineMessages';
 import { MediaServerType } from '@server/constants/server';
 import axios from 'axios';
 import { useState } from 'react';
@@ -8,6 +9,12 @@ import { FormattedMessage, useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 
 type SwitchTargetServerType = 'jellyfin' | 'emby';
+
+const messages = defineMessages('components.Settings', {
+  switchMediaServerError:
+    'Something went wrong while switching media server. Please try again.',
+  switchMediaServerSuccess: 'Media server cleared. You may need to restart.',
+});
 
 const SwitchMediaServerSection = () => {
   const settings = useSettings();
@@ -100,15 +107,22 @@ const SwitchMediaServerSection = () => {
                 ? { targetServerType: switchTargetServerType }
                 : undefined
             );
-            addToast('Media server cleared. You may need to restart.', {
+            addToast(intl.formatMessage(messages.switchMediaServerSuccess), {
               appearance: 'success',
             });
             window.location.reload();
           } catch (err: unknown) {
+            const extracted = axios.isAxiosError(err)
+              ? (err.response?.data?.error ??
+                err.response?.data?.message ??
+                err.message)
+              : err instanceof Error
+                ? err.message
+                : null;
             const message =
-              axios.isAxiosError(err) && err.response?.data?.error
-                ? String(err.response.data.error)
-                : intl.formatMessage(globalMessages.blocklistError);
+              extracted != null && String(extracted).trim() !== ''
+                ? String(extracted)
+                : intl.formatMessage(messages.switchMediaServerError);
             addToast(message, { appearance: 'error' });
           }
         }}
