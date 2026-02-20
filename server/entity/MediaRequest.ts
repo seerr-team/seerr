@@ -337,7 +337,9 @@ export class MediaRequest {
         type: MediaType.MOVIE,
         media,
         requestedBy: requestUser,
-        // If the user is an admin or has the "auto approve" permission, automatically approve the request
+        // If the user has the "auto approve" permission, automatically approve the request
+        // Note: MANAGE_REQUESTS is intentionally excluded to allow third-party tools
+        // to intercept admin requests for additional processing
         status: user.hasPermission(
           [
             requestBody.is4k
@@ -346,7 +348,6 @@ export class MediaRequest {
             requestBody.is4k
               ? Permission.AUTO_APPROVE_4K_MOVIE
               : Permission.AUTO_APPROVE_MOVIE,
-            Permission.MANAGE_REQUESTS,
           ],
           { type: 'or' }
         )
@@ -360,7 +361,6 @@ export class MediaRequest {
             requestBody.is4k
               ? Permission.AUTO_APPROVE_4K_MOVIE
               : Permission.AUTO_APPROVE_MOVIE,
-            Permission.MANAGE_REQUESTS,
           ],
           { type: 'or' }
         )
@@ -447,7 +447,9 @@ export class MediaRequest {
         type: MediaType.TV,
         media,
         requestedBy: requestUser,
-        // If the user is an admin or has the "auto approve" permission, automatically approve the request
+        // If the user has the "auto approve" permission, automatically approve the request
+        // Note: MANAGE_REQUESTS is intentionally excluded to allow third-party tools
+        // to intercept admin requests for additional processing
         status: user.hasPermission(
           [
             requestBody.is4k
@@ -456,7 +458,6 @@ export class MediaRequest {
             requestBody.is4k
               ? Permission.AUTO_APPROVE_4K_TV
               : Permission.AUTO_APPROVE_TV,
-            Permission.MANAGE_REQUESTS,
           ],
           { type: 'or' }
         )
@@ -470,7 +471,6 @@ export class MediaRequest {
             requestBody.is4k
               ? Permission.AUTO_APPROVE_4K_TV
               : Permission.AUTO_APPROVE_TV,
-            Permission.MANAGE_REQUESTS,
           ],
           { type: 'or' }
         )
@@ -494,7 +494,6 @@ export class MediaRequest {
                   requestBody.is4k
                     ? Permission.AUTO_APPROVE_4K_TV
                     : Permission.AUTO_APPROVE_TV,
-                  Permission.MANAGE_REQUESTS,
                 ],
                 { type: 'or' }
               )

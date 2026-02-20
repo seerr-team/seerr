@@ -305,9 +305,10 @@ const MovieRequestModal = ({
     );
   }
 
+  // Note: MANAGE_REQUESTS is intentionally excluded to allow third-party tools
+  // to intercept admin requests for additional processing
   const hasAutoApprove = hasPermission(
     [
-      Permission.MANAGE_REQUESTS,
       is4k ? Permission.AUTO_APPROVE_4K : Permission.AUTO_APPROVE,
       is4k ? Permission.AUTO_APPROVE_4K_MOVIE : Permission.AUTO_APPROVE_MOVIE,
     ],

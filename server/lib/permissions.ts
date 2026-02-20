@@ -36,39 +36,88 @@ export interface PermissionCheckOptions {
 }
 
 /**
+ * Checks if a permission is an auto-approve permission.
+ * Admin users should NOT automatically bypass these permissions,
+ * allowing third-party tools to intercept and process requests.
+ */
+function isAutoApprovePermission(perm: Permission): boolean {
+  return (
+    perm === Permission.AUTO_APPROVE ||
+    perm === Permission.AUTO_APPROVE_MOVIE ||
+    perm === Permission.AUTO_APPROVE_TV ||
+    perm === Permission.AUTO_APPROVE_4K ||
+    perm === Permission.AUTO_APPROVE_4K_MOVIE ||
+    perm === Permission.AUTO_APPROVE_4K_TV
+  );
+}
+
+/**
  * Takes a Permission and the users permission value and determines
  * if the user has access to the permission provided. If the user has
- * the admin permission, true will always be returned from this check!
+ * the admin permission, true will be returned UNLESS the permission
+ * being checked is an auto-approve permission (to allow third-party
+ * tools to intercept requests).
  *
  * @param permissions Single permission or array of permissions
- * @param value users current permission value
+ * @param userPermissionValue users current permission value
  * @param options Extra options to control permission check behavior (mainly for arrays)
  */
 export const hasPermission = (
   permissions: Permission | Permission[],
-  value: number,
+  userPermissionValue: number,
   options: PermissionCheckOptions = { type: 'and' }
 ): boolean => {
-  let total = 0;
-
   // If we are not checking any permissions, bail out and return true
+  // This handles isAuthenticated() called with no arguments (any logged-in user)
   if (permissions === 0) {
     return true;
   }
 
-  if (Array.isArray(permissions)) {
-    if (value & Permission.ADMIN) {
-      return true;
-    }
-    switch (options.type) {
-      case 'and':
-        return permissions.every((permission) => !!(value & permission));
-      case 'or':
-        return permissions.some((permission) => !!(value & permission));
-    }
-  } else {
-    total = permissions;
+  // Normalize permissions to an array
+  const requiredPermissions: Permission[] = Array.isArray(permissions)
+    ? permissions
+    : [permissions];
+
+  // If we're checking an empty array, return true
+  if (requiredPermissions.length === 0) {
+    return true;
   }
 
-  return !!(value & Permission.ADMIN) || !!(value & total);
+  // Handle array of permissions
+  if (Array.isArray(permissions)) {
+    // Check if this array includes ANY auto-approve permission
+    const includesAutoApprove = requiredPermissions.some((perm) =>
+      isAutoApprovePermission(perm)
+    );
+
+    // If there's NO auto-approve permission in the list, admin bypasses
+    if (!includesAutoApprove && userPermissionValue & Permission.ADMIN) {
+      return true;
+    }
+
+    // Otherwise, do the normal bit checks for each required permission
+    switch (options.type) {
+      case 'and':
+        return requiredPermissions.every(
+          (perm) => !!(userPermissionValue & perm)
+        );
+      case 'or':
+        return requiredPermissions.some(
+          (perm) => !!(userPermissionValue & perm)
+        );
+    }
+  }
+
+  // Handle single permission
+  const singlePerm = requiredPermissions[0];
+  // If it's NOT an auto-approve permission, let admin pass automatically
+  if (
+    !isAutoApprovePermission(singlePerm) &&
+    userPermissionValue & Permission.ADMIN
+  ) {
+    return true;
+  }
+
+  // Otherwise, must explicitly match the permission bit
+  return !!(userPermissionValue & singlePerm);
 };

@@ -48,15 +48,18 @@ const PermissionOption = ({
   let disabled = false;
   let checked = hasPermission(option.permission, currentPermission);
 
+  // Check if this is an auto-approve permission
+  const isAutoApprove = autoApprovePermissions.includes(option.permission);
+
   if (
-    // Permissions for user ID 1 (Plex server owner) cannot be changed
-    (currentUser && currentUser.id === 1) ||
+    // Permissions for user ID 1 (server owner) cannot be changed
+    // EXCEPT for auto-approve permissions (admins can opt out of auto-approval)
+    (currentUser && currentUser.id === 1 && !isAutoApprove) ||
     // Admin permission automatically bypasses/grants all other permissions
+    // EXCEPT for auto-approve permissions (admins must explicitly have these)
     (option.permission !== Permission.ADMIN &&
+      !isAutoApprove &&
       hasPermission(Permission.ADMIN, currentPermission)) ||
-    // Manage Requests permission automatically grants all Auto-Approve permissions
-    (autoApprovePermissions.includes(option.permission) &&
-      hasPermission(Permission.MANAGE_REQUESTS, currentPermission)) ||
     // Selecting a parent permission automatically selects all children
     (!!parent?.permission &&
       hasPermission(parent.permission, currentPermission))
