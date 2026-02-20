@@ -4,6 +4,9 @@ description: Install Seerr using Unraid
 sidebar_position: 3
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 # Unraid
 
 :::warning
@@ -14,76 +17,176 @@ Third-party installation methods are maintained by the community. The Seerr team
 This method is not recommended for most users. It is intended for advanced users who are using Unraid.
 :::
 
+## Template installation
 
-If an official Unraid Community Applications template for Seerr isn't available in your catalog, you can install Seerr manually using Unraid's Docker UI.
+Several templates from Unraid Community are available right now
+- [Unraid Community Apps](https://unraid.net/community/apps#community-apps-iframe)
 
-## Fresh Installation
+In case you still want to do it manually, please follow the instructions below.
 
-### 1. Create the config directory
+## Manual Installation
 
-:::note
-Seerr is now rootless. Unraid typically runs Docker containers as `nobody:users` (UID 99, GID 100), but Seerr now runs internally as UID 1000, GID 1000. This creates a permission mismatch.
+Before proceeding, choose which installation method best suits your server:
+
+**Seerr Default** — Runs the container with its native `node` user (UID 1000). This method aligns with how the Seerr image is officially packaged and is suitable for most standard setups.
+
+:::caution
+The Seerr Default method sets appdata ownership to UID 1000:1000, which conflicts with Unraid's expectation that appdata is owned by `nobody:users` (UID 99, GID 100). This can break SMB share access (users won't be able to edit config files over the network), trigger warnings in the "Fix Common Problems" plugin, and cause issues with backup plugins like CA Appdata Backup or Tailscale.
 :::
 
-:::info
-**If migrating**: Copy your existing Jellyseerr/Overseerr config files (e.g., from `/mnt/user/appdata/overseerr/` or `/mnt/user/appdata/jellyseerr`) to `/mnt/user/appdata/seerr`, then apply the permissions below
+**Unraid Default** — Runs the container with Unraid's native `nobody:users` ownership (UID 99, GID 100). This method follows Unraid best practices and maintains native file ownership. Use this method if you need to retain standard SMB share access without permission errors, or if you are running specific Unraid network integrations (like Tailscale) that require specific routing.
+
+:::caution
+The Unraid Default method overrides the container's built-in user with `--user 99:100`. Because Seerr is designed to run as a rootless container under its native `node` user (UID 1000), overriding this may lead to unexpected permission issues or compatibility problems with future Seerr updates.
 :::
 
-Open the Unraid terminal and run:
+<Tabs groupId="unraid-permissions" queryString>
+  <TabItem value="seerr-default" label="Seerr Default">
 
-```bash
-mkdir -p /mnt/user/appdata/seerr
-chown -R 1000:1000 /mnt/user/appdata/seerr
-```
+  ### 1. Create the config directory
 
-### 2. Add the Docker container
+  :::note
+  Seerr is now rootless. Unraid typically runs containers as `nobody:users` (UID 99, GID 100) while Seerr runs as UID 1000, GID 1000. This method changes the host folder ownership so Seerr runs with its native UID/GID.
+  :::
 
-Navigate to the **Docker** tab in Unraid and click **Add Container**. Fill in the following:
+  Open the Unraid terminal and run:
 
-| Field | Value |
-|---|---|
-| **Name** | `seerr` |
-| **Repository** | `ghcr.io/seerr-team/seerr:latest` |
-| **Registry URL** (optional) | `https://ghcr.io` |
-| **Icon URL** | `https://raw.githubusercontent.com/seerr-team/seerr/develop/public/android-chrome-512x512.png` |
-| **WebUI** | `http://[IP]:[PORT:5055]` |
-| **Extra Parameters** | `--init` |
-| **Network Type** | `bridge` |
-| **Privileged** | `Off` |
+  ```bash
+  mkdir -p /mnt/user/appdata/seerr
+  ```
 
-Then click **Add another Path, Port, Variable** to add:
+  Change ownership of the config folder on the host so Seerr runs with its native UID/GID:
 
-**Port:**
-| Field | Value |
-|---|---|
-| Container Port | `5055` |
-| Host Port | `5055` |
-| Connection Type | `TCP` |
+  ```bash
+  chown -R 1000:1000 /mnt/user/appdata/seerr
+  ```
 
-**Path:**
-| Field | Value |
-|---|---|
-| Container Path | `/app/config` |
-| Host Path | `/mnt/user/appdata/seerr` |
+  ### 2. Add the Docker container
 
-**Variable:**
-| Field | Value |
-|---|---|
-| Key | `TZ` |
-| Value | Your [TZ database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) (e.g., `America/New_York`) |
+  :::warning
+  The **Extra Parameters** field is critical. You **must** add `--init --restart=unless-stopped` (see table below). Without `--init`, the container will not handle signals properly or shut down cleanly. Without `--restart=unless-stopped`, the container will not automatically restart after a reboot.
 
-**Variable (optional):**
-| Field | Value |
-|---|---|
-| Key | `LOG_LEVEL` |
-| Value | `info` |
+  To see the **Extra Parameters** field, click **Basic View** in the top-right corner of the template page to switch to the advanced editor.
+  :::
 
-Click **Apply** to create and start the container.
+  Navigate to the **Docker** tab in Unraid and click **Add Container**. Fill in the following:
 
-### 3. Access Seerr
+  | Field | Value |
+  |---|---|
+  | **Name** | `seerr` |
+  | **Repository** | `ghcr.io/seerr-team/seerr:latest` |
+  | **Icon URL** | `https://raw.githubusercontent.com/seerr-team/seerr/develop/public/android-chrome-512x512.png` |
+  | **WebUI** | `http://[IP]:[PORT:5055]` |
+  | **Extra Parameters** | `--init --restart=unless-stopped` |
+  | **Network Type** | `bridge` |
+  | **Privileged** | `Off` |
 
-Open the WebUI at `http://<your-unraid-ip>:5055` and follow the setup wizard.
+  Then click **Add another Path, Port, Variable** to add:
 
-:::info
-The `--init` flag in **Extra Parameters** is required. Seerr does not include its own init process, so `--init` ensures proper signal handling and clean container shutdowns.
-:::
+  **Port:**
+  | Field | Value |
+  |---|---|
+  | Container Port | `5055` |
+  | Host Port | `5055` |
+  | Connection Type | `TCP` |
+
+  **Path:**
+  | Field | Value |
+  |---|---|
+  | Container Path | `/app/config` |
+  | Host Path | `/mnt/user/appdata/seerr` |
+
+  **Variable:**
+  | Field | Value |
+  |---|---|
+  | Key | `TZ` |
+  | Value | Your [TZ database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) (e.g., `America/New_York`) |
+
+  **Variable (optional):**
+  | Field | Value |
+  |---|---|
+  | Key | `LOG_LEVEL` |
+  | Value | `info` |
+
+  Click **Apply** to create and start the container.
+
+  ### 3. Access Seerr
+
+  Open the WebUI at `http://<your-unraid-ip>:5055` and follow the setup wizard.
+
+  </TabItem>
+  <TabItem value="unraid-default" label="Unraid Default">
+
+  ### 1. Create the config directory
+
+  :::note
+  Keep current host ownership and run the container as Unraid's `nobody:users` (UID 99, GID 100). This avoids changing host permissions while allowing the container to access your shares.
+  :::
+
+  Open the Unraid terminal and run:
+
+  ```bash
+  mkdir -p /mnt/user/appdata/seerr
+  ```
+
+  Change ownership of the config folder on the host so Seerr runs with Unraid native UID/GID:
+
+  ```bash
+  chown -R 99:100 /mnt/user/appdata/seerr
+  ```
+
+  ### 2. Add the Docker container
+
+  :::warning
+  The **Extra Parameters** field is critical. You **must** add `--init --restart=unless-stopped --user 99:100` (see table below). Without `--init`, the container will not handle signals properly or shut down cleanly. Without `--restart=unless-stopped`, the container will not automatically restart after a reboot. The `--user 99:100` parameter runs the container process with Unraid's default UID/GID and avoids permission errors accessing your shares without changing host folder ownership.
+
+  To see the **Extra Parameters** field, click **Basic View** in the top-right corner of the template page to switch to the advanced editor.
+  :::
+
+  Navigate to the **Docker** tab in Unraid and click **Add Container**. Fill in the following:
+
+  | Field | Value |
+  |---|---|
+  | **Name** | `seerr` |
+  | **Repository** | `ghcr.io/seerr-team/seerr:latest` |
+  | **Icon URL** | `https://raw.githubusercontent.com/seerr-team/seerr/develop/public/android-chrome-512x512.png` |
+  | **WebUI** | `http://[IP]:[PORT:5055]` |
+  | **Extra Parameters** | `--init --restart=unless-stopped --user 99:100` |
+  | **Network Type** | `bridge` |
+  | **Privileged** | `Off` |
+
+  Then click **Add another Path, Port, Variable** to add:
+
+  **Port:**
+  | Field | Value |
+  |---|---|
+  | Container Port | `5055` |
+  | Host Port | `5055` |
+  | Connection Type | `TCP` |
+
+  **Path:**
+  | Field | Value |
+  |---|---|
+  | Container Path | `/app/config` |
+  | Host Path | `/mnt/user/appdata/seerr` |
+
+  **Variable:**
+  | Field | Value |
+  |---|---|
+  | Key | `TZ` |
+  | Value | Your [TZ database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) (e.g., `America/New_York`) |
+
+  **Variable (optional):**
+  | Field | Value |
+  |---|---|
+  | Key | `LOG_LEVEL` |
+  | Value | `info` |
+
+  Click **Apply** to create and start the container.
+
+  ### 3. Access Seerr
+
+  Open the WebUI at `http://<your-unraid-ip>:5055` and follow the setup wizard.
+
+  </TabItem>
+</Tabs>
