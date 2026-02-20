@@ -6,6 +6,12 @@ All help is welcome and greatly appreciated! If you would like to contribute to 
 
 > [!IMPORTANT]
 >
+> Automated AI-generated contributions without human review are not allowed and will be rejected.
+> This is an open-source project maintained by volunteers.
+> We do not have the resources to review pull requests that could have been avoided with proper human oversight.
+> While we have no issue with contributors using AI tools as an aid, it is your responsibility as a contributor to ensure that all submissions are carefully reviewed and meet our quality standards.
+> Submissions that appear to be unreviewed AI output will be considered low-effort and may result in a ban.
+>
 > If you are using **any kind of AI assistance** to contribute to Seerr,
 > it must be disclosed in the pull request.
 
