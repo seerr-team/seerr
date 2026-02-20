@@ -37,6 +37,7 @@ export interface PublicSettingsResponse {
   series4kEnabled: boolean;
   discoverRegion: string;
   streamingRegion: string;
+  excludedWatchProviders: string;
   originalLanguage: string;
   mediaServerType: number;
   partialRequestsEnabled: boolean;
