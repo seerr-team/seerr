@@ -12,7 +12,6 @@ import * as Yup from 'yup';
 
 const messages = defineMessages('components.Login', {
   loginwithapp: 'Login with {appName}',
-  username: 'Username',
   email: 'Email Address',
   password: 'Password',
   validationemailrequired: 'You must provide a valid email address',
@@ -84,11 +83,11 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                       name="email"
                       placeholder={`${intl.formatMessage(
                         messages.email
-                      )} / ${intl.formatMessage(messages.username)}`}
+                      )}`}
                       type="text"
                       inputMode="email"
                       data-testid="email"
-                      data-form-type="username,email"
+                      data-form-type="email"
                       className="!bg-gray-700/80 placeholder:text-gray-400"
                     />
                   </div>
