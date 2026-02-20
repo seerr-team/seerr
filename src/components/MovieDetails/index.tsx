@@ -306,6 +306,9 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     .split('|')
     .filter(Boolean)
     .map(Number);
+  const isAvailableOnExcludedProvider =
+    excludedWatchProviders.length > 0 &&
+    streamingProviders.some((p) => excludedWatchProviders.includes(p.id));
 
   function getAvailableMediaServerName() {
     if (settings.currentSettings.mediaServerType === MediaServerType.EMBY) {
@@ -625,12 +628,14 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
           <div className="z-20">
             <PlayButton links={mediaLinks} />
           </div>
-          <RequestButton
-            mediaType="movie"
-            media={data.mediaInfo}
-            tmdbId={data.id}
-            onUpdate={() => revalidate()}
-          />
+          {!isAvailableOnExcludedProvider && (
+            <RequestButton
+              mediaType="movie"
+              media={data.mediaInfo}
+              tmdbId={data.id}
+              onUpdate={() => revalidate()}
+            />
+          )}
           {(data.mediaInfo?.status === MediaStatus.AVAILABLE ||
             (settings.currentSettings.movie4kEnabled &&
               hasPermission(

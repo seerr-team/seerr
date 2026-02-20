@@ -334,6 +334,9 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     .split('|')
     .filter(Boolean)
     .map(Number);
+  const isAvailableOnExcludedProvider =
+    excludedWatchProviders.length > 0 &&
+    streamingProviders.some((p) => excludedWatchProviders.includes(p.id));
 
   function getAvailableMediaServerName() {
     if (settings.currentSettings.mediaServerType === MediaServerType.EMBY) {
@@ -667,14 +670,16 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
           <div className="z-20">
             <PlayButton links={mediaLinks} />
           </div>
-          <RequestButton
-            mediaType="tv"
-            onUpdate={() => revalidate()}
-            tmdbId={data?.id}
-            media={data?.mediaInfo}
-            isShowComplete={isComplete}
-            is4kShowComplete={is4kComplete}
-          />
+          {!isAvailableOnExcludedProvider && (
+            <RequestButton
+              mediaType="tv"
+              onUpdate={() => revalidate()}
+              tmdbId={data?.id}
+              media={data?.mediaInfo}
+              isShowComplete={isComplete}
+              is4kShowComplete={is4kComplete}
+            />
+          )}
           {(data.mediaInfo?.status === MediaStatus.AVAILABLE ||
             data.mediaInfo?.status === MediaStatus.PARTIALLY_AVAILABLE ||
             (settings.currentSettings.series4kEnabled &&
