@@ -802,6 +802,7 @@ const SettingsPlex = ({ isSetupSettings }: SettingsPlexProps) => {
               tautulliApiKey: dataTautulli?.apiKey,
               tautulliExternalUrl: dataTautulli?.externalUrl,
             }}
+            enableReinitialize
             validationSchema={TautulliSettingsSchema}
             onSubmit={async (values) => {
               try {
