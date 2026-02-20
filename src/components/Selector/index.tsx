@@ -446,7 +446,7 @@ export const WatchProviderSelector = ({
       {isLoading ? (
         <SmallLoadingSpinner />
       ) : (
-        <div className="grid">
+        <div className="w-full">
           <div className="provider-icons grid gap-2">
             {initialProviders.map((provider) => {
               const isActive = activeProvider.includes(provider.id);
@@ -456,7 +456,7 @@ export const WatchProviderSelector = ({
                   key={`prodiver-${provider.id}`}
                 >
                   <div
-                    className={`provider-container w-full cursor-pointer rounded-lg ring-1 ${
+                    className={`provider-container relative w-full cursor-pointer rounded-lg ring-1 ${
                       isActive
                         ? 'bg-gray-600 ring-indigo-500 hover:bg-gray-500'
                         : 'bg-gray-700 ring-gray-500 hover:bg-gray-600'
@@ -499,7 +499,7 @@ export const WatchProviderSelector = ({
                     key={`prodiver-${provider.id}`}
                   >
                     <div
-                      className={`provider-container w-full cursor-pointer rounded-lg ring-1 transition ${
+                      className={`provider-container relative w-full cursor-pointer rounded-lg ring-1 transition ${
                         isActive
                           ? 'bg-gray-600 ring-indigo-500 hover:bg-gray-500'
                           : 'bg-gray-700 ring-gray-500 hover:bg-gray-600'
