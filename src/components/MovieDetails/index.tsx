@@ -89,7 +89,7 @@ const messages = defineMessages('components.MovieDetails', {
   showmore: 'Show More',
   showless: 'Show Less',
   streamingproviders: 'Currently Streaming On',
-  watchonprovider: 'Already available on {provider}',
+  watchonprovider: 'Available on {provider}',
   productioncountries:
     'Production {countryCount, plural, one {Country} other {Countries}}',
   theatricalrelease: 'Theatrical Release',

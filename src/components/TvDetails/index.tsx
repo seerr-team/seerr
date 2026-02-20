@@ -88,7 +88,7 @@ const messages = defineMessages('components.TvDetails', {
   episodeRuntime: 'Episode Runtime',
   episodeRuntimeMinutes: '{runtime} minutes',
   streamingproviders: 'Currently Streaming On',
-  watchonprovider: 'Already available on {provider}',
+  watchonprovider: 'Available on {provider}',
   productioncountries:
     'Production {countryCount, plural, one {Country} other {Countries}}',
   reportissue: 'Report an Issue',
