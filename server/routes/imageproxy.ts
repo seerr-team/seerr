@@ -32,7 +32,14 @@ function initTvdbImageProxy() {
 
 router.get('/:type/*', async (req, res) => {
   const imagePath = req.path.replace(/^\/\w+/, '');
+
+  if (imagePath.startsWith('//') || imagePath.includes('://')) {
+    logger.error('Potential SSRF attempt blocked', { imagePath });
+    return res.status(403).send('Forbidden');
+  }
+
   try {
+
     let imageData;
     if (req.params.type === 'tmdb') {
       imageData = await initTmdbImageProxy().getImage(imagePath);
