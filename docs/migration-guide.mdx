@@ -258,63 +258,23 @@ Refer to [Seerr Unraid Documentation](/getting-started/third-parties/unraid), al
 
 Seerr will automatically migrate your existing Overseerr or Jellyseerr data on first startup. No manual database migration is needed.
 
-1. Stop and remove the old Overseerr (or Jellyseerr) container from the Unraid **Docker** tab. Click the container icon, then **Stop**, then **Remove**. **⚠️ Do not delete the appdata folder ⚠️**
+**1. Stop the existing container**
+In the Unraid **Docker** tab, stop your Overseerr (or Jellyseerr) container.
+**⚠️ Do not remove the container or delete the appdata folder yet ⚠️**
 
-2. Back up your existing appdata folder:
+**2. Copy existing data to Seerr appdata**
+Open the Unraid terminal and copy your existing appdata folder into the new Seerr appdata directory:
 ```bash
-cp -a /mnt/user/appdata/overseerr /mnt/user/appdata/overseerr-backup
+cp -a /mnt/user/appdata/overseerr /mnt/user/appdata/seerr
 ```
 
-3. Fix config folder permissions — Seerr runs as the `node` user (UID 1000) instead of root:
-```bash
-chown -R 1000:1000 /mnt/user/appdata/overseerr
-```
-For Jellyseerr users, replace `overseerr` with `jellyseerr` in the path above.
+*(For Jellyseerr users, replace `overseerr` with `jellyseerr` in the paths).*
 
-4. Add a new container in the Unraid **Docker** tab. Click **Add Container** and fill in the following:
+**3. Set permissions and install Seerr**
+Follow the [Unraid Installation Guide](/getting-started/third-parties/unraid#2-set-folder-permissions), **starting from step 2** — this covers setting the correct folder permissions and adding the Docker container. The guide offers two permission methods (**Seerr Default** and **Unraid Default**), each with trade-offs — read the descriptions before choosing.
 
-| Field | Value |
-|---|---|
-| **Name** | `seerr` |
-| **Repository** | `ghcr.io/seerr-team/seerr:latest` |
-| **Registry URL** (optional) | `https://ghcr.io` |
-| **Icon URL** | `https://raw.githubusercontent.com/seerr-team/seerr/develop/public/android-chrome-512x512.png` |
-| **WebUI** | `http://[IP]:[PORT:5055]` |
-| **Extra Parameters** | `--init` |
-| **Network Type** | `bridge` |
-| **Privileged** | `Off` |
+**4. Start the new Seerr app**
+Start the newly created Seerr container. Check the container logs to confirm the automatic migration completed successfully.
 
-Then click **Add another Path, Port, Variable** to add:
-
-**Port:**
-| Field | Value |
-|---|---|
-| Container Port | `5055` |
-| Host Port | `5055` |
-| Connection Type | `TCP` |
-
-**Path** — point this to your existing config folder:
-| Field | Value |
-|---|---|
-| Container Path | `/app/config` |
-| Host Path | `/mnt/user/appdata/overseerr` |
-
-For Jellyseerr users, use `/mnt/user/appdata/jellyseerr`.
-
-**Variable:**
-| Field | Value |
-|---|---|
-| Key | `TZ` |
-| Value | Your [TZ database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) (e.g., `America/New_York`) |
-
-**Variable (optional):**
-| Field | Value |
-|---|---|
-| Key | `LOG_LEVEL` |
-| Value | `info` |
-
-5. Click **Apply** to start the container. Check the container logs to confirm the automatic migration completed successfully.
-
-:::tip
-If you are using a reverse proxy (such as SWAG or Nginx Proxy Manager), update your proxy configuration to point to the new container name `seerr`. The default port remains `5055`.
-:::
+**5. Remove the old app**
+Once you have confirmed Seerr is working properly and your data has successfully migrated, you can safely **Remove** the old Overseerr (or Jellyseerr) container from Unraid.
