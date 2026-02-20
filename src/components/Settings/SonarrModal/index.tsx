@@ -89,6 +89,18 @@ interface SonarrModalProps {
   onSave: () => void;
 }
 
+const shouldShowRequestLabelField = ({
+  isDefault,
+  is4k,
+  series4kEnabled,
+  sonarrIs4k,
+}: {
+  isDefault: boolean;
+  is4k: boolean;
+  series4kEnabled: boolean;
+  sonarrIs4k?: boolean;
+}) => isDefault && (is4k || (series4kEnabled && !sonarrIs4k));
+
 const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
   const intl = useIntl();
   const settings = useSettings();
@@ -262,10 +274,16 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
             const animeProfileName = testResponse.profiles.find(
               (profile) => profile.id === Number(values.activeAnimeProfileId)
             )?.name;
+            const showRequestLabelField = shouldShowRequestLabelField({
+              isDefault: values.isDefault,
+              is4k: values.is4k,
+              series4kEnabled: settings.currentSettings.series4kEnabled,
+              sonarrIs4k: sonarr?.is4k,
+            });
 
             const submission = {
               name: values.name,
-              requestLabel: values.isDefault
+              requestLabel: showRequestLabelField
                 ? values.requestLabel?.trim() || undefined
                 : undefined,
               hostname: values.hostname,
@@ -323,10 +341,12 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
           isSubmitting,
           isValid,
         }) => {
-          const showRequestLabelField =
-            values.isDefault &&
-            (values.is4k ||
-              (settings.currentSettings.series4kEnabled && !sonarr?.is4k));
+          const showRequestLabelField = shouldShowRequestLabelField({
+            isDefault: values.isDefault,
+            is4k: values.is4k,
+            series4kEnabled: settings.currentSettings.series4kEnabled,
+            sonarrIs4k: sonarr?.is4k,
+          });
 
           return (
             <Modal
