@@ -68,6 +68,12 @@ authRoutes.post('/plex', async (req, res, next) => {
         message: 'Authentication required.',
       });
     }
+    if (!req.user.hasPermission(Permission.ADMIN)) {
+      return next({
+        status: 403,
+        message: 'Admin permissions required.',
+      });
+    }
     try {
       const plextv = new PlexTvAPI(body.authToken);
       const account = await plextv.getUser();
