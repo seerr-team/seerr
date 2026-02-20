@@ -73,23 +73,23 @@ const UserLinkedAccountsSettings = () => {
   const accounts: LinkedAccount[] = useMemo(() => {
     const accounts: LinkedAccount[] = [];
     if (!user) return accounts;
-    if (user.userType === UserType.PLEX && user.plexUsername)
+    if (user.plexUsername)
       accounts.push({
         type: LinkedAccountType.Plex,
         username: user.plexUsername,
       });
-    if (user.userType === UserType.EMBY && user.jellyfinUsername)
+    // Jellyfin and Emby both store the linked username in jellyfinUsername
+    if (user.jellyfinUsername) {
+      const treatAsEmby =
+        user.userType === UserType.EMBY ||
+        settings.currentSettings.mediaServerType === MediaServerType.EMBY;
       accounts.push({
-        type: LinkedAccountType.Emby,
+        type: treatAsEmby ? LinkedAccountType.Emby : LinkedAccountType.Jellyfin,
         username: user.jellyfinUsername,
       });
-    if (user.userType === UserType.JELLYFIN && user.jellyfinUsername)
-      accounts.push({
-        type: LinkedAccountType.Jellyfin,
-        username: user.jellyfinUsername,
-      });
+    }
     return accounts;
-  }, [user]);
+  }, [user, settings.currentSettings.mediaServerType]);
 
   const linkPlexAccount = async () => {
     setError(null);
@@ -126,14 +126,20 @@ const UserLinkedAccountsSettings = () => {
         setTimeout(() => linkPlexAccount(), 1500);
       },
       hide:
-        settings.currentSettings.mediaServerType !== MediaServerType.PLEX ||
+        (settings.currentSettings.mediaServerType !== MediaServerType.PLEX &&
+          settings.currentSettings.mediaServerType !==
+            MediaServerType.JELLYFIN &&
+          settings.currentSettings.mediaServerType !== MediaServerType.EMBY) ||
         accounts.some((a) => a.type === LinkedAccountType.Plex),
     },
     {
       name: 'Jellyfin',
       action: () => setShowJellyfinModal(true),
       hide:
-        settings.currentSettings.mediaServerType !== MediaServerType.JELLYFIN ||
+        (settings.currentSettings.mediaServerType !==
+          MediaServerType.JELLYFIN &&
+          settings.currentSettings.mediaServerType !== MediaServerType.EMBY &&
+          settings.currentSettings.mediaServerType !== MediaServerType.PLEX) ||
         accounts.some((a) => a.type === LinkedAccountType.Jellyfin),
     },
     {

@@ -4,8 +4,10 @@ import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
+import PlexLoginButton from '@app/components/Login/PlexLoginButton';
 import LibraryItem from '@app/components/Settings/LibraryItem';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
+import useSettings from '@app/hooks/useSettings';
 import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -16,6 +18,7 @@ import {
   MagnifyingGlassIcon,
   XMarkIcon,
 } from '@heroicons/react/24/solid';
+import { MediaServerType } from '@server/constants/server';
 import type { PlexDevice } from '@server/interfaces/api/plexInterfaces';
 import type { PlexSettings, TautulliSettings } from '@server/lib/settings';
 import axios from 'axios';
@@ -84,6 +87,9 @@ const messages = defineMessages('components.Settings', {
   toastTautulliSettingsSuccess: 'Tautulli settings saved successfully!',
   toastTautulliSettingsFailure:
     'Something went wrong while saving Tautulli settings.',
+  plexConnectionForLinking:
+    'Configure the Plex connection so users can link their Plex account in Profile => Linked accounts before you switch media server.',
+  signInWithPlex: 'Sign in with Plex',
 });
 
 interface Library {
@@ -140,6 +146,7 @@ const SettingsPlex = ({ isSetupSettings }: SettingsPlexProps) => {
   );
   const intl = useIntl();
   const { addToast, removeToast } = useToasts();
+  const settings = useSettings();
 
   const PlexSettingsSchema = Yup.object().shape({
     hostname: Yup.string()
@@ -339,11 +346,17 @@ const SettingsPlex = ({ isSetupSettings }: SettingsPlexProps) => {
     }
   };
 
+  const isMainPlex =
+    settings.currentSettings.mediaServerType === MediaServerType.PLEX;
   if (
+    isMainPlex &&
     (!data || (!isSetupSettings && !dataTautulli)) &&
     !error &&
     !errorTautulli
   ) {
+    return <LoadingSpinner />;
+  }
+  if (!isMainPlex && !data && !error) {
     return <LoadingSpinner />;
   }
   return (
@@ -357,9 +370,36 @@ const SettingsPlex = ({ isSetupSettings }: SettingsPlexProps) => {
       <div className="mb-6">
         <h3 className="heading">{intl.formatMessage(messages.plexsettings)}</h3>
         <p className="description">
-          {intl.formatMessage(messages.plexsettingsDescription)}
+          {isMainPlex
+            ? intl.formatMessage(messages.plexsettingsDescription)
+            : intl.formatMessage(messages.plexConnectionForLinking)}
         </p>
-        {isSetupSettings && (
+        {!isMainPlex && (
+          <div className="form-row">
+            <PlexLoginButton
+              onAuthToken={async (authToken) => {
+                try {
+                  await axios.post('/api/v1/auth/plex', { authToken });
+                  addToast(
+                    intl.formatMessage(messages.toastPlexConnectingSuccess),
+                    {
+                      appearance: 'success',
+                    }
+                  );
+                  revalidate();
+                } catch (e) {
+                  addToast(
+                    axios.isAxiosError(e) && e.response?.data?.message
+                      ? String(e.response.data.message)
+                      : intl.formatMessage(messages.toastPlexConnectingFailure),
+                    { appearance: 'error' }
+                  );
+                }
+              }}
+            />
+          </div>
+        )}
+        {isSetupSettings && isMainPlex && (
           <div className="section">
             <Alert
               title={intl.formatMessage(messages.settingUpPlexDescription, {
