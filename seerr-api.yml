@@ -2290,6 +2290,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JellyfinSettings'
+  /settings/switch-media-server:
+    post:
+      summary: Switch media server
+      tags:
+        - settings
+      responses:
+        '200':
+          description: Media server cleared
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Media server cleared. Restart or reload to configure a new server.'
+        '400':
+          description: No media server is configured
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: 'No media server is configured.'
+        '500':
+          description: Failed to switch media server
   /settings/jellyfin/library:
     get:
       summary: Get Jellyfin libraries
