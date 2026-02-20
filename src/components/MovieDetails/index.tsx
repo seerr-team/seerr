@@ -89,6 +89,7 @@ const messages = defineMessages('components.MovieDetails', {
   showmore: 'Show More',
   showless: 'Show Less',
   streamingproviders: 'Currently Streaming On',
+  watchonprovider: 'Already available on {provider}',
   productioncountries:
     'Production {countryCount, plural, one {Country} other {Countries}}',
   theatricalrelease: 'Theatrical Release',
@@ -294,10 +295,11 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     : settings.currentSettings.streamingRegion
       ? settings.currentSettings.streamingRegion
       : 'US';
-  const streamingProviders =
-    data?.watchProviders?.find(
-      (provider) => provider.iso_3166_1 === streamingRegion
-    )?.flatrate ?? [];
+  const streamingProviderData = data?.watchProviders?.find(
+    (provider) => provider.iso_3166_1 === streamingRegion
+  );
+  const streamingProviders = streamingProviderData?.flatrate ?? [];
+  const watchProviderLink = streamingProviderData?.link;
   const excludedWatchProviders = (
     user?.settings?.excludedWatchProviders ??
     settings.currentSettings.excludedWatchProviders ??
@@ -306,6 +308,9 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     .split('|')
     .filter(Boolean)
     .map(Number);
+  const firstExcludedProvider = streamingProviders.find((p) =>
+    excludedWatchProviders.includes(p.id)
+  );
   const isAvailableOnExcludedProvider =
     excludedWatchProviders.length > 0 &&
     streamingProviders.some((p) => excludedWatchProviders.includes(p.id));
@@ -496,20 +501,35 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
       />
       <div className="media-header">
         <div className="media-poster">
-          <CachedImage
-            type="tmdb"
-            src={
-              data.posterPath
-                ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.posterPath}`
-                : '/images/seerr_poster_not_found.png'
-            }
-            alt=""
-            sizes="100vw"
-            style={{ width: '100%', height: 'auto' }}
-            width={600}
-            height={900}
-            priority
-          />
+          <div className="relative">
+            <CachedImage
+              type="tmdb"
+              src={
+                data.posterPath
+                  ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.posterPath}`
+                  : '/images/seerr_poster_not_found.png'
+              }
+              alt=""
+              sizes="100vw"
+              style={{ width: '100%', height: 'auto' }}
+              width={600}
+              height={900}
+              priority
+              className={isAvailableOnExcludedProvider ? 'opacity-40' : ''}
+            />
+            {isAvailableOnExcludedProvider && firstExcludedProvider?.logoPath && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <CachedImage
+                  type="tmdb"
+                  src={`https://image.tmdb.org/t/p/w92${firstExcludedProvider.logoPath}`}
+                  alt={firstExcludedProvider.name}
+                  width={64}
+                  height={64}
+                  className="rounded-xl shadow-lg"
+                />
+              </div>
+            )}
+          </div>
         </div>
         <div className="media-title">
           <div className="media-status">
@@ -635,6 +655,34 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
               tmdbId={data.id}
               onUpdate={() => revalidate()}
             />
+          )}
+          {isAvailableOnExcludedProvider && firstExcludedProvider && watchProviderLink && (
+            <Tooltip
+              content={intl.formatMessage(messages.watchonprovider, {
+                provider: firstExcludedProvider.name,
+              })}
+            >
+              <Button
+                as="a"
+                href={watchProviderLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                buttonType="primary"
+                className="ml-2 first:ml-0"
+              >
+                {firstExcludedProvider.logoPath && (
+                  <CachedImage
+                    type="tmdb"
+                    src={`https://image.tmdb.org/t/p/w45${firstExcludedProvider.logoPath}`}
+                    alt={firstExcludedProvider.name}
+                    width={20}
+                    height={20}
+                    className="mr-2 rounded"
+                  />
+                )}
+                <span>{firstExcludedProvider.name}</span>
+              </Button>
+            </Tooltip>
           )}
           {(data.mediaInfo?.status === MediaStatus.AVAILABLE ||
             (settings.currentSettings.movie4kEnabled &&
