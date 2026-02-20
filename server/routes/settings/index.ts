@@ -450,123 +450,127 @@ settingsRoutes.post('/jellyfin/sync', (req, res) => {
   return res.status(200).json(jellyfinFullScanner.status());
 });
 
-settingsRoutes.post('/switch-media-server', async (req, res, next) => {
-  const settings = getSettings();
-  const current = settings.main.mediaServerType;
-  const body = (req.body as { targetServerType?: string }) ?? {};
-  if (current === MediaServerType.NOT_CONFIGURED) {
-    return res.status(400).json({
-      error: 'No media server is configured.',
-    });
-  }
-  try {
-    if (current === MediaServerType.PLEX) {
-      const useEmby = body.targetServerType === 'emby';
-      settings.main.mediaServerType = useEmby
-        ? MediaServerType.EMBY
-        : MediaServerType.JELLYFIN;
-      settings.plex = {
-        name: '',
-        ip: '',
-        port: 32400,
-        useSsl: false,
-        libraries: [],
-      };
-      const userRepository = getRepository(User);
-      await userRepository
-        .createQueryBuilder()
-        .update(User)
-        .set({ plexId: null, plexUsername: null, plexToken: null })
-        .where('user.id >= :zero', { zero: 0 })
-        .execute();
-      await userRepository
-        .createQueryBuilder()
-        .update(User)
-        .set({
-          userType: useEmby ? UserType.EMBY : UserType.JELLYFIN,
-        })
-        .where('user.jellyfinUserId IS NOT NULL')
-        .execute();
-      const mediaRepository = getRepository(Media);
-      await mediaRepository
-        .createQueryBuilder()
-        .update(Media)
-        .set({ ratingKey: null, ratingKey4k: null })
-        .where('media.ratingKey IS NOT NULL OR media.ratingKey4k IS NOT NULL')
-        .execute();
-      const watchlistRepository = getRepository(Watchlist);
-      await watchlistRepository
-        .createQueryBuilder()
-        .update(Watchlist)
-        .set({ ratingKey: '' })
-        .where("watchlist.ratingKey != ''")
-        .execute();
-      await settings.save();
-      startJobs();
-      return res.status(200).json({
-        message: useEmby
-          ? 'Switched to Emby. Restart or reload if the app does not update.'
-          : 'Switched to Jellyfin. Restart or reload if the app does not update.',
-      });
-    } else if (
-      current === MediaServerType.JELLYFIN ||
-      current === MediaServerType.EMBY
-    ) {
-      settings.main.mediaServerType = MediaServerType.PLEX;
-      settings.jellyfin = {
-        name: '',
-        ip: '',
-        port: 8096,
-        useSsl: false,
-        urlBase: '',
-        externalHostname: '',
-        jellyfinForgotPasswordUrl: '',
-        libraries: [],
-        serverId: '',
-        apiKey: '',
-      };
-      const userRepository = getRepository(User);
-      await userRepository
-        .createQueryBuilder()
-        .update(User)
-        .set({
-          jellyfinUserId: null,
-          jellyfinUsername: null,
-          jellyfinAuthToken: null,
-          jellyfinDeviceId: null,
-        })
-        .where('user.id >= :zero', { zero: 0 })
-        .execute();
-      await userRepository
-        .createQueryBuilder()
-        .update(User)
-        .set({ userType: UserType.PLEX })
-        .where('user.plexId IS NOT NULL')
-        .execute();
-      const mediaRepository = getRepository(Media);
-      await mediaRepository
-        .createQueryBuilder()
-        .update(Media)
-        .set({ jellyfinMediaId: null, jellyfinMediaId4k: null })
-        .where(
-          'media.jellyfinMediaId IS NOT NULL OR media.jellyfinMediaId4k IS NOT NULL'
-        )
-        .execute();
-      await settings.save();
-      startJobs();
-      return res.status(200).json({
-        message:
-          'Switched to Plex. Restart or reload if the app does not update.',
+settingsRoutes.post(
+  '/switch-media-server',
+  isAuthenticated(Permission.ADMIN),
+  async (req, res, next) => {
+    const settings = getSettings();
+    const current = settings.main.mediaServerType;
+    const body = (req.body as { targetServerType?: string }) ?? {};
+    if (current === MediaServerType.NOT_CONFIGURED) {
+      return res.status(400).json({
+        error: 'No media server is configured.',
       });
     }
-  } catch (e) {
-    logger.error('Switch media server failed', {
-      label: 'Settings',
-      errorMessage: e.message,
-    });
-    return next({ status: 500, message: 'Failed to switch media server.' });
+    try {
+      if (current === MediaServerType.PLEX) {
+        const useEmby = body.targetServerType === 'emby';
+        settings.main.mediaServerType = useEmby
+          ? MediaServerType.EMBY
+          : MediaServerType.JELLYFIN;
+        settings.plex = {
+          name: '',
+          ip: '',
+          port: 32400,
+          useSsl: false,
+          libraries: [],
+        };
+        const userRepository = getRepository(User);
+        await userRepository
+          .createQueryBuilder()
+          .update(User)
+          .set({ plexId: null, plexUsername: null, plexToken: null })
+          .where('user.id >= :zero', { zero: 0 })
+          .execute();
+        await userRepository
+          .createQueryBuilder()
+          .update(User)
+          .set({
+            userType: useEmby ? UserType.EMBY : UserType.JELLYFIN,
+          })
+          .where('user.jellyfinUserId IS NOT NULL')
+          .execute();
+        const mediaRepository = getRepository(Media);
+        await mediaRepository
+          .createQueryBuilder()
+          .update(Media)
+          .set({ ratingKey: null, ratingKey4k: null })
+          .where('media.ratingKey IS NOT NULL OR media.ratingKey4k IS NOT NULL')
+          .execute();
+        const watchlistRepository = getRepository(Watchlist);
+        await watchlistRepository
+          .createQueryBuilder()
+          .update(Watchlist)
+          .set({ ratingKey: '' })
+          .where("watchlist.ratingKey != ''")
+          .execute();
+        await settings.save();
+        startJobs();
+        return res.status(200).json({
+          message: useEmby
+            ? 'Switched to Emby. Restart or reload if the app does not update.'
+            : 'Switched to Jellyfin. Restart or reload if the app does not update.',
+        });
+      } else if (
+        current === MediaServerType.JELLYFIN ||
+        current === MediaServerType.EMBY
+      ) {
+        settings.main.mediaServerType = MediaServerType.PLEX;
+        settings.jellyfin = {
+          name: '',
+          ip: '',
+          port: 8096,
+          useSsl: false,
+          urlBase: '',
+          externalHostname: '',
+          jellyfinForgotPasswordUrl: '',
+          libraries: [],
+          serverId: '',
+          apiKey: '',
+        };
+        const userRepository = getRepository(User);
+        await userRepository
+          .createQueryBuilder()
+          .update(User)
+          .set({
+            jellyfinUserId: null,
+            jellyfinUsername: null,
+            jellyfinAuthToken: null,
+            jellyfinDeviceId: null,
+          })
+          .where('user.id >= :zero', { zero: 0 })
+          .execute();
+        await userRepository
+          .createQueryBuilder()
+          .update(User)
+          .set({ userType: UserType.PLEX })
+          .where('user.plexId IS NOT NULL')
+          .execute();
+        const mediaRepository = getRepository(Media);
+        await mediaRepository
+          .createQueryBuilder()
+          .update(Media)
+          .set({ jellyfinMediaId: null, jellyfinMediaId4k: null })
+          .where(
+            'media.jellyfinMediaId IS NOT NULL OR media.jellyfinMediaId4k IS NOT NULL'
+          )
+          .execute();
+        await settings.save();
+        startJobs();
+        return res.status(200).json({
+          message:
+            'Switched to Plex. Restart or reload if the app does not update.',
+        });
+      }
+    } catch (e) {
+      logger.error('Switch media server failed', {
+        label: 'Settings',
+        errorMessage: e.message,
+      });
+      return next({ status: 500, message: 'Failed to switch media server.' });
+    }
   }
-});
+);
 
 settingsRoutes.get('/tautulli', (_req, res) => {
   const settings = getSettings();
