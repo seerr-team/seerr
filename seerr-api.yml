@@ -164,6 +164,11 @@ components:
           type: string
           nullable: true
           example: 'US'
+        excludedWatchProviders:
+          type: string
+          nullable: true
+          description: 'Pipe-separated list of excluded watch provider IDs'
+          example: '8|337|384'
         originalLanguage:
           type: string
           nullable: true
@@ -254,6 +259,10 @@ components:
         enableSpecialEpisodes:
           type: boolean
           example: false
+        excludedWatchProviders:
+          type: string
+          description: 'Pipe-separated list of excluded watch provider IDs'
+          example: '8|337|384'
     NetworkSettings:
       type: object
       properties:

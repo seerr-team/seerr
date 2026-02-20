@@ -405,7 +405,14 @@ export const WatchProviderSelector = ({
     }?watchRegion=${watchRegion}`
   );
 
+  // Only notify the parent when values actually change after mount.
+  // Skipping the initial call prevents spurious router.replace navigations
+  // (e.g. in FilterSlideover, firing onChange on mount removes watchRegion from
+  // the URL, which triggers an HMR rebuild cycle and causes 400s on static assets).
   useEffect(() => {
+    if (!isMounted.current) {
+      return;
+    }
     onChange(watchRegion, activeProvider);
     // removed onChange as a dependency as we only need to call it when the value(s) change
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -413,8 +420,8 @@ export const WatchProviderSelector = ({
 
   // Sync internal state when the activeProviders prop changes (e.g. after async data load).
   // Skip the first render — useState already initialises from the prop, so firing here
-  // would create a new array reference, trigger Effect 1, and call onChange unnecessarily
-  // (which in FilterSlideover calls batchUpdateQueryParams → router.replace → full remount).
+  // would create a new array reference, trigger the onChange effect, and call onChange
+  // unnecessarily (which in FilterSlideover calls batchUpdateQueryParams → router.replace).
   useEffect(() => {
     if (!isMounted.current) {
       isMounted.current = true;
