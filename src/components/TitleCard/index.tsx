@@ -381,18 +381,6 @@ const TitleCard = ({
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             fill
           />
-          {isAvailableOnExcludedProvider && firstExcludedProvider?.logoPath && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center">
-              <CachedImage
-                type="tmdb"
-                src={`https://image.tmdb.org/t/p/w92${firstExcludedProvider.logoPath}`}
-                alt={firstExcludedProvider.name}
-                width={64}
-                height={64}
-                className="rounded-xl shadow-lg"
-              />
-            </div>
-          )}
           <div className="absolute left-0 right-0 flex items-center justify-between p-2">
             <div
               className={`pointer-events-none z-40 self-start rounded-full border bg-opacity-80 shadow-md ${
