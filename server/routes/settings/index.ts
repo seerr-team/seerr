@@ -3,17 +3,20 @@ import PlexAPI from '@server/api/plexapi';
 import PlexTvAPI from '@server/api/plextv';
 import TautulliAPI from '@server/api/tautulli';
 import { ApiErrorCode } from '@server/constants/error';
+import { MediaServerType } from '@server/constants/server';
+import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import { User } from '@server/entity/User';
+import { Watchlist } from '@server/entity/Watchlist';
 import type { PlexConnection } from '@server/interfaces/api/plexInterfaces';
 import type {
   LogMessage,
   LogsResultsResponse,
   SettingsAboutResponse,
 } from '@server/interfaces/api/settingsInterfaces';
-import { scheduledJobs } from '@server/job/schedule';
+import { scheduledJobs, startJobs } from '@server/job/schedule';
 import type { AvailableCacheIds } from '@server/lib/cache';
 import cacheManager from '@server/lib/cache';
 import ImageProxy from '@server/lib/imageproxy';
@@ -118,15 +121,30 @@ settingsRoutes.get('/plex', (_req, res) => {
 settingsRoutes.post('/plex', async (req, res, next) => {
   const userRepository = getRepository(User);
   const settings = getSettings();
+  const body = req.body as Record<string, unknown>;
+  const { authToken: bodyToken, ...plexBody } = body;
   try {
     const admin = await userRepository.findOneOrFail({
       select: { id: true, plexToken: true },
       where: { id: 1 },
     });
 
-    Object.assign(settings.plex, req.body);
+    Object.assign(settings.plex, plexBody);
 
-    const plexClient = new PlexAPI({ plexToken: admin.plexToken });
+    const token =
+      settings.main.mediaServerType !== MediaServerType.PLEX &&
+      typeof bodyToken === 'string'
+        ? bodyToken
+        : admin.plexToken;
+    if (!token) {
+      return next({
+        status: 400,
+        message:
+          'Sign in with Plex to verify the connection when the main server is not Plex.',
+      });
+    }
+
+    const plexClient = new PlexAPI({ plexToken: token });
 
     const result = await plexClient.getStatus();
 
@@ -154,18 +172,17 @@ settingsRoutes.post('/plex', async (req, res, next) => {
 
 settingsRoutes.get('/plex/devices/servers', async (req, res, next) => {
   const userRepository = getRepository(User);
+  const settings = getSettings();
   try {
     const admin = await userRepository.findOneOrFail({
       select: { id: true, plexToken: true },
       where: { id: 1 },
     });
-    const plexTvClient = admin.plexToken
-      ? new PlexTvAPI(admin.plexToken)
-      : null;
+    const authToken = admin.plexToken ?? null;
+    const plexTvClient = authToken ? new PlexTvAPI(authToken) : null;
     const devices = (await plexTvClient?.getDevices())?.filter((device) => {
       return device.provides.includes('server') && device.owned;
     });
-    const settings = getSettings();
 
     if (devices) {
       await Promise.all(
@@ -198,7 +215,7 @@ settingsRoutes.get('/plex/devices/servers', async (req, res, next) => {
                 useSsl: connection.protocol === 'https',
               };
               const plexClient = new PlexAPI({
-                plexToken: admin.plexToken,
+                plexToken: authToken,
                 plexSettings: plexDeviceSettings,
                 timeout: 5000,
               });
@@ -432,6 +449,125 @@ settingsRoutes.post('/jellyfin/sync', (req, res) => {
   }
   return res.status(200).json(jellyfinFullScanner.status());
 });
+
+settingsRoutes.post('/switch-media-server', async (req, res, next) => {
+  const settings = getSettings();
+  const current = settings.main.mediaServerType;
+  const body = (req.body as { targetServerType?: string }) ?? {};
+  if (current === MediaServerType.NOT_CONFIGURED) {
+    return res.status(400).json({
+      error: 'No media server is configured.',
+    });
+  }
+  try {
+    if (current === MediaServerType.PLEX) {
+      const useEmby = body.targetServerType === 'emby';
+      settings.main.mediaServerType = useEmby
+        ? MediaServerType.EMBY
+        : MediaServerType.JELLYFIN;
+      settings.plex = {
+        name: '',
+        ip: '',
+        port: 32400,
+        useSsl: false,
+        libraries: [],
+      };
+      const userRepository = getRepository(User);
+      await userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set({ plexId: null, plexUsername: null, plexToken: null })
+        .where('user.id >= :zero', { zero: 0 })
+        .execute();
+      await userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set({
+          userType: useEmby ? UserType.EMBY : UserType.JELLYFIN,
+        })
+        .where('user.jellyfinUserId IS NOT NULL')
+        .execute();
+      const mediaRepository = getRepository(Media);
+      await mediaRepository
+        .createQueryBuilder()
+        .update(Media)
+        .set({ ratingKey: null, ratingKey4k: null })
+        .where('media.ratingKey IS NOT NULL OR media.ratingKey4k IS NOT NULL')
+        .execute();
+      const watchlistRepository = getRepository(Watchlist);
+      await watchlistRepository
+        .createQueryBuilder()
+        .update(Watchlist)
+        .set({ ratingKey: '' })
+        .where("watchlist.ratingKey != ''")
+        .execute();
+      await settings.save();
+      startJobs();
+      return res.status(200).json({
+        message: useEmby
+          ? 'Switched to Emby. Restart or reload if the app does not update.'
+          : 'Switched to Jellyfin. Restart or reload if the app does not update.',
+      });
+    } else if (
+      current === MediaServerType.JELLYFIN ||
+      current === MediaServerType.EMBY
+    ) {
+      settings.main.mediaServerType = MediaServerType.PLEX;
+      settings.jellyfin = {
+        name: '',
+        ip: '',
+        port: 8096,
+        useSsl: false,
+        urlBase: '',
+        externalHostname: '',
+        jellyfinForgotPasswordUrl: '',
+        libraries: [],
+        serverId: '',
+        apiKey: '',
+      };
+      const userRepository = getRepository(User);
+      await userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set({
+          jellyfinUserId: null,
+          jellyfinUsername: null,
+          jellyfinAuthToken: null,
+          jellyfinDeviceId: null,
+        })
+        .where('user.id >= :zero', { zero: 0 })
+        .execute();
+      await userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set({ userType: UserType.PLEX })
+        .where('user.plexId IS NOT NULL')
+        .execute();
+      const mediaRepository = getRepository(Media);
+      await mediaRepository
+        .createQueryBuilder()
+        .update(Media)
+        .set({ jellyfinMediaId: null, jellyfinMediaId4k: null })
+        .where(
+          'media.jellyfinMediaId IS NOT NULL OR media.jellyfinMediaId4k IS NOT NULL'
+        )
+        .execute();
+      await settings.save();
+      startJobs();
+      return res.status(200).json({
+        message:
+          'Switched to Plex. Restart or reload if the app does not update.',
+      });
+    }
+  } catch (e) {
+    logger.error('Switch media server failed', {
+      label: 'Settings',
+      errorMessage: e.message,
+    });
+    return next({ status: 500, message: 'Failed to switch media server.' });
+  }
+});
+
 settingsRoutes.get('/tautulli', (_req, res) => {
   const settings = getSettings();
 

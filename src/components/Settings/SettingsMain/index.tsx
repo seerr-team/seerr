@@ -7,6 +7,7 @@ import LanguageSelector from '@app/components/LanguageSelector';
 import RegionSelector from '@app/components/RegionSelector';
 import CopyButton from '@app/components/Settings/CopyButton';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
+import SwitchMediaServerSection from '@app/components/Settings/SwitchMediaServerSection';
 import { availableLanguages } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
 import { Permission, useUser } from '@app/hooks/useUser';
@@ -581,6 +582,9 @@ const SettingsMain = () => {
           }}
         </Formik>
       </div>
+      {currentUser && userHasPermission(Permission.ADMIN) && (
+        <SwitchMediaServerSection />
+      )}
     </>
   );
 };

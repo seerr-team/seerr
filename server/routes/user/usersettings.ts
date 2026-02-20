@@ -275,23 +275,35 @@ userSettingsRoutes.post<{ authToken: string }>(
     if (!req.user) {
       return res.status(404).json({ code: ApiErrorCode.Unauthorized });
     }
-    // Make sure Plex login is enabled
-    if (settings.main.mediaServerType !== MediaServerType.PLEX) {
-      return res.status(500).json({ message: 'Plex login is disabled' });
+    const isMainPlex = settings.main.mediaServerType === MediaServerType.PLEX;
+    const plexForLinking = isMainPlex || settings.plex?.name ? true : false;
+    if (!plexForLinking) {
+      return res.status(400).json({
+        message:
+          'Plex is not the main server and Plex connection is not configured. Configure Plex in Settings for account linking.',
+      });
     }
 
     // First we need to use this auth token to get the user's email from plex.tv
     const plextv = new PlexTvAPI(req.body.authToken);
     const account = await plextv.getUser();
 
-    // Do not allow linking of an already linked account
-    if (await userRepository.exist({ where: { plexId: account.id } })) {
+    const user = req.user;
+    const existingUser = await userRepository.findOne({
+      where: { plexId: account.id },
+    });
+    if (existingUser) {
+      if (existingUser.id === user.id) {
+        user.plexId = account.id;
+        user.plexUsername = account.username;
+        user.plexToken = account.authToken;
+        await userRepository.save(user);
+        return res.status(204).send();
+      }
       return res.status(422).json({
         message: 'This Plex account is already linked to a Seerr user',
       });
     }
-
-    const user = req.user;
 
     // Emails do not match
     if (user.email !== account.email) {
@@ -302,7 +314,9 @@ userSettingsRoutes.post<{ authToken: string }>(
     }
 
     // valid plex user found, link to current user
-    user.userType = UserType.PLEX;
+    if (isMainPlex) {
+      user.userType = UserType.PLEX;
+    }
     user.plexId = account.id;
     user.plexUsername = account.username;
     user.plexToken = account.authToken;
@@ -319,9 +333,12 @@ userSettingsRoutes.delete<{ id: string }>(
     const settings = getSettings();
     const userRepository = getRepository(User);
 
-    // Make sure Plex login is enabled
-    if (settings.main.mediaServerType !== MediaServerType.PLEX) {
-      return res.status(500).json({ message: 'Plex login is disabled' });
+    const isMainPlex = settings.main.mediaServerType === MediaServerType.PLEX;
+    const plexConfigured = isMainPlex || settings.plex?.name;
+    if (!plexConfigured) {
+      return res.status(400).json({
+        message: 'Plex is not configured. Configure Plex in Settings first.',
+      });
     }
 
     try {
@@ -373,14 +390,17 @@ userSettingsRoutes.post<{ username: string; password: string }>(
     if (!req.user) {
       return res.status(401).json({ code: ApiErrorCode.Unauthorized });
     }
-    // Make sure jellyfin login is enabled
-    if (
-      settings.main.mediaServerType !== MediaServerType.JELLYFIN &&
-      settings.main.mediaServerType !== MediaServerType.EMBY
-    ) {
-      return res
-        .status(500)
-        .json({ message: 'Jellyfin/Emby login is disabled' });
+
+    const isMainJellyfin =
+      settings.main.mediaServerType === MediaServerType.JELLYFIN ||
+      settings.main.mediaServerType === MediaServerType.EMBY;
+    const jellyfinForLinking = settings.jellyfin;
+
+    if (!isMainJellyfin && !jellyfinForLinking?.ip) {
+      return res.status(400).json({
+        message:
+          'Jellyfin is not the main server and Jellyfin connection is not configured. Ask an admin to set Jellyfin in Settings (connection only) for account linking.',
+      });
     }
 
     // Do not allow linking of an already linked account
@@ -394,7 +414,9 @@ userSettingsRoutes.post<{ username: string; password: string }>(
       });
     }
 
-    const hostname = getHostname();
+    const hostname = isMainJellyfin
+      ? getHostname()
+      : getHostname(jellyfinForLinking);
     const deviceId = Buffer.from(
       req.user?.id === 1 ? 'BOT_seerr' : `BOT_seerr_${req.user.username ?? ''}`
     ).toString('base64');
@@ -431,11 +453,12 @@ userSettingsRoutes.post<{ username: string; password: string }>(
 
       const user = req.user;
 
-      // valid jellyfin user found, link to current user
-      user.userType =
-        settings.main.mediaServerType === MediaServerType.EMBY
-          ? UserType.EMBY
-          : UserType.JELLYFIN;
+      if (isMainJellyfin) {
+        user.userType =
+          settings.main.mediaServerType === MediaServerType.EMBY
+            ? UserType.EMBY
+            : UserType.JELLYFIN;
+      }
       user.jellyfinUserId = account.User.Id;
       user.jellyfinUsername = account.User.Name;
       user.jellyfinAuthToken = account.AccessToken;

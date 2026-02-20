@@ -58,6 +58,39 @@ authRoutes.post('/plex', async (req, res, next) => {
     });
   }
 
+  const mediaServerType = settings.main.mediaServerType;
+
+  // When main server is not Plex, allow storing the token for Plex settings
+  if (mediaServerType !== MediaServerType.PLEX) {
+    if (!req.user) {
+      return next({
+        status: 401,
+        message: 'Authentication required.',
+      });
+    }
+    try {
+      const plextv = new PlexTvAPI(body.authToken);
+      const account = await plextv.getUser();
+      const admin = await userRepository.findOneOrFail({
+        where: { id: 1 },
+      });
+      admin.plexToken = body.authToken;
+      admin.plexId = account.id;
+      admin.plexUsername = account.username;
+      await userRepository.save(admin);
+      return res.status(200).json({ email: admin.email });
+    } catch (e) {
+      logger.error('Failed to store Plex token for settings', {
+        label: 'API',
+        errorMessage: (e as Error).message,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to validate Plex token.',
+      });
+    }
+  }
+
   if (
     settings.main.mediaServerType != MediaServerType.NOT_CONFIGURED &&
     (settings.main.mediaServerLogin === false ||
@@ -410,9 +443,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       settings.jellyfin.apiKey = apiKey;
       await settings.save();
       startJobs();
-    }
-    // User already exists, let's update their information
-    else if (account.User.Id === user?.jellyfinUserId) {
+    } else if (account.User.Id === user?.jellyfinUserId) {
       logger.info(
         `Found matching ${
           settings.main.mediaServerType === MediaServerType.JELLYFIN
@@ -431,6 +462,13 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       );
       user.avatar = getUserAvatarUrl(user);
       user.jellyfinUsername = account.User.Name;
+      user.userType =
+        settings.main.mediaServerType === MediaServerType.JELLYFIN
+          ? UserType.JELLYFIN
+          : UserType.EMBY;
+      user.plexId = null;
+      user.plexUsername = null;
+      user.plexToken = null;
 
       if (user.username === account.User.Name) {
         user.username = '';
