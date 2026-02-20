@@ -20,7 +20,7 @@ import type {
 } from '@server/models/common';
 import axios from 'axios';
 import orderBy from 'lodash/orderBy';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import type { MultiValue, SingleValue } from 'react-select';
 import AsyncSelect from 'react-select/async';
@@ -396,6 +396,9 @@ export const WatchProviderSelector = ({
   const [activeProvider, setActiveProvider] = useState<number[]>(
     activeProviders ?? []
   );
+  // Track whether the component has mounted so we can skip the sync effect
+  // on the initial render (useState already initialises from the prop).
+  const isMounted = useRef(false);
   const { data, isLoading } = useSWR<WatchProviderDetails[]>(
     `/api/v1/watchproviders/${
       type === 'movie' ? 'movies' : 'tv'
@@ -409,9 +412,14 @@ export const WatchProviderSelector = ({
   }, [activeProvider, watchRegion]);
 
   // Sync internal state when the activeProviders prop changes (e.g. after async data load).
-  // JSON.stringify produces a primitive string, so React's Object.is comparison is value-based
-  // and the effect only fires when the set of IDs actually changes.
+  // Skip the first render — useState already initialises from the prop, so firing here
+  // would create a new array reference, trigger Effect 1, and call onChange unnecessarily
+  // (which in FilterSlideover calls batchUpdateQueryParams → router.replace → full remount).
   useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
     setActiveProvider(activeProviders ?? []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(activeProviders)]);
