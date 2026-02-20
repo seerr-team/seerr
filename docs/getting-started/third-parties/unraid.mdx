@@ -31,7 +31,7 @@ Before proceeding, choose which installation method best suits your server:
 **Seerr Default** — Runs the container with its native `node` user (UID 1000). This method aligns with how the Seerr image is officially packaged and is suitable for most standard setups.
 
 :::caution
-The Seerr Default method sets appdata ownership to UID 1000:1000, which conflicts with Unraid's expectation that appdata is owned by `nobody:users` (UID 99, GID 100). This can break SMB share access (users won't be able to edit config files over the network), trigger warnings in the "Fix Common Problems" plugin, and cause issues with backup plugins like CA Appdata Backup or Tailscale.
+The Seerr Default method sets appdata ownership to UID 1000:1000, which conflicts with Unraid's expectation that appdata is owned by `nobody:users` (UID 99, GID 100). This can break SMB share access (users won't be able to edit config files over the network), trigger warnings in the "Fix Common Problems" plugin, and cause issues with backup plugins (such as CA Appdata Backup) and network integrations (such as Tailscale).
 :::
 
 **Unraid Default** — Runs the container with Unraid's native `nobody:users` ownership (UID 99, GID 100). This method follows Unraid best practices and maintains native file ownership. Use this method if you need to retain standard SMB share access without permission errors, or if you are running specific Unraid network integrations (like Tailscale) that require specific routing.
