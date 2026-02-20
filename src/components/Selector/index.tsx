@@ -446,7 +446,7 @@ export const WatchProviderSelector = ({
       {isLoading ? (
         <SmallLoadingSpinner />
       ) : (
-        <div className="grid">
+        <div className="w-full">
           <div className="provider-icons grid gap-2">
             {initialProviders.map((provider) => {
               const isActive = activeProvider.includes(provider.id);
