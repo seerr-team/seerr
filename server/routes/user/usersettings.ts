@@ -491,14 +491,15 @@ userSettingsRoutes.delete<{ id: string }>(
     const settings = getSettings();
     const userRepository = getRepository(User);
 
-    // Make sure jellyfin login is enabled
-    if (
-      settings.main.mediaServerType !== MediaServerType.JELLYFIN &&
-      settings.main.mediaServerType !== MediaServerType.EMBY
-    ) {
-      return res
-        .status(500)
-        .json({ message: 'Jellyfin/Emby login is disabled' });
+    const isMainJellyfin =
+      settings.main.mediaServerType === MediaServerType.JELLYFIN ||
+      settings.main.mediaServerType === MediaServerType.EMBY;
+    const jellyfinForLinking = settings.jellyfin;
+    if (!isMainJellyfin && !jellyfinForLinking?.ip) {
+      return res.status(400).json({
+        message:
+          'Jellyfin is not the main server and Jellyfin connection is not configured. Configure Jellyfin in Settings to allow unlinking.',
+      });
     }
 
     try {
