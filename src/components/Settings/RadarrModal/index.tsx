@@ -83,6 +83,18 @@ interface RadarrModalProps {
   onSave: () => void;
 }
 
+const shouldShowRequestLabelField = ({
+  isDefault,
+  is4k,
+  movie4kEnabled,
+  radarrIs4k,
+}: {
+  isDefault: boolean;
+  is4k: boolean;
+  movie4kEnabled: boolean;
+  radarrIs4k?: boolean;
+}) => isDefault && (is4k || (movie4kEnabled && !radarrIs4k));
+
 const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
   const intl = useIntl();
   const settings = useSettings();
@@ -243,10 +255,16 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
             const profileName = testResponse.profiles.find(
               (profile) => profile.id === Number(values.activeProfileId)
             )?.name;
+            const showRequestLabelField = shouldShowRequestLabelField({
+              isDefault: values.isDefault,
+              is4k: values.is4k,
+              movie4kEnabled: settings.currentSettings.movie4kEnabled,
+              radarrIs4k: radarr?.is4k,
+            });
 
             const submission = {
               name: values.name,
-              requestLabel: values.isDefault
+              requestLabel: showRequestLabelField
                 ? values.requestLabel?.trim() || undefined
                 : undefined,
               hostname: values.hostname,
@@ -290,10 +308,12 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
           isSubmitting,
           isValid,
         }) => {
-          const showRequestLabelField =
-            values.isDefault &&
-            (values.is4k ||
-              (settings.currentSettings.movie4kEnabled && !radarr?.is4k));
+          const showRequestLabelField = shouldShowRequestLabelField({
+            isDefault: values.isDefault,
+            is4k: values.is4k,
+            movie4kEnabled: settings.currentSettings.movie4kEnabled,
+            radarrIs4k: radarr?.is4k,
+          });
 
           return (
             <Modal
