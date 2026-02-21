@@ -10,14 +10,8 @@ import axios from 'axios';
 import { Field, Formik } from 'formik';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
-import Select from 'react-select';
 import { useToasts } from 'react-toast-notifications';
 import * as Yup from 'yup';
-
-type OptionType = {
-  value: number;
-  label: string;
-};
 
 const messages = defineMessages('components.Settings.RadarrModal', {
   createradarr: 'Add New Radarr Server',
@@ -28,10 +22,6 @@ const messages = defineMessages('components.Settings.RadarrModal', {
   validationHostnameRequired: 'You must provide a valid hostname or IP address',
   validationPortRequired: 'You must provide a valid port number',
   validationApiKeyRequired: 'You must provide an API key',
-  validationRootFolderRequired: 'You must select a root folder',
-  validationProfileRequired: 'You must select a quality profile',
-  validationMinimumAvailabilityRequired:
-    'You must select a minimum availability',
   toastRadarrTestSuccess: 'Radarr connection established successfully!',
   toastRadarrTestFailure: 'Failed to connect to Radarr.',
   add: 'Add Server',
@@ -43,22 +33,9 @@ const messages = defineMessages('components.Settings.RadarrModal', {
   ssl: 'Use SSL',
   apiKey: 'API Key',
   baseUrl: 'URL Base',
+  server4k: '4K Server',
   syncEnabled: 'Enable Scan',
   externalUrl: 'External URL',
-  qualityprofile: 'Quality Profile',
-  rootfolder: 'Root Folder',
-  minimumAvailability: 'Minimum Availability',
-  server4k: '4K Server',
-  selectQualityProfile: 'Select quality profile',
-  selectRootFolder: 'Select root folder',
-  selectMinimumAvailability: 'Select minimum availability',
-  loadingprofiles: 'Loading quality profiles…',
-  testFirstQualityProfiles: 'Test connection to load quality profiles',
-  loadingrootfolders: 'Loading root folders…',
-  testFirstRootFolders: 'Test connection to load root folders',
-  loadingTags: 'Loading tags…',
-  testFirstTags: 'Test connection to load tags',
-  tags: 'Tags',
   enableSearch: 'Enable Automatic Search',
   tagRequests: 'Tag Requests',
   tagRequestsInfo:
@@ -67,17 +44,12 @@ const messages = defineMessages('components.Settings.RadarrModal', {
   validationApplicationUrlTrailingSlash: 'URL must not end in a trailing slash',
   validationBaseUrlLeadingSlash: 'URL base must have a leading slash',
   validationBaseUrlTrailingSlash: 'URL base must not end in a trailing slash',
-  notagoptions: 'No tags.',
-  selecttags: 'Select tags',
-  announced: 'Announced',
-  inCinemas: 'In Cinemas',
-  released: 'Released',
 });
 
 interface RadarrModalProps {
   radarr: RadarrSettings | null;
   onClose: () => void;
-  onSave: () => void;
+  onSave: (savedInstance: RadarrSettings) => Promise<void>;
 }
 
 const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
@@ -104,15 +76,6 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
       .required(intl.formatMessage(messages.validationPortRequired)),
     apiKey: Yup.string().required(
       intl.formatMessage(messages.validationApiKeyRequired)
-    ),
-    rootFolder: Yup.string().required(
-      intl.formatMessage(messages.validationRootFolderRequired)
-    ),
-    activeProfileId: Yup.string().required(
-      intl.formatMessage(messages.validationProfileRequired)
-    ),
-    minimumAvailability: Yup.string().required(
-      intl.formatMessage(messages.validationMinimumAvailabilityRequired)
     ),
     externalUrl: Yup.string()
       .test(
@@ -221,10 +184,6 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
           ssl: radarr?.useSsl ?? false,
           apiKey: radarr?.apiKey,
           baseUrl: radarr?.baseUrl,
-          activeProfileId: radarr?.activeProfileId,
-          rootFolder: radarr?.activeDirectory,
-          minimumAvailability: radarr?.minimumAvailability ?? 'released',
-          tags: radarr?.tags ?? [],
           isDefault: radarr?.isDefault ?? false,
           is4k: radarr?.is4k ?? false,
           externalUrl: radarr?.externalUrl,
@@ -235,10 +194,6 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
         validationSchema={RadarrSettingsSchema}
         onSubmit={async (values) => {
           try {
-            const profileName = testResponse.profiles.find(
-              (profile) => profile.id === Number(values.activeProfileId)
-            )?.name;
-
             const submission = {
               name: values.name,
               hostname: values.hostname,
@@ -246,30 +201,32 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
               apiKey: values.apiKey,
               useSsl: values.ssl,
               baseUrl: values.baseUrl,
-              activeProfileId: Number(values.activeProfileId),
-              activeProfileName: profileName,
-              activeDirectory: values.rootFolder,
-              is4k: values.is4k,
-              minimumAvailability: values.minimumAvailability,
-              tags: values.tags,
               isDefault: values.isDefault,
+              is4k: values.is4k,
               externalUrl: values.externalUrl,
               syncEnabled: values.syncEnabled,
               preventSearch: !values.enableSearch,
               tagRequests: values.tagRequests,
             };
+
+            let savedInstance: RadarrSettings;
             if (!radarr) {
-              await axios.post('/api/v1/settings/radarr', submission);
+              const response = await axios.post<RadarrSettings>(
+                '/api/v1/settings/radarr',
+                submission
+              );
+              savedInstance = response.data;
             } else {
-              await axios.put(
+              const response = await axios.put<RadarrSettings>(
                 `/api/v1/settings/radarr/${radarr.id}`,
                 submission
               );
+              savedInstance = response.data;
             }
 
-            onSave();
+            await onSave(savedInstance);
           } catch (e) {
-            // set error here
+            // TODO: handle error
           }
         }}
       >
@@ -499,176 +456,6 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                       typeof errors.baseUrl === 'string' && (
                         <div className="error">{errors.baseUrl}</div>
                       )}
-                  </div>
-                </div>
-                <div className="form-row">
-                  <label htmlFor="activeProfileId" className="text-label">
-                    {intl.formatMessage(messages.qualityprofile)}
-                    <span className="label-required">*</span>
-                  </label>
-                  <div className="form-input-area">
-                    <div className="form-input-field">
-                      <Field
-                        as="select"
-                        id="activeProfileId"
-                        name="activeProfileId"
-                        disabled={!isValidated || isTesting}
-                      >
-                        <option value="">
-                          {isTesting
-                            ? intl.formatMessage(messages.loadingprofiles)
-                            : !isValidated
-                              ? intl.formatMessage(
-                                  messages.testFirstQualityProfiles
-                                )
-                              : intl.formatMessage(
-                                  messages.selectQualityProfile
-                                )}
-                        </option>
-                        {testResponse.profiles.length > 0 &&
-                          testResponse.profiles.map((profile) => (
-                            <option
-                              key={`loaded-profile-${profile.id}`}
-                              value={profile.id}
-                            >
-                              {profile.name}
-                            </option>
-                          ))}
-                      </Field>
-                    </div>
-                    {errors.activeProfileId &&
-                      touched.activeProfileId &&
-                      typeof errors.activeProfileId === 'string' && (
-                        <div className="error">{errors.activeProfileId}</div>
-                      )}
-                  </div>
-                </div>
-                <div className="form-row">
-                  <label htmlFor="rootFolder" className="text-label">
-                    {intl.formatMessage(messages.rootfolder)}
-                    <span className="label-required">*</span>
-                  </label>
-                  <div className="form-input-area">
-                    <div className="form-input-field">
-                      <Field
-                        as="select"
-                        id="rootFolder"
-                        name="rootFolder"
-                        disabled={!isValidated || isTesting}
-                      >
-                        <option value="">
-                          {isTesting
-                            ? intl.formatMessage(messages.loadingrootfolders)
-                            : !isValidated
-                              ? intl.formatMessage(
-                                  messages.testFirstRootFolders
-                                )
-                              : intl.formatMessage(messages.selectRootFolder)}
-                        </option>
-                        {testResponse.rootFolders.length > 0 &&
-                          testResponse.rootFolders.map((folder) => (
-                            <option
-                              key={`loaded-profile-${folder.id}`}
-                              value={folder.path}
-                            >
-                              {folder.path}
-                            </option>
-                          ))}
-                      </Field>
-                    </div>
-                    {errors.rootFolder &&
-                      touched.rootFolder &&
-                      typeof errors.rootFolder === 'string' && (
-                        <div className="error">{errors.rootFolder}</div>
-                      )}
-                  </div>
-                </div>
-                <div className="form-row">
-                  <label htmlFor="minimumAvailability" className="text-label">
-                    {intl.formatMessage(messages.minimumAvailability)}
-                    <span className="label-required">*</span>
-                  </label>
-                  <div className="form-input-area">
-                    <div className="form-input-field">
-                      <Field
-                        as="select"
-                        id="minimumAvailability"
-                        name="minimumAvailability"
-                      >
-                        <option value="announced">
-                          {intl.formatMessage(messages.announced)}
-                        </option>
-                        <option value="inCinemas">
-                          {intl.formatMessage(messages.inCinemas)}
-                        </option>
-                        <option value="released">
-                          {intl.formatMessage(messages.released)}
-                        </option>
-                      </Field>
-                    </div>
-                    {errors.minimumAvailability &&
-                      touched.minimumAvailability && (
-                        <div className="error">
-                          {errors.minimumAvailability}
-                        </div>
-                      )}
-                  </div>
-                </div>
-                <div className="form-row">
-                  <label htmlFor="tags" className="text-label">
-                    {intl.formatMessage(messages.tags)}
-                  </label>
-                  <div className="form-input-area">
-                    <Select<OptionType, true>
-                      options={
-                        isValidated
-                          ? testResponse.tags.map((tag) => ({
-                              label: tag.label,
-                              value: tag.id,
-                            }))
-                          : []
-                      }
-                      isMulti
-                      isDisabled={!isValidated || isTesting}
-                      placeholder={
-                        !isValidated
-                          ? intl.formatMessage(messages.testFirstTags)
-                          : isTesting
-                            ? intl.formatMessage(messages.loadingTags)
-                            : intl.formatMessage(messages.selecttags)
-                      }
-                      className="react-select-container"
-                      classNamePrefix="react-select"
-                      value={
-                        values.tags
-                          .map((tagId) => {
-                            const foundTag = testResponse.tags.find(
-                              (tag) => tag.id === tagId
-                            );
-
-                            if (!foundTag) {
-                              return undefined;
-                            }
-
-                            return {
-                              value: foundTag.id,
-                              label: foundTag.label,
-                            };
-                          })
-                          .filter(
-                            (option) => option !== undefined
-                          ) as OptionType[]
-                      }
-                      onChange={(value) => {
-                        setFieldValue(
-                          'tags',
-                          value.map((option) => option.value)
-                        );
-                      }}
-                      noOptionsMessage={() =>
-                        intl.formatMessage(messages.notagoptions)
-                      }
-                    />
                   </div>
                 </div>
                 <div className="form-row">

@@ -16,8 +16,8 @@ import deprecatedRoute from '@server/middleware/deprecation';
 import { mapProductionCompany } from '@server/models/Movie';
 import { mapNetwork } from '@server/models/Tv';
 import { mapWatchProviderDetails } from '@server/models/common';
-import overrideRuleRoutes from '@server/routes/overrideRule';
 import settingsRoutes from '@server/routes/settings';
+import routingRuleRoutes from '@server/routes/settings/routingRule';
 import watchlistRoutes from '@server/routes/watchlist';
 import {
   appDataPath,
@@ -173,9 +173,9 @@ router.use('/issue', isAuthenticated(), issueRoutes);
 router.use('/issueComment', isAuthenticated(), issueCommentRoutes);
 router.use('/auth', authRoutes);
 router.use(
-  '/overrideRule',
+  '/routingRule',
   isAuthenticated(Permission.ADMIN),
-  overrideRuleRoutes
+  routingRuleRoutes
 );
 
 router.get('/regions', isAuthenticated(), async (req, res, next) => {

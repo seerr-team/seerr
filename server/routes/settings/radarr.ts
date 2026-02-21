@@ -1,4 +1,6 @@
 import RadarrAPI from '@server/api/servarr/radarr';
+import { getRepository } from '@server/datasource';
+import RoutingRule from '@server/entity/RoutingRule';
 import type { RadarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -136,6 +138,7 @@ radarrRoutes.get<{ id: string }>('/:id/profiles', async (req, res, next) => {
 
 radarrRoutes.delete<{ id: string }>('/:id', async (req, res, next) => {
   const settings = getSettings();
+  const routingRuleRepository = getRepository(RoutingRule);
 
   const radarrIndex = settings.radarr.findIndex(
     (r) => r.id === Number(req.params.id)
@@ -143,6 +146,19 @@ radarrRoutes.delete<{ id: string }>('/:id', async (req, res, next) => {
 
   if (radarrIndex === -1) {
     return next({ status: '404', message: 'Settings instance not found' });
+  }
+
+  const instanceId = Number(req.params.id);
+
+  const rulesToDelete = await routingRuleRepository.find({
+    where: {
+      serviceType: 'radarr',
+      targetServiceId: instanceId,
+    },
+  });
+
+  if (rulesToDelete.length > 0) {
+    await routingRuleRepository.remove(rulesToDelete);
   }
 
   const removed = settings.radarr.splice(radarrIndex, 1);
