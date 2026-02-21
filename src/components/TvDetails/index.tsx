@@ -561,18 +561,19 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
               priority
               className={isAvailableOnExcludedProvider ? 'opacity-40' : ''}
             />
-            {isAvailableOnExcludedProvider && firstExcludedProvider?.logoPath && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <CachedImage
-                  type="tmdb"
-                  src={`https://image.tmdb.org/t/p/w92${firstExcludedProvider.logoPath}`}
-                  alt={firstExcludedProvider.name}
-                  width={64}
-                  height={64}
-                  className="rounded-xl shadow-lg"
-                />
-              </div>
-            )}
+            {isAvailableOnExcludedProvider &&
+              firstExcludedProvider?.logoPath && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <CachedImage
+                    type="tmdb"
+                    src={`https://image.tmdb.org/t/p/w92${firstExcludedProvider.logoPath}`}
+                    alt={firstExcludedProvider.name}
+                    width={64}
+                    height={64}
+                    className="rounded-xl shadow-lg"
+                  />
+                </div>
+              )}
           </div>
         </div>
         <div className="media-title">
@@ -692,17 +693,9 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
           <div className="z-20">
             <PlayButton links={mediaLinks} />
           </div>
-          {!isAvailableOnExcludedProvider && (
-            <RequestButton
-              mediaType="tv"
-              onUpdate={() => revalidate()}
-              tmdbId={data?.id}
-              media={data?.mediaInfo}
-              isShowComplete={isComplete}
-              is4kShowComplete={is4kComplete}
-            />
-          )}
-          {isAvailableOnExcludedProvider && firstExcludedProvider && watchProviderLink && (
+          {isAvailableOnExcludedProvider &&
+          firstExcludedProvider &&
+          watchProviderLink ? (
             <Tooltip
               content={intl.formatMessage(messages.watchonprovider, {
                 provider: firstExcludedProvider.name,
@@ -729,6 +722,15 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                 <span>{firstExcludedProvider.name}</span>
               </Button>
             </Tooltip>
+          ) : (
+            <RequestButton
+              mediaType="tv"
+              onUpdate={() => revalidate()}
+              tmdbId={data?.id}
+              media={data?.mediaInfo}
+              isShowComplete={isComplete}
+              is4kShowComplete={is4kComplete}
+            />
           )}
           {(data.mediaInfo?.status === MediaStatus.AVAILABLE ||
             data.mediaInfo?.status === MediaStatus.PARTIALLY_AVAILABLE ||
