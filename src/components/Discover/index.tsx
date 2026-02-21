@@ -396,6 +396,16 @@ const Discover = () => {
               />
             );
             break;
+          case DiscoverSliderType.TMDB_LIST:
+            sliderComponent = (
+              <MediaSlider
+                sliderKey={`custom-slider-${slider.id}`}
+                title={slider.title ?? ''}
+                url={`/api/v1/discover/list/${slider.data}`}
+                // linkUrl intentionally omitted
+              />
+            );
+            break;
         }
 
         if (isEditing) {
