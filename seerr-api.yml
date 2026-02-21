@@ -254,6 +254,9 @@ components:
         enableSpecialEpisodes:
           type: boolean
           example: false
+        enableEpisodeAvailability:
+          type: boolean
+          example: false
     NetworkSettings:
       type: object
       properties:
