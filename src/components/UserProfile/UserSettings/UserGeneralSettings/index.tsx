@@ -5,6 +5,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import LanguageSelector from '@app/components/LanguageSelector';
 import QuotaSelector from '@app/components/QuotaSelector';
 import RegionSelector from '@app/components/RegionSelector';
+import { WatchProviderSelector } from '@app/components/Selector';
 import { availableLanguages } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
@@ -56,6 +57,9 @@ const messages = defineMessages(
     originallanguageTip: 'Filter content by original language',
     streamingRegion: 'Streaming Region',
     streamingRegionTip: 'Show streaming sites by regional availability',
+    excludedWatchProviders: 'Excluded Streaming Providers',
+    excludedWatchProvidersTip:
+      'Content available on these providers will be visually indicated as already streamable. Uses the streaming region set above.',
     movierequestlimit: 'Movie Request Limit',
     seriesrequestlimit: 'Series Request Limit',
     enableOverride: 'Override Global Limit',
@@ -162,6 +166,7 @@ const UserGeneralSettings = () => {
           locale: data?.locale,
           discoverRegion: data?.discoverRegion,
           streamingRegion: data?.streamingRegion,
+          excludedWatchProviders: data?.excludedWatchProviders ?? '',
           originalLanguage: data?.originalLanguage,
           movieQuotaLimit: data?.movieQuotaLimit,
           movieQuotaDays: data?.movieQuotaDays,
@@ -182,6 +187,7 @@ const UserGeneralSettings = () => {
               locale: values.locale,
               discoverRegion: values.discoverRegion,
               streamingRegion: values.streamingRegion,
+              excludedWatchProviders: values.excludedWatchProviders,
               originalLanguage: values.originalLanguage,
               movieQuotaLimit: movieQuotaEnabled
                 ? values.movieQuotaLimit
@@ -453,6 +459,41 @@ const UserGeneralSettings = () => {
                       onChange={setFieldValue}
                       regionType="streaming"
                       disableAll
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="excludedWatchProviders" className="text-label">
+                  <span>
+                    {intl.formatMessage(messages.excludedWatchProviders)}
+                  </span>
+                  <span className="label-tip">
+                    {intl.formatMessage(messages.excludedWatchProvidersTip)}
+                  </span>
+                </label>
+                <div className="form-input-area">
+                  <div className="form-input-field relative z-[19]">
+                    <WatchProviderSelector
+                      key={`${values.streamingRegion || currentSettings.streamingRegion || 'US'}`}
+                      type="movie"
+                      region={
+                        values.streamingRegion ||
+                        currentSettings.streamingRegion ||
+                        'US'
+                      }
+                      hideRegionSelector
+                      activeProviders={
+                        values.excludedWatchProviders
+                          ? values.excludedWatchProviders.split('|').map(Number)
+                          : []
+                      }
+                      onChange={(_region, providers) => {
+                        setFieldValue(
+                          'excludedWatchProviders',
+                          providers.join('|')
+                        );
+                      }}
                     />
                   </div>
                 </div>

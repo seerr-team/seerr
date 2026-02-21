@@ -8,6 +8,7 @@ import RequestModal from '@app/components/RequestModal';
 import ErrorCard from '@app/components/TitleCard/ErrorCard';
 import Placeholder from '@app/components/TitleCard/Placeholder';
 import { useIsTouch } from '@app/hooks/useIsTouch';
+import useSettings from '@app/hooks/useSettings';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -22,13 +23,16 @@ import {
 } from '@heroicons/react/24/outline';
 import { MediaStatus } from '@server/constants/media';
 import type { Watchlist } from '@server/entity/Watchlist';
+import type { MovieDetails } from '@server/models/Movie';
 import type { MediaType } from '@server/models/Search';
+import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
 import Link from 'next/link';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import { mutate } from 'swr';
+import useSWR from 'swr';
 
 interface TitleCardProps {
   id: number;
@@ -53,6 +57,7 @@ const messages = defineMessages('components.TitleCard', {
     '<strong>{title}</strong> Removed from watchlist  successfully!',
   watchlistCancel: 'watchlist for <strong>{title}</strong> canceled.',
   watchlistError: 'Something went wrong. Please try again.',
+  watchonprovider: 'Available on {provider}',
 });
 
 const TitleCard = ({
@@ -70,6 +75,7 @@ const TitleCard = ({
 }: TitleCardProps) => {
   const isTouch = useIsTouch();
   const intl = useIntl();
+  const { currentSettings } = useSettings();
   const { user, hasPermission } = useUser();
   const [isUpdating, setIsUpdating] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(status);
@@ -80,6 +86,42 @@ const TitleCard = ({
     useState<boolean>(!isAddedToWatchlist);
   const [showBlocklistModal, setShowBlocklistModal] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Compute excluded streaming providers from user/global settings
+  const streamingRegion =
+    user?.settings?.streamingRegion ??
+    currentSettings.streamingRegion ??
+    'US';
+  const excludedWatchProviderIds = (
+    user?.settings?.excludedWatchProviders ??
+    currentSettings.excludedWatchProviders ??
+    ''
+  )
+    .split('|')
+    .filter(Boolean)
+    .map(Number);
+
+  // Lazy-fetch full details only when excluded providers are configured and
+  // the card is a movie or TV show (no extra calls when the feature is unused).
+  const shouldFetchDetails =
+    excludedWatchProviderIds.length > 0 &&
+    (mediaType === 'movie' || mediaType === 'tv');
+  const detailsUrl = shouldFetchDetails
+    ? `/api/v1/${mediaType === 'movie' ? 'movie' : 'tv'}/${id}`
+    : null;
+  const { data: details } = useSWR<MovieDetails | TvDetails>(detailsUrl);
+
+  const watchProvidersForRegion = details?.watchProviders?.find(
+    (p) => p.iso_3166_1 === streamingRegion
+  );
+  const streamingProviders = watchProvidersForRegion?.flatrate ?? [];
+  const watchProviderLink = watchProvidersForRegion?.link;
+  const firstExcludedProvider = streamingProviders.find((p) =>
+    excludedWatchProviderIds.includes(p.id)
+  );
+  const isAvailableOnExcludedProvider =
+    excludedWatchProviderIds.length > 0 &&
+    streamingProviders.some((p) => excludedWatchProviderIds.includes(p.id));
 
   // Just to get the year from the date
   if (year) {
@@ -329,7 +371,7 @@ const TitleCard = ({
         <div className="absolute inset-0 h-full w-full overflow-hidden">
           <CachedImage
             type="tmdb"
-            className="absolute inset-0 h-full w-full"
+            className={`absolute inset-0 h-full w-full${isAvailableOnExcludedProvider ? ' opacity-40' : ''}`}
             alt=""
             src={
               image
@@ -339,6 +381,20 @@ const TitleCard = ({
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             fill
           />
+          {isAvailableOnExcludedProvider &&
+            !showDetail &&
+            firstExcludedProvider?.logoPath && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <CachedImage
+                  type="tmdb"
+                  src={`https://image.tmdb.org/t/p/w92${firstExcludedProvider.logoPath}`}
+                  alt={firstExcludedProvider.name}
+                  width={64}
+                  height={64}
+                  className="rounded-xl shadow-lg"
+                />
+              </div>
+            )}
           <div className="absolute left-0 right-0 flex items-center justify-between p-2">
             <div
               className={`pointer-events-none z-40 self-start rounded-full border bg-opacity-80 shadow-md ${
@@ -514,7 +570,39 @@ const TitleCard = ({
                 {showRequestButton &&
                   (!currentStatus ||
                     currentStatus === MediaStatus.UNKNOWN ||
-                    currentStatus === MediaStatus.DELETED) && (
+                    currentStatus === MediaStatus.DELETED) &&
+                  (isAvailableOnExcludedProvider &&
+                  firstExcludedProvider &&
+                  watchProviderLink ? (
+                    <Tooltip
+                      content={intl.formatMessage(messages.watchonprovider, {
+                        provider: firstExcludedProvider.name,
+                      })}
+                    >
+                      <Button
+                        as="a"
+                        href={watchProviderLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        buttonType="primary"
+                        buttonSize="sm"
+                        className="h-7 w-full"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {firstExcludedProvider.logoPath && (
+                          <CachedImage
+                            type="tmdb"
+                            src={`https://image.tmdb.org/t/p/w45${firstExcludedProvider.logoPath}`}
+                            alt={firstExcludedProvider.name}
+                            width={16}
+                            height={16}
+                            className="mr-1 rounded"
+                          />
+                        )}
+                        <span>{firstExcludedProvider.name}</span>
+                      </Button>
+                    </Tooltip>
+                  ) : (
                     <Button
                       buttonType="primary"
                       buttonSize="sm"
@@ -527,7 +615,7 @@ const TitleCard = ({
                       <ArrowDownTrayIcon />
                       <span>{intl.formatMessage(globalMessages.request)}</span>
                     </Button>
-                  )}
+                  ))}
               </div>
             </div>
           </Transition>

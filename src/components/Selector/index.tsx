@@ -20,7 +20,7 @@ import type {
 } from '@server/models/common';
 import axios from 'axios';
 import orderBy from 'lodash/orderBy';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import type { MultiValue, SingleValue } from 'react-select';
 import AsyncSelect from 'react-select/async';
@@ -372,6 +372,7 @@ type WatchProviderSelectorProps = {
   type: 'movie' | 'tv';
   region?: string;
   activeProviders?: number[];
+  hideRegionSelector?: boolean;
   onChange: (region: string, value: number[]) => void;
 };
 
@@ -380,6 +381,7 @@ export const WatchProviderSelector = ({
   onChange,
   region,
   activeProviders,
+  hideRegionSelector,
 }: WatchProviderSelectorProps) => {
   const intl = useIntl();
   const { currentSettings } = useSettings();
@@ -394,17 +396,40 @@ export const WatchProviderSelector = ({
   const [activeProvider, setActiveProvider] = useState<number[]>(
     activeProviders ?? []
   );
+  // Track whether the component has mounted so we can skip the sync effect
+  // on the initial render (useState already initialises from the prop).
+  const isMounted = useRef(false);
   const { data, isLoading } = useSWR<WatchProviderDetails[]>(
     `/api/v1/watchproviders/${
       type === 'movie' ? 'movies' : 'tv'
     }?watchRegion=${watchRegion}`
   );
 
+  // Only notify the parent when values actually change after mount.
+  // Skipping the initial call prevents spurious router.replace navigations
+  // (e.g. in FilterSlideover, firing onChange on mount removes watchRegion from
+  // the URL, which triggers an HMR rebuild cycle and causes 400s on static assets).
   useEffect(() => {
+    if (!isMounted.current) {
+      return;
+    }
     onChange(watchRegion, activeProvider);
     // removed onChange as a dependency as we only need to call it when the value(s) change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeProvider, watchRegion]);
+
+  // Sync internal state when the activeProviders prop changes (e.g. after async data load).
+  // Skip the first render — useState already initialises from the prop, so firing here
+  // would create a new array reference, trigger the onChange effect, and call onChange
+  // unnecessarily (which in FilterSlideover calls batchUpdateQueryParams → router.replace).
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
+    setActiveProvider(activeProviders ?? []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(activeProviders)]);
 
   const orderedData = useMemo(() => {
     if (!data) {
@@ -425,110 +450,68 @@ export const WatchProviderSelector = ({
   const initialProviders = orderedData.slice(0, 24);
   const otherProviders = orderedData.slice(24);
 
+  const renderProvider = (provider: WatchProviderDetails) => {
+    const isActive = activeProvider.includes(provider.id);
+    return (
+      <Tooltip content={provider.name} key={`provider-${provider.id}`}>
+        <div
+          className={`provider-container relative w-full cursor-pointer rounded-lg ring-1 transition ${
+            isActive
+              ? 'bg-gray-600 ring-indigo-500 hover:bg-gray-500'
+              : 'bg-gray-700 ring-gray-500 hover:bg-gray-600'
+          }`}
+          onClick={() => toggleProvider(provider.id)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              toggleProvider(provider.id);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="relative m-2 aspect-1">
+            <CachedImage
+              type="tmdb"
+              src={`https://image.tmdb.org/t/p/original${provider.logoPath}`}
+              alt=""
+              fill
+              className="rounded-lg object-contain"
+            />
+          </div>
+          {isActive && (
+            <div className="pointer-events-none absolute -left-1 -top-1 flex items-center justify-center text-indigo-100 opacity-90">
+              <CheckCircleIcon className="h-6 w-6" />
+            </div>
+          )}
+        </div>
+      </Tooltip>
+    );
+  };
+
   return (
     <>
-      <RegionSelector
-        value={watchRegion}
-        name="watchRegion"
-        onChange={(_name, value) => {
-          if (value !== watchRegion) {
-            setActiveProvider([]);
-          }
-          setWatchRegion(value);
-        }}
-        disableAll
-        watchProviders
-      />
+      {!hideRegionSelector && (
+        <RegionSelector
+          value={watchRegion}
+          name="watchRegion"
+          onChange={(_name, value) => {
+            if (value !== watchRegion) {
+              setActiveProvider([]);
+            }
+            setWatchRegion(value);
+          }}
+          disableAll
+          watchProviders
+        />
+      )}
       {isLoading ? (
         <SmallLoadingSpinner />
       ) : (
-        <div className="grid">
+        <div className="w-full">
           <div className="provider-icons grid gap-2">
-            {initialProviders.map((provider) => {
-              const isActive = activeProvider.includes(provider.id);
-              return (
-                <Tooltip
-                  content={provider.name}
-                  key={`prodiver-${provider.id}`}
-                >
-                  <div
-                    className={`provider-container w-full cursor-pointer rounded-lg ring-1 ${
-                      isActive
-                        ? 'bg-gray-600 ring-indigo-500 hover:bg-gray-500'
-                        : 'bg-gray-700 ring-gray-500 hover:bg-gray-600'
-                    }`}
-                    onClick={() => toggleProvider(provider.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        toggleProvider(provider.id);
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <div className="relative m-2 aspect-1">
-                      <CachedImage
-                        type="tmdb"
-                        src={`https://image.tmdb.org/t/p/original${provider.logoPath}`}
-                        alt=""
-                        fill
-                        className="rounded-lg object-contain"
-                      />
-                    </div>
-                    {isActive && (
-                      <div className="pointer-events-none absolute -left-1 -top-1 flex items-center justify-center text-indigo-100 opacity-90">
-                        <CheckCircleIcon className="h-6 w-6" />
-                      </div>
-                    )}
-                  </div>
-                </Tooltip>
-              );
-            })}
+            {initialProviders.map(renderProvider)}
+            {showMore && otherProviders.map(renderProvider)}
           </div>
-          {showMore && otherProviders.length > 0 && (
-            <div className="provider-icons relative top-2 grid gap-2">
-              {otherProviders.map((provider) => {
-                const isActive = activeProvider.includes(provider.id);
-                return (
-                  <Tooltip
-                    content={provider.name}
-                    key={`prodiver-${provider.id}`}
-                  >
-                    <div
-                      className={`provider-container w-full cursor-pointer rounded-lg ring-1 transition ${
-                        isActive
-                          ? 'bg-gray-600 ring-indigo-500 hover:bg-gray-500'
-                          : 'bg-gray-700 ring-gray-500 hover:bg-gray-600'
-                      }`}
-                      onClick={() => toggleProvider(provider.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          toggleProvider(provider.id);
-                        }
-                      }}
-                      role="button"
-                      tabIndex={0}
-                    >
-                      <div className="relative m-2 aspect-1">
-                        <CachedImage
-                          type="tmdb"
-                          src={`https://image.tmdb.org/t/p/original${provider.logoPath}`}
-                          alt=""
-                          fill
-                          className="rounded-lg object-contain"
-                        />
-                      </div>
-                      {isActive && (
-                        <div className="pointer-events-none absolute -left-1 -top-1 flex items-center justify-center text-indigo-100 opacity-90">
-                          <CheckCircleIcon className="h-6 w-6" />
-                        </div>
-                      )}
-                    </div>
-                  </Tooltip>
-                );
-              })}
-            </div>
-          )}
           {otherProviders.length > 0 && (
             <button
               className="relative top-4 flex items-center justify-center space-x-2 text-sm text-gray-400 transition hover:text-gray-200"

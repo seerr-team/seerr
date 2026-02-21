@@ -26,6 +26,7 @@ import Slider from '@app/components/Slider';
 import StatusBadge from '@app/components/StatusBadge';
 import Season from '@app/components/TvDetails/Season';
 import useDeepLinks from '@app/hooks/useDeepLinks';
+import { useExcludedProviders } from '@app/hooks/useExcludedProviders';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
@@ -88,6 +89,7 @@ const messages = defineMessages('components.TvDetails', {
   episodeRuntime: 'Episode Runtime',
   episodeRuntimeMinutes: '{runtime} minutes',
   streamingproviders: 'Currently Streaming On',
+  watchonprovider: 'Available on {provider}',
   productioncountries:
     'Production {countryCount, plural, one {Country} other {Countries}}',
   reportissue: 'Report an Issue',
@@ -168,6 +170,24 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     iOSPlexUrl: data?.mediaInfo?.iOSPlexUrl,
     iOSPlexUrl4k: data?.mediaInfo?.iOSPlexUrl4k,
   });
+
+  const streamingRegion = user?.settings?.streamingRegion
+    ? user.settings.streamingRegion
+    : settings.currentSettings.streamingRegion
+      ? settings.currentSettings.streamingRegion
+      : 'US';
+  const {
+    streamingProviders,
+    watchProviderLink,
+    excludedWatchProviders,
+    firstExcludedProvider,
+    isAvailableOnExcludedProvider,
+  } = useExcludedProviders(
+    data?.watchProviders,
+    streamingRegion,
+    user?.settings?.excludedWatchProviders,
+    settings.currentSettings.excludedWatchProviders
+  );
 
   if (!data && !error) {
     return <LoadingSpinner />;
@@ -316,16 +336,6 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   const is4kComplete =
     (showHasSpecials ? seasonCount + 1 : seasonCount) <=
     getAllRequestedSeasons(true).length;
-
-  const streamingRegion = user?.settings?.streamingRegion
-    ? user.settings.streamingRegion
-    : settings.currentSettings.streamingRegion
-      ? settings.currentSettings.streamingRegion
-      : 'US';
-  const streamingProviders =
-    data?.watchProviders?.find(
-      (provider) => provider.iso_3166_1 === streamingRegion
-    )?.flatrate ?? [];
 
   function getAvailableMediaServerName() {
     if (settings.currentSettings.mediaServerType === MediaServerType.EMBY) {
@@ -527,20 +537,36 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
       />
       <div className="media-header">
         <div className="media-poster">
-          <CachedImage
-            type="tmdb"
-            src={
-              data.posterPath
-                ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.posterPath}`
-                : '/images/seerr_poster_not_found.png'
-            }
-            alt=""
-            sizes="100vw"
-            style={{ width: '100%', height: 'auto' }}
-            width={600}
-            height={900}
-            priority
-          />
+          <div className="relative">
+            <CachedImage
+              type="tmdb"
+              src={
+                data.posterPath
+                  ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.posterPath}`
+                  : '/images/seerr_poster_not_found.png'
+              }
+              alt=""
+              sizes="100vw"
+              style={{ width: '100%', height: 'auto' }}
+              width={600}
+              height={900}
+              priority
+              className={isAvailableOnExcludedProvider ? 'opacity-40' : ''}
+            />
+            {isAvailableOnExcludedProvider &&
+              firstExcludedProvider?.logoPath && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <CachedImage
+                    type="tmdb"
+                    src={`https://image.tmdb.org/t/p/w92${firstExcludedProvider.logoPath}`}
+                    alt={firstExcludedProvider.name}
+                    width={64}
+                    height={64}
+                    className="rounded-xl shadow-lg"
+                  />
+                </div>
+              )}
+          </div>
         </div>
         <div className="media-title">
           <div className="media-status">
@@ -659,14 +685,45 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
           <div className="z-20">
             <PlayButton links={mediaLinks} />
           </div>
-          <RequestButton
-            mediaType="tv"
-            onUpdate={() => revalidate()}
-            tmdbId={data?.id}
-            media={data?.mediaInfo}
-            isShowComplete={isComplete}
-            is4kShowComplete={is4kComplete}
-          />
+          {isAvailableOnExcludedProvider &&
+          firstExcludedProvider &&
+          watchProviderLink ? (
+            <Tooltip
+              content={intl.formatMessage(messages.watchonprovider, {
+                provider: firstExcludedProvider.name,
+              })}
+            >
+              <Button
+                as="a"
+                href={watchProviderLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                buttonType="primary"
+                className="ml-2 first:ml-0"
+              >
+                {firstExcludedProvider.logoPath && (
+                  <CachedImage
+                    type="tmdb"
+                    src={`https://image.tmdb.org/t/p/w45${firstExcludedProvider.logoPath}`}
+                    alt={firstExcludedProvider.name}
+                    width={20}
+                    height={20}
+                    className="mr-2 rounded"
+                  />
+                )}
+                <span>{firstExcludedProvider.name}</span>
+              </Button>
+            </Tooltip>
+          ) : (
+            <RequestButton
+              mediaType="tv"
+              onUpdate={() => revalidate()}
+              tmdbId={data?.id}
+              media={data?.mediaInfo}
+              isShowComplete={isComplete}
+              is4kShowComplete={is4kComplete}
+            />
+          )}
           {(data.mediaInfo?.status === MediaStatus.AVAILABLE ||
             data.mediaInfo?.status === MediaStatus.PARTIALLY_AVAILABLE ||
             (settings.currentSettings.series4kEnabled &&
@@ -1284,11 +1341,15 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                 <span>{intl.formatMessage(messages.streamingproviders)}</span>
                 <span className="media-fact-value flex flex-row flex-wrap gap-5">
                   {streamingProviders.map((p) => {
+                    const isExcluded = excludedWatchProviders.includes(p.id);
                     return (
-                      <Tooltip content={p.name}>
+                      <Tooltip content={p.name} key={`provider-${p.id}`}>
                         <span
-                          className="opacity-50 transition duration-300 hover:opacity-100"
-                          key={`provider-${p.id}`}
+                          className={`relative transition duration-300 ${
+                            isExcluded
+                              ? 'opacity-100'
+                              : 'opacity-50 hover:opacity-100'
+                          }`}
                         >
                           <CachedImage
                             type="tmdb"
@@ -1296,8 +1357,11 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                             alt={p.name}
                             width={32}
                             height={32}
-                            className="rounded-md"
+                            className={`rounded-md ${isExcluded ? 'ring-2 ring-indigo-500' : ''}`}
                           />
+                          {isExcluded && (
+                            <span className="absolute -right-1 -top-1 flex h-3 w-3 items-center justify-center rounded-full bg-indigo-500" />
+                          )}
                         </span>
                       </Tooltip>
                     );
