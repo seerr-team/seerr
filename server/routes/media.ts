@@ -2,6 +2,10 @@ import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import TautulliAPI from '@server/api/tautulli';
 import TheMovieDb from '@server/api/themoviedb';
+import type {
+  TmdbMovieResult,
+  TmdbTvResult,
+} from '@server/api/themoviedb/interfaces';
 import { MediaStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
@@ -15,6 +19,10 @@ import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
+import {
+  filterMoviesByRating,
+  filterTvByRating,
+} from '@server/utils/contentFiltering';
 import { Router } from 'express';
 import type { FindOneOptions } from 'typeorm';
 import { In } from 'typeorm';
@@ -69,7 +77,7 @@ mediaRoutes.get('/', async (req, res, next) => {
   }
 
   try {
-    const [media, mediaCount] = await mediaRepository.findAndCount({
+    const [media] = await mediaRepository.findAndCount({
       order: sortFilter,
       where: statusFilter && {
         status: statusFilter,
@@ -77,14 +85,51 @@ mediaRoutes.get('/', async (req, res, next) => {
       take: pageSize,
       skip,
     });
+
+    // Filter media based on content ratings
+    let filteredMedia = media;
+    if (req.user?.settings?.maxMovieRating || req.user?.settings?.maxTvRating) {
+      const filtered: Media[] = [];
+
+      for (const item of media) {
+        if (item.mediaType === MediaType.MOVIE) {
+          const mockResult = {
+            id: item.tmdbId,
+            adult: false,
+            media_type: item.mediaType,
+          } as Partial<TmdbMovieResult> & { id: number };
+          const allowed = await filterMoviesByRating(
+            [mockResult as TmdbMovieResult],
+            req.user
+          );
+          if (allowed.length > 0) filtered.push(item);
+        } else if (item.mediaType === MediaType.TV) {
+          const mockResult = {
+            id: item.tmdbId,
+            adult: false,
+            media_type: item.mediaType,
+          } as Partial<TmdbTvResult> & { id: number };
+          const allowed = await filterTvByRating(
+            [mockResult as TmdbTvResult],
+            req.user
+          );
+          if (allowed.length > 0) filtered.push(item);
+        } else {
+          filtered.push(item);
+        }
+      }
+
+      filteredMedia = filtered;
+    }
+
     return res.status(200).json({
       pageInfo: {
-        pages: Math.ceil(mediaCount / pageSize),
+        pages: Math.ceil(filteredMedia.length / pageSize),
         pageSize,
-        results: mediaCount,
+        results: filteredMedia.length,
         page: Math.ceil(skip / pageSize) + 1,
       },
-      results: media,
+      results: filteredMedia,
     } as MediaResultsResponse);
   } catch (e) {
     next({ status: 500, message: e.message });

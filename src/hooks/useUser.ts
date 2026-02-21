@@ -37,6 +37,8 @@ export interface UserSettings {
   notificationTypes: Partial<NotificationAgentTypes>;
   watchlistSyncMovies?: boolean;
   watchlistSyncTv?: boolean;
+  maxMovieRating?: string;
+  maxTvRating?: string;
 }
 
 interface UserHookResponse {

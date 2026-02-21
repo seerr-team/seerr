@@ -35,6 +35,12 @@ const BulkEditModal = ({
   const intl = useIntl();
   const { addToast } = useToasts();
   const [currentPermission, setCurrentPermission] = useState(0);
+  const [currentMaxMovieRating, setCurrentMaxMovieRating] = useState<
+    string | undefined
+  >(undefined);
+  const [currentMaxTvRating, setCurrentMaxTvRating] = useState<
+    string | undefined
+  >(undefined);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -49,6 +55,8 @@ const BulkEditModal = ({
       const { data: updated } = await axios.put<User[]>(`/api/v1/user`, {
         ids: selectedUserIds,
         permissions: currentPermission,
+        maxMovieRating: currentMaxMovieRating || '',
+        maxTvRating: currentMaxTvRating || '',
       });
       if (onComplete) {
         onComplete(updated);
@@ -84,6 +92,12 @@ const BulkEditModal = ({
       if (allPermissionsEqual) {
         setCurrentPermission(allPermissionsEqual);
       }
+
+      // Set initial content rating values from first selected user
+      if (selectedUsers.length > 0 && selectedUsers[0].settings) {
+        setCurrentMaxMovieRating(selectedUsers[0].settings.maxMovieRating);
+        setCurrentMaxTvRating(selectedUsers[0].settings.maxTvRating);
+      }
     }
   }, [users, selectedUserIds]);
 
@@ -104,6 +118,57 @@ const BulkEditModal = ({
           onUpdate={(newPermission) => setCurrentPermission(newPermission)}
         />
       </div>
+      {hasPermission(
+        Permission.MANAGE_USERS,
+        currentUser?.permissions ?? 0
+      ) && (
+        <div className="mb-6">
+          <h3 className="mb-2 text-lg font-semibold">Content Filtering</h3>
+          <div className="mb-4">
+            <label htmlFor="maxMovieRating" className="text-label">
+              Max Movie Rating
+            </label>
+            <select
+              id="maxMovieRating"
+              className="w-full rounded-md border border-gray-700 bg-gray-800 p-2 text-white"
+              value={currentMaxMovieRating || ''}
+              onChange={(e) =>
+                setCurrentMaxMovieRating(e.target.value || undefined)
+              }
+            >
+              <option value="">No Restriction</option>
+              <option value="G">G</option>
+              <option value="PG">PG</option>
+              <option value="PG-13">PG-13</option>
+              <option value="R">R</option>
+              <option value="NC-17">NC-17</option>
+              <option value="NR">NR (Allow Unrated)</option>
+            </select>
+          </div>
+          <div className="mb-4">
+            <label htmlFor="maxTvRating" className="text-label">
+              Max TV Rating
+            </label>
+            <select
+              id="maxTvRating"
+              className="w-full rounded-md border border-gray-700 bg-gray-800 p-2 text-white"
+              value={currentMaxTvRating || ''}
+              onChange={(e) =>
+                setCurrentMaxTvRating(e.target.value || undefined)
+              }
+            >
+              <option value="">No Restriction</option>
+              <option value="TV-Y">TV-Y</option>
+              <option value="TV-Y7">TV-Y7</option>
+              <option value="TV-G">TV-G</option>
+              <option value="TV-PG">TV-PG</option>
+              <option value="TV-14">TV-14</option>
+              <option value="TV-MA">TV-MA</option>
+              <option value="NR">NR (Allow Unrated)</option>
+            </select>
+          </div>
+        </div>
+      )}
     </Modal>
   );
 };

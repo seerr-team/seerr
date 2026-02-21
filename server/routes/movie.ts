@@ -9,6 +9,7 @@ import { Watchlist } from '@server/entity/Watchlist';
 import logger from '@server/logger';
 import { mapMovieDetails } from '@server/models/Movie';
 import { mapMovieResult } from '@server/models/Search';
+import { filterMoviesByRating } from '@server/utils/contentFiltering';
 import { Router } from 'express';
 
 const movieRoutes = Router();
@@ -70,11 +71,16 @@ movieRoutes.get('/:id/recommendations', async (req, res, next) => {
       results.results.map((result) => result.id)
     );
 
+    const filteredResults = await filterMoviesByRating(
+      results.results,
+      req.user
+    );
+
     return res.status(200).json({
       page: results.page,
       totalPages: results.total_pages,
-      totalResults: results.total_results,
-      results: results.results.map((result) =>
+      totalResults: filteredResults.length,
+      results: filteredResults.map((result) =>
         mapMovieResult(
           result,
           media.find(
@@ -112,11 +118,16 @@ movieRoutes.get('/:id/similar', async (req, res, next) => {
       results.results.map((result) => result.id)
     );
 
+    const filteredResults = await filterMoviesByRating(
+      results.results,
+      req.user
+    );
+
     return res.status(200).json({
       page: results.page,
       totalPages: results.total_pages,
-      totalResults: results.total_results,
-      results: results.results.map((result) =>
+      totalResults: filteredResults.length,
+      results: filteredResults.map((result) =>
         mapMovieResult(
           result,
           media.find(

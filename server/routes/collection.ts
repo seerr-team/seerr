@@ -2,6 +2,7 @@ import TheMovieDb from '@server/api/themoviedb';
 import Media from '@server/entity/Media';
 import logger from '@server/logger';
 import { mapCollection } from '@server/models/Collection';
+import { filterMoviesByRating } from '@server/utils/contentFiltering';
 import { Router } from 'express';
 
 const collectionRoutes = Router();
@@ -20,7 +21,17 @@ collectionRoutes.get<{ id: string }>('/:id', async (req, res, next) => {
       collection.parts.map((part) => part.id)
     );
 
-    return res.status(200).json(mapCollection(collection, media));
+    // Filter collection parts based on content rating
+    const filteredParts = await filterMoviesByRating(
+      collection.parts,
+      req.user
+    );
+    const filteredCollection = {
+      ...collection,
+      parts: filteredParts,
+    };
+
+    return res.status(200).json(mapCollection(filteredCollection, media));
   } catch (e) {
     logger.debug('Something went wrong retrieving collection', {
       label: 'API',

@@ -35,6 +35,7 @@ yarn-error.log*
 config/db/*.sqlite3*
 config/settings.json
 config/settings.old.json
+config-test/
 
 # logs
 config/logs/*.log*

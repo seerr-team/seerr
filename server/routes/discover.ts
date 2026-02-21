@@ -21,6 +21,10 @@ import {
   mapTvResult,
 } from '@server/models/Search';
 import { mapNetwork } from '@server/models/Tv';
+import {
+  filterMoviesByRating,
+  filterTvByRating,
+} from '@server/utils/contentFiltering';
 import { isCollection, isMovie, isPerson } from '@server/utils/typeHelpers';
 import { Router } from 'express';
 import { sortBy } from 'lodash';
@@ -127,6 +131,9 @@ discoverRoutes.get('/movies', async (req, res, next) => {
       data.results.map((result) => result.id)
     );
 
+    // Apply content rating filters
+    const filteredResults = await filterMoviesByRating(data.results, req.user);
+
     let keywordData: TmdbKeyword[] = [];
     if (keywords) {
       const splitKeywords = keywords.split(',');
@@ -145,9 +152,9 @@ discoverRoutes.get('/movies', async (req, res, next) => {
     return res.status(200).json({
       page: data.page,
       totalPages: data.total_pages,
-      totalResults: data.total_results,
+      totalResults: filteredResults.length,
       keywords: keywordData,
-      results: data.results.map((result) =>
+      results: filteredResults.map((result) =>
         mapMovieResult(
           result,
           media.find(
@@ -297,9 +304,14 @@ discoverRoutes.get<{ studioId: string }>(
         studio: req.params.studioId as string,
       });
 
+      const filteredResults = await filterMoviesByRating(
+        data.results,
+        req.user
+      );
+
       const media = await Media.getRelatedMedia(
         req.user,
-        data.results.map((result) => result.id)
+        filteredResults.map((result) => result.id)
       );
 
       return res.status(200).json({
@@ -307,7 +319,7 @@ discoverRoutes.get<{ studioId: string }>(
         totalPages: data.total_pages,
         totalResults: data.total_results,
         studio: mapProductionCompany(studio),
-        results: data.results.map((result) =>
+        results: filteredResults.map((result) =>
           mapMovieResult(
             result,
             media.find(
@@ -352,11 +364,13 @@ discoverRoutes.get('/movies/upcoming', async (req, res, next) => {
       data.results.map((result) => result.id)
     );
 
+    const filteredResults = await filterMoviesByRating(data.results, req.user);
+
     return res.status(200).json({
       page: data.page,
       totalPages: data.total_pages,
-      totalResults: data.total_results,
-      results: data.results.map((result) =>
+      totalResults: filteredResults.length,
+      results: filteredResults.map((result) =>
         mapMovieResult(
           result,
           media.find(
@@ -420,6 +434,9 @@ discoverRoutes.get('/tv', async (req, res, next) => {
       data.results.map((result) => result.id)
     );
 
+    // Apply content rating filters
+    const filteredResults = await filterTvByRating(data.results, req.user);
+
     let keywordData: TmdbKeyword[] = [];
     if (keywords) {
       const splitKeywords = keywords.split(',');
@@ -438,9 +455,9 @@ discoverRoutes.get('/tv', async (req, res, next) => {
     return res.status(200).json({
       page: data.page,
       totalPages: data.total_pages,
-      totalResults: data.total_results,
+      totalResults: filteredResults.length,
       keywords: keywordData,
-      results: data.results.map((result) =>
+      results: filteredResults.map((result) =>
         mapTvResult(
           result,
           media.find(
@@ -589,9 +606,11 @@ discoverRoutes.get<{ networkId: string }>(
         network: Number(req.params.networkId),
       });
 
+      const filteredResults = await filterTvByRating(data.results, req.user);
+
       const media = await Media.getRelatedMedia(
         req.user,
-        data.results.map((result) => result.id)
+        filteredResults.map((result) => result.id)
       );
 
       return res.status(200).json({
@@ -599,7 +618,7 @@ discoverRoutes.get<{ networkId: string }>(
         totalPages: data.total_pages,
         totalResults: data.total_results,
         network: mapNetwork(network),
-        results: data.results.map((result) =>
+        results: filteredResults.map((result) =>
           mapTvResult(
             result,
             media.find(
@@ -644,11 +663,13 @@ discoverRoutes.get('/tv/upcoming', async (req, res, next) => {
       data.results.map((result) => result.id)
     );
 
+    const filteredResults = await filterTvByRating(data.results, req.user);
+
     return res.status(200).json({
       page: data.page,
       totalPages: data.total_pages,
-      totalResults: data.total_results,
-      results: data.results.map((result) =>
+      totalResults: filteredResults.length,
+      results: filteredResults.map((result) =>
         mapTvResult(
           result,
           media.find(
@@ -683,11 +704,27 @@ discoverRoutes.get('/trending', async (req, res, next) => {
       data.results.map((result) => result.id)
     );
 
+    // Filter results based on media type
+    const filteredResults = [];
+    for (const result of data.results) {
+      if (isMovie(result)) {
+        const filtered = await filterMoviesByRating([result], req.user);
+        if (filtered.length > 0) filteredResults.push(result);
+      } else if (!isPerson(result) && !isCollection(result)) {
+        // It's a TV show
+        const filtered = await filterTvByRating([result], req.user);
+        if (filtered.length > 0) filteredResults.push(result);
+      } else {
+        // Keep persons and collections
+        filteredResults.push(result);
+      }
+    }
+
     return res.status(200).json({
       page: data.page,
       totalPages: data.total_pages,
-      totalResults: data.total_results,
-      results: data.results.map((result) =>
+      totalResults: filteredResults.length,
+      results: filteredResults.map((result) =>
         isMovie(result)
           ? mapMovieResult(
               result,
