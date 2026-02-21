@@ -51,9 +51,7 @@ const StatusBadgeMini = ({
       indicatorIcon = <BellIcon />;
       break;
     case MediaStatus.BLOCKLISTED:
-      badgeStyle.push(
-        'bg-red-500/80 border-white-400 ring-white-400 text-white'
-      );
+      badgeStyle.push('bg-red-500/80 border-white ring-white text-white');
       indicatorIcon = <EyeSlashIcon />;
       break;
     case MediaStatus.PARTIALLY_AVAILABLE:
