@@ -100,14 +100,16 @@ const UserLinkedAccountsSettings = () => {
       );
       await revalidateUser();
     } catch (e) {
-      if (e?.response?.status === 401) {
-        setError(intl.formatMessage(messages.plexErrorUnauthorized));
-      } else if (e?.response?.status === 422) {
-        setError(intl.formatMessage(messages.plexErrorExists));
-      } else {
-        setError(intl.formatMessage(messages.errorUnknown));
+      switch (e?.response?.status) {
+        case 401:
+          setError(intl.formatMessage(messages.plexErrorUnauthorized));
+          break;
+        case 422:
+          setError(intl.formatMessage(messages.plexErrorExists));
+          break;
+        default:
+          setError(intl.formatMessage(messages.errorUnknown));
       }
-      setError(intl.formatMessage(messages.errorUnknown));
     }
   };
 
