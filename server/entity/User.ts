@@ -317,9 +317,6 @@ export class User {
             .andWhere('requestedBy.id = :userId', {
               userId: this.id,
             })
-            .andWhere('request.createdAt > :date', {
-              date: tvQuotaStartDate,
-            })
             .andWhere('request.status != :declinedStatus', {
               declinedStatus: MediaRequestStatus.DECLINED,
             })
@@ -328,7 +325,10 @@ export class User {
                 .select('COUNT(season.id)', 'seasonCount')
                 .from(SeasonRequest, 'season')
                 .leftJoin('season.request', 'parentRequest')
-                .where('parentRequest.id = request.id');
+                .where('parentRequest.id = request.id')
+                .andWhere('season.createdAt > :date', {
+                  date: tvQuotaStartDate,
+                });
             }, 'seasonCount')
             .getMany()
         ).reduce((sum: number, req: MediaRequest) => sum + req.seasonCount, 0)
