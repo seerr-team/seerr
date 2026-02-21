@@ -124,6 +124,8 @@
   "components.Discover.resetwarning": "Reset all sliders to default. This will also delete any custom sliders!",
   "components.Discover.stopediting": "Stop Editing",
   "components.Discover.studios": "Studios",
+  "components.Discover.timeWindowDay": "Daily",
+  "components.Discover.timeWindowWeek": "Weekly",
   "components.Discover.tmdbmoviegenre": "TMDB Movie Genre",
   "components.Discover.tmdbmoviekeyword": "TMDB Movie Keyword",
   "components.Discover.tmdbmoviestreamingservices": "TMDB Movie Streaming Services",
