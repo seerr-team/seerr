@@ -427,12 +427,12 @@ discoverRoutes.get('/movies', async (req, res, next) => {
       ratingLimits,
       currentPage < data.total_pages
         ? async () =>
-          (
-            await tmdb.getDiscoverMovies({
-              page: currentPage + 1,
-              ...discoverOpts,
-            })
-          ).results
+            (
+              await tmdb.getDiscoverMovies({
+                page: currentPage + 1,
+                ...discoverOpts,
+              })
+            ).results
         : undefined
     );
 
@@ -525,12 +525,12 @@ discoverRoutes.get<{ language: string }>(
         ratingLimits,
         langPage < data.total_pages
           ? async () =>
-            (
-              await tmdb.getDiscoverMovies({
-                page: langPage + 1,
-                ...langDiscoverOpts,
-              })
-            ).results
+              (
+                await tmdb.getDiscoverMovies({
+                  page: langPage + 1,
+                  ...langDiscoverOpts,
+                })
+              ).results
           : undefined
       );
 
@@ -612,12 +612,12 @@ discoverRoutes.get<{ genreId: string }>(
         ratingLimits,
         genrePage < data.total_pages
           ? async () =>
-            (
-              await tmdb.getDiscoverMovies({
-                page: genrePage + 1,
-                ...genreDiscoverOpts,
-              })
-            ).results
+              (
+                await tmdb.getDiscoverMovies({
+                  page: genrePage + 1,
+                  ...genreDiscoverOpts,
+                })
+              ).results
           : undefined
       );
 
@@ -689,12 +689,12 @@ discoverRoutes.get<{ studioId: string }>(
         ratingLimits,
         studioPage < data.total_pages
           ? async () =>
-            (
-              await tmdb.getDiscoverMovies({
-                page: studioPage + 1,
-                ...studioDiscoverOpts,
-              })
-            ).results
+              (
+                await tmdb.getDiscoverMovies({
+                  page: studioPage + 1,
+                  ...studioDiscoverOpts,
+                })
+              ).results
           : undefined
       );
 
@@ -768,12 +768,12 @@ discoverRoutes.get('/movies/upcoming', async (req, res, next) => {
       ratingLimits,
       upcomingMoviePage < data.total_pages
         ? async () =>
-          (
-            await tmdb.getDiscoverMovies({
-              page: upcomingMoviePage + 1,
-              ...upcomingMovieOpts,
-            })
-          ).results
+            (
+              await tmdb.getDiscoverMovies({
+                page: upcomingMoviePage + 1,
+                ...upcomingMovieOpts,
+              })
+            ).results
         : undefined
     );
 
@@ -872,8 +872,8 @@ discoverRoutes.get('/tv', async (req, res, next) => {
       ratingLimits,
       tvPage < data.total_pages
         ? async () =>
-          (await tmdb.getDiscoverTv({ page: tvPage + 1, ...tvDiscoverOpts }))
-            .results
+            (await tmdb.getDiscoverTv({ page: tvPage + 1, ...tvDiscoverOpts }))
+              .results
         : undefined
     );
 
@@ -965,12 +965,12 @@ discoverRoutes.get<{ language: string }>(
         ratingLimits,
         tvLangPage < data.total_pages
           ? async () =>
-            (
-              await tmdb.getDiscoverTv({
-                page: tvLangPage + 1,
-                ...tvLangOpts,
-              })
-            ).results
+              (
+                await tmdb.getDiscoverTv({
+                  page: tvLangPage + 1,
+                  ...tvLangOpts,
+                })
+              ).results
           : undefined
       );
 
@@ -1052,12 +1052,12 @@ discoverRoutes.get<{ genreId: string }>(
         ratingLimits,
         tvGenrePage < data.total_pages
           ? async () =>
-            (
-              await tmdb.getDiscoverTv({
-                page: tvGenrePage + 1,
-                ...tvGenreOpts,
-              })
-            ).results
+              (
+                await tmdb.getDiscoverTv({
+                  page: tvGenrePage + 1,
+                  ...tvGenreOpts,
+                })
+              ).results
           : undefined
       );
 
@@ -1129,12 +1129,12 @@ discoverRoutes.get<{ networkId: string }>(
         ratingLimits,
         tvNetworkPage < data.total_pages
           ? async () =>
-            (
-              await tmdb.getDiscoverTv({
-                page: tvNetworkPage + 1,
-                ...tvNetworkOpts,
-              })
-            ).results
+              (
+                await tmdb.getDiscoverTv({
+                  page: tvNetworkPage + 1,
+                  ...tvNetworkOpts,
+                })
+              ).results
           : undefined
       );
 
@@ -1205,12 +1205,12 @@ discoverRoutes.get('/tv/upcoming', async (req, res, next) => {
       ratingLimits,
       upcomingTvPage < data.total_pages
         ? async () =>
-          (
-            await tmdb.getDiscoverTv({
-              page: upcomingTvPage + 1,
-              ...upcomingTvOpts,
-            })
-          ).results
+            (
+              await tmdb.getDiscoverTv({
+                page: upcomingTvPage + 1,
+                ...upcomingTvOpts,
+              })
+            ).results
         : undefined
     );
 
@@ -1304,23 +1304,23 @@ discoverRoutes.get('/trending', async (req, res, next) => {
       results: filteredResults.map((result) =>
         isMovie(result)
           ? mapMovieResult(
-            result,
-            media.find(
-              (med) =>
-                med.tmdbId === result.id && med.mediaType === MediaType.MOVIE
+              result,
+              media.find(
+                (med) =>
+                  med.tmdbId === result.id && med.mediaType === MediaType.MOVIE
+              )
             )
-          )
           : isPerson(result)
             ? mapPersonResult(result)
             : isCollection(result)
               ? mapCollectionResult(result)
               : mapTvResult(
-                result,
-                media.find(
-                  (med) =>
-                    med.tmdbId === result.id && med.mediaType === MediaType.TV
+                  result,
+                  media.find(
+                    (med) =>
+                      med.tmdbId === result.id && med.mediaType === MediaType.TV
+                  )
                 )
-              )
       ),
     });
   } catch (e) {

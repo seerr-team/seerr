@@ -1,5 +1,7 @@
 import JellyfinAPI from '@server/api/jellyfin';
 import PlexTvAPI from '@server/api/plextv';
+import type { MovieRating, TvRating } from '@server/constants/contentRatings';
+import { MOVIE_RATINGS, TV_RATINGS } from '@server/constants/contentRatings';
 import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
@@ -791,6 +793,26 @@ userSettingsRoutes.post<
           status: 403,
           message:
             'Cannot set parental controls for users with admin permissions.',
+        });
+      }
+
+      // Validate rating values against allowed constants
+      if (
+        req.body.maxMovieRating &&
+        !MOVIE_RATINGS.includes(req.body.maxMovieRating as MovieRating)
+      ) {
+        return next({
+          status: 400,
+          message: `Invalid movie rating: ${req.body.maxMovieRating}`,
+        });
+      }
+      if (
+        req.body.maxTvRating &&
+        !TV_RATINGS.includes(req.body.maxTvRating as TvRating)
+      ) {
+        return next({
+          status: 400,
+          message: `Invalid TV rating: ${req.body.maxTvRating}`,
         });
       }
 

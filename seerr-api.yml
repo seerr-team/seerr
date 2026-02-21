@@ -5162,6 +5162,14 @@ paths:
                     nullable: true
                     example: 'TV-14'
                     description: Maximum allowed TV rating (TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA)
+                  blockUnrated:
+                    type: boolean
+                    default: false
+                    description: Block content with no rating (NR, Unrated)
+                  blockAdult:
+                    type: boolean
+                    default: false
+                    description: Block content flagged as adult by TMDB
     post:
       summary: Update parental control settings for a user
       description: Updates and returns parental control settings for a specific user. Requires `MANAGE_USERS` permission.
@@ -5190,6 +5198,14 @@ paths:
                   nullable: true
                   example: 'TV-14'
                   description: Maximum allowed TV rating (TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA)
+                blockUnrated:
+                  type: boolean
+                  default: false
+                  description: Block content with no rating (NR, Unrated)
+                blockAdult:
+                  type: boolean
+                  default: false
+                  description: Block content flagged as adult by TMDB
       responses:
         '200':
           description: Updated user parental control settings returned
@@ -5206,6 +5222,12 @@ paths:
                     type: string
                     nullable: true
                     example: 'TV-14'
+                  blockUnrated:
+                    type: boolean
+                    default: false
+                  blockAdult:
+                    type: boolean
+                    default: false
   /user/{userId}/watch_data:
     get:
       summary: Get watch data

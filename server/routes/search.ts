@@ -68,10 +68,16 @@ const filterSearchBatch = async (
   tmdb: TheMovieDb,
   maxMovieRating?: string,
   maxTvRating?: string,
-  blockUnrated = false
+  blockUnrated = false,
+  blockAdult = false
 ): Promise<TmdbSearchResult[]> => {
+  // Pre-filter adult content (free, no API calls needed)
+  const preFiltered = blockAdult
+    ? results.filter((r) => !('adult' in r && (r as TmdbMovieResult).adult))
+    : results;
+
   const settled = await Promise.allSettled(
-    results.map((r) => getCertification(r, tmdb))
+    preFiltered.map((r) => getCertification(r, tmdb))
   );
 
   const filtered: TmdbSearchResult[] = [];
@@ -131,9 +137,10 @@ const filterSearchResultsByRating = async (
   maxMovieRating?: string,
   maxTvRating?: string,
   blockUnrated = false,
+  blockAdult = false,
   fetchNextPage?: () => Promise<TmdbSearchResult[] | null>
 ): Promise<TmdbSearchResult[]> => {
-  if (!maxMovieRating && !maxTvRating && !blockUnrated) {
+  if (!maxMovieRating && !maxTvRating && !blockUnrated && !blockAdult) {
     return results;
   }
 
@@ -142,7 +149,8 @@ const filterSearchResultsByRating = async (
     tmdb,
     maxMovieRating,
     maxTvRating,
-    blockUnrated
+    blockUnrated,
+    blockAdult
   );
 
   // Backfill: if too many results were removed, grab one more page
@@ -154,7 +162,8 @@ const filterSearchResultsByRating = async (
         tmdb,
         maxMovieRating,
         maxTvRating,
-        blockUnrated
+        blockUnrated,
+        blockAdult
       );
       filtered.push(...nextFiltered);
     }
@@ -178,7 +187,8 @@ searchRoutes.get('/', async (req, res, next) => {
   const hasFilters = !!(
     limits.maxMovieRating ||
     limits.maxTvRating ||
-    limits.blockUnrated
+    limits.blockUnrated ||
+    limits.blockAdult
   );
 
   try {
@@ -206,6 +216,7 @@ searchRoutes.get('/', async (req, res, next) => {
       limits.maxMovieRating,
       limits.maxTvRating,
       limits.blockUnrated ?? false,
+      limits.blockAdult ?? false,
       // Only backfill for non-provider multi-search with more pages available
       !searchProvider && hasFilters && searchPage < results.total_pages
         ? async () => {

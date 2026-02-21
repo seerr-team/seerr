@@ -4,6 +4,10 @@ import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import {
+  getMovieRatingOptions,
+  getTvRatingOptions,
+} from '@server/constants/contentRatings';
 import { hasPermission } from '@server/lib/permissions';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
@@ -25,29 +29,9 @@ const messages = defineMessages('components.UserList', {
   contentfiltering: 'Content Filtering',
   maxmovierating: 'Max Movie Rating',
   maxtvrating: 'Max TV Rating',
-  norestriction: 'No Restriction',
   blockunrated: 'Block Unrated Content',
   blockadult: 'Block Adult Content',
 });
-
-const MOVIE_RATINGS = [
-  { value: '', label: 'No Restriction' },
-  { value: 'G', label: 'G - General Audiences' },
-  { value: 'PG', label: 'PG - Parental Guidance Suggested' },
-  { value: 'PG-13', label: 'PG-13 - Parents Strongly Cautioned' },
-  { value: 'R', label: 'R - Restricted' },
-  { value: 'NC-17', label: 'NC-17 - Adults Only' },
-];
-
-const TV_RATINGS = [
-  { value: '', label: 'No Restriction' },
-  { value: 'TV-Y', label: 'TV-Y - All Children' },
-  { value: 'TV-Y7', label: 'TV-Y7 - Directed to Older Children' },
-  { value: 'TV-G', label: 'TV-G - General Audience' },
-  { value: 'TV-PG', label: 'TV-PG - Parental Guidance Suggested' },
-  { value: 'TV-14', label: 'TV-14 - Parents Strongly Cautioned' },
-  { value: 'TV-MA', label: 'TV-MA - Mature Audience Only' },
-];
 
 const BulkEditModal = ({
   selectedUserIds,
@@ -162,7 +146,7 @@ const BulkEditModal = ({
                     setCurrentMaxMovieRating(e.target.value || undefined)
                   }
                 >
-                  {MOVIE_RATINGS.map((rating) => (
+                  {getMovieRatingOptions().map((rating) => (
                     <option key={rating.value} value={rating.value}>
                       {rating.label}
                     </option>
@@ -184,7 +168,7 @@ const BulkEditModal = ({
                     setCurrentMaxTvRating(e.target.value || undefined)
                   }
                 >
-                  {TV_RATINGS.map((rating) => (
+                  {getTvRatingOptions().map((rating) => (
                     <option key={rating.value} value={rating.value}>
                       {rating.label}
                     </option>

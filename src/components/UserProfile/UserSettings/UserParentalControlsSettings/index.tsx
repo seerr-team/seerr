@@ -6,6 +6,10 @@ import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
+import {
+  getMovieRatingOptions,
+  getTvRatingOptions,
+} from '@server/constants/contentRatings';
 import type { UserSettingsParentalControlsResponse } from '@server/interfaces/api/userSettingsInterfaces';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
@@ -27,7 +31,6 @@ const messages = defineMessages(
     maxtvrating: 'Max TV Rating',
     maxtvratingTip:
       'TV shows above this rating will be hidden from this user (TV Parental Guidelines)',
-    norestriction: 'No Restriction',
     blockunrated: 'Block Unrated Content',
     blockunratedTip:
       'Block content that has no rating (NR, Unrated). When disabled, unrated content is allowed through.',
@@ -38,25 +41,6 @@ const messages = defineMessages(
     toastSettingsFailure: 'Something went wrong while saving settings.',
   }
 );
-
-const MOVIE_RATINGS = [
-  { value: '', label: 'No Restriction' },
-  { value: 'G', label: 'G - General Audiences' },
-  { value: 'PG', label: 'PG - Parental Guidance Suggested' },
-  { value: 'PG-13', label: 'PG-13 - Parents Strongly Cautioned' },
-  { value: 'R', label: 'R - Restricted' },
-  { value: 'NC-17', label: 'NC-17 - Adults Only' },
-];
-
-const TV_RATINGS = [
-  { value: '', label: 'No Restriction' },
-  { value: 'TV-Y', label: 'TV-Y - All Children' },
-  { value: 'TV-Y7', label: 'TV-Y7 - Directed to Older Children' },
-  { value: 'TV-G', label: 'TV-G - General Audience' },
-  { value: 'TV-PG', label: 'TV-PG - Parental Guidance Suggested' },
-  { value: 'TV-14', label: 'TV-14 - Parents Strongly Cautioned' },
-  { value: 'TV-MA', label: 'TV-MA - Mature Audience Only' },
-];
 
 const UserParentalControlsSettings = () => {
   const intl = useIntl();
@@ -148,7 +132,7 @@ const UserParentalControlsSettings = () => {
                       id="maxMovieRating"
                       name="maxMovieRating"
                     >
-                      {MOVIE_RATINGS.map((rating) => (
+                      {getMovieRatingOptions().map((rating) => (
                         <option key={rating.value} value={rating.value}>
                           {rating.label}
                         </option>
@@ -167,7 +151,7 @@ const UserParentalControlsSettings = () => {
                 <div className="form-input-area">
                   <div className="form-input-field">
                     <Field as="select" id="maxTvRating" name="maxTvRating">
-                      {TV_RATINGS.map((rating) => (
+                      {getTvRatingOptions().map((rating) => (
                         <option key={rating.value} value={rating.value}>
                           {rating.label}
                         </option>

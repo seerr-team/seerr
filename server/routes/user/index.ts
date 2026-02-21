@@ -1,6 +1,8 @@
 import JellyfinAPI from '@server/api/jellyfin';
 import PlexTvAPI from '@server/api/plextv';
 import TautulliAPI from '@server/api/tautulli';
+import type { MovieRating, TvRating } from '@server/constants/contentRatings';
+import { MOVIE_RATINGS, TV_RATINGS } from '@server/constants/contentRatings';
 import { MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
@@ -18,7 +20,7 @@ import type {
   UserResultsResponse,
   UserWatchDataResponse,
 } from '@server/interfaces/api/userInterfaces';
-import { hasPermission, Permission } from '@server/lib/permissions';
+import { Permission, hasPermission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
@@ -454,6 +456,26 @@ router.put<
       return next({
         status: 403,
         message: 'You do not have permission to grant this level of access',
+      });
+    }
+
+    // Validate rating values against allowed constants
+    if (
+      req.body.maxMovieRating &&
+      !MOVIE_RATINGS.includes(req.body.maxMovieRating as MovieRating)
+    ) {
+      return next({
+        status: 400,
+        message: `Invalid movie rating: ${req.body.maxMovieRating}`,
+      });
+    }
+    if (
+      req.body.maxTvRating &&
+      !TV_RATINGS.includes(req.body.maxTvRating as TvRating)
+    ) {
+      return next({
+        status: 400,
+        message: `Invalid TV rating: ${req.body.maxTvRating}`,
       });
     }
 
