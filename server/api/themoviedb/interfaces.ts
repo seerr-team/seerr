@@ -263,6 +263,7 @@ export interface TmdbTvDetails {
   origin_country: string[];
   original_language: string;
   original_name: string;
+  adult?: boolean;
   overview: string;
   popularity: number;
   poster_path?: string;

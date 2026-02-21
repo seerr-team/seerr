@@ -112,7 +112,7 @@ export const enforceTvRating = async (
     const details = await tmdb.getTvShow({ tvId });
 
     // Check adult flag (rare on TV but exists in TMDB)
-    if (limits.blockAdult && (details as Record<string, unknown>).adult) {
+    if (limits.blockAdult && details.adult) {
       res.status(403).json({
         message: 'This content is restricted by your parental controls.',
       });
