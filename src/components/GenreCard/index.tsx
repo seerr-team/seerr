@@ -20,8 +20,8 @@ const GenreCard = ({ image, url, name, canExpand = false }: GenreCardProps) => {
         canExpand ? 'w-full' : 'w-56 sm:w-72'
       } transform-gpu cursor-pointer p-8 shadow ring-1 transition duration-300 ease-in-out ${
         isHovered
-          ? 'scale-105 bg-gray-700 bg-opacity-100 ring-gray-500'
-          : 'scale-100 bg-gray-800 bg-opacity-80 ring-gray-700'
+          ? 'scale-105 bg-gray-700/100 ring-gray-500'
+          : 'scale-100 bg-gray-800/80 ring-gray-700'
       } overflow-hidden rounded-xl bg-cover bg-center`}
       onMouseEnter={() => {
         setHovered(true);
@@ -43,8 +43,8 @@ const GenreCard = ({ image, url, name, canExpand = false }: GenreCardProps) => {
         fill
       />
       <div
-        className={`absolute inset-0 z-10 h-full w-full bg-gray-800 transition duration-300 ${
-          isHovered ? 'bg-opacity-10' : 'bg-opacity-30'
+        className={`absolute inset-0 z-10 h-full w-full transition duration-300 ${
+          isHovered ? 'bg-gray-800/10' : 'bg-gray-800/30'
         }`}
       />
       <div className="relative z-20 w-full truncate whitespace-normal text-center text-2xl font-bold text-white sm:text-3xl">

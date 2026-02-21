@@ -245,7 +245,7 @@ const SettingsLogs = () => {
         <p className="description">
           {intl.formatMessage(messages.logsDescription, {
             code: (msg: React.ReactNode) => (
-              <code className="whitespace-normal break-words bg-opacity-50">
+              <code className="whitespace-normal break-words bg-gray-800/50">
                 {msg}
               </code>
             ),

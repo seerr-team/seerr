@@ -210,7 +210,7 @@ const UserLinkedAccountsSettings = () => {
           {accounts.map((acct, i) => (
             <li
               key={i}
-              className="flex items-center gap-4 overflow-hidden rounded-lg bg-gray-800 bg-opacity-50 px-4 py-5 shadow ring-1 ring-gray-700 sm:p-6"
+              className="flex items-center gap-4 overflow-hidden rounded-lg bg-gray-800/50 px-4 py-5 shadow ring-1 ring-gray-700 sm:p-6"
             >
               <div className="w-12">
                 {acct.type === LinkedAccountType.Plex ? (

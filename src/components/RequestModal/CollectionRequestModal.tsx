@@ -317,7 +317,7 @@ const CollectionRequestModal = ({
               <table className="min-w-full">
                 <thead>
                   <tr>
-                    <th className="w-16 bg-gray-700 bg-opacity-80 px-4 py-3">
+                    <th className="w-16 bg-gray-700/80 px-4 py-3">
                       <span
                         role="checkbox"
                         tabIndex={0}
@@ -349,10 +349,10 @@ const CollectionRequestModal = ({
                         ></span>
                       </span>
                     </th>
-                    <th className="bg-gray-700 bg-opacity-80 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(globalMessages.movie)}
                     </th>
-                    <th className="bg-gray-700 bg-opacity-80 px-2 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-2 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(globalMessages.status)}
                     </th>
                   </tr>
