@@ -3,6 +3,7 @@ import type { AxiosInstance, AxiosRequestConfig } from 'axios';
 import axios from 'axios';
 import rateLimit from 'axios-rate-limit';
 import type NodeCache from 'node-cache';
+import querystring from 'querystring';
 
 // 5 minute default TTL (in seconds)
 const DEFAULT_TTL = 300;
@@ -84,6 +85,7 @@ class ExternalAPI {
   ): Promise<T> {
     const cacheKey = this.serializeCacheKey(endpoint, {
       config: config?.params,
+      headers: config?.headers,
       ...(data ? { data } : {}),
     });
 
@@ -92,7 +94,16 @@ class ExternalAPI {
       return cachedItem;
     }
 
-    const response = await this.axios.post<T>(endpoint, data, config);
+    const isFormUrlEncoded = (
+      config?.headers?.['Content-Type'] as string
+    )?.includes('application/x-www-form-urlencoded');
+
+    const body =
+      data && isFormUrlEncoded
+        ? querystring.stringify(data as Record<string, string>)
+        : data;
+
+    const response = await this.axios.post<T>(endpoint, body, config);
 
     if (this.cache && ttl !== 0) {
       this.cache.set(cacheKey, response.data, ttl ?? DEFAULT_TTL);
