@@ -10,8 +10,11 @@ services:
       DB_HOST: 'postgres' # The host (url) of the database
       DB_PORT: '5432' # The port to connect to
       DB_USER: 'seerr' # Username used to connect to the database
+      DB_USER_FILE: '/run/secrets/postgres_user'
       DB_PASS: 'seerr' # Password of the user used to connect to the database
+      DB_PASS_FILE: '/run/secrets/postgres_password'
       DB_NAME: 'seerr' # The name of the database to connect to
+      DB_NAME_FILE: '/run/secrets/postgres_password'
       DB_LOG_QUERIES: 'false' # Whether to log the DB queries for debugging
       DB_USE_SSL: 'false' # Whether to enable ssl for database connection
     volumes:
@@ -22,15 +25,31 @@ services:
       - postgres
     links:
       - postgres
+    secrets:
+      - postgres_user
+      - postgres_password
   postgres:
     image: postgres:18
     environment:
       POSTGRES_USER: seerr
+      POSTGRES_USER_FILE: '/run/secrets/postgres_user'
       POSTGRES_PASSWORD: seerr
+      POSTGRES_PASSWORD_FILE: '/run/secrets/postgres_password'
       POSTGRES_DB: seerr
+      POSTGRES_DB_FILE: '/run/secrets/postgres_db'
     ports:
       - '5432:5432'
     volumes:
       - postgres:/var/lib/postgresql
+    secrets:
+      - postgres_user
+      - postgres_password
 volumes:
   postgres:
+secrets:
+  postgres_user:
+    file: secret_postgres_user.txt # File containing the username used to connect to the database
+  postgres_password:
+    file: secret_postgres_password.txt # File containing password used to connect to the database
+  postgres_db:
+    file: secret_postgres_db.txt # File containing the database name
