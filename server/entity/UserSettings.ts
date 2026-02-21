@@ -74,11 +74,11 @@ export class UserSettings {
 
   // Per-user content rating limits (admin-enforced parental controls)
   // Users cannot see or modify their own limits - only admins can set these
-  @Column({ nullable: true })
-  public maxMovieRating?: string; // MPAA: "G", "PG", "PG-13", "R", "NC-17" (null = unrestricted)
+  @Column({ type: 'varchar', nullable: true })
+  public maxMovieRating?: string | null; // MPAA: "G", "PG", "PG-13", "R", "NC-17" (null = unrestricted)
 
-  @Column({ nullable: true })
-  public maxTvRating?: string; // TV Guidelines: "TV-Y", "TV-Y7", "TV-G", "TV-PG", "TV-14", "TV-MA" (null = unrestricted)
+  @Column({ type: 'varchar', nullable: true })
+  public maxTvRating?: string | null; // TV Guidelines: "TV-Y", "TV-Y7", "TV-G", "TV-PG", "TV-14", "TV-MA" (null = unrestricted)
 
   @Column({ default: false })
   public blockUnrated?: boolean; // Block content with no rating (NR, unrated)

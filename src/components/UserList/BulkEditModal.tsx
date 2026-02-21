@@ -62,10 +62,10 @@ const BulkEditModal = ({
   const [currentPermission, setCurrentPermission] = useState(0);
   const [currentMaxMovieRating, setCurrentMaxMovieRating] = useState<
     string | undefined
-  >(undefined);
+  >('NC-17');
   const [currentMaxTvRating, setCurrentMaxTvRating] = useState<
     string | undefined
-  >(undefined);
+  >('TV-MA');
   const [currentBlockUnrated, setCurrentBlockUnrated] = useState(false);
   const [currentBlockAdult, setCurrentBlockAdult] = useState(false);
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
@@ -119,8 +119,8 @@ const BulkEditModal = ({
 
       if (settings.length === 0) return;
 
-      const movieRatings = settings.map((s) => s.maxMovieRating || '');
-      const tvRatings = settings.map((s) => s.maxTvRating || '');
+      const movieRatings = settings.map((s) => s.maxMovieRating || 'NC-17');
+      const tvRatings = settings.map((s) => s.maxTvRating || 'TV-MA');
       const blockUnrateds = settings.map((s) => s.blockUnrated ?? false);
       const blockAdults = settings.map((s) => s.blockAdult ?? false);
 
@@ -130,13 +130,13 @@ const BulkEditModal = ({
       const commonAdult = commonValue(blockAdults);
 
       if (commonMovie !== undefined) {
-        setCurrentMaxMovieRating(commonMovie || undefined);
+        setCurrentMaxMovieRating(commonMovie);
       } else {
         setMixedMovieRating(true);
       }
 
       if (commonTv !== undefined) {
-        setCurrentMaxTvRating(commonTv || undefined);
+        setCurrentMaxTvRating(commonTv);
       } else {
         setMixedTvRating(true);
       }
@@ -183,10 +183,10 @@ const BulkEditModal = ({
         ids: selectedUserIds,
         permissions: currentPermission,
         ...(touchedFields.has('maxMovieRating')
-          ? { maxMovieRating: currentMaxMovieRating || '' }
+          ? { maxMovieRating: currentMaxMovieRating }
           : {}),
         ...(touchedFields.has('maxTvRating')
-          ? { maxTvRating: currentMaxTvRating || '' }
+          ? { maxTvRating: currentMaxTvRating }
           : {}),
         ...(touchedFields.has('blockUnrated')
           ? { blockUnrated: currentBlockUnrated }
@@ -276,11 +276,11 @@ const BulkEditModal = ({
                   value={
                     showMixedMovieHint
                       ? '__mixed__'
-                      : currentMaxMovieRating || ''
+                      : currentMaxMovieRating || 'NC-17'
                   }
                   onChange={(e) => {
                     markTouched('maxMovieRating');
-                    setCurrentMaxMovieRating(e.target.value || undefined);
+                    setCurrentMaxMovieRating(e.target.value);
                   }}
                 >
                   {showMixedMovieHint && (
@@ -306,11 +306,13 @@ const BulkEditModal = ({
                 <select
                   id="maxTvRating"
                   value={
-                    showMixedTvHint ? '__mixed__' : currentMaxTvRating || ''
+                    showMixedTvHint
+                      ? '__mixed__'
+                      : currentMaxTvRating || 'TV-MA'
                   }
                   onChange={(e) => {
                     markTouched('maxTvRating');
-                    setCurrentMaxTvRating(e.target.value || undefined);
+                    setCurrentMaxTvRating(e.target.value);
                   }}
                 >
                   {showMixedTvHint && (

@@ -83,8 +83,8 @@ const UserParentalControlsSettings = () => {
       </div>
       <Formik
         initialValues={{
-          maxMovieRating: data?.maxMovieRating ?? '',
-          maxTvRating: data?.maxTvRating ?? '',
+          maxMovieRating: data?.maxMovieRating ?? 'NC-17',
+          maxTvRating: data?.maxTvRating ?? 'TV-MA',
           blockUnrated: data?.blockUnrated ?? false,
           blockAdult: data?.blockAdult ?? false,
         }}
@@ -94,8 +94,8 @@ const UserParentalControlsSettings = () => {
             await axios.post(
               `/api/v1/user/${user?.id}/settings/parental-controls`,
               {
-                maxMovieRating: values.maxMovieRating || undefined,
-                maxTvRating: values.maxTvRating || undefined,
+                maxMovieRating: values.maxMovieRating,
+                maxTvRating: values.maxTvRating,
                 blockUnrated: values.blockUnrated,
                 blockAdult: values.blockAdult,
               }

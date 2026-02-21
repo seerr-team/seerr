@@ -510,12 +510,13 @@ router.put<
             user.settings = new UserSettings({ user });
           }
           const settings = user.settings;
-          // Empty string = "No Restriction" from the UI dropdown; convert to undefined for DB storage
+          // NC-17/TV-MA = unrestricted (getUserContentRatingLimits converts to undefined)
+          // Falsy values → null to clear the DB column (TypeORM ignores undefined)
           if (req.body.maxMovieRating !== undefined) {
-            settings.maxMovieRating = req.body.maxMovieRating || undefined;
+            settings.maxMovieRating = req.body.maxMovieRating || null;
           }
           if (req.body.maxTvRating !== undefined) {
-            settings.maxTvRating = req.body.maxTvRating || undefined;
+            settings.maxTvRating = req.body.maxTvRating || null;
           }
           if (req.body.blockUnrated !== undefined) {
             settings.blockUnrated = req.body.blockUnrated;

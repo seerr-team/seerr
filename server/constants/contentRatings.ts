@@ -93,24 +93,22 @@ export function shouldFilterTv(
 /** Display options for movie rating dropdown (admin UI) */
 export function getMovieRatingOptions(): { value: string; label: string }[] {
   return [
-    { value: '', label: 'No Restriction' },
     { value: 'G', label: 'G - General Audiences' },
     { value: 'PG', label: 'PG - Parental Guidance Suggested' },
     { value: 'PG-13', label: 'PG-13 - Parents Strongly Cautioned' },
     { value: 'R', label: 'R - Restricted' },
-    { value: 'NC-17', label: 'NC-17 - Adults Only' },
+    { value: 'NC-17', label: 'NC-17 - Adults Only (No Restrictions)' },
   ];
 }
 
 /** Display options for TV rating dropdown (admin UI) */
 export function getTvRatingOptions(): { value: string; label: string }[] {
   return [
-    { value: '', label: 'No Restriction' },
     { value: 'TV-Y', label: 'TV-Y - All Children' },
     { value: 'TV-Y7', label: 'TV-Y7 - Directed to Older Children' },
     { value: 'TV-G', label: 'TV-G - General Audience' },
     { value: 'TV-PG', label: 'TV-PG - Parental Guidance Suggested' },
     { value: 'TV-14', label: 'TV-14 - Parents Strongly Cautioned' },
-    { value: 'TV-MA', label: 'TV-MA - Mature Audience Only' },
+    { value: 'TV-MA', label: 'TV-MA - Mature Audience Only (No Restrictions)' },
   ];
 }

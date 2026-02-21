@@ -816,17 +816,22 @@ userSettingsRoutes.post<
         });
       }
 
+      // NC-17/TV-MA = unrestricted (getUserContentRatingLimits converts to undefined)
+      // Falsy values (empty string) → null to clear the DB column
+      const movieRating = req.body.maxMovieRating || null;
+      const tvRating = req.body.maxTvRating || null;
+
       if (!user.settings) {
         user.settings = new UserSettings({
           user: user,
-          maxMovieRating: req.body.maxMovieRating || undefined,
-          maxTvRating: req.body.maxTvRating || undefined,
+          maxMovieRating: movieRating,
+          maxTvRating: tvRating,
           blockUnrated: req.body.blockUnrated ?? false,
           blockAdult: req.body.blockAdult ?? false,
         });
       } else {
-        user.settings.maxMovieRating = req.body.maxMovieRating || undefined;
-        user.settings.maxTvRating = req.body.maxTvRating || undefined;
+        user.settings.maxMovieRating = movieRating;
+        user.settings.maxTvRating = tvRating;
         user.settings.blockUnrated = req.body.blockUnrated ?? false;
         user.settings.blockAdult = req.body.blockAdult ?? false;
       }
@@ -834,8 +839,8 @@ userSettingsRoutes.post<
       await userRepository.save(user);
 
       return res.status(200).json({
-        maxMovieRating: user.settings.maxMovieRating,
-        maxTvRating: user.settings.maxTvRating,
+        maxMovieRating: user.settings.maxMovieRating ?? undefined,
+        maxTvRating: user.settings.maxTvRating ?? undefined,
         blockUnrated: user.settings.blockUnrated ?? false,
         blockAdult: user.settings.blockAdult ?? false,
       });
