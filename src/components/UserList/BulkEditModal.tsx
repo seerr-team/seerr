@@ -93,6 +93,13 @@ const BulkEditModal = ({
   const fetchParentalControls = useCallback(async () => {
     if (!selectedUserIds.length) return;
 
+    // Reset stale state from previous selection
+    setMixedMovieRating(false);
+    setMixedTvRating(false);
+    setMixedBlockUnrated(false);
+    setMixedBlockAdult(false);
+    setTouchedFields(new Set());
+
     try {
       const results = await Promise.allSettled(
         selectedUserIds.map((id) =>
