@@ -7,14 +7,19 @@ import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { Watchlist } from '@server/entity/Watchlist';
+import { getUserContentRatingLimits } from '@server/lib/contentRating';
 import logger from '@server/logger';
+import {
+  enforceTvRating,
+  filterTvListByRating,
+} from '@server/middleware/ratingCheck';
 import { mapTvResult } from '@server/models/Search';
 import { mapSeasonWithEpisodes, mapTvDetails } from '@server/models/Tv';
 import { Router } from 'express';
 
 const tvRoutes = Router();
 
-tvRoutes.get('/:id', async (req, res, next) => {
+tvRoutes.get('/:id', enforceTvRating, async (req, res, next) => {
   const tmdb = new TheMovieDb();
 
   try {
@@ -65,7 +70,7 @@ tvRoutes.get('/:id', async (req, res, next) => {
   }
 });
 
-tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
+tvRoutes.get('/:id/season/:seasonNumber', enforceTvRating, async (req, res, next) => {
   try {
     const tmdb = new TheMovieDb();
     const tmdbTv = await tmdb.getTvShow({
@@ -108,16 +113,23 @@ tvRoutes.get('/:id/recommendations', async (req, res, next) => {
       language: (req.query.language as string) ?? req.locale,
     });
 
+    const limits = getUserContentRatingLimits(req.user);
+    const filteredResults = await filterTvListByRating(
+      results.results,
+      tmdb,
+      limits
+    );
+
     const media = await Media.getRelatedMedia(
       req.user,
-      results.results.map((result) => result.id)
+      filteredResults.map((result) => result.id)
     );
 
     return res.status(200).json({
       page: results.page,
       totalPages: results.total_pages,
       totalResults: results.total_results,
-      results: results.results.map((result) =>
+      results: filteredResults.map((result) =>
         mapTvResult(
           result,
           media.find(
@@ -149,16 +161,23 @@ tvRoutes.get('/:id/similar', async (req, res, next) => {
       language: (req.query.language as string) ?? req.locale,
     });
 
+    const limits = getUserContentRatingLimits(req.user);
+    const filteredResults = await filterTvListByRating(
+      results.results,
+      tmdb,
+      limits
+    );
+
     const media = await Media.getRelatedMedia(
       req.user,
-      results.results.map((result) => result.id)
+      filteredResults.map((result) => result.id)
     );
 
     return res.status(200).json({
       page: results.page,
       totalPages: results.total_pages,
       totalResults: results.total_results,
-      results: results.results.map((result) =>
+      results: filteredResults.map((result) =>
         mapTvResult(
           result,
           media.find(

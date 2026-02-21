@@ -91,7 +91,8 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
   }
 
   if (!data) {
-    return <Error statusCode={404} />;
+    const statusCode = error?.response?.status === 403 ? 403 : 404;
+    return <Error statusCode={statusCode} />;
   }
 
   let collectionStatus = MediaStatus.UNKNOWN;

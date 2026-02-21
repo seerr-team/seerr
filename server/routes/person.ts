@@ -1,6 +1,8 @@
 import TheMovieDb from '@server/api/themoviedb';
 import Media from '@server/entity/Media';
+import { getUserContentRatingLimits } from '@server/lib/contentRating';
 import logger from '@server/logger';
+import { filterCreditsByRating } from '@server/middleware/ratingCheck';
 import {
   mapCastCredits,
   mapCrewCredits,
@@ -41,18 +43,31 @@ personRoutes.get('/:id/combined_credits', async (req, res, next) => {
       language: (req.query.language as string) ?? req.locale,
     });
 
+    // Filter credits by user's content rating limits
+    const limits = getUserContentRatingLimits(req.user);
+    const filteredCast = await filterCreditsByRating(
+      combinedCredits.cast,
+      tmdb,
+      limits
+    );
+    const filteredCrew = await filterCreditsByRating(
+      combinedCredits.crew,
+      tmdb,
+      limits
+    );
+
     const castMedia = await Media.getRelatedMedia(
       req.user,
-      combinedCredits.cast.map((result) => result.id)
+      filteredCast.map((result) => result.id)
     );
 
     const crewMedia = await Media.getRelatedMedia(
       req.user,
-      combinedCredits.crew.map((result) => result.id)
+      filteredCrew.map((result) => result.id)
     );
 
     return res.status(200).json({
-      cast: combinedCredits.cast
+      cast: filteredCast
         .map((result) =>
           mapCastCredits(
             result,
@@ -63,7 +78,7 @@ personRoutes.get('/:id/combined_credits', async (req, res, next) => {
           )
         )
         .filter((item) => !item.adult),
-      crew: combinedCredits.crew
+      crew: filteredCrew
         .map((result) =>
           mapCrewCredits(
             result,

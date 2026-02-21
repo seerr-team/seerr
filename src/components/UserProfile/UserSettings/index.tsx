@@ -21,6 +21,7 @@ const messages = defineMessages('components.UserProfile.UserSettings', {
   menuLinkedAccounts: 'Linked Accounts',
   menuNotifications: 'Notifications',
   menuPermissions: 'Permissions',
+  menuParentalControls: 'Parental Controls',
   unauthorizedDescription:
     "You do not have permission to modify this user's settings.",
 });
@@ -86,6 +87,17 @@ const UserSettings = ({ children }: UserSettingsProps) => {
       regex: /\/settings\/permissions/,
       requiredPermission: Permission.MANAGE_USERS,
       hidden: currentUser?.id !== 1 && currentUser?.id === user.id,
+    },
+    {
+      text: intl.formatMessage(messages.menuParentalControls),
+      route: '/settings/parental-controls',
+      regex: /\/settings\/parental-controls/,
+      requiredPermission: Permission.MANAGE_USERS,
+      // Hide for owner user (id=1), users viewing their own profile, or admin users
+      hidden:
+        user.id === 1 ||
+        currentUser?.id === user.id ||
+        hasPermission(Permission.MANAGE_USERS, user.permissions ?? 0),
     },
   ];
 
