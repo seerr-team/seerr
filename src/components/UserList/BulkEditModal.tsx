@@ -38,7 +38,7 @@ const messages = defineMessages('components.UserList', {
   maxtvrating: 'Max TV Rating',
   blockunrated: 'Block Unrated Content',
   blockadult: 'Block Adult Content',
-  mixedvalues: 'Varies across selected users',
+  mixedvalues: 'Restrictions vary between selected users',
   enabledforsome: 'Enabled for some but not all users',
 });
 
@@ -266,12 +266,21 @@ const BulkEditModal = ({
               <div className="form-input-field">
                 <select
                   id="maxMovieRating"
-                  value={currentMaxMovieRating || ''}
+                  value={
+                    showMixedMovieHint
+                      ? '__mixed__'
+                      : currentMaxMovieRating || ''
+                  }
                   onChange={(e) => {
                     markTouched('maxMovieRating');
                     setCurrentMaxMovieRating(e.target.value || undefined);
                   }}
                 >
+                  {showMixedMovieHint && (
+                    <option value="__mixed__" disabled>
+                      {intl.formatMessage(messages.mixedvalues)}
+                    </option>
+                  )}
                   {getMovieRatingOptions().map((rating) => (
                     <option key={rating.value} value={rating.value}>
                       {rating.label}
@@ -279,11 +288,6 @@ const BulkEditModal = ({
                   ))}
                 </select>
               </div>
-              {showMixedMovieHint && (
-                <p className="mt-1 text-sm text-gray-400">
-                  {intl.formatMessage(messages.mixedvalues)}
-                </p>
-              )}
             </div>
           </div>
           <div className="mb-4">
@@ -294,12 +298,19 @@ const BulkEditModal = ({
               <div className="form-input-field">
                 <select
                   id="maxTvRating"
-                  value={currentMaxTvRating || ''}
+                  value={
+                    showMixedTvHint ? '__mixed__' : currentMaxTvRating || ''
+                  }
                   onChange={(e) => {
                     markTouched('maxTvRating');
                     setCurrentMaxTvRating(e.target.value || undefined);
                   }}
                 >
+                  {showMixedTvHint && (
+                    <option value="__mixed__" disabled>
+                      {intl.formatMessage(messages.mixedvalues)}
+                    </option>
+                  )}
                   {getTvRatingOptions().map((rating) => (
                     <option key={rating.value} value={rating.value}>
                       {rating.label}
@@ -307,11 +318,6 @@ const BulkEditModal = ({
                   ))}
                 </select>
               </div>
-              {showMixedTvHint && (
-                <p className="mt-1 text-sm text-gray-400">
-                  {intl.formatMessage(messages.mixedvalues)}
-                </p>
-              )}
             </div>
           </div>
           <div className="mb-4 flex items-center gap-2">

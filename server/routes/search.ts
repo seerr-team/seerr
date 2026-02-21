@@ -23,6 +23,10 @@ type TmdbSearchResult =
   | TmdbPersonResult
   | TmdbCollectionResult;
 
+const hasAdultFlag = (
+  r: TmdbSearchResult
+): r is TmdbSearchResult & { adult: boolean } => 'adult' in r;
+
 /**
  * Fetch US certification for a single search result.
  * Returns the result paired with its certification, or null on failure.
@@ -73,7 +77,7 @@ const filterSearchBatch = async (
 ): Promise<TmdbSearchResult[]> => {
   // Pre-filter adult content (free, no API calls needed)
   const preFiltered = blockAdult
-    ? results.filter((r) => !('adult' in r && (r as { adult?: boolean }).adult))
+    ? results.filter((r) => !(hasAdultFlag(r) && r.adult))
     : results;
 
   // Skip expensive cert lookups when only blockAdult is active
