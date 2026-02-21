@@ -239,6 +239,9 @@ components:
         partialRequestsEnabled:
           type: boolean
           example: false
+        removeUnmonitoredEnabled:
+          type: boolean
+          example: false
         localLogin:
           type: boolean
           example: true
