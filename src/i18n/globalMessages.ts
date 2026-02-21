@@ -67,6 +67,8 @@ const globalMessages = defineMessages('i18n', {
     '<strong>{title}</strong> was successfully removed from the Blocklist.',
   addToBlocklist: 'Add to Blocklist',
   removefromBlocklist: 'Remove from Blocklist',
+  addToPlexWatchlist: 'Add to Plex Watchlist',
+  removeFromPlexWatchlist: 'Remove from Plex Watchlist',
   specials: 'Specials',
 });
 

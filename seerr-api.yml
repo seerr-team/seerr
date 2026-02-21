@@ -4793,6 +4793,121 @@ paths:
       responses:
         '204':
           description: Succesfully removed watchlist item
+  /plex-watchlist:
+    post:
+      summary: Add media to Plex Watchlist
+      description: Adds a movie or TV show to the authenticated Plex user's watchlist. Only available for Plex users.
+      tags:
+        - watchlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tmdbId
+                - mediaType
+              properties:
+                tmdbId:
+                  type: number
+                  example: 701387
+                mediaType:
+                  type: string
+                  enum:
+                    - movie
+                    - tv
+                  example: movie
+                title:
+                  type: string
+                  example: 'Bugonia'
+      responses:
+        '201':
+          description: Successfully added to Plex watchlist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'Added to Plex watchlist'
+                  tmdbId:
+                    type: number
+                    example: 701387
+                  mediaType:
+                    type: string
+                    example: movie
+                  title:
+                    type: string
+                    example: 'Bugonia'
+        '401':
+          description: Unauthorized - user not logged in
+        '403':
+          description: Forbidden - endpoint only available for Plex users
+        '404':
+          description: Could not find title in Plex
+        '500':
+          description: Internal server error
+  /plex-watchlist/{tmdbId}:
+    delete:
+      summary: Remove media from Plex Watchlist
+      description: Removes a movie or TV show from the authenticated Plex user's watchlist. Only available for Plex users.
+      tags:
+        - watchlist
+      parameters:
+        - in: path
+          name: tmdbId
+          description: TMDB ID of the media to remove
+          required: true
+          example: '701387'
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successfully removed from Plex watchlist
+        '400':
+          description: Invalid TMDB ID
+        '401':
+          description: Unauthorized - user not logged in
+        '403':
+          description: Forbidden - endpoint only available for Plex users
+        '404':
+          description: Item not found in Plex watchlist
+        '500':
+          description: Internal server error
+  /plex-watchlist/status/{tmdbId}:
+    get:
+      summary: Check if media is on Plex Watchlist
+      description: Returns whether the specified media item is on the authenticated user's Plex watchlist.
+      tags:
+        - watchlist
+      parameters:
+        - in: path
+          name: tmdbId
+          description: TMDB ID of the media to check
+          required: true
+          example: '701387'
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Watchlist status returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isOnWatchlist:
+                    type: boolean
+                    example: true
+        '400':
+          description: Invalid TMDB ID
+        '401':
+          description: Unauthorized - user not logged in
   /user/{userId}/watchlist:
     get:
       summary: Get the Plex watchlist for a specific user
