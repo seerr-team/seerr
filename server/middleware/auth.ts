@@ -1,3 +1,4 @@
+import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import type {
@@ -9,18 +10,30 @@ import { getSettings } from '@server/lib/settings';
 export const checkUser: Middleware = async (req, _res, next) => {
   const settings = getSettings();
   let user: User | undefined | null;
+  const apiKey = req.header('X-API-Key');
 
-  if (req.header('X-API-Key') === settings.main.apiKey) {
+  if (apiKey) {
+    let userId: number | null = null;
     const userRepository = getRepository(User);
 
-    let userId = 1; // Work on original administrator account
+    if (apiKey === settings.main.apiKey) {
+      userId = 1; // Work on original administrator account
 
-    // If a User ID is provided, we will act on that user's behalf
-    if (req.header('X-API-User')) {
-      userId = Number(req.header('X-API-User'));
+      // If a User ID is provided, we will act on that user's behalf
+      if (req.header('X-API-User')) {
+        userId = Number(req.header('X-API-User'));
+      }
+
+      if (userId) {
+        user = await userRepository.findOne({ where: { id: userId } });
+      }
     }
-
-    user = await userRepository.findOne({ where: { id: userId } });
+    // potentially provided user auth token
+    else if (settings.main.mediaServerType === MediaServerType.JELLYFIN) {
+      user = await userRepository.findOne({
+        where: { jellyfinAuthToken: apiKey },
+      });
+    }
   } else if (req.session?.userId) {
     const userRepository = getRepository(User);
 
