@@ -464,10 +464,7 @@ const UserGeneralSettings = () => {
                 </div>
               </div>
               <div className="form-row">
-                <label
-                  htmlFor="excludedWatchProviders"
-                  className="text-label"
-                >
+                <label htmlFor="excludedWatchProviders" className="text-label">
                   <span>
                     {intl.formatMessage(messages.excludedWatchProviders)}
                   </span>
@@ -478,6 +475,7 @@ const UserGeneralSettings = () => {
                 <div className="form-input-area">
                   <div className="form-input-field relative z-[19]">
                     <WatchProviderSelector
+                      key={`${values.streamingRegion || currentSettings.streamingRegion || 'US'}`}
                       type="movie"
                       region={
                         values.streamingRegion ||

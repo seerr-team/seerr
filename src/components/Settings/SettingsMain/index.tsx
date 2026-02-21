@@ -423,6 +423,7 @@ const SettingsMain = () => {
                   <div className="form-input-area">
                     <div className="form-input-field relative z-[19]">
                       <WatchProviderSelector
+                        key={values.streamingRegion}
                         type="movie"
                         region={values.streamingRegion}
                         hideRegionSelector

@@ -517,18 +517,19 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
               priority
               className={isAvailableOnExcludedProvider ? 'opacity-40' : ''}
             />
-            {isAvailableOnExcludedProvider && firstExcludedProvider?.logoPath && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <CachedImage
-                  type="tmdb"
-                  src={`https://image.tmdb.org/t/p/w92${firstExcludedProvider.logoPath}`}
-                  alt={firstExcludedProvider.name}
-                  width={64}
-                  height={64}
-                  className="rounded-xl shadow-lg"
-                />
-              </div>
-            )}
+            {isAvailableOnExcludedProvider &&
+              firstExcludedProvider?.logoPath && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <CachedImage
+                    type="tmdb"
+                    src={`https://image.tmdb.org/t/p/w92${firstExcludedProvider.logoPath}`}
+                    alt={firstExcludedProvider.name}
+                    width={64}
+                    height={64}
+                    className="rounded-xl shadow-lg"
+                  />
+                </div>
+              )}
           </div>
         </div>
         <div className="media-title">
@@ -648,15 +649,9 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
           <div className="z-20">
             <PlayButton links={mediaLinks} />
           </div>
-          {!isAvailableOnExcludedProvider && (
-            <RequestButton
-              mediaType="movie"
-              media={data.mediaInfo}
-              tmdbId={data.id}
-              onUpdate={() => revalidate()}
-            />
-          )}
-          {isAvailableOnExcludedProvider && firstExcludedProvider && watchProviderLink && (
+          {isAvailableOnExcludedProvider &&
+          firstExcludedProvider &&
+          watchProviderLink ? (
             <Tooltip
               content={intl.formatMessage(messages.watchonprovider, {
                 provider: firstExcludedProvider.name,
@@ -683,6 +678,13 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                 <span>{firstExcludedProvider.name}</span>
               </Button>
             </Tooltip>
+          ) : (
+            <RequestButton
+              mediaType="movie"
+              media={data.mediaInfo}
+              tmdbId={data.id}
+              onUpdate={() => revalidate()}
+            />
           )}
           {(data.mediaInfo?.status === MediaStatus.AVAILABLE ||
             (settings.currentSettings.movie4kEnabled &&
