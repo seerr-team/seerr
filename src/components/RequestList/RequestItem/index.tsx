@@ -2,7 +2,9 @@ import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import ConfirmButton from '@app/components/Common/ConfirmButton';
+import Tooltip from '@app/components/Common/Tooltip';
 import RequestModal from '@app/components/RequestModal';
+import DeclineRequestModal from '@app/components/RequestModal/DeclineRequestModal';
 import StatusBadge from '@app/components/StatusBadge';
 import useDeepLinks from '@app/hooks/useDeepLinks';
 import { Permission, useUser } from '@app/hooks/useUser';
@@ -46,6 +48,7 @@ const messages = defineMessages('components.RequestList.RequestItem', {
   unknowntitle: 'Unknown Title',
   removearr: 'Remove from {arr}',
   profileName: 'Profile',
+  declineReason: 'Reason',
 });
 
 const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
@@ -322,6 +325,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
   });
 
   const [isRetrying, setRetrying] = useState(false);
+  const [showDeclineRequestModal, setShowDeclineRequestModal] = useState(false);
 
   const modifyRequest = async (type: 'approve' | 'decline') => {
     const response = await axios.post(`/api/v1/request/${request.id}/${type}`);
@@ -402,6 +406,16 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
         onComplete={() => {
           revalidateList();
           setShowEditModal(false);
+        }}
+      />
+      <DeclineRequestModal
+        show={showDeclineRequestModal}
+        requests={[request]}
+        type={request.type}
+        onCancel={() => setShowDeclineRequestModal(false)}
+        onComplete={() => {
+          revalidateList();
+          setShowDeclineRequestModal(false);
         }}
       />
       <div className="relative flex w-full flex-col justify-between overflow-hidden rounded-xl bg-gray-800 py-2 text-gray-400 shadow-md ring-1 ring-gray-700 xl:h-28 xl:flex-row">
@@ -657,6 +671,22 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                 </span>
               </div>
             )}
+            {requestData.declineReason && (
+              <Tooltip
+                tooltipConfig={{ delayHide: 100 }}
+                className="m-4 w-96 rounded-xl px-4 py-2 text-lg"
+                content={requestData.declineReason}
+              >
+                <div className="card-field whitespace-normal lg:whitespace-nowrap">
+                  <span className="card-field-name">
+                    {intl.formatMessage(messages.declineReason)}
+                  </span>
+                  <span className="flex text-sm text-gray-300">
+                    {requestData.declineReason}
+                  </span>
+                </div>
+              </Tooltip>
+            )}
           </div>
         </div>
         <div className="z-10 mt-4 flex w-full flex-col justify-center space-y-2 pl-4 pr-4 xl:mt-0 xl:w-96 xl:items-end xl:pl-0">
@@ -723,7 +753,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                   <Button
                     className="w-full"
                     buttonType="danger"
-                    onClick={() => modifyRequest('decline')}
+                    onClick={() => setShowDeclineRequestModal(true)}
                   >
                     <XMarkIcon />
                     <span>{intl.formatMessage(globalMessages.decline)}</span>

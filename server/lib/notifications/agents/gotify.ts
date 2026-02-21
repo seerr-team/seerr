@@ -82,6 +82,13 @@ class GotifyAgent
 
       if (status) {
         message += `\n**Request Status:** ${status}  `;
+        if (
+          type === Notification.MEDIA_DECLINED &&
+          payload.request &&
+          payload.request.declineReason
+        ) {
+          message += `\nDecline Reason: ${payload.request.declineReason}`;
+        }
       }
     } else if (payload.comment) {
       message += `\nComment from ${payload.comment.user.displayName}:\n${payload.comment.message}  `;

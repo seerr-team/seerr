@@ -3,6 +3,7 @@ import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import Tooltip from '@app/components/Common/Tooltip';
 import RequestModal from '@app/components/RequestModal';
+import DeclineRequestModal from '@app/components/RequestModal/DeclineRequestModal';
 import StatusBadge from '@app/components/StatusBadge';
 import useDeepLinks from '@app/hooks/useDeepLinks';
 import { Permission, useUser } from '@app/hooks/useUser';
@@ -226,6 +227,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
   const { addToast } = useToasts();
   const [isRetrying, setRetrying] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeclineRequestModal, setShowDeclineRequestModal] = useState(false);
   const url =
     request.type === 'movie'
       ? `/api/v1/movie/${request.media.tmdbId}`
@@ -327,6 +329,16 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
         onComplete={() => {
           revalidate();
           setShowEditModal(false);
+        }}
+      />
+      <DeclineRequestModal
+        show={showDeclineRequestModal}
+        requests={[request]}
+        type={request.type}
+        onCancel={() => setShowDeclineRequestModal(false)}
+        onComplete={() => {
+          revalidate();
+          setShowDeclineRequestModal(false);
         }}
       />
       <div
@@ -470,6 +482,22 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
               />
             )}
           </div>
+          {requestData.declineReason && (
+            <Tooltip
+              tooltipConfig={{ delayHide: 100 }}
+              className="m-4 w-96 rounded-xl px-4 py-2 text-lg"
+              content={requestData.declineReason}
+            >
+              <div className="mt-2 flex flex-wrap items-center text-sm sm:mt-1">
+                <span className="mr-2 block font-bold">
+                  {intl.formatMessage(globalMessages.declinemessage)}
+                </span>
+                <span className="mr-2 block overflow-hidden overflow-ellipsis whitespace-nowrap">
+                  {requestData.declineReason}
+                </span>
+              </div>
+            </Tooltip>
+          )}
           <div className="flex flex-1 items-end space-x-2">
             {requestData.status === MediaRequestStatus.FAILED &&
               hasPermission(Permission.MANAGE_REQUESTS) && (
@@ -519,7 +547,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                       buttonType="danger"
                       buttonSize="sm"
                       className="hidden sm:block"
-                      onClick={() => modifyRequest('decline')}
+                      onClick={() => setShowDeclineRequestModal(true)}
                     >
                       <XMarkIcon />
                       <span>{intl.formatMessage(globalMessages.decline)}</span>
@@ -531,7 +559,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                         buttonType="danger"
                         buttonSize="sm"
                         className="sm:hidden"
-                        onClick={() => modifyRequest('decline')}
+                        onClick={() => setShowDeclineRequestModal(true)}
                       >
                         <XMarkIcon />
                       </Button>

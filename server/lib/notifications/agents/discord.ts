@@ -156,6 +156,17 @@ class DiscordAgent
           value: status,
           inline: true,
         });
+        if (
+          type === Notification.MEDIA_DECLINED &&
+          payload.request &&
+          payload.request.declineReason
+        ) {
+          fields.push({
+            name: 'Decline Reason',
+            value: payload.request.declineReason,
+            inline: false,
+          });
+        }
       }
     } else if (payload.comment) {
       fields.push({

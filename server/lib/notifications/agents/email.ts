@@ -107,7 +107,10 @@ class EmailAgent
         case Notification.MEDIA_DECLINED:
           body = `Your request for the following ${mediaType} ${
             is4k ? 'in 4K ' : ''
-          }was declined:`;
+          }was declined${payload.request.declineReason ? ' because: ' : ':'}`;
+          if (payload.request.declineReason) {
+            body += `${payload.request.declineReason}`;
+          }
           break;
         case Notification.MEDIA_FAILED:
           body = `A request for the following ${mediaType} ${

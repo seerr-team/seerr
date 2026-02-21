@@ -517,6 +517,9 @@ export class MediaRequest {
   @Index()
   public status: MediaRequestStatus;
 
+  @Column({ type: 'text', nullable: true })
+  public declineReason: string;
+
   @ManyToOne(() => Media, (media) => media.requests, {
     eager: true,
     onDelete: 'CASCADE',
