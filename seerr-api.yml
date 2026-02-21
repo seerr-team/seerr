@@ -4433,6 +4433,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+  /user/{userId}/merge:
+    post:
+      summary: Merge user into another user
+      description: |
+        Merges the user with the provided userId into another user. All requests,
+        issues, watchlist items, and other data will be transferred to the target user.
+        The source user will be deleted after the merge.
+
+        Requires the `MANAGE_USERS` permission. Cannot merge the owner account (ID 1).
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - targetUserId
+              properties:
+                targetUserId:
+                  type: number
+                  description: The ID of the user to merge into
+                  example: 1
+      responses:
+        '200':
+          description: User successfully merged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request (e.g., merging user into themselves)
+        '403':
+          description: Forbidden (e.g., trying to merge admin without owner permission)
+        '404':
+          description: Source or target user not found
+        '405':
+          description: Not allowed (e.g., trying to merge owner account)
   /user/{userId}/requests:
     get:
       summary: Get requests for a specific user
