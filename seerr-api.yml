@@ -4117,8 +4117,14 @@ paths:
           name: sort
           schema:
             type: string
-            enum: [created, updated, requests, displayname]
+            enum: [created, updated, requests, displayname, usertype, role]
             default: created
+        - in: query
+          name: sortDirection
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
         - in: query
           name: q
           required: false
