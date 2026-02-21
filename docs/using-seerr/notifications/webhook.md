@@ -32,7 +32,7 @@ Customize the JSON payload to suit your needs. Seerr provides several [template 
 
 | Variable                | Value                                                                                                                               |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `{{notification_type}}` | The type of notification (e.g. `MEDIA_PENDING` or `ISSUE_COMMENT`)                                                                  |
+| `{{notification_type}}` | The type of notification (e.g. `MEDIA_PENDING`, `MEDIA_PENDING_UPDATED`, or `ISSUE_COMMENT`)                                                                 |
 | `{{event}}`             | A friendly description of the notification event                                                                                    |
 | `{{subject}}`           | The notification subject (typically the media title)                                                                                |
 | `{{message}}`           | The notification message body (the media overview/synopsis for request notifications; the issue description for issue notificatons) |

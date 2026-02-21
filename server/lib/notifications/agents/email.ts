@@ -89,6 +89,11 @@ class EmailAgent
             is4k ? 'in 4K ' : ''
           }was automatically submitted:`;
           break;
+        case Notification.MEDIA_PENDING_UPDATED:
+          body = `A new request for the following ${mediaType} ${
+            is4k ? 'in 4K ' : ''
+          }has been updated:`;
+          break;
         case Notification.MEDIA_APPROVED:
           body = `Your request for the following ${mediaType} ${
             is4k ? 'in 4K ' : ''
