@@ -26,6 +26,7 @@ import Slider from '@app/components/Slider';
 import StatusBadge from '@app/components/StatusBadge';
 import Season from '@app/components/TvDetails/Season';
 import useDeepLinks from '@app/hooks/useDeepLinks';
+import { useExcludedProviders } from '@app/hooks/useExcludedProviders';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
@@ -169,6 +170,24 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     iOSPlexUrl: data?.mediaInfo?.iOSPlexUrl,
     iOSPlexUrl4k: data?.mediaInfo?.iOSPlexUrl4k,
   });
+
+  const streamingRegion = user?.settings?.streamingRegion
+    ? user.settings.streamingRegion
+    : settings.currentSettings.streamingRegion
+      ? settings.currentSettings.streamingRegion
+      : 'US';
+  const {
+    streamingProviders,
+    watchProviderLink,
+    excludedWatchProviders,
+    firstExcludedProvider,
+    isAvailableOnExcludedProvider,
+  } = useExcludedProviders(
+    data?.watchProviders,
+    streamingRegion,
+    user?.settings?.excludedWatchProviders,
+    settings.currentSettings.excludedWatchProviders
+  );
 
   if (!data && !error) {
     return <LoadingSpinner />;
@@ -317,31 +336,6 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   const is4kComplete =
     (showHasSpecials ? seasonCount + 1 : seasonCount) <=
     getAllRequestedSeasons(true).length;
-
-  const streamingRegion = user?.settings?.streamingRegion
-    ? user.settings.streamingRegion
-    : settings.currentSettings.streamingRegion
-      ? settings.currentSettings.streamingRegion
-      : 'US';
-  const streamingProviderData = data?.watchProviders?.find(
-    (provider) => provider.iso_3166_1 === streamingRegion
-  );
-  const streamingProviders = streamingProviderData?.flatrate ?? [];
-  const watchProviderLink = streamingProviderData?.link;
-  const excludedWatchProviders = (
-    user?.settings?.excludedWatchProviders ??
-    settings.currentSettings.excludedWatchProviders ??
-    ''
-  )
-    .split('|')
-    .filter(Boolean)
-    .map(Number);
-  const firstExcludedProvider = streamingProviders.find((p) =>
-    excludedWatchProviders.includes(p.id)
-  );
-  const isAvailableOnExcludedProvider =
-    excludedWatchProviders.length > 0 &&
-    streamingProviders.some((p) => excludedWatchProviders.includes(p.id));
 
   function getAvailableMediaServerName() {
     if (settings.currentSettings.mediaServerType === MediaServerType.EMBY) {
@@ -1349,14 +1343,13 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                   {streamingProviders.map((p) => {
                     const isExcluded = excludedWatchProviders.includes(p.id);
                     return (
-                      <Tooltip content={p.name}>
+                      <Tooltip content={p.name} key={`provider-${p.id}`}>
                         <span
                           className={`relative transition duration-300 ${
                             isExcluded
                               ? 'opacity-100'
                               : 'opacity-50 hover:opacity-100'
                           }`}
-                          key={`provider-${p.id}`}
                         >
                           <CachedImage
                             type="tmdb"
