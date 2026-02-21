@@ -27,10 +27,13 @@ export interface PlexLibraryItem {
   Media: Media[];
 }
 
-interface PlexLibraryResponse {
+interface PlexLibraryResponseRaw {
   MediaContainer: {
-    totalSize: number;
-    Metadata: PlexLibraryItem[];
+    totalSize?: number;
+    size?: number;
+    Metadata?: PlexLibraryItem[];
+    Directory?: PlexLibraryItem[];
+    [key: string]: unknown;
   };
 }
 
@@ -177,7 +180,7 @@ class PlexAPI extends ExternalAPI {
     id: string,
     { offset = 0, size = 50 }: { offset?: number; size?: number } = {}
   ): Promise<{ totalSize: number; items: PlexLibraryItem[] }> {
-    const response = await this.get<PlexLibraryResponse>(
+    const response = await this.get<PlexLibraryResponseRaw>(
       `/library/sections/${id}/all?includeGuids=1`,
       {
         headers: {
@@ -187,9 +190,26 @@ class PlexAPI extends ExternalAPI {
       }
     );
 
+    const container = response.MediaContainer;
+    const metadataLength = container.Metadata?.length ?? 0;
+    const directoryLength = container.Directory?.length ?? 0;
+
+    logger.debug('Plex getLibraryContents raw response', {
+      label: 'Plex API',
+      libraryId: id,
+      offset,
+      metadataLength,
+      directoryLength,
+      totalSize: container.totalSize,
+      size: container.size,
+      keys: Object.keys(container).filter((k) =>
+        ['Metadata', 'Directory', 'totalSize', 'size'].includes(k)
+      ),
+    });
+
     return {
-      totalSize: response.MediaContainer.totalSize,
-      items: response.MediaContainer.Metadata ?? [],
+      totalSize: container.totalSize ?? 0,
+      items: container.Metadata ?? [],
     };
   }
 
@@ -221,7 +241,7 @@ class PlexAPI extends ExternalAPI {
     },
     mediaType: 'movie' | 'show'
   ): Promise<PlexLibraryItem[]> {
-    const response = await this.get<PlexLibraryResponse>(
+    const response = await this.get<PlexLibraryResponseRaw>(
       `/library/sections/${id}/all?type=${
         mediaType === 'show' ? '4' : '1'
       }&sort=addedAt%3Adesc&addedAt>>=${Math.floor(options.addedAt / 1000)}`,
@@ -233,7 +253,21 @@ class PlexAPI extends ExternalAPI {
       }
     );
 
-    return response.MediaContainer.Metadata;
+    const container = response.MediaContainer;
+    const items = container.Metadata ?? [];
+
+    logger.debug('Plex getRecentlyAdded raw response', {
+      label: 'Plex API',
+      libraryId: id,
+      mediaType,
+      addedAtFilter: options.addedAt,
+      addedAtFilterDate: new Date(options.addedAt).toISOString(),
+      metadataLength: container.Metadata?.length ?? 0,
+      directoryLength: container.Directory?.length ?? 0,
+      itemsReturned: items.length,
+    });
+
+    return items;
   }
 }
 

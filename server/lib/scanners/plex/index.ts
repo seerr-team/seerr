@@ -90,20 +90,39 @@ class PlexScanner
       if (this.isRecentOnly) {
         for (const library of this.libraries) {
           this.currentLibrary = library;
+          const addedAtOpt = library.lastScan
+            ? {
+                // We remove 10 minutes from the last scan as a buffer
+                addedAt: library.lastScan - 1000 * 60 * 10,
+              }
+            : undefined;
           this.log(
             `Beginning to process recently added for library: ${library.name}`,
             'info',
-            { lastScan: library.lastScan }
+            {
+              lastScan: library.lastScan,
+              addedAtFilter: addedAtOpt?.addedAt,
+              addedAtFilterDate: addedAtOpt
+                ? new Date(addedAtOpt.addedAt).toISOString()
+                : undefined,
+            }
           );
           const libraryItems = await this.plexClient.getRecentlyAdded(
             library.id,
-            library.lastScan
-              ? {
-                  // We remove 10 minutes from the last scan as a buffer
-                  addedAt: library.lastScan - 1000 * 60 * 10,
-                }
-              : undefined,
+            addedAtOpt ?? {
+              addedAt: Date.now() - 1000 * 60 * 60,
+            },
             library.type
+          );
+
+          this.log(
+            `Recently added fetched ${libraryItems.length} items for library: ${library.name}`,
+            'debug',
+            {
+              libraryId: library.id,
+              itemCount: libraryItems.length,
+              lastScanWillUpdateTo: Date.now(),
+            }
           );
 
           // Bundle items up by rating keys
