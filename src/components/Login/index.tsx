@@ -169,7 +169,7 @@ const Login = () => {
       </div>
       <div className="relative z-50 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div
-          className="bg-gray-800 bg-opacity-50 shadow sm:rounded-lg"
+          className="bg-gray-800/50 shadow sm:rounded-lg"
           style={{ backdropFilter: 'blur(5px)' }}
         >
           <>

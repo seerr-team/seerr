@@ -28,7 +28,7 @@ const AppDataWarning = () => {
         <Alert
           title={intl.formatMessage(messages.dockerVolumeMissingDescription, {
             code: (msg: React.ReactNode) => (
-              <code className="bg-opacity-50">{msg}</code>
+              <code className="bg-gray-800/50">{msg}</code>
             ),
             appDataPath: data.appDataPath,
           })}

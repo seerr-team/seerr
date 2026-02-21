@@ -529,7 +529,7 @@ const TvRequestModal = ({
                 <thead>
                   <tr>
                     <th
-                      className={`w-16 bg-gray-700 bg-opacity-80 px-4 py-3 ${
+                      className={`w-16 bg-gray-700/80 px-4 py-3 ${
                         !settings.currentSettings.partialRequestsEnabled &&
                         'hidden'
                       }`}
@@ -566,13 +566,13 @@ const TvRequestModal = ({
                         ></span>
                       </span>
                     </th>
-                    <th className="bg-gray-700 bg-opacity-80 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(messages.season)}
                     </th>
-                    <th className="bg-gray-700 bg-opacity-80 px-5 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-5 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(messages.numberofepisodes)}
                     </th>
-                    <th className="bg-gray-700 bg-opacity-80 px-2 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-2 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(globalMessages.status)}
                     </th>
                   </tr>

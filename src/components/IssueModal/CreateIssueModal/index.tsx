@@ -244,7 +244,7 @@ const CreateIssueModal = ({
               <RadioGroup.Label className="sr-only">
                 Select an Issue
               </RadioGroup.Label>
-              <div className="-space-y-px overflow-hidden rounded-md bg-gray-800 bg-opacity-30">
+              <div className="-space-y-px overflow-hidden rounded-md bg-gray-800/30">
                 {issueOptions.map((setting, index) => (
                   <RadioGroup.Option
                     key={`issue-type-${setting.issueType}`}
@@ -256,7 +256,7 @@ const CreateIssueModal = ({
                           ? 'rounded-bl-md rounded-br-md'
                           : '',
                         checked
-                          ? 'z-10 border border-indigo-500 bg-indigo-400 bg-opacity-20'
+                          ? 'z-10 border border-indigo-500 bg-indigo-400/20'
                           : 'border-gray-500',
                         'relative flex cursor-pointer border p-4 focus:outline-none'
                       )
