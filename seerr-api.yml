@@ -254,6 +254,64 @@ components:
         enableSpecialEpisodes:
           type: boolean
           example: false
+    OidcProvider:
+      type: object
+      properties:
+        slug:
+          type: string
+          readOnly: true
+        name:
+          type: string
+        issuerUrl:
+          type: string
+        clientId:
+          type: string
+        clientSecret:
+          type: string
+        logo:
+          type: string
+        requiredClaims:
+          type: string
+        scopes:
+          type: string
+        newUserLogin:
+          type: boolean
+      required:
+        - slug
+        - name
+        - issuerUrl
+        - clientId
+        - clientSecret
+    PublicOidcProvider:
+      type: object
+      readOnly: true
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        logo:
+          type: string
+      required:
+        - slug
+        - name
+        - logo
+    OidcSettings:
+      type: object
+      properties:
+        providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/OidcProvider'
+    LinkedAccount:
+      type: object
+      properties:
+        id:
+          type: number
+        username:
+          type: string
+        provider:
+          $ref: '#/components/schemas/PublicOidcProvider'
     NetworkSettings:
       type: object
       properties:
@@ -2215,6 +2273,64 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MainSettings'
+  /settings/oidc:
+    get:
+      summary: Get OpenID Connect settings
+      description: Retrieves all OpenID Connect settings in a JSON object.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcSettings'
+  /settings/oidc/{provider}:
+    put:
+      summary: Update OpenID Connect provider
+      description: Updates an existing OpenID Connect provider with the provided values.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+          description: Provider slug
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OidcProvider'
+      responses:
+        '200':
+          description: 'Radarr instance updated'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RadarrSettings'
+    delete:
+      summary: Delete OpenID Connect provider
+      description: Deletes an existing OpenID Connect provider based on the provider slug parameter.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+          description: Provider slug
+      responses:
+        '200':
+          description: 'OpenID Connect provider deleted'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcSettings'
   /settings/network:
     get:
       summary: Get network settings
@@ -4012,6 +4128,69 @@ paths:
               required:
                 - email
                 - password
+  /auth/oidc/login/{slug}:
+    get:
+      summary: Initiate OpenID Connect login
+      description: Initiates the OpenID Connect authorization code flow with PKCE for the specified provider. Returns a redirect URL to the provider's authorization endpoint.
+      security: []
+      tags:
+        - auth
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+          description: Provider slug
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  redirectUrl:
+                    type: string
+        '403':
+          description: OpenID Connect sign-in is disabled or provider not found
+  /auth/oidc/callback/{slug}:
+    get:
+      summary: Handle OpenID Connect callback
+      description: Handles the authorization code callback from the OpenID Connect provider. Exchanges the code for tokens, validates claims, and either logs in an existing user, links the account to the currently logged-in user, or creates a new user if allowed.
+      security: []
+      tags:
+        - auth
+      x-allow-unknown-query-parameters: true
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+          description: Provider slug
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: 'ok'
+                  to:
+                    type: string
+                    example: '/'
+        '400':
+          description: Invalid token response or unable to create new user account
+        '403':
+          description: OpenID Connect sign-in is disabled or insufficient permissions
+        '409':
+          description: A user with this email address already exists
+        '500':
+          description: An unknown error occurred
   /auth/logout:
     post:
       summary: Sign out and clear session cookie
@@ -4935,6 +5114,29 @@ paths:
       responses:
         '204':
           description: User password updated
+  /user/{userId}/settings/linked-accounts:
+    get:
+      summary: Lists the user's linked OpenID Connect accounts
+      description: Lists the user's linked OpenID Connect accounts
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: List of linked accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LinkedAccount'
+        '403':
+          description: Invalid credentials
   /user/{userId}/settings/linked-accounts/plex:
     post:
       summary: Link the provided Plex account to the current user
@@ -5033,6 +5235,28 @@ paths:
           description: Unlink request invalid
         '404':
           description: User does not exist
+  /user/{userId}/settings/linked-accounts/{acctId}:
+    delete:
+      summary: Remove a linked account for a user
+      description: Removes the linked account with the given ID for a specific user. Requires `MANAGE_USERS` permission if editing other users.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+        - in: path
+          name: acctId
+          required: true
+          schema:
+            type: number
+      responses:
+        '204':
+          description: Unlinking account succeeded
+        '404':
+          description: User or linked account does not exist
   /user/{userId}/settings/notifications:
     get:
       summary: Get notification settings for a user

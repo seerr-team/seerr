@@ -1,3 +1,4 @@
+import type { PublicOidcProvider } from '@server/lib/settings';
 import type { DnsEntries, DnsStats } from 'dns-caching';
 import type { PaginatedResponse } from './common';
 
@@ -48,6 +49,7 @@ export interface PublicSettingsResponse {
   emailEnabled: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  openIdProviders: PublicOidcProvider[];
 }
 
 export interface CacheItem {

@@ -25,6 +25,7 @@ import {
   RelationCount,
 } from 'typeorm';
 import Issue from './Issue';
+import { LinkedAccount } from './LinkedAccount';
 import { MediaRequest } from './MediaRequest';
 import SeasonRequest from './SeasonRequest';
 import { UserPushSubscription } from './UserPushSubscription';
@@ -39,7 +40,7 @@ export class User {
     return users.map((u) => u.filter(showFiltered));
   }
 
-  static readonly filteredFields: string[] = ['email', 'plexId'];
+  static readonly filteredFields: string[] = ['email', 'plexId', 'password'];
 
   public displayName: string;
 
@@ -70,7 +71,7 @@ export class User {
   @Column({ nullable: true, select: false })
   public resetPasswordGuid?: string;
 
-  @Column({ type: 'date', nullable: true })
+  @DbAwareColumn({ type: 'datetime', nullable: true })
   public recoveryLinkExpirationDate?: Date | null;
 
   @Column({ type: 'integer', default: UserType.PLEX })
@@ -90,6 +91,9 @@ export class User {
 
   @Column({ type: 'varchar', nullable: true, select: false })
   public plexToken?: string | null;
+
+  @OneToMany(() => LinkedAccount, (link) => link.user)
+  public linkedAccounts: LinkedAccount[];
 
   @Column({ type: 'integer', default: 0 })
   public permissions = 0;
