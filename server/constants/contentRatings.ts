@@ -2,7 +2,7 @@
  * Content Rating Constants for Parental Controls
  *
  * Single source of truth for US content rating hierarchies and filtering logic.
- * Lower index = more restrictive (suitable for younger audiences).
+ * Lower index = less restrictive (suitable for younger audiences).
  */
 
 // MPAA Movie Ratings (US)

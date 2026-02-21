@@ -9,10 +9,12 @@ import type {
 import type { UserContentRatingLimits } from '@server/constants/contentRatings';
 import {
   MOVIE_RATINGS,
+  TV_RATINGS,
   UNRATED_VALUES,
   shouldFilterMovie,
   shouldFilterTv,
   type MovieRating,
+  type TvRating,
 } from '@server/constants/contentRatings';
 import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
@@ -265,6 +267,33 @@ const postFilterDiscoverMovies = async (
   return filtered;
 };
 
+/**
+ * Extract the best TV certification from content ratings.
+ * Prefers the US rating; falls back to the first known rating
+ * from any country if no US rating exists.
+ */
+const getTvCertFromDetails = (
+  contentRatings: { iso_3166_1: string; rating: string }[]
+): string | undefined => {
+  const usRating = contentRatings.find((r) => r.iso_3166_1 === 'US');
+  if (usRating?.rating && !UNRATED_VALUES.includes(usRating.rating)) {
+    return usRating.rating;
+  }
+
+  // Fallback: check all countries for a known TV rating
+  for (const entry of contentRatings) {
+    if (
+      entry.rating &&
+      !UNRATED_VALUES.includes(entry.rating) &&
+      TV_RATINGS.indexOf(entry.rating as TvRating) !== -1
+    ) {
+      return entry.rating;
+    }
+  }
+
+  return undefined;
+};
+
 const filterTvBatch = async (
   shows: TmdbTvResult[],
   tmdb: TheMovieDb,
@@ -273,10 +302,10 @@ const filterTvBatch = async (
   const settled = await Promise.allSettled(
     shows.map(async (show) => {
       const details = await tmdb.getTvShow({ tvId: show.id });
-      const usRating = details.content_ratings?.results?.find(
-        (r) => r.iso_3166_1 === 'US'
+      const cert = getTvCertFromDetails(
+        details.content_ratings?.results ?? []
       );
-      return { show, cert: usRating?.rating, title: details.name };
+      return { show, cert, title: details.name };
     })
   );
 
@@ -1339,6 +1368,7 @@ discoverRoutes.get<{ keywordId: string }>(
   '/keyword/:keywordId/movies',
   async (req, res, next) => {
     const tmdb = new TheMovieDb();
+    const ratingLimits = getUserContentRatingLimits(req.user);
 
     try {
       const data = await tmdb.getMoviesByKeyword({
@@ -1347,16 +1377,24 @@ discoverRoutes.get<{ keywordId: string }>(
         language: (req.query.language as string) ?? req.locale,
       });
 
+      const filteredResults = await postFilterDiscoverMovies(
+        data.results,
+        tmdb,
+        ratingLimits,
+        undefined,
+        false // keyword endpoint has no certification.lte pre-filter
+      );
+
       const media = await Media.getRelatedMedia(
         req.user,
-        data.results.map((result) => result.id)
+        filteredResults.map((result) => result.id)
       );
 
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
         totalResults: data.total_results,
-        results: data.results.map((result) =>
+        results: filteredResults.map((result) =>
           mapMovieResult(
             result,
             media.find(

@@ -76,6 +76,11 @@ const filterSearchBatch = async (
     ? results.filter((r) => !('adult' in r && (r as TmdbMovieResult).adult))
     : results;
 
+  // Skip expensive cert lookups when only blockAdult is active
+  if (!maxMovieRating && !maxTvRating && !blockUnrated) {
+    return preFiltered;
+  }
+
   const settled = await Promise.allSettled(
     preFiltered.map((r) => getCertification(r, tmdb))
   );
@@ -237,7 +242,8 @@ searchRoutes.get('/', async (req, res, next) => {
     );
 
     // Estimate total counts based on the filter ratio from this page
-    const filterRatio = originalCount > 0 ? filteredCount / originalCount : 1;
+    const filterRatio =
+      originalCount > 0 ? Math.min(1, filteredCount / originalCount) : 1;
 
     return res.status(200).json({
       page: results.page,

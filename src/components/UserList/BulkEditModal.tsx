@@ -52,7 +52,11 @@ const BulkEditModal = ({
   >(undefined);
   const [currentBlockUnrated, setCurrentBlockUnrated] = useState(false);
   const [currentBlockAdult, setCurrentBlockAdult] = useState(false);
+  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
+
+  const markTouched = (field: string) =>
+    setTouchedFields((prev) => new Set(prev).add(field));
 
   useEffect(() => {
     if (onSaving) {
@@ -66,10 +70,18 @@ const BulkEditModal = ({
       const { data: updated } = await axios.put<User[]>(`/api/v1/user`, {
         ids: selectedUserIds,
         permissions: currentPermission,
-        maxMovieRating: currentMaxMovieRating || '',
-        maxTvRating: currentMaxTvRating || '',
-        blockUnrated: currentBlockUnrated,
-        blockAdult: currentBlockAdult,
+        ...(touchedFields.has('maxMovieRating')
+          ? { maxMovieRating: currentMaxMovieRating || '' }
+          : {}),
+        ...(touchedFields.has('maxTvRating')
+          ? { maxTvRating: currentMaxTvRating || '' }
+          : {}),
+        ...(touchedFields.has('blockUnrated')
+          ? { blockUnrated: currentBlockUnrated }
+          : {}),
+        ...(touchedFields.has('blockAdult')
+          ? { blockAdult: currentBlockAdult }
+          : {}),
       });
       if (onComplete) {
         onComplete(updated);
@@ -142,9 +154,10 @@ const BulkEditModal = ({
                 <select
                   id="maxMovieRating"
                   value={currentMaxMovieRating || ''}
-                  onChange={(e) =>
-                    setCurrentMaxMovieRating(e.target.value || undefined)
-                  }
+                  onChange={(e) => {
+                    markTouched('maxMovieRating');
+                    setCurrentMaxMovieRating(e.target.value || undefined);
+                  }}
                 >
                   {getMovieRatingOptions().map((rating) => (
                     <option key={rating.value} value={rating.value}>
@@ -164,9 +177,10 @@ const BulkEditModal = ({
                 <select
                   id="maxTvRating"
                   value={currentMaxTvRating || ''}
-                  onChange={(e) =>
-                    setCurrentMaxTvRating(e.target.value || undefined)
-                  }
+                  onChange={(e) => {
+                    markTouched('maxTvRating');
+                    setCurrentMaxTvRating(e.target.value || undefined);
+                  }}
                 >
                   {getTvRatingOptions().map((rating) => (
                     <option key={rating.value} value={rating.value}>
@@ -182,7 +196,10 @@ const BulkEditModal = ({
               type="checkbox"
               id="blockUnrated"
               checked={currentBlockUnrated}
-              onChange={(e) => setCurrentBlockUnrated(e.target.checked)}
+              onChange={(e) => {
+                markTouched('blockUnrated');
+                setCurrentBlockUnrated(e.target.checked);
+              }}
               className="rounded-md"
             />
             <label htmlFor="blockUnrated">
@@ -194,7 +211,10 @@ const BulkEditModal = ({
               type="checkbox"
               id="blockAdult"
               checked={currentBlockAdult}
-              onChange={(e) => setCurrentBlockAdult(e.target.checked)}
+              onChange={(e) => {
+                markTouched('blockAdult');
+                setCurrentBlockAdult(e.target.checked);
+              }}
               className="rounded-md"
             />
             <label htmlFor="blockAdult">

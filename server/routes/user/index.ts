@@ -495,12 +495,16 @@ router.put<
         // Update permissions
         user.permissions = req.body.permissions;
 
-        // Update parental controls if provided
-        if (
+        // Update parental controls if provided (skip admin users)
+        const hasParentalControlFields =
           req.body.maxMovieRating !== undefined ||
           req.body.maxTvRating !== undefined ||
           req.body.blockUnrated !== undefined ||
-          req.body.blockAdult !== undefined
+          req.body.blockAdult !== undefined;
+        if (
+          hasParentalControlFields &&
+          user.id !== 1 &&
+          !hasPermission(Permission.MANAGE_USERS, user.permissions)
         ) {
           if (!user.settings) {
             user.settings = new UserSettings({ user });
