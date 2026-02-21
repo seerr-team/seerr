@@ -1,6 +1,6 @@
 # seerr-chart
 
-![Version: 3.1.0](https://img.shields.io/badge/Version-3.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v3.0.1](https://img.shields.io/badge/AppVersion-v3.0.1-informational?style=flat-square)
+![Version: 3.2.0](https://img.shields.io/badge/Version-3.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v3.0.1](https://img.shields.io/badge/AppVersion-v3.0.1-informational?style=flat-square)
 
 Seerr helm chart for Kubernetes
 
@@ -83,8 +83,8 @@ If `replicaCount` value was used - remove it. Helm update should work fine after
 | route.main.enabled | bool | `false` | Enables or disables the Gateway API route |
 | route.main.filters | list | `[]` |  |
 | route.main.hostnames | list | `[]` |  |
-| route.main.httpsRedirect | bool | `false` | Adds a filter for redirecting to HTTPS |
-| route.main.kind | string | `"HTTPRoute"` | Set the route kind Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute |
+| route.main.httpsRedirect | bool | `false` | To redirect to HTTPS, create a new route object under the main route and enable this option. This should only be used with HTTP-like routes, such as HTTPRoute or GRPCRoute. [Reference]( https://gateway-api.sigs.k8s.io/guides/http-redirect-rewrite/ ) |
+| route.main.kind | string | `"HTTPRoute"` | Set the route kind. Note that experimental kinds require changing `apiVersion` |
 | route.main.labels | object | `{}` |  |
 | route.main.matches[0].path.type | string | `"PathPrefix"` |  |
 | route.main.matches[0].path.value | string | `"/"` |  |
