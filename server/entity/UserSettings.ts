@@ -43,6 +43,9 @@ export class UserSettings {
   public pgpKey?: string;
 
   @Column({ nullable: true })
+  public notifyEmail?: string;
+
+  @Column({ nullable: true })
   public discordId?: string;
 
   @Column({ nullable: true })
