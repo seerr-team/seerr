@@ -575,6 +575,9 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
               tmdbId: media.tmdbId,
             }
           );
+          entity.status = MediaRequestStatus.FAILED;
+          const requestRepository = getRepository(MediaRequest);
+          await requestRepository.save(entity);
           return;
         }
 
