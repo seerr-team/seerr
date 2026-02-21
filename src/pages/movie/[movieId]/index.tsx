@@ -14,22 +14,30 @@ const MoviePage: NextPage<MoviePageProps> = ({ movie }) => {
 export const getServerSideProps: GetServerSideProps<MoviePageProps> = async (
   ctx
 ) => {
-  const response = await axios.get<MovieDetailsType>(
-    `http://${process.env.HOST || 'localhost'}:${
-      process.env.PORT || 5055
-    }/api/v1/movie/${ctx.query.movieId}`,
-    {
-      headers: ctx.req?.headers?.cookie
-        ? { cookie: ctx.req.headers.cookie }
-        : undefined,
-    }
-  );
+  try {
+    const response = await axios.get<MovieDetailsType>(
+      `http://${process.env.HOST || 'localhost'}:${
+        process.env.PORT || 5055
+      }/api/v1/movie/${ctx.query.movieId}`,
+      {
+        headers: ctx.req?.headers?.cookie
+          ? { cookie: ctx.req.headers.cookie }
+          : undefined,
+      }
+    );
 
-  return {
-    props: {
-      movie: response.data,
-    },
-  };
+    return {
+      props: {
+        movie: response.data,
+      },
+    };
+  } catch (e) {
+    if (axios.isAxiosError(e) && e.response?.status === 403) {
+      ctx.res.statusCode = 403;
+      return { props: {} };
+    }
+    throw e;
+  }
 };
 
 export default MoviePage;

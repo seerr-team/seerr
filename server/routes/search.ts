@@ -11,10 +11,14 @@ import {
   shouldFilterTv,
 } from '@server/constants/contentRatings';
 import Media from '@server/entity/Media';
+import {
+  getMovieCertFromDetails,
+  getTvCertFromDetails,
+  getUserContentRatingLimits,
+} from '@server/lib/contentRating';
 import { findSearchProvider } from '@server/lib/search';
 import logger from '@server/logger';
 import { mapSearchResults } from '@server/models/Search';
-import { getUserContentRatingLimits } from '@server/routes/discover';
 import { Router } from 'express';
 
 type TmdbSearchResult =
@@ -29,6 +33,7 @@ const hasAdultFlag = (
 
 /**
  * Fetch US certification for a single search result.
+ * Uses shared cert extraction from @server/lib/contentRating.
  * Returns the result paired with its certification, or null on failure.
  */
 const getCertification = async (
@@ -38,20 +43,16 @@ const getCertification = async (
   try {
     if (result.media_type === 'movie') {
       const details = await tmdb.getMovie({ movieId: result.id });
-      const usRelease = details.release_dates?.results?.find(
-        (r) => r.iso_3166_1 === 'US'
+      const certification = getMovieCertFromDetails(
+        details.release_dates?.results ?? []
       );
-      return {
-        result,
-        certification: usRelease?.release_dates?.find((rd) => rd.certification)
-          ?.certification,
-      };
+      return { result, certification };
     } else if (result.media_type === 'tv') {
       const details = await tmdb.getTvShow({ tvId: result.id });
-      const usRating = details.content_ratings?.results?.find(
-        (r) => r.iso_3166_1 === 'US'
+      const certification = getTvCertFromDetails(
+        details.content_ratings?.results ?? []
       );
-      return { result, certification: usRating?.rating };
+      return { result, certification };
     }
     // Person/collection — no certification needed
     return { result };
@@ -147,7 +148,9 @@ const filterSearchResultsByRating = async (
   maxTvRating?: string,
   blockUnrated = false,
   blockAdult = false,
-  fetchNextPage?: () => Promise<TmdbSearchResult[] | null>
+  fetchNextPage?: (page: number) => Promise<TmdbSearchResult[] | null>,
+  currentPage = 1,
+  totalPages = 1
 ): Promise<TmdbSearchResult[]> => {
   if (!maxMovieRating && !maxTvRating && !blockUnrated && !blockAdult) {
     return results;
@@ -162,19 +165,30 @@ const filterSearchResultsByRating = async (
     blockAdult
   );
 
-  // Backfill: if too many results were removed, grab one more page
-  if (filtered.length < BACKFILL_THRESHOLD && fetchNextPage) {
-    const nextResults = await fetchNextPage();
-    if (nextResults && nextResults.length > 0) {
-      const nextFiltered = await filterSearchBatch(
-        nextResults,
-        tmdb,
-        maxMovieRating,
-        maxTvRating,
-        blockUnrated,
-        blockAdult
-      );
-      filtered.push(...nextFiltered);
+  // Backfill: if filtering dropped us below threshold, fetch up to 2 extra pages
+  if (fetchNextPage) {
+    let nextPage = currentPage + 1;
+    while (
+      filtered.length < BACKFILL_THRESHOLD &&
+      nextPage <= totalPages &&
+      nextPage <= currentPage + 2
+    ) {
+      try {
+        const nextResults = await fetchNextPage(nextPage);
+        if (!nextResults || nextResults.length === 0) break;
+        const nextFiltered = await filterSearchBatch(
+          nextResults,
+          tmdb,
+          maxMovieRating,
+          maxTvRating,
+          blockUnrated,
+          blockAdult
+        );
+        filtered.push(...nextFiltered);
+      } catch {
+        break; // Return what we have so far
+      }
+      nextPage++;
     }
   }
 
@@ -228,15 +242,17 @@ searchRoutes.get('/', async (req, res, next) => {
       limits.blockAdult ?? false,
       // Only backfill for non-provider multi-search with more pages available
       !searchProvider && hasFilters && searchPage < results.total_pages
-        ? async () => {
+        ? async (page: number) => {
             const next = await tmdb.searchMulti({
               query: queryString,
-              page: searchPage + 1,
+              page,
               language: searchLang,
             });
             return next.results;
           }
-        : undefined
+        : undefined,
+      searchPage,
+      results.total_pages
     );
     const filteredCount = filteredResults.length;
 
