@@ -1,0 +1,192 @@
+# MCP Server Setup
+
+Seerr includes a built-in [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that allows AI assistants to interact with your media library — searching, requesting, managing issues, and more.
+
+## Transports
+
+Seerr supports two MCP transport modes:
+
+### Streamable HTTP (Recommended)
+
+The MCP server is embedded in the Seerr application and accessible at `/mcp` on your Seerr instance. This requires no additional setup — it's available as soon as Seerr is running.
+
+- **Endpoint:** `https://your-seerr-url/mcp`
+- **Auth:** `Authorization: Bearer <your-api-key>` header
+
+### STDIO
+
+A standalone process that proxies MCP calls to the Seerr REST API. This is used by clients that spawn MCP servers as child processes (Claude Desktop, Claude Code, etc.).
+
+- **Binary:** `node dist/mcp-stdio.cjs`
+- **Environment variables:**
+  - `SEERR_API_KEY` (required) — Your Seerr API key
+  - `SEERR_URL` (optional) — Base URL of your Seerr instance (default: `http://localhost:5055`)
+
+## Client Configuration
+
+### Claude Desktop
+
+Add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "seerr": {
+      "command": "node",
+      "args": ["/path/to/seerr/dist/mcp-stdio.cjs"],
+      "env": {
+        "SEERR_URL": "http://localhost:5055",
+        "SEERR_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+### Claude Code
+
+Add to `.mcp.json` in your project root or global settings:
+
+```json
+{
+  "mcpServers": {
+    "seerr": {
+      "command": "node",
+      "args": ["/path/to/seerr/dist/mcp-stdio.cjs"],
+      "env": {
+        "SEERR_URL": "http://localhost:5055",
+        "SEERR_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+### VS Code / GitHub Copilot
+
+Add to `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "seerr": {
+      "command": "node",
+      "args": ["/path/to/seerr/dist/mcp-stdio.cjs"],
+      "env": {
+        "SEERR_URL": "http://localhost:5055",
+        "SEERR_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+### Streamable HTTP Clients (OpenAI, Gemini, etc.)
+
+For clients that support Streamable HTTP transport, point them to:
+
+```
+URL: https://your-seerr-url/mcp
+Headers:
+  Authorization: Bearer your-api-key-here
+```
+
+## Available Tools
+
+### Search & Discovery
+| Tool | Description |
+|------|-------------|
+| `search_media` | Multi-search for movies, TV shows, and people |
+| `search_keyword` | Search for keywords |
+| `search_company` | Search for production companies |
+| `discover_movies` | Discover movies with filters (genre, year, rating, etc.) |
+| `discover_tv` | Discover TV shows with filters |
+| `discover_trending` | Get trending media |
+
+### Request Management
+| Tool | Description |
+|------|-------------|
+| `create_request` | Submit a media request |
+| `list_requests` | List requests with filtering and pagination |
+| `get_request` | Get details of a specific request |
+| `approve_request` | Approve a pending request |
+| `decline_request` | Decline a pending request |
+| `retry_request` | Retry a failed request |
+| `get_request_count` | Get request statistics |
+
+### Media Management
+| Tool | Description |
+|------|-------------|
+| `list_media` | List tracked media items |
+| `get_media` | Get a specific media item |
+| `update_media_status` | Change media availability status |
+| `delete_media` | Remove media tracking |
+| `get_watch_data` | Get Tautulli watch statistics |
+
+### Watchlist & Blocklist
+| Tool | Description |
+|------|-------------|
+| `add_to_watchlist` / `remove_from_watchlist` / `get_watchlist` | Manage your watchlist |
+| `add_to_blocklist` / `remove_from_blocklist` / `get_blocklist` | Manage the blocklist |
+
+### User Management
+| Tool | Description |
+|------|-------------|
+| `list_users` | List users with search and pagination |
+| `get_user` | Get user details |
+| `create_user` | Create a local user |
+| `update_user` | Update username or permissions |
+| `delete_user` | Delete a user |
+| `get_user_quota` | Get a user's request quota |
+
+### Issue Tracking
+| Tool | Description |
+|------|-------------|
+| `create_issue` | Report an issue with a media item |
+| `list_issues` | List issues with filtering |
+| `get_issue` | Get issue details with comments |
+| `comment_on_issue` | Add a comment to an issue |
+| `resolve_issue` / `reopen_issue` | Change issue status |
+| `get_issue_count` | Get issue statistics |
+
+### Settings & System (Admin)
+| Tool | Description |
+|------|-------------|
+| `get_settings` / `update_settings` | View and update application settings |
+| `get_services` | List configured Radarr/Sonarr instances |
+| `test_notification` | Send a test notification |
+| `get_about` | Application info and statistics |
+| `get_status` | Server version and update status |
+| `list_jobs` / `run_job` / `cancel_job` | Manage scheduled jobs |
+| `get_logs` | Retrieve application logs |
+
+## Available Resources
+
+| Resource URI | Description |
+|-------------|-------------|
+| `seerr://movie/{tmdbId}` | Movie details |
+| `seerr://tv/{tmdbId}` | TV show details |
+| `seerr://person/{tmdbId}` | Person details with credits |
+| `seerr://collection/{collectionId}` | Collection details |
+| `seerr://genres/movie` | Movie genres |
+| `seerr://genres/tv` | TV genres |
+| `seerr://languages` | Available languages |
+| `seerr://regions` | Available regions |
+| `seerr://certifications/movie` | Movie content ratings |
+| `seerr://certifications/tv` | TV content ratings |
+| `seerr://watchproviders/movies/{region}` | Movie streaming providers by region |
+| `seerr://watchproviders/tv/{region}` | TV streaming providers by region |
+
+## Available Prompts
+
+| Prompt | Description |
+|--------|-------------|
+| `request_media` | Guided flow to search and request media |
+| `check_status` | Check request statuses with optional filtering |
+| `report_issue` | Guided issue creation flow |
+
+## Finding Your API Key
+
+1. Log in to Seerr as an admin
+2. Go to **Settings** > **General**
+3. Your API key is displayed under "API Key"
