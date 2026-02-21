@@ -73,7 +73,7 @@ const filterSearchBatch = async (
 ): Promise<TmdbSearchResult[]> => {
   // Pre-filter adult content (free, no API calls needed)
   const preFiltered = blockAdult
-    ? results.filter((r) => !('adult' in r && (r as TmdbMovieResult).adult))
+    ? results.filter((r) => !('adult' in r && (r as { adult?: boolean }).adult))
     : results;
 
   // Skip expensive cert lookups when only blockAdult is active
@@ -187,7 +187,7 @@ searchRoutes.get('/', async (req, res, next) => {
 
   const limits = getUserContentRatingLimits(req.user);
 
-  const searchPage = Number(req.query.page) || 1;
+  const searchPage = Math.max(1, Number(req.query.page) || 1);
   const searchLang = (req.query.language as string) ?? req.locale;
   const hasFilters = !!(
     limits.maxMovieRating ||

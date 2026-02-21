@@ -510,6 +510,7 @@ router.put<
             user.settings = new UserSettings({ user });
           }
           const settings = user.settings;
+          // Empty string = "No Restriction" from the UI dropdown; convert to undefined for DB storage
           if (req.body.maxMovieRating !== undefined) {
             settings.maxMovieRating = req.body.maxMovieRating || undefined;
           }

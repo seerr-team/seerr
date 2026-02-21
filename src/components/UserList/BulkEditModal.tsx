@@ -10,9 +10,16 @@ import {
 } from '@server/constants/contentRatings';
 import { hasPermission } from '@server/lib/permissions';
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
+
+interface ParentalControlsData {
+  maxMovieRating?: string;
+  maxTvRating?: string;
+  blockUnrated?: boolean;
+  blockAdult?: boolean;
+}
 
 interface BulkEditProps {
   selectedUserIds: number[];
@@ -31,7 +38,16 @@ const messages = defineMessages('components.UserList', {
   maxtvrating: 'Max TV Rating',
   blockunrated: 'Block Unrated Content',
   blockadult: 'Block Adult Content',
+  mixedvalues: 'Varies across selected users',
+  enabledforsome: 'Enabled for some but not all users',
 });
+
+/** Compute a common value from an array, or undefined if values differ */
+function commonValue<T>(values: T[]): T | undefined {
+  if (values.length === 0) return undefined;
+  const first = values[0];
+  return values.every((v) => v === first) ? first : undefined;
+}
 
 const BulkEditModal = ({
   selectedUserIds,
@@ -55,6 +71,15 @@ const BulkEditModal = ({
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
 
+  // Track whether selected users have mixed parental control values
+  const [mixedMovieRating, setMixedMovieRating] = useState(false);
+  const [mixedTvRating, setMixedTvRating] = useState(false);
+  const [mixedBlockUnrated, setMixedBlockUnrated] = useState(false);
+  const [mixedBlockAdult, setMixedBlockAdult] = useState(false);
+
+  const blockUnratedRef = useRef<HTMLInputElement>(null);
+  const blockAdultRef = useRef<HTMLInputElement>(null);
+
   const markTouched = (field: string) =>
     setTouchedFields((prev) => new Set(prev).add(field));
 
@@ -63,6 +88,86 @@ const BulkEditModal = ({
       onSaving(isSaving);
     }
   }, [isSaving, onSaving]);
+
+  // Fetch parental controls for selected users and compute common/mixed state
+  const fetchParentalControls = useCallback(async () => {
+    if (!selectedUserIds.length) return;
+
+    try {
+      const results = await Promise.allSettled(
+        selectedUserIds.map((id) =>
+          axios.get<ParentalControlsData>(
+            `/api/v1/user/${id}/settings/parental-controls`
+          )
+        )
+      );
+
+      const settings: ParentalControlsData[] = results
+        .filter((r) => r.status === 'fulfilled')
+        .map(
+          (r) =>
+            (r as PromiseFulfilledResult<{ data: ParentalControlsData }>).value
+              .data
+        );
+
+      if (settings.length === 0) return;
+
+      const movieRatings = settings.map((s) => s.maxMovieRating || '');
+      const tvRatings = settings.map((s) => s.maxTvRating || '');
+      const blockUnrateds = settings.map((s) => s.blockUnrated ?? false);
+      const blockAdults = settings.map((s) => s.blockAdult ?? false);
+
+      const commonMovie = commonValue(movieRatings);
+      const commonTv = commonValue(tvRatings);
+      const commonUnrated = commonValue(blockUnrateds);
+      const commonAdult = commonValue(blockAdults);
+
+      if (commonMovie !== undefined) {
+        setCurrentMaxMovieRating(commonMovie || undefined);
+      } else {
+        setMixedMovieRating(true);
+      }
+
+      if (commonTv !== undefined) {
+        setCurrentMaxTvRating(commonTv || undefined);
+      } else {
+        setMixedTvRating(true);
+      }
+
+      if (commonUnrated !== undefined) {
+        setCurrentBlockUnrated(commonUnrated);
+      } else {
+        setMixedBlockUnrated(true);
+      }
+
+      if (commonAdult !== undefined) {
+        setCurrentBlockAdult(commonAdult);
+      } else {
+        setMixedBlockAdult(true);
+      }
+    } catch {
+      // Silently fail — controls start at defaults
+    }
+  }, [selectedUserIds]);
+
+  useEffect(() => {
+    fetchParentalControls();
+  }, [fetchParentalControls]);
+
+  // Set indeterminate state on checkbox refs when mixed
+  useEffect(() => {
+    if (blockUnratedRef.current) {
+      blockUnratedRef.current.indeterminate =
+        mixedBlockUnrated && !touchedFields.has('blockUnrated');
+    }
+  }, [mixedBlockUnrated, touchedFields]);
+
+  useEffect(() => {
+    if (blockAdultRef.current) {
+      blockAdultRef.current.indeterminate =
+        mixedBlockAdult && !touchedFields.has('blockAdult');
+    }
+  }, [mixedBlockAdult, touchedFields]);
 
   const updateUsers = async () => {
     try {
@@ -120,6 +225,14 @@ const BulkEditModal = ({
     }
   }, [users, selectedUserIds]);
 
+  const showMixedMovieHint =
+    mixedMovieRating && !touchedFields.has('maxMovieRating');
+  const showMixedTvHint = mixedTvRating && !touchedFields.has('maxTvRating');
+  const showMixedUnratedHint =
+    mixedBlockUnrated && !touchedFields.has('blockUnrated');
+  const showMixedAdultHint =
+    mixedBlockAdult && !touchedFields.has('blockAdult');
+
   return (
     <Modal
       title={intl.formatMessage(messages.edituser)}
@@ -166,6 +279,11 @@ const BulkEditModal = ({
                   ))}
                 </select>
               </div>
+              {showMixedMovieHint && (
+                <p className="mt-1 text-sm text-gray-400">
+                  {intl.formatMessage(messages.mixedvalues)}
+                </p>
+              )}
             </div>
           </div>
           <div className="mb-4">
@@ -189,12 +307,18 @@ const BulkEditModal = ({
                   ))}
                 </select>
               </div>
+              {showMixedTvHint && (
+                <p className="mt-1 text-sm text-gray-400">
+                  {intl.formatMessage(messages.mixedvalues)}
+                </p>
+              )}
             </div>
           </div>
           <div className="mb-4 flex items-center gap-2">
             <input
               type="checkbox"
               id="blockUnrated"
+              ref={blockUnratedRef}
               checked={currentBlockUnrated}
               onChange={(e) => {
                 markTouched('blockUnrated');
@@ -205,11 +329,17 @@ const BulkEditModal = ({
             <label htmlFor="blockUnrated">
               {intl.formatMessage(messages.blockunrated)}
             </label>
+            {showMixedUnratedHint && (
+              <span className="text-xs text-gray-400">
+                ({intl.formatMessage(messages.enabledforsome)})
+              </span>
+            )}
           </div>
           <div className="mb-4 flex items-center gap-2">
             <input
               type="checkbox"
               id="blockAdult"
+              ref={blockAdultRef}
               checked={currentBlockAdult}
               onChange={(e) => {
                 markTouched('blockAdult');
@@ -220,6 +350,11 @@ const BulkEditModal = ({
             <label htmlFor="blockAdult">
               {intl.formatMessage(messages.blockadult)}
             </label>
+            {showMixedAdultHint && (
+              <span className="text-xs text-gray-400">
+                ({intl.formatMessage(messages.enabledforsome)})
+              </span>
+            )}
           </div>
         </div>
       )}
