@@ -1,6 +1,7 @@
 import Modal from '@app/components/Common/Modal';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import type { SonarrTestResponse } from '@app/components/Settings/SettingsServices';
+import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -38,6 +39,8 @@ const messages = defineMessages('components.Settings.SonarrModal', {
   defaultserver: 'Default Server',
   default4kserver: 'Default 4K Server',
   servername: 'Server Name',
+  requestButtonLabel: 'Request Button Label',
+  requestButtonLabelPlaceholder: 'in 4K',
   hostname: 'Hostname or IP Address',
   port: 'Port',
   ssl: 'Use SSL',
@@ -86,8 +89,21 @@ interface SonarrModalProps {
   onSave: () => void;
 }
 
+const shouldShowRequestLabelField = ({
+  isDefault,
+  is4k,
+  series4kEnabled,
+  sonarrIs4k,
+}: {
+  isDefault: boolean;
+  is4k: boolean;
+  series4kEnabled: boolean;
+  sonarrIs4k?: boolean;
+}) => isDefault && (is4k || (series4kEnabled && !sonarrIs4k));
+
 const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
   const intl = useIntl();
+  const settings = useSettings();
   const initialLoad = useRef(false);
   const { addToast } = useToasts();
   const [isValidated, setIsValidated] = useState(sonarr ? true : false);
@@ -225,6 +241,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
       <Formik
         initialValues={{
           name: sonarr?.name,
+          requestLabel: sonarr?.requestLabel ?? '',
           hostname: sonarr?.hostname,
           port: sonarr?.port ?? 8989,
           ssl: sonarr?.useSsl ?? false,
@@ -257,9 +274,18 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
             const animeProfileName = testResponse.profiles.find(
               (profile) => profile.id === Number(values.activeAnimeProfileId)
             )?.name;
+            const showRequestLabelField = shouldShowRequestLabelField({
+              isDefault: values.isDefault,
+              is4k: values.is4k,
+              series4kEnabled: settings.currentSettings.series4kEnabled,
+              sonarrIs4k: sonarr?.is4k,
+            });
 
             const submission = {
               name: values.name,
+              requestLabel: showRequestLabelField
+                ? values.requestLabel?.trim() || undefined
+                : undefined,
               hostname: values.hostname,
               port: Number(values.port),
               apiKey: values.apiKey,
@@ -315,6 +341,13 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
           isSubmitting,
           isValid,
         }) => {
+          const showRequestLabelField = shouldShowRequestLabelField({
+            isDefault: values.isDefault,
+            is4k: values.is4k,
+            series4kEnabled: settings.currentSettings.series4kEnabled,
+            sonarrIs4k: sonarr?.is4k,
+          });
+
           return (
             <Modal
               onCancel={onClose}
@@ -388,6 +421,26 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                     <Field type="checkbox" id="is4k" name="is4k" />
                   </div>
                 </div>
+                {showRequestLabelField && (
+                  <div className="form-row">
+                    <label htmlFor="requestLabel" className="text-label">
+                      {intl.formatMessage(messages.requestButtonLabel)}
+                    </label>
+                    <div className="form-input-area">
+                      <div className="form-input-field">
+                        <Field
+                          id="requestLabel"
+                          name="requestLabel"
+                          type="text"
+                          autoComplete="off"
+                          placeholder={intl.formatMessage(
+                            messages.requestButtonLabelPlaceholder
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="form-row">
                   <label htmlFor="name" className="text-label">
                     {intl.formatMessage(messages.servername)}
