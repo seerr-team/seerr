@@ -13,7 +13,9 @@ import type {
   ServiceCommonServerWithDetails,
 } from '@server/interfaces/api/serviceInterfaces';
 import type { UserResultsResponse } from '@server/interfaces/api/userInterfaces';
+import type { OverrideRulesResult } from '@server/lib/overrideRules';
 import { hasPermission } from '@server/lib/permissions';
+import axios from 'axios';
 import { isEqual } from 'lodash';
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -51,6 +53,7 @@ export type RequestOverrides = {
 
 interface AdvancedRequesterProps {
   type: 'movie' | 'tv';
+  tmdbId?: number;
   is4k: boolean;
   isAnime?: boolean;
   defaultOverrides?: RequestOverrides;
@@ -60,6 +63,7 @@ interface AdvancedRequesterProps {
 
 const AdvancedRequester = ({
   type,
+  tmdbId,
   is4k = false,
   isAnime = false,
   defaultOverrides,
@@ -283,6 +287,35 @@ const AdvancedRequester = ({
     selectedLanguage,
     selectedTags,
   ]);
+
+  useEffect(() => {
+    (async () => {
+      if (tmdbId) {
+        try {
+          const { data: override } = await axios.post<OverrideRulesResult>(
+            '/api/v1/overrideRule/advancedRequest',
+            {
+              mediaType: type,
+              is4k,
+              requestUser: requestUser?.id ?? currentUser?.id,
+              tmdbId,
+            }
+          );
+          if (override.rootFolder) {
+            setSelectedFolder(override.rootFolder);
+          }
+          if (override.profileId) {
+            setSelectedProfile(override.profileId);
+          }
+          if (override.tags) {
+            setSelectedTags(override.tags);
+          }
+        } catch {
+          /* empty */
+        }
+      }
+    })();
+  }, [serverData, is4k, requestUser]);
 
   if (!data && !error) {
     return (
