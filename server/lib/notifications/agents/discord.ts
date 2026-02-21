@@ -214,16 +214,13 @@ class DiscordAgent
       : undefined;
 
     return {
-      title: payload.subject,
+      title: payload.event
+        ? `${payload.event}: ${payload.subject}`
+        : payload.subject,
       url,
       description: payload.message,
       color,
       timestamp: new Date().toISOString(),
-      author: payload.event
-        ? {
-            name: payload.event,
-          }
-        : undefined,
       fields,
       thumbnail: embedPoster
         ? {
