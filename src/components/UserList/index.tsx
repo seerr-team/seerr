@@ -10,6 +10,7 @@ import SensitiveInput from '@app/components/Common/SensitiveInput';
 import Table from '@app/components/Common/Table';
 import BulkEditModal from '@app/components/UserList/BulkEditModal';
 import PlexImportModal from '@app/components/UserList/PlexImportModal';
+import useDebouncedState from '@app/hooks/useDebouncedState';
 import useSettings from '@app/hooks/useSettings';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import type { User } from '@app/hooks/useUser';
@@ -22,6 +23,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   InboxArrowDownIcon,
+  MagnifyingGlassIcon,
   PencilIcon,
   UserPlusIcon,
 } from '@heroicons/react/24/solid';
@@ -81,6 +83,7 @@ const messages = defineMessages('components.UserList', {
   sortCreated: 'Join Date',
   sortDisplayName: 'Display Name',
   sortRequests: 'Request Count',
+  searchUsers: 'Search by username or email…',
   localLoginDisabled:
     'The <strong>Enable Local Sign-In</strong> setting is currently disabled.',
 });
@@ -95,20 +98,22 @@ const UserList = () => {
   const { user: currentUser, hasPermission: currentHasPermission } = useUser();
   const [currentSort, setCurrentSort] = useState<Sort>('displayname');
   const [currentPageSize, setCurrentPageSize] = useState<number>(10);
+  const [searchInput, searchQuery, setSearchInput] =
+    useDebouncedState<string>('', 300);
 
   const page = router.query.page ? Number(router.query.page) : 1;
   const pageIndex = page - 1;
   const updateQueryParams = useUpdateQueryParams({ page: page.toString() });
 
+  const apiUrl = `/api/v1/user?take=${currentPageSize}&skip=${
+    pageIndex * currentPageSize
+  }&sort=${currentSort}${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ''}`;
+
   const {
     data,
     error,
     mutate: revalidate,
-  } = useSWR<UserResultsResponse>(
-    `/api/v1/user?take=${currentPageSize}&skip=${
-      pageIndex * currentPageSize
-    }&sort=${currentSort}`
-  );
+  } = useSWR<UserResultsResponse>(apiUrl);
 
   const [isDeleting, setDeleting] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -134,6 +139,9 @@ const UserList = () => {
 
       setCurrentSort(filterSettings.currentSort);
       setCurrentPageSize(filterSettings.currentPageSize);
+      if (filterSettings.searchQuery) {
+        setSearchInput(filterSettings.searchQuery);
+      }
     }
   }, []);
 
@@ -143,9 +151,16 @@ const UserList = () => {
       JSON.stringify({
         currentSort,
         currentPageSize,
+        searchQuery,
       })
     );
-  }, [currentSort, currentPageSize]);
+  }, [currentSort, currentPageSize, searchQuery]);
+
+  useEffect(() => {
+    if (searchQuery && page > 1) {
+      updateQueryParams('page', '1');
+    }
+  }, [searchQuery]);
 
   const isUserPermsEditable = (userId: number) =>
     userId !== 1 && userId !== currentUser?.id;
@@ -546,20 +561,34 @@ const UserList = () => {
               </span>
             </Button>
           </div>
-          <div className="mb-2 flex flex-grow lg:mb-0 lg:flex-grow-0">
-            <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
-              <BarsArrowDownIcon className="h-6 w-6" />
-            </span>
-            <select
-              id="sort"
-              name="sort"
-              onChange={(e) => {
-                setCurrentSort(e.target.value as Sort);
-                router.push(router.pathname);
-              }}
-              value={currentSort}
-              className="rounded-r-only"
-            >
+          <div className="mb-2 flex flex-grow flex-col gap-2 sm:flex-row lg:mb-0 lg:flex-grow-0">
+            <div className="flex flex-grow lg:flex-grow-0">
+              <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
+                <MagnifyingGlassIcon className="h-6 w-6" />
+              </span>
+              <input
+                type="text"
+                className="min-w-[200px] rounded-r-only"
+                placeholder={intl.formatMessage(messages.searchUsers)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                aria-label={intl.formatMessage(messages.searchUsers)}
+              />
+            </div>
+            <div className="flex">
+              <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
+                <BarsArrowDownIcon className="h-6 w-6" />
+              </span>
+              <select
+                id="sort"
+                name="sort"
+                onChange={(e) => {
+                  setCurrentSort(e.target.value as Sort);
+                  router.push(router.pathname);
+                }}
+                value={currentSort}
+                className="rounded-r-only"
+              >
               <option value="created">
                 {intl.formatMessage(messages.sortCreated)}
               </option>
@@ -570,6 +599,7 @@ const UserList = () => {
                 {intl.formatMessage(messages.sortDisplayName)}
               </option>
             </select>
+            </div>
           </div>
         </div>
       </div>
