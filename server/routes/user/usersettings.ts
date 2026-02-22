@@ -403,12 +403,11 @@ userSettingsRoutes.post<{ username: string; password: string }>(
       });
     }
 
-    // Do not allow linking of an already linked account
-    if (
-      await userRepository.exist({
-        where: { jellyfinUsername: req.body.username },
-      })
-    ) {
+    // Do not allow linking of an already linked account (by another user)
+    const existingByUsername = await userRepository.findOne({
+      where: { jellyfinUsername: req.body.username },
+    });
+    if (existingByUsername && existingByUsername.id !== req.user!.id) {
       return res.status(422).json({
         message: 'The specified account is already linked to a Seerr user',
       });
@@ -440,18 +439,30 @@ userSettingsRoutes.post<{ username: string; password: string }>(
         clientIp
       );
 
-      // Do not allow linking of an already linked account
-      if (
-        await userRepository.exist({
-          where: { jellyfinUserId: account.User.Id },
-        })
-      ) {
+      const user = req.user;
+      const existingByUserId = await userRepository.findOne({
+        where: { jellyfinUserId: account.User.Id },
+      });
+
+      if (existingByUserId) {
+        if (existingByUserId.id === user.id) {
+          if (isMainJellyfin) {
+            user.userType =
+              settings.main.mediaServerType === MediaServerType.EMBY
+                ? UserType.EMBY
+                : UserType.JELLYFIN;
+          }
+          user.jellyfinUserId = account.User.Id;
+          user.jellyfinUsername = account.User.Name;
+          user.jellyfinAuthToken = account.AccessToken;
+          user.jellyfinDeviceId = deviceId;
+          await userRepository.save(user);
+          return res.status(204).send();
+        }
         return res.status(422).json({
           message: 'The specified account is already linked to a Seerr user',
         });
       }
-
-      const user = req.user;
 
       if (isMainJellyfin) {
         user.userType =
