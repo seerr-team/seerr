@@ -138,9 +138,10 @@ const SettingsNetwork = () => {
             proxyPassword: data?.proxy?.password,
             proxyBypassFilter: data?.proxy?.bypassFilter,
             proxyBypassLocalAddresses: data?.proxy?.bypassLocalAddresses,
-            apiRequestTimeout: data?.apiRequestTimeout
-              ? data.apiRequestTimeout / 1000
-              : 10,
+            apiRequestTimeout:
+              data?.apiRequestTimeout !== undefined
+                ? data.apiRequestTimeout / 1000
+                : 10,
           }}
           enableReinitialize
           validationSchema={NetworkSettingsSchema}
