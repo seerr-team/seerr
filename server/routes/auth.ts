@@ -60,7 +60,6 @@ authRoutes.post('/plex', async (req, res, next) => {
 
   const mediaServerType = settings.main.mediaServerType;
 
-  // When main server is Jellyfin/Emby, allow admin to store Plex token for settings (linking)
   if (
     mediaServerType === MediaServerType.JELLYFIN ||
     mediaServerType === MediaServerType.EMBY

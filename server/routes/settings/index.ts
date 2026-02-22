@@ -451,6 +451,27 @@ settingsRoutes.post('/jellyfin/sync', (req, res) => {
   return res.status(200).json(jellyfinFullScanner.status());
 });
 
+const EMPTY_PLEX_SETTINGS = {
+  name: '',
+  ip: '',
+  port: 32400,
+  useSsl: false,
+  libraries: [] as never[],
+};
+
+const EMPTY_JELLYFIN_SETTINGS = {
+  name: '',
+  ip: '',
+  port: 8096,
+  useSsl: false,
+  urlBase: '',
+  externalHostname: '',
+  jellyfinForgotPasswordUrl: '',
+  libraries: [] as never[],
+  serverId: '',
+  apiKey: '',
+};
+
 settingsRoutes.post(
   '/switch-media-server',
   isAuthenticated(Permission.ADMIN),
@@ -458,12 +479,14 @@ settingsRoutes.post(
     const settings = getSettings();
     const current = settings.main.mediaServerType;
     const body = (req.body as { targetServerType?: string }) ?? {};
+    const target = body.targetServerType;
+
     if (current === MediaServerType.NOT_CONFIGURED) {
       return res.status(400).json({
         error: 'No media server is configured.',
       });
     }
-    const target = body.targetServerType;
+
     if (current === MediaServerType.PLEX) {
       if (target !== 'jellyfin' && target !== 'emby') {
         return res.status(400).json({
@@ -502,26 +525,20 @@ settingsRoutes.post(
         }
       }
     }
+
     try {
       if (current === MediaServerType.PLEX) {
-        const useEmby = body.targetServerType === 'emby';
+        const useEmby = target === 'emby';
         settings.main.mediaServerType = useEmby
           ? MediaServerType.EMBY
           : MediaServerType.JELLYFIN;
-        settings.plex = {
-          name: '',
-          ip: '',
-          port: 32400,
-          useSsl: false,
-          libraries: [],
-        };
-        const userRepository = getRepository(User);
-        await userRepository
+        settings.plex = { ...EMPTY_PLEX_SETTINGS };
+        await getRepository(User)
           .createQueryBuilder()
           .update(User)
           .set({ plexId: null, plexUsername: null, plexToken: null })
           .execute();
-        await userRepository
+        await getRepository(User)
           .createQueryBuilder()
           .update(User)
           .set({
@@ -529,15 +546,13 @@ settingsRoutes.post(
           })
           .where('user.jellyfinUserId IS NOT NULL')
           .execute();
-        const mediaRepository = getRepository(Media);
-        await mediaRepository
+        await getRepository(Media)
           .createQueryBuilder()
           .update(Media)
           .set({ ratingKey: null, ratingKey4k: null })
           .where('media.ratingKey IS NOT NULL OR media.ratingKey4k IS NOT NULL')
           .execute();
-        const watchlistRepository = getRepository(Watchlist);
-        await watchlistRepository
+        await getRepository(Watchlist)
           .createQueryBuilder()
           .update(Watchlist)
           .set({ ratingKey: '' })
@@ -555,184 +570,81 @@ settingsRoutes.post(
             ? 'Switched to Emby. All users have been logged out. Restart the server, then sign in with the new media server.'
             : 'Switched to Jellyfin. All users have been logged out. Restart the server, then sign in with the new media server.',
         });
-      } else if (
+      }
+
+      if (
         current === MediaServerType.JELLYFIN ||
         current === MediaServerType.EMBY
       ) {
-        const targetJellyfinType = body.targetServerType;
-        const switchToJellyfin = targetJellyfinType === 'jellyfin';
-        const switchToEmby = targetJellyfinType === 'emby';
-        const switchToPlex = targetJellyfinType === 'plex';
+        const newType =
+          target === 'plex'
+            ? MediaServerType.PLEX
+            : target === 'emby'
+              ? MediaServerType.EMBY
+              : MediaServerType.JELLYFIN;
+        const newUserType =
+          target === 'plex'
+            ? UserType.PLEX
+            : target === 'emby'
+              ? UserType.EMBY
+              : UserType.JELLYFIN;
+        const serverName =
+          target === 'plex' ? 'Plex' : target === 'emby' ? 'Emby' : 'Jellyfin';
 
-        if (switchToJellyfin && current !== MediaServerType.JELLYFIN) {
-          // Emby => Jellyfin
-          settings.main.mediaServerType = MediaServerType.JELLYFIN;
-          settings.jellyfin = {
-            name: '',
-            ip: '',
-            port: 8096,
-            useSsl: false,
-            urlBase: '',
-            externalHostname: '',
-            jellyfinForgotPasswordUrl: '',
-            libraries: [],
-            serverId: '',
-            apiKey: '',
-          };
-          const userRepository = getRepository(User);
-          await userRepository
-            .createQueryBuilder()
-            .update(User)
-            .set({
-              jellyfinUserId: null,
-              jellyfinUsername: null,
-              jellyfinAuthToken: null,
-              jellyfinDeviceId: null,
-            })
-            .execute();
-          await userRepository
-            .createQueryBuilder()
-            .update(User)
-            .set({ userType: UserType.JELLYFIN })
-            .where('user.jellyfinUserId IS NOT NULL')
-            .execute();
-          const mediaRepository = getRepository(Media);
-          await mediaRepository
-            .createQueryBuilder()
-            .update(Media)
-            .set({ jellyfinMediaId: null, jellyfinMediaId4k: null })
-            .where(
-              'media.jellyfinMediaId IS NOT NULL OR media.jellyfinMediaId4k IS NOT NULL'
-            )
-            .execute();
-          await settings.save();
-          await getRepository(Session)
-            .createQueryBuilder()
-            .delete()
-            .from(Session)
-            .execute();
-          startJobs();
-          return res.status(200).json({
-            message:
-              'Switched to Jellyfin. All users have been logged out. Restart the server, then reconfigure and sign in with the new media server.',
+        if (
+          (target === 'jellyfin' && current === MediaServerType.JELLYFIN) ||
+          (target === 'emby' && current === MediaServerType.EMBY)
+        ) {
+          return res.status(400).json({
+            error: `Already using ${serverName}. Choose a different target.`,
           });
         }
 
-        if (switchToEmby && current !== MediaServerType.EMBY) {
-          // Jellyfin => Emby
-          settings.main.mediaServerType = MediaServerType.EMBY;
-          settings.jellyfin = {
-            name: '',
-            ip: '',
-            port: 8096,
-            useSsl: false,
-            urlBase: '',
-            externalHostname: '',
-            jellyfinForgotPasswordUrl: '',
-            libraries: [],
-            serverId: '',
-            apiKey: '',
-          };
-          const userRepository = getRepository(User);
-          await userRepository
-            .createQueryBuilder()
-            .update(User)
-            .set({
-              jellyfinUserId: null,
-              jellyfinUsername: null,
-              jellyfinAuthToken: null,
-              jellyfinDeviceId: null,
-            })
-            .execute();
-          await userRepository
-            .createQueryBuilder()
-            .update(User)
-            .set({ userType: UserType.EMBY })
-            .execute();
-          const mediaRepository = getRepository(Media);
-          await mediaRepository
-            .createQueryBuilder()
-            .update(Media)
-            .set({ jellyfinMediaId: null, jellyfinMediaId4k: null })
-            .where(
-              'media.jellyfinMediaId IS NOT NULL OR media.jellyfinMediaId4k IS NOT NULL'
-            )
-            .execute();
-          await settings.save();
-          await getRepository(Session)
-            .createQueryBuilder()
-            .delete()
-            .from(Session)
-            .execute();
-          startJobs();
-          return res.status(200).json({
-            message:
-              'Switched to Emby. All users have been logged out. Restart the server, then reconfigure and sign in with the new media server.',
-          });
-        }
+        settings.main.mediaServerType = newType;
+        settings.jellyfin = { ...EMPTY_JELLYFIN_SETTINGS };
+        await getRepository(User)
+          .createQueryBuilder()
+          .update(User)
+          .set({
+            jellyfinUserId: null,
+            jellyfinUsername: null,
+            jellyfinAuthToken: null,
+            jellyfinDeviceId: null,
+          })
+          .execute();
+        await getRepository(User)
+          .createQueryBuilder()
+          .update(User)
+          .set({ userType: newUserType })
+          .execute();
+        await getRepository(Media)
+          .createQueryBuilder()
+          .update(Media)
+          .set({ jellyfinMediaId: null, jellyfinMediaId4k: null })
+          .where(
+            'media.jellyfinMediaId IS NOT NULL OR media.jellyfinMediaId4k IS NOT NULL'
+          )
+          .execute();
+        await settings.save();
+        await getRepository(Session)
+          .createQueryBuilder()
+          .delete()
+          .from(Session)
+          .execute();
+        startJobs();
 
-        if (switchToPlex) {
-          // Jellyfin/Emby => Plex
-          settings.main.mediaServerType = MediaServerType.PLEX;
-          settings.jellyfin = {
-            name: '',
-            ip: '',
-            port: 8096,
-            useSsl: false,
-            urlBase: '',
-            externalHostname: '',
-            jellyfinForgotPasswordUrl: '',
-            libraries: [],
-            serverId: '',
-            apiKey: '',
-          };
-          const userRepository = getRepository(User);
-          await userRepository
-            .createQueryBuilder()
-            .update(User)
-            .set({
-              jellyfinUserId: null,
-              jellyfinUsername: null,
-              jellyfinAuthToken: null,
-              jellyfinDeviceId: null,
-            })
-            .execute();
-          await userRepository
-            .createQueryBuilder()
-            .update(User)
-            .set({ userType: UserType.PLEX })
-            .execute();
-          const mediaRepository = getRepository(Media);
-          await mediaRepository
-            .createQueryBuilder()
-            .update(Media)
-            .set({ jellyfinMediaId: null, jellyfinMediaId4k: null })
-            .where(
-              'media.jellyfinMediaId IS NOT NULL OR media.jellyfinMediaId4k IS NOT NULL'
-            )
-            .execute();
-          await settings.save();
-          await getRepository(Session)
-            .createQueryBuilder()
-            .delete()
-            .from(Session)
-            .execute();
-          startJobs();
-          return res.status(200).json({
-            message:
-              'Switched to Plex. All users have been logged out. Restart the server, then sign in with the new media server.',
-          });
-        }
-
-        return res.status(400).json({
-          error:
-            'Specify targetServerType: "plex", "jellyfin", or "emby" to switch media server.',
+        const reconfigure =
+          target === 'jellyfin' || target === 'emby'
+            ? ' Restart the server, then reconfigure and sign in with the new media server.'
+            : ' Restart the server, then sign in with the new media server.';
+        return res.status(200).json({
+          message: `Switched to ${serverName}. All users have been logged out.${reconfigure}`,
         });
       }
     } catch (e) {
       logger.error('Switch media server failed', {
         label: 'Settings',
-        errorMessage: e.message,
+        errorMessage: (e as Error).message,
       });
       return next({ status: 500, message: 'Failed to switch media server.' });
     }

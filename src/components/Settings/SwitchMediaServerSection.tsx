@@ -16,6 +16,14 @@ import useSWR from 'swr';
 
 type SwitchTargetServerType = 'jellyfin' | 'emby' | 'plex';
 
+function getTargetLabel(target: SwitchTargetServerType): string {
+  return target === 'plex'
+    ? 'Plex'
+    : target === 'jellyfin'
+      ? 'Jellyfin'
+      : 'Emby';
+}
+
 const messages = defineMessages('components.Settings', {
   switchMediaServerError:
     'Something went wrong while switching media server. Please try again.',
@@ -48,6 +56,43 @@ const messages = defineMessages('components.Settings', {
   switchToPlex: 'Switch to Plex',
   checkUsersLink: 'Users',
 });
+
+type StepsVariant = 'plex' | 'jellyfinEmbyToPlex' | 'jellyfinEmbyToOther';
+
+const STEP_KEYS: Record<
+  StepsVariant,
+  [
+    keyof typeof messages,
+    keyof typeof messages,
+    keyof typeof messages,
+    keyof typeof messages,
+  ]
+> = {
+  plex: [
+    'switchMediaServerStep1Plex',
+    'switchMediaServerStep2Plex',
+    'switchMediaServerStep3Plex',
+    'switchMediaServerStep4Plex',
+  ],
+  jellyfinEmbyToPlex: [
+    'switchMediaServerStep1JellyfinEmby',
+    'switchMediaServerStep2JellyfinEmby',
+    'switchMediaServerStep3JellyfinEmby',
+    'switchMediaServerStep4JellyfinEmby',
+  ],
+  jellyfinEmbyToOther: [
+    'switchMediaServerStep1JellyfinEmbyToOther',
+    'switchMediaServerStep2JellyfinEmbyToOther',
+    'switchMediaServerStep3JellyfinEmbyToOther',
+    'switchMediaServerStep4JellyfinEmbyToOther',
+  ],
+};
+
+const STEP_LINK_VALUES_INDEX: Record<StepsVariant, number[]> = {
+  plex: [1, 2],
+  jellyfinEmbyToPlex: [1, 2],
+  jellyfinEmbyToOther: [],
+};
 
 const SwitchMediaServerSection = () => {
   const settings = useSettings();
@@ -97,9 +142,13 @@ const SwitchMediaServerSection = () => {
   const effectiveTarget = validTargets.includes(switchTargetServerType)
     ? switchTargetServerType
     : validTargets[0];
-  const targetPayload: { targetServerType: SwitchTargetServerType } = {
-    targetServerType: effectiveTarget,
-  };
+  const targetPayload = { targetServerType: effectiveTarget };
+  const showPlexOnly = validTargets.length === 1 && validTargets[0] === 'plex';
+  const stepsVariant: StepsVariant = isPlex
+    ? 'plex'
+    : (isJellyfin || isEmby) && effectiveTarget !== 'plex'
+      ? 'jellyfinEmbyToOther'
+      : 'jellyfinEmbyToPlex';
 
   const handleSwitch = async () => {
     setSubmitting(true);
@@ -115,17 +164,12 @@ const SwitchMediaServerSection = () => {
       setModalOpen(false);
       window.location.reload();
     } catch (err: unknown) {
-      const extracted = axios.isAxiosError(err)
-        ? (err.response?.data?.error ??
-          err.response?.data?.message ??
-          err.message)
-        : err instanceof Error
-          ? err.message
-          : null;
       const message =
-        extracted != null && String(extracted).trim() !== ''
-          ? String(extracted)
-          : intl.formatMessage(messages.switchMediaServerError);
+        axios.isAxiosError(err) && err.response?.data?.message
+          ? String(err.response.data.message)
+          : axios.isAxiosError(err) && err.response?.data?.error
+            ? String(err.response.data.error)
+            : intl.formatMessage(messages.switchMediaServerError);
       addToast(message, { appearance: 'error' });
     } finally {
       setSubmitting(false);
@@ -150,7 +194,7 @@ const SwitchMediaServerSection = () => {
   return (
     <div className="mt-10 border-t border-gray-700 pt-8">
       <Button buttonType="danger" onClick={() => setModalOpen(true)}>
-        {validTargets.length === 1 && validTargets[0] === 'plex' ? (
+        {showPlexOnly ? (
           <FormattedMessage
             id="components.Settings.switchToPlex"
             defaultMessage={messages.switchToPlex.defaultMessage}
@@ -175,14 +219,14 @@ const SwitchMediaServerSection = () => {
       >
         <Modal
           title={
-            validTargets.length === 1 && validTargets[0] === 'plex'
+            showPlexOnly
               ? intl.formatMessage(messages.switchToPlex)
               : intl.formatMessage(messages.switchMediaServerButton)
           }
           onCancel={() => !isSubmitting && setModalOpen(false)}
           onOk={handleSwitch}
           okText={
-            validTargets.length === 1 && validTargets[0] === 'plex'
+            showPlexOnly
               ? intl.formatMessage(messages.switchToPlex)
               : intl.formatMessage(messages.switchMediaServerButton)
           }
@@ -192,120 +236,19 @@ const SwitchMediaServerSection = () => {
           okDisabled={isSubmitting}
         >
           <div className="space-y-1 text-gray-300">
-            {isPlex ? (
-              <>
-                <p className="m-0">
-                  <FormattedMessage
-                    id="components.Settings.switchMediaServerStep1Plex"
-                    defaultMessage={
-                      messages.switchMediaServerStep1Plex.defaultMessage
-                    }
-                  />
-                </p>
-                <p className="m-0">
-                  <FormattedMessage
-                    id="components.Settings.switchMediaServerStep2Plex"
-                    defaultMessage={
-                      messages.switchMediaServerStep2Plex.defaultMessage
-                    }
-                    values={linkValues}
-                  />
-                </p>
-                <p className="m-0">
-                  <FormattedMessage
-                    id="components.Settings.switchMediaServerStep3Plex"
-                    defaultMessage={
-                      messages.switchMediaServerStep3Plex.defaultMessage
-                    }
-                    values={linkValues}
-                  />
-                </p>
-                <p className="m-0">
-                  <FormattedMessage
-                    id="components.Settings.switchMediaServerStep4Plex"
-                    defaultMessage={
-                      messages.switchMediaServerStep4Plex.defaultMessage
-                    }
-                  />
-                </p>
-              </>
-            ) : (isJellyfin || isEmby) && effectiveTarget !== 'plex' ? (
-              <>
-                <p className="m-0">
-                  <FormattedMessage
-                    id="components.Settings.switchMediaServerStep1JellyfinEmbyToOther"
-                    defaultMessage={
-                      messages.switchMediaServerStep1JellyfinEmbyToOther
-                        .defaultMessage
-                    }
-                  />
-                </p>
-                <p className="m-0">
-                  <FormattedMessage
-                    id="components.Settings.switchMediaServerStep2JellyfinEmbyToOther"
-                    defaultMessage={
-                      messages.switchMediaServerStep2JellyfinEmbyToOther
-                        .defaultMessage
-                    }
-                  />
-                </p>
-                <p className="m-0">
-                  <FormattedMessage
-                    id="components.Settings.switchMediaServerStep3JellyfinEmbyToOther"
-                    defaultMessage={
-                      messages.switchMediaServerStep3JellyfinEmbyToOther
-                        .defaultMessage
-                    }
-                  />
-                </p>
-                <p className="m-0">
-                  <FormattedMessage
-                    id="components.Settings.switchMediaServerStep4JellyfinEmbyToOther"
-                    defaultMessage={
-                      messages.switchMediaServerStep4JellyfinEmbyToOther
-                        .defaultMessage
-                    }
-                  />
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="m-0">
-                  <FormattedMessage
-                    id="components.Settings.switchMediaServerStep1JellyfinEmby"
-                    defaultMessage={
-                      messages.switchMediaServerStep1JellyfinEmby.defaultMessage
-                    }
-                  />
-                </p>
-                <p className="m-0">
-                  <FormattedMessage
-                    id="components.Settings.switchMediaServerStep2JellyfinEmby"
-                    defaultMessage={
-                      messages.switchMediaServerStep2JellyfinEmby.defaultMessage
-                    }
-                    values={linkValues}
-                  />
-                </p>
-                <p className="m-0">
-                  <FormattedMessage
-                    id="components.Settings.switchMediaServerStep3JellyfinEmby"
-                    defaultMessage={
-                      messages.switchMediaServerStep3JellyfinEmby.defaultMessage
-                    }
-                    values={linkValues}
-                  />
-                </p>
-                <p className="m-0">
-                  <FormattedMessage
-                    id="components.Settings.switchMediaServerStep4JellyfinEmby"
-                    defaultMessage={
-                      messages.switchMediaServerStep4JellyfinEmby.defaultMessage
-                    }
-                  />
-                </p>
-              </>
-            )}
+            {STEP_KEYS[stepsVariant].map((key, i) => (
+              <p key={key} className="m-0">
+                <FormattedMessage
+                  id={`components.Settings.${key}`}
+                  defaultMessage={messages[key].defaultMessage}
+                  values={
+                    STEP_LINK_VALUES_INDEX[stepsVariant].includes(i)
+                      ? linkValues
+                      : undefined
+                  }
+                />
+              </p>
+            ))}
           </div>
           <div className="mt-3">
             <Alert
@@ -335,21 +278,13 @@ const SwitchMediaServerSection = () => {
                 >
                   {validTargets.map((t) => (
                     <option key={t} value={t}>
-                      {t === 'plex'
-                        ? 'Plex'
-                        : t === 'jellyfin'
-                          ? 'Jellyfin'
-                          : 'Emby'}
+                      {getTargetLabel(t)}
                     </option>
                   ))}
                 </select>
               ) : (
                 <span className="text-sm font-medium text-white">
-                  {effectiveTarget === 'plex'
-                    ? 'Plex'
-                    : effectiveTarget === 'jellyfin'
-                      ? 'Jellyfin'
-                      : 'Emby'}
+                  {getTargetLabel(effectiveTarget)}
                 </span>
               )}
             </div>
