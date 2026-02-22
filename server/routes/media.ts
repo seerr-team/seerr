@@ -348,7 +348,7 @@ mediaRoutes.get<{ id: string }, MediaWatchDataResponse>(
           media.ratingKey4k
         );
         const plexIds4k = watchUsers4k.map((u) => u.user_id);
-        if (!plexIds4k.length) plexIds4k.push(-1); // avoid IN () which is invalid SQL
+        if (!plexIds4k.length) plexIds4k.push(-1);
 
         const users = await userRepository
           .createQueryBuilder('user')
