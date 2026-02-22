@@ -183,7 +183,7 @@ const SwitchMediaServerSection = () => {
     ),
     users: (
       <Link
-        href="/settings/users"
+        href="/users"
         className="font-medium text-indigo-400 hover:text-indigo-300 hover:underline"
       >
         {intl.formatMessage(messages.checkUsersLink)}
