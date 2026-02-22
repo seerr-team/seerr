@@ -43,12 +43,12 @@ const messages = defineMessages('components.Settings', {
   switchMediaServerStep3JellyfinEmby: '3) Optionally check {users}.',
   switchMediaServerStep4JellyfinEmby: '4) Choose the target below and switch.',
   switchMediaServerStep1JellyfinEmbyToOther:
-    '1) Choose the target below and switch.',
-  switchMediaServerStep2JellyfinEmbyToOther: '2) Restart the server.',
-  switchMediaServerStep3JellyfinEmbyToOther:
-    '3) Reconfigure the connection in the Jellyfin settings tab (same tab, new server type).',
+    '1) In the Jellyfin settings tab, reconfigure the connection for your new server (host, API key, etc.) and save.',
+  switchMediaServerStep2JellyfinEmbyToOther:
+    '2) Choose the target below and switch.',
+  switchMediaServerStep3JellyfinEmbyToOther: '3) Restart the server.',
   switchMediaServerStep4JellyfinEmbyToOther:
-    '4) Have users sign in with the new media server.',
+    '4) Sign in with the new media server.',
   switchMediaServerWarning:
     'Everyone will be logged out. You must restart the server after switching.',
   switchTargetAfter: 'New media server:',

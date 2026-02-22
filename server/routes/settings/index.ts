@@ -601,7 +601,9 @@ settingsRoutes.post(
         }
 
         settings.main.mediaServerType = newType;
-        settings.jellyfin = { ...EMPTY_JELLYFIN_SETTINGS };
+        if (target === 'plex') {
+          settings.jellyfin = { ...EMPTY_JELLYFIN_SETTINGS };
+        }
         await getRepository(User)
           .createQueryBuilder()
           .update(User)
@@ -633,12 +635,8 @@ settingsRoutes.post(
           .execute();
         startJobs();
 
-        const reconfigure =
-          target === 'jellyfin' || target === 'emby'
-            ? ' Restart the server, then reconfigure and sign in with the new media server.'
-            : ' Restart the server, then sign in with the new media server.';
         return res.status(200).json({
-          message: `Switched to ${serverName}. All users have been logged out.${reconfigure}`,
+          message: `Switched to ${serverName}. All users have been logged out. Restart the server, then sign in with the new media server.`,
         });
       }
     } catch (e) {
