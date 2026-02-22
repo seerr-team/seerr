@@ -514,50 +514,160 @@ settingsRoutes.post(
         current === MediaServerType.JELLYFIN ||
         current === MediaServerType.EMBY
       ) {
-        settings.main.mediaServerType = MediaServerType.PLEX;
-        settings.jellyfin = {
-          name: '',
-          ip: '',
-          port: 8096,
-          useSsl: false,
-          urlBase: '',
-          externalHostname: '',
-          jellyfinForgotPasswordUrl: '',
-          libraries: [],
-          serverId: '',
-          apiKey: '',
-        };
-        const userRepository = getRepository(User);
-        await userRepository
-          .createQueryBuilder()
-          .update(User)
-          .set({
-            jellyfinUserId: null,
-            jellyfinUsername: null,
-            jellyfinAuthToken: null,
-            jellyfinDeviceId: null,
-          })
-          .execute();
-        await userRepository
-          .createQueryBuilder()
-          .update(User)
-          .set({ userType: UserType.PLEX })
-          .where('user.plexId IS NOT NULL')
-          .execute();
-        const mediaRepository = getRepository(Media);
-        await mediaRepository
-          .createQueryBuilder()
-          .update(Media)
-          .set({ jellyfinMediaId: null, jellyfinMediaId4k: null })
-          .where(
-            'media.jellyfinMediaId IS NOT NULL OR media.jellyfinMediaId4k IS NOT NULL'
-          )
-          .execute();
-        await settings.save();
-        startJobs();
-        return res.status(200).json({
-          message:
-            'Switched to Plex. Restart or reload if the app does not update.',
+        const targetJellyfinType = body.targetServerType;
+        const switchToJellyfin = targetJellyfinType === 'jellyfin';
+        const switchToEmby = targetJellyfinType === 'emby';
+        const switchToPlex = targetJellyfinType === 'plex';
+
+        if (switchToJellyfin && current !== MediaServerType.JELLYFIN) {
+          // Emby → Jellyfin
+          settings.main.mediaServerType = MediaServerType.JELLYFIN;
+          settings.jellyfin = {
+            name: '',
+            ip: '',
+            port: 8096,
+            useSsl: false,
+            urlBase: '',
+            externalHostname: '',
+            jellyfinForgotPasswordUrl: '',
+            libraries: [],
+            serverId: '',
+            apiKey: '',
+          };
+          const userRepository = getRepository(User);
+          await userRepository
+            .createQueryBuilder()
+            .update(User)
+            .set({
+              jellyfinUserId: null,
+              jellyfinUsername: null,
+              jellyfinAuthToken: null,
+              jellyfinDeviceId: null,
+            })
+            .execute();
+          await userRepository
+            .createQueryBuilder()
+            .update(User)
+            .set({ userType: UserType.JELLYFIN })
+            .where('user.jellyfinUserId IS NOT NULL')
+            .execute();
+          const mediaRepository = getRepository(Media);
+          await mediaRepository
+            .createQueryBuilder()
+            .update(Media)
+            .set({ jellyfinMediaId: null, jellyfinMediaId4k: null })
+            .where(
+              'media.jellyfinMediaId IS NOT NULL OR media.jellyfinMediaId4k IS NOT NULL'
+            )
+            .execute();
+          await settings.save();
+          startJobs();
+          return res.status(200).json({
+            message:
+              'Switched to Jellyfin. Reconfigure the server and have users sign in again. Restart or reload if the app does not update.',
+          });
+        }
+
+        if (switchToEmby && current !== MediaServerType.EMBY) {
+          // Jellyfin → Emby
+          settings.main.mediaServerType = MediaServerType.EMBY;
+          settings.jellyfin = {
+            name: '',
+            ip: '',
+            port: 8096,
+            useSsl: false,
+            urlBase: '',
+            externalHostname: '',
+            jellyfinForgotPasswordUrl: '',
+            libraries: [],
+            serverId: '',
+            apiKey: '',
+          };
+          const userRepository = getRepository(User);
+          await userRepository
+            .createQueryBuilder()
+            .update(User)
+            .set({
+              jellyfinUserId: null,
+              jellyfinUsername: null,
+              jellyfinAuthToken: null,
+              jellyfinDeviceId: null,
+            })
+            .execute();
+          await userRepository
+            .createQueryBuilder()
+            .update(User)
+            .set({ userType: UserType.EMBY })
+            .execute();
+          const mediaRepository = getRepository(Media);
+          await mediaRepository
+            .createQueryBuilder()
+            .update(Media)
+            .set({ jellyfinMediaId: null, jellyfinMediaId4k: null })
+            .where(
+              'media.jellyfinMediaId IS NOT NULL OR media.jellyfinMediaId4k IS NOT NULL'
+            )
+            .execute();
+          await settings.save();
+          startJobs();
+          return res.status(200).json({
+            message:
+              'Switched to Emby. Reconfigure the server and have users sign in again. Restart or reload if the app does not update.',
+          });
+        }
+
+        if (switchToPlex) {
+          // Jellyfin/Emby → Plex
+          settings.main.mediaServerType = MediaServerType.PLEX;
+          settings.jellyfin = {
+            name: '',
+            ip: '',
+            port: 8096,
+            useSsl: false,
+            urlBase: '',
+            externalHostname: '',
+            jellyfinForgotPasswordUrl: '',
+            libraries: [],
+            serverId: '',
+            apiKey: '',
+          };
+          const userRepository = getRepository(User);
+          await userRepository
+            .createQueryBuilder()
+            .update(User)
+            .set({
+              jellyfinUserId: null,
+              jellyfinUsername: null,
+              jellyfinAuthToken: null,
+              jellyfinDeviceId: null,
+            })
+            .execute();
+          await userRepository
+            .createQueryBuilder()
+            .update(User)
+            .set({ userType: UserType.PLEX })
+            .where('user.plexId IS NOT NULL')
+            .execute();
+          const mediaRepository = getRepository(Media);
+          await mediaRepository
+            .createQueryBuilder()
+            .update(Media)
+            .set({ jellyfinMediaId: null, jellyfinMediaId4k: null })
+            .where(
+              'media.jellyfinMediaId IS NOT NULL OR media.jellyfinMediaId4k IS NOT NULL'
+            )
+            .execute();
+          await settings.save();
+          startJobs();
+          return res.status(200).json({
+            message:
+              'Switched to Plex. Restart or reload if the app does not update.',
+          });
+        }
+
+        return res.status(400).json({
+          error:
+            'Specify targetServerType: "plex", "jellyfin", or "emby" to switch media server.',
         });
       }
     } catch (e) {
