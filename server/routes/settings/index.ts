@@ -525,6 +525,45 @@ settingsRoutes.post(
         error: 'No media server is configured.',
       });
     }
+    const target = body.targetServerType;
+    if (current === MediaServerType.PLEX) {
+      if (target !== 'jellyfin' && target !== 'emby') {
+        return res.status(400).json({
+          error:
+            'Specify targetServerType: "jellyfin" or "emby". Configure the connection in the Jellyfin/Emby settings tab first.',
+        });
+      }
+      if (!settings.jellyfin?.ip) {
+        return res.status(400).json({
+          error:
+            'Jellyfin/Emby is not configured. Configure it in Settings first, then switch.',
+        });
+      }
+    } else if (
+      current === MediaServerType.JELLYFIN ||
+      current === MediaServerType.EMBY
+    ) {
+      if (target !== 'plex' && target !== 'jellyfin' && target !== 'emby') {
+        return res.status(400).json({
+          error:
+            'Specify targetServerType: "plex", "jellyfin", or "emby". Configure the target in Settings first if switching to Plex.',
+        });
+      }
+      if (target === 'plex') {
+        const admin = await getRepository(User).findOne({
+          where: { id: 1 },
+          select: { plexToken: true },
+        });
+        const plexConfigured =
+          (settings.plex?.name ?? settings.plex?.ip) || admin?.plexToken;
+        if (!plexConfigured) {
+          return res.status(400).json({
+            error:
+              'Plex is not configured. Configure Plex in Settings first, then switch.',
+          });
+        }
+      }
+    }
     try {
       if (current === MediaServerType.PLEX) {
         const useEmby = body.targetServerType === 'emby';
@@ -588,7 +627,7 @@ settingsRoutes.post(
         const switchToPlex = targetJellyfinType === 'plex';
 
         if (switchToJellyfin && current !== MediaServerType.JELLYFIN) {
-          // Emby → Jellyfin
+          // Emby => Jellyfin
           settings.main.mediaServerType = MediaServerType.JELLYFIN;
           settings.jellyfin = {
             name: '',
@@ -642,7 +681,7 @@ settingsRoutes.post(
         }
 
         if (switchToEmby && current !== MediaServerType.EMBY) {
-          // Jellyfin → Emby
+          // Jellyfin => Emby
           settings.main.mediaServerType = MediaServerType.EMBY;
           settings.jellyfin = {
             name: '',
@@ -695,7 +734,7 @@ settingsRoutes.post(
         }
 
         if (switchToPlex) {
-          // Jellyfin/Emby → Plex
+          // Jellyfin/Emby => Plex
           settings.main.mediaServerType = MediaServerType.PLEX;
           settings.jellyfin = {
             name: '',

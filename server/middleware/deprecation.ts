@@ -20,7 +20,7 @@ export const deprecatedRoute = ({
 }: DeprecationOptions) => {
   return (req: Request, res: Response, next: NextFunction) => {
     logger.warn(
-      `Deprecated API endpoint accessed: ${oldPath} → use ${newPath} instead`,
+      `Deprecated API endpoint accessed: ${oldPath} => use ${newPath} instead`,
       {
         label: 'API Deprecation',
         ip: req.ip,
