@@ -28,9 +28,19 @@ interface WebPushError extends Error {
   statusCode?: number;
   status?: number;
   body?: string | unknown;
+  endpoint?: string;
+  headers?: Record<string, string>;
   response?: {
     body?: string | unknown;
   };
+}
+
+function getPushServiceHost(endpoint: string): string {
+  try {
+    return new URL(endpoint).host;
+  } catch {
+    return '(invalid endpoint URL)';
+  }
 }
 
 class WebPushAgent
@@ -178,11 +188,16 @@ class WebPushAgent
       pushSub: UserPushSubscription,
       notificationPayload: Buffer
     ) => {
+      const pushServiceHost = getPushServiceHost(pushSub.endpoint);
+
       logger.debug('Sending web push notification', {
         label: 'Notifications',
         recipient: pushSub.user.displayName,
         type: Notification[type],
         subject: payload.subject,
+        pushServiceHost,
+        userAgent: pushSub.userAgent ?? '(none)',
+        subscriptionId: pushSub.id,
       });
 
       try {
@@ -200,6 +215,16 @@ class WebPushAgent
         const webPushError = e as WebPushError;
         const statusCode = webPushError.statusCode || webPushError.status;
         const errorMessage = webPushError.message || String(e);
+        const responseBody =
+          webPushError.body ??
+          (webPushError.response &&
+          typeof webPushError.response.body !== 'undefined'
+            ? String(webPushError.response.body)
+            : undefined);
+        const errorEndpoint =
+          typeof webPushError.endpoint === 'string'
+            ? getPushServiceHost(webPushError.endpoint)
+            : pushServiceHost;
 
         // RFC 8030: 410/404 are permanent failures, others are transient
         const isPermanentFailure = statusCode === 410 || statusCode === 404;
@@ -214,7 +239,13 @@ class WebPushAgent
             type: Notification[type],
             subject: payload.subject,
             errorMessage,
-            statusCode: statusCode || 'unknown',
+            statusCode: statusCode ?? 'unknown',
+            pushServiceHost: errorEndpoint,
+            userAgent: pushSub.userAgent ?? '(none)',
+            subscriptionId: pushSub.id,
+            ...(responseBody !== undefined && responseBody !== ''
+              ? { pushServiceResponseBody: responseBody }
+              : {}),
           }
         );
 
@@ -310,6 +341,19 @@ class WebPushAgent
     }
 
     if (mainUser && pushSubs.length > 0) {
+      logger.debug('Web push: preparing to send to subscriptions', {
+        label: 'Notifications',
+        type: Notification[type],
+        subject: payload.subject,
+        subscriptionCount: pushSubs.length,
+        subscriptions: pushSubs.map((sub) => ({
+          id: sub.id,
+          pushServiceHost: getPushServiceHost(sub.endpoint),
+          userAgent: sub.userAgent ?? '(none)',
+          recipient: sub.user.displayName,
+        })),
+      });
+
       webpush.setVapidDetails(
         `mailto:${mainUser.email}`,
         settings.vapidPublic,
