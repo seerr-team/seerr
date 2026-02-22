@@ -646,7 +646,6 @@ settingsRoutes.post(
             .createQueryBuilder()
             .update(User)
             .set({ userType: UserType.PLEX })
-            .where('user.plexId IS NOT NULL')
             .execute();
           const mediaRepository = getRepository(Media);
           await mediaRepository
