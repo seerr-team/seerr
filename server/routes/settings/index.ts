@@ -606,7 +606,7 @@ settingsRoutes.post(
           .set({
             userType: useEmby ? UserType.EMBY : UserType.JELLYFIN,
           })
-          .where('"user".jellyfinUserId IS NOT NULL')
+          .where('"user"."jellyfinUserId" IS NOT NULL')
           .execute();
         await getRepository(Media)
           .createQueryBuilder()
