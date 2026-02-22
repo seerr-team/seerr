@@ -480,7 +480,6 @@ settingsRoutes.post(
           .createQueryBuilder()
           .update(User)
           .set({ plexId: null, plexUsername: null, plexToken: null })
-          .where('user.id >= :zero', { zero: 0 })
           .execute();
         await userRepository
           .createQueryBuilder()
@@ -538,7 +537,6 @@ settingsRoutes.post(
             jellyfinAuthToken: null,
             jellyfinDeviceId: null,
           })
-          .where('user.id >= :zero', { zero: 0 })
           .execute();
         await userRepository
           .createQueryBuilder()
