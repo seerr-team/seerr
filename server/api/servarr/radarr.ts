@@ -64,16 +64,8 @@ export interface RadarrMovie {
 }
 
 class RadarrAPI extends ServarrBase<{ movieId: number }> {
-  constructor({
-    url,
-    apiKey,
-    timeout,
-  }: {
-    url: string;
-    apiKey: string;
-    timeout?: number;
-  }) {
-    super({ url, apiKey, cacheName: 'radarr', apiName: 'Radarr', timeout });
+  constructor({ url, apiKey }: { url: string; apiKey: string }) {
+    super({ url, apiKey, cacheName: 'radarr', apiName: 'Radarr' });
   }
 
   public getMovies = async (): Promise<RadarrMovie[]> => {
