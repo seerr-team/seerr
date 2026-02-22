@@ -1356,6 +1356,8 @@
   "components.UserList.importfrommediaserver": "Import {mediaServerName} Users",
   "components.UserList.importfromplex": "Import Plex Users",
   "components.UserList.importfromplexerror": "Something went wrong while importing Plex users.",
+  "components.UserList.linkedToJellyfinEmby": "Jellyfin/Emby linked",
+  "components.UserList.linkedToPlex": "Plex linked",
   "components.UserList.localLoginDisabled": "The <strong>Enable Local Sign-In</strong> setting is currently disabled.",
   "components.UserList.localuser": "Local User",
   "components.UserList.mediaServerUser": "{mediaServerName} User",
