@@ -171,6 +171,7 @@ export interface NetworkSettings {
   trustProxy: boolean;
   proxy: ProxySettings;
   dnsCache: DnsCacheSettings;
+  apiRequestTimeout: number;
 }
 
 interface PublicSettings {
@@ -593,6 +594,7 @@ class Settings {
           forceMinTtl: 0,
           forceMaxTtl: -1,
         },
+        apiRequestTimeout: 10000,
       },
       migrations: [],
     };
