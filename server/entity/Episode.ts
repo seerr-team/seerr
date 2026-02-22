@@ -1,9 +1,16 @@
 import { MediaStatus } from '@server/constants/media';
 import { DbAwareColumn } from '@server/utils/DbColumnHelper';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import Season from './Season';
 
 @Entity()
+@Index(['season'])
 class Episode {
   @PrimaryGeneratedColumn()
   public id: number;
