@@ -33,7 +33,7 @@ import { Field, Form, Formik } from 'formik';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { useIntl } from 'react-intl';
+import { FormattedMessage, useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import validator from 'validator';
@@ -85,6 +85,8 @@ const messages = defineMessages('components.UserList', {
     'The <strong>Enable Local Sign-In</strong> setting is currently disabled.',
   linkedToPlex: 'Plex linked',
   linkedToJellyfinEmby: 'Jellyfin/Emby linked',
+  switchMediaServerTip:
+    'Users with "Plex linked" or "Jellyfin/Emby linked" can sign in after you switch media server in {generalSettings}.',
 });
 
 type Sort = 'created' | 'updated' | 'requests' | 'displayname';
@@ -575,6 +577,29 @@ const UserList = () => {
           </div>
         </div>
       </div>
+      {(settings.currentSettings.mediaServerType === MediaServerType.PLEX ||
+        settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN ||
+        settings.currentSettings.mediaServerType === MediaServerType.EMBY) && (
+        <p className="mb-4 text-sm text-gray-400">
+          <FormattedMessage
+            id="components.UserList.switchMediaServerTip"
+            defaultMessage={messages.switchMediaServerTip.defaultMessage}
+            values={{
+              generalSettings: (
+                <Link
+                  href="/settings/main"
+                  className="font-medium text-indigo-400 hover:text-indigo-300 hover:underline"
+                >
+                  <FormattedMessage
+                    id="components.UserList.generalSettingsLinkText"
+                    defaultMessage="General"
+                  />
+                </Link>
+              ),
+            }}
+          />
+        </p>
+      )}
       <Table>
         <thead>
           <tr>
