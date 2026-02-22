@@ -8,6 +8,7 @@ import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
+import { Session } from '@server/entity/Session';
 import { User } from '@server/entity/User';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { PlexConnection } from '@server/interfaces/api/plexInterfaces';
@@ -504,11 +505,16 @@ settingsRoutes.post(
           .where("watchlist.ratingKey != ''")
           .execute();
         await settings.save();
+        await getRepository(Session)
+          .createQueryBuilder()
+          .delete()
+          .from(Session)
+          .execute();
         startJobs();
         return res.status(200).json({
           message: useEmby
-            ? 'Switched to Emby. Restart or reload if the app does not update.'
-            : 'Switched to Jellyfin. Restart or reload if the app does not update.',
+            ? 'Switched to Emby. All users have been logged out. Restart the server, then sign in with the new media server.'
+            : 'Switched to Jellyfin. All users have been logged out. Restart the server, then sign in with the new media server.',
         });
       } else if (
         current === MediaServerType.JELLYFIN ||
@@ -561,10 +567,15 @@ settingsRoutes.post(
             )
             .execute();
           await settings.save();
+          await getRepository(Session)
+            .createQueryBuilder()
+            .delete()
+            .from(Session)
+            .execute();
           startJobs();
           return res.status(200).json({
             message:
-              'Switched to Jellyfin. Reconfigure the server and have users sign in again. Restart or reload if the app does not update.',
+              'Switched to Jellyfin. All users have been logged out. Restart the server, then reconfigure and sign in with the new media server.',
           });
         }
 
@@ -609,10 +620,15 @@ settingsRoutes.post(
             )
             .execute();
           await settings.save();
+          await getRepository(Session)
+            .createQueryBuilder()
+            .delete()
+            .from(Session)
+            .execute();
           startJobs();
           return res.status(200).json({
             message:
-              'Switched to Emby. Reconfigure the server and have users sign in again. Restart or reload if the app does not update.',
+              'Switched to Emby. All users have been logged out. Restart the server, then reconfigure and sign in with the new media server.',
           });
         }
 
@@ -657,10 +673,15 @@ settingsRoutes.post(
             )
             .execute();
           await settings.save();
+          await getRepository(Session)
+            .createQueryBuilder()
+            .delete()
+            .from(Session)
+            .execute();
           startJobs();
           return res.status(200).json({
             message:
-              'Switched to Plex. Restart or reload if the app does not update.',
+              'Switched to Plex. All users have been logged out. Restart the server, then sign in with the new media server.',
           });
         }
 

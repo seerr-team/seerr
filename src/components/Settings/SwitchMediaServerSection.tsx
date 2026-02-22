@@ -13,7 +13,8 @@ type SwitchTargetServerType = 'jellyfin' | 'emby';
 const messages = defineMessages('components.Settings', {
   switchMediaServerError:
     'Something went wrong while switching media server. Please try again.',
-  switchMediaServerSuccess: 'Media server cleared. You may need to restart.',
+  switchMediaServerSuccess:
+    'Media server switched. All users logged out. Restart the server, then sign in again.',
 });
 
 const SwitchMediaServerSection = () => {
@@ -41,7 +42,7 @@ const SwitchMediaServerSection = () => {
         {settings.currentSettings.mediaServerType === MediaServerType.PLEX ? (
           <FormattedMessage
             id="components.Settings.switchMediaServerDescriptionPlex"
-            defaultMessage="Have users link Jellyfin or Emby in {profile} => {linkedAccounts} first, then choose the target below and switch. Restart may be required."
+            defaultMessage="Have users link Jellyfin or Emby in {profile} => {linkedAccounts} first, then choose the target below and switch. All users will be logged out. Restart the server after switching."
             values={{
               profile: (
                 <strong className="font-semibold text-gray-300">Profile</strong>
@@ -56,7 +57,7 @@ const SwitchMediaServerSection = () => {
         ) : (
           <FormattedMessage
             id="components.Settings.switchMediaServerDescriptionJellyfinEmby"
-            defaultMessage="Configure Plex in the Plex tab, then have users link Plex in {profile} => {linkedAccounts}, then switch. This clears the current server. Restart may be required."
+            defaultMessage="Configure Plex in the Plex tab, then have users link Plex in {profile} => {linkedAccounts}, then switch. This clears the current server. All users will be logged out. Restart the server after switching."
             values={{
               profile: (
                 <strong className="font-semibold text-gray-300">Profile</strong>
@@ -101,15 +102,19 @@ const SwitchMediaServerSection = () => {
         confirmText={intl.formatMessage(globalMessages.areyousure)}
         onClick={async () => {
           try {
-            await axios.post(
+            const { data } = await axios.post<{ message?: string }>(
               '/api/v1/settings/switch-media-server',
               settings.currentSettings.mediaServerType === MediaServerType.PLEX
                 ? { targetServerType: switchTargetServerType }
                 : undefined
             );
-            addToast(intl.formatMessage(messages.switchMediaServerSuccess), {
-              appearance: 'success',
-            });
+            addToast(
+              data?.message ??
+                intl.formatMessage(messages.switchMediaServerSuccess),
+              {
+                appearance: 'success',
+              }
+            );
             window.location.reload();
           } catch (err: unknown) {
             const extracted = axios.isAxiosError(err)

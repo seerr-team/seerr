@@ -1225,7 +1225,7 @@
   "components.Settings.startscan": "Start Scan",
   "components.Settings.starttyping": "Starting typing to search.",
   "components.Settings.switchMediaServerError": "Something went wrong while switching media server. Please try again.",
-  "components.Settings.switchMediaServerSuccess": "Media server cleared. You may need to restart.",
+  "components.Settings.switchMediaServerSuccess": "Media server switched. All users logged out. Restart the server, then sign in again.",
   "components.Settings.syncJellyfin": "Sync Libraries",
   "components.Settings.syncing": "Syncing",
   "components.Settings.tautulliApiKey": "API Key",
