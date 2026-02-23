@@ -23,7 +23,6 @@ Installation methods are now divided into two categories: official and third-par
 The Seerr team is only responsible for official installation methods, while third-party methods are maintained by the community.
 Some methods are currently not maintained, but this does not mean they are permanently discontinued. The community may restore and support them if they choose to do so.
 
-- **Unraid app:** Not maintained
 - **Snap package:** Not maintained
 :::
 
@@ -200,14 +199,82 @@ Summary of changes :
   </TabItem>
 </Tabs>
 
-### Nix (Third-party installation methods)
+## Third-party installation methods
+
+:::warning
+Third-party installation methods are maintained by the community. The Seerr team is not responsible for these packages.
+:::
+
+### Nix
 
 Waiting for https://github.com/NixOS/nixpkgs/pull/450096 and https://github.com/NixOS/nixpkgs/pull/450093
 
-### AUR (Third-party installation methods)
+### AUR
 
 See https://aur.archlinux.org/packages/seerr
 
-### TrueNAS (Third-party installation methods)
+### TrueNAS
 
-Waiting for https://github.com/truenas/apps/issues/3374
+Refer to [Seerr TrueNAS Documentation](/getting-started/third-parties/truenas), all of our examples have been updated to reflect the below change.
+
+<Tabs groupId="truenas-migration" queryString>
+  <TabItem value="hostpath" label="Host Path">
+    **This guide describes how to migrate from Host Path storage (not ixVolume).**
+    1. Stop Jellyseerr/Overseerr
+    2. Install Seerr and use the same Host Path storage that was used by Jellyseerr/Overseerr
+    3. Start Seerr app
+    4. Delete Jellyseerr/Overseerr app
+  </TabItem>
+  <TabItem value="ixvolume" label="ixVolume">
+    **This guide describes how to migrate from ixVolume storage (not Host Path).**
+    1. Stop Jellyseerr/Overseerr
+    2. Create a dataset for Seerr
+          If your apps normally store data under something like:
+          ```
+          /mnt/storage/<app-name>
+          ```
+          then create a dataset named:
+          ```
+          storage/seerr
+          ```
+          resulting in:
+          ```
+          /mnt/storage/seerr
+          ```
+    3. Copy ixVolume Data
+          Open System Settings → Shell, or SSH into your TrueNAS server as root and run :
+          ```bash
+          rsync -av /mnt/.ix-apps/app_mounts/jellyseerr/ /mnt/storage/seerr/
+          ```
+    4. Install Seerr and use the same Host Path storage that was created before (`/mnt/storage/seerr/config` in our example)
+    5. Start Seerr app
+    6. Delete Jellyseerr/Overseerr app
+  </TabItem>
+</Tabs>
+
+### Unraid
+
+Refer to [Seerr Unraid Documentation](/getting-started/third-parties/unraid), all of our examples have been updated to reflect the below change.
+
+Seerr will automatically migrate your existing Overseerr or Jellyseerr data on first startup. No manual database migration is needed.
+
+**1. Stop the existing container**
+In the Unraid **Docker** tab, stop your Overseerr (or Jellyseerr) container.
+**⚠️ Do not remove the container or delete the appdata folder yet ⚠️**
+
+**2. Copy existing data to Seerr appdata**
+Open the Unraid terminal and copy your existing appdata folder into the new Seerr appdata directory:
+```bash
+cp -a /mnt/user/appdata/overseerr /mnt/user/appdata/seerr
+```
+
+*(For Jellyseerr users, replace `overseerr` with `jellyseerr` in the paths).*
+
+**3. Set permissions and install Seerr**
+Follow the [Unraid Installation Guide](/getting-started/third-parties/unraid#2-set-folder-permissions), **starting from step 2** — this covers setting the correct folder permissions and adding the Docker container. The guide offers two permission methods (**Seerr Default** and **Unraid Default**), each with trade-offs — read the descriptions before choosing.
+
+**4. Start the new Seerr app**
+Start the newly created Seerr container. Check the container logs to confirm the automatic migration completed successfully.
+
+**5. Remove the old app**
+Once you have confirmed Seerr is working properly and your data has successfully migrated, you can safely **Remove** the old Overseerr (or Jellyseerr) container from Unraid.

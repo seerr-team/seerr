@@ -4,13 +4,11 @@ description: Install Seerr using Unraid
 sidebar_position: 3
 ---
 
-# Unraid
-:::danger
-This method has not yet been updated for Seerr and is awaiting a community contribution.
-Feel free to open a pull request on GitHub to update this installation method.
-:::
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-<!--
+# Unraid
+
 :::warning
 Third-party installation methods are maintained by the community. The Seerr team is not responsible for these packages.
 :::
@@ -19,9 +17,160 @@ Third-party installation methods are maintained by the community. The Seerr team
 This method is not recommended for most users. It is intended for advanced users who are using Unraid.
 :::
 
-1. Ensure you have the **Community Applications** plugin installed.
-2. Inside the **Community Applications** app store, search for **Seerr**.
-3. Click the **Install Button**.
-4. On the following **Add Container** screen, make changes to the **Host Port** and **Host Path 1** \(Appdata\) as needed.
-5. Click apply and access "Seerr" at your `<ServerIP:HostPort>` in a web browser.
--->
+## Template installation
+
+Several templates from Unraid Community are available right now
+- [Unraid Community Apps](https://unraid.net/community/apps#community-apps-iframe)
+
+In case you still want to do it manually, please follow the instructions below.
+
+## Manual Installation
+
+Before proceeding, choose which installation method best suits your server:
+
+**Seerr Default** (`UID 1000:1000`) — Runs with the container's native `node` user. Matches the official image, but may break SMB share access, trigger "Fix Common Problems" warnings, and cause issues with backup plugins (such as CA Appdata Backup) and network integrations (such as Tailscale).
+
+**Unraid Default** (`UID 99:100`) — Runs with Unraid's native `nobody:users` ownership. Follows Unraid best practices, but overrides Seerr's built-in rootless user and may cause compatibility issues with future Seerr updates.
+
+<Tabs groupId="unraid-permissions" queryString>
+  <TabItem value="seerr-default" label="Seerr Default">
+
+  ### 1. Create the config directory
+
+  Open the Unraid terminal and run:
+
+  ```bash
+  mkdir -p /mnt/user/appdata/seerr
+  ```
+
+  ### 2. Set folder permissions
+
+  ```bash
+  chown -R 1000:1000 /mnt/user/appdata/seerr
+  ```
+
+  ### 3. Add the Docker container
+
+  :::warning
+  The **Extra Parameters** field is critical. You **must** add `--init --restart=unless-stopped` (see table below). Without `--init`, the container will not handle signals properly or shut down cleanly. Without `--restart=unless-stopped`, the container will not automatically restart after a reboot.
+
+  To see the **Extra Parameters** field, click **Basic View** in the top-right corner of the template page to switch to the advanced editor.
+  :::
+
+  Navigate to the **Docker** tab in Unraid and click **Add Container**. Fill in the following:
+
+  | Field | Value |
+  |---|---|
+  | **Name** | `seerr` |
+  | **Repository** | `ghcr.io/seerr-team/seerr:latest` |
+  | **Icon URL** | `https://raw.githubusercontent.com/seerr-team/seerr/develop/public/android-chrome-512x512.png` |
+  | **WebUI** | `http://[IP]:[PORT:5055]` |
+  | **Extra Parameters** | `--init --restart=unless-stopped` |
+  | **Network Type** | `bridge` |
+  | **Privileged** | `Off` |
+
+  Then click **Add another Path, Port, Variable** to add:
+
+  **Port:**
+  | Field | Value |
+  |---|---|
+  | Container Port | `5055` |
+  | Host Port | `5055` |
+  | Connection Type | `TCP` |
+
+  **Path:**
+  | Field | Value |
+  |---|---|
+  | Container Path | `/app/config` |
+  | Host Path | `/mnt/user/appdata/seerr` |
+
+  **Variable:**
+  | Field | Value |
+  |---|---|
+  | Key | `TZ` |
+  | Value | Your [TZ database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) (e.g., `America/New_York`) |
+
+  **Variable (optional):**
+  | Field | Value |
+  |---|---|
+  | Key | `LOG_LEVEL` |
+  | Value | `info` |
+
+  Click **Apply** to create and start the container.
+
+  ### 4. Access Seerr
+
+  Open the WebUI at `http://<your-unraid-ip>:5055` and follow the setup wizard.
+
+  </TabItem>
+  <TabItem value="unraid-default" label="Unraid Default">
+
+  ### 1. Create the config directory
+
+  Open the Unraid terminal and run:
+
+  ```bash
+  mkdir -p /mnt/user/appdata/seerr
+  ```
+
+  ### 2. Set folder permissions
+
+  ```bash
+  chown -R 99:100 /mnt/user/appdata/seerr
+  ```
+
+  ### 3. Add the Docker container
+
+  :::warning
+  The **Extra Parameters** field is critical. You **must** add `--init --restart=unless-stopped --user 99:100` (see table below). Without `--init`, the container will not handle signals properly or shut down cleanly. Without `--restart=unless-stopped`, the container will not automatically restart after a reboot. The `--user 99:100` parameter runs the container process with Unraid's default UID/GID and avoids permission errors accessing your shares without changing host folder ownership.
+
+  To see the **Extra Parameters** field, click **Basic View** in the top-right corner of the template page to switch to the advanced editor.
+  :::
+
+  Navigate to the **Docker** tab in Unraid and click **Add Container**. Fill in the following:
+
+  | Field | Value |
+  |---|---|
+  | **Name** | `seerr` |
+  | **Repository** | `ghcr.io/seerr-team/seerr:latest` |
+  | **Icon URL** | `https://raw.githubusercontent.com/seerr-team/seerr/develop/public/android-chrome-512x512.png` |
+  | **WebUI** | `http://[IP]:[PORT:5055]` |
+  | **Extra Parameters** | `--init --restart=unless-stopped --user 99:100` |
+  | **Network Type** | `bridge` |
+  | **Privileged** | `Off` |
+
+  Then click **Add another Path, Port, Variable** to add:
+
+  **Port:**
+  | Field | Value |
+  |---|---|
+  | Container Port | `5055` |
+  | Host Port | `5055` |
+  | Connection Type | `TCP` |
+
+  **Path:**
+  | Field | Value |
+  |---|---|
+  | Container Path | `/app/config` |
+  | Host Path | `/mnt/user/appdata/seerr` |
+
+  **Variable:**
+  | Field | Value |
+  |---|---|
+  | Key | `TZ` |
+  | Value | Your [TZ database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) (e.g., `America/New_York`) |
+
+  **Variable (optional):**
+  | Field | Value |
+  |---|---|
+  | Key | `LOG_LEVEL` |
+  | Value | `info` |
+
+  Click **Apply** to create and start the container.
+
+  ### 4. Access Seerr
+
+  Open the WebUI at `http://<your-unraid-ip>:5055` and follow the setup wizard.
+
+  </TabItem>
+</Tabs>

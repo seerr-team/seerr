@@ -1,4 +1,4 @@
-import BlacklistedTagsBadge from '@app/components/BlacklistedTagsBadge';
+import BlocklistedTagsBadge from '@app/components/BlocklistedTagsBadge';
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
@@ -20,9 +20,9 @@ import {
   TrashIcon,
 } from '@heroicons/react/24/solid';
 import type {
-  BlacklistItem,
-  BlacklistResultsResponse,
-} from '@server/interfaces/api/blacklistInterfaces';
+  BlocklistItem,
+  BlocklistResultsResponse,
+} from '@server/interfaces/api/blocklistInterfaces';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
@@ -35,31 +35,31 @@ import { FormattedRelativeTime, useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
-const messages = defineMessages('components.Blacklist', {
-  blacklistsettings: 'Blacklist Settings',
-  blacklistSettingsDescription: 'Manage blacklisted media.',
+const messages = defineMessages('components.Blocklist', {
+  blocklistsettings: 'Blocklist Settings',
+  blocklistSettingsDescription: 'Manage blocklisted media.',
   mediaName: 'Name',
   mediaType: 'Type',
   mediaTmdbId: 'tmdb Id',
-  blacklistdate: 'date',
-  blacklistedby: '{date} by {user}',
-  blacklistNotFoundError: '<strong>{title}</strong> is not blacklisted.',
+  blocklistdate: 'date',
+  blocklistedby: '{date} by {user}',
+  blocklistNotFoundError: '<strong>{title}</strong> is not blocklisted.',
   filterManual: 'Manual',
-  filterBlacklistedTags: 'Blacklisted Tags',
-  showAllBlacklisted: 'Show All Blacklisted Media',
+  filterBlocklistedTags: 'Blocklisted Tags',
+  showAllBlocklisted: 'Show All Blocklisted Media',
 });
 
 enum Filter {
   ALL = 'all',
   MANUAL = 'manual',
-  BLACKLISTEDTAGS = 'blacklistedTags',
+  BLOCKLISTEDTAGS = 'blocklistedTags',
 }
 
 const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
   return (movie as MovieDetails).title !== undefined;
 };
 
-const Blacklist = () => {
+const Blocklist = () => {
   const [currentPageSize, setCurrentPageSize] = useState<number>(10);
   const [searchFilter, debouncedSearchFilter, setSearchFilter] =
     useDebouncedState('');
@@ -75,8 +75,8 @@ const Blacklist = () => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR<BlacklistResultsResponse>(
-    `/api/v1/blacklist/?take=${currentPageSize}&skip=${
+  } = useSWR<BlocklistResultsResponse>(
+    `/api/v1/blocklist/?take=${currentPageSize}&skip=${
       pageIndex * currentPageSize
     }&filter=${currentFilter}${
       debouncedSearchFilter ? `&search=${debouncedSearchFilter}` : ''
@@ -107,9 +107,9 @@ const Blacklist = () => {
 
   return (
     <>
-      <PageTitle title={[intl.formatMessage(globalMessages.blacklist)]} />
+      <PageTitle title={[intl.formatMessage(globalMessages.blocklist)]} />
       <div className="mb-4 flex flex-col justify-between lg:flex-row lg:items-end">
-        <Header>{intl.formatMessage(globalMessages.blacklist)}</Header>
+        <Header>{intl.formatMessage(globalMessages.blocklist)}</Header>
 
         <div className="mt-2 flex flex-grow flex-col sm:flex-row lg:flex-grow-0">
           <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
@@ -137,8 +137,8 @@ const Blacklist = () => {
               <option value="manual">
                 {intl.formatMessage(messages.filterManual)}
               </option>
-              <option value="blacklistedTags">
-                {intl.formatMessage(messages.filterBlacklistedTags)}
+              <option value="blocklistedTags">
+                {intl.formatMessage(messages.filterBlocklistedTags)}
               </option>
             </select>
           </div>
@@ -170,16 +170,16 @@ const Blacklist = () => {
                 buttonType="primary"
                 onClick={() => setCurrentFilter(Filter.ALL)}
               >
-                {intl.formatMessage(messages.showAllBlacklisted)}
+                {intl.formatMessage(messages.showAllBlocklisted)}
               </Button>
             </div>
           )}
         </div>
       ) : (
-        data.results.map((item: BlacklistItem) => {
+        data.results.map((item: BlocklistItem) => {
           return (
             <div className="py-2" key={`request-list-${item.tmdbId}`}>
-              <BlacklistedItem item={item} revalidateList={revalidate} />
+              <BlocklistedItem item={item} revalidateList={revalidate} />
             </div>
           );
         })
@@ -260,14 +260,14 @@ const Blacklist = () => {
   );
 };
 
-export default Blacklist;
+export default Blocklist;
 
-interface BlacklistedItemProps {
-  item: BlacklistItem;
+interface BlocklistedItemProps {
+  item: BlocklistItem;
   revalidateList: () => void;
 }
 
-const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
+const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const { addToast } = useToasts();
   const { ref, inView } = useInView({
@@ -293,15 +293,15 @@ const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
     );
   }
 
-  const removeFromBlacklist = async (tmdbId: number, title?: string) => {
+  const removeFromBlocklist = async (tmdbId: number, title?: string) => {
     setIsUpdating(true);
 
     try {
-      await axios.delete(`/api/v1/blacklist/${tmdbId}`);
+      await axios.delete(`/api/v1/blocklist/${tmdbId}`);
 
       addToast(
         <span>
-          {intl.formatMessage(globalMessages.removeFromBlacklistSuccess, {
+          {intl.formatMessage(globalMessages.removeFromBlocklistSuccess, {
             title,
             strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
           })}
@@ -309,7 +309,7 @@ const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
         { appearance: 'success', autoDismiss: true }
       );
     } catch {
-      addToast(intl.formatMessage(globalMessages.blacklistError), {
+      addToast(intl.formatMessage(globalMessages.blocklistError), {
         appearance: 'error',
         autoDismiss: true,
       });
@@ -389,17 +389,17 @@ const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
           <div className="card-field">
             <span className="card-field-name">Status</span>
             <Badge badgeType="danger">
-              {intl.formatMessage(globalMessages.blacklisted)}
+              {intl.formatMessage(globalMessages.blocklisted)}
             </Badge>
           </div>
 
           {item.createdAt && (
             <div className="card-field">
               <span className="card-field-name">
-                {intl.formatMessage(globalMessages.blacklisted)}
+                {intl.formatMessage(globalMessages.blocklisted)}
               </span>
               <span className="flex truncate text-sm text-gray-300">
-                {intl.formatMessage(messages.blacklistedby, {
+                {intl.formatMessage(messages.blocklistedby, {
                   date: (
                     <FormattedRelativeTime
                       value={Math.floor(
@@ -426,9 +426,9 @@ const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
                         </span>
                       </span>
                     </Link>
-                  ) : item.blacklistedTags ? (
+                  ) : item.blocklistedTags ? (
                     <span className="ml-1">
-                      <BlacklistedTagsBadge data={item} />
+                      <BlocklistedTagsBadge data={item} />
                     </span>
                   ) : (
                     <span className="ml-1 truncate text-sm font-semibold">
@@ -457,10 +457,10 @@ const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
         </div>
       </div>
       <div className="z-10 mt-4 flex w-full flex-col justify-center space-y-2 pl-4 pr-4 xl:mt-0 xl:w-96 xl:items-end xl:pl-0">
-        {hasPermission(Permission.MANAGE_BLACKLIST) && (
+        {hasPermission(Permission.MANAGE_BLOCKLIST) && (
           <ConfirmButton
             onClick={() =>
-              removeFromBlacklist(
+              removeFromBlocklist(
                 item.tmdbId,
                 title && (isMovie(title) ? title.title : title.name)
               )
@@ -474,7 +474,7 @@ const BlacklistedItem = ({ item, revalidateList }: BlacklistedItemProps) => {
           >
             <TrashIcon />
             <span>
-              {intl.formatMessage(globalMessages.removefromBlacklist)}
+              {intl.formatMessage(globalMessages.removefromBlocklist)}
             </span>
           </ConfirmButton>
         )}

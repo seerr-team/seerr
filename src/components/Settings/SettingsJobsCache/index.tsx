@@ -69,6 +69,7 @@ const messages: { [messageName: string]: MessageDescriptor } = defineMessages(
     dnsCacheGlobalStats: 'Global DNS Cache Stats',
     dnsCacheGlobalStatsDescription:
       'These stats are aggregated across all DNS cache entries.',
+    dnsNoCacheEntries: 'No DNS lookups have been cached yet.',
     size: 'Size',
     hits: 'Hits',
     misses: 'Misses',
@@ -88,7 +89,7 @@ const messages: { [messageName: string]: MessageDescriptor } = defineMessages(
     'download-sync': 'Download Sync',
     'download-sync-reset': 'Download Sync Reset',
     'image-cache-cleanup': 'Image Cache Cleanup',
-    'process-blacklisted-tags': 'Process Blacklisted Tags',
+    'process-blocklisted-tags': 'Process Blocklisted Tags',
     editJobSchedule: 'Modify Job',
     jobScheduleEditSaved: 'Job edited successfully!',
     jobScheduleEditFailed: 'Something went wrong while saving the job.',
@@ -494,7 +495,7 @@ const SettingsJobs = () => {
               <Table.TH>{intl.formatMessage(messages.jobname)}</Table.TH>
               <Table.TH>{intl.formatMessage(messages.jobtype)}</Table.TH>
               <Table.TH>{intl.formatMessage(messages.nextexecution)}</Table.TH>
-              <Table.TH></Table.TH>
+              <Table.TH />
             </tr>
           </thead>
           <Table.TBody>
@@ -577,7 +578,7 @@ const SettingsJobs = () => {
               <Table.TH>{intl.formatMessage(messages.cachekeys)}</Table.TH>
               <Table.TH>{intl.formatMessage(messages.cacheksize)}</Table.TH>
               <Table.TH>{intl.formatMessage(messages.cachevsize)}</Table.TH>
-              <Table.TH></Table.TH>
+              <Table.TH />
             </tr>
           </thead>
           <Table.TBody>
@@ -611,91 +612,133 @@ const SettingsJobs = () => {
           </Table.TBody>
         </Table>
       </div>
-      <div>
-        <h3 className="heading">{intl.formatMessage(messages.dnsCache)}</h3>
-        <p className="description">
-          {intl.formatMessage(messages.dnsCacheDescription)}
-        </p>
-      </div>
-      <div className="section">
-        <Table>
-          <thead>
-            <tr>
-              <Table.TH>{intl.formatMessage(messages.dnscachename)}</Table.TH>
-              <Table.TH>
-                {intl.formatMessage(messages.dnscacheactiveaddress)}
-              </Table.TH>
-              <Table.TH>{intl.formatMessage(messages.dnscachehits)}</Table.TH>
-              <Table.TH>{intl.formatMessage(messages.dnscachemisses)}</Table.TH>
-              <Table.TH>{intl.formatMessage(messages.dnscacheage)}</Table.TH>
-              <Table.TH></Table.TH>
-            </tr>
-          </thead>
-          <Table.TBody>
-            {Object.entries(cacheData?.dnsCache.entries || {}).map(
-              ([hostname, data]) => (
-                <tr key={`cache-list-${hostname}`}>
-                  <Table.TD>{hostname}</Table.TD>
-                  <Table.TD>{data.activeAddress}</Table.TD>
-                  <Table.TD>{intl.formatNumber(data.hits)}</Table.TD>
-                  <Table.TD>{intl.formatNumber(data.misses)}</Table.TD>
-                  <Table.TD>{formatAge(data.age)}</Table.TD>
-                  <Table.TD alignText="right">
-                    <Button
-                      buttonType="danger"
-                      onClick={() => flushDnsCache(hostname)}
-                    >
-                      <TrashIcon />
-                      <span>{intl.formatMessage(messages.flushdnscache)}</span>
-                    </Button>
-                  </Table.TD>
-                </tr>
-              )
-            )}
-          </Table.TBody>
-        </Table>
-      </div>
-      <div>
-        <h3 className="heading">
-          {intl.formatMessage(messages.dnsCacheGlobalStats)}
-        </h3>
-        <p className="description">
-          {intl.formatMessage(messages.dnsCacheGlobalStatsDescription)}
-        </p>
-      </div>
-      <div className="section">
-        <Table>
-          <thead>
-            <tr>
-              {Object.entries(cacheData?.dnsCache.stats || {})
-                .filter(([statName]) => statName !== 'maxSize')
-                .map(([statName]) => (
-                  <Table.TH key={`dns-stat-header-${statName}`}>
-                    {messages[statName]
-                      ? intl.formatMessage(messages[statName])
-                      : statName}
+      {cacheData?.dnsCache != null && (
+        <>
+          <div>
+            <h3 className="heading">{intl.formatMessage(messages.dnsCache)}</h3>
+            <p className="description">
+              {intl.formatMessage(messages.dnsCacheDescription)}
+            </p>
+          </div>
+          <div className="section">
+            <Table>
+              <thead>
+                <tr>
+                  <Table.TH>
+                    {intl.formatMessage(messages.dnscachename)}
                   </Table.TH>
-                ))}
-            </tr>
-          </thead>
-          <Table.TBody>
-            <tr>
-              {Object.entries(cacheData?.dnsCache.stats || {})
-                .filter(([statName]) => statName !== 'maxSize')
-                .map(([statName, statValue]) => (
-                  <Table.TD key={`dns-stat-${statName}`}>
-                    {statName === 'hitRate'
-                      ? intl.formatNumber(statValue, {
-                          style: 'percent',
-                          maximumFractionDigits: 2,
-                        })
-                      : intl.formatNumber(statValue)}
-                  </Table.TD>
-                ))}
-            </tr>
-          </Table.TBody>
-        </Table>
-      </div>
+                  <Table.TH>
+                    {intl.formatMessage(messages.dnscacheactiveaddress)}
+                  </Table.TH>
+                  <Table.TH>
+                    {intl.formatMessage(messages.dnscachehits)}
+                  </Table.TH>
+                  <Table.TH>
+                    {intl.formatMessage(messages.dnscachemisses)}
+                  </Table.TH>
+                  <Table.TH>
+                    {intl.formatMessage(messages.dnscacheage)}
+                  </Table.TH>
+                  <Table.TH />
+                </tr>
+              </thead>
+              <Table.TBody>
+                {(() => {
+                  if (!cacheData) {
+                    return (
+                      <tr>
+                        <Table.TD colSpan={6} alignText="center">
+                          <LoadingSpinner />
+                        </Table.TD>
+                      </tr>
+                    );
+                  }
+
+                  const entries = Object.entries(
+                    cacheData.dnsCache?.entries ?? {}
+                  );
+
+                  if (entries.length === 0) {
+                    return (
+                      <tr>
+                        <Table.TD colSpan={6} alignText="center">
+                          {intl.formatMessage(messages.dnsNoCacheEntries)}
+                        </Table.TD>
+                      </tr>
+                    );
+                  }
+
+                  return entries.map(([hostname, data]) => (
+                    <tr key={`cache-list-${hostname}`}>
+                      <Table.TD>{hostname}</Table.TD>
+                      <Table.TD>{data.activeAddress}</Table.TD>
+                      <Table.TD>{intl.formatNumber(data.hits)}</Table.TD>
+                      <Table.TD>{intl.formatNumber(data.misses)}</Table.TD>
+                      <Table.TD>{formatAge(data.age)}</Table.TD>
+                      <Table.TD alignText="right">
+                        <Button
+                          buttonType="danger"
+                          onClick={() => flushDnsCache(hostname)}
+                        >
+                          <TrashIcon />
+                          <span>
+                            {intl.formatMessage(messages.flushdnscache)}
+                          </span>
+                        </Button>
+                      </Table.TD>
+                    </tr>
+                  ));
+                })()}
+              </Table.TBody>
+            </Table>
+          </div>
+          <div>
+            <h3 className="heading">
+              {intl.formatMessage(messages.dnsCacheGlobalStats)}
+            </h3>
+            <p className="description">
+              {intl.formatMessage(messages.dnsCacheGlobalStatsDescription)}
+            </p>
+          </div>
+          <div className="section">
+            {!cacheData ? (
+              <LoadingSpinner />
+            ) : (
+              <Table>
+                <thead>
+                  <tr>
+                    {Object.entries(cacheData.dnsCache?.stats ?? {})
+                      .filter(([statName]) => statName !== 'maxSize')
+                      .map(([statName]) => (
+                        <Table.TH key={`dns-stat-header-${statName}`}>
+                          {messages[statName]
+                            ? intl.formatMessage(messages[statName])
+                            : statName}
+                        </Table.TH>
+                      ))}
+                  </tr>
+                </thead>
+                <Table.TBody>
+                  <tr>
+                    {Object.entries(cacheData.dnsCache?.stats ?? {})
+                      .filter(([statName]) => statName !== 'maxSize')
+                      .map(([statName, statValue]) => (
+                        <Table.TD key={`dns-stat-${statName}`}>
+                          {statName === 'hitRate'
+                            ? intl.formatNumber(statValue, {
+                                style: 'percent',
+                                maximumFractionDigits: 2,
+                              })
+                            : intl.formatNumber(statValue)}
+                        </Table.TD>
+                      ))}
+                  </tr>
+                </Table.TBody>
+              </Table>
+            )}
+          </div>
+        </>
+      )}
       <div className="break-words">
         <h3 className="heading">{intl.formatMessage(messages.imagecache)}</h3>
         <p className="description">

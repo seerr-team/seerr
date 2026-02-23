@@ -1,15 +1,15 @@
 import type { User } from '@server/entity/User';
 import type { PaginatedResponse } from '@server/interfaces/api/common';
 
-export interface BlacklistItem {
+export interface BlocklistItem {
   tmdbId: number;
   mediaType: 'movie' | 'tv';
   title?: string;
   createdAt?: Date;
   user?: User;
-  blacklistedTags?: string;
+  blocklistedTags?: string;
 }
 
-export interface BlacklistResultsResponse extends PaginatedResponse {
-  results: BlacklistItem[];
+export interface BlocklistResultsResponse extends PaginatedResponse {
+  results: BlocklistItem[];
 }

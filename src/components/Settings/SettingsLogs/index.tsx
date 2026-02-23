@@ -314,7 +314,7 @@ const SettingsLogs = () => {
               <Table.TH>{intl.formatMessage(messages.level)}</Table.TH>
               <Table.TH>{intl.formatMessage(messages.label)}</Table.TH>
               <Table.TH>{intl.formatMessage(messages.message)}</Table.TH>
-              <Table.TH></Table.TH>
+              <Table.TH />
             </tr>
           </thead>
           <Table.TBody>

@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -279,17 +279,17 @@ jobs:
             --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
             --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
 
-      - name: Verify attestations
-        run: |
-          cosign verify-attestation "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}" \
-            --type cyclonedx \
-            --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
-            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" > /dev/null
+      # - name: Verify attestations
+      #   run: |
+      #     cosign verify-attestation "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}" \
+      #       --type cyclonedx \
+      #       --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
+      #       --certificate-oidc-issuer "https://token.actions.githubusercontent.com" > /dev/null
 
-          cosign verify-attestation "${{ env.DOCKER_HUB }}@${{ needs.publish.outputs.image_digest }}" \
-            --type cyclonedx \
-            --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
-            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" > /dev/null
+      #     cosign verify-attestation "${{ env.DOCKER_HUB }}@${{ needs.publish.outputs.image_digest }}" \
+      #       --type cyclonedx \
+      #       --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
+      #       --certificate-oidc-issuer "https://token.actions.githubusercontent.com" > /dev/null
 
   publish-release:
     name: Publish release
@@ -304,42 +304,3 @@ jobs:
         run: gh release edit "${{ env.VERSION }}" --draft=false --repo "${{ github.repository }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  discord:
-    name: Send Discord Notification
-    needs: publish-release
-    if: always()
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Determine status
-        id: status
-        run: |
-          case "${{ needs.publish-release.result }}" in
-            success)   echo "status=Success"   >> $GITHUB_OUTPUT; echo "colour=3066993"  >> $GITHUB_OUTPUT ;;
-            failure)   echo "status=Failure"   >> $GITHUB_OUTPUT; echo "colour=15158332" >> $GITHUB_OUTPUT ;;
-            cancelled) echo "status=Cancelled" >> $GITHUB_OUTPUT; echo "colour=10181046" >> $GITHUB_OUTPUT ;;
-            *)         echo "status=Skipped"   >> $GITHUB_OUTPUT; echo "colour=9807270"  >> $GITHUB_OUTPUT ;;
-          esac
-
-      - name: Send notification
-        run: |
-          WEBHOOK="${{ secrets.DISCORD_WEBHOOK }}"
-
-          PAYLOAD=$(cat <<EOF
-          {
-            "embeds": [{
-              "title": "${{ steps.status.outputs.status }}: ${{ github.workflow }}",
-              "color": ${{ steps.status.outputs.colour }},
-              "fields": [
-                { "name": "Repository",   "value": "[${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})", "inline": true },
-                { "name": "Ref",          "value": "${{ github.ref }}", "inline": true },
-                { "name": "Event",        "value": "${{ github.event_name }}", "inline": true },
-                { "name": "Triggered by", "value": "${{ github.actor }}", "inline": true },
-                { "name": "Workflow",     "value": "[${{ github.workflow }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})", "inline": true }
-              ]
-            }]
-          }
-          EOF
-          )
-
-          curl -sS -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK" || true

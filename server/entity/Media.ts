@@ -3,7 +3,7 @@ import SonarrAPI from '@server/api/servarr/sonarr';
 import { MediaStatus, MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
-import { Blacklist } from '@server/entity/Blacklist';
+import { Blocklist } from '@server/entity/Blocklist';
 import type { User } from '@server/entity/User';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { DownloadingItem } from '@server/lib/downloadtracker';
@@ -126,8 +126,8 @@ class Media {
   @OneToMany(() => Issue, (issue) => issue.media, { cascade: true })
   public issues: Issue[];
 
-  @OneToOne(() => Blacklist, (blacklist) => blacklist.media)
-  public blacklist: Promise<Blacklist>;
+  @OneToOne(() => Blocklist, (blocklist) => blocklist.media)
+  public blocklist: Promise<Blocklist>;
 
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
@@ -204,6 +204,19 @@ class Media {
 
   constructor(init?: Partial<Media>) {
     Object.assign(this, init);
+  }
+
+  public resetServiceData(): void {
+    this.serviceId = null;
+    this.serviceId4k = null;
+    this.externalServiceId = null;
+    this.externalServiceId4k = null;
+    this.externalServiceSlug = null;
+    this.externalServiceSlug4k = null;
+    this.ratingKey = null;
+    this.ratingKey4k = null;
+    this.jellyfinMediaId = null;
+    this.jellyfinMediaId4k = null;
   }
 
   @AfterLoad()

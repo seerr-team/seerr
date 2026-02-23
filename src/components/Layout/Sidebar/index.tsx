@@ -27,7 +27,7 @@ export const menuMessages = defineMessages('components.Layout.Sidebar', {
   browsemovies: 'Movies',
   browsetv: 'Series',
   requests: 'Requests',
-  blacklist: 'Blacklist',
+  blocklist: 'Blocklist',
   issues: 'Issues',
   users: 'Users',
   settings: 'Settings',
@@ -79,13 +79,13 @@ const SidebarLinks: SidebarLinkProps[] = [
     activeRegExp: /^\/requests/,
   },
   {
-    href: '/blacklist',
-    messagesKey: 'blacklist',
+    href: '/blocklist',
+    messagesKey: 'blocklist',
     svgIcon: <EyeSlashIcon className="mr-3 h-6 w-6" />,
-    activeRegExp: /^\/blacklist/,
+    activeRegExp: /^\/blocklist/,
     requiredPermission: [
-      Permission.MANAGE_BLACKLIST,
-      Permission.VIEW_BLACKLIST,
+      Permission.MANAGE_BLOCKLIST,
+      Permission.VIEW_BLOCKLIST,
     ],
     permissionType: 'or',
   },
@@ -163,7 +163,7 @@ const Sidebar = ({
               leaveTo="opacity-0"
             >
               <div className="fixed inset-0">
-                <div className="absolute inset-0 bg-gray-900 opacity-90"></div>
+                <div className="absolute inset-0 bg-gray-900 opacity-90" />
               </div>
             </Transition.Child>
             <Transition.Child

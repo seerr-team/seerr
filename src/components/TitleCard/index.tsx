@@ -1,5 +1,5 @@
 import Spinner from '@app/assets/spinner.svg';
-import BlacklistModal from '@app/components/BlacklistModal';
+import BlocklistModal from '@app/components/BlocklistModal';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import StatusBadgeMini from '@app/components/Common/StatusBadgeMini';
@@ -78,7 +78,7 @@ const TitleCard = ({
   const { addToast } = useToasts();
   const [toggleWatchlist, setToggleWatchlist] =
     useState<boolean>(!isAddedToWatchlist);
-  const [showBlacklistModal, setShowBlacklistModal] = useState(false);
+  const [showBlocklistModal, setShowBlocklistModal] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   // Just to get the year from the date
@@ -100,8 +100,8 @@ const TitleCard = ({
     []
   );
 
-  const closeBlacklistModal = useCallback(
-    () => setShowBlacklistModal(false),
+  const closeBlocklistModal = useCallback(
+    () => setShowBlocklistModal(false),
     []
   );
 
@@ -173,7 +173,7 @@ const TitleCard = ({
 
     if (topNode) {
       try {
-        await axios.post('/api/v1/blacklist', {
+        await axios.post('/api/v1/blocklist', {
           tmdbId: id,
           mediaType,
           title,
@@ -181,19 +181,19 @@ const TitleCard = ({
         });
         addToast(
           <span>
-            {intl.formatMessage(globalMessages.blacklistSuccess, {
+            {intl.formatMessage(globalMessages.blocklistSuccess, {
               title,
               strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
             })}
           </span>,
           { appearance: 'success', autoDismiss: true }
         );
-        setCurrentStatus(MediaStatus.BLACKLISTED);
+        setCurrentStatus(MediaStatus.BLOCKLISTED);
       } catch (e) {
         if (e?.response?.status === 412) {
           addToast(
             <span>
-              {intl.formatMessage(globalMessages.blacklistDuplicateError, {
+              {intl.formatMessage(globalMessages.blocklistDuplicateError, {
                 title,
                 strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
               })}
@@ -201,7 +201,7 @@ const TitleCard = ({
             { appearance: 'info', autoDismiss: true }
           );
         } else {
-          addToast(intl.formatMessage(globalMessages.blacklistError), {
+          addToast(intl.formatMessage(globalMessages.blocklistError), {
             appearance: 'error',
             autoDismiss: true,
           });
@@ -209,26 +209,26 @@ const TitleCard = ({
       }
 
       setIsUpdating(false);
-      closeBlacklistModal();
+      closeBlocklistModal();
     } else {
-      addToast(intl.formatMessage(globalMessages.blacklistError), {
+      addToast(intl.formatMessage(globalMessages.blocklistError), {
         appearance: 'error',
         autoDismiss: true,
       });
     }
   };
 
-  const onClickShowBlacklistBtn = async (): Promise<void> => {
+  const onClickShowBlocklistBtn = async (): Promise<void> => {
     setIsUpdating(true);
     const topNode = cardRef.current;
 
     if (topNode) {
-      const res = await axios.delete('/api/v1/blacklist/' + id);
+      const res = await axios.delete('/api/v1/blocklist/' + id);
 
       if (res.status === 204) {
         addToast(
           <span>
-            {intl.formatMessage(globalMessages.removeFromBlacklistSuccess, {
+            {intl.formatMessage(globalMessages.removeFromBlocklistSuccess, {
               title,
               strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
             })}
@@ -237,13 +237,13 @@ const TitleCard = ({
         );
         setCurrentStatus(MediaStatus.UNKNOWN);
       } else {
-        addToast(intl.formatMessage(globalMessages.blacklistError), {
+        addToast(intl.formatMessage(globalMessages.blocklistError), {
           appearance: 'error',
           autoDismiss: true,
         });
       }
     } else {
-      addToast(intl.formatMessage(globalMessages.blacklistError), {
+      addToast(intl.formatMessage(globalMessages.blocklistError), {
         appearance: 'error',
         autoDismiss: true,
       });
@@ -264,7 +264,7 @@ const TitleCard = ({
     { type: 'or' }
   );
 
-  const showHideButton = hasPermission([Permission.MANAGE_BLACKLIST], {
+  const showHideButton = hasPermission([Permission.MANAGE_BLOCKLIST], {
     type: 'or',
   });
 
@@ -288,7 +288,7 @@ const TitleCard = ({
         onUpdating={requestUpdating}
         onCancel={closeModal}
       />
-      <BlacklistModal
+      <BlocklistModal
         tmdbId={id}
         type={
           mediaType === 'movie'
@@ -297,8 +297,8 @@ const TitleCard = ({
               ? 'collection'
               : 'tv'
         }
-        show={showBlacklistModal}
-        onCancel={closeBlacklistModal}
+        show={showBlocklistModal}
+        onCancel={closeBlocklistModal}
         onComplete={onClickHideItemBtn}
         isUpdating={isUpdating}
       />
@@ -355,7 +355,7 @@ const TitleCard = ({
                     : intl.formatMessage(globalMessages.tvshow)}
               </div>
             </div>
-            {showDetail && currentStatus !== MediaStatus.BLACKLISTED && (
+            {showDetail && currentStatus !== MediaStatus.BLOCKLISTED && (
               <div className="flex flex-col gap-1">
                 {user?.userType !== UserType.PLEX &&
                   (toggleWatchlist ? (
@@ -385,7 +385,7 @@ const TitleCard = ({
                       buttonType={'ghost'}
                       className="z-40"
                       buttonSize={'sm'}
-                      onClick={() => setShowBlacklistModal(true)}
+                      onClick={() => setShowBlocklistModal(true)}
                     >
                       <EyeSlashIcon className={'h-3'} />
                     </Button>
@@ -394,17 +394,17 @@ const TitleCard = ({
             )}
             {showDetail &&
               showHideButton &&
-              currentStatus == MediaStatus.BLACKLISTED && (
+              currentStatus == MediaStatus.BLOCKLISTED && (
                 <Tooltip
                   content={intl.formatMessage(
-                    globalMessages.removefromBlacklist
+                    globalMessages.removefromBlocklist
                   )}
                 >
                   <Button
                     buttonType={'ghost'}
                     className="z-40"
                     buttonSize={'sm'}
-                    onClick={() => onClickShowBlacklistBtn()}
+                    onClick={() => onClickShowBlocklistBtn()}
                   >
                     <EyeIcon className={'h-3'} />
                   </Button>

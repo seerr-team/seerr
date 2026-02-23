@@ -206,7 +206,7 @@ const CoreApp: Omit<NextAppComponentType, 'origGetInitialProps'> = ({
                   <meta
                     name="viewport"
                     content="initial-scale=1, viewport-fit=cover, width=device-width"
-                  ></meta>
+                  />
                   <PWAHeader
                     applicationTitle={currentSettings.applicationTitle}
                   />
@@ -231,7 +231,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     applicationTitle: '',
     applicationUrl: '',
     hideAvailable: false,
-    hideBlacklisted: false,
+    hideBlocklisted: false,
     movie4kEnabled: false,
     series4kEnabled: false,
     localLogin: true,
