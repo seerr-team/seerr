@@ -1,4 +1,5 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
+import { MediaType } from '@server/constants/media';
 import type { NotificationAgentSlack } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -183,7 +184,11 @@ class SlackAgent
       ? payload.issue
         ? `${applicationUrl}/issues/${payload.issue.id}`
         : payload.media
-          ? `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`
+          ? `${applicationUrl}/${payload.media.mediaType}/${
+              payload.media.mediaType === MediaType.MUSIC
+                ? payload.media.mbId
+                : payload.media.tmdbId
+            }`
           : undefined
       : undefined;
 

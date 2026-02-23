@@ -360,7 +360,7 @@ const MusicDetails = ({ music }: MusicDetailsProps) => {
             data.artistBackdrop ||
             data.artistThumb ||
             data.posterPath ||
-            '/images/jellyseerr_poster_not_found_square.png'
+            '/images/seerr_poster_not_found_square.png'
           }
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           fill
@@ -411,8 +411,7 @@ const MusicDetails = ({ music }: MusicDetailsProps) => {
           <CachedImage
             type="music"
             src={
-              data?.posterPath ||
-              '/images/jellyseerr_poster_not_found_square.png'
+              data?.posterPath || '/images/seerr_poster_not_found_square.png'
             }
             alt=""
             sizes="100vw"
@@ -502,7 +501,7 @@ const MusicDetails = ({ music }: MusicDetailsProps) => {
                     {isUpdating ? (
                       <Spinner />
                     ) : (
-                      <StarIcon className=" text-amber-300" />
+                      <StarIcon className="text-amber-300" />
                     )}
                   </Button>
                 </Tooltip>
@@ -682,7 +681,7 @@ const MusicDetails = ({ music }: MusicDetailsProps) => {
                         data.artistThumb ??
                         data.artistBackdrop ??
                         data.posterPath ??
-                        '/images/jellyseerr_poster_not_found_square.png'
+                        '/images/seerr_poster_not_found_square.png'
                       }
                       alt=""
                       style={{

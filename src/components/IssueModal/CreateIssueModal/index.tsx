@@ -80,8 +80,8 @@ const CreateIssueModal = ({
     mediaType === 'music' && mbId
       ? `/api/v1/music/${mbId}`
       : tmdbId
-      ? `/api/v1/${mediaType}/${tmdbId}`
-      : null
+        ? `/api/v1/${mediaType}/${tmdbId}`
+        : null
   );
 
   if (!tmdbId && !mbId) {
@@ -139,8 +139,8 @@ const CreateIssueModal = ({
                     title: isMusic(data)
                       ? `${data.artist.name} - ${data.title}`
                       : isMovie(data)
-                      ? data.title
-                      : data.name,
+                        ? data.title
+                        : data.name,
                     strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
                   })}
                 </div>
@@ -182,8 +182,8 @@ const CreateIssueModal = ({
               (isMusic(data)
                 ? `${data.artist.name} - ${data.title}`
                 : isMovie(data)
-                ? data.title
-                : data.name)
+                  ? data.title
+                  : data.name)
             }
             cancelText={intl.formatMessage(globalMessages.close)}
             onOk={() => handleSubmit()}
@@ -193,10 +193,10 @@ const CreateIssueModal = ({
               data
                 ? isMusic(data)
                   ? data.posterPath ||
-                    '/images/jellyseerr_poster_not_found_square.png'
+                    '/images/seerr_poster_not_found_square.png'
                   : data.backdropPath
-                  ? `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data.backdropPath}`
-                  : '/images/jellyseerr_poster_not_found.png'
+                    ? `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data.backdropPath}`
+                    : '/images/seerr_poster_not_found.png'
                 : undefined
             }
           >

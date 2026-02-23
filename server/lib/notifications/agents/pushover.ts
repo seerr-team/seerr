@@ -1,5 +1,5 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
-import { MediaStatus } from '@server/constants/media';
+import { MediaStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import type { NotificationAgentPushover } from '@server/lib/settings';
@@ -158,7 +158,11 @@ class PushoverAgent
       ? payload.issue
         ? `${applicationUrl}/issues/${payload.issue.id}`
         : payload.media
-          ? `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`
+          ? `${applicationUrl}/${payload.media.mediaType}/${
+              payload.media.mediaType === MediaType.MUSIC
+                ? payload.media.mbId
+                : payload.media.tmdbId
+            }`
           : undefined
       : undefined;
     const url_title = url

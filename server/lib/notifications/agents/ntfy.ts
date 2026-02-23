@@ -1,4 +1,5 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
+import { MediaType } from '@server/constants/media';
 import type { NotificationAgentNtfy } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -78,7 +79,11 @@ class NtfyAgent
 
     let click;
     if (applicationUrl && payload.media) {
-      click = `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`;
+      click = `${applicationUrl}/${payload.media.mediaType}/${
+        payload.media.mediaType === MediaType.MUSIC
+          ? payload.media.mbId
+          : payload.media.tmdbId
+      }`;
     }
 
     return {

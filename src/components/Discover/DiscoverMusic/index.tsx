@@ -60,7 +60,7 @@ const DiscoverMusic = () => {
     '/api/v1/discover/music',
     {
       ...preparedFilters,
-      days: preparedFilters.days ?? '7',
+      days: preparedFilters.days ?? '14',
     }
   );
 
@@ -84,7 +84,7 @@ const DiscoverMusic = () => {
               id="sortBy"
               name="sortBy"
               className="rounded-r-only"
-              value={preparedFilters.sortBy}
+              value={preparedFilters.sortBy ?? SortOptions.ReleaseDateDesc}
               onChange={(e) => updateQueryParams('sortBy', e.target.value)}
             >
               <option value={SortOptions.ReleaseDateDesc}>

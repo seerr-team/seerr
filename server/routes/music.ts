@@ -71,7 +71,7 @@ musicRoutes.get('/:id', async (req, res, next) => {
       getRepository(MetadataArtist).find({
         where: { mbArtistId: In(trackArtistIds) },
       }),
-      artistId && isPerson
+      artistId
         ? musicbrainz
             .getArtistWikipediaExtract({
               artistMbid: artistId,

@@ -60,8 +60,8 @@ const IssueItem = ({ issue }: IssueItemProps) => {
     issue.media.mediaType === MediaType.MOVIE
       ? `/api/v1/movie/${issue.media.tmdbId}`
       : issue.media.mediaType === MediaType.TV
-      ? `/api/v1/tv/${issue.media.tmdbId}`
-      : `/api/v1/music/${issue.media.mbId}`;
+        ? `/api/v1/tv/${issue.media.tmdbId}`
+        : `/api/v1/music/${issue.media.mbId}`;
 
   const { data: title, error } = useSWR<
     MovieDetails | TvDetails | MusicDetails
@@ -139,7 +139,7 @@ const IssueItem = ({ issue }: IssueItemProps) => {
             type={isMusic(title) ? 'music' : 'tmdb'}
             src={
               isMusic(title)
-                ? title.artistBackdrop ?? title.artistThumb ?? ''
+                ? (title.artistBackdrop ?? title.artistThumb ?? '')
                 : `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${
                     title.backdropPath ?? ''
                   }`
@@ -164,8 +164,8 @@ const IssueItem = ({ issue }: IssueItemProps) => {
               issue.media.mediaType === MediaType.MOVIE
                 ? `/movie/${issue.media.tmdbId}`
                 : issue.media.mediaType === MediaType.TV
-                ? `/tv/${issue.media.tmdbId}`
-                : `/music/${issue.media.mbId}`
+                  ? `/tv/${issue.media.tmdbId}`
+                  : `/music/${issue.media.mbId}`
             }
             className="relative h-auto w-12 flex-shrink-0 scale-100 transform-gpu overflow-hidden rounded-md transition duration-300 hover:scale-105"
           >
@@ -173,11 +173,11 @@ const IssueItem = ({ issue }: IssueItemProps) => {
               type={isMusic(title) ? 'music' : 'tmdb'}
               src={
                 isMusic(title)
-                  ? title.posterPath ??
-                    '/images/jellyseerr_poster_not_found_square.png'
+                  ? (title.posterPath ??
+                    '/images/seerr_poster_not_found_square.png')
                   : title.posterPath
-                  ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
-                  : '/images/seerr_poster_not_found.png'
+                    ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
+                    : '/images/seerr_poster_not_found.png'
               }
               alt=""
               sizes="100vw"
@@ -200,16 +200,16 @@ const IssueItem = ({ issue }: IssueItemProps) => {
                 issue.media.mediaType === MediaType.MOVIE
                   ? `/movie/${issue.media.tmdbId}`
                   : issue.media.mediaType === MediaType.TV
-                  ? `/tv/${issue.media.tmdbId}`
-                  : `/music/${issue.media.mbId}`
+                    ? `/tv/${issue.media.tmdbId}`
+                    : `/music/${issue.media.mbId}`
               }
               className="mr-2 min-w-0 truncate text-lg font-bold text-white hover:underline xl:text-xl"
             >
               {isMusic(title)
                 ? `${title.artist.name} - ${title.title}`
                 : isMovie(title)
-                ? title.title
-                : title.name}
+                  ? title.title
+                  : title.name}
             </Link>
             {description && (
               <div className="mt-1 max-w-full">

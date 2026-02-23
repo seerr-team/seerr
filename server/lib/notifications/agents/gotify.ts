@@ -1,4 +1,5 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
+import { MediaType } from '@server/constants/media';
 import type { NotificationAgentGotify } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -100,7 +101,11 @@ class GotifyAgent
     }
 
     if (applicationUrl && payload.media) {
-      const actionUrl = `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`;
+      const actionUrl = `${applicationUrl}/${payload.media.mediaType}/${
+        payload.media.mediaType === MediaType.MUSIC
+          ? payload.media.mbId
+          : payload.media.tmdbId
+      }`;
       const displayUrl =
         actionUrl.length > 40 ? `${actionUrl.slice(0, 41)}...` : actionUrl;
       message += `\n\n**Open in ${applicationTitle}:** [${displayUrl}](${actionUrl})  `;

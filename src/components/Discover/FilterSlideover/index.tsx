@@ -50,6 +50,7 @@ const messages = defineMessages('components.Discover.FilterSlideover', {
   status: 'Status',
   certification: 'Content Rating',
   onlyWithCoverArt: 'Only show releases with cover art',
+  releaseType: 'Release Type',
 });
 
 type FilterSlideoverProps = {
@@ -72,6 +73,8 @@ const FilterSlideover = ({
   const [defaultSelectedGenres, setDefaultSelectedGenres] = useState<
     { label: string; value: string }[] | null
   >(null);
+  const [defaultSelectedReleaseTypes, setDefaultSelectedReleaseTypes] =
+    useState<{ label: string; value: string }[] | null>(null);
 
   const dateGte =
     type === 'movie' ? 'primaryReleaseDateGte' : 'firstAirDateGte';
@@ -91,9 +94,22 @@ const FilterSlideover = ({
     } else {
       setDefaultSelectedGenres(null);
     }
-  }, [type, currentFilters.genre]);
 
-  const musicGenreOptions = [
+    if (type === 'music' && currentFilters.releaseType) {
+      const releaseTypes = currentFilters.releaseType.split(',');
+
+      setDefaultSelectedReleaseTypes(
+        releaseTypes.map((rt) => ({
+          label: rt,
+          value: rt,
+        }))
+      );
+    } else {
+      setDefaultSelectedReleaseTypes(null);
+    }
+  }, [type, currentFilters.genre, currentFilters.releaseType]);
+
+  const musicReleaseTypeOptions = [
     { label: 'Album', value: 'Album' },
     { label: 'EP', value: 'EP' },
     { label: 'Single', value: 'Single' },
@@ -109,8 +125,47 @@ const FilterSlideover = ({
     { label: 'Other', value: 'Other' },
   ];
 
-  const loadMusicGenreOptions = async (inputValue: string) => {
-    return musicGenreOptions.filter((option) =>
+  const loadMusicReleaseTypeOptions = async (inputValue: string) => {
+    return musicReleaseTypeOptions.filter((option) =>
+      option.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+  };
+
+  const musicGenreTagOptions = [
+    { label: 'Rock', value: 'rock' },
+    { label: 'Pop', value: 'pop' },
+    { label: 'Electronic', value: 'electronic' },
+    { label: 'Hip Hop', value: 'hip hop' },
+    { label: 'Metal', value: 'metal' },
+    { label: 'Jazz', value: 'jazz' },
+    { label: 'Classical', value: 'classical' },
+    { label: 'Punk', value: 'punk' },
+    { label: 'Folk', value: 'folk' },
+    { label: 'Country', value: 'country' },
+    { label: 'Blues', value: 'blues' },
+    { label: 'R&B', value: 'r&b' },
+    { label: 'Soul', value: 'soul' },
+    { label: 'Reggae', value: 'reggae' },
+    { label: 'Latin', value: 'latin' },
+    { label: 'Indie', value: 'indie' },
+    { label: 'Alternative', value: 'alternative' },
+    { label: 'Experimental', value: 'experimental' },
+    { label: 'Ambient', value: 'ambient' },
+    { label: 'Dance', value: 'dance' },
+    { label: 'Funk', value: 'funk' },
+    { label: 'Singer-Songwriter', value: 'singer-songwriter' },
+    { label: 'World', value: 'world' },
+    { label: 'Industrial', value: 'industrial' },
+    { label: 'New Wave', value: 'new wave' },
+    { label: 'Soundtrack', value: 'soundtrack' },
+    { label: 'Heavy Metal', value: 'heavy metal' },
+    { label: 'Hard Rock', value: 'hard rock' },
+    { label: 'Progressive Rock', value: 'progressive rock' },
+    { label: 'Grunge', value: 'grunge' },
+  ];
+
+  const loadMusicGenreTagOptions = async (inputValue: string) => {
+    return musicGenreTagOptions.filter((option) =>
       option.label.toLowerCase().includes(inputValue.toLowerCase())
     );
   };
@@ -195,6 +250,27 @@ const FilterSlideover = ({
 
         <div className="mt-4 flex flex-col space-y-4">
           <span className="text-lg font-semibold">
+            {intl.formatMessage(messages.releaseType)}
+          </span>
+          <AsyncSelect
+            key={`music-release-type-select-${defaultSelectedReleaseTypes}`}
+            className="react-select-container"
+            classNamePrefix="react-select"
+            defaultValue={defaultSelectedReleaseTypes}
+            defaultOptions={musicReleaseTypeOptions}
+            isMulti
+            cacheOptions
+            loadOptions={loadMusicReleaseTypeOptions}
+            placeholder={intl.formatMessage(messages.releaseType)}
+            onChange={(value: MultiValue<{ label: string; value: string }>) => {
+              updateQueryParams(
+                'releaseType',
+                value?.length ? value.map((v) => v.value).join(',') : undefined
+              );
+            }}
+          />
+
+          <span className="text-lg font-semibold">
             {intl.formatMessage(messages.genres)}
           </span>
           <AsyncSelect
@@ -202,10 +278,10 @@ const FilterSlideover = ({
             className="react-select-container"
             classNamePrefix="react-select"
             defaultValue={defaultSelectedGenres}
-            defaultOptions={musicGenreOptions}
+            defaultOptions={musicGenreTagOptions}
             isMulti
             cacheOptions
-            loadOptions={loadMusicGenreOptions}
+            loadOptions={loadMusicGenreTagOptions}
             placeholder={intl.formatMessage(messages.genres)}
             onChange={(value: MultiValue<{ label: string; value: string }>) => {
               updateQueryParams(

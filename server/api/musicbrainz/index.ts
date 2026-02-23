@@ -15,8 +15,7 @@ class MusicBrainz extends ExternalAPI {
       {},
       {
         headers: {
-          'User-Agent':
-            'Jellyseerr/1.0.0 (https://github.com/Fallenbagel/jellyseerr)',
+          'User-Agent': 'Seerr/1.0.0 (https://github.com/seerr-team/seerr)',
           Accept: 'application/json',
         },
         nodeCache: cacheManager.getCache('musicbrainz').data,
@@ -104,6 +103,72 @@ class MusicBrainz extends ExternalAPI {
     }
   }
 
+  public async searchReleaseGroupsByTag({
+    tags,
+    primaryTypes,
+    releaseDateGte,
+    releaseDateLte,
+    limit = 25,
+    offset = 0,
+  }: {
+    tags: string[];
+    primaryTypes?: string[];
+    releaseDateGte?: string;
+    releaseDateLte?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ releaseGroups: MbAlbumDetails[]; totalCount: number }> {
+    try {
+      // Build MusicBrainz Lucene query
+      const tagQuery = tags.map((t) => `tag:"${t}"`).join(' OR ');
+      let query = `(${tagQuery})`;
+
+      if (primaryTypes && primaryTypes.length > 0) {
+        const typeQuery = primaryTypes
+          .map((t) => `primarytype:"${t}"`)
+          .join(' OR ');
+        query += ` AND (${typeQuery})`;
+      }
+
+      if (releaseDateGte || releaseDateLte) {
+        const from = releaseDateGte || '*';
+        const to = releaseDateLte || '*';
+        query += ` AND firstreleasedate:[${from} TO ${to}]`;
+      }
+
+      query += ' AND status:"official"';
+
+      const data = await this.get<{
+        created: string;
+        count: number;
+        offset: number;
+        'release-groups': MbAlbumDetails[];
+      }>(
+        '/release-group',
+        {
+          params: {
+            query,
+            fmt: 'json',
+            limit: limit.toString(),
+            offset: offset.toString(),
+          },
+        },
+        43200
+      );
+
+      return {
+        releaseGroups: data['release-groups'],
+        totalCount: data.count,
+      };
+    } catch (e) {
+      throw new Error(
+        `[MusicBrainz] Failed to search release groups by tag: ${
+          e instanceof Error ? e.message : 'Unknown error'
+        }`
+      );
+    }
+  }
+
   public async getArtistWikipediaExtract({
     artistMbid,
     language = 'en',
@@ -128,8 +193,7 @@ class MusicBrainz extends ExternalAPI {
         headers: {
           Accept: 'application/json',
           'Accept-Language': language,
-          'User-Agent':
-            'Jellyseerr/1.0.0 (https://github.com/Fallenbagel/jellyseerr)',
+          'User-Agent': 'Seerr/1.0.0 (https://github.com/seerr-team/seerr)',
         },
       });
 

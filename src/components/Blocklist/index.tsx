@@ -287,8 +287,8 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
     item.mediaType === 'music'
       ? `/api/v1/music/${item.mbId}`
       : item.mediaType === 'movie'
-      ? `/api/v1/movie/${item.tmdbId}`
-      : `/api/v1/tv/${item.tmdbId}`;
+        ? `/api/v1/movie/${item.tmdbId}`
+        : `/api/v1/tv/${item.tmdbId}`;
 
   const { data: title, error } = useSWR<
     MovieDetails | TvDetails | MusicDetails
@@ -369,8 +369,8 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
               item.mediaType === 'music'
                 ? `/music/${item.mbId}`
                 : item.mediaType === 'movie'
-                ? `/movie/${item.tmdbId}`
-                : `/tv/${item.tmdbId}`
+                  ? `/movie/${item.tmdbId}`
+                  : `/tv/${item.tmdbId}`
             }
             className="relative h-auto w-12 flex-shrink-0 scale-100 transform-gpu overflow-hidden rounded-md transition duration-300 hover:scale-105"
           >
@@ -380,11 +380,11 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
                 title
                   ? isMusic(title)
                     ? title.posterPath ||
-                      '/images/jellyseerr_poster_not_found_square.png'
+                      '/images/seerr_poster_not_found_square.png'
                     : title.posterPath
-                    ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
-                    : '/images/jellyseerr_poster_not_found.png'
-                  : '/images/jellyseerr_poster_not_found.png'
+                      ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
+                      : '/images/seerr_poster_not_found.png'
+                  : '/images/seerr_poster_not_found.png'
               }
               alt=""
               sizes="100vw"
@@ -399,16 +399,16 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
                 (isMusic(title)
                   ? title.releaseDate?.slice(0, 4)
                   : isMovie(title)
-                  ? title.releaseDate?.slice(0, 4)
-                  : title.firstAirDate?.slice(0, 4))}
+                    ? title.releaseDate?.slice(0, 4)
+                    : title.firstAirDate?.slice(0, 4))}
             </div>
             <Link
               href={
                 item.mediaType === 'music'
                   ? `/music/${item.mbId}`
                   : item.mediaType === 'movie'
-                  ? `/movie/${item.tmdbId}`
-                  : `/tv/${item.tmdbId}`
+                    ? `/movie/${item.tmdbId}`
+                    : `/tv/${item.tmdbId}`
               }
             >
               <span className="mr-2 min-w-0 truncate text-lg font-bold text-white hover:underline xl:text-xl">
@@ -416,8 +416,8 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
                   (isMusic(title)
                     ? `${title.artist.name} - ${title.title}`
                     : isMovie(title)
-                    ? title.title
-                    : title.name)}
+                      ? title.title
+                      : title.name)}
               </span>
             </Link>
           </div>
@@ -511,8 +511,8 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
                   (isMusic(title)
                     ? `${title.artist.name} - ${title.title}`
                     : isMovie(title)
-                    ? title.title
-                    : title.name)
+                      ? title.title
+                      : title.name)
               )
             }
             confirmText={intl.formatMessage(

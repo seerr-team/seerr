@@ -171,7 +171,7 @@ class Media {
   })
   public mediaAddedAt: Date;
 
-  @Column({ nullable: false, type: 'int', default: 0 })
+  @Column({ nullable: true, type: 'int', default: 0 })
   public serviceId?: number | null;
 
   @Column({ nullable: true, type: 'int' })

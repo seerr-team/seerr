@@ -1,4 +1,5 @@
 import ListenBrainzAPI from '@server/api/listenbrainz';
+import MusicBrainz from '@server/api/musicbrainz';
 import PlexTvAPI from '@server/api/plextv';
 import TheAudioDb from '@server/api/theaudiodb';
 import type { SortOptions } from '@server/api/themoviedb';
@@ -869,9 +870,108 @@ discoverRoutes.get('/music', async (req, res, next) => {
     const sortBy = (req.query.sortBy as string) || 'release_date.desc';
     const days = Number(req.query.days) || 30;
     const genreFilter = req.query.genre as string | undefined;
+    const releaseTypeFilter = req.query.releaseType as string | undefined;
     const showOnlyWithCovers = req.query.onlyWithCoverArt === 'true';
     const releaseDateGte = req.query.releaseDateGte as string | undefined;
     const releaseDateLte = req.query.releaseDateLte as string | undefined;
+
+    // When a genre filter is active, use MusicBrainz tag search for
+    // comprehensive genre browsing instead of filtering within the limited
+    // ListenBrainz fresh releases window.
+    if (genreFilter) {
+      const musicbrainz = new MusicBrainz();
+      const tags = genreFilter.split(',').map((g) => g.trim());
+
+      const primaryTypes = releaseTypeFilter
+        ? releaseTypeFilter.split(',')
+        : undefined;
+
+      const { releaseGroups, totalCount } =
+        await musicbrainz.searchReleaseGroupsByTag({
+          tags,
+          primaryTypes,
+          releaseDateGte,
+          releaseDateLte,
+          limit: pageSize,
+          offset: (page - 1) * pageSize,
+        });
+
+      // Get MBIDs for metadata lookup
+      const mbIds = releaseGroups.map((rg) => rg.id).filter(Boolean);
+
+      // Look up cached cover art from MetadataAlbum table
+      const existingMetadata =
+        mbIds.length > 0
+          ? await getRepository(MetadataAlbum).find({
+              where: { mbAlbumId: In(mbIds) },
+              select: ['mbAlbumId', 'caaUrl'],
+              cache: true,
+            })
+          : [];
+
+      const metadataMap = new Map(
+        existingMetadata.map((meta) => [meta.mbAlbumId, meta])
+      );
+
+      // Look up media info for request status
+      const media =
+        mbIds.length > 0 ? await Media.getRelatedMedia(req.user, mbIds) : [];
+      const mediaMap = new Map(media.map((m) => [m.mbId, m]));
+
+      // Map MusicBrainz results to response format
+      const results = releaseGroups.map((rg) => {
+        const metadata = metadataMap.get(rg.id);
+        const hasCoverArt = !!metadata?.caaUrl;
+
+        return {
+          id: rg.id,
+          mediaType: 'album',
+          'primary-type': rg['primary-type'] || 'Album',
+          secondaryType: rg['secondary-types']?.[0],
+          title: rg.title,
+          'artist-credit':
+            rg['artist-credit']?.map((ac) => ({
+              name: ac.name,
+            })) || [],
+          artistId: rg['artist-credit']?.[0]?.artist?.id,
+          mediaInfo: mediaMap.get(rg.id),
+          releaseDate: rg['first-release-date'] || '',
+          posterPath: metadata?.caaUrl || null,
+          needsCoverArt: !hasCoverArt,
+        };
+      });
+
+      const [field, direction] = sortBy.split('.');
+      results.sort((a, b) => {
+        const multiplier = direction === 'asc' ? 1 : -1;
+        switch (field) {
+          case 'release_date': {
+            const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
+            const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
+            return (dateA - dateB) * multiplier;
+          }
+          case 'title': {
+            return (a.title ?? '').localeCompare(b.title ?? '') * multiplier;
+          }
+          case 'artist': {
+            const artistA = a['artist-credit']?.[0]?.name ?? '';
+            const artistB = b['artist-credit']?.[0]?.name ?? '';
+            return artistA.localeCompare(artistB) * multiplier;
+          }
+          default:
+            return 0;
+        }
+      });
+
+      const totalPages = Math.ceil(totalCount / pageSize);
+
+      return res.json({
+        page,
+        totalPages,
+        totalResults: totalCount,
+        results,
+      });
+    }
 
     const [field, direction] = sortBy.split('.');
     let apiSortField = 'release_date';
@@ -885,27 +985,34 @@ discoverRoutes.get('/music', async (req, res, next) => {
     const freshReleasesData = await listenbrainz.getFreshReleases({
       days,
       sort: apiSortField,
+      count: 500,
     });
 
     let filteredReleases = freshReleasesData.payload.releases;
 
+    if (releaseTypeFilter) {
+      const types = releaseTypeFilter.split(',');
+      filteredReleases = filteredReleases.filter((release) => {
+        const primaryType = release.release_group_primary_type || 'Album';
+        const secondaryType = release.release_group_secondary_type;
+        return (
+          types.includes(primaryType) ||
+          (secondaryType && types.includes(secondaryType))
+        );
+      });
+    }
+
     if (genreFilter) {
-      const genres = genreFilter.split(',');
-      filteredReleases = freshReleasesData.payload.releases.filter(
-        (release) => {
-          let releaseType;
-
-          if (release.release_group_secondary_type) {
-            releaseType = release.release_group_secondary_type;
-          } else if (release.release_tags && release.release_tags.length > 0) {
-            releaseType = release.release_tags[0];
-          } else {
-            releaseType = release.release_group_primary_type || 'Album';
-          }
-
-          return genres.includes(releaseType);
+      const genres = genreFilter.split(',').map((g) => g.toLowerCase());
+      filteredReleases = filteredReleases.filter((release) => {
+        if (!release.release_tags || release.release_tags.length === 0) {
+          return false;
         }
-      );
+        const lowerTags = release.release_tags.map((t) => t.toLowerCase());
+        return genres.some((genre) =>
+          lowerTags.some((tag) => tag.includes(genre) || genre.includes(tag))
+        );
+      });
     }
 
     if (releaseDateGte || releaseDateLte) {

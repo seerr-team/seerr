@@ -118,6 +118,7 @@ export const QueryFilterOptions = z.object({
   certificationCountry: z.string().optional(),
   certificationMode: z.enum(['exact', 'range']).optional(),
   onlyWithCoverArt: z.string().optional(),
+  releaseType: z.string().optional(),
   releaseDateGte: z.string().optional(),
   releaseDateLte: z.string().optional(),
   days: z.string().optional(),
@@ -236,6 +237,10 @@ export const prepareFilterValues = (
     filterValues.onlyWithCoverArt = values.onlyWithCoverArt;
   }
 
+  if (values.releaseType) {
+    filterValues.releaseType = values.releaseType;
+  }
+
   if (values.releaseDateGte) {
     filterValues.releaseDateGte = values.releaseDateGte;
   }
@@ -250,6 +255,8 @@ export const prepareFilterValues = (
 export const countActiveFilters = (filterValues: FilterOptions): number => {
   let totalCount = 0;
   const clonedFilters = Object.assign({}, filterValues);
+  delete clonedFilters.sortBy;
+  delete clonedFilters.days;
 
   if (clonedFilters.voteAverageGte || filterValues.voteAverageLte) {
     totalCount += 1;

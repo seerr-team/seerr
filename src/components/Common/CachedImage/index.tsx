@@ -36,17 +36,17 @@ const CachedImage = ({ src, type, ...props }: CachedImageProps) => {
             '/imageproxy/tvdb/'
           )
         : src;
-    fallbackImage = '/images/jellyseerr_poster_not_found.png';
+    fallbackImage = '/images/seerr_poster_not_found.png';
   } else if (type === 'music') {
     // Cover Art Archive and TheAudioDB images
     imageUrl = src.startsWith('https://archive.org/')
       ? src.replace(/^https:\/\/archive\.org\//, '/caaproxy/')
       : currentSettings.cacheImages &&
-        !src.startsWith('/') &&
-        src.startsWith('https://r2.theaudiodb.com/')
-      ? src.replace(/^https:\/\/r2\.theaudiodb\.com\//, '/tadbproxy/')
-      : src;
-    fallbackImage = '/images/jellyseerr_poster_not_found_square.png';
+          !src.startsWith('/') &&
+          src.startsWith('https://r2.theaudiodb.com/')
+        ? src.replace(/^https:\/\/r2\.theaudiodb\.com\//, '/tadbproxy/')
+        : src;
+    fallbackImage = '/images/seerr_poster_not_found_square.png';
   } else if (type === 'avatar') {
     imageUrl = src;
     fallbackImage = '/images/user_placeholder.png';

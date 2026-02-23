@@ -257,8 +257,8 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
     request.type === 'movie'
       ? `/api/v1/movie/${request.media.tmdbId}`
       : request.type === 'tv'
-      ? `/api/v1/tv/${request.media.tmdbId}`
-      : `/api/v1/music/${request.media.mbId}`;
+        ? `/api/v1/tv/${request.media.tmdbId}`
+        : `/api/v1/music/${request.media.mbId}`;
 
   const { data: titleData, error } = useSWR<
     MovieDetails | TvDetails | MusicDetails
@@ -352,8 +352,8 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
             } as MusicDetails,
           ]
         : titleData
-        ? [titleData]
-        : []
+          ? [titleData]
+          : []
     )[0] ?? titleData;
 
   if (!titleData && !error) {
@@ -399,13 +399,13 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                 ? title.artistBackdrop
                   ? title.artistBackdrop
                   : title.artistThumb
-                  ? title.artistThumb
-                  : title.posterPath
-                  ? title.posterPath
-                  : '/images/jellyseerr_poster_not_found_square.png'
+                    ? title.artistThumb
+                    : title.posterPath
+                      ? title.posterPath
+                      : '/images/seerr_poster_not_found_square.png'
                 : hasBackdropPath(title) && title.backdropPath
-                ? `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`
-                : '/images/jellyseerr_poster_not_found.png'
+                  ? `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`
+                  : '/images/seerr_poster_not_found.png'
             }
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             fill
@@ -426,8 +426,8 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
             {(isMovie(title)
               ? title.releaseDate
               : isAlbum(title)
-              ? title.releaseDate
-              : title.firstAirDate
+                ? title.releaseDate
+                : title.firstAirDate
             )?.slice(0, 4)}
             {isAlbum(title) && (
               <>
@@ -441,16 +441,16 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
               request.type === 'movie'
                 ? `/movie/${requestData.media.tmdbId}`
                 : request.type === 'tv'
-                ? `/tv/${requestData.media.tmdbId}`
-                : `/music/${requestData.media.mbId}`
+                  ? `/tv/${requestData.media.tmdbId}`
+                  : `/music/${requestData.media.mbId}`
             }
             className="overflow-hidden overflow-ellipsis whitespace-nowrap text-base font-bold text-white hover:underline sm:text-lg"
           >
             {isMovie(title)
               ? title.title
               : isAlbum(title)
-              ? title.title
-              : title.name}
+                ? title.title
+                : title.name}
           </Link>
           {hasPermission(
             [Permission.MANAGE_REQUESTS, Permission.REQUEST_VIEW],
@@ -544,8 +544,8 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                   isMovie(title)
                     ? title.title
                     : isAlbum(title)
-                    ? title.title
-                    : (title as TvDetails).name
+                      ? title.title
+                      : (title as TvDetails).name
                 }
                 inProgress={
                   (
@@ -696,8 +696,8 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
             request.type === 'movie'
               ? `/movie/${requestData.media.tmdbId}`
               : request.type === 'tv'
-              ? `/tv/${requestData.media.tmdbId}`
-              : `/music/${requestData.media.mbId}`
+                ? `/tv/${requestData.media.tmdbId}`
+                : `/music/${requestData.media.mbId}`
           }
           className={`w-20 flex-shrink-0 scale-100 transform-gpu cursor-pointer overflow-hidden rounded-md shadow-sm transition duration-300 hover:scale-105 hover:shadow-md sm:w-28`}
         >
@@ -712,10 +712,10 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                 request.type === 'music' && isAlbum(title)
                   ? title.posterPath
                     ? title.posterPath
-                    : '/images/jellyseerr_poster_not_found_square.png'
+                    : '/images/seerr_poster_not_found_square.png'
                   : title.posterPath
-                  ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
-                  : '/images/seerr_poster_not_found.png'
+                    ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
+                    : '/images/seerr_poster_not_found.png'
               }
               alt=""
               sizes="100vw"

@@ -194,14 +194,14 @@ const IssueDetails = () => {
   const title = isMusic(data)
     ? `${data.artist.name} - ${data.title}`
     : isMovie(data)
-    ? data.title
-    : data.name;
+      ? data.title
+      : data.name;
 
   const releaseYear = isMusic(data)
     ? data.releaseDate
     : isMovie(data)
-    ? data.releaseDate
-    : data.firstAirDate;
+      ? data.releaseDate
+      : data.firstAirDate;
 
   return (
     <div
@@ -260,11 +260,10 @@ const IssueDetails = () => {
             type={isMusic(data) ? 'music' : 'tmdb'}
             src={
               isMusic(data)
-                ? data.posterPath ||
-                  '/images/jellyseerr_poster_not_found_square.png'
+                ? data.posterPath || '/images/seerr_poster_not_found_square.png'
                 : data.posterPath
-                ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.posterPath}`
-                : '/images/seerr_poster_not_found.png'
+                  ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.posterPath}`
+                  : '/images/seerr_poster_not_found.png'
             }
             alt=""
             sizes="100vw"
@@ -293,8 +292,8 @@ const IssueDetails = () => {
                 issueData.media.mediaType === MediaType.MOVIE
                   ? 'movie'
                   : issueData.media.mediaType === MediaType.TV
-                  ? 'tv'
-                  : 'music'
+                    ? 'tv'
+                    : 'music'
               }/${
                 issueData.media.mediaType === MediaType.MUSIC
                   ? isMusic(data)

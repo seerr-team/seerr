@@ -108,8 +108,8 @@ const RequestItemError = ({
                   ? requestData?.type === 'movie'
                     ? globalMessages.movie
                     : requestData?.type === 'tv'
-                    ? globalMessages.tvshow
-                    : globalMessages.music
+                      ? globalMessages.tvshow
+                      : globalMessages.music
                   : globalMessages.request
               ),
             })}
@@ -340,8 +340,8 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
     request.type === 'music'
       ? `/api/v1/music/${request.media.mbId}`
       : request.type === 'movie'
-      ? `/api/v1/movie/${request.media.tmdbId}`
-      : `/api/v1/tv/${request.media.tmdbId}`;
+        ? `/api/v1/movie/${request.media.tmdbId}`
+        : `/api/v1/tv/${request.media.tmdbId}`;
   const { data: titleData, error } = useSWR<
     MovieDetails | TvDetails | MusicDetails
   >(inView ? url : null);
@@ -427,8 +427,8 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
             } as MusicDetails,
           ]
         : titleData
-        ? [titleData]
-        : []
+          ? [titleData]
+          : []
     )[0] ?? titleData;
 
   if (!title && !error) {
@@ -473,13 +473,13 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                 ? title.artistBackdrop
                   ? title.artistBackdrop
                   : title.artistThumb
-                  ? title.artistThumb
-                  : title.posterPath
-                  ? title.posterPath
-                  : '/images/jellyseerr_poster_not_found_square.png'
+                    ? title.artistThumb
+                    : title.posterPath
+                      ? title.posterPath
+                      : '/images/seerr_poster_not_found_square.png'
                 : title.backdropPath
-                ? `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`
-                : '/images/jellyseerr_poster_not_found.png'
+                  ? `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`
+                  : '/images/seerr_poster_not_found.png'
             }
             alt=""
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -500,8 +500,8 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                 requestData.type === 'music'
                   ? `/music/${requestData.media.mbId}`
                   : requestData.type === 'movie'
-                  ? `/movie/${requestData.media.tmdbId}`
-                  : `/tv/${requestData.media.tmdbId}`
+                    ? `/movie/${requestData.media.tmdbId}`
+                    : `/tv/${requestData.media.tmdbId}`
               }
               className="relative h-auto w-12 flex-shrink-0 scale-100 transform-gpu overflow-hidden rounded-md transition duration-300 hover:scale-105"
             >
@@ -511,10 +511,10 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                   isMusic(title)
                     ? title.posterPath
                       ? title.posterPath
-                      : '/images/jellyseerr_poster_not_found_square.png'
+                      : '/images/seerr_poster_not_found_square.png'
                     : title.posterPath
-                    ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
-                    : '/images/seerr_poster_not_found.png'
+                      ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
+                      : '/images/seerr_poster_not_found.png'
                 }
                 alt=""
                 sizes="100vw"
@@ -528,8 +528,8 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                 {(isMusic(title)
                   ? title.releaseDate
                   : isMovie(title)
-                  ? title.releaseDate
-                  : title.firstAirDate
+                    ? title.releaseDate
+                    : title.firstAirDate
                 )?.slice(0, 4)}
               </div>
               <Link
@@ -537,16 +537,16 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                   requestData.type === 'music'
                     ? `/music/${requestData.media.mbId}`
                     : requestData.type === 'movie'
-                    ? `/movie/${requestData.media.tmdbId}`
-                    : `/tv/${requestData.media.tmdbId}`
+                      ? `/movie/${requestData.media.tmdbId}`
+                      : `/tv/${requestData.media.tmdbId}`
                 }
                 className="mr-2 min-w-0 truncate text-lg font-bold text-white hover:underline xl:text-xl"
               >
                 {isMusic(title)
                   ? `${title.artist.name} - ${title.title}`
                   : isMovie(title)
-                  ? title.title
-                  : title.name}
+                    ? title.title
+                    : title.name}
               </Link>
               {!isMovie(title) &&
                 !isMusic(title) &&
@@ -618,8 +618,8 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                     isMovie(title)
                       ? title.title
                       : isMusic(title)
-                      ? title.title
-                      : title.name
+                        ? title.title
+                        : title.name
                   }
                   inProgress={
                     (
@@ -802,8 +802,8 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                           request.type === 'music'
                             ? 'Lidarr'
                             : request.type === 'movie'
-                            ? 'Radarr'
-                            : 'Sonarr',
+                              ? 'Radarr'
+                              : 'Sonarr',
                       })}
                     </span>
                   </ConfirmButton>

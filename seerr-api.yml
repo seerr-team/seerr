@@ -4937,7 +4937,7 @@ paths:
     get:
       summary: Returns blocklisted items
       description: |
-        **DEPRECATED**: Use `/blocklist` instead. This endpoint will be deprecated soon.
+        **DEPRECATED**: Redirects to `/blocklist`. Use `/blocklist` instead. This endpoint will be removed after 2026-06-01.
       deprecated: true
       tags:
         - blocklist
@@ -5001,7 +5001,7 @@ paths:
     post:
       summary: Add media to blocklist
       description: |
-        **DEPRECATED**: Use `/blocklist` instead. This endpoint will be deprecated soon.
+        **DEPRECATED**: Redirects to `/blocklist`. Use `/blocklist` instead. This endpoint will be removed after 2026-06-01.
       deprecated: true
       tags:
         - blocklist
@@ -5020,7 +5020,7 @@ paths:
     get:
       summary: Get media from blocklist
       description: |
-        **DEPRECATED**: Use `/blocklist/{tmdbId}` instead. This endpoint will be deprecated soon.
+        **DEPRECATED**: Redirects to `/blocklist/{tmdbId}`. Use `/blocklist/{tmdbId}` instead. This endpoint will be removed after 2026-06-01.
       deprecated: true
       tags:
         - blocklist
@@ -5038,7 +5038,7 @@ paths:
     delete:
       summary: Remove media from blocklist
       description: |
-        **DEPRECATED**: Use `/blocklist/{tmdbId}` instead. This endpoint will be deprecated soon.
+        **DEPRECATED**: Redirects to `/blocklist/{tmdbId}`. Use `/blocklist/{tmdbId}` instead. This endpoint will be removed after 2026-06-01.
       deprecated: true
       tags:
         - blocklist
