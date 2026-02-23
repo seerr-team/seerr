@@ -665,6 +665,10 @@ components:
         activeAnimeDirectory:
           type: string
           nullable: true
+        monitorNewItems:
+          type: string
+          enum: [all, none]
+          example: all
         is4k:
           type: boolean
           example: false

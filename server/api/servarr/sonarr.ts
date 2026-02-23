@@ -75,7 +75,9 @@ export interface SonarrSeries {
     ignoreEpisodesWithFiles?: boolean;
     ignoreEpisodesWithoutFiles?: boolean;
     searchForMissingEpisodes?: boolean;
+    monitor?: 'firstSeason' | 'latestSeason' | 'none';
   };
+  monitorNewItems?: string;
   statistics: {
     seasonCount: number;
     episodeFileCount: number;
@@ -99,6 +101,7 @@ export interface AddSeriesOptions {
   seriesType: SonarrSeries['seriesType'];
   monitored?: boolean;
   searchNow?: boolean;
+  monitorNewItems?: string;
 }
 
 export interface LanguageProfile {
@@ -269,6 +272,7 @@ class SonarrAPI extends ServarrBase<{
           tags: options.tags,
           seasonFolder: options.seasonFolder,
           monitored: options.monitored,
+          monitorNewItems: options.monitorNewItems,
           rootFolderPath: options.rootFolderPath,
           seriesType: options.seriesType,
           addOptions: {

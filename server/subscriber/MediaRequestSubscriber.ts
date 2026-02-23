@@ -694,6 +694,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           tags,
           monitored: true,
           searchNow: !sonarrSettings.preventSearch,
+          monitorNewItems: sonarrSettings.monitorNewItems,
         };
 
         // Run entity asynchronously so we don't wait for it on the UI side
