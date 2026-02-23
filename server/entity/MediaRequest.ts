@@ -1272,6 +1272,7 @@ export class MediaRequest {
           tags,
           monitored: true,
           searchNow: !sonarrSettings.preventSearch,
+          monitorNewItems: sonarrSettings.monitorNewItems,
         };
 
         // Run this asynchronously so we don't wait for it on the UI side

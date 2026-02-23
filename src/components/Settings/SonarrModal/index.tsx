@@ -76,6 +76,9 @@ const messages = defineMessages('components.Settings.SonarrModal', {
   animeTags: 'Anime Tags',
   notagoptions: 'No tags.',
   selecttags: 'Select tags',
+  monitorNewItems: 'Monitor New Seasons',
+  monitorNewItemsAll: 'All Seasons',
+  monitorNewItemsNone: 'No Seasons',
 });
 
 interface SonarrModalProps {
@@ -252,6 +255,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
           syncEnabled: sonarr?.syncEnabled ?? false,
           enableSearch: !sonarr?.preventSearch,
           tagRequests: sonarr?.tagRequests ?? false,
+          monitorNewItems: sonarr?.monitorNewItems ?? 'all',
         }}
         validationSchema={SonarrSettingsSchema}
         onSubmit={async (values) => {
@@ -295,6 +299,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
               syncEnabled: values.syncEnabled,
               preventSearch: !values.enableSearch,
               tagRequests: values.tagRequests,
+              monitorNewItems: values.monitorNewItems,
             };
             if (!sonarr) {
               const res = await fetch('/api/v1/settings/sonarr', {
@@ -963,6 +968,28 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                         intl.formatMessage(messages.notagoptions)
                       }
                     />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="monitorNewItems" className="text-label">
+                    {intl.formatMessage(messages.monitorNewItems)}
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <Field
+                        as="select"
+                        id="monitorNewItems"
+                        name="monitorNewItems"
+                        disabled={!isValidated || isTesting}
+                      >
+                        <option value="all">
+                          {intl.formatMessage(messages.monitorNewItemsAll)}
+                        </option>
+                        <option value="none">
+                          {intl.formatMessage(messages.monitorNewItemsNone)}
+                        </option>
+                      </Field>
+                    </div>
                   </div>
                 </div>
                 <div className="form-row">
