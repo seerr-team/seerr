@@ -12,8 +12,8 @@ import { UserContext } from '@app/context/UserContext';
 import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
 import '@app/styles/globals.css';
-import { inter } from '@app/utils/fonts';
 import { polyfillIntl } from '@app/utils/polyfillIntl';
+import '@fontsource-variable/inter';
 import { MediaServerType } from '@server/constants/server';
 import type { PublicSettingsResponse } from '@server/interfaces/api/settingsInterfaces';
 import type { AvailableLocale } from '@server/types/languages';
@@ -184,45 +184,43 @@ const CoreApp: Omit<NextAppComponentType, 'origGetInitialProps'> = ({
   }
 
   return (
-    <div className={inter.variable}>
-      <SWRConfig
-        value={{
-          fetcher: (url) => axios.get(url).then((res) => res.data),
-          fallback: {
-            '/api/v1/auth/me': user,
-          },
-        }}
-      >
-        <LanguageContext.Provider value={{ locale: currentLocale, setLocale }}>
-          <IntlProvider
-            locale={currentLocale}
-            defaultLocale="en"
-            messages={loadedMessages}
-          >
-            <LoadingBar />
-            <SettingsProvider currentSettings={currentSettings}>
-              <InteractionProvider>
-                <ToastProvider components={{ Toast, ToastContainer }}>
-                  <Head>
-                    <title>{currentSettings.applicationTitle}</title>
-                    <meta
-                      name="viewport"
-                      content="initial-scale=1, viewport-fit=cover, width=device-width"
-                    ></meta>
-                    <PWAHeader
-                      applicationTitle={currentSettings.applicationTitle}
-                    />
-                  </Head>
-                  <StatusChecker />
-                  <ServiceWorkerSetup />
-                  <UserContext initialUser={user}>{component}</UserContext>
-                </ToastProvider>
-              </InteractionProvider>
-            </SettingsProvider>
-          </IntlProvider>
-        </LanguageContext.Provider>
-      </SWRConfig>
-    </div>
+    <SWRConfig
+      value={{
+        fetcher: (url) => axios.get(url).then((res) => res.data),
+        fallback: {
+          '/api/v1/auth/me': user,
+        },
+      }}
+    >
+      <LanguageContext.Provider value={{ locale: currentLocale, setLocale }}>
+        <IntlProvider
+          locale={currentLocale}
+          defaultLocale="en"
+          messages={loadedMessages}
+        >
+          <LoadingBar />
+          <SettingsProvider currentSettings={currentSettings}>
+            <InteractionProvider>
+              <ToastProvider components={{ Toast, ToastContainer }}>
+                <Head>
+                  <title>{currentSettings.applicationTitle}</title>
+                  <meta
+                    name="viewport"
+                    content="initial-scale=1, viewport-fit=cover, width=device-width"
+                  ></meta>
+                  <PWAHeader
+                    applicationTitle={currentSettings.applicationTitle}
+                  />
+                </Head>
+                <StatusChecker />
+                <ServiceWorkerSetup />
+                <UserContext initialUser={user}>{component}</UserContext>
+              </ToastProvider>
+            </InteractionProvider>
+          </SettingsProvider>
+        </IntlProvider>
+      </LanguageContext.Provider>
+    </SWRConfig>
   );
 };
 

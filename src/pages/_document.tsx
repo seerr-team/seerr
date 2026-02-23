@@ -1,4 +1,3 @@
-import { inter } from '@app/utils/fonts';
 import type { DocumentContext, DocumentInitialProps } from 'next/document';
 import Document, { Head, Html, Main, NextScript } from 'next/document';
 
@@ -13,7 +12,7 @@ class MyDocument extends Document {
 
   render(): JSX.Element {
     return (
-      <Html className={inter.variable}>
+      <Html>
         <Head></Head>
         <body>
           <Main />
