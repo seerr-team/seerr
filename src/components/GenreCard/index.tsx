@@ -58,7 +58,7 @@ const GenreCardPlaceholder = () => {
   return (
     <div
       className={`relative h-32 w-56 animate-pulse rounded-xl bg-gray-700 sm:h-40 sm:w-72`}
-    ></div>
+    />
   );
 };
 
