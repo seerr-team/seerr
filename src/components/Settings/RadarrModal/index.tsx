@@ -72,6 +72,26 @@ const messages = defineMessages('components.Settings.RadarrModal', {
   announced: 'Announced',
   inCinemas: 'In Cinemas',
   released: 'Released',
+
+  tooltipDefaultServer:
+    'At least one server needs to be marked as "Default" in order for requests to be sent successfully. If you have separate 4K servers, you need to designate default 4K servers in addition to default non-4K servers.',
+  tooltip4kServer:
+    'Only select this option if you have separate non-4K and 4K servers. If you only have a single server, do not check this box!',
+  tooltipServerName: 'Enter a friendly name for the server.',
+  tooltipHostname:
+    'If installed on the same network, you can set this to the local IP address of your server. Otherwise, this should be set to a valid hostname (e.g., radarr.myawesomeserver.com).',
+  tooltipApiKey:
+    'Enter your API key here. Do not share this key publicly! You can locate it in Settings → General → Security.',
+  tooltipUrlBase:
+    'If you have configured a URL base for your server, you must enter it here. You can verify this in Settings → General → Host.',
+  tooltipProfileRootMin:
+    'Select the default settings you would like to use for all new requests. All of these options are required, and requests will fail if not configured!',
+  tooltipExternalUrl:
+    'If the hostname or IP address is not accessible outside your network, you can set a different URL here. This is used to add clickable links on media detail pages.',
+  tooltipEnableScan:
+    'Enable this setting to scan your server for existing media/request status. Recommended so users cannot request available media.',
+  tooltipEnableSearch:
+    'Enable this setting to automatically search for media upon approval of a request.',
 });
 
 interface RadarrModalProps {
@@ -79,6 +99,56 @@ interface RadarrModalProps {
   onClose: () => void;
   onSave: () => void;
 }
+
+const HelpWrapper = ({
+  text,
+  children,
+}: {
+  text?: string;
+  children: React.ReactNode;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!text) return <>{children}</>;
+
+  return (
+    <div className="flex w-full flex-col">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            setIsOpen(!isOpen);
+          }}
+          className="flex-shrink-0 text-gray-400 transition-colors hover:text-white focus:outline-none"
+          aria-label="More information"
+          title="Click for more info"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            className="h-5 w-5"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"
+            />
+          </svg>
+        </button>
+        <div className="min-w-0 flex-grow">{children}</div>
+      </div>
+      {isOpen && (
+        <div className="mt-2 text-xs font-normal leading-snug text-gray-400">
+          {text}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
   const intl = useIntl();
@@ -344,7 +414,11 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                     )}
                   </label>
                   <div className="form-input-area">
-                    <Field type="checkbox" id="isDefault" name="isDefault" />
+                    <HelpWrapper
+                      text={intl.formatMessage(messages.tooltipDefaultServer)}
+                    >
+                      <Field type="checkbox" id="isDefault" name="isDefault" />
+                    </HelpWrapper>
                   </div>
                 </div>
                 <div className="form-row">
@@ -352,7 +426,11 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                     {intl.formatMessage(messages.server4k)}
                   </label>
                   <div className="form-input-area">
-                    <Field type="checkbox" id="is4k" name="is4k" />
+                    <HelpWrapper
+                      text={intl.formatMessage(messages.tooltip4kServer)}
+                    >
+                      <Field type="checkbox" id="is4k" name="is4k" />
+                    </HelpWrapper>
                   </div>
                 </div>
                 <div className="form-row">
@@ -361,22 +439,28 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                     <span className="label-required">*</span>
                   </label>
                   <div className="form-input-area">
-                    <div className="form-input-field">
-                      <Field
-                        id="name"
-                        name="name"
-                        type="text"
-                        autoComplete="off"
-                        data-form-type="other"
-                        data-1pignore="true"
-                        data-lpignore="true"
-                        data-bwignore="true"
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          setIsValidated(false);
-                          setFieldValue('name', e.target.value);
-                        }}
-                      />
-                    </div>
+                    <HelpWrapper
+                      text={intl.formatMessage(messages.tooltipServerName)}
+                    >
+                      <div className="form-input-field">
+                        <Field
+                          id="name"
+                          name="name"
+                          type="text"
+                          autoComplete="off"
+                          data-form-type="other"
+                          data-1pignore="true"
+                          data-lpignore="true"
+                          data-bwignore="true"
+                          onChange={(
+                            e: React.ChangeEvent<HTMLInputElement>
+                          ) => {
+                            setIsValidated(false);
+                            setFieldValue('name', e.target.value);
+                          }}
+                        />
+                      </div>
+                    </HelpWrapper>
                     {errors.name &&
                       touched.name &&
                       typeof errors.name === 'string' && (
@@ -390,22 +474,28 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                     <span className="label-required">*</span>
                   </label>
                   <div className="form-input-area">
-                    <div className="form-input-field">
-                      <span className="protocol">
-                        {values.ssl ? 'https://' : 'http://'}
-                      </span>
-                      <Field
-                        id="hostname"
-                        name="hostname"
-                        type="text"
-                        inputMode="url"
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          setIsValidated(false);
-                          setFieldValue('hostname', e.target.value);
-                        }}
-                        className="rounded-r-only"
-                      />
-                    </div>
+                    <HelpWrapper
+                      text={intl.formatMessage(messages.tooltipHostname)}
+                    >
+                      <div className="form-input-field">
+                        <span className="protocol">
+                          {values.ssl ? 'https://' : 'http://'}
+                        </span>
+                        <Field
+                          id="hostname"
+                          name="hostname"
+                          type="text"
+                          inputMode="url"
+                          onChange={(
+                            e: React.ChangeEvent<HTMLInputElement>
+                          ) => {
+                            setIsValidated(false);
+                            setFieldValue('hostname', e.target.value);
+                          }}
+                          className="rounded-r-only"
+                        />
+                      </div>
+                    </HelpWrapper>
                     {errors.hostname &&
                       touched.hostname &&
                       typeof errors.hostname === 'string' && (
@@ -459,17 +549,23 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                     <span className="label-required">*</span>
                   </label>
                   <div className="form-input-area">
-                    <div className="form-input-field">
-                      <SensitiveInput
-                        as="field"
-                        id="apiKey"
-                        name="apiKey"
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          setIsValidated(false);
-                          setFieldValue('apiKey', e.target.value);
-                        }}
-                      />
-                    </div>
+                    <HelpWrapper
+                      text={intl.formatMessage(messages.tooltipApiKey)}
+                    >
+                      <div className="form-input-field">
+                        <SensitiveInput
+                          as="field"
+                          id="apiKey"
+                          name="apiKey"
+                          onChange={(
+                            e: React.ChangeEvent<HTMLInputElement>
+                          ) => {
+                            setIsValidated(false);
+                            setFieldValue('apiKey', e.target.value);
+                          }}
+                        />
+                      </div>
+                    </HelpWrapper>
                     {errors.apiKey &&
                       touched.apiKey &&
                       typeof errors.apiKey === 'string' && (
@@ -482,18 +578,24 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                     {intl.formatMessage(messages.baseUrl)}
                   </label>
                   <div className="form-input-area">
-                    <div className="form-input-field">
-                      <Field
-                        id="baseUrl"
-                        name="baseUrl"
-                        type="text"
-                        inputMode="url"
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          setIsValidated(false);
-                          setFieldValue('baseUrl', e.target.value);
-                        }}
-                      />
-                    </div>
+                    <HelpWrapper
+                      text={intl.formatMessage(messages.tooltipUrlBase)}
+                    >
+                      <div className="form-input-field">
+                        <Field
+                          id="baseUrl"
+                          name="baseUrl"
+                          type="text"
+                          inputMode="url"
+                          onChange={(
+                            e: React.ChangeEvent<HTMLInputElement>
+                          ) => {
+                            setIsValidated(false);
+                            setFieldValue('baseUrl', e.target.value);
+                          }}
+                        />
+                      </div>
+                    </HelpWrapper>
                     {errors.baseUrl &&
                       touched.baseUrl &&
                       typeof errors.baseUrl === 'string' && (
@@ -507,35 +609,39 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                     <span className="label-required">*</span>
                   </label>
                   <div className="form-input-area">
-                    <div className="form-input-field">
-                      <Field
-                        as="select"
-                        id="activeProfileId"
-                        name="activeProfileId"
-                        disabled={!isValidated || isTesting}
-                      >
-                        <option value="">
-                          {isTesting
-                            ? intl.formatMessage(messages.loadingprofiles)
-                            : !isValidated
-                              ? intl.formatMessage(
-                                  messages.testFirstQualityProfiles
-                                )
-                              : intl.formatMessage(
-                                  messages.selectQualityProfile
-                                )}
-                        </option>
-                        {testResponse.profiles.length > 0 &&
-                          testResponse.profiles.map((profile) => (
-                            <option
-                              key={`loaded-profile-${profile.id}`}
-                              value={profile.id}
-                            >
-                              {profile.name}
-                            </option>
-                          ))}
-                      </Field>
-                    </div>
+                    <HelpWrapper
+                      text={intl.formatMessage(messages.tooltipProfileRootMin)}
+                    >
+                      <div className="form-input-field">
+                        <Field
+                          as="select"
+                          id="activeProfileId"
+                          name="activeProfileId"
+                          disabled={!isValidated || isTesting}
+                        >
+                          <option value="">
+                            {isTesting
+                              ? intl.formatMessage(messages.loadingprofiles)
+                              : !isValidated
+                                ? intl.formatMessage(
+                                    messages.testFirstQualityProfiles
+                                  )
+                                : intl.formatMessage(
+                                    messages.selectQualityProfile
+                                  )}
+                          </option>
+                          {testResponse.profiles.length > 0 &&
+                            testResponse.profiles.map((profile) => (
+                              <option
+                                key={`loaded-profile-${profile.id}`}
+                                value={profile.id}
+                              >
+                                {profile.name}
+                              </option>
+                            ))}
+                        </Field>
+                      </div>
+                    </HelpWrapper>
                     {errors.activeProfileId &&
                       touched.activeProfileId &&
                       typeof errors.activeProfileId === 'string' && (
@@ -549,33 +655,37 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                     <span className="label-required">*</span>
                   </label>
                   <div className="form-input-area">
-                    <div className="form-input-field">
-                      <Field
-                        as="select"
-                        id="rootFolder"
-                        name="rootFolder"
-                        disabled={!isValidated || isTesting}
-                      >
-                        <option value="">
-                          {isTesting
-                            ? intl.formatMessage(messages.loadingrootfolders)
-                            : !isValidated
-                              ? intl.formatMessage(
-                                  messages.testFirstRootFolders
-                                )
-                              : intl.formatMessage(messages.selectRootFolder)}
-                        </option>
-                        {testResponse.rootFolders.length > 0 &&
-                          testResponse.rootFolders.map((folder) => (
-                            <option
-                              key={`loaded-profile-${folder.id}`}
-                              value={folder.path}
-                            >
-                              {folder.path}
-                            </option>
-                          ))}
-                      </Field>
-                    </div>
+                    <HelpWrapper
+                      text={intl.formatMessage(messages.tooltipProfileRootMin)}
+                    >
+                      <div className="form-input-field">
+                        <Field
+                          as="select"
+                          id="rootFolder"
+                          name="rootFolder"
+                          disabled={!isValidated || isTesting}
+                        >
+                          <option value="">
+                            {isTesting
+                              ? intl.formatMessage(messages.loadingrootfolders)
+                              : !isValidated
+                                ? intl.formatMessage(
+                                    messages.testFirstRootFolders
+                                  )
+                                : intl.formatMessage(messages.selectRootFolder)}
+                          </option>
+                          {testResponse.rootFolders.length > 0 &&
+                            testResponse.rootFolders.map((folder) => (
+                              <option
+                                key={`loaded-profile-${folder.id}`}
+                                value={folder.path}
+                              >
+                                {folder.path}
+                              </option>
+                            ))}
+                        </Field>
+                      </div>
+                    </HelpWrapper>
                     {errors.rootFolder &&
                       touched.rootFolder &&
                       typeof errors.rootFolder === 'string' && (
@@ -589,23 +699,27 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                     <span className="label-required">*</span>
                   </label>
                   <div className="form-input-area">
-                    <div className="form-input-field">
-                      <Field
-                        as="select"
-                        id="minimumAvailability"
-                        name="minimumAvailability"
-                      >
-                        <option value="announced">
-                          {intl.formatMessage(messages.announced)}
-                        </option>
-                        <option value="inCinemas">
-                          {intl.formatMessage(messages.inCinemas)}
-                        </option>
-                        <option value="released">
-                          {intl.formatMessage(messages.released)}
-                        </option>
-                      </Field>
-                    </div>
+                    <HelpWrapper
+                      text={intl.formatMessage(messages.tooltipProfileRootMin)}
+                    >
+                      <div className="form-input-field">
+                        <Field
+                          as="select"
+                          id="minimumAvailability"
+                          name="minimumAvailability"
+                        >
+                          <option value="announced">
+                            {intl.formatMessage(messages.announced)}
+                          </option>
+                          <option value="inCinemas">
+                            {intl.formatMessage(messages.inCinemas)}
+                          </option>
+                          <option value="released">
+                            {intl.formatMessage(messages.released)}
+                          </option>
+                        </Field>
+                      </div>
+                    </HelpWrapper>
                     {errors.minimumAvailability &&
                       touched.minimumAvailability && (
                         <div className="error">
@@ -676,14 +790,18 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                     {intl.formatMessage(messages.externalUrl)}
                   </label>
                   <div className="form-input-area">
-                    <div className="form-input-field">
-                      <Field
-                        id="externalUrl"
-                        name="externalUrl"
-                        type="text"
-                        inputMode="url"
-                      />
-                    </div>
+                    <HelpWrapper
+                      text={intl.formatMessage(messages.tooltipExternalUrl)}
+                    >
+                      <div className="form-input-field">
+                        <Field
+                          id="externalUrl"
+                          name="externalUrl"
+                          type="text"
+                          inputMode="url"
+                        />
+                      </div>
+                    </HelpWrapper>
                     {errors.externalUrl &&
                       touched.externalUrl &&
                       typeof errors.externalUrl === 'string' && (
@@ -696,11 +814,15 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                     {intl.formatMessage(messages.syncEnabled)}
                   </label>
                   <div className="form-input-area">
-                    <Field
-                      type="checkbox"
-                      id="syncEnabled"
-                      name="syncEnabled"
-                    />
+                    <HelpWrapper
+                      text={intl.formatMessage(messages.tooltipEnableScan)}
+                    >
+                      <Field
+                        type="checkbox"
+                        id="syncEnabled"
+                        name="syncEnabled"
+                      />
+                    </HelpWrapper>
                   </div>
                 </div>
                 <div className="form-row">
@@ -708,11 +830,15 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                     {intl.formatMessage(messages.enableSearch)}
                   </label>
                   <div className="form-input-area">
-                    <Field
-                      type="checkbox"
-                      id="enableSearch"
-                      name="enableSearch"
-                    />
+                    <HelpWrapper
+                      text={intl.formatMessage(messages.tooltipEnableSearch)}
+                    >
+                      <Field
+                        type="checkbox"
+                        id="enableSearch"
+                        name="enableSearch"
+                      />
+                    </HelpWrapper>
                   </div>
                 </div>
                 <div className="form-row">
