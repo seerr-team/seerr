@@ -86,6 +86,7 @@ const messages: { [messageName: string]: MessageDescriptor } = defineMessages(
     'availability-sync': 'Media Availability Sync',
     'radarr-scan': 'Radarr Scan',
     'sonarr-scan': 'Sonarr Scan',
+    'lidarr-scan': 'Lidarr Scan',
     'download-sync': 'Download Sync',
     'download-sync-reset': 'Download Sync Reset',
     'image-cache-cleanup': 'Image Cache Cleanup',
@@ -782,6 +783,24 @@ const SettingsJobs = () => {
               </Table.TD>
               <Table.TD>
                 {formatBytes(cacheData?.imageCache.avatar.size ?? 0)}
+              </Table.TD>
+            </tr>
+            <tr>
+              <Table.TD>Cover Art Archive (caa)</Table.TD>
+              <Table.TD>
+                {intl.formatNumber(cacheData?.imageCache.caa.imageCount ?? 0)}
+              </Table.TD>
+              <Table.TD>
+                {formatBytes(cacheData?.imageCache.caa.size ?? 0)}
+              </Table.TD>
+            </tr>
+            <tr>
+              <Table.TD>The Audio Database (tadb)</Table.TD>
+              <Table.TD>
+                {intl.formatNumber(cacheData?.imageCache.tadb.imageCount ?? 0)}
+              </Table.TD>
+              <Table.TD>
+                {formatBytes(cacheData?.imageCache.tadb.size ?? 0)}
               </Table.TD>
             </tr>
           </Table.TBody>

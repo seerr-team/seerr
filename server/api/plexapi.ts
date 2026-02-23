@@ -23,7 +23,7 @@ export interface PlexLibraryItem {
   Guid?: {
     id: string;
   }[];
-  type: 'movie' | 'show' | 'season' | 'episode';
+  type: 'movie' | 'show' | 'season' | 'episode' | 'artist' | 'album' | 'track';
   Media: Media[];
 }
 
@@ -35,7 +35,7 @@ interface PlexLibraryResponse {
 }
 
 export interface PlexLibrary {
-  type: 'show' | 'movie';
+  type: 'show' | 'movie' | 'artist';
   key: string;
   title: string;
   agent: string;
@@ -51,7 +51,7 @@ export interface PlexMetadata {
   ratingKey: string;
   parentRatingKey?: string;
   guid: string;
-  type: 'movie' | 'show' | 'season';
+  type: 'movie' | 'show' | 'season' | 'artist' | 'album' | 'track';
   title: string;
   Guid: {
     id: string;
@@ -142,7 +142,10 @@ class PlexAPI extends ExternalAPI {
       const newLibraries: Library[] = libraries
         // Remove libraries that are not movie or show
         .filter(
-          (library) => library.type === 'movie' || library.type === 'show'
+          (library) =>
+            library.type === 'movie' ||
+            library.type === 'show' ||
+            library.type === 'artist'
         )
         // Remove libraries that do not have a metadata agent set (usually personal video libraries)
         .filter((library) => library.agent !== 'com.plexapp.agents.none')
@@ -155,7 +158,7 @@ class PlexAPI extends ExternalAPI {
             id: library.key,
             name: library.title,
             enabled: existing?.enabled ?? false,
-            type: library.type,
+            type: library.type === 'artist' ? 'music' : library.type,
             lastScan: existing?.lastScan,
           };
         });
@@ -219,12 +222,19 @@ class PlexAPI extends ExternalAPI {
     options: { addedAt: number } = {
       addedAt: Date.now() - 1000 * 60 * 60,
     },
-    mediaType: 'movie' | 'show'
+    mediaType: 'movie' | 'show' | 'album'
   ): Promise<PlexLibraryItem[]> {
+    let typeCode = '1';
+    if (mediaType === 'show') {
+      typeCode = '4';
+    } else if (mediaType === 'album') {
+      typeCode = '9';
+    }
+
     const response = await this.get<PlexLibraryResponse>(
-      `/library/sections/${id}/all?type=${
-        mediaType === 'show' ? '4' : '1'
-      }&sort=addedAt%3Adesc&addedAt>>=${Math.floor(options.addedAt / 1000)}`,
+      `/library/sections/${id}/all?type=${typeCode}&sort=addedAt%3Adesc&addedAt>>=${Math.floor(
+        options.addedAt / 1000
+      )}`,
       {
         headers: {
           'X-Plex-Container-Start': '0',

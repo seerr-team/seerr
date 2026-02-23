@@ -26,6 +26,7 @@ export class NotFoundError extends Error {
 
 @Entity()
 @Unique('UNIQUE_USER_DB', ['tmdbId', 'requestedBy'])
+@Unique('UNIQUE_USER_FOREIGN', ['mbId', 'requestedBy'])
 export class Watchlist implements WatchlistItem {
   @PrimaryGeneratedColumn()
   id: number;
@@ -39,9 +40,13 @@ export class Watchlist implements WatchlistItem {
   @Column({ type: 'varchar' })
   title = '';
 
-  @Column()
+  @Column({ nullable: true })
   @Index()
-  public tmdbId: number;
+  public tmdbId?: number;
+
+  @Column({ nullable: true })
+  @Index()
+  public mbId?: string;
 
   @ManyToOne(() => User, (user) => user.watchlists, {
     eager: true,
@@ -53,6 +58,7 @@ export class Watchlist implements WatchlistItem {
   @ManyToOne(() => Media, (media) => media.watchlists, {
     eager: true,
     onDelete: 'CASCADE',
+    nullable: false,
   })
   @Index()
   public media: Media;
@@ -79,7 +85,8 @@ export class Watchlist implements WatchlistItem {
       mediaType: MediaType;
       ratingKey?: ZodOptional<ZodString>['_output'];
       title?: ZodOptional<ZodString>['_output'];
-      tmdbId: ZodNumber['_output'];
+      tmdbId?: ZodNumber['_output'];
+      mbId?: ZodOptional<ZodString>['_output'];
     };
     user: User;
   }): Promise<Watchlist> {
@@ -87,46 +94,88 @@ export class Watchlist implements WatchlistItem {
     const mediaRepository = getRepository(Media);
     const tmdb = new TheMovieDb();
 
-    const tmdbMedia =
-      watchlistRequest.mediaType === MediaType.MOVIE
-        ? await tmdb.getMovie({ movieId: watchlistRequest.tmdbId })
-        : await tmdb.getTvShow({ tvId: watchlistRequest.tmdbId });
+    let media: Media | null;
 
-    const existing = await watchlistRepository
-      .createQueryBuilder('watchlist')
-      .leftJoinAndSelect('watchlist.requestedBy', 'user')
-      .where('user.id = :userId', { userId: user.id })
-      .andWhere('watchlist.tmdbId = :tmdbId', {
-        tmdbId: watchlistRequest.tmdbId,
-      })
-      .andWhere('watchlist.mediaType = :mediaType', {
-        mediaType: watchlistRequest.mediaType,
-      })
-      .getMany();
+    if (watchlistRequest.mediaType === MediaType.MUSIC) {
+      if (!watchlistRequest.mbId) {
+        throw new Error('MusicBrainz ID is required for music media type');
+      }
 
-    if (existing && existing.length > 0) {
-      logger.warn('Duplicate request for watchlist blocked', {
-        tmdbId: watchlistRequest.tmdbId,
-        mediaType: watchlistRequest.mediaType,
-        label: 'Watchlist',
+      const existing = await watchlistRepository
+        .createQueryBuilder('watchlist')
+        .leftJoinAndSelect('watchlist.requestedBy', 'user')
+        .where('user.id = :userId', { userId: user.id })
+        .andWhere('watchlist.mbId = :mbId', { mbId: watchlistRequest.mbId })
+        .andWhere('watchlist.mediaType = :mediaType', {
+          mediaType: watchlistRequest.mediaType,
+        })
+        .getMany();
+
+      if (existing && existing.length > 0) {
+        logger.warn('Duplicate request for watchlist blocked', {
+          mbId: watchlistRequest.mbId,
+          mediaType: watchlistRequest.mediaType,
+          label: 'Watchlist',
+        });
+        throw new DuplicateWatchlistRequestError();
+      }
+
+      media = await mediaRepository.findOne({
+        where: { mbId: watchlistRequest.mbId, mediaType: MediaType.MUSIC },
       });
 
-      throw new DuplicateWatchlistRequestError();
-    }
+      if (!media) {
+        media = new Media({
+          mbId: watchlistRequest.mbId,
+          mediaType: MediaType.MUSIC,
+        });
+      }
+    } else {
+      // For movies/TV, validate tmdbId exists
+      if (!watchlistRequest.tmdbId) {
+        throw new Error('TMDB ID is required for movie/TV media types');
+      }
 
-    let media = await mediaRepository.findOne({
-      where: {
-        tmdbId: watchlistRequest.tmdbId,
-        mediaType: watchlistRequest.mediaType,
-      },
-    });
+      const tmdbMedia =
+        watchlistRequest.mediaType === MediaType.MOVIE
+          ? await tmdb.getMovie({ movieId: watchlistRequest.tmdbId })
+          : await tmdb.getTvShow({ tvId: watchlistRequest.tmdbId });
 
-    if (!media) {
-      media = new Media({
-        tmdbId: tmdbMedia.id,
-        tvdbId: tmdbMedia.external_ids.tvdb_id,
-        mediaType: watchlistRequest.mediaType,
+      const existing = await watchlistRepository
+        .createQueryBuilder('watchlist')
+        .leftJoinAndSelect('watchlist.requestedBy', 'user')
+        .where('user.id = :userId', { userId: user.id })
+        .andWhere('watchlist.tmdbId = :tmdbId', {
+          tmdbId: watchlistRequest.tmdbId,
+        })
+        .andWhere('watchlist.mediaType = :mediaType', {
+          mediaType: watchlistRequest.mediaType,
+        })
+        .getMany();
+
+      if (existing && existing.length > 0) {
+        logger.warn('Duplicate request for watchlist blocked', {
+          tmdbId: watchlistRequest.tmdbId,
+          mediaType: watchlistRequest.mediaType,
+          label: 'Watchlist',
+        });
+        throw new DuplicateWatchlistRequestError();
+      }
+
+      media = await mediaRepository.findOne({
+        where: {
+          tmdbId: watchlistRequest.tmdbId,
+          mediaType: watchlistRequest.mediaType,
+        },
       });
+
+      if (!media) {
+        media = new Media({
+          tmdbId: tmdbMedia.id,
+          tvdbId: tmdbMedia.external_ids.tvdb_id,
+          mediaType: watchlistRequest.mediaType,
+        });
+      }
     }
 
     const watchlist = new this({
@@ -141,14 +190,19 @@ export class Watchlist implements WatchlistItem {
   }
 
   public static async deleteWatchlist(
-    tmdbId: Watchlist['tmdbId'],
+    id: Watchlist['tmdbId'] | Watchlist['mbId'],
     user: User
   ): Promise<Watchlist | null> {
     const watchlistRepository = getRepository(this);
-    const watchlist = await watchlistRepository.findOneBy({
-      tmdbId,
-      requestedBy: { id: user.id },
-    });
+
+    // Check if the ID is a number (TMDB) or string (MusicBrainz)
+    const whereClause =
+      typeof id === 'number'
+        ? { tmdbId: id, requestedBy: { id: user.id } }
+        : { mbId: id, requestedBy: { id: user.id } };
+
+    const watchlist = await watchlistRepository.findOneBy(whereClause);
+
     if (!watchlist) {
       throw new NotFoundError('not Found');
     }

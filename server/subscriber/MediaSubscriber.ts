@@ -109,6 +109,13 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
 
           const allSeasonsReady = allSeasonResults.every((result) => result);
           shouldComplete = allSeasonsReady;
+        } else if (event.mediaType === MediaType.MUSIC) {
+          if (
+            event['status'] == MediaStatus.AVAILABLE ||
+            event['status'] === MediaStatus.DELETED
+          ) {
+            shouldComplete = true;
+          }
         }
 
         if (shouldComplete) {

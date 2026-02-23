@@ -7,8 +7,9 @@ export interface GenreSliderItem {
 export interface WatchlistItem {
   id: number;
   ratingKey: string;
-  tmdbId: number;
-  mediaType: 'movie' | 'tv';
+  tmdbId?: number;
+  mbId?: string;
+  mediaType: 'movie' | 'tv' | 'music';
   title: string;
 }
 

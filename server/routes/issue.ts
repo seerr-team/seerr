@@ -179,6 +179,12 @@ issueRoutes.get('/count', async (req, res, next) => {
       })
       .getCount();
 
+    const lyricsCount = await query
+      .where('issue.issueType = :issueType', {
+        issueType: IssueType.LYRICS,
+      })
+      .getCount();
+
     const openCount = await query
       .where('issue.status = :issueStatus', {
         issueStatus: IssueStatus.OPEN,
@@ -197,6 +203,7 @@ issueRoutes.get('/count', async (req, res, next) => {
       audio: audioCount,
       subtitles: subtitlesCount,
       others: othersCount,
+      lyrics: lyricsCount,
       open: openCount,
       closed: closedCount,
     });

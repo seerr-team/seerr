@@ -5,14 +5,17 @@ import type {
 } from '@server/api/jellyfin';
 import JellyfinAPI from '@server/api/jellyfin';
 import { getMetadataProvider } from '@server/api/metadata';
+import MusicBrainz from '@server/api/musicbrainz';
 import TheMovieDb from '@server/api/themoviedb';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import type {
   TmdbKeyword,
   TmdbTvDetails,
 } from '@server/api/themoviedb/interfaces';
+import { MediaStatus, MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
+import Media from '@server/entity/Media';
 import { User } from '@server/entity/User';
 import type {
   ProcessableSeason,
@@ -439,11 +442,112 @@ class JellyfinScanner
     }
   }
 
+  private async processJellyfinMusic(jellyfinitem: JellyfinLibraryItem) {
+    const mediaRepository = getRepository(Media);
+    const musicBrainz = new MusicBrainz();
+
+    try {
+      const metadata = await this.jfClient.getItemData(jellyfinitem.Id);
+      const newMedia = new Media();
+
+      if (!metadata?.Id) {
+        this.log('No Id metadata for this title. Skipping', 'debug', {
+          jellyfinItemId: jellyfinitem.Id,
+        });
+        return;
+      }
+
+      newMedia.mbId = metadata.ProviderIds?.MusicBrainzReleaseGroup;
+
+      if (!newMedia.mbId && metadata.ProviderIds?.MusicBrainzAlbum) {
+        try {
+          const releaseGroupId = await musicBrainz.getReleaseGroup({
+            releaseId: metadata.ProviderIds.MusicBrainzAlbum,
+          });
+          if (releaseGroupId) {
+            newMedia.mbId = releaseGroupId;
+          }
+        } catch (e) {
+          this.log('Failed to get release group ID', 'error', {
+            title: metadata.Name,
+            releaseId: metadata.ProviderIds.MusicBrainzAlbum,
+            error: e.message,
+          });
+        }
+      }
+
+      if (!newMedia.mbId) {
+        this.log(
+          'No MusicBrainz Album ID found for this title. Skipping.',
+          'debug',
+          {
+            title: metadata.Name,
+          }
+        );
+        return;
+      }
+
+      await this.asyncLock.dispatch(metadata.Id, async () => {
+        const existing = await mediaRepository.findOne({
+          where: { mbId: newMedia.mbId, mediaType: MediaType.MUSIC },
+        });
+
+        if (existing) {
+          let changedExisting = false;
+
+          if (existing.status !== MediaStatus.AVAILABLE) {
+            existing.status = MediaStatus.AVAILABLE;
+            existing.mediaAddedAt = new Date(metadata.DateCreated ?? '');
+            changedExisting = true;
+          }
+
+          if (!existing.mediaAddedAt && !changedExisting) {
+            existing.mediaAddedAt = new Date(metadata.DateCreated ?? '');
+            changedExisting = true;
+          }
+
+          if (existing.jellyfinMediaId !== metadata.Id) {
+            existing.jellyfinMediaId = metadata.Id;
+            changedExisting = true;
+          }
+
+          if (changedExisting) {
+            await mediaRepository.save(existing);
+            this.log(
+              `Request for ${metadata.Name} exists. New media set to AVAILABLE`,
+              'info'
+            );
+          } else {
+            this.log(`Album already exists: ${metadata.Name}`);
+          }
+        } else {
+          newMedia.status = MediaStatus.AVAILABLE;
+          newMedia.mediaType = MediaType.MUSIC;
+          newMedia.mediaAddedAt = new Date(metadata.DateCreated ?? '');
+          newMedia.jellyfinMediaId = metadata.Id;
+          await mediaRepository.save(newMedia);
+          this.log(`Saved new album: ${metadata.Name}`);
+        }
+      });
+    } catch (e) {
+      this.log(
+        `Failed to process Jellyfin item, id: ${jellyfinitem.Id}`,
+        'error',
+        {
+          errorMessage: e.message,
+          jellyfinitem,
+        }
+      );
+    }
+  }
+
   private async processItem(item: JellyfinLibraryItem): Promise<void> {
     if (item.Type === 'Movie') {
       await this.processJellyfinMovie(item);
     } else if (item.Type === 'Series') {
       await this.processJellyfinShow(item);
+    } else if (item.Type === 'MusicAlbum') {
+      await this.processJellyfinMusic(item);
     }
   }
 

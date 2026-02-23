@@ -36,6 +36,7 @@ watchlistRoutes.post<never, Watchlist, Watchlist>(
         case QueryFailedError:
           logger.warn('Something wrong with data watchlist', {
             tmdbId: req.body.tmdbId,
+            mbId: req.body.mbId,
             mediaType: req.body.mediaType,
             label: 'Watchlist',
           });
@@ -49,7 +50,7 @@ watchlistRoutes.post<never, Watchlist, Watchlist>(
   }
 );
 
-watchlistRoutes.delete('/:tmdbId', async (req, res, next) => {
+watchlistRoutes.delete('/:id', async (req, res, next) => {
   if (!req.user) {
     return next({
       status: 401,
@@ -57,7 +58,11 @@ watchlistRoutes.delete('/:tmdbId', async (req, res, next) => {
     });
   }
   try {
-    await Watchlist.deleteWatchlist(Number(req.params.tmdbId), req.user);
+    const id = isNaN(Number(req.params.id))
+      ? req.params.id
+      : Number(req.params.id);
+
+    await Watchlist.deleteWatchlist(id, req.user);
     return res.status(204).send();
   } catch (e) {
     if (e instanceof NotFoundError) {

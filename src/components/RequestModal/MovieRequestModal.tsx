@@ -38,7 +38,7 @@ const messages = defineMessages('components.RequestModal', {
 });
 
 interface RequestModalProps extends React.HTMLAttributes<HTMLDivElement> {
-  tmdbId: number;
+  tmdbId?: number;
   is4k?: boolean;
   editRequest?: NonFunctionProperties<MediaRequest>;
   onCancel?: () => void;

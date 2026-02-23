@@ -20,7 +20,7 @@ interface SearchByNameModalProps {
   closeModal: () => void;
   modalTitle: string;
   modalSubTitle: string;
-  tmdbId: number;
+  tmdbId?: number;
   backdrop?: string;
 }
 

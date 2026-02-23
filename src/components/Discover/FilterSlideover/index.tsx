@@ -1,6 +1,7 @@
 import Button from '@app/components/Common/Button';
 import MultiRangeSlider from '@app/components/Common/MultiRangeSlider';
 import SlideOver from '@app/components/Common/SlideOver';
+import Toggle from '@app/components/Common/Toggle';
 import type { FilterOptions } from '@app/components/Discover/constants';
 import { countActiveFilters } from '@app/components/Discover/constants';
 import LanguageSelector from '@app/components/LanguageSelector';
@@ -20,7 +21,10 @@ import {
 import defineMessages from '@app/utils/defineMessages';
 import { XCircleIcon } from '@heroicons/react/24/outline';
 import Datepicker from '@seerr-team/react-tailwindcss-datepicker';
+import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
+import type { MultiValue } from 'react-select';
+import AsyncSelect from 'react-select/async';
 
 const messages = defineMessages('components.Discover.FilterSlideover', {
   filters: 'Filters',
@@ -45,12 +49,13 @@ const messages = defineMessages('components.Discover.FilterSlideover', {
   voteCount: 'Number of votes between {minValue} and {maxValue}',
   status: 'Status',
   certification: 'Content Rating',
+  onlyWithCoverArt: 'Only show releases with cover art',
 });
 
 type FilterSlideoverProps = {
   show: boolean;
   onClose: () => void;
-  type: 'movie' | 'tv';
+  type: 'movie' | 'tv' | 'music';
   currentFilters: FilterOptions;
 };
 
@@ -64,11 +69,187 @@ const FilterSlideover = ({
   const { currentSettings } = useSettings();
   const updateQueryParams = useUpdateQueryParams({});
   const batchUpdateQueryParams = useBatchUpdateQueryParams({});
+  const [defaultSelectedGenres, setDefaultSelectedGenres] = useState<
+    { label: string; value: string }[] | null
+  >(null);
 
   const dateGte =
     type === 'movie' ? 'primaryReleaseDateGte' : 'firstAirDateGte';
   const dateLte =
     type === 'movie' ? 'primaryReleaseDateLte' : 'firstAirDateLte';
+
+  useEffect(() => {
+    if (type === 'music' && currentFilters.genre) {
+      const genres = currentFilters.genre.split(',');
+
+      setDefaultSelectedGenres(
+        genres.map((genre) => ({
+          label: genre,
+          value: genre,
+        }))
+      );
+    } else {
+      setDefaultSelectedGenres(null);
+    }
+  }, [type, currentFilters.genre]);
+
+  const musicGenreOptions = [
+    { label: 'Album', value: 'Album' },
+    { label: 'EP', value: 'EP' },
+    { label: 'Single', value: 'Single' },
+    { label: 'Soundtrack', value: 'Soundtrack' },
+    { label: 'Remix', value: 'Remix' },
+    { label: 'Live', value: 'Live' },
+    { label: 'Demo', value: 'Demo' },
+    { label: 'DJ-mix', value: 'DJ-mix' },
+    { label: 'Compilation', value: 'Compilation' },
+    { label: 'Audio drama', value: 'Audio drama' },
+    { label: 'Mixtape/Street', value: 'Mixtape/Street' },
+    { label: 'Field recording', value: 'Field recording' },
+    { label: 'Other', value: 'Other' },
+  ];
+
+  const loadMusicGenreOptions = async (inputValue: string) => {
+    return musicGenreOptions.filter((option) =>
+      option.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+  };
+
+  if (type === 'music') {
+    return (
+      <SlideOver
+        show={show}
+        title={intl.formatMessage(messages.filters)}
+        subText={intl.formatMessage(messages.activefilters, {
+          count: countActiveFilters(currentFilters),
+        })}
+        onClose={() => onClose()}
+      >
+        <div>
+          <div className="mb-2 text-lg font-semibold">
+            {intl.formatMessage(messages.releaseDate)}
+          </div>
+          <div className="relative z-40 flex space-x-2">
+            <div className="flex flex-col">
+              <div className="mb-2">{intl.formatMessage(messages.from)}</div>
+              <Datepicker
+                primaryColor="indigo"
+                value={{
+                  startDate: currentFilters.releaseDateGte ?? null,
+                  endDate: currentFilters.releaseDateGte ?? null,
+                }}
+                onChange={(value) => {
+                  let formattedDate: string | undefined = undefined;
+                  if (value?.startDate) {
+                    try {
+                      const date = new Date(value.startDate as string);
+                      if (!isNaN(date.getTime())) {
+                        formattedDate = date.toISOString().split('T')[0];
+                      }
+                    } catch (e) {
+                      // Invalid date, use undefined
+                    }
+                  }
+                  updateQueryParams('releaseDateGte', formattedDate);
+                }}
+                inputName="fromdate"
+                useRange={false}
+                asSingle
+                containerClassName="datepicker-wrapper"
+                inputClassName="pr-1 sm:pr-4 text-base leading-5"
+                displayFormat="YYYY-MM-DD"
+              />
+            </div>
+            <div className="flex flex-col">
+              <div className="mb-2">{intl.formatMessage(messages.to)}</div>
+              <Datepicker
+                primaryColor="indigo"
+                value={{
+                  startDate: currentFilters.releaseDateLte ?? null,
+                  endDate: currentFilters.releaseDateLte ?? null,
+                }}
+                onChange={(value) => {
+                  let formattedDate: string | undefined = undefined;
+                  if (value?.startDate) {
+                    try {
+                      const date = new Date(value.startDate as string);
+                      if (!isNaN(date.getTime())) {
+                        formattedDate = date.toISOString().split('T')[0];
+                      }
+                    } catch (e) {
+                      // Invalid date, use undefined
+                    }
+                  }
+                  updateQueryParams('releaseDateLte', formattedDate);
+                }}
+                inputName="todate"
+                useRange={false}
+                asSingle
+                containerClassName="datepicker-wrapper"
+                inputClassName="pr-1 sm:pr-4 text-base leading-5"
+                displayFormat="YYYY-MM-DD"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col space-y-4">
+          <span className="text-lg font-semibold">
+            {intl.formatMessage(messages.genres)}
+          </span>
+          <AsyncSelect
+            key={`music-genre-select-${defaultSelectedGenres}`}
+            className="react-select-container"
+            classNamePrefix="react-select"
+            defaultValue={defaultSelectedGenres}
+            defaultOptions={musicGenreOptions}
+            isMulti
+            cacheOptions
+            loadOptions={loadMusicGenreOptions}
+            placeholder={intl.formatMessage(messages.genres)}
+            onChange={(value: MultiValue<{ label: string; value: string }>) => {
+              updateQueryParams(
+                'genre',
+                value?.length ? value.map((v) => v.value).join(',') : undefined
+              );
+            }}
+          />
+
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-lg font-semibold">
+              {intl.formatMessage(messages.onlyWithCoverArt)}
+            </span>
+            <Toggle
+              checked={currentFilters.onlyWithCoverArt === 'true'}
+              onChange={(checked) => {
+                const newValue = checked ? 'true' : undefined;
+                updateQueryParams('onlyWithCoverArt', newValue);
+              }}
+            />
+          </div>
+          <div className="pt-4">
+            <Button
+              className="w-full"
+              disabled={Object.keys(currentFilters).length === 0}
+              onClick={() => {
+                const copyCurrent = Object.assign({}, currentFilters);
+                (
+                  Object.keys(copyCurrent) as (keyof typeof currentFilters)[]
+                ).forEach((k) => {
+                  copyCurrent[k] = undefined;
+                });
+                batchUpdateQueryParams(copyCurrent);
+                onClose();
+              }}
+            >
+              <XCircleIcon />
+              <span>{intl.formatMessage(messages.clearfilters)}</span>
+            </Button>
+          </div>
+        </div>
+      </SlideOver>
+    );
+  }
 
   return (
     <SlideOver
@@ -96,16 +277,26 @@ const FilterSlideover = ({
                   endDate: currentFilters[dateGte] ?? null,
                 }}
                 onChange={(value) => {
-                  updateQueryParams(
-                    dateGte,
-                    value?.startDate ? (value.startDate as string) : undefined
-                  );
+                  // Format the date as YYYY-MM-DD before setting it
+                  let formattedDate: string | undefined = undefined;
+                  if (value?.startDate) {
+                    try {
+                      const date = new Date(value.startDate as string);
+                      if (!isNaN(date.getTime())) {
+                        formattedDate = date.toISOString().split('T')[0];
+                      }
+                    } catch (e) {
+                      // Invalid date, use undefined
+                    }
+                  }
+                  updateQueryParams(dateGte, formattedDate);
                 }}
                 inputName="fromdate"
                 useRange={false}
                 asSingle
                 containerClassName="datepicker-wrapper"
                 inputClassName="pr-1 sm:pr-4 text-base leading-5"
+                displayFormat="YYYY-MM-DD" // Add this to enforce the correct format
               />
             </div>
             <div className="flex flex-col">
@@ -117,16 +308,25 @@ const FilterSlideover = ({
                   endDate: currentFilters[dateLte] ?? null,
                 }}
                 onChange={(value) => {
-                  updateQueryParams(
-                    dateLte,
-                    value?.startDate ? (value.startDate as string) : undefined
-                  );
+                  let formattedDate: string | undefined = undefined;
+                  if (value?.startDate) {
+                    try {
+                      const date = new Date(value.startDate as string);
+                      if (!isNaN(date.getTime())) {
+                        formattedDate = date.toISOString().split('T')[0];
+                      }
+                    } catch (e) {
+                      // Invalid date, use undefined
+                    }
+                  }
+                  updateQueryParams(dateLte, formattedDate);
                 }}
                 inputName="todate"
                 useRange={false}
                 asSingle
                 containerClassName="datepicker-wrapper"
                 inputClassName="pr-1 sm:pr-4 text-base leading-5"
+                displayFormat="YYYY-MM-DD" // Add this to enforce the correct format
               />
             </div>
           </div>

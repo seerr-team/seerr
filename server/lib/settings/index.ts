@@ -11,7 +11,7 @@ export interface Library {
   id: string;
   name: string;
   enabled: boolean;
-  type: 'show' | 'movie';
+  type: 'show' | 'movie' | 'music';
   lastScan?: number;
 }
 
@@ -95,6 +95,11 @@ export interface SonarrSettings extends DVRSettings {
   enableSeasonFolders: boolean;
 }
 
+export interface LidarrSettings extends DVRSettings {
+  activeMetadataProfileId?: number;
+  activeMetadataProfileName?: string;
+}
+
 interface Quota {
   quotaLimit?: number;
   quotaDays?: number;
@@ -130,6 +135,7 @@ export interface MainSettings {
   defaultQuotas: {
     movie: Quota;
     tv: Quota;
+    music: Quota;
   };
   hideAvailable: boolean;
   hideBlocklisted: boolean;
@@ -341,6 +347,7 @@ export type JobId =
   | 'plex-refresh-token'
   | 'radarr-scan'
   | 'sonarr-scan'
+  | 'lidarr-scan'
   | 'download-sync'
   | 'download-sync-reset'
   | 'jellyfin-recently-added-scan'
@@ -359,6 +366,7 @@ export interface AllSettings {
   tautulli: TautulliSettings;
   radarr: RadarrSettings[];
   sonarr: SonarrSettings[];
+  lidarr: LidarrSettings[];
   public: PublicSettings;
   notifications: NotificationSettings;
   jobs: Record<JobId, JobSettings>;
@@ -388,6 +396,7 @@ class Settings {
         defaultQuotas: {
           movie: {},
           tv: {},
+          music: {},
         },
         hideAvailable: false,
         hideBlocklisted: false,
@@ -430,6 +439,7 @@ class Settings {
         anime: MetadataProviderType.TMDB,
       },
       radarr: [],
+      lidarr: [],
       sonarr: [],
       public: {
         initialized: false,
@@ -553,6 +563,9 @@ class Settings {
         'sonarr-scan': {
           schedule: '0 30 4 * * *',
         },
+        'lidarr-scan': {
+          schedule: '0 30 4 * * *',
+        },
         'availability-sync': {
           schedule: '0 0 5 * * *',
         },
@@ -649,6 +662,14 @@ class Settings {
 
   set radarr(data: RadarrSettings[]) {
     this.data.radarr = data;
+  }
+
+  get lidarr(): LidarrSettings[] {
+    return this.data.lidarr;
+  }
+
+  set lidarr(data: LidarrSettings[]) {
+    this.data.lidarr = data;
   }
 
   get sonarr(): SonarrSettings[] {

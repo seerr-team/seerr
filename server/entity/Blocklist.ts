@@ -18,7 +18,7 @@ import {
 import type { ZodNumber, ZodOptional, ZodString } from 'zod';
 
 @Entity()
-@Unique(['tmdbId'])
+@Unique(['tmdbId', 'mbId'])
 export class Blocklist implements BlocklistItem {
   @PrimaryGeneratedColumn()
   public id: number;
@@ -29,9 +29,13 @@ export class Blocklist implements BlocklistItem {
   @Column({ nullable: true, type: 'varchar' })
   title?: string;
 
-  @Column()
+  @Column({ nullable: true })
   @Index()
-  public tmdbId: number;
+  public tmdbId?: number;
+
+  @Column({ nullable: true })
+  @Index()
+  public mbId?: string;
 
   @ManyToOne(() => User, (user) => user.id, {
     eager: true,
@@ -62,7 +66,8 @@ export class Blocklist implements BlocklistItem {
       blocklistRequest: {
         mediaType: MediaType;
         title?: ZodOptional<ZodString>['_output'];
-        tmdbId: ZodNumber['_output'];
+        tmdbId?: ZodNumber['_output'];
+        mbId?: ZodOptional<ZodString>['_output'];
         blocklistedTags?: string;
       };
     },
@@ -75,9 +80,10 @@ export class Blocklist implements BlocklistItem {
 
     const mediaRepository = em.getRepository(Media);
     let media = await mediaRepository.findOne({
-      where: {
-        tmdbId: blocklistRequest.tmdbId,
-      },
+      where:
+        blocklistRequest.mediaType === 'music'
+          ? { mbId: blocklistRequest.mbId }
+          : { tmdbId: blocklistRequest.tmdbId },
     });
 
     const blocklistRepository = em.getRepository(this);
@@ -87,6 +93,7 @@ export class Blocklist implements BlocklistItem {
     if (!media) {
       media = new Media({
         tmdbId: blocklistRequest.tmdbId,
+        mbId: blocklistRequest.mbId,
         status: MediaStatus.BLOCKLISTED,
         status4k: MediaStatus.BLOCKLISTED,
         mediaType: blocklistRequest.mediaType,

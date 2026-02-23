@@ -28,6 +28,7 @@ export interface MediaIds {
   imdbId?: string;
   tvdbId?: number;
   isHama?: boolean;
+  mbId?: string;
 }
 
 interface ProcessOptions {
@@ -81,11 +82,24 @@ class BaseScanner<T> {
     this.updateRate = updateRate ?? UPDATE_RATE;
   }
 
-  private async getExisting(tmdbId: number, mediaType: MediaType) {
+  private async getExisting(
+    id: number | string,
+    mediaType: MediaType
+  ): Promise<Media | null> {
     const mediaRepository = getRepository(Media);
 
+    const query: Record<string, any> = {
+      mediaType,
+    };
+
+    if (mediaType === MediaType.MUSIC) {
+      query.mbId = id.toString();
+    } else {
+      query.tmdbId = Number(id);
+    }
+
     const existing = await mediaRepository.findOne({
-      where: { tmdbId: tmdbId, mediaType },
+      where: query,
     });
 
     return existing;
@@ -586,6 +600,93 @@ class BaseScanner<T> {
         });
         await mediaRepository.save(newMedia);
         this.log(`Saved ${title}`);
+      }
+    });
+  }
+
+  protected async processMusic(
+    mbId: string,
+    {
+      serviceId,
+      externalServiceId,
+      externalServiceSlug,
+      mediaAddedAt,
+      ratingKey,
+      processing = false,
+      title = 'Unknown Title',
+    }: ProcessOptions = {}
+  ): Promise<void> {
+    const mediaRepository = getRepository(Media);
+
+    await this.asyncLock.dispatch(mbId, async () => {
+      const existing = await mediaRepository.findOne({
+        where: { mbId, mediaType: MediaType.MUSIC },
+      });
+
+      if (!existing) {
+        const newMedia = new Media();
+        newMedia.mbId = mbId;
+        newMedia.status = processing
+          ? MediaStatus.PROCESSING
+          : MediaStatus.AVAILABLE;
+        newMedia.mediaType = MediaType.MUSIC;
+        newMedia.mediaAddedAt = mediaAddedAt ?? newMedia.mediaAddedAt;
+        newMedia.ratingKey = ratingKey ?? newMedia.ratingKey;
+        newMedia.serviceId = serviceId ?? newMedia.serviceId;
+        newMedia.externalServiceId =
+          externalServiceId ?? newMedia.externalServiceId;
+        newMedia.externalServiceSlug =
+          externalServiceSlug ?? newMedia.externalServiceSlug;
+
+        try {
+          await mediaRepository.save(newMedia);
+          this.log(`Saved new media: ${title}`);
+        } catch (err) {
+          this.log('Failed to save new media', 'error', {
+            title,
+            error: err.message,
+          });
+        }
+      } else {
+        let hasChanges = false;
+
+        if (existing.status !== MediaStatus.AVAILABLE && !processing) {
+          existing.status = MediaStatus.AVAILABLE;
+          hasChanges = true;
+        }
+
+        if (serviceId && !existing.serviceId) {
+          existing.serviceId = serviceId;
+          hasChanges = true;
+        }
+        if (externalServiceId && !existing.externalServiceId) {
+          existing.externalServiceId = externalServiceId;
+          hasChanges = true;
+        }
+        if (externalServiceSlug && !existing.externalServiceSlug) {
+          existing.externalServiceSlug = externalServiceSlug;
+          hasChanges = true;
+        }
+        if (mediaAddedAt && !existing.mediaAddedAt) {
+          existing.mediaAddedAt = mediaAddedAt;
+          hasChanges = true;
+        }
+        if (ratingKey && !existing.ratingKey) {
+          existing.ratingKey = ratingKey;
+          hasChanges = true;
+        }
+
+        if (hasChanges) {
+          try {
+            await mediaRepository.save(existing);
+            this.log(`Updated existing media: ${title}`);
+          } catch (err) {
+            this.log('Failed to update existing media', 'error', {
+              title,
+              error: err.message,
+            });
+          }
+        }
       }
     });
   }

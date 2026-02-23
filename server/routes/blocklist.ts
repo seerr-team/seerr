@@ -12,12 +12,18 @@ import { z } from 'zod';
 
 const blocklistRoutes = Router();
 
-export const blocklistAdd = z.object({
-  tmdbId: z.coerce.number(),
-  mediaType: z.nativeEnum(MediaType),
-  title: z.coerce.string().optional(),
-  user: z.coerce.number(),
-});
+export const blocklistAdd = z
+  .object({
+    mediaType: z.nativeEnum(MediaType),
+    title: z.coerce.string().optional(),
+    user: z.coerce.number(),
+  })
+  .and(
+    z.union([
+      z.object({ tmdbId: z.coerce.number() }),
+      z.object({ mbId: z.coerce.string() }),
+    ])
+  );
 
 const blocklistGet = z.object({
   take: z.coerce.number().int().positive().default(25),
@@ -90,10 +96,12 @@ blocklistRoutes.get(
   }),
   async (req, res, next) => {
     try {
-      const blocklisteRepository = getRepository(Blocklist);
+      const blocklistRepository = getRepository(Blocklist);
 
-      const blocklistItem = await blocklisteRepository.findOneOrFail({
-        where: { tmdbId: Number(req.params.id) },
+      const blocklistItem = await blocklistRepository.findOneOrFail({
+        where: !isNaN(Number(req.params.id))
+          ? { tmdbId: Number(req.params.id) }
+          : { mbId: req.params.id },
       });
 
       return res.status(200).send(blocklistItem);
@@ -135,6 +143,7 @@ blocklistRoutes.post(
           default:
             logger.warn('Something wrong with data blocklist', {
               tmdbId: req.body.tmdbId,
+              mbId: req.body.mbId,
               mediaType: req.body.mediaType,
               label: 'Blocklist',
             });
@@ -154,18 +163,22 @@ blocklistRoutes.delete(
   }),
   async (req, res, next) => {
     try {
-      const blocklisteRepository = getRepository(Blocklist);
+      const blocklistRepository = getRepository(Blocklist);
 
-      const blocklistItem = await blocklisteRepository.findOneOrFail({
-        where: { tmdbId: Number(req.params.id) },
+      const blocklistItem = await blocklistRepository.findOneOrFail({
+        where: !isNaN(Number(req.params.id))
+          ? { tmdbId: Number(req.params.id) }
+          : { mbId: req.params.id },
       });
 
-      await blocklisteRepository.remove(blocklistItem);
+      await blocklistRepository.remove(blocklistItem);
 
       const mediaRepository = getRepository(Media);
 
       const mediaItem = await mediaRepository.findOneOrFail({
-        where: { tmdbId: Number(req.params.id) },
+        where: !isNaN(Number(req.params.id))
+          ? { tmdbId: Number(req.params.id) }
+          : { mbId: req.params.id },
       });
 
       await mediaRepository.remove(mediaItem);

@@ -11,6 +11,7 @@ const messages = defineMessages('components.RequestModal.QuotaDisplay', {
     '{remaining, plural, =0 {No} other {<strong>#</strong>}} {type} {remaining, plural, one {request} other {requests}} remaining',
   movielimit: '{limit, plural, one {movie} other {movies}}',
   seasonlimit: '{limit, plural, one {season} other {seasons}}',
+  musiclimit: '{limit, plural, one {album} other {albums}}',
   allowedRequests:
     'You are allowed to request <strong>{limit}</strong> {type} every <strong>{days}</strong> days.',
   allowedRequestsUser:
@@ -21,6 +22,7 @@ const messages = defineMessages('components.RequestModal.QuotaDisplay', {
     "You can view a summary of this user's request limits on their <ProfileLink>profile page</ProfileLink>.",
   movie: 'movie',
   season: 'season',
+  album: 'album',
   notenoughseasonrequests: 'Not enough season requests remaining',
   requiredquota:
     'You need to have at least <strong>{seasons}</strong> {seasons, plural, one {season request} other {season requests}} remaining in order to submit a request for this series.',
@@ -30,7 +32,7 @@ const messages = defineMessages('components.RequestModal.QuotaDisplay', {
 
 interface QuotaDisplayProps {
   quota?: QuotaStatus;
-  mediaType: 'movie' | 'tv';
+  mediaType: 'movie' | 'tv' | 'music';
   userOverride?: number | null;
   remaining?: number;
   overLimit?: number;
@@ -118,7 +120,9 @@ const QuotaDisplay = ({
                 type: intl.formatMessage(
                   mediaType === 'movie'
                     ? messages.movielimit
-                    : messages.seasonlimit,
+                    : mediaType === 'tv'
+                    ? messages.seasonlimit
+                    : messages.musiclimit,
                   { limit: quota?.limit }
                 ),
                 strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
