@@ -98,8 +98,10 @@ const UserList = () => {
   const { user: currentUser, hasPermission: currentHasPermission } = useUser();
   const [currentSort, setCurrentSort] = useState<Sort>('displayname');
   const [currentPageSize, setCurrentPageSize] = useState<number>(10);
-  const [searchInput, searchQuery, setSearchInput] =
-    useDebouncedState<string>('', 300);
+  const [searchInput, searchQuery, setSearchInput] = useDebouncedState<string>(
+    '',
+    300
+  );
 
   const page = router.query.page ? Number(router.query.page) : 1;
   const pageIndex = page - 1;
@@ -139,9 +141,6 @@ const UserList = () => {
 
       setCurrentSort(filterSettings.currentSort);
       setCurrentPageSize(filterSettings.currentPageSize);
-      if (filterSettings.searchQuery) {
-        setSearchInput(filterSettings.searchQuery);
-      }
     }
   }, []);
 
@@ -151,13 +150,12 @@ const UserList = () => {
       JSON.stringify({
         currentSort,
         currentPageSize,
-        searchQuery,
       })
     );
-  }, [currentSort, currentPageSize, searchQuery]);
+  }, [currentSort, currentPageSize]);
 
   useEffect(() => {
-    if (searchQuery && page > 1) {
+    if (page > 1) {
       updateQueryParams('page', '1');
     }
   }, [searchQuery]);
@@ -568,7 +566,7 @@ const UserList = () => {
               </span>
               <input
                 type="text"
-                className="min-w-[200px] rounded-r-only"
+                className="rounded-r-only min-w-[200px]"
                 placeholder={intl.formatMessage(messages.searchUsers)}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
@@ -589,16 +587,16 @@ const UserList = () => {
                 value={currentSort}
                 className="rounded-r-only"
               >
-              <option value="created">
-                {intl.formatMessage(messages.sortCreated)}
-              </option>
-              <option value="requests">
-                {intl.formatMessage(messages.sortRequests)}
-              </option>
-              <option value="displayname">
-                {intl.formatMessage(messages.sortDisplayName)}
-              </option>
-            </select>
+                <option value="created">
+                  {intl.formatMessage(messages.sortCreated)}
+                </option>
+                <option value="requests">
+                  {intl.formatMessage(messages.sortRequests)}
+                </option>
+                <option value="displayname">
+                  {intl.formatMessage(messages.sortDisplayName)}
+                </option>
+              </select>
             </div>
           </div>
         </div>
