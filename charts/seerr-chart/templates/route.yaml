@@ -24,8 +24,8 @@ spec:
     {{- tpl (toYaml .) $ | nindent 4 }}
   {{- end }}
   rules:
-    {{- if $route.additionalRules }}
-    {{- tpl (toYaml $route.additionalRules) $ | nindent 4 }}
+    {{- with $route.additionalRules }}
+    {{- tpl (toYaml .) $ | nindent 4 }}
     {{- end }}
     {{- if $route.httpsRedirect }}
     - filters:
