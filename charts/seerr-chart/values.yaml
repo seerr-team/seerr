@@ -105,6 +105,44 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
+route:
+  main:
+    # -- Enables or disables the Gateway API route
+    enabled: false
+
+    # -- Set the route apiVersion, e.g. gateway.networking.k8s.io/v1 or gateway.networking.k8s.io/v1alpha2
+    apiVersion: gateway.networking.k8s.io/v1
+
+    # -- Set the route kind.
+    # Note that experimental kinds require changing `apiVersion`
+    kind: HTTPRoute
+
+    annotations: {}
+
+    labels: {}
+
+    parentRefs: []
+    # - name: my-gateway
+    #   namespace: gateway
+    #   sectionName: https
+
+    hostnames: []
+    # - seerr.example.com
+
+    additionalRules: []
+
+    filters: []
+
+    matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+    # -- To redirect to HTTPS, create a new route object under the main route and enable this option.
+    # This should only be used with HTTP-like routes, such as HTTPRoute or GRPCRoute.
+    # [Reference]( https://gateway-api.sigs.k8s.io/guides/http-redirect-rewrite/ )
+    httpsRedirect: false
+
 resources: {}
 # We usually recommend not to specify default resources and to leave this as a conscious
 # choice for the user. This also increases chances charts run on environments with little
