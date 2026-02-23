@@ -8,7 +8,7 @@ import { Transition } from '@headlessui/react';
 import type { RadarrSettings } from '@server/lib/settings';
 import axios from 'axios';
 import { Field, Formik } from 'formik';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import Select from 'react-select';
 import { useToasts } from 'react-toast-notifications';
@@ -73,6 +73,9 @@ const messages = defineMessages('components.Settings.RadarrModal', {
   inCinemas: 'In Cinemas',
   released: 'Released',
 
+  moreInfo: 'More information',
+  clickForMoreInfo: 'Click for more info',
+
   tooltipDefaultServer:
     'At least one server needs to be marked as "Default" in order for requests to be sent successfully. If you have separate 4K servers, you need to designate default 4K servers in addition to default non-4K servers.',
   tooltip4kServer:
@@ -108,6 +111,8 @@ const HelpWrapper = ({
   children: React.ReactNode;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const intl = useIntl();
+  const helpId = useId();
 
   if (!text) return <>{children}</>;
 
@@ -120,9 +125,11 @@ const HelpWrapper = ({
             e.preventDefault();
             setIsOpen(!isOpen);
           }}
-          className="flex-shrink-0 text-gray-400 transition-colors hover:text-white focus:outline-none"
-          aria-label="More information"
-          title="Click for more info"
+          className="flex-shrink-0 rounded text-gray-400 transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+          aria-expanded={isOpen}
+          aria-controls={helpId}
+          aria-label={intl.formatMessage(messages.moreInfo)}
+          title={intl.formatMessage(messages.clickForMoreInfo)}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -142,7 +149,10 @@ const HelpWrapper = ({
         <div className="min-w-0 flex-grow">{children}</div>
       </div>
       {isOpen && (
-        <div className="mt-2 text-xs font-normal leading-snug text-gray-400">
+        <div
+          id={helpId}
+          className="mt-2 text-xs font-normal leading-snug text-gray-400"
+        >
           {text}
         </div>
       )}
