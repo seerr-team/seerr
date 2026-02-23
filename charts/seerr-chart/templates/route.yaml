@@ -33,10 +33,6 @@ spec:
           requestRedirect:
             scheme: https
             statusCode: 301
-      {{- with $route.matches }}
-      matches:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
     {{- else }}
     - backendRefs:
         - name: {{ include "seerr.fullname" $ }}
