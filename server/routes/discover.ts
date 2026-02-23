@@ -985,7 +985,7 @@ discoverRoutes.get('/music', async (req, res, next) => {
     const freshReleasesData = await listenbrainz.getFreshReleases({
       days,
       sort: apiSortField,
-      count: 500,
+      count: 100,
     });
 
     let filteredReleases = freshReleasesData.payload.releases;

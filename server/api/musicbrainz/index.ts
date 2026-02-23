@@ -8,6 +8,9 @@ import type { MbAlbumDetails, MbArtistDetails } from './interfaces';
 const window = new JSDOM('').window;
 const purify = DOMPurify(window);
 
+const escapeLucene = (s: string): string =>
+  s.replace(/([+\-&|!(){}[\]^"~*?:\\/])/g, '\\$1');
+
 class MusicBrainz extends ExternalAPI {
   constructor() {
     super(
@@ -120,19 +123,26 @@ class MusicBrainz extends ExternalAPI {
   }): Promise<{ releaseGroups: MbAlbumDetails[]; totalCount: number }> {
     try {
       // Build MusicBrainz Lucene query
-      const tagQuery = tags.map((t) => `tag:"${t}"`).join(' OR ');
+      const tagQuery = tags.map((t) => `tag:"${escapeLucene(t)}"`).join(' OR ');
       let query = `(${tagQuery})`;
 
       if (primaryTypes && primaryTypes.length > 0) {
         const typeQuery = primaryTypes
-          .map((t) => `primarytype:"${t}"`)
+          .map((t) => `primarytype:"${escapeLucene(t)}"`)
           .join(' OR ');
         query += ` AND (${typeQuery})`;
       }
 
       if (releaseDateGte || releaseDateLte) {
-        const from = releaseDateGte || '*';
-        const to = releaseDateLte || '*';
+        const datePattern = /^\d{4}(-\d{2}(-\d{2})?)?$/;
+        const from =
+          releaseDateGte && datePattern.test(releaseDateGte)
+            ? releaseDateGte
+            : '*';
+        const to =
+          releaseDateLte && datePattern.test(releaseDateLte)
+            ? releaseDateLte
+            : '*';
         query += ` AND firstreleasedate:[${from} TO ${to}]`;
       }
 

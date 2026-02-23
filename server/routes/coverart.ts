@@ -6,7 +6,7 @@ const coverArtRoutes = Router();
 
 coverArtRoutes.get('/batch/:ids', async (req, res) => {
   const coverArtArchive = new CoverArtArchive();
-  const ids = (req.params.ids || '').split(',').filter(Boolean);
+  const ids = (req.params.ids || '').split(',').filter(Boolean).slice(0, 50);
 
   if (!ids.length) {
     return res.status(200).json({});
