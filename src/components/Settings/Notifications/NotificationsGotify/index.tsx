@@ -109,7 +109,7 @@ const NotificationsGotify = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.gotifysettingsfailed), {
             appearance: 'error',
             autoDismiss: true,
@@ -159,7 +159,7 @@ const NotificationsGotify = () => {
               autoDismiss: true,
               appearance: 'success',
             });
-          } catch (e) {
+          } catch {
             if (toastId) {
               removeToast(toastId);
             }

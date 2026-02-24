@@ -162,7 +162,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
       });
 
       return data;
-    } catch (e) {
+    } catch {
       return {
         page: 1,
         results: [],
@@ -191,7 +191,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
       });
 
       return data;
-    } catch (e) {
+    } catch {
       return {
         page: 1,
         results: [],
@@ -220,7 +220,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
       });
 
       return data;
-    } catch (e) {
+    } catch {
       return {
         page: 1,
         results: [],

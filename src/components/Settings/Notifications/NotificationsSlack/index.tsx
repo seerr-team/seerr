@@ -79,7 +79,7 @@ const NotificationsSlack = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.slacksettingsfailed), {
             appearance: 'error',
             autoDismiss: true,
@@ -128,7 +128,7 @@ const NotificationsSlack = () => {
               autoDismiss: true,
               appearance: 'success',
             });
-          } catch (e) {
+          } catch {
             if (toastId) {
               removeToast(toastId);
             }

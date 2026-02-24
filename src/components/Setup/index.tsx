@@ -90,7 +90,7 @@ const Setup = () => {
       );
 
       setMediaServerSettingsComplete(hasEnabledLibraries);
-    } catch (e) {
+    } catch {
       toasts.addToast(intl.formatMessage(messages.librarieserror), {
         autoDismiss: true,
         appearance: 'error',

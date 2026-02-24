@@ -36,7 +36,7 @@ async function extractMessages(
         .replace(/,$/, '');
       const messagesJson = JSON.parse(`{${formattedMessages}}`);
       return { namespace: namespace.trim(), messages: messagesJson };
-    } catch (e) {
+    } catch {
       return null;
     }
   }

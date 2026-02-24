@@ -156,7 +156,7 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
         }
 
         return tmdbTvShow;
-      } catch (error) {
+      } catch {
         return tmdbTvShow;
       }
     } catch (error) {

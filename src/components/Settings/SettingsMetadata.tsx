@@ -322,7 +322,7 @@ const SettingsMetadata = () => {
                 appearance: 'success',
                 autoDismiss: true,
               });
-            } catch (e) {
+            } catch {
               addToast(
                 intl.formatMessage(messages.failedToSaveMetadataSettings),
                 {
@@ -428,7 +428,7 @@ const SettingsMetadata = () => {
                                 }
                               );
                             }
-                          } catch (e) {
+                          } catch {
                             addToast(
                               intl.formatMessage(messages.connectionTestFailed),
                               {

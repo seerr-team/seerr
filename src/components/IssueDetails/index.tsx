@@ -131,7 +131,7 @@ const IssueDetails = () => {
         autoDismiss: true,
       });
       revalidateIssue();
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.toasteditdescriptionfailed), {
         appearance: 'error',
         autoDismiss: true,
@@ -149,7 +149,7 @@ const IssueDetails = () => {
       });
       revalidateIssue();
       mutate('/api/v1/issue/count');
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.toaststatusupdatefailed), {
         appearance: 'error',
         autoDismiss: true,
@@ -167,7 +167,7 @@ const IssueDetails = () => {
         autoDismiss: true,
       });
       router.push('/issues');
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.toastissuedeletefailed), {
         appearance: 'error',
         autoDismiss: true,

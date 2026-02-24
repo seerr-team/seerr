@@ -97,7 +97,7 @@ export const verifyAndResubscribePushSubscription = async (
               oldEndpoint
             )}`
           );
-        } catch (error) {
+        } catch {
           // Ignore errors when deleting old endpoint (it might not exist)
         }
       }

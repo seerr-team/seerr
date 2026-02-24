@@ -355,7 +355,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
     try {
       const result = await axios.post(`/api/v1/request/${request.id}/retry`);
       revalidate(result.data);
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.failedretry), {
         autoDismiss: true,
         appearance: 'error',

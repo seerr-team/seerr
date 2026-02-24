@@ -308,7 +308,7 @@ const SettingsJobs = () => {
 
       dispatch({ type: 'close' });
       revalidate();
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.jobScheduleEditFailed), {
         appearance: 'error',
         autoDismiss: true,

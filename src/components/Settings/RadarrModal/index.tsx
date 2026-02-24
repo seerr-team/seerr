@@ -173,7 +173,7 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
             autoDismiss: true,
           });
         }
-      } catch (e) {
+      } catch {
         setIsValidated(false);
         if (initialLoad.current) {
           addToast(intl.formatMessage(messages.toastRadarrTestFailure), {
@@ -268,7 +268,7 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
             }
 
             onSave();
-          } catch (e) {
+          } catch {
             // set error here
           }
         }}

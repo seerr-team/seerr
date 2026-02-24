@@ -276,7 +276,7 @@ const BlocklistedTagImportForm = forwardRef<
             label: data.name,
             value: data.id,
           };
-        } catch (err) {
+        } catch {
           throw intl.formatMessage(messages.invalidKeyword, { keywordId });
         }
       })

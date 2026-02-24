@@ -84,7 +84,7 @@ const DiscoverSliderEdit = ({
         autoDismiss: true,
       });
       onDelete();
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.deletefail), {
         appearance: 'error',
         autoDismiss: true,

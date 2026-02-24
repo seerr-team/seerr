@@ -59,7 +59,7 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
             email: values.email,
             password: values.password,
           });
-        } catch (e) {
+        } catch {
           setLoginError(intl.formatMessage(messages.loginerror));
         } finally {
           revalidate();
