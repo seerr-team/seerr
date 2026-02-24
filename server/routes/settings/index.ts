@@ -42,6 +42,7 @@ import { escapeRegExp, merge, omit, set, sortBy } from 'lodash';
 import { rescheduleJob } from 'node-schedule';
 import path from 'path';
 import semver from 'semver';
+import { IsNull, Not } from 'typeorm';
 import { URL } from 'url';
 import metadataRoutes from './metadata';
 import notificationRoutes from './notifications';
@@ -538,26 +539,24 @@ settingsRoutes.post(
           .update(User)
           .set({ plexId: null, plexUsername: null, plexToken: null })
           .execute();
-        await getRepository(User)
-          .createQueryBuilder()
-          .update(User)
-          .set({
+        await getRepository(User).update(
+          { jellyfinUserId: Not(IsNull()) },
+          {
             userType: useEmby ? UserType.EMBY : UserType.JELLYFIN,
-          })
-          .where('"user"."jellyfinUserId" IS NOT NULL')
-          .execute();
-        await getRepository(Media)
-          .createQueryBuilder()
-          .update(Media)
-          .set({ ratingKey: null, ratingKey4k: null })
-          .where('media.ratingKey IS NOT NULL OR media.ratingKey4k IS NOT NULL')
-          .execute();
-        await getRepository(Watchlist)
-          .createQueryBuilder()
-          .update(Watchlist)
-          .set({ ratingKey: '' })
-          .where("watchlist.ratingKey != ''")
-          .execute();
+          }
+        );
+        await getRepository(Media).update(
+          { ratingKey: Not(IsNull()) },
+          { ratingKey: null, ratingKey4k: null }
+        );
+        await getRepository(Media).update(
+          { ratingKey4k: Not(IsNull()) },
+          { ratingKey: null, ratingKey4k: null }
+        );
+        await getRepository(Watchlist).update(
+          { ratingKey: Not('') },
+          { ratingKey: '' }
+        );
         await settings.save();
         await getRepository(Session)
           .createQueryBuilder()
@@ -619,14 +618,14 @@ settingsRoutes.post(
           .update(User)
           .set({ userType: newUserType })
           .execute();
-        await getRepository(Media)
-          .createQueryBuilder()
-          .update(Media)
-          .set({ jellyfinMediaId: null, jellyfinMediaId4k: null })
-          .where(
-            'media.jellyfinMediaId IS NOT NULL OR media.jellyfinMediaId4k IS NOT NULL'
-          )
-          .execute();
+        await getRepository(Media).update(
+          { jellyfinMediaId: Not(IsNull()) },
+          { jellyfinMediaId: null, jellyfinMediaId4k: null }
+        );
+        await getRepository(Media).update(
+          { jellyfinMediaId4k: Not(IsNull()) },
+          { jellyfinMediaId: null, jellyfinMediaId4k: null }
+        );
         await settings.save();
         await getRepository(Session)
           .createQueryBuilder()
