@@ -1,4 +1,4 @@
-import Infinity from '@app/assets/infinity.svg';
+import InfinityIcon from '@app/assets/infinity.svg';
 import { SmallLoadingSpinner } from '@app/components/Common/LoadingSpinner';
 import ProgressCircle from '@app/components/Common/ProgressCircle';
 import defineMessages from '@app/utils/defineMessages';
@@ -56,7 +56,7 @@ const MiniQuotaDisplay = ({ userId }: MiniQuotaDisplayProps) => {
                 </>
               ) : (
                 <>
-                  <Infinity className="w-7" />
+                  <InfinityIcon className="w-7" />
                   <span className="font-bold">Unlimited</span>
                 </>
               )}
@@ -82,7 +82,7 @@ const MiniQuotaDisplay = ({ userId }: MiniQuotaDisplayProps) => {
                 </>
               ) : (
                 <>
-                  <Infinity className="w-7" />
+                  <InfinityIcon className="w-7" />
                   <span className="font-bold">Unlimited</span>
                 </>
               )}
