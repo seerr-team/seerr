@@ -27,8 +27,6 @@ function getTargetLabel(target: SwitchTargetServerType): string {
 const messages = defineMessages('components.Settings', {
   switchMediaServerError:
     'Something went wrong while switching media server. Please try again.',
-  switchMediaServerSuccess:
-    'Media server switched. All users logged out. Restart the server, then sign in again.',
   switchMediaServerStep1Plex:
     '1) Configure Jellyfin or Emby in the Jellyfin settings tab.',
   switchMediaServerStep2Plex:
@@ -153,13 +151,9 @@ const SwitchMediaServerSection = () => {
   const handleSwitch = async () => {
     setSubmitting(true);
     try {
-      const { data } = await axios.post<{ message?: string }>(
+      await axios.post<{ message?: string }>(
         '/api/v1/settings/switch-media-server',
         targetPayload
-      );
-      addToast(
-        data?.message ?? intl.formatMessage(messages.switchMediaServerSuccess),
-        { appearance: 'success' }
       );
       setModalOpen(false);
       window.location.reload();
