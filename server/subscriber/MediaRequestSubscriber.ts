@@ -320,9 +320,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
             tagLabel = String(entity.requestedBy.id);
             userTag = radarrTags.find((v) => v.label === tagLabel);
           } else if (tagFormat === TagRequestsFormat.USERNAME) {
-            tagLabel = sanitizeDisplayName(
-              entity.requestedBy.displayName.toLowerCase()
-            );
+            tagLabel = sanitizeDisplayName(entity.requestedBy.displayName);
             userTag = radarrTags.find((v) => v.label === tagLabel);
           } else if (!userTag) {
             // old tags had space around the hyphen
@@ -666,9 +664,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
             tagLabel = String(entity.requestedBy.id);
             userTag = sonarrTags.find((v) => v.label === tagLabel);
           } else if (tagFormat === TagRequestsFormat.USERNAME) {
-            tagLabel = sanitizeDisplayName(
-              entity.requestedBy.displayName.toLowerCase()
-            );
+            tagLabel = sanitizeDisplayName(entity.requestedBy.displayName);
             userTag = sonarrTags.find((v) => v.label === tagLabel);
           } else if (!userTag) {
             // old tags had space around the hyphen
