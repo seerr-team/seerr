@@ -138,8 +138,7 @@ Summary of changes :
       external: true
   ```
   </TabItem>
-  <TabItem value="docker-cli" label="Docker CLI">
-  In **PowerShell**, use backticks (`` ` ``) for line continuation—do not use backslash (``\``).
+  <TabItem value="docker-cli-pwsh" label="Docker CLI (PowerShell)">
   ```powershell {2-3,8,10}
   docker run -d `
     --name seerr `
@@ -150,6 +149,21 @@ Summary of changes :
     -p 5055:5055 `
     -v seerr-data:/app/config `
     --restart unless-stopped `
+    ghcr.io/seerr-team/seerr:latest
+  ```
+  </TabItem>
+
+  <TabItem value="docker-cli-cmd" label="Docker CLI (CMD)">
+  ```cmd {2-3,8,10}
+  docker run -d ^
+    --name seerr ^
+    --init ^
+    -e LOG_LEVEL=debug ^
+    -e TZ=Asia/Tashkent ^
+    -e PORT=5055 ^
+    -p 5055:5055 ^
+    -v seerr-data:/app/config ^
+    --restart unless-stopped ^
     ghcr.io/seerr-team/seerr:latest
   ```
   </TabItem>
