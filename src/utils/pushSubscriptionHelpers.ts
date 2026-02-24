@@ -104,7 +104,9 @@ export const verifyAndResubscribePushSubscription = async (
 
       return true;
     } catch (error) {
-      throw new Error(`[SW] Resubscribe failed: ${error.message}`);
+      throw new Error(`[SW] Resubscribe failed: ${error.message}`, {
+        cause: error,
+      });
     }
   }
 
@@ -151,7 +153,8 @@ export const subscribeToPushNotifications = async (
     return false;
   } catch (error) {
     throw new Error(
-      `Issue subscribing to push notifications: ${error.message}`
+      `Issue subscribing to push notifications: ${error.message}`,
+      { cause: error }
     );
   }
 };
@@ -181,7 +184,8 @@ export const unsubscribeToPushNotifications = async (
     return null;
   } catch (error) {
     throw new Error(
-      `Issue unsubscribing to push notifications: ${error.message}`
+      `Issue unsubscribing to push notifications: ${error.message}`,
+      { cause: error }
     );
   }
 };

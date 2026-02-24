@@ -134,7 +134,7 @@ const SettingsMetadata = () => {
       }
 
       // In case of error without usable data
-      throw new Error('Failed to test connection');
+      throw new Error('Failed to test connection', { cause: error });
     }
   };
 
@@ -203,7 +203,7 @@ const SettingsMetadata = () => {
         }
       }
 
-      throw new Error('Failed to save Metadata settings');
+      throw new Error('Failed to save Metadata settings', { cause: error });
     }
   };
 

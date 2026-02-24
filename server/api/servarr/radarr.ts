@@ -74,7 +74,9 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
 
       return response.data;
     } catch (e) {
-      throw new Error(`[Radarr] Failed to retrieve movies: ${e.message}`);
+      throw new Error(`[Radarr] Failed to retrieve movies: ${e.message}`, {
+        cause: e,
+      });
     }
   };
 
@@ -84,7 +86,9 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
 
       return response.data;
     } catch (e) {
-      throw new Error(`[Radarr] Failed to retrieve movie: ${e.message}`);
+      throw new Error(`[Radarr] Failed to retrieve movie: ${e.message}`, {
+        cause: e,
+      });
     }
   };
 
@@ -107,7 +111,7 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
         errorMessage: e.message,
         tmdbId: id,
       });
-      throw new Error('Movie not found');
+      throw new Error('Movie not found', { cause: e });
     }
   }
 
@@ -223,7 +227,7 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
           response: e?.response?.data,
         }
       );
-      throw new Error('Failed to add movie to Radarr');
+      throw new Error('Failed to add movie to Radarr', { cause: e });
     }
   };
 
@@ -257,7 +261,9 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
       });
       logger.info(`[Radarr] Removed movie ${title}`);
     } catch (e) {
-      throw new Error(`[Radarr] Failed to remove movie: ${e.message}`);
+      throw new Error(`[Radarr] Failed to remove movie: ${e.message}`, {
+        cause: e,
+      });
     }
   };
 
