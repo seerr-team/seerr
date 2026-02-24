@@ -36,7 +36,7 @@ const checkOverseerrMerge = async (): Promise<boolean> => {
   // We have to replace Jellyseerr migrations not working with Overseerr with a custom one
   try {
     // Filter out the Jellyseerr migrations and replace them with the Seerr migration
-    // eslint-disable-next-line @typescript-eslint/ban-types
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     const newMigrations: MixedList<string | Function> = migrations
       ?.filter(
         (migration) =>
