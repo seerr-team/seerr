@@ -56,6 +56,10 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
     'Do NOT enable this if you are experiencing issues with DNS lookups',
   dnsCacheForceMinTtl: 'DNS Cache Minimum TTL',
   dnsCacheForceMaxTtl: 'DNS Cache Maximum TTL',
+  apiRequestTimeout: 'API Request Timeout',
+  apiRequestTimeoutTip:
+    'Maximum time (in seconds) to wait for responses from external services like Radarr/Sonarr. Set to 0 for no timeout.',
+  validationApiRequestTimeout: 'You must provide a valid timeout value',
 });
 
 const SettingsNetwork = () => {
@@ -91,6 +95,10 @@ const SettingsNetwork = () => {
         .max(65535, intl.formatMessage(messages.validationProxyPort))
         .required(intl.formatMessage(messages.validationProxyPort)),
     }),
+    apiRequestTimeout: Yup.number()
+      .typeError(intl.formatMessage(messages.validationApiRequestTimeout))
+      .required(intl.formatMessage(messages.validationApiRequestTimeout))
+      .min(0, intl.formatMessage(messages.validationApiRequestTimeout)),
   });
 
   if (!data && !error) {
@@ -130,6 +138,10 @@ const SettingsNetwork = () => {
             proxyPassword: data?.proxy?.password,
             proxyBypassFilter: data?.proxy?.bypassFilter,
             proxyBypassLocalAddresses: data?.proxy?.bypassLocalAddresses,
+            apiRequestTimeout:
+              data?.apiRequestTimeout !== undefined
+                ? data.apiRequestTimeout / 1000
+                : 10,
           }}
           enableReinitialize
           validationSchema={NetworkSettingsSchema}
@@ -154,6 +166,7 @@ const SettingsNetwork = () => {
                   bypassFilter: values.proxyBypassFilter,
                   bypassLocalAddresses: values.proxyBypassLocalAddresses,
                 },
+                apiRequestTimeout: Number(values.apiRequestTimeout) * 1000,
               });
               mutate('/api/v1/settings/public');
               mutate('/api/v1/status');
@@ -341,6 +354,31 @@ const SettingsNetwork = () => {
                     </div>
                   </>
                 )}
+                <div className="form-row">
+                  <label htmlFor="apiRequestTimeout" className="text-label">
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.apiRequestTimeout)}
+                    </span>
+                    <SettingsBadge badgeType="restartRequired" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.apiRequestTimeoutTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      id="apiRequestTimeout"
+                      name="apiRequestTimeout"
+                      type="text"
+                      inputMode="numeric"
+                      className="short"
+                    />
+                  </div>
+                  {errors.apiRequestTimeout &&
+                    touched.apiRequestTimeout &&
+                    typeof errors.apiRequestTimeout === 'string' && (
+                      <div className="error">{errors.apiRequestTimeout}</div>
+                    )}
+                </div>
                 <div className="form-row">
                   <label htmlFor="proxyEnabled" className="checkbox-label">
                     <span className="mr-2">

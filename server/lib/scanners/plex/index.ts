@@ -430,6 +430,13 @@ class PlexScanner
         mediaIds.tmdbId = tmdbMedia.id;
       }
 
+      if (mediaIds.tvdbId && !mediaIds.tmdbId) {
+        const show = await this.tmdb.getShowByTvdbId({
+          tvdbId: mediaIds.tvdbId,
+        });
+        mediaIds.tmdbId = show.id;
+      }
+
       // Cache GUIDs
       guidCache.data.set(plexitem.ratingKey, mediaIds);
 
