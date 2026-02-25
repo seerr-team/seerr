@@ -245,7 +245,7 @@ const SettingsLogs = () => {
         <p className="description">
           {intl.formatMessage(messages.logsDescription, {
             code: (msg: React.ReactNode) => (
-              <code className="whitespace-normal break-words bg-opacity-50">
+              <code className="whitespace-normal break-words bg-gray-800/50">
                 {msg}
               </code>
             ),
@@ -314,7 +314,7 @@ const SettingsLogs = () => {
               <Table.TH>{intl.formatMessage(messages.level)}</Table.TH>
               <Table.TH>{intl.formatMessage(messages.label)}</Table.TH>
               <Table.TH>{intl.formatMessage(messages.message)}</Table.TH>
-              <Table.TH></Table.TH>
+              <Table.TH />
             </tr>
           </thead>
           <Table.TBody>

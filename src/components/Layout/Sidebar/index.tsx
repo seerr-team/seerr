@@ -163,7 +163,7 @@ const Sidebar = ({
               leaveTo="opacity-0"
             >
               <div className="fixed inset-0">
-                <div className="absolute inset-0 bg-gray-900 opacity-90"></div>
+                <div className="absolute inset-0 bg-gray-900 opacity-90" />
               </div>
             </Transition.Child>
             <Transition.Child

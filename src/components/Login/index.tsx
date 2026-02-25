@@ -169,7 +169,7 @@ const Login = () => {
       </div>
       <div className="relative z-50 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div
-          className="bg-gray-800 bg-opacity-50 shadow sm:rounded-lg"
+          className="bg-gray-800/50 shadow sm:rounded-lg"
           style={{ backdropFilter: 'blur(5px)' }}
         >
           <>
@@ -241,11 +241,11 @@ const Login = () => {
               {additionalLoginOptions.length > 0 &&
                 (loginFormVisible ? (
                   <div className="flex items-center py-5">
-                    <div className="flex-grow border-t border-gray-600"></div>
+                    <div className="flex-grow border-t border-gray-600" />
                     <span className="mx-2 flex-shrink text-sm text-gray-400">
                       {intl.formatMessage(messages.orsigninwith)}
                     </span>
-                    <div className="flex-grow border-t border-gray-600"></div>
+                    <div className="flex-grow border-t border-gray-600" />
                   </div>
                 ) : (
                   <h2 className="mb-6 text-center text-lg font-bold text-neutral-200">
