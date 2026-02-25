@@ -8,6 +8,7 @@ import PlexLoginButton from '@app/components/Login/PlexLoginButton';
 import LibraryItem from '@app/components/Settings/LibraryItem';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import useSettings from '@app/hooks/useSettings';
+import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -139,6 +140,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
   const intl = useIntl();
   const { addToast, removeToast } = useToasts();
   const settings = useSettings();
+  const { revalidate: revalidateUser } = useUser();
 
   const PlexSettingsSchema = Yup.object().shape({
     hostname: Yup.string()
@@ -376,6 +378,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                     }
                   );
                   revalidate();
+                  revalidateUser();
                 } catch (e) {
                   addToast(
                     axios.isAxiosError(e) && e.response?.data?.message
