@@ -9,6 +9,7 @@ import LibraryItem from '@app/components/Settings/LibraryItem';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import useSettings from '@app/hooks/useSettings';
 import useToasts from '@app/hooks/useToasts';
+import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -147,6 +148,7 @@ const SettingsPlex = ({ isSetupSettings }: SettingsPlexProps) => {
   const intl = useIntl();
   const { addToast, removeToast } = useToasts();
   const settings = useSettings();
+  const { revalidate: revalidateUser } = useUser();
 
   const PlexSettingsSchema = Yup.object().shape({
     hostname: Yup.string()
@@ -387,6 +389,7 @@ const SettingsPlex = ({ isSetupSettings }: SettingsPlexProps) => {
                     }
                   );
                   revalidate();
+                  revalidateUser();
                 } catch (e) {
                   addToast(
                     axios.isAxiosError(e) && e.response?.data?.message
