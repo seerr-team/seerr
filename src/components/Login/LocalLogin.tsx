@@ -120,7 +120,7 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                       typeof errors.password === 'string' && (
                         <div className="error">{errors.password}</div>
                       )}
-                    <div className="flex-grow"></div>
+                    <div className="flex-grow" />
                     {passwordResetEnabled && (
                       <Link
                         href="/resetpassword"

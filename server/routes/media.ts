@@ -315,12 +315,12 @@ mediaRoutes.get<{ id: string }, MediaWatchDataResponse>(
       if (media.ratingKey) {
         const watchStats = await tautulli.getMediaWatchStats(media.ratingKey);
         const watchUsers = await tautulli.getMediaWatchUsers(media.ratingKey);
+        const plexIds = watchUsers.map((u) => u.user_id);
+        if (!plexIds.length) plexIds.push(-1);
 
         const users = await userRepository
           .createQueryBuilder('user')
-          .where('user.plexId IN (:...plexIds)', {
-            plexIds: watchUsers.map((u) => u.user_id),
-          })
+          .where('user.plexId IN (:...plexIds)', { plexIds })
           .getMany();
 
         const playCount =
@@ -347,12 +347,12 @@ mediaRoutes.get<{ id: string }, MediaWatchDataResponse>(
         const watchUsers4k = await tautulli.getMediaWatchUsers(
           media.ratingKey4k
         );
+        const plexIds4k = watchUsers4k.map((u) => u.user_id);
+        if (!plexIds4k.length) plexIds4k.push(-1);
 
         const users = await userRepository
           .createQueryBuilder('user')
-          .where('user.plexId IN (:...plexIds)', {
-            plexIds: watchUsers4k.map((u) => u.user_id),
-          })
+          .where('user.plexId IN (:...plexIds)', { plexIds: plexIds4k })
           .getMany();
 
         const playCount =

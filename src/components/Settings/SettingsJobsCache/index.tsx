@@ -495,7 +495,7 @@ const SettingsJobs = () => {
               <Table.TH>{intl.formatMessage(messages.jobname)}</Table.TH>
               <Table.TH>{intl.formatMessage(messages.jobtype)}</Table.TH>
               <Table.TH>{intl.formatMessage(messages.nextexecution)}</Table.TH>
-              <Table.TH></Table.TH>
+              <Table.TH />
             </tr>
           </thead>
           <Table.TBody>
@@ -578,7 +578,7 @@ const SettingsJobs = () => {
               <Table.TH>{intl.formatMessage(messages.cachekeys)}</Table.TH>
               <Table.TH>{intl.formatMessage(messages.cacheksize)}</Table.TH>
               <Table.TH>{intl.formatMessage(messages.cachevsize)}</Table.TH>
-              <Table.TH></Table.TH>
+              <Table.TH />
             </tr>
           </thead>
           <Table.TBody>
@@ -639,7 +639,7 @@ const SettingsJobs = () => {
                   <Table.TH>
                     {intl.formatMessage(messages.dnscacheage)}
                   </Table.TH>
-                  <Table.TH></Table.TH>
+                  <Table.TH />
                 </tr>
               </thead>
               <Table.TBody>
