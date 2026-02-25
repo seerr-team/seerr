@@ -89,11 +89,22 @@ blocklistRoutes.get(
     type: 'or',
   }),
   async (req, res, next) => {
+    const mediaType = req.query.mediaType;
+    if (mediaType !== MediaType.MOVIE && mediaType !== MediaType.TV) {
+      return next({
+        status: 400,
+        message: 'Invalid or missing mediaType query parameter.',
+      });
+    }
+
     try {
       const blocklisteRepository = getRepository(Blocklist);
 
       const blocklistItem = await blocklisteRepository.findOneOrFail({
-        where: { tmdbId: Number(req.params.id) },
+        where: {
+          tmdbId: Number(req.params.id),
+          mediaType,
+        },
       });
 
       return res.status(200).send(blocklistItem);
@@ -153,11 +164,22 @@ blocklistRoutes.delete(
     type: 'or',
   }),
   async (req, res, next) => {
+    const mediaType = req.query.mediaType;
+    if (mediaType !== MediaType.MOVIE && mediaType !== MediaType.TV) {
+      return next({
+        status: 400,
+        message: 'Invalid or missing mediaType query parameter.',
+      });
+    }
+
     try {
       const blocklisteRepository = getRepository(Blocklist);
 
       const blocklistItem = await blocklisteRepository.findOneOrFail({
-        where: { tmdbId: Number(req.params.id) },
+        where: {
+          tmdbId: Number(req.params.id),
+          mediaType,
+        },
       });
 
       await blocklisteRepository.remove(blocklistItem);
@@ -165,7 +187,10 @@ blocklistRoutes.delete(
       const mediaRepository = getRepository(Media);
 
       const mediaItem = await mediaRepository.findOneOrFail({
-        where: { tmdbId: Number(req.params.id) },
+        where: {
+          tmdbId: Number(req.params.id),
+          mediaType: req.query.mediaType as MediaType,
+        },
       });
 
       await mediaRepository.remove(mediaItem);
@@ -174,7 +199,7 @@ blocklistRoutes.delete(
     } catch (e) {
       if (e instanceof EntityNotFoundError) {
         return next({
-          status: 401,
+          status: 404,
           message: e.message,
         });
       }

@@ -297,7 +297,9 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
     setIsUpdating(true);
 
     try {
-      await axios.delete(`/api/v1/blocklist/${tmdbId}`);
+      await axios.delete(
+        `/api/v1/blocklist/${tmdbId}?mediaType=${item.mediaType}`
+      );
 
       addToast(
         <span>

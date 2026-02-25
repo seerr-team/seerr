@@ -358,7 +358,9 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   const onClickDeleteWatchlistBtn = async (): Promise<void> => {
     setIsUpdating(true);
     try {
-      await axios.delete(`/api/v1/watchlist/${movie?.id}`);
+      await axios.delete(
+        `/api/v1/watchlist/${movie?.id}?mediaType=${MediaType.MOVIE}`
+      );
 
       addToast(
         <span>

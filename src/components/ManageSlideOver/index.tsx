@@ -322,6 +322,7 @@ const ManageSlideOver = ({
             <div className="overflow-hidden rounded-md border border-gray-700 shadow">
               <BlocklistBlock
                 tmdbId={data.mediaInfo.tmdbId}
+                mediaType={data.mediaInfo.mediaType}
                 onUpdate={() => revalidate()}
                 onDelete={() => onClose()}
               />
