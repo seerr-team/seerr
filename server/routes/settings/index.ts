@@ -563,12 +563,13 @@ settingsRoutes.post(
           .delete()
           .from(Session)
           .execute();
-        startJobs();
-        return res.status(200).json({
+        res.status(200).json({
           message: useEmby
             ? 'Switched to Emby. All users have been logged out. Restart the server, then sign in with the new media server.'
             : 'Switched to Jellyfin. All users have been logged out. Restart the server, then sign in with the new media server.',
         });
+        setImmediate(() => startJobs());
+        return;
       }
 
       if (
@@ -632,11 +633,11 @@ settingsRoutes.post(
           .delete()
           .from(Session)
           .execute();
-        startJobs();
-
-        return res.status(200).json({
+        res.status(200).json({
           message: `Switched to ${serverName}. All users have been logged out. Restart the server, then sign in with the new media server.`,
         });
+        setImmediate(() => startJobs());
+        return;
       }
     } catch (e) {
       logger.error('Switch media server failed', {
