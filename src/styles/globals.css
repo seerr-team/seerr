@@ -106,7 +106,7 @@
   }
 
   .service-error-banner {
-    @apply mb-2 flex items-center gap-2 rounded-md border border-yellow-500 bg-yellow-500 bg-opacity-20 px-3 py-2 text-sm text-yellow-200;
+    @apply mb-2 flex items-center gap-2 rounded-md border border-yellow-500 bg-yellow-500/20 px-3 py-2 text-sm text-yellow-200;
   }
 
   .slider-title {
@@ -346,7 +346,7 @@
   }
 
   button.input-action {
-    @apply relative -ml-px inline-flex items-center border border-gray-500 bg-indigo-600 bg-opacity-80 px-3 py-2 text-sm font-medium leading-5 text-white last:rounded-r-md sm:px-3.5;
+    @apply relative -ml-px inline-flex items-center border border-gray-500 bg-indigo-600/80 px-3 py-2 text-sm font-medium leading-5 text-white last:rounded-r-md sm:px-3.5;
   }
 
   button.input-action[disabled] {
@@ -354,7 +354,7 @@
   }
 
   button.input-action:not([disabled]) {
-    @apply transition duration-150 ease-in-out hover:bg-opacity-100 active:bg-gray-100 active:text-gray-700;
+    @apply transition duration-150 ease-in-out hover:bg-indigo-600 active:bg-gray-100 active:text-gray-700;
   }
 
   .button-md :where(svg),
