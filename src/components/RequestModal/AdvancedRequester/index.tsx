@@ -308,14 +308,14 @@ const AdvancedRequester = ({
 
   return (
     <>
-      <div className="mb-2 mt-4 flex items-center text-lg font-semibold">
+      <div className="mt-4 mb-2 flex items-center text-lg font-semibold">
         {intl.formatMessage(messages.advancedoptions)}
       </div>
       <div className="rounded-md">
         {!!data && selectedServer !== null && (
           <div className="flex flex-col md:flex-row">
             {data.filter((server) => server.is4k === is4k).length > 1 && (
-              <div className="mb-3 w-full flex-shrink-0 flex-grow last:pr-0 md:w-1/4 md:pr-4">
+              <div className="mb-3 w-full flex-shrink-0 grow last:pr-0 md:w-1/4 md:pr-4">
                 <label htmlFor="server">
                   {intl.formatMessage(messages.destinationserver)}
                 </label>
@@ -347,7 +347,7 @@ const AdvancedRequester = ({
             {(isValidating ||
               !serverData ||
               serverData.profiles.length > 1) && (
-              <div className="mb-3 w-full flex-shrink-0 flex-grow last:pr-0 md:w-1/4 md:pr-4">
+              <div className="mb-3 w-full flex-shrink-0 grow last:pr-0 md:w-1/4 md:pr-4">
                 <label htmlFor="profile">
                   {intl.formatMessage(messages.qualityprofile)}
                 </label>
@@ -391,7 +391,7 @@ const AdvancedRequester = ({
             {(isValidating ||
               !serverData ||
               serverData.rootFolders.length > 1) && (
-              <div className="mb-3 w-full flex-shrink-0 flex-grow last:pr-0 md:w-1/4 md:pr-4">
+              <div className="mb-3 w-full flex-shrink-0 grow last:pr-0 md:w-1/4 md:pr-4">
                 <label htmlFor="folder">
                   {intl.formatMessage(messages.rootfolder)}
                 </label>
@@ -445,7 +445,7 @@ const AdvancedRequester = ({
               (isValidating ||
                 !serverData ||
                 (serverData.languageProfiles ?? []).length > 1) && (
-                <div className="mb-3 w-full flex-shrink-0 flex-grow last:pr-0 md:w-1/4 md:pr-4">
+                <div className="mb-3 w-full flex-shrink-0 grow last:pr-0 md:w-1/4 md:pr-4">
                   <label htmlFor="language">
                     {intl.formatMessage(messages.languageprofile)}
                   </label>
@@ -558,8 +558,8 @@ const AdvancedRequester = ({
                     {intl.formatMessage(messages.requestas)}
                   </Listbox.Label>
                   <div className="relative">
-                    <span className="inline-block w-full rounded-md shadow-sm">
-                      <Listbox.Button className="focus:shadow-outline-blue relative w-full cursor-default rounded-md border border-gray-700 bg-gray-800 py-2 pl-3 pr-10 text-left text-white transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none sm:text-sm sm:leading-5">
+                    <span className="inline-block w-full rounded-md shadow-xs">
+                      <Listbox.Button className="focus:shadow-outline-blue relative w-full cursor-default rounded-md border border-gray-700 bg-gray-800 py-2 pr-10 pl-3 text-left text-white transition duration-150 ease-in-out focus:border-blue-300 focus:outline-hidden sm:text-sm sm:leading-5">
                         <span className="flex items-center">
                           <CachedImage
                             type="avatar"
@@ -597,7 +597,7 @@ const AdvancedRequester = ({
                     >
                       <Listbox.Options
                         static
-                        className="shadow-xs max-h-60 overflow-auto rounded-md py-1 text-base leading-6 focus:outline-none sm:text-sm sm:leading-5"
+                        className="max-h-60 overflow-auto rounded-md py-1 text-base leading-6 shadow-2xs focus:outline-hidden sm:text-sm sm:leading-5"
                       >
                         {filteredUserData?.map((user) => (
                           <Listbox.Option key={user.id} value={user}>
@@ -607,7 +607,7 @@ const AdvancedRequester = ({
                                   active
                                     ? 'bg-indigo-600 text-white'
                                     : 'text-gray-300'
-                                } relative cursor-default select-none py-2 pl-8 pr-4`}
+                                } relative cursor-default py-2 pr-4 pl-8 select-none`}
                               >
                                 <span
                                   className={`${

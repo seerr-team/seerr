@@ -77,7 +77,7 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                   })}
                 </h2>
 
-                <div className="mb-4 mt-1">
+                <div className="mt-1 mb-4">
                   <div className="form-input-field">
                     <Field
                       id="email"
@@ -89,7 +89,7 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                       inputMode="email"
                       data-testid="email"
                       data-form-type="username,email"
-                      className="!bg-gray-700/80 placeholder:text-gray-400"
+                      className="bg-gray-700/80! placeholder:text-gray-400"
                     />
                   </div>
                   {errors.email &&
@@ -98,7 +98,7 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                       <div className="error">{errors.email}</div>
                     )}
                 </div>
-                <div className="mb-2 mt-1">
+                <div className="mt-1 mb-2">
                   <div className="form-input-field">
                     <SensitiveInput
                       as="field"
@@ -109,7 +109,7 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                       autoComplete="current-password"
                       data-testid="password"
                       data-form-type="password"
-                      className="!bg-gray-700/80 placeholder:text-gray-400"
+                      className="bg-gray-700/80! placeholder:text-gray-400"
                       data-1pignore="false"
                       data-lpignore="false"
                     />
@@ -120,7 +120,7 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                       typeof errors.password === 'string' && (
                         <div className="error">{errors.password}</div>
                       )}
-                    <div className="flex-grow" />
+                    <div className="grow" />
                     {passwordResetEnabled && (
                       <Link
                         href="/resetpassword"
@@ -132,7 +132,7 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                   </div>
                 </div>
                 {loginError && (
-                  <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
+                  <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0">
                     <div className="error">{loginError}</div>
                   </div>
                 )}
@@ -143,7 +143,7 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                 type="submit"
                 disabled={isSubmitting || !isValid}
                 data-testid="local-signin-button"
-                className="mt-2 w-full shadow-sm"
+                className="mt-2 w-full shadow-xs"
               >
                 <ArrowLeftOnRectangleIcon />
                 <span>

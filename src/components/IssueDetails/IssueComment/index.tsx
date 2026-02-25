@@ -97,16 +97,16 @@ const IssueComment = ({
         />
       </Link>
       <div className="relative flex-1">
-        <div className="w-full rounded-md shadow ring-1 ring-gray-500">
+        <div className="w-full rounded-md shadow-sm ring-1 ring-gray-500">
           {(isActiveUser || hasPermission(Permission.MANAGE_ISSUES)) && (
             <Menu
               as="div"
-              className="absolute right-1 top-2 z-40 inline-block text-left"
+              className="absolute top-2 right-1 z-40 inline-block text-left"
             >
               {({ open }) => (
                 <>
                   <div>
-                    <Menu.Button className="flex items-center rounded-full text-gray-400 hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100">
+                    <Menu.Button className="flex items-center rounded-full text-gray-400 hover:text-gray-200 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100 focus:outline-hidden">
                       <span className="sr-only">Open options</span>
                       <EllipsisVerticalIcon
                         className="h-5 w-5"
@@ -127,7 +127,7 @@ const IssueComment = ({
                   >
                     <Menu.Items
                       static
-                      className="absolute right-0 mt-2 w-56 origin-top-right rounded-md bg-gray-700 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                      className="ring-opacity-5 absolute right-0 mt-2 w-56 origin-top-right rounded-md bg-gray-700 shadow-lg ring-1 ring-black focus:outline-hidden"
                     >
                       <div className="py-1">
                         {isActiveUser && (
@@ -172,7 +172,7 @@ const IssueComment = ({
               isReversed ? '-left-1' : '-right-1'
             }`}
           />
-          <div className="relative z-20 w-full rounded-md bg-gray-800 py-4 pl-4 pr-8">
+          <div className="relative z-20 w-full rounded-md bg-gray-800 py-4 pr-8 pl-4">
             {isEditing ? (
               <Formik
                 initialValues={{ newMessage: comment.message }}

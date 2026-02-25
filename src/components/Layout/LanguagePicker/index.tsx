@@ -23,7 +23,7 @@ const LanguagePicker = () => {
     <div className="relative">
       <div>
         <button
-          className={`rounded-full p-1 hover:bg-gray-600 hover:text-white focus:bg-gray-600 focus:text-white focus:outline-none focus:ring-1 focus:ring-gray-500 sm:p-2 ${
+          className={`rounded-full p-1 hover:bg-gray-600 hover:text-white focus:bg-gray-600 focus:text-white focus:ring-1 focus:ring-gray-500 focus:outline-hidden sm:p-2 ${
             isDropdownOpen ? 'bg-gray-600 text-white' : 'text-gray-400'
           }`}
           aria-label="Language Picker"
@@ -46,11 +46,11 @@ const LanguagePicker = () => {
           className="absolute right-0 mt-2 w-56 origin-top-right rounded-md shadow-lg"
           ref={dropdownRef}
         >
-          <div className="rounded-md bg-gray-700 px-3 py-2 ring-1 ring-black ring-opacity-5">
+          <div className="ring-opacity-5 rounded-md bg-gray-700 px-3 py-2 ring-1 ring-black">
             <div>
               <label
                 htmlFor="language"
-                className="block pb-2 text-sm font-bold leading-5 text-gray-300"
+                className="block pb-2 text-sm leading-5 font-bold text-gray-300"
               >
                 {intl.formatMessage(messages.displaylanguage)}
               </label>

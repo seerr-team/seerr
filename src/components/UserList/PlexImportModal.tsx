@@ -130,7 +130,7 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
           <div className="flex flex-col">
             <div className="-mx-4 sm:mx-0">
               <div className="inline-block min-w-full py-2 align-middle">
-                <div className="overflow-hidden shadow sm:rounded-lg">
+                <div className="overflow-hidden shadow-sm sm:rounded-lg">
                   <table className="min-w-full">
                     <thead>
                       <tr>
@@ -145,7 +145,7 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
                                 toggleAllUsers();
                               }
                             }}
-                            className="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none"
+                            className="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-hidden"
                           >
                             <span
                               aria-hidden="true"
@@ -157,11 +157,11 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
                               aria-hidden="true"
                               className={`${
                                 isAllUsers() ? 'translate-x-5' : 'translate-x-0'
-                              } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
+                              } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring-3`}
                             />
                           </span>
                         </th>
-                        <th className="bg-gray-500 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                        <th className="bg-gray-500 px-1 py-3 text-left text-xs leading-4 font-medium tracking-wider text-gray-200 uppercase md:px-6">
                           {intl.formatMessage(messages.user)}
                         </th>
                       </tr>
@@ -169,7 +169,7 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
                     <tbody className="divide-y divide-gray-700 bg-gray-600">
                       {data?.map((user) => (
                         <tr key={`user-${user.id}`}>
-                          <td className="whitespace-nowrap px-4 py-4 text-sm font-medium leading-5 text-gray-100">
+                          <td className="px-4 py-4 text-sm leading-5 font-medium whitespace-nowrap text-gray-100">
                             <span
                               role="checkbox"
                               tabIndex={0}
@@ -180,7 +180,7 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
                                   toggleUser(user.id);
                                 }
                               }}
-                              className="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none"
+                              className="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-hidden"
                             >
                               <span
                                 aria-hidden="true"
@@ -196,11 +196,11 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
                                   isSelectedUser(user.id)
                                     ? 'translate-x-5'
                                     : 'translate-x-0'
-                                } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
+                                } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring-3`}
                               />
                             </span>
                           </td>
-                          <td className="whitespace-nowrap px-1 py-4 text-sm font-medium leading-5 text-gray-100 md:px-6">
+                          <td className="px-1 py-4 text-sm leading-5 font-medium whitespace-nowrap text-gray-100 md:px-6">
                             <div className="flex items-center">
                               <Image
                                 className="h-10 w-10 flex-shrink-0 rounded-full"
@@ -210,7 +210,7 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
                                 height={40}
                               />
                               <div className="ml-4">
-                                <div className="text-base font-bold leading-5">
+                                <div className="text-base leading-5 font-bold">
                                   {user.username}
                                 </div>
                                 {user.username &&

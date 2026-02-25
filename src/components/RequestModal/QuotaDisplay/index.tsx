@@ -47,7 +47,7 @@ const QuotaDisplay = ({
   const [showDetails, setShowDetails] = useState(false);
   return (
     <div
-      className="my-4 flex flex-col rounded-md border border-gray-700 p-4 backdrop-blur"
+      className="my-4 flex flex-col rounded-md border border-gray-700 p-4 backdrop-blur-sm"
       onClick={() => setShowDetails((s) => !s)}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {

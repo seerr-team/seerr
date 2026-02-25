@@ -302,7 +302,7 @@ const SettingsNetwork = () => {
                 </div>
                 {values.dnsCacheEnabled && (
                   <>
-                    <div className="ml-4 mr-2">
+                    <div className="mr-2 ml-4">
                       <div className="form-row">
                         <label
                           htmlFor="dnsCacheForceMinTtl"
@@ -403,7 +403,7 @@ const SettingsNetwork = () => {
                 </div>
                 {values.proxyEnabled && (
                   <>
-                    <div className="ml-4 mr-2">
+                    <div className="mr-2 ml-4">
                       <div className="form-row">
                         <label
                           htmlFor="proxyHostname"
@@ -560,7 +560,7 @@ const SettingsNetwork = () => {
                 )}
                 <div className="actions">
                   <div className="flex justify-end">
-                    <span className="ml-3 inline-flex rounded-md shadow-sm">
+                    <span className="ml-3 inline-flex rounded-md shadow-xs">
                       <Button
                         buttonType="primary"
                         type="submit"

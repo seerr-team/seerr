@@ -179,7 +179,7 @@ const Sidebar = ({
                 <div className="sidebar relative flex h-full w-full max-w-xs flex-1 flex-col bg-gray-800">
                   <div className="sidebar-close-button absolute right-0 -mr-14 p-1">
                     <button
-                      className="flex h-12 w-12 items-center justify-center rounded-full focus:bg-gray-600 focus:outline-none"
+                      className="flex h-12 w-12 items-center justify-center rounded-full focus:bg-gray-600 focus:outline-hidden"
                       aria-label="Close sidebar"
                       onClick={() => setClosed()}
                     >
@@ -188,7 +188,7 @@ const Sidebar = ({
                   </div>
                   <div
                     ref={navRef}
-                    className="flex flex-1 flex-col overflow-y-auto pb-8 pt-4 sm:pb-4"
+                    className="flex flex-1 flex-col overflow-y-auto pt-4 pb-8 sm:pb-4"
                   >
                     <div className="flex flex-shrink-0 items-center px-2">
                       <span className="w-full px-4 text-xl text-gray-50">
@@ -218,9 +218,9 @@ const Sidebar = ({
                             }}
                             role="button"
                             tabIndex={0}
-                            className={`flex items-center rounded-md px-2 py-2 text-base font-medium leading-6 text-white transition duration-150 ease-in-out focus:outline-none ${
+                            className={`flex items-center rounded-md px-2 py-2 text-base leading-6 font-medium text-white transition duration-150 ease-in-out focus:outline-hidden ${
                               router.pathname.match(sidebarLink.activeRegExp)
-                                ? 'bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
+                                ? 'bg-linear-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
                                 : 'hover:bg-gray-700 focus:bg-gray-700'
                             } `}
                             data-testid={`${sidebarLink.dataTestId}-mobile`}
@@ -253,7 +253,7 @@ const Sidebar = ({
         </Transition>
       </div>
 
-      <div className="fixed bottom-0 left-0 top-0 z-30 hidden lg:flex lg:flex-shrink-0">
+      <div className="fixed top-0 bottom-0 left-0 z-30 hidden lg:flex lg:shrink-0">
         <div className="sidebar flex w-64 flex-col">
           <div className="flex h-0 flex-1 flex-col">
             <div className="flex flex-1 flex-col overflow-y-auto pb-4">
@@ -277,9 +277,9 @@ const Sidebar = ({
                       key={`desktop-${sidebarLink.messagesKey}`}
                       href={sidebarLink.href}
                       as={sidebarLink.as}
-                      className={`group flex items-center rounded-md px-2 py-2 text-lg font-medium leading-6 text-white transition duration-150 ease-in-out focus:outline-none ${
+                      className={`group flex items-center rounded-md px-2 py-2 text-lg leading-6 font-medium text-white transition duration-150 ease-in-out focus:outline-hidden ${
                         router.pathname.match(sidebarLink.activeRegExp)
-                          ? 'bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
+                          ? 'bg-linear-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
                           : 'hover:bg-gray-700 focus:bg-gray-700'
                       } `}
                       data-testid={sidebarLink.dataTestId}
@@ -293,7 +293,7 @@ const Sidebar = ({
                         hasPermission(Permission.MANAGE_REQUESTS) && (
                           <div className="ml-auto flex">
                             <Badge
-                              className={`rounded-md bg-gradient-to-br ${
+                              className={`rounded-md bg-linear-to-br ${
                                 router.pathname.match(sidebarLink.activeRegExp)
                                   ? 'border-indigo-600 from-indigo-700 to-purple-700'
                                   : 'border-indigo-500 from-indigo-600 to-purple-600'
@@ -308,7 +308,7 @@ const Sidebar = ({
                         hasPermission(Permission.MANAGE_ISSUES) && (
                           <div className="ml-auto flex">
                             <Badge
-                              className={`rounded-md bg-gradient-to-br ${
+                              className={`rounded-md bg-linear-to-br ${
                                 router.pathname.match(sidebarLink.activeRegExp)
                                   ? 'border-indigo-600 from-indigo-700 to-purple-700'
                                   : 'border-indigo-500 from-indigo-600 to-purple-600'

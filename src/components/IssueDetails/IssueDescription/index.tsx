@@ -45,7 +45,7 @@ const IssueDescription = ({
             {({ open }) => (
               <>
                 <div>
-                  <Menu.Button className="flex items-center rounded-full text-gray-400 hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100">
+                  <Menu.Button className="flex items-center rounded-full text-gray-400 hover:text-gray-200 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100 focus:outline-hidden">
                     <span className="sr-only">Open options</span>
                     <EllipsisVerticalIcon
                       className="h-5 w-5"
@@ -66,7 +66,7 @@ const IssueDescription = ({
                 >
                   <Menu.Items
                     static
-                    className="absolute right-0 mt-2 w-56 origin-top-right rounded-md bg-gray-700 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    className="ring-opacity-5 absolute right-0 mt-2 w-56 origin-top-right rounded-md bg-gray-700 shadow-lg ring-1 ring-black focus:outline-hidden"
                   >
                     <div className="py-1">
                       {belongsToUser && (

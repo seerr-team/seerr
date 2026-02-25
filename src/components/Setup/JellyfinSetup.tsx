@@ -170,8 +170,8 @@ function JellyfinSetup({
                     mediaServerFormatValues
                   )}
                 </label>
-                <div className="mb-2 mt-1 sm:col-span-2 sm:mb-0 sm:mt-0">
-                  <div className="flex rounded-md shadow-sm">
+                <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0 sm:mb-0">
+                  <div className="flex rounded-md shadow-xs">
                     <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-gray-100 sm:text-sm">
                       {values.useSsl ? 'https://' : 'http://'}
                     </span>
@@ -218,8 +218,8 @@ function JellyfinSetup({
             <label htmlFor="useSsl" className="text-label mt-2">
               {intl.formatMessage(messages.enablessl)}
             </label>
-            <div className="mb-2 mt-1 sm:col-span-2">
-              <div className="flex rounded-md shadow-sm">
+            <div className="mt-1 mb-2 sm:col-span-2">
+              <div className="flex rounded-md shadow-xs">
                 <Field
                   id="useSsl"
                   name="useSsl"
@@ -234,8 +234,8 @@ function JellyfinSetup({
             <label htmlFor="urlBase" className="text-label mt-1">
               {intl.formatMessage(messages.urlBase)}
             </label>
-            <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
-              <div className="flex rounded-md shadow-sm">
+            <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0">
+              <div className="flex rounded-md shadow-xs">
                 <Field
                   type="text"
                   inputMode="url"
@@ -266,8 +266,8 @@ function JellyfinSetup({
                 </Tooltip>
               </span>
             </label>
-            <div className="mt-1 sm:col-span-2 sm:mb-2 sm:mt-0">
-              <div className="flex rounded-md shadow-sm">
+            <div className="mt-1 sm:col-span-2 sm:mt-0 sm:mb-2">
+              <div className="flex rounded-md shadow-xs">
                 <Field
                   id="email"
                   name="email"
@@ -287,8 +287,8 @@ function JellyfinSetup({
             <label htmlFor="username" className="text-label">
               {intl.formatMessage(messages.username)}
             </label>
-            <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
-              <div className="flex rounded-md shadow-sm">
+            <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0">
+              <div className="flex rounded-md shadow-xs">
                 <Field
                   id="username"
                   name="username"
@@ -308,8 +308,8 @@ function JellyfinSetup({
             <label htmlFor="password" className="text-label">
               {intl.formatMessage(messages.password)}
             </label>
-            <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
-              <div className="flexrounded-md shadow-sm">
+            <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0">
+              <div className="flexrounded-md shadow-xs">
                 <Field
                   id="password"
                   name="password"
@@ -329,7 +329,7 @@ function JellyfinSetup({
           </div>
           <div className="mt-8 border-t border-gray-700 pt-5">
             <div className="flex flex-row-reverse justify-between">
-              <span className="inline-flex rounded-md shadow-sm">
+              <span className="inline-flex rounded-md shadow-xs">
                 <Button
                   buttonType="primary"
                   type="submit"
@@ -341,7 +341,7 @@ function JellyfinSetup({
                 </Button>
               </span>
               {onCancel && (
-                <span className="inline-flex rounded-md shadow-sm">
+                <span className="inline-flex rounded-md shadow-xs">
                   <Button buttonType="default" onClick={() => onCancel()}>
                     <FormattedMessage {...messages.back} />
                   </Button>

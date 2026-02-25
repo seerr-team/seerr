@@ -20,7 +20,7 @@ const GenreCard = ({ image, url, name, canExpand = false }: GenreCardProps) => {
         canExpand ? 'w-full' : 'w-56 sm:w-72'
       } transform-gpu cursor-pointer p-8 shadow ring-1 transition duration-300 ease-in-out ${
         isHovered
-          ? 'scale-105 bg-gray-700/100 ring-gray-500'
+          ? 'scale-105 bg-gray-700 ring-gray-500'
           : 'scale-100 bg-gray-800/80 ring-gray-700'
       } overflow-hidden rounded-xl bg-cover bg-center`}
       onMouseEnter={() => {
@@ -47,7 +47,7 @@ const GenreCard = ({ image, url, name, canExpand = false }: GenreCardProps) => {
           isHovered ? 'bg-gray-800/10' : 'bg-gray-800/30'
         }`}
       />
-      <div className="relative z-20 w-full truncate whitespace-normal text-center text-2xl font-bold text-white sm:text-3xl">
+      <div className="relative z-20 w-full truncate text-center text-2xl font-bold whitespace-normal text-white sm:text-3xl">
         {name}
       </div>
     </Link>

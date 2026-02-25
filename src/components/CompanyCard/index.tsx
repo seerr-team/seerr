@@ -42,7 +42,7 @@ const CompanyCard = ({ image, url, name }: CompanyCardProps) => {
         />
       </div>
       <div
-        className={`absolute bottom-0 left-0 right-0 z-0 h-12 rounded-b-xl bg-gradient-to-t ${
+        className={`absolute right-0 bottom-0 left-0 z-0 h-12 rounded-b-xl bg-linear-to-t ${
           isHovered ? 'from-gray-800' : 'from-gray-900'
         }`}
       />

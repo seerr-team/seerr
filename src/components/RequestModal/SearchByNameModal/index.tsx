@@ -80,12 +80,12 @@ const SearchByNameModal = ({
         {data?.slice(0, 6).map((item) => (
           <button
             key={item.tvdbId}
-            className="container mx-auto flex h-40 scale-100 transform-gpu cursor-pointer flex-col items-center justify-center space-y-4 rounded-xl outline-none transition hover:scale-105 focus:outline-none focus:ring focus:ring-indigo-500 focus:ring-opacity-70"
+            className="focus:ring-opacity-70 container mx-auto flex h-40 scale-100 transform-gpu cursor-pointer flex-col items-center justify-center space-y-4 rounded-xl outline-hidden transition hover:scale-105 focus:ring-3 focus:ring-indigo-500 focus:outline-hidden"
             onClick={() => handleClick(item.tvdbId)}
           >
             <div
-              className={`flex h-40 w-full items-center overflow-hidden rounded-xl border border-gray-700 bg-gray-700/20 p-2 shadow backdrop-blur transition ${
-                tvdbId === item.tvdbId ? 'ring ring-indigo-500' : ''
+              className={`flex h-40 w-full items-center overflow-hidden rounded-xl border border-gray-700 bg-gray-700/20 p-2 shadow backdrop-blur-sm transition ${
+                tvdbId === item.tvdbId ? 'ring-3 ring-indigo-500' : ''
               } `}
             >
               <div className="relative flex w-24 flex-none items-center space-x-4 self-stretch">
@@ -95,16 +95,16 @@ const SearchByNameModal = ({
                     item.remotePoster ?? '/images/seerr_poster_not_found.png'
                   }
                   alt={item.title}
-                  className="w-100 h-auto rounded-md"
+                  className="h-auto w-100 rounded-md"
                   fill
                 />
               </div>
-              <div className="flex-grow self-start p-3 text-left">
-                <div className="text-sm font-medium leading-tight">
+              <div className="grow self-start p-3 text-left">
+                <div className="text-sm leading-tight font-medium">
                   {item.year}
                 </div>
                 <div
-                  className="text-grey-200 text-xl font-bold leading-tight"
+                  className="text-grey-200 text-xl leading-tight font-bold"
                   style={{
                     WebkitLineClamp: 1,
                     display: '-webkit-box',
@@ -117,7 +117,7 @@ const SearchByNameModal = ({
                 </div>
                 {item.overview && (
                   <div
-                    className="whitespace-normal text-xs text-gray-400"
+                    className="text-xs whitespace-normal text-gray-400"
                     style={{
                       WebkitLineClamp: 5,
                       display: '-webkit-box',

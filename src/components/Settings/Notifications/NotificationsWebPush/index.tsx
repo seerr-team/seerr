@@ -143,7 +143,7 @@ const NotificationsWebPush = () => {
               </div>
               <div className="actions">
                 <div className="flex justify-end">
-                  <span className="ml-3 inline-flex rounded-md shadow-sm">
+                  <span className="ml-3 inline-flex rounded-md shadow-xs">
                     <Button
                       buttonType="warning"
                       disabled={isSubmitting || isTesting}
@@ -160,7 +160,7 @@ const NotificationsWebPush = () => {
                       </span>
                     </Button>
                   </span>
-                  <span className="ml-3 inline-flex rounded-md shadow-sm">
+                  <span className="ml-3 inline-flex rounded-md shadow-xs">
                     <Button
                       buttonType="primary"
                       type="submit"

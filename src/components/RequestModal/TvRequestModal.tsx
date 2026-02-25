@@ -524,7 +524,7 @@ const TvRequestModal = ({
       <div className="flex flex-col">
         <div className="-mx-4 sm:mx-0">
           <div className="inline-block min-w-full py-2 align-middle">
-            <div className="overflow-hidden border border-gray-700 shadow backdrop-blur sm:rounded-lg">
+            <div className="overflow-hidden border border-gray-700 shadow-sm backdrop-blur-sm sm:rounded-lg">
               <table className="min-w-full">
                 <thead>
                   <tr>
@@ -544,7 +544,7 @@ const TvRequestModal = ({
                             toggleAllSeasons();
                           }
                         }}
-                        className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none ${
+                        className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-hidden ${
                           quota?.tv.remaining &&
                           quota.tv.limit &&
                           quota.tv.remaining < unrequestedSeasons.length
@@ -562,17 +562,17 @@ const TvRequestModal = ({
                           aria-hidden="true"
                           className={`${
                             isAllSeasons() ? 'translate-x-5' : 'translate-x-0'
-                          } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
+                          } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring-3`}
                         />
                       </span>
                     </th>
-                    <th className="bg-gray-700/80 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-1 py-3 text-left text-xs leading-4 font-medium tracking-wider text-gray-200 uppercase md:px-6">
                       {intl.formatMessage(messages.season)}
                     </th>
-                    <th className="bg-gray-700/80 px-5 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-5 py-3 text-left text-xs leading-4 font-medium tracking-wider text-gray-200 uppercase md:px-6">
                       {intl.formatMessage(messages.numberofepisodes)}
                     </th>
-                    <th className="bg-gray-700/80 px-2 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-2 py-3 text-left text-xs leading-4 font-medium tracking-wider text-gray-200 uppercase md:px-6">
                       {intl.formatMessage(globalMessages.status)}
                     </th>
                   </tr>
@@ -604,7 +604,7 @@ const TvRequestModal = ({
                       return (
                         <tr key={`season-${season.id}`}>
                           <td
-                            className={`whitespace-nowrap px-4 py-4 text-sm font-medium leading-5 text-gray-100 ${
+                            className={`px-4 py-4 text-sm leading-5 font-medium whitespace-nowrap text-gray-100 ${
                               !settings.currentSettings
                                 .partialRequestsEnabled && 'hidden'
                             }`}
@@ -626,7 +626,7 @@ const TvRequestModal = ({
                                   toggleSeason(season.seasonNumber);
                                 }
                               }}
-                              className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none ${
+                              className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-hidden ${
                                 mediaSeason ||
                                 (quota?.tv.limit &&
                                   currentlyRemaining <= 0 &&
@@ -661,21 +661,21 @@ const TvRequestModal = ({
                                   isSelectedSeason(season.seasonNumber)
                                     ? 'translate-x-5'
                                     : 'translate-x-0'
-                                } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
+                                } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring-3`}
                               />
                             </span>
                           </td>
-                          <td className="whitespace-nowrap px-1 py-4 text-sm font-medium leading-5 text-gray-100 md:px-6">
+                          <td className="px-1 py-4 text-sm leading-5 font-medium whitespace-nowrap text-gray-100 md:px-6">
                             {season.seasonNumber === 0
                               ? intl.formatMessage(globalMessages.specials)
                               : intl.formatMessage(messages.seasonnumber, {
                                   number: season.seasonNumber,
                                 })}
                           </td>
-                          <td className="whitespace-nowrap px-5 py-4 text-sm leading-5 text-gray-200 md:px-6">
+                          <td className="px-5 py-4 text-sm leading-5 whitespace-nowrap text-gray-200 md:px-6">
                             {season.episodeCount}
                           </td>
-                          <td className="whitespace-nowrap py-4 pr-2 text-sm leading-5 text-gray-200 md:px-6">
+                          <td className="py-4 pr-2 text-sm leading-5 whitespace-nowrap text-gray-200 md:px-6">
                             {!seasonRequest && !mediaSeason && (
                               <Badge>
                                 {intl.formatMessage(

@@ -111,8 +111,8 @@ const Blocklist = () => {
       <div className="mb-4 flex flex-col justify-between lg:flex-row lg:items-end">
         <Header>{intl.formatMessage(globalMessages.blocklist)}</Header>
 
-        <div className="mt-2 flex flex-grow flex-col sm:flex-row lg:flex-grow-0">
-          <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
+        <div className="mt-2 flex grow flex-col sm:flex-row lg:grow-0">
+          <div className="mb-2 flex grow sm:mr-2 sm:mb-0 lg:grow-0">
             <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
               <FunnelIcon className="h-6 w-6" />
             </span>
@@ -143,7 +143,7 @@ const Blocklist = () => {
             </select>
           </div>
 
-          <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 md:flex-grow-0">
+          <div className="mb-2 flex grow sm:mr-2 sm:mb-0 md:grow-0">
             <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
               <MagnifyingGlassIcon className="h-6 w-6" />
             </span>
@@ -340,7 +340,7 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
         </div>
       )}
       <div className="relative flex w-full flex-col justify-between overflow-hidden sm:flex-row">
-        <div className="relative z-10 flex w-full items-center overflow-hidden pl-4 pr-4 sm:pr-0 xl:w-7/12 2xl:w-2/3">
+        <div className="relative z-10 flex w-full items-center overflow-hidden pr-4 pl-4 sm:pr-0 xl:w-7/12 2xl:w-2/3">
           <Link
             href={
               item.mediaType === 'movie'
@@ -385,7 +385,7 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
           </div>
         </div>
 
-        <div className="z-10 ml-4 mt-4 flex w-full flex-col justify-center overflow-hidden pr-4 text-sm sm:ml-2 sm:mt-0 xl:flex-1 xl:pr-0">
+        <div className="z-10 mt-4 ml-4 flex w-full flex-col justify-center overflow-hidden pr-4 text-sm sm:mt-0 sm:ml-2 xl:flex-1 xl:pr-0">
           <div className="card-field">
             <span className="card-field-name">Status</span>
             <Badge badgeType="danger">
@@ -442,13 +442,13 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
           <div className="card-field">
             {item.mediaType === 'movie' ? (
               <div className="pointer-events-none z-40 self-start rounded-full border border-blue-500 bg-blue-600/80 shadow-md">
-                <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium uppercase tracking-wider text-white sm:h-5">
+                <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium tracking-wider text-white uppercase sm:h-5">
                   {intl.formatMessage(globalMessages.movie)}
                 </div>
               </div>
             ) : (
               <div className="pointer-events-none z-40 self-start rounded-full border border-purple-600 bg-purple-600/80 shadow-md">
-                <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium uppercase tracking-wider text-white sm:h-5">
+                <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium tracking-wider text-white uppercase sm:h-5">
                   {intl.formatMessage(globalMessages.tvshow)}
                 </div>
               </div>
@@ -456,7 +456,7 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
           </div>
         </div>
       </div>
-      <div className="z-10 mt-4 flex w-full flex-col justify-center space-y-2 pl-4 pr-4 xl:mt-0 xl:w-96 xl:items-end xl:pl-0">
+      <div className="z-10 mt-4 flex w-full flex-col justify-center space-y-2 pr-4 pl-4 xl:mt-0 xl:w-96 xl:items-end xl:pl-0">
         {hasPermission(Permission.MANAGE_BLOCKLIST) && (
           <ConfirmButton
             onClick={() =>

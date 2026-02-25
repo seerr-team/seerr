@@ -60,7 +60,7 @@ const SettingsAbout = () => {
           intl.formatMessage(globalMessages.settings),
         ]}
       />
-      <div className="mt-6 rounded-md border border-indigo-500 bg-indigo-400/20 p-4 backdrop-blur">
+      <div className="mt-6 rounded-md border border-indigo-500 bg-indigo-400/20 p-4 backdrop-blur-sm">
         <div className="flex">
           <div className="flex-shrink-0">
             <InformationCircleIcon className="h-5 w-5 text-gray-100" />
@@ -69,10 +69,10 @@ const SettingsAbout = () => {
             <p className="text-sm leading-5 text-gray-100">
               {intl.formatMessage(messages.betawarning)}
             </p>
-            <p className="mt-3 text-sm leading-5 md:ml-6 md:mt-0">
+            <p className="mt-3 text-sm leading-5 md:mt-0 md:ml-6">
               <a
                 href="http://github.com/seerr-team/seerr"
-                className="whitespace-nowrap font-medium text-gray-100 transition duration-150 ease-in-out hover:text-white"
+                className="font-medium whitespace-nowrap text-gray-100 transition duration-150 ease-in-out hover:text-white"
                 target="_blank"
                 rel="noreferrer"
               >
@@ -113,7 +113,7 @@ const SettingsAbout = () => {
                 >
                   <Badge
                     badgeType="warning"
-                    className="ml-2 !cursor-pointer transition hover:bg-yellow-400"
+                    className="ml-2 cursor-pointer! transition hover:bg-yellow-400"
                   >
                     {intl.formatMessage(messages.outofdate)}
                   </Badge>
@@ -130,7 +130,7 @@ const SettingsAbout = () => {
                 >
                   <Badge
                     badgeType="success"
-                    className="ml-2 !cursor-pointer transition hover:bg-green-400"
+                    className="ml-2 cursor-pointer! transition hover:bg-green-400"
                   >
                     {intl.formatMessage(messages.uptodate)}
                   </Badge>

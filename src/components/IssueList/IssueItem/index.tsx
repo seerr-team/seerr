@@ -137,7 +137,7 @@ const IssueItem = ({ issue }: IssueItemProps) => {
         </div>
       )}
       <div className="relative flex w-full flex-col justify-between overflow-hidden sm:flex-row">
-        <div className="relative z-10 flex w-full items-center overflow-hidden pl-4 pr-4 sm:pr-0 xl:w-7/12 2xl:w-2/3">
+        <div className="relative z-10 flex w-full items-center overflow-hidden pr-4 pl-4 sm:pr-0 xl:w-7/12 2xl:w-2/3">
           <Link
             href={
               issue.media.mediaType === MediaType.MOVIE
@@ -187,7 +187,7 @@ const IssueItem = ({ issue }: IssueItemProps) => {
                           <div className="mb-1 text-sm font-medium text-gray-200">
                             Issue Description
                           </div>
-                          <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-300">
+                          <div className="text-sm leading-relaxed whitespace-pre-wrap text-gray-300">
                             {description}
                           </div>
                         </div>
@@ -202,7 +202,7 @@ const IssueItem = ({ issue }: IssueItemProps) => {
                       </span>
                     </Tooltip>
                   ) : (
-                    <span className="block break-words">{description}</span>
+                    <span className="block wrap-break-word">{description}</span>
                   )}
                 </div>
               </div>
@@ -216,7 +216,7 @@ const IssueItem = ({ issue }: IssueItemProps) => {
             )}
           </div>
         </div>
-        <div className="z-10 ml-4 mt-4 flex w-full flex-col justify-center overflow-hidden pr-4 text-sm sm:ml-2 sm:mt-0 xl:flex-1 xl:pr-0">
+        <div className="z-10 mt-4 ml-4 flex w-full flex-col justify-center overflow-hidden pr-4 text-sm sm:mt-0 sm:ml-2 xl:flex-1 xl:pr-0">
           <div className="card-field">
             <span className="card-field-name">
               {intl.formatMessage(messages.issuestatus)}
@@ -301,7 +301,7 @@ const IssueItem = ({ issue }: IssueItemProps) => {
           </div>
         </div>
       </div>
-      <div className="z-10 mt-4 flex w-full flex-col justify-center pl-4 pr-4 xl:mt-0 xl:w-96 xl:items-end xl:pl-0">
+      <div className="z-10 mt-4 flex w-full flex-col justify-center pr-4 pl-4 xl:mt-0 xl:w-96 xl:items-end xl:pl-0">
         <span className="w-full">
           <Link href={`/issues/${issue.id}`} passHref legacyBehavior>
             <Button as="a" className="w-full" buttonType="primary">

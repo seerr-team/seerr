@@ -660,7 +660,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                   onClick={() => setShowManager(true)}
                   className="relative ml-2 first:ml-0"
                 >
-                  <CogIcon className="!mr-0" />
+                  <CogIcon className="mr-0!" />
                   {hasPermission(
                     [Permission.MANAGE_ISSUES, Permission.VIEW_ISSUES],
                     {
@@ -673,8 +673,8 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                       ) ?? []
                     ).length > 0 && (
                       <>
-                        <div className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-red-600" />
-                        <div className="absolute -right-1 -top-1 h-3 w-3 animate-ping rounded-full bg-red-600" />
+                        <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-600" />
+                        <div className="absolute -top-1 -right-1 h-3 w-3 animate-ping rounded-full bg-red-600" />
                       </>
                     )}
                 </Button>
@@ -720,7 +720,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                 <Link
                   href={`/discover/movies?keywords=${keyword.id}`}
                   key={`keyword-id-${keyword.id}`}
-                  className="mb-2 mr-2 inline-flex last:mr-0"
+                  className="mr-2 mb-2 inline-flex last:mr-0"
                 >
                   <Tag>{keyword.name}</Tag>
                 </Link>

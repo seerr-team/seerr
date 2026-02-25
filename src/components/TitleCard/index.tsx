@@ -303,10 +303,10 @@ const TitleCard = ({
         isUpdating={isUpdating}
       />
       <div
-        className={`relative transform-gpu cursor-default overflow-hidden rounded-xl bg-gray-800 bg-cover outline-none ring-1 transition duration-300 ${
+        className={`relative transform-gpu cursor-default overflow-hidden rounded-xl bg-gray-800 bg-cover ring-1 outline-hidden transition duration-300 ${
           showDetail
             ? 'scale-105 shadow-lg ring-gray-500'
-            : 'scale-100 shadow ring-gray-700'
+            : 'scale-100 shadow-sm ring-gray-700'
         }`}
         style={{
           paddingBottom: '150%',
@@ -339,7 +339,7 @@ const TitleCard = ({
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             fill
           />
-          <div className="absolute left-0 right-0 flex items-center justify-between p-2">
+          <div className="absolute right-0 left-0 flex items-center justify-between p-2">
             <div
               className={`pointer-events-none z-40 self-start rounded-full border shadow-md ${
                 mediaType === 'movie' || mediaType === 'collection'
@@ -347,7 +347,7 @@ const TitleCard = ({
                   : 'border-purple-600 bg-purple-600/80'
               }`}
             >
-              <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium uppercase tracking-wider text-white sm:h-5">
+              <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium tracking-wider text-white uppercase sm:h-5">
                 {mediaType === 'movie'
                   ? intl.formatMessage(globalMessages.movie)
                   : mediaType === 'collection'
@@ -476,7 +476,7 @@ const TitleCard = ({
                     {year && <div className="text-sm font-medium">{year}</div>}
 
                     <h1
-                      className="whitespace-normal text-xl font-bold leading-tight"
+                      className="text-xl leading-tight font-bold whitespace-normal"
                       style={{
                         WebkitLineClamp: 3,
                         display: '-webkit-box',
@@ -489,7 +489,7 @@ const TitleCard = ({
                       {title}
                     </h1>
                     <div
-                      className="whitespace-normal text-xs"
+                      className="text-xs whitespace-normal"
                       style={{
                         WebkitLineClamp:
                           !showRequestButton ||
@@ -510,7 +510,7 @@ const TitleCard = ({
                 </div>
               </Link>
 
-              <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 py-2">
+              <div className="absolute right-0 bottom-0 left-0 flex justify-between px-2 py-2">
                 {showRequestButton &&
                   (!currentStatus ||
                     currentStatus === MediaStatus.UNKNOWN ||

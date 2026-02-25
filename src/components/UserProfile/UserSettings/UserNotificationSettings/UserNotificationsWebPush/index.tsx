@@ -308,7 +308,7 @@ const UserWebPushSettings = () => {
               />
               <div className="actions">
                 <div className="flex justify-end">
-                  <span className="ml-3 inline-flex rounded-md shadow-sm">
+                  <span className="ml-3 inline-flex rounded-md shadow-xs">
                     <Button
                       buttonType={`${webPushEnabled ? 'danger' : 'primary'}`}
                       type="button"
@@ -330,7 +330,7 @@ const UserWebPushSettings = () => {
                       </span>
                     </Button>
                   </span>
-                  <span className="ml-3 inline-flex rounded-md shadow-sm">
+                  <span className="ml-3 inline-flex rounded-md shadow-xs">
                     <Button
                       buttonType="primary"
                       type="submit"
@@ -350,7 +350,7 @@ const UserWebPushSettings = () => {
           );
         }}
       </Formik>
-      <div className="mb-6 mt-10">
+      <div className="mt-10 mb-6">
         <h3 className="heading">
           {intl.formatMessage(messages.managedevices)}
         </h3>

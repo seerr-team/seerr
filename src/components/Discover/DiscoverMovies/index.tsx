@@ -76,8 +76,8 @@ const DiscoverMovies = () => {
       <PageTitle title={title} />
       <div className="mb-4 flex flex-col justify-between lg:flex-row lg:items-end">
         <Header>{title}</Header>
-        <div className="mt-2 flex flex-grow flex-col sm:flex-row lg:flex-grow-0">
-          <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
+        <div className="mt-2 flex grow flex-col sm:flex-row lg:grow-0">
+          <div className="mb-2 flex grow sm:mr-2 sm:mb-0 lg:grow-0">
             <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-gray-100 sm:text-sm">
               <BarsArrowDownIcon className="h-6 w-6" />
             </span>
@@ -120,7 +120,7 @@ const DiscoverMovies = () => {
             onClose={() => setShowFilters(false)}
             show={showFilters}
           />
-          <div className="mb-2 flex flex-grow sm:mb-0 lg:flex-grow-0">
+          <div className="mb-2 flex grow sm:mb-0 lg:grow-0">
             <Button onClick={() => setShowFilters(true)} className="w-full">
               <FunnelIcon />
               <span>

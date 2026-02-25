@@ -135,7 +135,7 @@ const PersonDetails = () => {
   const isLoading = !combinedCredits && !errorCombinedCredits;
 
   const mediaTypePicker = (
-    <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
+    <div className="mb-2 flex grow sm:mr-2 sm:mb-0 lg:grow-0">
       <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
         <CircleStackIcon className="h-6 w-6" />
       </span>
@@ -241,7 +241,7 @@ const PersonDetails = () => {
     <>
       <PageTitle title={data.name} />
       {(sortedCrew || sortedCast) && (
-        <div className="absolute left-0 right-0 top-0 z-0 h-96">
+        <div className="absolute top-0 right-0 left-0 z-0 h-96">
           <ImageFader
             isDarker
             backgroundImages={[...(sortedCast ?? []), ...(sortedCrew ?? [])]
@@ -255,12 +255,12 @@ const PersonDetails = () => {
         </div>
       )}
       <div
-        className={`relative z-10 mb-8 mt-4 flex flex-col items-center lg:flex-row ${
+        className={`relative z-10 mt-4 mb-8 flex flex-col items-center lg:flex-row ${
           data.biography ? 'lg:items-start' : ''
         }`}
       >
         {data.profilePath && (
-          <div className="relative mb-6 mr-0 h-36 w-36 flex-shrink-0 overflow-hidden rounded-full ring-1 ring-gray-700 lg:mb-0 lg:mr-6 lg:h-44 lg:w-44">
+          <div className="relative mr-0 mb-6 h-36 w-36 flex-shrink-0 overflow-hidden rounded-full ring-1 ring-gray-700 lg:mr-6 lg:mb-0 lg:h-44 lg:w-44">
             <CachedImage
               type="tmdb"
               src={`https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.profilePath}`}
@@ -277,7 +277,7 @@ const PersonDetails = () => {
               {mediaTypePicker}
             </div>
           </div>
-          <div className="mb-2 mt-1 space-y-1 text-xs text-white sm:text-sm lg:text-base">
+          <div className="mt-1 mb-2 space-y-1 text-xs text-white sm:text-sm lg:text-base">
             <div>{personAttributes.join(' | ')}</div>
             {(data.alsoKnownAs ?? []).length > 0 && (
               <div>
@@ -297,7 +297,7 @@ const PersonDetails = () => {
             <div className="relative text-left">
               {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
               <div
-                className="group outline-none ring-0"
+                className="group ring-0 outline-hidden"
                 onClick={() => setShowBio((show) => !show)}
                 role="button"
                 tabIndex={-1}

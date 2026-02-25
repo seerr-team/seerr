@@ -137,7 +137,7 @@ const StatusBadge = ({
 
   const badgeDownloadProgress = (
     <div
-      className={`absolute left-0 top-0 z-10 flex h-full ${
+      className={`absolute top-0 left-0 z-10 flex h-full ${
         status === MediaStatus.DELETED
           ? 'bg-red-600/80'
           : status === MediaStatus.PROCESSING
@@ -168,7 +168,7 @@ const StatusBadge = ({
             badgeType="success"
             href={mediaLink}
             className={`${
-              inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
+              inProgress && 'relative bg-gray-700/80! px-0! hover:bg-gray-700!'
             } overflow-hidden`}
           >
             {inProgress && badgeDownloadProgress}
@@ -233,7 +233,7 @@ const StatusBadge = ({
             badgeType="success"
             href={mediaLink}
             className={`${
-              inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
+              inProgress && 'relative bg-gray-700/80! px-0! hover:bg-gray-700!'
             } overflow-hidden`}
           >
             {inProgress && badgeDownloadProgress}
@@ -298,7 +298,7 @@ const StatusBadge = ({
             badgeType="primary"
             href={mediaLink}
             className={`${
-              inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
+              inProgress && 'relative bg-gray-700/80! px-0! hover:bg-gray-700!'
             } overflow-hidden`}
           >
             {inProgress && badgeDownloadProgress}
@@ -385,7 +385,7 @@ const StatusBadge = ({
             badgeType="danger"
             href={mediaLink}
             className={`${
-              inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
+              inProgress && 'relative bg-gray-700/80! px-0! hover:bg-gray-700!'
             } overflow-hidden`}
           >
             {inProgress && badgeDownloadProgress}

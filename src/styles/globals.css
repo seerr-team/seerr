@@ -1,6 +1,665 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@config '../../tailwind.config.js';
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility searchbar {
+  padding-top: env(safe-area-inset-top);
+  height: calc(4rem + env(safe-area-inset-top));
+}
+
+@utility sidebar {
+  @apply border-r border-gray-700;
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  background: linear-gradient(180deg, rgba(31, 41, 55, 1) 0%, #131928 100%);
+}
+
+@utility slideover {
+  padding-top: calc(0.75rem + env(safe-area-inset-top)) !important;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-top)) !important;
+}
+
+@utility sidebar-close-button {
+  top: env(safe-area-inset-top);
+}
+
+@utility server-type-button {
+  @apply rounded-md border border-gray-500 bg-gray-700 px-4 py-2 text-white transition duration-150 ease-in-out hover:bg-gray-500;
+}
+
+@utility jellyfin-server {
+  & svg {
+    @apply h-6 w-6;
+  }
+}
+
+@utility emby-server {
+  & svg {
+    @apply h-7 w-7;
+  }
+}
+
+@utility cards-vertical {
+  &ul {
+    @apply grid gap-4;
+  }
+
+  &ul {
+    grid-template-columns: repeat(auto-fill, minmax(9.375rem, 1fr));
+  }
+}
+
+@utility cards-horizontal {
+  & ul {
+    @apply grid gap-4;
+  }
+
+  &ul {
+    grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr));
+  }
+}
+
+@utility provider-icons {
+  grid-template-columns: repeat(auto-fill, minmax(3.5rem, 1fr));
+}
+
+@utility slider-header {
+  @apply relative mt-6 mb-4 flex;
+}
+
+@utility service-error-banner {
+  @apply mb-2 flex items-center gap-2 rounded-md border border-yellow-500 bg-yellow-500/20 px-3 py-2 text-sm text-yellow-200;
+}
+
+@utility slider-title {
+  @apply inline-flex items-center text-xl leading-7 font-bold text-gray-300 sm:truncate sm:text-2xl sm:leading-9;
+
+  &a {
+    @apply transition duration-300 hover:text-white;
+  }
+
+  &a svg {
+    @apply ml-2 h-6 w-6;
+  }
+}
+
+@utility media-page {
+  @apply relative -mx-4 bg-cover bg-center px-4;
+  margin-top: calc(-4rem - env(safe-area-inset-top));
+  padding-top: calc(4rem + env(safe-area-inset-top));
+}
+
+@utility media-page-bg-image {
+  @apply absolute inset-0 h-full w-full;
+  z-index: -10;
+}
+
+@utility media-header {
+  @apply flex flex-col items-center pt-4 xl:flex-row xl:items-end;
+}
+
+@utility media-poster {
+  @apply w-32 overflow-hidden rounded-sm shadow-sm md:w-44 md:rounded-lg md:shadow-2xl xl:mr-4 xl:w-52;
+}
+
+@utility media-status {
+  @apply mb-2 space-x-2;
+}
+
+@utility media-title {
+  @apply mt-4 flex flex-1 flex-col text-center text-white xl:mt-0 xl:mr-4 xl:text-left;
+
+  & > h1 {
+    @apply text-2xl font-bold xl:text-4xl;
+  }
+}
+
+@utility media-year {
+  h1 & {
+    @apply text-2xl;
+  }
+}
+
+@utility media-attributes {
+  @apply mt-1 flex flex-wrap items-center justify-center space-x-1 text-xs text-gray-300 sm:text-sm xl:mt-0 xl:justify-start xl:text-base;
+
+  & a {
+    @apply transition duration-300 hover:text-white hover:underline;
+  }
+}
+
+@utility media-actions {
+  @apply relative mt-4 flex flex-shrink-0 flex-wrap items-center justify-center sm:flex-nowrap sm:justify-end xl:mt-0;
+
+  & > * {
+    @apply mb-3 sm:mb-0;
+  }
+}
+
+@utility media-overview {
+  @apply flex flex-col pt-8 pb-4 text-white lg:flex-row;
+
+  & h2 {
+    @apply text-xl font-bold text-gray-300 sm:text-2xl;
+  }
+
+  & p {
+    @apply pt-2 text-sm text-gray-400 sm:text-base;
+  }
+}
+
+@utility media-overview-left {
+  @apply flex-1 lg:mr-8;
+}
+
+@utility tagline {
+  @apply mb-4 text-xl text-gray-400 italic lg:text-2xl;
+}
+
+@utility media-crew {
+  &ul {
+    @apply mt-6 grid grid-cols-2 gap-6 sm:grid-cols-3;
+  }
+
+  &ul > li {
+    @apply col-span-1 flex flex-col font-bold text-gray-300;
+  }
+}
+
+@utility crew-name {
+  &a {
+    @apply font-normal text-gray-400 transition duration-300 hover:text-gray-100 hover:underline;
+  }
+}
+
+@utility media-fact-value {
+  & a {
+    @apply font-normal text-gray-400 transition duration-300 hover:text-gray-100 hover:underline;
+  }
+
+  & button {
+    @apply font-normal text-gray-400 transition duration-300 hover:text-gray-100 hover:underline;
+  }
+  @apply ml-2 text-right text-sm font-normal text-gray-400;
+}
+
+@utility media-overview-right {
+  @apply mt-8 w-full lg:mt-0 lg:w-80;
+}
+
+@utility media-facts {
+  @apply rounded-lg border border-gray-700 bg-gray-900 text-sm font-bold text-gray-300 shadow-sm;
+}
+
+@utility media-fact {
+  @apply flex justify-between border-b border-gray-700 px-4 py-2 last:border-b-0;
+}
+
+@utility media-ratings {
+  @apply flex items-center justify-center space-x-5 border-b border-gray-700 px-4 py-2 font-medium last:border-b-0;
+}
+
+@utility media-rating {
+  @apply flex items-center space-x-1;
+}
+
+@utility error-message {
+  @apply relative top-0 right-0 bottom-0 left-0 flex h-screen flex-col items-center justify-center text-center text-gray-300;
+}
+
+@utility heading {
+  @apply text-2xl leading-8 font-bold text-gray-100;
+}
+
+@utility description {
+  @apply mt-1 max-w-4xl text-sm leading-5 text-gray-400;
+}
+
+@utility avatar-sm {
+  &img {
+    @apply mr-1 h-5 w-5 scale-100 transform-gpu rounded-full transition duration-300 group-hover:scale-105;
+  }
+}
+
+@utility card-field {
+  @apply flex items-center truncate py-0.5 text-sm sm:py-1;
+
+  & a {
+    @apply transition duration-300 hover:text-white hover:underline;
+  }
+}
+
+@utility card-field-name {
+  @apply mr-2 font-bold;
+}
+
+@utility section {
+  @apply mt-6 mb-10 text-white;
+}
+
+@utility form-row {
+  @apply mt-6 max-w-6xl sm:mt-5 sm:grid sm:grid-cols-3 sm:items-start sm:gap-4;
+}
+
+@utility form-input-area {
+  @apply text-sm text-white sm:col-span-2;
+}
+
+@utility form-input-field {
+  @apply flex max-w-xl rounded-md shadow-xs;
+}
+
+@utility actions {
+  @apply mt-8 border-t border-gray-700 pt-5 text-white;
+}
+
+@utility group-label {
+  @apply mb-1 block text-sm leading-5 font-bold text-gray-400;
+}
+
+@utility checkbox-label {
+  &label {
+    @apply sm:mt-1;
+  }
+}
+
+@utility text-label {
+  &label {
+    @apply sm:mt-2;
+  }
+}
+
+@utility label-required {
+  @apply ml-1 text-red-500;
+}
+
+@utility label-tip {
+  @apply block font-medium text-gray-500;
+}
+
+@utility rounded-l-only {
+  &input {
+    @apply rounded-r-none;
+  }
+
+  & select {
+    @apply rounded-r-none;
+  }
+
+  & textarea {
+    @apply rounded-r-none;
+  }
+}
+
+@utility rounded-r-only {
+  &input {
+    @apply rounded-l-none;
+  }
+
+  & select {
+    @apply rounded-l-none;
+  }
+
+  & textarea {
+    @apply rounded-l-none;
+  }
+}
+
+@utility short {
+  &input {
+    @apply w-20;
+  }
+
+  &select {
+    @apply w-min;
+  }
+}
+
+@utility input-action {
+  &button {
+    @apply relative -ml-px inline-flex items-center border border-gray-500 bg-indigo-600/80 px-3 py-2 text-sm leading-5 font-medium text-white last:rounded-r-md sm:px-3.5;
+  }
+
+  &button[disabled] {
+    filter: grayscale(100%);
+  }
+
+  &button:not([disabled]) {
+    @apply transition duration-150 ease-in-out hover:bg-indigo-600 active:bg-gray-100 active:text-gray-700;
+  }
+
+  & button svg {
+    @apply mr-2 ml-2 h-5 w-5 first:ml-0 last:mr-0;
+  }
+
+  .react-select-container:has(+ &) .react-select__control {
+    @apply rounded-r-none border border-gray-500 bg-gray-700 text-white hover:border-gray-500;
+  }
+}
+
+@utility button-md {
+  & :where(svg) {
+    @apply mr-2 ml-2 h-5 w-5 first:ml-0 last:mr-0;
+  }
+}
+
+@utility button-sm {
+  & svg {
+    @apply mr-1.5 ml-1.5 h-4 w-4 first:ml-0 last:mr-0;
+  }
+}
+
+@utility icon-md {
+  &svg {
+    @apply h-5 w-5;
+  }
+}
+
+@utility icon-sm {
+  &svg {
+    @apply h-4 w-4;
+  }
+}
+
+@utility protocol {
+  @apply inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-600 px-3 text-gray-100 sm:text-sm;
+}
+
+@utility error {
+  @apply mt-2 text-sm text-red-500;
+}
+
+@utility form-group {
+  @apply mt-6 text-white;
+}
+
+@utility toast {
+  width: 360px;
+}
+
+@utility react-select-container {
+  @apply w-full;
+
+  &:has(+ .input-action) .react-select__control {
+    @apply rounded-r-none border border-gray-500 bg-gray-700 text-white hover:border-gray-500;
+  }
+
+  & .react-select__control {
+    @apply rounded-md border border-gray-500 bg-gray-700 text-white hover:border-gray-500;
+  }
+
+  & .react-select__control--is-focused {
+    @apply rounded-md border border-gray-500 bg-gray-700 text-white shadow-sm;
+  }
+
+  & .react-select__menu {
+    @apply bg-gray-700 text-gray-300;
+  }
+
+  & .react-select__option--is-focused {
+    @apply bg-gray-600 text-white;
+  }
+
+  & .react-select__indicator-separator {
+    @apply bg-gray-500;
+  }
+
+  & .react-select__indicator {
+    @apply text-gray-500;
+  }
+
+  & .react-select__placeholder {
+    @apply text-gray-400;
+  }
+
+  & .react-select__multi-value {
+    @apply rounded-md border border-gray-500 bg-gray-800;
+  }
+
+  & .react-select__multi-value__label {
+    @apply text-white;
+  }
+
+  & .react-select__multi-value__remove {
+    @apply cursor-pointer rounded-r-md hover:bg-red-700 hover:text-red-100;
+  }
+
+  & .react-select__input {
+    @apply border-none text-base shadow-xs ring-0;
+  }
+
+  & .react-select__input input:focus {
+    @apply border-none;
+    box-shadow: none;
+  }
+
+  & .react-select__input-container {
+    @apply text-white;
+  }
+
+  & .react-select__single-value {
+    @apply text-sm text-gray-100;
+  }
+
+  & .react-select__placeholder {
+    @apply text-sm text-gray-500;
+  }
+}
+
+@utility react-select__control {
+  .react-select-container:has(+ .input-action) & {
+    @apply rounded-r-none border border-gray-500 bg-gray-700 text-white hover:border-gray-500;
+  }
+
+  .react-select-container & {
+    @apply rounded-md border border-gray-500 bg-gray-700 text-white hover:border-gray-500;
+  }
+
+  .react-select-container-dark & {
+    @apply border border-gray-700 bg-gray-800;
+  }
+}
+
+@utility react-select-container-dark {
+  & .react-select__control {
+    @apply border border-gray-700 bg-gray-800;
+  }
+
+  & .react-select__control--is-focused {
+    @apply border-gray-600 bg-gray-800;
+  }
+
+  & .react-select__menu {
+    @apply bg-gray-800;
+  }
+
+  & .react-select__option--is-focused {
+    @apply bg-gray-700;
+  }
+}
+
+@utility react-select__control--is-focused {
+  .react-select-container & {
+    @apply rounded-md border border-gray-500 bg-gray-700 text-white shadow-sm;
+  }
+
+  .react-select-container-dark & {
+    @apply border-gray-600 bg-gray-800;
+  }
+}
+
+@utility react-select__menu {
+  .react-select-container & {
+    @apply bg-gray-700 text-gray-300;
+  }
+
+  .react-select-container-dark & {
+    @apply bg-gray-800;
+  }
+}
+
+@utility react-select__option--is-focused {
+  .react-select-container & {
+    @apply bg-gray-600 text-white;
+  }
+
+  .react-select-container-dark & {
+    @apply bg-gray-700;
+  }
+}
+
+@utility react-select__indicator-separator {
+  .react-select-container & {
+    @apply bg-gray-500;
+  }
+}
+
+@utility react-select__indicator {
+  .react-select-container & {
+    @apply text-gray-500;
+  }
+}
+
+@utility react-select__placeholder {
+  .react-select-container & {
+    @apply text-gray-400;
+  }
+
+  .react-select-container & {
+    @apply text-sm text-gray-500;
+  }
+}
+
+@utility react-select__multi-value {
+  .react-select-container & {
+    @apply rounded-md border border-gray-500 bg-gray-800;
+  }
+}
+
+@utility react-select__multi-value__label {
+  .react-select-container & {
+    @apply text-white;
+  }
+}
+
+@utility react-select__multi-value__remove {
+  .react-select-container & {
+    @apply cursor-pointer rounded-r-md hover:bg-red-700 hover:text-red-100;
+  }
+}
+
+@utility react-select__input {
+  .react-select-container & {
+    @apply border-none text-base shadow-xs ring-0;
+  }
+
+  .react-select-container & input:focus {
+    @apply border-none;
+    box-shadow: none;
+  }
+}
+
+@utility react-select__input-container {
+  .react-select-container & {
+    @apply text-white;
+  }
+}
+
+@utility react-select__single-value {
+  .react-select-container & {
+    @apply text-sm text-gray-100;
+  }
+}
+
+@utility datepicker-wrapper {
+  & > button {
+    @apply top-0;
+  }
+
+  & > div {
+    @apply fixed right-0 left-0 w-full px-4 md:w-auto;
+  }
+
+  & > div > div:nth-child(2) > div {
+    @apply flex-col!;
+  }
+
+  & > div > div:nth-child(2) > div > div > div {
+    @apply w-full! min-w-full!;
+  }
+
+  & > div > div:first-child {
+    @apply hidden;
+  }
+}
+
+@utility absolute-top-shift {
+  top: calc(-4rem - env(safe-area-inset-top));
+}
+
+@utility absolute-bottom-shift {
+  bottom: calc(5rem + env(safe-area-inset-bottom));
+}
+
+@utility safe-shift-edit-menu {
+  bottom: calc(54px + env(safe-area-inset-bottom));
+}
+
+@utility padding-bottom-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility min-h-screen-shift {
+  min-height: calc(100vh + env(safe-area-inset-top));
+}
+
+@utility extra-max-height {
+  /* Used for animating height */
+  max-height: 100rem;
+}
+
+@utility hide-scrollbar {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+@utility text-overseerr {
+  @apply bg-linear-to-br from-indigo-400 to-purple-400 bg-clip-text text-transparent;
+}
+
+@utility pwa-only {
+  @media all and (display-mode: browser) {
+    @apply hidden;
+  }
+}
+
+@utility extra-bottom-space {
+  height: calc(4rem + env(safe-area-inset-bottom));
+}
 
 @layer base {
   html {
@@ -53,254 +712,8 @@
 }
 
 @layer components {
-  .searchbar {
-    padding-top: env(safe-area-inset-top);
-    height: calc(4rem + env(safe-area-inset-top));
-  }
-
-  .sidebar {
-    @apply border-r border-gray-700;
-    padding-top: env(safe-area-inset-top);
-    padding-left: env(safe-area-inset-left);
-    background: linear-gradient(180deg, rgba(31, 41, 55, 1) 0%, #131928 100%);
-  }
-
-  .slideover {
-    padding-top: calc(0.75rem + env(safe-area-inset-top)) !important;
-    padding-bottom: calc(0.75rem + env(safe-area-inset-top)) !important;
-  }
-
-  .sidebar-close-button {
-    top: env(safe-area-inset-top);
-  }
-
-  .server-type-button {
-    @apply rounded-md border border-gray-500 bg-gray-700 px-4 py-2 text-white transition duration-150 ease-in-out hover:bg-gray-500;
-  }
-  .jellyfin-server svg {
-    @apply h-6 w-6;
-  }
-  .emby-server svg {
-    @apply h-7 w-7;
-  }
-
-  ul.cards-vertical,
-  ul.cards-horizontal {
-    @apply grid gap-4;
-  }
-
-  ul.cards-vertical {
-    grid-template-columns: repeat(auto-fill, minmax(9.375rem, 1fr));
-  }
-
-  ul.cards-horizontal {
-    grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr));
-  }
-
-  .provider-icons {
-    grid-template-columns: repeat(auto-fill, minmax(3.5rem, 1fr));
-  }
-
-  .slider-header {
-    @apply relative mb-4 mt-6 flex;
-  }
-
-  .service-error-banner {
-    @apply mb-2 flex items-center gap-2 rounded-md border border-yellow-500 bg-yellow-500/20 px-3 py-2 text-sm text-yellow-200;
-  }
-
-  .slider-title {
-    @apply inline-flex items-center text-xl font-bold leading-7 text-gray-300 sm:truncate sm:text-2xl sm:leading-9;
-  }
-
-  a.slider-title {
-    @apply transition duration-300 hover:text-white;
-  }
-
-  a.slider-title svg {
-    @apply ml-2 h-6 w-6;
-  }
-
-  .media-page {
-    @apply relative -mx-4 bg-cover bg-center px-4;
-    margin-top: calc(-4rem - env(safe-area-inset-top));
-    padding-top: calc(4rem + env(safe-area-inset-top));
-  }
-
-  .media-page-bg-image {
-    @apply absolute inset-0 h-full w-full;
-    z-index: -10;
-  }
-
-  .media-header {
-    @apply flex flex-col items-center pt-4 xl:flex-row xl:items-end;
-  }
-
-  .media-poster {
-    @apply w-32 overflow-hidden rounded shadow md:w-44 md:rounded-lg md:shadow-2xl xl:mr-4 xl:w-52;
-  }
-
-  .media-status {
-    @apply mb-2 space-x-2;
-  }
-
-  .media-title {
-    @apply mt-4 flex flex-1 flex-col text-center text-white xl:mr-4 xl:mt-0 xl:text-left;
-  }
-
-  .media-title > h1 {
-    @apply text-2xl font-bold xl:text-4xl;
-  }
-
-  h1 .media-year {
-    @apply text-2xl;
-  }
-
-  .media-attributes {
-    @apply mt-1 flex flex-wrap items-center justify-center space-x-1 text-xs text-gray-300 sm:text-sm xl:mt-0 xl:justify-start xl:text-base;
-  }
-
-  .media-attributes a {
-    @apply transition duration-300 hover:text-white hover:underline;
-  }
-
-  .media-actions {
-    @apply relative mt-4 flex flex-shrink-0 flex-wrap items-center justify-center sm:flex-nowrap sm:justify-end xl:mt-0;
-  }
-
-  .media-actions > * {
-    @apply mb-3 sm:mb-0;
-  }
-
-  .media-overview {
-    @apply flex flex-col pb-4 pt-8 text-white lg:flex-row;
-  }
-
-  .media-overview-left {
-    @apply flex-1 lg:mr-8;
-  }
-
-  .tagline {
-    @apply mb-4 text-xl italic text-gray-400 lg:text-2xl;
-  }
-
-  .media-overview h2 {
-    @apply text-xl font-bold text-gray-300 sm:text-2xl;
-  }
-
-  .media-overview p {
-    @apply pt-2 text-sm text-gray-400 sm:text-base;
-  }
-
-  ul.media-crew {
-    @apply mt-6 grid grid-cols-2 gap-6 sm:grid-cols-3;
-  }
-
-  ul.media-crew > li {
-    @apply col-span-1 flex flex-col font-bold text-gray-300;
-  }
-
-  a.crew-name,
-  .media-fact-value a,
-  .media-fact-value button {
-    @apply font-normal text-gray-400 transition duration-300 hover:text-gray-100 hover:underline;
-  }
-
-  .media-overview-right {
-    @apply mt-8 w-full lg:mt-0 lg:w-80;
-  }
-
-  .media-facts {
-    @apply rounded-lg border border-gray-700 bg-gray-900 text-sm font-bold text-gray-300 shadow;
-  }
-
-  .media-fact {
-    @apply flex justify-between border-b border-gray-700 px-4 py-2 last:border-b-0;
-  }
-
-  .media-fact-value {
-    @apply ml-2 text-right text-sm font-normal text-gray-400;
-  }
-
-  .media-ratings {
-    @apply flex items-center justify-center space-x-5 border-b border-gray-700 px-4 py-2 font-medium last:border-b-0;
-  }
-
-  .media-rating {
-    @apply flex items-center space-x-1;
-  }
-
-  .error-message {
-    @apply relative bottom-0 left-0 right-0 top-0 flex h-screen flex-col items-center justify-center text-center text-gray-300;
-  }
-
-  .heading {
-    @apply text-2xl font-bold leading-8 text-gray-100;
-  }
-
-  .description {
-    @apply mt-1 max-w-4xl text-sm leading-5 text-gray-400;
-  }
-
-  img.avatar-sm {
-    @apply mr-1 h-5 w-5 scale-100 transform-gpu rounded-full transition duration-300 group-hover:scale-105;
-  }
-
-  .card-field {
-    @apply flex items-center truncate py-0.5 text-sm sm:py-1;
-  }
-
-  .card-field-name {
-    @apply mr-2 font-bold;
-  }
-
-  .card-field a {
-    @apply transition duration-300 hover:text-white hover:underline;
-  }
-
-  .section {
-    @apply mb-10 mt-6 text-white;
-  }
-
-  .form-row {
-    @apply mt-6 max-w-6xl sm:mt-5 sm:grid sm:grid-cols-3 sm:items-start sm:gap-4;
-  }
-
-  .form-input-area {
-    @apply text-sm text-white sm:col-span-2;
-  }
-
-  .form-input-field {
-    @apply flex max-w-xl rounded-md shadow-sm;
-  }
-
-  .actions {
-    @apply mt-8 border-t border-gray-700 pt-5 text-white;
-  }
-
-  label,
-  .group-label {
-    @apply mb-1 block text-sm font-bold leading-5 text-gray-400;
-  }
-
-  label.checkbox-label {
-    @apply sm:mt-1;
-  }
-
-  label.text-label {
-    @apply sm:mt-2;
-  }
-
   label a {
     @apply text-gray-100 transition duration-300 hover:text-white hover:underline;
-  }
-
-  .label-required {
-    @apply ml-1 text-red-500;
-  }
-
-  .label-tip {
-    @apply block font-medium text-gray-500;
   }
 
   button,
@@ -321,178 +734,8 @@
     @apply block w-full min-w-0 flex-1 rounded-md border border-gray-500 bg-gray-700 text-white transition duration-150 ease-in-out sm:text-sm sm:leading-5;
   }
 
-  input.rounded-l-only,
-  select.rounded-l-only,
-  textarea.rounded-l-only {
-    @apply rounded-r-none;
-  }
-
-  input.rounded-r-only,
-  select.rounded-r-only,
-  textarea.rounded-r-only {
-    @apply rounded-l-none;
-  }
-
-  input.short {
-    @apply w-20;
-  }
-
-  select.short {
-    @apply w-min;
-  }
-
   button > span {
     @apply whitespace-nowrap;
-  }
-
-  button.input-action {
-    @apply relative -ml-px inline-flex items-center border border-gray-500 bg-indigo-600/80 px-3 py-2 text-sm font-medium leading-5 text-white last:rounded-r-md sm:px-3.5;
-  }
-
-  button.input-action[disabled] {
-    filter: grayscale(100%);
-  }
-
-  button.input-action:not([disabled]) {
-    @apply transition duration-150 ease-in-out hover:bg-indigo-600 active:bg-gray-100 active:text-gray-700;
-  }
-
-  .button-md :where(svg),
-  button.input-action svg {
-    @apply ml-2 mr-2 h-5 w-5 first:ml-0 last:mr-0;
-  }
-
-  .button-sm svg {
-    @apply ml-1.5 mr-1.5 h-4 w-4 first:ml-0 last:mr-0;
-  }
-
-  svg.icon-md {
-    @apply h-5 w-5;
-  }
-
-  svg.icon-sm {
-    @apply h-4 w-4;
-  }
-
-  .protocol {
-    @apply inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-600 px-3 text-gray-100 sm:text-sm;
-  }
-
-  .error {
-    @apply mt-2 text-sm text-red-500;
-  }
-
-  .form-group {
-    @apply mt-6 text-white;
-  }
-
-  .toast {
-    width: 360px;
-  }
-
-  .react-select-container {
-    @apply w-full;
-  }
-
-  .react-select-container:has(+ .input-action) .react-select__control {
-    @apply rounded-r-none border border-gray-500 bg-gray-700 text-white hover:border-gray-500;
-  }
-
-  .react-select-container .react-select__control {
-    @apply rounded-md border border-gray-500 bg-gray-700 text-white hover:border-gray-500;
-  }
-
-  .react-select-container-dark .react-select__control {
-    @apply border border-gray-700 bg-gray-800;
-  }
-
-  .react-select-container .react-select__control--is-focused {
-    @apply rounded-md border border-gray-500 bg-gray-700 text-white shadow;
-  }
-
-  .react-select-container-dark .react-select__control--is-focused {
-    @apply border-gray-600 bg-gray-800;
-  }
-
-  .react-select-container .react-select__menu {
-    @apply bg-gray-700 text-gray-300;
-  }
-
-  .react-select-container-dark .react-select__menu {
-    @apply bg-gray-800;
-  }
-
-  .react-select-container .react-select__option--is-focused {
-    @apply bg-gray-600 text-white;
-  }
-
-  .react-select-container-dark .react-select__option--is-focused {
-    @apply bg-gray-700;
-  }
-
-  .react-select-container .react-select__indicator-separator {
-    @apply bg-gray-500;
-  }
-
-  .react-select-container .react-select__indicator {
-    @apply text-gray-500;
-  }
-
-  .react-select-container .react-select__placeholder {
-    @apply text-gray-400;
-  }
-
-  .react-select-container .react-select__multi-value {
-    @apply rounded-md border border-gray-500 bg-gray-800;
-  }
-
-  .react-select-container .react-select__multi-value__label {
-    @apply text-white;
-  }
-
-  .react-select-container .react-select__multi-value__remove {
-    @apply cursor-pointer rounded-r-md hover:bg-red-700 hover:text-red-100;
-  }
-
-  .react-select-container .react-select__input {
-    @apply border-none text-base shadow-sm ring-0;
-  }
-
-  .react-select-container .react-select__input input:focus {
-    @apply border-none;
-    box-shadow: none;
-  }
-
-  .react-select-container .react-select__input-container {
-    @apply text-white;
-  }
-
-  .react-select-container .react-select__single-value {
-    @apply text-sm text-gray-100;
-  }
-
-  .react-select-container .react-select__placeholder {
-    @apply text-sm text-gray-500;
-  }
-
-  .datepicker-wrapper > button {
-    @apply top-0;
-  }
-
-  .datepicker-wrapper > div {
-    @apply fixed left-0 right-0 w-full px-4 md:w-auto;
-  }
-
-  .datepicker-wrapper > div > div:nth-child(2) > div {
-    @apply !flex-col;
-  }
-
-  .datepicker-wrapper > div > div:nth-child(2) > div > div > div {
-    @apply !w-full !min-w-full;
-  }
-
-  .datepicker-wrapper > div > div:first-child {
-    @apply hidden;
   }
 
   input[type='range']::-webkit-slider-thumb {
@@ -509,58 +752,6 @@
     width: 16px;
     height: 16px;
     -webkit-appearance: none;
-  }
-}
-
-@layer utilities {
-  .absolute-top-shift {
-    top: calc(-4rem - env(safe-area-inset-top));
-  }
-
-  .absolute-bottom-shift {
-    bottom: calc(5rem + env(safe-area-inset-bottom));
-  }
-
-  .safe-shift-edit-menu {
-    bottom: calc(54px + env(safe-area-inset-bottom));
-  }
-
-  .padding-bottom-safe {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  .min-h-screen-shift {
-    min-height: calc(100vh + env(safe-area-inset-top));
-  }
-
-  /* Used for animating height */
-  .extra-max-height {
-    max-height: 100rem;
-  }
-
-  /* Hide scrollbar for Chrome, Safari and Opera */
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* Hide scrollbar for IE, Edge and Firefox */
-  .hide-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
-  }
-
-  .text-overseerr {
-    @apply bg-gradient-to-br from-indigo-400 to-purple-400 bg-clip-text text-transparent;
-  }
-
-  @media all and (display-mode: browser) {
-    .pwa-only {
-      @apply hidden;
-    }
-  }
-
-  .extra-bottom-space {
-    height: calc(4rem + env(safe-area-inset-bottom));
   }
 }
 

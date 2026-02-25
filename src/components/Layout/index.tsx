@@ -65,8 +65,8 @@ const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="flex h-full min-h-full min-w-0 bg-gray-900">
       <div className="pwa-only fixed inset-0 z-20 h-1 w-full border-gray-700 md:border-t" />
-      <div className="absolute top-0 h-64 w-full bg-gradient-to-bl from-gray-800 to-gray-900">
-        <div className="relative inset-0 h-full w-full bg-gradient-to-t from-gray-900 to-transparent" />
+      <div className="absolute top-0 h-64 w-full bg-linear-to-bl from-gray-800 to-gray-900">
+        <div className="relative inset-0 h-full w-full bg-linear-to-t from-gray-900 to-transparent" />
       </div>
       <Sidebar
         open={isSidebarOpen}
@@ -88,7 +88,7 @@ const Layout = ({ children }: LayoutProps) => {
       <div className="relative mb-16 flex w-0 min-w-0 flex-1 flex-col lg:ml-64">
         <PullToRefresh />
         <div
-          className={`searchbar fixed left-0 right-0 top-0 z-10 flex flex-shrink-0 transition duration-300 ${
+          className={`searchbar fixed top-0 right-0 left-0 z-10 flex flex-shrink-0 transition duration-300 ${
             isScrolled ? 'bg-gray-700/80' : 'bg-transparent'
           } lg:left-64`}
           style={{
@@ -96,11 +96,11 @@ const Layout = ({ children }: LayoutProps) => {
             WebkitBackdropFilter: isScrolled ? 'blur(5px)' : undefined,
           }}
         >
-          <div className="flex flex-1 items-center justify-between px-4 md:pl-4 md:pr-4">
+          <div className="flex flex-1 items-center justify-between px-4 md:pr-4 md:pl-4">
             <button
               className={`mr-2 hidden text-white sm:block ${
                 isScrolled ? 'opacity-90' : 'opacity-70'
-              } transition duration-300 focus:outline-none lg:hidden`}
+              } transition duration-300 focus:outline-hidden lg:hidden`}
               aria-label="Open sidebar"
               onClick={() => setSidebarOpen(true)}
               data-testid="sidebar-toggle"
@@ -110,7 +110,7 @@ const Layout = ({ children }: LayoutProps) => {
             <button
               className={`mr-2 text-white ${
                 isScrolled ? 'opacity-90' : 'opacity-70'
-              } pwa-only transition duration-300 hover:text-white focus:text-white focus:outline-none`}
+              } pwa-only transition duration-300 hover:text-white focus:text-white focus:outline-hidden`}
               onClick={() => router.back()}
             >
               <ArrowLeftIcon className="w-7" />
@@ -122,7 +122,7 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
         </div>
 
-        <main className="relative top-16 z-0 focus:outline-none" tabIndex={0}>
+        <main className="relative top-16 z-0 focus:outline-hidden" tabIndex={0}>
           <div className="mb-6">
             <div className="max-w-8xl mx-auto px-4">{children}</div>
           </div>

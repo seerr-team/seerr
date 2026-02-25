@@ -365,7 +365,7 @@ const SettingsJobs = () => {
                 <label className="text-label">
                   {intl.formatMessage(messages.editJobScheduleCurrent)}
                 </label>
-                <div className="form-input-area mb-1 mt-2">
+                <div className="form-input-area mt-2 mb-1">
                   <div>
                     {jobModalState.job &&
                       cronstrue.toString(jobModalState.job.cronSchedule, {
@@ -739,7 +739,7 @@ const SettingsJobs = () => {
           </div>
         </>
       )}
-      <div className="break-words">
+      <div className="wrap-break-word">
         <h3 className="heading">{intl.formatMessage(messages.imagecache)}</h3>
         <p className="description">
           {intl.formatMessage(messages.imagecacheDescription, {

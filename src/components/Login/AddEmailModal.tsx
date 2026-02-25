@@ -95,8 +95,8 @@ const AddEmailModal: React.FC<AddEmailModalProps> = ({
               <label htmlFor="email" className="text-label">
                 {intl.formatMessage(messages.email)}
               </label>
-              <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
-                <div className="flex rounded-md shadow-sm">
+              <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0">
+                <div className="flex rounded-md shadow-xs">
                   <Field
                     id="email"
                     name="email"

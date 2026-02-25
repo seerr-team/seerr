@@ -47,7 +47,7 @@ function Button<P extends ElementTypes = 'button'>(
   ref?: React.Ref<Element<P>>
 ): JSX.Element {
   const buttonStyle = [
-    'inline-flex items-center justify-center border leading-5 font-medium rounded-md focus:outline-none transition ease-in-out duration-150 cursor-pointer disabled:opacity-50 whitespace-nowrap',
+    'inline-flex items-center justify-center border leading-5 font-medium rounded-md focus:outline-hidden transition ease-in-out duration-150 cursor-pointer disabled:opacity-50 whitespace-nowrap',
   ];
   switch (buttonType) {
     case 'primary':
