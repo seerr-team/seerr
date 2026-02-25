@@ -16,7 +16,7 @@ const Bar = ({ progress, isFinished }: BarProps) => {
       }`}
     >
       <div
-        className="transition-width bg-indigo-400 duration-300"
+        className="bg-indigo-400 transition-[width] duration-300"
         style={{
           height: '3px',
           width: `${progress * 100}%`,
