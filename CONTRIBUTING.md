@@ -130,7 +130,7 @@ Steps:
 - Pull requests with titles not following [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) will **not** be merged. PR titles are automatically checked for compliance.
 - Please make meaningful commits, or squash them prior to opening a pull request.
   - Do not squash commits once people have begun reviewing your changes.
-- Always rebase your commit to the latest `develop` branch.
+- Always rebase your branch to the latest `develop` branch.
 - It is your responsibility to keep your branch up-to-date. Your work will **not** be merged unless it is rebased off the latest `develop` branch.
 - You can create a "draft" pull request early to get feedback on your work.
 - Your code **must** be formatted correctly, or the tests will fail.
@@ -179,7 +179,7 @@ PGPASSWORD=postgres sudo docker exec -it postgres-seerr /usr/bin/psql -h 127.0.0
 PGPASSWORD=postgres sudo docker exec -it postgres-seerr /usr/bin/psql -h 127.0.0.1 -U postgres -c "CREATE DATABASE seerr;"
 ```
 
-3. Switch the `develop` branch and create the original database for SQLite and PostgreSQL so that TypeORM can automatically generate the migrations:
+3. Switch to the `develop` branch and create the original database for SQLite and PostgreSQL so that TypeORM can automatically generate the migrations:
 
 ```bash
 git switch develop
