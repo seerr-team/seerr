@@ -111,7 +111,7 @@ blocklistRoutes.get(
     } catch (e) {
       if (e instanceof EntityNotFoundError) {
         return next({
-          status: 401,
+          status: 404,
           message: e.message,
         });
       }
