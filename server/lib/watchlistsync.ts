@@ -90,19 +90,23 @@ class WatchlistSync {
         .map((r) => `${r.media.mediaType}:${r.media.tmdbId}`)
     );
 
-    const unavailableItems = response.items.filter(
-      (i) =>
-        !autoRequestedTmdbIds.has(
-          `${i.type === 'show' ? MediaType.TV : MediaType.MOVIE}:${i.tmdbId}`
-        ) &&
+    const unavailableItems = response.items.filter((i) => {
+      const itemMediaType = i.type === 'show' ? MediaType.TV : MediaType.MOVIE;
+
+      return (
+        !autoRequestedTmdbIds.has(`${itemMediaType}:${i.tmdbId}`) &&
         !mediaItems.find(
           (m) =>
             m.tmdbId === i.tmdbId &&
+            m.mediaType === itemMediaType &&
             (m.status === MediaStatus.BLOCKLISTED ||
-              (m.status !== MediaStatus.UNKNOWN && m.mediaType === 'movie') ||
-              (m.mediaType === 'tv' && m.status === MediaStatus.AVAILABLE))
+              (itemMediaType === MediaType.MOVIE &&
+                m.status !== MediaStatus.UNKNOWN) ||
+              (itemMediaType === MediaType.TV &&
+                m.status === MediaStatus.AVAILABLE))
         )
-    );
+      );
+    });
 
     for (const mediaItem of unavailableItems) {
       try {
