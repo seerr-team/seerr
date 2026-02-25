@@ -466,7 +466,7 @@ export const WatchProviderSelector = ({
                     role="button"
                     tabIndex={0}
                   >
-                    <div className="relative m-2 aspect-1">
+                    <div className="relative m-2 aspect-square">
                       <CachedImage
                         type="tmdb"
                         src={`https://image.tmdb.org/t/p/original${provider.logoPath}`}
@@ -509,7 +509,7 @@ export const WatchProviderSelector = ({
                       role="button"
                       tabIndex={0}
                     >
-                      <div className="relative m-2 aspect-1">
+                      <div className="relative m-2 aspect-square">
                         <CachedImage
                           type="tmdb"
                           src={`https://image.tmdb.org/t/p/original${provider.logoPath}`}
