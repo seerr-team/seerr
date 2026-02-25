@@ -1,4 +1,5 @@
 import TheMovieDb from '@server/api/themoviedb';
+import { MediaType } from '@server/constants/media';
 import Media from '@server/entity/Media';
 import logger from '@server/logger';
 import { mapCollection } from '@server/models/Collection';
@@ -17,7 +18,10 @@ collectionRoutes.get<{ id: string }>('/:id', async (req, res, next) => {
 
     const media = await Media.getRelatedMedia(
       req.user,
-      collection.parts.map((part) => part.id)
+      collection.parts.map((part) => ({
+        tmdbId: part.id,
+        mediaType: MediaType.MOVIE,
+      }))
     );
 
     return res.status(200).json(mapCollection(collection, media));

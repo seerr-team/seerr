@@ -25,7 +25,7 @@ export class NotFoundError extends Error {
 }
 
 @Entity()
-@Unique('UNIQUE_USER_DB', ['tmdbId', 'requestedBy'])
+@Unique('UNIQUE_USER_DB', ['tmdbId', 'mediaType', 'requestedBy'])
 export class Watchlist implements WatchlistItem {
   @PrimaryGeneratedColumn()
   id: number;
@@ -142,11 +142,13 @@ export class Watchlist implements WatchlistItem {
 
   public static async deleteWatchlist(
     tmdbId: Watchlist['tmdbId'],
+    mediaType: MediaType,
     user: User
   ): Promise<Watchlist | null> {
     const watchlistRepository = getRepository(this);
     const watchlist = await watchlistRepository.findOneBy({
       tmdbId,
+      mediaType,
       requestedBy: { id: user.id },
     });
     if (!watchlist) {

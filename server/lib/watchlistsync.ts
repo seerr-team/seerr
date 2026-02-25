@@ -67,7 +67,10 @@ class WatchlistSync {
 
     const mediaItems = await Media.getRelatedMedia(
       user,
-      response.items.map((i) => i.tmdbId)
+      response.items.map((i) => ({
+        tmdbId: i.tmdbId,
+        mediaType: i.type === 'show' ? MediaType.TV : MediaType.MOVIE,
+      }))
     );
 
     const watchlistTmdbIds = response.items.map((i) => i.tmdbId);
