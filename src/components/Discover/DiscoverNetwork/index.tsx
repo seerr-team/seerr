@@ -45,7 +45,7 @@ const DiscoverTvNetwork = () => {
   return (
     <>
       <PageTitle title={title} />
-      <div className="mb-5 mt-1">
+      <div className="mt-1 mb-5">
         <Header>
           {firstResultData?.network.logoPath ? (
             <div className="relative mb-6 flex h-24 justify-center sm:h-32">

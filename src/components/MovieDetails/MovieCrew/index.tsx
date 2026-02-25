@@ -32,7 +32,7 @@ const MovieCrew = () => {
   return (
     <>
       <PageTitle title={[intl.formatMessage(messages.fullcrew), data.title]} />
-      <div className="mb-5 mt-1">
+      <div className="mt-1 mb-5">
         <Header
           subtext={
             <Link href={`/movie/${data.id}`} className="hover:underline">

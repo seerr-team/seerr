@@ -271,7 +271,7 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
               {request.seasons.map((season) => (
                 <span
                   key={`season-${season.id}`}
-                  className="mb-1 mr-2 inline-block"
+                  className="mr-2 mb-1 inline-block"
                 >
                   <Badge>
                     {season.seasonNumber === 0
@@ -285,7 +285,7 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
         )}
         {(server || profile || rootFolder || languageProfile) && (
           <>
-            <div className="mb-1 mt-4 text-sm">
+            <div className="mt-4 mb-1 text-sm">
               {intl.formatMessage(messages.requestoverrides)}
             </div>
             <ul className="divide-y divide-gray-700 rounded-md bg-gray-800 px-2 text-xs">

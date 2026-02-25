@@ -46,7 +46,7 @@ const DeviceItem = ({
   return (
     <div className="relative flex w-full flex-col justify-between overflow-hidden rounded-xl bg-gray-800 py-4 text-gray-400 shadow-md ring-1 ring-gray-700 xl:h-28 xl:flex-row">
       <div className="relative flex w-full flex-col justify-between overflow-hidden sm:flex-row">
-        <div className="relative z-10 flex w-full items-center overflow-hidden pl-4 pr-4 sm:pr-0 xl:w-7/12 2xl:w-2/3">
+        <div className="relative z-10 flex w-full items-center overflow-hidden pr-4 pl-4 sm:pr-0 xl:w-7/12 2xl:w-2/3">
           <div className="relative h-auto w-12 flex-shrink-0 scale-100 transform-gpu overflow-hidden rounded-md transition duration-300 hover:scale-105">
             {parsedUserAgent.device.type === 'mobile' ? (
               <DevicePhoneMobileIcon />
@@ -71,7 +71,7 @@ const DeviceItem = ({
             </div>
           </div>
         </div>
-        <div className="z-10 ml-4 mt-4 flex w-full flex-col justify-center overflow-hidden pr-4 text-sm sm:ml-2 sm:mt-0 xl:flex-1 xl:pr-0">
+        <div className="z-10 mt-4 ml-4 flex w-full flex-col justify-center overflow-hidden pr-4 text-sm sm:mt-0 sm:ml-2 xl:flex-1 xl:pr-0">
           <div className="card-field">
             <span className="card-field-name">
               {intl.formatMessage(messages.operatingsystem)}
@@ -98,7 +98,7 @@ const DeviceItem = ({
           </div>
         </div>
       </div>
-      <div className="z-10 mt-4 flex w-full flex-col justify-center space-y-2 pl-4 pr-4 xl:mt-0 xl:w-96 xl:items-end xl:pl-0">
+      <div className="z-10 mt-4 flex w-full flex-col justify-center space-y-2 pr-4 pl-4 xl:mt-0 xl:w-96 xl:items-end xl:pl-0">
         {subEndpoint === device.endpoint ? (
           <Button buttonType="primary" className="w-full" disabled>
             <LockClosedIcon />{' '}

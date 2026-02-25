@@ -91,7 +91,7 @@ const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
       <Transition.Child
         appear
         as="div"
-        className="fixed bottom-0 left-0 right-0 top-0 z-50 flex h-full w-full items-center justify-center bg-gray-800/70"
+        className="fixed top-0 right-0 bottom-0 left-0 z-50 flex h-full w-full items-center justify-center bg-gray-800/70"
         enter="transition-opacity duration-300"
         enterFrom="opacity-0"
         enterTo="opacity-100"
@@ -116,7 +116,7 @@ const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
           </div>
         </Transition>
         <Transition
-          className={`hide-scrollbar relative inline-block w-full overflow-auto bg-gray-800 px-4 pb-4 pt-4 text-left align-bottom shadow-xl ring-1 ring-gray-700 transition-all sm:my-8 sm:max-w-3xl sm:rounded-lg sm:align-middle ${dialogClass}`}
+          className={`hide-scrollbar relative inline-block w-full overflow-auto bg-gray-800 px-4 pt-4 pb-4 text-left align-bottom shadow-xl ring-1 ring-gray-700 transition-all sm:my-8 sm:max-w-3xl sm:rounded-lg sm:align-middle ${dialogClass}`}
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-headline"
@@ -135,7 +135,7 @@ const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
           ref={modalRef}
         >
           {backdrop && (
-            <div className="absolute left-0 right-0 top-0 z-0 h-64 max-h-full w-full">
+            <div className="absolute top-0 right-0 left-0 z-0 h-64 max-h-full w-full">
               <CachedImage
                 type="tmdb"
                 alt=""
@@ -161,7 +161,7 @@ const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
                 <div className="flex flex-col space-y-1">
                   {title && (
                     <span
-                      className="text-overseerr truncate pb-0.5 text-2xl font-bold leading-6"
+                      className="text-overseerr truncate pb-0.5 text-2xl leading-6 font-bold"
                       id="modal-headline"
                       data-testid="modal-title"
                     >
@@ -170,7 +170,7 @@ const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
                   )}
                   {subTitle && (
                     <span
-                      className="truncate text-lg font-semibold leading-6 text-gray-200"
+                      className="truncate text-lg leading-6 font-semibold text-gray-200"
                       id="modal-headline"
                       data-testid="modal-title"
                     >

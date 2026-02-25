@@ -38,7 +38,7 @@ const TvRecommendations = () => {
       <PageTitle
         title={[intl.formatMessage(messages.recommendations), tvData?.name]}
       />
-      <div className="mb-5 mt-1">
+      <div className="mt-1 mb-5">
         <Header
           subtext={
             <Link href={`/tv/${tvData?.id}`} className="hover:underline">
