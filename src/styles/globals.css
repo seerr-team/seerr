@@ -1,6 +1,19 @@
 @import 'tailwindcss';
 
-@config '../../tailwind.config.js';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+@plugin '@tailwindcss/aspect-ratio';
+
+@theme {
+  /* Typography custom colors */
+  --tw-prose-body: var(--color-gray-300);
+  --tw-prose-headings: var(--color-gray-300);
+  --tw-prose-bold: var(--color-gray-400);
+  --tw-prose-code: var(--color-gray-300);
+  --tw-prose-links: var(--color-indigo-500);
+  --tw-prose-links-hover: var(--color-indigo-400);
+  --tw-prose-captions: var(--color-gray-500);
+}
 
 /*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,
