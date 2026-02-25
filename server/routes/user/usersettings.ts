@@ -305,8 +305,11 @@ userSettingsRoutes.post<{ authToken: string }>(
       });
     }
 
-    // Emails do not match
-    if (user.email !== account.email) {
+    // Jellyfin users often have no email.
+    if (
+      isMainPlex &&
+      user.email?.toLowerCase() !== account.email?.toLowerCase()
+    ) {
       return res.status(422).json({
         message:
           'This Plex account is registered under a different email address.',
