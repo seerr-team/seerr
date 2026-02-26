@@ -34,7 +34,7 @@ import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
@@ -106,6 +106,7 @@ const UserList = () => {
   const page = router.query.page ? Number(router.query.page) : 1;
   const pageIndex = page - 1;
   const updateQueryParams = useUpdateQueryParams({ page: page.toString() });
+  const previousSearchQueryRef = useRef<string | undefined>(undefined);
 
   const apiUrl = `/api/v1/user?take=${currentPageSize}&skip=${
     pageIndex * currentPageSize
@@ -155,10 +156,15 @@ const UserList = () => {
   }, [currentSort, currentPageSize]);
 
   useEffect(() => {
-    if (page > 1) {
+    if (
+      previousSearchQueryRef.current !== undefined &&
+      previousSearchQueryRef.current !== searchQuery &&
+      page > 1
+    ) {
       updateQueryParams('page', '1');
     }
-  }, [searchQuery]);
+    previousSearchQueryRef.current = searchQuery;
+  }, [searchQuery, page, updateQueryParams]);
 
   const isUserPermsEditable = (userId: number) =>
     userId !== 1 && userId !== currentUser?.id;
