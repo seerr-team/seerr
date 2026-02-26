@@ -38,6 +38,8 @@ import {
   ExclamationTriangleIcon,
   EyeSlashIcon,
   FilmIcon,
+  HandThumbDownIcon,
+  HandThumbUpIcon,
   MinusCircleIcon,
   PlayIcon,
   StarIcon,
@@ -106,6 +108,11 @@ const messages = defineMessages('components.MovieDetails', {
   watchlistError: 'Something went wrong. Please try again.',
   removefromwatchlist: 'Remove From Watchlist',
   addtowatchlist: 'Add To Watchlist',
+  voteInterested: 'Vote interested',
+  voteNotInterested: 'Vote not interested',
+  removeInterestedVote: 'Remove interested vote',
+  removeNotInterestedVote: 'Remove not interested vote',
+  voteError: 'Unable to update vote.',
 });
 
 interface MovieDetailsProps {
@@ -151,6 +158,10 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   const { data: ratingData } = useSWR<RatingResponse>(
     `/api/v1/movie/${router.query.movieId}/ratingscombined`
   );
+  const canVote =
+    settings.currentSettings.enableVoting && hasPermission(Permission.VOTE);
+
+  const [isVoteUpdating, setIsVoteUpdating] = useState<boolean>(false);
 
   const sortedCrew = useMemo(
     () => sortCrewPriority(data?.credits.crew ?? []),
@@ -425,6 +436,37 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     closeBlocklistModal();
   };
 
+  const onClickVoteBtn = async (
+    actionType: 'interested' | 'not_interested'
+  ): Promise<void> => {
+    if (!canVote || !data?.id) {
+      return;
+    }
+
+    setIsVoteUpdating(true);
+
+    try {
+      if (data?.userVote === actionType) {
+        await axios.delete(`/api/v1/vote/movie/${data.id}`);
+      } else {
+        await axios.post('/api/v1/vote', {
+          tmdbId: data.id,
+          mediaType: MediaType.MOVIE,
+          actionType,
+        });
+      }
+
+      await revalidate();
+    } catch {
+      addToast(intl.formatMessage(messages.voteError), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    } finally {
+      setIsVoteUpdating(false);
+    }
+  };
+
   const showHideButton = hasPermission([Permission.MANAGE_BLOCKLIST], {
     type: 'or',
   });
@@ -571,7 +613,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
               >
                 <Button
                   buttonType={'ghost'}
-                  className="z-40 mr-2"
+                  className="z-40 ml-2 first:ml-0"
                   buttonSize={'md'}
                   onClick={() => setShowBlocklistModal(true)}
                 >
@@ -588,7 +630,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                   >
                     <Button
                       buttonType={'ghost'}
-                      className="z-40 mr-2"
+                      className="z-40 ml-2 first:ml-0"
                       buttonSize={'md'}
                       onClick={onClickWatchlistBtn}
                     >
@@ -604,7 +646,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                     content={intl.formatMessage(messages.removefromwatchlist)}
                   >
                     <Button
-                      className="z-40 mr-2"
+                      className="z-40 ml-2 first:ml-0"
                       buttonSize={'md'}
                       onClick={onClickDeleteWatchlistBtn}
                     >
@@ -614,7 +656,49 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                 )}
               </>
             )}
-          <div className="z-20">
+          {canVote && (
+            <>
+              <Tooltip
+                content={intl.formatMessage(
+                  data?.userVote === 'interested'
+                    ? messages.removeInterestedVote
+                    : messages.voteInterested
+                )}
+              >
+                <Button
+                  buttonType={
+                    data?.userVote === 'interested' ? 'success' : 'ghost'
+                  }
+                  className="ml-2 first:ml-0"
+                  buttonSize="md"
+                  onClick={() => onClickVoteBtn('interested')}
+                  disabled={isVoteUpdating}
+                >
+                  <HandThumbUpIcon />
+                </Button>
+              </Tooltip>
+              <Tooltip
+                content={intl.formatMessage(
+                  data?.userVote === 'not_interested'
+                    ? messages.removeNotInterestedVote
+                    : messages.voteNotInterested
+                )}
+              >
+                <Button
+                  buttonType={
+                    data?.userVote === 'not_interested' ? 'danger' : 'ghost'
+                  }
+                  className="ml-2 first:ml-0"
+                  buttonSize="md"
+                  onClick={() => onClickVoteBtn('not_interested')}
+                  disabled={isVoteUpdating}
+                >
+                  <HandThumbDownIcon />
+                </Button>
+              </Tooltip>
+            </>
+          )}
+          <div className="z-20 ml-2 first:ml-0">
             <PlayButton links={mediaLinks} />
           </div>
           <RequestButton

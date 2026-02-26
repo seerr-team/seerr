@@ -5,6 +5,7 @@ import TheMovieDb from '@server/api/themoviedb';
 import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
+import { Vote } from '@server/entity/Vote';
 import { Watchlist } from '@server/entity/Watchlist';
 import logger from '@server/logger';
 import { mapMovieDetails } from '@server/models/Movie';
@@ -33,7 +34,22 @@ movieRoutes.get('/:id', async (req, res, next) => {
       },
     });
 
-    const data = mapMovieDetails(tmdbMovie, media, onUserWatchlist);
+    const userVote = await getRepository(Vote).findOne({
+      where: {
+        tmdbId: Number(req.params.id),
+        mediaType: MediaType.MOVIE,
+        user: {
+          id: req.user?.id,
+        },
+      },
+    });
+
+    const data = mapMovieDetails(
+      tmdbMovie,
+      media,
+      onUserWatchlist,
+      userVote?.actionType
+    );
 
     // TMDB issue where it doesnt fallback to English when no overview is available in requested locale.
     if (!data.overview) {
