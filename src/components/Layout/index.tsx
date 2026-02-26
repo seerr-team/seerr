@@ -88,7 +88,7 @@ const Layout = ({ children }: LayoutProps) => {
       <div className="relative mb-16 flex w-0 min-w-0 flex-1 flex-col lg:ml-64">
         <PullToRefresh />
         <div
-          className={`searchbar fixed top-0 right-0 left-0 z-10 flex flex-shrink-0 transition duration-300 ${
+          className={`searchbar fixed top-0 right-0 left-0 z-10 flex shrink-0 transition duration-300 ${
             isScrolled ? 'bg-gray-700/80' : 'bg-transparent'
           } lg:left-64`}
           style={{

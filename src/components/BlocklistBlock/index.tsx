@@ -81,7 +81,7 @@ const BlocklistBlock = ({
             {data.user ? (
               <>
                 <Tooltip content={intl.formatMessage(messages.blocklistedby)}>
-                  <UserIcon className="mr-1.5 h-5 w-5 min-w-0 flex-shrink-0" />
+                  <UserIcon className="mr-1.5 h-5 w-5 min-w-0 shrink-0" />
                 </Tooltip>
                 <span className="w-40 truncate md:w-auto">
                   <Link
@@ -107,7 +107,7 @@ const BlocklistBlock = ({
             ) : null}
           </div>
         </div>
-        <div className="ml-2 flex flex-shrink-0 flex-wrap">
+        <div className="ml-2 flex shrink-0 flex-wrap">
           <Tooltip
             content={intl.formatMessage(globalMessages.removefromBlocklist)}
           >
@@ -131,7 +131,7 @@ const BlocklistBlock = ({
         </div>
         <div className="mt-2 flex items-center text-sm leading-5 sm:mt-0">
           <Tooltip content={intl.formatMessage(messages.blocklistdate)}>
-            <CalendarIcon className="mr-1.5 h-5 w-5 flex-shrink-0" />
+            <CalendarIcon className="mr-1.5 h-5 w-5 shrink-0" />
           </Tooltip>
           <span>
             {intl.formatDate(data.createdAt, {

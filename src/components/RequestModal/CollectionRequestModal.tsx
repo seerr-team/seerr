@@ -328,7 +328,7 @@ const CollectionRequestModal = ({
                             toggleAllParts();
                           }
                         }}
-                        className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-hidden ${
+                        className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-hidden ${
                           quota?.movie.limit &&
                           (quota.movie.remaining ?? 0) < unrequestedParts.length
                             ? 'opacity-50'
@@ -400,7 +400,7 @@ const CollectionRequestModal = ({
                                   togglePart(part.id);
                                 }
                               }}
-                              className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-hidden ${
+                              className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-hidden ${
                                 (!!partMedia &&
                                   partMedia.status !==
                                     MediaStatus.BLOCKLISTED) ||
@@ -444,7 +444,7 @@ const CollectionRequestModal = ({
                               'pointer-events-none opacity-50'
                             }`}
                           >
-                            <div className="relative h-auto w-10 flex-shrink-0 overflow-hidden rounded-md">
+                            <div className="relative h-auto w-10 shrink-0 overflow-hidden rounded-md">
                               <CachedImage
                                 type="tmdb"
                                 src={

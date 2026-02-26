@@ -185,7 +185,7 @@ const Login = () => {
             >
               <div className="mb-4 rounded-md bg-red-600 p-4">
                 <div className="flex">
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     <XCircleIcon className="h-5 w-5 text-red-300" />
                   </div>
                   <div className="ml-3">

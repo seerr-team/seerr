@@ -601,7 +601,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
               ? `/movie/${requestData.media.tmdbId}`
               : `/tv/${requestData.media.tmdbId}`
           }
-          className="w-20 flex-shrink-0 scale-100 transform-gpu cursor-pointer overflow-hidden rounded-md shadow-xs transition duration-300 hover:scale-105 hover:shadow-md sm:w-28"
+          className="w-20 shrink-0 scale-100 transform-gpu cursor-pointer overflow-hidden rounded-md shadow-xs transition duration-300 hover:scale-105 hover:shadow-md sm:w-28"
         >
           <CachedImage
             type="tmdb"

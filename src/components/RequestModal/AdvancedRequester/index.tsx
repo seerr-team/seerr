@@ -315,7 +315,7 @@ const AdvancedRequester = ({
         {!!data && selectedServer !== null && (
           <div className="flex flex-col md:flex-row">
             {data.filter((server) => server.is4k === is4k).length > 1 && (
-              <div className="mb-3 w-full flex-shrink-0 grow last:pr-0 md:w-1/4 md:pr-4">
+              <div className="mb-3 w-full shrink-0 grow last:pr-0 md:w-1/4 md:pr-4">
                 <label htmlFor="server">
                   {intl.formatMessage(messages.destinationserver)}
                 </label>
@@ -347,7 +347,7 @@ const AdvancedRequester = ({
             {(isValidating ||
               !serverData ||
               serverData.profiles.length > 1) && (
-              <div className="mb-3 w-full flex-shrink-0 grow last:pr-0 md:w-1/4 md:pr-4">
+              <div className="mb-3 w-full shrink-0 grow last:pr-0 md:w-1/4 md:pr-4">
                 <label htmlFor="profile">
                   {intl.formatMessage(messages.qualityprofile)}
                 </label>
@@ -391,7 +391,7 @@ const AdvancedRequester = ({
             {(isValidating ||
               !serverData ||
               serverData.rootFolders.length > 1) && (
-              <div className="mb-3 w-full flex-shrink-0 grow last:pr-0 md:w-1/4 md:pr-4">
+              <div className="mb-3 w-full shrink-0 grow last:pr-0 md:w-1/4 md:pr-4">
                 <label htmlFor="folder">
                   {intl.formatMessage(messages.rootfolder)}
                 </label>
@@ -445,7 +445,7 @@ const AdvancedRequester = ({
               (isValidating ||
                 !serverData ||
                 (serverData.languageProfiles ?? []).length > 1) && (
-                <div className="mb-3 w-full flex-shrink-0 grow last:pr-0 md:w-1/4 md:pr-4">
+                <div className="mb-3 w-full shrink-0 grow last:pr-0 md:w-1/4 md:pr-4">
                   <label htmlFor="language">
                     {intl.formatMessage(messages.languageprofile)}
                   </label>
@@ -565,7 +565,7 @@ const AdvancedRequester = ({
                             type="avatar"
                             src={selectedUser.avatar}
                             alt=""
-                            className="h-6 w-6 flex-shrink-0 rounded-full object-cover"
+                            className="h-6 w-6 shrink-0 rounded-full object-cover"
                             width={24}
                             height={24}
                           />
@@ -618,11 +618,11 @@ const AdvancedRequester = ({
                                     type="avatar"
                                     src={user.avatar}
                                     alt=""
-                                    className="h-6 w-6 flex-shrink-0 rounded-full object-cover"
+                                    className="h-6 w-6 shrink-0 rounded-full object-cover"
                                     width={24}
                                     height={24}
                                   />
-                                  <span className="ml-3 block flex-shrink-0">
+                                  <span className="ml-3 block shrink-0">
                                     {user.displayName}
                                   </span>
                                   {user.displayName.toLowerCase() !==

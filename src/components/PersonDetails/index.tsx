@@ -260,7 +260,7 @@ const PersonDetails = () => {
         }`}
       >
         {data.profilePath && (
-          <div className="relative mr-0 mb-6 h-36 w-36 flex-shrink-0 overflow-hidden rounded-full ring-1 ring-gray-700 lg:mr-6 lg:mb-0 lg:h-44 lg:w-44">
+          <div className="relative mr-0 mb-6 h-36 w-36 shrink-0 overflow-hidden rounded-full ring-1 ring-gray-700 lg:mr-6 lg:mb-0 lg:h-44 lg:w-44">
             <CachedImage
               type="tmdb"
               src={`https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.profilePath}`}
@@ -273,9 +273,7 @@ const PersonDetails = () => {
         <div className="w-full text-center text-gray-300 lg:text-left">
           <div className="flex w-full items-center justify-center lg:justify-between">
             <h1 className="text-3xl text-white lg:text-4xl">{data.name}</h1>
-            <div className="hidden flex-shrink-0 lg:block">
-              {mediaTypePicker}
-            </div>
+            <div className="hidden shrink-0 lg:block">{mediaTypePicker}</div>
           </div>
           <div className="mt-1 mb-2 space-y-1 text-xs text-white sm:text-sm lg:text-base">
             <div>{personAttributes.join(' | ')}</div>

@@ -347,7 +347,7 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
                 ? `/movie/${item.tmdbId}`
                 : `/tv/${item.tmdbId}`
             }
-            className="relative h-auto w-12 flex-shrink-0 scale-100 transform-gpu overflow-hidden rounded-md transition duration-300 hover:scale-105"
+            className="relative h-auto w-12 shrink-0 scale-100 transform-gpu overflow-hidden rounded-md transition duration-300 hover:scale-105"
           >
             <CachedImage
               type="tmdb"

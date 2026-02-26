@@ -190,7 +190,7 @@ const Sidebar = ({
                     ref={navRef}
                     className="flex flex-1 flex-col overflow-y-auto pt-4 pb-8 sm:pb-4"
                   >
-                    <div className="flex flex-shrink-0 items-center px-2">
+                    <div className="flex shrink-0 items-center px-2">
                       <span className="w-full px-4 text-xl text-gray-50">
                         <Link href="/" className="relative block h-24 w-64">
                           <Image src="/logo_full.svg" alt="Logo" fill />
@@ -244,7 +244,7 @@ const Sidebar = ({
                     )}
                   </div>
                 </div>
-                <div className="w-14 flex-shrink-0">
+                <div className="w-14 shrink-0">
                   {/* <!-- Force sidebar to shrink to fit close icon --> */}
                 </div>
               </>
@@ -257,7 +257,7 @@ const Sidebar = ({
         <div className="sidebar flex w-64 flex-col">
           <div className="flex h-0 flex-1 flex-col">
             <div className="flex flex-1 flex-col overflow-y-auto pb-4">
-              <div className="flex flex-shrink-0 items-center">
+              <div className="flex shrink-0 items-center">
                 <span className="w-full px-4 py-2 text-2xl text-gray-50">
                   <Link href="/" className="relative block h-24">
                     <Image src="/logo_full.svg" alt="Logo" fill />

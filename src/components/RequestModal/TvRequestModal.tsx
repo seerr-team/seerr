@@ -544,7 +544,7 @@ const TvRequestModal = ({
                             toggleAllSeasons();
                           }
                         }}
-                        className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-hidden ${
+                        className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-hidden ${
                           quota?.tv.remaining &&
                           quota.tv.limit &&
                           quota.tv.remaining < unrequestedSeasons.length
@@ -626,7 +626,7 @@ const TvRequestModal = ({
                                   toggleSeason(season.seasonNumber);
                                 }
                               }}
-                              className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-hidden ${
+                              className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-hidden ${
                                 mediaSeason ||
                                 (quota?.tv.limit &&
                                   currentlyRemaining <= 0 &&

@@ -62,7 +62,7 @@ const SettingsAbout = () => {
       />
       <div className="mt-6 rounded-md border border-indigo-500 bg-indigo-400/20 p-4 backdrop-blur-sm">
         <div className="flex">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <InformationCircleIcon className="h-5 w-5 text-gray-100" />
           </div>
           <div className="ml-3 flex-1 md:flex md:justify-between">

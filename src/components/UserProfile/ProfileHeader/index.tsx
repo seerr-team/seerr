@@ -40,7 +40,7 @@ const ProfileHeader = ({ user, isSettingsPage }: ProfileHeaderProps) => {
   return (
     <div className="relative z-40 mt-6 mb-12 lg:flex lg:items-end lg:justify-between lg:space-x-5">
       <div className="flex items-end justify-items-end space-x-5">
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <div className="relative">
             <CachedImage
               type="avatar"
