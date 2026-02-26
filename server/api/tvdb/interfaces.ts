@@ -166,6 +166,7 @@ const TMDB_TO_TVDB_MAPPING: Record<string, string> & {
   el: 'ell', // Greek
   en: 'eng', // English
   es: 'spa', // Spanish
+  et: 'est', // Estonian
   fi: 'fin', // Finnish
   fr: 'fra', // French
   he: 'heb', // Hebrew
