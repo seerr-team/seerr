@@ -26,7 +26,7 @@ const LibraryItem = ({ isEnabled, name, onToggle }: LibraryItemProps) => {
             }}
             className={`${
               isEnabled ? 'bg-indigo-600' : 'bg-gray-700'
-            } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:ring-3 focus:outline-hidden`}
+            } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:ring-3 focus:ring-blue-500 focus:outline-hidden`}
           >
             <span
               aria-hidden="true"

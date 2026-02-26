@@ -345,7 +345,7 @@ const CollectionRequestModal = ({
                           aria-hidden="true"
                           className={`${
                             isAllParts() ? 'translate-x-5' : 'translate-x-0'
-                          } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring-3`}
+                          } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring-3 group-focus:ring-blue-500`}
                         />
                       </span>
                     </th>
@@ -434,7 +434,7 @@ const CollectionRequestModal = ({
                                   isSelectedPart(part.id)
                                     ? 'translate-x-5'
                                     : 'translate-x-0'
-                                } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring-3`}
+                                } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring-3 group-focus:ring-blue-500`}
                               />
                             </span>
                           </td>
