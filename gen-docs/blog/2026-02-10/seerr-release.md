@@ -19,7 +19,7 @@ Please check how to migrate to Seerr in our [migration guide](https://docs.seerr
 
 Seerr brings several features that were previously available in Jellyseerr but missing from Overseerr. These additions improve flexibility, performance, and overall control for admins and power users:
 
-* **Alternative media solution:** Added support for Jellyfin and Emby in addition to the existing Plex integration.
+* **Alternative media solution:** Added support for Jellyfin and Emby as alternatives to Plex. Only one integration can be used at a time.
 * **PostgreSQL support**: In addition to SQLite, you can now opt in to using a PostgreSQL database.
 * **Blocklist for movies, series, and tags**: Allows permitted users to hide movies, series, or tags from regular users.
 * **Override rules**: Adjust default request settings based on conditions such as user, tag, or other criteria.

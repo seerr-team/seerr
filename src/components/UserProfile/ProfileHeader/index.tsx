@@ -53,7 +53,7 @@ const ProfileHeader = ({ user, isSettingsPage }: ProfileHeaderProps) => {
             <span
               className="absolute inset-0 rounded-full shadow-inner"
               aria-hidden="true"
-            ></span>
+            />
           </div>
         </div>
         <div className="pt-1.5">
