@@ -266,6 +266,17 @@ const Discover = () => {
               />
             );
             break;
+          case DiscoverSliderType.POPULAR_ON_SERVER:
+            sliderComponent = (
+              <MediaSlider
+                sliderKey="popular-on-server"
+                title={intl.formatMessage(sliderTitles.popularonserver)}
+                url="/api/v1/discover/popular"
+                linkUrl="/discover/popular"
+                hideWhenEmpty
+              />
+            );
+            break;
           case DiscoverSliderType.TV_GENRES:
             sliderComponent = <TvGenreSlider />;
             break;
