@@ -19,7 +19,7 @@ const SetupSteps = ({
     <li className="relative md:flex md:flex-1">
       <div className="flex items-center space-x-4 px-6 py-4 text-sm leading-5 font-medium">
         <div
-          className={`flex h-10 w-10 flex-shrink-0 items-center justify-center border-2 ${
+          className={`flex h-10 w-10 shrink-0 items-center justify-center border-2 ${
             active ? 'border-indigo-600' : 'border-white'
           } ${completed ? 'border-indigo-600 bg-indigo-600' : ''} rounded-full`}
         >

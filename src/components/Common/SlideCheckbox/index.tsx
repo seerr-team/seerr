@@ -17,7 +17,7 @@ const SlideCheckbox = ({ onClick, checked = false }: SlideCheckboxProps) => {
           onClick();
         }
       }}
-      className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-hidden`}
+      className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-hidden`}
     >
       <span
         aria-hidden="true"

@@ -171,9 +171,9 @@ const ServerInstance = ({
           className="opacity-50 hover:opacity-100"
         >
           {isSonarr ? (
-            <SonarrLogo className="h-10 w-10 flex-shrink-0" />
+            <SonarrLogo className="h-10 w-10 shrink-0" />
           ) : (
-            <RadarrLogo className="h-10 w-10 flex-shrink-0" />
+            <RadarrLogo className="h-10 w-10 shrink-0" />
           )}
         </a>
       </div>
