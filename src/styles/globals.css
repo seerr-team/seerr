@@ -75,11 +75,11 @@
 }
 
 @utility cards-vertical {
-  &ul {
+  ul& {
     @apply grid gap-4;
   }
 
-  &ul {
+  ul& {
     grid-template-columns: repeat(auto-fill, minmax(9.375rem, 1fr));
   }
 }
@@ -89,7 +89,7 @@
     @apply grid gap-4;
   }
 
-  &ul {
+  ul& {
     grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr));
   }
 }
@@ -109,11 +109,11 @@
 @utility slider-title {
   @apply inline-flex items-center text-xl leading-7 font-bold text-gray-300 sm:truncate sm:text-2xl sm:leading-9;
 
-  &a {
+  a& {
     @apply transition duration-300 hover:text-white;
   }
 
-  &a svg {
+  a& svg {
     @apply ml-2 h-6 w-6;
   }
 }
@@ -192,17 +192,17 @@
 }
 
 @utility media-crew {
-  &ul {
+  ul& {
     @apply mt-6 grid grid-cols-2 gap-6 sm:grid-cols-3;
   }
 
-  &ul > li {
+  ul& > li {
     @apply col-span-1 flex flex-col font-bold text-gray-300;
   }
 }
 
 @utility crew-name {
-  &a {
+  a& {
     @apply font-normal text-gray-400 transition duration-300 hover:text-gray-100 hover:underline;
   }
 }
@@ -251,7 +251,7 @@
 }
 
 @utility avatar-sm {
-  &img {
+  img& {
     @apply mr-1 h-5 w-5 scale-100 transform-gpu rounded-full transition duration-300 group-hover:scale-105;
   }
 }
@@ -293,13 +293,13 @@
 }
 
 @utility checkbox-label {
-  &label {
+  label& {
     @apply sm:mt-1;
   }
 }
 
 @utility text-label {
-  &label {
+  label& {
     @apply sm:mt-2;
   }
 }
@@ -313,57 +313,57 @@
 }
 
 @utility rounded-l-only {
-  &input {
+  input& {
     @apply rounded-r-none;
   }
 
-  & select {
+  select& {
     @apply rounded-r-none;
   }
 
-  & textarea {
+  textarea& {
     @apply rounded-r-none;
   }
 }
 
 @utility rounded-r-only {
-  &input {
+  input& {
     @apply rounded-l-none;
   }
 
-  & select {
+  select& {
     @apply rounded-l-none;
   }
 
-  & textarea {
+  textarea& {
     @apply rounded-l-none;
   }
 }
 
 @utility short {
-  &input {
+  input& {
     @apply w-20;
   }
 
-  &select {
+  select& {
     @apply w-min;
   }
 }
 
 @utility input-action {
-  &button {
+  button& {
     @apply relative -ml-px inline-flex items-center border border-gray-500 bg-indigo-600/80 px-3 py-2 text-sm leading-5 font-medium text-white last:rounded-r-md sm:px-3.5;
   }
 
-  &button[disabled] {
+  button[disabled]& {
     filter: grayscale(100%);
   }
 
-  &button:not([disabled]) {
+  button:not([disabled])& {
     @apply transition duration-150 ease-in-out hover:bg-indigo-600 active:bg-gray-100 active:text-gray-700;
   }
 
-  & button svg {
+  button& svg {
     @apply mr-2 ml-2 h-5 w-5 first:ml-0 last:mr-0;
   }
 
@@ -385,13 +385,13 @@
 }
 
 @utility icon-md {
-  &svg {
+  svg& {
     @apply h-5 w-5;
   }
 }
 
 @utility icon-sm {
-  &svg {
+  svg& {
     @apply h-4 w-4;
   }
 }
