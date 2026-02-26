@@ -256,7 +256,7 @@ const CreateIssueModal = ({
                           ? 'rounded-br-md rounded-bl-md'
                           : '',
                         checked
-                          ? 'z-10 border border-indigo-500 bg-indigo-400/20'
+                          ? 'z-10 border-indigo-500 bg-indigo-400/20'
                           : 'border-gray-500',
                         'relative flex cursor-pointer border p-4 focus:outline-hidden'
                       )
