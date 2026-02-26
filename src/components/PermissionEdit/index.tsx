@@ -19,6 +19,9 @@ export const messages = defineMessages('components.PermissionEdit', {
     'Grant permission to manage media requests. All requests made by a user with this permission will be automatically approved.',
   request: 'Request',
   requestDescription: 'Grant permission to submit requests for non-4K media.',
+  vote: 'Vote',
+  voteDescription:
+    'Grant permission to express interest in media without creating requests.',
   requestMovies: 'Request Movies',
   requestMoviesDescription:
     'Grant permission to submit requests for non-4K movies.',
@@ -183,6 +186,12 @@ export const PermissionEdit = ({
           permission: Permission.REQUEST_TV,
         },
       ],
+    },
+    {
+      id: 'vote',
+      name: intl.formatMessage(messages.vote),
+      description: intl.formatMessage(messages.voteDescription),
+      permission: Permission.VOTE,
     },
     {
       id: 'autoapprove',

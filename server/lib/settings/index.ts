@@ -145,6 +145,7 @@ export interface MainSettings {
   mediaServerType: number;
   partialRequestsEnabled: boolean;
   enableSpecialEpisodes: boolean;
+  enableVoting: boolean;
   locale: string;
   youtubeUrl: string;
 }
@@ -197,6 +198,7 @@ interface FullPublicSettings extends PublicSettings {
   jellyfinServerName?: string;
   partialRequestsEnabled: boolean;
   enableSpecialEpisodes: boolean;
+  enableVoting: boolean;
   cacheImages: boolean;
   vapidPublic: string;
   enablePushRegistration: boolean;
@@ -387,7 +389,7 @@ class Settings {
         applicationTitle: 'Seerr',
         applicationUrl: '',
         cacheImages: false,
-        defaultPermissions: Permission.REQUEST,
+        defaultPermissions: Permission.REQUEST | Permission.VOTE,
         defaultQuotas: {
           movie: {},
           tv: {},
@@ -405,6 +407,7 @@ class Settings {
         mediaServerType: MediaServerType.NOT_CONFIGURED,
         partialRequestsEnabled: true,
         enableSpecialEpisodes: false,
+        enableVoting: false,
         locale: 'en',
         youtubeUrl: '',
       },
@@ -694,6 +697,7 @@ class Settings {
       mediaServerType: this.main.mediaServerType,
       partialRequestsEnabled: this.data.main.partialRequestsEnabled,
       enableSpecialEpisodes: this.data.main.enableSpecialEpisodes,
+      enableVoting: this.data.main.enableVoting,
       cacheImages: this.data.main.cacheImages,
       vapidPublic: this.vapidPublic,
       enablePushRegistration: this.data.notifications.agents.webpush.enabled,

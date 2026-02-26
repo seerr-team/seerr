@@ -64,6 +64,9 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   validationApplicationUrlTrailingSlash: 'URL must not end in a trailing slash',
   partialRequestsEnabled: 'Allow Partial Series Requests',
   enableSpecialEpisodes: 'Allow Special Episodes Requests',
+  enableVoting: 'Enable Voting',
+  enableVotingTip:
+    'Allow users with the Vote permission to submit interested or not interested signals',
   locale: 'Display Language',
   youtubeUrl: 'YouTube URL',
   youtubeUrlTip:
@@ -173,6 +176,7 @@ const SettingsMain = () => {
             blocklistedTagsLimit: data?.blocklistedTagsLimit || 50,
             partialRequestsEnabled: data?.partialRequestsEnabled,
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
+            enableVoting: data?.enableVoting,
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
           }}
@@ -193,6 +197,7 @@ const SettingsMain = () => {
                 blocklistedTagsLimit: values.blocklistedTagsLimit,
                 partialRequestsEnabled: values.partialRequestsEnabled,
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
+                enableVoting: values.enableVoting,
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
               });
@@ -485,6 +490,26 @@ const SettingsMain = () => {
                           'hideBlocklisted',
                           !values.hideBlocklisted
                         );
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="enableVoting" className="checkbox-label">
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.enableVoting)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.enableVotingTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="enableVoting"
+                      name="enableVoting"
+                      onChange={() => {
+                        setFieldValue('enableVoting', !values.enableVoting);
                       }}
                     />
                   </div>
