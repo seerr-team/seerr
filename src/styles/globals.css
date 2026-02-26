@@ -729,6 +729,10 @@
 }
 
 @layer components {
+  label {
+    @apply group-label;
+  }
+
   label a {
     @apply text-gray-100 transition duration-300 hover:text-white hover:underline;
   }
