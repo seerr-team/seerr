@@ -4906,6 +4906,30 @@ paths:
             type: number
             default: 0
             minimum: 0
+        - in: query
+          name: filter
+          schema:
+            type: string
+            enum: [all, interested, not_interested]
+            default: all
+        - in: query
+          name: mediaType
+          schema:
+            type: string
+            enum: [all, movie, tv]
+            default: all
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [added]
+            default: added
+        - in: query
+          name: sortDirection
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
       responses:
         '200':
           description: Vote history returned

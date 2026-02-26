@@ -6,6 +6,7 @@ import RequestCard from '@app/components/RequestCard';
 import Slider from '@app/components/Slider';
 import TmdbTitleCard from '@app/components/TitleCard/TmdbTitleCard';
 import ProfileHeader from '@app/components/UserProfile/ProfileHeader';
+import useSettings from '@app/hooks/useSettings';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import Error from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
@@ -16,6 +17,7 @@ import type {
   UserRequestsResponse,
   UserWatchDataResponse,
 } from '@server/interfaces/api/userInterfaces';
+import type { VoteHistoryResponse } from '@server/interfaces/api/voteInterfaces';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
 import Link from 'next/link';
@@ -36,6 +38,7 @@ const messages = defineMessages('components.UserProfile', {
   recentlywatched: 'Recently Watched',
   plexwatchlist: 'Plex Watchlist',
   localWatchlist: "{username}'s Watchlist",
+  recentvotes: 'Recent Votes',
   emptywatchlist:
     'Media added to your <PlexWatchlistSupportLink>Plex Watchlist</PlexWatchlistSupportLink> will appear here.',
 });
@@ -45,6 +48,7 @@ type MediaTitle = MovieDetails | TvDetails;
 const UserProfile = () => {
   const intl = useIntl();
   const router = useRouter();
+  const settings = useSettings();
   const { user, error } = useUser({
     id: Number(router.query.userId),
   });
@@ -95,6 +99,14 @@ const UserProfile = () => {
       {
         revalidateOnMount: true,
       }
+    );
+  const canViewVotes =
+    settings.currentSettings.enableVoting &&
+    user?.id === currentUser?.id &&
+    currentHasPermission(Permission.VOTE);
+  const { data: voteHistory, error: voteHistoryError } =
+    useSWR<VoteHistoryResponse>(
+      canViewVotes ? '/api/v1/vote/history?take=20&skip=0' : null
     );
 
   const updateAvailableTitles = useCallback(
@@ -370,6 +382,30 @@ const UserProfile = () => {
                   key={`watchlist-slider-item-${item.ratingKey}`}
                   tmdbId={item.tmdbId}
                   type={item.mediaType}
+                />
+              ))}
+            />
+          </>
+        )}
+      {canViewVotes &&
+        (!voteHistory || !!voteHistory.results.length) &&
+        !voteHistoryError && (
+          <>
+            <div className="slider-header">
+              <Link href="/profile/votes" className="slider-title">
+                <span>{intl.formatMessage(messages.recentvotes)}</span>
+                <ArrowRightCircleIcon />
+              </Link>
+            </div>
+            <Slider
+              sliderKey="votes"
+              isLoading={!voteHistory}
+              items={(voteHistory?.results ?? []).map((vote) => (
+                <TmdbTitleCard
+                  id={vote.id}
+                  key={`vote-slider-item-${vote.id}`}
+                  tmdbId={vote.tmdbId}
+                  type={vote.mediaType}
                 />
               ))}
             />

@@ -17,6 +17,16 @@ export const votePathParams = z.object({
 export const voteHistoryQuery = z.object({
   take: z.coerce.number().min(1).max(100).optional().default(20),
   skip: z.coerce.number().min(0).optional().default(0),
+  filter: z
+    .enum(['all', VoteActionType.INTERESTED, VoteActionType.NOT_INTERESTED])
+    .optional()
+    .default('all'),
+  mediaType: z
+    .enum(['all', MediaType.MOVIE, MediaType.TV])
+    .optional()
+    .default('all'),
+  sort: z.enum(['added']).optional().default('added'),
+  sortDirection: z.enum(['asc', 'desc']).optional().default('desc'),
 });
 
 export interface VoteResponse {

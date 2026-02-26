@@ -37,11 +37,16 @@ voteRoutes.get<never, VoteHistoryResponse>(
     }
 
     try {
-      const { take, skip } = voteHistoryQuery.parse(req.query);
+      const { take, skip, filter, mediaType, sortDirection } =
+        voteHistoryQuery.parse(req.query);
       const voteRepository = getRepository(Vote);
       const [votes, total] = await voteRepository.findAndCount({
-        where: { user: { id: req.user.id } },
-        order: { createdAt: 'DESC' },
+        where: {
+          user: { id: req.user.id },
+          ...(filter !== 'all' ? { actionType: filter } : {}),
+          ...(mediaType !== 'all' ? { mediaType } : {}),
+        },
+        order: { createdAt: sortDirection.toUpperCase() as 'ASC' | 'DESC' },
         take,
         skip,
       });
