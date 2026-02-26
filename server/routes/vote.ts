@@ -125,6 +125,7 @@ voteRoutes.post<never, VoteUpsertResponse>('/', async (req, res, next) => {
 
     if (existingVote) {
       existingVote.actionType = actionType;
+      existingVote.updatedAt = new Date();
       const updatedVote = await voteRepository.save(existingVote);
 
       return res.status(200).json({
