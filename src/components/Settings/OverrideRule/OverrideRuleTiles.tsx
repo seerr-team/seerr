@@ -140,7 +140,7 @@ const OverrideRuleTiles = ({
   return (
     <>
       {rules.map((rule) => (
-        <li className="flex h-full flex-col rounded-lg bg-gray-800 text-left shadow ring-1 ring-gray-500">
+        <li className="flex h-full flex-col rounded-lg bg-gray-800 text-left shadow-sm ring-1 ring-gray-500">
           <div className="flex w-full flex-1 items-center justify-between space-x-6 p-6">
             <div className="flex-1 truncate">
               <span className="text-lg">
@@ -280,7 +280,7 @@ const OverrideRuleTiles = ({
               <div className="flex w-0 flex-1 border-r border-gray-500">
                 <button
                   onClick={() => setOverrideRuleModal({ open: true, rule })}
-                  className="focus:ring-blue relative -mr-px inline-flex w-0 flex-1 items-center justify-center rounded-bl-lg border border-transparent py-4 text-sm font-medium leading-5 text-gray-200 transition duration-150 ease-in-out hover:text-white focus:z-10 focus:border-gray-500 focus:outline-none"
+                  className="focus:ring-blue relative -mr-px inline-flex w-0 flex-1 items-center justify-center rounded-bl-lg border border-transparent py-4 text-sm leading-5 font-medium text-gray-200 transition duration-150 ease-in-out hover:text-white focus:z-10 focus:border-gray-500 focus:outline-hidden"
                 >
                   <PencilIcon className="mr-2 h-5 w-5" />
                   <span>{intl.formatMessage(globalMessages.edit)}</span>
@@ -292,7 +292,7 @@ const OverrideRuleTiles = ({
                     await axios.delete(`/api/v1/overrideRule/${rule.id}`);
                     revalidate();
                   }}
-                  className="focus:ring-blue relative inline-flex w-0 flex-1 items-center justify-center rounded-br-lg border border-transparent py-4 text-sm font-medium leading-5 text-gray-200 transition duration-150 ease-in-out hover:text-white focus:z-10 focus:border-gray-500 focus:outline-none"
+                  className="focus:ring-blue relative inline-flex w-0 flex-1 items-center justify-center rounded-br-lg border border-transparent py-4 text-sm leading-5 font-medium text-gray-200 transition duration-150 ease-in-out hover:text-white focus:z-10 focus:border-gray-500 focus:outline-hidden"
                 >
                   <TrashIcon className="mr-2 h-5 w-5" />
                   <span>{intl.formatMessage(globalMessages.delete)}</span>

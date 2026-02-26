@@ -47,12 +47,12 @@ function Button<P extends ElementTypes = 'button'>(
   ref?: React.Ref<Element<P>>
 ): JSX.Element {
   const buttonStyle = [
-    'inline-flex items-center justify-center border leading-5 font-medium rounded-md focus:outline-none transition ease-in-out duration-150 cursor-pointer disabled:opacity-50 whitespace-nowrap',
+    'inline-flex items-center justify-center border leading-5 font-medium rounded-md focus:outline-hidden transition ease-in-out duration-150 cursor-pointer disabled:opacity-50 whitespace-nowrap',
   ];
   switch (buttonType) {
     case 'primary':
       buttonStyle.push(
-        'text-white border border-indigo-500 bg-indigo-600/80 hover:bg-indigo-600 hover:border-indigo-500 focus:border-indigo-700 focus:ring-indigo active:bg-indigo-600 active:border-indigo-700'
+        'text-white border-indigo-500 bg-indigo-600/80 hover:bg-indigo-600 hover:border-indigo-500 focus:border-indigo-700 focus:ring-indigo active:bg-indigo-600 active:border-indigo-700'
       );
       break;
     case 'danger':
@@ -62,7 +62,7 @@ function Button<P extends ElementTypes = 'button'>(
       break;
     case 'warning':
       buttonStyle.push(
-        'text-white border border-yellow-500 bg-yellow-500/80 hover:bg-yellow-500 hover:border-yellow-400 focus:border-yellow-700 focus:ring-yellow active:bg-yellow-500 active:border-yellow-700'
+        'text-white border-yellow-500 bg-yellow-500/80 hover:bg-yellow-500 hover:border-yellow-400 focus:border-yellow-700 focus:ring-yellow active:bg-yellow-500 active:border-yellow-700'
       );
       break;
     case 'success':

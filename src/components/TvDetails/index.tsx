@@ -236,7 +236,9 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   )?.rating;
   if (contentRating) {
     seriesAttributes.push(
-      <span className="rounded-md border p-0.5 py-0">{contentRating}</span>
+      <span className="rounded-md border border-gray-200 p-0.5 py-0">
+        {contentRating}
+      </span>
     );
   }
 
@@ -699,7 +701,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                 onClick={() => setShowManager(true)}
                 className="relative ml-2 first:ml-0"
               >
-                <CogIcon className="!mr-0" />
+                <CogIcon className="mr-0!" />
                 {hasPermission(
                   [Permission.MANAGE_ISSUES, Permission.VIEW_ISSUES],
                   {
@@ -712,8 +714,8 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                     ) ?? []
                   ).length > 0 && (
                     <>
-                      <div className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-red-600" />
-                      <div className="absolute -right-1 -top-1 h-3 w-3 animate-ping rounded-full bg-red-600" />
+                      <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-600" />
+                      <div className="absolute -top-1 -right-1 h-3 w-3 animate-ping rounded-full bg-red-600" />
                     </>
                   )}
               </Button>
@@ -773,7 +775,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                 <Link
                   href={`/discover/tv?keywords=${keyword.id}`}
                   key={`keyword-id-${keyword.id}`}
-                  className="mb-2 mr-2 inline-flex last:mr-0"
+                  className="mr-2 mb-2 inline-flex last:mr-0"
                 >
                   <Tag>{keyword.name}</Tag>
                 </Link>
@@ -849,7 +851,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                         <Disclosure.Button
                           className={`mt-2 flex w-full items-center justify-between space-x-2 border-gray-700 bg-gray-800 px-4 py-2 text-gray-200 ${
                             open
-                              ? 'rounded-t-md border-l border-r border-t'
+                              ? 'rounded-t-md border-t border-r border-l'
                               : 'rounded-md border'
                           }`}
                         >
@@ -1072,7 +1074,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                           // Not sure why this transition is adding a margin without this here
                           style={{ margin: '0px' }}
                         >
-                          <Disclosure.Panel className="w-full rounded-b-md border-b border-l border-r border-gray-700 px-4 pb-2">
+                          <Disclosure.Panel className="w-full rounded-b-md border-r border-b border-l border-gray-700 px-4 pb-2">
                             <Season
                               tvId={data.id}
                               seasonNumber={season.seasonNumber}

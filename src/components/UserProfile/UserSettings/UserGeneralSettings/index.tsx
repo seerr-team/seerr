@@ -250,7 +250,7 @@ const UserGeneralSettings = () => {
                 <label className="text-label">
                   {intl.formatMessage(messages.accounttype)}
                 </label>
-                <div className="mb-1 text-sm font-medium leading-5 text-gray-400 sm:mt-2">
+                <div className="mb-1 text-sm leading-5 font-medium text-gray-400 sm:mt-2">
                   <div className="flex max-w-lg items-center">
                     {user?.userType === UserType.PLEX ? (
                       <Badge badgeType="warning">
@@ -280,7 +280,7 @@ const UserGeneralSettings = () => {
                 <label className="text-label">
                   {intl.formatMessage(messages.role)}
                 </label>
-                <div className="mb-1 text-sm font-medium leading-5 text-gray-400 sm:mt-2">
+                <div className="mb-1 text-sm leading-5 font-medium text-gray-400 sm:mt-2">
                   <div className="flex max-w-lg items-center">
                     {user?.id === 1
                       ? intl.formatMessage(messages.owner)
@@ -409,7 +409,7 @@ const UserGeneralSettings = () => {
                   </span>
                 </label>
                 <div className="form-input-area">
-                  <div className="form-input-field relative z-[22]">
+                  <div className="form-input-field relative z-22">
                     <RegionSelector
                       name="discoverRegion"
                       value={values.discoverRegion ?? ''}
@@ -427,7 +427,7 @@ const UserGeneralSettings = () => {
                   </span>
                 </label>
                 <div className="form-input-area">
-                  <div className="form-input-field relative z-[21]">
+                  <div className="form-input-field relative z-21">
                     <LanguageSelector
                       setFieldValue={setFieldValue}
                       serverValue={currentSettings.originalLanguage}
@@ -637,7 +637,7 @@ const UserGeneralSettings = () => {
                 )}
               <div className="actions">
                 <div className="flex justify-end">
-                  <span className="ml-3 inline-flex rounded-md shadow-sm">
+                  <span className="ml-3 inline-flex rounded-md shadow-xs">
                     <Button
                       buttonType="primary"
                       type="submit"

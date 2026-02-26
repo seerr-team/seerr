@@ -61,7 +61,7 @@ const Release = ({ currentVersion, release, isLatest }: ReleaseProps) => {
   const [isModalOpen, setModalOpen] = useState(false);
 
   return (
-    <div className="flex w-full flex-col space-y-3 rounded-md bg-gray-800 px-4 py-2 shadow-md ring-1 ring-gray-700 sm:flex-row sm:space-x-3 sm:space-y-0">
+    <div className="flex w-full flex-col space-y-3 rounded-md bg-gray-800 px-4 py-2 shadow-md ring-1 ring-gray-700 sm:flex-row sm:space-y-0 sm:space-x-3">
       <Transition
         as={Fragment}
         enter="transition-opacity duration-300"
@@ -88,9 +88,9 @@ const Release = ({ currentVersion, release, isLatest }: ReleaseProps) => {
           </div>
         </Modal>
       </Transition>
-      <div className="flex w-full flex-grow items-center justify-center space-x-2 truncate sm:justify-start">
+      <div className="flex w-full grow items-center justify-center space-x-2 truncate sm:justify-start">
         <span className="truncate text-lg font-bold">
-          <span className="mr-2 whitespace-nowrap text-xs font-normal">
+          <span className="mr-2 text-xs font-normal whitespace-nowrap">
             <FormattedRelativeTime
               value={Math.floor(
                 (new Date(release.created_at).getTime() - Date.now()) / 1000

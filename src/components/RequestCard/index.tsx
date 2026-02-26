@@ -82,14 +82,14 @@ const RequestCardError = ({ requestData }: RequestCardErrorProps) => {
 
   return (
     <div
-      className="relative flex w-72 overflow-hidden rounded-xl bg-gray-800 p-4 text-gray-400 shadow ring-1 ring-red-500 sm:w-96"
+      className="relative flex w-72 overflow-hidden rounded-xl bg-gray-800 p-4 text-gray-400 shadow-sm ring-1 ring-red-500 sm:w-96"
       data-testid="request-card"
     >
       <div className="w-20 sm:w-28">
         <div className="w-full" style={{ paddingBottom: '150%' }}>
           <div className="absolute inset-0 z-10 flex min-w-0 flex-1 flex-col p-4">
             <div
-              className="whitespace-normal text-base font-bold text-white sm:text-lg"
+              className="text-base font-bold whitespace-normal text-white sm:text-lg"
               data-testid="request-card-title"
             >
               {intl.formatMessage(messages.mediaerror, {
@@ -108,7 +108,7 @@ const RequestCardError = ({ requestData }: RequestCardErrorProps) => {
                   [Permission.MANAGE_REQUESTS, Permission.REQUEST_VIEW],
                   { type: 'or' }
                 ) && (
-                  <div className="card-field !hidden sm:!block">
+                  <div className="card-field hidden! sm:block!">
                     <Link
                       href={`/users/${requestData.requestedBy.id}`}
                       className="group flex items-center"
@@ -330,7 +330,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
         }}
       />
       <div
-        className="relative flex w-72 overflow-hidden rounded-xl bg-gray-800 bg-cover bg-center p-4 text-gray-400 shadow ring-1 ring-gray-700 sm:w-96"
+        className="relative flex w-72 overflow-hidden rounded-xl bg-gray-800 bg-cover bg-center p-4 text-gray-400 shadow-sm ring-1 ring-gray-700 sm:w-96"
         data-testid="request-card"
       >
         {title.backdropPath && (
@@ -367,7 +367,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                 ? `/movie/${requestData.media.tmdbId}`
                 : `/tv/${requestData.media.tmdbId}`
             }
-            className="overflow-hidden overflow-ellipsis whitespace-nowrap text-base font-bold text-white hover:underline sm:text-lg"
+            className="overflow-hidden text-base font-bold text-ellipsis whitespace-nowrap text-white hover:underline sm:text-lg"
           >
             {isMovie(title) ? title.title : title.name}
           </Link>
@@ -601,7 +601,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
               ? `/movie/${requestData.media.tmdbId}`
               : `/tv/${requestData.media.tmdbId}`
           }
-          className="w-20 flex-shrink-0 scale-100 transform-gpu cursor-pointer overflow-hidden rounded-md shadow-sm transition duration-300 hover:scale-105 hover:shadow-md sm:w-28"
+          className="w-20 shrink-0 scale-100 transform-gpu cursor-pointer overflow-hidden rounded-md shadow-xs transition duration-300 hover:scale-105 hover:shadow-md sm:w-28"
         >
           <CachedImage
             type="tmdb"

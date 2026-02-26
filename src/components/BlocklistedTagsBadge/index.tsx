@@ -46,7 +46,7 @@ const BlocklistedTagsBadge = ({ data }: BlocklistedTagsBadgeProps) => {
     >
       <Badge
         badgeType="dark"
-        className="items-center border border-red-500 !text-red-400"
+        className="items-center border border-red-500 text-red-400!"
       >
         <TagIcon className="mr-1 h-4" />
         {intl.formatMessage(messages.blocklistedTagsText)}

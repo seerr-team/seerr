@@ -370,7 +370,7 @@ const IssueDetails = () => {
                 </span>
               </div>
             </div>
-            <div className="mb-6 mt-4 flex flex-col space-y-2">
+            <div className="mt-4 mb-6 flex flex-col space-y-2">
               {issueData?.media.mediaUrl && (
                 <Button
                   as="a"
@@ -483,7 +483,7 @@ const IssueDetails = () => {
               />
             ))}
             {otherComments.length === 0 && (
-              <div className="mb-10 mt-4 text-gray-400">
+              <div className="mt-4 mb-10 text-gray-400">
                 <span>{intl.formatMessage(messages.nocomments)}</span>
               </div>
             )}
@@ -636,7 +636,7 @@ const IssueDetails = () => {
               </span>
             </div>
           </div>
-          <div className="mb-6 mt-4 flex flex-col space-y-2">
+          <div className="mt-4 mb-6 flex flex-col space-y-2">
             {issueData?.media.mediaUrl && (
               <Button
                 as="a"

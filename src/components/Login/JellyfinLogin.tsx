@@ -119,14 +119,14 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
                     })}
                   </h2>
 
-                  <div className="mb-4 mt-1">
+                  <div className="mt-1 mb-4">
                     <div className="form-input-field">
                       <Field
                         id="username"
                         name="username"
                         type="text"
                         placeholder={intl.formatMessage(messages.username)}
-                        className="!bg-gray-700/80 placeholder:text-gray-400"
+                        className="bg-gray-700/80! placeholder:text-gray-400"
                         data-form-type="username"
                       />
                     </div>
@@ -135,7 +135,7 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
                     )}
                   </div>
 
-                  <div className="mb-2 mt-1">
+                  <div className="mt-1 mb-2">
                     <div className="form-input-field">
                       <SensitiveInput
                         as="field"
@@ -144,7 +144,7 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
                         type="password"
                         autoComplete="current-password"
                         placeholder={intl.formatMessage(messages.password)}
-                        className="!bg-gray-700/80 placeholder:text-gray-400"
+                        className="bg-gray-700/80! placeholder:text-gray-400"
                         data-form-type="password"
                         data-1pignore="false"
                         data-lpignore="false"
@@ -154,7 +154,7 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
                       {errors.password && touched.password && (
                         <div className="error">{errors.password}</div>
                       )}
-                      <div className="flex-grow" />
+                      <div className="grow" />
                       {baseUrl && (
                         <a
                           href={
@@ -180,7 +180,7 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
                   buttonType="primary"
                   type="submit"
                   disabled={isSubmitting || !isValid}
-                  className="mt-2 w-full shadow-sm"
+                  className="mt-2 w-full shadow-xs"
                 >
                   <ArrowLeftOnRectangleIcon />
                   <span>

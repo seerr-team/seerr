@@ -98,7 +98,7 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
             <div className="white mb-1 flex flex-nowrap">
               <span className="flex w-40 items-center truncate md:w-auto">
                 <Tooltip content={intl.formatMessage(messages.requestedby)}>
-                  <UserIcon className="mr-1.5 h-5 w-5 min-w-0 flex-shrink-0" />
+                  <UserIcon className="mr-1.5 h-5 w-5 min-w-0 shrink-0" />
                 </Tooltip>
                 <Link
                   href={
@@ -128,7 +128,7 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
                   <Tooltip
                     content={intl.formatMessage(messages.lastmodifiedby)}
                   >
-                    <EyeIcon className="mr-1.5 h-5 w-5 flex-shrink-0" />
+                    <EyeIcon className="mr-1.5 h-5 w-5 shrink-0" />
                   </Tooltip>
                   <Link
                     href={
@@ -154,7 +154,7 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
               </div>
             )}
           </div>
-          <div className="ml-2 flex flex-shrink-0 flex-wrap">
+          <div className="ml-2 flex shrink-0 flex-wrap">
             {request.status === MediaRequestStatus.PENDING && (
               <>
                 <Tooltip content={intl.formatMessage(messages.approve)}>
@@ -238,7 +238,7 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
           </div>
           <div className="mt-2 flex items-center text-sm leading-5 sm:mt-0">
             <Tooltip content={intl.formatMessage(messages.requestdate)}>
-              <CalendarIcon className="mr-1.5 h-5 w-5 flex-shrink-0" />
+              <CalendarIcon className="mr-1.5 h-5 w-5 shrink-0" />
             </Tooltip>
             <Tooltip
               content={intl.formatDate(request.createdAt, {
@@ -271,7 +271,7 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
               {request.seasons.map((season) => (
                 <span
                   key={`season-${season.id}`}
-                  className="mb-1 mr-2 inline-block"
+                  className="mr-2 mb-1 inline-block"
                 >
                   <Badge>
                     {season.seasonNumber === 0
@@ -285,7 +285,7 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
         )}
         {(server || profile || rootFolder || languageProfile) && (
           <>
-            <div className="mb-1 mt-4 text-sm">
+            <div className="mt-4 mb-1 text-sm">
               {intl.formatMessage(messages.requestoverrides)}
             </div>
             <ul className="divide-y divide-gray-700 rounded-md bg-gray-800 px-2 text-xs">

@@ -32,7 +32,7 @@ const MovieCast = () => {
   return (
     <>
       <PageTitle title={[intl.formatMessage(messages.fullcast), data.title]} />
-      <div className="mb-5 mt-1">
+      <div className="mt-1 mb-5">
         <Header
           subtext={
             <Link href={`/movie/${data.id}`} className="hover:underline">

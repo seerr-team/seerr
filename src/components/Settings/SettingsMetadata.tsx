@@ -387,7 +387,7 @@ const SettingsMetadata = () => {
 
                 <div className="actions">
                   <div className="flex justify-end">
-                    <span className="ml-3 inline-flex rounded-md shadow-sm">
+                    <span className="ml-3 inline-flex rounded-md shadow-xs">
                       <Button
                         buttonType="warning"
                         type="button"
@@ -450,7 +450,7 @@ const SettingsMetadata = () => {
                       </Button>
                     </span>
 
-                    <span className="ml-3 inline-flex rounded-md shadow-sm">
+                    <span className="ml-3 inline-flex rounded-md shadow-xs">
                       <Button
                         data-testid="metadata-save-button"
                         buttonType="primary"

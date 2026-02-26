@@ -50,7 +50,7 @@ const RecentRequestsSlider = () => {
         (hasPermission(Permission.MANAGE_REQUESTS) ||
           hasPermission(Permission.REQUEST_ADVANCED)) && (
           <div className="service-error-banner">
-            <ExclamationTriangleIcon className="h-5 w-5 flex-shrink-0" />
+            <ExclamationTriangleIcon className="h-5 w-5 shrink-0" />
             <span>
               {intl.formatMessage(messages.unableToConnect, {
                 services: [

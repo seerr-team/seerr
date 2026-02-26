@@ -62,20 +62,20 @@ const ResetPassword = () => {
           '/images/rotate6.jpg',
         ]}
       />
-      <div className="absolute right-4 top-4 z-50">
+      <div className="absolute top-4 right-4 z-50">
         <LanguagePicker />
       </div>
       <div className="relative z-40 mt-10 flex flex-col items-center px-4 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="relative h-48 w-full max-w-full">
           <Image src="/logo_stacked.svg" alt="Logo" fill />
         </div>
-        <h2 className="mt-12 text-center text-3xl font-extrabold leading-9 text-gray-100">
+        <h2 className="mt-12 text-center text-3xl leading-9 font-extrabold text-gray-100">
           {intl.formatMessage(messages.resetpassword)}
         </h2>
       </div>
       <div className="relative z-50 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div
-          className="bg-gray-800/50 shadow sm:rounded-lg"
+          className="bg-gray-800/50 shadow-sm sm:rounded-lg"
           style={{ backdropFilter: 'blur(5px)' }}
         >
           <div className="px-10 py-8">
@@ -84,7 +84,7 @@ const ResetPassword = () => {
                 <p className="text-md text-gray-300">
                   {intl.formatMessage(messages.resetpasswordsuccessmessage)}
                 </p>
-                <span className="mt-4 flex justify-center rounded-md shadow-sm">
+                <span className="mt-4 flex justify-center rounded-md shadow-xs">
                   <Link href="/login" passHref legacyBehavior>
                     <Button as="a" buttonType="ghost">
                       {intl.formatMessage(messages.gobacklogin)}
@@ -118,11 +118,11 @@ const ResetPassword = () => {
                       <div>
                         <label
                           htmlFor="password"
-                          className="my-1 block text-sm font-medium leading-5 text-gray-400 sm:mt-px"
+                          className="my-1 block text-sm leading-5 font-medium text-gray-400 sm:mt-px"
                         >
                           {intl.formatMessage(messages.password)}
                         </label>
-                        <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
+                        <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0">
                           <div className="form-input-field">
                             <SensitiveInput
                               as="field"
@@ -141,11 +141,11 @@ const ResetPassword = () => {
                         </div>
                         <label
                           htmlFor="confirmPassword"
-                          className="my-1 block text-sm font-medium leading-5 text-gray-400 sm:mt-px"
+                          className="my-1 block text-sm leading-5 font-medium text-gray-400 sm:mt-px"
                         >
                           {intl.formatMessage(messages.confirmpassword)}
                         </label>
-                        <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
+                        <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0">
                           <div className="form-input-field">
                             <SensitiveInput
                               as="field"
@@ -166,7 +166,7 @@ const ResetPassword = () => {
                       </div>
                       <div className="mt-4 border-t border-gray-700 pt-5">
                         <div className="flex justify-end">
-                          <span className="inline-flex rounded-md shadow-sm">
+                          <span className="inline-flex rounded-md shadow-xs">
                             <Button
                               buttonType="primary"
                               type="submit"

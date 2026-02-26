@@ -55,7 +55,7 @@ const DiscoverWatchlist = () => {
       <PageTitle
         title={[title, router.query.userId ? user?.displayName : '']}
       />
-      <div className="mb-5 mt-1">
+      <div className="mt-1 mb-5">
         <Header
           subtext={
             router.query.userId ? (

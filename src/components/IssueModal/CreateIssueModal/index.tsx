@@ -253,12 +253,12 @@ const CreateIssueModal = ({
                       classNames(
                         index === 0 ? 'rounded-tl-md rounded-tr-md' : '',
                         index === issueOptions.length - 1
-                          ? 'rounded-bl-md rounded-br-md'
+                          ? 'rounded-br-md rounded-bl-md'
                           : '',
                         checked
-                          ? 'z-10 border border-indigo-500 bg-indigo-400/20'
+                          ? 'z-10 border-indigo-500 bg-indigo-400/20'
                           : 'border-gray-500',
-                        'relative flex cursor-pointer border p-4 focus:outline-none'
+                        'relative flex cursor-pointer border p-4 focus:outline-hidden'
                       )
                     }
                   >

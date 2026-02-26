@@ -17,9 +17,9 @@ const SetupSteps = ({
 }: CurrentStep) => {
   return (
     <li className="relative md:flex md:flex-1">
-      <div className="flex items-center space-x-4 px-6 py-4 text-sm font-medium leading-5">
+      <div className="flex items-center space-x-4 px-6 py-4 text-sm leading-5 font-medium">
         <div
-          className={`flex h-10 w-10 flex-shrink-0 items-center justify-center border-2 ${
+          className={`flex h-10 w-10 shrink-0 items-center justify-center border-2 ${
             active ? 'border-indigo-600' : 'border-white'
           } ${completed ? 'border-indigo-600 bg-indigo-600' : ''} rounded-full`}
         >
@@ -31,7 +31,7 @@ const SetupSteps = ({
           )}
         </div>
         <p
-          className={`text-sm font-medium leading-5 ${
+          className={`text-sm leading-5 font-medium ${
             active ? 'text-white' : 'text-indigo-200'
           }`}
         >
@@ -40,7 +40,7 @@ const SetupSteps = ({
       </div>
 
       {!isLastStep && (
-        <div className="absolute right-0 top-0 hidden h-full w-5 md:block">
+        <div className="absolute top-0 right-0 hidden h-full w-5 md:block">
           <svg
             className="h-full w-full text-gray-600"
             viewBox="0 0 22 80"

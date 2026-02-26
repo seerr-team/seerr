@@ -513,10 +513,10 @@ const UserList = () => {
 
       <div className="flex flex-col justify-between lg:flex-row lg:items-end">
         <Header>{intl.formatMessage(messages.userlist)}</Header>
-        <div className="mt-2 flex flex-grow flex-col lg:flex-grow-0 lg:flex-row">
-          <div className="mb-2 flex flex-grow flex-col justify-between sm:flex-row lg:mb-0 lg:flex-grow-0">
+        <div className="mt-2 flex grow flex-col lg:grow-0 lg:flex-row">
+          <div className="mb-2 flex grow flex-col justify-between sm:flex-row lg:mb-0 lg:grow-0">
             <Button
-              className="mb-2 flex-grow sm:mb-0 sm:mr-2"
+              className="mb-2 grow sm:mr-2 sm:mb-0"
               buttonType="primary"
               onClick={() => setCreateModal({ isOpen: true })}
             >
@@ -524,7 +524,7 @@ const UserList = () => {
               <span>{intl.formatMessage(messages.createlocaluser)}</span>
             </Button>
             <Button
-              className="flex-grow lg:mr-2"
+              className="grow lg:mr-2"
               buttonType="primary"
               onClick={() => setShowImportModal(true)}
             >
@@ -546,7 +546,7 @@ const UserList = () => {
               </span>
             </Button>
           </div>
-          <div className="mb-2 flex flex-grow lg:mb-0 lg:flex-grow-0">
+          <div className="mb-2 flex grow lg:mb-0 lg:grow-0">
             <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
               <BarsArrowDownIcon className="h-6 w-6" />
             </span>
@@ -628,7 +628,7 @@ const UserList = () => {
                 <div className="flex items-center">
                   <Link
                     href={`/users/${user.id}`}
-                    className="h-10 w-10 flex-shrink-0"
+                    className="h-10 w-10 shrink-0"
                   >
                     <CachedImage
                       type="avatar"
@@ -642,7 +642,7 @@ const UserList = () => {
                   <div className="ml-4">
                     <Link
                       href={`/users/${user.id}`}
-                      className="text-base font-bold leading-5 transition duration-300 hover:underline"
+                      className="text-base leading-5 font-bold transition duration-300 hover:underline"
                       data-testid="user-list-username-link"
                     >
                       {user.username ||
@@ -746,7 +746,7 @@ const UserList = () => {
           <tr className="bg-gray-700">
             <Table.TD colSpan={8} noPadding>
               <nav
-                className="flex w-screen flex-col items-center space-x-4 space-y-3 px-6 py-3 sm:flex-row sm:space-y-0 lg:w-full"
+                className="flex w-screen flex-col items-center space-y-3 space-x-4 px-6 py-3 sm:flex-row sm:space-y-0 lg:w-full"
                 aria-label="Pagination"
               >
                 <div className="hidden lg:flex lg:flex-1">
@@ -766,7 +766,7 @@ const UserList = () => {
                   </p>
                 </div>
                 <div className="flex justify-center sm:flex-1 sm:justify-start lg:justify-center">
-                  <span className="-mt-3 items-center text-sm sm:-ml-4 sm:mt-0 lg:ml-0">
+                  <span className="-mt-3 items-center text-sm sm:mt-0 sm:-ml-4 lg:ml-0">
                     {intl.formatMessage(globalMessages.resultsperpage, {
                       pageSize: (
                         <select

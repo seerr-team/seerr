@@ -256,7 +256,7 @@ const NotificationsNtfy = () => {
               </div>
             </div>
             {values.authMethodUsernamePassword && (
-              <div className="ml-4 mr-2">
+              <div className="mr-2 ml-4">
                 <div className="form-row">
                   <label htmlFor="username" className="text-label">
                     {intl.formatMessage(messages.username)}
@@ -302,7 +302,7 @@ const NotificationsNtfy = () => {
               </div>
             </div>
             {values.authMethodToken && (
-              <div className="form-row ml-4 mr-2">
+              <div className="form-row mr-2 ml-4">
                 <label htmlFor="token" className="text-label">
                   {intl.formatMessage(messages.token)}
                 </label>
@@ -331,7 +331,7 @@ const NotificationsNtfy = () => {
             />
             <div className="actions">
               <div className="flex justify-end">
-                <span className="ml-3 inline-flex rounded-md shadow-sm">
+                <span className="ml-3 inline-flex rounded-md shadow-xs">
                   <Button
                     buttonType="warning"
                     disabled={isSubmitting || !isValid || isTesting}
@@ -348,7 +348,7 @@ const NotificationsNtfy = () => {
                     </span>
                   </Button>
                 </span>
-                <span className="ml-3 inline-flex rounded-md shadow-sm">
+                <span className="ml-3 inline-flex rounded-md shadow-xs">
                   <Button
                     buttonType="primary"
                     type="submit"

@@ -17,7 +17,7 @@ const SlideCheckbox = ({ onClick, checked = false }: SlideCheckboxProps) => {
           onClick();
         }
       }}
-      className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none`}
+      className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-hidden`}
     >
       <span
         aria-hidden="true"
@@ -29,7 +29,7 @@ const SlideCheckbox = ({ onClick, checked = false }: SlideCheckboxProps) => {
         aria-hidden="true"
         className={`${
           checked ? 'translate-x-5' : 'translate-x-0'
-        } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
+        } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring-3 group-focus:ring-blue-500`}
       />
     </span>
   );

@@ -240,7 +240,7 @@ const ManageSlideOver = ({
             <h3 className="mb-2 text-xl font-bold">
               {intl.formatMessage(messages.downloadstatus)}
             </h3>
-            <div className="overflow-hidden rounded-md border border-gray-700 shadow">
+            <div className="overflow-hidden rounded-md border border-gray-700 shadow-sm">
               <ul>
                 {filterDuplicateDownloads(data.mediaInfo?.downloadStatus).map(
                   (status, index) => (
@@ -278,7 +278,7 @@ const ManageSlideOver = ({
               <h3 className="mb-2 text-xl font-bold">
                 {intl.formatMessage(messages.manageModalIssues)}
               </h3>
-              <div className="overflow-hidden rounded-md border border-gray-700 shadow">
+              <div className="overflow-hidden rounded-md border border-gray-700 shadow-sm">
                 <ul>
                   {openIssues.map((issue) => (
                     <li
@@ -297,7 +297,7 @@ const ManageSlideOver = ({
             <h3 className="mb-2 text-xl font-bold">
               {intl.formatMessage(messages.manageModalRequests)}
             </h3>
-            <div className="overflow-hidden rounded-md border border-gray-700 shadow">
+            <div className="overflow-hidden rounded-md border border-gray-700 shadow-sm">
               <ul>
                 {requests.map((request) => (
                   <li
@@ -319,7 +319,7 @@ const ManageSlideOver = ({
             <h3 className="mb-2 text-xl font-bold">
               {intl.formatMessage(globalMessages.blocklist)}
             </h3>
-            <div className="overflow-hidden rounded-md border border-gray-700 shadow">
+            <div className="overflow-hidden rounded-md border border-gray-700 shadow-sm">
               <BlocklistBlock
                 tmdbId={data.mediaInfo.tmdbId}
                 onUpdate={() => revalidate()}
@@ -378,8 +378,8 @@ const ManageSlideOver = ({
                           </div>
                         </div>
                         {!!watchData.data.users.length && (
-                          <div className="flex flex-row space-x-2 px-4 pb-2 pt-3">
-                            <span className="shrink-0 font-bold leading-8">
+                          <div className="flex flex-row space-x-2 px-4 pt-3 pb-2">
+                            <span className="shrink-0 leading-8 font-bold">
                               {intl.formatMessage(messages.playedby)}
                             </span>
                             <span className="flex flex-row flex-wrap">
@@ -540,8 +540,8 @@ const ManageSlideOver = ({
                           </div>
                         </div>
                         {!!watchData.data4k.users.length && (
-                          <div className="flex flex-row space-x-2 px-4 pb-2 pt-3">
-                            <span className="shrink-0 font-bold leading-8">
+                          <div className="flex flex-row space-x-2 px-4 pt-3 pb-2">
+                            <span className="shrink-0 leading-8 font-bold">
                               {intl.formatMessage(messages.playedby)}
                             </span>
                             <span className="flex flex-row flex-wrap">

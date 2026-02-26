@@ -42,7 +42,7 @@ const SettingsLink = ({
   }
 
   let linkClasses =
-    'px-1 py-4 ml-8 text-sm font-medium leading-5 transition duration-300 border-b-2 border-transparent whitespace-nowrap first:ml-0';
+    'px-1 py-4 ml-8 text-sm font-medium leading-5 transition duration-300 border-b-2 whitespace-nowrap first:ml-0';
   let activeLinkColor = 'text-indigo-500 border-indigo-600';
   let inactiveLinkColor =
     'text-gray-500 border-transparent hover:text-gray-300 hover:border-gray-400 focus:text-gray-300 focus:border-gray-400';

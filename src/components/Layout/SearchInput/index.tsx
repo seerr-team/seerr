@@ -24,7 +24,7 @@ const SearchInput = () => {
           <input
             id="search_field"
             style={{ paddingRight: searchValue.length > 0 ? '1.75rem' : '' }}
-            className="block w-full rounded-full border border-gray-600 bg-gray-900/80 py-2 pl-10 text-white placeholder-gray-300 hover:border-gray-500 focus:border-gray-500 focus:bg-gray-900 focus:placeholder-gray-400 focus:outline-none focus:ring-0 sm:text-base"
+            className="block w-full rounded-full border border-gray-600 bg-gray-900/80 py-2 pl-10 text-white placeholder-gray-300 hover:border-gray-500 focus:border-gray-500 focus:bg-gray-900 focus:placeholder-gray-400 focus:ring-0 focus:ring-blue-500 focus:outline-hidden sm:text-base"
             placeholder={intl.formatMessage(messages.searchPlaceholder)}
             type="search"
             autoComplete="off"
@@ -45,7 +45,7 @@ const SearchInput = () => {
           />
           {searchValue.length > 0 && (
             <button
-              className="absolute inset-y-0 right-2 m-auto h-7 w-7 border-none p-1 text-gray-400 outline-none transition hover:text-white focus:border-none focus:outline-none"
+              className="absolute inset-y-0 right-2 m-auto h-7 w-7 border-none p-1 text-gray-400 outline-hidden transition hover:text-white focus:border-none focus:outline-hidden"
               onClick={() => clear()}
             >
               <XCircleIcon className="h-5 w-5" />
