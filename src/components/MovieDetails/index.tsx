@@ -256,7 +256,9 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   const certification = releases?.find((r) => r.certification)?.certification;
   if (certification) {
     movieAttributes.push(
-      <span className="rounded-md border p-0.5 py-0">{certification}</span>
+      <span className="rounded-md border border-gray-200 p-0.5 py-0">
+        {certification}
+      </span>
     );
   }
 

@@ -236,7 +236,9 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   )?.rating;
   if (contentRating) {
     seriesAttributes.push(
-      <span className="rounded-md border p-0.5 py-0">{contentRating}</span>
+      <span className="rounded-md border border-gray-200 p-0.5 py-0">
+        {contentRating}
+      </span>
     );
   }
 
