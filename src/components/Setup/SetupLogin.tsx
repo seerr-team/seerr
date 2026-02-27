@@ -45,8 +45,9 @@ const SetupLogin: React.FC<LoginWithMediaServerProps> = ({
         authToken: authToken,
       });
 
-      if (response.data?.email) {
-        revalidate();
+      if (response.data?.id) {
+        const { data: user } = await axios.get('/api/v1/auth/me');
+        revalidate(user, false);
       }
     };
     if (authToken && mediaServerType == MediaServerType.PLEX) {
