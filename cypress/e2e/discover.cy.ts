@@ -211,4 +211,22 @@ describe('Discover', () => {
         cy.get('[data-testid=media-title]').should('contain', text);
       });
   });
+
+  it('navigates from My Media Library slider to the library page', () => {
+    cy.intercept('/api/v1/media?filter=allavailable*').as('getLibraryMedia');
+
+    cy.visit('/');
+
+    cy.contains('.slider-header .slider-title', 'My Media Library', {
+      timeout: 20000,
+    })
+      .scrollIntoView()
+      .should('be.visible')
+      .click();
+
+    cy.get('@getLibraryMedia.all').should('have.length.at.least', 1);
+
+    cy.url().should('include', '/discover/library');
+    cy.get('[data-testid=page-header]').should('contain', 'My Media Library');
+  });
 });

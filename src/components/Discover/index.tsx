@@ -7,6 +7,7 @@ import { sliderTitles } from '@app/components/Discover/constants';
 import CreateSlider from '@app/components/Discover/CreateSlider';
 import DiscoverSliderEdit from '@app/components/Discover/DiscoverSliderEdit';
 import MovieGenreSlider from '@app/components/Discover/MovieGenreSlider';
+import MyMediaLibrarySlider from '@app/components/Discover/MyMediaLibrarySlider';
 import NetworkSlider from '@app/components/Discover/NetworkSlider';
 import PlexWatchlistSlider from '@app/components/Discover/PlexWatchlistSlider';
 import RecentlyAddedSlider from '@app/components/Discover/RecentlyAddedSlider';
@@ -395,6 +396,9 @@ const Discover = () => {
                 }&watchProviders=${slider.data?.split(',')[1]}`}
               />
             );
+            break;
+          case DiscoverSliderType.MY_MEDIA_LIBRARY:
+            sliderComponent = <MyMediaLibrarySlider />;
             break;
         }
 

@@ -112,6 +112,7 @@
   "components.Discover.discover": "Discover",
   "components.Discover.emptywatchlist": "Media added to your <PlexWatchlistSupportLink>Plex Watchlist</PlexWatchlistSupportLink> will appear here.",
   "components.Discover.moviegenres": "Movie Genres",
+  "components.Discover.myMediaLibrary": "My Media Library",
   "components.Discover.networks": "Networks",
   "components.Discover.plexwatchlist": "Your Watchlist",
   "components.Discover.popularmovies": "Popular Movies",
