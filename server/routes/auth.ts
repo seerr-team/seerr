@@ -695,11 +695,27 @@ authRoutes.get(
     const userRepository = getRepository(User);
 
     try {
+      if (!req.user) {
+        return next({
+          status: 403,
+          message: 'Not authorized to access this resource.',
+        });
+      }
+
       const userId = parseInt(req.params.userId, 10);
       if (isNaN(userId)) {
         return next({
           status: 400,
           message: 'Invalid user ID format.',
+        });
+      }
+
+      const isOwner = req.user.id === userId;
+      const isAdmin = req.user.hasPermission(Permission.ADMIN);
+      if (!isOwner && !isAdmin) {
+        return next({
+          status: 403,
+          message: "Not authorized to access this user's profiles.",
         });
       }
 
@@ -740,7 +756,7 @@ authRoutes.get(
 
       return res.status(200).json({
         profiles,
-        profileUsers,
+        profileUsers: User.filterMany(profileUsers),
         mainUser: mainUser.filter(),
       });
     } catch (e) {
