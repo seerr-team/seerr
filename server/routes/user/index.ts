@@ -355,14 +355,14 @@ router.delete<{ userId: number; endpoint: string }>(
 router.get<{ id: string }>('/:id', async (req, res, next) => {
   try {
     const userRepository = getRepository(User);
-
     const user = await userRepository.findOneOrFail({
       where: { id: Number(req.params.id) },
     });
 
-    return res
-      .status(200)
-      .json(user.filter(req.user?.hasPermission(Permission.MANAGE_USERS)));
+    const isOwnProfile = req.user?.id === user.id;
+    const isAdmin = req.user?.hasPermission(Permission.MANAGE_USERS);
+
+    return res.status(200).json(user.filter(isOwnProfile || isAdmin));
   } catch (e) {
     next({ status: 404, message: 'User not found.' });
   }
