@@ -17,8 +17,6 @@ const messages = defineMessages('components.Login.PlexProfileSelector', {
 
 interface PlexProfileSelectorProps {
   profiles: PlexProfile[];
-  mainUserId: number;
-  authToken: string | undefined;
   onProfileSelected: (
     profileId: string,
     pin?: string,
