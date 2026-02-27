@@ -1072,6 +1072,7 @@
   "components.Settings.SonarrModal.loadinglanguageprofiles": "Loading language profiles…",
   "components.Settings.SonarrModal.loadingprofiles": "Loading quality profiles…",
   "components.Settings.SonarrModal.loadingrootfolders": "Loading root folders…",
+  "components.Settings.SonarrModal.monitorNewItems": "Monitor New Seasons",
   "components.Settings.SonarrModal.notagoptions": "No tags.",
   "components.Settings.SonarrModal.port": "Port",
   "components.Settings.SonarrModal.qualityprofile": "Quality Profile",
