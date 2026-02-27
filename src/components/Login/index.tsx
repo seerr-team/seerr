@@ -38,6 +38,8 @@ const messages = defineMessages('components.Login', {
   accessDenied: 'Access denied.',
   profileUserExists:
     'A profile user already exists for this Plex account. Please contact your administrator to resolve this duplicate.',
+  couldNotLoadProfiles:
+    "We couldn't load your Plex profiles. Please try signing in again.",
 });
 
 const Login = () => {
@@ -84,9 +86,14 @@ const Login = () => {
             setProfiles(response.data.profiles);
             profilesRef.current = response.data.profiles;
             const rawUserId = response.data.mainUserId;
-            let numericUserId = Number(rawUserId);
-            if (!numericUserId || isNaN(numericUserId) || numericUserId <= 0) {
-              numericUserId = 1;
+            const numericUserId = Number(rawUserId);
+            if (
+              rawUserId == null ||
+              Number.isNaN(numericUserId) ||
+              numericUserId <= 0
+            ) {
+              setError(intl.formatMessage(messages.couldNotLoadProfiles));
+              break;
             }
             setMainUserId(numericUserId);
             setShowProfileSelector(true);
@@ -103,8 +110,8 @@ const Login = () => {
         const msg =
           httpStatus === 403
             ? intl.formatMessage(messages.accessDenied)
-            : e?.response?.data?.message ??
-              intl.formatMessage(messages.authFailed);
+            : (e?.response?.data?.message ??
+              intl.formatMessage(messages.authFailed));
         setError(msg);
         setAuthToken(undefined);
       } finally {
