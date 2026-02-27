@@ -75,7 +75,7 @@ Please be respectful to maintainers and disclose AI assistance.
 3. Create a new branch:
 
    ```bash
-   git checkout -b BRANCH_NAME develop
+   git switch -c BRANCH_NAME develop
    ```
 
    - It is recommended to give your branch a meaningful name, relevant to the feature or fix you are working on.
@@ -127,11 +127,10 @@ Steps:
 ### Contributing Code
 
 - If you are taking on an existing bug or feature ticket, please comment on the [issue](/../../issues) to avoid multiple people working on the same thing.
-- All commits **must** follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
-  - Pull requests with titles or commits not following this standard will **not** be merged. PR titles are automatically checked for compliance.
+- Pull requests with titles not following [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) will **not** be merged. PR titles are automatically checked for compliance.
 - Please make meaningful commits, or squash them prior to opening a pull request.
   - Do not squash commits once people have begun reviewing your changes.
-- Always rebase your commit to the latest `develop` branch. Do **not** merge `develop` into your branch.
+- Always rebase your branch to the latest `develop` branch.
 - It is your responsibility to keep your branch up-to-date. Your work will **not** be merged unless it is rebased off the latest `develop` branch.
 - You can create a "draft" pull request early to get feedback on your work.
 - Your code **must** be formatted correctly, or the tests will fail.
@@ -180,10 +179,10 @@ PGPASSWORD=postgres sudo docker exec -it postgres-seerr /usr/bin/psql -h 127.0.0
 PGPASSWORD=postgres sudo docker exec -it postgres-seerr /usr/bin/psql -h 127.0.0.1 -U postgres -c "CREATE DATABASE seerr;"
 ```
 
-3. Checkout the `develop` branch and create the original database for SQLite and PostgreSQL so that TypeORM can automatically generate the migrations:
+3. Switch to the `develop` branch and create the original database for SQLite and PostgreSQL so that TypeORM can automatically generate the migrations:
 
 ```bash
-git checkout develop
+git switch develop
 pnpm i
 rm -r .next dist; pnpm build
 pnpm start
@@ -195,7 +194,7 @@ DB_TYPE="postgres" DB_USER=postgres DB_PASS=postgres pnpm start
 4. Let TypeORM generate the migrations:
 
 ```bash
-git checkout -b your-feature-branch
+git switch -c your-feature-branch
 pnpm i
 pnpm migration:generate server/migration/sqlite/YourMigrationName
 DB_TYPE="postgres" DB_USER=postgres DB_PASS=postgres pnpm migration:generate server/migration/postgres/YourMigrationName
