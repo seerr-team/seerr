@@ -1,4 +1,6 @@
 import SonarrAPI from '@server/api/servarr/sonarr';
+import { getRepository } from '@server/datasource';
+import RoutingRule from '@server/entity/RoutingRule';
 import type { SonarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -108,6 +110,7 @@ sonarrRoutes.put<{ id: string }>('/:id', async (req, res) => {
 
 sonarrRoutes.delete<{ id: string }>('/:id', async (req, res) => {
   const settings = getSettings();
+  const routingRuleRepository = getRepository(RoutingRule);
 
   const sonarrIndex = settings.sonarr.findIndex(
     (r) => r.id === Number(req.params.id)
@@ -117,6 +120,19 @@ sonarrRoutes.delete<{ id: string }>('/:id', async (req, res) => {
     return res
       .status(404)
       .json({ status: '404', message: 'Settings instance not found' });
+  }
+
+  const instanceId = Number(req.params.id);
+
+  const rulesToDelete = await routingRuleRepository.find({
+    where: {
+      serviceType: 'sonarr',
+      targetServiceId: instanceId,
+    },
+  });
+
+  if (rulesToDelete.length > 0) {
+    await routingRuleRepository.remove(rulesToDelete);
   }
 
   const removed = settings.sonarr.splice(sonarrIndex, 1);
