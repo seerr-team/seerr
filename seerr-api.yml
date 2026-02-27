@@ -4013,6 +4013,10 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/User'
                   - type: object
+                    required:
+                      - status
+                      - mainUserId
+                      - profiles
                     properties:
                       status:
                         type: string
@@ -4076,6 +4080,11 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/User'
                   - type: object
+                    required:
+                      - status
+                      - profileId
+                      - profileName
+                      - mainUserId
                     properties:
                       status:
                         type: string
