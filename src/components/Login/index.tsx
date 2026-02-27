@@ -344,7 +344,6 @@ const Login = () => {
             <div className="px-10 py-8">
               {showPinEntry && pinProfileId && pinProfileName ? (
                 <PlexPinEntry
-                  profileId={pinProfileId}
                   profileName={pinProfileName}
                   profileThumb={pinProfileThumb}
                   isProtected={pinIsProtected}

@@ -16,7 +16,6 @@ const messages = defineMessages('components.Login.PlexPinEntry', {
 });
 
 interface PlexPinEntryProps {
-  profileId: string;
   profileName: string;
   profileThumb?: string | null;
   isProtected?: boolean;
