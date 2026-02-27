@@ -368,7 +368,6 @@ authRoutes.post('/plex', async (req, res, next) => {
     }
 
     if ((isAdmin || isMainUser) && profiles && profiles.length > 1) {
-      // Return main user ID and profiles for selection only when multiple profiles exist
       const mainUserIdToSend =
         user?.id && Number(user.id) > 0 ? Number(user.id) : 1;
 
@@ -378,7 +377,6 @@ authRoutes.post('/plex', async (req, res, next) => {
         profiles: profiles,
       });
     } else {
-      // Single profile or non-main user: log in directly
       if (req.session && user) {
         req.session.userId = user.id;
       }
@@ -413,45 +411,52 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
     });
   }
 
-  let mainUserId = 1; // Default to admin user
+  if (mainUserIdRaw == null || mainUserIdRaw === '') {
+    return next({
+      status: 400,
+      message: 'mainUserId is required.',
+    });
+  }
 
-  if (mainUserIdRaw) {
-    try {
-      mainUserId =
-        typeof mainUserIdRaw === 'string'
-          ? parseInt(mainUserIdRaw, 10)
-          : Number(mainUserIdRaw);
+  const mainUserId =
+    typeof mainUserIdRaw === 'string'
+      ? parseInt(mainUserIdRaw, 10)
+      : Number(mainUserIdRaw);
 
-      if (isNaN(mainUserId) || mainUserId <= 0) {
-        mainUserId = 1;
-      }
-    } catch (e) {
-      mainUserId = 1;
-    }
+  if (Number.isNaN(mainUserId) || mainUserId <= 0) {
+    return next({
+      status: 400,
+      message: 'Invalid mainUserId.',
+    });
+  }
+
+  const mainUser = await userRepository.findOne({
+    where: { id: mainUserId },
+  });
+
+  if (!mainUser) {
+    return next({
+      status: 404,
+      message: 'Main user not found.',
+    });
+  }
+
+  if (!authToken || typeof authToken !== 'string' || authToken.trim() === '') {
+    return next({
+      status: 400,
+      message: 'authToken is required.',
+    });
   }
 
   try {
-    const mainUser = await userRepository.findOne({
-      where: { id: mainUserId },
-    });
-
-    if (!mainUser) {
+    const plextv = new PlexTvAPI(authToken);
+    const tokenAccount = await plextv.getUser();
+    if (tokenAccount.id !== mainUser.plexId) {
       return next({
-        status: 404,
-        message: 'Main user not found.',
+        status: 403,
+        message: 'Auth token does not belong to this user.',
       });
     }
-
-    const tokenToUse = authToken || mainUser.plexToken;
-
-    if (!tokenToUse) {
-      return next({
-        status: 400,
-        message: 'No valid Plex token available.',
-      });
-    }
-
-    const plextv = new PlexTvAPI(tokenToUse);
 
     const profiles = await plextv.getProfiles();
     const selectedProfile = profiles.find((p) => p.id === profileId);
@@ -621,7 +626,7 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
             email: proposedEmail,
             plexUsername: selectedProfile.username || selectedProfile.title,
             plexId: mainUser.plexId,
-            plexToken: tokenToUse,
+            plexToken: authToken,
             permissions: settings.main.defaultPermissions,
             avatar: selectedProfile.thumb,
             userType: UserType.PLEX_PROFILE,
@@ -666,7 +671,7 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
       }
 
       // Otherwise update and use this profile
-      profileUser.plexToken = tokenToUse;
+      profileUser.plexToken = authToken;
       profileUser.avatar = selectedProfile.thumb;
       profileUser.plexUsername =
         selectedProfile.username || selectedProfile.title;
