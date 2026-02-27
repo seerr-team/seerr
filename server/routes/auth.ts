@@ -556,10 +556,7 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
     const isAdminUser = mainUser.id === adminUser?.id;
 
     let profileUser = await userRepository.findOne({
-      where: [
-        { plexProfileId: profileId },
-        { plexUsername: selectedProfile.username || selectedProfile.title },
-      ],
+      where: { plexProfileId: profileId },
     });
     // Profile doesn't exist yet - only allow creation for admin/main Plex user
     if (!profileUser) {
