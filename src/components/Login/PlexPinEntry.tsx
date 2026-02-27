@@ -83,13 +83,11 @@ const PlexPinEntry = ({
   const boxes = Array.from({ length: 4 }, (_, i) => (
     <div
       key={i}
-      className={`mx-2 flex h-12 w-12 items-center justify-center rounded-lg border-2 font-mono text-2xl transition-all
-        ${
-          i === pin.length
-            ? 'border-indigo-500 ring-2 ring-indigo-500'
-            : 'border-white/30'
-        }
-        ${pinDigits[i] ? 'text-white' : 'text-white/40'}`}
+      className={`mx-2 flex h-12 w-12 items-center justify-center rounded-lg border-2 font-mono text-2xl transition-all ${
+        i === pin.length
+          ? 'border-indigo-500 ring-2 ring-indigo-500'
+          : 'border-white/30'
+      } ${pinDigits[i] ? 'text-white' : 'text-white/40'}`}
       aria-label={pinDigits[i] ? 'Entered' : 'Empty'}
     >
       {pinDigits[i] ? '•' : ''}
