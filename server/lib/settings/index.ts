@@ -49,6 +49,25 @@ export interface JellyfinSettings {
   serverId: string;
   apiKey: string;
 }
+
+export type OidcProvider = {
+  slug: string;
+  name: string;
+  issuerUrl: string;
+  clientId: string;
+  clientSecret: string;
+  logo?: string;
+  requiredClaims?: string;
+  scopes?: string;
+  newUserLogin?: boolean;
+};
+
+export type PublicOidcProvider = Pick<OidcProvider, 'slug' | 'name' | 'logo'>;
+
+export interface OidcSettings {
+  providers: OidcProvider[];
+}
+
 export interface TautulliSettings {
   hostname?: string;
   port?: number;
@@ -135,6 +154,7 @@ export interface MainSettings {
   hideBlocklisted: boolean;
   localLogin: boolean;
   mediaServerLogin: boolean;
+  oidcLogin: boolean;
   newPlexLogin: boolean;
   discoverRegion: string;
   streamingRegion: string;
@@ -204,6 +224,7 @@ interface FullPublicSettings extends PublicSettings {
   userEmailRequired: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  openIdProviders: PublicOidcProvider[];
 }
 
 export interface NotificationAgentConfig {
@@ -356,6 +377,7 @@ export interface AllSettings {
   main: MainSettings;
   plex: PlexSettings;
   jellyfin: JellyfinSettings;
+  oidc: OidcSettings;
   tautulli: TautulliSettings;
   radarr: RadarrSettings[];
   sonarr: SonarrSettings[];
@@ -371,10 +393,272 @@ const SETTINGS_PATH = process.env.CONFIG_DIRECTORY
   ? `${process.env.CONFIG_DIRECTORY}/settings.json`
   : path.join(__dirname, '../../../config/settings.json');
 
+type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+
 class Settings {
   private data: AllSettings;
 
-  constructor(initialSettings?: AllSettings) {
+  constructor(initialSettings?: DeepPartial<AllSettings>) {
+    this.reset();
+    if (initialSettings) this.load(initialSettings);
+  }
+
+  get main(): MainSettings {
+    return this.data.main;
+  }
+
+  set main(data: MainSettings) {
+    this.data.main = data;
+  }
+
+  get plex(): PlexSettings {
+    return this.data.plex;
+  }
+
+  set plex(data: PlexSettings) {
+    this.data.plex = data;
+  }
+
+  get jellyfin(): JellyfinSettings {
+    return this.data.jellyfin;
+  }
+
+  set jellyfin(data: JellyfinSettings) {
+    this.data.jellyfin = data;
+  }
+
+  get oidc(): OidcSettings {
+    return this.data.oidc;
+  }
+
+  set oidc(data: OidcSettings) {
+    this.data.oidc = data;
+  }
+
+  get tautulli(): TautulliSettings {
+    return this.data.tautulli;
+  }
+
+  set tautulli(data: TautulliSettings) {
+    this.data.tautulli = data;
+  }
+
+  get metadataSettings(): MetadataSettings {
+    return this.data.metadataSettings;
+  }
+
+  set metadataSettings(data: MetadataSettings) {
+    this.data.metadataSettings = data;
+  }
+
+  get radarr(): RadarrSettings[] {
+    return this.data.radarr;
+  }
+
+  set radarr(data: RadarrSettings[]) {
+    this.data.radarr = data;
+  }
+
+  get sonarr(): SonarrSettings[] {
+    return this.data.sonarr;
+  }
+
+  set sonarr(data: SonarrSettings[]) {
+    this.data.sonarr = data;
+  }
+
+  get public(): PublicSettings {
+    return this.data.public;
+  }
+
+  set public(data: PublicSettings) {
+    this.data.public = data;
+  }
+
+  get fullPublicSettings(): FullPublicSettings {
+    return {
+      ...this.data.public,
+      applicationTitle: this.data.main.applicationTitle,
+      applicationUrl: this.data.main.applicationUrl,
+      hideAvailable: this.data.main.hideAvailable,
+      hideBlocklisted: this.data.main.hideBlocklisted,
+      localLogin: this.data.main.localLogin,
+      mediaServerLogin: this.data.main.mediaServerLogin,
+      jellyfinExternalHost: this.data.jellyfin.externalHostname,
+      jellyfinForgotPasswordUrl: this.data.jellyfin.jellyfinForgotPasswordUrl,
+      movie4kEnabled: this.data.radarr.some(
+        (radarr) => radarr.is4k && radarr.isDefault
+      ),
+      series4kEnabled: this.data.sonarr.some(
+        (sonarr) => sonarr.is4k && sonarr.isDefault
+      ),
+      discoverRegion: this.data.main.discoverRegion,
+      streamingRegion: this.data.main.streamingRegion,
+      originalLanguage: this.data.main.originalLanguage,
+      mediaServerType: this.main.mediaServerType,
+      partialRequestsEnabled: this.data.main.partialRequestsEnabled,
+      enableSpecialEpisodes: this.data.main.enableSpecialEpisodes,
+      cacheImages: this.data.main.cacheImages,
+      vapidPublic: this.vapidPublic,
+      enablePushRegistration: this.data.notifications.agents.webpush.enabled,
+      locale: this.data.main.locale,
+      emailEnabled: this.data.notifications.agents.email.enabled,
+      userEmailRequired:
+        this.data.notifications.agents.email.options.userEmailRequired,
+      newPlexLogin: this.data.main.newPlexLogin,
+      youtubeUrl: this.data.main.youtubeUrl,
+      openIdProviders: this.data.main.oidcLogin
+        ? this.data.oidc.providers.map((p) => ({
+            slug: p.slug,
+            name: p.name,
+            logo: p.logo,
+          }))
+        : [],
+    };
+  }
+
+  get notifications(): NotificationSettings {
+    return this.data.notifications;
+  }
+
+  set notifications(data: NotificationSettings) {
+    this.data.notifications = data;
+  }
+
+  get jobs(): Record<JobId, JobSettings> {
+    return this.data.jobs;
+  }
+
+  set jobs(data: Record<JobId, JobSettings>) {
+    this.data.jobs = data;
+  }
+
+  get network(): NetworkSettings {
+    return this.data.network;
+  }
+
+  set network(data: NetworkSettings) {
+    this.data.network = data;
+  }
+
+  get migrations(): string[] {
+    return this.data.migrations;
+  }
+
+  set migrations(data: string[]) {
+    this.data.migrations = data;
+  }
+
+  get clientId(): string {
+    return this.data.clientId;
+  }
+
+  get vapidPublic(): string {
+    return this.data.vapidPublic;
+  }
+
+  get vapidPrivate(): string {
+    return this.data.vapidPrivate;
+  }
+
+  public async regenerateApiKey(): Promise<MainSettings> {
+    this.main.apiKey = this.generateApiKey();
+    await this.save();
+    return this.main;
+  }
+
+  private generateApiKey(): string {
+    if (process.env.API_KEY) {
+      return process.env.API_KEY;
+    } else {
+      return Buffer.from(`${Date.now()}${randomUUID()}`).toString('base64');
+    }
+  }
+
+  /**
+   * Settings Load
+   *
+   * This will load settings from file unless an optional argument of the object structure
+   * is passed in.
+   * @param overrideSettings If passed in, will override all existing settings with these
+   * @param raw If true, will load the settings without running migrations or generating missing
+   * values
+   */
+  public async load(
+    overrideSettings?: DeepPartial<AllSettings>,
+    raw?: false
+  ): Promise<Settings>;
+  public async load(
+    overrideSettings: AllSettings | undefined,
+    raw: true
+  ): Promise<Settings>;
+  public async load(
+    overrideSettings?: DeepPartial<AllSettings>,
+    raw = false
+  ): Promise<Settings> {
+    if (overrideSettings) {
+      if (raw) {
+        this.data = overrideSettings as AllSettings;
+      } else {
+        this.data = merge(this.data, overrideSettings);
+      }
+      return this;
+    }
+
+    let data;
+    try {
+      data = await fs.readFile(SETTINGS_PATH, 'utf-8');
+    } catch {
+      await this.save();
+    }
+
+    if (data && !raw) {
+      const parsedJson = JSON.parse(data);
+      const migratedData = await runMigrations(parsedJson, SETTINGS_PATH);
+      this.data = merge(this.data, migratedData);
+    } else if (data) {
+      this.data = JSON.parse(data);
+    }
+
+    // generate keys and ids if it's missing
+    let change = false;
+    if (!this.data.main.apiKey) {
+      this.data.main.apiKey = this.generateApiKey();
+      change = true;
+    } else if (process.env.API_KEY) {
+      if (this.main.apiKey != process.env.API_KEY) {
+        this.main.apiKey = process.env.API_KEY;
+      }
+    }
+    if (!this.data.clientId) {
+      this.data.clientId = randomUUID();
+      change = true;
+    }
+    if (!this.data.vapidPublic || !this.data.vapidPrivate) {
+      const vapidKeys = webpush.generateVAPIDKeys();
+      this.data.vapidPrivate = vapidKeys.privateKey;
+      this.data.vapidPublic = vapidKeys.publicKey;
+      change = true;
+    }
+    if (change) {
+      await this.save();
+    }
+
+    return this;
+  }
+
+  public async save(): Promise<void> {
+    const tmp = SETTINGS_PATH + '.tmp';
+    await fs.writeFile(tmp, JSON.stringify(this.data, undefined, ' '));
+    await fs.rename(tmp, SETTINGS_PATH);
+  }
+
+  /**
+   * Resets all settings to their default values.
+   */
+  public reset() {
     this.data = {
       clientId: randomUUID(),
       vapidPrivate: '',
@@ -393,6 +677,7 @@ class Settings {
         hideBlocklisted: false,
         localLogin: true,
         mediaServerLogin: true,
+        oidcLogin: false,
         newPlexLogin: true,
         discoverRegion: '',
         streamingRegion: '',
@@ -423,6 +708,9 @@ class Settings {
         libraries: [],
         serverId: '',
         apiKey: '',
+      },
+      oidc: {
+        providers: [],
       },
       tautulli: {},
       metadataSettings: {
@@ -598,232 +886,6 @@ class Settings {
       },
       migrations: [],
     };
-    if (initialSettings) {
-      this.data = merge(this.data, initialSettings);
-    }
-  }
-
-  get main(): MainSettings {
-    return this.data.main;
-  }
-
-  set main(data: MainSettings) {
-    this.data.main = data;
-  }
-
-  get plex(): PlexSettings {
-    return this.data.plex;
-  }
-
-  set plex(data: PlexSettings) {
-    this.data.plex = data;
-  }
-
-  get jellyfin(): JellyfinSettings {
-    return this.data.jellyfin;
-  }
-
-  set jellyfin(data: JellyfinSettings) {
-    this.data.jellyfin = data;
-  }
-
-  get tautulli(): TautulliSettings {
-    return this.data.tautulli;
-  }
-
-  set tautulli(data: TautulliSettings) {
-    this.data.tautulli = data;
-  }
-
-  get metadataSettings(): MetadataSettings {
-    return this.data.metadataSettings;
-  }
-
-  set metadataSettings(data: MetadataSettings) {
-    this.data.metadataSettings = data;
-  }
-
-  get radarr(): RadarrSettings[] {
-    return this.data.radarr;
-  }
-
-  set radarr(data: RadarrSettings[]) {
-    this.data.radarr = data;
-  }
-
-  get sonarr(): SonarrSettings[] {
-    return this.data.sonarr;
-  }
-
-  set sonarr(data: SonarrSettings[]) {
-    this.data.sonarr = data;
-  }
-
-  get public(): PublicSettings {
-    return this.data.public;
-  }
-
-  set public(data: PublicSettings) {
-    this.data.public = data;
-  }
-
-  get fullPublicSettings(): FullPublicSettings {
-    return {
-      ...this.data.public,
-      applicationTitle: this.data.main.applicationTitle,
-      applicationUrl: this.data.main.applicationUrl,
-      hideAvailable: this.data.main.hideAvailable,
-      hideBlocklisted: this.data.main.hideBlocklisted,
-      localLogin: this.data.main.localLogin,
-      mediaServerLogin: this.data.main.mediaServerLogin,
-      jellyfinExternalHost: this.data.jellyfin.externalHostname,
-      jellyfinForgotPasswordUrl: this.data.jellyfin.jellyfinForgotPasswordUrl,
-      movie4kEnabled: this.data.radarr.some(
-        (radarr) => radarr.is4k && radarr.isDefault
-      ),
-      series4kEnabled: this.data.sonarr.some(
-        (sonarr) => sonarr.is4k && sonarr.isDefault
-      ),
-      discoverRegion: this.data.main.discoverRegion,
-      streamingRegion: this.data.main.streamingRegion,
-      originalLanguage: this.data.main.originalLanguage,
-      mediaServerType: this.main.mediaServerType,
-      partialRequestsEnabled: this.data.main.partialRequestsEnabled,
-      enableSpecialEpisodes: this.data.main.enableSpecialEpisodes,
-      cacheImages: this.data.main.cacheImages,
-      vapidPublic: this.vapidPublic,
-      enablePushRegistration: this.data.notifications.agents.webpush.enabled,
-      locale: this.data.main.locale,
-      emailEnabled: this.data.notifications.agents.email.enabled,
-      userEmailRequired:
-        this.data.notifications.agents.email.options.userEmailRequired,
-      newPlexLogin: this.data.main.newPlexLogin,
-      youtubeUrl: this.data.main.youtubeUrl,
-    };
-  }
-
-  get notifications(): NotificationSettings {
-    return this.data.notifications;
-  }
-
-  set notifications(data: NotificationSettings) {
-    this.data.notifications = data;
-  }
-
-  get jobs(): Record<JobId, JobSettings> {
-    return this.data.jobs;
-  }
-
-  set jobs(data: Record<JobId, JobSettings>) {
-    this.data.jobs = data;
-  }
-
-  get network(): NetworkSettings {
-    return this.data.network;
-  }
-
-  set network(data: NetworkSettings) {
-    this.data.network = data;
-  }
-
-  get migrations(): string[] {
-    return this.data.migrations;
-  }
-
-  set migrations(data: string[]) {
-    this.data.migrations = data;
-  }
-
-  get clientId(): string {
-    return this.data.clientId;
-  }
-
-  get vapidPublic(): string {
-    return this.data.vapidPublic;
-  }
-
-  get vapidPrivate(): string {
-    return this.data.vapidPrivate;
-  }
-
-  public async regenerateApiKey(): Promise<MainSettings> {
-    this.main.apiKey = this.generateApiKey();
-    await this.save();
-    return this.main;
-  }
-
-  private generateApiKey(): string {
-    if (process.env.API_KEY) {
-      return process.env.API_KEY;
-    } else {
-      return Buffer.from(`${Date.now()}${randomUUID()}`).toString('base64');
-    }
-  }
-
-  /**
-   * Settings Load
-   *
-   * This will load settings from file unless an optional argument of the object structure
-   * is passed in.
-   * @param overrideSettings If passed in, will override all existing settings with these
-   * @param raw If true, will load the settings without running migrations or generating missing
-   * values
-   */
-  public async load(
-    overrideSettings?: AllSettings,
-    raw = false
-  ): Promise<Settings> {
-    if (overrideSettings) {
-      this.data = overrideSettings;
-      return this;
-    }
-
-    let data;
-    try {
-      data = await fs.readFile(SETTINGS_PATH, 'utf-8');
-    } catch {
-      await this.save();
-    }
-
-    if (data && !raw) {
-      const parsedJson = JSON.parse(data);
-      const migratedData = await runMigrations(parsedJson, SETTINGS_PATH);
-      this.data = merge(this.data, migratedData);
-    } else if (data) {
-      this.data = JSON.parse(data);
-    }
-
-    // generate keys and ids if it's missing
-    let change = false;
-    if (!this.data.main.apiKey) {
-      this.data.main.apiKey = this.generateApiKey();
-      change = true;
-    } else if (process.env.API_KEY) {
-      if (this.main.apiKey != process.env.API_KEY) {
-        this.main.apiKey = process.env.API_KEY;
-      }
-    }
-    if (!this.data.clientId) {
-      this.data.clientId = randomUUID();
-      change = true;
-    }
-    if (!this.data.vapidPublic || !this.data.vapidPrivate) {
-      const vapidKeys = webpush.generateVAPIDKeys();
-      this.data.vapidPrivate = vapidKeys.privateKey;
-      this.data.vapidPublic = vapidKeys.publicKey;
-      change = true;
-    }
-    if (change) {
-      await this.save();
-    }
-
-    return this;
-  }
-
-  public async save(): Promise<void> {
-    const tmp = SETTINGS_PATH + '.tmp';
-    await fs.writeFile(tmp, JSON.stringify(this.data, undefined, ' '));
-    await fs.rename(tmp, SETTINGS_PATH);
   }
 }
 

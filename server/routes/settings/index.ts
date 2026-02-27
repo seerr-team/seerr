@@ -109,6 +109,45 @@ settingsRoutes.post('/main/regenerate', async (req, res, next) => {
   return res.status(200).json(filteredMainSettings(req.user, main));
 });
 
+settingsRoutes.get('/oidc', async (req, res) => {
+  const settings = getSettings();
+
+  return res.status(200).json(settings.oidc);
+});
+
+settingsRoutes.put('/oidc/:slug', async (req, res) => {
+  const settings = getSettings();
+  let provider = settings.oidc.providers.findIndex(
+    (p) => p.slug === req.params.slug
+  );
+
+  if (provider !== -1) {
+    Object.assign(settings.oidc.providers[provider], req.body);
+  } else {
+    settings.oidc.providers.push({ slug: req.params.slug, ...req.body });
+    provider = settings.oidc.providers.length - 1;
+  }
+
+  await settings.save();
+
+  return res.status(200).json(settings.oidc.providers[provider]);
+});
+
+settingsRoutes.delete('/oidc/:slug', async (req, res) => {
+  const settings = getSettings();
+  const provider = settings.oidc.providers.findIndex(
+    (p) => p.slug === req.params.slug
+  );
+
+  if (provider === -1)
+    return res.status(404).json({ message: 'Provider not found' });
+
+  settings.oidc.providers.splice(provider, 1);
+  await settings.save();
+
+  return res.status(200).json(settings.oidc);
+});
+
 settingsRoutes.get('/plex', (_req, res) => {
   const settings = getSettings();
 
