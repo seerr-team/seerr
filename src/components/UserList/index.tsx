@@ -190,7 +190,7 @@ const UserList = () => {
         appearance: 'success',
       });
       setDeleteModal({ isOpen: false, user: deleteModal.user });
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.userdeleteerror), {
         autoDismiss: true,
         appearance: 'error',

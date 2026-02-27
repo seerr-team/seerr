@@ -117,7 +117,7 @@ const NotificationsTelegram = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.telegramsettingsfailed), {
             appearance: 'error',
             autoDismiss: true,
@@ -169,7 +169,7 @@ const NotificationsTelegram = () => {
               autoDismiss: true,
               appearance: 'success',
             });
-          } catch (e) {
+          } catch {
             if (toastId) {
               removeToast(toastId);
             }

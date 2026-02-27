@@ -139,7 +139,7 @@ const SettingsUsers = () => {
                 autoDismiss: true,
                 appearance: 'success',
               });
-            } catch (e) {
+            } catch {
               addToast(intl.formatMessage(messages.toastSettingsFailure), {
                 autoDismiss: true,
                 appearance: 'error',

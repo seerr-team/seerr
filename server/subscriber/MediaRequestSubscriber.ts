@@ -452,7 +452,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           requestId: entity.id,
           mediaId: entity.media.id,
         });
-        throw new Error(e.message);
+        throw new Error(e.message, { cause: e });
       }
     }
   }
@@ -774,7 +774,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           requestId: entity.id,
           mediaId: entity.media.id,
         });
-        throw new Error(e.message);
+        throw new Error(e.message, { cause: e });
       }
     }
   }

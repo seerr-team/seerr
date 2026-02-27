@@ -81,7 +81,7 @@ const UserPushbulletSettings = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.pushbulletsettingsfailed), {
             appearance: 'error',
             autoDismiss: true,

@@ -267,7 +267,7 @@ router.post<
     );
 
     return res.status(204).send();
-  } catch (e) {
+  } catch {
     logger.error('Failed to register user push subscription', {
       label: 'API',
     });
@@ -287,7 +287,7 @@ router.get<{ userId: number }>(
       });
 
       return res.status(200).json(userPushSubs);
-    } catch (e) {
+    } catch {
       next({ status: 404, message: 'User subscriptions not found.' });
     }
   }
@@ -310,7 +310,7 @@ router.get<{ userId: number; endpoint: string }>(
       });
 
       return res.status(200).json(userPushSub);
-    } catch (e) {
+    } catch {
       next({ status: 404, message: 'User subscription not found.' });
     }
   }
@@ -363,7 +363,7 @@ router.get<{ id: string }>('/:id', async (req, res, next) => {
     return res
       .status(200)
       .json(user.filter(req.user?.hasPermission(Permission.MANAGE_USERS)));
-  } catch (e) {
+  } catch {
     next({ status: 404, message: 'User not found.' });
   }
 });
@@ -508,7 +508,7 @@ router.put<{ id: string }>(
       await userRepository.save(user);
 
       return res.status(200).json(user.filter());
-    } catch (e) {
+    } catch {
       next({ status: 404, message: 'User not found.' });
     }
   }
@@ -872,7 +872,7 @@ router.get<{ id: string }, WatchlistResponse>(
     }
 
     const itemsPerPage = 20;
-    const page = Number(req.query.page) ?? 1;
+    const page = req.query.page ? Number(req.query.page) : 1;
     const offset = (page - 1) * itemsPerPage;
 
     const user = await getRepository(User).findOneOrFail({

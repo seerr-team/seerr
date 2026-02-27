@@ -140,7 +140,7 @@ const NotificationsWebhook = () => {
           try {
             JSON.parse(value ?? '');
             return true;
-          } catch (e) {
+          } catch {
             return false;
           }
         }
@@ -178,7 +178,7 @@ const NotificationsWebhook = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.webhooksettingsfailed), {
             appearance: 'error',
             autoDismiss: true,
@@ -240,7 +240,7 @@ const NotificationsWebhook = () => {
               autoDismiss: true,
               appearance: 'success',
             });
-          } catch (e) {
+          } catch {
             if (toastId) {
               removeToast(toastId);
             }

@@ -57,7 +57,7 @@ const BulkEditModal = ({
         appearance: 'success',
         autoDismiss: true,
       });
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.userfail), {
         appearance: 'error',
         autoDismiss: true,

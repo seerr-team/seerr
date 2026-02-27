@@ -138,7 +138,7 @@ const CreateIssueModal = ({
           if (onCancel) {
             onCancel();
           }
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.toastFailedCreate), {
             appearance: 'error',
             autoDismiss: true,

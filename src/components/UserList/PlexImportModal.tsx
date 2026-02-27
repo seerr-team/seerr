@@ -71,7 +71,7 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
       if (onComplete) {
         onComplete();
       }
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.importfromplexerror), {
         autoDismiss: true,
         appearance: 'error',

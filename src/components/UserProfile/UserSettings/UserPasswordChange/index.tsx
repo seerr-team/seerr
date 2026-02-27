@@ -133,7 +133,7 @@ const UserPasswordChange = () => {
               autoDismiss: true,
               appearance: 'success',
             });
-          } catch (e) {
+          } catch {
             addToast(
               intl.formatMessage(
                 data.hasPassword && user?.id === currentUser?.id

@@ -344,7 +344,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
           { appearance: 'success', autoDismiss: true }
         );
       }
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.watchlistError), {
         appearance: 'error',
         autoDismiss: true,
@@ -369,7 +369,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
         </span>,
         { appearance: 'info', autoDismiss: true }
       );
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.watchlistError), {
         appearance: 'error',
         autoDismiss: true,

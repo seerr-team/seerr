@@ -293,7 +293,7 @@ CoreApp.getInitialProps = async (initialProps) => {
           });
           ctx.res.end();
         }
-      } catch (e) {
+      } catch {
         // If there is no user, and ctx.res is set (to check if we are on the server side)
         // _AND_ we are not already on the login or setup route, redirect to /login with a 307
         // before anything actually renders

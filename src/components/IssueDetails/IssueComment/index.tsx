@@ -51,7 +51,7 @@ const IssueComment = ({
   const deleteComment = async () => {
     try {
       await axios.delete(`/api/v1/issueComment/${comment.id}`);
-    } catch (e) {
+    } catch {
       // something went wrong deleting the comment
     } finally {
       if (onUpdate) {

@@ -70,7 +70,7 @@ const NotificationsWebPush = () => {
               appearance: 'success',
               autoDismiss: true,
             });
-          } catch (e) {
+          } catch {
             addToast(intl.formatMessage(messages.webpushsettingsfailed), {
               appearance: 'error',
               autoDismiss: true,
@@ -108,7 +108,7 @@ const NotificationsWebPush = () => {
                 autoDismiss: true,
                 appearance: 'success',
               });
-            } catch (e) {
+            } catch {
               if (toastId) {
                 removeToast(toastId);
               }
