@@ -42,6 +42,9 @@ const messages = defineMessages('components.UserList', {
     '{count, plural, one {# user was} other {# users were}} skipped due to duplicates.',
   skippedProfilesDuplicates:
     '{count, plural, one {# profile was} other {# profiles were}} skipped due to duplicates.',
+  plexUsers: 'Plex Users',
+  plexProfiles: 'Plex Profiles',
+  pinProtected: '(PIN protected)',
 });
 
 const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
@@ -347,7 +350,9 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
           {/* Plex Users Section */}
           {data?.users && data.users.length > 0 && (
             <div className="mb-6 flex flex-col">
-              <h3 className="mb-2 text-lg font-medium">Plex Users</h3>
+              <h3 className="mb-2 text-lg font-medium">
+                {intl.formatMessage(messages.plexUsers)}
+              </h3>
               <div className="-mx-4 sm:mx-0">
                 <div className="inline-block min-w-full py-2 align-middle">
                   <div className="overflow-hidden shadow sm:rounded-lg">
@@ -472,7 +477,9 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
           {/* Plex Profiles Section */}
           {data?.profiles && data.profiles.length > 0 && (
             <div className="flex flex-col">
-              <h3 className="mb-2 text-lg font-medium">Plex Profiles</h3>
+              <h3 className="mb-2 text-lg font-medium">
+                {intl.formatMessage(messages.plexProfiles)}
+              </h3>
               <div className="-mx-4 sm:mx-0">
                 <div className="inline-block min-w-full py-2 align-middle">
                   <div className="overflow-hidden shadow sm:rounded-lg">
@@ -578,7 +585,9 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
                                   </div>
                                   {profile.protected && (
                                     <div className="text-sm leading-5 text-gray-300">
-                                      (PIN protected)
+                                      {intl.formatMessage(
+                                        messages.pinProtected
+                                      )}
                                     </div>
                                   )}
                                 </div>
