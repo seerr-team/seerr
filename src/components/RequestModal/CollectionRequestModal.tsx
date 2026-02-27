@@ -317,7 +317,7 @@ const CollectionRequestModal = ({
               <table className="min-w-full">
                 <thead>
                   <tr>
-                    <th className="w-16 bg-gray-700 bg-opacity-80 px-4 py-3">
+                    <th className="w-16 bg-gray-700/80 px-4 py-3">
                       <span
                         role="checkbox"
                         tabIndex={0}
@@ -340,19 +340,19 @@ const CollectionRequestModal = ({
                           className={`${
                             isAllParts() ? 'bg-indigo-500' : 'bg-gray-800'
                           } absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out`}
-                        ></span>
+                        />
                         <span
                           aria-hidden="true"
                           className={`${
                             isAllParts() ? 'translate-x-5' : 'translate-x-0'
                           } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
-                        ></span>
+                        />
                       </span>
                     </th>
-                    <th className="bg-gray-700 bg-opacity-80 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(globalMessages.movie)}
                     </th>
-                    <th className="bg-gray-700 bg-opacity-80 px-2 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-2 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(globalMessages.status)}
                     </th>
                   </tr>
@@ -423,7 +423,7 @@ const CollectionRequestModal = ({
                                     ? 'bg-indigo-500'
                                     : 'bg-gray-700'
                                 } absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out`}
-                              ></span>
+                              />
                               <span
                                 aria-hidden="true"
                                 className={`${
@@ -435,7 +435,7 @@ const CollectionRequestModal = ({
                                     ? 'translate-x-5'
                                     : 'translate-x-0'
                                 } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
-                              ></span>
+                              />
                             </span>
                           </td>
                           <td

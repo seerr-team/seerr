@@ -33,5 +33,11 @@ module.exports = {
         rangeEnd: 0,
       },
     },
+    {
+      files: 'cache/config.json',
+      options: {
+        rangeEnd: 0, // default: Infinity
+      },
+    },
   ],
 };

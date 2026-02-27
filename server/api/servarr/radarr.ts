@@ -64,16 +64,8 @@ export interface RadarrMovie {
 }
 
 class RadarrAPI extends ServarrBase<{ movieId: number }> {
-  constructor({
-    url,
-    apiKey,
-    timeout,
-  }: {
-    url: string;
-    apiKey: string;
-    timeout?: number;
-  }) {
-    super({ url, apiKey, cacheName: 'radarr', apiName: 'Radarr', timeout });
+  constructor({ url, apiKey }: { url: string; apiKey: string }) {
+    super({ url, apiKey, cacheName: 'radarr', apiName: 'Radarr' });
   }
 
   public getMovies = async (): Promise<RadarrMovie[]> => {
@@ -184,10 +176,27 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
       }
 
       if (movie.id) {
-        logger.info(
-          'Movie is already monitored in Radarr. Skipping add and returning success',
-          { label: 'Radarr' }
-        );
+        // Movie exists and is already monitored
+        logger.info('Movie is already monitored in Radarr.', {
+          label: 'Radarr',
+          movieId: movie.id,
+          movieTitle: movie.title,
+          hasFile: movie.hasFile,
+        });
+
+        // If searchNow is requested and movie doesn't have a file, trigger search
+        if (options.searchNow && !movie.hasFile) {
+          logger.info(
+            'Triggering search for existing monitored movie without file',
+            {
+              label: 'Radarr',
+              movieId: movie.id,
+              movieTitle: movie.title,
+            }
+          );
+          this.searchMovie(movie.id);
+        }
+
         return movie;
       }
 

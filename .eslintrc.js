@@ -45,8 +45,10 @@ module.exports = {
   overrides: [
     {
       files: ['**/*.tsx'],
+      plugins: ['react'],
       rules: {
         'react/prop-types': 'off',
+        'react/self-closing-comp': 'error',
       },
     },
   ],

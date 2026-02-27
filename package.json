@@ -5,6 +5,7 @@
   "packageManager": "pnpm@10.24.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
+    "postinstall": "next telemetry disable",
     "dev": "nodemon -e ts --watch server --watch seerr-api.yml -e .json,.ts,.yml -x ts-node -r tsconfig-paths/register --files --project server/tsconfig.json server/index.ts",
     "build:server": "tsc --project server/tsconfig.json && copyfiles -u 2 server/templates/**/*.{html,pug} dist/templates && tsc-alias -p server/tsconfig.json",
     "build:next": "next build",
@@ -33,6 +34,7 @@
   "license": "MIT",
   "dependencies": {
     "@dr.pogodin/csurf": "^1.16.6",
+    "@fontsource-variable/inter": "^5.2.8",
     "@formatjs/intl-displaynames": "6.8.13",
     "@formatjs/intl-locale": "3.1.1",
     "@formatjs/intl-pluralrules": "5.4.6",

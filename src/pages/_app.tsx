@@ -13,6 +13,7 @@ import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
 import '@app/styles/globals.css';
 import { polyfillIntl } from '@app/utils/polyfillIntl';
+import '@fontsource-variable/inter';
 import { MediaServerType } from '@server/constants/server';
 import type { PublicSettingsResponse } from '@server/interfaces/api/settingsInterfaces';
 import type { AvailableLocale } from '@server/types/languages';
@@ -206,7 +207,7 @@ const CoreApp: Omit<NextAppComponentType, 'origGetInitialProps'> = ({
                   <meta
                     name="viewport"
                     content="initial-scale=1, viewport-fit=cover, width=device-width"
-                  ></meta>
+                  />
                   <PWAHeader
                     applicationTitle={currentSettings.applicationTitle}
                   />
