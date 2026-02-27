@@ -280,7 +280,7 @@ class PlexTvAPI extends ExternalAPI {
           'https://clients.plex.tv/api/home/users',
           {
             headers: {
-              Accept: 'application/json',
+              Accept: 'application/xml',
               'X-Plex-Token': this.authToken,
               'X-Plex-Client-Identifier': randomUUID(),
             },
