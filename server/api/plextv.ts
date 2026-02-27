@@ -279,6 +279,7 @@ class PlexTvAPI extends ExternalAPI {
         const response = await axios.get(
           'https://clients.plex.tv/api/home/users',
           {
+            timeout: 10000,
             headers: {
               Accept: 'application/xml',
               'X-Plex-Token': this.authToken,
@@ -439,6 +440,7 @@ class PlexTvAPI extends ExternalAPI {
 
   public async getUsers(): Promise<UsersResponse> {
     const response = await this.axios.get('/api/users', {
+      timeout: 10000,
       transformResponse: [],
       responseType: 'text',
     });
