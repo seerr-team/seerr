@@ -532,9 +532,7 @@ settingsRoutes.get(
         (profile) =>
           !profile.isMainUser &&
           !existingProfileUsers.some(
-            (user: User) =>
-              user.plexProfileId === profile.id &&
-              user.userType === UserType.PLEX_PROFILE
+            (user: User) => user.plexProfileId === profile.id
           )
       );
 
