@@ -367,8 +367,8 @@ authRoutes.post('/plex', async (req, res, next) => {
       }
     }
 
-    if (isAdmin || isMainUser) {
-      // Return main user ID and profiles for selection
+    if ((isAdmin || isMainUser) && profiles && profiles.length > 1) {
+      // Return main user ID and profiles for selection only when multiple profiles exist
       const mainUserIdToSend =
         user?.id && Number(user.id) > 0 ? Number(user.id) : 1;
 
@@ -378,8 +378,8 @@ authRoutes.post('/plex', async (req, res, next) => {
         profiles: profiles,
       });
     } else {
-      // For non-main users, just log them in directly
-      if (req.session) {
+      // Single profile or non-main user: log in directly
+      if (req.session && user) {
         req.session.userId = user.id;
       }
       return res.status(200).json(user?.filter() ?? {});
