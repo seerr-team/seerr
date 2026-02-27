@@ -377,7 +377,7 @@ authRoutes.post('/plex', async (req, res, next) => {
         profiles: profiles,
       });
     } else {
-      if (req.session && user) {
+      if (req.session) {
         req.session.userId = user.id;
       }
       return res.status(200).json(user?.filter() ?? {});
