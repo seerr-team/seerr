@@ -122,7 +122,7 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
   }
 
   public async beforeUpdate(event: UpdateEvent<Media>): Promise<void> {
-    if (!event.entity) {
+    if (!event.entity || !event.databaseEntity) {
       return;
     }
 
@@ -153,7 +153,7 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
   }
 
   public async afterUpdate(event: UpdateEvent<Media>): Promise<void> {
-    if (!event.entity) {
+    if (!event.entity || !event.databaseEntity) {
       return;
     }
 
@@ -175,7 +175,7 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
     };
 
     if (
-      (event.entity.status !== event.databaseEntity?.status ||
+      (event.entity.status !== event.databaseEntity.status ||
         (event.entity.mediaType === MediaType.TV &&
           seasonStatusCheck(false))) &&
       validStatuses.includes(event.entity.status)
@@ -188,7 +188,7 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
     }
 
     if (
-      (event.entity.status4k !== event.databaseEntity?.status4k ||
+      (event.entity.status4k !== event.databaseEntity.status4k ||
         (event.entity.mediaType === MediaType.TV && seasonStatusCheck(true))) &&
       validStatuses.includes(event.entity.status4k)
     ) {

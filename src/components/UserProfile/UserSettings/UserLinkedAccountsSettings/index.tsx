@@ -70,17 +70,20 @@ const UserLinkedAccountsSettings = () => {
   const accounts: LinkedAccount[] = useMemo(() => {
     const accounts: LinkedAccount[] = [];
     if (!user) return accounts;
-    if (user.userType === UserType.PLEX && user.plexUsername)
+    if (user.plexUsername || user.userType === UserType.PLEX)
       accounts.push({
         type: LinkedAccountType.Plex,
-        username: user.plexUsername,
+        username: user.plexUsername ?? 'Plex',
       });
     if (user.userType === UserType.EMBY && user.jellyfinUsername)
       accounts.push({
         type: LinkedAccountType.Emby,
         username: user.jellyfinUsername,
       });
-    if (user.userType === UserType.JELLYFIN && user.jellyfinUsername)
+    if (
+      user.jellyfinUsername &&
+      (user.userType === UserType.JELLYFIN || user.userType === UserType.PLEX)
+    )
       accounts.push({
         type: LinkedAccountType.Jellyfin,
         username: user.jellyfinUsername,
@@ -121,14 +124,20 @@ const UserLinkedAccountsSettings = () => {
         setTimeout(() => linkPlexAccount(), 1500);
       },
       hide:
-        settings.currentSettings.mediaServerType !== MediaServerType.PLEX ||
+        (settings.currentSettings.mediaServerType !== MediaServerType.PLEX &&
+          settings.currentSettings.mediaServerType !==
+            MediaServerType.JELLYFIN &&
+          settings.currentSettings.mediaServerType !== MediaServerType.EMBY) ||
         accounts.some((a) => a.type === LinkedAccountType.Plex),
     },
     {
       name: 'Jellyfin',
       action: () => setShowJellyfinModal(true),
       hide:
-        settings.currentSettings.mediaServerType !== MediaServerType.JELLYFIN ||
+        (settings.currentSettings.mediaServerType !==
+          MediaServerType.JELLYFIN &&
+          settings.currentSettings.mediaServerType !== MediaServerType.EMBY &&
+          settings.currentSettings.mediaServerType !== MediaServerType.PLEX) ||
         accounts.some((a) => a.type === LinkedAccountType.Jellyfin),
     },
     {
