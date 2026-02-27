@@ -348,7 +348,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         if (
           media[entity.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
         ) {
-          logger.warn('Media already exists, marking request as APPROVED', {
+          logger.warn('Media already exists, marking request as COMPLETED', {
             label: 'Media Request',
             requestId: entity.id,
             mediaId: entity.media.id,
@@ -524,7 +524,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         if (
           media[entity.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
         ) {
-          logger.warn('Media already exists, marking request as APPROVED', {
+          logger.warn('Media already exists, marking request as COMPLETED', {
             label: 'Media Request',
             requestId: entity.id,
             mediaId: entity.media.id,
