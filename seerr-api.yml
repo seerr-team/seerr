@@ -563,6 +563,10 @@ components:
         name:
           type: string
           example: 'Radarr Main'
+        requestLabel:
+          type: string
+          example: 'in English'
+          description: Optional custom suffix used for request button text.
         hostname:
           type: string
           example: '127.0.0.1'
@@ -626,6 +630,10 @@ components:
         name:
           type: string
           example: 'Sonarr Main'
+        requestLabel:
+          type: string
+          example: 'in English'
+          description: Optional custom suffix used for request button text.
         hostname:
           type: string
           example: '127.0.0.1'
