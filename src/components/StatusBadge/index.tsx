@@ -9,6 +9,7 @@ import defineMessages from '@app/utils/defineMessages';
 import { MediaStatus } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import type { DownloadingItem } from '@server/lib/downloadtracker';
+import { useRouter } from 'next/router';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.StatusBadge', {
@@ -45,11 +46,13 @@ const StatusBadge = ({
   title,
 }: StatusBadgeProps) => {
   const intl = useIntl();
+  const router = useRouter();
   const { hasPermission } = useUser();
   const settings = useSettings();
 
   let mediaLink: string | undefined;
   let mediaLinkDescription: string | undefined;
+  let mediaLinkReplace = false;
 
   const calculateDownloadProgress = (media: DownloadingItem) => {
     return Math.round(((media?.size - media?.sizeLeft) / media?.size) * 100);
@@ -93,6 +96,8 @@ const StatusBadge = ({
   } else if (hasPermission(Permission.MANAGE_REQUESTS)) {
     if (mediaType && tmdbId) {
       mediaLink = `/${mediaType}/${tmdbId}?manage=1`;
+      mediaLinkReplace =
+        router.asPath.split('?')[0] === `/${mediaType}/${tmdbId}`;
       mediaLinkDescription = intl.formatMessage(messages.managemedia, {
         mediaType: intl.formatMessage(
           mediaType === 'movie' ? globalMessages.movie : globalMessages.tvshow
@@ -167,6 +172,7 @@ const StatusBadge = ({
           <Badge
             badgeType="success"
             href={mediaLink}
+            replace={mediaLinkReplace}
             className={`${
               inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
             } overflow-hidden`}
@@ -232,6 +238,7 @@ const StatusBadge = ({
           <Badge
             badgeType="success"
             href={mediaLink}
+            replace={mediaLinkReplace}
             className={`${
               inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
             } overflow-hidden`}
@@ -297,6 +304,7 @@ const StatusBadge = ({
           <Badge
             badgeType="primary"
             href={mediaLink}
+            replace={mediaLinkReplace}
             className={`${
               inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
             } overflow-hidden`}
@@ -351,7 +359,11 @@ const StatusBadge = ({
     case MediaStatus.PENDING:
       return (
         <Tooltip content={mediaLinkDescription}>
-          <Badge badgeType="warning" href={mediaLink}>
+          <Badge
+            badgeType="warning"
+            href={mediaLink}
+            replace={mediaLinkReplace}
+          >
             {intl.formatMessage(is4k ? messages.status4k : messages.status, {
               status: intl.formatMessage(globalMessages.pending),
             })}
@@ -362,7 +374,7 @@ const StatusBadge = ({
     case MediaStatus.BLOCKLISTED:
       return (
         <Tooltip content={mediaLinkDescription}>
-          <Badge badgeType="danger" href={mediaLink}>
+          <Badge badgeType="danger" href={mediaLink} replace={mediaLinkReplace}>
             {intl.formatMessage(is4k ? messages.status4k : messages.status, {
               status: intl.formatMessage(globalMessages.blocklisted),
             })}
@@ -384,6 +396,7 @@ const StatusBadge = ({
           <Badge
             badgeType="danger"
             href={mediaLink}
+            replace={mediaLinkReplace}
             className={`${
               inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
             } overflow-hidden`}
