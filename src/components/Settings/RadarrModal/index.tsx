@@ -5,6 +5,7 @@ import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
 import { Transition } from '@headlessui/react';
+import { TagRequestsFormat } from '@server/constants/server';
 import type { RadarrSettings } from '@server/lib/settings';
 import axios from 'axios';
 import { Field, Formik } from 'formik';
@@ -62,7 +63,11 @@ const messages = defineMessages('components.Settings.RadarrModal', {
   enableSearch: 'Enable Automatic Search',
   tagRequests: 'Tag Requests',
   tagRequestsInfo:
-    "Automatically add an additional tag with the requester's user ID & display name",
+    "Automatically add an additional tag with the requester's user ID and/or display name",
+  tagRequestsFormat: 'Tag Format',
+  tagFormatUserId: 'UserID',
+  tagFormatUserIdUsername: 'UserID-Username',
+  tagFormatUsername: 'Username',
   validationApplicationUrl: 'You must provide a valid URL',
   validationApplicationUrlTrailingSlash: 'URL must not end in a trailing slash',
   validationBaseUrlLeadingSlash: 'URL base must have a leading slash',
@@ -231,6 +236,8 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
           syncEnabled: radarr?.syncEnabled ?? false,
           enableSearch: !radarr?.preventSearch,
           tagRequests: radarr?.tagRequests ?? false,
+          tagRequestsFormat:
+            radarr?.tagRequestsFormat ?? TagRequestsFormat.USERID_USERNAME,
         }}
         validationSchema={RadarrSettingsSchema}
         onSubmit={async (values) => {
@@ -257,6 +264,7 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
               syncEnabled: values.syncEnabled,
               preventSearch: !values.enableSearch,
               tagRequests: values.tagRequests,
+              tagRequestsFormat: values.tagRequestsFormat,
             };
             if (!radarr) {
               await axios.post('/api/v1/settings/radarr', submission);
@@ -730,6 +738,35 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                     />
                   </div>
                 </div>
+                {values.tagRequests && (
+                  <div className="form-row pl-8">
+                    <label htmlFor="tagRequestsFormat" className="text-label">
+                      {intl.formatMessage(messages.tagRequestsFormat)}
+                    </label>
+                    <div className="form-input-area">
+                      <div className="form-input-field">
+                        <Field
+                          as="select"
+                          id="tagRequestsFormat"
+                          name="tagRequestsFormat"
+                          className="rounded-only"
+                        >
+                          <option value={TagRequestsFormat.USERID}>
+                            {intl.formatMessage(messages.tagFormatUserId)}
+                          </option>
+                          <option value={TagRequestsFormat.USERID_USERNAME}>
+                            {intl.formatMessage(
+                              messages.tagFormatUserIdUsername
+                            )}
+                          </option>
+                          <option value={TagRequestsFormat.USERNAME}>
+                            {intl.formatMessage(messages.tagFormatUsername)}
+                          </option>
+                        </Field>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </Modal>
           );

@@ -12,6 +12,7 @@ import {
   MediaStatus,
   MediaType,
 } from '@server/constants/media';
+import { TagRequestsFormat } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
@@ -302,14 +303,29 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
         if (radarrSettings.tagRequests) {
           const radarrTags = await radarr.getTags();
-          // old tags had space around the hyphen
-          let userTag = radarrTags.find((v) =>
-            v.label.startsWith(entity.requestedBy.id + ' - ')
-          );
+          const tagFormat =
+            radarrSettings.tagRequestsFormat ??
+            TagRequestsFormat.USERID_USERNAME;
+
+          let tagLabel =
+            entity.requestedBy.id +
+            '-' +
+            sanitizeDisplayName(entity.requestedBy.displayName);
           // new tags do not have spaces around the hyphen, since spaces are not allowed anymore
-          if (!userTag) {
+          // note: this can theoretically collide if a USERNAME-format tag starts with this user's id
+          let userTag = radarrTags.find((v) =>
+            v.label.startsWith(entity.requestedBy.id + '-')
+          );
+          if (tagFormat === TagRequestsFormat.USERID) {
+            tagLabel = String(entity.requestedBy.id);
+            userTag = radarrTags.find((v) => v.label === tagLabel);
+          } else if (tagFormat === TagRequestsFormat.USERNAME) {
+            tagLabel = sanitizeDisplayName(entity.requestedBy.displayName);
+            userTag = radarrTags.find((v) => v.label === tagLabel);
+          } else if (!userTag) {
+            // old tags had space around the hyphen
             userTag = radarrTags.find((v) =>
-              v.label.startsWith(entity.requestedBy.id + '-')
+              v.label.startsWith(entity.requestedBy.id + ' - ')
             );
           }
           if (!userTag) {
@@ -318,17 +334,9 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
               requestId: entity.id,
               mediaId: entity.media.id,
               userId: entity.requestedBy.id,
-              newTag:
-                entity.requestedBy.id +
-                '-' +
-                sanitizeDisplayName(entity.requestedBy.displayName),
+              newTag: tagLabel,
             });
-            userTag = await radarr.createTag({
-              label:
-                entity.requestedBy.id +
-                '-' +
-                sanitizeDisplayName(entity.requestedBy.displayName),
-            });
+            userTag = await radarr.createTag({ label: tagLabel });
           }
           if (userTag.id) {
             if (!tags?.find((v) => v === userTag?.id)) {
@@ -639,14 +647,29 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
         if (sonarrSettings.tagRequests) {
           const sonarrTags = await sonarr.getTags();
-          // old tags had space around the hyphen
-          let userTag = sonarrTags.find((v) =>
-            v.label.startsWith(entity.requestedBy.id + ' - ')
-          );
+          const tagFormat =
+            sonarrSettings.tagRequestsFormat ??
+            TagRequestsFormat.USERID_USERNAME;
+
+          let tagLabel =
+            entity.requestedBy.id +
+            '-' +
+            sanitizeDisplayName(entity.requestedBy.displayName);
           // new tags do not have spaces around the hyphen, since spaces are not allowed anymore
-          if (!userTag) {
+          // note: this can theoretically collide if a USERNAME-format tag starts with this user's id
+          let userTag = sonarrTags.find((v) =>
+            v.label.startsWith(entity.requestedBy.id + '-')
+          );
+          if (tagFormat === TagRequestsFormat.USERID) {
+            tagLabel = String(entity.requestedBy.id);
+            userTag = sonarrTags.find((v) => v.label === tagLabel);
+          } else if (tagFormat === TagRequestsFormat.USERNAME) {
+            tagLabel = sanitizeDisplayName(entity.requestedBy.displayName);
+            userTag = sonarrTags.find((v) => v.label === tagLabel);
+          } else if (!userTag) {
+            // old tags had space around the hyphen
             userTag = sonarrTags.find((v) =>
-              v.label.startsWith(entity.requestedBy.id + '-')
+              v.label.startsWith(entity.requestedBy.id + ' - ')
             );
           }
           if (!userTag) {
@@ -655,17 +678,9 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
               requestId: entity.id,
               mediaId: entity.media.id,
               userId: entity.requestedBy.id,
-              newTag:
-                entity.requestedBy.id +
-                '-' +
-                sanitizeDisplayName(entity.requestedBy.displayName),
+              newTag: tagLabel,
             });
-            userTag = await sonarr.createTag({
-              label:
-                entity.requestedBy.id +
-                '-' +
-                sanitizeDisplayName(entity.requestedBy.displayName),
-            });
+            userTag = await sonarr.createTag({ label: tagLabel });
           }
           if (userTag.id) {
             if (!tags?.find((v) => v === userTag?.id)) {
