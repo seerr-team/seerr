@@ -366,8 +366,6 @@ const Login = () => {
               ) : showProfileSelector ? (
                 <PlexProfileSelector
                   profiles={profiles}
-                  mainUserId={mainUserId || 1}
-                  authToken={authToken}
                   onProfileSelected={(profileId, pin, onError) =>
                     handleSubmitProfile(profileId, pin, onError)
                   }
