@@ -209,6 +209,8 @@ const Login = () => {
       if (onError) {
         onError(msg);
       }
+    } finally {
+      setProcessing(false);
     }
   };
 
