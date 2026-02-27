@@ -336,7 +336,7 @@ authRoutes.post('/plex', async (req, res, next) => {
 
     const adminUser = await userRepository.findOne({ where: { id: 1 } });
     const isMainUser = profiles.some(
-      (profile) => profile.isMainUser && profile.id === account.id.toString()
+      (profile) => profile.isMainUser && profile.id === account.uuid
     );
     const isAdmin = user?.id === adminUser?.id;
 
@@ -537,8 +537,7 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
     const userAccount = await plextv.getUser();
     const adminUser = await userRepository.findOne({ where: { id: 1 } });
     const isMainPlexUser = profiles.some(
-      (profile) =>
-        profile.isMainUser && profile.id === userAccount.id.toString()
+      (profile) => profile.isMainUser && profile.id === userAccount.uuid
     );
     const isAdminUser = mainUser.id === adminUser?.id;
 
