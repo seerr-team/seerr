@@ -354,11 +354,9 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
             mediaId: entity.media.id,
           });
 
-          if (entity.status !== MediaRequestStatus.APPROVED) {
-            const requestRepository = getRepository(MediaRequest);
-            entity.status = MediaRequestStatus.APPROVED;
-            await requestRepository.save(entity);
-          }
+          const requestRepository = getRepository(MediaRequest);
+          entity.status = MediaRequestStatus.COMPLETED;
+          await requestRepository.save(entity);
           return;
         }
 
@@ -532,11 +530,12 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
             mediaId: entity.media.id,
           });
 
-          if (entity.status !== MediaRequestStatus.APPROVED) {
-            const requestRepository = getRepository(MediaRequest);
-            entity.status = MediaRequestStatus.APPROVED;
-            await requestRepository.save(entity);
-          }
+          const requestRepository = getRepository(MediaRequest);
+          entity.status = MediaRequestStatus.COMPLETED;
+          entity.seasons.forEach((season) => {
+            season.status = MediaRequestStatus.COMPLETED;
+          });
+          await requestRepository.save(entity);
           return;
         }
 
