@@ -76,7 +76,6 @@ const PlexProfileSelector = ({
   if (showPinEntry && selectedProfile && selectedProfileId) {
     return (
       <PlexPinEntry
-        profileId={selectedProfileId}
         profileName={
           selectedProfile.title ||
           selectedProfile.username ||
