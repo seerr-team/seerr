@@ -12,11 +12,18 @@ interface BadgeProps {
     | 'light';
   className?: string;
   href?: string;
+  replace?: boolean;
   children: React.ReactNode;
 }
 
 const Badge = (
-  { badgeType = 'default', className, href, children }: BadgeProps,
+  {
+    badgeType = 'default',
+    className,
+    href,
+    replace = false,
+    children,
+  }: BadgeProps,
   ref?: React.Ref<HTMLElement>
 ) => {
   const badgeStyle = [
@@ -93,6 +100,7 @@ const Badge = (
     return (
       <Link
         href={href}
+        replace={replace}
         className={badgeStyle.join(' ')}
         ref={ref as React.Ref<HTMLAnchorElement>}
       >

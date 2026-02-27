@@ -519,7 +519,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
         mediaType="tv"
         onClose={() => {
           setShowManager(false);
-          router.push({
+          router.replace({
             pathname: router.pathname,
             query: { tvId: router.query.tvId },
           });
