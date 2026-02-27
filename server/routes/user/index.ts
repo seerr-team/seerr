@@ -730,16 +730,12 @@ router.post(
             }
 
             if (mainUserDuplicate) {
-              // Skip this profile and add to skipped list, but ensure main user is imported
+              // Skip this profile and add to skipped list
               skippedItems.push({
                 id: profileId,
                 type: 'profile',
                 reason: 'MAIN_USER_ALREADY_EXISTS',
               });
-              // If main user is not already in createdUsers, add it
-              if (!createdUsers.find((u) => u.id === mainUserDuplicate.id)) {
-                createdUsers.push(mainUserDuplicate);
-              }
               continue;
             }
 
