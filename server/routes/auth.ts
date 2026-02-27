@@ -143,21 +143,27 @@ authRoutes.post('/plex', async (req, res, next) => {
         where: { plexProfileId: body.profileId },
       });
 
-      if (profileUser) {
-        profileUser.plexToken = body.authToken;
-        await userRepository.save(profileUser);
-
-        if (req.session) {
-          req.session.userId = profileUser.id;
-        }
-
-        return res.status(200).json(profileUser.filter() ?? {});
-      } else {
+      if (!profileUser) {
         return next({
           status: 400,
           message: 'Invalid profile selection.',
         });
       }
+      if (!profiles.some((p) => p.id === body.profileId)) {
+        return next({
+          status: 403,
+          error: 'Auth token does not have access to this profile.',
+        });
+      }
+
+      profileUser.plexToken = body.authToken;
+      await userRepository.save(profileUser);
+
+      if (req.session) {
+        req.session.userId = profileUser.id;
+      }
+
+      return res.status(200).json(profileUser.filter() ?? {});
     }
 
     // Standard Plex authentication flow
