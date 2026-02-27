@@ -161,8 +161,7 @@ const Login = () => {
         setPinIsMainUser(
           profiles.find((p) => p.id === profileId)?.isMainUser || false
         );
-        setPinError(intl.formatMessage(messages.invalidPin));
-        throw new Error('Invalid PIN');
+        setPinError(null);
       } else {
         setShowProfileSelector(false);
         setShowPinEntry(false);
@@ -182,22 +181,28 @@ const Login = () => {
       switch (code) {
         case ApiErrorCode.NewPlexLoginDisabled:
           msg = intl.formatMessage(messages.accessDenied);
+          setPinError(null);
           break;
         case ApiErrorCode.InvalidPin:
           msg = intl.formatMessage(messages.invalidPin);
+          setPinError(msg);
           break;
         case ApiErrorCode.ProfileUserExists:
           msg = intl.formatMessage(messages.profileUserExists);
+          setPinError(null);
           break;
         default:
           if (httpStatus === 401) {
             msg = intl.formatMessage(messages.invalidPin);
+            setPinError(msg);
           } else if (httpStatus === 403) {
             msg = intl.formatMessage(messages.accessDenied);
+            setPinError(null);
           } else {
             msg =
               e?.response?.data?.message ??
               intl.formatMessage(messages.authFailed);
+            setPinError(null);
           }
       }
       setError(msg);
