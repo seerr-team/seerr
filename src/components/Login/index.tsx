@@ -54,7 +54,6 @@ const Login = () => {
   const [mediaServerLogin, setMediaServerLogin] = useState(
     settings.currentSettings.mediaServerLogin
   );
-  const profilesRef = useRef<PlexProfile[]>([]);
   const [profiles, setProfiles] = useState<PlexProfile[]>([]);
   const [mainUserId, setMainUserId] = useState<number | null>(null);
   const [showProfileSelector, setShowProfileSelector] = useState(false);
@@ -84,7 +83,6 @@ const Login = () => {
           }
           case 'REQUIRES_PROFILE': {
             setProfiles(response.data.profiles);
-            profilesRef.current = response.data.profiles;
             const rawUserId = response.data.mainUserId;
             const numericUserId = Number(rawUserId);
             if (
