@@ -683,71 +683,75 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
   }
 });
 
-authRoutes.get('/plex/profiles/:userId', async (req, res, next) => {
-  const userRepository = getRepository(User);
+authRoutes.get(
+  '/plex/profiles/:userId',
+  isAuthenticated(),
+  async (req, res, next) => {
+    const userRepository = getRepository(User);
 
-  try {
-    const userId = parseInt(req.params.userId, 10);
-    if (isNaN(userId)) {
+    try {
+      const userId = parseInt(req.params.userId, 10);
+      if (isNaN(userId)) {
+        return next({
+          status: 400,
+          message: 'Invalid user ID format.',
+        });
+      }
+
+      const mainUser = await userRepository.findOne({
+        where: { id: userId },
+      });
+
+      if (!mainUser) {
+        return next({
+          status: 404,
+          message: 'User not found.',
+        });
+      }
+
+      if (mainUser.userType !== UserType.PLEX) {
+        return next({
+          status: 400,
+          message: 'Only Plex users have profiles.',
+        });
+      }
+
+      if (!mainUser.plexToken) {
+        return next({
+          status: 400,
+          message: 'User has no valid Plex token.',
+        });
+      }
+
+      const plextv = new PlexTvAPI(mainUser.plexToken);
+      const profiles = await plextv.getProfiles();
+
+      const profileUsers = await userRepository.find({
+        where: {
+          mainPlexUserId: mainUser.id,
+          userType: UserType.PLEX_PROFILE,
+        },
+      });
+
+      return res.status(200).json({
+        profiles,
+        profileUsers,
+        mainUser: mainUser.filter(),
+      });
+    } catch (e) {
+      logger.error('Failed to fetch Plex profiles', {
+        label: 'API',
+        errorMessage: e.message,
+        ip: req.ip,
+      });
+
       return next({
-        status: 400,
-        message: 'Invalid user ID format.',
+        status: 500,
+        message: 'Unable to fetch profiles.',
       });
     }
-
-    const mainUser = await userRepository.findOne({
-      where: { id: userId },
-    });
-
-    if (!mainUser) {
-      return next({
-        status: 404,
-        message: 'User not found.',
-      });
-    }
-
-    if (mainUser.userType !== UserType.PLEX) {
-      return next({
-        status: 400,
-        message: 'Only Plex users have profiles.',
-      });
-    }
-
-    if (!mainUser.plexToken) {
-      return next({
-        status: 400,
-        message: 'User has no valid Plex token.',
-      });
-    }
-
-    const plextv = new PlexTvAPI(mainUser.plexToken);
-    const profiles = await plextv.getProfiles();
-
-    const profileUsers = await userRepository.find({
-      where: {
-        mainPlexUserId: mainUser.id,
-        userType: UserType.PLEX_PROFILE,
-      },
-    });
-
-    return res.status(200).json({
-      profiles,
-      profileUsers,
-      mainUser: mainUser.filter(),
-    });
-  } catch (e) {
-    logger.error('Failed to fetch Plex profiles', {
-      label: 'API',
-      errorMessage: e.message,
-      ip: req.ip,
-    });
-
-    return next({
-      status: 500,
-      message: 'Unable to fetch profiles.',
-    });
   }
-});
+);
 
 function getUserAvatarUrl(user: User): string {
   return `/avatarproxy/${user.jellyfinUserId}?v=${user.avatarVersion}`;
@@ -794,11 +798,11 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       settings.jellyfin.ip !== ''
         ? getHostname()
         : getHostname({
-          useSsl: body.useSsl,
-          ip: body.hostname,
-          port: body.port,
-          urlBase: body.urlBase,
-        });
+            useSsl: body.useSsl,
+            ip: body.hostname,
+            port: body.port,
+            urlBase: body.urlBase,
+          });
 
     // Try to find deviceId that corresponds to jellyfin user, else generate a new one
     let user = await userRepository.findOne({
@@ -944,12 +948,14 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     // User already exists, let's update their information
     else if (account.User.Id === user?.jellyfinUserId) {
       logger.info(
-        `Found matching ${settings.main.mediaServerType === MediaServerType.JELLYFIN
-          ? ServerType.JELLYFIN
-          : ServerType.EMBY
-        } user; updating user with ${settings.main.mediaServerType === MediaServerType.JELLYFIN
-          ? ServerType.JELLYFIN
-          : ServerType.EMBY
+        `Found matching ${
+          settings.main.mediaServerType === MediaServerType.JELLYFIN
+            ? ServerType.JELLYFIN
+            : ServerType.EMBY
+        } user; updating user with ${
+          settings.main.mediaServerType === MediaServerType.JELLYFIN
+            ? ServerType.JELLYFIN
+            : ServerType.EMBY
         }`,
         {
           label: 'API',
@@ -1040,9 +1046,10 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     switch (e.errorCode) {
       case ApiErrorCode.InvalidUrl:
         logger.error(
-          `The provided ${settings.main.mediaServerType === MediaServerType.JELLYFIN
-            ? ServerType.JELLYFIN
-            : ServerType.EMBY
+          `The provided ${
+            settings.main.mediaServerType === MediaServerType.JELLYFIN
+              ? ServerType.JELLYFIN
+              : ServerType.EMBY
           } is invalid or the server is not reachable.`,
           {
             label: 'Auth',
@@ -1198,8 +1205,9 @@ authRoutes.post('/logout', async (req, res, next) => {
             await axios.delete(`${baseUrl}/Devices`, {
               params: { Id: user.jellyfinDeviceId },
               headers: {
-                'X-Emby-Authorization': `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="seerr", Version="${getAppVersion()}", Token="${settings.jellyfin.apiKey
-                  }"`,
+                'X-Emby-Authorization': `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="seerr", Version="${getAppVersion()}", Token="${
+                  settings.jellyfin.apiKey
+                }"`,
               },
             });
           } catch (error) {

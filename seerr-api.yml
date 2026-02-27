@@ -4093,7 +4093,9 @@ paths:
       description: |
         Returns the list of available Plex home profiles and their corresponding user accounts
         linked to the specified Jellyseerr user. The user must be a Plex-based account.
-      security: []
+      security:
+        - cookieAuth: []
+        - apiKey: []
       tags:
         - auth
       parameters:
