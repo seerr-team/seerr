@@ -22,6 +22,7 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { getHostname } from '@server/utils/getHostname';
+import { isOwnProfileOrAdmin } from '@server/utils/profileMiddleware';
 import { Router } from 'express';
 import gravatarUrl from 'gravatar-url';
 import { findIndex, sortBy } from 'lodash';
@@ -275,15 +276,16 @@ router.post<
   }
 });
 
-router.get<{ userId: number }>(
+router.get<{ userId: string }>(
   '/:userId/pushSubscriptions',
+  isOwnProfileOrAdmin(),
   async (req, res, next) => {
     try {
       const userPushSubRepository = getRepository(UserPushSubscription);
 
       const userPushSubs = await userPushSubRepository.find({
         relations: { user: true },
-        where: { user: { id: req.params.userId } },
+        where: { user: { id: Number(req.params.userId) } },
       });
 
       return res.status(200).json(userPushSubs);
@@ -293,8 +295,9 @@ router.get<{ userId: number }>(
   }
 );
 
-router.get<{ userId: number; endpoint: string }>(
+router.get<{ userId: string; endpoint: string }>(
   '/:userId/pushSubscription/:endpoint',
+  isOwnProfileOrAdmin(),
   async (req, res, next) => {
     try {
       const userPushSubRepository = getRepository(UserPushSubscription);
@@ -304,7 +307,7 @@ router.get<{ userId: number; endpoint: string }>(
           user: true,
         },
         where: {
-          user: { id: req.params.userId },
+          user: { id: Number(req.params.userId) },
           endpoint: req.params.endpoint,
         },
       });
@@ -316,8 +319,9 @@ router.get<{ userId: number; endpoint: string }>(
   }
 );
 
-router.delete<{ userId: number; endpoint: string }>(
+router.delete<{ userId: string; endpoint: string }>(
   '/:userId/pushSubscription/:endpoint',
+  isOwnProfileOrAdmin(),
   async (req, res, next) => {
     try {
       const userPushSubRepository = getRepository(UserPushSubscription);
@@ -325,7 +329,7 @@ router.delete<{ userId: number; endpoint: string }>(
       const userPushSub = await userPushSubRepository.findOne({
         relations: { user: true },
         where: {
-          user: { id: req.params.userId },
+          user: { id: Number(req.params.userId) },
           endpoint: req.params.endpoint,
         },
       });
@@ -355,14 +359,14 @@ router.delete<{ userId: number; endpoint: string }>(
 router.get<{ id: string }>('/:id', async (req, res, next) => {
   try {
     const userRepository = getRepository(User);
-
     const user = await userRepository.findOneOrFail({
       where: { id: Number(req.params.id) },
     });
 
-    return res
-      .status(200)
-      .json(user.filter(req.user?.hasPermission(Permission.MANAGE_USERS)));
+    const isOwnProfile = req.user?.id === user.id;
+    const isAdmin = req.user?.hasPermission(Permission.MANAGE_USERS);
+
+    return res.status(200).json(user.filter(isOwnProfile || isAdmin));
   } catch (e) {
     next({ status: 404, message: 'User not found.' });
   }
@@ -747,18 +751,8 @@ router.get<{ id: string }, QuotaResponse>(
 
 router.get<{ id: string }, UserWatchDataResponse>(
   '/:id/watch_data',
+  isOwnProfileOrAdmin(),
   async (req, res, next) => {
-    if (
-      Number(req.params.id) !== req.user?.id &&
-      !req.user?.hasPermission(Permission.ADMIN)
-    ) {
-      return next({
-        status: 403,
-        message:
-          "You do not have permission to view this user's recently watched media.",
-      });
-    }
-
     const settings = getSettings().tautulli;
 
     if (!settings.hostname || !settings.port || !settings.apiKey) {

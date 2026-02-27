@@ -244,8 +244,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     (settings.main.mediaServerLogin === false ||
       // media server is neither jellyfin or emby
       (settings.main.mediaServerType !== MediaServerType.JELLYFIN &&
-        settings.main.mediaServerType !== MediaServerType.EMBY &&
-        settings.jellyfin.ip !== ''))
+        settings.main.mediaServerType !== MediaServerType.EMBY))
   ) {
     return res.status(500).json({ error: 'Jellyfin login is disabled' });
   }
