@@ -4134,6 +4134,8 @@ paths:
                     $ref: '#/components/schemas/User'
         '400':
           description: Invalid user ID format or unsupported user type
+        '403':
+          description: Not authorized to access this user's profiles (must be the user or an admin)
         '404':
           description: User not found
         '500':
