@@ -1,3 +1,4 @@
+include ../_helpers.pug
 doctype html
 head
   meta(charset='utf-8')
@@ -33,7 +34,7 @@ div(style='display: block; background-color: #111827; padding: 2.5rem 0;')
     tr
       td(style='text-align: center;')
         div(style='margin: 1rem 0 0; font-size: 1.25em;')
-          | #{body}
+          | A new request for #{__followingAcc()} #{__prefix4k}is pending approval:
     tr
       td
         div(style='box-sizing: border-box; margin: 1.5rem 0 0; width: 100%; color: #fff; border-radius: .75rem; padding: 1rem; border: 1px solid rgb(100,100,100); background: linear-gradient(135deg, rgba(17,24,39,0.47) 0%, rgb(17,24,39) 75%), url(' + imageUrl + ') center 25%/cover')

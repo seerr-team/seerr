@@ -1,3 +1,4 @@
+include ../_helpers.pug
 doctype html
 head
   meta(charset='utf-8')
@@ -33,7 +34,18 @@ div(style='display: block; background-color: #111827; padding: 2.5rem 0;')
     tr
       td(style='text-align: center;')
         div(style='margin: 1rem 0 0; font-size: 1.25em;')
-          | #{body}
+          - var __it = (typeof issueTypeName !== 'undefined' ? issueTypeName : '')
+          - var __t = (typeof type !== 'undefined' ? type : '')
+          - if (__t === 'ISSUE_CREATED')
+            | A new #{String(__it).toLowerCase()} issue has been reported by #{__obfuscateUser(issueCreatedBy)} for the #{__mediaLabelAcc()} #{mediaName}:
+          - else if (__t === 'ISSUE_COMMENT')
+            | #{__obfuscateUser(commentUser)} commented on the #{String(__it).toLowerCase()} issue for the #{__mediaLabelAcc()} #{mediaName}:
+          - else if (__t === 'ISSUE_RESOLVED')
+            | The #{String(__it).toLowerCase()} issue for the #{__mediaLabelAcc()} #{mediaName} was marked as resolved by #{__obfuscateUser(issueModifiedBy)}!
+          - else if (__t === 'ISSUE_REOPENED')
+            | The #{String(__it).toLowerCase()} issue for the #{__mediaLabelAcc()} #{mediaName} was reopened by #{__obfuscateUser(issueModifiedBy)}.
+          - else
+            | #{body}
     if issueComment
       tr
         td(style='text-align: center;')

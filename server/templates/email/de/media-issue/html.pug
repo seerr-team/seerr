@@ -1,3 +1,4 @@
+include ../_helpers.pug
 doctype html
 head
   meta(charset='utf-8')
@@ -34,7 +35,18 @@ div(style='display: block; background-color: #111827; padding: 2.5rem 0;')
     tr
       td(style='text-align: center;')
         div(style='margin: 1rem 0 0; font-size: 1.25em;')
-          | #{body}
+          - var __it = (typeof issueTypeName !== 'undefined' ? issueTypeName : '')
+          - var __t = (typeof type !== 'undefined' ? type : '')
+          - if (__t === 'ISSUE_CREATED')
+            | Ein neues Problem wurde von #{__obfuscateUser(issueCreatedBy)} für #{__mediaLabelAcc()} #{mediaName} gemeldet:
+          - else if (__t === 'ISSUE_COMMENT')
+            | #{__obfuscateUser(commentUser)} hat einen Kommentar zum Problem bei #{__mediaLabelAcc()} #{mediaName} geschrieben:
+          - else if (__t === 'ISSUE_RESOLVED')
+            | Das Problem bei #{__mediaLabelAcc()} #{mediaName} wurde von #{__obfuscateUser(issueModifiedBy)} als gelöst markiert!
+          - else if (__t === 'ISSUE_REOPENED')
+            | Das Problem bei #{__mediaLabelAcc()} #{mediaName} wurde von #{__obfuscateUser(issueModifiedBy)} erneut geöffnet.
+          - else
+            | #{body}
     if issueComment
       tr
         td(style='text-align: center;')
