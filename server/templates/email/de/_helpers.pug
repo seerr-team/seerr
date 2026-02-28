@@ -5,9 +5,9 @@
 - var __isMovie = (typeof mediaType !== 'undefined' && mediaType === 'movie') || (typeof __isMovie !== 'undefined' && __isMovie)
 - var __isSeries = (typeof mediaType !== 'undefined' && mediaType === 'tv') || (typeof __isSeries !== 'undefined' && __isSeries)
 
-// ---------------------------------------------------------------------------
-// String-or-function helpers: usable as "#{__helper}" AND "#{__helper()}"
-// ---------------------------------------------------------------------------
+//- ---------------------------------------------------------------------------
+//- String-or-function helpers: usable as "#{__helper}" AND "#{__helper()}"
+//- ---------------------------------------------------------------------------
 - function __mkStrFn(s) {
 -   const f = function () { return s; };
 -   f.toString = function () { return s; };
@@ -19,9 +19,9 @@
 - var __mediaLabelAcc = __mkStrFn(__isMovie ? 'den Film' : 'die Serie')
 - var __mediaLabelDat = __mkStrFn(__isMovie ? 'dem Film' : 'der Serie')
 
-// ---------------------------------------------------------------------------
-// Subjects (DE) - must exist, used by many subject.pug templates
-// ---------------------------------------------------------------------------
+//- ---------------------------------------------------------------------------
+//- Subjects (DE) - must exist, used by many subject.pug templates
+//- ---------------------------------------------------------------------------
 - function __reqSubject(type) {
 -   const __prefix4k = (typeof is4k !== 'undefined' && is4k) ? '4K ' : '';
 -   if (type === 'MEDIA_REQUEST' || type === 'MEDIA_REQUEST_PENDING') return __prefix4k + (__isMovie ? 'Neue Film-Anfrage' : 'Neue Serien-Anfrage')
@@ -42,9 +42,9 @@
 -   return base + 'Problem'
 - }
 
-// ---------------------------------------------------------------------------
-// Extra labels (DE): supports both enum-like keys and historic human strings
-// ---------------------------------------------------------------------------
+//- ---------------------------------------------------------------------------
+//- Extra labels (DE): supports both enum-like keys and historic human strings
+//- ---------------------------------------------------------------------------
 - function __extraLabel(name, value) {
 -   // Requested Seasons
 -   if (name === 'REQUESTED_SEASONS' || name === 'Requested Seasons') {
