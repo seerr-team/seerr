@@ -270,7 +270,7 @@ class PlexTvAPI extends ExternalAPI {
           username: mainUser.username,
           thumb: mainUser.thumb,
           isMainUser: true,
-          protected: false, // Will be updated if we get XML data
+          protected: undefined, // Unknown until Plex Home data is fetched
         },
       ];
 
@@ -349,11 +349,11 @@ class PlexTvAPI extends ExternalAPI {
           count: profiles.length,
         });
       } catch (e) {
-        // Continue with just the main user profile if we can't get managed profiles
-        logger.debug('Could not retrieve managed profiles', {
+        logger.warn('Could not retrieve managed profiles', {
           label: 'Plex.tv API',
           errorMessage: e.message,
         });
+        throw new Error('Unable to retrieve Plex profile metadata');
       }
 
       return profiles;
@@ -362,7 +362,7 @@ class PlexTvAPI extends ExternalAPI {
         label: 'Plex.tv API',
         errorMessage: e.message,
       });
-      return [];
+      throw e;
     }
   }
 
