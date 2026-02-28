@@ -5988,6 +5988,52 @@ paths:
                         - $ref: '#/components/schemas/MovieResult'
                         - $ref: '#/components/schemas/TvResult'
                         - $ref: '#/components/schemas/PersonResult'
+  /discover/list/{listId}:
+    get:
+      summary: Get TMDB list by ID
+      description: Returns items from a public TMDB list as discovery results.
+      tags:
+        - search
+      parameters:
+        - in: path
+          name: listId
+          required: true
+          schema:
+            type: number
+            example: 8234446
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: en
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: number
+            example: 1
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                  totalPages:
+                    type: number
+                  totalResults:
+                    type: number
+                  results:
+                    type: array
+                    items:
+                      anyOf:
+                        - $ref: '#/components/schemas/MovieResult'
+                        - $ref: '#/components/schemas/TvResult'
+                        - $ref: '#/components/schemas/PersonResult'
+                        - $ref: '#/components/schemas/Collection'
   /discover/keyword/{keywordId}/movies:
     get:
       summary: Get movies from keyword
