@@ -13,6 +13,41 @@ import { Notification, shouldSendAdminNotification } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
 import { BaseAgent } from './agent';
 
+
+
+import { existsSync } from 'fs';
+
+
+// --- email template locale routing (User > Global > EN fallback; requires template existence) ---
+function __normalizeLocale(loc?: string) {
+  const x = (loc || '').toLowerCase();
+  if (!x) return '';
+  // map de-DE -> de, en-US -> en, etc.
+  return x.split(/[_-]/)[0] || '';
+}
+
+function __templateDirFor(templateName: string, userLocale?: string, globalLocale?: string) {
+  const base = path.join(__dirname, '../../../templates/email');
+
+  const tryLoc = (loc: string) => {
+    // EN lives at base/<templateName>, localized at base/<loc>/<templateName>
+    if (!loc || loc === 'en') return path.join(base, templateName);
+    const candidate = path.join(base, loc, templateName);
+    // Check html.pug existence as "template exists" signal
+    if (existsSync(path.join(candidate, 'html.pug'))) return candidate;
+    return '';
+  };
+
+  const u = __normalizeLocale(userLocale);
+  const g = __normalizeLocale(globalLocale);
+
+  return (
+    tryLoc(u) ||
+    tryLoc(g) ||
+    path.join(base, templateName) // EN fallback
+  );
+}
+
 class EmailAgent
   extends BaseAgent<NotificationAgentEmail>
   implements NotificationAgent
@@ -54,7 +89,7 @@ class EmailAgent
 
     if (type === Notification.TEST_NOTIFICATION) {
       return {
-        template: path.join(__dirname, '../../../templates/email/test-email'),
+        template: __templateDirFor('test-email', recipientLocale, globalLocale),
         message: {
           to: recipientEmail,
         },
@@ -126,10 +161,7 @@ class EmailAgent
       }
 
       return {
-        template: path.join(
-          __dirname,
-          '../../../templates/email/media-request'
-        ),
+        template: __templateDirFor('media-request', recipientLocale, globalLocale),
         message: {
           to: recipientEmail,
         },
@@ -174,7 +206,7 @@ class EmailAgent
       }
 
       return {
-        template: path.join(__dirname, '../../../templates/email/media-issue'),
+        template: __templateDirFor('media-issue', recipientLocale, globalLocale),
         message: {
           to: recipientEmail,
         },
