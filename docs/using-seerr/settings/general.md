@@ -12,7 +12,18 @@ This is your Seerr API key, which can be used to integrate Seerr with third-part
 
 If you need to generate a new API key for any reason, simply click the button to the right of the text box.
 
-If you want to set the API key, rather than letting it be randomly generated, you can use the API_KEY environment variable. Whatever that variable is set to will be your API key.
+If you want to set the API key, rather than letting it be randomly generated,
+you can use the API_KEY environment variable. Whatever that variable is set to
+will be your API key.
+
+You can also use the `api-key` credential, if you're using a systemd service.
+
+```ini
+[Service]
+LoadCredential=api-key:/path/to/your/api-key-secret
+```
+
+[Learn more](https://systemd.io/CREDENTIALS/).
 
 ## Application Title
 

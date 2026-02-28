@@ -748,17 +748,27 @@ class Settings {
   }
 
   public async regenerateApiKey(): Promise<MainSettings> {
-    this.main.apiKey = this.generateApiKey();
+    this.main.apiKey = await this.generateApiKey();
     await this.save();
     return this.main;
   }
 
-  private generateApiKey(): string {
-    if (process.env.API_KEY) {
+  private async apiKeyFromEnvOrCred(): Promise<string | undefined> {
+    const apiKeyCredential = `${process.env.CREDENTIALS_DIRECTORY}/api-key`;
+
+    try {
+      return await fs.readFile(apiKeyCredential, 'utf-8');
+    } catch {
       return process.env.API_KEY;
-    } else {
-      return Buffer.from(`${Date.now()}${randomUUID()}`).toString('base64');
     }
+  }
+
+  private async generateApiKey(): Promise<string> {
+    const apiKey = await this.apiKeyFromEnvOrCred();
+
+    return (
+      apiKey || Buffer.from(`${Date.now()}${randomUUID()}`).toString('base64')
+    );
   }
 
   /**
@@ -797,11 +807,12 @@ class Settings {
     // generate keys and ids if it's missing
     let change = false;
     if (!this.data.main.apiKey) {
-      this.data.main.apiKey = this.generateApiKey();
+      this.data.main.apiKey = await this.generateApiKey();
       change = true;
-    } else if (process.env.API_KEY) {
-      if (this.main.apiKey != process.env.API_KEY) {
-        this.main.apiKey = process.env.API_KEY;
+    } else {
+      const apiKey = await this.apiKeyFromEnvOrCred();
+      if (apiKey && this.main.apiKey != apiKey) {
+        this.main.apiKey = apiKey;
       }
     }
     if (!this.data.clientId) {
