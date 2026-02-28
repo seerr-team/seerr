@@ -1373,6 +1373,7 @@
   "components.UserList.sortByType": "Sort by account type",
   "components.UserList.sortByUser": "Sort by username",
   "components.UserList.toggleSortDirection": "Click again to sort {direction}",
+  "components.UserList.toggleSortDirectionAria": "Toggle sort direction",
   "components.UserList.totalrequests": "Requests",
   "components.UserList.user": "User",
   "components.UserList.usercreatedfailed": "Something went wrong while creating the user.",
