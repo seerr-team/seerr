@@ -131,7 +131,7 @@ const { embedPoster } = settings.notifications.agents.email;
                 payload.subject ??
                 '',
             mediaExtra: payload.extra ?? [],
-          body: payload.message,
+          body: '',
           applicationUrl,
           applicationTitle,
           recipientName,
