@@ -81,16 +81,15 @@ class EmailAgent
     type: Notification,
     payload: NotificationPayload,
     recipientEmail: string,
-    recipientName?: string
-      , recipientLocale?: string
+    recipientName?: string,
+      recipientLocale?: string
   ): EmailOptions | undefined {
     const settings = getSettings();
     const { applicationUrl, applicationTitle } = settings.main;
       const globalLocale = (settings.main as any)?.locale ?? (settings as any)?.locale;
       // IMPORTANT: locale routing is recipient-based (not payload-based)
-      const _recipientLocale = recipientLocale;
-      const recipientLocaleNorm = _recipientLocale;
-    const { embedPoster } = settings.notifications.agents.email;
+      const recipientLocaleNorm = recipientLocale;
+const { embedPoster } = settings.notifications.agents.email;
 
     if (type === Notification.TEST_NOTIFICATION) {
       return {
@@ -273,8 +272,8 @@ class EmailAgent
                 type,
                 payload,
                 payload.notifyUser.email,
-                payload.notifyUser.displayName
-                , (recipient as any)?.locale
+                payload.notifyUser.displayName,
+                  (payload.notifyUser as any)?.locale
               )
             );
           } else {
