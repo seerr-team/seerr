@@ -44,8 +44,34 @@ router.get('/', async (req, res, next) => {
       : Math.max(10, includeIds.length);
     const skip = req.query.skip ? Number(req.query.skip) : 0;
     const q = req.query.q ? req.query.q.toString().toLowerCase() : '';
-    const sortDirection =
-      (req.query.sortDirection as string) === 'asc' ? 'ASC' : 'DESC';
+    const sortParam = req.query.sort ? req.query.sort.toString() : undefined;
+    const sortDirectionQuery = req.query.sortDirection
+      ? (req.query.sortDirection as string).toLowerCase()
+      : undefined;
+
+    let sortDirection: 'ASC' | 'DESC';
+    if (sortDirectionQuery === 'asc') {
+      sortDirection = 'ASC';
+    } else if (sortDirectionQuery === 'desc') {
+      sortDirection = 'DESC';
+    } else {
+      switch (sortParam) {
+        case 'displayname':
+          sortDirection = 'ASC';
+          break;
+        case 'requests':
+        case 'updated':
+          sortDirection = 'DESC';
+          break;
+        case 'created':
+        case 'usertype':
+        case 'role':
+        case undefined:
+        default:
+          sortDirection = 'ASC';
+          break;
+      }
+    }
 
     let query = getRepository(User).createQueryBuilder('user');
 
@@ -60,7 +86,7 @@ router.get('/', async (req, res, next) => {
       query.andWhereInIds(includeIds);
     }
 
-    switch (req.query.sort) {
+    switch (sortParam) {
       case 'created':
         query = query.orderBy('user.createdAt', sortDirection);
         break;
