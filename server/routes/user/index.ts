@@ -46,7 +46,7 @@ router.get('/', async (req, res, next) => {
     const q = req.query.q ? req.query.q.toString().toLowerCase() : '';
     const sortParam = req.query.sort ? req.query.sort.toString() : undefined;
     const sortDirectionQuery = req.query.sortDirection
-      ? (req.query.sortDirection as string).toLowerCase()
+      ? req.query.sortDirection.toString().toLowerCase()
       : undefined;
 
     let sortDirection: 'ASC' | 'DESC';

@@ -671,10 +671,7 @@ const UserList = () => {
             <select
               id="sort"
               name="sort"
-              onChange={(e) => {
-                setCurrentSort(e.target.value as Sort);
-                updateQueryParams('page', '1');
-              }}
+              onChange={(e) => handleSortChange(e.target.value as Sort)}
               value={currentSort}
               className="rounded-r-only"
             >
