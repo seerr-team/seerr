@@ -27,6 +27,7 @@ const messages = defineMessages(
     password: 'Password',
     tokenAuth: 'Token authentication',
     token: 'Token',
+    priority: 'Priority',
     ntfysettingssaved: 'Ntfy notification settings saved successfully!',
     ntfysettingsfailed: 'Ntfy notification settings failed to save.',
     toastNtfyTestSending: 'Sending ntfy test notification…',
@@ -34,6 +35,7 @@ const messages = defineMessages(
     toastNtfyTestFailed: 'Ntfy test notification failed to send.',
     validationNtfyUrl: 'You must provide a valid URL',
     validationNtfyTopic: 'You must provide a topic',
+    validationPriorityRequired: 'You must provide a priority between 1 and 5',
     validationTypes: 'You must select at least one notification type',
   }
 );
@@ -71,6 +73,14 @@ const NotificationsNtfy = () => {
         otherwise: Yup.string().nullable(),
       })
       .defined(intl.formatMessage(messages.validationNtfyTopic)),
+    priority: Yup.number().when('enabled', {
+      is: true,
+      then: Yup.number()
+        .min(1)
+        .max(5)
+        .required(intl.formatMessage(messages.validationPriorityRequired)),
+      otherwise: Yup.number().nullable(),
+    }),
   });
 
   if (!data && !error) {
@@ -90,6 +100,7 @@ const NotificationsNtfy = () => {
         password: data?.options.password,
         authMethodToken: data?.options.authMethodToken,
         token: data?.options.token,
+        priority: data?.options.priority,
       }}
       validationSchema={NotificationsNtfySchema}
       onSubmit={async (values) => {
@@ -106,6 +117,7 @@ const NotificationsNtfy = () => {
               password: values.password,
               authMethodToken: values.authMethodToken,
               token: values.token,
+              priority: values.priority,
             },
           });
 
@@ -157,6 +169,7 @@ const NotificationsNtfy = () => {
                 password: values.password,
                 authMethodToken: values.authMethodToken,
                 token: values.token,
+                priority: values.priority,
               },
             });
 
@@ -313,6 +326,22 @@ const NotificationsNtfy = () => {
                 </div>
               </div>
             )}
+            <div className="form-row">
+              <label htmlFor="priority" className="text-label">
+                {intl.formatMessage(messages.priority)}
+              </label>
+              <div className="form-input-area">
+                <div className="form-input-field">
+                  <Field as="select" id="priority" name="priority">
+                    <option value={1}>Minimum</option>
+                    <option value={2}>Low</option>
+                    <option value={3}>Default</option>
+                    <option value={4}>High</option>
+                    <option value={5}>Urgent</option>
+                  </Field>
+                </div>
+              </div>
+            </div>
             <NotificationTypeSelector
               currentTypes={values.enabled ? values.types || 0 : 0}
               onUpdate={(newTypes) => {

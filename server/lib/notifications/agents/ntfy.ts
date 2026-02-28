@@ -27,7 +27,7 @@ class NtfyAgent
     const { embedPoster } = settings.notifications.agents.ntfy;
 
     const topic = this.getSettings().options.topic;
-    const priority = 3;
+    const priority = this.getSettings().options.priority ?? 3;
 
     const title = payload.event
       ? `${payload.event} - ${payload.subject}`

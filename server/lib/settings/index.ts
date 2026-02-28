@@ -298,6 +298,7 @@ export interface NotificationAgentNtfy extends NotificationAgentConfig {
     password?: string;
     authMethodToken?: boolean;
     token?: string;
+    priority?: number;
   };
 }
 
@@ -531,6 +532,7 @@ class Settings {
             options: {
               url: '',
               topic: '',
+              priority: 3,
             },
           },
         },
