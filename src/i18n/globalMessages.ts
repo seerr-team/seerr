@@ -43,6 +43,7 @@ const globalMessages = defineMessages('i18n', {
   next: 'Next',
   previous: 'Previous',
   status: 'Status',
+  declinemessage: 'Message',
   all: 'All',
   experimental: 'Experimental',
   advanced: 'Advanced',

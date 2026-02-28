@@ -79,6 +79,13 @@ class PushbulletAgent
 
       if (status) {
         body += `\nRequest Status: ${status}`;
+        if (
+          type === Notification.MEDIA_DECLINED &&
+          payload.request &&
+          payload.request.declineReason
+        ) {
+          body += `\nDecline Reason: ${payload.request.declineReason}`;
+        }
       }
     } else if (payload.comment) {
       body += `\n\nComment from ${payload.comment.user.displayName}:\n${payload.comment.message}`;
