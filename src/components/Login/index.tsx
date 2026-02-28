@@ -143,22 +143,13 @@ const Login = () => {
       );
 
       if (response.data?.status === 'REQUIRES_PIN') {
+        const profile = profiles.find((p) => p.id === profileId);
         setShowPinEntry(true);
         setPinProfileId(profileId);
-        setPinProfileName(
-          profiles.find((p) => p.id === profileId)?.title ||
-            profiles.find((p) => p.id === profileId)?.username ||
-            'Profile'
-        );
-        setPinProfileThumb(
-          profiles.find((p) => p.id === profileId)?.thumb || null
-        );
-        setPinIsProtected(
-          profiles.find((p) => p.id === profileId)?.protected || false
-        );
-        setPinIsMainUser(
-          profiles.find((p) => p.id === profileId)?.isMainUser || false
-        );
+        setPinProfileName(profile?.title || profile?.username || 'Profile');
+        setPinProfileThumb(profile?.thumb ?? null);
+        setPinIsProtected(profile?.protected ?? false);
+        setPinIsMainUser(profile?.isMainUser ?? false);
         setPinError(null);
       } else {
         setShowProfileSelector(false);
