@@ -63,6 +63,8 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
         globalTvQuotaLimit: defaultQuotas.tv.quotaLimit,
         watchlistSyncMovies: user.settings?.watchlistSyncMovies,
         watchlistSyncTv: user.settings?.watchlistSyncTv,
+        maxMovieRating: user.settings?.maxMovieRating,
+        maxTvRating: user.settings?.maxTvRating,
       });
     } catch (e) {
       next({ status: 500, message: e.message });
@@ -129,6 +131,8 @@ userSettingsRoutes.post<
         originalLanguage: req.body.originalLanguage,
         watchlistSyncMovies: req.body.watchlistSyncMovies,
         watchlistSyncTv: req.body.watchlistSyncTv,
+        maxMovieRating: req.body.maxMovieRating,
+        maxTvRating: req.body.maxTvRating,
       });
     } else {
       user.settings.discordId = req.body.discordId;
@@ -138,6 +142,11 @@ userSettingsRoutes.post<
       user.settings.originalLanguage = req.body.originalLanguage;
       user.settings.watchlistSyncMovies = req.body.watchlistSyncMovies;
       user.settings.watchlistSyncTv = req.body.watchlistSyncTv;
+      // Only allow MANAGE_USERS permission to update content ratings
+      if (req.user?.hasPermission(Permission.MANAGE_USERS)) {
+        user.settings.maxMovieRating = req.body.maxMovieRating;
+        user.settings.maxTvRating = req.body.maxTvRating;
+      }
     }
 
     const savedUser = await userRepository.save(user);
@@ -152,6 +161,8 @@ userSettingsRoutes.post<
       watchlistSyncMovies: savedUser.settings?.watchlistSyncMovies,
       watchlistSyncTv: savedUser.settings?.watchlistSyncTv,
       email: savedUser.email,
+      maxMovieRating: savedUser.settings?.maxMovieRating,
+      maxTvRating: savedUser.settings?.maxTvRating,
     });
   } catch (e) {
     if (e.errorCode) {
@@ -637,32 +648,9 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
   }
 );
 
-userSettingsRoutes.get<{ id: string }, { permissions?: number }>(
-  '/permissions',
-  isAuthenticated(Permission.MANAGE_USERS),
-  async (req, res, next) => {
-    const userRepository = getRepository(User);
-
-    try {
-      const user = await userRepository.findOne({
-        where: { id: Number(req.params.id) },
-      });
-
-      if (!user) {
-        return next({ status: 404, message: 'User not found.' });
-      }
-
-      return res.status(200).json({ permissions: user.permissions });
-    } catch (e) {
-      next({ status: 500, message: e.message });
-    }
-  }
-);
-
-userSettingsRoutes.post<
+userSettingsRoutes.get<
   { id: string },
-  { permissions?: number },
-  { permissions: number }
+  { permissions?: number; maxMovieRating?: string; maxTvRating?: string }
 >(
   '/permissions',
   isAuthenticated(Permission.MANAGE_USERS),
@@ -672,6 +660,38 @@ userSettingsRoutes.post<
     try {
       const user = await userRepository.findOne({
         where: { id: Number(req.params.id) },
+        relations: ['settings'],
+      });
+
+      if (!user) {
+        return next({ status: 404, message: 'User not found.' });
+      }
+
+      return res.status(200).json({
+        permissions: user.permissions,
+        maxMovieRating: user.settings?.maxMovieRating,
+        maxTvRating: user.settings?.maxTvRating,
+      });
+    } catch (e) {
+      next({ status: 500, message: e.message });
+    }
+  }
+);
+
+userSettingsRoutes.post<
+  { id: string },
+  { permissions?: number; maxMovieRating?: string; maxTvRating?: string },
+  { permissions: number; maxMovieRating?: string; maxTvRating?: string }
+>(
+  '/permissions',
+  isAuthenticated(Permission.MANAGE_USERS),
+  async (req, res, next) => {
+    const userRepository = getRepository(User);
+
+    try {
+      const user = await userRepository.findOne({
+        where: { id: Number(req.params.id) },
+        relations: ['settings'],
       });
 
       if (!user) {
@@ -694,9 +714,27 @@ userSettingsRoutes.post<
       }
       user.permissions = req.body.permissions;
 
+      // Update content ratings if provided
+      if (req.body.maxMovieRating !== undefined) {
+        if (!user.settings) {
+          user.settings = new UserSettings();
+        }
+        user.settings.maxMovieRating = req.body.maxMovieRating || undefined;
+      }
+      if (req.body.maxTvRating !== undefined) {
+        if (!user.settings) {
+          user.settings = new UserSettings();
+        }
+        user.settings.maxTvRating = req.body.maxTvRating || undefined;
+      }
+
       await userRepository.save(user);
 
-      return res.status(200).json({ permissions: user.permissions });
+      return res.status(200).json({
+        permissions: user.permissions,
+        maxMovieRating: user.settings?.maxMovieRating,
+        maxTvRating: user.settings?.maxTvRating,
+      });
     } catch (e) {
       next({ status: 500, message: e.message });
     }

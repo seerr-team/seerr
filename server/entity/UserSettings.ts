@@ -72,6 +72,12 @@ export class UserSettings {
   @Column({ nullable: true })
   public watchlistSyncTv?: boolean;
 
+  @Column({ nullable: true })
+  public maxMovieRating?: string;
+
+  @Column({ nullable: true })
+  public maxTvRating?: string;
+
   @Column({
     type: 'text',
     nullable: true,
