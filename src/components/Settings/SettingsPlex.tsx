@@ -417,13 +417,23 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                 toastId = id;
               }
             );
+            const dedupe = (arr: string[]) => [
+              ...new Map(arr.map((s) => [s, s])).values(),
+            ];
+            const normalize = (arr?: string[]) =>
+              dedupe(
+                (arr ?? [])
+                  .map((s) => s.trim().toLowerCase())
+                  .filter((s) => s.length > 0)
+              );
+
             await axios.post('/api/v1/settings/plex', {
               ip: values.hostname,
               port: Number(values.port),
               useSsl: values.useSsl,
               webAppUrl: values.webAppUrl,
-              ignoredEditions: values.ignoredEditions,
-              ignoredEpisodeTitles: values.ignoredEpisodeTitles,
+              ignoredEditions: normalize(values.ignoredEditions),
+              ignoredEpisodeTitles: normalize(values.ignoredEpisodeTitles),
               ignoredEpisodeFilterMode: values.ignoredEpisodeFilterMode,
             } as PlexSettings);
 

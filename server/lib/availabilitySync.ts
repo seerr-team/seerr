@@ -12,11 +12,11 @@ import Media from '@server/entity/Media';
 import MediaRequest from '@server/entity/MediaRequest';
 import type Season from '@server/entity/Season';
 import { User } from '@server/entity/User';
-import { isIgnoredEdition } from '@server/lib/scanners/plex';
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { getHostname } from '@server/utils/getHostname';
+import { isIgnoredEdition } from '@server/utils/plexFilter';
 
 class AvailabilitySync {
   public running = false;

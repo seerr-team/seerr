@@ -20,6 +20,7 @@ import type {
 import BaseScanner from '@server/lib/scanners/baseScanner';
 import type { Library } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
+import { isIgnoredEdition, isIgnoredEpisode } from '@server/utils/plexFilter';
 import { uniqWith } from 'lodash';
 
 const imdbRegex = new RegExp(/imdb:\/\/(tt[0-9]+)/);
@@ -32,39 +33,6 @@ const plexRegex = new RegExp(/plex:\/\//);
 const hamaTvdbRegex = new RegExp(/hama:\/\/tvdb[0-9]?-([0-9]+)/);
 const hamaAnidbRegex = new RegExp(/hama:\/\/anidb[0-9]?-([0-9]+)/);
 const HAMA_AGENT = 'com.plexapp.agents.hama';
-
-export function isIgnoredEdition(editionTitle?: string): boolean {
-  if (!editionTitle) return false;
-
-  const ignoredEditions = getSettings().plex.ignoredEditions ?? [];
-  return ignoredEditions.some(
-    (e) => editionTitle.toLowerCase().trim() === e.toLowerCase().trim()
-  );
-}
-
-export function isIgnoredEpisode(
-  episodeTitle: string | undefined,
-  seasonNumber: number,
-  episodeNumber: number
-): boolean {
-  const settings = getSettings();
-  const ignoredTitles = settings.plex.ignoredEpisodeTitles ?? [];
-  const filterMode = settings.plex.ignoredEpisodeFilterMode ?? 'season';
-
-  if (ignoredTitles.length === 0) return false;
-
-  const titleMatch = ignoredTitles.some(
-    (t) => episodeTitle?.toLowerCase().trim() === t.toLowerCase().trim()
-  );
-  if (!titleMatch) return false;
-
-  if (filterMode === 'any') return true;
-  if (filterMode === 'season') return seasonNumber === 0;
-  if (filterMode === 'seasonAndEpisode')
-    return seasonNumber === 0 && episodeNumber === 0;
-
-  return false;
-}
 
 type SyncStatus = StatusBase & {
   currentLibrary: Library;
@@ -428,17 +396,14 @@ class PlexScanner
       (s) => s.episodes > 0 || s.episodes4k > 0
     );
 
-    if (mediaIds.tvdbId && hasAnyEpisodes) {
-      await this.processShow(
-        mediaIds.tmdbId,
-        mediaIds.tvdbId ?? tvShow.external_ids.tvdb_id,
-        processableSeasons,
-        {
-          mediaAddedAt: new Date(metadata.addedAt * 1000),
-          ratingKey: ratingKey,
-          title: metadata.title,
-        }
-      );
+    const tvdbId = mediaIds.tvdbId ?? tvShow.external_ids?.tvdb_id;
+
+    if (tvdbId && hasAnyEpisodes) {
+      await this.processShow(mediaIds.tmdbId, tvdbId, processableSeasons, {
+        mediaAddedAt: new Date(metadata.addedAt * 1000),
+        ratingKey: ratingKey,
+        title: metadata.title,
+      });
     }
   }
 
