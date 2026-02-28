@@ -1,5 +1,6 @@
 import Button from '@app/components/Common/Button';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
+import UsernameInput from '@app/components/Login/UsernameInput';
 import useSettings from '@app/hooks/useSettings';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
@@ -78,20 +79,19 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                 </h2>
 
                 <div className="mb-4 mt-1">
-                  <div className="form-input-field">
-                    <Field
-                      id="email"
-                      name="email"
-                      placeholder={`${intl.formatMessage(
-                        messages.email
-                      )} / ${intl.formatMessage(messages.username)}`}
-                      type="text"
-                      inputMode="email"
-                      data-testid="email"
-                      data-form-type="username,email"
-                      className="!bg-gray-700/80 placeholder:text-gray-400"
-                    />
-                  </div>
+                  <Field
+                    id="email"
+                    name="email"
+                    placeholder={`${intl.formatMessage(
+                      messages.email
+                    )} / ${intl.formatMessage(messages.username)}`}
+                    type="text"
+                    inputMode="email"
+                    data-testid="email"
+                    data-form-type="username,email"
+                    className="!bg-gray-700/80 placeholder:text-gray-400"
+                    component={UsernameInput}
+                  />
                   {errors.email &&
                     touched.email &&
                     typeof errors.email === 'string' && (

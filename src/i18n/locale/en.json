@@ -267,6 +267,7 @@
   "components.Login.signinwithjellyfin": "Use your {mediaServerName} account",
   "components.Login.signinwithoverseerr": "Use your {applicationTitle} account",
   "components.Login.signinwithplex": "Use your Plex account",
+  "components.Login.tipUsernameHasTrailingWhitespace": "The username/email ends with a space",
   "components.Login.title": "Add Email",
   "components.Login.urlBase": "URL Base",
   "components.Login.username": "Username",
