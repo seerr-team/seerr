@@ -128,12 +128,17 @@ const UserList = () => {
     }&sort=${currentSort}&sortDirection=${sortDirection}`
   );
 
+  const defaultSortDirection = (sortKey: Sort): SortDirection =>
+    sortKey === 'requests' || sortKey === 'created' || sortKey === 'updated'
+      ? 'desc'
+      : 'asc';
+
   const handleSortChange = (sortKey: Sort) => {
     if (currentSort === sortKey) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setCurrentSort(sortKey);
-      setSortDirection('desc');
+      setSortDirection(defaultSortDirection(sortKey));
     }
   };
 
