@@ -279,6 +279,7 @@ notificationRoutes.get('/webhook', (_req, res) => {
           'utf8'
         )
       ),
+      customHeaders: webhookSettings.options.customHeaders ?? [],
       supportVariables: webhookSettings.options.supportVariables ?? false,
     },
   };
@@ -301,6 +302,7 @@ notificationRoutes.post('/webhook', async (req, res, next) => {
         ),
         webhookUrl: req.body.options.webhookUrl,
         authHeader: req.body.options.authHeader,
+        customHeaders: req.body.options.customHeaders ?? [],
         supportVariables: req.body.options.supportVariables ?? false,
       },
     };
@@ -333,6 +335,7 @@ notificationRoutes.post('/webhook/test', async (req, res, next) => {
         ),
         webhookUrl: req.body.options.webhookUrl,
         authHeader: req.body.options.authHeader,
+        customHeaders: req.body.options.customHeaders ?? [],
         supportVariables: req.body.options.supportVariables ?? false,
       },
     };
