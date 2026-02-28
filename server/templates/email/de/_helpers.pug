@@ -6,7 +6,7 @@
 - var __isSeries = (typeof mediaType !== 'undefined' && mediaType === 'tv') || (typeof __isSeries !== 'undefined' && __isSeries)
 
 // ---------------------------------------------------------------------------
-// String-or-function helpers: usable as "#{helper}" AND "#{helper()}"
+// String-or-function helpers: usable as "#{__helper}" AND "#{__helper()}"
 // ---------------------------------------------------------------------------
 - function __mkStrFn(s) {
 -   const f = function () { return s; };
@@ -65,3 +65,6 @@
 -   // Same behavior as EN: keep identity (can be expanded later)
 -   return `${str || ''}`
 - }
+
+
+- __helper = (typeof helper !== 'undefined' ? helper : function() { return '' })
