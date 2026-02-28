@@ -6,6 +6,10 @@ import PreparedEmail from '@server/lib/email';
 import type { NotificationAgentEmail } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import {
+  getAvailableMediaServerName,
+  getAvailableMediaServerUrl,
+} from '@server/utils/mediaServerHelper';
 import type { EmailOptions } from 'email-templates';
 import path from 'path';
 import validator from 'validator';
@@ -17,6 +21,11 @@ class EmailAgent
   extends BaseAgent<NotificationAgentEmail>
   implements NotificationAgent
 {
+  /**
+   * Returns this agents notification settings
+   * Uses a cached copy when available
+   * @protected
+   */
   protected getSettings(): NotificationAgentEmail {
     if (this.settings) {
       return this.settings;
@@ -27,6 +36,10 @@ class EmailAgent
     return settings.notifications.agents.email;
   }
 
+  /**
+   * Determines whether this agent is able to send email notifications
+   * Returns true only if the agent is enabled and the required SMTP settings are configured
+   */
   public shouldSend(): boolean {
     const settings = this.getSettings();
 
@@ -42,6 +55,18 @@ class EmailAgent
     return false;
   }
 
+  /**
+   * Builds the email payload for an email notification
+   *
+   * For all notifications it has a button to take you to the media in Seerr
+   * For request notifications it includes a button that links to the media in the chosen media server
+   * @param type Type of notification being sent
+   * @param payload Notification context
+   * @param recipientEmail The recipient's email address
+   * @param recipientName The recipient's name
+   * @returns Email notification payload
+   * @private
+   */
   private buildMessage(
     type: Notification,
     payload: NotificationPayload,
@@ -49,8 +74,10 @@ class EmailAgent
     recipientName?: string
   ): EmailOptions | undefined {
     const settings = getSettings();
-    const { applicationUrl, applicationTitle } = settings.main;
+    const { applicationUrl, applicationTitle, mediaServerType } = settings.main;
     const { embedPoster } = settings.notifications.agents.email;
+    const mediaServerName = getAvailableMediaServerName(mediaServerType);
+    const mediaServerUrl = getAvailableMediaServerUrl(payload);
 
     if (type === Notification.TEST_NOTIFICATION) {
       return {
@@ -141,6 +168,8 @@ class EmailAgent
           applicationTitle,
           recipientName,
           recipientEmail,
+          mediaServerActionUrl: mediaServerUrl,
+          mediaServerName,
         },
       };
     } else if (payload.issue) {
@@ -194,6 +223,14 @@ class EmailAgent
     return undefined;
   }
 
+  /**
+   * Sends an email notification to the recipients in the payload.
+   *
+   * Respects per-user notification settings, and it validates the email address before sending the notification
+   * @param type The type of notification being sent
+   * @param payload Notification context
+   * @returns True if the notification has successfully sent, else returns False
+   */
   public async send(
     type: Notification,
     payload: NotificationPayload
