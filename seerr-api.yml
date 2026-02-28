@@ -3985,6 +3985,9 @@ paths:
                 pin:
                   type: string
                   description: Optional 4-digit profile PIN
+                  pattern: '^[0-9]{4}$'
+                  minLength: 4
+                  maxLength: 4
                 isSetup:
                   type: boolean
                   description: Set to true during initial setup wizard
@@ -4049,7 +4052,10 @@ paths:
                   description: The ID of the main Plex user account
                 pin:
                   type: string
-                  description: Optional 4 digit profile PIN
+                  description: Optional 4-digit profile PIN
+                  pattern: '^[0-9]{4}$'
+                  minLength: 4
+                  maxLength: 4
                 authToken:
                   type: string
                   description: Optional Plex token (when reselecting without /plex step)
