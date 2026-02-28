@@ -39,9 +39,21 @@ function __normalizeLocale(loc?: string) {
 }
 
 function __userEmailTemplateDir(templateName: string, userLocale?: string, globalLocale?: string) {
-  const base = path.join(__dirname, '../templates/email');
-
-  const tryLoc = (loc: string) => {
+  const base = (() => {
+    // Prefer built templates (prod), then source templates (dev)
+    const candidates = [
+      path.join(process.cwd(), 'dist/templates/email'),
+      path.join(process.cwd(), 'server/templates/email'),
+      path.join(__dirname, '../templates/email'),
+    ];
+    for (const c of candidates) {
+      try {
+        if (existsSync(path.join(c, 'generatedpassword', 'html.pug'))) return c;
+      } catch (_) {}
+    }
+    return path.join(process.cwd(), 'server/templates/email');
+  })();
+const tryLoc = (loc: string) => {
     if (!loc) return '';
       if (loc === 'en') return path.join(base, templateName);
     const candidate = path.join(base, loc, templateName);
