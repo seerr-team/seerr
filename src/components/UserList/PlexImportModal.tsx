@@ -16,6 +16,17 @@ interface PlexImportProps {
   onComplete?: () => void;
 }
 
+interface PlexImportSkippedItem {
+  id: string;
+  type: 'user' | 'profile';
+  reason: string;
+}
+
+interface PlexImportResponse {
+  data?: { userType: number }[];
+  skipped?: PlexImportSkippedItem[];
+}
+
 const messages = defineMessages('components.UserList', {
   importfromplex: 'Import Plex Users & Profiles',
   importfromplexerror:
@@ -116,7 +127,7 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
     setImporting(true);
 
     try {
-      const { data: response } = await axios.post(
+      const { data: response } = await axios.post<PlexImportResponse>(
         '/api/v1/user/import-from-plex',
         {
           plexIds: selectedUsers,
@@ -126,12 +137,10 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
 
       if (response.data) {
         const importedUsers = response.data.filter(
-          (item: { userType: number }) =>
-            item.userType !== UserType.PLEX_PROFILE
+          (item) => item.userType !== UserType.PLEX_PROFILE
         ).length;
         const importedProfiles = response.data.filter(
-          (item: { userType: number }) =>
-            item.userType === UserType.PLEX_PROFILE
+          (item) => item.userType === UserType.PLEX_PROFILE
         ).length;
 
         let successMessage;
@@ -158,10 +167,10 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
 
         if (response.skipped && response.skipped.length > 0) {
           const skippedUsers = response.skipped.filter(
-            (item: { type: string }) => item.type === 'user'
+            (item) => item.type === 'user'
           ).length;
           const skippedProfiles = response.skipped.filter(
-            (item: { type: string }) => item.type === 'profile'
+            (item) => item.type === 'profile'
           ).length;
 
           let skippedMessage = '';
