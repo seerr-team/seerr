@@ -27,7 +27,7 @@ import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
 
-type EditionOption = {
+type TagOption = {
   label: string;
   value: string;
 };
@@ -77,6 +77,16 @@ const messages = defineMessages('components.Settings', {
   ignoredEditionsTip:
     'Movies with these Plex edition tags will be ignored during library scans and not marked as available (e.g., Trailer)',
   ignoredEditionsPlaceholder: 'Type an edition name and press Enter…',
+  ignoredEpisodeTitles: 'Ignored Episode Titles',
+  ignoredEpisodeTitlesTip:
+    'TV episodes with these titles will be ignored during Plex library scans (used to filter placeholders like trailers)',
+  ignoredEpisodeTitlesPlaceholder: 'Type an episode title and press Enter…',
+  ignoredEpisodeFilterMode: 'Episode Filter Mode',
+  ignoredEpisodeFilterModeTip:
+    'Controls how strictly episode titles are matched when filtering',
+  ignoredEpisodeFilterModeSeason: 'Season 0',
+  ignoredEpisodeFilterModeSeasonAndEpisode: 'Season 0 + Episode 0',
+  ignoredEpisodeFilterModeAny: 'Any Season or Episode',
   tautulliSettings: 'Tautulli Settings',
   tautulliSettingsDescription:
     'Optionally configure the settings for your Tautulli server. Seerr fetches watch history data for your Plex media from Tautulli.',
@@ -386,6 +396,9 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           selectedPreset: undefined,
           webAppUrl: data?.webAppUrl,
           ignoredEditions: data?.ignoredEditions ?? [],
+          ignoredEpisodeTitles: data?.ignoredEpisodeTitles ?? [],
+          ignoredEpisodeFilterMode:
+            data?.ignoredEpisodeFilterMode ?? 'season',
         }}
         validationSchema={PlexSettingsSchema}
         validateOnMount={true}
@@ -408,6 +421,8 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
               useSsl: values.useSsl,
               webAppUrl: values.webAppUrl,
               ignoredEditions: values.ignoredEditions,
+              ignoredEpisodeTitles: values.ignoredEpisodeTitles,
+              ignoredEpisodeFilterMode: values.ignoredEpisodeFilterMode,
             } as PlexSettings);
 
             syncLibraries();
@@ -623,7 +638,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                 </label>
                 <div className="form-input-area">
                   <div className="form-input-field relative">
-                    <CreatableSelect<EditionOption, true>
+                    <CreatableSelect<TagOption, true>
                       components={{
                         DropdownIndicator: null,
                       }}
@@ -646,6 +661,82 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                         );
                       }}
                     />
+                  </div>
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="ignoredEpisodeTitles" className="text-label">
+                  {intl.formatMessage(messages.ignoredEpisodeTitles)}
+                  <SettingsBadge badgeType="advanced" className="ml-2" />
+                  <span className="label-tip">
+                    {intl.formatMessage(messages.ignoredEpisodeTitlesTip)}
+                  </span>
+                </label>
+                <div className="form-input-area">
+                  <div className="form-input-field relative">
+                    <CreatableSelect<TagOption, true>
+                      components={{
+                        DropdownIndicator: null,
+                      }}
+                      isClearable
+                      isMulti
+                      noOptionsMessage={() => null}
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                      placeholder={intl.formatMessage(
+                        messages.ignoredEpisodeTitlesPlaceholder
+                      )}
+                      value={(values.ignoredEpisodeTitles ?? []).map((e) => ({
+                        label: e,
+                        value: e,
+                      }))}
+                      onChange={(newValue) => {
+                        setFieldValue(
+                          'ignoredEpisodeTitles',
+                          newValue.map((v) => v.value)
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="ignoredEpisodeFilterMode" className="text-label">
+                  {intl.formatMessage(messages.ignoredEpisodeFilterMode)}
+                  <SettingsBadge badgeType="advanced" className="ml-2" />
+                  <span className="label-tip">
+                    {intl.formatMessage(messages.ignoredEpisodeFilterModeTip)}
+                  </span>
+                </label>
+                <div className="form-input-area">
+                  <div className="form-input-field">
+                    <select
+                      id="ignoredEpisodeFilterMode"
+                      name="ignoredEpisodeFilterMode"
+                      value={values.ignoredEpisodeFilterMode}
+                      onChange={(e) => {
+                        setFieldValue(
+                          'ignoredEpisodeFilterMode',
+                          e.target.value
+                        );
+                      }}
+                    >
+                      <option value="season">
+                        {intl.formatMessage(
+                          messages.ignoredEpisodeFilterModeSeason
+                        )}
+                      </option>
+                      <option value="seasonAndEpisode">
+                        {intl.formatMessage(
+                          messages.ignoredEpisodeFilterModeSeasonAndEpisode
+                        )}
+                      </option>
+                      <option value="any">
+                        {intl.formatMessage(
+                          messages.ignoredEpisodeFilterModeAny
+                        )}
+                      </option>
+                    </select>
                   </div>
                 </div>
               </div>

@@ -12,6 +12,7 @@ import Media from '@server/entity/Media';
 import MediaRequest from '@server/entity/MediaRequest';
 import type Season from '@server/entity/Season';
 import { User } from '@server/entity/User';
+import { isIgnoredEdition } from '@server/lib/scanners/plex';
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -879,15 +880,7 @@ class AvailabilitySync {
       }
 
       if (plexMedia && media.mediaType === 'movie') {
-        const ignoredEditions = getSettings().plex.ignoredEditions ?? [];
-        if (
-          plexMedia.editionTitle &&
-          ignoredEditions.some(
-            (e) =>
-              plexMedia!.editionTitle!.toLowerCase().trim() ===
-              e.toLowerCase().trim()
-          )
-        ) {
+        if (isIgnoredEdition(plexMedia.editionTitle)) {
           plexMedia = undefined;
         }
       }
