@@ -51,6 +51,7 @@ const globalMessages = defineMessages('i18n', {
   settings: 'Settings',
   usersettings: 'User Settings',
   delimitedlist: '{a}, {b}',
+  error: 'Something went wrong. Please try again.',
   showingresults:
     'Showing <strong>{from}</strong> to <strong>{to}</strong> of <strong>{total}</strong> results',
   resultsperpage: 'Display {pageSize} results per page',
