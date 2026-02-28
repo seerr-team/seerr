@@ -5,8 +5,11 @@ import { MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
 import dataSource, { getRepository } from '@server/datasource';
+import Issue from '@server/entity/Issue';
+import IssueComment from '@server/entity/IssueComment';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
+import OverrideRule from '@server/entity/OverrideRule';
 import { User } from '@server/entity/User';
 import { UserPushSubscription } from '@server/entity/UserPushSubscription';
 import { Watchlist } from '@server/entity/Watchlist';
@@ -577,6 +580,183 @@ router.delete<{ id: string }>(
       return next({
         status: 500,
         message: 'Something went wrong deleting the user',
+      });
+    }
+  }
+);
+
+router.post<{ id: string }, Partial<User>, { targetUserId: number }>(
+  '/:id/merge',
+  isAuthenticated(Permission.MANAGE_USERS),
+  async (req, res, next) => {
+    try {
+      const sourceUserId = Number(req.params.id);
+      const targetUserId = req.body.targetUserId;
+
+      if (!targetUserId) {
+        return next({
+          status: 400,
+          message: 'Target user ID is required.',
+        });
+      }
+
+      if (sourceUserId === targetUserId) {
+        return next({
+          status: 400,
+          message: 'Cannot merge a user into themselves.',
+        });
+      }
+
+      if (sourceUserId === 1) {
+        return next({
+          status: 405,
+          message: 'The owner account cannot be merged into another user.',
+        });
+      }
+
+      if (targetUserId === 1 && req.user?.id !== 1) {
+        return next({
+          status: 403,
+          message: 'Only the owner can merge users into the owner account.',
+        });
+      }
+
+      const userRepository = getRepository(User);
+
+      const sourceUser = await userRepository.findOne({
+        where: { id: sourceUserId },
+      });
+
+      if (!sourceUser) {
+        return next({ status: 404, message: 'Source user not found.' });
+      }
+
+      const targetUser = await userRepository.findOne({
+        where: { id: targetUserId },
+      });
+
+      if (!targetUser) {
+        return next({ status: 404, message: 'Target user not found.' });
+      }
+
+      if (sourceUser.hasPermission(Permission.ADMIN) && req.user?.id !== 1) {
+        return next({
+          status: 403,
+          message: 'You cannot merge users with administrative privileges.',
+        });
+      }
+
+      // Perform the merge in a transaction
+      await dataSource.transaction(async (transactionalEntityManager) => {
+        // Reassign MediaRequests (requestedBy)
+        await transactionalEntityManager
+          .createQueryBuilder()
+          .update(MediaRequest)
+          .set({ requestedBy: targetUser })
+          .where('requestedById = :sourceId', { sourceId: sourceUserId })
+          .execute();
+
+        // Reassign MediaRequests (modifiedBy)
+        await transactionalEntityManager
+          .createQueryBuilder()
+          .update(MediaRequest)
+          .set({ modifiedBy: targetUser })
+          .where('modifiedById = :sourceId', { sourceId: sourceUserId })
+          .execute();
+
+        // Reassign Issues (createdBy)
+        await transactionalEntityManager
+          .createQueryBuilder()
+          .update(Issue)
+          .set({ createdBy: targetUser })
+          .where('createdById = :sourceId', { sourceId: sourceUserId })
+          .execute();
+
+        // Reassign Issues (modifiedBy)
+        await transactionalEntityManager
+          .createQueryBuilder()
+          .update(Issue)
+          .set({ modifiedBy: targetUser })
+          .where('modifiedById = :sourceId', { sourceId: sourceUserId })
+          .execute();
+
+        // Reassign IssueComments
+        await transactionalEntityManager
+          .createQueryBuilder()
+          .update(IssueComment)
+          .set({ user: targetUser })
+          .where('userId = :sourceId', { sourceId: sourceUserId })
+          .execute();
+
+        // Handle Watchlist - need to avoid duplicates due to unique constraint
+        const sourceWatchlistItems = await transactionalEntityManager.find(
+          Watchlist,
+          {
+            where: { requestedBy: { id: sourceUserId } },
+          }
+        );
+
+        const targetWatchlistTmdbIds = (
+          await transactionalEntityManager.find(Watchlist, {
+            where: { requestedBy: { id: targetUserId } },
+            select: ['tmdbId'],
+          })
+        ).map((w) => w.tmdbId);
+
+        for (const watchlistItem of sourceWatchlistItems) {
+          if (targetWatchlistTmdbIds.includes(watchlistItem.tmdbId)) {
+            // Duplicate - delete source's watchlist item
+            await transactionalEntityManager.delete(Watchlist, watchlistItem.id);
+          } else {
+            // Not a duplicate - reassign to target
+            await transactionalEntityManager.update(
+              Watchlist,
+              watchlistItem.id,
+              { requestedBy: targetUser }
+            );
+          }
+        }
+
+        // Update OverrideRules that reference the source user
+        const overrideRules = await transactionalEntityManager.find(OverrideRule);
+        for (const rule of overrideRules) {
+          if (rule.users) {
+            const userIds = rule.users.split(',').map((id) => id.trim());
+            const sourceIndex = userIds.indexOf(String(sourceUserId));
+            if (sourceIndex !== -1) {
+              // Replace source user ID with target user ID
+              userIds[sourceIndex] = String(targetUserId);
+              // Remove duplicates
+              const uniqueUserIds = [...new Set(userIds)];
+              await transactionalEntityManager.update(OverrideRule, rule.id, {
+                users: uniqueUserIds.join(','),
+              });
+            }
+          }
+        }
+
+        // Delete the source user (cascades UserSettings, UserPushSubscription)
+        await transactionalEntityManager.delete(User, sourceUserId);
+      });
+
+      logger.info('User merged successfully', {
+        label: 'User Management',
+        sourceUserId,
+        targetUserId,
+        mergedBy: req.user?.id,
+      });
+
+      return res.status(200).json(targetUser.filter());
+    } catch (e) {
+      logger.error('Something went wrong merging users', {
+        label: 'API',
+        sourceUserId: req.params.id,
+        targetUserId: req.body.targetUserId,
+        errorMessage: e.message,
+      });
+      return next({
+        status: 500,
+        message: 'Something went wrong merging the users.',
       });
     }
   }
