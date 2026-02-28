@@ -493,16 +493,6 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
             error: ApiErrorCode.InvalidPin,
           });
         }
-
-        try {
-          await plextv.getUser();
-        } catch (e) {
-          return next({
-            status: 401,
-            message: 'Invalid PIN.',
-            error: ApiErrorCode.InvalidPin,
-          });
-        }
       }
 
       if (mainUser.plexProfileId !== profileId && selectedProfile.isMainUser) {
