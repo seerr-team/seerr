@@ -7,6 +7,7 @@ import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { CalendarIcon, TrashIcon, UserIcon } from '@heroicons/react/24/solid';
+import type { MediaType } from '@server/constants/media';
 import type { Blocklist } from '@server/entity/Blocklist';
 import axios from 'axios';
 import Link from 'next/link';
@@ -22,12 +23,14 @@ const messages = defineMessages('component.BlocklistBlock', {
 
 interface BlocklistBlockProps {
   tmdbId: number;
+  mediaType: MediaType;
   onUpdate?: () => void;
   onDelete?: () => void;
 }
 
 const BlocklistBlock = ({
   tmdbId,
+  mediaType,
   onUpdate,
   onDelete,
 }: BlocklistBlockProps) => {
@@ -35,13 +38,15 @@ const BlocklistBlock = ({
   const intl = useIntl();
   const [isUpdating, setIsUpdating] = useState(false);
   const { addToast } = useToasts();
-  const { data } = useSWR<Blocklist>(`/api/v1/blocklist/${tmdbId}`);
+  const { data } = useSWR<Blocklist>(
+    `/api/v1/blocklist/${tmdbId}?mediaType=${mediaType}`
+  );
 
   const removeFromBlocklist = async (tmdbId: number, title?: string) => {
     setIsUpdating(true);
 
     try {
-      await axios.delete('/api/v1/blocklist/' + tmdbId);
+      await axios.delete(`/api/v1/blocklist/${tmdbId}?mediaType=${mediaType}`);
 
       addToast(
         <span>

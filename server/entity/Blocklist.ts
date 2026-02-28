@@ -18,7 +18,7 @@ import {
 import type { ZodNumber, ZodOptional, ZodString } from 'zod';
 
 @Entity()
-@Unique(['tmdbId'])
+@Unique(['tmdbId', 'mediaType'])
 export class Blocklist implements BlocklistItem {
   @PrimaryGeneratedColumn()
   public id: number;
@@ -77,6 +77,7 @@ export class Blocklist implements BlocklistItem {
     let media = await mediaRepository.findOne({
       where: {
         tmdbId: blocklistRequest.tmdbId,
+        mediaType: blocklistRequest.mediaType,
       },
     });
 

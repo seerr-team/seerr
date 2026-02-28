@@ -35,6 +35,7 @@ tvRoutes.get('/:id', async (req, res, next) => {
     const onUserWatchlist = await getRepository(Watchlist).exist({
       where: {
         tmdbId: Number(req.params.id),
+        mediaType: MediaType.TV,
         requestedBy: {
           id: req.user?.id,
         },
@@ -110,7 +111,10 @@ tvRoutes.get('/:id/recommendations', async (req, res, next) => {
 
     const media = await Media.getRelatedMedia(
       req.user,
-      results.results.map((result) => result.id)
+      results.results.map((result) => ({
+        tmdbId: result.id,
+        mediaType: MediaType.TV,
+      }))
     );
 
     return res.status(200).json({
@@ -151,7 +155,10 @@ tvRoutes.get('/:id/similar', async (req, res, next) => {
 
     const media = await Media.getRelatedMedia(
       req.user,
-      results.results.map((result) => result.id)
+      results.results.map((result) => ({
+        tmdbId: result.id,
+        mediaType: MediaType.TV,
+      }))
     );
 
     return res.status(200).json({

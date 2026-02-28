@@ -178,7 +178,10 @@ const Blocklist = () => {
       ) : (
         data.results.map((item: BlocklistItem) => {
           return (
-            <div className="py-2" key={`request-list-${item.tmdbId}`}>
+            <div
+              className="py-2"
+              key={`request-list-${item.mediaType}-${item.tmdbId}`}
+            >
               <BlocklistedItem item={item} revalidateList={revalidate} />
             </div>
           );
@@ -297,7 +300,9 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
     setIsUpdating(true);
 
     try {
-      await axios.delete(`/api/v1/blocklist/${tmdbId}`);
+      await axios.delete(
+        `/api/v1/blocklist/${tmdbId}?mediaType=${item.mediaType}`
+      );
 
       addToast(
         <span>
