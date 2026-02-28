@@ -67,4 +67,37 @@ describe('User List', () => {
       .contains(testUser.emailAddress)
       .should('not.exist');
   });
+
+  it('sorts by column headers and updates request params and row order', () => {
+    cy.intercept('GET', '/api/v1/user?*').as('userListFetch');
+
+    cy.visit('/users');
+    cy.wait('@userListFetch');
+
+    cy.get('[data-testid=column-header-displayname]').click();
+    cy.wait('@userListFetch').then((interception) => {
+      const url = interception.request.url;
+      expect(url).to.include('sort=displayname');
+      expect(url).to.include('sortDirection=asc');
+    });
+
+    cy.get(
+      '[data-testid=user-list-row] [data-testid=user-list-username-link]'
+    ).then(($links) => {
+      const displayNames = $links
+        .toArray()
+        .map((el) => (el as HTMLElement).innerText.trim().toLowerCase());
+      const sorted = [...displayNames].sort((a, b) => a.localeCompare(b));
+      expect(displayNames).to.deep.equal(sorted);
+    });
+
+    cy.get('[data-testid=column-header-created]').click();
+    cy.wait('@userListFetch').then((interception) => {
+      const url = interception.request.url;
+      expect(url).to.include('sort=created');
+      expect(url).to.include('sortDirection=desc');
+    });
+
+    cy.get('[data-testid=user-list-row]').should('have.length.greaterThan', 0);
+  });
 });
