@@ -22,9 +22,15 @@ import { Field, Formik } from 'formik';
 import { orderBy } from 'lodash';
 import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
+import CreatableSelect from 'react-select/creatable';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
+
+type TagOption = {
+  label: string;
+  value: string;
+};
 
 const messages = defineMessages('components.Settings', {
   plex: 'Plex',
@@ -67,6 +73,23 @@ const messages = defineMessages('components.Settings', {
   webAppUrl: '<WebAppLink>Web App</WebAppLink> URL',
   webAppUrlTip:
     'Optionally direct users to the web app on your server instead of the "hosted" web app',
+  contentFiltering: 'Content Filtering',
+  contentFilteringDescription:
+    'Configure rules to exclude specific media from being detected during Plex library scans.',
+  ignoredEditions: 'Ignored Editions',
+  ignoredEditionsTip:
+    'Movies with these Plex edition tags will be ignored during library scans and not marked as available (e.g., Trailer)',
+  ignoredEditionsPlaceholder: 'Type an edition name and press Enter…',
+  ignoredEpisodeTitles: 'Ignored Episode Titles',
+  ignoredEpisodeTitlesTip:
+    'TV episodes with these titles will be ignored during Plex library scans (used to filter placeholders like trailers)',
+  ignoredEpisodeTitlesPlaceholder: 'Type an episode title and press Enter…',
+  ignoredEpisodeFilterMode: 'Episode Filter Mode',
+  ignoredEpisodeFilterModeTip:
+    'Controls which episodes are filtered when their title matches the ignored list above',
+  ignoredEpisodeFilterModeSeason: 'Season 0',
+  ignoredEpisodeFilterModeSeasonAndEpisode: 'Season 0 + Episode 0',
+  ignoredEpisodeFilterModeAny: 'Any Season or Episode',
   tautulliSettings: 'Tautulli Settings',
   tautulliSettingsDescription:
     'Optionally configure the settings for your Tautulli server. Seerr fetches watch history data for your Plex media from Tautulli.',
@@ -375,6 +398,9 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           useSsl: data?.useSsl,
           selectedPreset: undefined,
           webAppUrl: data?.webAppUrl,
+          ignoredEditions: data?.ignoredEditions ?? [],
+          ignoredEpisodeTitles: data?.ignoredEpisodeTitles ?? [],
+          ignoredEpisodeFilterMode: data?.ignoredEpisodeFilterMode ?? 'season',
         }}
         validationSchema={PlexSettingsSchema}
         validateOnMount={true}
@@ -391,11 +417,24 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                 toastId = id;
               }
             );
+            const dedupe = (arr: string[]) => [
+              ...new Map(arr.map((s) => [s, s])).values(),
+            ];
+            const normalize = (arr?: string[]) =>
+              dedupe(
+                (arr ?? [])
+                  .map((s) => s.trim().toLowerCase())
+                  .filter((s) => s.length > 0)
+              );
+
             await axios.post('/api/v1/settings/plex', {
               ip: values.hostname,
               port: Number(values.port),
               useSsl: values.useSsl,
               webAppUrl: values.webAppUrl,
+              ignoredEditions: normalize(values.ignoredEditions),
+              ignoredEpisodeTitles: normalize(values.ignoredEpisodeTitles),
+              ignoredEpisodeFilterMode: values.ignoredEpisodeFilterMode,
             } as PlexSettings);
 
             syncLibraries();
@@ -599,6 +638,130 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                     typeof errors.webAppUrl === 'string' && (
                       <div className="error">{errors.webAppUrl}</div>
                     )}
+                </div>
+              </div>
+              <div className="mt-6">
+                <h3 className="heading">
+                  {intl.formatMessage(messages.contentFiltering)}
+                </h3>
+                <p className="description">
+                  {intl.formatMessage(messages.contentFilteringDescription)}
+                </p>
+              </div>
+              <div className="form-row">
+                <label htmlFor="ignoredEditions" className="text-label">
+                  {intl.formatMessage(messages.ignoredEditions)}
+                  <SettingsBadge badgeType="advanced" className="ml-2" />
+                  <span className="label-tip">
+                    {intl.formatMessage(messages.ignoredEditionsTip)}
+                  </span>
+                </label>
+                <div className="form-input-area">
+                  <div className="form-input-field relative">
+                    <CreatableSelect<TagOption, true>
+                      components={{
+                        DropdownIndicator: null,
+                      }}
+                      isClearable
+                      isMulti
+                      noOptionsMessage={() => null}
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                      placeholder={intl.formatMessage(
+                        messages.ignoredEditionsPlaceholder
+                      )}
+                      value={(values.ignoredEditions ?? []).map((e) => ({
+                        label: e,
+                        value: e,
+                      }))}
+                      onChange={(newValue) => {
+                        setFieldValue(
+                          'ignoredEditions',
+                          newValue.map((v) => v.value)
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="ignoredEpisodeTitles" className="text-label">
+                  {intl.formatMessage(messages.ignoredEpisodeTitles)}
+                  <SettingsBadge badgeType="advanced" className="ml-2" />
+                  <span className="label-tip">
+                    {intl.formatMessage(messages.ignoredEpisodeTitlesTip)}
+                  </span>
+                </label>
+                <div className="form-input-area">
+                  <div className="form-input-field relative">
+                    <CreatableSelect<TagOption, true>
+                      components={{
+                        DropdownIndicator: null,
+                      }}
+                      isClearable
+                      isMulti
+                      noOptionsMessage={() => null}
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                      placeholder={intl.formatMessage(
+                        messages.ignoredEpisodeTitlesPlaceholder
+                      )}
+                      value={(values.ignoredEpisodeTitles ?? []).map((e) => ({
+                        label: e,
+                        value: e,
+                      }))}
+                      onChange={(newValue) => {
+                        setFieldValue(
+                          'ignoredEpisodeTitles',
+                          newValue.map((v) => v.value)
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="form-row">
+                <label
+                  htmlFor="ignoredEpisodeFilterMode"
+                  className="text-label"
+                >
+                  {intl.formatMessage(messages.ignoredEpisodeFilterMode)}
+                  <SettingsBadge badgeType="advanced" className="ml-2" />
+                  <span className="label-tip">
+                    {intl.formatMessage(messages.ignoredEpisodeFilterModeTip)}
+                  </span>
+                </label>
+                <div className="form-input-area">
+                  <div className="form-input-field">
+                    <select
+                      id="ignoredEpisodeFilterMode"
+                      name="ignoredEpisodeFilterMode"
+                      disabled={!values.ignoredEpisodeTitles?.length}
+                      value={values.ignoredEpisodeFilterMode}
+                      onChange={(e) => {
+                        setFieldValue(
+                          'ignoredEpisodeFilterMode',
+                          e.target.value
+                        );
+                      }}
+                    >
+                      <option value="season">
+                        {intl.formatMessage(
+                          messages.ignoredEpisodeFilterModeSeason
+                        )}
+                      </option>
+                      <option value="seasonAndEpisode">
+                        {intl.formatMessage(
+                          messages.ignoredEpisodeFilterModeSeasonAndEpisode
+                        )}
+                      </option>
+                      <option value="any">
+                        {intl.formatMessage(
+                          messages.ignoredEpisodeFilterModeAny
+                        )}
+                      </option>
+                    </select>
+                  </div>
                 </div>
               </div>
               <div className="actions">

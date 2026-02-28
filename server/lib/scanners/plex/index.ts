@@ -20,6 +20,7 @@ import type {
 import BaseScanner from '@server/lib/scanners/baseScanner';
 import type { Library } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
+import { isIgnoredEdition, isIgnoredEpisode } from '@server/utils/plexFilter';
 import { uniqWith } from 'lodash';
 
 const imdbRegex = new RegExp(/imdb:\/\/(tt[0-9]+)/);
@@ -225,6 +226,13 @@ class PlexScanner
   }
 
   private async processPlexMovie(plexitem: PlexLibraryItem) {
+    if (isIgnoredEdition(plexitem.editionTitle)) {
+      this.log(
+        `Skipping movie ${plexitem.title} with ignored edition: ${plexitem.editionTitle}`
+      );
+      return;
+    }
+
     const mediaIds = await this.getMediaIds(plexitem);
 
     const has4k = plexitem.Media.some(
@@ -243,6 +251,13 @@ class PlexScanner
     plexitem: PlexMetadata,
     tmdbId: number
   ) {
+    if (isIgnoredEdition(plexitem.editionTitle)) {
+      this.log(
+        `Skipping movie ${plexitem.title} with ignored edition: ${plexitem.editionTitle}`
+      );
+      return;
+    }
+
     const has4k = plexitem.Media.some(
       (media) => media.videoResolution === '4k'
     );
@@ -334,9 +349,19 @@ class PlexScanner
 
       if (matchedPlexSeason) {
         // If we have a matched Plex season, get its children metadata so we can check details
-        const episodes = await this.plexClient.getChildrenMetadata(
+        const allEpisodes = await this.plexClient.getChildrenMetadata(
           matchedPlexSeason.ratingKey
         );
+
+        const episodes = allEpisodes.filter(
+          (episode) =>
+            !isIgnoredEpisode(
+              episode.title,
+              season.season_number,
+              episode.index
+            )
+        );
+
         // Total episodes that are in standard definition (not 4k)
         const totalStandard = episodes.filter((episode) =>
           !this.enable4kShow
@@ -367,17 +392,18 @@ class PlexScanner
       }
     }
 
-    if (mediaIds.tvdbId) {
-      await this.processShow(
-        mediaIds.tmdbId,
-        mediaIds.tvdbId ?? tvShow.external_ids.tvdb_id,
-        processableSeasons,
-        {
-          mediaAddedAt: new Date(metadata.addedAt * 1000),
-          ratingKey: ratingKey,
-          title: metadata.title,
-        }
-      );
+    const hasAnyEpisodes = processableSeasons.some(
+      (s) => s.episodes > 0 || s.episodes4k > 0
+    );
+
+    const tvdbId = mediaIds.tvdbId ?? tvShow.external_ids?.tvdb_id;
+
+    if (tvdbId && hasAnyEpisodes) {
+      await this.processShow(mediaIds.tmdbId, tvdbId, processableSeasons, {
+        mediaAddedAt: new Date(metadata.addedAt * 1000),
+        ratingKey: ratingKey,
+        title: metadata.title,
+      });
     }
   }
 
@@ -577,6 +603,9 @@ class PlexScanner
       );
       if (episodes) {
         for (const episode of episodes) {
+          if (isIgnoredEpisode(episode.title, 0, episode.index)) {
+            continue;
+          }
           const special = animeList.getSpecialEpisode(tvdbId, episode.index);
           if (special) {
             if (special.tmdbId) {

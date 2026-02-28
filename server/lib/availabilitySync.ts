@@ -16,6 +16,7 @@ import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { getHostname } from '@server/utils/getHostname';
+import { isIgnoredEdition } from '@server/utils/plexFilter';
 
 class AvailabilitySync {
   public running = false;
@@ -875,6 +876,12 @@ class AvailabilitySync {
               }
             }
           }
+        }
+      }
+
+      if (plexMedia && media.mediaType === 'movie') {
+        if (isIgnoredEdition(plexMedia.editionTitle)) {
+          plexMedia = undefined;
         }
       }
 

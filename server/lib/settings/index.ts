@@ -35,6 +35,9 @@ export interface PlexSettings {
   useSsl?: boolean;
   libraries: Library[];
   webAppUrl?: string;
+  ignoredEditions: string[];
+  ignoredEpisodeTitles: string[];
+  ignoredEpisodeFilterMode: 'season' | 'seasonAndEpisode' | 'any';
 }
 
 export interface JellyfinSettings {
@@ -412,6 +415,9 @@ class Settings {
         port: 32400,
         useSsl: false,
         libraries: [],
+        ignoredEditions: [],
+        ignoredEpisodeTitles: [],
+        ignoredEpisodeFilterMode: 'season',
       },
       jellyfin: {
         name: '',
