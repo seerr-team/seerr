@@ -53,6 +53,7 @@ Changes :
 Since the container now runs as the `node` user (UID 1000), you must ensure your config folder has the correct permissions. The `node` user must have read and write access to the `/app/config` directory.
 
 If you're migrating from a previous installation, you may need to update the ownership of your config folder:
+
 ```bash
 docker run --rm -v /path/to/appdata/config:/data alpine chown -R 1000:1000 /data
 ```
@@ -106,6 +107,7 @@ Summary of changes :
 </Tabs>
 
 ### Windows
+
 Summary of changes :
 <Tabs groupId="docker-methods" queryString>
   <TabItem value="docker-compose" label="Docker compose">
@@ -136,17 +138,32 @@ Summary of changes :
       external: true
   ```
   </TabItem>
-  <TabItem value="docker-cli" label="Docker CLI">
-  ```bash {2-3,8,10}
-  docker run -d \
-    --name seerr \
-    --init \
-    -e LOG_LEVEL=debug \
-    -e TZ=Asia/Tashkent \
-    -e PORT=5055 \
-    -p 5055:5055 \
-    -v seerr-data:/app/config \
-    --restart unless-stopped \
+  <TabItem value="docker-cli" label="Docker CLI (PowerShell)">
+  ```powershell {2-3,8,10}
+  docker run -d `
+    --name seerr `
+    --init `
+    -e LOG_LEVEL=debug `
+    -e TZ=Asia/Tashkent `
+    -e PORT=5055 `
+    -p 5055:5055 `
+    -v seerr-data:/app/config `
+    --restart unless-stopped `
+    ghcr.io/seerr-team/seerr:latest
+  ```
+  </TabItem>
+
+  <TabItem value="docker-cli-cmd" label="Docker CLI (CMD)">
+  ```batch {2-3,8,10}
+  docker run -d ^
+    --name seerr ^
+    --init ^
+    -e LOG_LEVEL=debug ^
+    -e TZ=Asia/Tashkent ^
+    -e PORT=5055 ^
+    -p 5055:5055 ^
+    -v seerr-data:/app/config ^
+    --restart unless-stopped ^
     ghcr.io/seerr-team/seerr:latest
   ```
   </TabItem>

@@ -133,7 +133,14 @@ const config: Config = {
     prism: {
       theme: prismThemes.shadesOfPurple,
       darkTheme: prismThemes.shadesOfPurple,
-      additionalLanguages: ['bash', 'powershell', 'yaml', 'nix', 'nginx'],
+      additionalLanguages: [
+        'bash',
+        'powershell',
+        'yaml',
+        'nix',
+        'nginx',
+        'batch',
+      ],
     },
   } satisfies Preset.ThemeConfig,
 };
