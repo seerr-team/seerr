@@ -31,8 +31,7 @@ import { UserPushSubscription } from './UserPushSubscription';
 import { UserSettings } from './UserSettings';
 
 import { existsSync } from 'fs';
-
-\n\n// --- email template locale routing (User > Global > EN fallback; requires template existence) ---
+// --- email template locale routing (User > Global > EN fallback; requires template existence) ---
 function __normalizeLocale(loc?: string) {
   const x = (loc || '').toLowerCase();
   if (!x) return '';
@@ -236,7 +235,7 @@ export class User {
 
       const email = new PreparedEmail(getSettings().notifications.agents.email);
       await email.send({
-        template: __userEmailTemplateDir('generatedpassword', (this as any)?.locale, (settings as any)?.main?.locale ?? (settings as any)?.locale),
+        template: __userEmailTemplateDir('generatedpassword', this.settings?.locale, getSettings().main.locale),
         message: {
           to: this.email,
         },
@@ -273,7 +272,7 @@ export class User {
       });
       const email = new PreparedEmail(getSettings().notifications.agents.email);
       await email.send({
-        template: __userEmailTemplateDir('resetpassword', (this as any)?.locale, (settings as any)?.main?.locale ?? (settings as any)?.locale),
+        template: __userEmailTemplateDir('resetpassword', this.settings?.locale, getSettings().main.locale),
         message: {
           to: this.email,
         },

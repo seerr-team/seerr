@@ -273,7 +273,7 @@ const { embedPoster } = settings.notifications.agents.email;
                 payload,
                 payload.notifyUser.email,
                 payload.notifyUser.displayName,
-                  (payload.notifyUser as any)?.locale
+                  payload.notifyUser.settings?.locale
               )
             );
           } else {
@@ -331,7 +331,7 @@ const { embedPoster } = settings.notifications.agents.email;
               );
               if (validator.isEmail(user.email, { require_tld: false })) {
                 await email.send(
-                  this.buildMessage(type, payload, user.email, user.displayName, (user as any)?.locale)
+                  this.buildMessage(type, payload, user.email, user.displayName, user.settings?.locale)
                 );
               } else {
                 logger.warn('Invalid email address provided for user', {
