@@ -1,0 +1,63 @@
+//- DE email template helpers
+//- - Keeps parity with EN helpers where possible.
+//- - Provides helpers as callable functions *and* string-coercible values
+
+- var __isMovie = (typeof mediaType !== 'undefined' && mediaType === 'movie') || (typeof __isMovie !== 'undefined' && __isMovie)
+- var __isSeries = (typeof mediaType !== 'undefined' && mediaType === 'tv') || (typeof __isSeries !== 'undefined' && __isSeries)
+
+// ---------------------------------------------------------------------------
+// String-or-function helpers: usable as "#{helper}" AND "#{helper()}"
+// ---------------------------------------------------------------------------
+- function __mkStrFn(s) {
+-   const f = function () { return s; };
+-   f.toString = function () { return s; };
+-   f.valueOf = function () { return s; };
+-   return f;
+- }
+
+- var __followingAcc = __mkStrFn(__isMovie ? 'den folgenden Film' : 'die folgende Serie')
+- var __mediaLabelAcc = __mkStrFn(__isMovie ? 'den Film' : 'die Serie')
+- var __mediaLabelDat = __mkStrFn(__isMovie ? 'dem Film' : 'der Serie')
+
+// ---------------------------------------------------------------------------
+// Subjects (DE) - must exist, used by many subject.pug templates
+// ---------------------------------------------------------------------------
+- function __reqSubject(type) {
+-   const __prefix4k = (typeof is4k !== 'undefined' && is4k) ? '4K ' : '';
+-   if (type === 'MEDIA_REQUEST' || type === 'MEDIA_REQUEST_PENDING') return __prefix4k + (__isMovie ? 'Neue Film-Anfrage' : 'Neue Serien-Anfrage')
+-   if (type === 'MEDIA_REQUEST_APPROVED' || type === 'MEDIA_REQUEST_AUTO_APPROVED') return __prefix4k + (__isMovie ? 'Film-Anfrage genehmigt' : 'Serien-Anfrage genehmigt')
+-   if (type === 'MEDIA_REQUEST_DECLINED') return __prefix4k + (__isMovie ? 'Film-Anfrage abgelehnt' : 'Serien-Anfrage abgelehnt')
+-   if (type === 'MEDIA_REQUEST_AVAILABLE') return __prefix4k + (__isMovie ? 'Film jetzt verfügbar' : 'Serie jetzt verfügbar')
+-   if (type === 'MEDIA_REQUEST_FAILED') return __prefix4k + (__isMovie ? 'Film-Anfrage fehlgeschlagen' : 'Serien-Anfrage fehlgeschlagen')
+-   if (type === 'MEDIA_REQUEST_AUTO_REQUESTED') return __prefix4k + (__isMovie ? 'Film-Anfrage automatisch erstellt' : 'Serien-Anfrage automatisch erstellt')
+-   return __prefix4k + (__isMovie ? 'Film-Anfrage' : 'Serien-Anfrage')
+- }
+
+- function __issueSubject(type, issueTypeName) {
+-   const base = (issueTypeName && issueTypeName.length) ? (issueTypeName + ' ') : '';
+-   if (type === 'ISSUE_CREATED' || type === 'ISSUE_REPORTED' || type === 'ISSUE') return base + 'Problem gemeldet'
+-   if (type === 'ISSUE_RESOLVED') return base + 'Problem gelöst'
+-   if (type === 'ISSUE_REOPENED') return base + 'Problem wieder geöffnet'
+-   if (type === 'ISSUE_COMMENT') return base + 'Neuer Kommentar zum Problem'
+-   return base + 'Problem'
+- }
+
+// ---------------------------------------------------------------------------
+// Extra labels (DE): supports both enum-like keys and historic human strings
+// ---------------------------------------------------------------------------
+- function __extraLabel(name, value) {
+-   // Requested Seasons
+-   if (name === 'REQUESTED_SEASONS' || name === 'Requested Seasons') {
+-     if (typeof value === 'number') return value === 1 ? 'Angefragte Staffel' : 'Angefragte Staffeln'
+-     return 'Angefragte Staffeln'
+-   }
+-   // Affected Season
+-   if (name === 'AFFECTED_SEASON' || name === 'Affected Season') {
+-     return 'Betroffene Staffel'
+-   }
+-   // Affected Episode
+-   if (name === 'AFFECTED_EPISODE' || name === 'Affected Episode') {
+-     return 'Betroffene Episode'
+-   }
+-   return name
+- }

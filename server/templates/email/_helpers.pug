@@ -1,0 +1,61 @@
+- __mediaTypeKey = (typeof mediaTypeKey !== 'undefined' ? String(mediaTypeKey) : '')
+- __mediaTypeLower = (typeof mediaType !== 'undefined' ? String(mediaType).toLowerCase() : '')
+- __isMovie = (__mediaTypeKey === 'MOVIE') || (__mediaTypeLower === 'movie')
+- __isSeries = (__mediaTypeKey === 'SERIES') || (__mediaTypeLower === 'series')
+- __prefix4k = (typeof is4k !== 'undefined' && is4k) ? '4K ' : ''
+
+- __reqSubject = function(type) {
+-   if (!type) return ''
+-   if (type === 'MEDIA_REQUEST' || type === 'MEDIA_REQUEST_PENDING') return __prefix4k + (__isMovie ? 'New Movie Request' : 'New Series Request')
+-   if (type === 'MEDIA_REQUEST_AUTO_REQUESTED') return __prefix4k + (__isMovie ? 'Movie Request Automatically Submitted' : 'Series Request Automatically Submitted')
+-   if (type === 'MEDIA_REQUEST_AUTO_APPROVED') return __prefix4k + (__isMovie ? 'Movie Request Automatically Approved' : 'Series Request Automatically Approved')
+-   if (type === 'MEDIA_REQUEST_APPROVED') return __prefix4k + (__isMovie ? 'Movie Request Approved' : 'Series Request Approved')
+-   if (type === 'MEDIA_REQUEST_DECLINED') return __prefix4k + (__isMovie ? 'Movie Request Declined' : 'Series Request Declined')
+-   if (type === 'MEDIA_REQUEST_AVAILABLE_MOVIE') return __prefix4k + 'Movie Request Now Available'
+-   if (type === 'MEDIA_REQUEST_AVAILABLE_SERIES') return __prefix4k + 'Series Request Now Available'
+-   if (type === 'MEDIA_REQUEST_FAILED') return __prefix4k + (__isMovie ? 'Movie Request Failed' : 'Series Request Failed')
+-   return __prefix4k + String(type)
+- }
+
+- __issueSubject = function(type, issueTypeName) {
+-   var label = issueTypeName ? (String(issueTypeName).toLowerCase() + ' issue') : 'issue'
+-   if (type === 'ISSUE_CREATED') return 'New ' + label + ' reported'
+-   if (type === 'ISSUE_COMMENT') return 'New comment on ' + label
+-   if (type === 'ISSUE_RESOLVED') return 'Resolved ' + label
+-   if (type === 'ISSUE_REOPENED') return 'Reopened ' + label
+-   return String(type)
+- }
+
+//- ==== Added for locale parity (EN reference API) ====
+//- NOTE: All helpers must be plain JS functions so templates can call __foo(...).
+
+- __extraLabel = function(name, value) {
+-   // EN: map stable keys to human labels; fall back to identity
+-   if (!name) return ''
+-   if (name === 'REQUESTED_SEASONS') return 'Requested Seasons'
+-   if (name === 'AFFECTED_SEASON') return 'Affected Season'
+-   if (name === 'AFFECTED_EPISODE') return 'Affected Episode'
+-   // Backward-compat: keep old labels if they are already human-readable
+-   if (name === 'Requested Seasons') return 'Requested Seasons'
+-   if (name === 'Affected Season') return 'Affected Season'
+-   if (name === 'Affected Episode') return 'Affected Episode'
+-   return `${name}`
+- }
+
+- __followingAcc = function() {
+-   // EN: keep it simple; used in DE for grammar parity
+-   if (__isMovie) return 'the following movie'
+-   if (__isSeries) return 'the following series'
+-   return 'the following item'
+- }
+
+- __mediaLabelAcc = function() {
+-   if (__isMovie) return 'movie'
+-   if (__isSeries) return 'series'
+-   return 'item'
+- }
+
+- __obfuscateUser = function(str) {
+-   // Identity by default (can be expanded later)
+-   return `${str || ''}`
+- }
