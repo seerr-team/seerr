@@ -6,7 +6,15 @@ import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
 import dataSource, { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
-import { MediaRequest } from '@server/entity/MediaRequest';
+import {
+  BlacklistedMediaError,
+  DuplicateMediaRequestError,
+  MediaRequest,
+  NoSeasonsAvailableError,
+  QuotaRestrictedError,
+  RequestPermissionError,
+} from '@server/entity/MediaRequest';
+import type { MediaRequestBody } from '@server/interfaces/api/requestInterfaces';
 import { User } from '@server/entity/User';
 import { UserPushSubscription } from '@server/entity/UserPushSubscription';
 import { Watchlist } from '@server/entity/Watchlist';
@@ -373,6 +381,45 @@ router.get<{ id: string }>('/:id', async (req, res, next) => {
 });
 
 router.use('/:id/settings', userSettingsRoutes);
+
+router.post<{ id: string }, MediaRequest, MediaRequestBody>(
+  '/:id/request',
+  isAuthenticated(Permission.ADMIN),
+  async (req, res, next) => {
+    try {
+      // Logic shared with MediaRequest.request
+      const user = await getRepository(User).findOne({
+        where: { id: Number(req.params.id) },
+      });
+
+      if (!user) {
+        return next({ status: 404, message: 'User not found.' });
+      }
+
+      const request = await MediaRequest.request(req.body, user);
+
+      return res.status(201).json(request);
+    } catch (error) {
+      if (!(error instanceof Error)) {
+        return;
+      }
+
+      switch (error.constructor) {
+        case RequestPermissionError:
+        case QuotaRestrictedError:
+          return next({ status: 403, message: error.message });
+        case DuplicateMediaRequestError:
+          return next({ status: 409, message: error.message });
+        case NoSeasonsAvailableError:
+          return next({ status: 202, message: error.message });
+        case BlacklistedMediaError:
+          return next({ status: 403, message: error.message });
+        default:
+          return next({ status: 500, message: error.message });
+      }
+    }
+  }
+);
 
 router.get<{ id: string }, UserRequestsResponse>(
   '/:id/requests',
