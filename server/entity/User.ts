@@ -30,6 +30,35 @@ import SeasonRequest from './SeasonRequest';
 import { UserPushSubscription } from './UserPushSubscription';
 import { UserSettings } from './UserSettings';
 
+import { existsSync } from 'fs';
+
+\n\n// --- email template locale routing (User > Global > EN fallback; requires template existence) ---
+function __normalizeLocale(loc?: string) {
+  const x = (loc || '').toLowerCase();
+  if (!x) return '';
+  return x.split(/[_-]/)[0] || '';
+}
+
+function __userEmailTemplateDir(templateName: string, userLocale?: string, globalLocale?: string) {
+  const base = path.join(__dirname, '../templates/email');
+
+  const tryLoc = (loc: string) => {
+    if (!loc || loc === 'en') return path.join(base, templateName);
+    const candidate = path.join(base, loc, templateName);
+    if (existsSync(path.join(candidate, 'html.pug'))) return candidate;
+    return '';
+  };
+
+  const u = __normalizeLocale(userLocale);
+  const g = __normalizeLocale(globalLocale);
+
+  return (
+    tryLoc(u) ||
+    tryLoc(g) ||
+    path.join(base, templateName)
+  );
+}
+
 @Entity()
 export class User {
   public static filterMany(
@@ -207,7 +236,7 @@ export class User {
 
       const email = new PreparedEmail(getSettings().notifications.agents.email);
       await email.send({
-        template: path.join(__dirname, '../templates/email/generatedpassword'),
+        template: __userEmailTemplateDir('generatedpassword', (this as any)?.locale, (settings as any)?.main?.locale ?? (settings as any)?.locale),
         message: {
           to: this.email,
         },
@@ -244,7 +273,7 @@ export class User {
       });
       const email = new PreparedEmail(getSettings().notifications.agents.email);
       await email.send({
-        template: path.join(__dirname, '../templates/email/resetpassword'),
+        template: __userEmailTemplateDir('resetpassword', (this as any)?.locale, (settings as any)?.main?.locale ?? (settings as any)?.locale),
         message: {
           to: this.email,
         },
