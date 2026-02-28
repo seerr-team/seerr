@@ -1,4 +1,7 @@
-import type { JellyfinLibraryItem } from '@server/api/jellyfin';
+import type {
+  JellyfinLibraryItem,
+  JellyfinLibraryItemExtended,
+} from '@server/api/jellyfin';
 import JellyfinAPI from '@server/api/jellyfin';
 import type { PlexMetadata } from '@server/api/plexapi';
 import PlexAPI from '@server/api/plexapi';
@@ -16,6 +19,7 @@ import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { getHostname } from '@server/utils/getHostname';
+import { getPlexFilePaths, isPathIgnored } from '@server/utils/mediaFilter';
 
 class AvailabilitySync {
   public running = false;
@@ -879,6 +883,13 @@ class AvailabilitySync {
       }
 
       if (plexMedia) {
+        const filePaths = getPlexFilePaths(plexMedia.Media ?? []);
+        if (isPathIgnored(filePaths)) {
+          plexMedia = undefined;
+        }
+      }
+
+      if (plexMedia) {
         existsInPlex = true;
       }
     } catch (ex) {
@@ -975,7 +986,7 @@ class AvailabilitySync {
     // If found, we will assume the media exists and prevent removal
     // We can use the cache we built when we fetched the series with mediaExistsInJellyfin
     try {
-      let jellyfinMedia: JellyfinLibraryItem | undefined;
+      let jellyfinMedia: JellyfinLibraryItemExtended | undefined;
 
       if (ratingKey && !is4k) {
         jellyfinMedia = await this.jellyfinClient?.getItemData(ratingKey);
@@ -992,6 +1003,14 @@ class AvailabilitySync {
         if (media.mediaType === 'tv' && jellyfinMedia !== undefined) {
           this.jellyfinSeasonsCache[ratingKey4k] =
             await this.jellyfinClient?.getSeasons(ratingKey4k);
+        }
+      }
+
+      if (jellyfinMedia) {
+        const jfFilePaths =
+          jellyfinMedia.MediaSources?.map((ms) => ms.Path) ?? [];
+        if (isPathIgnored(jfFilePaths)) {
+          jellyfinMedia = undefined;
         }
       }
 

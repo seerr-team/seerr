@@ -83,6 +83,7 @@ interface Media {
   container: string;
   videoFrameRate: string;
   videoProfile: string;
+  Part?: { file: string }[];
 }
 
 interface PlexMetadataResponse {

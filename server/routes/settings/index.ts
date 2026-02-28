@@ -77,6 +77,12 @@ settingsRoutes.post('/main', async (req, res) => {
   const settings = getSettings();
 
   settings.main = merge(settings.main, req.body);
+
+  // merge() does not replace arrays (merges by index), so explicitly replace when present
+  if (Array.isArray(req.body.ignoredPathPatterns)) {
+    settings.main.ignoredPathPatterns = req.body.ignoredPathPatterns;
+  }
+
   await settings.save();
 
   return res.status(200).json(settings.main);
