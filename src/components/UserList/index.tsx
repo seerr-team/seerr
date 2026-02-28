@@ -88,6 +88,7 @@ const messages = defineMessages('components.UserList', {
   sortByRole: 'Sort by user role',
   sortByJoined: 'Sort by join date',
   toggleSortDirection: 'Click again to sort {direction}',
+  toggleSortDirectionAria: 'Toggle sort direction',
   ascending: 'ascending',
   descending: 'descending',
   localLoginDisabled:
@@ -644,10 +645,11 @@ const UserList = () => {
           <div className="mb-2 flex flex-grow lg:mb-0 lg:flex-grow-0">
             <button
               type="button"
-              className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100"
+              className="inline-flex cursor-pointer items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100"
               onClick={() =>
                 setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
               }
+              aria-label={intl.formatMessage(messages.toggleSortDirectionAria)}
               title={
                 sortDirection === 'asc'
                   ? intl.formatMessage(messages.descending)
