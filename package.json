@@ -175,7 +175,7 @@
     "typescript": "5.4.5"
   },
   "engines": {
-    "node": "^22.0.0",
+    "node": "^24.0.0",
     "pnpm": "^10.0.0"
   },
   "config": {
