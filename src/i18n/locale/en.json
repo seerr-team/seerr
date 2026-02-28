@@ -981,6 +981,7 @@
   "components.Settings.SettingsMain.hideBlocklisted": "Hide Blocklisted Items",
   "components.Settings.SettingsMain.hideBlocklistedTip": "Hide blocklisted items from discover pages for all users with the \"Manage Blocklist\" permission",
   "components.Settings.SettingsMain.ignoredPathPatterns": "Ignored Path Patterns",
+  "components.Settings.SettingsMain.ignoredPathPatternsInvalidRegex": "Invalid regex pattern rejected: {pattern}",
   "components.Settings.SettingsMain.ignoredPathPatternsPlaceholder": "Type a regex pattern and press Enter\\u2026",
   "components.Settings.SettingsMain.ignoredPathPatternsTip": "Regular expressions matched against media file paths (case-insensitive). For example, \"placeholders/\" will ignore all files in a placeholders directory.",
   "components.Settings.SettingsMain.locale": "Display Language",

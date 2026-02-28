@@ -935,6 +935,10 @@ class AvailabilitySync {
         }
       }
 
+      if (existsInPlex && seasonsMap.size === 0) {
+        existsInPlex = false;
+      }
+
       return { existsInPlex, seasonsMap };
     }
 
@@ -948,9 +952,7 @@ class AvailabilitySync {
   ): Promise<boolean> {
     const ratingKey = media.ratingKey;
     const ratingKey4k = media.ratingKey4k;
-    let seasonExistsInPlex = false;
 
-    // Check each plex instance to see if the season exists
     let plexSeasons: PlexMetadata[] | undefined;
 
     if (ratingKey && !is4k) {
@@ -961,15 +963,30 @@ class AvailabilitySync {
       plexSeasons = this.plexSeasonsCache[ratingKey4k];
     }
 
-    const seasonIsAvailable = plexSeasons?.find(
+    const seasonMeta = plexSeasons?.find(
       (plexSeason) => plexSeason.index === season.seasonNumber
     );
 
-    if (seasonIsAvailable) {
-      seasonExistsInPlex = true;
+    if (!seasonMeta) {
+      return false;
     }
 
-    return seasonExistsInPlex;
+    try {
+      const episodes = await this.plexClient?.getChildrenMetadata(
+        seasonMeta.ratingKey
+      );
+
+      if (!episodes?.length) {
+        return true;
+      }
+
+      return episodes.some((episode) => {
+        const filePaths = getPlexFilePaths(episode.Media ?? []);
+        return filePaths.length === 0 || !isPathIgnored(filePaths);
+      });
+    } catch {
+      return true;
+    }
   }
 
   // Jellyfin
@@ -1060,6 +1077,10 @@ class AvailabilitySync {
         }
       }
 
+      if (existsInJellyfin && seasonsMap.size === 0) {
+        existsInJellyfin = false;
+      }
+
       return { existsInJellyfin, seasonsMap };
     }
 
@@ -1073,9 +1094,8 @@ class AvailabilitySync {
   ): Promise<boolean> {
     const ratingKey = media.jellyfinMediaId;
     const ratingKey4k = media.jellyfinMediaId4k;
-    let seasonExistsInJellyfin = false;
+    const activeKey = is4k ? ratingKey4k : ratingKey;
 
-    // Check each jellyfin instance to see if the season exists
     let jellyfinSeasons: JellyfinLibraryItem[] | undefined;
 
     if (ratingKey && !is4k) {
@@ -1086,15 +1106,35 @@ class AvailabilitySync {
       jellyfinSeasons = this.jellyfinSeasonsCache[ratingKey4k];
     }
 
-    const seasonIsAvailable = jellyfinSeasons?.find(
+    const seasonMeta = jellyfinSeasons?.find(
       (jellyfinSeason) => jellyfinSeason.IndexNumber === season.seasonNumber
     );
 
-    if (seasonIsAvailable) {
-      seasonExistsInJellyfin = true;
+    if (!seasonMeta || !activeKey) {
+      return false;
     }
 
-    return seasonExistsInJellyfin;
+    try {
+      const episodes = await this.jellyfinClient?.getEpisodes(
+        activeKey,
+        seasonMeta.Id,
+        { includeMediaInfo: true }
+      );
+
+      if (!episodes?.length) {
+        return true;
+      }
+
+      return episodes.some((episode) => {
+        const filePaths =
+          'MediaSources' in episode
+            ? (episode.MediaSources?.map((ms) => ms.Path) ?? [])
+            : [];
+        return filePaths.length === 0 || !isPathIgnored(filePaths);
+      });
+    } catch {
+      return true;
+    }
   }
 }
 

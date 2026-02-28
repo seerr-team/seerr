@@ -80,6 +80,7 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   ignoredPathPatternsTip:
     'Regular expressions matched against media file paths (case-insensitive). For example, "placeholders/" will ignore all files in a placeholders directory.',
   ignoredPathPatternsPlaceholder: 'Type a regex pattern and press Enter\u2026',
+  ignoredPathPatternsInvalidRegex: 'Invalid regex pattern rejected: {pattern}',
 });
 
 const SettingsMain = () => {
@@ -562,8 +563,9 @@ const SettingsMain = () => {
                     </span>
                   </label>
                   <div className="form-input-area">
-                    <div className="form-input-field relative">
+                    <div className="form-input-field relative z-10">
                       <CreatableSelect<TagOption, true>
+                        inputId="ignoredPathPatterns"
                         components={{ DropdownIndicator: null }}
                         isClearable
                         isMulti
@@ -578,10 +580,22 @@ const SettingsMain = () => {
                           value: p,
                         }))}
                         onChange={(newValue) => {
-                          setFieldValue(
-                            'ignoredPathPatterns',
-                            newValue.map((v) => v.value)
-                          );
+                          const valid: string[] = [];
+                          for (const v of newValue) {
+                            try {
+                              new RegExp(v.value);
+                              valid.push(v.value);
+                            } catch {
+                              addToast(
+                                intl.formatMessage(
+                                  messages.ignoredPathPatternsInvalidRegex,
+                                  { pattern: v.value }
+                                ),
+                                { autoDismiss: true, appearance: 'error' }
+                              );
+                            }
+                          }
+                          setFieldValue('ignoredPathPatterns', valid);
                         }}
                       />
                     </div>
