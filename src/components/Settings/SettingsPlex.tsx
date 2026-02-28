@@ -86,7 +86,7 @@ const messages = defineMessages('components.Settings', {
   ignoredEpisodeTitlesPlaceholder: 'Type an episode title and press Enter…',
   ignoredEpisodeFilterMode: 'Episode Filter Mode',
   ignoredEpisodeFilterModeTip:
-    'Controls how strictly episode titles are matched when filtering',
+    'Controls which episodes are filtered when their title matches the ignored list above',
   ignoredEpisodeFilterModeSeason: 'Season 0',
   ignoredEpisodeFilterModeSeasonAndEpisode: 'Season 0 + Episode 0',
   ignoredEpisodeFilterModeAny: 'Any Season or Episode',
@@ -400,8 +400,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           webAppUrl: data?.webAppUrl,
           ignoredEditions: data?.ignoredEditions ?? [],
           ignoredEpisodeTitles: data?.ignoredEpisodeTitles ?? [],
-          ignoredEpisodeFilterMode:
-            data?.ignoredEpisodeFilterMode ?? 'season',
+          ignoredEpisodeFilterMode: data?.ignoredEpisodeFilterMode ?? 'season',
         }}
         validationSchema={PlexSettingsSchema}
         validateOnMount={true}
@@ -712,7 +711,10 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                 </div>
               </div>
               <div className="form-row">
-                <label htmlFor="ignoredEpisodeFilterMode" className="text-label">
+                <label
+                  htmlFor="ignoredEpisodeFilterMode"
+                  className="text-label"
+                >
                   {intl.formatMessage(messages.ignoredEpisodeFilterMode)}
                   <SettingsBadge badgeType="advanced" className="ml-2" />
                   <span className="label-tip">
@@ -724,6 +726,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                     <select
                       id="ignoredEpisodeFilterMode"
                       name="ignoredEpisodeFilterMode"
+                      disabled={!values.ignoredEpisodeTitles?.length}
                       value={values.ignoredEpisodeFilterMode}
                       onChange={(e) => {
                         setFieldValue(
