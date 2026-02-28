@@ -5,6 +5,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import LanguageSelector from '@app/components/LanguageSelector';
 import RegionSelector from '@app/components/RegionSelector';
+import { WatchProviderSelector } from '@app/components/Selector';
 import CopyButton from '@app/components/Settings/CopyButton';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import { availableLanguages } from '@app/context/LanguageContext';
@@ -46,6 +47,9 @@ const messages = defineMessages('components.Settings.SettingsMain', {
     'The "Process Blocklisted Tags" job will blocklist this many pages into each sort. Larger numbers will create a more accurate blocklist, but use more space.',
   streamingRegion: 'Streaming Region',
   streamingRegionTip: 'Show streaming sites by regional availability',
+  excludedWatchProviders: 'Excluded Streaming Providers',
+  excludedWatchProvidersTip:
+    'Content available on these providers will be visually indicated as already streamable. Uses the streaming region set above.',
   hideBlocklisted: 'Hide Blocklisted Items',
   hideBlocklistedTip:
     'Hide blocklisted items from discover pages for all users with the "Manage Blocklist" permission',
@@ -169,6 +173,7 @@ const SettingsMain = () => {
             discoverRegion: data?.discoverRegion,
             originalLanguage: data?.originalLanguage,
             streamingRegion: data?.streamingRegion || 'US',
+            excludedWatchProviders: data?.excludedWatchProviders ?? '',
             blocklistedTags: data?.blocklistedTags,
             blocklistedTagsLimit: data?.blocklistedTagsLimit || 50,
             partialRequestsEnabled: data?.partialRequestsEnabled,
@@ -188,6 +193,7 @@ const SettingsMain = () => {
                 locale: values.locale,
                 discoverRegion: values.discoverRegion,
                 streamingRegion: values.streamingRegion,
+                excludedWatchProviders: values.excludedWatchProviders,
                 originalLanguage: values.originalLanguage,
                 blocklistedTags: values.blocklistedTags,
                 blocklistedTagsLimit: values.blocklistedTagsLimit,
@@ -398,6 +404,42 @@ const SettingsMain = () => {
                         onChange={setFieldValue}
                         regionType="streaming"
                         disableAll
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="excludedWatchProviders"
+                    className="text-label"
+                  >
+                    <span>
+                      {intl.formatMessage(messages.excludedWatchProviders)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.excludedWatchProvidersTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field relative z-[19]">
+                      <WatchProviderSelector
+                        key={values.streamingRegion}
+                        type="movie"
+                        region={values.streamingRegion}
+                        hideRegionSelector
+                        activeProviders={
+                          values.excludedWatchProviders
+                            ? values.excludedWatchProviders
+                                .split('|')
+                                .map(Number)
+                            : []
+                        }
+                        onChange={(_region, providers) => {
+                          setFieldValue(
+                            'excludedWatchProviders',
+                            providers.join('|')
+                          );
+                        }}
                       />
                     </div>
                   </div>

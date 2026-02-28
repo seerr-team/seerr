@@ -52,6 +52,7 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
         locale: user.settings?.locale,
         discoverRegion: user.settings?.discoverRegion,
         streamingRegion: user.settings?.streamingRegion,
+        excludedWatchProviders: user.settings?.excludedWatchProviders,
         originalLanguage: user.settings?.originalLanguage,
         movieQuotaLimit: user.movieQuotaLimit,
         movieQuotaDays: user.movieQuotaDays,
@@ -126,6 +127,7 @@ userSettingsRoutes.post<
         locale: req.body.locale,
         discoverRegion: req.body.discoverRegion,
         streamingRegion: req.body.streamingRegion,
+        excludedWatchProviders: req.body.excludedWatchProviders,
         originalLanguage: req.body.originalLanguage,
         watchlistSyncMovies: req.body.watchlistSyncMovies,
         watchlistSyncTv: req.body.watchlistSyncTv,
@@ -135,6 +137,7 @@ userSettingsRoutes.post<
       user.settings.locale = req.body.locale;
       user.settings.discoverRegion = req.body.discoverRegion;
       user.settings.streamingRegion = req.body.streamingRegion;
+      user.settings.excludedWatchProviders = req.body.excludedWatchProviders;
       user.settings.originalLanguage = req.body.originalLanguage;
       user.settings.watchlistSyncMovies = req.body.watchlistSyncMovies;
       user.settings.watchlistSyncTv = req.body.watchlistSyncTv;
@@ -148,6 +151,7 @@ userSettingsRoutes.post<
       locale: savedUser.settings?.locale,
       discoverRegion: savedUser.settings?.discoverRegion,
       streamingRegion: savedUser.settings?.streamingRegion,
+      excludedWatchProviders: savedUser.settings?.excludedWatchProviders,
       originalLanguage: savedUser.settings?.originalLanguage,
       watchlistSyncMovies: savedUser.settings?.watchlistSyncMovies,
       watchlistSyncTv: savedUser.settings?.watchlistSyncTv,

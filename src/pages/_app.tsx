@@ -239,6 +239,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     mediaServerLogin: true,
     discoverRegion: '',
     streamingRegion: '',
+    excludedWatchProviders: '',
     originalLanguage: '',
     mediaServerType: MediaServerType.NOT_CONFIGURED,
     partialRequestsEnabled: true,
