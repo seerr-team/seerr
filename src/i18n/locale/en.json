@@ -1141,6 +1141,8 @@
   "components.Settings.general": "General",
   "components.Settings.hostname": "Hostname or IP Address",
   "components.Settings.importBlocklistedTagsTip": "Import blocklisted tag configuration",
+  "components.Settings.contentFiltering": "Content Filtering",
+  "components.Settings.contentFilteringDescription": "Configure rules to exclude specific media from being detected during Plex library scans.",
   "components.Settings.ignoredEditions": "Ignored Editions",
   "components.Settings.ignoredEditionsPlaceholder": "Type an edition name and press Enter…",
   "components.Settings.ignoredEditionsTip": "Movies with these Plex edition tags will be ignored during library scans and not marked as available (e.g., Trailer)",

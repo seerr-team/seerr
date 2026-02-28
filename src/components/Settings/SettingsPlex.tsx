@@ -73,6 +73,9 @@ const messages = defineMessages('components.Settings', {
   webAppUrl: '<WebAppLink>Web App</WebAppLink> URL',
   webAppUrlTip:
     'Optionally direct users to the web app on your server instead of the "hosted" web app',
+  contentFiltering: 'Content Filtering',
+  contentFilteringDescription:
+    'Configure rules to exclude specific media from being detected during Plex library scans.',
   ignoredEditions: 'Ignored Editions',
   ignoredEditionsTip:
     'Movies with these Plex edition tags will be ignored during library scans and not marked as available (e.g., Trailer)',
@@ -627,6 +630,14 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                       <div className="error">{errors.webAppUrl}</div>
                     )}
                 </div>
+              </div>
+              <div className="mt-6">
+                <h3 className="heading">
+                  {intl.formatMessage(messages.contentFiltering)}
+                </h3>
+                <p className="description">
+                  {intl.formatMessage(messages.contentFilteringDescription)}
+                </p>
               </div>
               <div className="form-row">
                 <label htmlFor="ignoredEditions" className="text-label">
