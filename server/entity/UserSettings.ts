@@ -72,6 +72,20 @@ export class UserSettings {
   @Column({ nullable: true })
   public watchlistSyncTv?: boolean;
 
+  // Per-user content rating limits (admin-enforced parental controls)
+  // Users cannot see or modify their own limits - only admins can set these
+  @Column({ type: 'varchar', nullable: true })
+  public maxMovieRating?: string | null; // MPAA: "G", "PG", "PG-13", "R", "NC-17" (null = unrestricted)
+
+  @Column({ type: 'varchar', nullable: true })
+  public maxTvRating?: string | null; // TV Guidelines: "TV-Y", "TV-Y7", "TV-G", "TV-PG", "TV-14", "TV-MA" (null = unrestricted)
+
+  @Column({ default: false })
+  public blockUnrated?: boolean; // Block content with no rating (NR, unrated)
+
+  @Column({ default: false })
+  public blockAdult?: boolean; // Block adult content (TMDB adult flag)
+
   @Column({
     type: 'text',
     nullable: true,

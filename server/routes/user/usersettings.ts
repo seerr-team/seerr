@@ -1,5 +1,7 @@
 import JellyfinAPI from '@server/api/jellyfin';
 import PlexTvAPI from '@server/api/plextv';
+import type { MovieRating, TvRating } from '@server/constants/contentRatings';
+import { MOVIE_RATINGS, TV_RATINGS } from '@server/constants/contentRatings';
 import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
@@ -9,6 +11,7 @@ import { UserSettings } from '@server/entity/UserSettings';
 import type {
   UserSettingsGeneralResponse,
   UserSettingsNotificationsResponse,
+  UserSettingsParentalControlsResponse,
 } from '@server/interfaces/api/userSettingsInterfaces';
 import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
@@ -697,6 +700,125 @@ userSettingsRoutes.post<
       await userRepository.save(user);
 
       return res.status(200).json({ permissions: user.permissions });
+    } catch (e) {
+      next({ status: 500, message: e.message });
+    }
+  }
+);
+
+// Parental Controls settings - admin only
+userSettingsRoutes.get<{ id: string }, UserSettingsParentalControlsResponse>(
+  '/parental-controls',
+  isAuthenticated(Permission.MANAGE_USERS),
+  async (req, res, next) => {
+    const userRepository = getRepository(User);
+
+    try {
+      const user = await userRepository.findOne({
+        where: { id: Number(req.params.id) },
+      });
+
+      if (!user) {
+        return next({ status: 404, message: 'User not found.' });
+      }
+
+      return res.status(200).json({
+        maxMovieRating: user.settings?.maxMovieRating ?? undefined,
+        maxTvRating: user.settings?.maxTvRating ?? undefined,
+        blockUnrated: user.settings?.blockUnrated ?? false,
+        blockAdult: user.settings?.blockAdult ?? false,
+      });
+    } catch (e) {
+      next({ status: 500, message: e.message });
+    }
+  }
+);
+
+userSettingsRoutes.post<
+  { id: string },
+  UserSettingsParentalControlsResponse,
+  UserSettingsParentalControlsResponse
+>(
+  '/parental-controls',
+  isAuthenticated(Permission.MANAGE_USERS),
+  async (req, res, next) => {
+    const userRepository = getRepository(User);
+
+    try {
+      const user = await userRepository.findOne({
+        where: { id: Number(req.params.id) },
+      });
+
+      if (!user) {
+        return next({ status: 404, message: 'User not found.' });
+      }
+
+      // "Owner" user (id=1) parental controls cannot be set
+      if (user.id === 1) {
+        return next({
+          status: 403,
+          message:
+            'Cannot set parental controls for the primary administrator.',
+        });
+      }
+
+      // Users with MANAGE_USERS permission cannot have parental controls set on them
+      if (user.hasPermission(Permission.MANAGE_USERS)) {
+        return next({
+          status: 403,
+          message:
+            'Cannot set parental controls for users with admin permissions.',
+        });
+      }
+
+      // Validate rating values against allowed constants
+      if (
+        req.body.maxMovieRating &&
+        !MOVIE_RATINGS.includes(req.body.maxMovieRating as MovieRating)
+      ) {
+        return next({
+          status: 400,
+          message: `Invalid movie rating: ${req.body.maxMovieRating}`,
+        });
+      }
+      if (
+        req.body.maxTvRating &&
+        !TV_RATINGS.includes(req.body.maxTvRating as TvRating)
+      ) {
+        return next({
+          status: 400,
+          message: `Invalid TV rating: ${req.body.maxTvRating}`,
+        });
+      }
+
+      // NC-17/TV-MA = unrestricted (getUserContentRatingLimits converts to undefined)
+      // Falsy values (empty string) → null to clear the DB column
+      const movieRating = req.body.maxMovieRating || null;
+      const tvRating = req.body.maxTvRating || null;
+
+      if (!user.settings) {
+        user.settings = new UserSettings({
+          user: user,
+          maxMovieRating: movieRating,
+          maxTvRating: tvRating,
+          blockUnrated: req.body.blockUnrated ?? false,
+          blockAdult: req.body.blockAdult ?? false,
+        });
+      } else {
+        user.settings.maxMovieRating = movieRating;
+        user.settings.maxTvRating = tvRating;
+        user.settings.blockUnrated = req.body.blockUnrated ?? false;
+        user.settings.blockAdult = req.body.blockAdult ?? false;
+      }
+
+      await userRepository.save(user);
+
+      return res.status(200).json({
+        maxMovieRating: user.settings.maxMovieRating ?? undefined,
+        maxTvRating: user.settings.maxTvRating ?? undefined,
+        blockUnrated: user.settings.blockUnrated ?? false,
+        blockAdult: user.settings.blockAdult ?? false,
+      });
     } catch (e) {
       next({ status: 500, message: e.message });
     }

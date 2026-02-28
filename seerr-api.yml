@@ -5132,6 +5132,102 @@ paths:
                   permissions:
                     type: number
                     example: 2
+  /user/{userId}/settings/parental-controls:
+    get:
+      summary: Get parental control settings for a user
+      description: Returns parental control settings (content rating limits) for a specific user. Requires `MANAGE_USERS` permission.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: User parental control settings returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  maxMovieRating:
+                    type: string
+                    nullable: true
+                    example: 'PG-13'
+                    description: Maximum allowed MPAA movie rating (G, PG, PG-13, R, NC-17)
+                  maxTvRating:
+                    type: string
+                    nullable: true
+                    example: 'TV-14'
+                    description: Maximum allowed TV rating (TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA)
+                  blockUnrated:
+                    type: boolean
+                    default: false
+                    description: Block content with no rating (NR, Unrated)
+                  blockAdult:
+                    type: boolean
+                    default: false
+                    description: Block content flagged as adult by TMDB
+    post:
+      summary: Update parental control settings for a user
+      description: Updates and returns parental control settings for a specific user. Requires `MANAGE_USERS` permission.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                maxMovieRating:
+                  type: string
+                  nullable: true
+                  example: 'PG-13'
+                  description: Maximum allowed MPAA movie rating (G, PG, PG-13, R, NC-17)
+                maxTvRating:
+                  type: string
+                  nullable: true
+                  example: 'TV-14'
+                  description: Maximum allowed TV rating (TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA)
+                blockUnrated:
+                  type: boolean
+                  default: false
+                  description: Block content with no rating (NR, Unrated)
+                blockAdult:
+                  type: boolean
+                  default: false
+                  description: Block content flagged as adult by TMDB
+      responses:
+        '200':
+          description: Updated user parental control settings returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  maxMovieRating:
+                    type: string
+                    nullable: true
+                    example: 'PG-13'
+                  maxTvRating:
+                    type: string
+                    nullable: true
+                    example: 'TV-14'
+                  blockUnrated:
+                    type: boolean
+                    default: false
+                  blockAdult:
+                    type: boolean
+                    default: false
   /user/{userId}/watch_data:
     get:
       summary: Get watch data
