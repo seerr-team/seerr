@@ -1,6 +1,12 @@
+import TheMovieDb from '@server/api/themoviedb';
+import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import OverrideRule from '@server/entity/OverrideRule';
+import { User } from '@server/entity/User';
 import type { OverrideRuleResultsResponse } from '@server/interfaces/api/overrideRuleInterfaces';
+import overrideRules, {
+  type OverrideRulesResult,
+} from '@server/lib/overrideRules';
 import { Permission } from '@server/lib/permissions';
 import { isAuthenticated } from '@server/middleware/auth';
 import { Router } from 'express';
@@ -60,6 +66,40 @@ overrideRuleRoutes.post<
     next({ status: 404, message: e.message });
   }
 });
+
+overrideRuleRoutes.post(
+  '/advancedRequest',
+  isAuthenticated(Permission.REQUEST_ADVANCED),
+  async (req, res, next) => {
+    try {
+      const tmdb = new TheMovieDb();
+      const tmdbMedia =
+        req.body.mediaType === MediaType.MOVIE
+          ? await tmdb.getMovie({ movieId: req.body.tmdbId })
+          : await tmdb.getTvShow({ tvId: req.body.tmdbId });
+
+      const userRepository = getRepository(User);
+      const user = await userRepository.findOne({
+        where: { id: req.body.requestUser },
+        relations: { requests: true },
+      });
+      if (!user) {
+        return next({ status: 404, message: 'User not found.' });
+      }
+
+      const overrideRulesResult: OverrideRulesResult = await overrideRules({
+        mediaType: req.body.mediaType,
+        is4k: req.body.is4k,
+        tmdbMedia,
+        requestUser: user,
+      });
+
+      res.status(200).json(overrideRulesResult);
+    } catch {
+      next({ status: 404, message: 'Media not found' });
+    }
+  }
+);
 
 overrideRuleRoutes.put<
   { ruleId: string },
