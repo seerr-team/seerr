@@ -102,9 +102,8 @@ const { embedPoster } = settings.notifications.agents.email;
             // --- email template locals (ensure defined for templates) ---
             requestedBy:
               payload.request?.requestedBy?.displayName ??
-              payload.user?.displayName ??
-              payload.request?.requestedBy?.email ??
-              '',
+                payload.request?.requestedBy?.email ??
+'',
             commentUser:
               payload.comment?.user?.displayName ??
               payload.comment?.user?.email ??
@@ -118,9 +117,8 @@ const { embedPoster } = settings.notifications.agents.email;
               payload.issue?.modifiedBy?.email ??
               '',
             mediaName:
-              payload.subject ??
-              payload.media?.title ??
-              '',
+                payload.subject ??
+                '',
             mediaExtra: payload.extra ?? [],
           body: payload.message,
           applicationUrl,
