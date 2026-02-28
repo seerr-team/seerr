@@ -986,6 +986,7 @@
   "components.Settings.SettingsMain.partialRequestsEnabled": "Allow Partial Series Requests",
   "components.Settings.SettingsMain.streamingRegion": "Streaming Region",
   "components.Settings.SettingsMain.streamingRegionTip": "Show streaming sites by regional availability",
+  "components.Settings.SettingsMain.removeUnmonitoredFromRequestsEnabled": "Remove Request for Movies that have been un-monitored since",
   "components.Settings.SettingsMain.toastApiKeyFailure": "Something went wrong while generating a new API key.",
   "components.Settings.SettingsMain.toastApiKeySuccess": "New API key generated successfully!",
   "components.Settings.SettingsMain.toastSettingsFailure": "Something went wrong while saving settings.",

@@ -79,14 +79,13 @@ class RadarrScanner
   }
 
   private async processRadarrMovie(radarrMovie: RadarrMovie): Promise<void> {
-    if (!radarrMovie.monitored && !radarrMovie.hasFile) {
-      this.log(
-        'Title is unmonitored and has not been downloaded. Skipping item.',
-        'debug',
-        {
-          title: radarrMovie.title,
-        }
-      );
+    const settings = getSettings();
+    if (
+      settings.main.removeUnmonitoredEnabled &&
+      !radarrMovie.monitored &&
+      !radarrMovie.hasFile
+    ) {
+      this.processUnmonitoredMovie(radarrMovie.tmdbId);
       return;
     }
 
