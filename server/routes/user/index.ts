@@ -1,4 +1,5 @@
 import JellyfinAPI from '@server/api/jellyfin';
+import type { PlexProfile } from '@server/api/plextv';
 import PlexTvAPI from '@server/api/plextv';
 import TautulliAPI from '@server/api/tautulli';
 import { MediaType } from '@server/constants/media';
@@ -589,43 +590,80 @@ router.post(
     try {
       const settings = getSettings();
       const userRepository = getRepository(User);
-      const body = req.body as { plexIds: string[] } | undefined;
+      const { plexIds, profileIds } = req.body as {
+        plexIds?: string[];
+        profileIds?: string[];
+      };
 
-      // taken from auth.ts
+      const skippedItems: {
+        id: string;
+        type: 'user' | 'profile';
+        reason: string;
+      }[] = [];
+      const createdUsers: User[] = [];
+
       const mainUser = await userRepository.findOneOrFail({
-        select: { id: true, plexToken: true },
+        select: { id: true, plexToken: true, email: true, plexId: true },
         where: { id: 1 },
       });
+
       const mainPlexTv = new PlexTvAPI(mainUser.plexToken ?? '');
 
-      const plexUsersResponse = await mainPlexTv.getUsers();
-      const createdUsers: User[] = [];
-      for (const rawUser of plexUsersResponse.MediaContainer.User) {
-        const account = rawUser.$;
+      if (plexIds && plexIds.length > 0) {
+        const plexUsersResponse = await mainPlexTv.getUsers();
 
-        if (account.email) {
-          const user = await userRepository
-            .createQueryBuilder('user')
-            .where('user.plexId = :id', { id: account.id })
-            .orWhere('user.email = :email', {
-              email: account.email.toLowerCase(),
-            })
-            .getOne();
+        for (const rawUser of plexUsersResponse.MediaContainer.User) {
+          const account = rawUser.$;
 
-          if (user) {
-            // Update the user's avatar with their Plex thumbnail, in case it changed
-            user.avatar = account.thumb;
-            user.email = account.email;
-            user.plexUsername = account.username;
+          if (account.email && plexIds.includes(account.id)) {
+            // Check for duplicate users more thoroughly
+            const user = await userRepository
+              .createQueryBuilder('user')
+              .where('user.plexId = :id', { id: account.id })
+              .orWhere('user.email = :email', {
+                email: account.email.toLowerCase(),
+              })
+              .orWhere('user.plexUsername = :username', {
+                username: account.username,
+              })
+              .getOne();
 
-            // In case the user was previously a local account
-            if (user.userType === UserType.LOCAL) {
-              user.userType = UserType.PLEX;
-              user.plexId = parseInt(account.id);
-            }
-            await userRepository.save(user);
-          } else if (!body || body.plexIds.includes(account.id)) {
-            if (await mainPlexTv.checkUserAccess(parseInt(account.id))) {
+            if (user) {
+              // Update the user's avatar with their Plex thumbnail, in case it changed
+              user.avatar = account.thumb;
+              user.email = account.email;
+              user.plexUsername = account.username;
+
+              // In case the user was previously a local account
+              if (user.userType === UserType.LOCAL) {
+                user.userType = UserType.PLEX;
+                user.plexId = parseInt(account.id);
+              }
+
+              await userRepository.save(user);
+              skippedItems.push({
+                id: account.id,
+                type: 'user',
+                reason: 'USER_ALREADY_EXISTS',
+              });
+            } else if (await mainPlexTv.checkUserAccess(parseInt(account.id))) {
+              // Check for profiles with the same username
+              const existingProfile = await userRepository.findOne({
+                where: {
+                  plexUsername: account.username,
+                  userType: UserType.PLEX_PROFILE,
+                },
+              });
+
+              if (existingProfile) {
+                skippedItems.push({
+                  id: account.id,
+                  type: 'user',
+                  reason: 'PROFILE_WITH_SAME_NAME_EXISTS',
+                });
+                continue;
+              }
+
               const newUser = new User({
                 plexUsername: account.username,
                 email: account.email,
@@ -635,6 +673,7 @@ router.post(
                 avatar: account.thumb,
                 userType: UserType.PLEX,
               });
+
               await userRepository.save(newUser);
               createdUsers.push(newUser);
             }
@@ -642,7 +681,87 @@ router.post(
         }
       }
 
-      return res.status(201).json(User.filterMany(createdUsers));
+      if (profileIds && profileIds.length > 0) {
+        const profiles = await mainPlexTv.getProfiles();
+        // Filter out real Plex users (with email/isMainUser) from importable profiles
+        const importableProfiles = profiles.filter(
+          (p: PlexProfile) => !p.isMainUser
+        );
+
+        for (const profileId of profileIds) {
+          const profileData = importableProfiles.find(
+            (p: PlexProfile) => p.id === profileId
+          );
+
+          if (profileData) {
+            // Check for existing user with same plexProfileId
+            const existingUser = await userRepository.findOne({
+              where: { plexProfileId: profileId },
+            });
+
+            const emailPrefix = mainUser.email.split('@')[0];
+            const domainPart = mainUser.email.includes('@')
+              ? mainUser.email.split('@')[1]
+              : 'plex.local';
+            const safeUsername = (profileData.username || profileData.title)
+              .replace(/\s+/g, '.')
+              .replace(/[^a-zA-Z0-9._-]/g, '');
+            const proposedEmail = `${emailPrefix}+${safeUsername}@${domainPart}`;
+
+            // Check for main user with same plexUsername or email
+            const mainUserDuplicate = await userRepository.findOne({
+              where: [
+                {
+                  plexUsername: profileData.username || profileData.title,
+                  userType: UserType.PLEX,
+                },
+                { email: proposedEmail, userType: UserType.PLEX },
+              ],
+            });
+
+            if (existingUser) {
+              // Skip this profile and add to skipped list
+              skippedItems.push({
+                id: profileId,
+                type: 'profile',
+                reason: 'DUPLICATE_USER_EXISTS',
+              });
+              continue;
+            }
+
+            if (mainUserDuplicate) {
+              // Skip this profile and add to skipped list
+              skippedItems.push({
+                id: profileId,
+                type: 'profile',
+                reason: 'MAIN_USER_ALREADY_EXISTS',
+              });
+              continue;
+            }
+
+            const profileUser = new User({
+              email: proposedEmail,
+              plexUsername: profileData.username || profileData.title,
+              plexId: mainUser.plexId,
+              plexToken: mainUser.plexToken,
+              permissions: settings.main.defaultPermissions,
+              avatar: profileData.thumb,
+              userType: UserType.PLEX_PROFILE,
+              plexProfileId: profileId,
+              plexProfileNumericId: profileData.numericId || null,
+              mainPlexUserId: mainUser.id,
+            });
+
+            await userRepository.save(profileUser);
+            createdUsers.push(profileUser);
+          }
+        }
+      }
+
+      return res.status(201).json({
+        data: User.filterMany(createdUsers),
+        skipped: skippedItems,
+      });
     } catch (e) {
       next({ status: 500, message: e.message });
     }
@@ -765,7 +884,13 @@ router.get<{ id: string }, UserWatchDataResponse>(
     try {
       const user = await getRepository(User).findOneOrFail({
         where: { id: Number(req.params.id) },
-        select: { id: true, plexId: true },
+        select: {
+          id: true,
+          plexId: true,
+          plexProfileId: true,
+          plexProfileNumericId: true,
+          userType: true,
+        },
       });
 
       const tautulli = new TautulliAPI(settings);

@@ -49,7 +49,12 @@ authRoutes.get('/me', isAuthenticated(), async (req, res) => {
 authRoutes.post('/plex', async (req, res, next) => {
   const settings = getSettings();
   const userRepository = getRepository(User);
-  const body = req.body as { authToken?: string };
+  const body = req.body as {
+    authToken?: string;
+    profileId?: string;
+    pin?: string;
+    isSetup?: boolean;
+  };
 
   if (!body.authToken) {
     return next({
@@ -65,12 +70,89 @@ authRoutes.post('/plex', async (req, res, next) => {
   ) {
     return res.status(500).json({ error: 'Plex login is disabled' });
   }
+
   try {
-    // First we need to use this auth token to get the user's email from plex.tv
     const plextv = new PlexTvAPI(body.authToken);
     const account = await plextv.getUser();
+    const profiles = await plextv.getProfiles();
+    const mainUserProfile = profiles.find((p) => p.isMainUser);
 
-    // Next let's see if the user already exists
+    // Special handling for setup process
+    if (body.isSetup) {
+      let user = await userRepository
+        .createQueryBuilder('user')
+        .where('user.plexId = :id', { id: account.id })
+        .orWhere('user.email = :email', {
+          email: account.email.toLowerCase(),
+        })
+        .getOne();
+
+      // First user setup - create the admin user
+      if (!user && !(await userRepository.count())) {
+        user = new User({
+          email: account.email,
+          plexUsername: account.username,
+          plexId: account.id,
+          plexToken: account.authToken,
+          permissions: Permission.ADMIN,
+          avatar: account.thumb,
+          userType: UserType.PLEX,
+          plexProfileId: mainUserProfile?.id || account.id.toString(),
+        });
+
+        settings.main.mediaServerType = MediaServerType.PLEX;
+        await settings.save();
+        startJobs();
+
+        await userRepository.save(user);
+      } else if (user) {
+        // Update existing user with latest Plex data
+        user.plexToken = account.authToken;
+        user.plexId = account.id;
+        user.avatar = account.thumb;
+        user.plexProfileId = mainUserProfile?.id || account.id.toString();
+        user.userType = UserType.PLEX;
+
+        await userRepository.save(user);
+      }
+
+      // Return user directly, bypassing profile selection
+      if (user && req.session) {
+        req.session.userId = user.id;
+      }
+      return res.status(200).json(user?.filter() ?? {});
+    }
+
+    // Enforce PIN for protected main account
+    if (!body.profileId && mainUserProfile?.protected && !body.pin) {
+      return next({
+        status: 401,
+        error: ApiErrorCode.InvalidPin,
+        message: 'PIN required.',
+      });
+    }
+
+    if (!body.profileId && mainUserProfile?.protected && body.pin) {
+      const isPinValid = await plextv.validateProfilePin(
+        mainUserProfile.id,
+        body.pin
+      );
+      if (!isPinValid) {
+        return next({
+          status: 401,
+          error: ApiErrorCode.InvalidPin,
+        });
+      }
+    }
+
+    if (body.profileId) {
+      return next({
+        status: 400,
+        message: 'Use /auth/plex/profile/select for profile authentication.',
+      });
+    }
+
+    // Standard Plex authentication flow
     let user = await userRepository
       .createQueryBuilder('user')
       .where('user.plexId = :id', { id: account.id })
@@ -79,7 +161,40 @@ authRoutes.post('/plex', async (req, res, next) => {
       })
       .getOne();
 
+    const safeUsername = (account.username || account.title)
+      .replace(/\s+/g, '.')
+      .replace(/[^a-zA-Z0-9._-]/g, '');
+    const emailPrefix = account.email.split('@')[0];
+    const domainPart = account.email.includes('@')
+      ? account.email.split('@')[1]
+      : 'plex.local';
+    const proposedEmail = `${emailPrefix}+${safeUsername}@${domainPart}`;
+    const existingProfileUser = await userRepository.findOne({
+      where: [
+        { plexUsername: account.username, userType: UserType.PLEX_PROFILE },
+        { email: proposedEmail, userType: UserType.PLEX_PROFILE },
+      ],
+    });
+    if (!user && existingProfileUser) {
+      logger.warn(
+        'Main user login attempted but profile user already exists for this person',
+        {
+          label: 'Auth',
+          plexUsername: account.username,
+          email: account.email,
+          profileUserId: existingProfileUser.id,
+        }
+      );
+      return next({
+        status: 409,
+        message:
+          'A profile user already exists for this Plex account. Please contact your administrator to resolve this duplicate.',
+        error: ApiErrorCode.ProfileUserExists,
+      });
+    }
+
     if (!user && !(await userRepository.count())) {
+      // First user setup through standard auth flow
       user = new User({
         email: account.email,
         plexUsername: account.username,
@@ -88,6 +203,7 @@ authRoutes.post('/plex', async (req, res, next) => {
         permissions: Permission.ADMIN,
         avatar: account.thumb,
         userType: UserType.PLEX,
+        plexProfileId: account.id.toString(),
       });
 
       settings.main.mediaServerType = MediaServerType.PLEX;
@@ -135,13 +251,14 @@ authRoutes.post('/plex', async (req, res, next) => {
               }
             );
           }
-
+          // Update existing user
           user.plexToken = body.authToken;
           user.plexId = account.id;
           user.avatar = account.thumb;
           user.email = account.email;
           user.plexUsername = account.username;
           user.userType = UserType.PLEX;
+          user.plexProfileId = account.id.toString();
 
           await userRepository.save(user);
         } else if (!settings.main.newPlexLogin) {
@@ -157,6 +274,7 @@ authRoutes.post('/plex', async (req, res, next) => {
           );
           return next({
             status: 403,
+            error: ApiErrorCode.NewPlexLoginDisabled,
             message: 'Access denied.',
           });
         } else {
@@ -178,13 +296,14 @@ authRoutes.post('/plex', async (req, res, next) => {
             permissions: settings.main.defaultPermissions,
             avatar: account.thumb,
             userType: UserType.PLEX,
+            plexProfileId: account.id.toString(),
           });
 
           await userRepository.save(user);
         }
       } else {
-        logger.warn(
-          'Failed sign-in attempt by Plex user without access to the media server',
+        logger.info(
+          'Sign-in attempt from Plex user with access to the media server; creating new Jellyseerr user',
           {
             label: 'API',
             ip: req.ip,
@@ -195,17 +314,60 @@ authRoutes.post('/plex', async (req, res, next) => {
         );
         return next({
           status: 403,
+          error: ApiErrorCode.NewPlexLoginDisabled,
           message: 'Access denied.',
         });
       }
     }
 
-    // Set logged in session
-    if (req.session) {
-      req.session.userId = user.id;
+    const adminUser = await userRepository.findOne({ where: { id: 1 } });
+    const isMainUser = profiles.some(
+      (profile) => profile.isMainUser && profile.id === account.uuid
+    );
+    const isAdmin = user?.id === adminUser?.id;
+
+    if (isMainUser || isAdmin) {
+      // Only update existing profiles for the main user
+      for (const profile of profiles) {
+        if (profile.isMainUser) continue;
+
+        const existingProfileUser = await userRepository.findOne({
+          where: { plexProfileId: profile.id },
+        });
+
+        if (existingProfileUser) {
+          // Only update profiles that don't have their own Plex ID
+          // or are already marked as profiles
+          if (
+            !existingProfileUser.plexId ||
+            existingProfileUser.plexId === user.plexId ||
+            existingProfileUser.userType === UserType.PLEX_PROFILE
+          ) {
+            existingProfileUser.plexToken = user.plexToken;
+            existingProfileUser.avatar = profile.thumb;
+            existingProfileUser.plexUsername =
+              profile.username || profile.title;
+            await userRepository.save(existingProfileUser);
+          }
+        }
+      }
     }
 
-    return res.status(200).json(user?.filter() ?? {});
+    if ((isAdmin || isMainUser) && profiles && profiles.length > 1) {
+      const mainUserIdToSend =
+        user?.id && Number(user.id) > 0 ? Number(user.id) : 1;
+
+      return res.status(200).json({
+        status: 'REQUIRES_PROFILE',
+        mainUserId: mainUserIdToSend,
+        profiles: profiles,
+      });
+    } else {
+      if (req.session) {
+        req.session.userId = user.id;
+      }
+      return res.status(200).json(user?.filter() ?? {});
+    }
   } catch (e) {
     logger.error('Something went wrong authenticating with Plex account', {
       label: 'API',
@@ -218,6 +380,359 @@ authRoutes.post('/plex', async (req, res, next) => {
     });
   }
 });
+
+authRoutes.post('/plex/profile/select', async (req, res, next) => {
+  const settings = getSettings();
+  const userRepository = getRepository(User);
+
+  const profileId = req.body.profileId;
+  const mainUserIdRaw = req.body.mainUserId;
+  const pin = req.body.pin;
+  const authToken = req.body.authToken;
+
+  if (!profileId) {
+    return next({
+      status: 400,
+      message: 'Profile ID is required.',
+    });
+  }
+
+  if (mainUserIdRaw == null || mainUserIdRaw === '') {
+    return next({
+      status: 400,
+      message: 'mainUserId is required.',
+    });
+  }
+
+  const mainUserId =
+    typeof mainUserIdRaw === 'string'
+      ? parseInt(mainUserIdRaw, 10)
+      : Number(mainUserIdRaw);
+
+  if (Number.isNaN(mainUserId) || mainUserId <= 0) {
+    return next({
+      status: 400,
+      message: 'Invalid mainUserId.',
+    });
+  }
+
+  const mainUser = await userRepository.findOne({
+    where: { id: mainUserId },
+  });
+
+  if (!mainUser) {
+    return next({
+      status: 404,
+      message: 'Main user not found.',
+    });
+  }
+
+  if (!authToken || typeof authToken !== 'string' || authToken.trim() === '') {
+    return next({
+      status: 400,
+      message: 'authToken is required.',
+    });
+  }
+
+  try {
+    const plextv = new PlexTvAPI(authToken);
+    const tokenAccount = await plextv.getUser();
+    if (tokenAccount.id !== mainUser.plexId) {
+      return next({
+        status: 403,
+        message: 'Auth token does not belong to this user.',
+      });
+    }
+
+    const profiles = await plextv.getProfiles();
+    const selectedProfile = profiles.find((p) => p.id === profileId);
+
+    if (!selectedProfile) {
+      return next({
+        status: 404,
+        message: 'Selected profile not found.',
+      });
+    }
+
+    if (
+      profileId === mainUser.plexProfileId ||
+      selectedProfile.isMainUser === true
+    ) {
+      // Check if PIN is required and not provided
+      if (selectedProfile.protected && !pin) {
+        return res.status(200).json({
+          status: 'REQUIRES_PIN',
+          profileId: profileId,
+          profileName:
+            selectedProfile.title || selectedProfile.username || 'Main Account',
+          mainUserId: mainUserId,
+        });
+      }
+
+      if (selectedProfile.protected && pin) {
+        const isPinValid = await plextv.validateProfilePin(profileId, pin);
+
+        if (!isPinValid) {
+          return next({
+            status: 401,
+            message: 'Invalid PIN.',
+            error: ApiErrorCode.InvalidPin,
+          });
+        }
+      }
+
+      if (mainUser.plexProfileId !== profileId && selectedProfile.isMainUser) {
+        mainUser.plexProfileId = profileId;
+        await userRepository.save(mainUser);
+      }
+
+      if (req.session) {
+        req.session.userId = mainUser.id;
+      }
+
+      return res.status(200).json(mainUser.filter() ?? {});
+    }
+
+    if (selectedProfile.protected && !pin) {
+      return res.status(200).json({
+        status: 'REQUIRES_PIN',
+        profileId: profileId,
+        profileName:
+          selectedProfile.title || selectedProfile.username || 'Unknown',
+        mainUserId: mainUserId,
+      });
+    }
+
+    if (selectedProfile.protected && pin) {
+      const isPinValid = await plextv.validateProfilePin(profileId, pin);
+
+      if (!isPinValid) {
+        return next({
+          status: 401,
+          message: 'Invalid PIN.',
+          error: ApiErrorCode.InvalidPin,
+        });
+      }
+    }
+
+    const userAccount = await plextv.getUser();
+    const adminUser = await userRepository.findOne({ where: { id: 1 } });
+    const isMainPlexUser = profiles.some(
+      (profile) => profile.isMainUser && profile.id === userAccount.uuid
+    );
+    const isAdminUser = mainUser.id === adminUser?.id;
+
+    let profileUser = await userRepository.findOne({
+      where: { plexProfileId: profileId },
+    });
+    // Profile doesn't exist yet - only allow creation for admin/main Plex user
+    if (!profileUser) {
+      // Profile doesn't exist yet
+      if (!settings.main.newPlexLogin) {
+        return next({
+          status: 403,
+          error: ApiErrorCode.NewPlexLoginDisabled,
+          message: 'Access denied.',
+        });
+      }
+
+      // Only allow profile creation for main Plex user or admin user
+      if (!isMainPlexUser && !isAdminUser) {
+        return next({
+          status: 403,
+          message: 'Only the Plex server owner can create profile users.',
+        });
+      }
+
+      // Check for existing users that might match this profile
+      const emailPrefix = mainUser.email.split('@')[0];
+      const domainPart = mainUser.email.includes('@')
+        ? mainUser.email.split('@')[1]
+        : 'plex.local';
+
+      const safeUsername = (selectedProfile.username || selectedProfile.title)
+        .replace(/\s+/g, '.')
+        .replace(/[^a-zA-Z0-9._-]/g, '');
+
+      const proposedEmail = `${emailPrefix}+${safeUsername}@${domainPart}`;
+
+      // First check for existing user with this email
+      const existingEmailUser = await userRepository.findOne({
+        where: { email: proposedEmail },
+      });
+
+      if (existingEmailUser) {
+        logger.warn('Found existing user with same email as profile', {
+          label: 'Auth',
+          email: proposedEmail,
+          profileId,
+          existingUserId: existingEmailUser.id,
+        });
+
+        // Use the existing user
+        profileUser = existingEmailUser;
+
+        if (req.session) {
+          req.session.userId = profileUser.id;
+        }
+        return res.status(200).json(profileUser.filter() ?? {});
+      } else {
+        // Create a new profile user
+        profileUser = new User({
+          email: proposedEmail,
+          plexUsername: selectedProfile.username || selectedProfile.title,
+          plexId: mainUser.plexId,
+          plexToken: authToken,
+          permissions: settings.main.defaultPermissions,
+          avatar: selectedProfile.thumb,
+          userType: UserType.PLEX_PROFILE,
+          plexProfileId: profileId,
+          plexProfileNumericId: selectedProfile.numericId || null,
+          mainPlexUserId: mainUser.id,
+        });
+
+        logger.info('Creating new profile user', {
+          label: 'Auth',
+          profileId,
+          email: proposedEmail,
+        });
+
+        await userRepository.save(profileUser);
+
+        if (req.session) {
+          req.session.userId = profileUser.id;
+        }
+        return res.status(200).json(profileUser.filter() ?? {});
+      }
+    } else {
+      // Profile exists - only set mainPlexUserId if it's the main user creating it
+      if (
+        profileUser.plexId &&
+        profileUser.plexId !== mainUser.plexId &&
+        profileUser.userType !== UserType.PLEX_PROFILE
+      ) {
+        logger.warn('Attempted to use a regular Plex user as a profile', {
+          label: 'Auth',
+          profileId,
+          userId: profileUser.id,
+          mainUserId: mainUser.id,
+        });
+
+        // Simply use their account without modifying it
+        if (req.session) {
+          req.session.userId = profileUser.id;
+        }
+        return res.status(200).json(profileUser.filter() ?? {});
+      }
+
+      // Otherwise update and use this profile
+      profileUser.plexToken = authToken;
+      profileUser.avatar = selectedProfile.thumb;
+      profileUser.plexUsername =
+        selectedProfile.username || selectedProfile.title;
+      profileUser.mainPlexUserId = mainUser.id;
+      profileUser.userType = UserType.PLEX_PROFILE;
+
+      await userRepository.save(profileUser);
+
+      if (req.session) {
+        req.session.userId = profileUser.id;
+      }
+      return res.status(200).json(profileUser.filter() ?? {});
+    }
+  } catch (e) {
+    return next({
+      status: 500,
+      message: 'Unable to select profile: ' + e.message,
+    });
+  }
+});
+
+authRoutes.get(
+  '/plex/profiles/:userId',
+  isAuthenticated(),
+  async (req, res, next) => {
+    const userRepository = getRepository(User);
+
+    try {
+      if (!req.user) {
+        return next({
+          status: 403,
+          message: 'Not authorized to access this resource.',
+        });
+      }
+
+      const userId = parseInt(req.params.userId, 10);
+      if (isNaN(userId)) {
+        return next({
+          status: 400,
+          message: 'Invalid user ID format.',
+        });
+      }
+
+      const isOwner = req.user.id === userId;
+      const isAdmin = req.user.hasPermission(Permission.ADMIN);
+      if (!isOwner && !isAdmin) {
+        return next({
+          status: 403,
+          message: "Not authorized to access this user's profiles.",
+        });
+      }
+
+      const mainUser = await userRepository.findOne({
+        where: { id: userId },
+      });
+
+      if (!mainUser) {
+        return next({
+          status: 404,
+          message: 'User not found.',
+        });
+      }
+
+      if (mainUser.userType !== UserType.PLEX) {
+        return next({
+          status: 400,
+          message: 'Only Plex users have profiles.',
+        });
+      }
+
+      if (!mainUser.plexToken) {
+        return next({
+          status: 400,
+          message: 'User has no valid Plex token.',
+        });
+      }
+
+      const plextv = new PlexTvAPI(mainUser.plexToken);
+      const profiles = await plextv.getProfiles();
+
+      const profileUsers = await userRepository.find({
+        where: {
+          mainPlexUserId: mainUser.id,
+          userType: UserType.PLEX_PROFILE,
+        },
+      });
+
+      return res.status(200).json({
+        profiles,
+        profileUsers: User.filterMany(profileUsers),
+        mainUser: mainUser.filter(),
+      });
+    } catch (e) {
+      logger.error('Failed to fetch Plex profiles', {
+        label: 'API',
+        errorMessage: e.message,
+        ip: req.ip,
+      });
+
+      return next({
+        status: 500,
+        message: 'Unable to fetch profiles.',
+      });
+    }
+  }
+);
 
 function getUserAvatarUrl(user: User): string {
   return `/avatarproxy/${user.jellyfinUserId}?v=${user.avatarVersion}`;
