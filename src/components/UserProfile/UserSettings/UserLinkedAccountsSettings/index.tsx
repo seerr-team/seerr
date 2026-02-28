@@ -5,6 +5,7 @@ import Alert from '@app/components/Common/Alert';
 import ConfirmButton from '@app/components/Common/ConfirmButton';
 import Dropdown from '@app/components/Common/Dropdown';
 import PageTitle from '@app/components/Common/PageTitle';
+import LinkJellyfinQuickConnectModal from '@app/components/UserProfile/UserSettings/UserLinkedAccountsSettings/LinkJellyfinQuickConnectModal';
 import useSettings from '@app/hooks/useSettings';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
@@ -63,6 +64,8 @@ const UserLinkedAccountsSettings = () => {
     user ? `/api/v1/user/${user?.id}/settings/password` : null
   );
   const [showJellyfinModal, setShowJellyfinModal] = useState(false);
+  const [showJellyfinQuickConnectModal, setShowJellyfinQuickConnectModal] =
+    useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const applicationName = settings.currentSettings.applicationTitle;
@@ -264,6 +267,23 @@ const UserLinkedAccountsSettings = () => {
         onSave={() => {
           setShowJellyfinModal(false);
           revalidateUser();
+        }}
+        onSwitchToQuickConnect={() => {
+          setShowJellyfinModal(false);
+          setShowJellyfinQuickConnectModal(true);
+        }}
+      />
+
+      <LinkJellyfinQuickConnectModal
+        show={showJellyfinQuickConnectModal}
+        onClose={() => setShowJellyfinQuickConnectModal(false)}
+        onSave={() => {
+          setShowJellyfinQuickConnectModal(false);
+          revalidateUser();
+        }}
+        onSwitchToPassword={() => {
+          setShowJellyfinQuickConnectModal(false);
+          setShowJellyfinModal(true);
         }}
       />
     </>

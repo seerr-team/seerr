@@ -518,6 +518,81 @@ userSettingsRoutes.delete<{ id: string }>(
   }
 );
 
+userSettingsRoutes.post<{ secret: string }>(
+  '/linked-accounts/jellyfin/quickconnect',
+  isOwnProfile(),
+  async (req, res) => {
+    const settings = getSettings();
+    const userRepository = getRepository(User);
+
+    if (!req.user) {
+      return res.status(401).json({ code: ApiErrorCode.Unauthorized });
+    }
+
+    const secret = req.body.secret;
+    if (
+      !secret ||
+      typeof secret !== 'string' ||
+      secret.length < 8 ||
+      secret.length > 128 ||
+      !/^[A-Fa-f0-9]+$/.test(secret)
+    ) {
+      return res.status(400).json({ message: 'Invalid secret format' });
+    }
+
+    if (
+      settings.main.mediaServerType !== MediaServerType.JELLYFIN &&
+      settings.main.mediaServerType !== MediaServerType.EMBY
+    ) {
+      return res
+        .status(500)
+        .json({ message: 'Jellyfin/Emby login is disabled' });
+    }
+
+    const hostname = getHostname();
+    const jellyfinServer = new JellyfinAPI(hostname);
+
+    try {
+      const account = await jellyfinServer.authenticateQuickConnect(secret);
+
+      if (
+        await userRepository.exist({
+          where: { jellyfinUserId: account.User.Id },
+        })
+      ) {
+        return res.status(422).json({
+          message: 'The specified account is already linked to a Seerr user',
+        });
+      }
+
+      const user = req.user;
+      const deviceId = Buffer.from(
+        `BOT_seerr_qc_link_${account.User.Id}`
+      ).toString('base64');
+
+      user.userType =
+        settings.main.mediaServerType === MediaServerType.EMBY
+          ? UserType.EMBY
+          : UserType.JELLYFIN;
+      user.jellyfinUserId = account.User.Id;
+      user.jellyfinUsername = account.User.Name;
+      user.jellyfinAuthToken = account.AccessToken;
+      user.jellyfinDeviceId = deviceId;
+      await userRepository.save(user);
+
+      return res.status(204).send();
+    } catch (e) {
+      logger.error('Failed to link account with Quick Connect.', {
+        label: 'API',
+        ip: req.ip,
+        error: e,
+      });
+
+      return res.status(500).send();
+    }
+  }
+);
+
 userSettingsRoutes.get<{ id: string }, UserSettingsNotificationsResponse>(
   '/notifications',
   isOwnProfileOrAdmin(),

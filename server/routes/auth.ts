@@ -593,6 +593,189 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
   }
 });
 
+authRoutes.post('/jellyfin/quickconnect/initiate', async (req, res, next) => {
+  try {
+    const hostname = getHostname();
+    const jellyfinServer = new JellyfinAPI(
+      hostname ?? '',
+      undefined,
+      undefined
+    );
+
+    const response = await jellyfinServer.initiateQuickConnect();
+
+    return res.status(200).json({
+      code: response.Code,
+      secret: response.Secret,
+    });
+  } catch (error) {
+    logger.error('Error initiating Jellyfin quick connect', {
+      label: 'Auth',
+      errorMessage: error.message,
+    });
+    return next({
+      status: 500,
+      message: 'Failed to initiate quick connect.',
+    });
+  }
+});
+
+authRoutes.get('/jellyfin/quickconnect/check', async (req, res, next) => {
+  const secret = req.query.secret as string;
+
+  if (
+    !secret ||
+    typeof secret !== 'string' ||
+    secret.length < 8 ||
+    secret.length > 128 ||
+    !/^[A-Fa-f0-9]+$/.test(secret)
+  ) {
+    return next({
+      status: 400,
+      message: 'Invalid secret format',
+    });
+  }
+
+  try {
+    const hostname = getHostname();
+    const jellyfinServer = new JellyfinAPI(
+      hostname ?? '',
+      undefined,
+      undefined
+    );
+
+    const response = await jellyfinServer.checkQuickConnect(secret);
+
+    return res.status(200).json({ authenticated: response.Authenticated });
+  } catch (e) {
+    return next({
+      status: e.statusCode || 500,
+      message: 'Failed to check Quick Connect status',
+    });
+  }
+});
+
+authRoutes.post(
+  '/jellyfin/quickconnect/authenticate',
+  async (req, res, next) => {
+    const settings = getSettings();
+    const userRepository = getRepository(User);
+    const body = req.body as { secret?: string };
+
+    if (
+      !body.secret ||
+      typeof body.secret !== 'string' ||
+      body.secret.length < 8 ||
+      body.secret.length > 128 ||
+      !/^[A-Fa-f0-9]+$/.test(body.secret)
+    ) {
+      return next({
+        status: 400,
+        message: 'Secret required',
+      });
+    }
+
+    if (
+      settings.main.mediaServerType === MediaServerType.NOT_CONFIGURED ||
+      !(await userRepository.count())
+    ) {
+      return next({
+        status: 403,
+        message: 'Quick Connect is not available during initial setup.',
+      });
+    }
+
+    try {
+      const hostname = getHostname();
+      const jellyfinServer = new JellyfinAPI(
+        hostname ?? '',
+        undefined,
+        undefined
+      );
+
+      const account = await jellyfinServer.authenticateQuickConnect(
+        body.secret
+      );
+
+      let user = await userRepository.findOne({
+        where: { jellyfinUserId: account.User.Id },
+      });
+
+      const deviceId = Buffer.from(`BOT_seerr_qc_${account.User.Id}`).toString(
+        'base64'
+      );
+
+      if (user) {
+        logger.info('Quick Connect sign-in from existing user', {
+          label: 'API',
+          ip: req.ip,
+          jellyfinUsername: account.User.Name,
+          userId: user.id,
+        });
+
+        user.jellyfinAuthToken = account.AccessToken;
+        user.jellyfinDeviceId = deviceId;
+        user.avatar = getUserAvatarUrl(user);
+        await userRepository.save(user);
+      } else if (!settings.main.newPlexLogin) {
+        logger.warn(
+          'Failed Quick Connect sign-in attempt by unimported Jellyfin user',
+          {
+            label: 'API',
+            ip: req.ip,
+            jellyfinUserId: account.User.Id,
+            jellyfinUsername: account.User.Name,
+          }
+        );
+        return next({
+          status: 403,
+          message: 'Access denied.',
+        });
+      } else {
+        logger.info(
+          'Quick Connect sign-in from new Jellyfin user; creating new Seerr user',
+          {
+            label: 'API',
+            ip: req.ip,
+            jellyfinUsername: account.User.Name,
+          }
+        );
+
+        user = new User({
+          email: account.User.Name,
+          jellyfinUsername: account.User.Name,
+          jellyfinUserId: account.User.Id,
+          jellyfinDeviceId: deviceId,
+          permissions: settings.main.defaultPermissions,
+          userType:
+            settings.main.mediaServerType === MediaServerType.JELLYFIN
+              ? UserType.JELLYFIN
+              : UserType.EMBY,
+        });
+        user.avatar = getUserAvatarUrl(user);
+        await userRepository.save(user);
+      }
+
+      // Set session
+      if (req.session) {
+        req.session.userId = user.id;
+      }
+
+      return res.status(200).json(user?.filter() ?? {});
+    } catch (e) {
+      logger.error('Quick Connect authentication failed', {
+        label: 'Auth',
+        error: e.message,
+        ip: req.ip,
+      });
+      return next({
+        status: e.statusCode || 500,
+        message: ApiErrorCode.InvalidCredentials,
+      });
+    }
+  }
+);
+
 authRoutes.post('/local', async (req, res, next) => {
   const settings = getSettings();
   const userRepository = getRepository(User);
