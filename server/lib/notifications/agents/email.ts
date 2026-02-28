@@ -31,7 +31,8 @@ function __templateDirFor(templateName: string, userLocale?: string, globalLocal
 
   const tryLoc = (loc: string) => {
     // EN lives at base/<templateName>, localized at base/<loc>/<templateName>
-    if (!loc || loc === 'en') return path.join(base, templateName);
+    if (!loc) return '';
+      if (loc === 'en') return path.join(base, templateName);
     const candidate = path.join(base, loc, templateName);
     // Check html.pug existence as "template exists" signal
     if (existsSync(path.join(candidate, 'html.pug'))) return candidate;

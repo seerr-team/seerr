@@ -42,7 +42,8 @@ function __userEmailTemplateDir(templateName: string, userLocale?: string, globa
   const base = path.join(__dirname, '../templates/email');
 
   const tryLoc = (loc: string) => {
-    if (!loc || loc === 'en') return path.join(base, templateName);
+    if (!loc) return '';
+      if (loc === 'en') return path.join(base, templateName);
     const candidate = path.join(base, loc, templateName);
     if (existsSync(path.join(candidate, 'html.pug'))) return candidate;
     return '';
