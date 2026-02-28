@@ -82,14 +82,19 @@ class EmailAgent
     payload: NotificationPayload,
     recipientEmail: string,
     recipientName?: string
+      , recipientLocale?: string
   ): EmailOptions | undefined {
     const settings = getSettings();
     const { applicationUrl, applicationTitle } = settings.main;
+      const globalLocale = (settings.main as any)?.locale ?? (settings as any)?.locale;
+      // IMPORTANT: locale routing is recipient-based (not payload-based)
+      const _recipientLocale = recipientLocale;
+      const recipientLocaleNorm = _recipientLocale;
     const { embedPoster } = settings.notifications.agents.email;
 
     if (type === Notification.TEST_NOTIFICATION) {
       return {
-        template: __templateDirFor('test-email', recipientLocale, globalLocale),
+        template: __templateDirFor('test-email', recipientLocaleNorm, globalLocale),
         message: {
           to: recipientEmail,
         },
@@ -161,7 +166,7 @@ class EmailAgent
       }
 
       return {
-        template: __templateDirFor('media-request', recipientLocale, globalLocale),
+        template: __templateDirFor('media-request', recipientLocaleNorm, globalLocale),
         message: {
           to: recipientEmail,
         },
@@ -206,7 +211,7 @@ class EmailAgent
       }
 
       return {
-        template: __templateDirFor('media-issue', recipientLocale, globalLocale),
+        template: __templateDirFor('media-issue', recipientLocaleNorm, globalLocale),
         message: {
           to: recipientEmail,
         },
@@ -269,6 +274,7 @@ class EmailAgent
                 payload,
                 payload.notifyUser.email,
                 payload.notifyUser.displayName
+                , (recipient as any)?.locale
               )
             );
           } else {
@@ -326,7 +332,7 @@ class EmailAgent
               );
               if (validator.isEmail(user.email, { require_tld: false })) {
                 await email.send(
-                  this.buildMessage(type, payload, user.email, user.displayName)
+                  this.buildMessage(type, payload, user.email, user.displayName, (user as any)?.locale)
                 );
               } else {
                 logger.warn('Invalid email address provided for user', {
