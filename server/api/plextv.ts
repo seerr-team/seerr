@@ -397,16 +397,7 @@ class PlexTvAPI extends ExternalAPI {
     profileId: string,
     pin: string
   ): Promise<boolean> {
-    try {
-      const success = await this.switchProfile(profileId, pin);
-      return success;
-    } catch (e) {
-      logger.error('Failed to validate Plex profile pin', {
-        label: 'Plex.tv API',
-        errorMessage: e.message,
-      });
-      return false;
-    }
+    return this.switchProfile(profileId, pin);
   }
 
   public async checkUserAccess(userId: number): Promise<boolean> {
