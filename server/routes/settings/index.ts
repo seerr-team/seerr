@@ -77,6 +77,27 @@ settingsRoutes.post('/main', async (req, res) => {
   const settings = getSettings();
 
   settings.main = merge(settings.main, req.body);
+
+  // merge() does not replace arrays (merges by index), so explicitly replace when present
+  if (Array.isArray(req.body.ignoredPathPatterns)) {
+    const cleaned = [
+      ...new Set(
+        (req.body.ignoredPathPatterns as unknown[])
+          .map((p) => (typeof p === 'string' ? p.trim() : ''))
+          .filter((p) => {
+            if (p.length === 0) return false;
+            try {
+              new RegExp(p);
+              return true;
+            } catch {
+              return false;
+            }
+          })
+      ),
+    ];
+    settings.main.ignoredPathPatterns = cleaned;
+  }
+
   await settings.save();
 
   return res.status(200).json(settings.main);

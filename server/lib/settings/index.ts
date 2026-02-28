@@ -147,6 +147,7 @@ export interface MainSettings {
   enableSpecialEpisodes: boolean;
   locale: string;
   youtubeUrl: string;
+  ignoredPathPatterns: string[];
 }
 
 export interface ProxySettings {
@@ -405,6 +406,7 @@ class Settings {
         enableSpecialEpisodes: false,
         locale: 'en',
         youtubeUrl: '',
+        ignoredPathPatterns: [],
       },
       plex: {
         name: '',

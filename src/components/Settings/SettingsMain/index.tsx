@@ -21,9 +21,15 @@ import type { AvailableLocale } from '@server/types/languages';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useIntl } from 'react-intl';
+import CreatableSelect from 'react-select/creatable';
 import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
 import * as Yup from 'yup';
+
+type TagOption = {
+  label: string;
+  value: string;
+};
 
 const messages = defineMessages('components.Settings.SettingsMain', {
   general: 'General',
@@ -70,6 +76,11 @@ const messages = defineMessages('components.Settings.SettingsMain', {
     'Base URL for YouTube videos if a self-hosted YouTube instance is used.',
   validationUrl: 'You must provide a valid URL',
   validationUrlTrailingSlash: 'URL must not end in a trailing slash',
+  ignoredPathPatterns: 'Ignored Path Patterns',
+  ignoredPathPatternsTip:
+    'Regular expressions matched against media file paths (case-insensitive). For example, "placeholders/" will ignore all files in a placeholders directory.',
+  ignoredPathPatternsPlaceholder: 'Type a regex pattern and press Enter\u2026',
+  ignoredPathPatternsInvalidRegex: 'Invalid regex pattern rejected: {pattern}',
 });
 
 const SettingsMain = () => {
@@ -175,6 +186,7 @@ const SettingsMain = () => {
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
+            ignoredPathPatterns: data?.ignoredPathPatterns ?? [],
           }}
           enableReinitialize
           validationSchema={MainSettingsSchema}
@@ -195,6 +207,13 @@ const SettingsMain = () => {
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
+                ignoredPathPatterns: [
+                  ...new Set(
+                    (values.ignoredPathPatterns ?? [])
+                      .map((s) => s.trim())
+                      .filter((s) => s.length > 0)
+                  ),
+                ],
               });
               mutate('/api/v1/settings/public');
               mutate('/api/v1/status');
@@ -533,6 +552,53 @@ const SettingsMain = () => {
                         );
                       }}
                     />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="ignoredPathPatterns" className="text-label">
+                    {intl.formatMessage(messages.ignoredPathPatterns)}
+                    <SettingsBadge badgeType="advanced" className="ml-2" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.ignoredPathPatternsTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field relative z-10">
+                      <CreatableSelect<TagOption, true>
+                        inputId="ignoredPathPatterns"
+                        components={{ DropdownIndicator: null }}
+                        isClearable
+                        isMulti
+                        noOptionsMessage={() => null}
+                        className="react-select-container"
+                        classNamePrefix="react-select"
+                        placeholder={intl.formatMessage(
+                          messages.ignoredPathPatternsPlaceholder
+                        )}
+                        value={(values.ignoredPathPatterns ?? []).map((p) => ({
+                          label: p,
+                          value: p,
+                        }))}
+                        onChange={(newValue) => {
+                          const valid: string[] = [];
+                          for (const v of newValue) {
+                            try {
+                              new RegExp(v.value);
+                              valid.push(v.value);
+                            } catch {
+                              addToast(
+                                intl.formatMessage(
+                                  messages.ignoredPathPatternsInvalidRegex,
+                                  { pattern: v.value }
+                                ),
+                                { autoDismiss: true, appearance: 'error' }
+                              );
+                            }
+                          }
+                          setFieldValue('ignoredPathPatterns', valid);
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="form-row">
