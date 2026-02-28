@@ -19,8 +19,11 @@ import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import {
   BarsArrowDownIcon,
+  BarsArrowUpIcon,
+  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ChevronUpIcon,
   InboxArrowDownIcon,
   PencilIcon,
   UserPlusIcon,
@@ -78,14 +81,28 @@ const messages = defineMessages('components.UserList', {
   autogeneratepasswordTip: 'Email a server-generated password to the user',
   validationUsername: 'You must provide an username',
   validationEmail: 'Email required',
-  sortCreated: 'Join Date',
-  sortDisplayName: 'Display Name',
-  sortRequests: 'Request Count',
+  sortBy: 'Sort by {field}',
+  sortByUser: 'Sort by username',
+  sortByRequests: 'Sort by number of requests',
+  sortByType: 'Sort by account type',
+  sortByRole: 'Sort by user role',
+  sortByJoined: 'Sort by join date',
+  toggleSortDirection: 'Click again to sort {direction}',
+  toggleSortDirectionAria: 'Toggle sort direction',
+  ascending: 'ascending',
+  descending: 'descending',
   localLoginDisabled:
     'The <strong>Enable Local Sign-In</strong> setting is currently disabled.',
 });
 
-type Sort = 'created' | 'updated' | 'requests' | 'displayname';
+type Sort =
+  | 'created'
+  | 'updated'
+  | 'requests'
+  | 'displayname'
+  | 'usertype'
+  | 'role';
+type SortDirection = 'asc' | 'desc';
 
 const UserList = () => {
   const intl = useIntl();
@@ -99,6 +116,7 @@ const UserList = () => {
   const page = router.query.page ? Number(router.query.page) : 1;
   const pageIndex = page - 1;
   const updateQueryParams = useUpdateQueryParams({ page: page.toString() });
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const {
     data,
@@ -107,8 +125,23 @@ const UserList = () => {
   } = useSWR<UserResultsResponse>(
     `/api/v1/user?take=${currentPageSize}&skip=${
       pageIndex * currentPageSize
-    }&sort=${currentSort}`
+    }&sort=${currentSort}&sortDirection=${sortDirection}`
   );
+
+  const defaultSortDirection = (sortKey: Sort): SortDirection =>
+    sortKey === 'requests' || sortKey === 'created' || sortKey === 'updated'
+      ? 'desc'
+      : 'asc';
+
+  const handleSortChange = (sortKey: Sort) => {
+    if (currentSort === sortKey) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setCurrentSort(sortKey);
+      setSortDirection(defaultSortDirection(sortKey));
+    }
+    updateQueryParams('page', '1');
+  };
 
   const [isDeleting, setDeleting] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -134,6 +167,9 @@ const UserList = () => {
 
       setCurrentSort(filterSettings.currentSort);
       setCurrentPageSize(filterSettings.currentPageSize);
+      if (filterSettings.sortDirection) {
+        setSortDirection(filterSettings.sortDirection);
+      }
     }
   }, []);
 
@@ -143,9 +179,74 @@ const UserList = () => {
       JSON.stringify({
         currentSort,
         currentPageSize,
+        sortDirection,
       })
     );
-  }, [currentSort, currentPageSize]);
+  }, [currentSort, currentPageSize, sortDirection]);
+
+  const SortableColumnHeader = ({
+    sortKey,
+    currentSort,
+    sortDirection,
+    onSortChange,
+    children,
+  }: {
+    sortKey: Sort;
+    currentSort: Sort;
+    sortDirection: SortDirection;
+    onSortChange: (sortKey: Sort) => void;
+    children: React.ReactNode;
+  }) => {
+    const intl = useIntl();
+
+    const getTooltip = () => {
+      if (currentSort === sortKey) {
+        return intl.formatMessage(messages.toggleSortDirection, {
+          direction:
+            sortDirection === 'asc'
+              ? intl.formatMessage(messages.descending)
+              : intl.formatMessage(messages.ascending),
+        });
+      }
+
+      switch (sortKey) {
+        case 'displayname':
+          return intl.formatMessage(messages.sortByUser);
+        case 'requests':
+          return intl.formatMessage(messages.sortByRequests);
+        case 'usertype':
+          return intl.formatMessage(messages.sortByType);
+        case 'role':
+          return intl.formatMessage(messages.sortByRole);
+        case 'created':
+          return intl.formatMessage(messages.sortByJoined);
+        default:
+          return intl.formatMessage(messages.sortBy, { field: sortKey });
+      }
+    };
+
+    return (
+      <Table.TH
+        className="cursor-pointer hover:bg-gray-700"
+        onClick={() => onSortChange(sortKey)}
+        data-testid={`column-header-${sortKey}`}
+        title={getTooltip()}
+      >
+        <div className="flex items-center">
+          <span>{children}</span>
+          {currentSort === sortKey && (
+            <span className="ml-1">
+              {sortDirection === 'asc' ? (
+                <ChevronUpIcon className="h-4 w-4" />
+              ) : (
+                <ChevronDownIcon className="h-4 w-4" />
+              )}
+            </span>
+          )}
+        </div>
+      </Table.TH>
+    );
+  };
 
   const isUserPermsEditable = (userId: number) =>
     userId !== 1 && userId !== currentUser?.id;
@@ -546,28 +647,46 @@ const UserList = () => {
               </span>
             </Button>
           </div>
+
           <div className="mb-2 flex flex-grow lg:mb-0 lg:flex-grow-0">
-            <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
-              <BarsArrowDownIcon className="h-6 w-6" />
-            </span>
+            <button
+              type="button"
+              className="inline-flex cursor-pointer items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100"
+              onClick={() =>
+                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+              }
+              aria-label={intl.formatMessage(messages.toggleSortDirectionAria)}
+              title={
+                sortDirection === 'asc'
+                  ? intl.formatMessage(messages.descending)
+                  : intl.formatMessage(messages.ascending)
+              }
+            >
+              {sortDirection === 'asc' ? (
+                <BarsArrowUpIcon className="h-6 w-6" />
+              ) : (
+                <BarsArrowDownIcon className="h-6 w-6" />
+              )}
+            </button>
             <select
               id="sort"
               name="sort"
-              onChange={(e) => {
-                setCurrentSort(e.target.value as Sort);
-                router.push(router.pathname);
-              }}
+              onChange={(e) => handleSortChange(e.target.value as Sort)}
               value={currentSort}
               className="rounded-r-only"
             >
-              <option value="created">
-                {intl.formatMessage(messages.sortCreated)}
+              <option value="displayname">
+                {intl.formatMessage(messages.username)}
               </option>
               <option value="requests">
-                {intl.formatMessage(messages.sortRequests)}
+                {intl.formatMessage(messages.totalrequests)}
               </option>
-              <option value="displayname">
-                {intl.formatMessage(messages.sortDisplayName)}
+              <option value="usertype">
+                {intl.formatMessage(messages.accounttype)}
+              </option>
+              <option value="role">{intl.formatMessage(messages.role)}</option>
+              <option value="created">
+                {intl.formatMessage(messages.created)}
               </option>
             </select>
           </div>
@@ -589,11 +708,46 @@ const UserList = () => {
                 />
               )}
             </Table.TH>
-            <Table.TH>{intl.formatMessage(messages.user)}</Table.TH>
-            <Table.TH>{intl.formatMessage(messages.totalrequests)}</Table.TH>
-            <Table.TH>{intl.formatMessage(messages.accounttype)}</Table.TH>
-            <Table.TH>{intl.formatMessage(messages.role)}</Table.TH>
-            <Table.TH>{intl.formatMessage(messages.created)}</Table.TH>
+            <SortableColumnHeader
+              sortKey="displayname"
+              currentSort={currentSort}
+              sortDirection={sortDirection}
+              onSortChange={handleSortChange}
+            >
+              {intl.formatMessage(messages.user)}
+            </SortableColumnHeader>
+            <SortableColumnHeader
+              sortKey="requests"
+              currentSort={currentSort}
+              sortDirection={sortDirection}
+              onSortChange={handleSortChange}
+            >
+              {intl.formatMessage(messages.totalrequests)}
+            </SortableColumnHeader>
+            <SortableColumnHeader
+              sortKey="usertype"
+              currentSort={currentSort}
+              sortDirection={sortDirection}
+              onSortChange={handleSortChange}
+            >
+              {intl.formatMessage(messages.accounttype)}
+            </SortableColumnHeader>
+            <SortableColumnHeader
+              sortKey="role"
+              currentSort={currentSort}
+              sortDirection={sortDirection}
+              onSortChange={handleSortChange}
+            >
+              {intl.formatMessage(messages.role)}
+            </SortableColumnHeader>
+            <SortableColumnHeader
+              sortKey="created"
+              currentSort={currentSort}
+              sortDirection={sortDirection}
+              onSortChange={handleSortChange}
+            >
+              {intl.formatMessage(messages.created)}
+            </SortableColumnHeader>
             <Table.TH className="text-right">
               {(data.results ?? []).length > 1 && (
                 <Button

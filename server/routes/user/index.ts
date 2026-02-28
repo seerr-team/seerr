@@ -44,6 +44,35 @@ router.get('/', async (req, res, next) => {
       : Math.max(10, includeIds.length);
     const skip = req.query.skip ? Number(req.query.skip) : 0;
     const q = req.query.q ? req.query.q.toString().toLowerCase() : '';
+    const sortParam = req.query.sort ? req.query.sort.toString() : undefined;
+    const sortDirectionQuery = req.query.sortDirection
+      ? req.query.sortDirection.toString().toLowerCase()
+      : undefined;
+
+    let sortDirection: 'ASC' | 'DESC';
+    if (sortDirectionQuery === 'asc') {
+      sortDirection = 'ASC';
+    } else if (sortDirectionQuery === 'desc') {
+      sortDirection = 'DESC';
+    } else {
+      switch (sortParam) {
+        case 'displayname':
+          sortDirection = 'ASC';
+          break;
+        case 'requests':
+        case 'updated':
+          sortDirection = 'DESC';
+          break;
+        case 'created':
+        case 'usertype':
+        case 'role':
+        case undefined:
+        default:
+          sortDirection = 'ASC';
+          break;
+      }
+    }
+
     let query = getRepository(User).createQueryBuilder('user');
 
     if (q) {
@@ -57,29 +86,32 @@ router.get('/', async (req, res, next) => {
       query.andWhereInIds(includeIds);
     }
 
-    switch (req.query.sort) {
+    switch (sortParam) {
+      case 'created':
+        query = query.orderBy('user.createdAt', sortDirection);
+        break;
       case 'updated':
-        query = query.orderBy('user.updatedAt', 'DESC');
+        query = query.orderBy('user.updatedAt', sortDirection);
         break;
       case 'displayname':
         query = query
           .addSelect(
             `CASE WHEN (user.username IS NULL OR user.username = '') THEN (
-              CASE WHEN (user.plexUsername IS NULL OR user.plexUsername = '') THEN (
-                CASE WHEN (user.jellyfinUsername IS NULL OR user.jellyfinUsername = '') THEN
-                  "user"."email"
+                CASE WHEN (user.plexUsername IS NULL OR user.plexUsername = '') THEN (
+                  CASE WHEN (user.jellyfinUsername IS NULL OR user.jellyfinUsername = '') THEN
+                    "user"."email"
+                  ELSE
+                    LOWER(user.jellyfinUsername)
+                  END)
                 ELSE
-                  LOWER(user.jellyfinUsername)
+                  LOWER(user.plexUsername)
                 END)
               ELSE
-                LOWER(user.jellyfinUsername)
-              END)
-            ELSE
-              LOWER(user.username)
-            END`,
+                LOWER(user.username)
+              END`,
             'displayname_sort_key'
           )
-          .orderBy('displayname_sort_key', 'ASC');
+          .orderBy('displayname_sort_key', sortDirection);
         break;
       case 'requests':
         query = query
@@ -89,10 +121,16 @@ router.get('/', async (req, res, next) => {
               .from(MediaRequest, 'request')
               .where('request.requestedBy.id = user.id');
           }, 'request_count')
-          .orderBy('request_count', 'DESC');
+          .orderBy('request_count', sortDirection);
+        break;
+      case 'usertype':
+        query = query.orderBy('user.userType', sortDirection);
+        break;
+      case 'role':
+        query = query.orderBy('user.permissions', sortDirection);
         break;
       default:
-        query = query.orderBy('user.id', 'ASC');
+        query = query.orderBy('user.id', sortDirection);
         break;
     }
 

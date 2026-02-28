@@ -4117,8 +4117,16 @@ paths:
           name: sort
           schema:
             type: string
-            enum: [created, updated, requests, displayname]
+            enum: [created, updated, requests, displayname, usertype, role]
             default: created
+        - in: query
+          name: sortDirection
+          description: |
+            Sort direction. When omitted, the server chooses the direction per sort
+            field (e.g. displayname defaults to asc, requests/updated to desc).
+          schema:
+            type: string
+            enum: [asc, desc]
         - in: query
           name: q
           required: false
