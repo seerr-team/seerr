@@ -19,6 +19,7 @@ import WebPushAgent from '@server/lib/notifications/agents/webpush';
 import checkOverseerrMerge from '@server/lib/overseerrMerge';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import { createMcpRouter } from '@server/mcp/transports';
 import clearCookies from '@server/middleware/clearcookies';
 import routes from '@server/routes';
 import avatarproxy from '@server/routes/avatarproxy';
@@ -179,6 +180,10 @@ app
         next();
       }
     });
+    // MCP (Model Context Protocol) Streamable HTTP transport
+    // Mounted early to avoid CSRF and OpenAPI validation middleware
+    server.use('/mcp', createMcpRouter());
+
     if (settings.network.csrfProtection) {
       server.use(
         csurf({
