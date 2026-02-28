@@ -116,7 +116,7 @@ const UserList = () => {
   const page = router.query.page ? Number(router.query.page) : 1;
   const pageIndex = page - 1;
   const updateQueryParams = useUpdateQueryParams({ page: page.toString() });
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const {
     data,
