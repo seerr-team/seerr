@@ -41,7 +41,7 @@ const PlexProfileSelector = ({
     null
   );
 
-  const handleProfileClick = (profile: PlexProfile) => {
+  const handleProfileClick = async (profile: PlexProfile) => {
     setSelectedProfileId(profile.id);
     setSelectedProfile(profile);
 
@@ -51,7 +51,7 @@ const PlexProfileSelector = ({
       setIsSubmitting(true);
 
       try {
-        onProfileSelected(profile.id);
+        await onProfileSelected(profile.id);
       } catch (err) {
         setError(intl.formatMessage(messages.selectProfileError));
       } finally {
