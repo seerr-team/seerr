@@ -1,6 +1,10 @@
 import AirDateBadge from '@app/components/AirDateBadge';
+import Badge from '@app/components/Common/Badge';
 import CachedImage from '@app/components/Common/CachedImage';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
+import { MetadataProviderType } from '@app/components/MetadataSelector';
+import useSettings from '@app/hooks/useSettings';
+import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import type { SeasonWithEpisodes } from '@server/models/Tv';
 import { useIntl } from 'react-intl';
@@ -18,6 +22,7 @@ type SeasonProps = {
 
 const Season = ({ seasonNumber, tvId }: SeasonProps) => {
   const intl = useIntl();
+  const settings = useSettings();
   const { data, error } = useSWR<SeasonWithEpisodes>(
     `/api/v1/tv/${tvId}/season/${seasonNumber}`
   );
@@ -29,6 +34,13 @@ const Season = ({ seasonNumber, tvId }: SeasonProps) => {
   if (!data) {
     return <div>{intl.formatMessage(messages.somethingwentwrong)}</div>;
   }
+
+  const showEpisodeAvailability =
+    settings.currentSettings.enableEpisodeAvailability &&
+    (settings.currentSettings.metadataSettings.tv ===
+      MetadataProviderType.TVDB ||
+      settings.currentSettings.metadataSettings.anime ===
+        MetadataProviderType.TVDB);
 
   return (
     <div className="flex flex-col justify-center divide-y divide-gray-700">
@@ -52,6 +64,14 @@ const Season = ({ seasonNumber, tvId }: SeasonProps) => {
                     {episode.airDate && (
                       <AirDateBadge airDate={episode.airDate} />
                     )}
+                    {showEpisodeAvailability &&
+                      episode.airDate &&
+                      new Date(episode.airDate) <= new Date() &&
+                      episode.available === true && (
+                        <Badge badgeType="success">
+                          {intl.formatMessage(globalMessages.available)}
+                        </Badge>
+                      )}
                   </div>
                   {episode.overview && <p>{episode.overview}</p>}
                 </div>

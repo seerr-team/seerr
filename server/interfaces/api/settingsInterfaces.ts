@@ -41,6 +41,7 @@ export interface PublicSettingsResponse {
   mediaServerType: number;
   partialRequestsEnabled: boolean;
   enableSpecialEpisodes: boolean;
+  enableEpisodeAvailability: boolean;
   cacheImages: boolean;
   vapidPublic: string;
   enablePushRegistration: boolean;
@@ -48,6 +49,10 @@ export interface PublicSettingsResponse {
   emailEnabled: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  metadataSettings: {
+    tv: string;
+    anime: string;
+  };
 }
 
 export interface CacheItem {

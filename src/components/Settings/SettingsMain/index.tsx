@@ -1,4 +1,5 @@
 import BlocklistedTagsSelector from '@app/components/BlocklistedTagsSelector';
+import Alert from '@app/components/Common/Alert';
 import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
@@ -9,6 +10,7 @@ import CopyButton from '@app/components/Settings/CopyButton';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import { availableLanguages } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
+import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -64,6 +66,11 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   validationApplicationUrlTrailingSlash: 'URL must not end in a trailing slash',
   partialRequestsEnabled: 'Allow Partial Series Requests',
   enableSpecialEpisodes: 'Allow Special Episodes Requests',
+  enableEpisodeAvailability: 'Enable Episode Availability Tracking',
+  enableEpisodeAvailabilityTip:
+    'Track individual episode availability status (requires TVDB as metadata provider for TV shows or anime)',
+  enableEpisodeAvailabilityNoTvdbWarning:
+    'This setting has no effect because neither TV shows nor anime use TVDB as the metadata provider.',
   locale: 'Display Language',
   youtubeUrl: 'YouTube URL',
   youtubeUrlTip:
@@ -77,11 +84,13 @@ const SettingsMain = () => {
   const { user: currentUser, hasPermission: userHasPermission } = useUser();
   const intl = useIntl();
   const { setLocale } = useLocale();
+  const { currentSettings } = useSettings();
   const {
     data,
     error,
     mutate: revalidate,
   } = useSWR<MainSettings>('/api/v1/settings/main');
+
   const { data: userData } = useSWR<UserSettingsGeneralResponse>(
     currentUser ? `/api/v1/user/${currentUser.id}/settings/main` : null
   );
@@ -173,6 +182,7 @@ const SettingsMain = () => {
             blocklistedTagsLimit: data?.blocklistedTagsLimit || 50,
             partialRequestsEnabled: data?.partialRequestsEnabled,
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
+            enableEpisodeAvailability: data?.enableEpisodeAvailability,
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
           }}
@@ -193,6 +203,7 @@ const SettingsMain = () => {
                 blocklistedTagsLimit: values.blocklistedTagsLimit,
                 partialRequestsEnabled: values.partialRequestsEnabled,
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
+                enableEpisodeAvailability: values.enableEpisodeAvailability,
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
               });
@@ -534,6 +545,45 @@ const SettingsMain = () => {
                       }}
                     />
                   </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="enableEpisodeAvailability"
+                    className="checkbox-label"
+                  >
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.enableEpisodeAvailability)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(
+                        messages.enableEpisodeAvailabilityTip
+                      )}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="enableEpisodeAvailability"
+                      name="enableEpisodeAvailability"
+                      onChange={() => {
+                        setFieldValue(
+                          'enableEpisodeAvailability',
+                          !values.enableEpisodeAvailability
+                        );
+                      }}
+                    />
+                  </div>
+                  {values.enableEpisodeAvailability &&
+                    currentSettings.metadataSettings?.tv !== 'tvdb' &&
+                    currentSettings.metadataSettings?.anime !== 'tvdb' && (
+                      <div className="sm:col-span-3">
+                        <Alert type="warning">
+                          {intl.formatMessage(
+                            messages.enableEpisodeAvailabilityNoTvdbWarning
+                          )}
+                        </Alert>
+                      </div>
+                    )}
                 </div>
                 <div className="form-row">
                   <label htmlFor="youtubeUrl" className="text-label">

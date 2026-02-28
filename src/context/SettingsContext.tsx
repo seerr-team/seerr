@@ -24,6 +24,7 @@ const defaultSettings = {
   mediaServerType: MediaServerType.NOT_CONFIGURED,
   partialRequestsEnabled: true,
   enableSpecialEpisodes: false,
+  enableEpisodeAvailability: false,
   cacheImages: false,
   vapidPublic: '',
   enablePushRegistration: false,
@@ -31,6 +32,10 @@ const defaultSettings = {
   emailEnabled: false,
   newPlexLogin: true,
   youtubeUrl: '',
+  metadataSettings: {
+    tv: 'tmdb',
+    anime: 'tmdb',
+  },
 };
 
 export const SettingsContext = React.createContext<SettingsContextProps>({
