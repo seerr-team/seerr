@@ -129,7 +129,7 @@
     "@types/express-session": "1.18.2",
     "@types/lodash": "4.17.21",
     "@types/mime": "3",
-    "@types/node": "22.10.5",
+    "@types/node": "24.10.13",
     "@types/node-schedule": "2.1.8",
     "@types/nodemailer": "7",
     "@types/react": "^18.3.3",
