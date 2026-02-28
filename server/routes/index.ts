@@ -17,6 +17,7 @@ import { mapProductionCompany } from '@server/models/Movie';
 import { mapNetwork } from '@server/models/Tv';
 import { mapWatchProviderDetails } from '@server/models/common';
 import overrideRuleRoutes from '@server/routes/overrideRule';
+import plexWatchlistRoutes from '@server/routes/plexWatchlist';
 import settingsRoutes from '@server/routes/settings';
 import watchlistRoutes from '@server/routes/watchlist';
 import {
@@ -152,6 +153,7 @@ router.use('/search', isAuthenticated(), searchRoutes);
 router.use('/discover', isAuthenticated(), discoverRoutes);
 router.use('/request', isAuthenticated(), requestRoutes);
 router.use('/watchlist', isAuthenticated(), watchlistRoutes);
+router.use('/plex-watchlist', isAuthenticated(), plexWatchlistRoutes);
 router.use('/blocklist', isAuthenticated(), blocklistRoutes);
 router.use(
   '/blacklist',
