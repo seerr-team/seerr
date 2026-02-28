@@ -878,6 +878,20 @@ class AvailabilitySync {
         }
       }
 
+      if (plexMedia && media.mediaType === 'movie') {
+        const ignoredEditions = getSettings().plex.ignoredEditions ?? [];
+        if (
+          plexMedia.editionTitle &&
+          ignoredEditions.some(
+            (e) =>
+              plexMedia!.editionTitle!.toLowerCase().trim() ===
+              e.toLowerCase().trim()
+          )
+        ) {
+          plexMedia = undefined;
+        }
+      }
+
       if (plexMedia) {
         existsInPlex = true;
       }

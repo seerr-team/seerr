@@ -35,6 +35,7 @@ export interface PlexSettings {
   useSsl?: boolean;
   libraries: Library[];
   webAppUrl?: string;
+  ignoredEditions: string[];
 }
 
 export interface JellyfinSettings {
@@ -412,6 +413,7 @@ class Settings {
         port: 32400,
         useSsl: false,
         libraries: [],
+        ignoredEditions: [],
       },
       jellyfin: {
         name: '',

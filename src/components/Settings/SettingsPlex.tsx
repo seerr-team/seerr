@@ -22,9 +22,15 @@ import { Field, Formik } from 'formik';
 import { orderBy } from 'lodash';
 import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
+import CreatableSelect from 'react-select/creatable';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
+
+type EditionOption = {
+  label: string;
+  value: string;
+};
 
 const messages = defineMessages('components.Settings', {
   plex: 'Plex',
@@ -67,6 +73,10 @@ const messages = defineMessages('components.Settings', {
   webAppUrl: '<WebAppLink>Web App</WebAppLink> URL',
   webAppUrlTip:
     'Optionally direct users to the web app on your server instead of the "hosted" web app',
+  ignoredEditions: 'Ignored Editions',
+  ignoredEditionsTip:
+    'Movies with these Plex edition tags will be ignored during library scans and not marked as available (e.g., Trailer)',
+  ignoredEditionsPlaceholder: 'Type an edition name and press Enter…',
   tautulliSettings: 'Tautulli Settings',
   tautulliSettingsDescription:
     'Optionally configure the settings for your Tautulli server. Seerr fetches watch history data for your Plex media from Tautulli.',
@@ -375,6 +385,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           useSsl: data?.useSsl,
           selectedPreset: undefined,
           webAppUrl: data?.webAppUrl,
+          ignoredEditions: data?.ignoredEditions ?? [],
         }}
         validationSchema={PlexSettingsSchema}
         validateOnMount={true}
@@ -396,6 +407,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
               port: Number(values.port),
               useSsl: values.useSsl,
               webAppUrl: values.webAppUrl,
+              ignoredEditions: values.ignoredEditions,
             } as PlexSettings);
 
             syncLibraries();
@@ -599,6 +611,42 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                     typeof errors.webAppUrl === 'string' && (
                       <div className="error">{errors.webAppUrl}</div>
                     )}
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="ignoredEditions" className="text-label">
+                  {intl.formatMessage(messages.ignoredEditions)}
+                  <SettingsBadge badgeType="advanced" className="ml-2" />
+                  <span className="label-tip">
+                    {intl.formatMessage(messages.ignoredEditionsTip)}
+                  </span>
+                </label>
+                <div className="form-input-area">
+                  <div className="form-input-field relative">
+                    <CreatableSelect<EditionOption, true>
+                      components={{
+                        DropdownIndicator: null,
+                      }}
+                      isClearable
+                      isMulti
+                      noOptionsMessage={() => null}
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                      placeholder={intl.formatMessage(
+                        messages.ignoredEditionsPlaceholder
+                      )}
+                      value={(values.ignoredEditions ?? []).map((e) => ({
+                        label: e,
+                        value: e,
+                      }))}
+                      onChange={(newValue) => {
+                        setFieldValue(
+                          'ignoredEditions',
+                          newValue.map((v) => v.value)
+                        );
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="actions">

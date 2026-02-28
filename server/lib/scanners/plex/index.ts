@@ -224,7 +224,23 @@ class PlexScanner
     }
   }
 
+  private isIgnoredEdition(editionTitle?: string): boolean {
+    if (!editionTitle) return false;
+
+    const ignoredEditions = getSettings().plex.ignoredEditions ?? [];
+    return ignoredEditions.some(
+      (e) => editionTitle.toLowerCase().trim() === e.toLowerCase().trim()
+    );
+  }
+
   private async processPlexMovie(plexitem: PlexLibraryItem) {
+    if (this.isIgnoredEdition(plexitem.editionTitle)) {
+      this.log(
+        `Skipping movie ${plexitem.title} with ignored edition: ${plexitem.editionTitle}`
+      );
+      return;
+    }
+
     const mediaIds = await this.getMediaIds(plexitem);
 
     const has4k = plexitem.Media.some(
@@ -243,6 +259,13 @@ class PlexScanner
     plexitem: PlexMetadata,
     tmdbId: number
   ) {
+    if (this.isIgnoredEdition(plexitem.editionTitle)) {
+      this.log(
+        `Skipping movie ${plexitem.title} with ignored edition: ${plexitem.editionTitle}`
+      );
+      return;
+    }
+
     const has4k = plexitem.Media.some(
       (media) => media.videoResolution === '4k'
     );
