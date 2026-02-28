@@ -140,6 +140,7 @@ const UserList = () => {
       setCurrentSort(sortKey);
       setSortDirection(defaultSortDirection(sortKey));
     }
+    updateQueryParams('page', '1');
   };
 
   const [isDeleting, setDeleting] = useState(false);
@@ -672,6 +673,7 @@ const UserList = () => {
               name="sort"
               onChange={(e) => {
                 setCurrentSort(e.target.value as Sort);
+                updateQueryParams('page', '1');
               }}
               value={currentSort}
               className="rounded-r-only"
