@@ -123,7 +123,15 @@ authRoutes.post('/plex', async (req, res, next) => {
       return res.status(200).json(user?.filter() ?? {});
     }
 
-    // Validate PIN for main account
+    // Enforce PIN for protected main account
+    if (!body.profileId && mainUserProfile?.protected && !body.pin) {
+      return next({
+        status: 401,
+        error: ApiErrorCode.InvalidPin,
+        message: 'PIN required.',
+      });
+    }
+
     if (!body.profileId && mainUserProfile?.protected && body.pin) {
       const isPinValid = await plextv.validateProfilePin(
         mainUserProfile.id,
@@ -131,8 +139,8 @@ authRoutes.post('/plex', async (req, res, next) => {
       );
       if (!isPinValid) {
         return next({
-          status: 403,
-          error: 'INVALID_PIN.',
+          status: 401,
+          error: ApiErrorCode.InvalidPin,
         });
       }
     }
