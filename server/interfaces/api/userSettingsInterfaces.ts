@@ -4,6 +4,7 @@ export interface UserSettingsGeneralResponse {
   username?: string;
   email?: string;
   appriseTags?: string;
+  appriseStatelessURL?: string;
   discordId?: string;
   locale?: string;
   discoverRegion?: string;
@@ -30,6 +31,7 @@ export interface UserSettingsNotificationsResponse {
   appriseURL?: string;
   appriseAPIToken?: string;
   appriseTags?: string;
+  appriseStatelessURL?: string;
   discordEnabled?: boolean;
   discordEnabledTypes?: number;
   discordId?: string;

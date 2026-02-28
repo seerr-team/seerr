@@ -257,6 +257,7 @@ const UserWebPushSettings = () => {
               {
                 pgpKey: data?.pgpKey,
                 appriseTags: data?.appriseTags,
+                appriseStatelessURL: data?.appriseStatelessURL,
                 discordId: data?.discordId,
                 pushbulletAccessToken: data?.pushbulletAccessToken,
                 pushoverApplicationToken: data?.pushoverApplicationToken,

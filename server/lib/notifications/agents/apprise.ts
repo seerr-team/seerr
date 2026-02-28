@@ -17,6 +17,7 @@ interface AppriseOptions {
   apiToken?: string;
   title?: string;
   body?: string;
+  urls?: string;
   type: 'info' | 'success' | 'warning' | 'failure';
 }
 
@@ -59,7 +60,11 @@ class AppriseAgent
       body += `${payload.message}\n\n`;
     }
 
-    title += ` [[${applicationTitle}]](${applicationUrl})`;
+    if (applicationUrl) {
+      title += ` [[${applicationTitle}]](${applicationUrl})`;
+    } else {
+      title += ` [${applicationTitle}]`;
+    }
 
     if (payload.request) {
       body += `Requested By\n${payload.request.requestedBy.displayName}`;
@@ -88,7 +93,7 @@ class AppriseAgent
         body += `\n\nRequest Status\n${status}`;
       }
     } else if (payload.comment) {
-      body += `\n\nComment From ${payload.comment.user.displayName}\n${payload.comment}`;
+      body += `\n\nComment From ${payload.comment.user.displayName}\n${payload.comment.message}`;
     } else if (payload.issue) {
       body += `\n\nReported By\n${payload.issue.createdBy.displayName}\n\nIssue Type\n${IssueTypeName[payload.issue.issueType]}\n\nIssue Status\n${payload.issue.status === IssueStatus.OPEN ? 'Open' : 'Resolved'}`;
     }
@@ -111,13 +116,23 @@ class AppriseAgent
       body += `\n\nPlay on [${mediaServerName}](${mediaServerUrl})`;
     }
 
-    return {
-      title: title,
-      body: body,
-      format: 'markdown',
-      tags: payload.notifyUser?.settings?.appriseTags || 'all',
-      type: 'info',
-    };
+    if (payload.notifyUser?.settings?.appriseStatelessURL) {
+      return {
+        title: title,
+        body: body,
+        format: 'markdown',
+        urls: payload.notifyUser?.settings?.appriseStatelessURL,
+        type: 'info',
+      };
+    } else {
+      return {
+        title: title,
+        body: body,
+        format: 'markdown',
+        tags: payload.notifyUser?.settings?.appriseTags || 'all',
+        type: 'info',
+      };
+    }
   }
   public async send(
     type: Notification,

@@ -70,6 +70,7 @@ const UserEmailSettings = () => {
           await axios.post(`/api/v1/user/${user?.id}/settings/notifications`, {
             pgpKey: values.pgpKey,
             appriseTags: data?.appriseTags,
+            appriseStatelessURL: data?.appriseStatelessURL,
             discordId: data?.discordId,
             pushbulletAccessToken: data?.pushbulletAccessToken,
             pushoverApplicationToken: data?.pushoverApplicationToken,

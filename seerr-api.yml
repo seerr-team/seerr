@@ -150,6 +150,8 @@ components:
           example: 'user@example.com'
         appriseTags:
           type: string
+        appriseStatelessURL:
+          type: string
         discordId:
           type: string
           nullable: true
@@ -1962,6 +1964,12 @@ components:
         appriseEnabledTypes:
           type: number
           nullable: true
+        appriseTags:
+          type: string
+          nullable: true
+        appriseStatelessURL:
+          type: string
+          nullable: true
         discordEnabled:
           type: boolean
         discordEnabledTypes:
@@ -1999,6 +2007,8 @@ components:
     NotificationAgentTypes:
       type: object
       properties:
+        apprise:
+          type: number
         discord:
           type: number
         email:

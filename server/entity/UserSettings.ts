@@ -46,6 +46,9 @@ export class UserSettings {
   public appriseTags?: string;
 
   @Column({ nullable: true })
+  public appriseStatelessURL?: string;
+
+  @Column({ nullable: true })
   public discordId?: string;
 
   @Column({ nullable: true })
