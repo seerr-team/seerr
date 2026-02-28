@@ -59,6 +59,29 @@ class EmailAgent
           to: recipientEmail,
         },
         locals: {
+            // --- email template locals (ensure defined for templates) ---
+            requestedBy:
+              payload.request?.requestedBy?.displayName ??
+              payload.user?.displayName ??
+              payload.request?.requestedBy?.email ??
+              '',
+            commentUser:
+              payload.comment?.user?.displayName ??
+              payload.comment?.user?.email ??
+              '',
+            issueCreatedBy:
+              payload.issue?.createdBy?.displayName ??
+              payload.issue?.createdBy?.email ??
+              '',
+            issueModifiedBy:
+              payload.issue?.modifiedBy?.displayName ??
+              payload.issue?.modifiedBy?.email ??
+              '',
+            mediaName:
+              payload.subject ??
+              payload.media?.title ??
+              '',
+            mediaExtra: payload.extra ?? [],
           body: payload.message,
           applicationUrl,
           applicationTitle,
@@ -80,41 +103,25 @@ class EmailAgent
 
       switch (type) {
         case Notification.MEDIA_PENDING:
-          body = `A new request for the following ${mediaType} ${
-            is4k ? 'in 4K ' : ''
-          }is pending approval:`;
+
           break;
         case Notification.MEDIA_AUTO_REQUESTED:
-          body = `A new request for the following ${mediaType} ${
-            is4k ? 'in 4K ' : ''
-          }was automatically submitted:`;
+
           break;
         case Notification.MEDIA_APPROVED:
-          body = `Your request for the following ${mediaType} ${
-            is4k ? 'in 4K ' : ''
-          }has been approved:`;
+
           break;
         case Notification.MEDIA_AUTO_APPROVED:
-          body = `A new request for the following ${mediaType} ${
-            is4k ? 'in 4K ' : ''
-          }has been automatically approved:`;
+
           break;
         case Notification.MEDIA_AVAILABLE:
-          body = `Your request for the following ${mediaType} ${
-            is4k ? 'in 4K ' : ''
-          }is now available:`;
+
           break;
         case Notification.MEDIA_DECLINED:
-          body = `Your request for the following ${mediaType} ${
-            is4k ? 'in 4K ' : ''
-          }was declined:`;
+
           break;
         case Notification.MEDIA_FAILED:
-          body = `A request for the following ${mediaType} ${
-            is4k ? 'in 4K ' : ''
-          }failed to be added to ${
-            payload.media?.mediaType === MediaType.MOVIE ? 'Radarr' : 'Sonarr'
-          }:`;
+
           break;
       }
 
@@ -153,16 +160,16 @@ class EmailAgent
 
       switch (type) {
         case Notification.ISSUE_CREATED:
-          body = `A new ${issueType} has been reported by ${payload.issue.createdBy.displayName} for the ${mediaType} ${payload.subject}:`;
+
           break;
         case Notification.ISSUE_COMMENT:
-          body = `${payload.comment?.user.displayName} commented on the ${issueType} for the ${mediaType} ${payload.subject}:`;
+
           break;
         case Notification.ISSUE_RESOLVED:
-          body = `The ${issueType} for the ${mediaType} ${payload.subject} was marked as resolved by ${payload.issue.modifiedBy?.displayName}!`;
+
           break;
         case Notification.ISSUE_REOPENED:
-          body = `The ${issueType} for the ${mediaType} ${payload.subject} was reopened by ${payload.issue.modifiedBy?.displayName}.`;
+
           break;
       }
 
