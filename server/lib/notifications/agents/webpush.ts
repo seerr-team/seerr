@@ -106,6 +106,11 @@ class WebPushAgent
           payload.request?.requestedBy.displayName
         }.`;
         break;
+      case Notification.MEDIA_PENDING_UPDATED:
+        message = `A new request for the following ${mediaType} ${
+          is4k ? 'in 4K ' : ''
+        }has been updated:`;
+        break;
       case Notification.ISSUE_CREATED:
         message = `A new ${issueType} was reported by ${payload.issue?.createdBy.displayName}.`;
         break;

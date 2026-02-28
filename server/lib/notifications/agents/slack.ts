@@ -78,6 +78,7 @@ class SlackAgent
       let status = '';
       switch (type) {
         case Notification.MEDIA_PENDING:
+        case Notification.MEDIA_PENDING_UPDATED:
           status = 'Pending Approval';
           break;
         case Notification.MEDIA_APPROVED:

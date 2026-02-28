@@ -128,6 +128,7 @@ class DiscordAgent
       let status = '';
       switch (type) {
         case Notification.MEDIA_PENDING:
+        case Notification.MEDIA_PENDING_UPDATED:
           color = EmbedColors.ORANGE;
           status = `[Pending Approval](${appUrl}/requests)`;
           break;
