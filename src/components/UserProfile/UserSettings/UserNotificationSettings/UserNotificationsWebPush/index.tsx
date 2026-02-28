@@ -256,6 +256,7 @@ const UserWebPushSettings = () => {
               `/api/v1/user/${user?.id}/settings/notifications`,
               {
                 pgpKey: data?.pgpKey,
+                notifyEmail: data?.notifyEmail,
                 discordId: data?.discordId,
                 pushbulletAccessToken: data?.pushbulletAccessToken,
                 pushoverApplicationToken: data?.pushoverApplicationToken,
