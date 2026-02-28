@@ -591,50 +591,32 @@ authRoutes.post('/plex/profile/select', async (req, res, next) => {
         }
         return res.status(200).json(profileUser.filter() ?? {});
       } else {
-        // Then check for any other potential matches
-        const exactProfileUser = await userRepository.findOne({
-          where: { plexProfileId: profileId },
+        // Create a new profile user
+        profileUser = new User({
+          email: proposedEmail,
+          plexUsername: selectedProfile.username || selectedProfile.title,
+          plexId: mainUser.plexId,
+          plexToken: authToken,
+          permissions: settings.main.defaultPermissions,
+          avatar: selectedProfile.thumb,
+          userType: UserType.PLEX_PROFILE,
+          plexProfileId: profileId,
+          plexProfileNumericId: selectedProfile.numericId || null,
+          mainPlexUserId: mainUser.id,
         });
 
-        if (exactProfileUser) {
-          logger.info('Found existing profile user with exact ID match', {
-            label: 'Auth',
-            profileId,
-            userId: exactProfileUser.id,
-          });
+        logger.info('Creating new profile user', {
+          label: 'Auth',
+          profileId,
+          email: proposedEmail,
+        });
 
-          if (req.session) {
-            req.session.userId = exactProfileUser.id;
-          }
-          return res.status(200).json(exactProfileUser.filter() ?? {});
-        } else {
-          // Create a new profile user
-          profileUser = new User({
-            email: proposedEmail,
-            plexUsername: selectedProfile.username || selectedProfile.title,
-            plexId: mainUser.plexId,
-            plexToken: authToken,
-            permissions: settings.main.defaultPermissions,
-            avatar: selectedProfile.thumb,
-            userType: UserType.PLEX_PROFILE,
-            plexProfileId: profileId,
-            plexProfileNumericId: selectedProfile.numericId || null,
-            mainPlexUserId: mainUser.id,
-          });
+        await userRepository.save(profileUser);
 
-          logger.info('Creating new profile user', {
-            label: 'Auth',
-            profileId,
-            email: proposedEmail,
-          });
-
-          await userRepository.save(profileUser);
-
-          if (req.session) {
-            req.session.userId = profileUser.id;
-          }
-          return res.status(200).json(profileUser.filter() ?? {});
+        if (req.session) {
+          req.session.userId = profileUser.id;
         }
+        return res.status(200).json(profileUser.filter() ?? {});
       }
     } else {
       // Profile exists - only set mainPlexUserId if it's the main user creating it
