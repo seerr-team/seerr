@@ -181,12 +181,19 @@ const { embedPoster } = settings.notifications.agents.email;
         },
         locals: {
           event: payload.event,
+          notificationType: type,
+          mediaType,
+          isMovie: mediaType === 'movie',
+          isSeries: mediaType === 'series',
           body,
           mediaName: payload.subject,
           mediaExtra: payload.extra ?? [],
           imageUrl: embedPoster ? payload.image : undefined,
           timestamp: new Date().toTimeString(),
-          requestedBy: payload.request.requestedBy.displayName,
+          requestedBy:
+            payload.request.requestedBy.displayName ??
+            payload.request.requestedBy.email ??
+            '',
           actionUrl: applicationUrl
             ? `${applicationUrl}/${payload.media?.mediaType}/${payload.media?.tmdbId}`
             : undefined,
