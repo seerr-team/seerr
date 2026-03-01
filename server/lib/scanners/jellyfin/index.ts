@@ -60,7 +60,7 @@ class JellyfinScanner
     }
 
     const anidbId = Number(metadata.ProviderIds.AniDB ?? null);
-    let tmdbId = Number(metadata.ProviderIds.Tmdb ?? metadata.ProviderIds.TheMovieDb ?? null);
+    let tmdbId = Number(metadata.ProviderIds.Tmdb || metadata.ProviderIds.TheMovieDb || null);
     let imdbId = metadata.ProviderIds.Imdb;
 
     // We use anidb only if we have the anidbId and nothing else
