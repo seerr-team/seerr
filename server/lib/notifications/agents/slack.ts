@@ -215,7 +215,7 @@ class SlackAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    const settings = this.getSettings() as NotificationAgentSlack;
+    const settings = this.getSettings();
 
     if (
       !payload.notifySystem ||

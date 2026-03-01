@@ -94,7 +94,7 @@ class NtfyAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    const settings = this.getSettings() as NotificationAgentNtfy;
+    const settings = this.getSettings();
 
     if (
       !payload.notifySystem ||

@@ -95,7 +95,7 @@ class PushbulletAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    const settings = this.getSettings() as NotificationAgentPushbullet;
+    const settings = this.getSettings();
     const endpoint = 'https://api.pushbullet.com/v2/pushes';
     const notificationPayload = this.getNotificationPayload(type, payload);
 

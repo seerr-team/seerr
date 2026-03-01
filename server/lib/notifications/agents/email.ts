@@ -210,7 +210,7 @@ class EmailAgent
 
         try {
           const email = new PreparedEmail(
-            this.getSettings() as NotificationAgentEmail,
+            this.getSettings(),
             payload.notifyUser.settings?.pgpKey
           );
           if (
@@ -274,7 +274,7 @@ class EmailAgent
 
             try {
               const email = new PreparedEmail(
-                this.getSettings() as NotificationAgentEmail,
+                this.getSettings(),
                 user.settings?.pgpKey
               );
               if (validator.isEmail(user.email, { require_tld: false })) {

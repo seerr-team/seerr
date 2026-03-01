@@ -33,7 +33,7 @@ export abstract class BaseAgent<T extends NotificationAgentConfig> {
     this.id = id;
   }
 
-  protected getSettings(): NotificationAgentConfig {
+  protected getSettings(): T {
     if (this.settings) {
       return this.settings;
     }
@@ -44,7 +44,7 @@ export abstract class BaseAgent<T extends NotificationAgentConfig> {
       (instance) => instance.id === Number(this.id)
     );
 
-    return notificationInstance as NotificationAgentConfig;
+    return notificationInstance as T;
   }
 }
 

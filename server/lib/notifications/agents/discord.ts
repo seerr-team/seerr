@@ -236,7 +236,7 @@ class DiscordAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    const settings = this.getSettings() as NotificationAgentDiscord;
+    const settings = this.getSettings();
 
     if (
       !payload.notifySystem ||

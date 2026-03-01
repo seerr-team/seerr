@@ -183,7 +183,7 @@ class PushoverAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    const settings = this.getSettings() as NotificationAgentPushover;
+    const settings = this.getSettings();
     const endpoint = 'https://api.pushover.net/1/messages.json';
     const notificationPayload = await this.getNotificationPayload(
       type,

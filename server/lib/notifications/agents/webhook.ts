@@ -147,7 +147,7 @@ class WebhookAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    const settings = this.getSettings() as NotificationAgentWebhook;
+    const settings = this.getSettings();
 
     if (
       !payload.notifySystem ||
