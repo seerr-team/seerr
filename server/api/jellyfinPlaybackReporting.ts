@@ -32,21 +32,23 @@ class JellyfinPlaybackReportingAPI extends JellyfinAPI {
     JellyfinPlaybackActivityResponse[]
   > {
     try {
-      const CustomQueryString = `SELECT DateCreated, UserId, ItemId, ItemType, PlayDuration FROM PlaybackActivity \
-                                ${
-                                  sinceDate
-                                    ? `WHERE DateCreated >= '${sinceDate.toISOString()}'`
-                                    : ''
-                                }\
-                                ${
-                                  sinceDate ? `WHERE UserId = '${userId}'` : ''
-                                }\
-                                ${
-                                  sinceDate
-                                    ? `WHERE ItemType = '${itemType}'`
-                                    : ''
-                                }\
-                                ORDER BY DateCreated ASC`;
+      const escapeSql = (value: string) => value.replace(/'/g, "''");
+      const whereClauses: string[] = [];
+
+      if (sinceDate) {
+        whereClauses.push(`DateCreated >= '${sinceDate.toISOString()}'`);
+      }
+      if (userId) {
+        whereClauses.push(`UserId = '${escapeSql(userId)}'`);
+      }
+      if (itemType) {
+        whereClauses.push(`ItemType = '${escapeSql(itemType)}'`);
+      }
+
+      const whereSql =
+        whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+      const CustomQueryString = `SELECT DateCreated, UserId, ItemId, ItemType, PlayDuration FROM PlaybackActivity\
+        ${whereSql} ORDER BY DateCreated ASC`;
 
       const playbackActivityResult = await this.post<CustomQueryResponse>(
         'user_usage_stats/submit_custom_query',
