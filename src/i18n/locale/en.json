@@ -861,7 +861,6 @@
   "components.Settings.SettingsAbout.about": "About",
   "components.Settings.SettingsAbout.aboutseerr": "About Seerr",
   "components.Settings.SettingsAbout.appDataPath": "Data Directory",
-  "components.Settings.SettingsAbout.betawarning": "This is BETA software. Features may be broken and/or unstable. Please report any issues on GitHub!",
   "components.Settings.SettingsAbout.contribute": "Make a Contribution",
   "components.Settings.SettingsAbout.documentation": "Documentation",
   "components.Settings.SettingsAbout.gettingsupport": "Getting Support",
