@@ -84,6 +84,7 @@ export interface SonarrSettings extends DVRSettings {
   activeLanguageProfileId?: number;
   animeTags?: number[];
   enableSeasonFolders: boolean;
+  monitorNewItems: 'all' | 'none';
 }
 
 interface Quota {
@@ -102,15 +103,15 @@ export interface MainSettings {
     tv: Quota;
   };
   hideAvailable: boolean;
-  hideBlacklisted: boolean;
+  hideBlocklisted: boolean;
   localLogin: boolean;
   mediaServerLogin: boolean;
   newPlexLogin: boolean;
   discoverRegion: string;
   streamingRegion: string;
   originalLanguage: string;
-  blacklistedTags: string;
-  blacklistedTagsLimit: number;
+  blocklistedTags: string;
+  blocklistedTagsLimit: number;
   mediaServerType: number;
   partialRequestsEnabled: boolean;
   enableSpecialEpisodes: boolean;
@@ -151,6 +152,7 @@ export interface NetworkSettings {
   trustProxy: boolean;
   proxy: ProxySettings;
   dnsCache: DnsCacheSettings;
+  apiRequestTimeout: number;
 }
 
 export interface PublicSettings {
@@ -161,7 +163,7 @@ export interface FullPublicSettings extends PublicSettings {
   applicationTitle: string;
   applicationUrl: string;
   hideAvailable: boolean;
-  hideBlacklisted: boolean;
+  hideBlocklisted: boolean;
   localLogin: boolean;
   mediaServerLogin: boolean;
   movie4kEnabled: boolean;
@@ -332,7 +334,7 @@ export type JobId =
   | 'jellyfin-full-scan'
   | 'image-cache-cleanup'
   | 'availability-sync'
-  | 'process-blacklisted-tags';
+  | 'process-blocklisted-tags';
 
 export interface AllSettings {
   clientId: string;

@@ -420,7 +420,7 @@ class JellyfinAPI extends ExternalAPI {
   }
 
   public async getEpisodes<
-    T extends { includeMediaInfo?: boolean } | undefined = undefined
+    T extends { includeMediaInfo?: boolean } | undefined = undefined,
   >(
     seriesID: string,
     seasonID: string,

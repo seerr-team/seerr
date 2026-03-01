@@ -201,7 +201,7 @@ function NotificationInstanceList({
           <Table.TH>{intl.formatMessage(messages.notificationAgent)}</Table.TH>
           <Table.TH>{intl.formatMessage(messages.instanceEnabled)}</Table.TH>
           <Table.TH>{intl.formatMessage(messages.instanceDefault)}</Table.TH>
-          <Table.TH></Table.TH>
+          <Table.TH />
         </tr>
       </thead>
 

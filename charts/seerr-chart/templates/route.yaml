@@ -1,0 +1,50 @@
+{{- range $name, $route := .Values.route }}
+{{- if $route.enabled }}
+---
+apiVersion: {{ $route.apiVersion | default "gateway.networking.k8s.io/v1" }}
+kind: {{ $route.kind | default "HTTPRoute" }}
+metadata:
+  name: {{ template "seerr.fullname" $ }}{{ if ne $name "main" }}-{{ $name }}{{ end }}
+  labels:
+    {{- include "seerr.labels" $ | nindent 4 }}
+    {{- with $route.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $route.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with $route.parentRefs }}
+  parentRefs:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $route.hostnames }}
+  hostnames:
+    {{- tpl (toYaml .) $ | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- with $route.additionalRules }}
+    {{- tpl (toYaml .) $ | nindent 4 }}
+    {{- end }}
+    {{- if $route.httpsRedirect }}
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+    {{- else }}
+    - backendRefs:
+        - name: {{ include "seerr.fullname" $ }}
+          port: {{ $.Values.service.port }}
+      {{- with $route.filters }}
+      filters:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $route.matches }}
+      matches:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}

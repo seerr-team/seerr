@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddUserSettingsStreamingRegion1727907530757
-  implements MigrationInterface
-{
+export class AddUserSettingsStreamingRegion1727907530757 implements MigrationInterface {
   name = 'AddUserSettingsStreamingRegion1727907530757';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

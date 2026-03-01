@@ -11,9 +11,14 @@ export let requestInterceptorFunction: (
 ) => InternalAxiosRequestConfig;
 
 export default async function createCustomProxyAgent(
-  proxySettings: ProxySettings
+  proxySettings: ProxySettings,
+  forceIpv4First?: boolean
 ) {
-  const defaultAgent = new Agent({ keepAliveTimeout: 5000 });
+  const defaultAgent = new Agent({
+    keepAliveTimeout: 5000,
+    connections: 50,
+    connect: forceIpv4First ? { family: 4 } : undefined,
+  });
 
   const skipUrl = (url: string | URL) => {
     const hostname =
@@ -67,16 +72,23 @@ export default async function createCustomProxyAgent(
       uri: proxyUrl,
       token,
       keepAliveTimeout: 5000,
+      connections: 50,
+      connect: forceIpv4First ? { family: 4 } : undefined,
     });
 
     setGlobalDispatcher(proxyAgent.compose(noProxyInterceptor));
 
-    axios.defaults.httpAgent = new HttpProxyAgent(proxyUrl, {
+    const agentOptions = {
       headers: token ? { 'proxy-authorization': token } : undefined,
-    });
-    axios.defaults.httpsAgent = new HttpsProxyAgent(proxyUrl, {
-      headers: token ? { 'proxy-authorization': token } : undefined,
-    });
+      keepAlive: true,
+      maxSockets: 50,
+      maxFreeSockets: 10,
+      timeout: 5000,
+      scheduling: 'lifo' as const,
+      family: forceIpv4First ? 4 : undefined,
+    };
+    axios.defaults.httpAgent = new HttpProxyAgent(proxyUrl, agentOptions);
+    axios.defaults.httpsAgent = new HttpsProxyAgent(proxyUrl, agentOptions);
 
     requestInterceptorFunction = (config) => {
       const url = config.baseURL

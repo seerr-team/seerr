@@ -361,7 +361,12 @@ const TvRequestModal = ({
       ).length > 0
     ) {
       data.mediaInfo.requests
-        .filter((request) => request.is4k === is4k)
+        .filter(
+          (request) =>
+            request.is4k === is4k &&
+            request.status !== MediaRequestStatus.DECLINED &&
+            request.status !== MediaRequestStatus.COMPLETED
+        )
         .forEach((request) => {
           if (!seasonRequest) {
             seasonRequest = request.seasons.find(
@@ -409,8 +414,8 @@ const TvRequestModal = ({
             ? messages.pending4krequest
             : messages.pendingrequest
           : is4k
-          ? messages.requestseries4ktitle
-          : messages.requestseriestitle
+            ? messages.requestseries4ktitle
+            : messages.requestseriestitle
       )}
       subTitle={data?.name}
       okText={
@@ -418,33 +423,33 @@ const TvRequestModal = ({
           ? selectedSeasons.length === 0
             ? intl.formatMessage(messages.cancel)
             : hasPermission(Permission.MANAGE_REQUESTS)
-            ? intl.formatMessage(messages.approve)
-            : intl.formatMessage(messages.edit)
+              ? intl.formatMessage(messages.approve)
+              : intl.formatMessage(messages.edit)
           : getAllRequestedSeasons().length >= getAllSeasons().length
-          ? intl.formatMessage(messages.alreadyrequested)
-          : !settings.currentSettings.partialRequestsEnabled
-          ? intl.formatMessage(
-              is4k ? globalMessages.request4k : globalMessages.request
-            )
-          : selectedSeasons.length === 0
-          ? intl.formatMessage(messages.selectseason)
-          : intl.formatMessage(
-              is4k ? messages.requestseasons4k : messages.requestseasons,
-              {
-                seasonCount: selectedSeasons.length,
-              }
-            )
+            ? intl.formatMessage(messages.alreadyrequested)
+            : !settings.currentSettings.partialRequestsEnabled
+              ? intl.formatMessage(
+                  is4k ? globalMessages.request4k : globalMessages.request
+                )
+              : selectedSeasons.length === 0
+                ? intl.formatMessage(messages.selectseason)
+                : intl.formatMessage(
+                    is4k ? messages.requestseasons4k : messages.requestseasons,
+                    {
+                      seasonCount: selectedSeasons.length,
+                    }
+                  )
       }
       okDisabled={
         editRequest
           ? false
           : !settings.currentSettings.partialRequestsEnabled &&
-            quota?.tv.limit &&
-            unrequestedSeasons.length > quota.tv.limit
-          ? true
-          : getAllRequestedSeasons().length >= getAllSeasons().length ||
-            (settings.currentSettings.partialRequestsEnabled &&
-              selectedSeasons.length === 0)
+              quota?.tv.limit &&
+              unrequestedSeasons.length > quota.tv.limit
+            ? true
+            : getAllRequestedSeasons().length >= getAllSeasons().length ||
+              (settings.currentSettings.partialRequestsEnabled &&
+                selectedSeasons.length === 0)
       }
       okButtonType={
         editRequest
@@ -452,16 +457,16 @@ const TvRequestModal = ({
             selectedSeasons.length === 0
             ? 'danger'
             : hasPermission(Permission.MANAGE_REQUESTS)
-            ? 'success'
-            : 'primary'
+              ? 'success'
+              : 'primary'
           : 'primary'
       }
       cancelText={
         editRequest
           ? intl.formatMessage(globalMessages.close)
           : tvdbId
-          ? intl.formatMessage(globalMessages.back)
-          : intl.formatMessage(globalMessages.cancel)
+            ? intl.formatMessage(globalMessages.back)
+            : intl.formatMessage(globalMessages.cancel)
       }
       backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
     >
@@ -525,7 +530,7 @@ const TvRequestModal = ({
                 <thead>
                   <tr>
                     <th
-                      className={`w-16 bg-gray-700 bg-opacity-80 px-4 py-3 ${
+                      className={`w-16 bg-gray-700/80 px-4 py-3 ${
                         !settings.currentSettings.partialRequestsEnabled &&
                         'hidden'
                       }`}
@@ -540,13 +545,13 @@ const TvRequestModal = ({
                         }
                       />
                     </th>
-                    <th className="bg-gray-700 bg-opacity-80 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(messages.season)}
                     </th>
-                    <th className="bg-gray-700 bg-opacity-80 px-5 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-5 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(messages.numberofepisodes)}
                     </th>
-                    <th className="bg-gray-700 bg-opacity-80 px-2 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-2 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(globalMessages.status)}
                     </th>
                   </tr>

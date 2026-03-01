@@ -36,8 +36,8 @@ const VersionStatus = ({ onClick }: VersionStatusProps) => {
     data.commitTag === 'local'
       ? 'Keep it up! 👍'
       : data.version.startsWith('develop-')
-      ? intl.formatMessage(messages.streamdevelop)
-      : intl.formatMessage(messages.streamstable);
+        ? intl.formatMessage(messages.streamdevelop)
+        : intl.formatMessage(messages.streamstable);
 
   return (
     <Link

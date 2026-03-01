@@ -24,6 +24,6 @@ module.exports = {
   },
   experimental: {
     scrollRestoration: true,
-    largePageDataBytes: 256000,
+    largePageDataBytes: 512 * 1000,
   },
 };

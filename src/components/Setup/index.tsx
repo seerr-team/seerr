@@ -154,7 +154,7 @@ const Setup = () => {
           ) ?? []
         }
       />
-      <div className="absolute top-4 right-4 z-50">
+      <div className="absolute right-4 top-4 z-50">
         <LanguagePicker />
       </div>
       <div className="relative z-40 px-4 sm:mx-auto sm:w-full sm:max-w-4xl">
@@ -164,7 +164,7 @@ const Setup = () => {
         <AppDataWarning />
         <nav className="relative z-50">
           <ul
-            className="divide-y divide-gray-600 rounded-md border border-gray-600 bg-gray-800 bg-opacity-50 md:flex md:divide-y-0"
+            className="divide-y divide-gray-600 rounded-md border border-gray-600 bg-gray-800/50 md:flex md:divide-y-0"
             style={{ backdropFilter: 'blur(5px)' }}
           >
             <SetupSteps
@@ -193,7 +193,7 @@ const Setup = () => {
             />
           </ul>
         </nav>
-        <div className="mt-10 w-full rounded-md border border-gray-600 bg-gray-800 bg-opacity-50 p-4 text-white">
+        <div className="mt-10 w-full rounded-md border border-gray-600 bg-gray-800/50 p-4 text-white">
           {currentStep === 1 && (
             <div className="flex flex-col items-center pb-6">
               <div className="mb-2 flex justify-center text-xl font-bold">
@@ -204,7 +204,7 @@ const Setup = () => {
               </div>
               <div className="grid grid-cols-3">
                 <div className="flex flex-col divide-y divide-gray-600 rounded-l border border-gray-600 py-2">
-                  <div className="mb-2 flex flex-1 items-center justify-center py-2 px-2">
+                  <div className="mb-2 flex flex-1 items-center justify-center px-2 py-2">
                     <JellyfinLogo className="h-10" />
                   </div>
                   <div className="px-2 pt-2">
@@ -220,7 +220,7 @@ const Setup = () => {
                   </div>
                 </div>
                 <div className="flex flex-col divide-y divide-gray-600 border-y border-gray-600 py-2">
-                  <div className="mb-2 flex flex-1 items-center justify-center py-2 px-2">
+                  <div className="mb-2 flex flex-1 items-center justify-center px-2 py-2">
                     <PlexLogo className="h-8" />
                   </div>
                   <div className="px-2 pt-2">
@@ -236,7 +236,7 @@ const Setup = () => {
                   </div>
                 </div>
                 <div className="flex flex-col divide-y divide-gray-600 rounded-r border border-gray-600 py-2">
-                  <div className="mb-2 flex flex-1 items-center justify-center py-2 px-2">
+                  <div className="mb-2 flex flex-1 items-center justify-center px-2 py-2">
                     <EmbyLogo className="h-9" />
                   </div>
                   <div className="px-2 pt-2">

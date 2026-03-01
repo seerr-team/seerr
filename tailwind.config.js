@@ -5,7 +5,7 @@ const defaultTheme = require('tailwindcss/defaultTheme');
 module.exports = {
   mode: 'jit',
   content: [
-    './node_modules/react-tailwindcss-datepicker-sct/dist/index.esm.js',
+    './node_modules/@seerr-team/react-tailwindcss-datepicker/dist/index.esm.js',
     './src/pages/**/*.{ts,tsx}',
     './src/components/**/*.{ts,tsx}',
   ],
@@ -16,7 +16,7 @@ module.exports = {
         width: 'width',
       },
       fontFamily: {
-        sans: ['Inter', ...defaultTheme.fontFamily.sans],
+        sans: ['Inter Variable', ...defaultTheme.fontFamily.sans],
       },
       typography: (theme) => ({
         DEFAULT: {

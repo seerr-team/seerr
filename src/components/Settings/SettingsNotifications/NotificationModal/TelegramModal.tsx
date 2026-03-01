@@ -230,7 +230,7 @@ const TelegramModal = ({
                         </a>
                       ),
                       code: (msg: React.ReactNode) => (
-                        <code className="bg-opacity-50">{msg}</code>
+                        <code className="bg-gray-800/50">{msg}</code>
                       ),
                     })}
                   </span>

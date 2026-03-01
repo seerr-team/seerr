@@ -8,11 +8,11 @@ import { NotificationAgentKey } from '@server/interfaces/settings';
 import PreparedEmail from '@server/lib/email';
 import { retrieveDefaultNotificationInstanceSettings } from '@server/lib/notifications';
 import type { PermissionCheckOptions } from '@server/lib/permissions';
-import { hasPermission, Permission } from '@server/lib/permissions';
+import { Permission, hasPermission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import { AfterDate } from '@server/utils/dateHelpers';
 import { DbAwareColumn } from '@server/utils/DbColumnHelper';
+import { AfterDate } from '@server/utils/dateHelpers';
 import bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import path from 'path';
@@ -42,7 +42,16 @@ export class User {
     return users.map((u) => u.filter(showFiltered));
   }
 
-  static readonly filteredFields: string[] = ['email', 'plexId'];
+  static readonly filteredFields: string[] = [
+    'email',
+    'plexId',
+    'password',
+    'resetPasswordGuid',
+    'jellyfinDeviceId',
+    'jellyfinAuthToken',
+    'plexToken',
+    'settings',
+  ];
 
   public displayName: string;
 
@@ -282,7 +291,7 @@ export class User {
     });
 
     const movieQuotaLimit = !canBypass
-      ? this.movieQuotaLimit ?? defaultQuotas.movie.quotaLimit
+      ? (this.movieQuotaLimit ?? defaultQuotas.movie.quotaLimit)
       : 0;
     const movieQuotaDays = this.movieQuotaDays ?? defaultQuotas.movie.quotaDays;
 
@@ -306,7 +315,7 @@ export class User {
       : 0;
 
     const tvQuotaLimit = !canBypass
-      ? this.tvQuotaLimit ?? defaultQuotas.tv.quotaLimit
+      ? (this.tvQuotaLimit ?? defaultQuotas.tv.quotaLimit)
       : 0;
     const tvQuotaDays = this.tvQuotaDays ?? defaultQuotas.tv.quotaDays;
 

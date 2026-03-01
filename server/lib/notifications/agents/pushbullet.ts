@@ -7,8 +7,8 @@ import { NotificationAgentKey } from '@server/interfaces/settings';
 import logger from '@server/logger';
 import axios from 'axios';
 import {
-  hasNotificationType,
   Notification,
+  hasNotificationType,
   shouldSendAdminNotification,
 } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';

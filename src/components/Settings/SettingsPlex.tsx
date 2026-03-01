@@ -483,12 +483,12 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                                 ? intl.formatMessage(messages.serverLocal)
                                 : intl.formatMessage(messages.serverRemote)
                             }]${
-                            server.ssl
-                              ? ` [${intl.formatMessage(
-                                  messages.serverSecure
-                                )}]`
-                              : ''
-                          }
+                              server.ssl
+                                ? ` [${intl.formatMessage(
+                                    messages.serverSecure
+                                  )}]`
+                                : ''
+                            }
                             ${server.status ? '' : '(' + server.message + ')'}
                           `}
                         </option>
@@ -626,7 +626,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           );
         }}
       </Formik>
-      <div className="mt-10 mb-6">
+      <div className="mb-6 mt-10">
         <h3 className="heading">
           {intl.formatMessage(messages.plexlibraries)}
         </h3>
@@ -660,7 +660,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           ))}
         </ul>
       </div>
-      <div className="mt-10 mb-6">
+      <div className="mb-6 mt-10">
         <h3 className="heading">{intl.formatMessage(messages.manualscan)}</h3>
         <p className="description">
           {intl.formatMessage(messages.manualscanDescription)}
@@ -737,7 +737,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
       </div>
       {!onComplete && (
         <>
-          <div className="mt-10 mb-6">
+          <div className="mb-6 mt-10">
             <h3 className="heading">
               {intl.formatMessage(messages.tautulliSettings)}
             </h3>

@@ -23,7 +23,7 @@ Welcome to the Seerr Documentation.
 - Localization into other languages.
 - Support for **PostgreSQL** and **SQLite** databases.
 - Support for various notification agents.
-- Easily **Watchlist** or **Blacklist** media.
+- Easily **Watchlist** or **Blocklist** media.
 - More features to come!
 
 ## We need your help!

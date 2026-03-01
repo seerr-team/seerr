@@ -494,13 +494,16 @@ settingsRoutes.get(
         thumb: string;
       }[] = [];
 
+      const plexIds = plexUsers.map((plexUser) => plexUser.id);
+      const plexEmails = plexUsers.map((plexUser) =>
+        plexUser.email.toLowerCase()
+      );
+      if (!plexIds.length) plexIds.push('-1');
+      if (!plexEmails.length) plexEmails.push('@');
+
       const existingUsers = await qb
-        .where('user.plexId IN (:...plexIds)', {
-          plexIds: plexUsers.map((plexUser) => plexUser.id),
-        })
-        .orWhere('user.email IN (:...plexEmails)', {
-          plexEmails: plexUsers.map((plexUser) => plexUser.email.toLowerCase()),
-        })
+        .where('user.plexId IN (:...plexIds)', { plexIds })
+        .orWhere('user.email IN (:...plexEmails)', { plexEmails })
         .getMany();
 
       await Promise.all(

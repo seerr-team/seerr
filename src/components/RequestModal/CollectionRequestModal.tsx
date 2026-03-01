@@ -69,7 +69,7 @@ const CollectionRequestModal = ({
 
   const getAllParts = (): number[] => {
     return (data?.parts ?? [])
-      .filter((part) => part.mediaInfo?.status !== MediaStatus.BLACKLISTED)
+      .filter((part) => part.mediaInfo?.status !== MediaStatus.BLOCKLISTED)
       .map((part) => part.id);
   };
 
@@ -258,8 +258,8 @@ const CollectionRequestModal = ({
     { type: 'or' }
   );
 
-  const blacklistVisibility = hasPermission(
-    [Permission.MANAGE_BLACKLIST, Permission.VIEW_BLACKLIST],
+  const blocklistVisibility = hasPermission(
+    [Permission.MANAGE_BLOCKLIST, Permission.VIEW_BLOCKLIST],
     { type: 'or' }
   );
 
@@ -279,13 +279,13 @@ const CollectionRequestModal = ({
         isUpdating
           ? intl.formatMessage(globalMessages.requesting)
           : selectedParts.length === 0
-          ? intl.formatMessage(messages.selectmovies)
-          : intl.formatMessage(
-              is4k ? messages.requestmovies4k : messages.requestmovies,
-              {
-                count: selectedParts.length,
-              }
-            )
+            ? intl.formatMessage(messages.selectmovies)
+            : intl.formatMessage(
+                is4k ? messages.requestmovies4k : messages.requestmovies,
+                {
+                  count: selectedParts.length,
+                }
+              )
       }
       okDisabled={selectedParts.length === 0}
       okButtonType={'primary'}
@@ -318,16 +318,16 @@ const CollectionRequestModal = ({
               <table className="min-w-full">
                 <thead>
                   <tr>
-                    <th className="w-16 bg-gray-700 bg-opacity-80 px-4 py-3">
+                    <th className="w-16 bg-gray-700/80 px-4 py-3">
                       <ToggleSwitch
                         isToggled={isAllParts()}
                         onToggle={() => toggleAllParts()}
                       />
                     </th>
-                    <th className="bg-gray-700 bg-opacity-80 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(globalMessages.movie)}
                     </th>
-                    <th className="bg-gray-700 bg-opacity-80 px-2 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-2 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(globalMessages.status)}
                     </th>
                   </tr>
@@ -335,9 +335,9 @@ const CollectionRequestModal = ({
                 <tbody className="divide-y divide-gray-700">
                   {data?.parts
                     .filter((part) => {
-                      if (!blacklistVisibility)
+                      if (!blocklistVisibility)
                         return (
-                          part.mediaInfo?.status !== MediaStatus.BLACKLISTED
+                          part.mediaInfo?.status !== MediaStatus.BLOCKLISTED
                         );
                       return part;
                     })
@@ -356,7 +356,7 @@ const CollectionRequestModal = ({
                         <tr key={`part-${part.id}`}>
                           <td
                             className={`whitespace-nowrap px-4 py-4 text-sm font-medium leading-5 text-gray-100 ${
-                              partMedia?.status === MediaStatus.BLACKLISTED &&
+                              partMedia?.status === MediaStatus.BLOCKLISTED &&
                               'pointer-events-none opacity-50'
                             }`}
                           >
@@ -364,7 +364,7 @@ const CollectionRequestModal = ({
                               isToggled={
                                 (!!partMedia &&
                                   partMedia.status !==
-                                    MediaStatus.BLACKLISTED) ||
+                                    MediaStatus.BLOCKLISTED) ||
                                 partRequest !== undefined ||
                                 isSelectedPart(part.id)
                               }
@@ -372,7 +372,7 @@ const CollectionRequestModal = ({
                               disabled={
                                 (!!partMedia &&
                                   partMedia.status !==
-                                    MediaStatus.BLACKLISTED) ||
+                                    MediaStatus.BLOCKLISTED) ||
                                 partRequest ||
                                 (quota?.movie.limit &&
                                   currentlyRemaining <= 0 &&
@@ -383,7 +383,7 @@ const CollectionRequestModal = ({
                           </td>
                           <td
                             className={`flex items-center px-1 py-4 text-sm font-medium leading-5 text-gray-100 md:px-6 ${
-                              partMedia?.status === MediaStatus.BLACKLISTED &&
+                              partMedia?.status === MediaStatus.BLOCKLISTED &&
                               'pointer-events-none opacity-50'
                             }`}
                           >
@@ -445,9 +445,9 @@ const CollectionRequestModal = ({
                                 {intl.formatMessage(globalMessages.available)}
                               </Badge>
                             )}
-                            {partMedia?.status === MediaStatus.BLACKLISTED && (
+                            {partMedia?.status === MediaStatus.BLOCKLISTED && (
                               <Badge badgeType="danger">
-                                {intl.formatMessage(globalMessages.blacklisted)}
+                                {intl.formatMessage(globalMessages.blocklisted)}
                               </Badge>
                             )}
                           </td>

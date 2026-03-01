@@ -2,6 +2,7 @@ import ExternalAPI from '@server/api/externalapi';
 import type { DVRSettings } from '@server/interfaces/settings';
 import type { AvailableCacheIds } from '@server/lib/cache';
 import cacheManager from '@server/lib/cache';
+import { getSettings } from '@server/lib/settings';
 
 export interface SystemStatus {
   version: string;
@@ -98,6 +99,8 @@ class ServarrBase<QueueItemAppendT> extends ExternalAPI {
     cacheName: AvailableCacheIds;
     apiName: string;
   }) {
+    const timeout = getSettings().network.apiRequestTimeout;
+
     super(
       url,
       {
@@ -105,6 +108,7 @@ class ServarrBase<QueueItemAppendT> extends ExternalAPI {
       },
       {
         nodeCache: cacheManager.getCache(cacheName).data,
+        timeout,
       }
     );
 

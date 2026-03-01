@@ -10,8 +10,8 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
 import {
-  hasNotificationType,
   Notification,
+  hasNotificationType,
   shouldSendAdminNotification,
 } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
@@ -150,8 +150,8 @@ class PushoverAgent
       ? payload.issue
         ? `${applicationUrl}/issues/${payload.issue.id}`
         : payload.media
-        ? `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`
-        : undefined
+          ? `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`
+          : undefined
       : undefined;
     const url_title = url
       ? `View ${payload.issue ? 'Issue' : 'Media'} in ${applicationTitle}`

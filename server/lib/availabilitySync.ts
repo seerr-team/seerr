@@ -516,8 +516,8 @@ class AvailabilitySync {
           mediaServerType === MediaServerType.PLEX
             ? 'plex'
             : mediaServerType === MediaServerType.JELLYFIN
-            ? 'jellyfin'
-            : 'emby'
+              ? 'jellyfin'
+              : 'emby'
         } instance. Status will be changed to deleted.`,
         { label: 'AvailabilitySync' }
       );
@@ -591,8 +591,8 @@ class AvailabilitySync {
           mediaServerType === MediaServerType.PLEX
             ? 'plex'
             : mediaServerType === MediaServerType.JELLYFIN
-            ? 'jellyfin'
-            : 'emby'
+              ? 'jellyfin'
+              : 'emby'
         } instance. Status will be changed to deleted.`,
         { label: 'AvailabilitySync' }
       );
@@ -614,6 +614,13 @@ class AvailabilitySync {
     is4k: boolean
   ): Promise<boolean> {
     let existsInRadarr = false;
+
+    const hasSameServerInBothModes = this.radarrServers.some((a) =>
+      this.radarrServers.some(
+        (b) =>
+          a.is4k !== b.is4k && a.hostname === b.hostname && a.port === b.port
+      )
+    );
 
     // Check for availability in all of the available radarr servers
     // If any find the media, we will assume the media exists
@@ -645,7 +652,14 @@ class AvailabilitySync {
             radarr?.movieFile?.mediaInfo?.resolution?.split('x');
           const is4kMovie =
             resolution?.length === 2 && Number(resolution[0]) >= 2000;
-          existsInRadarr = is4k ? is4kMovie : !is4kMovie;
+
+          if (hasSameServerInBothModes && resolution?.length === 2) {
+            // Same server in both modes then use resolution to distinguish
+            existsInRadarr = is4k ? is4kMovie : !is4kMovie;
+          } else {
+            // One server type and if file exists, count it
+            existsInRadarr = true;
+          }
         }
       } catch (ex) {
         if (!ex.message.includes('404')) {
@@ -661,6 +675,8 @@ class AvailabilitySync {
           );
         }
       }
+
+      if (existsInRadarr) break;
     }
 
     return existsInRadarr;
@@ -818,6 +834,50 @@ class AvailabilitySync {
         if (media.mediaType === 'tv') {
           this.plexSeasonsCache[ratingKey4k] =
             await this.plexClient?.getChildrenMetadata(ratingKey4k);
+        }
+
+        if (plexMedia) {
+          if (ratingKey === ratingKey4k) {
+            plexMedia = undefined;
+          }
+
+          if (
+            plexMedia &&
+            media.mediaType === 'movie' &&
+            !plexMedia.Media?.some(
+              (mediaItem) => (mediaItem.width ?? 0) >= 2000
+            )
+          ) {
+            plexMedia = undefined;
+          }
+
+          if (plexMedia && media.mediaType === 'tv') {
+            const cachedSeasons = this.plexSeasonsCache[ratingKey4k];
+            if (cachedSeasons?.length) {
+              let has4kInAnySeason = false;
+              for (const season of cachedSeasons) {
+                try {
+                  const episodes = await this.plexClient?.getChildrenMetadata(
+                    season.ratingKey
+                  );
+                  const has4kEpisode = episodes?.some((episode) =>
+                    episode.Media?.some(
+                      (mediaItem) => (mediaItem.width ?? 0) >= 2000
+                    )
+                  );
+                  if (has4kEpisode) {
+                    has4kInAnySeason = true;
+                    break;
+                  }
+                } catch {
+                  // If we can't fetch episodes for a season, continue checking other seasons
+                }
+              }
+              if (!has4kInAnySeason) {
+                plexMedia = undefined;
+              }
+            }
+          }
         }
       }
 

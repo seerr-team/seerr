@@ -269,8 +269,8 @@ class TautulliAPI {
           recordA.grandparent_rating_key && recordB.grandparent_rating_key
             ? recordA.grandparent_rating_key === recordB.grandparent_rating_key
             : recordA.parent_rating_key && recordB.parent_rating_key
-            ? recordA.parent_rating_key === recordB.parent_rating_key
-            : recordA.rating_key === recordB.rating_key
+              ? recordA.parent_rating_key === recordB.parent_rating_key
+              : recordA.rating_key === recordB.rating_key
         );
 
         start += take;

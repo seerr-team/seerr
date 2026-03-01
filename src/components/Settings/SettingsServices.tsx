@@ -400,7 +400,7 @@ const SettingsServices = () => {
                 <div className="flex h-full w-full items-center justify-center">
                   <Button
                     buttonType="ghost"
-                    className="mt-3 mb-3"
+                    className="mb-3 mt-3"
                     onClick={() =>
                       setEditRadarrModal({ open: true, radarr: null })
                     }
@@ -414,7 +414,7 @@ const SettingsServices = () => {
           </>
         )}
       </div>
-      <div className="mt-10 mb-6">
+      <div className="mb-6 mt-10">
         <h3 className="heading">
           {intl.formatMessage(messages.sonarrsettings)}
         </h3>
@@ -502,7 +502,7 @@ const SettingsServices = () => {
           </>
         )}
       </div>
-      <div className="mt-10 mb-6">
+      <div className="mb-6 mt-10">
         <h3 className="heading">
           {intl.formatMessage(messages.overrideRules)}
         </h3>

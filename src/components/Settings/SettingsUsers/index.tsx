@@ -81,10 +81,10 @@ const SettingsUsers = () => {
       settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
         ? 'Jellyfin'
         : settings.currentSettings.mediaServerType === MediaServerType.EMBY
-        ? 'Emby'
-        : settings.currentSettings.mediaServerType === MediaServerType.PLEX
-        ? 'Plex'
-        : undefined,
+          ? 'Emby'
+          : settings.currentSettings.mediaServerType === MediaServerType.PLEX
+            ? 'Plex'
+            : undefined,
   };
 
   return (

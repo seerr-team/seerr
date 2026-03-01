@@ -1,7 +1,14 @@
 import type { Library, PlexSettings } from '@server/interfaces/settings';
+import ExternalAPI from '@server/api/externalapi';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import NodePlexAPI from 'plex-api';
+
+interface PlexStatusResponse {
+  MediaContainer: {
+    machineIdentifier: string;
+    friendlyName: string;
+  };
+}
 
 export interface PlexLibraryItem {
   ratingKey: string;
@@ -84,9 +91,7 @@ interface PlexMetadataResponse {
   };
 }
 
-class PlexAPI {
-  private plexClient: NodePlexAPI;
-
+class PlexAPI extends ExternalAPI {
   constructor({
     plexToken,
     plexSettings,
@@ -97,48 +102,33 @@ class PlexAPI {
     timeout?: number;
   }) {
     const settings = getSettings();
-    let settingsPlex: PlexSettings | undefined;
-    plexSettings
-      ? (settingsPlex = plexSettings)
-      : (settingsPlex = getSettings().plex);
+    const settingsPlex = plexSettings ?? settings.plex;
 
-    this.plexClient = new NodePlexAPI({
-      hostname: settingsPlex.ip,
-      port: settingsPlex.port,
-      https: settingsPlex.useSsl,
-      timeout: timeout,
-      token: plexToken ?? undefined,
-      authenticator: {
-        authenticate: (
-          _plexApi,
-          cb: (err?: string, token?: string) => void
-        ) => {
-          if (!plexToken) {
-            return cb('Plex Token not found!');
-          }
-          cb(undefined, plexToken);
+    const protocol = settingsPlex.useSsl ? 'https' : 'http';
+    const baseUrl = `${protocol}://${settingsPlex.ip}:${settingsPlex.port}`;
+
+    super(
+      baseUrl,
+      {},
+      {
+        timeout,
+        headers: {
+          'X-Plex-Token': plexToken ?? '',
+          'X-Plex-Client-Identifier': settings.clientId,
+          'X-Plex-Product': 'Seerr',
+          'X-Plex-Device-Name': 'Seerr',
+          'X-Plex-Platform': 'Seerr',
         },
-      },
-      // requestOptions: {
-      //   includeChildren: 1,
-      // },
-      options: {
-        identifier: settings.clientId,
-        product: 'Seerr',
-        deviceName: 'Seerr',
-        platform: 'Seerr',
-      },
-    });
+      }
+    );
   }
 
-  public async getStatus() {
-    return await this.plexClient.query('/');
+  public async getStatus(): Promise<PlexStatusResponse> {
+    return await this.get('/');
   }
 
   public async getLibraries(): Promise<PlexLibrary[]> {
-    const response = await this.plexClient.query<PlexLibrariesResponse>(
-      '/library/sections'
-    );
+    const response = await this.get<PlexLibrariesResponse>('/library/sections');
 
     return response.MediaContainer.Directory;
   }
@@ -187,13 +177,15 @@ class PlexAPI {
     id: string,
     { offset = 0, size = 50 }: { offset?: number; size?: number } = {}
   ): Promise<{ totalSize: number; items: PlexLibraryItem[] }> {
-    const response = await this.plexClient.query<PlexLibraryResponse>({
-      uri: `/library/sections/${id}/all?includeGuids=1`,
-      extraHeaders: {
-        'X-Plex-Container-Start': `${offset}`,
-        'X-Plex-Container-Size': `${size}`,
-      },
-    });
+    const response = await this.get<PlexLibraryResponse>(
+      `/library/sections/${id}/all?includeGuids=1`,
+      {
+        headers: {
+          'X-Plex-Container-Start': `${offset}`,
+          'X-Plex-Container-Size': `${size}`,
+        },
+      }
+    );
 
     return {
       totalSize: response.MediaContainer.totalSize,
@@ -205,7 +197,7 @@ class PlexAPI {
     key: string,
     options: { includeChildren?: boolean } = {}
   ): Promise<PlexMetadata> {
-    const response = await this.plexClient.query<PlexMetadataResponse>(
+    const response = await this.get<PlexMetadataResponse>(
       `/library/metadata/${key}${
         options.includeChildren ? '?includeChildren=1' : ''
       }`
@@ -215,7 +207,7 @@ class PlexAPI {
   }
 
   public async getChildrenMetadata(key: string): Promise<PlexMetadata[]> {
-    const response = await this.plexClient.query<PlexMetadataResponse>(
+    const response = await this.get<PlexMetadataResponse>(
       `/library/metadata/${key}/children`
     );
 
@@ -229,15 +221,17 @@ class PlexAPI {
     },
     mediaType: 'movie' | 'show'
   ): Promise<PlexLibraryItem[]> {
-    const response = await this.plexClient.query<PlexLibraryResponse>({
-      uri: `/library/sections/${id}/all?type=${
+    const response = await this.get<PlexLibraryResponse>(
+      `/library/sections/${id}/all?type=${
         mediaType === 'show' ? '4' : '1'
       }&sort=addedAt%3Adesc&addedAt>>=${Math.floor(options.addedAt / 1000)}`,
-      extraHeaders: {
-        'X-Plex-Container-Start': `0`,
-        'X-Plex-Container-Size': `500`,
-      },
-    });
+      {
+        headers: {
+          'X-Plex-Container-Start': '0',
+          'X-Plex-Container-Size': '500',
+        },
+      }
+    );
 
     return response.MediaContainer.Metadata;
   }

@@ -9,8 +9,8 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
 import {
-  hasNotificationType,
   Notification,
+  hasNotificationType,
   shouldSendAdminNotification,
 } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
@@ -201,21 +201,18 @@ class DiscordAgent
       ? payload.issue
         ? `${applicationUrl}/issues/${payload.issue.id}`
         : payload.media
-        ? `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`
-        : undefined
+          ? `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`
+          : undefined
       : undefined;
 
     return {
-      title: payload.subject,
+      title: payload.event
+        ? `${payload.event}: ${payload.subject}`
+        : payload.subject,
       url,
       description: payload.message,
       color,
       timestamp: new Date().toISOString(),
-      author: payload.event
-        ? {
-            name: payload.event,
-          }
-        : undefined,
       fields,
       thumbnail: embedPoster
         ? {

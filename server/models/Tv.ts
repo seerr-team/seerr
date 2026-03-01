@@ -7,6 +7,7 @@ import type {
   TmdbTvSeasonResult,
 } from '@server/api/themoviedb/interfaces';
 import type Media from '@server/entity/Media';
+import type { Video } from './Movie';
 import type {
   Cast,
   Crew,
@@ -24,7 +25,6 @@ import {
   mapVideos,
   mapWatchProviders,
 } from './common';
-import type { Video } from './Movie';
 
 interface Episode {
   id: number;

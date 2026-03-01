@@ -285,8 +285,8 @@ const UserGeneralSettings = () => {
                     {user?.id === 1
                       ? intl.formatMessage(messages.owner)
                       : hasPermission(Permission.ADMIN)
-                      ? intl.formatMessage(messages.admin)
-                      : intl.formatMessage(messages.user)}
+                        ? intl.formatMessage(messages.admin)
+                        : intl.formatMessage(messages.user)}
                   </div>
                 </div>
               </div>

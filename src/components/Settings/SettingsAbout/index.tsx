@@ -60,7 +60,7 @@ const SettingsAbout = () => {
           intl.formatMessage(globalMessages.settings),
         ]}
       />
-      <div className="mt-6 rounded-md border border-indigo-500 bg-indigo-400 bg-opacity-20 p-4 backdrop-blur">
+      <div className="mt-6 rounded-md border border-indigo-500 bg-indigo-400/20 p-4 backdrop-blur">
         <div className="flex">
           <div className="flex-shrink-0">
             <InformationCircleIcon className="h-5 w-5 text-gray-100" />
@@ -69,7 +69,7 @@ const SettingsAbout = () => {
             <p className="text-sm leading-5 text-gray-100">
               {intl.formatMessage(messages.betawarning)}
             </p>
-            <p className="mt-3 text-sm leading-5 md:mt-0 md:ml-6">
+            <p className="mt-3 text-sm leading-5 md:ml-6 md:mt-0">
               <a
                 href="http://github.com/seerr-team/seerr"
                 className="whitespace-nowrap font-medium text-gray-100 transition duration-150 ease-in-out hover:text-white"
@@ -88,7 +88,7 @@ const SettingsAbout = () => {
             <Alert
               title={intl.formatMessage(messages.runningDevelop, {
                 code: (msg: React.ReactNode) => (
-                  <code className="bg-opacity-50">{msg}</code>
+                  <code className="bg-gray-800/50">{msg}</code>
                 ),
               })}
             />

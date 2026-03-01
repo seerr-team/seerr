@@ -16,6 +16,7 @@ module.exports = {
     },
   },
   rules: {
+    '@typescript-eslint/no-explicit-any': 'warn', // disable the rule for now to replicate previous behavior
     '@typescript-eslint/camelcase': 0,
     '@typescript-eslint/no-use-before-define': 0,
     'jsx-a11y/no-noninteractive-tabindex': 0,
@@ -44,8 +45,10 @@ module.exports = {
   overrides: [
     {
       files: ['**/*.tsx'],
+      plugins: ['react'],
       rules: {
         'react/prop-types': 'off',
+        'react/self-closing-comp': 'error',
       },
     },
   ],
