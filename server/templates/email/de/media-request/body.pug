@@ -1,0 +1,18 @@
+- const __nt = (typeof notificationType !== "undefined" ? String(notificationType) : "")
+case __nt
+  when "MEDIA_PENDING"
+    | Eine neue Anfrage für #{__followingAcc()} #{__prefix4k}wartet auf Freigabe:
+  when "MEDIA_AUTO_REQUESTED"
+    | Eine neue Anfrage für #{__followingAcc()} #{__prefix4k}wartet auf Freigabe:
+  when "MEDIA_APPROVED"
+    | Eine Anfrage für #{__followingAcc()} #{__prefix4k}wurde freigegeben:
+  when "MEDIA_AUTO_APPROVED"
+    | Eine Anfrage für #{__followingAcc()} #{__prefix4k}wurde automatisch freigegeben:
+  when "MEDIA_DECLINED"
+    | Eine Anfrage für #{__followingAcc()} #{__prefix4k}wurde abgelehnt:
+  when "MEDIA_AVAILABLE"
+    | #{__followingAcc()} #{__prefix4k}ist jetzt verfügbar:
+  when "MEDIA_FAILED"
+    | Bei #{__followingAcc()} #{__prefix4k}ist ein Fehler aufgetreten:
+  default
+    | Eine Benachrichtigung zu #{__followingAcc()} #{__prefix4k}:
