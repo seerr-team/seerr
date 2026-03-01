@@ -227,7 +227,7 @@ const UserList = () => {
 
     return (
       <Table.TH
-        className="cursor-pointer hover:bg-gray-700"
+        className="cursor-pointer"
         onClick={() => onSortChange(sortKey)}
         data-testid={`column-header-${sortKey}`}
         title={getTooltip()}
