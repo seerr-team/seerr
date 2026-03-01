@@ -570,7 +570,7 @@ settingsRoutes.get(
         plexUsers.map(async (plexUser) => {
           if (
             !existingUsers.find(
-              (user: any) =>
+              (user) =>
                 user.plexId === parseInt(plexUser.id) ||
                 user.email === plexUser.email.toLowerCase()
             ) &&
