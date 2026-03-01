@@ -11,7 +11,7 @@ const migrateApiTokens = async (settings: any): Promise<AllSettings> => {
     (mediaServerType === MediaServerType.JELLYFIN ||
       mediaServerType === MediaServerType.EMBY)
   ) {
-    const admin = await getMediaServerAdmin();
+    const admin = await getMediaServerAdmin(MediaServerType.JELLYFIN);
     if (!admin) {
       return settings;
     }
