@@ -17,7 +17,7 @@ export const getMediaServerAdmin = async (
   // If it is plex admin is selected using plexToken if jellyfin admin is selected using jellyfinUserID
   if (mediaServerType === MediaServerType.PLEX) {
     admin = await userRepository.findOne({
-      select: ['id', 'plexToken'],
+      select: ['id', 'plexId', 'plexToken'],
       where: { id: 1 },
     });
   } else if (
