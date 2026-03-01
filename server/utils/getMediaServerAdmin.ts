@@ -25,7 +25,7 @@ export const getMediaServerAdmin = async (
     mediaServerType === MediaServerType.EMBY
   ) {
     admin = await userRepository.findOne({
-      select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
+      select: ['id', 'jellyfinAuthToken', 'jellyfinUserId', 'jellyfinDeviceId'],
       where: { id: 1 },
     });
   }
