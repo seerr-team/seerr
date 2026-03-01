@@ -21,7 +21,8 @@ const messages = defineMessages(
     telegramBotUsernameTip:
       'Allow users to also start a chat with your bot and configure their own notifications',
     telegramBotAPI: 'Bot Authorization Token',
-    telegramBotApiTip: '<CreateBotLink>Create a bot</CreateBotLink> for use with Seerr',
+    telegramBotApiTip:
+      '<CreateBotLink>Create a bot</CreateBotLink> for use with Seerr',
     telegramChatId: 'Chat ID',
     telegramChatIdTip:
       'Start a chat with your bot, add <GetIdBotLink>@get_id_bot</GetIdBotLink>, and issue the <code>/my_id</code> command',
@@ -80,7 +81,7 @@ const TelegramModal = ({
         intl.formatMessage(messages.telegramValidationChatIdRequired)
       ),
     messageThreadId: Yup.string()
-      .when(['types'], {
+      .when(['enabled', 'types'], {
         is: (enabled: boolean, types: number) => enabled && !!types,
         then: Yup.string()
           .nullable()
@@ -176,8 +177,8 @@ const TelegramModal = ({
               isSubmitting
                 ? intl.formatMessage(globalMessages.saving)
                 : type === NotificationModalType.EDIT
-                ? intl.formatMessage(globalMessages.save)
-                : intl.formatMessage(messages.createInstance)
+                  ? intl.formatMessage(globalMessages.save)
+                  : intl.formatMessage(messages.createInstance)
             }
             onOk={() => {
               handleSubmit();
