@@ -39,7 +39,16 @@ export class User {
     return users.map((u) => u.filter(showFiltered));
   }
 
-  static readonly filteredFields: string[] = ['email', 'plexId'];
+  static readonly filteredFields: string[] = [
+    'email',
+    'plexId',
+    'password',
+    'resetPasswordGuid',
+    'jellyfinDeviceId',
+    'jellyfinAuthToken',
+    'plexToken',
+    'settings',
+  ];
 
   public displayName: string;
 
