@@ -181,7 +181,8 @@ const { embedPoster } = settings.notifications.agents.email;
         },
         locals: {
           event: payload.event,
-          notificationType: type,
+          notificationType: Notification[type],
+          notificationTypeValue: type,
           mediaType,
           isMovie: mediaType === 'movie',
           isSeries: mediaType === 'series',
