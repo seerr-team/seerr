@@ -20,13 +20,15 @@ function ToggleSwitch({
         onToggle();
       }}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === 'Space') {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
           onToggle();
         }
       }}
       className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none ${
-        disabled ? 'opacity-50' : ''
+        disabled ? 'cursor-not-allowed opacity-50' : ''
       }`}
+      aria-disabled={disabled ? true : undefined}
     >
       <span
         aria-hidden="true"
