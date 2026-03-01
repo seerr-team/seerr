@@ -36,8 +36,25 @@ div(style='display: block; background-color: #111827; padding: 2.5rem 0;')
     tr
       td(style='text-align: center;')
         div(style='margin: 1rem 0 0; font-size: 1.25em;')
-          | Eine neue Anfrage für #{__followingAcc()} #{__prefix4k}wartet auf Freigabe:
-    tr
+          - const __nt = (typeof notificationType !== "undefined" ? String(notificationType) : "")
+          case __nt
+            when "MEDIA_PENDING"
+              | Eine neue Anfrage für #{__followingAcc()} #{__prefix4k}wartet auf Freigabe:
+            when "MEDIA_AUTO_REQUESTED"
+              | Eine neue Anfrage für #{__followingAcc()} #{__prefix4k}wartet auf Freigabe:
+            when "MEDIA_APPROVED"
+              | Eine Anfrage für #{__followingAcc()} #{__prefix4k}wurde freigegeben:
+            when "MEDIA_AUTO_APPROVED"
+              | Eine Anfrage für #{__followingAcc()} #{__prefix4k}wurde automatisch freigegeben:
+            when "MEDIA_DECLINED"
+              | Eine Anfrage für #{__followingAcc()} #{__prefix4k}wurde abgelehnt:
+            when "MEDIA_AVAILABLE"
+              | #{__followingAcc()} #{__prefix4k}ist jetzt verfügbar:
+            when "MEDIA_FAILED"
+              | Bei #{__followingAcc()} #{__prefix4k}ist ein Fehler aufgetreten:
+            default
+              | Eine Benachrichtigung zu #{__followingAcc()} #{__prefix4k}:
+tr
       td
         div(style='box-sizing: border-box; margin: 1.5rem 0 0; width: 100%; color: #fff; border-radius: .75rem; padding: 1rem; border: 1px solid rgb(100,100,100); background: linear-gradient(135deg, rgba(17,24,39,0.47) 0%, rgb(17,24,39) 75%), url(' + imageUrl + ') center 25%/cover')
           table(style='color: #fff; width: 100%;')
@@ -64,9 +81,9 @@ div(style='display: block; background-color: #111827; padding: 2.5rem 0;')
               td(style='font-size: .85em; color: #9ca3af; line-height: 1em; vertical-align: bottom; margin-right: 1rem')
                 span
                   | #{timestamp}
-    if actionUrl
-      tr
-        td
-          a(href=actionUrl style='display: block; margin: 1.5rem 3rem 0; text-decoration: none; font-size: 1.0em; line-height: 2.25em;')
+            if actionUrl
+              tr
+                td
+                  a(href=actionUrl style='display: block; margin: 1.5rem 3rem 0; text-decoration: none; font-size: 1.0em; line-height: 2.25em;')
             span(style='padding: 0.2rem; font-weight: 500; text-align: center; border-radius: 10px; background-color: rgb(99,102,241); color: #fff; display: block; border: 1px solid rgba(255,255,255,0.2);')
               | In #{applicationTitle} anzeigen
