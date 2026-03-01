@@ -88,7 +88,7 @@ type EpisodeReturn<T> = T extends { includeMediaInfo: true }
   ? JellyfinLibraryItemExtended[]
   : JellyfinLibraryItem[];
 
-export interface JellyfinItemsReponse {
+export interface JellyfinItemsResponse {
   Items: JellyfinLibraryItemExtended[];
   TotalRecordCount: number;
   StartIndex: number;
@@ -255,7 +255,7 @@ class JellyfinMainAPI extends JellyfinAPI {
     id: string
   ): Promise<JellyfinLibraryItemExtended | undefined> {
     try {
-      const itemResponse = await this.get<JellyfinItemsReponse>(`/Items`, {
+      const itemResponse = await this.get<JellyfinItemsResponse>(`/Items`, {
         params: {
           ids: id,
           fields: 'ProviderIds,MediaSources,Width,Height,IsHD,DateCreated',
