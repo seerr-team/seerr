@@ -191,7 +191,14 @@ const UserNotificationsApprise = () => {
                 <div className="form-input-area">
                   <div className="form-input-field">
                     <Field name="appriseTags">
-                      {({ field }: { field: { name: string; value: any } }) => (
+                      {({
+                        field,
+                      }: {
+                        field: {
+                          name: string;
+                          value: string | null | undefined;
+                        };
+                      }) => (
                         <input
                           id="appriseTags"
                           type="text"
@@ -240,7 +247,14 @@ const UserNotificationsApprise = () => {
                 <div className="form-input-area">
                   <div className="form-input-field">
                     <Field name="appriseStatelessURL">
-                      {({ field }: { field: { name: string; value: any } }) => (
+                      {({
+                        field,
+                      }: {
+                        field: {
+                          name: string;
+                          value: string | null | undefined;
+                        };
+                      }) => (
                         <SensitiveInput
                           id="appriseStatelessURL"
                           type="text"
