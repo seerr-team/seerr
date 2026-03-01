@@ -22,6 +22,7 @@ export enum DiscoverSliderType {
   TMDB_NETWORK,
   TMDB_MOVIE_STREAMING_SERVICES,
   TMDB_TV_STREAMING_SERVICES,
+  MY_MEDIA_LIBRARY,
 }
 
 export const defaultSliders: Partial<DiscoverSlider>[] = [
@@ -96,5 +97,11 @@ export const defaultSliders: Partial<DiscoverSlider>[] = [
     enabled: true,
     isBuiltIn: true,
     order: 11,
+  },
+  {
+    type: DiscoverSliderType.MY_MEDIA_LIBRARY,
+    enabled: true,
+    isBuiltIn: true,
+    order: 12,
   },
 ];

@@ -90,11 +90,12 @@ discoverRoutes.get('/movies', async (req, res, next) => {
 
   try {
     const query = ApiQuerySchema.parse(req.query);
+    const page = Number(query.page) || 1;
     const keywords = query.keywords;
     const excludeKeywords = query.excludeKeywords;
 
     const data = await tmdb.getDiscoverMovies({
-      page: Number(query.page),
+      page,
       sortBy: query.sortBy as SortOptions,
       language: req.locale ?? query.language,
       originalLanguage: query.language,
@@ -383,10 +384,12 @@ discoverRoutes.get('/tv', async (req, res, next) => {
 
   try {
     const query = ApiQuerySchema.parse(req.query);
+    const page = Number(query.page) || 1;
     const keywords = query.keywords;
     const excludeKeywords = query.excludeKeywords;
+
     const data = await tmdb.getDiscoverTv({
-      page: Number(query.page),
+      page,
       sortBy: query.sortBy as SortOptions,
       language: req.locale ?? query.language,
       genre: query.genre,
