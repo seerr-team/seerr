@@ -442,14 +442,14 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       </div>
       <Formik
         initialValues={{
-          hostname: data?.ip,
+          hostname: data?.ip || '',
           port: data?.port ?? 8096,
-          useSsl: data?.useSsl,
+          useSsl: data?.useSsl || false,
           urlBase: data?.urlBase || '',
           jellyfinExternalUrl: data?.externalHostname || '',
           jellyfinForgotPasswordUrl: data?.jellyfinForgotPasswordUrl || '',
-          apiKey: data?.apiKey,
-          enablePlaybackReporting: data?.enablePlaybackReporting,
+          apiKey: data?.apiKey || '',
+          enablePlaybackReporting: data?.enablePlaybackReporting || false,
         }}
         validationSchema={JellyfinSettingsSchema}
         onSubmit={async (values) => {

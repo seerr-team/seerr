@@ -22,8 +22,8 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { getHostname } from '@server/utils/getHostname';
-import { isOwnProfileOrAdmin } from '@server/utils/profileMiddleware';
 import { getMediaServerAdmin } from '@server/utils/getMediaServerAdmin';
+import { isOwnProfileOrAdmin } from '@server/utils/profileMiddleware';
 import { Router } from 'express';
 import gravatarUrl from 'gravatar-url';
 import { findIndex, sortBy } from 'lodash';
@@ -669,7 +669,6 @@ router.post(
         settings.jellyfin.apiKey,
         admin.jellyfinDeviceId ?? ''
       );
-      jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
 
       jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
       const jellyfinUsers = await jellyfinClient.getUsers();
