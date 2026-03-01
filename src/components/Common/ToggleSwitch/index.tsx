@@ -1,7 +1,7 @@
 interface ToggleSwitchProps {
   isToggled?: boolean;
   onToggle: () => void;
-  disabled?: unknown;
+  disabled?: boolean;
   highContrast?: boolean;
 }
 
@@ -34,8 +34,8 @@ function ToggleSwitch({
           isToggled
             ? 'bg-indigo-500'
             : highContrast
-            ? 'bg-gray-700'
-            : 'bg-gray-800'
+              ? 'bg-gray-700'
+              : 'bg-gray-800'
         } absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out`}
       />
       <span

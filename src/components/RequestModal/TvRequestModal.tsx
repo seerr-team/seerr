@@ -539,9 +539,11 @@ const TvRequestModal = ({
                         isToggled={isAllSeasons()}
                         onToggle={() => toggleAllSeasons()}
                         disabled={
-                          quota?.tv.remaining &&
-                          quota.tv.limit &&
-                          quota.tv.remaining < unrequestedSeasons.length
+                          !!(
+                            quota?.tv.remaining &&
+                            quota.tv.limit &&
+                            quota.tv.remaining < unrequestedSeasons.length
+                          )
                         }
                       />
                     </th>
@@ -599,12 +601,16 @@ const TvRequestModal = ({
                               }
                               onToggle={() => toggleSeason(season.seasonNumber)}
                               disabled={
-                                mediaSeason ||
-                                (quota?.tv.limit &&
-                                  currentlyRemaining <= 0 &&
-                                  !isSelectedSeason(season.seasonNumber)) ||
-                                (!!seasonRequest &&
-                                  !editingSeasons.includes(season.seasonNumber))
+                                !!(
+                                  mediaSeason ||
+                                  (quota?.tv.limit &&
+                                    currentlyRemaining <= 0 &&
+                                    !isSelectedSeason(season.seasonNumber)) ||
+                                  (!!seasonRequest &&
+                                    !editingSeasons.includes(
+                                      season.seasonNumber
+                                    ))
+                                )
                               }
                               highContrast
                             />

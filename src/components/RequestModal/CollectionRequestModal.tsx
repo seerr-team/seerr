@@ -370,13 +370,15 @@ const CollectionRequestModal = ({
                               }
                               onToggle={() => togglePart(part.id)}
                               disabled={
-                                (!!partMedia &&
-                                  partMedia.status !==
-                                    MediaStatus.BLOCKLISTED) ||
-                                partRequest ||
-                                (quota?.movie.limit &&
-                                  currentlyRemaining <= 0 &&
-                                  !isSelectedPart(part.id))
+                                !!(
+                                  (!!partMedia &&
+                                    partMedia.status !==
+                                      MediaStatus.BLOCKLISTED) ||
+                                  partRequest ||
+                                  (quota?.movie.limit &&
+                                    currentlyRemaining <= 0 &&
+                                    !isSelectedPart(part.id))
+                                )
                               }
                               highContrast
                             />
