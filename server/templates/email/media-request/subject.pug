@@ -1,1 +1,22 @@
-!= `${event} - ${mediaName} [${applicationTitle}]`
+- const __nt = (typeof notificationType !== "undefined" ? String(notificationType) : "")
+- const __isMovie = (typeof isMovie !== "undefined" ? !!isMovie : false)
+- const __kindReq = __isMovie ? "Movie Request" : "Series Request"
+- const __kindNew = __isMovie ? "New Movie Request" : "New Series Request"
+
+case __nt
+  when "MEDIA_PENDING"
+    | #{__kindNew} - #{mediaName} [#{applicationTitle}]
+  when "MEDIA_AUTO_REQUESTED"
+    | #{__kindNew} - #{mediaName} [#{applicationTitle}]
+  when "MEDIA_APPROVED"
+    | #{__kindReq} Approved - #{mediaName} [#{applicationTitle}]
+  when "MEDIA_AUTO_APPROVED"
+    | #{__kindReq} Approved - #{mediaName} [#{applicationTitle}]
+  when "MEDIA_DECLINED"
+    | #{__kindReq} Declined - #{mediaName} [#{applicationTitle}]
+  when "MEDIA_AVAILABLE"
+    | #{__isMovie ? "Movie Available" : "Series Available"} - #{mediaName} [#{applicationTitle}]
+  when "MEDIA_FAILED"
+    | #{__kindReq} Failed - #{mediaName} [#{applicationTitle}]
+  default
+    | #{__kindReq} - #{mediaName} [#{applicationTitle}]

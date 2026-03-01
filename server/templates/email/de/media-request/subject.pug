@@ -1,2 +1,22 @@
-include ../_helpers.pug
-!= `${__reqSubject(notificationTypeKey)} - ${mediaName} [${applicationTitle}]`
+- const __nt = (typeof notificationType !== "undefined" ? String(notificationType) : "")
+- const __isMovie = (typeof isMovie !== "undefined" ? !!isMovie : false)
+- const __kind = __isMovie ? "Film" : "Serie"
+- const __kindReq = __isMovie ? "Filmanfrage" : "Serienanfrage"
+
+case __nt
+  when "MEDIA_PENDING"
+    | Neue #{__kindReq} – #{mediaName} [#{applicationTitle}]
+  when "MEDIA_AUTO_REQUESTED"
+    | Neue #{__kindReq} – #{mediaName} [#{applicationTitle}]
+  when "MEDIA_APPROVED"
+    | #{__kindReq} genehmigt – #{mediaName} [#{applicationTitle}]
+  when "MEDIA_AUTO_APPROVED"
+    | #{__kindReq} genehmigt – #{mediaName} [#{applicationTitle}]
+  when "MEDIA_DECLINED"
+    | #{__kindReq} abgelehnt – #{mediaName} [#{applicationTitle}]
+  when "MEDIA_AVAILABLE"
+    | #{__kind} verfügbar – #{mediaName} [#{applicationTitle}]
+  when "MEDIA_FAILED"
+    | #{__kindReq} fehlgeschlagen – #{mediaName} [#{applicationTitle}]
+  default
+    | #{__kindReq} – #{mediaName} [#{applicationTitle}]
