@@ -180,7 +180,7 @@ class TelegramAgent
       const mediaServerUrl = getAvailableMediaServerUrl(payload);
 
       if (mediaServerUrl) {
-        message += `\n\[Play on ${this.escapeText(mediaServerName)}\]\(${mediaServerUrl}\)`;
+        message += `\n\[Play on ${this.escapeText(mediaServerName)}\]\(${mediaServerUrl.replace(/\)/g, '\\)')}\)`;
       }
     }
     /* eslint-enable */

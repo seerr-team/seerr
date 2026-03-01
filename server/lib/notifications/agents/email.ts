@@ -74,10 +74,8 @@ class EmailAgent
     recipientName?: string
   ): EmailOptions | undefined {
     const settings = getSettings();
-    const { applicationUrl, applicationTitle, mediaServerType } = settings.main;
+    const { applicationUrl, applicationTitle } = settings.main;
     const { embedPoster } = settings.notifications.agents.email;
-    const mediaServerName = getAvailableMediaServerName(mediaServerType);
-    const mediaServerUrl = getAvailableMediaServerUrl(payload);
 
     if (type === Notification.TEST_NOTIFICATION) {
       return {
@@ -144,6 +142,10 @@ class EmailAgent
           }:`;
           break;
       }
+
+      const { mediaServerType } = settings.main;
+      const mediaServerName = getAvailableMediaServerName(mediaServerType);
+      const mediaServerUrl = getAvailableMediaServerUrl(payload);
 
       return {
         template: path.join(
