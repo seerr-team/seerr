@@ -1,5 +1,5 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
-import type { NotificationAgentSlack } from '@server/lib/settings';
+import type { NotificationAgentSlack } from '@server/interfaces/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
@@ -49,23 +49,12 @@ class SlackAgent
   extends BaseAgent<NotificationAgentSlack>
   implements NotificationAgent
 {
-  protected getSettings(): NotificationAgentSlack {
-    if (this.settings) {
-      return this.settings;
-    }
-
-    const settings = getSettings();
-
-    return settings.notifications.agents.slack;
-  }
-
   public buildEmbed(
     type: Notification,
     payload: NotificationPayload
   ): SlackBlockEmbed {
-    const settings = getSettings();
-    const { applicationUrl, applicationTitle } = settings.main;
-    const { embedPoster } = settings.notifications.agents.slack;
+    const { applicationUrl, applicationTitle } = getSettings().main;
+    const embedPoster = this.getSettings().embedPoster;
 
     const fields: EmbedField[] = [];
 
@@ -226,7 +215,7 @@ class SlackAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    const settings = this.getSettings();
+    const settings = this.getSettings() as NotificationAgentSlack;
 
     if (
       !payload.notifySystem ||

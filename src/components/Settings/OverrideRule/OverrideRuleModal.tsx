@@ -11,7 +11,10 @@ import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import type OverrideRule from '@server/entity/OverrideRule';
-import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
+import type {
+  RadarrSettings,
+  SonarrSettings,
+} from '@server/interfaces/settings';
 import axios from 'axios';
 import { Field, Formik } from 'formik';
 import { useCallback, useEffect, useState } from 'react';

@@ -1,5 +1,5 @@
+import type { Library, PlexSettings } from '@server/interfaces/settings';
 import ExternalAPI from '@server/api/externalapi';
-import type { Library, PlexSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 

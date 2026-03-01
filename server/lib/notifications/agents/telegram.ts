@@ -2,8 +2,11 @@ import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { MediaStatus } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
-import type { NotificationAgentTelegram } from '@server/lib/settings';
-import { NotificationAgentKey, getSettings } from '@server/lib/settings';
+import {
+  NotificationAgentKey,
+  type NotificationAgentTelegram,
+} from '@server/interfaces/settings';
+import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
 import {
@@ -37,16 +40,6 @@ class TelegramAgent
 {
   private baseUrl = 'https://api.telegram.org/';
 
-  protected getSettings(): NotificationAgentTelegram {
-    if (this.settings) {
-      return this.settings;
-    }
-
-    const settings = getSettings();
-
-    return settings.notifications.agents.telegram;
-  }
-
   public shouldSend(): boolean {
     const settings = this.getSettings();
 
@@ -65,9 +58,8 @@ class TelegramAgent
     type: Notification,
     payload: NotificationPayload
   ): Partial<TelegramMessagePayload | TelegramPhotoPayload> {
-    const settings = getSettings();
-    const { applicationUrl, applicationTitle } = settings.main;
-    const { embedPoster } = settings.notifications.agents.telegram;
+    const { applicationUrl, applicationTitle } = getSettings().main;
+    const embedPoster = this.getSettings().embedPoster;
 
     /* eslint-disable no-useless-escape */
     let message = `\*${this.escapeText(

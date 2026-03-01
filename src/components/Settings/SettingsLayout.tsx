@@ -67,7 +67,7 @@ const SettingsLayout = ({ children }: SettingsLayoutProps) => {
     },
     {
       text: intl.formatMessage(messages.menuNotifications),
-      route: '/settings/notifications/email',
+      route: '/settings/notifications',
       regex: /^\/settings\/notifications/,
     },
     {

@@ -1,5 +1,5 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
-import type { NotificationAgentNtfy } from '@server/lib/settings';
+import type { NotificationAgentNtfy } from '@server/interfaces/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
@@ -11,20 +11,9 @@ class NtfyAgent
   extends BaseAgent<NotificationAgentNtfy>
   implements NotificationAgent
 {
-  protected getSettings(): NotificationAgentNtfy {
-    if (this.settings) {
-      return this.settings;
-    }
-
-    const settings = getSettings();
-
-    return settings.notifications.agents.ntfy;
-  }
-
   private buildPayload(type: Notification, payload: NotificationPayload) {
-    const settings = getSettings();
-    const { applicationUrl } = settings.main;
-    const { embedPoster } = settings.notifications.agents.ntfy;
+    const { applicationUrl } = getSettings().main;
+    const embedPoster = this.getSettings().embedPoster;
 
     const topic = this.getSettings().options.topic;
     const priority = 3;
@@ -105,7 +94,7 @@ class NtfyAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    const settings = this.getSettings();
+    const settings = this.getSettings() as NotificationAgentNtfy;
 
     if (
       !payload.notifySystem ||

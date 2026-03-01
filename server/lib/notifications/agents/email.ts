@@ -2,9 +2,12 @@ import { IssueType, IssueTypeName } from '@server/constants/issue';
 import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
+import {
+  NotificationAgentKey,
+  type NotificationAgentEmail,
+} from '@server/interfaces/settings';
 import PreparedEmail from '@server/lib/email';
-import type { NotificationAgentEmail } from '@server/lib/settings';
-import { NotificationAgentKey, getSettings } from '@server/lib/settings';
+import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import type { EmailOptions } from 'email-templates';
 import path from 'path';
@@ -17,16 +20,6 @@ class EmailAgent
   extends BaseAgent<NotificationAgentEmail>
   implements NotificationAgent
 {
-  protected getSettings(): NotificationAgentEmail {
-    if (this.settings) {
-      return this.settings;
-    }
-
-    const settings = getSettings();
-
-    return settings.notifications.agents.email;
-  }
-
   public shouldSend(): boolean {
     const settings = this.getSettings();
 
@@ -48,9 +41,8 @@ class EmailAgent
     recipientEmail: string,
     recipientName?: string
   ): EmailOptions | undefined {
-    const settings = getSettings();
-    const { applicationUrl, applicationTitle } = settings.main;
-    const { embedPoster } = settings.notifications.agents.email;
+    const { applicationUrl, applicationTitle } = getSettings().main;
+    const embedPoster = this.getSettings().embedPoster;
 
     if (type === Notification.TEST_NOTIFICATION) {
       return {
@@ -218,7 +210,7 @@ class EmailAgent
 
         try {
           const email = new PreparedEmail(
-            this.getSettings(),
+            this.getSettings() as NotificationAgentEmail,
             payload.notifyUser.settings?.pgpKey
           );
           if (
@@ -282,7 +274,7 @@ class EmailAgent
 
             try {
               const email = new PreparedEmail(
-                this.getSettings(),
+                this.getSettings() as NotificationAgentEmail,
                 user.settings?.pgpKey
               );
               if (validator.isEmail(user.email, { require_tld: false })) {

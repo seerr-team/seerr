@@ -22,7 +22,7 @@ const DropdownItem = ({
     <Menu.Item>
       <a
         className={[
-          'button-md flex cursor-pointer items-center rounded px-4 py-2 text-sm leading-5 text-white focus:text-white focus:outline-none',
+          'button-md my-1 flex cursor-pointer items-center rounded px-4 py-2 text-sm leading-5 text-white focus:text-white focus:outline-none',
           buttonType === 'ghost'
             ? 'bg-transparent from-indigo-600 to-purple-600 hover:bg-gradient-to-br focus:border-gray-500'
             : 'bg-indigo-600 hover:bg-indigo-500 focus:border-indigo-700',
@@ -102,7 +102,7 @@ const Dropdown = ({
         disabled={!children}
         {...props}
       >
-        <span>{text}</span>
+        {text}
         {children && (dropdownIcon ? dropdownIcon : <ChevronDownIcon />)}
       </Menu.Button>
       {children && (

@@ -10,7 +10,7 @@ import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType } from '@server/constants/server';
-import type { JellyfinSettings } from '@server/lib/settings';
+import type { JellyfinSettings } from '@server/interfaces/settings';
 import axios from 'axios';
 import { Field, Formik } from 'formik';
 import { useState } from 'react';

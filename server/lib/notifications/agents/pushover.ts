@@ -2,8 +2,11 @@ import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { MediaStatus } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
-import type { NotificationAgentPushover } from '@server/lib/settings';
-import { NotificationAgentKey, getSettings } from '@server/lib/settings';
+import {
+  NotificationAgentKey,
+  type NotificationAgentPushover,
+} from '@server/interfaces/settings';
+import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
 import {
@@ -34,16 +37,6 @@ class PushoverAgent
   extends BaseAgent<NotificationAgentPushover>
   implements NotificationAgent
 {
-  protected getSettings(): NotificationAgentPushover {
-    if (this.settings) {
-      return this.settings;
-    }
-
-    const settings = getSettings();
-
-    return settings.notifications.agents.pushover;
-  }
-
   public shouldSend(): boolean {
     const settings = this.getSettings();
 
@@ -88,9 +81,8 @@ class PushoverAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<Partial<PushoverPayload>> {
-    const settings = getSettings();
-    const { applicationUrl, applicationTitle } = settings.main;
-    const { embedPoster } = settings.notifications.agents.pushover;
+    const { applicationUrl, applicationTitle } = getSettings().main;
+    const embedPoster = this.getSettings().embedPoster;
 
     const title = payload.event ?? payload.subject;
     let message = payload.event ? `<b>${payload.subject}</b>` : '';
@@ -191,7 +183,7 @@ class PushoverAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    const settings = this.getSettings();
+    const settings = this.getSettings() as NotificationAgentPushover;
     const endpoint = 'https://api.pushover.net/1/messages.json';
     const notificationPayload = await this.getNotificationPayload(
       type,

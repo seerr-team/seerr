@@ -16,7 +16,7 @@ import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import { ArrowPathIcon } from '@heroicons/react/24/solid';
 import type { UserSettingsGeneralResponse } from '@server/interfaces/api/userSettingsInterfaces';
-import type { MainSettings } from '@server/lib/settings';
+import type { MainSettings } from '@server/interfaces/settings';
 import type { AvailableLocale } from '@server/types/languages';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';

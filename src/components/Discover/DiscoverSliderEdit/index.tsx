@@ -1,6 +1,6 @@
 import Button from '@app/components/Common/Button';
-import SlideCheckbox from '@app/components/Common/SlideCheckbox';
 import Tag from '@app/components/Common/Tag';
+import ToggleSwitch from '@app/components/Common/ToggleSwitch';
 import Tooltip from '@app/components/Common/Tooltip';
 import CompanyTag from '@app/components/CompanyTag';
 import { sliderTitles } from '@app/components/Discover/constants';
@@ -308,11 +308,12 @@ const DiscoverSliderEdit = ({
           <div className="absolute right-4 top-4 flex-1 text-right md:relative md:right-0 md:top-0">
             <Tooltip content={intl.formatMessage(messages.enable)}>
               <div>
-                <SlideCheckbox
-                  onClick={() => {
+                <ToggleSwitch
+                  onToggle={() => {
                     onEnable();
                   }}
-                  checked={slider.enabled}
+                  isToggled={slider.enabled}
+                  highContrast
                 />
               </div>
             </Tooltip>

@@ -4,8 +4,8 @@ import SensitiveInput from '@app/components/Common/SensitiveInput';
 import NotificationTypeSelector, {
   ALL_NOTIFICATIONS,
 } from '@app/components/NotificationTypeSelector';
-import { OpenPgpLink } from '@app/components/Settings/Notifications/NotificationsEmail';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
+import { OpenPgpLink } from '@app/components/Settings/SettingsNotifications/NotificationModal/EmailModal';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';

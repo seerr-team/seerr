@@ -3,7 +3,8 @@ import type IssueComment from '@server/entity/IssueComment';
 import type Media from '@server/entity/Media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { User } from '@server/entity/User';
-import type { NotificationAgentConfig } from '@server/lib/settings';
+import type { NotificationAgentConfig } from '@server/interfaces/settings';
+import { getSettings } from '@server/lib/settings';
 import type { Notification } from '..';
 
 export interface NotificationPayload {
@@ -25,14 +26,31 @@ export interface NotificationPayload {
 
 export abstract class BaseAgent<T extends NotificationAgentConfig> {
   protected settings?: T;
-  public constructor(settings?: T) {
+  public id?: number;
+
+  public constructor(settings?: T, id?: number) {
     this.settings = settings;
+    this.id = id;
   }
 
-  protected abstract getSettings(): T;
+  protected getSettings(): NotificationAgentConfig {
+    if (this.settings) {
+      return this.settings;
+    }
+
+    const settings = getSettings();
+
+    const notificationInstance = settings.notification.instances.find(
+      (instance) => instance.id === Number(this.id)
+    );
+
+    return notificationInstance as NotificationAgentConfig;
+  }
 }
 
 export interface NotificationAgent {
+  id?: number;
+
   shouldSend(): boolean;
   send(type: Notification, payload: NotificationPayload): Promise<boolean>;
 }

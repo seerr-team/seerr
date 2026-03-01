@@ -1,4 +1,4 @@
-import type { NotificationAgentEmail } from '@server/lib/settings';
+import type { NotificationAgentEmail } from '@server/interfaces/settings';
 import { getSettings } from '@server/lib/settings';
 import Email from 'email-templates';
 import nodemailer from 'nodemailer';
