@@ -67,6 +67,8 @@ const messages = defineMessages('components.Settings', {
   tip: 'Tip',
   scanbackground:
     'Scanning will run in the background. You can continue the setup process in the meantime.',
+  jellyfinEnablePlaybackReporting:
+    'Enable Playback Reporting Plugin integration',
 });
 
 interface Library {
@@ -440,13 +442,14 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       </div>
       <Formik
         initialValues={{
-          hostname: data?.ip,
+          hostname: data?.ip || '',
           port: data?.port ?? 8096,
-          useSsl: data?.useSsl,
+          useSsl: data?.useSsl || false,
           urlBase: data?.urlBase || '',
           jellyfinExternalUrl: data?.externalHostname || '',
           jellyfinForgotPasswordUrl: data?.jellyfinForgotPasswordUrl || '',
-          apiKey: data?.apiKey,
+          apiKey: data?.apiKey || '',
+          enablePlaybackReporting: data?.enablePlaybackReporting || false,
         }}
         validationSchema={JellyfinSettingsSchema}
         onSubmit={async (values) => {
@@ -459,6 +462,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
               externalHostname: values.jellyfinExternalUrl,
               jellyfinForgotPasswordUrl: values.jellyfinForgotPasswordUrl,
               apiKey: values.apiKey,
+              enablePlaybackReporting: values.enablePlaybackReporting,
             } as JellyfinSettings);
 
             addToast(
@@ -660,6 +664,27 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
                         {errors.jellyfinForgotPasswordUrl}
                       </div>
                     )}
+                </div>
+              </div>
+              <div className="form-row">
+                <label
+                  htmlFor="enablePlaybackReporting"
+                  className="checkbox-label"
+                >
+                  {intl.formatMessage(messages.jellyfinEnablePlaybackReporting)}
+                </label>
+                <div className="form-input-area">
+                  <Field
+                    type="checkbox"
+                    id="enablePlaybackReporting"
+                    name="enablePlaybackReporting"
+                    onChange={() => {
+                      setFieldValue(
+                        'enablePlaybackReporting',
+                        !values.enablePlaybackReporting
+                      );
+                    }}
+                  />
                 </div>
               </div>
               <div

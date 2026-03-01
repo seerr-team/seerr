@@ -1,5 +1,5 @@
-import type { JellyfinLibraryItem } from '@server/api/jellyfin';
-import JellyfinAPI from '@server/api/jellyfin';
+import type { JellyfinLibraryItem } from '@server/api/jellyfinMain';
+import JellyfinMainAPI from '@server/api/jellyfinMain';
 import type { PlexMetadata } from '@server/api/plexapi';
 import PlexAPI from '@server/api/plexapi';
 import RadarrAPI, { type RadarrMovie } from '@server/api/servarr/radarr';
@@ -11,18 +11,18 @@ import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import MediaRequest from '@server/entity/MediaRequest';
 import type Season from '@server/entity/Season';
-import { User } from '@server/entity/User';
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { getHostname } from '@server/utils/getHostname';
+import { getMediaServerAdmin } from '@server/utils/getMediaServerAdmin';
 
 class AvailabilitySync {
   public running = false;
   private plexClient: PlexAPI;
   private plexSeasonsCache: Record<string, PlexMetadata[]>;
 
-  private jellyfinClient: JellyfinAPI;
+  private jellyfinClient: JellyfinMainAPI;
   private jellyfinSeasonsCache: Record<string, JellyfinLibraryItem[]>;
 
   private sonarrSeasonsCache: Record<string, SonarrSeason[]>;
@@ -31,7 +31,7 @@ class AvailabilitySync {
 
   async run() {
     const settings = getSettings();
-    const mediaServerType = getSettings().main.mediaServerType;
+    const mediaServerType = settings.main.mediaServerType;
     this.running = true;
     this.plexSeasonsCache = {};
     this.jellyfinSeasonsCache = {};
@@ -45,27 +45,7 @@ class AvailabilitySync {
       });
       const pageSize = 50;
 
-      const userRepository = getRepository(User);
-
-      // If it is plex admin is selected using plexToken if jellyfin admin is selected using jellyfinUserID
-
-      let admin = null;
-
-      if (mediaServerType === MediaServerType.PLEX) {
-        admin = await userRepository.findOne({
-          select: { id: true, plexToken: true },
-          where: { id: 1 },
-        });
-      } else if (
-        mediaServerType === MediaServerType.JELLYFIN ||
-        mediaServerType === MediaServerType.EMBY
-      ) {
-        admin = await userRepository.findOne({
-          where: { id: 1 },
-          select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
-          order: { id: 'ASC' },
-        });
-      }
+      const admin = await getMediaServerAdmin();
 
       switch (mediaServerType) {
         case MediaServerType.PLEX:
@@ -78,7 +58,7 @@ class AvailabilitySync {
         case MediaServerType.JELLYFIN:
         case MediaServerType.EMBY:
           if (admin) {
-            this.jellyfinClient = new JellyfinAPI(
+            this.jellyfinClient = new JellyfinMainAPI(
               getHostname(),
               settings.jellyfin.apiKey,
               admin.jellyfinDeviceId

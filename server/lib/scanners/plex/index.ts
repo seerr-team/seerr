@@ -8,8 +8,6 @@ import type {
   TmdbKeyword,
   TmdbTvDetails,
 } from '@server/api/themoviedb/interfaces';
-import { getRepository } from '@server/datasource';
-import { User } from '@server/entity/User';
 import cacheManager from '@server/lib/cache';
 import type {
   MediaIds,
@@ -20,6 +18,7 @@ import type {
 import BaseScanner from '@server/lib/scanners/baseScanner';
 import type { Library } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
+import { getMediaServerAdmin } from '@server/utils/getMediaServerAdmin';
 import { uniqWith } from 'lodash';
 
 const imdbRegex = new RegExp(/imdb:\/\/(tt[0-9]+)/);
@@ -33,10 +32,10 @@ const hamaTvdbRegex = new RegExp(/hama:\/\/tvdb[0-9]?-([0-9]+)/);
 const hamaAnidbRegex = new RegExp(/hama:\/\/anidb[0-9]?-([0-9]+)/);
 const HAMA_AGENT = 'com.plexapp.agents.hama';
 
-type SyncStatus = StatusBase & {
+interface SyncStatus extends StatusBase {
   currentLibrary: Library;
   libraries: Library[];
-};
+}
 
 class PlexScanner
   extends BaseScanner<PlexLibraryItem>
@@ -66,11 +65,7 @@ class PlexScanner
     const settings = getSettings();
     const sessionId = this.startRun();
     try {
-      const userRepository = getRepository(User);
-      const admin = await userRepository.findOne({
-        select: { id: true, plexToken: true },
-        where: { id: 1 },
-      });
+      const admin = await getMediaServerAdmin();
 
       if (!admin) {
         return this.log('No admin configured. Plex scan skipped.', 'warn');
