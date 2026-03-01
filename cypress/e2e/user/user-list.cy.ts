@@ -78,7 +78,7 @@ describe('User List', () => {
     cy.wait('@userListFetch').then((interception) => {
       const url = interception.request.url;
       expect(url).to.include('sort=displayname');
-      expect(url).to.include('sortDirection=desc');
+      expect(url).to.include('sortDirection=asc');
     });
 
     cy.get(
@@ -87,8 +87,8 @@ describe('User List', () => {
       const displayNames = $links
         .toArray()
         .map((el) => (el as HTMLElement).innerText.trim().toLowerCase());
-      const sortedDesc = [...displayNames].sort((a, b) => b.localeCompare(a));
-      expect(displayNames).to.deep.equal(sortedDesc);
+      const sortedAsc = [...displayNames].sort((a, b) => a.localeCompare(b));
+      expect(displayNames).to.deep.equal(sortedAsc);
     });
 
     cy.get('[data-testid=column-header-created]').click();

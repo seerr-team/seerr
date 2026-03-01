@@ -110,13 +110,13 @@ const UserList = () => {
   const settings = useSettings();
   const { addToast } = useToasts();
   const { user: currentUser, hasPermission: currentHasPermission } = useUser();
-  const [currentSort, setCurrentSort] = useState<Sort>('displayname');
+  const [currentSort, setCurrentSort] = useState<Sort>('created');
   const [currentPageSize, setCurrentPageSize] = useState<number>(10);
 
   const page = router.query.page ? Number(router.query.page) : 1;
   const pageIndex = page - 1;
   const updateQueryParams = useUpdateQueryParams({ page: page.toString() });
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const {
     data,
