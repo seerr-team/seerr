@@ -1402,6 +1402,10 @@ components:
           example: 0
         name:
           type: string
+        id:
+          type: integer
+          example: 0
+          readOnly: true
         agent:
           type: string
           enum:
