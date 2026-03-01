@@ -1,3 +1,4 @@
+import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
 import dataSource, { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
@@ -29,7 +30,7 @@ const prepareDb = async () => {
 
   const userRepository = getRepository(User);
 
-  const admin = await getMediaServerAdmin();
+  const admin = await getMediaServerAdmin(MediaServerType.PLEX);
 
   // Create the admin user
   const user =

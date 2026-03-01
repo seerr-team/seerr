@@ -1,5 +1,6 @@
 import csurf from '@dr.pogodin/csurf';
 import PlexAPI from '@server/api/plexapi';
+import { MediaServerType } from '@server/constants/server';
 import dataSource, { getRepository, isPgsql } from '@server/datasource';
 import DiscoverSlider from '@server/entity/DiscoverSlider';
 import { Session } from '@server/entity/Session';
@@ -109,7 +110,7 @@ app
       settings.plex.libraries.length > 1 &&
       !settings.plex.libraries[0].type
     ) {
-      const admin = await getMediaServerAdmin();
+      const admin = await getMediaServerAdmin(MediaServerType.PLEX);
 
       if (admin) {
         logger.info('Migrating Plex libraries to include media type', {

@@ -3,6 +3,7 @@ import PlexAPI from '@server/api/plexapi';
 import PlexTvAPI from '@server/api/plextv';
 import TautulliAPI from '@server/api/tautulli';
 import { ApiErrorCode } from '@server/constants/error';
+import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
@@ -119,7 +120,7 @@ settingsRoutes.get('/plex', (_req, res) => {
 settingsRoutes.post('/plex', async (req, res, next) => {
   const settings = getSettings();
   try {
-    const admin = await getMediaServerAdmin();
+    const admin = await getMediaServerAdmin(MediaServerType.PLEX);
     if (!admin) {
       throw new Error('Admin user not found');
     }
@@ -154,7 +155,7 @@ settingsRoutes.post('/plex', async (req, res, next) => {
 
 settingsRoutes.get('/plex/devices/servers', async (req, res, next) => {
   try {
-    const admin = await getMediaServerAdmin();
+    const admin = await getMediaServerAdmin(MediaServerType.PLEX);
     if (!admin) {
       throw new Error('Admin user not found');
     }
@@ -232,7 +233,7 @@ settingsRoutes.get('/plex/library', async (req, res) => {
   const settings = getSettings();
 
   if (req.query.sync) {
-    const admin = await getMediaServerAdmin();
+    const admin = await getMediaServerAdmin(MediaServerType.PLEX);
     if (!admin) {
       throw new Error('Admin user not found');
     }
@@ -275,7 +276,7 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
   const settings = getSettings();
 
   try {
-    const admin = await getMediaServerAdmin();
+    const admin = await getMediaServerAdmin(MediaServerType.JELLYFIN);
     if (!admin) {
       throw new Error('Admin user not found');
     }
@@ -330,7 +331,7 @@ settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
   const settings = getSettings();
 
   if (req.query.sync) {
-    const admin = await getMediaServerAdmin();
+    const admin = await getMediaServerAdmin(MediaServerType.JELLYFIN);
     if (!admin) {
       throw new Error('Admin user not found');
     }
@@ -391,7 +392,7 @@ settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
 settingsRoutes.get('/jellyfin/users', async (req, res) => {
   const settings = getSettings();
 
-  const admin = await getMediaServerAdmin();
+  const admin = await getMediaServerAdmin(MediaServerType.JELLYFIN);
   if (!admin) {
     throw new Error('Admin user not found');
   }
@@ -471,7 +472,7 @@ settingsRoutes.get(
     const qb = userRepository.createQueryBuilder('user');
 
     try {
-      const admin = await getMediaServerAdmin();
+      const admin = await getMediaServerAdmin(MediaServerType.PLEX);
       if (!admin) {
         throw new Error('Admin user not found');
       }

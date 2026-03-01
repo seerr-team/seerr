@@ -18,7 +18,7 @@ let _avatarImageProxy: ImageProxy | null = null;
 
 async function initAvatarImageProxy() {
   if (!_avatarImageProxy) {
-    const admin = await getMediaServerAdmin();
+    const admin = await getMediaServerAdmin(MediaServerType.JELLYFIN);
     const deviceId = admin?.jellyfinDeviceId || 'BOT_seerr';
     const authToken = getSettings().jellyfin.apiKey;
     _avatarImageProxy = new ImageProxy('avatar', '', {

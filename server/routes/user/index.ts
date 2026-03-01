@@ -592,7 +592,7 @@ router.post(
       const userRepository = getRepository(User);
       const body = req.body as { plexIds: string[] } | undefined;
 
-      const admin = await getMediaServerAdmin();
+      const admin = await getMediaServerAdmin(MediaServerType.PLEX);
       if (!admin) {
         throw new Error('Admin user not found');
       }
@@ -658,7 +658,7 @@ router.post(
       const userRepository = getRepository(User);
       const body = req.body as { jellyfinUserIds: string[] };
 
-      const admin = await getMediaServerAdmin();
+      const admin = await getMediaServerAdmin(MediaServerType.JELLYFIN);
       if (!admin) {
         throw new Error('Admin user not found');
       }

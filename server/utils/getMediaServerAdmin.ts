@@ -3,10 +3,15 @@ import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import { getSettings } from '@server/lib/settings';
 
-export const getMediaServerAdmin = async (): Promise<User | undefined> => {
+export const getMediaServerAdmin = async (
+  mediaServerType?: MediaServerType
+): Promise<User | undefined> => {
   let admin: User | null = null;
 
-  const mediaServerType = getSettings().main.mediaServerType;
+  if (!mediaServerType) {
+    mediaServerType = getSettings().main.mediaServerType;
+  }
+
   const userRepository = getRepository(User);
 
   // If it is plex admin is selected using plexToken if jellyfin admin is selected using jellyfinUserID

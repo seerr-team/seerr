@@ -29,8 +29,10 @@ interface JellyfinSyncStatus extends StatusBase {
   libraries: Library[];
 }
 
-class JellyfinScanner extends BaseScanner<JellyfinLibraryItem>
-  implements RunnableScanner<JellyfinSyncStatus> {
+class JellyfinScanner
+  extends BaseScanner<JellyfinLibraryItem>
+  implements RunnableScanner<JellyfinSyncStatus>
+{
   private jfClient: JellyfinMainAPI;
   private libraries: Library[];
   private currentLibrary: Library;
@@ -457,7 +459,7 @@ class JellyfinScanner extends BaseScanner<JellyfinLibraryItem>
     const sessionId = this.startRun();
 
     try {
-      const admin = await getMediaServerAdmin();
+      const admin = await getMediaServerAdmin(MediaServerType.JELLYFIN);
 
       if (!admin) {
         return this.log('No admin configured. Jellyfin sync skipped.', 'warn');
