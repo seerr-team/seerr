@@ -117,7 +117,7 @@ const EmailModal = ({
           otherwise: Yup.string().nullable(),
         })
         .matches(
-          /-----BEGIN PGP PRIVATE KEY BLOCK-----.+-----END PGP PRIVATE KEY BLOCK-----/,
+          /-----BEGIN PGP PRIVATE KEY BLOCK-----.+-----END PGP PRIVATE KEY BLOCK-----/s,
           intl.formatMessage(messages.emailValidationPgpPrivateKey)
         ),
       pgpPassword: Yup.string().when('pgpPrivateKey', {
@@ -228,8 +228,8 @@ const EmailModal = ({
               isSubmitting
                 ? intl.formatMessage(globalMessages.saving)
                 : type === NotificationModalType.EDIT
-                ? intl.formatMessage(globalMessages.save)
-                : intl.formatMessage(messages.createInstance)
+                  ? intl.formatMessage(globalMessages.save)
+                  : intl.formatMessage(messages.createInstance)
             }
             onOk={() => {
               handleSubmit();
