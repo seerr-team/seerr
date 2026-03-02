@@ -73,7 +73,7 @@ class NtfyAgent
       if (message) {
         message = `**- Comment:**\n${message}`;
       }
-      message += `\n\n**- Reported By:** ${payload.issue.createdBy.displayName}`;
+      message += `${message ? '\n\n' : ''}**- Reported By:** ${payload.issue.createdBy.displayName}`;
       message += `\n**- Issue Type:** ${IssueTypeName[payload.issue.issueType]}`;
       message += `\n**- Issue Status:** ${
         payload.issue.status === IssueStatus.OPEN ? 'Open' : 'Resolved'
