@@ -38,7 +38,7 @@ class NtfyAgent
       if (message) {
         message = `**- Description:**\n${message}`;
       }
-      message += `\n\n**- Requested By:** ${payload.request.requestedBy.displayName}`;
+      message += `${message ? '\n\n' : ''}**- Requested By:** ${payload.request.requestedBy.displayName}`;
 
       let status = '';
       switch (type) {
