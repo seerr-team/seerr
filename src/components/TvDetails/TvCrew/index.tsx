@@ -32,7 +32,7 @@ const TvCrew = () => {
       <PageTitle
         title={[intl.formatMessage(messages.fullseriescrew), data.name]}
       />
-      <div className="mt-1 mb-5">
+      <div className="mb-5 mt-1">
         <Header
           subtext={
             <Link href={`/tv/${data.id}`} className="hover:underline">

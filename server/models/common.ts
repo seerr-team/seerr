@@ -149,7 +149,7 @@ export const mapWatchProviders = (watchProvidersResult: {
         link: provider.link,
         buy: mapWatchProviderDetails(provider.buy ?? []),
         flatrate: mapWatchProviderDetails(provider.flatrate ?? []),
-      } as WatchProviders)
+      }) as WatchProviders
   );
 
 export const mapWatchProviderDetails = (
@@ -162,10 +162,10 @@ export const mapWatchProviderDetails = (
         logoPath: provider.logo_path,
         id: provider.provider_id,
         name: provider.provider_name,
-      } as WatchProviderDetails)
+      }) as WatchProviderDetails
   );
 
 const siteUrlCreator = (site: Video['site'], key: string): string =>
   ({
     YouTube: `https://www.youtube.com/watch?v=${key}`,
-  }[site]);
+  })[site];

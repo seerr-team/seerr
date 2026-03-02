@@ -16,39 +16,14 @@ import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { ApiError } from '@server/types/error';
 import { getHostname } from '@server/utils/getHostname';
+import {
+  isOwnProfile,
+  isOwnProfileOrAdmin,
+} from '@server/utils/profileMiddleware';
 import { Router } from 'express';
 import net from 'net';
 import { Not } from 'typeorm';
 import { canMakePermissionsChange } from '.';
-
-const isOwnProfile = (): Middleware => {
-  return (req, res, next) => {
-    if (req.user?.id !== Number(req.params.id)) {
-      return next({
-        status: 403,
-        message: "You do not have permission to view this user's settings.",
-      });
-    }
-    next();
-  };
-};
-
-const isOwnProfileOrAdmin = (): Middleware => {
-  const authMiddleware: Middleware = (req, res, next) => {
-    if (
-      !req.user?.hasPermission(Permission.MANAGE_USERS) &&
-      req.user?.id !== Number(req.params.id)
-    ) {
-      return next({
-        status: 403,
-        message: "You do not have permission to view this user's settings.",
-      });
-    }
-
-    next();
-  };
-  return authMiddleware;
-};
 
 const userSettingsRoutes = Router({ mergeParams: true });
 

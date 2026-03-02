@@ -21,6 +21,7 @@ import {
   AfterUpdate,
   Column,
   Entity,
+  Index,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -34,7 +35,7 @@ export class RequestPermissionError extends Error {}
 export class QuotaRestrictedError extends Error {}
 export class DuplicateMediaRequestError extends Error {}
 export class NoSeasonsAvailableError extends Error {}
-export class BlacklistedMediaError extends Error {}
+export class BlocklistedMediaError extends Error {}
 
 type MediaRequestOptions = {
   isAutoRequest?: boolean;
@@ -139,14 +140,14 @@ export class MediaRequest {
         mediaType: requestBody.mediaType,
       });
     } else {
-      if (media.status === MediaStatus.BLACKLISTED) {
-        logger.warn('Request for media blocked due to being blacklisted', {
+      if (media.status === MediaStatus.BLOCKLISTED) {
+        logger.warn('Request for media blocked due to being blocklisted', {
           tmdbId: tmdbMedia.id,
           mediaType: requestBody.mediaType,
           label: 'Media Request',
         });
 
-        throw new BlacklistedMediaError('This media is blacklisted.');
+        throw new BlocklistedMediaError('This media is blocklisted.');
       }
 
       if (media.status === MediaStatus.UNKNOWN && !requestBody.is4k) {
@@ -332,16 +333,9 @@ export class MediaRequest {
     if (requestBody.mediaType === MediaType.MOVIE) {
       await mediaRepository.save(media);
 
-      if (!media.id) {
-        throw new Error(
-          `Failed to save media before creating request. Media type: ${requestBody.mediaType}, TMDB ID: ${requestBody.mediaId}, persisted media id: ${media.id}`
-        );
-      }
-
       const request = new MediaRequest({
         type: MediaType.MOVIE,
         media,
-        mediaId: media.id,
         requestedBy: requestUser,
         // If the user is an admin or has the "auto approve" permission, automatically approve the request
         status: user.hasPermission(
@@ -449,16 +443,9 @@ export class MediaRequest {
 
       await mediaRepository.save(media);
 
-      if (!media.id) {
-        throw new Error(
-          `Failed to save media before creating request. Media type: TV, TMDB ID: ${requestBody.mediaId}, is4k: ${requestBody.is4k}`
-        );
-      }
-
       const request = new MediaRequest({
         type: MediaType.TV,
         media,
-        mediaId: media.id,
         requestedBy: requestUser,
         // If the user is an admin or has the "auto approve" permission, automatically approve the request
         status: user.hasPermission(
@@ -527,21 +514,21 @@ export class MediaRequest {
   public id: number;
 
   @Column({ type: 'integer' })
+  @Index()
   public status: MediaRequestStatus;
 
   @ManyToOne(() => Media, (media) => media.requests, {
     eager: true,
     onDelete: 'CASCADE',
   })
+  @Index()
   public media: Media;
-
-  @Column({ name: 'mediaId', nullable: true })
-  public mediaId: number;
 
   @ManyToOne(() => User, (user) => user.requests, {
     eager: true,
     onDelete: 'CASCADE',
   })
+  @Index()
   public requestedBy: User;
 
   @ManyToOne(() => User, {
@@ -550,6 +537,7 @@ export class MediaRequest {
     eager: true,
     onDelete: 'SET NULL',
   })
+  @Index()
   public modifiedBy?: User;
 
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })

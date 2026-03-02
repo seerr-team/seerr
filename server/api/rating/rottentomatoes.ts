@@ -157,8 +157,8 @@ class RottenTomatoes extends ExternalAPI {
         criticsRating: movie.rottenTomatoes.certifiedFresh
           ? 'Certified Fresh'
           : movie.rottenTomatoes.criticsScore >= 60
-          ? 'Fresh'
-          : 'Rotten',
+            ? 'Fresh'
+            : 'Rotten',
         criticsScore: movie.rottenTomatoes.criticsScore,
         audienceRating:
           movie.rottenTomatoes.audienceScore >= 60 ? 'Upright' : 'Spilled',

@@ -1,5 +1,5 @@
 import { MediaServerType } from '@server/constants/server';
-import blacklistedTagsProcessor from '@server/job/blacklistedTagsProcessor';
+import blocklistedTagsProcessor from '@server/job/blocklistedTagsProcessor';
 import availabilitySync from '@server/lib/availabilitySync';
 import downloadTracker from '@server/lib/downloadtracker';
 import ImageProxy from '@server/lib/imageproxy';
@@ -239,19 +239,19 @@ export const startJobs = (): void => {
   });
 
   scheduledJobs.push({
-    id: 'process-blacklisted-tags',
-    name: 'Process Blacklisted Tags',
+    id: 'process-blocklisted-tags',
+    name: 'Process Blocklisted Tags',
     type: 'process',
     interval: 'days',
-    cronSchedule: jobs['process-blacklisted-tags'].schedule,
-    job: schedule.scheduleJob(jobs['process-blacklisted-tags'].schedule, () => {
-      logger.info('Starting scheduled job: Process Blacklisted Tags', {
+    cronSchedule: jobs['process-blocklisted-tags'].schedule,
+    job: schedule.scheduleJob(jobs['process-blocklisted-tags'].schedule, () => {
+      logger.info('Starting scheduled job: Process Blocklisted Tags', {
         label: 'Jobs',
       });
-      blacklistedTagsProcessor.run();
+      blocklistedTagsProcessor.run();
     }),
-    running: () => blacklistedTagsProcessor.status().running,
-    cancelFn: () => blacklistedTagsProcessor.cancel(),
+    running: () => blocklistedTagsProcessor.status().running,
+    cancelFn: () => blocklistedTagsProcessor.cancel(),
   });
 
   logger.info('Scheduled jobs loaded', { label: 'Jobs' });

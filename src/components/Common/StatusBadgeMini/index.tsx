@@ -24,7 +24,7 @@ const StatusBadgeMini = ({
   shrink = false,
 }: StatusBadgeMiniProps) => {
   const badgeStyle = [
-    `rounded-full bg-opacity-80 shadow-md ${
+    `rounded-full shadow-md ${
       shrink ? 'w-4 sm:w-5 border p-0' : 'w-5 ring-1 p-0.5'
     }`,
   ];
@@ -34,34 +34,34 @@ const StatusBadgeMini = ({
   switch (status) {
     case MediaStatus.PROCESSING:
       badgeStyle.push(
-        'bg-indigo-500 border-indigo-400 ring-indigo-400 text-indigo-100'
+        'bg-indigo-500/80 border-indigo-400 ring-indigo-400 text-indigo-100'
       );
       indicatorIcon = <ClockIcon />;
       break;
     case MediaStatus.AVAILABLE:
       badgeStyle.push(
-        'bg-green-500 border-green-400 ring-green-400 text-green-100'
+        'bg-green-500/80 border-green-400 ring-green-400 text-green-100'
       );
       indicatorIcon = <CheckCircleIcon />;
       break;
     case MediaStatus.PENDING:
       badgeStyle.push(
-        'bg-yellow-500 border-yellow-400 ring-yellow-400 text-yellow-100'
+        'bg-yellow-500/80 border-yellow-400 ring-yellow-400 text-yellow-100'
       );
       indicatorIcon = <BellIcon />;
       break;
-    case MediaStatus.BLACKLISTED:
-      badgeStyle.push('bg-red-500 border-white-400 ring-white-400 text-white');
+    case MediaStatus.BLOCKLISTED:
+      badgeStyle.push('bg-red-500/80 border-white ring-white text-white');
       indicatorIcon = <EyeSlashIcon />;
       break;
     case MediaStatus.PARTIALLY_AVAILABLE:
       badgeStyle.push(
-        'bg-green-500 border-green-400 ring-green-400 text-green-100'
+        'bg-green-500/80 border-green-400 ring-green-400 text-green-100'
       );
       indicatorIcon = <MinusSmallIcon />;
       break;
     case MediaStatus.DELETED:
-      badgeStyle.push('bg-red-500 border-red-400 ring-red-400 text-red-100');
+      badgeStyle.push('bg-red-500/80 border-red-400 ring-red-400 text-red-100');
       indicatorIcon = <TrashIcon />;
       break;
   }

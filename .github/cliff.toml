@@ -33,9 +33,9 @@ body = """
         {{ self::print_commit(commit=commit) }}
     {%- endfor %}
     {%- for commit in commits %}
-        {%- if not commit.scope -%}
+        {%- if not commit.scope %}
             {{ self::print_commit(commit=commit) }}
-        {%- endif -%}
+        {%- endif %}
     {%- endfor -%}
 {%- endfor -%}
 

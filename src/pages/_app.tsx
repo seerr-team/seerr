@@ -13,6 +13,7 @@ import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
 import '@app/styles/globals.css';
 import { polyfillIntl } from '@app/utils/polyfillIntl';
+import '@fontsource-variable/inter';
 import { MediaServerType } from '@server/constants/server';
 import type { PublicSettingsResponse } from '@server/interfaces/api/settingsInterfaces';
 import type { AvailableLocale } from '@server/types/languages';
@@ -206,7 +207,7 @@ const CoreApp: Omit<NextAppComponentType, 'origGetInitialProps'> = ({
                   <meta
                     name="viewport"
                     content="initial-scale=1, viewport-fit=cover, width=device-width"
-                  ></meta>
+                  />
                   <PWAHeader
                     applicationTitle={currentSettings.applicationTitle}
                   />
@@ -231,7 +232,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     applicationTitle: '',
     applicationUrl: '',
     hideAvailable: false,
-    hideBlacklisted: false,
+    hideBlocklisted: false,
     movie4kEnabled: false,
     series4kEnabled: false,
     localLogin: true,
@@ -307,9 +308,8 @@ CoreApp.getInitialProps = async (initialProps) => {
   }
 
   // Run the default getInitialProps for the main nextjs initialProps
-  const appInitialProps: AppInitialProps = await App.getInitialProps(
-    initialProps
-  );
+  const appInitialProps: AppInitialProps =
+    await App.getInitialProps(initialProps);
 
   const locale = user?.settings?.locale
     ? user.settings.locale

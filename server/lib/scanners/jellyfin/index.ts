@@ -397,6 +397,13 @@ class JellyfinScanner
               episodes: totalStandard,
               episodes4k: total4k,
             });
+          } else {
+            processableSeasons.push({
+              seasonNumber: season.season_number,
+              totalEpisodes: season.episode_count,
+              episodes: 0,
+              episodes4k: 0,
+            });
           }
         }
 

@@ -134,7 +134,6 @@ const OverrideRuleTiles = ({
         const users: User[] = response.data.results;
         setUsers(users);
       }
-      setUsers(users);
     })();
   }, [rules, users]);
 

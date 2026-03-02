@@ -43,7 +43,7 @@ const DiscoverMovieGenre = () => {
   return (
     <>
       <PageTitle title={title} />
-      <div className="mt-1 mb-5">
+      <div className="mb-5 mt-1">
         <Header>{title}</Header>
       </div>
       <ListView

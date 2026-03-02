@@ -398,7 +398,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
           )}
           {!isMovie(title) && request.seasons.length > 0 && (
             <div className="my-0.5 hidden items-center text-sm sm:my-1 sm:flex">
-              <span className="mr-2 font-bold ">
+              <span className="mr-2 font-bold">
                 {intl.formatMessage(messages.seasons, {
                   seasonCount: request.seasons.length,
                 })}

@@ -3,7 +3,7 @@ import type { NotificationAgentSlack } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
-import { hasNotificationType, Notification } from '..';
+import { Notification, hasNotificationType } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
 import { BaseAgent } from './agent';
 
@@ -183,8 +183,8 @@ class SlackAgent
       ? payload.issue
         ? `${applicationUrl}/issues/${payload.issue.id}`
         : payload.media
-        ? `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`
-        : undefined
+          ? `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`
+          : undefined
       : undefined;
 
     if (url) {

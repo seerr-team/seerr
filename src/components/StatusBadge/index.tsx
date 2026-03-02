@@ -87,8 +87,8 @@ const StatusBadge = ({
         settings.currentSettings.mediaServerType === MediaServerType.EMBY
           ? 'Emby'
           : settings.currentSettings.mediaServerType === MediaServerType.PLEX
-          ? 'Plex'
-          : 'Jellyfin',
+            ? 'Plex'
+            : 'Jellyfin',
     });
   } else if (hasPermission(Permission.MANAGE_REQUESTS)) {
     if (mediaType && tmdbId) {
@@ -137,15 +137,13 @@ const StatusBadge = ({
 
   const badgeDownloadProgress = (
     <div
-      className={`
-      absolute top-0 left-0 z-10 flex h-full bg-opacity-80 ${
+      className={`absolute left-0 top-0 z-10 flex h-full ${
         status === MediaStatus.DELETED
-          ? 'bg-red-600'
+          ? 'bg-red-600/80'
           : status === MediaStatus.PROCESSING
-          ? 'bg-indigo-500'
-          : 'bg-green-500'
-      } transition-all duration-200 ease-in-out
-    `}
+            ? 'bg-indigo-500/80'
+            : 'bg-green-500/80'
+      } transition-all duration-200 ease-in-out`}
       style={{
         width: `${
           downloadItem ? calculateDownloadProgress(downloadItem[0]) : 0
@@ -170,8 +168,7 @@ const StatusBadge = ({
             badgeType="success"
             href={mediaLink}
             className={`${
-              inProgress &&
-              'relative !bg-gray-700 !bg-opacity-80 !px-0 hover:!bg-gray-700'
+              inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
             } overflow-hidden`}
           >
             {inProgress && badgeDownloadProgress}
@@ -236,8 +233,7 @@ const StatusBadge = ({
             badgeType="success"
             href={mediaLink}
             className={`${
-              inProgress &&
-              'relative !bg-gray-700 !bg-opacity-80 !px-0 hover:!bg-gray-700'
+              inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
             } overflow-hidden`}
           >
             {inProgress && badgeDownloadProgress}
@@ -302,8 +298,7 @@ const StatusBadge = ({
             badgeType="primary"
             href={mediaLink}
             className={`${
-              inProgress &&
-              'relative !bg-gray-700 !bg-opacity-80 !px-0 hover:!bg-gray-700'
+              inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
             } overflow-hidden`}
           >
             {inProgress && badgeDownloadProgress}
@@ -364,12 +359,12 @@ const StatusBadge = ({
         </Tooltip>
       );
 
-    case MediaStatus.BLACKLISTED:
+    case MediaStatus.BLOCKLISTED:
       return (
         <Tooltip content={mediaLinkDescription}>
           <Badge badgeType="danger" href={mediaLink}>
             {intl.formatMessage(is4k ? messages.status4k : messages.status, {
-              status: intl.formatMessage(globalMessages.blacklisted),
+              status: intl.formatMessage(globalMessages.blocklisted),
             })}
           </Badge>
         </Tooltip>
@@ -390,8 +385,7 @@ const StatusBadge = ({
             badgeType="danger"
             href={mediaLink}
             className={`${
-              inProgress &&
-              'relative !bg-gray-700 !bg-opacity-80 !px-0 hover:!bg-gray-700'
+              inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
             } overflow-hidden`}
           >
             {inProgress && badgeDownloadProgress}

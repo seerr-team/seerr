@@ -118,12 +118,12 @@ const RegionSelector = ({
                   {selectedRegion && selectedRegion.iso_3166_1 !== 'all'
                     ? regionName(selectedRegion.iso_3166_1)
                     : isUserSetting && selectedRegion?.iso_3166_1 !== 'all'
-                    ? intl.formatMessage(messages.regionServerDefault, {
-                        region: regionValue
-                          ? regionName(regionValue)
-                          : intl.formatMessage(messages.regionDefault),
-                      })
-                    : intl.formatMessage(messages.regionDefault)}
+                      ? intl.formatMessage(messages.regionServerDefault, {
+                          region: regionValue
+                            ? regionName(regionValue)
+                            : intl.formatMessage(messages.regionDefault),
+                        })
+                      : intl.formatMessage(messages.regionDefault)}
                 </span>
                 <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500">
                   <ChevronDownIcon className="h-5 w-5" />

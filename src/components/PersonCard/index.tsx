@@ -47,7 +47,7 @@ const PersonCard = ({
       >
         <div style={{ paddingBottom: '150%' }}>
           <div className="absolute inset-0 flex h-full w-full flex-col items-center p-2">
-            <div className="relative mt-2 mb-4 flex h-1/2 w-full justify-center">
+            <div className="relative mb-4 mt-2 flex h-1/2 w-full justify-center">
               {profilePath ? (
                 <div className="relative h-full w-3/4 overflow-hidden rounded-full ring-1 ring-gray-700">
                   <CachedImage

@@ -31,7 +31,7 @@ const DiscoverTvUpcoming = () => {
   return (
     <>
       <PageTitle title={intl.formatMessage(messages.upcomingtv)} />
-      <div className="mt-1 mb-5">
+      <div className="mb-5 mt-1">
         <Header>{intl.formatMessage(messages.upcomingtv)}</Header>
       </div>
       <ListView

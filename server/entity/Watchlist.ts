@@ -47,12 +47,14 @@ export class Watchlist implements WatchlistItem {
     eager: true,
     onDelete: 'CASCADE',
   })
+  @Index()
   public requestedBy: User;
 
   @ManyToOne(() => Media, (media) => media.watchlists, {
     eager: true,
     onDelete: 'CASCADE',
   })
+  @Index()
   public media: Media;
 
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })

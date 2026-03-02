@@ -259,8 +259,8 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
         ? 'Jellyfin'
         : settings.currentSettings.mediaServerType === MediaServerType.EMBY
-        ? 'Emby'
-        : undefined,
+          ? 'Emby'
+          : undefined,
   };
 
   return (
@@ -308,7 +308,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
           ))}
         </ul>
       </div>
-      <div className="mt-10 mb-6">
+      <div className="mb-6 mt-10">
         <h3 className="heading">
           <FormattedMessage {...messages.manualscanJellyfin} />
         </h3>
@@ -424,7 +424,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
           {intl.formatMessage(messages.scanbackground)}
         </div>
       )}
-      <div className="mt-10 mb-6">
+      <div className="mb-6 mt-10">
         <h3 className="heading">
           {intl.formatMessage(
             messages.jellyfinSettings,

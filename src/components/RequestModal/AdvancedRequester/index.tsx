@@ -308,7 +308,7 @@ const AdvancedRequester = ({
 
   return (
     <>
-      <div className="mt-4 mb-2 flex items-center text-lg font-semibold">
+      <div className="mb-2 mt-4 flex items-center text-lg font-semibold">
         {intl.formatMessage(messages.advancedoptions)}
       </div>
       <div className="rounded-md">
@@ -378,11 +378,11 @@ const AdvancedRequester = ({
                               name: profile.name,
                             })
                           : !isAnime &&
-                            serverData.server.activeProfileId === profile.id
-                          ? intl.formatMessage(messages.default, {
-                              name: profile.name,
-                            })
-                          : profile.name}
+                              serverData.server.activeProfileId === profile.id
+                            ? intl.formatMessage(messages.default, {
+                                name: profile.name,
+                              })
+                            : profile.name}
                       </option>
                     ))}
                 </select>
@@ -425,17 +425,17 @@ const AdvancedRequester = ({
                               }),
                             })
                           : !isAnime &&
-                            serverData.server.activeDirectory === folder.path
-                          ? intl.formatMessage(messages.default, {
-                              name: intl.formatMessage(messages.folder, {
+                              serverData.server.activeDirectory === folder.path
+                            ? intl.formatMessage(messages.default, {
+                                name: intl.formatMessage(messages.folder, {
+                                  path: folder.path,
+                                  space: formatBytes(folder.freeSpace ?? 0),
+                                }),
+                              })
+                            : intl.formatMessage(messages.folder, {
                                 path: folder.path,
                                 space: formatBytes(folder.freeSpace ?? 0),
-                              }),
-                            })
-                          : intl.formatMessage(messages.folder, {
-                              path: folder.path,
-                              space: formatBytes(folder.freeSpace ?? 0),
-                            })}
+                              })}
                       </option>
                     ))}
                 </select>
@@ -481,12 +481,12 @@ const AdvancedRequester = ({
                                 name: language.name,
                               })
                             : !isAnime &&
-                              serverData.server.activeLanguageProfileId ===
-                                language.id
-                            ? intl.formatMessage(messages.default, {
-                                name: language.name,
-                              })
-                            : language.name}
+                                serverData.server.activeLanguageProfileId ===
+                                  language.id
+                              ? intl.formatMessage(messages.default, {
+                                  name: language.name,
+                                })
+                              : language.name}
                         </option>
                       ))}
                   </select>

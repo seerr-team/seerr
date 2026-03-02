@@ -49,6 +49,7 @@ export interface SonarrSeries {
   languageProfileId: number;
   seasonFolder: boolean;
   monitored: boolean;
+  monitorNewItems: 'all' | 'none';
   useSceneNumbering: boolean;
   runtime: number;
   tvdbId: number;
@@ -98,6 +99,7 @@ export interface AddSeriesOptions {
   tags?: number[];
   seriesType: SonarrSeries['seriesType'];
   monitored?: boolean;
+  monitorNewItems?: SonarrSeries['monitorNewItems'];
   searchNow?: boolean;
 }
 
@@ -269,6 +271,7 @@ class SonarrAPI extends ServarrBase<{
           tags: options.tags,
           seasonFolder: options.seasonFolder,
           monitored: options.monitored,
+          monitorNewItems: options.monitorNewItems,
           rootFolderPath: options.rootFolderPath,
           seriesType: options.seriesType,
           addOptions: {

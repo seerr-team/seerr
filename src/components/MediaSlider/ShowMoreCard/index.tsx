@@ -48,12 +48,11 @@ const ShowMoreCard = ({ url, posters }: ShowMoreCardProps) => {
       tabIndex={0}
     >
       <div
-        className={`relative w-36 transform-gpu cursor-pointer
-       overflow-hidden rounded-xl text-white shadow-lg ring-1 transition duration-150 ease-in-out sm:w-36 md:w-44 ${
-         isHovered
-           ? 'scale-105 bg-gray-600 ring-gray-500'
-           : 'scale-100 bg-gray-800 ring-gray-700'
-       }`}
+        className={`relative w-36 transform-gpu cursor-pointer overflow-hidden rounded-xl text-white shadow-lg ring-1 transition duration-150 ease-in-out sm:w-36 md:w-44 ${
+          isHovered
+            ? 'scale-105 bg-gray-600 ring-gray-500'
+            : 'scale-100 bg-gray-800 ring-gray-700'
+        }`}
       >
         <div style={{ paddingBottom: '150%' }}>
           <div className="absolute inset-0 flex h-full w-full flex-col items-center p-2">

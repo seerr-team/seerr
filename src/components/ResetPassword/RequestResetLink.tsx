@@ -52,7 +52,7 @@ const ResetPassword = () => {
           '/images/rotate6.jpg',
         ]}
       />
-      <div className="absolute top-4 right-4 z-50">
+      <div className="absolute right-4 top-4 z-50">
         <LanguagePicker />
       </div>
       <div className="relative z-40 mt-10 flex flex-col items-center px-4 sm:mx-auto sm:w-full sm:max-w-md">
@@ -65,7 +65,7 @@ const ResetPassword = () => {
       </div>
       <div className="relative z-50 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div
-          className="bg-gray-800 bg-opacity-50 shadow sm:rounded-lg"
+          className="bg-gray-800/50 shadow sm:rounded-lg"
           style={{ backdropFilter: 'blur(5px)' }}
         >
           <div className="px-10 py-8">
@@ -112,7 +112,7 @@ const ResetPassword = () => {
                         >
                           {intl.formatMessage(messages.email)}
                         </label>
-                        <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0">
+                        <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
                           <div className="form-input-field">
                             <Field
                               id="email"
