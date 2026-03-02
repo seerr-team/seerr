@@ -220,11 +220,14 @@ class Media {
   }
 
   @AfterLoad()
-  public setPlexUrls(): void {
-    const { machineId, webAppUrl } = getSettings().plex;
-    const { externalUrl: tautulliUrl } = getSettings().tautulli;
+  public setMediaServerUrls(): void {
+    const settings = getSettings();
+    const mediaServerType = settings.main.mediaServerType;
 
-    if (getSettings().main.mediaServerType == MediaServerType.PLEX) {
+    if (mediaServerType === MediaServerType.PLEX) {
+      const { machineId, webAppUrl } = settings.plex;
+      const { externalUrl: tautulliUrl } = settings.tautulli;
+
       if (this.ratingKey) {
         this.mediaUrl = `${
           webAppUrl ? webAppUrl : 'https://app.plex.tv/desktop'
@@ -252,12 +255,13 @@ class Media {
           }
         }
       }
-    } else {
+    } else if (
+      mediaServerType === MediaServerType.JELLYFIN ||
+      mediaServerType === MediaServerType.EMBY
+    ) {
       const pageName =
-        getSettings().main.mediaServerType == MediaServerType.EMBY
-          ? 'item'
-          : 'details';
-      const { serverId, externalHostname } = getSettings().jellyfin;
+        mediaServerType == MediaServerType.EMBY ? 'item' : 'details';
+      const { serverId, externalHostname } = settings.jellyfin;
       const jellyfinHost =
         externalHostname && externalHostname.length > 0
           ? externalHostname

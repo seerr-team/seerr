@@ -1,6 +1,8 @@
+import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
 import dataSource, { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
+import { getMediaServerAdmin } from '@server/utils/getMediaServerAdmin';
 import { copyFileSync } from 'fs';
 import gravatarUrl from 'gravatar-url';
 import path from 'path';
@@ -28,10 +30,7 @@ const prepareDb = async () => {
 
   const userRepository = getRepository(User);
 
-  const admin = await userRepository.findOne({
-    select: { id: true, plexId: true },
-    where: { id: 1 },
-  });
+  const admin = await getMediaServerAdmin(MediaServerType.PLEX);
 
   // Create the admin user
   const user =
