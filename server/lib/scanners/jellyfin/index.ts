@@ -61,9 +61,7 @@ class JellyfinScanner
 
     const anidbId = Number(metadata.ProviderIds.AniDB ?? null);
     let tmdbId = Number(
-      metadata.ProviderIds.Tmdb ||
-        metadata.ProviderIds.TheMovieDb ||
-          null
+      metadata.ProviderIds.Tmdb || metadata.ProviderIds.TheMovieDb || null
     );
     let imdbId = metadata.ProviderIds.Imdb;
 
@@ -235,8 +233,7 @@ class JellyfinScanner
         try {
           tvShow = await this.getTvShow({
             tmdbId: Number(
-              metadata.ProviderIds.Tmdb ||
-                metadata.ProviderIds.TheMovieDb
+              metadata.ProviderIds.Tmdb || metadata.ProviderIds.TheMovieDb
             ),
           });
         } catch {
