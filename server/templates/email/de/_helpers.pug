@@ -34,7 +34,16 @@
 - }
 
 - function __issueSubject(type, issueTypeName) {
--   const base = (issueTypeName && issueTypeName.length) ? (issueTypeName + ' ') : '';
+-   const it = (issueTypeName && String(issueTypeName).trim()) ? String(issueTypeName).trim() : '';
+-   // Localize + format: "Audio-Problem ...", "Video-Problem ...", "Untertitel-Problem ..."; OTHER stays without prefix
+-   let label = '';
+-   if (it) {
+-     const low = it.toLowerCase();
+-     if (low === 'subtitle' || low === 'subtitles') label = 'Untertitel';
+-     else if (low === 'other') label = '';
+-     else label = it;
+-   }
+-   const base = label ? (label + '-') : '';
 -   if (type === 'ISSUE_CREATED' || type === 'ISSUE_REPORTED' || type === 'ISSUE') return base + 'Problem gemeldet'
 -   if (type === 'ISSUE_RESOLVED') return base + 'Problem gelöst'
 -   if (type === 'ISSUE_REOPENED') return base + 'Problem wieder geöffnet'
@@ -48,7 +57,13 @@
 - function __extraLabel(name, value) {
 -   // Requested Seasons
 -   if (name === 'REQUESTED_SEASONS' || name === 'Requested Seasons') {
+-     // value can be: number (1), string ('1' or '15, 21'), or array ([1,2])
 -     if (typeof value === 'number') return value === 1 ? 'Angefragte Staffel' : 'Angefragte Staffeln'
+-     if (Array.isArray(value)) return value.length === 1 ? 'Angefragte Staffel' : 'Angefragte Staffeln'
+-     if (typeof value === 'string') {
+-       const parts = value.split(',').map(s => s.trim()).filter(Boolean)
+-       return parts.length === 1 ? 'Angefragte Staffel' : 'Angefragte Staffeln'
+-     }
 -     return 'Angefragte Staffeln'
 -   }
 -   // Affected Season

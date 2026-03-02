@@ -40,11 +40,11 @@ div(style='display: block; background-color: #111827; padding: 2.5rem 0;')
           - if (__t === 'ISSUE_CREATED')
             | Ein neues Problem wurde von #{__obfuscateUser(issueCreatedBy)} für #{__mediaLabelAcc()} #{mediaName} gemeldet:
           - else if (__t === 'ISSUE_COMMENT')
-            | #{__obfuscateUser(commentUser)} hat einen Kommentar zum Problem bei #{__mediaLabelAcc()} #{mediaName} geschrieben:
+            | #{__obfuscateUser(commentUser)} hat einen Kommentar zum Problem bei #{__mediaLabelDat()} #{mediaName} geschrieben:
           - else if (__t === 'ISSUE_RESOLVED')
-            | Das Problem bei #{__mediaLabelAcc()} #{mediaName} wurde von #{__obfuscateUser(issueModifiedBy)} als gelöst markiert!
+            | Das Problem bei #{__mediaLabelDat()} #{mediaName} wurde von #{__obfuscateUser(issueModifiedBy)} als gelöst markiert!
           - else if (__t === 'ISSUE_REOPENED')
-            | Das Problem bei #{__mediaLabelAcc()} #{mediaName} wurde von #{__obfuscateUser(issueModifiedBy)} erneut geöffnet.
+            | Das Problem bei #{__mediaLabelDat()} #{mediaName} wurde von #{__obfuscateUser(issueModifiedBy)} erneut geöffnet.
           - else
             | #{body}
     if issueComment

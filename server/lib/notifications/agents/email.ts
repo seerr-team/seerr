@@ -13,10 +13,7 @@ import { Notification, shouldSendAdminNotification } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
 import { BaseAgent } from './agent';
 
-
-
 import { existsSync } from 'fs';
-
 
 // --- email template locale routing (User > Global > EN fallback; requires template existence) ---
 function __normalizeLocale(loc?: string) {
@@ -26,7 +23,11 @@ function __normalizeLocale(loc?: string) {
   return x.split(/[_-]/)[0] || '';
 }
 
-function __templateDirFor(templateName: string, userLocale?: string, globalLocale?: string) {
+function __templateDirFor(
+  templateName: string,
+  userLocale?: string,
+  globalLocale?: string
+) {
   const base = (() => {
     // Prefer built templates (prod), then source templates (dev)
     const candidates = [
@@ -40,10 +41,10 @@ function __templateDirFor(templateName: string, userLocale?: string, globalLocal
     }
     return path.join(process.cwd(), 'server/templates/email');
   })();
-const tryLoc = (loc: string) => {
+  const tryLoc = (loc: string) => {
     // EN lives at base/<templateName>, localized at base/<loc>/<templateName>
     if (!loc) return '';
-      if (loc === 'en') return path.join(base, templateName);
+    if (loc === 'en') return path.join(base, templateName);
     const candidate = path.join(base, loc, templateName);
     // Check html.pug existence as "template exists" signal
     if (existsSync(path.join(candidate, 'html.pug'))) return candidate;
@@ -54,9 +55,7 @@ const tryLoc = (loc: string) => {
   const g = __normalizeLocale(globalLocale);
 
   return (
-    tryLoc(u) ||
-    tryLoc(g) ||
-    path.join(base, templateName) // EN fallback
+    tryLoc(u) || tryLoc(g) || path.join(base, templateName) // EN fallback
   );
 }
 
@@ -94,43 +93,46 @@ class EmailAgent
     payload: NotificationPayload,
     recipientEmail: string,
     recipientName?: string,
-      recipientLocale?: string
+    recipientLocale?: string
   ): EmailOptions | undefined {
     const settings = getSettings();
     const { applicationUrl, applicationTitle } = settings.main;
-      const globalLocale = (settings.main as any)?.locale ?? (settings as any)?.locale;
-      // IMPORTANT: locale routing is recipient-based (not payload-based)
-      const recipientLocaleNorm = recipientLocale;
-const { embedPoster } = settings.notifications.agents.email;
+    const globalLocale =
+      (settings.main as any)?.locale ?? (settings as any)?.locale;
+    // IMPORTANT: locale routing is recipient-based (not payload-based)
+    const recipientLocaleNorm = recipientLocale;
+    const { embedPoster } = settings.notifications.agents.email;
 
     if (type === Notification.TEST_NOTIFICATION) {
       return {
-        template: __templateDirFor('test-email', recipientLocaleNorm, globalLocale),
+        template: __templateDirFor(
+          'test-email',
+          recipientLocaleNorm,
+          globalLocale
+        ),
         message: {
           to: recipientEmail,
         },
         locals: {
-            // --- email template locals (ensure defined for templates) ---
-            requestedBy:
-              payload.request?.requestedBy?.displayName ??
-                payload.request?.requestedBy?.email ??
-'',
-            commentUser:
-              payload.comment?.user?.displayName ??
-              payload.comment?.user?.email ??
-              '',
-            issueCreatedBy:
-              payload.issue?.createdBy?.displayName ??
-              payload.issue?.createdBy?.email ??
-              '',
-            issueModifiedBy:
-              payload.issue?.modifiedBy?.displayName ??
-              payload.issue?.modifiedBy?.email ??
-              '',
-            mediaName:
-                payload.subject ??
-                '',
-            mediaExtra: payload.extra ?? [],
+          // --- email template locals (ensure defined for templates) ---
+          requestedBy:
+            payload.request?.requestedBy?.displayName ??
+            payload.request?.requestedBy?.email ??
+            '',
+          commentUser:
+            payload.comment?.user?.displayName ??
+            payload.comment?.user?.email ??
+            '',
+          issueCreatedBy:
+            payload.issue?.createdBy?.displayName ??
+            payload.issue?.createdBy?.email ??
+            '',
+          issueModifiedBy:
+            payload.issue?.modifiedBy?.displayName ??
+            payload.issue?.modifiedBy?.email ??
+            '',
+          mediaName: payload.subject ?? '',
+          mediaExtra: payload.extra ?? [],
           body: '',
           applicationUrl,
           applicationTitle,
@@ -148,34 +150,31 @@ const { embedPoster } = settings.notifications.agents.email;
     const is4k = payload.request?.is4k;
 
     if (payload.request) {
-      let body = '';
+      const body = '';
 
       switch (type) {
         case Notification.MEDIA_PENDING:
-
           break;
         case Notification.MEDIA_AUTO_REQUESTED:
-
           break;
         case Notification.MEDIA_APPROVED:
-
           break;
         case Notification.MEDIA_AUTO_APPROVED:
-
           break;
         case Notification.MEDIA_AVAILABLE:
-
           break;
         case Notification.MEDIA_DECLINED:
-
           break;
         case Notification.MEDIA_FAILED:
-
           break;
       }
 
       return {
-        template: __templateDirFor('media-request', recipientLocaleNorm, globalLocale),
+        template: __templateDirFor(
+          'media-request',
+          recipientLocaleNorm,
+          globalLocale
+        ),
         message: {
           to: recipientEmail,
         },
@@ -210,30 +209,53 @@ const { embedPoster } = settings.notifications.agents.email;
           ? `${IssueTypeName[payload.issue.issueType].toLowerCase()} issue`
           : 'issue';
 
-      let body = '';
+      const body = '';
 
       switch (type) {
         case Notification.ISSUE_CREATED:
-
           break;
         case Notification.ISSUE_COMMENT:
-
           break;
         case Notification.ISSUE_RESOLVED:
-
           break;
         case Notification.ISSUE_REOPENED:
-
           break;
       }
 
       return {
-        template: __templateDirFor('media-issue', recipientLocaleNorm, globalLocale),
+        template: __templateDirFor(
+          'media-issue',
+          recipientLocaleNorm,
+          globalLocale
+        ),
         message: {
           to: recipientEmail,
         },
         locals: {
           event: payload.event,
+          // --- required locals for media-issue templates (EN+DE) ---
+          type: Notification[type], // e.g. "ISSUE_CREATED"
+          notificationTypeKey: Notification[type],
+          notificationTypeValue: type,
+          mediaType,
+          isMovie: mediaType === 'movie',
+          isSeries: mediaType === 'series',
+          issueTypeName:
+            payload.issue && payload.issue.issueType !== IssueType.OTHER
+              ? IssueTypeName[payload.issue.issueType]
+              : '',
+          issueCreatedBy:
+            payload.issue?.createdBy?.displayName ??
+            payload.issue?.createdBy?.email ??
+            '',
+          issueModifiedBy:
+            payload.issue?.modifiedBy?.displayName ??
+            payload.issue?.modifiedBy?.email ??
+            '',
+          commentUser:
+            payload.comment?.user?.displayName ??
+            payload.comment?.user?.email ??
+            '',
           body,
           issueDescription: payload.message,
           issueComment: payload.comment?.message,
@@ -291,7 +313,7 @@ const { embedPoster } = settings.notifications.agents.email;
                 payload,
                 payload.notifyUser.email,
                 payload.notifyUser.displayName,
-                  payload.notifyUser.settings?.locale
+                payload.notifyUser.settings?.locale
               )
             );
           } else {
@@ -349,7 +371,13 @@ const { embedPoster } = settings.notifications.agents.email;
               );
               if (validator.isEmail(user.email, { require_tld: false })) {
                 await email.send(
-                  this.buildMessage(type, payload, user.email, user.displayName, user.settings?.locale)
+                  this.buildMessage(
+                    type,
+                    payload,
+                    user.email,
+                    user.displayName,
+                    user.settings?.locale
+                  )
                 );
               } else {
                 logger.warn('Invalid email address provided for user', {
