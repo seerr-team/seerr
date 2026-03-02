@@ -293,7 +293,7 @@ issueRoutes.post<{ issueId: string }, Issue, { message: string }>(
       });
 
       issue.comments = [...issue.comments, comment];
-
+      issue.updatedAt = new Date();
       await issueRepository.save(issue);
 
       return res.status(200).json(issue);
