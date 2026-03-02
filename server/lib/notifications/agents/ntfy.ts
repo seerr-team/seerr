@@ -64,7 +64,10 @@ class NtfyAgent
         message += `\n**- Request Status:** ${status}`;
       }
     } else if (payload.comment) {
-      message = `**- Comment:**\n${payload.comment.message}`;
+      if (message) {
+        message = `**- Description:**\n${message}\n\n`;
+      }
+      message += `**- Comment:**\n${payload.comment.message}`;
       message += `\n\n**- Comment from:** ${payload.comment.user.displayName}`;
     } else if (payload.issue) {
       if (message) {
