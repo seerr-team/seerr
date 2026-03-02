@@ -128,7 +128,16 @@ router.get('/', async (req, res, next) => {
         query = query.orderBy('user.userType', sortDirection);
         break;
       case 'role':
-        query = query.orderBy('user.permissions', sortDirection);
+        query = query
+          .addSelect(
+            `CASE
+              WHEN user.id = 1 THEN 0
+              WHEN (user.permissions & ${Permission.ADMIN}) != 0 THEN 1
+              ELSE 2
+            END`,
+            'role_sort_key'
+          )
+          .orderBy('role_sort_key', sortDirection);
         break;
       default:
         query = query.orderBy('user.id', sortDirection);
