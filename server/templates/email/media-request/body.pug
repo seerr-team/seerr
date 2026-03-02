@@ -13,6 +13,6 @@ case __nt
   when "MEDIA_AVAILABLE"
     | #{__followingAcc()} #{__prefix4k}is now available:
   when "MEDIA_FAILED"
-    | There was an error processing #{__followingAcc()} #{__prefix4k}:
+    | There was an error processing #{__followingAcc()}#{__prefix4k ? " " + String(__prefix4k).trim() : ""}:
   default
     | Notification for #{__followingAcc()} #{__prefix4k}:

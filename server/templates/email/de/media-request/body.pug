@@ -13,6 +13,6 @@ case __nt
   when "MEDIA_AVAILABLE"
     | #{__followingAcc()} #{__prefix4k}ist jetzt verfügbar:
   when "MEDIA_FAILED"
-    | Bei #{__followingAcc()} #{__prefix4k}ist ein Fehler aufgetreten:
+    | Bei #{((typeof is4k !== "undefined" && is4k) ? (__isMovie ? "dem 4K Film" : "der 4K Serie") : __mediaLabelDat())} ist ein Fehler aufgetreten:
   default
     | Eine Benachrichtigung zu #{__followingAcc()} #{__prefix4k}:
