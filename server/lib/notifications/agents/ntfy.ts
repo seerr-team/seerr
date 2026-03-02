@@ -75,7 +75,7 @@ class NtfyAgent
       message += `\n\n**- Comment from:** ${this.escapeMarkdown(payload.comment.user.displayName)}`;
     } else if (payload.issue) {
       if (message) {
-        message = `**- Comment:**\n${message}`;
+        message = `**- Description:**\n${message}`;
       }
       message += `${message ? '\n\n' : ''}**- Reported By:** ${this.escapeMarkdown(payload.issue.createdBy.displayName)}`;
       message += `\n**- Issue Type:** ${IssueTypeName[payload.issue.issueType]}`;
