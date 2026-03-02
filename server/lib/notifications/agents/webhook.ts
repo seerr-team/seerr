@@ -207,13 +207,16 @@ class WebhookAgent
         settings.options.customHeaders.length > 0
       ) {
         settings.options.customHeaders.forEach((header) => {
-          if (header.key && header.value) {
+          const key = header.key?.trim();
+          const value = header.value?.trim();
+
+          if (key && value) {
             // Don't override Authorization header if it's already set via authHeader
             if (
-              header.key.toLowerCase() !== 'authorization' ||
+              key.toLowerCase() !== 'authorization' ||
               !settings.options.authHeader
             ) {
-              headers[header.key] = header.value;
+              headers[key] = value;
             }
           }
         });

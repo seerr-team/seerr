@@ -170,7 +170,7 @@ const NotificationsWebhook = () => {
             (header) =>
               header.key &&
               header.value &&
-              header.key.toLowerCase() === 'authorization'
+              header.key.trim().toLowerCase() === 'authorization'
           );
 
           return !hasCustomAuthHeader;
@@ -224,9 +224,15 @@ const NotificationsWebhook = () => {
               webhookUrl: values.webhookUrl,
               jsonPayload: JSON.stringify(values.jsonPayload),
               authHeader: values.authHeader,
-              customHeaders: values.customHeaders.filter(
-                (h: { key: string; value: string }) => h.key && h.value
-              ),
+              customHeaders: (values.customHeaders ?? [])
+                .map((h: { key: string; value: string }) => ({
+                  key: h.key?.trim() ?? '',
+                  value: h.value?.trim() ?? '',
+                }))
+                .filter(
+                  (h: { key: string; value: string }) =>
+                    h.key.length > 0 && h.value.length > 0
+                ),
               supportVariables: values.supportVariables,
             },
           });
@@ -285,9 +291,15 @@ const NotificationsWebhook = () => {
                 webhookUrl: values.webhookUrl,
                 jsonPayload: JSON.stringify(values.jsonPayload),
                 authHeader: values.authHeader,
-                customHeaders: values.customHeaders.filter(
-                  (h: { key: string; value: string }) => h.key && h.value
-                ),
+                customHeaders: (values.customHeaders ?? [])
+                  .map((h: { key: string; value: string }) => ({
+                    key: h.key?.trim() ?? '',
+                    value: h.value?.trim() ?? '',
+                  }))
+                  .filter(
+                    (h: { key: string; value: string }) =>
+                      h.key.length > 0 && h.value.length > 0
+                  ),
                 supportVariables: values.supportVariables ?? false,
               },
             });
