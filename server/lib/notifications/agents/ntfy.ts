@@ -21,6 +21,10 @@ class NtfyAgent
     return settings.notifications.agents.ntfy;
   }
 
+  private escapeMarkdown(text: string): string {
+    return text.replace(/([\\`*_{}[\]()#+\-.!|>])/g, '\\$1');
+  }
+
   private buildPayload(type: Notification, payload: NotificationPayload) {
     const settings = getSettings();
     const { applicationUrl } = settings.main;
@@ -38,7 +42,7 @@ class NtfyAgent
       if (message) {
         message = `**- Description:**\n${message}`;
       }
-      message += `${message ? '\n\n' : ''}**- Requested By:** ${payload.request.requestedBy.displayName}`;
+      message += `${message ? '\n\n' : ''}**- Requested By:** ${this.escapeMarkdown(payload.request.requestedBy.displayName)}`;
 
       let status = '';
       switch (type) {
@@ -68,12 +72,12 @@ class NtfyAgent
         message = `**- Description:**\n${message}\n\n`;
       }
       message += `**- Comment:**\n${payload.comment.message}`;
-      message += `\n\n**- Comment from:** ${payload.comment.user.displayName}`;
+      message += `\n\n**- Comment from:** ${this.escapeMarkdown(payload.comment.user.displayName)}`;
     } else if (payload.issue) {
       if (message) {
         message = `**- Comment:**\n${message}`;
       }
-      message += `${message ? '\n\n' : ''}**- Reported By:** ${payload.issue.createdBy.displayName}`;
+      message += `${message ? '\n\n' : ''}**- Reported By:** ${this.escapeMarkdown(payload.issue.createdBy.displayName)}`;
       message += `\n**- Issue Type:** ${IssueTypeName[payload.issue.issueType]}`;
       message += `\n**- Issue Status:** ${
         payload.issue.status === IssueStatus.OPEN ? 'Open' : 'Resolved'
