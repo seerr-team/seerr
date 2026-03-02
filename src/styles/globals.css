@@ -734,7 +734,7 @@
   input[type='password'],
   select,
   textarea {
-    @apply block w-full min-w-0 flex-1 rounded-md border border-gray-500 bg-gray-700 text-white transition duration-150 ease-in-out focus:border-blue-600 sm:text-sm sm:leading-5;
+    @apply block w-full min-w-0 flex-1 rounded-md border border-gray-500 bg-gray-700 text-white outline-transparent transition duration-150 ease-in-out focus:border-blue-600 sm:text-sm sm:leading-5;
   }
 
   button > span {
