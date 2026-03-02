@@ -20,7 +20,7 @@ const SensitiveInput = ({ as = 'input', ...props }: SensitiveInputProps) => {
       ? props
       : {
           ...props,
-          as: props.type === 'textarea' && !isHidden ? 'textarea' : undefined,
+          as: props.type === 'textarea' ? 'textarea' : undefined,
         };
   return (
     <>
@@ -32,11 +32,18 @@ const SensitiveInput = ({ as = 'input', ...props }: SensitiveInputProps) => {
         {...componentProps}
         className={`rounded-l-only ${componentProps.className ?? ''}`}
         type={
-          isHidden
-            ? 'password'
-            : props.type !== 'password'
-              ? (props.type ?? 'text')
-              : 'text'
+          props.type === 'textarea'
+            ? undefined
+            : isHidden
+              ? 'password'
+              : props.type !== 'password'
+                ? (props.type ?? 'text')
+                : 'text'
+        }
+        style={
+          props.type === 'textarea' && isHidden
+            ? { WebkitTextSecurity: 'disc', ...props.style }
+            : props.style
         }
       />
       <button

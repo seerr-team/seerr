@@ -106,7 +106,7 @@ const NotificationsEmail = () => {
           otherwise: Yup.string().nullable(),
         })
         .matches(
-          /-----BEGIN PGP PRIVATE KEY BLOCK-----.+-----END PGP PRIVATE KEY BLOCK-----/,
+          /-----BEGIN PGP PRIVATE KEY BLOCK-----.+-----END PGP PRIVATE KEY BLOCK-----/s,
           intl.formatMessage(messages.validationPgpPrivateKey)
         ),
       pgpPassword: Yup.string().when('pgpPrivateKey', {
