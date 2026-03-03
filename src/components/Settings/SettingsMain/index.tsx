@@ -452,44 +452,6 @@ const SettingsMain = () => {
                   </div>
                 </div>
                 <div className="form-row">
-                  <label htmlFor="blocklistRegion" className="text-label">
-                    <span>{intl.formatMessage(messages.blocklistRegion)}</span>
-                    <span className="label-tip">
-                      {intl.formatMessage(messages.blocklistRegionTip)}
-                    </span>
-                  </label>
-                  <div className="form-input-area">
-                    <div className="form-input-field">
-                      <RegionSelector
-                        value={values.blocklistRegion}
-                        name="blocklistRegion"
-                        onChange={setFieldValue}
-                        regionType="discover"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="form-row">
-                  <label htmlFor="blocklistLanguage" className="text-label">
-                    <span>
-                      {intl.formatMessage(messages.blocklistLanguage)}
-                    </span>
-                    <span className="label-tip">
-                      {intl.formatMessage(messages.blocklistLanguageTip)}
-                    </span>
-                  </label>
-                  <div className="form-input-area">
-                    <div className="form-input-field relative z-20">
-                      <LanguageSelector
-                        setFieldValue={setFieldValue}
-                        serverValue={data?.blocklistLanguage}
-                        value={values.blocklistLanguage}
-                        fieldName="blocklistLanguage"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="form-row">
                   <label htmlFor="blocklistedTags" className="text-label">
                     <span>{intl.formatMessage(messages.blocklistedTags)}</span>
                     <span className="label-tip">
