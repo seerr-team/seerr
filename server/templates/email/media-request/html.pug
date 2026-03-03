@@ -51,7 +51,7 @@ tr
                   each extra in mediaExtra
                     span(style='display: block;')
                       b(style='color: #9ca3af; font-weight: 700;')
-                        | #{extra.name}:&nbsp;
+                        | #{__extraLabel(extra.name, extra.value)}:&nbsp;
                       | #{extra.value}
               if imageUrl
                 td(rowspan='2' style='width: 7rem;')
