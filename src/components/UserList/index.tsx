@@ -116,7 +116,13 @@ const UserList = () => {
   const page = router.query.page ? Number(router.query.page) : 1;
   const pageIndex = page - 1;
   const updateQueryParams = useUpdateQueryParams({ page: page.toString() });
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  const defaultSortDirection = (sortKey: Sort): SortDirection =>
+    sortKey === 'requests' || sortKey === 'updated' ? 'desc' : 'asc';
+
+  const [sortDirection, setSortDirection] = useState<SortDirection>(() =>
+    defaultSortDirection('created')
+  );
 
   const {
     data,
@@ -127,11 +133,6 @@ const UserList = () => {
       pageIndex * currentPageSize
     }&sort=${currentSort}&sortDirection=${sortDirection}`
   );
-
-  const defaultSortDirection = (sortKey: Sort): SortDirection =>
-    sortKey === 'requests' || sortKey === 'created' || sortKey === 'updated'
-      ? 'desc'
-      : 'asc';
 
   const handleSortChange = (sortKey: Sort) => {
     if (currentSort === sortKey) {
