@@ -652,9 +652,10 @@ const UserList = () => {
             <button
               type="button"
               className="inline-flex cursor-pointer items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100"
-              onClick={() =>
-                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-              }
+              onClick={() => {
+                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                updateQueryParams('page', '1');
+              }}
               aria-label={intl.formatMessage(messages.toggleSortDirectionAria)}
               title={
                 sortDirection === 'asc'
