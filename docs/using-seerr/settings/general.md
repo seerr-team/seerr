@@ -64,7 +64,7 @@ These settings filter content shown on the "Discover" home page based on regiona
 
 ## Blocklist Region and Blocklist Language
 
-These settings control the region and language used specifically for blocklist content scanning. The "Process blocklisted Tags" job uses these settings to determine which content to scan for blocklisting, independent of the general discover settings.
+These settings control the region and language used specifically for blocklist content scanning. The "Process Blocklisted Tags" job uses these settings to determine which content to scan for blocklisting, independent of the general discover settings.
 
 - **Blocklist Region**: The region used for blocklist content scanning. Leave empty to scan all regions.
 - **Blocklist Language**: The language used for blocklist content scanning. Leave empty to scan all languages.
