@@ -5,6 +5,6 @@ export function getHostAndPort(): string {
     host = `[${host}]`;
   }
 
-  const port = process.env.PORT || 5055;
+  const port = Number(process.env.PORT) || 5055;
   return `${host}:${port}`;
 }
