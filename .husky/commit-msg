@@ -1,4 +1,0 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-[ -n "$HUSKY_BYPASS" ] || npx commitlint --edit $1
