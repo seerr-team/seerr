@@ -1,0 +1,74 @@
+{{- if and .Values.postgres.enabled .Values.postgres.migration.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "seerr.fullname" . }}-migration
+  labels:
+    {{- include "seerr.labels" . | nindent 4 }}
+data:
+  setup-schema.sh: |
+    #!/bin/sh
+    set -e
+
+    SEMAPHORE="/app/config/.migration-to-postgres-complete"
+
+    if [ -f "$SEMAPHORE" ]; then
+      echo "Schema setup already completed (semaphore file exists). Skipping."
+      exit 0
+    fi
+
+    echo "Starting Seerr to create PostgreSQL schema..."
+    npm start &
+    SEERR_PID=$!
+
+    echo "Waiting for Seerr to become ready on port 5055..."
+    TIMEOUT=120
+    ELAPSED=0
+    while [ "$ELAPSED" -lt "$TIMEOUT" ]; do
+      if wget -q --spider http://localhost:5055/ 2>/dev/null; then
+        echo "Seerr is ready. Schema should be created."
+        break
+      fi
+      sleep 2
+      ELAPSED=$((ELAPSED + 2))
+    done
+
+    if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+      echo "ERROR: Timed out waiting for Seerr to start."
+      kill "$SEERR_PID" 2>/dev/null || true
+      exit 1
+    fi
+
+    echo "Stopping Seerr..."
+    kill "$SEERR_PID" 2>/dev/null || true
+    wait "$SEERR_PID" 2>/dev/null || true
+    echo "Schema setup complete."
+  migrate.sh: |
+    #!/bin/sh
+    set -e
+
+    SEMAPHORE="/app/config/.migration-to-postgres-complete"
+
+    if [ -f "$SEMAPHORE" ]; then
+      echo "Migration already completed (semaphore file exists). Skipping."
+      exit 0
+    fi
+
+    SQLITE_DB="/app/config/db/db.sqlite3"
+    if [ ! -f "$SQLITE_DB" ]; then
+      echo "ERROR: SQLite database not found at $SQLITE_DB"
+      exit 1
+    fi
+
+    echo "Starting SQLite to PostgreSQL migration..."
+
+    PG_URI="postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+
+    pgloader --with "quote identifiers" \
+             --with "data only" \
+             "$SQLITE_DB" \
+             "$PG_URI"
+
+    echo "Migration completed successfully. Creating semaphore file."
+    touch "$SEMAPHORE"
+{{- end }}

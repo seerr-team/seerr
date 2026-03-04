@@ -73,6 +73,26 @@ If `replicaCount` value was used - remove it. Helm update should work fine after
 | podLabels | object | `{}` |  |
 | podSecurityContext.fsGroup | int | `1000` |  |
 | podSecurityContext.fsGroupChangePolicy | string | `"OnRootMismatch"` |  |
+| postgres.db_log_queries | bool | `false` |  |
+| postgres.db_name | string | `"seerr"` | Database name |
+| postgres.db_secret | string | `""` | Kubernetes basic-auth secret containing DB username and password |
+| postgres.enabled | bool | `false` | Specifies whether to use postgresql |
+| postgres.migration.enabled | bool | `false` | Enable SQLite to PostgreSQL migration initContainer using pgloader |
+| postgres.migration.image.pullPolicy | string | `"IfNotPresent"` |  |
+| postgres.migration.image.registry | string | `"ghcr.io"` |  |
+| postgres.migration.image.repository | string | `"ralgar/pgloader"` |  |
+| postgres.migration.image.tag | string | `"pr-1531"` |  |
+| postgres.network.db_host | string | `""` | IP or hostname of the database host |
+| postgres.network.db_port | int | `5432` | Database port |
+| postgres.socket.db_socket_path | string | `"/var/run/postgresql"` | Path to the postgresql socket if using socket connectivity |
+| postgres.ssl.db_ssl_ca | string | `""` |  |
+| postgres.ssl.db_ssl_ca_file | string | `""` |  |
+| postgres.ssl.db_ssl_cert | string | `""` |  |
+| postgres.ssl.db_ssl_cert_file | string | `""` |  |
+| postgres.ssl.db_ssl_key | string | `""` |  |
+| postgres.ssl.db_ssl_key_file | string | `""` |  |
+| postgres.ssl.db_ssl_reject_unauthorized | bool | `true` |  |
+| postgres.ssl.db_use_ssl | bool | `false` |  |
 | probes.livenessProbe | object | `{}` | Configure liveness probe |
 | probes.readinessProbe | object | `{}` | Configure readiness probe |
 | probes.startupProbe | string | `nil` | Configure startup probe |

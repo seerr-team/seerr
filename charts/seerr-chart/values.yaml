@@ -89,6 +89,40 @@ config:
     # -- Specify an existing `PersistentVolumeClaim` to use. If this value is provided, the default PVC will not be created
     existingClaim: ''
 
+postgres:
+  # -- Specifies whether to use postgresql
+  enabled: false
+  # -- Kubernetes basic-auth secret containing DB username and password
+  db_secret: ''
+  # -- Database name
+  db_name: seerr
+  db_log_queries: false
+  network:
+    # -- IP or hostname of the database host
+    db_host: ''
+    # -- Database port
+    db_port: 5432
+  socket:
+    # -- Path to the postgresql socket if using socket connectivity
+    db_socket_path: /var/run/postgresql
+  ssl:
+    db_use_ssl: false
+    db_ssl_reject_unauthorized: true
+    db_ssl_ca: ''
+    db_ssl_ca_file: ''
+    db_ssl_key: ''
+    db_ssl_key_file: ''
+    db_ssl_cert: ''
+    db_ssl_cert_file: ''
+  migration:
+    # -- Enable SQLite to PostgreSQL migration initContainer using pgloader
+    enabled: false
+    image:
+      registry: ghcr.io
+      repository: ralgar/pgloader
+      tag: pr-1531
+      pullPolicy: IfNotPresent
+
 ingress:
   enabled: false
   ingressClassName: ''

@@ -28,6 +28,108 @@ spec:
       serviceAccountName: {{ include "seerr.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if and .Values.postgres.enabled .Values.postgres.migration.enabled }}
+      initContainers:
+        - name: setup-postgres-schema
+          {{- if .Values.image.sha }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}@sha256:{{ .Values.image.sha }}"
+          {{- else }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          {{- end }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "/scripts/setup-schema.sh"]
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: DB_TYPE
+              value: postgres
+            - name: DB_NAME
+              value: {{ .Values.postgres.db_name }}
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.db_secret }}
+                  key: username
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.db_secret }}
+                  key: password
+            {{- if .Values.postgres.network.db_host }}
+            - name: DB_HOST
+              value: {{ .Values.postgres.network.db_host }}
+            - name: DB_PORT
+              value: {{ .Values.postgres.network.db_port | quote }}
+            {{- else }}
+            - name: DB_SOCKET_PATH
+              value: {{ .Values.postgres.socket.db_socket_path }}
+            {{- end }}
+            {{- if .Values.postgres.ssl.db_use_ssl }}
+            - name: DB_USE_SSL
+              value: {{ .Values.postgres.ssl.db_use_ssl | quote }}
+            {{- end }}
+            {{- if .Values.postgres.ssl.db_ssl_reject_unauthorized }}
+            - name: DB_SSL_REJECT_UNAUTHORIZED
+              value: {{ .Values.postgres.ssl.db_ssl_reject_unauthorized | quote }}
+            {{- end }}
+            {{- if .Values.postgres.ssl.db_ssl_ca }}
+            - name: DB_SSL_CA
+              value: {{ .Values.postgres.ssl.db_ssl_ca | quote }}
+            {{- end }}
+            {{- if .Values.postgres.ssl.db_ssl_ca_file }}
+            - name: DB_SSL_CA_FILE
+              value: {{ .Values.postgres.ssl.db_ssl_ca_file | quote }}
+            {{- end }}
+            {{- if .Values.postgres.ssl.db_ssl_key }}
+            - name: DB_SSL_KEY
+              value: {{ .Values.postgres.ssl.db_ssl_key | quote }}
+            {{- end }}
+            {{- if .Values.postgres.ssl.db_ssl_key_file }}
+            - name: DB_SSL_KEY_FILE
+              value: {{ .Values.postgres.ssl.db_ssl_key_file | quote }}
+            {{- end }}
+            {{- if .Values.postgres.ssl.db_ssl_cert }}
+            - name: DB_SSL_CERT
+              value: {{ .Values.postgres.ssl.db_ssl_cert | quote }}
+            {{- end }}
+            {{- if .Values.postgres.ssl.db_ssl_cert_file }}
+            - name: DB_SSL_CERT_FILE
+              value: {{ .Values.postgres.ssl.db_ssl_cert_file | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+            - name: migration-script
+              mountPath: /scripts
+        - name: migrate-sqlite-to-postgres
+          image: "{{ .Values.postgres.migration.image.registry }}/{{ .Values.postgres.migration.image.repository }}:{{ .Values.postgres.migration.image.tag }}"
+          imagePullPolicy: {{ .Values.postgres.migration.image.pullPolicy }}
+          command: ["/bin/sh", "/scripts/migrate.sh"]
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.db_secret }}
+                  key: username
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.db_secret }}
+                  key: password
+            - name: DB_HOST
+              value: {{ .Values.postgres.network.db_host | quote }}
+            - name: DB_PORT
+              value: {{ .Values.postgres.network.db_port | quote }}
+            - name: DB_NAME
+              value: {{ .Values.postgres.db_name | quote }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+            - name: migration-script
+              mountPath: /scripts
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -86,9 +188,69 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          {{- with .Values.extraEnv }}
           env:
-            {{- toYaml . | nindent 12 }}
+          {{- if .Values.postgres.enabled }}
+            - name: DB_TYPE
+              value: postgres
+            - name: DB_NAME
+              value: {{ .Values.postgres.db_name }}
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.db_secret }}
+                  key: username
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.db_secret }}
+                  key: password
+            {{- if .Values.postgres.network.db_host }}
+            - name: DB_HOST
+              value: {{ .Values.postgres.network.db_host }}
+            - name: DB_PORT
+              value: {{ .Values.postgres.network.db_port | quote }}
+            {{- else }}
+            - name: DB_SOCKET_PATH
+              value: {{ .Values.postgres.socket.db_socket_path }}
+            {{- end }}
+            {{- if .Values.postgres.ssl.db_use_ssl }}
+            - name: DB_USE_SSL
+              value: {{ .Values.postgres.ssl.db_use_ssl | quote }}
+            {{- end }}
+            {{- if .Values.postgres.ssl.db_ssl_reject_unauthorized }}
+            - name: DB_SSL_REJECT_UNAUTHORIZED
+              value: {{ .Values.postgres.ssl.db_ssl_reject_unauthorized | quote }}
+            {{- end }}
+            {{- if .Values.postgres.ssl.db_ssl_ca }}
+            - name: DB_SSL_CA
+              value: {{ .Values.postgres.ssl.db_ssl_ca | quote }}
+            {{- end }}
+            {{- if .Values.postgres.ssl.db_ssl_ca_file }}
+            - name: DB_SSL_CA_FILE
+              value: {{ .Values.postgres.ssl.db_ssl_ca_file | quote }}
+            {{- end }}
+            {{- if .Values.postgres.ssl.db_ssl_key }}
+            - name: DB_SSL_KEY
+              value: {{ .Values.postgres.ssl.db_ssl_key | quote }}
+            {{- end }}
+            {{- if .Values.postgres.ssl.db_ssl_key_file }}
+            - name: DB_SSL_KEY_FILE
+              value: {{ .Values.postgres.ssl.db_ssl_key_file | quote }}
+            {{- end }}
+            {{- if .Values.postgres.ssl.db_ssl_cert }}
+            - name: DB_SSL_CERT
+              value: {{ .Values.postgres.ssl.db_ssl_cert | quote }}
+            {{- end }}
+            {{- if .Values.postgres.ssl.db_ssl_cert_file }}
+            - name: DB_SSL_CERT_FILE
+              value: {{ .Values.postgres.ssl.db_ssl_cert_file | quote }}
+            {{- end }}
+          {{- else }}
+            - name: DB_TYPE
+              value: sqlite
+            {{- with .Values.extraEnv }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
           {{- with .Values.extraEnvFrom }}
           envFrom:
@@ -104,6 +266,12 @@ spec:
         - name: config
           persistentVolumeClaim:
             claimName: {{ include "seerr.configPersistenceName" . }}
+      {{- if and .Values.postgres.enabled .Values.postgres.migration.enabled }}
+        - name: migration-script
+          configMap:
+            name: {{ include "seerr.fullname" . }}-migration
+            defaultMode: 0555
+      {{- end }}
       {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
