@@ -66,5 +66,9 @@ Create the name of the service account to use
 Create the name of the pvc config to use
 */}}
 {{- define "seerr.configPersistenceName" -}}
+{{- if .Values.config.persistence.existingClaim }}
+{{- .Values.config.persistence.existingClaim }}
+{{- else }}
 {{- default (printf "%s-config" (include "seerr.fullname" .)) .Values.config.persistence.name }}
+{{- end }}
 {{- end }}

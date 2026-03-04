@@ -22,5 +22,5 @@ spec:
   {{- end }}
   resources:
     requests:
-      storage: "{{ .Values.config.persistence.size }}"
+      storage: {{ .Values.config.persistence.size | quote }}
 {{- end -}}
