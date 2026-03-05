@@ -101,6 +101,7 @@ export interface JellyfinMediaSource {
 export interface JellyfinLibraryItemExtended extends JellyfinLibraryItem {
   ProviderIds: {
     Tmdb?: string;
+    TheMovieDb?: string;
     Imdb?: string;
     Tvdb?: string;
     AniDB?: string;
