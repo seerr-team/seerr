@@ -87,11 +87,11 @@ const RegionSelector = ({
     if (onChange && regions) {
       if (selectedRegion) {
         onChange(name, selectedRegion.iso_3166_1);
-      } else {
+      } else if (!value) {
         onChange(name, '');
       }
     }
-  }, [onChange, selectedRegion, name, regions]);
+  }, [onChange, selectedRegion, name, regions, value]);
 
   return (
     <div className="z-40 w-full">
