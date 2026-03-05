@@ -527,8 +527,12 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                         </option>
                         {testResponse.profiles.length > 0 &&
                           testResponse.profiles
-                            .slice()
-                            .sort((a, b) => a.name.localeCompare(b.name))
+                            .toSorted((a, b) =>
+                              a.name.localeCompare(b.name, intl.locale, {
+                                numeric: true,
+                                sensitivity: 'base',
+                              })
+                            )
                             .map((profile) => (
                               <option
                                 key={`loaded-profile-${profile.id}`}

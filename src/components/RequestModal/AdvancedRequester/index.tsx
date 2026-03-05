@@ -368,8 +368,12 @@ const AdvancedRequester = ({
                   {!isValidating &&
                     serverData &&
                     serverData.profiles
-                      .slice()
-                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .toSorted((a, b) =>
+                        a.name.localeCompare(b.name, intl.locale, {
+                          numeric: true,
+                          sensitivity: 'base',
+                        })
+                      )
                       .map((profile) => (
                         <option
                           key={`profile-list${profile.id}`}
