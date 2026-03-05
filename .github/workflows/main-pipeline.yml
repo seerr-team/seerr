@@ -2,9 +2,9 @@ name: Main Pipeline
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "develop" ]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "develop" ]
 
 jobs:
   validate-and-build:
@@ -21,23 +21,23 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           version: 10
           run_install: false
 
       - name: Install Dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Security Audit (PNPM)
         run: pnpm audit --audit-level=high
 
       - name: Jules PR Guard (Strict Quality Check)
         if: contains(github.event.pull_request.title, 'Jules') || contains(github.event.pull_request.body, 'Jules')
-        run: pnpm type-check
+        run: pnpm run typecheck
 
       - name: Lint Code
         run: pnpm run lint --if-present
