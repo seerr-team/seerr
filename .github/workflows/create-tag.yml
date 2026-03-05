@@ -29,7 +29,7 @@ jobs:
           persist-credentials: false
 
       - name: Install git-cliff
-        uses: taiki-e/install-action@cede0bb282aae847dfa8aacca3a41c86d973d4d7 # v2.68.1
+        uses: taiki-e/install-action@d9c7e4de96b8ff27364cd0b5890e9280b99adbb3 # v2.68.11
         with:
           tool: git-cliff
 
