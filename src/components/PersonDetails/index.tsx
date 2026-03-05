@@ -256,8 +256,9 @@ const PersonDetails = () => {
         </div>
       )}
       <div
-        className={`relative z-10 mb-8 mt-4 flex flex-col items-center lg:flex-row ${data.biography ? 'lg:items-start' : ''
-          }`}
+        className={`relative z-10 mb-8 mt-4 flex flex-col items-center lg:flex-row ${
+          data.biography ? 'lg:items-start' : ''
+        }`}
       >
         {data.profilePath && (
           <div className="relative mb-6 mr-0 h-36 w-36 flex-shrink-0 overflow-hidden rounded-full ring-1 ring-gray-700 lg:mb-0 lg:mr-6 lg:h-44 lg:w-44">
@@ -278,7 +279,7 @@ const PersonDetails = () => {
             </div>
           </div>
           <div className="flex w-full items-center justify-center lg:justify-between">
-            <div className="mt-3 mb-3">
+            <div className="mb-3 mt-3">
               <ExternalLinkBlock
                 mediaType="person"
                 tmdbId={data.id}
