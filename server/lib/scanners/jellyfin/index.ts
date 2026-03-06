@@ -30,6 +30,32 @@ interface JellyfinSyncStatus extends StatusBase {
   libraries: Library[];
 }
 
+export interface WebhookProcessResult {
+  itemId: string;
+  itemName: string;
+  itemType: string;
+  effectiveId: string;
+  skipped: boolean;
+}
+
+// Collapse queue for webhook processing.
+//
+// When a full season lands in Jellyfin it fires one ItemAdded webhook per
+// episode.  They all resolve to the same series ID ("effective ID").
+// Rather than scanning the series N times, we collapse them:
+//
+//   - First webhook for a given effective ID starts processing.
+//   - Subsequent webhooks while processing is active set a dirty flag
+//     and return immediately.
+//   - When the current processing finishes, if the dirty flag is set,
+//     we clear it and re-scan once more.  That re-scan sees the *latest*
+//     Jellyfin state (all newly added episodes), so nothing is missed.
+//   - If more webhooks arrive during the re-scan, they set dirty again,
+//     triggering one more re-scan, and so on until quiescence.
+//
+// Worst case for N near-simultaneous webhooks: ~2–3 full scans.
+const webhookCollapseQueue = new Map<string, { dirty: boolean }>();
+
 class JellyfinScanner
   extends BaseScanner<JellyfinLibraryItem>
   implements RunnableScanner<JellyfinSyncStatus>
@@ -535,6 +561,123 @@ class JellyfinScanner
     }
   }
 
+  /**
+   * Process a single Jellyfin item by ID (used by webhook endpoint).
+   *
+   * For TV content (Episode/Season), resolves to the parent Series and
+   * rescans all seasons/episodes so availability status is fully up to date.
+   *
+   * Uses a collapse queue with a dirty flag so that rapid-fire webhooks
+   * for the same series (e.g. a whole season being added) never cause
+   * missed items — see the `webhookCollapseQueue` comment above.
+   */
+  public async processItemById(itemId: string): Promise<WebhookProcessResult> {
+    const settings = getSettings();
+
+    if (
+      settings.main.mediaServerType != MediaServerType.JELLYFIN &&
+      settings.main.mediaServerType != MediaServerType.EMBY
+    ) {
+      throw new Error('Jellyfin/Emby is not configured as the media server');
+    }
+
+    const userRepository = getRepository(User);
+    const admin = await userRepository.findOne({
+      where: { id: 1 },
+      select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
+      order: { id: 'ASC' },
+    });
+
+    if (!admin) {
+      throw new Error('No admin user configured');
+    }
+
+    // Create a Jellyfin client for this request
+    this.jfClient = new JellyfinAPI(
+      getHostname(),
+      settings.jellyfin.apiKey,
+      admin.jellyfinDeviceId
+    );
+    this.jfClient.setUserId(admin.jellyfinUserId ?? '');
+
+    // Fetch item to determine type and resolve series
+    const item = await this.jfClient.getItemData(itemId);
+    if (!item) {
+      throw new Error(`Item not found in Jellyfin: ${itemId}`);
+    }
+
+    // For TV content, the "effective ID" is the parent series — that's what
+    // actually gets scanned.  For movies it's the item itself.
+    const effectiveId =
+      item.Type === 'Episode' || item.Type === 'Season'
+        ? (item.SeriesId ?? item.SeasonId ?? item.Id)
+        : item.Id;
+
+    const result: WebhookProcessResult = {
+      itemId,
+      itemName: item.SeriesName ?? item.Name,
+      itemType: item.Type,
+      effectiveId,
+      skipped: false,
+    };
+
+    // ---- Collapse queue check (atomic — no await between check & set) ----
+    const existing = webhookCollapseQueue.get(effectiveId);
+    if (existing) {
+      existing.dirty = true;
+      this.log(
+        `Webhook: ${result.itemName} — re-scan queued (processing in progress)`,
+        'debug'
+      );
+      return { ...result, skipped: true };
+    }
+
+    const entry = { dirty: false };
+    webhookCollapseQueue.set(effectiveId, entry);
+
+    try {
+      do {
+        // Clear dirty *before* processing so any webhook that arrives
+        // during the await-heavy scan below will re-set it.
+        entry.dirty = false;
+
+        // Set up scanner state fresh each iteration
+        this.enable4kMovie = settings.radarr.some((radarr) => radarr.is4k);
+        this.enable4kShow = settings.sonarr.some((sonarr) => sonarr.is4k);
+        this.processedAnidbSeason = new Map();
+        await animeList.sync();
+
+        if (item.Type === 'Movie') {
+          await this.processJellyfinMovie(item);
+        } else if (
+          item.Type === 'Series' ||
+          item.Type === 'Season' ||
+          item.Type === 'Episode'
+        ) {
+          await this.processJellyfinShow(item);
+        } else {
+          throw new Error(`Unsupported item type: ${item.Type}`);
+        }
+
+        if (entry.dirty) {
+          this.log(
+            `Webhook: ${result.itemName} — dirty flag set during processing, re-scanning`,
+            'info'
+          );
+        }
+      } while (entry.dirty);
+
+      this.log(
+        `Webhook: Processed ${result.itemName} (${item.Type}${item.Type !== 'Movie' ? `, series: ${effectiveId}` : ''})`,
+        'info'
+      );
+
+      return result;
+    } finally {
+      webhookCollapseQueue.delete(effectiveId);
+    }
+  }
+
   public status(): JellyfinSyncStatus {
     return {
       running: this.running,
@@ -550,3 +693,15 @@ export const jellyfinFullScanner = new JellyfinScanner();
 export const jellyfinRecentScanner = new JellyfinScanner({
   isRecentOnly: true,
 });
+
+/**
+ * Process a single Jellyfin item by its ID, for use by the webhook endpoint.
+ * Creates a temporary scanner instance to avoid race conditions with
+ * scheduled scans.
+ */
+export async function processJellyfinItemById(
+  itemId: string
+): Promise<WebhookProcessResult> {
+  const scanner = new JellyfinScanner();
+  return await scanner.processItemById(itemId);
+}

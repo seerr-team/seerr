@@ -19,6 +19,7 @@ import { mapWatchProviderDetails } from '@server/models/common';
 import overrideRuleRoutes from '@server/routes/overrideRule';
 import settingsRoutes from '@server/routes/settings';
 import watchlistRoutes from '@server/routes/watchlist';
+import jellyfinWebhookRoutes from '@server/routes/webhooks/jellyfin';
 import {
   appDataPath,
   appDataPermissions,
@@ -44,6 +45,9 @@ import tvRoutes from './tv';
 import user from './user';
 
 const router = Router();
+
+// Webhook routes handle their own authentication
+router.use('/webhook/jellyfin', jellyfinWebhookRoutes);
 
 router.use(checkUser);
 

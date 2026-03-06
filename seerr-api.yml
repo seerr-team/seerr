@@ -7892,6 +7892,52 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OverrideRule'
+  /webhook/jellyfin:
+    post:
+      summary: Jellyfin webhook endpoint
+      description: >-
+        Receives webhook notifications from the Jellyfin Webhook Plugin.
+        Processes ItemAdded and ItemUpdated events to sync library availability.
+        Authenticates via apiKey query parameter or X-API-Key header.
+      tags:
+        - webhook
+      security: []
+      parameters:
+        - in: query
+          name: apiKey
+          schema:
+            type: string
+          description: Seerr API key for authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ItemId:
+                  type: string
+                  description: Jellyfin item ID to process
+                ItemIds:
+                  type: array
+                  items:
+                    type: string
+                  description: Batch of Jellyfin item IDs to process
+                NotificationType:
+                  type: string
+                  description: Jellyfin notification event type
+          text/plain:
+            schema:
+              type: string
+              description: JSON-encoded body sent as text/plain
+      responses:
+        '200':
+          description: Item processed successfully
+        '207':
+          description: Batch processed with partial errors
+        '400':
+          description: Missing or invalid request body
+        '401':
+          description: Invalid API key
 security:
   - cookieAuth: []
   - apiKey: []
