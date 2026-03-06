@@ -180,16 +180,24 @@ app
       }
     });
     if (settings.network.csrfProtection) {
-      server.use(
-        csurf({
-          cookie: {
-            httpOnly: true,
-            sameSite: true,
-            secure: !dev,
-          },
-        })
-      );
+      const csrfMiddleware = csurf({
+        cookie: {
+          httpOnly: true,
+          sameSite: true,
+          secure: !dev,
+        },
+      });
+      // Exempt webhook endpoints from CSRF — they use API key auth
       server.use((req, res, next) => {
+        if (req.path.startsWith('/api/v1/webhook/')) {
+          return next();
+        }
+        csrfMiddleware(req, res, next);
+      });
+      server.use((req, res, next) => {
+        if (req.path.startsWith('/api/v1/webhook/')) {
+          return next();
+        }
         res.cookie('XSRF-TOKEN', req.csrfToken(), {
           sameSite: true,
           secure: !dev,

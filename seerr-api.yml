@@ -2132,6 +2132,14 @@ components:
       type: apiKey
       in: header
       name: X-Api-Key
+    webhookApiKeyHeader:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    webhookApiKeyQuery:
+      type: apiKey
+      in: query
+      name: apiKey
 
 paths:
   /status:
@@ -7901,13 +7909,9 @@ paths:
         Authenticates via apiKey query parameter or X-API-Key header.
       tags:
         - webhook
-      security: []
-      parameters:
-        - in: query
-          name: apiKey
-          schema:
-            type: string
-          description: Seerr API key for authentication
+      security:
+        - webhookApiKeyHeader: []
+        - webhookApiKeyQuery: []
       requestBody:
         content:
           application/json:
@@ -7938,6 +7942,8 @@ paths:
           description: Missing or invalid request body
         '401':
           description: Invalid API key
+        '500':
+          description: Internal server error - item processing failed
 security:
   - cookieAuth: []
   - apiKey: []
