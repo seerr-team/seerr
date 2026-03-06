@@ -1,7 +1,7 @@
-import fs from 'fs';
 import type { TlsOptions } from 'tls';
 import type { DataSourceOptions, EntityTarget, Repository } from 'typeorm';
 import { DataSource } from 'typeorm';
+import { stringOrReadFileFromEnv } from '@server/utils/env';
 
 const DB_SSL_PREFIX = 'DB_SSL_';
 
@@ -10,17 +10,6 @@ function boolFromEnv(envVar: string, defaultVal = false) {
     return process.env[envVar]?.toLowerCase() === 'true';
   }
   return defaultVal;
-}
-
-function stringOrReadFileFromEnv(envVar: string): string | undefined {
-  if (process.env[envVar]) {
-    return process.env[envVar];
-  }
-  const filePath = process.env[`${envVar}_FILE`];
-  if (filePath) {
-    return fs.readFileSync(filePath, 'utf-8');
-  }
-  return undefined;
 }
 
 function buildSslConfig(): TlsOptions | undefined {
