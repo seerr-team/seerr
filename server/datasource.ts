@@ -63,7 +63,7 @@ const postgresDevConfig: DataSourceOptions = {
     : parseInt(process.env.DB_PORT ?? '5432'),
   username: stringOrReadFileFromEnv('DB_USER')?.trim(),
   password: stringOrReadFileFromEnv('DB_PASS')?.trim(),
-  database: process.env.DB_NAME ?? 'seerr',
+  database: stringOrReadFileFromEnv('DB_NAME')?.trim() ?? 'seerr',
   ssl: buildSslConfig(),
   synchronize: false,
   migrationsRun: true,
