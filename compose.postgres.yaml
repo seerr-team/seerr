@@ -45,6 +45,7 @@ services:
     secrets:
       - postgres_user
       - postgres_password
+      - postgres_db
 volumes:
   postgres:
 secrets:
