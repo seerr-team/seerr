@@ -483,9 +483,6 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
         settings.main.mediaServerType === MediaServerType.JELLYFIN
           ? UserType.JELLYFIN
           : UserType.EMBY;
-      user.plexId = null;
-      user.plexUsername = null;
-      user.plexToken = null;
 
       if (user.username === account.User.Name) {
         user.username = '';
