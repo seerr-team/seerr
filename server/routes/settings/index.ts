@@ -666,7 +666,22 @@ settingsRoutes.post(
         if (target === 'plex') {
           settings.jellyfin = { ...EMPTY_JELLYFIN_SETTINGS };
         }
-        await getRepository(User)
+
+        const userRepository = getRepository(User);
+        const userTypeUpdateQuery = userRepository
+          .createQueryBuilder()
+          .update(User)
+          .set({ userType: newUserType });
+
+        if (target === 'plex') {
+          userTypeUpdateQuery.where('plexId IS NOT NULL');
+        } else {
+          userTypeUpdateQuery.where('jellyfinUserId IS NOT NULL');
+        }
+
+        await userTypeUpdateQuery.execute();
+
+        await userRepository
           .createQueryBuilder()
           .update(User)
           .set({
@@ -675,11 +690,6 @@ settingsRoutes.post(
             jellyfinAuthToken: null,
             jellyfinDeviceId: null,
           })
-          .execute();
-        await getRepository(User)
-          .createQueryBuilder()
-          .update(User)
-          .set({ userType: newUserType })
           .execute();
         await getRepository(Media).update(
           { jellyfinMediaId: Not(IsNull()) },
