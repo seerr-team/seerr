@@ -14,7 +14,7 @@ import useSWRInfinite from 'swr/infinite';
 
 const PAGE_SIZE = 20;
 
-const MyMediaLibrary = () => {
+const AvailableMedia = () => {
   const intl = useIntl();
   const { data, error, setSize, isValidating } =
     useSWRInfinite<MediaResultsResponse>(
@@ -67,9 +67,9 @@ const MyMediaLibrary = () => {
 
   return (
     <>
-      <PageTitle title={intl.formatMessage(sliderTitles.myMediaLibrary)} />
+      <PageTitle title={intl.formatMessage(sliderTitles.availableMedia)} />
       <div className="mb-4">
-        <Header>{intl.formatMessage(sliderTitles.myMediaLibrary)}</Header>
+        <Header>{intl.formatMessage(sliderTitles.availableMedia)}</Header>
       </div>
 
       {isEmpty ? (
@@ -79,7 +79,7 @@ const MyMediaLibrary = () => {
       ) : (
         <ul className="cards-vertical">
           {items.map((item) => (
-            <li key={`my-media-library-item-${item.id}`}>
+            <li key={`available-media-item-${item.id}`}>
               <TmdbTitleCard
                 id={item.id}
                 tmdbId={item.tmdbId}
@@ -92,7 +92,7 @@ const MyMediaLibrary = () => {
           {isValidating &&
             !isReachingEnd &&
             [...Array(PAGE_SIZE)].map((_item, i) => (
-              <li key={`my-media-library-placeholder-${i}`}>
+              <li key={`available-media-placeholder-${i}`}>
                 <TitleCard.Placeholder canExpand />
               </li>
             ))}
@@ -102,4 +102,4 @@ const MyMediaLibrary = () => {
   );
 };
 
-export default MyMediaLibrary;
+export default AvailableMedia;

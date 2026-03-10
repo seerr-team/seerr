@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
 
-const MyMediaLibrarySlider = () => {
+const AvailableMediaSlider = () => {
   const intl = useIntl();
   const { data: media, error: mediaError } = useSWR<MediaResultsResponse>(
     '/api/v1/media?filter=allavailable&take=20&sort=mediaAdded',
@@ -21,7 +21,7 @@ const MyMediaLibrarySlider = () => {
 
   const items = (media?.results ?? []).map((item) => (
     <TmdbTitleCard
-      key={`my-media-library-slider-item-${item.id}`}
+      key={`available-media-slider-item-${item.id}`}
       id={item.id}
       tmdbId={item.tmdbId}
       tvdbId={item.tvdbId}
@@ -32,7 +32,7 @@ const MyMediaLibrarySlider = () => {
   if ((media?.pageInfo.results ?? 0) > 20) {
     items.push(
       <ShowMoreCard
-        key="my-media-library-show-more"
+        key="available-media-show-more"
         url="/discover/library"
         posters={[undefined, undefined, undefined, undefined]}
       />
@@ -43,13 +43,13 @@ const MyMediaLibrarySlider = () => {
     <>
       <div className="slider-header">
         <Link href="/discover/library" className="slider-title">
-          <span>{intl.formatMessage(sliderTitles.myMediaLibrary)}</span>
+          <span>{intl.formatMessage(sliderTitles.availableMedia)}</span>
           <ArrowRightCircleIcon />
         </Link>
       </div>
-      <Slider sliderKey="my-media-library" isLoading={!media} items={items} />
+      <Slider sliderKey="available-media" isLoading={!media} items={items} />
     </>
   );
 };
 
-export default MyMediaLibrarySlider;
+export default AvailableMediaSlider;

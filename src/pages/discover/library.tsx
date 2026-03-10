@@ -1,8 +1,8 @@
-import MyMediaLibrary from '@app/components/Discover/MyMediaLibrary';
+import AvailableMedia from '@app/components/Discover/AvailableMedia';
 import type { NextPage } from 'next';
 
 const DiscoverLibraryPage: NextPage = () => {
-  return <MyMediaLibrary />;
+  return <AvailableMedia />;
 };
 
 export default DiscoverLibraryPage;

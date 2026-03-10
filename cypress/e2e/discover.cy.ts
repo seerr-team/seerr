@@ -212,12 +212,12 @@ describe('Discover', () => {
       });
   });
 
-  it('navigates from My Media Library slider to the library page', () => {
+  it('navigates from Available Media slider to the library page', () => {
     cy.intercept('/api/v1/media?filter=allavailable*').as('getLibraryMedia');
 
     cy.visit('/');
 
-    cy.contains('.slider-header .slider-title', 'My Media Library', {
+    cy.contains('.slider-header .slider-title', 'Available Media', {
       timeout: 20000,
     })
       .scrollIntoView()
@@ -227,6 +227,6 @@ describe('Discover', () => {
     cy.get('@getLibraryMedia.all').should('have.length.at.least', 1);
 
     cy.url().should('include', '/discover/library');
-    cy.get('[data-testid=page-header]').should('contain', 'My Media Library');
+    cy.get('[data-testid=page-header]').should('contain', 'Available Media');
   });
 });

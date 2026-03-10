@@ -3,17 +3,17 @@ import ConfirmButton from '@app/components/Common/ConfirmButton';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import Tooltip from '@app/components/Common/Tooltip';
-import { sliderTitles } from '@app/components/Discover/constants';
+import AvailableMediaSlider from '@app/components/Discover/AvailableMediaSlider';
 import CreateSlider from '@app/components/Discover/CreateSlider';
 import DiscoverSliderEdit from '@app/components/Discover/DiscoverSliderEdit';
 import MovieGenreSlider from '@app/components/Discover/MovieGenreSlider';
-import MyMediaLibrarySlider from '@app/components/Discover/MyMediaLibrarySlider';
 import NetworkSlider from '@app/components/Discover/NetworkSlider';
 import PlexWatchlistSlider from '@app/components/Discover/PlexWatchlistSlider';
-import RecentlyAddedSlider from '@app/components/Discover/RecentlyAddedSlider';
 import RecentRequestsSlider from '@app/components/Discover/RecentRequestsSlider';
+import RecentlyAddedSlider from '@app/components/Discover/RecentlyAddedSlider';
 import StudioSlider from '@app/components/Discover/StudioSlider';
 import TvGenreSlider from '@app/components/Discover/TvGenreSlider';
+import { sliderTitles } from '@app/components/Discover/constants';
 import MediaSlider from '@app/components/MediaSlider';
 import { encodeURIExtraParams } from '@app/hooks/useDiscover';
 import { Permission, useUser } from '@app/hooks/useUser';
@@ -398,7 +398,7 @@ const Discover = () => {
             );
             break;
           case DiscoverSliderType.MY_MEDIA_LIBRARY:
-            sliderComponent = <MyMediaLibrarySlider />;
+            sliderComponent = <AvailableMediaSlider />;
             break;
         }
 
