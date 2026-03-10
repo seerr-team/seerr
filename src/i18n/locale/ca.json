@@ -696,7 +696,7 @@
   "components.RequestCard.mediaerror": "No s'ha trobat {mediaType}",
   "components.RequestCard.deleterequest": "Suprimeix la sol·licitud",
   "components.NotificationTypeSelector.notificationTypes": "Tipus de notificacions",
-  "components.Layout.VersionStatus.streamstable": "Jellyseer (Estable)",
+  "components.Layout.VersionStatus.streamstable": "Seerr (Estable)",
   "components.Layout.VersionStatus.streamdevelop": "Seerr (Desenvolupament)",
   "components.Layout.VersionStatus.outofdate": "No està actualitzat",
   "components.Layout.VersionStatus.commitsbehind": "{commitsBehind} {commitsBehind, plural, one {canvi} other {canvis}} posterior(s)",

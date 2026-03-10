@@ -692,7 +692,7 @@
   "components.RequestCard.deleterequest": "Borrar Solicitud",
   "components.NotificationTypeSelector.notificationTypes": "Tipos de Notificación",
   "components.Layout.VersionStatus.streamstable": "Seerr (Estable)",
-  "components.Layout.VersionStatus.streamdevelop": "Jellyseer (Desarrollo)",
+  "components.Layout.VersionStatus.streamdevelop": "Seerr (Desarrollo)",
   "components.Layout.VersionStatus.outofdate": "Desactualizado",
   "components.UserList.autogeneratepasswordTip": "Envía por email una contraseña al usuario generada por el servidor",
   "i18n.retrying": "Reintentando…",
