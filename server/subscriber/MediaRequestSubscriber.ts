@@ -300,49 +300,58 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           return;
         }
 
-        if (radarrSettings.tagRequests) {
-          const radarrTags = await radarr.getTags();
-          // old tags had space around the hyphen
-          let userTag = radarrTags.find((v) =>
-            v.label.startsWith(entity.requestedBy.id + ' - ')
-          );
-          // new tags do not have spaces around the hyphen, since spaces are not allowed anymore
-          if (!userTag) {
-            userTag = radarrTags.find((v) =>
-              v.label.startsWith(entity.requestedBy.id + '-')
+        try {
+          if (radarrSettings.tagRequests) {
+            const radarrTags = await radarr.getTags();
+            // old tags had space around the hyphen
+            let userTag = radarrTags.find((v) =>
+              v.label.startsWith(entity.requestedBy.id + ' - ')
             );
-          }
-          if (!userTag) {
-            logger.info(`Requester has no active tag. Creating new`, {
-              label: 'Media Request',
-              requestId: entity.id,
-              mediaId: entity.media.id,
-              userId: entity.requestedBy.id,
-              newTag:
-                entity.requestedBy.id +
-                '-' +
-                sanitizeDisplayName(entity.requestedBy.displayName),
-            });
-            userTag = await radarr.createTag({
-              label:
-                entity.requestedBy.id +
-                '-' +
-                sanitizeDisplayName(entity.requestedBy.displayName),
-            });
-          }
-          if (userTag.id) {
-            if (!tags?.find((v) => v === userTag?.id)) {
-              tags?.push(userTag.id);
+            // new tags do not have spaces around the hyphen, since spaces are not allowed anymore
+            if (!userTag) {
+              userTag = radarrTags.find((v) =>
+                v.label.startsWith(entity.requestedBy.id + '-')
+              );
             }
-          } else {
-            logger.warn(`Requester has no tag and failed to add one`, {
-              label: 'Media Request',
-              requestId: entity.id,
-              mediaId: entity.media.id,
-              userId: entity.requestedBy.id,
-              radarrServer: radarrSettings.hostname + ':' + radarrSettings.port,
-            });
+            if (!userTag) {
+              logger.info(`Requester has no active tag. Creating new`, {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+                userId: entity.requestedBy.id,
+                newTag:
+                  entity.requestedBy.id +
+                  '-' +
+                  sanitizeDisplayName(entity.requestedBy.displayName),
+              });
+              userTag = await radarr.createTag({
+                label:
+                  entity.requestedBy.id +
+                  '-' +
+                  sanitizeDisplayName(entity.requestedBy.displayName),
+              });
+            }
+            if (userTag.id) {
+              if (!tags?.find((v) => v === userTag?.id)) {
+                tags?.push(userTag.id);
+              }
+            } else {
+              logger.warn(`Requester has no tag and failed to add one`, {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+                userId: entity.requestedBy.id,
+                radarrServer: radarrSettings.hostname + ':' + radarrSettings.port,
+              });
+            }
           }
+        } catch (tagError) {
+          logger.warn('Could not fetch/create Radarr tags, proceeding without', {
+            label: 'Media Request',
+            requestId: entity.id,
+            mediaId: entity.media.id,
+            errorMessage: tagError instanceof Error ? tagError.message : String(tagError),
+          });
         }
 
         if (
@@ -656,49 +665,58 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           });
         }
 
-        if (sonarrSettings.tagRequests) {
-          const sonarrTags = await sonarr.getTags();
-          // old tags had space around the hyphen
-          let userTag = sonarrTags.find((v) =>
-            v.label.startsWith(entity.requestedBy.id + ' - ')
-          );
-          // new tags do not have spaces around the hyphen, since spaces are not allowed anymore
-          if (!userTag) {
-            userTag = sonarrTags.find((v) =>
-              v.label.startsWith(entity.requestedBy.id + '-')
+        try {
+          if (sonarrSettings.tagRequests) {
+            const sonarrTags = await sonarr.getTags();
+            // old tags had space around the hyphen
+            let userTag = sonarrTags.find((v) =>
+              v.label.startsWith(entity.requestedBy.id + ' - ')
             );
-          }
-          if (!userTag) {
-            logger.info(`Requester has no active tag. Creating new`, {
-              label: 'Media Request',
-              requestId: entity.id,
-              mediaId: entity.media.id,
-              userId: entity.requestedBy.id,
-              newTag:
-                entity.requestedBy.id +
-                '-' +
-                sanitizeDisplayName(entity.requestedBy.displayName),
-            });
-            userTag = await sonarr.createTag({
-              label:
-                entity.requestedBy.id +
-                '-' +
-                sanitizeDisplayName(entity.requestedBy.displayName),
-            });
-          }
-          if (userTag.id) {
-            if (!tags?.find((v) => v === userTag?.id)) {
-              tags?.push(userTag.id);
+            // new tags do not have spaces around the hyphen, since spaces are not allowed anymore
+            if (!userTag) {
+              userTag = sonarrTags.find((v) =>
+                v.label.startsWith(entity.requestedBy.id + '-')
+              );
             }
-          } else {
-            logger.warn(`Requester has no tag and failed to add one`, {
-              label: 'Media Request',
-              requestId: entity.id,
-              mediaId: entity.media.id,
-              userId: entity.requestedBy.id,
-              sonarrServer: sonarrSettings.hostname + ':' + sonarrSettings.port,
-            });
+            if (!userTag) {
+              logger.info(`Requester has no active tag. Creating new`, {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+                userId: entity.requestedBy.id,
+                newTag:
+                  entity.requestedBy.id +
+                  '-' +
+                  sanitizeDisplayName(entity.requestedBy.displayName),
+              });
+              userTag = await sonarr.createTag({
+                label:
+                  entity.requestedBy.id +
+                  '-' +
+                  sanitizeDisplayName(entity.requestedBy.displayName),
+              });
+            }
+            if (userTag.id) {
+              if (!tags?.find((v) => v === userTag?.id)) {
+                tags?.push(userTag.id);
+              }
+            } else {
+              logger.warn(`Requester has no tag and failed to add one`, {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+                userId: entity.requestedBy.id,
+                sonarrServer: sonarrSettings.hostname + ':' + sonarrSettings.port,
+              });
+            }
           }
+        } catch (tagError) {
+          logger.warn('Could not fetch/create Sonarr tags, proceeding without', {
+            label: 'Media Request',
+            requestId: entity.id,
+            mediaId: entity.media.id,
+            errorMessage: tagError instanceof Error ? tagError.message : String(tagError),
+          });
         }
 
         const sonarrSeriesOptions: AddSeriesOptions = {
