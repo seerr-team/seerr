@@ -750,7 +750,7 @@ const UserList = () => {
             >
               {intl.formatMessage(messages.created)}
             </SortableColumnHeader>
-            <Table.TH className="w-[13rem] text-right sm:w-[14rem]">
+            <Table.TH className="min-w-[13rem] text-right sm:min-w-[14rem] overflow-visible whitespace-normal">
               {(data.results ?? []).length > 1 && (
                 <div className="flex justify-end">
                   <Button
