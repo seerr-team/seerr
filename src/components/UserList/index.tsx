@@ -876,7 +876,7 @@ const UserList = () => {
               </Table.TD>
               <Table.TD
                 alignText="right"
-                className="flex max-w-[13rem] flex-col space-y-1 sm:max-w-[14rem] sm:flex-row sm:space-x-1 sm:space-y-0"
+                className="flex min-w-[13rem] flex-col space-y-1 sm:min-w-[14rem] sm:flex-row sm:space-x-1 sm:space-y-0"
               >
                 <Button
                   buttonType="warning"
