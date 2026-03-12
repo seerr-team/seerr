@@ -13,9 +13,8 @@ export class FixBlocklistIdDefault1772000000000 implements MigrationInterface {
     );
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `ALTER TABLE "blocklist" ALTER COLUMN "id" DROP DEFAULT`
-    );
+  public async down(): Promise<void> {
+    // Intentionally left empty: dropping the DEFAULT on blocklist.id would
+    // reintroduce the original bug and break blocklist inserts.
   }
 }
