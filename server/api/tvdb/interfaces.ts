@@ -175,6 +175,7 @@ const TMDB_TO_TVDB_MAPPING: Record<string, string> & {
   it: 'ita', // Italian
   ja: 'jpn', // Japanese
   ko: 'kor', // Korean
+  lb: 'ltz', // Luxembourgish
   lt: 'lit', // Lithuanian
   nl: 'nld', // Dutch
   pl: 'pol', // Polish
@@ -185,6 +186,7 @@ const TMDB_TO_TVDB_MAPPING: Record<string, string> & {
   sv: 'swe', // Swedish
   tr: 'tur', // Turkish
   uk: 'ukr', // Ukrainian
+  vi: 'vie', // Vietnamese
 
   'es-MX': 'spa', // Spanish (Latin America) -> Spanish
   'nb-NO': 'nor', // Norwegian Bokmål -> Norwegian

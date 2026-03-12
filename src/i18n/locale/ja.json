@@ -1010,7 +1010,6 @@
   "components.Settings.RadarrModal.validationBaseUrlTrailingSlash": "URLベースの末尾をスラッシュにしないでください",
   "components.Settings.SettingsAbout.about": "アプリ情報",
   "components.Settings.SettingsAbout.appDataPath": "データディレクトリ",
-  "components.Settings.SettingsAbout.betawarning": "これはベータ版ソフトウェアです。機能が動作しない、または不安定な場合があります。問題が発生した場合はGitHubで報告してください！",
   "components.Settings.SettingsAbout.documentation": "ドキュメント",
   "components.Settings.SettingsAbout.outofdate": "期限切れ",
   "components.Settings.SettingsAbout.runningDevelop": "あなたはSeerrの<code>開発版</code>のブランチを実行しています。このブランチは開発に貢献する方や最先端のテストを支援する方にのみ推奨されます。",
@@ -1612,5 +1611,18 @@
   "i18n.blocklistSuccess": "<strong>{title}</strong>がブロックリストに登録されました。",
   "i18n.blocklisted": "ブロックリストに登録されました",
   "i18n.removeFromBlocklistSuccess": "<strong>{title}</strong>がブロックリストから削除されました。",
-  "i18n.removefromBlocklist": "ブロックリストから削除"
+  "i18n.removefromBlocklist": "ブロックリストから削除",
+  "components.Settings.SonarrModal.monitorNewItems": "新シーズンを監視する",
+  "components.Discover.timeWindowDay": "毎日",
+  "components.Discover.timeWindowWeek": "毎週",
+  "components.Settings.Notifications.NotificationsNtfy.priority": "優先度",
+  "components.Settings.Notifications.NotificationsNtfy.validationPriorityRequired": "優先度を1から5の間で指定してください",
+  "components.Settings.Notifications.NotificationsWebhook.customHeaders": "カスタムヘッダー",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersAdd": "ヘッダーを追加",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersAuthConflict": "AuthorizationヘッダーとカスタムAuthorizationヘッダーの両方を使用することはできません。いずれか一方を削除してください。",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersIncomplete": "すべてのヘッダーには名前と値の両方が必要です",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersKey": "ヘッダー名",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersRemove": "削除",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersTip": "Webhookリクエストに含めるカスタムHTTPヘッダーを追加する",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersValue": "ヘッダーの値"
 }

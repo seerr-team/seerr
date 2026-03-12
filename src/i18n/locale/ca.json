@@ -766,7 +766,6 @@
   "components.Settings.SettingsUsers.defaultPermissionsTip": "Permisos inicials assignats a usuaris nous",
   "components.RequestList.RequestItem.requesteddate": "Sol·licitat",
   "components.RequestCard.failedretry": "S'ha produït un error en tornar a demanar la sol·licitud.",
-  "components.Settings.SettingsAbout.betawarning": "Aquest és un programari BETA. Algunes funcionalitats poden fallar. Informeu de qualsevol problema a GitHub!",
   "components.Settings.Notifications.validationTypes": "Heu de seleccionar com a mínim un tipus de notificació",
   "components.Settings.Notifications.NotificationsWebhook.validationTypes": "Heu de seleccionar com a mínim un tipus de notificació",
   "components.Settings.Notifications.NotificationsSlack.validationTypes": "Heu de seleccionar com a mínim un tipus de notificació",

@@ -9,7 +9,7 @@ import TitleCard from '@app/components/TitleCard';
 import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
-import Error from '@app/pages/_error';
+import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
@@ -91,7 +91,7 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
   }
 
   if (!data) {
-    return <Error statusCode={404} />;
+    return <ErrorPage statusCode={404} />;
   }
 
   let collectionStatus = MediaStatus.UNKNOWN;

@@ -3,7 +3,7 @@ import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
 import { useUser } from '@app/hooks/useUser';
-import Error from '@app/pages/_error';
+import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import type { WatchlistItem } from '@server/interfaces/api/discoverInterfaces';
 import Link from 'next/link';
@@ -43,7 +43,7 @@ const DiscoverWatchlist = () => {
   );
 
   if (error) {
-    return <Error statusCode={500} />;
+    return <ErrorPage statusCode={500} />;
   }
 
   const title = intl.formatMessage(

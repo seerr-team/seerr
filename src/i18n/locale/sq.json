@@ -368,7 +368,6 @@
   "components.Settings.SettingsAbout.Releases.viewchangelog": "Shfaq Changelog",
   "components.Settings.SettingsAbout.Releases.viewongithub": "Shikoni në GitHub",
   "components.Settings.SettingsAbout.about": "Rreth",
-  "components.Settings.SettingsAbout.betawarning": "Ky është programi BETA. Veçoritë mund të jenë të thyera dhe/ose të paqëndrueshme. Ju lutem raportoni ndonjë çështje në GitHub!",
   "components.Settings.menuAbout": "Rreth",
   "components.Settings.menuGeneralSettings": "Gjeneral",
   "components.PermissionEdit.requestMoviesDescription": "Jep leje për të dërguar kërkesa për filma jo-4K.",

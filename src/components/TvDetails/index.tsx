@@ -30,7 +30,7 @@ import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
-import Error from '@app/pages/_error';
+import ErrorPage from '@app/pages/_error';
 import { sortCrewPriority } from '@app/utils/creditHelpers';
 import defineMessages from '@app/utils/defineMessages';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
@@ -174,7 +174,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   }
 
   if (!data) {
-    return <Error statusCode={404} />;
+    return <ErrorPage statusCode={404} />;
   }
 
   const mediaLinks: PlayButtonLink[] = [];

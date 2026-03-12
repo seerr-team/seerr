@@ -531,7 +531,6 @@
   "components.Settings.SettingsAbout.Releases.viewchangelog": "Zobacz dziennik zmian",
   "components.Settings.SettingsAbout.Releases.viewongithub": "Zobacz na GitHub",
   "components.Settings.SettingsAbout.about": "O",
-  "components.Settings.SettingsAbout.betawarning": "To jest oprogramowanie BETA. Funkcje mogą być uszkodzone i/lub niestabilne. Zgłaszaj wszelkie problemy na GitHub!",
   "components.Settings.SettingsAbout.documentation": "Dokumentacja",
   "components.Settings.SettingsAbout.gettingsupport": "Uzyskiwanie pomocy technicznej",
   "components.Settings.SettingsAbout.githubdiscussions": "Dyskusje na GitHubie",

@@ -782,7 +782,6 @@
   "components.NotificationTypeSelector.usermediadeclinedDescription": "Notificar quando seus pedidos de multimédia forem recusados.",
   "components.NotificationTypeSelector.usermediaavailableDescription": "Notificar quando os seus pedidos de multimédia ficarem disponíveis.",
   "components.QuotaSelector.days": "{conta, plural, one {dia} other {dias}}",
-  "components.Settings.SettingsAbout.betawarning": "Isto é um software em BETA. As funcionalidades podem estar quebradas e/ou instáveis. Relate qualquer problema no GitHub!",
   "components.MovieDetails.streamingproviders": "Atualmente a Exibir em",
   "components.TvDetails.streamingproviders": "Atualmente a Exibir em",
   "components.MovieDetails.showmore": "Mostrar Mais",
@@ -1609,5 +1608,9 @@
   "i18n.blocklistSuccess": "<strong>{title}</strong> foi bloqueado com sucesso.",
   "i18n.blocklisted": "Na lista de bloqueio",
   "i18n.removeFromBlocklistSuccess": "<strong>{title}</strong> foi removido da lista de bloqueio com sucesso.",
-  "i18n.removefromBlocklist": "Remover da lista de bloqueio"
+  "i18n.removefromBlocklist": "Remover da lista de bloqueio",
+  "components.Settings.SettingsNetwork.apiRequestTimeout": "Tempo limite da solicitação da API",
+  "components.Settings.SettingsNetwork.apiRequestTimeoutTip": "Tempo máximo (em segundos) para aguardar respostas de serviços externos como o Radarr/Sonarr. Defina como 0 para nenhum tempo limite.",
+  "components.Settings.SettingsNetwork.validationApiRequestTimeout": "Deve fornecer um valor de tempo limite válido",
+  "components.Settings.SonarrModal.monitorNewItems": "Acompanhe as novas temporadas"
 }

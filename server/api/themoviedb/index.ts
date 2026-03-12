@@ -715,9 +715,11 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
   public getMovieTrending = async ({
     page = 1,
     timeWindow = 'day',
+    language = this.locale,
   }: {
     page?: number;
     timeWindow?: 'day' | 'week';
+    language?: string;
   } = {}): Promise<TmdbSearchMovieResponse> => {
     try {
       const data = await this.get<TmdbSearchMovieResponse>(
@@ -725,6 +727,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
         {
           params: {
             page,
+            language,
           },
         }
       );
@@ -738,9 +741,11 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
   public getTvTrending = async ({
     page = 1,
     timeWindow = 'day',
+    language = this.locale,
   }: {
     page?: number;
     timeWindow?: 'day' | 'week';
+    language?: string;
   } = {}): Promise<TmdbSearchTvResponse> => {
     try {
       const data = await this.get<TmdbSearchTvResponse>(
@@ -748,6 +753,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
         {
           params: {
             page,
+            language,
           },
         }
       );

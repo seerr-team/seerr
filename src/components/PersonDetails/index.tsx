@@ -5,7 +5,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import TitleCard from '@app/components/TitleCard';
 import globalMessages from '@app/i18n/globalMessages';
-import Error from '@app/pages/_error';
+import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import { CircleStackIcon } from '@heroicons/react/24/solid';
 import type { PersonCombinedCreditsResponse } from '@server/interfaces/api/personInterfaces';
@@ -91,7 +91,7 @@ const PersonDetails = () => {
   }
 
   if (!data) {
-    return <Error statusCode={404} />;
+    return <ErrorPage statusCode={404} />;
   }
 
   const personAttributes: string[] = [];

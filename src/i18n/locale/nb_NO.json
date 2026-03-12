@@ -546,7 +546,6 @@
   "components.RequestList.RequestItem.deleterequest": "Slett forespørsel",
   "components.RequestList.RequestItem.cancelRequest": "Avbryt Forespørsel",
   "components.RequestCard.mediaerror": "{mediaType} Finnes ikke",
-  "components.Settings.SettingsAbout.betawarning": "Dette er beta-programvare. Funksjoner kan slutte og fungerer og/eller være ustabile. Reporter gjerne problemer på GitHub!",
   "components.Settings.noDefaultNon4kServer": "Dersom du har én {serverType} server for både ikke-4K og 4K-media (eller hvis du kun laster ned 4K-innhold), skal {serverType} server <strong>IKKE</strong> være huket av som en 4K server.",
   "components.Settings.noDefault4kServer": "En 4K {serverType} server må være satt som standard for at brukere skal kunne forspørre 4K {mediaType}.",
   "components.Settings.SettingsUsers.defaultPermissionsTip": "Standard tilganger gitt til nye brukere",

@@ -10,7 +10,7 @@ import useDebouncedState from '@app/hooks/useDebouncedState';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
-import Error from '@app/pages/_error';
+import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import {
   ChevronLeftIcon,
@@ -90,7 +90,7 @@ const Blocklist = () => {
   // check if there's no data and no errors in the table
   // so as to show a spinner inside the table and not refresh the whole component
   if (!data && error) {
-    return <Error statusCode={500} />;
+    return <ErrorPage statusCode={500} />;
   }
 
   const searchItem = (e: ChangeEvent<HTMLInputElement>) => {

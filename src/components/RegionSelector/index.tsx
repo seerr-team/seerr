@@ -83,19 +83,14 @@ const RegionSelector = ({
     }
   }, [value, regions, allRegion]);
 
-  useEffect(() => {
-    if (onChange && regions) {
-      if (selectedRegion) {
-        onChange(name, selectedRegion.iso_3166_1);
-      } else {
-        onChange(name, '');
-      }
-    }
-  }, [onChange, selectedRegion, name, regions]);
+  const handleRegionSelect = (region: Region | null) => {
+    setSelectedRegion(region);
+    onChange?.(name, region?.iso_3166_1 ?? '');
+  };
 
   return (
     <div className="z-40 w-full">
-      <Listbox as="div" value={selectedRegion} onChange={setSelectedRegion}>
+      <Listbox as="div" value={selectedRegion} onChange={handleRegionSelect}>
         {({ open }) => (
           <div className="relative">
             <span className="inline-block w-full rounded-md shadow-sm">

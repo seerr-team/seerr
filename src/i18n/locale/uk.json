@@ -594,7 +594,6 @@
   "components.Settings.SettingsAbout.Releases.viewongithub": "Подивитися на GitHub",
   "components.Settings.SettingsAbout.about": "Про проект",
   "components.Settings.SettingsAbout.appDataPath": "Каталог даних",
-  "components.Settings.SettingsAbout.betawarning": "Це бета-версія програмного забезпечення. Деякі функції можуть не працювати або працювати нестабільно. Будь ласка, повідомляйте про будь-які проблеми на GitHub!",
   "components.Settings.SettingsAbout.documentation": "Документація",
   "components.Settings.SettingsAbout.gettingsupport": "Отримати підтримку",
   "components.Settings.SettingsAbout.githubdiscussions": "Обговорення на GitHub",

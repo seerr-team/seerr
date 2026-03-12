@@ -3,6 +3,7 @@ import SensitiveInput from '@app/components/Common/SensitiveInput';
 import useSettings from '@app/hooks/useSettings';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/solid';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import Link from 'next/link';
@@ -18,6 +19,7 @@ const messages = defineMessages('components.Login', {
   validationemailrequired: 'You must provide a valid email address',
   validationpasswordrequired: 'You must provide a password',
   loginerror: 'Something went wrong while trying to sign in.',
+  tipEmailHasTrailingWhitespace: 'The email ends with whitespace',
   signingin: 'Signing In…',
   signin: 'Sign In',
   forgotpassword: 'Forgot Password?',
@@ -66,7 +68,7 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
         }
       }}
     >
-      {({ errors, touched, isSubmitting, isValid }) => {
+      {({ errors, touched, values, isSubmitting, isValid }) => {
         return (
           <>
             <Form data-form-type="login">
@@ -92,6 +94,14 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                       className="!bg-gray-700/80 placeholder:text-gray-400"
                     />
                   </div>
+                  {touched.email && values.email.match(/\s$/) && (
+                    <div className="warning label-tip flex items-center">
+                      <ExclamationTriangleIcon className="mr-1 h-4 w-4" />
+                      {intl.formatMessage(
+                        messages.tipEmailHasTrailingWhitespace
+                      )}
+                    </div>
+                  )}
                   {errors.email &&
                     touched.email &&
                     typeof errors.email === 'string' && (
