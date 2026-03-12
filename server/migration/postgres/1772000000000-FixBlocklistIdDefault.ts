@@ -9,7 +9,7 @@ export class FixBlocklistIdDefault1772000000000 implements MigrationInterface {
     );
 
     await queryRunner.query(
-      `SELECT setval('public."blocklist_id_seq"', COALESCE((SELECT MAX("id") FROM "blocklist"), 0), true)`
+      `SELECT setval('public."blocklist_id_seq"', COALESCE((SELECT MAX("id") FROM "blocklist"), 0) + 1, false)`
     );
   }
 
