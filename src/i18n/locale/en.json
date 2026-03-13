@@ -1221,6 +1221,7 @@
   "components.Settings.plexlibrariesDescription": "The libraries Seerr scans for titles. Set up and save your Plex connection settings, then click the button below if no libraries are listed.",
   "components.Settings.plexsettings": "Plex Settings",
   "components.Settings.plexsettingsDescription": "Configure the settings for your Plex server. Seerr scans your Plex libraries to determine content availability.",
+  "components.Settings.plexAccountOwnerOnly": "Only the owner account can connect Plex from Settings because the Plex token is stored on the owner account.",
   "components.Settings.port": "Port",
   "components.Settings.providerStatus": "Metadata Provider Status",
   "components.Settings.radarrsettings": "Radarr Settings",

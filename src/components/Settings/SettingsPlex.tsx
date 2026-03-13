@@ -1,10 +1,10 @@
 import Alert from '@app/components/Common/Alert';
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
-import PlexLoginButton from '@app/components/Login/PlexLoginButton';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
+import PlexLoginButton from '@app/components/Login/PlexLoginButton';
 import LibraryItem from '@app/components/Settings/LibraryItem';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import { useUser } from '@app/hooks/useUser';
@@ -127,6 +127,11 @@ type PlexServerInstance = PlexSettings & {
   id: string;
 };
 
+interface PlexAuthStatus {
+  authenticated: boolean;
+  isOwner: boolean;
+}
+
 const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isRefreshingPresets, setIsRefreshingPresets] = useState(false);
@@ -151,6 +156,8 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
   );
   const { data: dataTautulli, mutate: revalidateTautulli } =
     useSWR<TautulliSettings>('/api/v1/settings/tautulli');
+  const { data: plexAuthStatus, mutate: revalidatePlexAuthStatus } =
+    useSWR<PlexAuthStatus>('/api/v1/settings/plex/login');
   const { data: dataSync, mutate: revalidateSync } = useSWR<SyncStatus>(
     '/api/v1/settings/plex/sync',
     {
@@ -161,6 +168,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
   const { user } = useUser();
   const { addToast, removeToast } = useToasts();
   const isOwner = user?.id === 1;
+  const canManagePlexSettings = Boolean(plexAuthStatus?.authenticated);
 
   const PlexSettingsSchema = Yup.object().shape({
     hostname: Yup.string()
@@ -354,6 +362,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
         appearance: 'success',
       });
 
+      await revalidatePlexAuthStatus();
       await refreshPresetServers();
     } catch (e) {
       addToast(intl.formatMessage(messages.toastPlexAuthFailure), {
@@ -415,7 +424,12 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
     revalidate();
   };
 
-  if ((!dataTautulli || (selectedServerId !== 'new' && !data)) && !error) {
+  if (
+    !plexAuthStatus ||
+    (canManagePlexSettings &&
+      (!dataTautulli || (selectedServerId !== 'new' && !data)) &&
+      !error)
+  ) {
     return <LoadingSpinner />;
   }
 
@@ -483,139 +497,150 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
             {intl.formatMessage(messages.servers)}
           </label>
           <div className="form-input-area">
-            <select
-              id="serverSelector"
-              name="serverSelector"
-              value={selectedServerId}
-              onChange={(event) => setSelectedServerId(event.target.value)}
-            >
-              <option value="new">
-                {intl.formatMessage(messages.addPlexServer)}
-              </option>
-              {plexServers?.map((server) => (
-                <option key={server.id} value={server.id}>
-                  {server.name || server.ip}
+            <div className="form-input-field">
+              <select
+                id="serverSelector"
+                name="serverSelector"
+                value={selectedServerId}
+                onChange={(event) => setSelectedServerId(event.target.value)}
+              >
+                <option value="new">
+                  {intl.formatMessage(messages.addPlexServer)}
                 </option>
-              ))}
-            </select>
+                {plexServers?.map((server) => (
+                  <option key={server.id} value={server.id}>
+                    {server.name || server.ip}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>
-      <Formik
-        key={selectedServerId}
-        initialValues={{
-          hostname: data?.ip,
-          port: data?.port ?? 32400,
-          useSsl: data?.useSsl,
-          selectedPreset: undefined,
-          webAppUrl: data?.webAppUrl,
-        }}
-        validationSchema={PlexSettingsSchema}
-        validateOnMount={true}
-        onSubmit={async (values) => {
-          let toastId: string | null = null;
-          try {
-            addToast(
-              intl.formatMessage(messages.toastPlexConnecting),
-              {
-                autoDismiss: false,
-                appearance: 'info',
-              },
-              (id) => {
-                toastId = id;
+      {canManagePlexSettings && (
+        <>
+          <Formik
+            key={selectedServerId}
+            initialValues={{
+              hostname: data?.ip,
+              port: data?.port ?? 32400,
+              useSsl: data?.useSsl,
+              selectedPreset: undefined,
+              webAppUrl: data?.webAppUrl,
+            }}
+            validationSchema={PlexSettingsSchema}
+            validateOnMount={true}
+            onSubmit={async (values) => {
+              let toastId: string | null = null;
+              try {
+                addToast(
+                  intl.formatMessage(messages.toastPlexConnecting),
+                  {
+                    autoDismiss: false,
+                    appearance: 'info',
+                  },
+                  (id) => {
+                    toastId = id;
+                  }
+                );
+                const response = await axios.post<PlexServerInstance>(
+                  '/api/v1/settings/plex',
+                  {
+                    id:
+                      selectedServerId !== 'new' ? selectedServerId : undefined,
+                    ip: values.hostname,
+                    port: Number(values.port),
+                    useSsl: values.useSsl,
+                    webAppUrl: values.webAppUrl,
+                  } as PlexServerInstance
+                );
+
+                setSelectedServerId(response.data.id);
+                revalidatePlexServers();
+                mutate('/api/v1/settings/public');
+
+                syncLibraries(response.data.id);
+
+                if (toastId) {
+                  removeToast(toastId);
+                }
+                addToast(
+                  intl.formatMessage(messages.toastPlexConnectingSuccess),
+                  {
+                    autoDismiss: true,
+                    appearance: 'success',
+                  }
+                );
+              } catch (e) {
+                if (toastId) {
+                  removeToast(toastId);
+                }
+                addToast(
+                  intl.formatMessage(messages.toastPlexConnectingFailure),
+                  {
+                    autoDismiss: true,
+                    appearance: 'error',
+                  }
+                );
               }
-            );
-            const response = await axios.post<PlexServerInstance>(
-              '/api/v1/settings/plex',
-              {
-                id: selectedServerId !== 'new' ? selectedServerId : undefined,
-                ip: values.hostname,
-                port: Number(values.port),
-                useSsl: values.useSsl,
-                webAppUrl: values.webAppUrl,
-              } as PlexServerInstance
-            );
+            }}
+          >
+            {({
+              errors,
+              touched,
+              values,
+              handleSubmit,
+              setFieldValue,
+              setValues,
+              isSubmitting,
+              isValid,
+            }) => {
+              return (
+                <form className="section" onSubmit={handleSubmit}>
+                  <div className="form-row">
+                    <label htmlFor="preset" className="text-label">
+                      {intl.formatMessage(messages.serverpreset)}
+                    </label>
+                    <div className="form-input-area">
+                      <div className="form-input-field">
+                        <select
+                          id="preset"
+                          name="preset"
+                          value={values.selectedPreset}
+                          disabled={!availableServers || isRefreshingPresets}
+                          className="rounded-l-only"
+                          onChange={async (e) => {
+                            const targPreset =
+                              availablePresets[Number(e.target.value)];
 
-            setSelectedServerId(response.data.id);
-            revalidatePlexServers();
-            mutate('/api/v1/settings/public');
-
-            syncLibraries(response.data.id);
-
-            if (toastId) {
-              removeToast(toastId);
-            }
-            addToast(intl.formatMessage(messages.toastPlexConnectingSuccess), {
-              autoDismiss: true,
-              appearance: 'success',
-            });
-          } catch (e) {
-            if (toastId) {
-              removeToast(toastId);
-            }
-            addToast(intl.formatMessage(messages.toastPlexConnectingFailure), {
-              autoDismiss: true,
-              appearance: 'error',
-            });
-          }
-        }}
-      >
-        {({
-          errors,
-          touched,
-          values,
-          handleSubmit,
-          setFieldValue,
-          setValues,
-          isSubmitting,
-          isValid,
-        }) => {
-          return (
-            <form className="section" onSubmit={handleSubmit}>
-              <div className="form-row">
-                <label htmlFor="preset" className="text-label">
-                  {intl.formatMessage(messages.serverpreset)}
-                </label>
-                <div className="form-input-area">
-                  <div className="form-input-field">
-                    <select
-                      id="preset"
-                      name="preset"
-                      value={values.selectedPreset}
-                      disabled={!availableServers || isRefreshingPresets}
-                      className="rounded-l-only"
-                      onChange={async (e) => {
-                        const targPreset =
-                          availablePresets[Number(e.target.value)];
-
-                        if (targPreset) {
-                          setValues({
-                            ...values,
-                            hostname: targPreset.address,
-                            port: targPreset.port,
-                            useSsl: targPreset.ssl,
-                          });
-                        }
-                      }}
-                    >
-                      <option value="manual">
-                        {availableServers || isRefreshingPresets
-                          ? isRefreshingPresets
-                            ? intl.formatMessage(
-                                messages.serverpresetRefreshing
-                              )
-                            : intl.formatMessage(
-                                messages.serverpresetManualMessage
-                              )
-                          : intl.formatMessage(messages.serverpresetLoad)}
-                      </option>
-                      {availablePresets.map((server, index) => (
-                        <option
-                          key={`preset-server-${index}`}
-                          value={index}
-                          disabled={!server.status}
+                            if (targPreset) {
+                              setValues({
+                                ...values,
+                                hostname: targPreset.address,
+                                port: targPreset.port,
+                                useSsl: targPreset.ssl,
+                              });
+                            }
+                          }}
                         >
-                          {`
+                          <option value="manual">
+                            {availableServers || isRefreshingPresets
+                              ? isRefreshingPresets
+                                ? intl.formatMessage(
+                                    messages.serverpresetRefreshing
+                                  )
+                                : intl.formatMessage(
+                                    messages.serverpresetManualMessage
+                                  )
+                              : intl.formatMessage(messages.serverpresetLoad)}
+                          </option>
+                          {availablePresets.map((server, index) => (
+                            <option
+                              key={`preset-server-${index}`}
+                              value={index}
+                              disabled={!server.status}
+                            >
+                              {`
                             ${server.name} (${server.address})
                             [${
                               server.local
@@ -630,341 +655,53 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                             }
                             ${server.status ? '' : '(' + server.message + ')'}
                           `}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        refreshPresetServers();
-                      }}
-                      className="input-action"
-                    >
-                      <ArrowPathIcon
-                        className={isRefreshingPresets ? 'animate-spin' : ''}
-                        style={{ animationDirection: 'reverse' }}
-                      />
-                    </button>
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            refreshPresetServers();
+                          }}
+                          className="input-action"
+                        >
+                          <ArrowPathIcon
+                            className={
+                              isRefreshingPresets ? 'animate-spin' : ''
+                            }
+                            style={{ animationDirection: 'reverse' }}
+                          />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-              <div className="form-row">
-                <label htmlFor="hostname" className="text-label">
-                  {intl.formatMessage(messages.hostname)}
-                  <span className="label-required">*</span>
-                </label>
-                <div className="form-input-area">
-                  <div className="form-input-field">
-                    <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-gray-100 sm:text-sm">
-                      {values.useSsl ? 'https://' : 'http://'}
-                    </span>
-                    <Field
-                      type="text"
-                      inputMode="url"
-                      id="hostname"
-                      name="hostname"
-                      className="rounded-r-only"
-                    />
-                  </div>
-                  {errors.hostname &&
-                    touched.hostname &&
-                    typeof errors.hostname === 'string' && (
-                      <div className="error">{errors.hostname}</div>
-                    )}
-                </div>
-              </div>
-              <div className="form-row">
-                <label htmlFor="port" className="text-label">
-                  {intl.formatMessage(messages.port)}
-                  <span className="label-required">*</span>
-                </label>
-                <div className="form-input-area">
-                  <Field
-                    type="text"
-                    inputMode="numeric"
-                    id="port"
-                    name="port"
-                    className="short"
-                  />
-                  {errors.port &&
-                    touched.port &&
-                    typeof errors.port === 'string' && (
-                      <div className="error">{errors.port}</div>
-                    )}
-                </div>
-              </div>
-              <div className="form-row">
-                <label htmlFor="ssl" className="checkbox-label">
-                  {intl.formatMessage(messages.enablessl)}
-                </label>
-                <div className="form-input-area">
-                  <Field
-                    type="checkbox"
-                    id="useSsl"
-                    name="useSsl"
-                    onChange={() => {
-                      setFieldValue('useSsl', !values.useSsl);
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="form-row">
-                <label htmlFor="webAppUrl" className="text-label">
-                  {intl.formatMessage(messages.webAppUrl, {
-                    WebAppLink: (msg: React.ReactNode) => (
-                      <a
-                        href="https://support.plex.tv/articles/200288666-opening-plex-web-app/"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {msg}
-                      </a>
-                    ),
-                  })}
-                  <SettingsBadge badgeType="advanced" className="ml-2" />
-                  <span className="label-tip">
-                    {intl.formatMessage(messages.webAppUrlTip)}
-                  </span>
-                </label>
-                <div className="form-input-area">
-                  <div className="form-input-field">
-                    <Field
-                      type="text"
-                      inputMode="url"
-                      id="webAppUrl"
-                      name="webAppUrl"
-                      placeholder="https://app.plex.tv/desktop"
-                    />
-                  </div>
-                  {errors.webAppUrl &&
-                    touched.webAppUrl &&
-                    typeof errors.webAppUrl === 'string' && (
-                      <div className="error">{errors.webAppUrl}</div>
-                    )}
-                </div>
-              </div>
-              <div className="actions">
-                <div className="flex justify-end">
-                  <span className="ml-3 inline-flex rounded-md shadow-sm">
-                    <Button
-                      buttonType="primary"
-                      type="submit"
-                      disabled={isSubmitting || !isValid}
-                    >
-                      <ArrowDownOnSquareIcon />
-                      <span>
-                        {isSubmitting
-                          ? intl.formatMessage(globalMessages.saving)
-                          : intl.formatMessage(globalMessages.save)}
-                      </span>
-                    </Button>
-                  </span>
-                </div>
-              </div>
-            </form>
-          );
-        }}
-      </Formik>
-      <div className="mb-6 mt-10">
-        <h3 className="heading">
-          {intl.formatMessage(messages.plexlibraries)}
-        </h3>
-        <p className="description">
-          {intl.formatMessage(messages.plexlibrariesDescription)}
-        </p>
-      </div>
-      <div className="section">
-        <Button
-          onClick={() => syncLibraries()}
-          disabled={
-            isSyncing || selectedServerId === 'new' || !data?.ip || !data?.port
-          }
-        >
-          <ArrowPathIcon
-            className={isSyncing ? 'animate-spin' : ''}
-            style={{ animationDirection: 'reverse' }}
-          />
-          <span>
-            {isSyncing
-              ? intl.formatMessage(messages.scanning)
-              : intl.formatMessage(messages.scan)}
-          </span>
-        </Button>
-        <ul className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
-          {data?.libraries.map((library) => (
-            <LibraryItem
-              name={library.name}
-              isEnabled={library.enabled}
-              key={`setting-library-${library.id}`}
-              onToggle={() => toggleLibrary(library.id)}
-            />
-          ))}
-        </ul>
-      </div>
-      <div className="mb-6 mt-10">
-        <h3 className="heading">{intl.formatMessage(messages.manualscan)}</h3>
-        <p className="description">
-          {intl.formatMessage(messages.manualscanDescription)}
-        </p>
-      </div>
-      <div className="section">
-        <div className="rounded-md bg-gray-800 p-4">
-          <div className="relative mb-6 h-8 w-full overflow-hidden rounded-full bg-gray-600">
-            {dataSync?.running && (
-              <div
-                className="h-8 bg-indigo-600 transition-all duration-200 ease-in-out"
-                style={{
-                  width: `${Math.round(
-                    (dataSync.progress / dataSync.total) * 100
-                  )}%`,
-                }}
-              />
-            )}
-            <div className="absolute inset-0 flex h-8 w-full items-center justify-center text-sm">
-              <span>
-                {dataSync?.running
-                  ? `${dataSync.progress} of ${dataSync.total}`
-                  : 'Not running'}
-              </span>
-            </div>
-          </div>
-          <div className="flex w-full flex-col sm:flex-row">
-            {dataSync?.running && (
-              <>
-                {dataSync.currentLibrary && (
-                  <div className="mb-2 mr-0 flex items-center sm:mb-0 sm:mr-2">
-                    <Badge>
-                      {intl.formatMessage(messages.currentlibrary, {
-                        name: dataSync.currentLibrary.name,
-                      })}
-                    </Badge>
-                  </div>
-                )}
-                <div className="flex items-center">
-                  <Badge badgeType="warning">
-                    {intl.formatMessage(messages.librariesRemaining, {
-                      count: dataSync.currentLibrary
-                        ? dataSync.libraries.slice(
-                            dataSync.libraries.findIndex(
-                              (library) =>
-                                library.id === dataSync.currentLibrary?.id
-                            ) + 1
-                          ).length
-                        : 0,
-                    })}
-                  </Badge>
-                </div>
-              </>
-            )}
-            <div className="flex-1 text-right">
-              {!dataSync?.running ? (
-                <Button
-                  buttonType="warning"
-                  onClick={() => startScan()}
-                  disabled={isSyncing || !activeLibraries.length}
-                >
-                  <MagnifyingGlassIcon />
-                  <span>{intl.formatMessage(messages.startscan)}</span>
-                </Button>
-              ) : (
-                <Button buttonType="danger" onClick={() => cancelScan()}>
-                  <XMarkIcon />
-                  <span>{intl.formatMessage(messages.cancelscan)}</span>
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-      {!onComplete && (
-        <>
-          <div className="mb-6 mt-10">
-            <h3 className="heading">
-              {intl.formatMessage(messages.tautulliSettings)}
-            </h3>
-            <p className="description">
-              {intl.formatMessage(messages.tautulliSettingsDescription)}
-            </p>
-          </div>
-          <Formik
-            initialValues={{
-              tautulliHostname: dataTautulli?.hostname,
-              tautulliPort: dataTautulli?.port ?? 8181,
-              tautulliUseSsl: dataTautulli?.useSsl,
-              tautulliUrlBase: dataTautulli?.urlBase,
-              tautulliApiKey: dataTautulli?.apiKey,
-              tautulliExternalUrl: dataTautulli?.externalUrl,
-            }}
-            validationSchema={TautulliSettingsSchema}
-            onSubmit={async (values) => {
-              try {
-                await axios.post('/api/v1/settings/tautulli', {
-                  hostname: values.tautulliHostname,
-                  port: Number(values.tautulliPort),
-                  useSsl: values.tautulliUseSsl,
-                  urlBase: values.tautulliUrlBase,
-                  apiKey: values.tautulliApiKey,
-                  externalUrl: values.tautulliExternalUrl,
-                } as TautulliSettings);
-
-                addToast(
-                  intl.formatMessage(messages.toastTautulliSettingsSuccess),
-                  {
-                    autoDismiss: true,
-                    appearance: 'success',
-                  }
-                );
-              } catch (e) {
-                addToast(
-                  intl.formatMessage(messages.toastTautulliSettingsFailure),
-                  {
-                    autoDismiss: true,
-                    appearance: 'error',
-                  }
-                );
-              } finally {
-                revalidateTautulli();
-              }
-            }}
-          >
-            {({
-              errors,
-              touched,
-              values,
-              handleSubmit,
-              setFieldValue,
-              isSubmitting,
-              isValid,
-            }) => {
-              return (
-                <form className="section" onSubmit={handleSubmit}>
                   <div className="form-row">
-                    <label htmlFor="tautulliHostname" className="text-label">
+                    <label htmlFor="hostname" className="text-label">
                       {intl.formatMessage(messages.hostname)}
                       <span className="label-required">*</span>
                     </label>
                     <div className="form-input-area">
                       <div className="form-input-field">
                         <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-gray-100 sm:text-sm">
-                          {values.tautulliUseSsl ? 'https://' : 'http://'}
+                          {values.useSsl ? 'https://' : 'http://'}
                         </span>
                         <Field
                           type="text"
                           inputMode="url"
-                          id="tautulliHostname"
-                          name="tautulliHostname"
+                          id="hostname"
+                          name="hostname"
                           className="rounded-r-only"
                         />
                       </div>
-                      {errors.tautulliHostname &&
-                        touched.tautulliHostname &&
-                        typeof errors.tautulliHostname === 'string' && (
-                          <div className="error">{errors.tautulliHostname}</div>
+                      {errors.hostname &&
+                        touched.hostname &&
+                        typeof errors.hostname === 'string' && (
+                          <div className="error">{errors.hostname}</div>
                         )}
                     </div>
                   </div>
                   <div className="form-row">
-                    <label htmlFor="tautulliPort" className="text-label">
+                    <label htmlFor="port" className="text-label">
                       {intl.formatMessage(messages.port)}
                       <span className="label-required">*</span>
                     </label>
@@ -972,108 +709,64 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                       <Field
                         type="text"
                         inputMode="numeric"
-                        id="tautulliPort"
-                        name="tautulliPort"
+                        id="port"
+                        name="port"
                         className="short"
-                        autoComplete="off"
-                        data-form-type="other"
-                        data-1pignore="true"
-                        data-lpignore="true"
-                        data-bwignore="true"
                       />
-                      {errors.tautulliPort &&
-                        touched.tautulliPort &&
-                        typeof errors.tautulliPort === 'string' && (
-                          <div className="error">{errors.tautulliPort}</div>
+                      {errors.port &&
+                        touched.port &&
+                        typeof errors.port === 'string' && (
+                          <div className="error">{errors.port}</div>
                         )}
                     </div>
                   </div>
                   <div className="form-row">
-                    <label htmlFor="tautulliUseSsl" className="checkbox-label">
+                    <label htmlFor="ssl" className="checkbox-label">
                       {intl.formatMessage(messages.enablessl)}
                     </label>
                     <div className="form-input-area">
                       <Field
                         type="checkbox"
-                        id="tautulliUseSsl"
-                        name="tautulliUseSsl"
+                        id="useSsl"
+                        name="useSsl"
                         onChange={() => {
-                          setFieldValue(
-                            'tautulliUseSsl',
-                            !values.tautulliUseSsl
-                          );
+                          setFieldValue('useSsl', !values.useSsl);
                         }}
                       />
                     </div>
                   </div>
                   <div className="form-row">
-                    <label htmlFor="tautulliUrlBase" className="text-label">
-                      {intl.formatMessage(messages.urlBase)}
+                    <label htmlFor="webAppUrl" className="text-label">
+                      {intl.formatMessage(messages.webAppUrl, {
+                        WebAppLink: (msg: React.ReactNode) => (
+                          <a
+                            href="https://support.plex.tv/articles/200288666-opening-plex-web-app/"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {msg}
+                          </a>
+                        ),
+                      })}
+                      <SettingsBadge badgeType="advanced" className="ml-2" />
+                      <span className="label-tip">
+                        {intl.formatMessage(messages.webAppUrlTip)}
+                      </span>
                     </label>
                     <div className="form-input-area">
                       <div className="form-input-field">
                         <Field
                           type="text"
                           inputMode="url"
-                          id="tautulliUrlBase"
-                          name="tautulliUrlBase"
-                          autoComplete="off"
-                          data-form-type="other"
-                          data-1pignore="true"
-                          data-lpignore="true"
-                          data-bwignore="true"
+                          id="webAppUrl"
+                          name="webAppUrl"
+                          placeholder="https://app.plex.tv/desktop"
                         />
                       </div>
-                      {errors.tautulliUrlBase &&
-                        touched.tautulliUrlBase &&
-                        typeof errors.tautulliUrlBase === 'string' && (
-                          <div className="error">{errors.tautulliUrlBase}</div>
-                        )}
-                    </div>
-                  </div>
-                  <div className="form-row">
-                    <label htmlFor="tautulliApiKey" className="text-label">
-                      {intl.formatMessage(messages.tautulliApiKey)}
-                      <span className="label-required">*</span>
-                    </label>
-                    <div className="form-input-area">
-                      <div className="form-input-field">
-                        <SensitiveInput
-                          as="field"
-                          id="tautulliApiKey"
-                          name="tautulliApiKey"
-                        />
-                      </div>
-                      {errors.tautulliApiKey &&
-                        touched.tautulliApiKey &&
-                        typeof errors.tautulliApiKey === 'string' && (
-                          <div className="error">{errors.tautulliApiKey}</div>
-                        )}
-                    </div>
-                  </div>
-                  <div className="form-row">
-                    <label htmlFor="tautulliExternalUrl" className="text-label">
-                      {intl.formatMessage(messages.externalUrl)}
-                    </label>
-                    <div className="form-input-area">
-                      <div className="form-input-field">
-                        <Field
-                          type="text"
-                          inputMode="url"
-                          id="tautulliExternalUrl"
-                          name="tautulliExternalUrl"
-                          autoComplete="off"
-                          data-form-type="other"
-                          data-1pignore="true"
-                          data-lpignore="true"
-                          data-bwignore="true"
-                        />
-                      </div>
-                      {errors.tautulliExternalUrl &&
-                        touched.tautulliExternalUrl && (
-                          <div className="error">
-                            {errors.tautulliExternalUrl}
-                          </div>
+                      {errors.webAppUrl &&
+                        touched.webAppUrl &&
+                        typeof errors.webAppUrl === 'string' && (
+                          <div className="error">{errors.webAppUrl}</div>
                         )}
                     </div>
                   </div>
@@ -1099,6 +792,362 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
               );
             }}
           </Formik>
+          <div className="mb-6 mt-10">
+            <h3 className="heading">
+              {intl.formatMessage(messages.plexlibraries)}
+            </h3>
+            <p className="description">
+              {intl.formatMessage(messages.plexlibrariesDescription)}
+            </p>
+          </div>
+          <div className="section">
+            <Button
+              onClick={() => syncLibraries()}
+              disabled={
+                isSyncing ||
+                selectedServerId === 'new' ||
+                !data?.ip ||
+                !data?.port
+              }
+            >
+              <ArrowPathIcon
+                className={isSyncing ? 'animate-spin' : ''}
+                style={{ animationDirection: 'reverse' }}
+              />
+              <span>
+                {isSyncing
+                  ? intl.formatMessage(messages.scanning)
+                  : intl.formatMessage(messages.scan)}
+              </span>
+            </Button>
+            <ul className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
+              {data?.libraries.map((library) => (
+                <LibraryItem
+                  name={library.name}
+                  isEnabled={library.enabled}
+                  key={`setting-library-${library.id}`}
+                  onToggle={() => toggleLibrary(library.id)}
+                />
+              ))}
+            </ul>
+          </div>
+          <div className="mb-6 mt-10">
+            <h3 className="heading">
+              {intl.formatMessage(messages.manualscan)}
+            </h3>
+            <p className="description">
+              {intl.formatMessage(messages.manualscanDescription)}
+            </p>
+          </div>
+          <div className="section">
+            <div className="rounded-md bg-gray-800 p-4">
+              <div className="relative mb-6 h-8 w-full overflow-hidden rounded-full bg-gray-600">
+                {dataSync?.running && (
+                  <div
+                    className="h-8 bg-indigo-600 transition-all duration-200 ease-in-out"
+                    style={{
+                      width: `${Math.round(
+                        (dataSync.progress / dataSync.total) * 100
+                      )}%`,
+                    }}
+                  />
+                )}
+                <div className="absolute inset-0 flex h-8 w-full items-center justify-center text-sm">
+                  <span>
+                    {dataSync?.running
+                      ? `${dataSync.progress} of ${dataSync.total}`
+                      : 'Not running'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex w-full flex-col sm:flex-row">
+                {dataSync?.running && (
+                  <>
+                    {dataSync.currentLibrary && (
+                      <div className="mb-2 mr-0 flex items-center sm:mb-0 sm:mr-2">
+                        <Badge>
+                          {intl.formatMessage(messages.currentlibrary, {
+                            name: dataSync.currentLibrary.name,
+                          })}
+                        </Badge>
+                      </div>
+                    )}
+                    <div className="flex items-center">
+                      <Badge badgeType="warning">
+                        {intl.formatMessage(messages.librariesRemaining, {
+                          count: dataSync.currentLibrary
+                            ? dataSync.libraries.slice(
+                                dataSync.libraries.findIndex(
+                                  (library) =>
+                                    library.id === dataSync.currentLibrary?.id
+                                ) + 1
+                              ).length
+                            : 0,
+                        })}
+                      </Badge>
+                    </div>
+                  </>
+                )}
+                <div className="flex-1 text-right">
+                  {!dataSync?.running ? (
+                    <Button
+                      buttonType="warning"
+                      onClick={() => startScan()}
+                      disabled={isSyncing || !activeLibraries.length}
+                    >
+                      <MagnifyingGlassIcon />
+                      <span>{intl.formatMessage(messages.startscan)}</span>
+                    </Button>
+                  ) : (
+                    <Button buttonType="danger" onClick={() => cancelScan()}>
+                      <XMarkIcon />
+                      <span>{intl.formatMessage(messages.cancelscan)}</span>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+          {!onComplete && (
+            <>
+              <div className="mb-6 mt-10">
+                <h3 className="heading">
+                  {intl.formatMessage(messages.tautulliSettings)}
+                </h3>
+                <p className="description">
+                  {intl.formatMessage(messages.tautulliSettingsDescription)}
+                </p>
+              </div>
+              <Formik
+                initialValues={{
+                  tautulliHostname: dataTautulli?.hostname,
+                  tautulliPort: dataTautulli?.port ?? 8181,
+                  tautulliUseSsl: dataTautulli?.useSsl,
+                  tautulliUrlBase: dataTautulli?.urlBase,
+                  tautulliApiKey: dataTautulli?.apiKey,
+                  tautulliExternalUrl: dataTautulli?.externalUrl,
+                }}
+                validationSchema={TautulliSettingsSchema}
+                onSubmit={async (values) => {
+                  try {
+                    await axios.post('/api/v1/settings/tautulli', {
+                      hostname: values.tautulliHostname,
+                      port: Number(values.tautulliPort),
+                      useSsl: values.tautulliUseSsl,
+                      urlBase: values.tautulliUrlBase,
+                      apiKey: values.tautulliApiKey,
+                      externalUrl: values.tautulliExternalUrl,
+                    } as TautulliSettings);
+
+                    addToast(
+                      intl.formatMessage(messages.toastTautulliSettingsSuccess),
+                      {
+                        autoDismiss: true,
+                        appearance: 'success',
+                      }
+                    );
+                  } catch (e) {
+                    addToast(
+                      intl.formatMessage(messages.toastTautulliSettingsFailure),
+                      {
+                        autoDismiss: true,
+                        appearance: 'error',
+                      }
+                    );
+                  } finally {
+                    revalidateTautulli();
+                  }
+                }}
+              >
+                {({
+                  errors,
+                  touched,
+                  values,
+                  handleSubmit,
+                  setFieldValue,
+                  isSubmitting,
+                  isValid,
+                }) => {
+                  return (
+                    <form className="section" onSubmit={handleSubmit}>
+                      <div className="form-row">
+                        <label
+                          htmlFor="tautulliHostname"
+                          className="text-label"
+                        >
+                          {intl.formatMessage(messages.hostname)}
+                          <span className="label-required">*</span>
+                        </label>
+                        <div className="form-input-area">
+                          <div className="form-input-field">
+                            <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-gray-100 sm:text-sm">
+                              {values.tautulliUseSsl ? 'https://' : 'http://'}
+                            </span>
+                            <Field
+                              type="text"
+                              inputMode="url"
+                              id="tautulliHostname"
+                              name="tautulliHostname"
+                              className="rounded-r-only"
+                            />
+                          </div>
+                          {errors.tautulliHostname &&
+                            touched.tautulliHostname &&
+                            typeof errors.tautulliHostname === 'string' && (
+                              <div className="error">
+                                {errors.tautulliHostname}
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                      <div className="form-row">
+                        <label htmlFor="tautulliPort" className="text-label">
+                          {intl.formatMessage(messages.port)}
+                          <span className="label-required">*</span>
+                        </label>
+                        <div className="form-input-area">
+                          <Field
+                            type="text"
+                            inputMode="numeric"
+                            id="tautulliPort"
+                            name="tautulliPort"
+                            className="short"
+                            autoComplete="off"
+                            data-form-type="other"
+                            data-1pignore="true"
+                            data-lpignore="true"
+                            data-bwignore="true"
+                          />
+                          {errors.tautulliPort &&
+                            touched.tautulliPort &&
+                            typeof errors.tautulliPort === 'string' && (
+                              <div className="error">{errors.tautulliPort}</div>
+                            )}
+                        </div>
+                      </div>
+                      <div className="form-row">
+                        <label
+                          htmlFor="tautulliUseSsl"
+                          className="checkbox-label"
+                        >
+                          {intl.formatMessage(messages.enablessl)}
+                        </label>
+                        <div className="form-input-area">
+                          <Field
+                            type="checkbox"
+                            id="tautulliUseSsl"
+                            name="tautulliUseSsl"
+                            onChange={() => {
+                              setFieldValue(
+                                'tautulliUseSsl',
+                                !values.tautulliUseSsl
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="form-row">
+                        <label htmlFor="tautulliUrlBase" className="text-label">
+                          {intl.formatMessage(messages.urlBase)}
+                        </label>
+                        <div className="form-input-area">
+                          <div className="form-input-field">
+                            <Field
+                              type="text"
+                              inputMode="url"
+                              id="tautulliUrlBase"
+                              name="tautulliUrlBase"
+                              autoComplete="off"
+                              data-form-type="other"
+                              data-1pignore="true"
+                              data-lpignore="true"
+                              data-bwignore="true"
+                            />
+                          </div>
+                          {errors.tautulliUrlBase &&
+                            touched.tautulliUrlBase &&
+                            typeof errors.tautulliUrlBase === 'string' && (
+                              <div className="error">
+                                {errors.tautulliUrlBase}
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                      <div className="form-row">
+                        <label htmlFor="tautulliApiKey" className="text-label">
+                          {intl.formatMessage(messages.tautulliApiKey)}
+                          <span className="label-required">*</span>
+                        </label>
+                        <div className="form-input-area">
+                          <div className="form-input-field">
+                            <SensitiveInput
+                              as="field"
+                              id="tautulliApiKey"
+                              name="tautulliApiKey"
+                            />
+                          </div>
+                          {errors.tautulliApiKey &&
+                            touched.tautulliApiKey &&
+                            typeof errors.tautulliApiKey === 'string' && (
+                              <div className="error">
+                                {errors.tautulliApiKey}
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                      <div className="form-row">
+                        <label
+                          htmlFor="tautulliExternalUrl"
+                          className="text-label"
+                        >
+                          {intl.formatMessage(messages.externalUrl)}
+                        </label>
+                        <div className="form-input-area">
+                          <div className="form-input-field">
+                            <Field
+                              type="text"
+                              inputMode="url"
+                              id="tautulliExternalUrl"
+                              name="tautulliExternalUrl"
+                              autoComplete="off"
+                              data-form-type="other"
+                              data-1pignore="true"
+                              data-lpignore="true"
+                              data-bwignore="true"
+                            />
+                          </div>
+                          {errors.tautulliExternalUrl &&
+                            touched.tautulliExternalUrl && (
+                              <div className="error">
+                                {errors.tautulliExternalUrl}
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                      <div className="actions">
+                        <div className="flex justify-end">
+                          <span className="ml-3 inline-flex rounded-md shadow-sm">
+                            <Button
+                              buttonType="primary"
+                              type="submit"
+                              disabled={isSubmitting || !isValid}
+                            >
+                              <ArrowDownOnSquareIcon />
+                              <span>
+                                {isSubmitting
+                                  ? intl.formatMessage(globalMessages.saving)
+                                  : intl.formatMessage(globalMessages.save)}
+                              </span>
+                            </Button>
+                          </span>
+                        </div>
+                      </div>
+                    </form>
+                  );
+                }}
+              </Formik>
+            </>
+          )}
         </>
       )}
     </>

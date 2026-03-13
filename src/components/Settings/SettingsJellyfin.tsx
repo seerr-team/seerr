@@ -379,13 +379,13 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       <div className="mb-6">
         <h3 className="heading">
           {intl.formatMessage(
-            messages.jellyfinlibraries,
+            messages.jellyfinsettings,
             mediaServerFormatValues
           )}
         </h3>
         <p className="description">
           {intl.formatMessage(
-            messages.jellyfinlibrariesDescription,
+            messages.jellyfinsettingsDescription,
             mediaServerFormatValues
           )}
         </p>
@@ -397,21 +397,23 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
               {intl.formatMessage(messages.servers)}
             </label>
             <div className="form-input-area">
-              <select
-                id="serverSelector"
-                name="serverSelector"
-                value={selectedServerId}
-                onChange={(event) => setSelectedServerId(event.target.value)}
-              >
-                <option value="new">
-                  {intl.formatMessage(messages.addServer)}
-                </option>
-                {jellyfinServers?.map((server) => (
-                  <option key={server.id} value={server.id}>
-                    {server.name || server.ip}
+              <div className="form-input-field">
+                <select
+                  id="serverSelector"
+                  name="serverSelector"
+                  value={selectedServerId}
+                  onChange={(event) => setSelectedServerId(event.target.value)}
+                >
+                  <option value="new">
+                    {intl.formatMessage(messages.addServer)}
                   </option>
-                ))}
-              </select>
+                  {jellyfinServers?.map((server) => (
+                    <option key={server.id} value={server.id}>
+                      {server.name || server.ip}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
           {selectedServerId === 'new' && (
@@ -420,21 +422,23 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
                 {intl.formatMessage(messages.serverType)}
               </label>
               <div className="form-input-area">
-                <select
-                  id="serverType"
-                  name="serverType"
-                  value={newServerType}
-                  onChange={(event) =>
-                    setNewServerType(
-                      Number(event.target.value) as
-                        | MediaServerType.JELLYFIN
-                        | MediaServerType.EMBY
-                    )
-                  }
-                >
-                  <option value={MediaServerType.JELLYFIN}>Jellyfin</option>
-                  <option value={MediaServerType.EMBY}>Emby</option>
-                </select>
+                <div className="form-input-field">
+                  <select
+                    id="serverType"
+                    name="serverType"
+                    value={newServerType}
+                    onChange={(event) =>
+                      setNewServerType(
+                        Number(event.target.value) as
+                          | MediaServerType.JELLYFIN
+                          | MediaServerType.EMBY
+                      )
+                    }
+                  >
+                    <option value={MediaServerType.JELLYFIN}>Jellyfin</option>
+                    <option value={MediaServerType.EMBY}>Emby</option>
+                  </select>
+                </div>
               </div>
             </div>
           )}

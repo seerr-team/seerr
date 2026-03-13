@@ -2488,6 +2488,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/PlexSettings'
   /settings/plex/login:
+    get:
+      summary: Get Plex settings authentication status
+      description: |
+        Returns whether Plex has been authenticated for owner-managed Plex settings actions.
+
+        Requires the `ADMIN` permission.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: Plex settings authentication status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authenticated:
+                    type: boolean
+                  isOwner:
+                    type: boolean
     post:
       summary: Authenticate Plex for admin settings
       description: |

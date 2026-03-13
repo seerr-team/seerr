@@ -1,8 +1,8 @@
 import Alert from '@app/components/Common/Alert';
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
+import ButtonWithDropdown from '@app/components/Common/ButtonWithDropdown';
 import CachedImage from '@app/components/Common/CachedImage';
-import Dropdown from '@app/components/Common/Dropdown';
 import Header from '@app/components/Common/Header';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import Modal from '@app/components/Common/Modal';
@@ -19,7 +19,7 @@ import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import {
   getJellyfinLikeServers,
-  getMediaServerDisplayName,
+  getMediaServerSelectionLabel,
   getMediaServerTypeName,
   type PublicMediaServer,
 } from '@app/utils/mediaServers';
@@ -206,15 +206,18 @@ const UserList = () => {
     settings.currentSettings.mediaServers
       .filter((server) => server.mediaServerType === MediaServerType.PLEX)
       .forEach((server) => {
-      sources.push({
-        id: server.id,
-        kind: 'plex',
-        label: intl.formatMessage(messages.importfrommediaserver, {
-          mediaServerName: getMediaServerDisplayName(server),
-        }),
-        server,
+        sources.push({
+          id: server.id,
+          kind: 'plex',
+          label: intl.formatMessage(messages.importfrommediaserver, {
+            mediaServerName: getMediaServerSelectionLabel(
+              server,
+              settings.currentSettings
+            ),
+          }),
+          server,
+        });
       });
-    });
 
     getJellyfinLikeServers(settings.currentSettings).forEach((server) => {
       sources.push({
@@ -222,7 +225,10 @@ const UserList = () => {
         kind: 'jellyfin',
         server,
         label: intl.formatMessage(messages.importfrommediaserver, {
-          mediaServerName: getMediaServerDisplayName(server),
+          mediaServerName: getMediaServerSelectionLabel(
+            server,
+            settings.currentSettings
+          ),
         }),
       });
     });
@@ -582,21 +588,26 @@ const UserList = () => {
               <span>{intl.formatMessage(messages.createlocaluser)}</span>
             </Button>
             {importSources.length > 1 ? (
-              <Dropdown
+              <ButtonWithDropdown
                 className="flex-grow lg:mr-2"
                 buttonType="primary"
-                text={intl.formatMessage(messages.importusers)}
-                dropdownIcon={<InboxArrowDownIcon className="h-5 w-5" />}
+                onClick={() => setSelectedImportSource(importSources[0])}
+                text={
+                  <>
+                    <InboxArrowDownIcon />
+                    <span>{importSources[0].label}</span>
+                  </>
+                }
               >
-                {importSources.map((source) => (
-                  <Dropdown.Item
+                {importSources.slice(1).map((source) => (
+                  <ButtonWithDropdown.Item
                     key={source.id}
                     onClick={() => setSelectedImportSource(source)}
                   >
                     {source.label}
-                  </Dropdown.Item>
+                  </ButtonWithDropdown.Item>
                 ))}
-              </Dropdown>
+              </ButtonWithDropdown>
             ) : (
               <Button
                 className="flex-grow lg:mr-2"

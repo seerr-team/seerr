@@ -37,6 +37,21 @@ export const getMediaServerDisplayName = (
     : typeName;
 };
 
+export const getMediaServerSelectionLabel = (
+  server: Pick<PublicMediaServer, 'id' | 'mediaServerType' | 'name'>,
+  settings: Pick<PublicSettingsResponse, 'mediaServers'>
+): string => {
+  const sameTypeServerCount = settings.mediaServers.filter(
+    (candidate) => candidate.mediaServerType === server.mediaServerType
+  ).length;
+
+  if (sameTypeServerCount <= 1) {
+    return getMediaServerTypeName(server.mediaServerType) ?? 'Media Server';
+  }
+
+  return getMediaServerDisplayName(server);
+};
+
 export const getJellyfinLikeServers = (
   settings: Pick<PublicSettingsResponse, 'mediaServers'>
 ): PublicMediaServer[] =>

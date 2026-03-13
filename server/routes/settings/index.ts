@@ -153,6 +153,26 @@ settingsRoutes.get('/plex', (req, res) => {
   res.status(200).json(server ?? getSettings().plex);
 });
 
+settingsRoutes.get('/plex/login', async (req, res) => {
+  if (req.user?.id !== 1) {
+    return res.status(200).json({
+      authenticated: false,
+      isOwner: false,
+    });
+  }
+
+  const userRepository = getRepository(User);
+  const owner = await userRepository.findOne({
+    select: { id: true, plexToken: true },
+    where: { id: 1 },
+  });
+
+  return res.status(200).json({
+    authenticated: Boolean(owner?.plexToken),
+    isOwner: true,
+  });
+});
+
 settingsRoutes.post('/plex/login', async (req, res, next) => {
   const userRepository = getRepository(User);
   const body = req.body as { authToken?: string };
@@ -196,6 +216,13 @@ settingsRoutes.post('/plex/login', async (req, res, next) => {
 });
 
 settingsRoutes.post('/plex', async (req, res, next) => {
+  if (req.user?.id !== 1) {
+    return next({
+      status: 403,
+      message: 'Only the owner can configure Plex servers.',
+    });
+  }
+
   const userRepository = getRepository(User);
   const settings = getSettings();
   let plexServerId: string | undefined;
@@ -374,6 +401,12 @@ settingsRoutes.get('/plex/devices/servers', async (req, res, next) => {
 });
 
 settingsRoutes.get('/plex/library', async (req, res) => {
+  if (req.query.sync && req.user?.id !== 1) {
+    return res.status(403).json({
+      message: 'Only the owner can sync Plex libraries from settings.',
+    });
+  }
+
   const settings = getSettings();
   const server = getPlexServerFromRequest({
     serverId: req.query.serverId?.toString(),
@@ -425,6 +458,12 @@ settingsRoutes.get('/plex/sync', (_req, res) => {
 });
 
 settingsRoutes.post('/plex/sync', (req, res) => {
+  if (req.user?.id !== 1) {
+    return res.status(403).json({
+      message: 'Only the owner can run Plex scans from settings.',
+    });
+  }
+
   if (req.body.cancel) {
     plexFullScanner.cancel();
   } else if (req.body.start) {
