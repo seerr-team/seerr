@@ -1,9 +1,8 @@
 import type { AllSettings } from '@server/lib/settings';
-import type { LegacySettings } from './types';
 
-const migrateNetworkSettings = (settings: LegacySettings): AllSettings => {
+const migrateNetworkSettings = (settings: any): AllSettings => {
   if (settings.network) {
-    return settings as AllSettings;
+    return settings;
   }
   const newSettings = { ...settings };
   const legacyProxy = settings.main.proxy;
@@ -27,7 +26,7 @@ const migrateNetworkSettings = (settings: LegacySettings): AllSettings => {
   delete settings.main.trustProxy;
   delete settings.main.forceIpv4First;
   delete settings.main.proxy;
-  return newSettings as AllSettings;
+  return newSettings;
 };
 
 export default migrateNetworkSettings;

@@ -22,8 +22,8 @@ export const runMigrations = async (
     }
     await fs.writeFile(BACKUP_PATH, JSON.stringify(settings, undefined, ' '));
 
-    const migrations = (await fs.readdir(migrationsDir)).filter((file) =>
-      /^\d+.*\.(js|ts)$/.test(file)
+    const migrations = (await fs.readdir(migrationsDir)).filter(
+      (file) => file.endsWith('.js') || file.endsWith('.ts')
     );
 
     const settingsBefore = JSON.stringify(migrated);

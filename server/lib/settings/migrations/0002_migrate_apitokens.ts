@@ -4,11 +4,8 @@ import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import type { AllSettings } from '@server/lib/settings';
 import { getHostname } from '@server/utils/getHostname';
-import type { LegacySettings } from './types';
 
-const migrateApiTokens = async (
-  settings: LegacySettings
-): Promise<AllSettings> => {
+const migrateApiTokens = async (settings: any): Promise<AllSettings> => {
   const mediaServerType = settings.main.mediaServerType;
   if (
     !settings.jellyfin?.apiKey &&
@@ -18,7 +15,7 @@ const migrateApiTokens = async (
     const jellyfinSettings = settings.jellyfin;
 
     if (!jellyfinSettings) {
-      return settings as AllSettings;
+      return settings;
     }
 
     const userRepository = getRepository(User);
@@ -28,7 +25,7 @@ const migrateApiTokens = async (
       order: { id: 'ASC' },
     });
     if (!admin) {
-      return settings as AllSettings;
+      return settings;
     }
     const jellyfinClient = new JellyfinAPI(
       getHostname(jellyfinSettings),
@@ -45,7 +42,7 @@ const migrateApiTokens = async (
       );
     }
   }
-  return settings as AllSettings;
+  return settings;
 };
 
 export default migrateApiTokens;

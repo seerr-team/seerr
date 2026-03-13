@@ -1,12 +1,11 @@
 import type { AllSettings } from '@server/lib/settings';
-import type { LegacySettings } from './types';
 
-const migrateBlacklistToBlocklist = (settings: LegacySettings): AllSettings => {
+const migrateBlacklistToBlocklist = (settings: any): AllSettings => {
   if (
     Array.isArray(settings.migrations) &&
     settings.migrations.includes('0008_migrate_blacklist_to_blocklist')
   ) {
-    return settings as AllSettings;
+    return settings;
   }
 
   if (settings.main?.hideBlacklisted !== undefined) {
@@ -35,7 +34,7 @@ const migrateBlacklistToBlocklist = (settings: LegacySettings): AllSettings => {
   }
   settings.migrations.push('0008_migrate_blacklist_to_blocklist');
 
-  return settings as AllSettings;
+  return settings;
 };
 
 export default migrateBlacklistToBlocklist;

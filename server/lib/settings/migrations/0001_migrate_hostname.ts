@@ -1,7 +1,6 @@
 import type { AllSettings } from '@server/lib/settings';
-import type { LegacySettings } from './types';
 
-const migrateHostname = (settings: LegacySettings): AllSettings => {
+const migrateHostname = (settings: any): AllSettings => {
   if (settings.jellyfin?.hostname) {
     const { hostname } = settings.jellyfin;
     const protocolMatch = hostname.match(/^(https?):\/\//i);
@@ -22,7 +21,7 @@ const migrateHostname = (settings: LegacySettings): AllSettings => {
     }
   }
 
-  return settings as AllSettings;
+  return settings;
 };
 
 export default migrateHostname;

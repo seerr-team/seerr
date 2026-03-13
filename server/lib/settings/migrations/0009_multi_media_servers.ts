@@ -9,16 +9,15 @@ import type {
   PlexSettings,
 } from '@server/lib/settings';
 import { randomUUID } from 'crypto';
-import type { LegacySettings } from './types';
 
-const hasLegacyPlexConfig = (settings: LegacySettings): boolean =>
+const hasLegacyPlexConfig = (settings: any): boolean =>
   Boolean(
     settings.plex?.ip ||
     settings.plex?.machineId ||
     settings.plex?.libraries?.length
   );
 
-const hasLegacyJellyfinConfig = (settings: LegacySettings): boolean =>
+const hasLegacyJellyfinConfig = (settings: any): boolean =>
   Boolean(
     settings.jellyfin?.ip ||
     settings.jellyfin?.serverId ||
@@ -63,7 +62,7 @@ const normalizeJellyfinServer = (
   apiKey: server.apiKey ?? '',
 });
 
-const getPrimaryMediaServerType = (settings: LegacySettings): MediaServerType => {
+const getPrimaryMediaServerType = (settings: any): MediaServerType => {
   const configuredMediaServerType = settings.main.mediaServerType as
     | MediaServerType.PLEX
     | MediaServerType.JELLYFIN
@@ -72,9 +71,11 @@ const getPrimaryMediaServerType = (settings: LegacySettings): MediaServerType =>
   const mediaServerTypes = [
     ...new Set(
       [
-        ...(settings.plexServers ?? []).map((server) => server.mediaServerType),
+        ...(settings.plexServers ?? []).map(
+          (server: any) => server.mediaServerType
+        ),
         ...(settings.jellyfinServers ?? []).map(
-          (server) => server.mediaServerType
+          (server: any) => server.mediaServerType
         ),
       ].filter(
         (
@@ -101,7 +102,7 @@ const getPrimaryMediaServerType = (settings: LegacySettings): MediaServerType =>
   return MediaServerType.NOT_CONFIGURED;
 };
 
-const syncLegacyPrimaryServers = (settings: LegacySettings): void => {
+const syncLegacyPrimaryServers = (settings: any): void => {
   if (settings.plexServers?.length === 1 && hasLegacyPlexConfig(settings)) {
     const primaryPlexServer = settings.plexServers[0];
     settings.plexServers[0] = normalizePlexServer({
@@ -132,9 +133,7 @@ const syncLegacyPrimaryServers = (settings: LegacySettings): void => {
   }
 };
 
-const backfillLegacyJellyfinUsers = async (
-  settings: LegacySettings
-): Promise<void> => {
+const backfillLegacyJellyfinUsers = async (settings: any): Promise<void> => {
   if (
     settings.jellyfinServers?.length !== 1 ||
     !settings.jellyfinServers[0].id
@@ -158,9 +157,7 @@ const backfillLegacyJellyfinUsers = async (
   }
 };
 
-const migrateMultiMediaServers = async (
-  settings: LegacySettings
-): Promise<AllSettings> => {
+const migrateMultiMediaServers = async (settings: any): Promise<AllSettings> => {
   if (!Array.isArray(settings.plexServers)) {
     settings.plexServers = [];
   }
@@ -169,11 +166,11 @@ const migrateMultiMediaServers = async (
     settings.jellyfinServers = [];
   }
 
-  settings.plexServers = settings.plexServers.map((server) =>
+  settings.plexServers = settings.plexServers.map((server: any) =>
     normalizePlexServer(server)
   );
 
-  settings.jellyfinServers = settings.jellyfinServers.map((server) =>
+  settings.jellyfinServers = settings.jellyfinServers.map((server: any) =>
     normalizeJellyfinServer(
       server,
       settings.main?.mediaServerType === MediaServerType.EMBY
@@ -209,7 +206,7 @@ const migrateMultiMediaServers = async (
 
   settings.main.mediaServerType = getPrimaryMediaServerType(settings);
 
-  return settings as AllSettings;
+  return settings;
 };
 
 export default migrateMultiMediaServers;

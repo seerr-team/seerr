@@ -3,7 +3,6 @@ import SonarrAPI from '@server/api/servarr/sonarr';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import type { AllSettings } from '@server/lib/settings';
-import type { LegacySettings } from './types';
 
 const writeMigrationWarning = (message: string): void => {
   process.stderr.write(`${message}\n`);
@@ -35,14 +34,12 @@ const buildArrUrl = (settings: {
   }${normalizedBaseUrl}/api/v3`;
 };
 
-const migrationArrTags = async (
-  settings: LegacySettings
-): Promise<AllSettings> => {
+const migrationArrTags = async (settings: any): Promise<AllSettings> => {
   if (
     Array.isArray(settings.migrations) &&
     settings.migrations.includes('0007_migrate_arr_tags')
   ) {
-    return settings as AllSettings;
+    return settings;
   }
 
   const userRepository = getRepository(User);
@@ -160,7 +157,7 @@ const migrationArrTags = async (
     }
     settings.migrations.push('0007_migrate_arr_tags');
   }
-  return settings as AllSettings;
+  return settings;
 };
 
 export default migrationArrTags;
