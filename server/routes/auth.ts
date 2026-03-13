@@ -288,7 +288,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     resolvedServerType === MediaServerType.JELLYFIN ||
     resolvedServerType === MediaServerType.EMBY
       ? resolvedServerType
-      : configuredServer?.mediaServerType;
+      : undefined;
   const loginJellyfinMediaServerType =
     jellyfinMediaServerType ?? MediaServerType.JELLYFIN;
 
@@ -774,26 +774,31 @@ authRoutes.post('/logout', async (req, res, next) => {
           );
 
           if (!jellyfinServer) {
-            throw new Error('Unable to resolve Jellyfin server for user.');
-          }
-
-          const baseUrl = getHostname(jellyfinServer);
-          try {
-            await axios.delete(`${baseUrl}/Devices`, {
-              params: { Id: user.jellyfinDeviceId },
-              headers: {
-                'X-Emby-Authorization': `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="seerr", Version="${getAppVersion()}", Token="${
-                  jellyfinServer.apiKey
-                }"`,
-              },
-            });
-          } catch (error) {
-            logger.error('Failed to delete Jellyfin device', {
+            logger.debug('Skipping Jellyfin device deletion without server', {
               label: 'Auth',
-              error: error instanceof Error ? error.message : 'Unknown error',
               userId: user.id,
               jellyfinUserId: user.jellyfinUserId,
+              jellyfinServerId: user.jellyfinServerId,
             });
+          } else {
+            const baseUrl = getHostname(jellyfinServer);
+            try {
+              await axios.delete(`${baseUrl}/Devices`, {
+                params: { Id: user.jellyfinDeviceId },
+                headers: {
+                  'X-Emby-Authorization': `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="seerr", Version="${getAppVersion()}", Token="${
+                    jellyfinServer.apiKey
+                  }"`,
+                },
+              });
+            } catch (error) {
+              logger.error('Failed to delete Jellyfin device', {
+                label: 'Auth',
+                error: error instanceof Error ? error.message : 'Unknown error',
+                userId: user.id,
+                jellyfinUserId: user.jellyfinUserId,
+              });
+            }
           }
         } catch (error) {
           logger.error('Failed to delete Jellyfin device', {

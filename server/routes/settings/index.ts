@@ -632,6 +632,14 @@ settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
     return res.status(200).json([]);
   }
 
+  const serverIndex = settings.jellyfinServers.findIndex(
+    (jellyfinServer) => jellyfinServer.id === server.id
+  );
+
+  if (serverIndex === -1 || !settings.jellyfinServers[serverIndex]) {
+    return res.status(404).json({ error: 'Jellyfin server not found.' });
+  }
+
   if (req.query.sync) {
     const userRepository = getRepository(User);
     const admin = await userRepository.findOneOrFail({
@@ -679,20 +687,12 @@ settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
       };
     });
 
-    const serverIndex = settings.jellyfinServers.findIndex(
-      (jellyfinServer) => jellyfinServer.id === server.id
-    );
-
     settings.jellyfinServers[serverIndex].libraries = newLibraries;
   }
 
   const enabledLibraries = req.query.enable
     ? (req.query.enable as string).split(',')
     : [];
-
-  const serverIndex = settings.jellyfinServers.findIndex(
-    (jellyfinServer) => jellyfinServer.id === server.id
-  );
 
   settings.jellyfinServers[serverIndex].libraries = settings.jellyfinServers[
     serverIndex

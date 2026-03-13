@@ -28,7 +28,11 @@ import {
   type Results,
 } from '@server/models/Search';
 import { mapNetwork } from '@server/models/Tv';
-import { isCollection, isMovie, isPerson } from '@server/utils/typeHelpers';
+import {
+  isCollection,
+  isMovie,
+  isPerson,
+} from '@server/utils/typeHelpers';
 import { Router } from 'express';
 import { sortBy } from 'lodash';
 import { z } from 'zod';
@@ -706,16 +710,32 @@ discoverRoutes.get('/trending', async (req, res, next) => {
       }),
       all: async () => ({
         data: await tmdb.getAllTrending({ page, language, timeWindow }),
-        mapper: (result: TrendingResult, media?: Media): Results => {
+        mapper: (
+          result: TrendingResult,
+          media?: Media
+        ): Results | null => {
           if (isMovie(result)) {
             return mapMovieResult(result, media);
           } else if (isPerson(result)) {
             return mapPersonResult(result);
           } else if (isCollection(result)) {
             return mapCollectionResult(result);
-          } else {
+          } else if (result.media_type === 'tv') {
             return mapTvResult(result, media);
           }
+
+          const unsupportedResult = result as {
+            id?: number;
+            media_type?: string;
+          };
+
+          logger.warn('Received unsupported TMDB trending result type', {
+            label: 'API',
+            mediaType: unsupportedResult.media_type,
+            resultId: unsupportedResult.id,
+          });
+
+          return null;
         },
         type: null,
       }),
@@ -732,16 +752,18 @@ discoverRoutes.get('/trending', async (req, res, next) => {
       page: data.page,
       totalPages: data.total_pages,
       totalResults: data.total_results,
-      results: data.results.map((result) => {
-        // - If "type" is set (case: "movie" or "tv"), the mediaType must also match.
-        // - If "type" is not set (case: "all"), only filter by tmdbId.
-        const selectedMedia = media.find(
-          (med) =>
-            med.tmdbId === result.id && (type ? med.mediaType === type : true)
-        );
+      results: data.results
+        .map((result) => {
+          // - If "type" is set (case: "movie" or "tv"), the mediaType must also match.
+          // - If "type" is not set (case: "all"), only filter by tmdbId.
+          const selectedMedia = media.find(
+            (med) =>
+              med.tmdbId === result.id && (type ? med.mediaType === type : true)
+          );
 
-        return mapper(result, selectedMedia);
-      }),
+          return mapper(result, selectedMedia);
+        })
+        .filter((result): result is Results => result !== null),
     });
   } catch (e) {
     logger.debug('Something went wrong retrieving trending items', {

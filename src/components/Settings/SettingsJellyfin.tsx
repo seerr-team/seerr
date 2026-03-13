@@ -217,7 +217,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
         }
 
         return this.createError({
-          path: 'apiKey | username | password',
+          path: 'credentials',
           message: intl.formatMessage(messages.validationApiKeyOrCredentials),
         });
       },
@@ -445,146 +445,6 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
           )}
         </div>
       )}
-      <div className="section">
-        <Button
-          onClick={() => syncLibraries()}
-          disabled={isSyncing || selectedServerId === 'new'}
-        >
-          <svg
-            className={`${isSyncing ? 'animate-spin' : ''} mr-1 h-5 w-5`}
-            fill="currentColor"
-            viewBox="0 0 20 20"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fillRule="evenodd"
-              d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
-              clipRule="evenodd"
-            />
-          </svg>
-          {isSyncing
-            ? intl.formatMessage(messages.syncing)
-            : intl.formatMessage(messages.syncJellyfin)}
-        </Button>
-        <ul className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
-          {(data?.libraries ?? []).map((library) => (
-            <LibraryItem
-              name={library.name}
-              isEnabled={library.enabled}
-              key={`setting-library-${library.id}`}
-              onToggle={() => toggleLibrary(library.id)}
-            />
-          ))}
-        </ul>
-      </div>
-      <div className="mb-6 mt-10">
-        <h3 className="heading">
-          <FormattedMessage {...messages.manualscanJellyfin} />
-        </h3>
-        <p className="description">
-          {intl.formatMessage(
-            messages.manualscanDescriptionJellyfin,
-            mediaServerFormatValues
-          )}
-        </p>
-      </div>
-      <div className="section">
-        <div className="rounded-md bg-gray-800 p-4">
-          <div className="relative mb-6 h-8 w-full overflow-hidden rounded-full bg-gray-600">
-            {dataSync?.running && (
-              <div
-                className="h-8 bg-indigo-600 transition-all duration-200 ease-in-out"
-                style={{
-                  width: `${Math.round(
-                    (dataSync.progress / dataSync.total) * 100
-                  )}%`,
-                }}
-              />
-            )}
-            <div className="absolute inset-0 flex h-8 w-full items-center justify-center text-sm">
-              <span>
-                {dataSync?.running
-                  ? `${dataSync.progress} of ${dataSync.total}`
-                  : 'Not running'}
-              </span>
-            </div>
-          </div>
-          <div className="flex w-full flex-col sm:flex-row">
-            {dataSync?.running && (
-              <>
-                {dataSync.currentLibrary && (
-                  <div className="mb-2 mr-0 flex items-center sm:mb-0 sm:mr-2">
-                    <Badge>
-                      <FormattedMessage
-                        {...messages.currentlibrary}
-                        values={{ name: dataSync.currentLibrary.name }}
-                      />
-                    </Badge>
-                  </div>
-                )}
-                <div className="flex items-center">
-                  <Badge badgeType="warning">
-                    <FormattedMessage
-                      {...messages.librariesRemaining}
-                      values={{
-                        count: dataSync.currentLibrary
-                          ? dataSync.libraries.slice(
-                              dataSync.libraries.findIndex(
-                                (library) =>
-                                  library.id === dataSync.currentLibrary?.id
-                              ) + 1
-                            ).length
-                          : 0,
-                      }}
-                    />
-                  </Badge>
-                </div>
-              </>
-            )}
-            <div className="flex-1 text-right">
-              {!dataSync?.running && (
-                <Button buttonType="warning" onClick={() => startScan()}>
-                  <svg
-                    className="mr-1 h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                  <FormattedMessage {...messages.startscan} />
-                </Button>
-              )}
-
-              {dataSync?.running && (
-                <Button buttonType="danger" onClick={() => cancelScan()}>
-                  <svg
-                    className="mr-1 h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                  <FormattedMessage {...messages.cancelscan} />
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
       {isSetupSettings && (
         <div className="text-sm text-gray-500">
           <span className="mr-2">
@@ -802,11 +662,10 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
                   {errors.apiKey && touched.apiKey && (
                     <div className="error">{errors.apiKey}</div>
                   )}
-                  {'apiKey | username | password' in errors &&
-                    typeof errors['apiKey | username | password'] ===
-                      'string' && (
+                  {'credentials' in errors &&
+                    typeof errors.credentials === 'string' && (
                       <div className="error">
-                        {errors['apiKey | username | password'] as string}
+                        {errors.credentials}
                       </div>
                     )}
                 </div>
@@ -953,6 +812,160 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
           );
         }}
       </Formik>
+      <div className="mb-6 mt-10">
+        <h3 className="heading">
+          {intl.formatMessage(
+            messages.jellyfinlibraries,
+            mediaServerFormatValues
+          )}
+        </h3>
+        <p className="description">
+          {intl.formatMessage(
+            messages.jellyfinlibrariesDescription,
+            mediaServerFormatValues
+          )}
+        </p>
+      </div>
+      <div className="section">
+        <Button
+          onClick={() => syncLibraries()}
+          disabled={isSyncing || selectedServerId === 'new'}
+        >
+          <svg
+            className={`${isSyncing ? 'animate-spin' : ''} mr-1 h-5 w-5`}
+            fill="currentColor"
+            viewBox="0 0 20 20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              fillRule="evenodd"
+              d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+              clipRule="evenodd"
+            />
+          </svg>
+          {isSyncing
+            ? intl.formatMessage(messages.syncing)
+            : intl.formatMessage(messages.syncJellyfin)}
+        </Button>
+        <ul className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
+          {(data?.libraries ?? []).map((library) => (
+            <LibraryItem
+              name={library.name}
+              isEnabled={library.enabled}
+              key={`setting-library-${library.id}`}
+              onToggle={() => toggleLibrary(library.id)}
+            />
+          ))}
+        </ul>
+      </div>
+      <div className="mb-6 mt-10">
+        <h3 className="heading">
+          <FormattedMessage {...messages.manualscanJellyfin} />
+        </h3>
+        <p className="description">
+          {intl.formatMessage(
+            messages.manualscanDescriptionJellyfin,
+            mediaServerFormatValues
+          )}
+        </p>
+      </div>
+      <div className="section">
+        <div className="rounded-md bg-gray-800 p-4">
+          <div className="relative mb-6 h-8 w-full overflow-hidden rounded-full bg-gray-600">
+            {dataSync?.running && (
+              <div
+                className="h-8 bg-indigo-600 transition-all duration-200 ease-in-out"
+                style={{
+                  width: `${Math.round(
+                    (dataSync.progress / dataSync.total) * 100
+                  )}%`,
+                }}
+              />
+            )}
+            <div className="absolute inset-0 flex h-8 w-full items-center justify-center text-sm">
+              <span>
+                {dataSync?.running
+                  ? `${dataSync.progress} of ${dataSync.total}`
+                  : 'Not running'}
+              </span>
+            </div>
+          </div>
+          <div className="flex w-full flex-col sm:flex-row">
+            {dataSync?.running && (
+              <>
+                {dataSync.currentLibrary && (
+                  <div className="mb-2 mr-0 flex items-center sm:mb-0 sm:mr-2">
+                    <Badge>
+                      <FormattedMessage
+                        {...messages.currentlibrary}
+                        values={{ name: dataSync.currentLibrary.name }}
+                      />
+                    </Badge>
+                  </div>
+                )}
+                <div className="flex items-center">
+                  <Badge badgeType="warning">
+                    <FormattedMessage
+                      {...messages.librariesRemaining}
+                      values={{
+                        count: dataSync.currentLibrary
+                          ? dataSync.libraries.slice(
+                              dataSync.libraries.findIndex(
+                                (library) =>
+                                  library.id === dataSync.currentLibrary?.id
+                              ) + 1
+                            ).length
+                          : 0,
+                      }}
+                    />
+                  </Badge>
+                </div>
+              </>
+            )}
+            <div className="flex-1 text-right">
+              {!dataSync?.running && (
+                <Button buttonType="warning" onClick={() => startScan()}>
+                  <svg
+                    className="mr-1 h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  <FormattedMessage {...messages.startscan} />
+                </Button>
+              )}
+
+              {dataSync?.running && (
+                <Button buttonType="danger" onClick={() => cancelScan()}>
+                  <svg
+                    className="mr-1 h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                  <FormattedMessage {...messages.cancelscan} />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   );
 };

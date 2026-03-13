@@ -3,6 +3,10 @@ import { MediaServerType } from '@server/constants/server';
 import type { MediaLink } from '@server/entity/Media';
 import { useEffect, useState } from 'react';
 
+const isIOSDevice = () =>
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.userAgent.includes('Mac') && navigator.maxTouchPoints > 1);
+
 interface useDeepLinksProps {
   mediaUrl?: string;
   mediaUrl4k?: string;
@@ -25,10 +29,6 @@ const useDeepLinks = ({
   const [returnedMediaUrls, setReturnedMediaUrls] = useState(mediaUrls);
   const [returnedMediaUrls4k, setReturnedMediaUrls4k] = useState(mediaUrls4k);
   const settings = useSettings();
-
-  const isIOSDevice = () =>
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.userAgent.includes('Mac') && navigator.maxTouchPoints > 1);
 
   useEffect(() => {
     const getMappedMediaLinks = (

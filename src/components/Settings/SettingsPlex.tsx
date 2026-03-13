@@ -281,10 +281,6 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
   }, [hasInitializedServerSelection, plexServers, selectedServerId]);
 
   const syncLibraries = async (serverId = selectedServerId) => {
-    if (serverId === 'new') {
-      return;
-    }
-
     setIsSyncing(true);
 
     const params: { sync: boolean; enable?: string; serverId?: string } = {
