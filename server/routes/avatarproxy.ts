@@ -151,9 +151,19 @@ router.get('/:jellyfinUserId', async (req, res) => {
     const user = await getRepository(User).findOne({
       where: { jellyfinUserId: req.params.jellyfinUserId },
     });
-    const server =
-      getJellyfinServer(requestedServerId) ??
-      getJellyfinServer(user?.jellyfinServerId ?? undefined);
+    let server;
+
+    if (requestedServerId) {
+      server = getJellyfinServer(requestedServerId);
+
+      if (!server) {
+        return res
+          .status(404)
+          .json({ message: 'Jellyfin or Emby server not found.' });
+      }
+    } else {
+      server = getJellyfinServer(user?.jellyfinServerId ?? undefined);
+    }
 
     if (!req.params.jellyfinUserId.match(/^[a-f0-9]{32}$/)) {
       throw new Error(
