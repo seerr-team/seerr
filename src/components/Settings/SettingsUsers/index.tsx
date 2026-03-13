@@ -7,8 +7,8 @@ import QuotaSelector from '@app/components/QuotaSelector';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { getConfiguredMediaServerTypeLabel } from '@app/utils/mediaServers';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
+import { MediaServerType } from '@server/constants/server';
 import type { MainSettings } from '@server/lib/settings';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
@@ -28,13 +28,15 @@ const messages = defineMessages('components.Settings.SettingsUsers', {
   localLogin: 'Enable Local Sign-In',
   localLoginTip:
     'Allow users to sign in using their email address and password',
+  plexLogin: 'Enable Plex Sign-In',
+  plexLoginTip: 'Allow users to sign in using their Plex account',
   mediaServerLogin: 'Enable {mediaServerName} Sign-In',
   mediaServerLoginTip:
     'Allow users to sign in using their {mediaServerName} account',
   atLeastOneAuth: 'At least one authentication method must be selected.',
-  newPlexLogin: 'Enable New {mediaServerName} Sign-In',
-  newPlexLoginTip:
-    'Allow {mediaServerName} users to sign in without first being imported',
+  newUserLogin: 'Enable New User Sign-In',
+  newUserLoginTip:
+    'Allow users to sign in without first being imported',
   movieRequestLimitLabel: 'Global Movie Request Limit',
   tvRequestLimitLabel: 'Global Series Request Limit',
   defaultPermissions: 'Default Permissions',
@@ -50,23 +52,34 @@ const SettingsUsers = () => {
     mutate: revalidate,
   } = useSWR<MainSettings>('/api/v1/settings/main');
   const settings = useSettings();
+  const plexConfigured = settings.currentSettings.mediaServers.some(
+    (server) => server.mediaServerType === MediaServerType.PLEX
+  );
+  const jellyfinConfigured = settings.currentSettings.mediaServers.some(
+    (server) => server.mediaServerType === MediaServerType.JELLYFIN
+  );
+  const embyConfigured = settings.currentSettings.mediaServers.some(
+    (server) => server.mediaServerType === MediaServerType.EMBY
+  );
 
   const schema = yup
     .object()
     .shape({
       localLogin: yup.boolean(),
-      mediaServerLogin: yup.boolean(),
+      plexLogin: yup.boolean(),
+      jellyfinLogin: yup.boolean(),
+      embyLogin: yup.boolean(),
     })
     .test({
       name: 'atLeastOneAuth',
       test: function (values) {
-        const isValid = ['localLogin', 'mediaServerLogin'].some(
+        const isValid = ['localLogin', 'plexLogin', 'jellyfinLogin', 'embyLogin'].some(
           (field) => !!values[field]
         );
 
         if (isValid) return true;
         return this.createError({
-          path: 'localLogin | mediaServerLogin',
+          path: 'localLogin',
           message: intl.formatMessage(messages.atLeastOneAuth),
         });
       },
@@ -75,12 +88,6 @@ const SettingsUsers = () => {
   if (!data && !error) {
     return <LoadingSpinner />;
   }
-
-  const mediaServerFormatValues = {
-    mediaServerName: getConfiguredMediaServerTypeLabel(
-      settings.currentSettings
-    ),
-  };
 
   return (
     <>
@@ -100,8 +107,10 @@ const SettingsUsers = () => {
         <Formik
           initialValues={{
             localLogin: data?.localLogin,
-            mediaServerLogin: data?.mediaServerLogin,
-            newPlexLogin: data?.newPlexLogin,
+            plexLogin: data?.plexLogin ?? data?.mediaServerLogin,
+            jellyfinLogin: data?.jellyfinLogin ?? data?.mediaServerLogin,
+            embyLogin: data?.embyLogin ?? data?.mediaServerLogin,
+            newUserLogin: data?.newPlexLogin,
             movieQuotaLimit: data?.defaultQuotas.movie.quotaLimit ?? 0,
             movieQuotaDays: data?.defaultQuotas.movie.quotaDays ?? 7,
             tvQuotaLimit: data?.defaultQuotas.tv.quotaLimit ?? 0,
@@ -112,10 +121,15 @@ const SettingsUsers = () => {
           enableReinitialize
           onSubmit={async (values) => {
             try {
+              const mediaServerLogin =
+                values.plexLogin || values.jellyfinLogin || values.embyLogin;
               await axios.post('/api/v1/settings/main', {
                 localLogin: values.localLogin,
-                mediaServerLogin: values.mediaServerLogin,
-                newPlexLogin: values.newPlexLogin,
+                mediaServerLogin,
+                plexLogin: values.plexLogin,
+                jellyfinLogin: values.jellyfinLogin,
+                embyLogin: values.embyLogin,
+                newPlexLogin: values.newUserLogin,
                 defaultQuotas: {
                   movie: {
                     quotaLimit: values.movieQuotaLimit,
@@ -158,9 +172,9 @@ const SettingsUsers = () => {
                       <span className="label-tip">
                         {intl.formatMessage(messages.loginMethodsTip)}
                       </span>
-                      {'localLogin | mediaServerLogin' in errors && (
+                      {'localLogin' in errors && (
                         <span className="error">
-                          {errors['localLogin | mediaServerLogin'] as string}
+                          {errors.localLogin as string}
                         </span>
                       )}
                     </span>
@@ -169,56 +183,76 @@ const SettingsUsers = () => {
                       <LabeledCheckbox
                         id="localLogin"
                         label={intl.formatMessage(messages.localLogin)}
-                        description={intl.formatMessage(
-                          messages.localLoginTip,
-                          mediaServerFormatValues
-                        )}
+                        description={intl.formatMessage(messages.localLoginTip)}
                         onChange={() =>
                           setFieldValue('localLogin', !values.localLogin)
                         }
                       />
-                      <LabeledCheckbox
-                        id="mediaServerLogin"
-                        className="mt-4"
-                        label={intl.formatMessage(
-                          messages.mediaServerLogin,
-                          mediaServerFormatValues
-                        )}
-                        description={intl.formatMessage(
-                          messages.mediaServerLoginTip,
-                          mediaServerFormatValues
-                        )}
-                        onChange={() =>
-                          setFieldValue(
-                            'mediaServerLogin',
-                            !values.mediaServerLogin
-                          )
-                        }
-                      />
+                      {plexConfigured && (
+                        <LabeledCheckbox
+                          id="plexLogin"
+                          className="mt-4"
+                          label={intl.formatMessage(messages.plexLogin)}
+                          description={intl.formatMessage(messages.plexLoginTip)}
+                          onChange={() =>
+                            setFieldValue('plexLogin', !values.plexLogin)
+                          }
+                        />
+                      )}
+                      {jellyfinConfigured && (
+                        <LabeledCheckbox
+                          id="jellyfinLogin"
+                          className="mt-4"
+                          label={intl.formatMessage(messages.mediaServerLogin, {
+                            mediaServerName: 'Jellyfin',
+                          })}
+                          description={intl.formatMessage(
+                            messages.mediaServerLoginTip,
+                            {
+                              mediaServerName: 'Jellyfin',
+                            }
+                          )}
+                          onChange={() =>
+                            setFieldValue('jellyfinLogin', !values.jellyfinLogin)
+                          }
+                        />
+                      )}
+                      {embyConfigured && (
+                        <LabeledCheckbox
+                          id="embyLogin"
+                          className="mt-4"
+                          label={intl.formatMessage(messages.mediaServerLogin, {
+                            mediaServerName: 'Emby',
+                          })}
+                          description={intl.formatMessage(
+                            messages.mediaServerLoginTip,
+                            {
+                              mediaServerName: 'Emby',
+                            }
+                          )}
+                          onChange={() =>
+                            setFieldValue('embyLogin', !values.embyLogin)
+                          }
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <div className="form-row">
-                  <label htmlFor="newPlexLogin" className="checkbox-label">
-                    {intl.formatMessage(
-                      messages.newPlexLogin,
-                      mediaServerFormatValues
-                    )}
+                  <label htmlFor="newUserLogin" className="checkbox-label">
+                    {intl.formatMessage(messages.newUserLogin)}
                     <span className="label-tip">
-                      {intl.formatMessage(
-                        messages.newPlexLoginTip,
-                        mediaServerFormatValues
-                      )}
+                      {intl.formatMessage(messages.newUserLoginTip)}
                     </span>
                   </label>
                   <div className="form-input-area">
                     <Field
                       type="checkbox"
-                      id="newPlexLogin"
-                      name="newPlexLogin"
+                      id="newUserLogin"
+                      name="newUserLogin"
                       onChange={() => {
-                        setFieldValue('newPlexLogin', !values.newPlexLogin);
+                        setFieldValue('newUserLogin', !values.newUserLogin);
                       }}
                     />
                   </div>
