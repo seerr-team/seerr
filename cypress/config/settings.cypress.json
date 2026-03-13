@@ -22,6 +22,7 @@
     "blocklistedTagsLimit": 50,
     "trustProxy": false,
     "primaryMediaServer": 1,
+    "enabledAuthMethods": [1],
     "partialRequestsEnabled": true,
     "enableSpecialEpisodes": false,
     "locale": "en"

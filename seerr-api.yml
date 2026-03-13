@@ -245,6 +245,11 @@ components:
         primaryMediaServer:
           type: number
           example: 1
+        enabledAuthMethods:
+          type: array
+          items:
+            type: number
+          example: [1]
         newUserLogin:
           type: boolean
           example: true
