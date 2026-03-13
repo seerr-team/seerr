@@ -20,10 +20,10 @@ import type { PlexSettings, TautulliSettings } from '@server/lib/settings';
 import axios from 'axios';
 import { Field, Formik } from 'formik';
 import { orderBy } from 'lodash';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import * as Yup from 'yup';
 
 const messages = defineMessages('components.Settings', {
@@ -44,6 +44,7 @@ const messages = defineMessages('components.Settings', {
   toastPlexConnecting: 'Attempting to connect to Plex…',
   toastPlexConnectingSuccess: 'Plex connection established successfully!',
   toastPlexConnectingFailure: 'Failed to connect to Plex.',
+  toastPlexSyncFailure: 'Something went wrong while syncing Plex libraries.',
   settingUpPlexDescription:
     'To set up Plex, you can either enter the details manually or select a server retrieved from <RegisterPlexTVLink>plex.tv</RegisterPlexTVLink>. Press the button to the right of the dropdown to fetch the list of available servers.',
   hostname: 'Hostname or IP Address',
@@ -81,6 +82,8 @@ const messages = defineMessages('components.Settings', {
   toastTautulliSettingsSuccess: 'Tautulli settings saved successfully!',
   toastTautulliSettingsFailure:
     'Something went wrong while saving Tautulli settings.',
+  servers: 'Servers',
+  addServer: 'Add New Plex Server',
 });
 
 interface Library {
@@ -111,17 +114,31 @@ interface SettingsPlexProps {
   onComplete?: () => void;
 }
 
+type PlexServerInstance = PlexSettings & {
+  id: string;
+};
+
 const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isRefreshingPresets, setIsRefreshingPresets] = useState(false);
   const [availableServers, setAvailableServers] = useState<PlexDevice[] | null>(
     null
   );
+  const [selectedServerId, setSelectedServerId] = useState<string>('new');
+  const [hasInitializedServerSelection, setHasInitializedServerSelection] =
+    useState(false);
+  const { data: plexServers, mutate: revalidatePlexServers } = useSWR<
+    PlexServerInstance[]
+  >('/api/v1/settings/plex/servers');
   const {
     data,
     error,
     mutate: revalidate,
-  } = useSWR<PlexSettings>('/api/v1/settings/plex');
+  } = useSWR<PlexServerInstance>(
+    selectedServerId === 'new'
+      ? null
+      : `/api/v1/settings/plex?serverId=${selectedServerId}`
+  );
   const { data: dataTautulli, mutate: revalidateTautulli } =
     useSWR<TautulliSettings>('/api/v1/settings/tautulli');
   const { data: dataSync, mutate: revalidateSync } = useSWR<SyncStatus>(
@@ -231,22 +248,46 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
     return orderBy(finalPresets, ['status', 'ssl'], ['desc', 'desc']);
   }, [availableServers]);
 
-  const syncLibraries = async () => {
+  useEffect(() => {
+    if (
+      !hasInitializedServerSelection &&
+      selectedServerId === 'new' &&
+      plexServers?.[0]?.id
+    ) {
+      setSelectedServerId(plexServers[0].id);
+      setHasInitializedServerSelection(true);
+    }
+  }, [hasInitializedServerSelection, plexServers, selectedServerId]);
+
+  const syncLibraries = async (serverId = selectedServerId) => {
+    if (serverId === 'new') {
+      return;
+    }
+
     setIsSyncing(true);
 
-    const params: { sync: boolean; enable?: string } = {
+    const params: { sync: boolean; enable?: string; serverId?: string } = {
       sync: true,
+      ...(serverId !== 'new' ? { serverId } : {}),
     };
 
     if (activeLibraries.length > 0) {
       params.enable = activeLibraries.join(',');
     }
 
-    await axios.get('/api/v1/settings/plex/library', {
-      params,
-    });
-    setIsSyncing(false);
-    revalidate();
+    try {
+      await axios.get('/api/v1/settings/plex/library', {
+        params,
+      });
+    } catch (e) {
+      addToast(intl.formatMessage(messages.toastPlexSyncFailure), {
+        autoDismiss: true,
+        appearance: 'error',
+      });
+    } finally {
+      setIsSyncing(false);
+      revalidate();
+    }
   };
 
   const refreshPresetServers = async () => {
@@ -304,15 +345,21 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
   };
 
   const toggleLibrary = async (libraryId: string) => {
+    if (selectedServerId === 'new') {
+      return;
+    }
+
     setIsSyncing(true);
     if (activeLibraries.includes(libraryId)) {
-      const params: { enable?: string } = {};
+      const params: { enable?: string; serverId?: string } = {};
 
       if (activeLibraries.length > 1) {
         params.enable = activeLibraries
           .filter((id) => id !== libraryId)
           .join(',');
       }
+
+      params.serverId = selectedServerId;
 
       await axios.get('/api/v1/settings/plex/library', {
         params,
@@ -321,6 +368,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
       await axios.get('/api/v1/settings/plex/library', {
         params: {
           enable: [...activeLibraries, libraryId].join(','),
+          serverId: selectedServerId,
         },
       });
     }
@@ -332,9 +380,10 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
     revalidate();
   };
 
-  if ((!data || !dataTautulli) && !error) {
+  if ((!dataTautulli || (selectedServerId !== 'new' && !data)) && !error) {
     return <LoadingSpinner />;
   }
+
   return (
     <>
       <PageTitle
@@ -368,7 +417,32 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           </div>
         )}
       </div>
+      <div className="section mb-6">
+        <div className="form-row">
+          <label htmlFor="serverSelector" className="text-label">
+            {intl.formatMessage(messages.servers)}
+          </label>
+          <div className="form-input-area">
+            <select
+              id="serverSelector"
+              name="serverSelector"
+              value={selectedServerId}
+              onChange={(event) => setSelectedServerId(event.target.value)}
+            >
+              <option value="new">
+                {intl.formatMessage(messages.addServer)}
+              </option>
+              {plexServers?.map((server) => (
+                <option key={server.id} value={server.id}>
+                  {server.name || server.ip}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
       <Formik
+        key={selectedServerId}
         initialValues={{
           hostname: data?.ip,
           port: data?.port ?? 32400,
@@ -391,14 +465,22 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                 toastId = id;
               }
             );
-            await axios.post('/api/v1/settings/plex', {
-              ip: values.hostname,
-              port: Number(values.port),
-              useSsl: values.useSsl,
-              webAppUrl: values.webAppUrl,
-            } as PlexSettings);
+            const response = await axios.post<PlexServerInstance>(
+              '/api/v1/settings/plex',
+              {
+                id: selectedServerId !== 'new' ? selectedServerId : undefined,
+                ip: values.hostname,
+                port: Number(values.port),
+                useSsl: values.useSsl,
+                webAppUrl: values.webAppUrl,
+              } as PlexServerInstance
+            );
 
-            syncLibraries();
+            setSelectedServerId(response.data.id);
+            revalidatePlexServers();
+            mutate('/api/v1/settings/public');
+
+            syncLibraries(response.data.id);
 
             if (toastId) {
               removeToast(toastId);
@@ -634,7 +716,9 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
       <div className="section">
         <Button
           onClick={() => syncLibraries()}
-          disabled={isSyncing || !data?.ip || !data?.port}
+          disabled={
+            isSyncing || selectedServerId === 'new' || !data?.ip || !data?.port
+          }
         >
           <ArrowPathIcon
             className={isSyncing ? 'animate-spin' : ''}

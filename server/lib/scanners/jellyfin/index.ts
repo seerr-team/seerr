@@ -11,7 +11,6 @@ import type {
   TmdbKeyword,
   TmdbTvDetails,
 } from '@server/api/themoviedb/interfaces';
-import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import type {
@@ -20,7 +19,7 @@ import type {
   StatusBase,
 } from '@server/lib/scanners/baseScanner';
 import BaseScanner from '@server/lib/scanners/baseScanner';
-import type { Library } from '@server/lib/settings';
+import type { JellyfinServerSettings, Library } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { getHostname } from '@server/utils/getHostname';
 import { uniqWith } from 'lodash';
@@ -37,6 +36,7 @@ class JellyfinScanner
   private jfClient: JellyfinAPI;
   private libraries: Library[];
   private currentLibrary: Library;
+  private currentServer?: JellyfinServerSettings;
   private isRecentOnly = false;
   private processedAnidbSeason: Map<number, Map<number, number>>;
 
@@ -150,6 +150,7 @@ class JellyfinScanner
           is4k: false,
           mediaAddedAt,
           jellyfinMediaId: metadata.Id,
+          jellyfinServerId: this.currentServer?.id,
           imdbId,
           title: metadata.Name,
         });
@@ -160,6 +161,7 @@ class JellyfinScanner
           is4k: true,
           mediaAddedAt,
           jellyfinMediaId: metadata.Id,
+          jellyfinServerId: this.currentServer?.id,
           imdbId,
           title: metadata.Name,
         });
@@ -416,6 +418,7 @@ class JellyfinScanner
               ? new Date(metadata.DateCreated)
               : undefined,
             jellyfinMediaId: Id,
+            jellyfinServerId: this.currentServer?.id,
             title: tvShow.name,
           }
         );
@@ -449,11 +452,11 @@ class JellyfinScanner
 
   public async run(): Promise<void> {
     const settings = getSettings();
+    const jellyfinServers = settings.jellyfinServers.filter((server) =>
+      server.libraries.some((library) => library.enabled)
+    );
 
-    if (
-      settings.main.mediaServerType != MediaServerType.JELLYFIN &&
-      settings.main.mediaServerType != MediaServerType.EMBY
-    ) {
+    if (jellyfinServers.length === 0) {
       return;
     }
 
@@ -471,54 +474,66 @@ class JellyfinScanner
         return this.log('No admin configured. Jellyfin sync skipped.', 'warn');
       }
 
-      this.jfClient = new JellyfinAPI(
-        getHostname(),
-        settings.jellyfin.apiKey,
-        admin.jellyfinDeviceId
-      );
-
-      this.jfClient.setUserId(admin.jellyfinUserId ?? '');
-
-      this.libraries = settings.jellyfin.libraries.filter(
-        (library) => library.enabled
+      this.libraries = jellyfinServers.flatMap((server) =>
+        server.libraries.filter((library) => library.enabled)
       );
 
       await animeList.sync();
 
-      if (this.isRecentOnly) {
-        for (const library of this.libraries) {
-          this.currentLibrary = library;
-          // Reset AniDB season tracking per library
-          this.processedAnidbSeason = new Map();
-          this.log(
-            `Beginning to process recently added for library: ${library.name}`,
-            'info'
-          );
-          const libraryItems = await this.jfClient.getRecentlyAdded(library.id);
+      for (const server of jellyfinServers) {
+        this.currentServer = server;
+        this.jfClient = new JellyfinAPI(
+          getHostname(server),
+          server.apiKey,
+          admin.jellyfinDeviceId,
+          server.mediaServerType
+        );
 
-          // Bundle items up by rating keys
-          this.items = uniqWith(libraryItems, (mediaA, mediaB) => {
-            if (mediaA.SeriesId && mediaB.SeriesId) {
-              return mediaA.SeriesId === mediaB.SeriesId;
-            }
-
-            if (mediaA.SeasonId && mediaB.SeasonId) {
-              return mediaA.SeasonId === mediaB.SeasonId;
-            }
-
-            return mediaA.Id === mediaB.Id;
-          });
-
-          await this.loop(this.processItem.bind(this), { sessionId });
+        if (admin.jellyfinUserId) {
+          this.jfClient.setUserId(admin.jellyfinUserId);
         }
-      } else {
-        for (const library of this.libraries) {
-          this.currentLibrary = library;
-          // Reset AniDB season tracking per library
-          this.processedAnidbSeason = new Map();
-          this.log(`Beginning to process library: ${library.name}`, 'info');
-          this.items = await this.jfClient.getLibraryContents(library.id);
-          await this.loop(this.processItem.bind(this), { sessionId });
+
+        const serverLibraries = server.libraries.filter(
+          (library) => library.enabled
+        );
+
+        if (this.isRecentOnly) {
+          for (const library of serverLibraries) {
+            this.currentLibrary = library;
+            this.processedAnidbSeason = new Map();
+            this.log(
+              `Beginning to process recently added for library: ${library.name}`,
+              'info',
+              { serverId: server.id }
+            );
+            const libraryItems = await this.jfClient.getRecentlyAdded(
+              library.id
+            );
+
+            this.items = uniqWith(libraryItems, (mediaA, mediaB) => {
+              if (mediaA.SeriesId && mediaB.SeriesId) {
+                return mediaA.SeriesId === mediaB.SeriesId;
+              }
+
+              if (mediaA.SeasonId && mediaB.SeasonId) {
+                return mediaA.SeasonId === mediaB.SeasonId;
+              }
+
+              return mediaA.Id === mediaB.Id;
+            });
+
+            await this.loop(this.processItem.bind(this), { sessionId });
+          }
+        } else {
+          for (const library of serverLibraries) {
+            this.currentLibrary = library;
+            this.processedAnidbSeason = new Map();
+            this.log(`Beginning to process library: ${library.name}`, 'info', {
+              serverId: server.id,
+            });
+            this.items = await this.jfClient.getLibraryContents(library.id);
+            await this.loop(this.processItem.bind(this), { sessionId });
+          }
         }
       }
 

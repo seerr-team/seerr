@@ -3,9 +3,9 @@ import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import LibraryItem from '@app/components/Settings/LibraryItem';
-import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import { getMediaServerTypeName } from '@app/utils/mediaServers';
 import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import { ApiErrorCode } from '@server/constants/error';
@@ -13,10 +13,10 @@ import { MediaServerType } from '@server/constants/server';
 import type { JellyfinSettings } from '@server/lib/settings';
 import axios from 'axios';
 import { Field, Formik } from 'formik';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import * as Yup from 'yup';
 
 const messages = defineMessages('components.Settings', {
@@ -48,6 +48,15 @@ const messages = defineMessages('components.Settings', {
   jellyfinSyncFailedGenericError:
     'Something went wrong while syncing libraries',
   invalidurlerror: 'Unable to connect to {mediaServerName} server.',
+  invalidautherror:
+    'Unable to authenticate with {mediaServerName}. Check the API key or admin credentials.',
+  adminerror: 'You must use an admin account to sign in.',
+  adminUsername: 'Admin Username',
+  adminPassword: 'Admin Password',
+  adminCredentialsDescription:
+    'Optionally sign in with an admin account to generate an API key automatically.',
+  validationApiKeyOrCredentials:
+    'Provide an API key or an admin username and password.',
   syncing: 'Syncing',
   syncJellyfin: 'Sync Libraries',
   manualscanJellyfin: 'Manual Library Scan',
@@ -67,6 +76,9 @@ const messages = defineMessages('components.Settings', {
   tip: 'Tip',
   scanbackground:
     'Scanning will run in the background. You can continue the setup process in the meantime.',
+  servers: 'Servers',
+  addServer: 'Add New Server',
+  serverType: 'Server Type',
 });
 
 interface Library {
@@ -86,20 +98,47 @@ interface SyncStatus {
 interface SettingsJellyfinProps {
   isSetupSettings?: boolean;
   onComplete?: () => void;
+  setupServerType?: MediaServerType.JELLYFIN | MediaServerType.EMBY;
 }
+
+type JellyfinServerInstance = JellyfinSettings & {
+  id: string;
+  mediaServerType: MediaServerType.JELLYFIN | MediaServerType.EMBY;
+};
+
+type JellyfinServerPayload = Partial<JellyfinSettings> & {
+  id?: string;
+  mediaServerType: MediaServerType.JELLYFIN | MediaServerType.EMBY;
+  username?: string;
+  password?: string;
+};
 
 const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
   onComplete,
   isSetupSettings,
+  setupServerType,
 }) => {
   const [isSyncing, setIsSyncing] = useState(false);
+  const [selectedServerId, setSelectedServerId] = useState<string>('new');
+  const [hasInitializedServerSelection, setHasInitializedServerSelection] =
+    useState(false);
+  const [newServerType, setNewServerType] = useState<
+    MediaServerType.JELLYFIN | MediaServerType.EMBY
+  >(MediaServerType.JELLYFIN);
   const toasts = useToasts();
+  const { data: jellyfinServers, mutate: revalidateJellyfinServers } = useSWR<
+    JellyfinServerInstance[]
+  >('/api/v1/settings/jellyfin/servers');
 
   const {
     data,
     error,
     mutate: revalidate,
-  } = useSWR<JellyfinSettings>('/api/v1/settings/jellyfin');
+  } = useSWR<JellyfinServerInstance>(
+    selectedServerId === 'new'
+      ? null
+      : `/api/v1/settings/jellyfin?serverId=${selectedServerId}`
+  );
   const { data: dataSync, mutate: revalidateSync } = useSWR<SyncStatus>(
     '/api/v1/settings/jellyfin/sync',
     {
@@ -108,61 +147,121 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
   );
   const intl = useIntl();
   const { addToast } = useToasts();
-  const settings = useSettings();
-
-  const JellyfinSettingsSchema = Yup.object().shape({
-    hostname: Yup.string()
-      .nullable()
-      .required(intl.formatMessage(messages.validationHostnameRequired)),
-    port: Yup.number().when(['hostname'], {
-      is: (value: unknown) => !!value,
-      then: Yup.number()
-        .typeError(intl.formatMessage(messages.validationPortRequired))
+  const JellyfinSettingsSchema = Yup.object()
+    .shape({
+      hostname: Yup.string()
         .nullable()
-        .required(intl.formatMessage(messages.validationPortRequired)),
-      otherwise: Yup.number()
-        .typeError(intl.formatMessage(messages.validationPortRequired))
-        .nullable(),
-    }),
-    urlBase: Yup.string()
-      .test(
-        'leading-slash',
-        intl.formatMessage(messages.validationUrlBaseLeadingSlash),
-        (value) => !value || value.startsWith('/')
-      )
-      .test(
-        'trailing-slash',
-        intl.formatMessage(messages.validationUrlBaseTrailingSlash),
-        (value) => !value || !value.endsWith('/')
-      ),
-    jellyfinExternalUrl: Yup.string()
-      .nullable()
-      .test('valid-url', intl.formatMessage(messages.validationUrl), isValidURL)
-      .test(
-        'no-trailing-slash',
-        intl.formatMessage(messages.validationUrlTrailingSlash),
-        (value) => !value || !value.endsWith('/')
-      ),
-    jellyfinForgotPasswordUrl: Yup.string()
-      .nullable()
-      .test('valid-url', intl.formatMessage(messages.validationUrl), isValidURL)
-      .test(
-        'no-trailing-slash',
-        intl.formatMessage(messages.validationUrlTrailingSlash),
-        (value) => !value || !value.endsWith('/')
-      ),
-  });
+        .required(intl.formatMessage(messages.validationHostnameRequired)),
+      port: Yup.number().when(['hostname'], {
+        is: (value: unknown) => !!value,
+        then: Yup.number()
+          .typeError(intl.formatMessage(messages.validationPortRequired))
+          .nullable()
+          .required(intl.formatMessage(messages.validationPortRequired)),
+        otherwise: Yup.number()
+          .typeError(intl.formatMessage(messages.validationPortRequired))
+          .nullable(),
+      }),
+      urlBase: Yup.string()
+        .test(
+          'leading-slash',
+          intl.formatMessage(messages.validationUrlBaseLeadingSlash),
+          (value) => !value || value.startsWith('/')
+        )
+        .test(
+          'trailing-slash',
+          intl.formatMessage(messages.validationUrlBaseTrailingSlash),
+          (value) => !value || !value.endsWith('/')
+        ),
+      jellyfinExternalUrl: Yup.string()
+        .nullable()
+        .test(
+          'valid-url',
+          intl.formatMessage(messages.validationUrl),
+          isValidURL
+        )
+        .test(
+          'no-trailing-slash',
+          intl.formatMessage(messages.validationUrlTrailingSlash),
+          (value) => !value || !value.endsWith('/')
+        ),
+      jellyfinForgotPasswordUrl: Yup.string()
+        .nullable()
+        .test(
+          'valid-url',
+          intl.formatMessage(messages.validationUrl),
+          isValidURL
+        )
+        .test(
+          'no-trailing-slash',
+          intl.formatMessage(messages.validationUrlTrailingSlash),
+          (value) => !value || !value.endsWith('/')
+        ),
+      apiKey: Yup.string().nullable(),
+      username: Yup.string().nullable(),
+      password: Yup.string().nullable(),
+    })
+    .test({
+      name: 'api-key-or-credentials',
+      test: function (values) {
+        if (selectedServerId !== 'new') {
+          return true;
+        }
+
+        const hasApiKey = !!values.apiKey?.trim();
+        const hasUsername = !!values.username?.trim();
+        const hasPassword = !!values.password?.trim();
+
+        if (hasApiKey || (hasUsername && hasPassword)) {
+          return true;
+        }
+
+        return this.createError({
+          path: 'apiKey | username | password',
+          message: intl.formatMessage(messages.validationApiKeyOrCredentials),
+        });
+      },
+    });
 
   const activeLibraries =
     data?.libraries
       .filter((library) => library.enabled)
       .map((library) => library.id) ?? [];
 
+  useEffect(() => {
+    if (isSetupSettings && setupServerType) {
+      setNewServerType(setupServerType);
+    }
+  }, [isSetupSettings, setupServerType]);
+
+  useEffect(() => {
+    if (
+      !isSetupSettings &&
+      !hasInitializedServerSelection &&
+      selectedServerId === 'new' &&
+      jellyfinServers?.[0]
+    ) {
+      setSelectedServerId(jellyfinServers[0].id);
+      setNewServerType(jellyfinServers[0].mediaServerType);
+      setHasInitializedServerSelection(true);
+    }
+  }, [
+    hasInitializedServerSelection,
+    isSetupSettings,
+    jellyfinServers,
+    selectedServerId,
+  ]);
+
   const syncLibraries = async () => {
+    if (selectedServerId === 'new') {
+      return;
+    }
+
     setIsSyncing(true);
 
-    const params: { sync: boolean; enable?: string } = {
+    const params: { sync: boolean; enable?: string; serverId?: string } = {
       sync: true,
+      serverId: selectedServerId,
     };
 
     if (activeLibraries.length > 0) {
@@ -223,9 +322,15 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
   };
 
   const toggleLibrary = async (libraryId: string) => {
+    if (selectedServerId === 'new') {
+      return;
+    }
+
     setIsSyncing(true);
     if (activeLibraries.includes(libraryId)) {
-      const params: { enable?: string } = {};
+      const params: { enable?: string; serverId?: string } = {
+        serverId: selectedServerId,
+      };
 
       if (activeLibraries.length > 1) {
         params.enable = activeLibraries
@@ -240,6 +345,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       await axios.get('/api/v1/settings/jellyfin/library', {
         params: {
           enable: [...activeLibraries, libraryId].join(','),
+          serverId: selectedServerId,
         },
       });
     }
@@ -250,15 +356,20 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
     revalidate();
   };
 
-  if (!data && !error) {
+  if (selectedServerId !== 'new' && !data && !error) {
     return <LoadingSpinner />;
   }
 
+  const selectedServer =
+    jellyfinServers?.find((server) => server.id === selectedServerId) ?? data;
+  const activeServerType =
+    selectedServer?.mediaServerType ??
+    (isSetupSettings && setupServerType ? setupServerType : newServerType);
   const mediaServerFormatValues = {
     mediaServerName:
-      settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
+      activeServerType === MediaServerType.JELLYFIN
         ? 'Jellyfin'
-        : settings.currentSettings.mediaServerType === MediaServerType.EMBY
+        : activeServerType === MediaServerType.EMBY
           ? 'Emby'
           : undefined,
   };
@@ -279,8 +390,61 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
           )}
         </p>
       </div>
+      {!isSetupSettings && (
+        <div className="section mb-6">
+          <div className="form-row">
+            <label htmlFor="serverSelector" className="text-label">
+              {intl.formatMessage(messages.servers)}
+            </label>
+            <div className="form-input-area">
+              <select
+                id="serverSelector"
+                name="serverSelector"
+                value={selectedServerId}
+                onChange={(event) => setSelectedServerId(event.target.value)}
+              >
+                <option value="new">
+                  {intl.formatMessage(messages.addServer)}
+                </option>
+                {jellyfinServers?.map((server) => (
+                  <option key={server.id} value={server.id}>
+                    {server.name || server.ip}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {selectedServerId === 'new' && (
+            <div className="form-row">
+              <label htmlFor="serverType" className="text-label">
+                {intl.formatMessage(messages.serverType)}
+              </label>
+              <div className="form-input-area">
+                <select
+                  id="serverType"
+                  name="serverType"
+                  value={newServerType}
+                  onChange={(event) =>
+                    setNewServerType(
+                      Number(event.target.value) as
+                        | MediaServerType.JELLYFIN
+                        | MediaServerType.EMBY
+                    )
+                  }
+                >
+                  <option value={MediaServerType.JELLYFIN}>Jellyfin</option>
+                  <option value={MediaServerType.EMBY}>Emby</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       <div className="section">
-        <Button onClick={() => syncLibraries()} disabled={isSyncing}>
+        <Button
+          onClick={() => syncLibraries()}
+          disabled={isSyncing || selectedServerId === 'new'}
+        >
           <svg
             className={`${isSyncing ? 'animate-spin' : ''} mr-1 h-5 w-5`}
             fill="currentColor"
@@ -439,6 +603,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
         </p>
       </div>
       <Formik
+        key={selectedServerId}
         initialValues={{
           hostname: data?.ip,
           port: data?.port ?? 8096,
@@ -447,11 +612,14 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
           jellyfinExternalUrl: data?.externalHostname || '',
           jellyfinForgotPasswordUrl: data?.jellyfinForgotPasswordUrl || '',
           apiKey: data?.apiKey,
+          username: '',
+          password: '',
         }}
         validationSchema={JellyfinSettingsSchema}
         onSubmit={async (values) => {
           try {
-            await axios.post('/api/v1/settings/jellyfin', {
+            const payload: JellyfinServerPayload = {
+              id: selectedServerId !== 'new' ? selectedServerId : undefined,
               ip: values.hostname,
               port: Number(values.port),
               useSsl: values.useSsl,
@@ -459,7 +627,18 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
               externalHostname: values.jellyfinExternalUrl,
               jellyfinForgotPasswordUrl: values.jellyfinForgotPasswordUrl,
               apiKey: values.apiKey,
-            } as JellyfinSettings);
+              username: values.username,
+              password: values.password,
+              mediaServerType: activeServerType,
+            };
+            const response = await axios.post<JellyfinServerInstance>(
+              '/api/v1/settings/jellyfin',
+              payload
+            );
+
+            setSelectedServerId(response.data.id);
+            revalidateJellyfinServers();
+            mutate('/api/v1/settings/public');
 
             addToast(
               intl.formatMessage(
@@ -476,6 +655,31 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
               addToast(
                 intl.formatMessage(
                   messages.invalidurlerror,
+                  mediaServerFormatValues
+                ),
+                {
+                  autoDismiss: true,
+                  appearance: 'error',
+                }
+              );
+            } else if (
+              e?.response?.data?.message === ApiErrorCode.InvalidCredentials ||
+              e?.response?.data?.message === ApiErrorCode.InvalidAuthToken
+            ) {
+              addToast(
+                intl.formatMessage(
+                  messages.invalidautherror,
+                  mediaServerFormatValues
+                ),
+                {
+                  autoDismiss: true,
+                  appearance: 'error',
+                }
+              );
+            } else if (e?.response?.data?.message === ApiErrorCode.NotAdmin) {
+              addToast(
+                intl.formatMessage(
+                  messages.adminerror,
                   mediaServerFormatValues
                 ),
                 {
@@ -593,8 +797,66 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
                   {errors.apiKey && touched.apiKey && (
                     <div className="error">{errors.apiKey}</div>
                   )}
+                  {'apiKey | username | password' in errors &&
+                    typeof errors['apiKey | username | password'] ===
+                      'string' && (
+                      <div className="error">
+                        {errors['apiKey | username | password'] as string}
+                      </div>
+                    )}
                 </div>
               </div>
+              {selectedServerId === 'new' && (
+                <>
+                  <div className="form-row">
+                    <span className="text-label">
+                      {intl.formatMessage(messages.serverType)}
+                    </span>
+                    <div className="form-input-area">
+                      <div className="text-sm text-gray-400">
+                        {intl.formatMessage(
+                          messages.adminCredentialsDescription,
+                          {
+                            mediaServerName:
+                              getMediaServerTypeName(activeServerType),
+                          }
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <label htmlFor="username" className="text-label">
+                      {intl.formatMessage(messages.adminUsername)}
+                    </label>
+                    <div className="form-input-area">
+                      <div className="form-input-field">
+                        <Field
+                          type="text"
+                          inputMode="text"
+                          id="username"
+                          name="username"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <label htmlFor="password" className="text-label">
+                      {intl.formatMessage(messages.adminPassword)}
+                    </label>
+                    <div className="form-input-area">
+                      <div className="form-input-field">
+                        <SensitiveInput
+                          as="field"
+                          type="password"
+                          inputMode="text"
+                          id="password"
+                          name="password"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
               {!isSetupSettings && (
                 <>
                   <div className="form-row">

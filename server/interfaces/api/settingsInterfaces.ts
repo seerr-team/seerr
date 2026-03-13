@@ -26,6 +26,14 @@ export interface PublicSettingsResponse {
   jellyfinExternalHost?: string;
   jellyfinServerName?: string;
   jellyfinForgotPasswordUrl?: string;
+  mediaServers: {
+    id: string;
+    mediaServerType: number;
+    name: string;
+    externalHostname?: string;
+    jellyfinForgotPasswordUrl?: string;
+  }[];
+  mediaServerTypes: number[];
   initialized: boolean;
   applicationTitle: string;
   applicationUrl: string;

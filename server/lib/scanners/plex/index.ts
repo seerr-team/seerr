@@ -18,7 +18,7 @@ import type {
   StatusBase,
 } from '@server/lib/scanners/baseScanner';
 import BaseScanner from '@server/lib/scanners/baseScanner';
-import type { Library } from '@server/lib/settings';
+import type { Library, PlexServerSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { uniqWith } from 'lodash';
 
@@ -45,6 +45,7 @@ class PlexScanner
   private plexClient: PlexAPI;
   private libraries: Library[];
   private currentLibrary: Library;
+  private currentServer?: PlexServerSettings;
   private isRecentOnly = false;
 
   public constructor(isRecentOnly = false) {
@@ -76,72 +77,93 @@ class PlexScanner
         return this.log('No admin configured. Plex scan skipped.', 'warn');
       }
 
-      this.plexClient = new PlexAPI({ plexToken: admin.plexToken });
-
-      this.libraries = settings.plex.libraries.filter(
-        (library) => library.enabled
+      const plexServers = settings.plexServers.filter((server) =>
+        server.libraries.some((library) => library.enabled)
       );
 
-      const hasHama = await this.hasHamaAgent();
-      if (hasHama) {
-        await animeList.sync();
-      }
+      this.libraries = plexServers.flatMap((server) =>
+        server.libraries.filter((library) => library.enabled)
+      );
 
-      if (this.isRecentOnly) {
-        for (const library of this.libraries) {
-          this.currentLibrary = library;
-          this.log(
-            `Beginning to process recently added for library: ${library.name}`,
-            'info',
-            { lastScan: library.lastScan }
-          );
-          const libraryItems = await this.plexClient.getRecentlyAdded(
-            library.id,
-            library.lastScan
-              ? {
-                  // We remove 10 minutes from the last scan as a buffer
-                  addedAt: library.lastScan - 1000 * 60 * 10,
-                }
-              : undefined,
-            library.type
-          );
+      for (const server of plexServers) {
+        this.currentServer = server;
+        this.plexClient = new PlexAPI({
+          plexToken: admin.plexToken,
+          plexSettings: server,
+          plexServerId: server.id,
+        });
 
-          // Bundle items up by rating keys
-          this.items = uniqWith(libraryItems, (mediaA, mediaB) => {
-            if (mediaA.grandparentRatingKey && mediaB.grandparentRatingKey) {
-              return (
-                mediaA.grandparentRatingKey === mediaB.grandparentRatingKey
-              );
-            }
+        const serverLibraries = server.libraries.filter(
+          (library) => library.enabled
+        );
 
-            if (mediaA.parentRatingKey && mediaB.parentRatingKey) {
-              return mediaA.parentRatingKey === mediaB.parentRatingKey;
-            }
-
-            return mediaA.ratingKey === mediaB.ratingKey;
-          });
-
-          await this.loop(this.processItem.bind(this), { sessionId });
-
-          // After run completes, update last scan time
-          const newLibraries = settings.plex.libraries.map((lib) => {
-            if (lib.id === library.id) {
-              return {
-                ...lib,
-                lastScan: Date.now(),
-              };
-            }
-            return lib;
-          });
-
-          settings.plex.libraries = newLibraries;
-          await settings.save();
+        const hasHama = await this.hasHamaAgent(serverLibraries);
+        if (hasHama) {
+          await animeList.sync();
         }
-      } else {
-        for (const library of this.libraries) {
-          this.currentLibrary = library;
-          this.log(`Beginning to process library: ${library.name}`, 'info');
-          await this.paginateLibrary(library, { sessionId });
+
+        if (this.isRecentOnly) {
+          for (const library of serverLibraries) {
+            this.currentLibrary = library;
+            this.log(
+              `Beginning to process recently added for library: ${library.name}`,
+              'info',
+              { lastScan: library.lastScan, serverId: server.id }
+            );
+            const libraryItems = await this.plexClient.getRecentlyAdded(
+              library.id,
+              library.lastScan
+                ? {
+                    // We remove 10 minutes from the last scan as a buffer
+                    addedAt: library.lastScan - 1000 * 60 * 10,
+                  }
+                : undefined,
+              library.type
+            );
+
+            // Bundle items up by rating keys
+            this.items = uniqWith(libraryItems, (mediaA, mediaB) => {
+              if (mediaA.grandparentRatingKey && mediaB.grandparentRatingKey) {
+                return (
+                  mediaA.grandparentRatingKey === mediaB.grandparentRatingKey
+                );
+              }
+
+              if (mediaA.parentRatingKey && mediaB.parentRatingKey) {
+                return mediaA.parentRatingKey === mediaB.parentRatingKey;
+              }
+
+              return mediaA.ratingKey === mediaB.ratingKey;
+            });
+
+            await this.loop(this.processItem.bind(this), { sessionId });
+
+            const serverIndex = settings.plexServers.findIndex(
+              (plexServer) => plexServer.id === server.id
+            );
+
+            settings.plexServers[serverIndex].libraries = settings.plexServers[
+              serverIndex
+            ].libraries.map((lib) => {
+              if (lib.id === library.id) {
+                return {
+                  ...lib,
+                  lastScan: Date.now(),
+                };
+              }
+              return lib;
+            });
+
+            await settings.save();
+          }
+        } else {
+          for (const library of serverLibraries) {
+            this.currentLibrary = library;
+            this.log(`Beginning to process library: ${library.name}`, 'info', {
+              serverId: server.id,
+            });
+            await this.paginateLibrary(library, { sessionId });
+          }
         }
       }
       this.log(
@@ -235,6 +257,7 @@ class PlexScanner
       is4k: has4k && this.enable4kMovie,
       mediaAddedAt: new Date(plexitem.addedAt * 1000),
       ratingKey: plexitem.ratingKey,
+      plexServerId: this.currentServer?.id,
       title: plexitem.title,
     });
   }
@@ -251,6 +274,7 @@ class PlexScanner
       is4k: has4k && this.enable4kMovie,
       mediaAddedAt: new Date(plexitem.addedAt * 1000),
       ratingKey: plexitem.ratingKey,
+      plexServerId: this.currentServer?.id,
       title: plexitem.title,
     });
   }
@@ -375,6 +399,7 @@ class PlexScanner
         {
           mediaAddedAt: new Date(metadata.addedAt * 1000),
           ratingKey: ratingKey,
+          plexServerId: this.currentServer?.id,
           title: metadata.title,
         }
       );
@@ -594,9 +619,9 @@ class PlexScanner
   }
 
   // checks if any of this.libraries has Hama agent set in Plex
-  private async hasHamaAgent() {
+  private async hasHamaAgent(libraries: Library[]) {
     const plexLibraries = await this.plexClient.getLibraries();
-    return this.libraries.some((library) =>
+    return libraries.some((library) =>
       plexLibraries.some(
         (plexLibrary) =>
           plexLibrary.agent === HAMA_AGENT && library.id === plexLibrary.key

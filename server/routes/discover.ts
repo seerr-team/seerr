@@ -1,7 +1,13 @@
 import PlexTvAPI from '@server/api/plextv';
 import type { SortOptions } from '@server/api/themoviedb';
 import TheMovieDb from '@server/api/themoviedb';
-import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
+import type {
+  TmdbCollectionResult,
+  TmdbKeyword,
+  TmdbMovieResult,
+  TmdbPersonResult,
+  TmdbTvResult,
+} from '@server/api/themoviedb/interfaces';
 import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
@@ -19,6 +25,7 @@ import {
   mapMovieResult,
   mapPersonResult,
   mapTvResult,
+  type Results,
 } from '@server/models/Search';
 import { mapNetwork } from '@server/models/Tv';
 import { isCollection, isMovie, isPerson } from '@server/utils/typeHelpers';
@@ -84,6 +91,11 @@ export type FilterOptions = z.infer<typeof QueryFilterOptions>;
 const ApiQuerySchema = QueryFilterOptions.omit({
   certificationMode: true,
 });
+type TrendingResult =
+  | TmdbMovieResult
+  | TmdbTvResult
+  | TmdbPersonResult
+  | TmdbCollectionResult;
 
 discoverRoutes.get('/movies', async (req, res, next) => {
   const tmdb = createTmdbWithRegionLanguage(req.user);
@@ -682,17 +694,19 @@ discoverRoutes.get('/trending', async (req, res, next) => {
     const trendingFetchers = {
       movie: async () => ({
         data: await tmdb.getMovieTrending({ page, language, timeWindow }),
-        mapper: mapMovieResult,
+        mapper: (result: TrendingResult, media?: Media): Results =>
+          mapMovieResult(result as TmdbMovieResult, media),
         type: MediaType.MOVIE,
       }),
       tv: async () => ({
         data: await tmdb.getTvTrending({ page, language, timeWindow }),
-        mapper: mapTvResult,
+        mapper: (result: TrendingResult, media?: Media): Results =>
+          mapTvResult(result as TmdbTvResult, media),
         type: MediaType.TV,
       }),
       all: async () => ({
         data: await tmdb.getAllTrending({ page, language, timeWindow }),
-        mapper: (result: any, media?: Media) => {
+        mapper: (result: TrendingResult, media?: Media): Results => {
           if (isMovie(result)) {
             return mapMovieResult(result, media);
           } else if (isPerson(result)) {

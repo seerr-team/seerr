@@ -34,7 +34,9 @@ interface ProcessOptions {
   is4k?: boolean;
   mediaAddedAt?: Date;
   ratingKey?: string;
+  plexServerId?: string;
   jellyfinMediaId?: string;
+  jellyfinServerId?: string;
   imdbId?: string;
   serviceId?: number;
   externalServiceId?: number;
@@ -97,7 +99,9 @@ class BaseScanner<T> {
       is4k = false,
       mediaAddedAt,
       ratingKey,
+      plexServerId,
       jellyfinMediaId,
+      jellyfinServerId,
       imdbId,
       serviceId,
       externalServiceId,
@@ -140,12 +144,30 @@ class BaseScanner<T> {
         }
 
         if (
+          plexServerId &&
+          existing[is4k ? 'plexServerId4k' : 'plexServerId'] !== plexServerId
+        ) {
+          existing[is4k ? 'plexServerId4k' : 'plexServerId'] = plexServerId;
+          changedExisting = true;
+        }
+
+        if (
           jellyfinMediaId &&
           existing[is4k ? 'jellyfinMediaId4k' : 'jellyfinMediaId'] !==
             jellyfinMediaId
         ) {
           existing[is4k ? 'jellyfinMediaId4k' : 'jellyfinMediaId'] =
             jellyfinMediaId;
+          changedExisting = true;
+        }
+
+        if (
+          jellyfinServerId &&
+          existing[is4k ? 'jellyfinServerId4k' : 'jellyfinServerId'] !==
+            jellyfinServerId
+        ) {
+          existing[is4k ? 'jellyfinServerId4k' : 'jellyfinServerId'] =
+            jellyfinServerId;
           changedExisting = true;
         }
 
@@ -224,12 +246,18 @@ class BaseScanner<T> {
           newMedia.ratingKey = !is4k ? ratingKey : undefined;
           newMedia.ratingKey4k =
             is4k && this.enable4kMovie ? ratingKey : undefined;
+          newMedia.plexServerId = !is4k ? plexServerId : undefined;
+          newMedia.plexServerId4k =
+            is4k && this.enable4kMovie ? plexServerId : undefined;
         }
 
         if (jellyfinMediaId) {
           newMedia.jellyfinMediaId = !is4k ? jellyfinMediaId : undefined;
           newMedia.jellyfinMediaId4k =
             is4k && this.enable4kMovie ? jellyfinMediaId : undefined;
+          newMedia.jellyfinServerId = !is4k ? jellyfinServerId : undefined;
+          newMedia.jellyfinServerId4k =
+            is4k && this.enable4kMovie ? jellyfinServerId : undefined;
         }
 
         await mediaRepository.save(newMedia);
@@ -255,7 +283,9 @@ class BaseScanner<T> {
     {
       mediaAddedAt,
       ratingKey,
+      plexServerId,
       jellyfinMediaId,
+      jellyfinServerId,
       serviceId,
       externalServiceId,
       externalServiceSlug,
@@ -294,11 +324,28 @@ class BaseScanner<T> {
 
         if (
           media &&
+          season.episodes > 0 &&
+          media.plexServerId !== plexServerId
+        ) {
+          media.plexServerId = plexServerId;
+        }
+
+        if (
+          media &&
           season.episodes4k > 0 &&
           this.enable4kShow &&
           media.ratingKey4k !== ratingKey
         ) {
           media.ratingKey4k = ratingKey;
+        }
+
+        if (
+          media &&
+          season.episodes4k > 0 &&
+          this.enable4kShow &&
+          media.plexServerId4k !== plexServerId
+        ) {
+          media.plexServerId4k = plexServerId;
         }
 
         if (
@@ -311,11 +358,28 @@ class BaseScanner<T> {
 
         if (
           media &&
+          season.episodes > 0 &&
+          media.jellyfinServerId !== jellyfinServerId
+        ) {
+          media.jellyfinServerId = jellyfinServerId;
+        }
+
+        if (
+          media &&
           season.episodes4k > 0 &&
           this.enable4kShow &&
           media.jellyfinMediaId4k !== jellyfinMediaId
         ) {
           media.jellyfinMediaId4k = jellyfinMediaId;
+        }
+
+        if (
+          media &&
+          season.episodes4k > 0 &&
+          this.enable4kShow &&
+          media.jellyfinServerId4k !== jellyfinServerId
+        ) {
+          media.jellyfinServerId4k = jellyfinServerId;
         }
 
         if (existingSeason) {
@@ -530,6 +594,13 @@ class BaseScanner<T> {
           )
             ? ratingKey
             : undefined,
+          plexServerId: newSeasons.some(
+            (sn) =>
+              sn.status === MediaStatus.PARTIALLY_AVAILABLE ||
+              sn.status === MediaStatus.AVAILABLE
+          )
+            ? plexServerId
+            : undefined,
           ratingKey4k:
             this.enable4kShow &&
             newSeasons.some(
@@ -539,12 +610,28 @@ class BaseScanner<T> {
             )
               ? ratingKey
               : undefined,
+          plexServerId4k:
+            this.enable4kShow &&
+            newSeasons.some(
+              (sn) =>
+                sn.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
+                sn.status4k === MediaStatus.AVAILABLE
+            )
+              ? plexServerId
+              : undefined,
           jellyfinMediaId: newSeasons.some(
             (sn) =>
               sn.status === MediaStatus.PARTIALLY_AVAILABLE ||
               sn.status === MediaStatus.AVAILABLE
           )
             ? jellyfinMediaId
+            : undefined,
+          jellyfinServerId: newSeasons.some(
+            (sn) =>
+              sn.status === MediaStatus.PARTIALLY_AVAILABLE ||
+              sn.status === MediaStatus.AVAILABLE
+          )
+            ? jellyfinServerId
             : undefined,
           jellyfinMediaId4k:
             this.enable4kShow &&
@@ -554,6 +641,15 @@ class BaseScanner<T> {
                 sn.status4k === MediaStatus.AVAILABLE
             )
               ? jellyfinMediaId
+              : undefined,
+          jellyfinServerId4k:
+            this.enable4kShow &&
+            newSeasons.some(
+              (sn) =>
+                sn.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
+                sn.status4k === MediaStatus.AVAILABLE
+            )
+              ? jellyfinServerId
               : undefined,
           status: isAllStandardSeasonsAvailable
             ? MediaStatus.AVAILABLE

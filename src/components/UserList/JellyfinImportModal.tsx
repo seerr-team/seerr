@@ -4,6 +4,7 @@ import Modal from '@app/components/Common/Modal';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import { getMediaServerDisplayName } from '@app/utils/mediaServers';
 import { MediaServerType } from '@server/constants/server';
 import type { UserResultsResponse } from '@server/interfaces/api/userInterfaces';
 import axios from 'axios';
@@ -13,9 +14,12 @@ import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
 interface JellyfinImportProps {
+  serverId: string;
+  mediaServerType: MediaServerType.JELLYFIN | MediaServerType.EMBY;
+  serverName: string;
+  existingUserCount?: number;
   onCancel?: () => void;
   onComplete?: () => void;
-  children?: React.ReactNode;
 }
 
 const messages = defineMessages('components.UserList', {
@@ -31,15 +35,22 @@ const messages = defineMessages('components.UserList', {
 });
 
 const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
+  serverId,
+  mediaServerType,
+  serverName,
+  existingUserCount,
   onCancel,
   onComplete,
-  children,
 }) => {
   const intl = useIntl();
   const settings = useSettings();
   const { addToast } = useToasts();
   const [isImporting, setImporting] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const mediaServerName = getMediaServerDisplayName({
+    mediaServerType,
+    name: serverName,
+  });
   const { data, error } = useSWR<
     {
       id: string;
@@ -48,12 +59,12 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
       email: string;
       thumb: string;
     }[]
-  >(`/api/v1/settings/jellyfin/users`, {
+  >(`/api/v1/settings/jellyfin/users?serverId=${serverId}`, {
     revalidateOnMount: true,
   });
 
   const { data: existingUsers } = useSWR<UserResultsResponse>(
-    `/api/v1/user?take=${children}`
+    `/api/v1/user?take=${existingUserCount ?? 20}`
   );
 
   const importUsers = async () => {
@@ -62,7 +73,7 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
     try {
       const { data: createdUsers } = await axios.post(
         '/api/v1/user/import-from-jellyfin',
-        { jellyfinUserIds: selectedUsers }
+        { jellyfinUserIds: selectedUsers, serverId }
       );
 
       if (!createdUsers.length) {
@@ -73,10 +84,7 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
         intl.formatMessage(messages.importedfromJellyfin, {
           userCount: createdUsers.length,
           strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
-          mediaServerName:
-            settings.currentSettings.mediaServerType === MediaServerType.EMBY
-              ? 'Emby'
-              : 'Jellyfin',
+          mediaServerName,
         }),
         {
           autoDismiss: true,
@@ -90,10 +98,7 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
     } catch (e) {
       addToast(
         intl.formatMessage(messages.importfromJellyfinerror, {
-          mediaServerName:
-            settings.currentSettings.mediaServerType === MediaServerType.EMBY
-              ? 'Emby'
-              : 'Jellyfin',
+          mediaServerName,
         }),
         {
           autoDismiss: true,
@@ -130,10 +135,7 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
     <Modal
       loading={!data && !error}
       title={intl.formatMessage(messages.importfromJellyfin, {
-        mediaServerName:
-          settings.currentSettings.mediaServerType === MediaServerType.EMBY
-            ? 'Emby'
-            : 'Jellyfin',
+        mediaServerName,
       })}
       onOk={() => {
         importUsers();
@@ -149,11 +151,7 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
           {settings.currentSettings.newPlexLogin && (
             <Alert
               title={intl.formatMessage(messages.newJellyfinsigninenabled, {
-                mediaServerName:
-                  settings.currentSettings.mediaServerType ===
-                  MediaServerType.EMBY
-                    ? 'Emby'
-                    : 'Jellyfin',
+                mediaServerName,
                 strong: (msg: React.ReactNode) => (
                   <strong className="font-semibold text-white">{msg}</strong>
                 ),
@@ -205,7 +203,9 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
                         ?.filter(
                           (user) =>
                             !existingUsers?.results.some(
-                              (u) => u.jellyfinUserId === user.id
+                              (u) =>
+                                u.jellyfinUserId === user.id &&
+                                u.jellyfinServerId === serverId
                             )
                         )
                         .map((user) => (

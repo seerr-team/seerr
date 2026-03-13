@@ -92,13 +92,18 @@ interface PlexMetadataResponse {
 }
 
 class PlexAPI extends ExternalAPI {
+  private readonly plexSettings: PlexSettings;
+  private readonly plexServerId?: string;
+
   constructor({
     plexToken,
     plexSettings,
+    plexServerId,
     timeout,
   }: {
     plexToken?: string | null;
     plexSettings?: PlexSettings;
+    plexServerId?: string;
     timeout?: number;
   }) {
     const settings = getSettings();
@@ -121,6 +126,9 @@ class PlexAPI extends ExternalAPI {
         },
       }
     );
+
+    this.plexSettings = settingsPlex;
+    this.plexServerId = plexServerId;
   }
 
   public async getStatus(): Promise<PlexStatusResponse> {
@@ -133,8 +141,14 @@ class PlexAPI extends ExternalAPI {
     return response.MediaContainer.Directory;
   }
 
-  public async syncLibraries(): Promise<void> {
+  public async syncLibraries(serverId?: string): Promise<void> {
     const settings = getSettings();
+    const targetServerId = serverId ?? this.plexServerId;
+    const existingLibraries =
+      targetServerId !== undefined
+        ? (settings.plexServers.find((server) => server.id === targetServerId)
+            ?.libraries ?? [])
+        : settings.plex.libraries;
 
     try {
       const libraries = await this.getLibraries();
@@ -147,7 +161,7 @@ class PlexAPI extends ExternalAPI {
         // Remove libraries that do not have a metadata agent set (usually personal video libraries)
         .filter((library) => library.agent !== 'com.plexapp.agents.none')
         .map((library) => {
-          const existing = settings.plex.libraries.find(
+          const existing = existingLibraries.find(
             (l) => l.id === library.key && l.name === library.title
           );
 
@@ -160,14 +174,46 @@ class PlexAPI extends ExternalAPI {
           };
         });
 
-      settings.plex.libraries = newLibraries;
+      if (targetServerId !== undefined) {
+        const serverIndex = settings.plexServers.findIndex(
+          (server) => server.id === targetServerId
+        );
+
+        if (serverIndex >= 0) {
+          settings.plexServers[serverIndex] = {
+            ...settings.plexServers[serverIndex],
+            libraries: newLibraries,
+          };
+        }
+      } else {
+        settings.plex = {
+          ...this.plexSettings,
+          libraries: newLibraries,
+        };
+      }
     } catch (e) {
       logger.error('Failed to fetch Plex libraries', {
         label: 'Plex API',
         message: e.message,
       });
 
-      settings.plex.libraries = [];
+      if (targetServerId !== undefined) {
+        const serverIndex = settings.plexServers.findIndex(
+          (server) => server.id === targetServerId
+        );
+
+        if (serverIndex >= 0) {
+          settings.plexServers[serverIndex] = {
+            ...settings.plexServers[serverIndex],
+            libraries: [],
+          };
+        }
+      } else {
+        settings.plex = {
+          ...this.plexSettings,
+          libraries: [],
+        };
+      }
     }
 
     await settings.save();

@@ -1,6 +1,7 @@
 import type { AllSettings } from '@server/lib/settings';
+import type { LegacySettings } from './types';
 
-const removeLunaSeaSetting = (settings: any): AllSettings => {
+const removeLunaSeaSetting = (settings: LegacySettings): AllSettings => {
   if (
     settings.notifications &&
     settings.notifications.agents &&
@@ -8,7 +9,7 @@ const removeLunaSeaSetting = (settings: any): AllSettings => {
   ) {
     delete settings.notifications.agents.lunasea;
   }
-  return settings;
+  return settings as AllSettings;
 };
 
 export default removeLunaSeaSetting;

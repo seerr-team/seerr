@@ -28,8 +28,10 @@ import useSettings from '@app/hooks/useSettings';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { hasCountryFlag } from '@app/utils/countryFlags';
 import { sortCrewPriority } from '@app/utils/creditHelpers';
 import defineMessages from '@app/utils/defineMessages';
+import { getMediaServerDisplayName } from '@app/utils/mediaServers';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
 import {
   ArrowRightCircleIcon,
@@ -50,10 +52,8 @@ import {
 import { type RatingResponse } from '@server/api/ratings';
 import { IssueStatus } from '@server/constants/issue';
 import { MediaStatus, MediaType } from '@server/constants/media';
-import { MediaServerType } from '@server/constants/server';
 import type { MovieDetails as MovieDetailsType } from '@server/models/Movie';
 import axios from 'axios';
-import { countries } from 'country-flag-icons';
 import 'country-flag-icons/3x2/flags.css';
 import { uniqBy } from 'lodash';
 import Link from 'next/link';
@@ -166,11 +166,18 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     []
   );
 
-  const { mediaUrl: plexUrl, mediaUrl4k: plexUrl4k } = useDeepLinks({
+  const {
+    mediaUrl: plexUrl,
+    mediaUrl4k: plexUrl4k,
+    mediaUrls,
+    mediaUrls4k,
+  } = useDeepLinks({
     mediaUrl: data?.mediaInfo?.mediaUrl,
     mediaUrl4k: data?.mediaInfo?.mediaUrl4k,
     iOSPlexUrl: data?.mediaInfo?.iOSPlexUrl,
     iOSPlexUrl4k: data?.mediaInfo?.iOSPlexUrl4k,
+    mediaUrls: data?.mediaInfo?.mediaUrls,
+    mediaUrls4k: data?.mediaInfo?.mediaUrls4k,
   });
 
   if (!data && !error) {
@@ -183,31 +190,69 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
 
   const showAllStudios = data.productionCompanies.length <= minStudios + 1;
   const mediaLinks: PlayButtonLink[] = [];
+  const availableMediaLinks =
+    mediaUrls?.length && mediaUrls.length > 0
+      ? mediaUrls
+      : plexUrl && data?.mediaInfo?.mediaServerType
+        ? [
+            {
+              mediaServerId: '',
+              mediaServerType: data.mediaInfo.mediaServerType,
+              mediaServerName: '',
+              url: plexUrl,
+            },
+          ]
+        : [];
+  const availableMediaLinks4k =
+    mediaUrls4k?.length && mediaUrls4k.length > 0
+      ? mediaUrls4k
+      : plexUrl4k && data?.mediaInfo?.mediaServerType4k
+        ? [
+            {
+              mediaServerId: '',
+              mediaServerType: data.mediaInfo.mediaServerType4k,
+              mediaServerName: '',
+              url: plexUrl4k,
+            },
+          ]
+        : [];
 
   if (
-    plexUrl &&
     hasPermission([Permission.REQUEST, Permission.REQUEST_MOVIE], {
       type: 'or',
     })
   ) {
-    mediaLinks.push({
-      text: getAvailableMediaServerName(),
-      url: plexUrl,
-      svg: <PlayIcon />,
+    availableMediaLinks.forEach((mediaLink) => {
+      mediaLinks.push({
+        text: intl.formatMessage(messages.play, {
+          mediaServerName: getMediaServerDisplayName({
+            mediaServerType: mediaLink.mediaServerType,
+            name: mediaLink.mediaServerName,
+          }),
+        }),
+        url: mediaLink.url,
+        svg: <PlayIcon />,
+      });
     });
   }
 
   if (
     settings.currentSettings.movie4kEnabled &&
-    plexUrl4k &&
     hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_MOVIE], {
       type: 'or',
     })
   ) {
-    mediaLinks.push({
-      text: getAvailable4kMediaServerName(),
-      url: plexUrl4k,
-      svg: <PlayIcon />,
+    availableMediaLinks4k.forEach((mediaLink) => {
+      mediaLinks.push({
+        text: intl.formatMessage(messages.play4k, {
+          mediaServerName: getMediaServerDisplayName({
+            mediaServerType: mediaLink.mediaServerType,
+            name: mediaLink.mediaServerName,
+          }),
+        }),
+        url: mediaLink.url,
+        svg: <PlayIcon />,
+      });
     });
   }
 
@@ -298,30 +343,6 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     data?.watchProviders?.find(
       (provider) => provider.iso_3166_1 === streamingRegion
     )?.flatrate ?? [];
-
-  function getAvailableMediaServerName() {
-    if (settings.currentSettings.mediaServerType === MediaServerType.EMBY) {
-      return intl.formatMessage(messages.play, { mediaServerName: 'Emby' });
-    }
-
-    if (settings.currentSettings.mediaServerType === MediaServerType.PLEX) {
-      return intl.formatMessage(messages.play, { mediaServerName: 'Plex' });
-    }
-
-    return intl.formatMessage(messages.play, { mediaServerName: 'Jellyfin' });
-  }
-
-  function getAvailable4kMediaServerName() {
-    if (settings.currentSettings.mediaServerType === MediaServerType.EMBY) {
-      return intl.formatMessage(messages.play, { mediaServerName: 'Emby' });
-    }
-
-    if (settings.currentSettings.mediaServerType === MediaServerType.PLEX) {
-      return intl.formatMessage(messages.play4k, { mediaServerName: 'Plex' });
-    }
-
-    return intl.formatMessage(messages.play4k, { mediaServerName: 'Jellyfin' });
-  }
 
   const onClickWatchlistBtn = async (): Promise<void> => {
     setIsUpdating(true);
@@ -992,7 +1013,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                         className="flex items-center justify-end"
                         key={`prodcountry-${c.iso_3166_1}`}
                       >
-                        {countries.includes(c.iso_3166_1) && (
+                        {hasCountryFlag(c.iso_3166_1) && (
                           <span
                             className={`mr-1.5 text-xs leading-5 flag:${c.iso_3166_1}`}
                           />

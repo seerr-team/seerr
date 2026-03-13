@@ -363,30 +363,75 @@ userSettingsRoutes.delete<{ id: string }>(
   }
 );
 
-userSettingsRoutes.post<{ username: string; password: string }>(
-  '/linked-accounts/jellyfin',
-  isOwnProfile(),
-  async (req, res) => {
-    const settings = getSettings();
-    const userRepository = getRepository(User);
+userSettingsRoutes.post<
+  Record<string, never>,
+  unknown,
+  { username: string; password: string; serverId?: string }
+>('/linked-accounts/jellyfin', isOwnProfile(), async (req, res) => {
+  const settings = getSettings();
+  const userRepository = getRepository(User);
+  const selectedServer = req.body.serverId
+    ? settings.jellyfinServers.find((server) => server.id === req.body.serverId)
+    : settings.getPrimaryJellyfinLikeServer();
 
-    if (!req.user) {
-      return res.status(401).json({ code: ApiErrorCode.Unauthorized });
+  if (!req.user) {
+    return res.status(401).json({ code: ApiErrorCode.Unauthorized });
+  }
+  // Make sure jellyfin login is enabled
+  if (!selectedServer) {
+    return res.status(500).json({ message: 'Jellyfin/Emby login is disabled' });
+  }
+
+  // Do not allow linking of an already linked account
+  if (
+    await userRepository.exist({
+      where: {
+        jellyfinUsername: req.body.username,
+        jellyfinServerId: selectedServer.id,
+      },
+    })
+  ) {
+    return res.status(422).json({
+      message: 'The specified account is already linked to a Seerr user',
+    });
+  }
+
+  const hostname = getHostname(selectedServer);
+  const deviceId = Buffer.from(
+    req.user?.id === 1 ? 'BOT_seerr' : `BOT_seerr_${req.user.username ?? ''}`
+  ).toString('base64');
+
+  const jellyfinserver = new JellyfinAPI(
+    hostname,
+    undefined,
+    deviceId,
+    selectedServer.mediaServerType
+  );
+
+  const ip = req.ip;
+  let clientIp: string | undefined;
+  if (ip) {
+    if (net.isIPv4(ip)) {
+      clientIp = ip;
+    } else if (net.isIPv6(ip)) {
+      clientIp = ip.startsWith('::ffff:') ? ip.substring(7) : ip;
     }
-    // Make sure jellyfin login is enabled
-    if (
-      settings.main.mediaServerType !== MediaServerType.JELLYFIN &&
-      settings.main.mediaServerType !== MediaServerType.EMBY
-    ) {
-      return res
-        .status(500)
-        .json({ message: 'Jellyfin/Emby login is disabled' });
-    }
+  }
+
+  try {
+    const account = await jellyfinserver.login(
+      req.body.username,
+      req.body.password,
+      clientIp
+    );
 
     // Do not allow linking of an already linked account
     if (
       await userRepository.exist({
-        where: { jellyfinUsername: req.body.username },
+        where: {
+          jellyfinUserId: account.User.Id,
+          jellyfinServerId: selectedServer.id,
+        },
       })
     ) {
       return res.status(422).json({
@@ -394,72 +439,37 @@ userSettingsRoutes.post<{ username: string; password: string }>(
       });
     }
 
-    const hostname = getHostname();
-    const deviceId = Buffer.from(
-      req.user?.id === 1 ? 'BOT_seerr' : `BOT_seerr_${req.user.username ?? ''}`
-    ).toString('base64');
+    const user = req.user;
 
-    const jellyfinserver = new JellyfinAPI(hostname, undefined, deviceId);
+    // valid jellyfin user found, link to current user
+    user.userType =
+      selectedServer.mediaServerType === MediaServerType.EMBY
+        ? UserType.EMBY
+        : UserType.JELLYFIN;
+    user.jellyfinUserId = account.User.Id;
+    user.jellyfinServerId = selectedServer.id;
+    user.jellyfinUsername = account.User.Name;
+    user.jellyfinAuthToken = account.AccessToken;
+    user.jellyfinDeviceId = deviceId;
+    await userRepository.save(user);
 
-    const ip = req.ip;
-    let clientIp: string | undefined;
-    if (ip) {
-      if (net.isIPv4(ip)) {
-        clientIp = ip;
-      } else if (net.isIPv6(ip)) {
-        clientIp = ip.startsWith('::ffff:') ? ip.substring(7) : ip;
-      }
+    return res.status(204).send();
+  } catch (e) {
+    logger.error('Failed to link account to user.', {
+      label: 'API',
+      ip: req.ip,
+      error: e,
+    });
+    if (
+      e instanceof ApiError &&
+      e.errorCode === ApiErrorCode.InvalidCredentials
+    ) {
+      return res.status(401).json({ code: e.errorCode });
     }
 
-    try {
-      const account = await jellyfinserver.login(
-        req.body.username,
-        req.body.password,
-        clientIp
-      );
-
-      // Do not allow linking of an already linked account
-      if (
-        await userRepository.exist({
-          where: { jellyfinUserId: account.User.Id },
-        })
-      ) {
-        return res.status(422).json({
-          message: 'The specified account is already linked to a Seerr user',
-        });
-      }
-
-      const user = req.user;
-
-      // valid jellyfin user found, link to current user
-      user.userType =
-        settings.main.mediaServerType === MediaServerType.EMBY
-          ? UserType.EMBY
-          : UserType.JELLYFIN;
-      user.jellyfinUserId = account.User.Id;
-      user.jellyfinUsername = account.User.Name;
-      user.jellyfinAuthToken = account.AccessToken;
-      user.jellyfinDeviceId = deviceId;
-      await userRepository.save(user);
-
-      return res.status(204).send();
-    } catch (e) {
-      logger.error('Failed to link account to user.', {
-        label: 'API',
-        ip: req.ip,
-        error: e,
-      });
-      if (
-        e instanceof ApiError &&
-        e.errorCode === ApiErrorCode.InvalidCredentials
-      ) {
-        return res.status(401).json({ code: e.errorCode });
-      }
-
-      return res.status(500).send();
-    }
+    return res.status(500).send();
   }
-);
+});
 
 userSettingsRoutes.delete<{ id: string }>(
   '/linked-accounts/jellyfin',
@@ -469,10 +479,7 @@ userSettingsRoutes.delete<{ id: string }>(
     const userRepository = getRepository(User);
 
     // Make sure jellyfin login is enabled
-    if (
-      settings.main.mediaServerType !== MediaServerType.JELLYFIN &&
-      settings.main.mediaServerType !== MediaServerType.EMBY
-    ) {
+    if (settings.jellyfinServers.length === 0) {
       return res
         .status(500)
         .json({ message: 'Jellyfin/Emby login is disabled' });
@@ -506,6 +513,7 @@ userSettingsRoutes.delete<{ id: string }>(
 
       user.userType = UserType.LOCAL;
       user.jellyfinUserId = null;
+      user.jellyfinServerId = null;
       user.jellyfinUsername = null;
       user.jellyfinAuthToken = null;
       user.jellyfinDeviceId = null;

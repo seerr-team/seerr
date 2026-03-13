@@ -1,10 +1,11 @@
 import type { AllSettings } from '@server/lib/settings';
+import type { LegacySettings } from './types';
 
-const migrateHostname = (settings: any): AllSettings => {
+const migrateHostname = (settings: LegacySettings): AllSettings => {
   if (settings.jellyfin?.hostname) {
     const { hostname } = settings.jellyfin;
     const protocolMatch = hostname.match(/^(https?):\/\//i);
-    const useSsl = protocolMatch && protocolMatch[1].toLowerCase() === 'https';
+    const useSsl = protocolMatch?.[1].toLowerCase() === 'https';
     const remainingUrl = hostname.replace(/^(https?):\/\//i, '');
     const urlMatch = remainingUrl.match(/^([^:]+)(:([0-9]+))?(\/.*)?$/);
 
@@ -14,14 +15,14 @@ const migrateHostname = (settings: any): AllSettings => {
       settings.jellyfin = {
         ...settings.jellyfin,
         ip,
-        port: port || (useSsl ? 443 : 80),
+        port: Number(port || (useSsl ? 443 : 80)),
         useSsl,
         urlBase: urlBase ? urlBase.replace(/\/$/, '') : '',
       };
     }
   }
 
-  return settings;
+  return settings as AllSettings;
 };
 
 export default migrateHostname;

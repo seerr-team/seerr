@@ -129,7 +129,8 @@ class JellyfinAPI extends ExternalAPI {
   constructor(
     jellyfinHost: string,
     authToken?: string | null,
-    deviceId?: string | null
+    deviceId?: string | null,
+    mediaServerType?: MediaServerType
   ) {
     const settings = getSettings();
     const safeDeviceId =
@@ -156,7 +157,7 @@ class JellyfinAPI extends ExternalAPI {
       }
     );
 
-    this.mediaServerType = settings.main.mediaServerType;
+    this.mediaServerType = mediaServerType ?? settings.main.mediaServerType;
   }
 
   public async login(
@@ -219,6 +220,17 @@ class JellyfinAPI extends ExternalAPI {
   public setUserId(userId: string): void {
     this.userId = userId;
     return;
+  }
+
+  private async getActiveUserId(): Promise<string> {
+    if (this.userId) {
+      return this.userId;
+    }
+
+    const currentUser = await this.getUser();
+    this.userId = currentUser.Id;
+
+    return currentUser.Id;
   }
 
   public async getSystemInfo(): Promise<any> {
@@ -354,14 +366,15 @@ class JellyfinAPI extends ExternalAPI {
 
   public async getRecentlyAdded(id: string): Promise<JellyfinLibraryItem[]> {
     try {
+      const userId = await this.getActiveUserId();
       const endpoint =
         this.mediaServerType === MediaServerType.JELLYFIN
           ? `/Items/Latest`
-          : `/Users/${this.userId}/Items/Latest`;
+          : `/Users/${userId}/Items/Latest`;
       const itemResponse = await this.get<any>(
         `${endpoint}?Limit=12&ParentId=${id}${
           this.mediaServerType === MediaServerType.JELLYFIN
-            ? `&userId=${this.userId ?? 'Me'}`
+            ? `&userId=${userId}`
             : ''
         }`
       );

@@ -1,4 +1,3 @@
-import { MediaServerType } from '@server/constants/server';
 import blocklistedTagsProcessor from '@server/job/blocklistedTagsProcessor';
 import availabilitySync from '@server/lib/availabilitySync';
 import downloadTracker from '@server/lib/downloadtracker';
@@ -32,9 +31,11 @@ export const scheduledJobs: ScheduledJob[] = [];
 
 export const startJobs = (): void => {
   const jobs = getSettings().jobs;
-  const mediaServerType = getSettings().main.mediaServerType;
+  const settings = getSettings();
+  const hasPlexServers = settings.plexServers.length > 0;
+  const hasJellyfinServers = settings.jellyfinServers.length > 0;
 
-  if (mediaServerType === MediaServerType.PLEX) {
+  if (hasPlexServers) {
     // Run recently added plex scan every 5 minutes
     scheduledJobs.push({
       id: 'plex-recently-added-scan',
@@ -100,10 +101,9 @@ export const startJobs = (): void => {
         watchlistSync.syncWatchlist();
       }),
     });
-  } else if (
-    mediaServerType === MediaServerType.JELLYFIN ||
-    mediaServerType === MediaServerType.EMBY
-  ) {
+  }
+
+  if (hasJellyfinServers) {
     // Run recently added jellyfin sync every 5 minutes
     scheduledJobs.push({
       id: 'jellyfin-recently-added-scan',

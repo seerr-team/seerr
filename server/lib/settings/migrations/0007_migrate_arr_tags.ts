@@ -3,13 +3,33 @@ import SonarrAPI from '@server/api/servarr/sonarr';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import type { AllSettings } from '@server/lib/settings';
+import type { LegacySettings } from './types';
 
-const migrationArrTags = async (settings: any): Promise<AllSettings> => {
+const writeMigrationWarning = (message: string): void => {
+  process.stderr.write(`${message}\n`);
+};
+
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
+const buildArrUrl = (settings: {
+  hostname: string;
+  port: number;
+  useSsl?: boolean;
+  baseUrl?: string;
+}): string =>
+  `${settings.useSsl ? 'https' : 'http'}://${settings.hostname}:${
+    settings.port
+  }${settings.baseUrl ?? ''}/api/v3`;
+
+const migrationArrTags = async (
+  settings: LegacySettings
+): Promise<AllSettings> => {
   if (
     Array.isArray(settings.migrations) &&
     settings.migrations.includes('0007_migrate_arr_tags')
   ) {
-    return settings;
+    return settings as AllSettings;
   }
 
   const userRepository = getRepository(User);
@@ -22,9 +42,18 @@ const migrationArrTags = async (settings: any): Promise<AllSettings> => {
       continue;
     }
     try {
+      if (!radarrSettings.apiKey || !radarrSettings.hostname) {
+        continue;
+      }
+
       const radarr = new RadarrAPI({
         apiKey: radarrSettings.apiKey,
-        url: RadarrAPI.buildUrl(radarrSettings, '/api/v3'),
+        url: buildArrUrl({
+          hostname: radarrSettings.hostname,
+          port: radarrSettings.port ?? 7878,
+          useSsl: radarrSettings.useSsl,
+          baseUrl: radarrSettings.baseUrl,
+        }),
       });
       const radarrTags = await radarr.getTags();
       for (const user of users) {
@@ -51,9 +80,10 @@ const migrationArrTags = async (settings: any): Promise<AllSettings> => {
         });
       }
     } catch (error) {
-      console.error(
-        `Unable to rename Radarr tags to the new format. Please check your Radarr connection settings for the instance "${radarrSettings.name}".`,
-        error.message
+      writeMigrationWarning(
+        `Unable to rename Radarr tags to the new format. Please check your Radarr connection settings for the instance "${radarrSettings.name}". ${getErrorMessage(
+          error
+        )}`
       );
       errorOccurred = true;
     }
@@ -64,9 +94,18 @@ const migrationArrTags = async (settings: any): Promise<AllSettings> => {
       continue;
     }
     try {
+      if (!sonarrSettings.apiKey || !sonarrSettings.hostname) {
+        continue;
+      }
+
       const sonarr = new SonarrAPI({
         apiKey: sonarrSettings.apiKey,
-        url: SonarrAPI.buildUrl(sonarrSettings, '/api/v3'),
+        url: buildArrUrl({
+          hostname: sonarrSettings.hostname,
+          port: sonarrSettings.port ?? 8989,
+          useSsl: sonarrSettings.useSsl,
+          baseUrl: sonarrSettings.baseUrl,
+        }),
       });
       const sonarrTags = await sonarr.getTags();
       for (const user of users) {
@@ -93,9 +132,10 @@ const migrationArrTags = async (settings: any): Promise<AllSettings> => {
         });
       }
     } catch (error) {
-      console.error(
-        `Unable to rename Sonarr tags to the new format. Please check your Sonarr connection settings for the instance "${sonarrSettings.name}".`,
-        error.message
+      writeMigrationWarning(
+        `Unable to rename Sonarr tags to the new format. Please check your Sonarr connection settings for the instance "${sonarrSettings.name}". ${getErrorMessage(
+          error
+        )}`
       );
       errorOccurred = true;
     }
@@ -107,7 +147,7 @@ const migrationArrTags = async (settings: any): Promise<AllSettings> => {
     }
     settings.migrations.push('0007_migrate_arr_tags');
   }
-  return settings;
+  return settings as AllSettings;
 };
 
 export default migrationArrTags;

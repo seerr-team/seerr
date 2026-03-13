@@ -3,6 +3,7 @@ import PlexAPI from '@server/api/plexapi';
 import PlexTvAPI from '@server/api/plextv';
 import TautulliAPI from '@server/api/tautulli';
 import { ApiErrorCode } from '@server/constants/error';
+import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
@@ -20,7 +21,13 @@ import ImageProxy from '@server/lib/imageproxy';
 import { Permission } from '@server/lib/permissions';
 import { jellyfinFullScanner } from '@server/lib/scanners/jellyfin';
 import { plexFullScanner } from '@server/lib/scanners/plex';
-import type { JobId, Library, MainSettings } from '@server/lib/settings';
+import type {
+  JellyfinServerSettings,
+  JobId,
+  Library,
+  MainSettings,
+  PlexServerSettings,
+} from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
@@ -36,6 +43,7 @@ import rateLimit from 'express-rate-limit';
 import fs from 'fs';
 import { escapeRegExp, merge, omit, set, sortBy } from 'lodash';
 import { rescheduleJob } from 'node-schedule';
+import { randomUUID } from 'node:crypto';
 import path from 'path';
 import semver from 'semver';
 import { URL } from 'url';
@@ -61,6 +69,34 @@ const filteredMainSettings = (
   }
 
   return main;
+};
+
+const getPlexServerFromRequest = ({
+  serverId,
+}: {
+  serverId?: string;
+} = {}): PlexServerSettings | undefined => {
+  const settings = getSettings();
+
+  if (serverId) {
+    return settings.plexServers.find((server) => server.id === serverId);
+  }
+
+  return settings.getPrimaryPlexServer();
+};
+
+const getJellyfinServerFromRequest = ({
+  serverId,
+}: {
+  serverId?: string;
+} = {}): JellyfinServerSettings | undefined => {
+  const settings = getSettings();
+
+  if (serverId) {
+    return settings.jellyfinServers.find((server) => server.id === serverId);
+  }
+
+  return settings.getPrimaryJellyfinLikeServer();
 };
 
 settingsRoutes.get('/main', (req, res, next) => {
@@ -109,24 +145,40 @@ settingsRoutes.post('/main/regenerate', async (req, res, next) => {
   return res.status(200).json(filteredMainSettings(req.user, main));
 });
 
-settingsRoutes.get('/plex', (_req, res) => {
-  const settings = getSettings();
+settingsRoutes.get('/plex', (req, res) => {
+  const server = getPlexServerFromRequest({
+    serverId: req.query.serverId?.toString(),
+  });
 
-  res.status(200).json(settings.plex);
+  res.status(200).json(server ?? getSettings().plex);
 });
 
 settingsRoutes.post('/plex', async (req, res, next) => {
   const userRepository = getRepository(User);
   const settings = getSettings();
+  let plexServerId: string | undefined;
   try {
+    const existingServer = getPlexServerFromRequest({ serverId: req.body.id });
     const admin = await userRepository.findOneOrFail({
       select: { id: true, plexToken: true },
       where: { id: 1 },
     });
 
-    Object.assign(settings.plex, req.body);
+    const plexServer: PlexServerSettings = {
+      ...(existingServer ?? {
+        id: req.body.id ?? randomUUID(),
+        mediaServerType: MediaServerType.PLEX,
+      }),
+      ...(existingServer ?? settings.plex),
+      ...req.body,
+      mediaServerType: MediaServerType.PLEX,
+    };
+    plexServerId = plexServer.id;
 
-    const plexClient = new PlexAPI({ plexToken: admin.plexToken });
+    const plexClient = new PlexAPI({
+      plexSettings: plexServer,
+      plexToken: admin.plexToken,
+    });
 
     const result = await plexClient.getStatus();
 
@@ -134,8 +186,18 @@ settingsRoutes.post('/plex', async (req, res, next) => {
       throw new Error('Server not found');
     }
 
-    settings.plex.machineId = result.MediaContainer.machineIdentifier;
-    settings.plex.name = result.MediaContainer.friendlyName;
+    plexServer.machineId = result.MediaContainer.machineIdentifier;
+    plexServer.name = result.MediaContainer.friendlyName;
+
+    const existingServerIndex = settings.plexServers.findIndex(
+      (server) => server.id === plexServer.id
+    );
+
+    if (existingServerIndex >= 0) {
+      settings.plexServers[existingServerIndex] = plexServer;
+    } else {
+      settings.plexServers = [...settings.plexServers, plexServer];
+    }
 
     await settings.save();
   } catch (e) {
@@ -149,7 +211,31 @@ settingsRoutes.post('/plex', async (req, res, next) => {
     });
   }
 
-  return res.status(200).json(settings.plex);
+  return res
+    .status(200)
+    .json(
+      getPlexServerFromRequest({ serverId: plexServerId }) ?? settings.plex
+    );
+});
+
+settingsRoutes.get('/plex/servers', (_req, res) => {
+  return res.status(200).json(getSettings().plexServers);
+});
+
+settingsRoutes.delete('/plex/servers/:serverId', async (req, res, next) => {
+  const settings = getSettings();
+  const serverIndex = settings.plexServers.findIndex(
+    (server) => server.id === req.params.serverId
+  );
+
+  if (serverIndex === -1) {
+    return next({ status: 404, message: 'Plex server not found.' });
+  }
+
+  const [removedServer] = settings.plexServers.splice(serverIndex, 1);
+  await settings.save();
+
+  return res.status(200).json(removedServer);
 });
 
 settingsRoutes.get('/plex/devices/servers', async (req, res, next) => {
@@ -231,6 +317,13 @@ settingsRoutes.get('/plex/devices/servers', async (req, res, next) => {
 
 settingsRoutes.get('/plex/library', async (req, res) => {
   const settings = getSettings();
+  const server = getPlexServerFromRequest({
+    serverId: req.query.serverId?.toString(),
+  });
+
+  if (!server) {
+    return res.status(200).json([]);
+  }
 
   if (req.query.sync) {
     const userRepository = getRepository(User);
@@ -238,20 +331,31 @@ settingsRoutes.get('/plex/library', async (req, res) => {
       select: { id: true, plexToken: true },
       where: { id: 1 },
     });
-    const plexapi = new PlexAPI({ plexToken: admin.plexToken });
+    const plexapi = new PlexAPI({
+      plexSettings: server,
+      plexToken: admin.plexToken,
+    });
 
-    await plexapi.syncLibraries();
+    await plexapi.syncLibraries(server.id);
   }
 
   const enabledLibraries = req.query.enable
     ? (req.query.enable as string).split(',')
     : [];
-  settings.plex.libraries = settings.plex.libraries.map((library) => ({
+
+  const serverIndex = settings.plexServers.findIndex(
+    (plexServer) => plexServer.id === server.id
+  );
+
+  settings.plexServers[serverIndex].libraries = settings.plexServers[
+    serverIndex
+  ].libraries.map((library) => ({
     ...library,
     enabled: enabledLibraries.includes(library.id),
   }));
+
   await settings.save();
-  return res.status(200).json(settings.plex.libraries);
+  return res.status(200).json(settings.plexServers[serverIndex].libraries);
 });
 
 settingsRoutes.get('/plex/sync', (_req, res) => {
@@ -267,29 +371,83 @@ settingsRoutes.post('/plex/sync', (req, res) => {
   return res.status(200).json(plexFullScanner.status());
 });
 
-settingsRoutes.get('/jellyfin', (_req, res) => {
-  const settings = getSettings();
+settingsRoutes.get('/jellyfin', (req, res) => {
+  const server = getJellyfinServerFromRequest({
+    serverId: req.query.serverId?.toString(),
+  });
 
-  res.status(200).json(settings.jellyfin);
+  res.status(200).json(server ?? getSettings().jellyfin);
 });
 
 settingsRoutes.post('/jellyfin', async (req, res, next) => {
   const userRepository = getRepository(User);
   const settings = getSettings();
+  let jellyfinServerId: string | undefined;
 
   try {
+    const existingServer = getJellyfinServerFromRequest({
+      serverId: req.body.id,
+    });
     const admin = await userRepository.findOneOrFail({
       where: { id: 1 },
       select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
       order: { id: 'ASC' },
     });
 
-    const tempJellyfinSettings = { ...settings.jellyfin, ...req.body };
+    const jellyfinServer: JellyfinServerSettings = {
+      ...(existingServer ?? {
+        id: req.body.id ?? randomUUID(),
+        mediaServerType:
+          req.body.mediaServerType ??
+          req.body.serverType ??
+          MediaServerType.JELLYFIN,
+      }),
+      ...(existingServer ?? settings.jellyfin),
+      ...req.body,
+      mediaServerType:
+        req.body.mediaServerType ??
+        req.body.serverType ??
+        existingServer?.mediaServerType ??
+        MediaServerType.JELLYFIN,
+    };
+    jellyfinServerId = jellyfinServer.id;
+    const jellyfinHostname = getHostname(jellyfinServer);
+    const jellyfinDeviceId =
+      admin.jellyfinDeviceId && admin.jellyfinDeviceId.length > 0
+        ? admin.jellyfinDeviceId
+        : Buffer.from('BOT_seerr').toString('base64');
+
+    if (!jellyfinServer.apiKey && req.body.username && req.body.password) {
+      const authClient = new JellyfinAPI(
+        jellyfinHostname,
+        undefined,
+        jellyfinDeviceId,
+        jellyfinServer.mediaServerType
+      );
+      const account = await authClient.login(
+        req.body.username,
+        req.body.password
+      );
+
+      if (!account.User.Policy.IsAdministrator) {
+        throw new ApiError(403, ApiErrorCode.NotAdmin);
+      }
+
+      const authenticatedClient = new JellyfinAPI(
+        jellyfinHostname,
+        account.AccessToken,
+        jellyfinDeviceId,
+        jellyfinServer.mediaServerType
+      );
+
+      jellyfinServer.apiKey = await authenticatedClient.createApiToken('Seerr');
+    }
 
     const jellyfinClient = new JellyfinAPI(
-      getHostname(tempJellyfinSettings),
-      tempJellyfinSettings.apiKey,
-      admin.jellyfinDeviceId ?? ''
+      jellyfinHostname,
+      jellyfinServer.apiKey,
+      jellyfinDeviceId,
+      jellyfinServer.mediaServerType
     );
 
     const result = await jellyfinClient.getSystemInfo();
@@ -298,21 +456,37 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
       throw new ApiError(result?.status, ApiErrorCode.InvalidUrl);
     }
 
-    Object.assign(settings.jellyfin, req.body);
-    settings.jellyfin.serverId = result.Id;
-    settings.jellyfin.name = result.ServerName;
+    jellyfinServer.serverId = result.Id;
+    jellyfinServer.name = result.ServerName;
+
+    const existingServerIndex = settings.jellyfinServers.findIndex(
+      (server) => server.id === jellyfinServer.id
+    );
+
+    if (existingServerIndex >= 0) {
+      settings.jellyfinServers[existingServerIndex] = jellyfinServer;
+    } else {
+      settings.jellyfinServers = [...settings.jellyfinServers, jellyfinServer];
+    }
+
     await settings.save();
   } catch (e) {
     if (e instanceof ApiError) {
       logger.error('Something went wrong testing Jellyfin connection', {
         label: 'API',
         status: e.statusCode,
-        errorMessage: ApiErrorCode.InvalidUrl,
+        errorMessage: e.errorCode,
       });
 
       return next({
         status: e.statusCode,
-        message: ApiErrorCode.InvalidUrl,
+        message:
+          e.errorCode === ApiErrorCode.InvalidUrl ||
+          e.errorCode === ApiErrorCode.InvalidCredentials ||
+          e.errorCode === ApiErrorCode.NotAdmin ||
+          e.errorCode === ApiErrorCode.InvalidAuthToken
+            ? e.errorCode
+            : ApiErrorCode.Unknown,
       });
     } else {
       logger.error('Something went wrong', {
@@ -327,11 +501,23 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
     }
   }
 
-  return res.status(200).json(settings.jellyfin);
+  return res
+    .status(200)
+    .json(
+      getJellyfinServerFromRequest({ serverId: jellyfinServerId }) ??
+        settings.jellyfin
+    );
 });
 
 settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
   const settings = getSettings();
+  const server = getJellyfinServerFromRequest({
+    serverId: req.query.serverId?.toString(),
+  });
+
+  if (!server) {
+    return res.status(200).json([]);
+  }
 
   if (req.query.sync) {
     const userRepository = getRepository(User);
@@ -341,9 +527,10 @@ settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
       order: { id: 'ASC' },
     });
     const jellyfinClient = new JellyfinAPI(
-      getHostname(),
-      settings.jellyfin.apiKey,
-      admin.jellyfinDeviceId ?? ''
+      getHostname(server),
+      server.apiKey,
+      admin.jellyfinDeviceId ?? '',
+      server.mediaServerType
     );
 
     jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
@@ -367,7 +554,7 @@ settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
     }
 
     const newLibraries: Library[] = libraries.map((library) => {
-      const existing = settings.jellyfin.libraries.find(
+      const existing = server.libraries.find(
         (l) => l.id === library.key && l.name === library.title
       );
 
@@ -379,22 +566,60 @@ settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
       };
     });
 
-    settings.jellyfin.libraries = newLibraries;
+    const serverIndex = settings.jellyfinServers.findIndex(
+      (jellyfinServer) => jellyfinServer.id === server.id
+    );
+
+    settings.jellyfinServers[serverIndex].libraries = newLibraries;
   }
 
   const enabledLibraries = req.query.enable
     ? (req.query.enable as string).split(',')
     : [];
-  settings.jellyfin.libraries = settings.jellyfin.libraries.map((library) => ({
+
+  const serverIndex = settings.jellyfinServers.findIndex(
+    (jellyfinServer) => jellyfinServer.id === server.id
+  );
+
+  settings.jellyfinServers[serverIndex].libraries = settings.jellyfinServers[
+    serverIndex
+  ].libraries.map((library) => ({
     ...library,
     enabled: enabledLibraries.includes(library.id),
   }));
+
   await settings.save();
-  return res.status(200).json(settings.jellyfin.libraries);
+  return res.status(200).json(settings.jellyfinServers[serverIndex].libraries);
+});
+
+settingsRoutes.get('/jellyfin/servers', (_req, res) => {
+  return res.status(200).json(getSettings().jellyfinServers);
+});
+
+settingsRoutes.delete('/jellyfin/servers/:serverId', async (req, res, next) => {
+  const settings = getSettings();
+  const serverIndex = settings.jellyfinServers.findIndex(
+    (server) => server.id === req.params.serverId
+  );
+
+  if (serverIndex === -1) {
+    return next({ status: 404, message: 'Jellyfin server not found.' });
+  }
+
+  const [removedServer] = settings.jellyfinServers.splice(serverIndex, 1);
+  await settings.save();
+
+  return res.status(200).json(removedServer);
 });
 
 settingsRoutes.get('/jellyfin/users', async (req, res) => {
-  const settings = getSettings();
+  const server = getJellyfinServerFromRequest({
+    serverId: req.query.serverId?.toString(),
+  });
+
+  if (!server) {
+    return res.status(200).json([]);
+  }
 
   const userRepository = getRepository(User);
   const admin = await userRepository.findOneOrFail({
@@ -403,9 +628,10 @@ settingsRoutes.get('/jellyfin/users', async (req, res) => {
     order: { id: 'ASC' },
   });
   const jellyfinClient = new JellyfinAPI(
-    getHostname(),
-    settings.jellyfin.apiKey,
-    admin.jellyfinDeviceId ?? ''
+    getHostname(server),
+    server.apiKey,
+    admin.jellyfinDeviceId ?? '',
+    server.mediaServerType
   );
 
   jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
@@ -413,7 +639,7 @@ settingsRoutes.get('/jellyfin/users', async (req, res) => {
   const users = resp.users.map((user) => ({
     username: user.Name,
     id: user.Id,
-    thumb: `/avatarproxy/${user.Id}`,
+    thumb: `/avatarproxy/${user.Id}?serverId=${server.id}`,
     email: user.Name,
   }));
 

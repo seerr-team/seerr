@@ -8,6 +8,7 @@ import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType, ServerType } from '@server/constants/server';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
+import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import * as Yup from 'yup';
@@ -27,6 +28,7 @@ const messages = defineMessages('components.Login', {
   signingin: 'Signing In…',
   signin: 'Sign In',
   forgotpassword: 'Forgot Password?',
+  server: 'Server',
 });
 
 interface JellyfinLoginProps {
@@ -41,12 +43,29 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
   const toasts = useToasts();
   const intl = useIntl();
   const settings = useSettings();
+  const jellyfinServers = useMemo(
+    () =>
+      settings.currentSettings.mediaServers.filter(
+        (server) =>
+          server.mediaServerType === MediaServerType.JELLYFIN ||
+          server.mediaServerType === MediaServerType.EMBY
+      ),
+    [settings.currentSettings.mediaServers]
+  );
+  const [selectedServerId, setSelectedServerId] = useState(
+    jellyfinServers[0]?.id
+  );
+  const selectedServer =
+    jellyfinServers.find((server) => server.id === selectedServerId) ??
+    jellyfinServers[0];
+  const resolvedServerType =
+    selectedServer?.mediaServerType ?? serverType ?? MediaServerType.JELLYFIN;
 
   const mediaServerFormatValues = {
     mediaServerName:
-      serverType === MediaServerType.JELLYFIN
+      resolvedServerType === MediaServerType.JELLYFIN
         ? ServerType.JELLYFIN
-        : serverType === MediaServerType.EMBY
+        : resolvedServerType === MediaServerType.EMBY
           ? ServerType.EMBY
           : 'Media Server',
   };
@@ -57,10 +76,11 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
     ),
     password: Yup.string(),
   });
-  const baseUrl = settings.currentSettings.jellyfinExternalHost
-    ? settings.currentSettings.jellyfinExternalHost
-    : settings.currentSettings.jellyfinHost;
+  const baseUrl =
+    selectedServer?.externalHostname ??
+    settings.currentSettings.jellyfinExternalHost;
   const jellyfinForgotPasswordUrl =
+    selectedServer?.jellyfinForgotPasswordUrl ??
     settings.currentSettings.jellyfinForgotPasswordUrl;
 
   return (
@@ -78,6 +98,7 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
               username: values.username,
               password: values.password,
               email: values.username,
+              serverId: selectedServer?.id,
             });
           } catch (e) {
             let errorMessage = null;
@@ -120,6 +141,31 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
                       appName: mediaServerFormatValues.mediaServerName,
                     })}
                   </h2>
+
+                  {jellyfinServers.length > 1 && (
+                    <div className="mb-4 mt-1">
+                      <div className="form-input-field">
+                        <select
+                          id="serverId"
+                          name="serverId"
+                          value={selectedServer?.id}
+                          onChange={(event) =>
+                            setSelectedServerId(event.target.value)
+                          }
+                          className="w-full"
+                        >
+                          {jellyfinServers.map((server) => (
+                            <option key={server.id} value={server.id}>
+                              {server.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="label-tip pt-2">
+                        {intl.formatMessage(messages.server)}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="mb-4 mt-1">
                     <div className="form-input-field">
@@ -171,8 +217,7 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
                             jellyfinForgotPasswordUrl
                               ? `${jellyfinForgotPasswordUrl}`
                               : `${baseUrl}/web/index.html#!/${
-                                  settings.currentSettings.mediaServerType ===
-                                  MediaServerType.EMBY
+                                  resolvedServerType === MediaServerType.EMBY
                                     ? 'startup/'
                                     : ''
                                 }forgotpassword.html`
