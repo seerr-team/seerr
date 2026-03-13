@@ -481,59 +481,70 @@ class JellyfinScanner
       await animeList.sync();
 
       for (const server of jellyfinServers) {
-        this.currentServer = server;
-        this.jfClient = new JellyfinAPI(
-          getHostname(server),
-          server.apiKey,
-          admin.jellyfinDeviceId,
-          server.mediaServerType
-        );
+        try {
+          this.currentServer = server;
+          this.jfClient = new JellyfinAPI(
+            getHostname(server),
+            server.apiKey,
+            admin.jellyfinDeviceId,
+            server.mediaServerType
+          );
 
-        if (admin.jellyfinUserId) {
-          this.jfClient.setUserId(admin.jellyfinUserId);
-        }
-
-        const serverLibraries = server.libraries.filter(
-          (library) => library.enabled
-        );
-
-        if (this.isRecentOnly) {
-          for (const library of serverLibraries) {
-            this.currentLibrary = library;
-            this.processedAnidbSeason = new Map();
-            this.log(
-              `Beginning to process recently added for library: ${library.name}`,
-              'info',
-              { serverId: server.id }
-            );
-            const libraryItems = await this.jfClient.getRecentlyAdded(
-              library.id
-            );
-
-            this.items = uniqWith(libraryItems, (mediaA, mediaB) => {
-              if (mediaA.SeriesId && mediaB.SeriesId) {
-                return mediaA.SeriesId === mediaB.SeriesId;
-              }
-
-              if (mediaA.SeasonId && mediaB.SeasonId) {
-                return mediaA.SeasonId === mediaB.SeasonId;
-              }
-
-              return mediaA.Id === mediaB.Id;
-            });
-
-            await this.loop(this.processItem.bind(this), { sessionId });
+          if (admin.jellyfinUserId) {
+            this.jfClient.setUserId(admin.jellyfinUserId);
           }
-        } else {
-          for (const library of serverLibraries) {
-            this.currentLibrary = library;
-            this.processedAnidbSeason = new Map();
-            this.log(`Beginning to process library: ${library.name}`, 'info', {
-              serverId: server.id,
-            });
-            this.items = await this.jfClient.getLibraryContents(library.id);
-            await this.loop(this.processItem.bind(this), { sessionId });
+
+          const serverLibraries = server.libraries.filter(
+            (library) => library.enabled
+          );
+
+          if (this.isRecentOnly) {
+            for (const library of serverLibraries) {
+              this.currentLibrary = library;
+              this.processedAnidbSeason = new Map();
+              this.log(
+                `Beginning to process recently added for library: ${library.name}`,
+                'info',
+                { serverId: server.id }
+              );
+              const libraryItems = await this.jfClient.getRecentlyAdded(
+                library.id
+              );
+
+              this.items = uniqWith(libraryItems, (mediaA, mediaB) => {
+                if (mediaA.SeriesId && mediaB.SeriesId) {
+                  return mediaA.SeriesId === mediaB.SeriesId;
+                }
+
+                if (mediaA.SeasonId && mediaB.SeasonId) {
+                  return mediaA.SeasonId === mediaB.SeasonId;
+                }
+
+                return mediaA.Id === mediaB.Id;
+              });
+
+              await this.loop(this.processItem.bind(this), { sessionId });
+            }
+          } else {
+            for (const library of serverLibraries) {
+              this.currentLibrary = library;
+              this.processedAnidbSeason = new Map();
+              this.log(`Beginning to process library: ${library.name}`, 'info', {
+                serverId: server.id,
+              });
+              this.items = await this.jfClient.getLibraryContents(library.id);
+              await this.loop(this.processItem.bind(this), { sessionId });
+            }
           }
+        } catch (err) {
+          this.log(
+            `Error scanning server ${server.name || server.id}: ${
+              err instanceof Error ? err.message : String(err)
+            }`,
+            'error',
+            { serverId: server.id }
+          );
+          continue;
         }
       }
 
