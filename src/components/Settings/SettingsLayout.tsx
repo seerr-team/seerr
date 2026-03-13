@@ -101,27 +101,30 @@ const SettingsLayout = ({ children }: SettingsLayoutProps) => {
     </>
   );
   function getAvailableMediaServerName() {
-    if (
-      !settings.currentSettings.mediaServers.some(
-        (server) =>
-          server.mediaServerType === MediaServerType.JELLYFIN ||
-          server.mediaServerType === MediaServerType.EMBY
-      )
-    ) {
+    const hasJellyfin = settings.currentSettings.mediaServers.some(
+      (server) => server.mediaServerType === MediaServerType.JELLYFIN
+    );
+    const hasEmby = settings.currentSettings.mediaServers.some(
+      (server) => server.mediaServerType === MediaServerType.EMBY
+    );
+
+    if (hasJellyfin && hasEmby) {
       return intl.formatMessage(messages.menuJellyfinEmbySettings);
     }
 
-    return intl.formatMessage(messages.menuJellyfinSettings, {
-      mediaServerName: settings.currentSettings.mediaServers.some(
-        (server) => server.mediaServerType === MediaServerType.JELLYFIN
-      )
-        ? 'Jellyfin'
-        : settings.currentSettings.mediaServers.some(
-              (server) => server.mediaServerType === MediaServerType.EMBY
-            )
-          ? 'Emby'
-          : undefined,
-    });
+    if (hasJellyfin) {
+      return intl.formatMessage(messages.menuJellyfinSettings, {
+        mediaServerName: 'Jellyfin',
+      });
+    }
+
+    if (hasEmby) {
+      return intl.formatMessage(messages.menuJellyfinSettings, {
+        mediaServerName: 'Emby',
+      });
+    }
+
+    return intl.formatMessage(messages.menuJellyfinEmbySettings);
   }
 };
 
