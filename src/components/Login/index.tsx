@@ -30,6 +30,8 @@ const messages = defineMessages('components.Login', {
   orsigninwith: 'Or sign in with',
 });
 
+type AuthMethod = 'local' | 'jellyfin' | 'emby';
+
 const Login = () => {
   const intl = useIntl();
   const router = useRouter();
@@ -39,19 +41,55 @@ const Login = () => {
   const [error, setError] = useState('');
   const [isProcessing, setProcessing] = useState(false);
   const [authToken, setAuthToken] = useState<string | undefined>(undefined);
-  const jellyfinServers = settings.currentSettings.mediaServers.filter(
-    (server) =>
-      server.mediaServerType === MediaServerType.JELLYFIN ||
-      server.mediaServerType === MediaServerType.EMBY
-  );
-  const hasPlexLogin = settings.currentSettings.mediaServerTypes.includes(
-    MediaServerType.PLEX
-  );
-  const hasJellyfinLogin = jellyfinServers.length > 0;
-  const [mediaServerLogin, setMediaServerLogin] = useState(
-    settings.currentSettings.mediaServerLogin &&
-      hasJellyfinLogin &&
-      !settings.currentSettings.localLogin
+  const plexEnabled =
+    settings.currentSettings.plexLogin &&
+    settings.currentSettings.mediaServers.some(
+      (server) => server.mediaServerType === MediaServerType.PLEX
+    );
+  const jellyfinEnabled =
+    settings.currentSettings.jellyfinLogin &&
+    settings.currentSettings.mediaServers.some(
+      (server) => server.mediaServerType === MediaServerType.JELLYFIN
+    );
+  const embyEnabled =
+    settings.currentSettings.embyLogin &&
+    settings.currentSettings.mediaServers.some(
+      (server) => server.mediaServerType === MediaServerType.EMBY
+    );
+  const formMethods: AuthMethod[] = [];
+
+  if (
+    settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN &&
+    jellyfinEnabled
+  ) {
+    formMethods.push('jellyfin');
+  } else if (
+    settings.currentSettings.mediaServerType === MediaServerType.EMBY &&
+    embyEnabled
+  ) {
+    formMethods.push('emby');
+  }
+
+  if (
+    jellyfinEnabled &&
+    settings.currentSettings.mediaServerType !== MediaServerType.JELLYFIN
+  ) {
+    formMethods.push('jellyfin');
+  }
+
+  if (
+    embyEnabled &&
+    settings.currentSettings.mediaServerType !== MediaServerType.EMBY
+  ) {
+    formMethods.push('emby');
+  }
+
+  const defaultAuthMethod = settings.currentSettings.localLogin
+    ? 'local'
+    : formMethods[0];
+
+  const [activeMethod, setActiveMethod] = useState<AuthMethod | undefined>(
+    defaultAuthMethod
   );
 
   // Effect that is triggered when the `authToken` comes back from the Plex OAuth
@@ -85,51 +123,79 @@ const Login = () => {
     }
   }, [user, router]);
 
+  useEffect(() => {
+    const methodEnabled =
+      activeMethod === 'local'
+        ? settings.currentSettings.localLogin
+        : activeMethod === 'jellyfin'
+          ? jellyfinEnabled
+          : activeMethod === 'emby'
+            ? embyEnabled
+            : false;
+
+    if (!methodEnabled) {
+      setActiveMethod(defaultAuthMethod);
+    }
+  }, [
+    activeMethod,
+    defaultAuthMethod,
+    embyEnabled,
+    jellyfinEnabled,
+    settings.currentSettings.localLogin,
+  ]);
+
   const { data: backdrops } = useSWR<string[]>('/api/v1/backdrops', {
     refreshInterval: 0,
     refreshWhenHidden: false,
     revalidateOnFocus: false,
   });
 
-  const activeJellyfinServer = jellyfinServers[0];
-  const mediaServerName =
-    activeJellyfinServer?.mediaServerType === MediaServerType.JELLYFIN
-      ? 'Jellyfin'
-      : activeJellyfinServer?.mediaServerType === MediaServerType.EMBY
-        ? 'Emby'
-        : undefined;
+  const loginRef = useRef<HTMLDivElement>(null);
+  const mediaServerNames = {
+    jellyfin: 'Jellyfin',
+    emby: 'Emby',
+  };
 
-  const MediaServerLogo =
-    activeJellyfinServer?.mediaServerType === MediaServerType.JELLYFIN
-      ? JellyfinLogo
-      : activeJellyfinServer?.mediaServerType === MediaServerType.EMBY
-        ? EmbyLogo
-        : undefined;
-  const mediaServerLoginRef = useRef<HTMLDivElement>(null);
-  const localLoginRef = useRef<HTMLDivElement>(null);
-  const loginRef = mediaServerLogin ? mediaServerLoginRef : localLoginRef;
+  const renderForm = (method?: AuthMethod) => {
+    switch (method) {
+      case 'local':
+        return <LocalLogin revalidate={revalidate} />;
+      case 'jellyfin':
+        return (
+          <JellyfinLogin
+            serverType={MediaServerType.JELLYFIN}
+            revalidate={revalidate}
+          />
+        );
+      case 'emby':
+        return (
+          <JellyfinLogin
+            serverType={MediaServerType.EMBY}
+            revalidate={revalidate}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
-  const loginFormVisible =
-    (hasJellyfinLogin && settings.currentSettings.mediaServerLogin) ||
-    settings.currentSettings.localLogin;
+  const loginFormVisible = Boolean(activeMethod && renderForm(activeMethod));
   const additionalLoginOptions = [
-    settings.currentSettings.mediaServerLogin && hasPlexLogin && (
+    plexEnabled && (
       <PlexLoginButton
         key="plex"
         isProcessing={isProcessing}
         onAuthToken={(authToken) => setAuthToken(authToken)}
-        large={!hasJellyfinLogin && !settings.currentSettings.localLogin}
+        large={!loginFormVisible && !settings.currentSettings.localLogin}
       />
     ),
-    settings.currentSettings.mediaServerLogin &&
-      hasJellyfinLogin &&
-      settings.currentSettings.localLogin &&
-      (mediaServerLogin ? (
+    settings.currentSettings.localLogin &&
+      activeMethod !== 'local' && (
         <Button
           key="seerr"
           data-testid="seerr-login-button"
           className="flex-1 bg-transparent"
-          onClick={() => setMediaServerLogin(false)}
+          onClick={() => setActiveMethod('local')}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -139,19 +205,31 @@ const Login = () => {
           />
           <span>{settings.currentSettings.applicationTitle}</span>
         </Button>
-      ) : (
-        MediaServerLogo && (
-          <Button
-            key="mediaserver"
-            data-testid="mediaserver-login-button"
-            className="flex-1 bg-transparent"
-            onClick={() => setMediaServerLogin(true)}
-          >
-            <MediaServerLogo />
-            <span>{mediaServerName}</span>
-          </Button>
-        )
-      )),
+      ),
+    jellyfinEnabled &&
+      activeMethod !== 'jellyfin' && (
+        <Button
+          key="jellyfin"
+          data-testid="mediaserver-login-button"
+          className="flex-1 bg-transparent"
+          onClick={() => setActiveMethod('jellyfin')}
+        >
+          <JellyfinLogo />
+          <span>{mediaServerNames.jellyfin}</span>
+        </Button>
+      ),
+    embyEnabled &&
+      activeMethod !== 'emby' && (
+        <Button
+          key="emby"
+          data-testid="mediaserver-login-button"
+          className="flex-1 bg-transparent"
+          onClick={() => setActiveMethod('emby')}
+        >
+          <EmbyLogo />
+          <span>{mediaServerNames.emby}</span>
+        </Button>
+      ),
   ].filter((o): o is JSX.Element => !!o);
 
   return (
@@ -204,7 +282,7 @@ const Login = () => {
             <div className="px-10 py-8">
               <SwitchTransition mode="out-in">
                 <CSSTransition
-                  key={mediaServerLogin ? 'ms' : 'local'}
+                  key={activeMethod ?? 'none'}
                   nodeRef={loginRef}
                   addEndListener={(done) => {
                     loginRef.current?.addEventListener(
@@ -227,18 +305,7 @@ const Login = () => {
                   }}
                 >
                   <div ref={loginRef} className="button-container">
-                    {hasJellyfinLogin &&
-                    (mediaServerLogin ||
-                      !settings.currentSettings.localLogin) ? (
-                      <JellyfinLogin
-                        serverType={activeJellyfinServer?.mediaServerType}
-                        revalidate={revalidate}
-                      />
-                    ) : (
-                      settings.currentSettings.localLogin && (
-                        <LocalLogin revalidate={revalidate} />
-                      )
-                    )}
+                    {renderForm(activeMethod)}
                   </div>
                 </CSSTransition>
               </SwitchTransition>

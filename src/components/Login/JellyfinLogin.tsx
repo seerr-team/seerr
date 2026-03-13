@@ -47,10 +47,12 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
     () =>
       settings.currentSettings.mediaServers.filter(
         (server) =>
-          server.mediaServerType === MediaServerType.JELLYFIN ||
-          server.mediaServerType === MediaServerType.EMBY
+          serverType
+            ? server.mediaServerType === serverType
+            : server.mediaServerType === MediaServerType.JELLYFIN ||
+              server.mediaServerType === MediaServerType.EMBY
       ),
-    [settings.currentSettings.mediaServers]
+    [serverType, settings.currentSettings.mediaServers]
   );
   const [selectedServerId, setSelectedServerId] = useState(
     jellyfinServers[0]?.id
