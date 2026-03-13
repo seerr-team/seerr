@@ -347,6 +347,10 @@ settingsRoutes.get('/plex/library', async (req, res) => {
     (plexServer) => plexServer.id === server.id
   );
 
+  if (serverIndex === -1 || !settings.plexServers[serverIndex]) {
+    return res.status(404).json({ message: 'Plex server not found.' });
+  }
+
   settings.plexServers[serverIndex].libraries = settings.plexServers[
     serverIndex
   ].libraries.map((library) => ({
