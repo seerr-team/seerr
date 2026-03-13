@@ -1,3 +1,4 @@
+import Button from '@app/components/Common/Button';
 import ImageFader from '@app/components/Common/ImageFader';
 import PageTitle from '@app/components/Common/PageTitle';
 import LanguagePicker from '@app/components/Layout/LanguagePicker';
@@ -9,13 +10,15 @@ import { useUser } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import { XCircleIcon } from '@heroicons/react/24/solid';
-import { MediaServerType } from '@server/constants/server';
+import { MediaServerType, ServerType } from '@server/constants/server';
 import axios from 'axios';
 import { useRouter } from 'next/dist/client/router';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
+
+type AuthMethod = 'local' | 'plex' | 'jellyfin' | 'emby';
 
 const messages = defineMessages('components.Login', {
   signin: 'Sign In',
@@ -36,59 +39,59 @@ const Login = () => {
   const [isProcessing, setProcessing] = useState(false);
   const [authToken, setAuthToken] = useState<string | undefined>(undefined);
 
-  const { enabledAuthMethods, primaryMediaServer, localLogin } =
-    settings.currentSettings;
+  const {
+    enabledAuthMethods,
+    primaryMediaServer,
+    localLogin,
+    applicationTitle,
+  } = settings.currentSettings;
 
   const plexEnabled = enabledAuthMethods.includes(MediaServerType.PLEX);
   const jellyfinEnabled = enabledAuthMethods.includes(MediaServerType.JELLYFIN);
   const embyEnabled = enabledAuthMethods.includes(MediaServerType.EMBY);
 
-  // Sort auth methods: primary first, then secondary
-  const authSections: JSX.Element[] = [];
-
-  const addPlexSection = () => {
-    authSections.push(
-      <PlexLoginButton
-        key="plex"
-        isProcessing={isProcessing}
-        onAuthToken={(token) => setAuthToken(token)}
-        large={authSections.length === 0 && !localLogin}
-      />
-    );
-  };
-
-  const addJellyfinSection = (serverType: number) => {
-    authSections.push(
-      <JellyfinLogin
-        key={`jellyfin-${serverType}`}
-        serverType={serverType}
-        revalidate={revalidate}
-      />
-    );
-  };
+  // Build ordered list of available auth methods (primary first)
+  const availableMethods: AuthMethod[] = [];
 
   // Add primary server's auth first
-  if (primaryMediaServer === MediaServerType.PLEX && plexEnabled) {
-    addPlexSection();
-  } else if (
-    primaryMediaServer === MediaServerType.JELLYFIN &&
-    jellyfinEnabled
-  ) {
-    addJellyfinSection(MediaServerType.JELLYFIN);
-  } else if (primaryMediaServer === MediaServerType.EMBY && embyEnabled) {
-    addJellyfinSection(MediaServerType.EMBY);
-  }
+  if (primaryMediaServer === MediaServerType.PLEX && plexEnabled)
+    availableMethods.push('plex');
+  else if (primaryMediaServer === MediaServerType.JELLYFIN && jellyfinEnabled)
+    availableMethods.push('jellyfin');
+  else if (primaryMediaServer === MediaServerType.EMBY && embyEnabled)
+    availableMethods.push('emby');
 
   // Add secondary server auth methods
-  if (plexEnabled && primaryMediaServer !== MediaServerType.PLEX) {
-    addPlexSection();
-  }
-  if (jellyfinEnabled && primaryMediaServer !== MediaServerType.JELLYFIN) {
-    addJellyfinSection(MediaServerType.JELLYFIN);
-  }
-  if (embyEnabled && primaryMediaServer !== MediaServerType.EMBY) {
-    addJellyfinSection(MediaServerType.EMBY);
-  }
+  if (plexEnabled && primaryMediaServer !== MediaServerType.PLEX)
+    availableMethods.push('plex');
+  if (jellyfinEnabled && primaryMediaServer !== MediaServerType.JELLYFIN)
+    availableMethods.push('jellyfin');
+  if (embyEnabled && primaryMediaServer !== MediaServerType.EMBY)
+    availableMethods.push('emby');
+
+  // Determine the default expanded method:
+  // local login if enabled, otherwise the first form-based method
+  const defaultMethod: AuthMethod = localLogin
+    ? 'local'
+    : (availableMethods.find((m) => m !== 'plex') ?? availableMethods[0]);
+
+  const [activeMethod, setActiveMethod] = useState<AuthMethod>(defaultMethod);
+
+  // Plex is always a button (no form), so it's never the "active" expanded form
+  const formMethods = availableMethods.filter((m) => m !== 'plex');
+
+  const getMethodLabel = (method: AuthMethod): string => {
+    switch (method) {
+      case 'jellyfin':
+        return ServerType.JELLYFIN;
+      case 'emby':
+        return ServerType.EMBY;
+      case 'local':
+        return applicationTitle;
+      default:
+        return '';
+    }
+  };
 
   // Effect that is triggered when the `authToken` comes back from the Plex OAuth
   useEffect(() => {
@@ -124,7 +127,48 @@ const Login = () => {
     revalidateOnFocus: false,
   });
 
-  const hasAnyAuth = authSections.length > 0 || localLogin;
+  const hasAnyAuth = availableMethods.length > 0 || localLogin;
+
+  // Render the expanded form for a given method
+  const renderForm = (method: AuthMethod) => {
+    switch (method) {
+      case 'local':
+        return <LocalLogin revalidate={revalidate} />;
+      case 'jellyfin':
+        return (
+          <JellyfinLogin
+            serverType={MediaServerType.JELLYFIN}
+            revalidate={revalidate}
+          />
+        );
+      case 'emby':
+        return (
+          <JellyfinLogin
+            serverType={MediaServerType.EMBY}
+            revalidate={revalidate}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Collect collapsed (non-active) form methods as buttons
+  const collapsedMethods: AuthMethod[] = [];
+  if (localLogin && activeMethod !== 'local') collapsedMethods.push('local');
+  for (const method of formMethods) {
+    if (method !== activeMethod) collapsedMethods.push(method);
+  }
+
+  const Divider = () => (
+    <div className="flex items-center">
+      <div className="flex-grow border-t border-gray-600" />
+      <span className="mx-2 flex-shrink text-sm text-gray-400">
+        {intl.formatMessage(messages.orsigninwith)}
+      </span>
+      <div className="flex-grow border-t border-gray-600" />
+    </div>
+  );
 
   return (
     <div className="relative flex min-h-screen flex-col bg-gray-900 py-14">
@@ -180,38 +224,47 @@ const Login = () => {
                 </h2>
               )}
 
-              {/* Render all enabled auth methods stacked vertically */}
               <div className="flex flex-col gap-4">
-                {authSections.map((section, index) => (
-                  <div key={index}>
-                    {index > 0 && (
-                      <div className="mb-4 flex items-center">
-                        <div className="flex-grow border-t border-gray-600" />
-                        <span className="mx-2 flex-shrink text-sm text-gray-400">
-                          {intl.formatMessage(messages.orsigninwith)}
-                        </span>
-                        <div className="flex-grow border-t border-gray-600" />
-                      </div>
-                    )}
-                    {section}
-                  </div>
-                ))}
+                {/* Active expanded form */}
+                {activeMethod && renderForm(activeMethod)}
 
-                {/* Local login at the bottom */}
-                {localLogin && (
-                  <div>
-                    {authSections.length > 0 && (
-                      <div className="mb-4 flex items-center">
-                        <div className="flex-grow border-t border-gray-600" />
-                        <span className="mx-2 flex-shrink text-sm text-gray-400">
-                          {intl.formatMessage(messages.orsigninwith)}
-                        </span>
-                        <div className="flex-grow border-t border-gray-600" />
-                      </div>
-                    )}
-                    <LocalLogin revalidate={revalidate} />
-                  </div>
+                {/* Plex button shown directly when it's the only method */}
+                {plexEnabled && !localLogin && formMethods.length === 0 && (
+                  <PlexLoginButton
+                    isProcessing={isProcessing}
+                    onAuthToken={(token) => setAuthToken(token)}
+                    large
+                  />
                 )}
+
+                {/* "Or sign in with" section for alternative methods */}
+                {(plexEnabled && (localLogin || formMethods.length > 0)) ||
+                collapsedMethods.length > 0 ? (
+                  <>
+                    <Divider />
+                    <div className="flex flex-col gap-2">
+                      {/* Plex is always a button */}
+                      {plexEnabled &&
+                        (localLogin || formMethods.length > 0) && (
+                          <PlexLoginButton
+                            isProcessing={isProcessing}
+                            onAuthToken={(token) => setAuthToken(token)}
+                          />
+                        )}
+
+                      {/* Collapsed form methods as buttons */}
+                      {collapsedMethods.map((method) => (
+                        <Button
+                          key={method}
+                          className="w-full border-gray-600 bg-gray-700/50 text-gray-200 hover:border-gray-500 hover:bg-gray-600/50"
+                          onClick={() => setActiveMethod(method)}
+                        >
+                          {getMethodLabel(method)}
+                        </Button>
+                      ))}
+                    </div>
+                  </>
+                ) : null}
               </div>
             </div>
           </>
