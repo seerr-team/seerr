@@ -59,9 +59,8 @@ authRoutes.post('/plex', async (req, res, next) => {
   }
 
   if (
-    settings.main.primaryMediaServer != MediaServerType.NOT_CONFIGURED &&
-    (settings.main.enabledAuthMethods.length === 0 ||
-      settings.main.primaryMediaServer != MediaServerType.PLEX)
+    settings.main.primaryMediaServer !== MediaServerType.NOT_CONFIGURED &&
+    !settings.isAuthMethodEnabled(MediaServerType.PLEX)
   ) {
     return res.status(500).json({ error: 'Plex login is disabled' });
   }
@@ -100,7 +99,8 @@ authRoutes.post('/plex', async (req, res, next) => {
         select: { id: true, plexToken: true, plexId: true, email: true },
         where: { id: 1 },
       });
-      const mainPlexTv = new PlexTvAPI(mainUser.plexToken ?? '');
+      const plexToken = mainUser.plexToken || settings.plex.adminToken || '';
+      const mainPlexTv = new PlexTvAPI(plexToken);
 
       if (!account.id) {
         logger.error('Plex ID was missing from Plex.tv response', {
@@ -113,6 +113,29 @@ authRoutes.post('/plex', async (req, res, next) => {
         return next({
           status: 500,
           message: 'Something went wrong. Try again.',
+        });
+      }
+
+      // Email collision check: if user was found by email but belongs to a different auth method
+      if (
+        user &&
+        !user.plexId &&
+        user.userType !== UserType.PLEX &&
+        user.userType !== UserType.LOCAL
+      ) {
+        logger.warn(
+          'Plex login rejected: email already associated with a different auth method',
+          {
+            label: 'API',
+            ip: req.ip,
+            email: account.email,
+            existingUserType: user.userType,
+          }
+        );
+        return next({
+          status: 403,
+          message:
+            'This email is already associated with a different login method.',
         });
       }
 
@@ -237,14 +260,11 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     serverType?: number;
   };
 
-  //Make sure jellyfin login is enabled, but only if jellyfin && Emby is not already configured
+  // Check if Jellyfin/Emby login is enabled (allow during initial setup)
   if (
-    // media server not configured, allow login for setup
-    settings.main.primaryMediaServer != MediaServerType.NOT_CONFIGURED &&
-    (settings.main.enabledAuthMethods.length === 0 ||
-      // media server is neither jellyfin or emby
-      (settings.main.primaryMediaServer !== MediaServerType.JELLYFIN &&
-        settings.main.primaryMediaServer !== MediaServerType.EMBY))
+    settings.main.primaryMediaServer !== MediaServerType.NOT_CONFIGURED &&
+    !settings.isAuthMethodEnabled(MediaServerType.JELLYFIN) &&
+    !settings.isAuthMethodEnabled(MediaServerType.EMBY)
   ) {
     return res.status(500).json({ error: 'Jellyfin login is disabled' });
   }
@@ -653,45 +673,39 @@ authRoutes.post('/logout', async (req, res, next) => {
     }
 
     const settings = getSettings();
-    const isJellyfinOrEmby =
-      settings.main.primaryMediaServer === MediaServerType.JELLYFIN ||
-      settings.main.primaryMediaServer === MediaServerType.EMBY;
 
-    if (isJellyfinOrEmby) {
-      const user = await getRepository(User)
-        .createQueryBuilder('user')
-        .addSelect(['user.jellyfinUserId', 'user.jellyfinDeviceId'])
-        .where('user.id = :id', { id: userId })
-        .getOne();
+    // Clean up Jellyfin/Emby device session based on user's type, not global setting
+    const user = await getRepository(User)
+      .createQueryBuilder('user')
+      .addSelect([
+        'user.jellyfinUserId',
+        'user.jellyfinDeviceId',
+        'user.userType',
+      ])
+      .where('user.id = :id', { id: userId })
+      .getOne();
 
-      if (user?.jellyfinUserId && user.jellyfinDeviceId) {
-        try {
-          const baseUrl = getHostname();
-          try {
-            await axios.delete(`${baseUrl}/Devices`, {
-              params: { Id: user.jellyfinDeviceId },
-              headers: {
-                'X-Emby-Authorization': `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="seerr", Version="${getAppVersion()}", Token="${
-                  settings.jellyfin.apiKey
-                }"`,
-              },
-            });
-          } catch (error) {
-            logger.error('Failed to delete Jellyfin device', {
-              label: 'Auth',
-              error: error instanceof Error ? error.message : 'Unknown error',
-              userId: user.id,
-              jellyfinUserId: user.jellyfinUserId,
-            });
-          }
-        } catch (error) {
-          logger.error('Failed to delete Jellyfin device', {
-            label: 'Auth',
-            error: error instanceof Error ? error.message : 'Unknown error',
-            userId: user.id,
-            jellyfinUserId: user.jellyfinUserId,
-          });
-        }
+    const isJellyfinOrEmbyUser =
+      user?.userType === UserType.JELLYFIN || user?.userType === UserType.EMBY;
+
+    if (isJellyfinOrEmbyUser && user.jellyfinUserId && user.jellyfinDeviceId) {
+      try {
+        const baseUrl = getHostname();
+        await axios.delete(`${baseUrl}/Devices`, {
+          params: { Id: user.jellyfinDeviceId },
+          headers: {
+            'X-Emby-Authorization': `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="seerr", Version="${getAppVersion()}", Token="${
+              settings.jellyfin.apiKey
+            }"`,
+          },
+        });
+      } catch (error) {
+        logger.error('Failed to delete Jellyfin device', {
+          label: 'Auth',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          userId: user.id,
+          jellyfinUserId: user.jellyfinUserId,
+        });
       }
     }
 

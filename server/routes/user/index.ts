@@ -592,12 +592,13 @@ router.post(
       const userRepository = getRepository(User);
       const body = req.body as { plexIds: string[] } | undefined;
 
-      // taken from auth.ts
+      // Use admin's Plex token, falling back to secondary Plex admin token
       const mainUser = await userRepository.findOneOrFail({
         select: { id: true, plexToken: true },
         where: { id: 1 },
       });
-      const mainPlexTv = new PlexTvAPI(mainUser.plexToken ?? '');
+      const plexToken = mainUser.plexToken || settings.plex.adminToken || '';
+      const mainPlexTv = new PlexTvAPI(plexToken);
 
       const plexUsersResponse = await mainPlexTv.getUsers();
       const createdUsers: User[] = [];
@@ -710,10 +711,9 @@ router.post(
             email: jellyfinUser?.Name,
             permissions: settings.main.defaultPermissions,
             avatar: `/avatarproxy/${jellyfinUser?.Id}`,
-            userType:
-              settings.main.primaryMediaServer === MediaServerType.JELLYFIN
-                ? UserType.JELLYFIN
-                : UserType.EMBY,
+            userType: settings.isAuthMethodEnabled(MediaServerType.EMBY)
+              ? UserType.EMBY
+              : UserType.JELLYFIN,
           });
 
           await userRepository.save(newUser);
