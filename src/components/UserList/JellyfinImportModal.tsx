@@ -262,9 +262,7 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
         <Alert
           title={intl.formatMessage(messages.noJellyfinuserstoimport, {
             mediaServerName:
-              settings.currentSettings.mediaServerType === MediaServerType.EMBY
-                ? 'Emby'
-                : 'Jellyfin',
+              mediaServerType === MediaServerType.EMBY ? 'Emby' : 'Jellyfin',
           })}
           type="info"
         />
