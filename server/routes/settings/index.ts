@@ -146,9 +146,14 @@ settingsRoutes.post('/main/regenerate', async (req, res, next) => {
 });
 
 settingsRoutes.get('/plex', (req, res) => {
+  const requestedServerId = req.query.serverId?.toString();
   const server = getPlexServerFromRequest({
-    serverId: req.query.serverId?.toString(),
+    serverId: requestedServerId,
   });
+
+  if (requestedServerId && !server) {
+    return res.status(404).json({ error: 'Plex server not found' });
+  }
 
   res.status(200).json(server ?? getSettings().plex);
 });
@@ -473,9 +478,14 @@ settingsRoutes.post('/plex/sync', (req, res) => {
 });
 
 settingsRoutes.get('/jellyfin', (req, res) => {
+  const requestedServerId = req.query.serverId?.toString();
   const server = getJellyfinServerFromRequest({
-    serverId: req.query.serverId?.toString(),
+    serverId: requestedServerId,
   });
+
+  if (requestedServerId && !server) {
+    return res.status(404).json({ error: 'Jellyfin server not found' });
+  }
 
   res.status(200).json(server ?? getSettings().jellyfin);
 });
