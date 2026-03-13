@@ -12,9 +12,11 @@ All configurations from the **Settings** panel in the Seerr web UI are saved, in
 These settings are stored in the `settings.json` file located in the Seerr data folder.
 
 :::note
-For multi-server setups, the active media server entries are stored in the `plexServers` and `jellyfinServers` arrays.
+For multi-server setups, the canonical media server configuration is stored in the `plexServers` and `jellyfinServers` arrays.
 
-The legacy `plex` and `jellyfin` objects are still kept for backward compatibility, but if you manually edit or restore a multi-server configuration, make sure the array entries contain the server details you want Seerr to use.
+The legacy `plex` and `jellyfin` objects are still kept for backward compatibility. When both the legacy objects and the arrays exist, Seerr synchronizes the first array entry back into the legacy object, but the array entries remain the source of truth for server identity and active configuration.
+
+If you manually edit or restore a multi-server backup, update the array entries first. The legacy `plex` and `jellyfin` objects may be refreshed from the first array entry, but they should not be relied on as the authoritative configuration in multi-server setups.
 :::
 
 ## User Data  
