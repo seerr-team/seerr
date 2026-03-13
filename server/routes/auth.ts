@@ -771,7 +771,7 @@ authRoutes.post('/logout', async (req, res, next) => {
         try {
           const jellyfinServer = settings.jellyfinServers.find(
             (server) => server.id === user.jellyfinServerId
-          );
+          ) ?? settings.jellyfinServers[0];
 
           if (!jellyfinServer) {
             logger.debug('Skipping Jellyfin device deletion without server', {

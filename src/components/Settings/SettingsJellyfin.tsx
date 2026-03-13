@@ -53,6 +53,7 @@ const messages = defineMessages('components.Settings', {
   adminerror: 'You must use an admin account to sign in.',
   adminUsername: 'Admin Username',
   adminPassword: 'Admin Password',
+  adminCredentialsLabel: 'Admin Credentials',
   adminCredentialsDescription:
     'Optionally sign in with an admin account to generate an API key automatically.',
   validationApiKeyOrCredentials:
@@ -139,8 +140,12 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       ? null
       : `/api/v1/settings/jellyfin?serverId=${selectedServerId}`
   );
+  const jellyfinSyncKey =
+    selectedServerId === 'new'
+      ? null
+      : `/api/v1/settings/jellyfin/sync?serverId=${selectedServerId}`;
   const { data: dataSync, mutate: revalidateSync } = useSWR<SyncStatus>(
-    '/api/v1/settings/jellyfin/sync',
+    jellyfinSyncKey,
     {
       refreshInterval: 1000,
     }
@@ -152,16 +157,16 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       hostname: Yup.string()
         .nullable()
         .required(intl.formatMessage(messages.validationHostnameRequired)),
-      port: Yup.number().when(['hostname'], {
-        is: (value: unknown) => !!value,
-        then: Yup.number()
-          .typeError(intl.formatMessage(messages.validationPortRequired))
-          .nullable()
-          .required(intl.formatMessage(messages.validationPortRequired)),
-        otherwise: Yup.number()
-          .typeError(intl.formatMessage(messages.validationPortRequired))
-          .nullable(),
-      }),
+      port: Yup.number().when(['hostname'], ([hostname], schema) =>
+        hostname
+          ? schema
+              .typeError(intl.formatMessage(messages.validationPortRequired))
+              .nullable()
+              .required(intl.formatMessage(messages.validationPortRequired))
+          : schema
+              .typeError(intl.formatMessage(messages.validationPortRequired))
+              .nullable()
+      ),
       urlBase: Yup.string()
         .test(
           'leading-slash',
@@ -309,16 +314,36 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
   };
 
   const startScan = async () => {
-    await axios.post('/api/v1/settings/jellyfin/sync', {
-      start: true,
-    });
+    if (selectedServerId === 'new') {
+      return;
+    }
+
+    await axios.post(
+      '/api/v1/settings/jellyfin/sync',
+      {
+        start: true,
+      },
+      {
+        params: { serverId: selectedServerId },
+      }
+    );
     revalidateSync();
   };
 
   const cancelScan = async () => {
-    await axios.post('/api/v1/settings/jellyfin/sync', {
-      cancel: true,
-    });
+    if (selectedServerId === 'new') {
+      return;
+    }
+
+    await axios.post(
+      '/api/v1/settings/jellyfin/sync',
+      {
+        cancel: true,
+      },
+      {
+        params: { serverId: selectedServerId },
+      }
+    );
     revalidateSync();
   };
 
@@ -403,7 +428,10 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
                   id="serverSelector"
                   name="serverSelector"
                   value={selectedServerId}
-                  onChange={(event) => setSelectedServerId(event.target.value)}
+                  onChange={(event) => {
+                    setSelectedServerId(event.target.value);
+                    setHasInitializedServerSelection(true);
+                  }}
                 >
                   <option value="new">
                     {intl.formatMessage(messages.addServer)}
@@ -674,7 +702,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
                 <>
                   <div className="form-row">
                     <span className="text-label">
-                      {intl.formatMessage(messages.serverType)}
+                      {intl.formatMessage(messages.adminCredentialsLabel)}
                     </span>
                     <div className="form-input-area">
                       <div className="text-sm text-gray-400">
@@ -886,7 +914,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
               <span>
                 {dataSync?.running
                   ? `${dataSync.progress} of ${dataSync.total}`
-                  : 'Not running'}
+                  : intl.formatMessage(messages.notrunning)}
               </span>
             </div>
           </div>
@@ -924,7 +952,11 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
             )}
             <div className="flex-1 text-right">
               {!dataSync?.running && (
-                <Button buttonType="warning" onClick={() => startScan()}>
+                <Button
+                  buttonType="warning"
+                  onClick={() => startScan()}
+                  disabled={selectedServerId === 'new'}
+                >
                   <svg
                     className="mr-1 h-5 w-5"
                     fill="none"
@@ -944,7 +976,11 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
               )}
 
               {dataSync?.running && (
-                <Button buttonType="danger" onClick={() => cancelScan()}>
+                <Button
+                  buttonType="danger"
+                  onClick={() => cancelScan()}
+                  disabled={selectedServerId === 'new'}
+                >
                   <svg
                     className="mr-1 h-5 w-5"
                     fill="none"

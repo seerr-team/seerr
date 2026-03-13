@@ -533,7 +533,10 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                 id="serverSelector"
                 name="serverSelector"
                 value={selectedServerId}
-                onChange={(event) => setSelectedServerId(event.target.value)}
+                onChange={(event) => {
+                  setSelectedServerId(event.target.value);
+                  setHasInitializedServerSelection(true);
+                }}
               >
                 <option value="new">
                   {intl.formatMessage(messages.addPlexServer)}
@@ -587,6 +590,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                 );
 
                 setSelectedServerId(response.data.id);
+                setHasInitializedServerSelection(true);
                 revalidatePlexServers();
                 mutate('/api/v1/settings/public');
 
@@ -752,7 +756,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                     </div>
                   </div>
                   <div className="form-row">
-                    <label htmlFor="ssl" className="checkbox-label">
+                    <label htmlFor="useSsl" className="checkbox-label">
                       {intl.formatMessage(messages.enablessl)}
                     </label>
                     <div className="form-input-area">
@@ -887,7 +891,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                   <span>
                     {dataSync?.running
                       ? `${dataSync.progress} of ${dataSync.total}`
-                      : 'Not running'}
+                      : intl.formatMessage(messages.notrunning)}
                   </span>
                 </div>
               </div>

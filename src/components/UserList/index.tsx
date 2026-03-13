@@ -201,39 +201,42 @@ const UserList = () => {
     }
   };
   const importSources = useMemo<ImportSource[]>(() => {
-    const sources: ImportSource[] = [];
+    const jellyfinLikeServerIds = new Set(
+      getJellyfinLikeServers(settings.currentSettings).map((server) => server.id)
+    );
 
-    settings.currentSettings.mediaServers
-      .filter((server) => server.mediaServerType === MediaServerType.PLEX)
-      .forEach((server) => {
-        sources.push({
-          id: server.id,
-          kind: 'plex',
-          label: intl.formatMessage(messages.importfrommediaserver, {
-            mediaServerName: getMediaServerSelectionLabel(
-              server,
-              settings.currentSettings
-            ),
-          }),
-          server,
-        });
-      });
-
-    getJellyfinLikeServers(settings.currentSettings).forEach((server) => {
-      sources.push({
-        id: server.id,
-        kind: 'jellyfin',
-        server,
-        label: intl.formatMessage(messages.importfrommediaserver, {
-          mediaServerName: getMediaServerSelectionLabel(
+    return settings.currentSettings.mediaServers.reduce<ImportSource[]>(
+      (sources, server) => {
+        if (server.mediaServerType === MediaServerType.PLEX) {
+          sources.push({
+            id: server.id,
+            kind: 'plex',
+            label: intl.formatMessage(messages.importfrommediaserver, {
+              mediaServerName: getMediaServerSelectionLabel(
+                server,
+                settings.currentSettings
+              ),
+            }),
             server,
-            settings.currentSettings
-          ),
-        }),
-      });
-    });
+          });
+        } else if (jellyfinLikeServerIds.has(server.id)) {
+          sources.push({
+            id: server.id,
+            kind: 'jellyfin',
+            label: intl.formatMessage(messages.importfrommediaserver, {
+              mediaServerName: getMediaServerSelectionLabel(
+                server,
+                settings.currentSettings
+              ),
+            }),
+            server,
+          });
+        }
 
-    return sources;
+        return sources;
+      },
+      []
+    );
   }, [intl, settings.currentSettings]);
 
   const deleteUser = async () => {

@@ -335,6 +335,10 @@ components:
     PlexSettings:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
         name:
           type: string
           example: 'Main Server'
@@ -362,6 +366,7 @@ components:
           nullable: true
           example: 'https://app.plex.tv/desktop'
       required:
+        - id
         - name
         - machineId
         - ip
@@ -504,6 +509,10 @@ components:
     JellyfinSettings:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
         name:
           type: string
           example: 'Main Server'
@@ -531,6 +540,8 @@ components:
         serverID:
           type: string
           readOnly: true
+      required:
+        - id
     MetadataSettings:
       type: object
       properties:

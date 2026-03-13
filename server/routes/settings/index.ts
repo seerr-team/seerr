@@ -308,6 +308,13 @@ settingsRoutes.delete('/plex/servers/:serverId', async (req, res, next) => {
     return next({ status: 404, message: 'Plex server not found.' });
   }
 
+  if (req.user?.id !== 1) {
+    return next({
+      status: 403,
+      message: 'Only the settings owner may delete Plex servers.',
+    });
+  }
+
   const [removedServer] = settings.plexServers.splice(serverIndex, 1);
   await settings.save();
 
@@ -741,6 +748,17 @@ settingsRoutes.delete('/jellyfin/servers/:serverId', async (req, res, next) => {
 
   if (serverIndex === -1) {
     return next({ status: 404, message: 'Jellyfin server not found.' });
+  }
+
+  const linkedUserCount = await getRepository(User).count({
+    where: { jellyfinServerId: req.params.serverId },
+  });
+
+  if (linkedUserCount > 0) {
+    return next({
+      status: 409,
+      message: 'Cannot delete Jellyfin server: linked users exist.',
+    });
   }
 
   const [removedServer] = settings.jellyfinServers.splice(serverIndex, 1);
