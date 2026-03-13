@@ -407,34 +407,52 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
     }
 
     setIsSyncing(true);
-    if (activeLibraries.includes(libraryId)) {
-      const params: { enable?: string; serverId?: string } = {};
+    try {
+      if (activeLibraries.includes(libraryId)) {
+        const params: { enable?: string; serverId?: string } = {};
 
-      if (activeLibraries.length > 1) {
-        params.enable = activeLibraries
-          .filter((id) => id !== libraryId)
-          .join(',');
+        if (activeLibraries.length > 1) {
+          params.enable = activeLibraries
+            .filter((id) => id !== libraryId)
+            .join(',');
+        }
+
+        params.serverId = selectedServerId;
+
+        await axios.get('/api/v1/settings/plex/library', {
+          params,
+        });
+      } else {
+        await axios.get('/api/v1/settings/plex/library', {
+          params: {
+            enable: [...activeLibraries, libraryId].join(','),
+            serverId: selectedServerId,
+          },
+        });
       }
 
-      params.serverId = selectedServerId;
+      if (onComplete) {
+        onComplete();
+      }
+    } catch (e) {
+      const failingServerName =
+        plexServers?.find((server) => server.id === selectedServerId)?.name ??
+        data?.name ??
+        intl.formatMessage(messages.plex);
 
-      await axios.get('/api/v1/settings/plex/library', {
-        params,
-      });
-    } else {
-      await axios.get('/api/v1/settings/plex/library', {
-        params: {
-          enable: [...activeLibraries, libraryId].join(','),
-          serverId: selectedServerId,
-        },
-      });
+      addToast(
+        intl.formatMessage(messages.toastPlexSyncFailure, {
+          serverName: failingServerName,
+        }),
+        {
+          autoDismiss: true,
+          appearance: 'error',
+        }
+      );
+    } finally {
+      setIsSyncing(false);
+      revalidate();
     }
-
-    if (onComplete) {
-      onComplete();
-    }
-    setIsSyncing(false);
-    revalidate();
   };
 
   if (

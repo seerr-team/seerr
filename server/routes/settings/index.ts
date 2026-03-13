@@ -615,12 +615,15 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
     }
   }
 
-  return res
-    .status(200)
-    .json(
-      getJellyfinServerFromRequest({ serverId: jellyfinServerId }) ??
-        settings.jellyfin
-    );
+  const requestedServer = getJellyfinServerFromRequest({
+    serverId: jellyfinServerId,
+  });
+
+  if (jellyfinServerId && !requestedServer) {
+    return res.status(404).json({ error: 'Jellyfin server not found' });
+  }
+
+  return res.status(200).json(requestedServer ?? settings.jellyfin);
 });
 
 settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
@@ -688,22 +691,42 @@ settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
       };
     });
 
-    settings.jellyfinServers[serverIndex].libraries = newLibraries;
+    const refreshedServerIndex = settings.jellyfinServers.findIndex(
+      (jellyfinServer) => jellyfinServer.id === server.id
+    );
+
+    if (
+      refreshedServerIndex === -1 ||
+      !settings.jellyfinServers[refreshedServerIndex]
+    ) {
+      return res.status(404).json({ error: 'Jellyfin server not found.' });
+    }
+
+    settings.jellyfinServers[refreshedServerIndex].libraries = newLibraries;
   }
 
   const enabledLibraries = req.query.enable
     ? (req.query.enable as string).split(',')
     : [];
 
-  settings.jellyfinServers[serverIndex].libraries = settings.jellyfinServers[
-    serverIndex
-  ].libraries.map((library) => ({
-    ...library,
-    enabled: enabledLibraries.includes(library.id),
-  }));
+  const finalServerIndex = settings.jellyfinServers.findIndex(
+    (jellyfinServer) => jellyfinServer.id === server.id
+  );
+
+  if (finalServerIndex === -1 || !settings.jellyfinServers[finalServerIndex]) {
+    return res.status(404).json({ error: 'Jellyfin server not found.' });
+  }
+
+  settings.jellyfinServers[finalServerIndex].libraries =
+    settings.jellyfinServers[finalServerIndex].libraries.map((library) => ({
+      ...library,
+      enabled: enabledLibraries.includes(library.id),
+    }));
 
   await settings.save();
-  return res.status(200).json(settings.jellyfinServers[serverIndex].libraries);
+  return res
+    .status(200)
+    .json(settings.jellyfinServers[finalServerIndex].libraries);
 });
 
 settingsRoutes.get('/jellyfin/servers', (_req, res) => {
