@@ -858,8 +858,34 @@ class AvailabilitySync {
       plexMedia = await plexClient.getMetadata(ratingKey);
 
       if (media.mediaType === 'tv') {
-        this.plexSeasonsCache[cacheKey] =
-          await plexClient.getChildrenMetadata(ratingKey);
+        const plexSeasons = await plexClient.getChildrenMetadata(ratingKey);
+
+        if (is4k) {
+          const seasonsWith4kEpisodes: PlexMetadata[] = [];
+
+          for (const season of plexSeasons) {
+            try {
+              const episodes = await plexClient.getChildrenMetadata(
+                season.ratingKey
+              );
+              const has4kEpisode = episodes?.some((episode) =>
+                episode.Media?.some(
+                  (mediaItem) => (mediaItem.width ?? 0) >= 2000
+                )
+              );
+
+              if (has4kEpisode) {
+                seasonsWith4kEpisodes.push(season);
+              }
+            } catch {
+              // If we can't fetch episodes for a season, continue checking other seasons
+            }
+          }
+
+          this.plexSeasonsCache[cacheKey] = seasonsWith4kEpisodes;
+        } else {
+          this.plexSeasonsCache[cacheKey] = plexSeasons;
+        }
       }
 
       if (is4k) {
@@ -874,32 +900,12 @@ class AvailabilitySync {
             plexMedia = undefined;
           }
 
-          if (plexMedia && media.mediaType === 'tv') {
-            const cachedSeasons = this.plexSeasonsCache[cacheKey];
-            if (cachedSeasons?.length) {
-              let has4kInAnySeason = false;
-              for (const season of cachedSeasons) {
-                try {
-                  const episodes = await plexClient.getChildrenMetadata(
-                    season.ratingKey
-                  );
-                  const has4kEpisode = episodes?.some((episode) =>
-                    episode.Media?.some(
-                      (mediaItem) => (mediaItem.width ?? 0) >= 2000
-                    )
-                  );
-                  if (has4kEpisode) {
-                    has4kInAnySeason = true;
-                    break;
-                  }
-                } catch {
-                  // If we can't fetch episodes for a season, continue checking other seasons
-                }
-              }
-              if (!has4kInAnySeason) {
-                plexMedia = undefined;
-              }
-            }
+          if (
+            plexMedia &&
+            media.mediaType === 'tv' &&
+            !this.plexSeasonsCache[cacheKey]?.length
+          ) {
+            plexMedia = undefined;
           }
         }
       }
