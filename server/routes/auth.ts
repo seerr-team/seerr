@@ -280,6 +280,10 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     return res.status(500).json({ error: 'Jellyfin login is disabled' });
   }
 
+  if (body.serverId && !configuredServer) {
+    return res.status(400).json({ error: 'Unknown Jellyfin serverId.' });
+  }
+
   if (!body.username) {
     return res.status(500).json({ error: 'You must provide an username' });
   } else if (configuredServer && body.hostname) {
