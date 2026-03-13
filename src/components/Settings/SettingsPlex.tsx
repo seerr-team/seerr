@@ -272,6 +272,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
     if (
       !hasInitializedServerSelection &&
       selectedServerId === 'new' &&
+      plexServers?.length === 1 &&
       plexServers?.[0]?.id
     ) {
       setSelectedServerId(plexServers[0].id);

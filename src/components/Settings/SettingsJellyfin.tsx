@@ -239,6 +239,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       !isSetupSettings &&
       !hasInitializedServerSelection &&
       selectedServerId === 'new' &&
+      jellyfinServers?.length === 1 &&
       jellyfinServers?.[0]
     ) {
       setSelectedServerId(jellyfinServers[0].id);
