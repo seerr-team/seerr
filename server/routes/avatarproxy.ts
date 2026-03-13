@@ -32,12 +32,6 @@ async function initAvatarImageProxy(serverId?: string) {
     throw new Error('No Jellyfin or Emby server configured.');
   }
 
-  const cacheKey = server.id;
-  const cachedProxy = avatarImageProxies.get(cacheKey);
-  if (cachedProxy) {
-    return cachedProxy;
-  }
-
   const userRepository = getRepository(User);
   const admin = await userRepository.findOne({
     where: { id: 1 },
@@ -45,6 +39,12 @@ async function initAvatarImageProxy(serverId?: string) {
     order: { id: 'ASC' },
   });
   const deviceId = admin?.jellyfinDeviceId || 'BOT_seerr';
+  const cacheKey = `${server.id}:${server.apiKey}:${deviceId}`;
+  const cachedProxy = avatarImageProxies.get(cacheKey);
+  if (cachedProxy) {
+    return cachedProxy;
+  }
+
   const imageProxy = new ImageProxy('avatar', '', {
     headers: {
       'X-Emby-Authorization': `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="${deviceId}", Version="${getAppVersion()}", Token="${server.apiKey}"`,
