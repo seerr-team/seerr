@@ -11,6 +11,12 @@ sidebar_position: 4
 All configurations from the **Settings** panel in the Seerr web UI are saved, including integrations with Radarr, Sonarr, Jellyfin, Plex, and notification settings.  
 These settings are stored in the `settings.json` file located in the Seerr data folder.
 
+:::note
+For multi-server setups, the active media server entries are stored in the `plexServers` and `jellyfinServers` arrays.
+
+The legacy `plex` and `jellyfin` objects are still kept for backward compatibility, but if you manually edit or restore a multi-server configuration, make sure the array entries contain the server details you want Seerr to use.
+:::
+
 ## User Data  
 
 Apart from the settings, all other data—including user accounts, media requests, blocklist etc. are stored in the database (either SQLite or PostgreSQL).

@@ -9,6 +9,12 @@ sidebar_position: 3
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+:::info
+Seerr can connect to multiple Plex, Jellyfin, and Emby servers at the same time. You can mix provider types and add more than one server of the same type.
+
+Each configured server has its own internal connection settings, external URL, library selection, and scan state.
+:::
+
 <Tabs groupId="media-server-type" queryString>
     <TabItem value="jellyfin" label="Jellyfin">
 :::info
@@ -16,6 +22,8 @@ To set up Jellyfin, make sure you log in using an account with administrative pr
 
 The email address can be any email address and is only used for notifications, password resets, and local sign-in.
 It is **not** tied to your Jellyfin account.
+
+When adding a new Jellyfin server from **Settings**, you can either provide an API key or sign in with an admin username and password to generate an API key automatically.
 :::
 
 ### Jellyfin Libraries
@@ -110,6 +118,8 @@ To set up Emby, make sure you log in using an account with administrative privil
 
 The email address can be any email address and is only used for notifications, password resets, and local sign-in.
 It is **not** tied to your Emby account.
+
+When adding a new Emby server from **Settings**, you can either provide an API key or sign in with an admin username and password to generate an API key automatically.
 :::
 
 ### Emby Libraries
