@@ -119,10 +119,22 @@ authRoutes.post('/plex', async (req, res, next) => {
         });
       }
 
+      let hasAccessToConfiguredPlexServer = false;
+
+      for (const plexServer of settings.plexServers) {
+        if (
+          plexServer.machineId &&
+          (await mainPlexTv.checkUserAccess(account.id, plexServer.machineId))
+        ) {
+          hasAccessToConfiguredPlexServer = true;
+          break;
+        }
+      }
+
       if (
         account.id === mainUser.plexId ||
         (account.email === mainUser.email && !mainUser.plexId) ||
-        (await mainPlexTv.checkUserAccess(account.id))
+        hasAccessToConfiguredPlexServer
       ) {
         if (user) {
           if (!user.plexId) {
