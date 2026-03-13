@@ -728,6 +728,15 @@ router.post(
 
         const jellyfinUser = jellyfinUsersById.get(jellyfinUserId);
 
+        if (!jellyfinUser) {
+          logger.warn('Skipping Jellyfin user import for unknown user ID', {
+            label: 'API',
+            jellyfinServerId: jellyfinServer.id,
+            jellyfinUserId,
+          });
+          continue;
+        }
+
         const user = await findJellyfinUser({
           userRepository,
           jellyfinUserId,
@@ -736,15 +745,15 @@ router.post(
 
         if (!user) {
           const newUser = new User({
-            jellyfinUsername: jellyfinUser?.Name,
-            jellyfinUserId: jellyfinUser?.Id,
+            jellyfinUsername: jellyfinUser.Name,
+            jellyfinUserId: jellyfinUser.Id,
             jellyfinServerId: jellyfinServer.id,
-            jellyfinDeviceId: Buffer.from(
-              `BOT_seerr_${jellyfinUser?.Name ?? ''}`
-            ).toString('base64'),
-            email: jellyfinUser?.Name,
+            jellyfinDeviceId: Buffer.from(`BOT_seerr_${jellyfinUser.Name}`).toString(
+              'base64'
+            ),
+            email: jellyfinUser.Name,
             permissions: settings.main.defaultPermissions,
-            avatar: `/avatarproxy/${jellyfinUser?.Id}?serverId=${jellyfinServer.id}`,
+            avatar: `/avatarproxy/${jellyfinUser.Id}?serverId=${jellyfinServer.id}`,
             userType:
               jellyfinServer.mediaServerType === MediaServerType.JELLYFIN
                 ? UserType.JELLYFIN
@@ -755,12 +764,12 @@ router.post(
           createdUsers.push(newUser);
         } else if (!user.jellyfinServerId) {
           user.jellyfinServerId = jellyfinServer.id;
-          user.jellyfinUsername = jellyfinUser?.Name;
+          user.jellyfinUsername = jellyfinUser.Name;
           user.userType =
             jellyfinServer.mediaServerType === MediaServerType.JELLYFIN
               ? UserType.JELLYFIN
               : UserType.EMBY;
-          user.avatar = `/avatarproxy/${jellyfinUser?.Id}?serverId=${jellyfinServer.id}`;
+          user.avatar = `/avatarproxy/${jellyfinUser.Id}?serverId=${jellyfinServer.id}`;
 
           await userRepository.save(user);
           createdUsers.push(user);
