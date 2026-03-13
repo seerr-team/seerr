@@ -2487,6 +2487,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PlexSettings'
+  /settings/plex/login:
+    post:
+      summary: Authenticate Plex for admin settings
+      description: |
+        Stores a Plex authentication token for the owner account so Plex servers can be discovered and configured from Settings.
+
+        Requires the `ADMIN` permission.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - authToken
+              properties:
+                authToken:
+                  type: string
+      responses:
+        '204':
+          description: Plex authentication stored successfully
   /settings/plex/servers:
     get:
       summary: Get Plex servers

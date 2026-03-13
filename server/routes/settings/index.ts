@@ -153,6 +153,48 @@ settingsRoutes.get('/plex', (req, res) => {
   res.status(200).json(server ?? getSettings().plex);
 });
 
+settingsRoutes.post('/plex/login', async (req, res, next) => {
+  const userRepository = getRepository(User);
+  const body = req.body as { authToken?: string };
+
+  if (req.user?.id !== 1) {
+    return next({
+      status: 403,
+      message: 'Only the owner can authenticate Plex for settings.',
+    });
+  }
+
+  if (!body.authToken) {
+    return next({
+      status: 400,
+      message: 'Authentication token required.',
+    });
+  }
+
+  try {
+    const plexTv = new PlexTvAPI(body.authToken);
+    const account = await plexTv.getUser();
+
+    await userRepository.update(
+      { id: 1 },
+      {
+        plexToken: account.authToken,
+      }
+    );
+
+    return res.status(204).send();
+  } catch (e) {
+    logger.error('Something went wrong authenticating Plex for settings', {
+      label: 'API',
+      errorMessage: e.message,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to authenticate with Plex.',
+    });
+  }
+});
+
 settingsRoutes.post('/plex', async (req, res, next) => {
   const userRepository = getRepository(User);
   const settings = getSettings();
@@ -240,11 +282,27 @@ settingsRoutes.delete('/plex/servers/:serverId', async (req, res, next) => {
 
 settingsRoutes.get('/plex/devices/servers', async (req, res, next) => {
   const userRepository = getRepository(User);
+
+  if (req.user?.id !== 1) {
+    return next({
+      status: 403,
+      message: 'Only the owner can access Plex server discovery.',
+    });
+  }
+
   try {
     const admin = await userRepository.findOneOrFail({
       select: { id: true, plexToken: true },
       where: { id: 1 },
     });
+
+    if (!admin.plexToken) {
+      return next({
+        status: 409,
+        message: 'Plex account authentication required.',
+      });
+    }
+
     const plexTvClient = admin.plexToken
       ? new PlexTvAPI(admin.plexToken)
       : null;

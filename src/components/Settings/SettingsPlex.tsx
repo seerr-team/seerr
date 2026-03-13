@@ -1,11 +1,13 @@
 import Alert from '@app/components/Common/Alert';
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
+import PlexLoginButton from '@app/components/Login/PlexLoginButton';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import LibraryItem from '@app/components/Settings/LibraryItem';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
+import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -44,6 +46,13 @@ const messages = defineMessages('components.Settings', {
   toastPlexConnecting: 'Attempting to connect to Plex…',
   toastPlexConnectingSuccess: 'Plex connection established successfully!',
   toastPlexConnectingFailure: 'Failed to connect to Plex.',
+  plexAccountRequired: 'Connect a Plex account before adding a Plex server.',
+  plexAccountRequiredDescription:
+    'Seerr uses your Plex account to discover servers from plex.tv and authenticate new Plex server connections from Settings.',
+  plexAccountOwnerOnly:
+    'Only the owner account can connect Plex from Settings because the Plex token is stored on the owner account.',
+  toastPlexAuthSuccess: 'Plex account connected successfully!',
+  toastPlexAuthFailure: 'Failed to authenticate with Plex.',
   toastPlexSyncFailure: 'Something went wrong while syncing Plex libraries.',
   settingUpPlexDescription:
     'To set up Plex, you can either enter the details manually or select a server retrieved from <RegisterPlexTVLink>plex.tv</RegisterPlexTVLink>. Press the button to the right of the dropdown to fetch the list of available servers.',
@@ -121,6 +130,7 @@ type PlexServerInstance = PlexSettings & {
 const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isRefreshingPresets, setIsRefreshingPresets] = useState(false);
+  const [isAuthenticatingPlex, setIsAuthenticatingPlex] = useState(false);
   const [availableServers, setAvailableServers] = useState<PlexDevice[] | null>(
     null
   );
@@ -148,7 +158,9 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
     }
   );
   const intl = useIntl();
+  const { user } = useUser();
   const { addToast, removeToast } = useToasts();
+  const isOwner = user?.id === 1;
 
   const PlexSettingsSchema = Yup.object().shape({
     hostname: Yup.string()
@@ -330,6 +342,29 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
     }
   };
 
+  const connectPlexAccount = async (authToken: string) => {
+    setIsAuthenticatingPlex(true);
+
+    try {
+      await axios.post('/api/v1/settings/plex/login', {
+        authToken,
+      });
+      addToast(intl.formatMessage(messages.toastPlexAuthSuccess), {
+        autoDismiss: true,
+        appearance: 'success',
+      });
+
+      await refreshPresetServers();
+    } catch (e) {
+      addToast(intl.formatMessage(messages.toastPlexAuthFailure), {
+        autoDismiss: true,
+        appearance: 'error',
+      });
+    } finally {
+      setIsAuthenticatingPlex(false);
+    }
+  };
+
   const startScan = async () => {
     await axios.post('/api/v1/settings/plex/sync', {
       start: true,
@@ -418,6 +453,31 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
         )}
       </div>
       <div className="section mb-6">
+        {selectedServerId === 'new' && (
+          <Alert
+            type="info"
+            title={intl.formatMessage(messages.plexAccountRequired)}
+          >
+            <div className="space-y-4">
+              <p>
+                {intl.formatMessage(
+                  isOwner
+                    ? messages.plexAccountRequiredDescription
+                    : messages.plexAccountOwnerOnly
+                )}
+              </p>
+              {isOwner && (
+                <div className="max-w-xs">
+                  <PlexLoginButton
+                    large
+                    isProcessing={isAuthenticatingPlex}
+                    onAuthToken={connectPlexAccount}
+                  />
+                </div>
+              )}
+            </div>
+          </Alert>
+        )}
         <div className="form-row">
           <label htmlFor="serverSelector" className="text-label">
             {intl.formatMessage(messages.servers)}
