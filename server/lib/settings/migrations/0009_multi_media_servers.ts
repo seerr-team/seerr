@@ -1,8 +1,12 @@
 import { MediaServerType } from '@server/constants/server';
+import { getRepository } from '@server/datasource';
+import { User } from '@server/entity/User';
 import type {
   AllSettings,
   JellyfinServerSettings,
+  JellyfinSettings,
   PlexServerSettings,
+  PlexSettings,
 } from '@server/lib/settings';
 import { randomUUID } from 'crypto';
 import type { LegacySettings } from './types';
@@ -58,7 +62,66 @@ const normalizeJellyfinServer = (
   apiKey: server.apiKey ?? '',
 });
 
-const migrateMultiMediaServers = (settings: LegacySettings): AllSettings => {
+const syncLegacyPrimaryServers = (settings: LegacySettings): void => {
+  if (settings.plexServers?.length === 1 && hasLegacyPlexConfig(settings)) {
+    const primaryPlexServer = settings.plexServers[0];
+    settings.plexServers[0] = normalizePlexServer({
+      ...primaryPlexServer,
+      ...(settings.plex as Partial<PlexSettings>),
+      id: primaryPlexServer.id,
+      mediaServerType: MediaServerType.PLEX,
+    });
+  }
+
+  if (
+    settings.jellyfinServers?.length === 1 &&
+    hasLegacyJellyfinConfig(settings)
+  ) {
+    const primaryJellyfinServer = settings.jellyfinServers[0];
+    settings.jellyfinServers[0] = normalizeJellyfinServer(
+      {
+        ...primaryJellyfinServer,
+        ...(settings.jellyfin as Partial<JellyfinSettings>),
+        id: primaryJellyfinServer.id,
+        mediaServerType:
+          primaryJellyfinServer.mediaServerType === MediaServerType.EMBY
+            ? MediaServerType.EMBY
+            : MediaServerType.JELLYFIN,
+      },
+      primaryJellyfinServer.mediaServerType
+    );
+  }
+};
+
+const backfillLegacyJellyfinUsers = async (
+  settings: LegacySettings
+): Promise<void> => {
+  if (
+    settings.jellyfinServers?.length !== 1 ||
+    !settings.jellyfinServers[0].id
+  ) {
+    return;
+  }
+
+  const [primaryServer] = settings.jellyfinServers;
+  const userRepository = getRepository(User);
+  const legacyUsers = await userRepository
+    .createQueryBuilder('user')
+    .where('user.jellyfinUserId IS NOT NULL')
+    .andWhere("(user.jellyfinServerId IS NULL OR user.jellyfinServerId = '')")
+    .getMany();
+
+  for (const user of legacyUsers) {
+    // Users reference Seerr's configured server entry ID, not Jellyfin's
+    // native serverId, so we backfill against primaryServer.id here.
+    user.jellyfinServerId = primaryServer.id;
+    await userRepository.save(user);
+  }
+};
+
+const migrateMultiMediaServers = async (
+  settings: LegacySettings
+): Promise<AllSettings> => {
   if (!Array.isArray(settings.plexServers)) {
     settings.plexServers = [];
   }
@@ -97,6 +160,9 @@ const migrateMultiMediaServers = (settings: LegacySettings): AllSettings => {
       )
     );
   }
+
+  syncLegacyPrimaryServers(settings);
+  await backfillLegacyJellyfinUsers(settings);
 
   if (!settings.main) {
     settings.main = {};

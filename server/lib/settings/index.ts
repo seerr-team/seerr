@@ -56,6 +56,8 @@ export interface JellyfinSettings {
 }
 
 export interface JellyfinServerSettings extends JellyfinSettings {
+  // Seerr's stable config entry ID. This is distinct from Jellyfin's native
+  // serverId below, which is returned by the remote server after authentication.
   id: string;
   mediaServerType: MediaServerType.JELLYFIN | MediaServerType.EMBY;
 }

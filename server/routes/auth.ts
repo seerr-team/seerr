@@ -14,6 +14,7 @@ import { isAuthenticated } from '@server/middleware/auth';
 import { checkAvatarChanged } from '@server/routes/avatarproxy';
 import { ApiError } from '@server/types/error';
 import { getAppVersion } from '@server/utils/appVersion';
+import { findJellyfinUser } from '@server/utils/findJellyfinUser';
 import { getHostname } from '@server/utils/getHostname';
 import axios from 'axios';
 import { Router } from 'express';
@@ -329,18 +330,12 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     );
 
     // Next let's see if the user already exists
-    user = configuredServer
-      ? await userRepository.findOne({
-          where: {
-            jellyfinUserId: account.User.Id,
-            jellyfinServerId: configuredServer.id,
-          },
-        })
-      : await userRepository.findOne({
-          where: {
-            jellyfinUserId: account.User.Id,
-          },
-        });
+    user =
+      (await findJellyfinUser({
+        userRepository,
+        jellyfinUserId: account.User.Id,
+        serverId: configuredServer?.id,
+      })) ?? null;
 
     const missingAdminUser = !user && !(await userRepository.count());
     if (

@@ -21,6 +21,7 @@ import { Permission, hasPermission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
+import { findJellyfinUser } from '@server/utils/findJellyfinUser';
 import { getHostname } from '@server/utils/getHostname';
 import { normalizeJellyfinGuid } from '@server/utils/jellyfin';
 import { isOwnProfileOrAdmin } from '@server/utils/profileMiddleware';
@@ -703,12 +704,10 @@ router.post(
 
         const jellyfinUser = jellyfinUsersById.get(jellyfinUserId);
 
-        const user = await userRepository.findOne({
-          select: ['id', 'jellyfinUserId', 'jellyfinServerId'],
-          where: {
-            jellyfinUserId: jellyfinUserId,
-            jellyfinServerId: jellyfinServer.id,
-          },
+        const user = await findJellyfinUser({
+          userRepository,
+          jellyfinUserId,
+          serverId: jellyfinServer.id,
         });
 
         if (!user) {
@@ -730,6 +729,17 @@ router.post(
 
           await userRepository.save(newUser);
           createdUsers.push(newUser);
+        } else if (!user.jellyfinServerId) {
+          user.jellyfinServerId = jellyfinServer.id;
+          user.jellyfinUsername = jellyfinUser?.Name;
+          user.userType =
+            jellyfinServer.mediaServerType === MediaServerType.JELLYFIN
+              ? UserType.JELLYFIN
+              : UserType.EMBY;
+          user.avatar = `/avatarproxy/${jellyfinUser?.Id}?serverId=${jellyfinServer.id}`;
+
+          await userRepository.save(user);
+          createdUsers.push(user);
         }
       }
       return res.status(201).json(User.filterMany(createdUsers));
