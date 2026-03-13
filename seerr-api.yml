@@ -242,6 +242,18 @@ components:
         localLogin:
           type: boolean
           example: true
+        mediaServerLogin:
+          type: boolean
+          example: true
+        plexLogin:
+          type: boolean
+          example: true
+        jellyfinLogin:
+          type: boolean
+          example: true
+        embyLogin:
+          type: boolean
+          example: true
         mediaServerType:
           type: number
           example: 1
