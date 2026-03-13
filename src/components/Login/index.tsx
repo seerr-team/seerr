@@ -1,3 +1,5 @@
+import EmbyIcon from '@app/assets/services/emby-icon-only.svg';
+import JellyfinIcon from '@app/assets/services/jellyfin-icon.svg';
 import Button from '@app/components/Common/Button';
 import ImageFader from '@app/components/Common/ImageFader';
 import PageTitle from '@app/components/Common/PageTitle';
@@ -9,7 +11,7 @@ import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
-import { XCircleIcon } from '@heroicons/react/24/solid';
+import { UserIcon, XCircleIcon } from '@heroicons/react/24/solid';
 import { MediaServerType, ServerType } from '@server/constants/server';
 import axios from 'axios';
 import { useRouter } from 'next/dist/client/router';
@@ -80,16 +82,31 @@ const Login = () => {
   // Plex is always a button (no form), so it's never the "active" expanded form
   const formMethods = availableMethods.filter((m) => m !== 'plex');
 
-  const getMethodLabel = (method: AuthMethod): string => {
+  const getMethodButton = (method: AuthMethod) => {
     switch (method) {
       case 'jellyfin':
-        return ServerType.JELLYFIN;
+        return {
+          label: ServerType.JELLYFIN,
+          icon: <JellyfinIcon className="mr-2 h-5 w-5" />,
+          className:
+            'border-[#6b4fa0] bg-[rgba(107,79,160,0.3)] hover:border-[#6b4fa0] hover:bg-[rgba(107,79,160,0.5)]',
+        };
       case 'emby':
-        return ServerType.EMBY;
+        return {
+          label: ServerType.EMBY,
+          icon: <EmbyIcon className="mr-2 h-5 w-5" />,
+          className:
+            'border-[#4caf50] bg-[rgba(76,175,80,0.3)] hover:border-[#4caf50] hover:bg-[rgba(76,175,80,0.5)]',
+        };
       case 'local':
-        return applicationTitle;
+        return {
+          label: applicationTitle,
+          icon: <UserIcon className="mr-2 h-5 w-5" />,
+          className:
+            'border-gray-600 bg-gray-700/50 hover:border-gray-500 hover:bg-gray-600/50',
+        };
       default:
-        return '';
+        return { label: '', icon: null, className: '' };
     }
   };
 
@@ -252,16 +269,21 @@ const Login = () => {
                           />
                         )}
 
-                      {/* Collapsed form methods as buttons */}
-                      {collapsedMethods.map((method) => (
-                        <Button
-                          key={method}
-                          className="w-full border-gray-600 bg-gray-700/50 text-gray-200 hover:border-gray-500 hover:bg-gray-600/50"
-                          onClick={() => setActiveMethod(method)}
-                        >
-                          {getMethodLabel(method)}
-                        </Button>
-                      ))}
+                      {/* Collapsed form methods as branded buttons */}
+                      {collapsedMethods.map((method) => {
+                        const { label, icon, className } =
+                          getMethodButton(method);
+                        return (
+                          <Button
+                            key={method}
+                            className={`w-full text-gray-200 ${className}`}
+                            onClick={() => setActiveMethod(method)}
+                          >
+                            {icon}
+                            {label}
+                          </Button>
+                        );
+                      })}
                     </div>
                   </>
                 ) : null}
