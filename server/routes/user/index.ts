@@ -591,7 +591,26 @@ router.post(
     try {
       const settings = getSettings();
       const userRepository = getRepository(User);
-      const body = req.body as { plexIds: string[] } | undefined;
+      const body = req.body as
+        | { plexIds?: string[]; serverId?: string }
+        | undefined;
+      const plexServer = body?.serverId
+        ? settings.plexServers.find((server) => server.id === body.serverId)
+        : settings.getPrimaryPlexServer();
+
+      if (body?.serverId && !plexServer) {
+        return next({
+          status: 404,
+          message: 'Plex server not found.',
+        });
+      }
+
+      if (!plexServer) {
+        return next({
+          status: 404,
+          message: 'No Plex server configured.',
+        });
+      }
 
       // taken from auth.ts
       const mainUser = await userRepository.findOneOrFail({
@@ -626,8 +645,13 @@ router.post(
               user.plexId = parseInt(account.id);
             }
             await userRepository.save(user);
-          } else if (!body || body.plexIds.includes(account.id)) {
-            if (await mainPlexTv.checkUserAccess(parseInt(account.id))) {
+          } else if (!body?.plexIds || body.plexIds.includes(account.id)) {
+            if (
+              await mainPlexTv.checkUserAccess(
+                parseInt(account.id),
+                plexServer.machineId
+              )
+            ) {
               const newUser = new User({
                 plexUsername: account.username,
                 email: account.email,

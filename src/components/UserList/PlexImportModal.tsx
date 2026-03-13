@@ -11,6 +11,7 @@ import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
 interface PlexImportProps {
+  plexServerId: string;
   onCancel?: () => void;
   onComplete?: () => void;
 }
@@ -26,7 +27,11 @@ const messages = defineMessages('components.UserList', {
     'The <strong>Enable New Plex Sign-In</strong> setting is currently enabled. Plex users with library access do not need to be imported in order to sign in.',
 });
 
-const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
+const PlexImportModal = ({
+  plexServerId,
+  onCancel,
+  onComplete,
+}: PlexImportProps) => {
   const intl = useIntl();
   const settings = useSettings();
   const { addToast } = useToasts();
@@ -40,7 +45,7 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
       email: string;
       thumb: string;
     }[]
-  >(`/api/v1/settings/plex/users`, {
+  >(`/api/v1/settings/plex/users?serverId=${plexServerId}`, {
     revalidateOnMount: true,
   });
 
@@ -50,7 +55,7 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
     try {
       const { data: createdUsers } = await axios.post(
         '/api/v1/user/import-from-plex',
-        { plexIds: selectedUsers }
+        { plexIds: selectedUsers, serverId: plexServerId }
       );
 
       if (!Array.isArray(createdUsers) || createdUsers.length === 0) {

@@ -2632,6 +2632,11 @@ paths:
       tags:
         - settings
         - users
+      parameters:
+        - in: query
+          name: serverId
+          schema:
+            type: string
       responses:
         '200':
           description: Plex users
@@ -4283,6 +4288,8 @@ paths:
                   type: array
                   items:
                     type: string
+                serverId:
+                  type: string
       responses:
         '201':
           description: A list of the newly created users

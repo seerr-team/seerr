@@ -96,9 +96,10 @@ const messages = defineMessages('components.UserList', {
 type Sort = 'created' | 'updated' | 'requests' | 'displayname';
 type ImportSource =
   | {
-      id: 'plex';
+      id: string;
       kind: 'plex';
       label: string;
+      server: PublicMediaServer;
     }
   | {
       id: string;
@@ -202,19 +203,18 @@ const UserList = () => {
   const importSources = useMemo<ImportSource[]>(() => {
     const sources: ImportSource[] = [];
 
-    if (
-      settings.currentSettings.mediaServers.some(
-        (server) => server.mediaServerType === MediaServerType.PLEX
-      )
-    ) {
+    settings.currentSettings.mediaServers
+      .filter((server) => server.mediaServerType === MediaServerType.PLEX)
+      .forEach((server) => {
       sources.push({
-        id: 'plex',
+        id: server.id,
         kind: 'plex',
         label: intl.formatMessage(messages.importfrommediaserver, {
-          mediaServerName: 'Plex',
+          mediaServerName: getMediaServerDisplayName(server),
         }),
+        server,
       });
-    }
+    });
 
     getJellyfinLikeServers(settings.currentSettings).forEach((server) => {
       sources.push({
@@ -543,6 +543,7 @@ const UserList = () => {
       >
         {selectedImportSource?.kind === 'plex' ? (
           <PlexImportModal
+            plexServerId={selectedImportSource.server.id}
             onCancel={() => setSelectedImportSource(null)}
             onComplete={() => {
               setSelectedImportSource(null);

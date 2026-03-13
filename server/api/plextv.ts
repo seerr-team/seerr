@@ -225,11 +225,15 @@ class PlexTvAPI extends ExternalAPI {
     }
   }
 
-  public async checkUserAccess(userId: number): Promise<boolean> {
+  public async checkUserAccess(
+    userId: number,
+    machineId?: string
+  ): Promise<boolean> {
     const settings = getSettings();
+    const targetMachineId = machineId ?? settings.plex.machineId;
 
     try {
-      if (!settings.plex.machineId) {
+      if (!targetMachineId) {
         throw new Error('Plex is not configured!');
       }
 
@@ -246,7 +250,7 @@ class PlexTvAPI extends ExternalAPI {
       }
 
       return !!user.Server?.find(
-        (server) => server.$.machineIdentifier === settings.plex.machineId
+        (server) => server.$.machineIdentifier === targetMachineId
       );
     } catch (e) {
       logger.error(`Error checking user access: ${e.message}`);

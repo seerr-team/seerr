@@ -705,6 +705,24 @@ settingsRoutes.get(
   async (req, res, next) => {
     const userRepository = getRepository(User);
     const qb = userRepository.createQueryBuilder('user');
+    const requestedServerId = req.query.serverId?.toString();
+    const plexServer = getPlexServerFromRequest({
+      serverId: requestedServerId,
+    });
+
+    if (requestedServerId && !plexServer) {
+      return next({
+        status: 404,
+        message: 'Plex server not found.',
+      });
+    }
+
+    if (!plexServer) {
+      return next({
+        status: 404,
+        message: 'No Plex server configured.',
+      });
+    }
 
     try {
       const admin = await userRepository.findOneOrFail({
@@ -744,7 +762,10 @@ settingsRoutes.get(
                 user.plexId === parseInt(plexUser.id) ||
                 user.email === plexUser.email.toLowerCase()
             ) &&
-            (await plexApi.checkUserAccess(parseInt(plexUser.id)))
+            (await plexApi.checkUserAccess(
+              parseInt(plexUser.id),
+              plexServer.machineId
+            ))
           ) {
             unimportedPlexUsers.push(plexUser);
           }
