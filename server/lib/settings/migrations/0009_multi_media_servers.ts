@@ -62,6 +62,44 @@ const normalizeJellyfinServer = (
   apiKey: server.apiKey ?? '',
 });
 
+const getPrimaryMediaServerType = (settings: LegacySettings): MediaServerType => {
+  const configuredMediaServerType = settings.main.mediaServerType as
+    | MediaServerType.PLEX
+    | MediaServerType.JELLYFIN
+    | MediaServerType.EMBY
+    | undefined;
+  const mediaServerTypes = [
+    ...new Set(
+      [
+        ...(settings.plexServers ?? []).map((server) => server.mediaServerType),
+        ...(settings.jellyfinServers ?? []).map(
+          (server) => server.mediaServerType
+        ),
+      ].filter(
+        (
+          mediaServerType
+        ): mediaServerType is
+          | MediaServerType.PLEX
+          | MediaServerType.JELLYFIN
+          | MediaServerType.EMBY => mediaServerType !== undefined
+      )
+    ),
+  ];
+
+  if (
+    configuredMediaServerType !== undefined &&
+    mediaServerTypes.includes(configuredMediaServerType)
+  ) {
+    return configuredMediaServerType;
+  }
+
+  if (mediaServerTypes.length === 1) {
+    return mediaServerTypes[0];
+  }
+
+  return MediaServerType.NOT_CONFIGURED;
+};
+
 const syncLegacyPrimaryServers = (settings: LegacySettings): void => {
   if (settings.plexServers?.length === 1 && hasLegacyPlexConfig(settings)) {
     const primaryPlexServer = settings.plexServers[0];
@@ -168,10 +206,7 @@ const migrateMultiMediaServers = async (
     settings.main = {};
   }
 
-  const primaryMediaServer =
-    settings.plexServers[0] ?? settings.jellyfinServers[0];
-  settings.main.mediaServerType =
-    primaryMediaServer?.mediaServerType ?? MediaServerType.NOT_CONFIGURED;
+  settings.main.mediaServerType = getPrimaryMediaServerType(settings);
 
   return settings as AllSettings;
 };

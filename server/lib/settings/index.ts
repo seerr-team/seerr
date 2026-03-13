@@ -916,10 +916,21 @@ class Settings {
   }
 
   public getPrimaryMediaServerType(): number {
-    return (
-      this.getMediaServers()[0]?.mediaServerType ??
-      MediaServerType.NOT_CONFIGURED
-    );
+    const mediaServerTypes = this.getMediaServerTypes();
+    const configuredPrimaryMediaServerType = this.data.main.mediaServerType;
+
+    if (
+      configuredPrimaryMediaServerType !== MediaServerType.NOT_CONFIGURED &&
+      mediaServerTypes.includes(configuredPrimaryMediaServerType)
+    ) {
+      return configuredPrimaryMediaServerType;
+    }
+
+    if (mediaServerTypes.length === 1) {
+      return mediaServerTypes[0];
+    }
+
+    return MediaServerType.NOT_CONFIGURED;
   }
 
   public getPrimaryPlexServer(): PlexServerSettings | undefined {
@@ -1048,8 +1059,6 @@ class Settings {
         ];
       }
     }
-
-    this.data.main.mediaServerType = this.getPrimaryMediaServerType();
   }
 }
 
