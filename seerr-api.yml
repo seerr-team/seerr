@@ -2265,6 +2265,13 @@ paths:
       description: Retrieves current Jellyfin settings.
       tags:
         - settings
+      parameters:
+        - in: query
+          name: serverId
+          description: Retrieves the settings for a specific Jellyfin or Emby server
+          schema:
+            type: string
+            nullable: true
       responses:
         '200':
           description: OK
@@ -2290,6 +2297,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JellyfinSettings'
+  /settings/jellyfin/servers:
+    get:
+      summary: Get Jellyfin servers
+      description: Retrieves the configured Jellyfin and Emby servers.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JellyfinSettings'
   /settings/jellyfin/library:
     get:
       summary: Get Jellyfin libraries
@@ -2297,6 +2319,12 @@ paths:
       tags:
         - settings
       parameters:
+        - in: query
+          name: serverId
+          description: Retrieves or syncs libraries for a specific Jellyfin or Emby server
+          schema:
+            type: string
+            nullable: true
         - in: query
           name: sync
           description: Syncs the current libraries with the current Jellyfin server
@@ -2327,6 +2355,13 @@ paths:
       tags:
         - settings
         - users
+      parameters:
+        - in: query
+          name: serverId
+          description: Retrieves users from a specific Jellyfin or Emby server
+          schema:
+            type: string
+            nullable: true
       responses:
         '200':
           description: Jellyfin users returned
@@ -2420,6 +2455,13 @@ paths:
       description: Retrieves current Plex settings.
       tags:
         - settings
+      parameters:
+        - in: query
+          name: serverId
+          description: Retrieves the settings for a specific Plex server
+          schema:
+            type: string
+            nullable: true
       responses:
         '200':
           description: OK
@@ -2445,6 +2487,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PlexSettings'
+  /settings/plex/servers:
+    get:
+      summary: Get Plex servers
+      description: Retrieves the configured Plex servers.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlexSettings'
   /settings/plex/library:
     get:
       summary: Get Plex libraries
@@ -2452,6 +2509,12 @@ paths:
       tags:
         - settings
       parameters:
+        - in: query
+          name: serverId
+          description: Retrieves or syncs libraries for a specific Plex server
+          schema:
+            type: string
+            nullable: true
         - in: query
           name: sync
           description: Syncs the current libraries with the current Plex server
@@ -4249,6 +4312,9 @@ paths:
                   type: array
                   items:
                     type: string
+                serverId:
+                  type: string
+                  nullable: true
       responses:
         '201':
           description: A list of the newly created users
@@ -5008,6 +5074,9 @@ paths:
                 password:
                   type: string
                   example: 'supersecret'
+                serverId:
+                  type: string
+                  nullable: true
       responses:
         '204':
           description: Linking account succeeded

@@ -2,6 +2,7 @@ import Alert from '@app/components/Common/Alert';
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
+import Dropdown from '@app/components/Common/Dropdown';
 import Header from '@app/components/Common/Header';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import Modal from '@app/components/Common/Modal';
@@ -16,6 +17,12 @@ import type { User } from '@app/hooks/useUser';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import {
+  getJellyfinLikeServers,
+  getMediaServerDisplayName,
+  getMediaServerTypeName,
+  type PublicMediaServer,
+} from '@app/utils/mediaServers';
 import { Transition } from '@headlessui/react';
 import {
   BarsArrowDownIcon,
@@ -32,7 +39,7 @@ import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
@@ -44,6 +51,7 @@ const messages = defineMessages('components.UserList', {
   users: 'Users',
   userlist: 'User List',
   importfrommediaserver: 'Import {mediaServerName} Users',
+  importusers: 'Import Users',
   user: 'User',
   totalrequests: 'Requests',
   accounttype: 'Type',
@@ -86,6 +94,18 @@ const messages = defineMessages('components.UserList', {
 });
 
 type Sort = 'created' | 'updated' | 'requests' | 'displayname';
+type ImportSource =
+  | {
+      id: 'plex';
+      kind: 'plex';
+      label: string;
+    }
+  | {
+      id: string;
+      kind: 'jellyfin';
+      label: string;
+      server: PublicMediaServer;
+    };
 
 const UserList = () => {
   const intl = useIntl();
@@ -111,7 +131,8 @@ const UserList = () => {
   );
 
   const [isDeleting, setDeleting] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
+  const [selectedImportSource, setSelectedImportSource] =
+    useState<ImportSource | null>(null);
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     user?: User;
@@ -178,6 +199,36 @@ const UserList = () => {
       setSelectedUsers((users) => [...users, userId]);
     }
   };
+  const importSources = useMemo<ImportSource[]>(() => {
+    const sources: ImportSource[] = [];
+
+    if (
+      settings.currentSettings.mediaServers.some(
+        (server) => server.mediaServerType === MediaServerType.PLEX
+      )
+    ) {
+      sources.push({
+        id: 'plex',
+        kind: 'plex',
+        label: intl.formatMessage(messages.importfrommediaserver, {
+          mediaServerName: 'Plex',
+        }),
+      });
+    }
+
+    getJellyfinLikeServers(settings.currentSettings).forEach((server) => {
+      sources.push({
+        id: server.id,
+        kind: 'jellyfin',
+        server,
+        label: intl.formatMessage(messages.importfrommediaserver, {
+          mediaServerName: getMediaServerDisplayName(server),
+        }),
+      });
+    });
+
+    return sources;
+  }, [intl, settings.currentSettings]);
 
   const deleteUser = async () => {
     setDeleting(true);
@@ -488,27 +539,33 @@ const UserList = () => {
         leave="transition-opacity duration-300"
         leaveFrom="opacity-100"
         leaveTo="opacity-0"
-        show={showImportModal}
+        show={selectedImportSource !== null}
       >
-        {settings.currentSettings.mediaServerType === MediaServerType.PLEX ? (
+        {selectedImportSource?.kind === 'plex' ? (
           <PlexImportModal
-            onCancel={() => setShowImportModal(false)}
+            onCancel={() => setSelectedImportSource(null)}
             onComplete={() => {
-              setShowImportModal(false);
+              setSelectedImportSource(null);
               revalidate();
             }}
           />
-        ) : (
+        ) : selectedImportSource?.kind === 'jellyfin' ? (
           <JellyfinImportModal
-            onCancel={() => setShowImportModal(false)}
+            serverId={selectedImportSource.server.id}
+            serverName={selectedImportSource.server.name}
+            mediaServerType={
+              selectedImportSource.server.mediaServerType as
+                | MediaServerType.JELLYFIN
+                | MediaServerType.EMBY
+            }
+            existingUserCount={data?.pageInfo.results}
+            onCancel={() => setSelectedImportSource(null)}
             onComplete={() => {
-              setShowImportModal(false);
+              setSelectedImportSource(null);
               revalidate();
             }}
-          >
-            {data.pageInfo.results}
-          </JellyfinImportModal>
-        )}
+          />
+        ) : null}
       </Transition>
 
       <div className="flex flex-col justify-between lg:flex-row lg:items-end">
@@ -523,28 +580,43 @@ const UserList = () => {
               <UserPlusIcon />
               <span>{intl.formatMessage(messages.createlocaluser)}</span>
             </Button>
-            <Button
-              className="flex-grow lg:mr-2"
-              buttonType="primary"
-              onClick={() => setShowImportModal(true)}
-            >
-              <InboxArrowDownIcon />
-              <span>
-                {settings.currentSettings.mediaServerType ===
-                MediaServerType.EMBY
-                  ? intl.formatMessage(messages.importfrommediaserver, {
-                      mediaServerName: 'Emby',
-                    })
-                  : settings.currentSettings.mediaServerType ===
-                      MediaServerType.PLEX
-                    ? intl.formatMessage(messages.importfrommediaserver, {
-                        mediaServerName: 'Plex',
-                      })
-                    : intl.formatMessage(messages.importfrommediaserver, {
-                        mediaServerName: 'Jellyfin',
-                      })}
-              </span>
-            </Button>
+            {importSources.length > 1 ? (
+              <Dropdown
+                className="flex-grow lg:mr-2"
+                buttonType="primary"
+                text={intl.formatMessage(messages.importusers)}
+                dropdownIcon={<InboxArrowDownIcon className="h-5 w-5" />}
+              >
+                {importSources.map((source) => (
+                  <Dropdown.Item
+                    key={source.id}
+                    onClick={() => setSelectedImportSource(source)}
+                  >
+                    {source.label}
+                  </Dropdown.Item>
+                ))}
+              </Dropdown>
+            ) : (
+              <Button
+                className="flex-grow lg:mr-2"
+                buttonType="primary"
+                onClick={() =>
+                  setSelectedImportSource(importSources[0] ?? null)
+                }
+                disabled={importSources.length === 0}
+              >
+                <InboxArrowDownIcon />
+                <span>
+                  {importSources[0]?.label ??
+                    intl.formatMessage(messages.importfrommediaserver, {
+                      mediaServerName:
+                        getMediaServerTypeName(
+                          settings.currentSettings.mediaServerType
+                        ) ?? 'Media Server',
+                    })}
+                </span>
+              </Button>
+            )}
           </div>
           <div className="mb-2 flex flex-grow lg:mb-0 lg:flex-grow-0">
             <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">

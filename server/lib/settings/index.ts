@@ -3,7 +3,7 @@ import { Permission } from '@server/lib/permissions';
 import { runMigrations } from '@server/lib/settings/migrator';
 import { randomUUID } from 'crypto';
 import fs from 'fs/promises';
-import { merge } from 'lodash';
+import { merge, omit } from 'lodash';
 import path from 'path';
 import webpush from 'web-push';
 
@@ -37,6 +37,11 @@ export interface PlexSettings {
   webAppUrl?: string;
 }
 
+export interface PlexServerSettings extends PlexSettings {
+  id: string;
+  mediaServerType: MediaServerType.PLEX;
+}
+
 export interface JellyfinSettings {
   name: string;
   ip: string;
@@ -49,6 +54,13 @@ export interface JellyfinSettings {
   serverId: string;
   apiKey: string;
 }
+
+export interface JellyfinServerSettings extends JellyfinSettings {
+  id: string;
+  mediaServerType: MediaServerType.JELLYFIN | MediaServerType.EMBY;
+}
+
+export type MediaServerSettings = PlexServerSettings | JellyfinServerSettings;
 export interface TautulliSettings {
   hostname?: string;
   port?: number;
@@ -179,6 +191,14 @@ interface PublicSettings {
   initialized: boolean;
 }
 
+export interface PublicMediaServerSettings {
+  id: string;
+  mediaServerType: number;
+  name: string;
+  externalHostname?: string;
+  jellyfinForgotPasswordUrl?: string;
+}
+
 interface FullPublicSettings extends PublicSettings {
   applicationTitle: string;
   applicationUrl: string;
@@ -192,6 +212,8 @@ interface FullPublicSettings extends PublicSettings {
   streamingRegion: string;
   originalLanguage: string;
   mediaServerType: number;
+  mediaServerTypes: number[];
+  mediaServers: PublicMediaServerSettings[];
   jellyfinExternalHost?: string;
   jellyfinForgotPasswordUrl?: string;
   jellyfinServerName?: string;
@@ -358,7 +380,9 @@ export interface AllSettings {
   vapidPrivate: string;
   main: MainSettings;
   plex: PlexSettings;
+  plexServers: PlexServerSettings[];
   jellyfin: JellyfinSettings;
+  jellyfinServers: JellyfinServerSettings[];
   tautulli: TautulliSettings;
   radarr: RadarrSettings[];
   sonarr: SonarrSettings[];
@@ -373,6 +397,27 @@ export interface AllSettings {
 const SETTINGS_PATH = process.env.CONFIG_DIRECTORY
   ? `${process.env.CONFIG_DIRECTORY}/settings.json`
   : path.join(__dirname, '../../../config/settings.json');
+
+const getDefaultPlexSettings = (): PlexSettings => ({
+  name: '',
+  ip: '',
+  port: 32400,
+  useSsl: false,
+  libraries: [],
+});
+
+const getDefaultJellyfinSettings = (): JellyfinSettings => ({
+  name: '',
+  ip: '',
+  port: 8096,
+  useSsl: false,
+  urlBase: '',
+  externalHostname: '',
+  jellyfinForgotPasswordUrl: '',
+  libraries: [],
+  serverId: '',
+  apiKey: '',
+});
 
 class Settings {
   private data: AllSettings;
@@ -408,25 +453,10 @@ class Settings {
         locale: 'en',
         youtubeUrl: '',
       },
-      plex: {
-        name: '',
-        ip: '',
-        port: 32400,
-        useSsl: false,
-        libraries: [],
-      },
-      jellyfin: {
-        name: '',
-        ip: '',
-        port: 8096,
-        useSsl: false,
-        urlBase: '',
-        externalHostname: '',
-        jellyfinForgotPasswordUrl: '',
-        libraries: [],
-        serverId: '',
-        apiKey: '',
-      },
+      plex: getDefaultPlexSettings(),
+      plexServers: [],
+      jellyfin: getDefaultJellyfinSettings(),
+      jellyfinServers: [],
       tautulli: {},
       metadataSettings: {
         tv: MetadataProviderType.TMDB,
@@ -605,6 +635,8 @@ class Settings {
     if (initialSettings) {
       this.data = merge(this.data, initialSettings);
     }
+
+    this.synchronizeMediaServerSettings();
   }
 
   get main(): MainSettings {
@@ -621,6 +653,16 @@ class Settings {
 
   set plex(data: PlexSettings) {
     this.data.plex = data;
+    this.synchronizeMediaServerSettings({ syncLegacyFromArrays: false });
+  }
+
+  get plexServers(): PlexServerSettings[] {
+    return this.data.plexServers;
+  }
+
+  set plexServers(data: PlexServerSettings[]) {
+    this.data.plexServers = data;
+    this.synchronizeMediaServerSettings();
   }
 
   get jellyfin(): JellyfinSettings {
@@ -629,6 +671,16 @@ class Settings {
 
   set jellyfin(data: JellyfinSettings) {
     this.data.jellyfin = data;
+    this.synchronizeMediaServerSettings({ syncLegacyFromArrays: false });
+  }
+
+  get jellyfinServers(): JellyfinServerSettings[] {
+    return this.data.jellyfinServers;
+  }
+
+  set jellyfinServers(data: JellyfinServerSettings[]) {
+    this.data.jellyfinServers = data;
+    this.synchronizeMediaServerSettings();
   }
 
   get tautulli(): TautulliSettings {
@@ -672,6 +724,9 @@ class Settings {
   }
 
   get fullPublicSettings(): FullPublicSettings {
+    const mediaServers = this.getMediaServers();
+    const jellyfinServer = this.getPrimaryJellyfinLikeServer();
+
     return {
       ...this.data.public,
       applicationTitle: this.data.main.applicationTitle,
@@ -680,8 +735,6 @@ class Settings {
       hideBlocklisted: this.data.main.hideBlocklisted,
       localLogin: this.data.main.localLogin,
       mediaServerLogin: this.data.main.mediaServerLogin,
-      jellyfinExternalHost: this.data.jellyfin.externalHostname,
-      jellyfinForgotPasswordUrl: this.data.jellyfin.jellyfinForgotPasswordUrl,
       movie4kEnabled: this.data.radarr.some(
         (radarr) => radarr.is4k && radarr.isDefault
       ),
@@ -691,7 +744,19 @@ class Settings {
       discoverRegion: this.data.main.discoverRegion,
       streamingRegion: this.data.main.streamingRegion,
       originalLanguage: this.data.main.originalLanguage,
-      mediaServerType: this.main.mediaServerType,
+      mediaServerType: this.getPrimaryMediaServerType(),
+      mediaServerTypes: this.getMediaServerTypes(),
+      mediaServers: mediaServers.map((server) => ({
+        id: server.id,
+        mediaServerType: server.mediaServerType,
+        name: server.name,
+        externalHostname:
+          'externalHostname' in server ? server.externalHostname : undefined,
+        jellyfinForgotPasswordUrl:
+          'jellyfinForgotPasswordUrl' in server
+            ? server.jellyfinForgotPasswordUrl
+            : undefined,
+      })),
       partialRequestsEnabled: this.data.main.partialRequestsEnabled,
       enableSpecialEpisodes: this.data.main.enableSpecialEpisodes,
       cacheImages: this.data.main.cacheImages,
@@ -703,6 +768,9 @@ class Settings {
         this.data.notifications.agents.email.options.userEmailRequired,
       newPlexLogin: this.data.main.newPlexLogin,
       youtubeUrl: this.data.main.youtubeUrl,
+      jellyfinExternalHost: jellyfinServer?.externalHostname,
+      jellyfinForgotPasswordUrl: jellyfinServer?.jellyfinForgotPasswordUrl,
+      jellyfinServerName: jellyfinServer?.name,
     };
   }
 
@@ -797,6 +865,8 @@ class Settings {
       this.data = JSON.parse(data);
     }
 
+    this.synchronizeMediaServerSettings();
+
     // generate keys and ids if it's missing
     let change = false;
     if (!this.data.main.apiKey) {
@@ -825,9 +895,159 @@ class Settings {
   }
 
   public async save(): Promise<void> {
+    this.synchronizeMediaServerSettings();
     const tmp = SETTINGS_PATH + '.tmp';
     await fs.writeFile(tmp, JSON.stringify(this.data, undefined, ' '));
     await fs.rename(tmp, SETTINGS_PATH);
+  }
+
+  public getMediaServers(): MediaServerSettings[] {
+    return [...this.data.plexServers, ...this.data.jellyfinServers];
+  }
+
+  public getMediaServerTypes(): number[] {
+    return [
+      ...new Set(
+        this.getMediaServers().map((server) => server.mediaServerType)
+      ),
+    ];
+  }
+
+  public getPrimaryMediaServerType(): number {
+    return (
+      this.getMediaServers()[0]?.mediaServerType ??
+      MediaServerType.NOT_CONFIGURED
+    );
+  }
+
+  public getPrimaryPlexServer(): PlexServerSettings | undefined {
+    return this.data.plexServers[0];
+  }
+
+  public getPrimaryJellyfinLikeServer(
+    mediaServerType?: MediaServerType.JELLYFIN | MediaServerType.EMBY
+  ): JellyfinServerSettings | undefined {
+    return this.data.jellyfinServers.find((server) =>
+      mediaServerType ? server.mediaServerType === mediaServerType : true
+    );
+  }
+
+  private synchronizeMediaServerSettings({
+    syncLegacyFromArrays = true,
+  }: { syncLegacyFromArrays?: boolean } = {}): void {
+    this.data.plexServers = (this.data.plexServers ?? []).map((server) => ({
+      ...server,
+      id: server.id || randomUUID(),
+      mediaServerType: MediaServerType.PLEX,
+    }));
+    this.data.jellyfinServers = (this.data.jellyfinServers ?? []).map(
+      (server) => ({
+        ...server,
+        id: server.id || randomUUID(),
+        mediaServerType:
+          server.mediaServerType === MediaServerType.EMBY
+            ? MediaServerType.EMBY
+            : MediaServerType.JELLYFIN,
+      })
+    );
+
+    if (
+      this.data.plexServers.length === 0 &&
+      (this.data.plex.ip ||
+        this.data.plex.machineId ||
+        this.data.plex.libraries.length > 0)
+    ) {
+      this.data.plexServers.push({
+        id: randomUUID(),
+        mediaServerType: MediaServerType.PLEX,
+        ...this.data.plex,
+      });
+    }
+
+    if (
+      this.data.jellyfinServers.length === 0 &&
+      (this.data.jellyfin.ip ||
+        this.data.jellyfin.serverId ||
+        this.data.jellyfin.libraries.length > 0)
+    ) {
+      this.data.jellyfinServers.push({
+        id: randomUUID(),
+        mediaServerType:
+          this.data.main.mediaServerType === MediaServerType.EMBY
+            ? MediaServerType.EMBY
+            : MediaServerType.JELLYFIN,
+        ...this.data.jellyfin,
+      });
+    }
+
+    if (syncLegacyFromArrays) {
+      const primaryPlexServer = this.getPrimaryPlexServer();
+      if (primaryPlexServer) {
+        this.data.plex = omit(primaryPlexServer, [
+          'id',
+          'mediaServerType',
+        ]) as PlexSettings;
+      } else {
+        this.data.plex = getDefaultPlexSettings();
+      }
+
+      const primaryJellyfinServer = this.getPrimaryJellyfinLikeServer();
+      if (primaryJellyfinServer) {
+        this.data.jellyfin = omit(primaryJellyfinServer, [
+          'id',
+          'mediaServerType',
+        ]) as JellyfinSettings;
+      } else {
+        this.data.jellyfin = getDefaultJellyfinSettings();
+      }
+    } else {
+      if (this.data.plexServers[0]) {
+        this.data.plexServers[0] = {
+          ...this.data.plexServers[0],
+          ...this.data.plex,
+          id: this.data.plexServers[0].id,
+          mediaServerType: MediaServerType.PLEX,
+        };
+      } else if (
+        this.data.plex.ip ||
+        this.data.plex.machineId ||
+        this.data.plex.libraries.length > 0
+      ) {
+        this.data.plexServers = [
+          {
+            id: randomUUID(),
+            mediaServerType: MediaServerType.PLEX,
+            ...this.data.plex,
+          },
+        ];
+      }
+
+      if (this.data.jellyfinServers[0]) {
+        this.data.jellyfinServers[0] = {
+          ...this.data.jellyfinServers[0],
+          ...this.data.jellyfin,
+          id: this.data.jellyfinServers[0].id,
+          mediaServerType: this.data.jellyfinServers[0].mediaServerType,
+        };
+      } else if (
+        this.data.jellyfin.ip ||
+        this.data.jellyfin.serverId ||
+        this.data.jellyfin.libraries.length > 0
+      ) {
+        this.data.jellyfinServers = [
+          {
+            id: randomUUID(),
+            mediaServerType:
+              this.data.main.mediaServerType === MediaServerType.EMBY
+                ? MediaServerType.EMBY
+                : MediaServerType.JELLYFIN,
+            ...this.data.jellyfin,
+          },
+        ];
+      }
+    }
+
+    this.data.main.mediaServerType = this.getPrimaryMediaServerType();
   }
 }
 

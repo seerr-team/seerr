@@ -40,6 +40,7 @@ const messages = defineMessages('components.Setup', {
   configureservices: 'Configure Services',
   librarieserror:
     'Validation failed. Please toggle the libraries again to continue.',
+  changeservertype: 'Change Server Type',
 });
 
 const Setup = () => {
@@ -51,6 +52,10 @@ const Setup = () => {
   const [mediaServerType, setMediaServerType] = useState(
     MediaServerType.NOT_CONFIGURED
   );
+  const [
+    hasAutoAdvancedToMediaServerStep,
+    setHasAutoAdvancedToMediaServerStep,
+  ] = useState(false);
   const router = useRouter();
   const { locale } = useLocale();
   const settings = useSettings();
@@ -113,14 +118,17 @@ const Setup = () => {
 
     if (
       settings.currentSettings.mediaServerType !==
-      MediaServerType.NOT_CONFIGURED
+        MediaServerType.NOT_CONFIGURED &&
+      !hasAutoAdvancedToMediaServerStep
     ) {
       setMediaServerType(settings.currentSettings.mediaServerType);
       if (currentStep < 3) {
         setCurrentStep(3);
       }
+      setHasAutoAdvancedToMediaServerStep(true);
     }
   }, [
+    hasAutoAdvancedToMediaServerStep,
     settings.currentSettings.mediaServerType,
     settings.currentSettings.initialized,
     router,
@@ -269,10 +277,29 @@ const Setup = () => {
               {mediaServerType === MediaServerType.PLEX ? (
                 <SettingsPlex onComplete={handleComplete} />
               ) : (
-                <SettingsJellyfin isSetupSettings onComplete={handleComplete} />
+                <SettingsJellyfin
+                  isSetupSettings
+                  setupServerType={
+                    mediaServerType === MediaServerType.EMBY
+                      ? MediaServerType.EMBY
+                      : MediaServerType.JELLYFIN
+                  }
+                  onComplete={handleComplete}
+                />
               )}
               <div className="actions">
-                <div className="flex justify-end">
+                <div className="flex justify-between">
+                  <span className="inline-flex rounded-md shadow-sm">
+                    <Button
+                      buttonType="default"
+                      onClick={() => {
+                        setMediaServerSettingsComplete(false);
+                        setCurrentStep(1);
+                      }}
+                    >
+                      {intl.formatMessage(messages.changeservertype)}
+                    </Button>
+                  </span>
                   <span className="ml-3 inline-flex rounded-md shadow-sm">
                     <Button
                       buttonType="primary"

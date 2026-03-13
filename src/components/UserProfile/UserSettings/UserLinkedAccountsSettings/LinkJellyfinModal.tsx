@@ -3,8 +3,8 @@ import Modal from '@app/components/Common/Modal';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
+import type { PublicMediaServer } from '@app/utils/mediaServers';
 import { Transition } from '@headlessui/react';
-import { MediaServerType } from '@server/constants/server';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useState } from 'react';
@@ -32,12 +32,14 @@ const messages = defineMessages(
 
 interface LinkJellyfinModalProps {
   show: boolean;
+  server: PublicMediaServer;
   onClose: () => void;
   onSave: () => void;
 }
 
 const LinkJellyfinModal: React.FC<LinkJellyfinModalProps> = ({
   show,
+  server,
   onClose,
   onSave,
 }) => {
@@ -56,10 +58,7 @@ const LinkJellyfinModal: React.FC<LinkJellyfinModalProps> = ({
   });
 
   const applicationName = settings.currentSettings.applicationTitle;
-  const mediaServerName =
-    settings.currentSettings.mediaServerType === MediaServerType.EMBY
-      ? 'Emby'
-      : 'Jellyfin';
+  const mediaServerName = server.name;
 
   return (
     <Transition
@@ -86,6 +85,7 @@ const LinkJellyfinModal: React.FC<LinkJellyfinModalProps> = ({
               {
                 username,
                 password,
+                serverId: server.id,
               }
             );
             onSave();

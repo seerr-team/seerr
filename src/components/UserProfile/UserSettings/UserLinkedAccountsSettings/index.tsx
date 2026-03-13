@@ -9,6 +9,11 @@ import useSettings from '@app/hooks/useSettings';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import {
+  getJellyfinLikeServers,
+  getMediaServerDisplayName,
+  type PublicMediaServer,
+} from '@app/utils/mediaServers';
 import PlexOAuth from '@app/utils/plex';
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { MediaServerType } from '@server/constants/server';
@@ -62,7 +67,8 @@ const UserLinkedAccountsSettings = () => {
   const { data: passwordInfo } = useSWR<{ hasPassword: boolean }>(
     user ? `/api/v1/user/${user?.id}/settings/password` : null
   );
-  const [showJellyfinModal, setShowJellyfinModal] = useState(false);
+  const [selectedJellyfinServer, setSelectedJellyfinServer] =
+    useState<PublicMediaServer | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const applicationName = settings.currentSettings.applicationTitle;
@@ -121,23 +127,18 @@ const UserLinkedAccountsSettings = () => {
         setTimeout(() => linkPlexAccount(), 1500);
       },
       hide:
-        settings.currentSettings.mediaServerType !== MediaServerType.PLEX ||
-        accounts.some((a) => a.type === LinkedAccountType.Plex),
+        !settings.currentSettings.mediaServers.some(
+          (server) => server.mediaServerType === MediaServerType.PLEX
+        ) || accounts.some((a) => a.type === LinkedAccountType.Plex),
     },
-    {
-      name: 'Jellyfin',
-      action: () => setShowJellyfinModal(true),
+    ...getJellyfinLikeServers(settings.currentSettings).map((server) => ({
+      name: getMediaServerDisplayName(server),
+      action: () => setSelectedJellyfinServer(server),
       hide:
-        settings.currentSettings.mediaServerType !== MediaServerType.JELLYFIN ||
-        accounts.some((a) => a.type === LinkedAccountType.Jellyfin),
-    },
-    {
-      name: 'Emby',
-      action: () => setShowJellyfinModal(true),
-      hide:
-        settings.currentSettings.mediaServerType !== MediaServerType.EMBY ||
-        accounts.some((a) => a.type === LinkedAccountType.Emby),
-    },
+        server.mediaServerType === MediaServerType.EMBY
+          ? accounts.some((a) => a.type === LinkedAccountType.Emby)
+          : accounts.some((a) => a.type === LinkedAccountType.Jellyfin),
+    })),
   ].filter((l) => !l.hide);
 
   const deleteRequest = async (account: string) => {
@@ -259,10 +260,13 @@ const UserLinkedAccountsSettings = () => {
       )}
 
       <LinkJellyfinModal
-        show={showJellyfinModal}
-        onClose={() => setShowJellyfinModal(false)}
+        show={selectedJellyfinServer !== null}
+        server={
+          selectedJellyfinServer ?? settings.currentSettings.mediaServers[0]
+        }
+        onClose={() => setSelectedJellyfinServer(null)}
         onSave={() => {
-          setShowJellyfinModal(false);
+          setSelectedJellyfinServer(null);
           revalidateUser();
         }}
       />

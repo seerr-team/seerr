@@ -657,7 +657,14 @@ router.post(
     try {
       const settings = getSettings();
       const userRepository = getRepository(User);
-      const body = req.body as { jellyfinUserIds: string[] };
+      const body = req.body as { jellyfinUserIds: string[]; serverId?: string };
+      const jellyfinServer = body.serverId
+        ? settings.jellyfinServers.find((server) => server.id === body.serverId)
+        : settings.getPrimaryJellyfinLikeServer();
+
+      if (!jellyfinServer) {
+        return next({ status: 404, message: 'Jellyfin server not found.' });
+      }
 
       // taken from auth.ts
       const admin = await userRepository.findOneOrFail({
@@ -666,11 +673,12 @@ router.post(
         order: { id: 'ASC' },
       });
 
-      const hostname = getHostname();
+      const hostname = getHostname(jellyfinServer);
       const jellyfinClient = new JellyfinAPI(
         hostname,
-        settings.jellyfin.apiKey,
-        admin.jellyfinDeviceId ?? ''
+        jellyfinServer.apiKey,
+        admin.jellyfinDeviceId ?? '',
+        jellyfinServer.mediaServerType
       );
       jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
 
@@ -696,22 +704,26 @@ router.post(
         const jellyfinUser = jellyfinUsersById.get(jellyfinUserId);
 
         const user = await userRepository.findOne({
-          select: ['id', 'jellyfinUserId'],
-          where: { jellyfinUserId: jellyfinUserId },
+          select: ['id', 'jellyfinUserId', 'jellyfinServerId'],
+          where: {
+            jellyfinUserId: jellyfinUserId,
+            jellyfinServerId: jellyfinServer.id,
+          },
         });
 
         if (!user) {
           const newUser = new User({
             jellyfinUsername: jellyfinUser?.Name,
             jellyfinUserId: jellyfinUser?.Id,
+            jellyfinServerId: jellyfinServer.id,
             jellyfinDeviceId: Buffer.from(
               `BOT_seerr_${jellyfinUser?.Name ?? ''}`
             ).toString('base64'),
             email: jellyfinUser?.Name,
             permissions: settings.main.defaultPermissions,
-            avatar: `/avatarproxy/${jellyfinUser?.Id}`,
+            avatar: `/avatarproxy/${jellyfinUser?.Id}?serverId=${jellyfinServer.id}`,
             userType:
-              settings.main.mediaServerType === MediaServerType.JELLYFIN
+              jellyfinServer.mediaServerType === MediaServerType.JELLYFIN
                 ? UserType.JELLYFIN
                 : UserType.EMBY,
           });

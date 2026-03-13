@@ -8,7 +8,7 @@ export interface SettingsContextProps {
   children?: React.ReactNode;
 }
 
-const defaultSettings = {
+const defaultSettings: PublicSettingsResponse = {
   initialized: false,
   applicationTitle: 'Seerr',
   applicationUrl: '',
@@ -22,6 +22,8 @@ const defaultSettings = {
   streamingRegion: '',
   originalLanguage: '',
   mediaServerType: MediaServerType.NOT_CONFIGURED,
+  mediaServerTypes: [],
+  mediaServers: [],
   partialRequestsEnabled: true,
   enableSpecialEpisodes: false,
   cacheImages: false,

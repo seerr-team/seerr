@@ -12,6 +12,7 @@ const messages = defineMessages('components.Settings', {
   menuUsers: 'Users',
   menuPlexSettings: 'Plex',
   menuJellyfinSettings: '{mediaServerName}',
+  menuJellyfinEmbySettings: 'Jellyfin / Emby',
   menuServices: 'Services',
   menuNetwork: 'Network',
   menuNotifications: 'Notifications',
@@ -28,6 +29,19 @@ type SettingsLayoutProps = {
 const SettingsLayout = ({ children }: SettingsLayoutProps) => {
   const intl = useIntl();
   const settings = useSettings();
+  const mediaServerRoutes: SettingsRoute[] = [
+    {
+      text: intl.formatMessage(messages.menuPlexSettings),
+      route: '/settings/plex',
+      regex: /^\/settings\/plex/,
+    },
+    {
+      text: getAvailableMediaServerName(),
+      route: '/settings/jellyfin',
+      regex: /^\/settings\/jellyfin/,
+    },
+  ];
+
   const settingsRoutes: SettingsRoute[] = [
     {
       text: intl.formatMessage(messages.menuGeneralSettings),
@@ -39,17 +53,7 @@ const SettingsLayout = ({ children }: SettingsLayoutProps) => {
       route: '/settings/users',
       regex: /^\/settings\/users/,
     },
-    settings.currentSettings.mediaServerType === MediaServerType.PLEX
-      ? {
-          text: intl.formatMessage(messages.menuPlexSettings),
-          route: '/settings/plex',
-          regex: /^\/settings\/plex/,
-        }
-      : {
-          text: getAvailableMediaServerName(),
-          route: '/settings/jellyfin',
-          regex: /^\/settings\/jellyfin/,
-        },
+    ...mediaServerRoutes,
     {
       text: intl.formatMessage(messages.menuServices),
       route: '/settings/services',
@@ -97,13 +101,26 @@ const SettingsLayout = ({ children }: SettingsLayoutProps) => {
     </>
   );
   function getAvailableMediaServerName() {
+    if (
+      !settings.currentSettings.mediaServers.some(
+        (server) =>
+          server.mediaServerType === MediaServerType.JELLYFIN ||
+          server.mediaServerType === MediaServerType.EMBY
+      )
+    ) {
+      return intl.formatMessage(messages.menuJellyfinEmbySettings);
+    }
+
     return intl.formatMessage(messages.menuJellyfinSettings, {
-      mediaServerName:
-        settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
-          ? 'Jellyfin'
-          : settings.currentSettings.mediaServerType === MediaServerType.EMBY
-            ? 'Emby'
-            : undefined,
+      mediaServerName: settings.currentSettings.mediaServers.some(
+        (server) => server.mediaServerType === MediaServerType.JELLYFIN
+      )
+        ? 'Jellyfin'
+        : settings.currentSettings.mediaServers.some(
+              (server) => server.mediaServerType === MediaServerType.EMBY
+            )
+          ? 'Emby'
+          : undefined,
     });
   }
 };

@@ -1,6 +1,5 @@
 import EmbyLogo from '@app/assets/services/emby-icon-only.svg';
 import JellyfinLogo from '@app/assets/services/jellyfin-icon.svg';
-import PlexLogo from '@app/assets/services/plex.svg';
 import Button from '@app/components/Common/Button';
 import ImageFader from '@app/components/Common/ImageFader';
 import PageTitle from '@app/components/Common/PageTitle';
@@ -40,8 +39,19 @@ const Login = () => {
   const [error, setError] = useState('');
   const [isProcessing, setProcessing] = useState(false);
   const [authToken, setAuthToken] = useState<string | undefined>(undefined);
+  const jellyfinServers = settings.currentSettings.mediaServers.filter(
+    (server) =>
+      server.mediaServerType === MediaServerType.JELLYFIN ||
+      server.mediaServerType === MediaServerType.EMBY
+  );
+  const hasPlexLogin = settings.currentSettings.mediaServerTypes.includes(
+    MediaServerType.PLEX
+  );
+  const hasJellyfinLogin = jellyfinServers.length > 0;
   const [mediaServerLogin, setMediaServerLogin] = useState(
-    settings.currentSettings.mediaServerLogin
+    settings.currentSettings.mediaServerLogin &&
+      hasJellyfinLogin &&
+      !settings.currentSettings.localLogin
   );
 
   // Effect that is triggered when the `authToken` comes back from the Plex OAuth
@@ -81,61 +91,56 @@ const Login = () => {
     revalidateOnFocus: false,
   });
 
+  const activeJellyfinServer = jellyfinServers[0];
   const mediaServerName =
-    settings.currentSettings.mediaServerType === MediaServerType.PLEX
-      ? 'Plex'
-      : settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
-        ? 'Jellyfin'
-        : settings.currentSettings.mediaServerType === MediaServerType.EMBY
-          ? 'Emby'
-          : undefined;
+    activeJellyfinServer?.mediaServerType === MediaServerType.JELLYFIN
+      ? 'Jellyfin'
+      : activeJellyfinServer?.mediaServerType === MediaServerType.EMBY
+        ? 'Emby'
+        : undefined;
 
   const MediaServerLogo =
-    settings.currentSettings.mediaServerType === MediaServerType.PLEX
-      ? PlexLogo
-      : settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
-        ? JellyfinLogo
-        : settings.currentSettings.mediaServerType === MediaServerType.EMBY
-          ? EmbyLogo
-          : undefined;
-
-  const isJellyfin =
-    settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN ||
-    settings.currentSettings.mediaServerType === MediaServerType.EMBY;
+    activeJellyfinServer?.mediaServerType === MediaServerType.JELLYFIN
+      ? JellyfinLogo
+      : activeJellyfinServer?.mediaServerType === MediaServerType.EMBY
+        ? EmbyLogo
+        : undefined;
   const mediaServerLoginRef = useRef<HTMLDivElement>(null);
   const localLoginRef = useRef<HTMLDivElement>(null);
   const loginRef = mediaServerLogin ? mediaServerLoginRef : localLoginRef;
 
   const loginFormVisible =
-    (isJellyfin && settings.currentSettings.mediaServerLogin) ||
+    (hasJellyfinLogin && settings.currentSettings.mediaServerLogin) ||
     settings.currentSettings.localLogin;
   const additionalLoginOptions = [
+    settings.currentSettings.mediaServerLogin && hasPlexLogin && (
+      <PlexLoginButton
+        key="plex"
+        isProcessing={isProcessing}
+        onAuthToken={(authToken) => setAuthToken(authToken)}
+        large={!hasJellyfinLogin && !settings.currentSettings.localLogin}
+      />
+    ),
     settings.currentSettings.mediaServerLogin &&
-      (settings.currentSettings.mediaServerType === MediaServerType.PLEX ? (
-        <PlexLoginButton
-          key="plex"
-          isProcessing={isProcessing}
-          onAuthToken={(authToken) => setAuthToken(authToken)}
-          large={!isJellyfin && !settings.currentSettings.localLogin}
-        />
+      hasJellyfinLogin &&
+      settings.currentSettings.localLogin &&
+      (mediaServerLogin ? (
+        <Button
+          key="seerr"
+          data-testid="seerr-login-button"
+          className="flex-1 bg-transparent"
+          onClick={() => setMediaServerLogin(false)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/os_icon.svg"
+            alt={settings.currentSettings.applicationTitle}
+            className="mr-2 h-5"
+          />
+          <span>{settings.currentSettings.applicationTitle}</span>
+        </Button>
       ) : (
-        settings.currentSettings.localLogin &&
-        (mediaServerLogin ? (
-          <Button
-            key="seerr"
-            data-testid="seerr-login-button"
-            className="flex-1 bg-transparent"
-            onClick={() => setMediaServerLogin(false)}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/os_icon.svg"
-              alt={settings.currentSettings.applicationTitle}
-              className="mr-2 h-5"
-            />
-            <span>{settings.currentSettings.applicationTitle}</span>
-          </Button>
-        ) : (
+        MediaServerLogo && (
           <Button
             key="mediaserver"
             data-testid="mediaserver-login-button"
@@ -145,7 +150,7 @@ const Login = () => {
             <MediaServerLogo />
             <span>{mediaServerName}</span>
           </Button>
-        ))
+        )
       )),
   ].filter((o): o is JSX.Element => !!o);
 
@@ -222,11 +227,11 @@ const Login = () => {
                   }}
                 >
                   <div ref={loginRef} className="button-container">
-                    {isJellyfin &&
+                    {hasJellyfinLogin &&
                     (mediaServerLogin ||
                       !settings.currentSettings.localLogin) ? (
                       <JellyfinLogin
-                        serverType={settings.currentSettings.mediaServerType}
+                        serverType={activeJellyfinServer?.mediaServerType}
                         revalidate={revalidate}
                       />
                     ) : (

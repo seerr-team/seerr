@@ -13,32 +13,59 @@ import { createHash } from 'node:crypto';
 
 const router = Router();
 
-let _avatarImageProxy: ImageProxy | null = null;
+const avatarImageProxies = new Map<string, ImageProxy>();
 
-async function initAvatarImageProxy() {
-  if (!_avatarImageProxy) {
-    const userRepository = getRepository(User);
-    const admin = await userRepository.findOne({
-      where: { id: 1 },
-      select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
-      order: { id: 'ASC' },
-    });
-    const deviceId = admin?.jellyfinDeviceId || 'BOT_seerr';
-    const authToken = getSettings().jellyfin.apiKey;
-    _avatarImageProxy = new ImageProxy('avatar', '', {
-      headers: {
-        'X-Emby-Authorization': `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="${deviceId}", Version="${getAppVersion()}", Token="${authToken}"`,
-      },
-    });
+const getJellyfinServer = (serverId?: string) => {
+  const settings = getSettings();
+
+  if (serverId) {
+    return settings.jellyfinServers.find((server) => server.id === serverId);
   }
-  return _avatarImageProxy;
+
+  return settings.getPrimaryJellyfinLikeServer();
+};
+
+async function initAvatarImageProxy(serverId?: string) {
+  const server = getJellyfinServer(serverId);
+
+  if (!server) {
+    throw new Error('No Jellyfin or Emby server configured.');
+  }
+
+  const cacheKey = server.id;
+  const cachedProxy = avatarImageProxies.get(cacheKey);
+  if (cachedProxy) {
+    return cachedProxy;
+  }
+
+  const userRepository = getRepository(User);
+  const admin = await userRepository.findOne({
+    where: { id: 1 },
+    select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
+    order: { id: 'ASC' },
+  });
+  const deviceId = admin?.jellyfinDeviceId || 'BOT_seerr';
+  const imageProxy = new ImageProxy('avatar', '', {
+    headers: {
+      'X-Emby-Authorization': `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="${deviceId}", Version="${getAppVersion()}", Token="${server.apiKey}"`,
+    },
+  });
+
+  avatarImageProxies.set(cacheKey, imageProxy);
+
+  return imageProxy;
 }
 
-function getJellyfinAvatarUrl(userId: string) {
-  const settings = getSettings();
-  return settings.main.mediaServerType === MediaServerType.JELLYFIN
-    ? `${getHostname()}/UserImage?UserId=${userId}`
-    : `${getHostname()}/Users/${userId}/Images/Primary?quality=90`;
+function getJellyfinAvatarUrl(userId: string, serverId?: string) {
+  const server = getJellyfinServer(serverId);
+
+  if (!server) {
+    throw new Error('No Jellyfin or Emby server configured.');
+  }
+
+  return server.mediaServerType === MediaServerType.JELLYFIN
+    ? `${getHostname(server)}/UserImage?UserId=${userId}`
+    : `${getHostname(server)}/Users/${userId}/Images/Primary?quality=90`;
 }
 
 function computeImageHash(buffer: Buffer): string {
@@ -53,7 +80,15 @@ export async function checkAvatarChanged(
       return { changed: false };
     }
 
-    const jellyfinAvatarUrl = getJellyfinAvatarUrl(user.jellyfinUserId);
+    const server = getJellyfinServer(user.jellyfinServerId ?? undefined);
+    if (!server) {
+      return { changed: false };
+    }
+
+    const jellyfinAvatarUrl = getJellyfinAvatarUrl(
+      user.jellyfinUserId,
+      server.id
+    );
 
     let headResponse;
     try {
@@ -65,14 +100,13 @@ export async function checkAvatarChanged(
       return { changed: false };
     }
 
-    const settings = getSettings();
     let remoteVersion: string;
-    if (settings.main.mediaServerType === MediaServerType.JELLYFIN) {
+    if (server.mediaServerType === MediaServerType.JELLYFIN) {
       const remoteLastModifiedStr = headResponse.headers['last-modified'] || '';
       remoteVersion = (
         Date.parse(remoteLastModifiedStr) || Date.now()
       ).toString();
-    } else if (settings.main.mediaServerType === MediaServerType.EMBY) {
+    } else if (server.mediaServerType === MediaServerType.EMBY) {
       remoteVersion =
         headResponse.headers['etag']?.replace(/"/g, '') ||
         Date.now().toString();
@@ -84,7 +118,7 @@ export async function checkAvatarChanged(
       return { changed: false, etag: user.avatarETag ?? undefined };
     }
 
-    const avatarImageCache = await initAvatarImageProxy();
+    const avatarImageCache = await initAvatarImageProxy(server.id);
     await avatarImageCache.clearCachedImage(jellyfinAvatarUrl);
     const imageData = await avatarImageCache.getImage(
       jellyfinAvatarUrl,
@@ -113,33 +147,43 @@ export async function checkAvatarChanged(
 
 router.get('/:jellyfinUserId', async (req, res) => {
   try {
+    const requestedServerId = req.query.serverId?.toString();
+    const user = await getRepository(User).findOne({
+      where: { jellyfinUserId: req.params.jellyfinUserId },
+    });
+    const server =
+      getJellyfinServer(requestedServerId) ??
+      getJellyfinServer(user?.jellyfinServerId ?? undefined);
+
     if (!req.params.jellyfinUserId.match(/^[a-f0-9]{32}$/)) {
-      const mediaServerType = getSettings().main.mediaServerType;
       throw new Error(
         `Provided URL is not ${
-          mediaServerType === MediaServerType.JELLYFIN
+          server?.mediaServerType === MediaServerType.JELLYFIN
             ? 'a Jellyfin'
             : 'an Emby'
         } avatar.`
       );
     }
 
-    const avatarImageCache = await initAvatarImageProxy();
+    if (!server) {
+      throw new Error('No Jellyfin or Emby server configured.');
+    }
+
+    const avatarImageCache = await initAvatarImageProxy(server.id);
 
     const userEtag = req.headers['if-none-match'];
 
     const versionParam = req.query.v;
-
-    const user = await getRepository(User).findOne({
-      where: { jellyfinUserId: req.params.jellyfinUserId },
-    });
 
     const fallbackUrl = gravatarUrl(user?.email || 'none', {
       default: 'mm',
       size: 200,
     });
 
-    const jellyfinAvatarUrl = getJellyfinAvatarUrl(req.params.jellyfinUserId);
+    const jellyfinAvatarUrl = getJellyfinAvatarUrl(
+      req.params.jellyfinUserId,
+      server.id
+    );
 
     let imageData = await avatarImageCache.getImage(
       jellyfinAvatarUrl,
