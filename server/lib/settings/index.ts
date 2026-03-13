@@ -736,7 +736,12 @@ class Settings {
 
   get fullPublicSettings(): FullPublicSettings {
     const mediaServers = this.getMediaServers();
-    const jellyfinServer = this.getPrimaryJellyfinLikeServer();
+    const primaryMediaServerType = this.getPrimaryMediaServerType();
+    const activeJellyfinLikeServer =
+      primaryMediaServerType === MediaServerType.JELLYFIN ||
+      primaryMediaServerType === MediaServerType.EMBY
+        ? this.getPrimaryJellyfinLikeServer(primaryMediaServerType)
+        : this.getPrimaryJellyfinLikeServer();
 
     return {
       ...this.data.public,
@@ -782,9 +787,10 @@ class Settings {
         this.data.notifications.agents.email.options.userEmailRequired,
       newPlexLogin: this.data.main.newPlexLogin,
       youtubeUrl: this.data.main.youtubeUrl,
-      jellyfinExternalHost: jellyfinServer?.externalHostname,
-      jellyfinForgotPasswordUrl: jellyfinServer?.jellyfinForgotPasswordUrl,
-      jellyfinServerName: jellyfinServer?.name,
+      jellyfinExternalHost: activeJellyfinLikeServer?.externalHostname,
+      jellyfinForgotPasswordUrl:
+        activeJellyfinLikeServer?.jellyfinForgotPasswordUrl,
+      jellyfinServerName: activeJellyfinLikeServer?.name,
     };
   }
 
@@ -1042,7 +1048,12 @@ class Settings {
         this.data.plex = getDefaultPlexSettings();
       }
 
-      const primaryJellyfinServer = this.getPrimaryJellyfinLikeServer();
+      const primaryMediaServerType = this.getPrimaryMediaServerType();
+      const primaryJellyfinServer =
+        primaryMediaServerType === MediaServerType.JELLYFIN ||
+        primaryMediaServerType === MediaServerType.EMBY
+          ? this.getPrimaryJellyfinLikeServer(primaryMediaServerType)
+          : this.getPrimaryJellyfinLikeServer();
       if (primaryJellyfinServer) {
         this.data.jellyfin = omit(primaryJellyfinServer, [
           'id',
