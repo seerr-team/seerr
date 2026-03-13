@@ -6,9 +6,10 @@ import RequestCard from '@app/components/RequestCard';
 import Slider from '@app/components/Slider';
 import TmdbTitleCard from '@app/components/TitleCard/TmdbTitleCard';
 import ProfileHeader from '@app/components/UserProfile/ProfileHeader';
-import { Permission, UserType, useUser } from '@app/hooks/useUser';
+import { Permission, useUser } from '@app/hooks/useUser';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
+import { hasLinkedPlexAccount } from '@app/utils/user';
 import { ArrowRightCircleIcon } from '@heroicons/react/24/outline';
 import type { WatchlistResponse } from '@server/interfaces/api/discoverInterfaces';
 import type {
@@ -75,7 +76,8 @@ const UserProfile = () => {
   );
   const { data: watchData, error: watchDataError } =
     useSWR<UserWatchDataResponse>(
-      user?.userType === UserType.PLEX &&
+      user &&
+        hasLinkedPlexAccount(user) &&
         (user.id === currentUser?.id || currentHasPermission(Permission.ADMIN))
         ? `/api/v1/user/${user.id}/watch_data`
         : null
@@ -119,10 +121,10 @@ const UserProfile = () => {
     return <ErrorPage statusCode={404} />;
   }
 
+  const hasPlexLink = hasLinkedPlexAccount(user);
+
   const watchlistSliderTitle = intl.formatMessage(
-    user.userType === UserType.PLEX
-      ? messages.plexwatchlist
-      : messages.localWatchlist,
+    hasPlexLink ? messages.plexwatchlist : messages.localWatchlist,
     { username: user.displayName }
   );
 
@@ -352,18 +354,22 @@ const UserProfile = () => {
               sliderKey="watchlist"
               isLoading={!watchlistItems}
               isEmpty={!!watchlistItems && watchlistItems.results.length === 0}
-              emptyMessage={intl.formatMessage(messages.emptywatchlist, {
-                PlexWatchlistSupportLink: (msg: React.ReactNode) => (
-                  <a
-                    href="https://support.plex.tv/articles/universal-watchlist/"
-                    className="text-white transition duration-300 hover:underline"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {msg}
-                  </a>
-                ),
-              })}
+              emptyMessage={
+                hasPlexLink
+                  ? intl.formatMessage(messages.emptywatchlist, {
+                      PlexWatchlistSupportLink: (msg: React.ReactNode) => (
+                        <a
+                          href="https://support.plex.tv/articles/universal-watchlist/"
+                          className="text-white transition duration-300 hover:underline"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {msg}
+                        </a>
+                      ),
+                    })
+                  : undefined
+              }
               items={watchlistItems?.results.map((item) => (
                 <TmdbTitleCard
                   id={item.tmdbId}
@@ -375,7 +381,7 @@ const UserProfile = () => {
             />
           </>
         )}
-      {user.userType === UserType.PLEX &&
+      {hasPlexLink &&
         (user.id === currentUser?.id ||
           currentHasPermission(Permission.ADMIN)) &&
         (!watchData || !!watchData.recentlyWatched?.length) &&

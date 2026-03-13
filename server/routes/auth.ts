@@ -178,7 +178,6 @@ authRoutes.post('/plex', async (req, res, next) => {
           user.avatar = account.thumb;
           user.email = account.email;
           user.plexUsername = account.username;
-          user.userType = UserType.PLEX;
 
           await userRepository.save(user);
         } else if (!settings.main.newPlexLogin) {

@@ -1,8 +1,8 @@
 import Alert from '@app/components/Common/Alert';
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
-import ButtonWithDropdown from '@app/components/Common/ButtonWithDropdown';
 import CachedImage from '@app/components/Common/CachedImage';
+import Dropdown from '@app/components/Common/Dropdown';
 import Header from '@app/components/Common/Header';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import Modal from '@app/components/Common/Modal';
@@ -565,7 +565,6 @@ const UserList = () => {
                 | MediaServerType.JELLYFIN
                 | MediaServerType.EMBY
             }
-            existingUserCount={data?.pageInfo.results}
             onCancel={() => setSelectedImportSource(null)}
             onComplete={() => {
               setSelectedImportSource(null);
@@ -588,26 +587,25 @@ const UserList = () => {
               <span>{intl.formatMessage(messages.createlocaluser)}</span>
             </Button>
             {importSources.length > 1 ? (
-              <ButtonWithDropdown
-                className="flex-grow lg:mr-2"
+              <Dropdown
+                className="w-full sm:mr-2 sm:w-auto lg:mr-2"
                 buttonType="primary"
-                onClick={() => setSelectedImportSource(importSources[0])}
                 text={
-                  <>
-                    <InboxArrowDownIcon />
-                    <span>{importSources[0].label}</span>
-                  </>
+                  <span className="flex items-center whitespace-nowrap">
+                    <InboxArrowDownIcon className="mr-2 h-5 w-5" />
+                    <span>{intl.formatMessage(messages.importusers)}</span>
+                  </span>
                 }
               >
-                {importSources.slice(1).map((source) => (
-                  <ButtonWithDropdown.Item
+                {importSources.map((source) => (
+                  <Dropdown.Item
                     key={source.id}
                     onClick={() => setSelectedImportSource(source)}
                   >
                     {source.label}
-                  </ButtonWithDropdown.Item>
+                  </Dropdown.Item>
                 ))}
-              </ButtonWithDropdown>
+              </Dropdown>
             ) : (
               <Button
                 className="flex-grow lg:mr-2"

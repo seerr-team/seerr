@@ -105,7 +105,7 @@ const Login = () => {
           revalidate();
         }
       } catch (e) {
-        setError(e.response?.data?.message);
+        setError(e.response?.data?.message ?? e.response?.data?.error ?? '');
         setAuthToken(undefined);
         setProcessing(false);
       }
@@ -189,47 +189,44 @@ const Login = () => {
         large={!loginFormVisible && !settings.currentSettings.localLogin}
       />
     ),
-    settings.currentSettings.localLogin &&
-      activeMethod !== 'local' && (
-        <Button
-          key="seerr"
-          data-testid="seerr-login-button"
-          className="flex-1 bg-transparent"
-          onClick={() => setActiveMethod('local')}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/os_icon.svg"
-            alt={settings.currentSettings.applicationTitle}
-            className="mr-2 h-5"
-          />
-          <span>{settings.currentSettings.applicationTitle}</span>
-        </Button>
-      ),
-    jellyfinEnabled &&
-      activeMethod !== 'jellyfin' && (
-        <Button
-          key="jellyfin"
-          data-testid="mediaserver-login-button"
-          className="flex-1 bg-transparent"
-          onClick={() => setActiveMethod('jellyfin')}
-        >
-          <JellyfinLogo />
-          <span>{mediaServerNames.jellyfin}</span>
-        </Button>
-      ),
-    embyEnabled &&
-      activeMethod !== 'emby' && (
-        <Button
-          key="emby"
-          data-testid="mediaserver-login-button"
-          className="flex-1 bg-transparent"
-          onClick={() => setActiveMethod('emby')}
-        >
-          <EmbyLogo />
-          <span>{mediaServerNames.emby}</span>
-        </Button>
-      ),
+    settings.currentSettings.localLogin && activeMethod !== 'local' && (
+      <Button
+        key="seerr"
+        data-testid="seerr-login-button"
+        className="flex-1 bg-transparent"
+        onClick={() => setActiveMethod('local')}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/os_icon.svg"
+          alt={settings.currentSettings.applicationTitle}
+          className="mr-2 h-5"
+        />
+        <span>{settings.currentSettings.applicationTitle}</span>
+      </Button>
+    ),
+    jellyfinEnabled && activeMethod !== 'jellyfin' && (
+      <Button
+        key="jellyfin"
+        data-testid="mediaserver-login-button"
+        className="flex-1 bg-transparent"
+        onClick={() => setActiveMethod('jellyfin')}
+      >
+        <JellyfinLogo />
+        <span>{mediaServerNames.jellyfin}</span>
+      </Button>
+    ),
+    embyEnabled && activeMethod !== 'emby' && (
+      <Button
+        key="emby"
+        data-testid="mediaserver-login-button"
+        className="flex-1 bg-transparent"
+        onClick={() => setActiveMethod('emby')}
+      >
+        <EmbyLogo />
+        <span>{mediaServerNames.emby}</span>
+      </Button>
+    ),
   ].filter((o): o is JSX.Element => !!o);
 
   return (

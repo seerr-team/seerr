@@ -637,13 +637,8 @@ router.post(
             // Update the user's avatar with their Plex thumbnail, in case it changed
             user.avatar = account.thumb;
             user.email = account.email;
+            user.plexId = parseInt(account.id);
             user.plexUsername = account.username;
-
-            // In case the user was previously a local account
-            if (user.userType === UserType.LOCAL) {
-              user.userType = UserType.PLEX;
-              user.plexId = parseInt(account.id);
-            }
             await userRepository.save(user);
           } else if (!body?.plexIds || body.plexIds.includes(account.id)) {
             if (
@@ -748,9 +743,9 @@ router.post(
             jellyfinUsername: jellyfinUser.Name,
             jellyfinUserId: jellyfinUser.Id,
             jellyfinServerId: jellyfinServer.id,
-            jellyfinDeviceId: Buffer.from(`BOT_seerr_${jellyfinUser.Name}`).toString(
-              'base64'
-            ),
+            jellyfinDeviceId: Buffer.from(
+              `BOT_seerr_${jellyfinUser.Name}`
+            ).toString('base64'),
             email: jellyfinUser.Name,
             permissions: settings.main.defaultPermissions,
             avatar: `/avatarproxy/${jellyfinUser.Id}?serverId=${jellyfinServer.id}`,
@@ -765,10 +760,6 @@ router.post(
         } else if (!user.jellyfinServerId) {
           user.jellyfinServerId = jellyfinServer.id;
           user.jellyfinUsername = jellyfinUser.Name;
-          user.userType =
-            jellyfinServer.mediaServerType === MediaServerType.JELLYFIN
-              ? UserType.JELLYFIN
-              : UserType.EMBY;
           user.avatar = `/avatarproxy/${jellyfinUser.Id}?serverId=${jellyfinServer.id}`;
 
           await userRepository.save(user);

@@ -245,7 +245,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
 
   const activeLibraries =
     data?.libraries
-      .filter((library) => library.enabled)
+      ?.filter((library) => library.enabled)
       .map((library) => library.id) ?? [];
 
   const availablePresets = useMemo(() => {
@@ -822,7 +822,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
               </span>
             </Button>
             <ul className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
-              {data?.libraries.map((library) => (
+              {(data?.libraries ?? []).map((library) => (
                 <LibraryItem
                   name={library.name}
                   isEnabled={library.enabled}

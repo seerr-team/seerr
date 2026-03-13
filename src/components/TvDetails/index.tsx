@@ -28,7 +28,7 @@ import Season from '@app/components/TvDetails/Season';
 import useDeepLinks from '@app/hooks/useDeepLinks';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
-import { Permission, UserType, useUser } from '@app/hooks/useUser';
+import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
 import { hasCountryFlag } from '@app/utils/countryFlags';
@@ -36,6 +36,7 @@ import { sortCrewPriority } from '@app/utils/creditHelpers';
 import defineMessages from '@app/utils/defineMessages';
 import { getMediaServerDisplayName } from '@app/utils/mediaServers';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
+import { hasLinkedPlexAccount } from '@app/utils/user';
 import { Disclosure, Transition } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import {
@@ -643,7 +644,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
               </Tooltip>
             )}
           {data?.mediaInfo?.status !== MediaStatus.BLOCKLISTED &&
-            user?.userType !== UserType.PLEX && (
+            !hasLinkedPlexAccount(user) && (
               <>
                 {toggleWatchlist ? (
                   <Tooltip

@@ -90,18 +90,26 @@ const LinkJellyfinModal: React.FC<LinkJellyfinModalProps> = ({
             );
             onSave();
           } catch (e) {
+            const apiMessage =
+              axios.isAxiosError(e) &&
+              typeof e.response?.data?.message === 'string'
+                ? e.response.data.message
+                : null;
+
             if (e?.response?.status === 401) {
               setError(
-                intl.formatMessage(messages.errorUnauthorized, {
-                  mediaServerName,
-                })
+                apiMessage ??
+                  intl.formatMessage(messages.errorUnauthorized, {
+                    mediaServerName,
+                  })
               );
             } else if (e?.response?.status === 422) {
               setError(
-                intl.formatMessage(messages.errorExists, { applicationName })
+                apiMessage ??
+                  intl.formatMessage(messages.errorExists, { applicationName })
               );
             } else {
-              setError(intl.formatMessage(messages.errorUnknown));
+              setError(apiMessage ?? intl.formatMessage(messages.errorUnknown));
             }
           }
         }}

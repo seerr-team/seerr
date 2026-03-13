@@ -6,7 +6,6 @@ import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { getMediaServerDisplayName } from '@app/utils/mediaServers';
 import { MediaServerType } from '@server/constants/server';
-import type { UserResultsResponse } from '@server/interfaces/api/userInterfaces';
 import axios from 'axios';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -17,7 +16,6 @@ interface JellyfinImportProps {
   serverId: string;
   mediaServerType: MediaServerType.JELLYFIN | MediaServerType.EMBY;
   serverName: string;
-  existingUserCount?: number;
   onCancel?: () => void;
   onComplete?: () => void;
 }
@@ -38,7 +36,6 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
   serverId,
   mediaServerType,
   serverName,
-  existingUserCount,
   onCancel,
   onComplete,
 }) => {
@@ -62,10 +59,6 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
   >(`/api/v1/settings/jellyfin/users?serverId=${serverId}`, {
     revalidateOnMount: true,
   });
-
-  const { data: existingUsers } = useSWR<UserResultsResponse>(
-    `/api/v1/user?take=${existingUserCount ?? 20}`
-  );
 
   const importUsers = async () => {
     setImporting(true);
@@ -199,74 +192,65 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-700 bg-gray-600">
-                      {data
-                        ?.filter(
-                          (user) =>
-                            !existingUsers?.results.some(
-                              (u) =>
-                                u.jellyfinUserId === user.id &&
-                                u.jellyfinServerId === serverId
-                            )
-                        )
-                        .map((user) => (
-                          <tr key={`user-${user.id}`}>
-                            <td className="whitespace-nowrap px-4 py-4 text-sm font-medium leading-5 text-gray-100">
+                      {data?.map((user) => (
+                        <tr key={`user-${user.id}`}>
+                          <td className="whitespace-nowrap px-4 py-4 text-sm font-medium leading-5 text-gray-100">
+                            <span
+                              role="checkbox"
+                              tabIndex={0}
+                              aria-checked={isSelectedUser(user.id)}
+                              onClick={() => toggleUser(user.id)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === 'Space') {
+                                  toggleUser(user.id);
+                                }
+                              }}
+                              className="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none"
+                            >
                               <span
-                                role="checkbox"
-                                tabIndex={0}
-                                aria-checked={isSelectedUser(user.id)}
-                                onClick={() => toggleUser(user.id)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' || e.key === 'Space') {
-                                    toggleUser(user.id);
-                                  }
-                                }}
-                                className="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none"
-                              >
-                                <span
-                                  aria-hidden="true"
-                                  className={`${
-                                    isSelectedUser(user.id)
-                                      ? 'bg-indigo-500'
-                                      : 'bg-gray-800'
-                                  } absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out`}
-                                />
-                                <span
-                                  aria-hidden="true"
-                                  className={`${
-                                    isSelectedUser(user.id)
-                                      ? 'translate-x-5'
-                                      : 'translate-x-0'
-                                  } absolute left-0 inline-block h-5 w-5 transform rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
-                                />
-                              </span>
-                            </td>
-                            <td className="whitespace-nowrap px-1 py-4 text-sm font-medium leading-5 text-gray-100 md:px-6">
-                              <div className="flex items-center">
-                                <CachedImage
-                                  type="avatar"
-                                  className="h-10 w-10 flex-shrink-0 rounded-full"
-                                  src={user.thumb}
-                                  alt=""
-                                  width={40}
-                                  height={40}
-                                />
-                                <div className="ml-4">
-                                  <div className="text-base font-bold leading-5">
-                                    {user.username}
-                                  </div>
-                                  {/* {user.username &&
+                                aria-hidden="true"
+                                className={`${
+                                  isSelectedUser(user.id)
+                                    ? 'bg-indigo-500'
+                                    : 'bg-gray-800'
+                                } absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out`}
+                              />
+                              <span
+                                aria-hidden="true"
+                                className={`${
+                                  isSelectedUser(user.id)
+                                    ? 'translate-x-5'
+                                    : 'translate-x-0'
+                                } absolute left-0 inline-block h-5 w-5 transform rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
+                              />
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap px-1 py-4 text-sm font-medium leading-5 text-gray-100 md:px-6">
+                            <div className="flex items-center">
+                              <CachedImage
+                                type="avatar"
+                                className="h-10 w-10 flex-shrink-0 rounded-full"
+                                src={user.thumb}
+                                alt=""
+                                width={40}
+                                height={40}
+                              />
+                              <div className="ml-4">
+                                <div className="text-base font-bold leading-5">
+                                  {user.username || user.email || user.id}
+                                </div>
+                                {/* {user.username &&
                                   user.username.toLowerCase() !==
                                   user.email && (
                                     <div className="text-sm leading-5 text-gray-300">
                                       {user.email}
                                     </div>
                                   )} */}
-                                </div>
                               </div>
-                            </td>
-                          </tr>
-                        ))}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>

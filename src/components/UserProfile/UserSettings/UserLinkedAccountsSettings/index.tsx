@@ -76,23 +76,35 @@ const UserLinkedAccountsSettings = () => {
   const accounts: LinkedAccount[] = useMemo(() => {
     const accounts: LinkedAccount[] = [];
     if (!user) return accounts;
-    if (user.userType === UserType.PLEX && user.plexUsername)
+
+    if (user.plexId && user.plexUsername) {
       accounts.push({
         type: LinkedAccountType.Plex,
         username: user.plexUsername,
       });
-    if (user.userType === UserType.EMBY && user.jellyfinUsername)
+    }
+
+    if (user.jellyfinUserId && user.jellyfinUsername) {
+      const linkedServer = user.jellyfinServerId
+        ? settings.currentSettings.mediaServers.find(
+            (server) => server.id === user.jellyfinServerId
+          )
+        : undefined;
+      const linkedAccountType =
+        linkedServer?.mediaServerType === MediaServerType.EMBY
+          ? LinkedAccountType.Emby
+          : user.userType === UserType.EMBY
+            ? LinkedAccountType.Emby
+            : LinkedAccountType.Jellyfin;
+
       accounts.push({
-        type: LinkedAccountType.Emby,
+        type: linkedAccountType,
         username: user.jellyfinUsername,
       });
-    if (user.userType === UserType.JELLYFIN && user.jellyfinUsername)
-      accounts.push({
-        type: LinkedAccountType.Jellyfin,
-        username: user.jellyfinUsername,
-      });
+    }
+
     return accounts;
-  }, [user]);
+  }, [settings.currentSettings.mediaServers, user]);
 
   const linkPlexAccount = async () => {
     setError(null);
@@ -106,15 +118,22 @@ const UserLinkedAccountsSettings = () => {
       );
       await revalidateUser();
     } catch (e) {
+      const apiMessage =
+        axios.isAxiosError(e) && typeof e.response?.data?.message === 'string'
+          ? e.response.data.message
+          : null;
+
       switch (e?.response?.status) {
         case 401:
-          setError(intl.formatMessage(messages.plexErrorUnauthorized));
+          setError(
+            apiMessage ?? intl.formatMessage(messages.plexErrorUnauthorized)
+          );
           break;
         case 422:
-          setError(intl.formatMessage(messages.plexErrorExists));
+          setError(apiMessage ?? intl.formatMessage(messages.plexErrorExists));
           break;
         default:
-          setError(intl.formatMessage(messages.errorUnknown));
+          setError(apiMessage ?? intl.formatMessage(messages.errorUnknown));
       }
     }
   };
@@ -127,17 +146,22 @@ const UserLinkedAccountsSettings = () => {
         setTimeout(() => linkPlexAccount(), 1500);
       },
       hide:
+        !settings.currentSettings.plexLogin ||
         !settings.currentSettings.mediaServers.some(
           (server) => server.mediaServerType === MediaServerType.PLEX
-        ) || accounts.some((a) => a.type === LinkedAccountType.Plex),
+        ) ||
+        accounts.some((a) => a.type === LinkedAccountType.Plex),
     },
     ...getJellyfinLikeServers(settings.currentSettings).map((server) => ({
       name: getMediaServerDisplayName(server),
       action: () => setSelectedJellyfinServer(server),
       hide:
-        server.mediaServerType === MediaServerType.EMBY
+        !(server.mediaServerType === MediaServerType.EMBY
+          ? settings.currentSettings.embyLogin
+          : settings.currentSettings.jellyfinLogin) ||
+        (server.mediaServerType === MediaServerType.EMBY
           ? accounts.some((a) => a.type === LinkedAccountType.Emby)
-          : accounts.some((a) => a.type === LinkedAccountType.Jellyfin),
+          : accounts.some((a) => a.type === LinkedAccountType.Jellyfin)),
     })),
   ].filter((l) => !l.hide);
 
@@ -146,8 +170,13 @@ const UserLinkedAccountsSettings = () => {
       await axios.delete(
         `/api/v1/user/${user?.id}/settings/linked-accounts/${account}`
       );
-    } catch {
-      setError(intl.formatMessage(messages.deleteFailed));
+    } catch (e) {
+      const apiMessage =
+        axios.isAxiosError(e) && typeof e.response?.data?.message === 'string'
+          ? e.response.data.message
+          : null;
+
+      setError(apiMessage ?? intl.formatMessage(messages.deleteFailed));
     }
 
     await revalidateUser();

@@ -749,12 +749,32 @@ settingsRoutes.get('/jellyfin/users', async (req, res) => {
 
   jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
   const resp = await jellyfinClient.getUsers();
-  const users = resp.users.map((user) => ({
-    username: user.Name,
+  const jellyfinUsers = resp.users.map((user) => ({
+    username: user.Name || user.Id,
     id: user.Id,
     thumb: `/avatarproxy/${user.Id}?serverId=${server.id}`,
-    email: user.Name,
+    email: user.Name || user.Id,
   }));
+
+  const jellyfinUserIds = jellyfinUsers.map((user) => user.id);
+  const existingUsers = jellyfinUserIds.length
+    ? await userRepository
+        .createQueryBuilder('user')
+        .where('user.jellyfinUserId IN (:...jellyfinUserIds)', {
+          jellyfinUserIds,
+        })
+        .getMany()
+    : [];
+
+  const users = jellyfinUsers.filter((user) => {
+    const existingUser = existingUsers.find(
+      (existing) =>
+        existing.jellyfinUserId === user.id &&
+        (!existing.jellyfinServerId || existing.jellyfinServerId === server.id)
+    );
+
+    return !existingUser;
+  });
 
   return res.status(200).json(users);
 });
@@ -865,12 +885,14 @@ settingsRoutes.get(
 
       await Promise.all(
         plexUsers.map(async (plexUser) => {
+          const existingUser = existingUsers.find(
+            (user) =>
+              user.plexId === parseInt(plexUser.id) ||
+              user.email === plexUser.email.toLowerCase()
+          );
+
           if (
-            !existingUsers.find(
-              (user) =>
-                user.plexId === parseInt(plexUser.id) ||
-                user.email === plexUser.email.toLowerCase()
-            ) &&
+            (!existingUser || !existingUser.plexId) &&
             (await plexApi.checkUserAccess(
               parseInt(plexUser.id),
               plexServer.machineId

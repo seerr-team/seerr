@@ -25,7 +25,7 @@ import StatusBadge from '@app/components/StatusBadge';
 import useDeepLinks from '@app/hooks/useDeepLinks';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
-import { Permission, UserType, useUser } from '@app/hooks/useUser';
+import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
 import { hasCountryFlag } from '@app/utils/countryFlags';
@@ -33,6 +33,7 @@ import { sortCrewPriority } from '@app/utils/creditHelpers';
 import defineMessages from '@app/utils/defineMessages';
 import { getMediaServerDisplayName } from '@app/utils/mediaServers';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
+import { hasLinkedPlexAccount } from '@app/utils/user';
 import {
   ArrowRightCircleIcon,
   CloudIcon,
@@ -601,7 +602,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
               </Tooltip>
             )}
           {data?.mediaInfo?.status !== MediaStatus.BLOCKLISTED &&
-            user?.userType !== UserType.PLEX && (
+            !hasLinkedPlexAccount(user) && (
               <>
                 {toggleWatchlist ? (
                   <Tooltip
