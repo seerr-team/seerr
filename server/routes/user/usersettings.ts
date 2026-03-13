@@ -276,7 +276,7 @@ userSettingsRoutes.post<{ authToken: string }>(
       return res.status(404).json({ code: ApiErrorCode.Unauthorized });
     }
     // Make sure Plex login is enabled
-    if (settings.main.mediaServerType !== MediaServerType.PLEX) {
+    if (settings.main.primaryMediaServer !== MediaServerType.PLEX) {
       return res.status(500).json({ message: 'Plex login is disabled' });
     }
 
@@ -320,7 +320,7 @@ userSettingsRoutes.delete<{ id: string }>(
     const userRepository = getRepository(User);
 
     // Make sure Plex login is enabled
-    if (settings.main.mediaServerType !== MediaServerType.PLEX) {
+    if (settings.main.primaryMediaServer !== MediaServerType.PLEX) {
       return res.status(500).json({ message: 'Plex login is disabled' });
     }
 
@@ -375,8 +375,8 @@ userSettingsRoutes.post<{ username: string; password: string }>(
     }
     // Make sure jellyfin login is enabled
     if (
-      settings.main.mediaServerType !== MediaServerType.JELLYFIN &&
-      settings.main.mediaServerType !== MediaServerType.EMBY
+      settings.main.primaryMediaServer !== MediaServerType.JELLYFIN &&
+      settings.main.primaryMediaServer !== MediaServerType.EMBY
     ) {
       return res
         .status(500)
@@ -433,7 +433,7 @@ userSettingsRoutes.post<{ username: string; password: string }>(
 
       // valid jellyfin user found, link to current user
       user.userType =
-        settings.main.mediaServerType === MediaServerType.EMBY
+        settings.main.primaryMediaServer === MediaServerType.EMBY
           ? UserType.EMBY
           : UserType.JELLYFIN;
       user.jellyfinUserId = account.User.Id;
@@ -470,8 +470,8 @@ userSettingsRoutes.delete<{ id: string }>(
 
     // Make sure jellyfin login is enabled
     if (
-      settings.main.mediaServerType !== MediaServerType.JELLYFIN &&
-      settings.main.mediaServerType !== MediaServerType.EMBY
+      settings.main.primaryMediaServer !== MediaServerType.JELLYFIN &&
+      settings.main.primaryMediaServer !== MediaServerType.EMBY
     ) {
       return res
         .status(500)

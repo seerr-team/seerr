@@ -382,12 +382,12 @@ const IssueDetails = () => {
                 >
                   <PlayIcon />
                   <span>
-                    {settings.currentSettings.mediaServerType ===
+                    {settings.currentSettings.primaryMediaServer ===
                     MediaServerType.EMBY
                       ? intl.formatMessage(messages.playonplex, {
                           mediaServerName: 'Emby',
                         })
-                      : settings.currentSettings.mediaServerType ===
+                      : settings.currentSettings.primaryMediaServer ===
                           MediaServerType.PLEX
                         ? intl.formatMessage(messages.playonplex, {
                             mediaServerName: 'Plex',
@@ -430,12 +430,12 @@ const IssueDetails = () => {
                 >
                   <PlayIcon />
                   <span>
-                    {settings.currentSettings.mediaServerType ===
+                    {settings.currentSettings.primaryMediaServer ===
                     MediaServerType.EMBY
                       ? intl.formatMessage(messages.play4konplex, {
                           mediaServerName: 'Emby',
                         })
-                      : settings.currentSettings.mediaServerType ===
+                      : settings.currentSettings.primaryMediaServer ===
                           MediaServerType.PLEX
                         ? intl.formatMessage(messages.play4konplex, {
                             mediaServerName: 'Plex',
@@ -648,12 +648,12 @@ const IssueDetails = () => {
               >
                 <PlayIcon />
                 <span>
-                  {settings.currentSettings.mediaServerType ===
+                  {settings.currentSettings.primaryMediaServer ===
                   MediaServerType.EMBY
                     ? intl.formatMessage(messages.playonplex, {
                         mediaServerName: 'Emby',
                       })
-                    : settings.currentSettings.mediaServerType ===
+                    : settings.currentSettings.primaryMediaServer ===
                         MediaServerType.PLEX
                       ? intl.formatMessage(messages.playonplex, {
                           mediaServerName: 'Plex',
@@ -695,12 +695,12 @@ const IssueDetails = () => {
               >
                 <PlayIcon />
                 <span>
-                  {settings.currentSettings.mediaServerType ===
+                  {settings.currentSettings.primaryMediaServer ===
                   MediaServerType.EMBY
                     ? intl.formatMessage(messages.play4konplex, {
                         mediaServerName: 'Emby',
                       })
-                    : settings.currentSettings.mediaServerType ===
+                    : settings.currentSettings.primaryMediaServer ===
                         MediaServerType.PLEX
                       ? intl.formatMessage(messages.play4konplex, {
                           mediaServerName: 'Plex',

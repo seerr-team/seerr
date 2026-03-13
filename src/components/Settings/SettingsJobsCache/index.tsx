@@ -205,14 +205,14 @@ const SettingsJobs = () => {
   const [isSaving, setIsSaving] = useState(false);
   const settings = useSettings();
 
-  if (settings.currentSettings.mediaServerType === MediaServerType.EMBY) {
+  if (settings.currentSettings.primaryMediaServer === MediaServerType.EMBY) {
     messages['jellyfin-recently-added-scan'] = {
       id: 'jellyfin-recently-added-scan',
       defaultMessage: 'Emby Recently Added Scan',
     };
   }
 
-  if (settings.currentSettings.mediaServerType === MediaServerType.EMBY) {
+  if (settings.currentSettings.primaryMediaServer === MediaServerType.EMBY) {
     messages['jellyfin-full-scan'] = {
       id: 'jellyfin-full-scan',
       defaultMessage: 'Emby Full Library Scan',
@@ -586,7 +586,7 @@ const SettingsJobs = () => {
               ?.filter(
                 (cache) =>
                   !(
-                    settings.currentSettings.mediaServerType !==
+                    settings.currentSettings.primaryMediaServer !==
                       MediaServerType.PLEX && cache.id === 'plexguid'
                   )
               )

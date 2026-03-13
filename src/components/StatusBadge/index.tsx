@@ -84,9 +84,9 @@ const StatusBadge = ({
     mediaLink = plexUrl;
     mediaLinkDescription = intl.formatMessage(messages.playonplex, {
       mediaServerName:
-        settings.currentSettings.mediaServerType === MediaServerType.EMBY
+        settings.currentSettings.primaryMediaServer === MediaServerType.EMBY
           ? 'Emby'
-          : settings.currentSettings.mediaServerType === MediaServerType.PLEX
+          : settings.currentSettings.primaryMediaServer === MediaServerType.PLEX
             ? 'Plex'
             : 'Jellyfin',
     });

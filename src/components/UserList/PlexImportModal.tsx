@@ -117,7 +117,7 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
     >
       {data?.length ? (
         <>
-          {settings.currentSettings.newPlexLogin && (
+          {settings.currentSettings.newUserLogin && (
             <Alert
               title={intl.formatMessage(messages.newplexsigninenabled, {
                 strong: (msg: React.ReactNode) => (

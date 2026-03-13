@@ -171,8 +171,8 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
                             jellyfinForgotPasswordUrl
                               ? `${jellyfinForgotPasswordUrl}`
                               : `${baseUrl}/web/index.html#!/${
-                                  settings.currentSettings.mediaServerType ===
-                                  MediaServerType.EMBY
+                                  settings.currentSettings
+                                    .primaryMediaServer === MediaServerType.EMBY
                                     ? 'startup/'
                                     : ''
                                 }forgotpassword.html`

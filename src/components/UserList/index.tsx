@@ -490,7 +490,8 @@ const UserList = () => {
         leaveTo="opacity-0"
         show={showImportModal}
       >
-        {settings.currentSettings.mediaServerType === MediaServerType.PLEX ? (
+        {settings.currentSettings.primaryMediaServer ===
+        MediaServerType.PLEX ? (
           <PlexImportModal
             onCancel={() => setShowImportModal(false)}
             onComplete={() => {
@@ -530,12 +531,12 @@ const UserList = () => {
             >
               <InboxArrowDownIcon />
               <span>
-                {settings.currentSettings.mediaServerType ===
+                {settings.currentSettings.primaryMediaServer ===
                 MediaServerType.EMBY
                   ? intl.formatMessage(messages.importfrommediaserver, {
                       mediaServerName: 'Emby',
                     })
-                  : settings.currentSettings.mediaServerType ===
+                  : settings.currentSettings.primaryMediaServer ===
                       MediaServerType.PLEX
                     ? intl.formatMessage(messages.importfrommediaserver, {
                         mediaServerName: 'Plex',

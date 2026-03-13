@@ -41,7 +41,7 @@ const Login = () => {
   const [isProcessing, setProcessing] = useState(false);
   const [authToken, setAuthToken] = useState<string | undefined>(undefined);
   const [mediaServerLogin, setMediaServerLogin] = useState(
-    settings.currentSettings.mediaServerLogin
+    settings.currentSettings.enabledAuthMethods.length > 0
   );
 
   // Effect that is triggered when the `authToken` comes back from the Plex OAuth
@@ -82,36 +82,36 @@ const Login = () => {
   });
 
   const mediaServerName =
-    settings.currentSettings.mediaServerType === MediaServerType.PLEX
+    settings.currentSettings.primaryMediaServer === MediaServerType.PLEX
       ? 'Plex'
-      : settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
+      : settings.currentSettings.primaryMediaServer === MediaServerType.JELLYFIN
         ? 'Jellyfin'
-        : settings.currentSettings.mediaServerType === MediaServerType.EMBY
+        : settings.currentSettings.primaryMediaServer === MediaServerType.EMBY
           ? 'Emby'
           : undefined;
 
   const MediaServerLogo =
-    settings.currentSettings.mediaServerType === MediaServerType.PLEX
+    settings.currentSettings.primaryMediaServer === MediaServerType.PLEX
       ? PlexLogo
-      : settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
+      : settings.currentSettings.primaryMediaServer === MediaServerType.JELLYFIN
         ? JellyfinLogo
-        : settings.currentSettings.mediaServerType === MediaServerType.EMBY
+        : settings.currentSettings.primaryMediaServer === MediaServerType.EMBY
           ? EmbyLogo
           : undefined;
 
   const isJellyfin =
-    settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN ||
-    settings.currentSettings.mediaServerType === MediaServerType.EMBY;
+    settings.currentSettings.primaryMediaServer === MediaServerType.JELLYFIN ||
+    settings.currentSettings.primaryMediaServer === MediaServerType.EMBY;
   const mediaServerLoginRef = useRef<HTMLDivElement>(null);
   const localLoginRef = useRef<HTMLDivElement>(null);
   const loginRef = mediaServerLogin ? mediaServerLoginRef : localLoginRef;
 
   const loginFormVisible =
-    (isJellyfin && settings.currentSettings.mediaServerLogin) ||
+    (isJellyfin && settings.currentSettings.enabledAuthMethods.length > 0) ||
     settings.currentSettings.localLogin;
   const additionalLoginOptions = [
-    settings.currentSettings.mediaServerLogin &&
-      (settings.currentSettings.mediaServerType === MediaServerType.PLEX ? (
+    settings.currentSettings.enabledAuthMethods.length > 0 &&
+      (settings.currentSettings.primaryMediaServer === MediaServerType.PLEX ? (
         <PlexLoginButton
           key="plex"
           isProcessing={isProcessing}
@@ -226,7 +226,7 @@ const Login = () => {
                     (mediaServerLogin ||
                       !settings.currentSettings.localLogin) ? (
                       <JellyfinLogin
-                        serverType={settings.currentSettings.mediaServerType}
+                        serverType={settings.currentSettings.primaryMediaServer}
                         revalidate={revalidate}
                       />
                     ) : (

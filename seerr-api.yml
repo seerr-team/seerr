@@ -242,10 +242,10 @@ components:
         localLogin:
           type: boolean
           example: true
-        mediaServerType:
+        primaryMediaServer:
           type: number
           example: 1
-        newPlexLogin:
+        newUserLogin:
           type: boolean
           example: true
         defaultPermissions:

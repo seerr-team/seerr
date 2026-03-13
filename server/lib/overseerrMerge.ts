@@ -9,7 +9,7 @@ const checkOverseerrMerge = async (): Promise<boolean> => {
   // Load settings without running migrations
   const settings = await new Settings().load(undefined, true);
 
-  if (settings.main.mediaServerType) {
+  if (settings.main.primaryMediaServer) {
     return false; // The application has already been migrated
   }
 
@@ -113,7 +113,7 @@ const checkOverseerrMerge = async (): Promise<boolean> => {
   }
 
   // Set media server type to Plex (default for Overseerr)
-  settings.main.mediaServerType = MediaServerType.PLEX;
+  settings.main.primaryMediaServer = MediaServerType.PLEX;
 
   // Replace default Overseerr values with Seerr values
   if (settings.main.applicationTitle === 'Overseerr') {

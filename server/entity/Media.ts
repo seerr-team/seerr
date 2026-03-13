@@ -224,7 +224,7 @@ class Media {
     const { machineId, webAppUrl } = getSettings().plex;
     const { externalUrl: tautulliUrl } = getSettings().tautulli;
 
-    if (getSettings().main.mediaServerType == MediaServerType.PLEX) {
+    if (getSettings().main.primaryMediaServer == MediaServerType.PLEX) {
       if (this.ratingKey) {
         this.mediaUrl = `${
           webAppUrl ? webAppUrl : 'https://app.plex.tv/desktop'
@@ -254,7 +254,7 @@ class Media {
       }
     } else {
       const pageName =
-        getSettings().main.mediaServerType == MediaServerType.EMBY
+        getSettings().main.primaryMediaServer == MediaServerType.EMBY
           ? 'item'
           : 'details';
       const { serverId, externalHostname } = getSettings().jellyfin;

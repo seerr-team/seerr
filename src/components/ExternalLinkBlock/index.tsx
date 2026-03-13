@@ -41,9 +41,10 @@ const ExternalLinkBlock = ({
           target="_blank"
           rel="noreferrer"
         >
-          {settings.currentSettings.mediaServerType === MediaServerType.PLEX ? (
+          {settings.currentSettings.primaryMediaServer ===
+          MediaServerType.PLEX ? (
             <PlexLogo />
-          ) : settings.currentSettings.mediaServerType ===
+          ) : settings.currentSettings.primaryMediaServer ===
             MediaServerType.EMBY ? (
             <EmbyLogo />
           ) : (

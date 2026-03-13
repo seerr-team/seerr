@@ -57,7 +57,7 @@ const LinkJellyfinModal: React.FC<LinkJellyfinModalProps> = ({
 
   const applicationName = settings.currentSettings.applicationTitle;
   const mediaServerName =
-    settings.currentSettings.mediaServerType === MediaServerType.EMBY
+    settings.currentSettings.primaryMediaServer === MediaServerType.EMBY
       ? 'Emby'
       : 'Jellyfin';
 

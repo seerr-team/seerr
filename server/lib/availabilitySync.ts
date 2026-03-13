@@ -31,7 +31,7 @@ class AvailabilitySync {
 
   async run() {
     const settings = getSettings();
-    const mediaServerType = getSettings().main.mediaServerType;
+    const mediaServerType = getSettings().main.primaryMediaServer;
     this.running = true;
     this.plexSeasonsCache = {};
     this.jellyfinSeasonsCache = {};

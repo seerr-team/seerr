@@ -256,9 +256,9 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
 
   const mediaServerFormatValues = {
     mediaServerName:
-      settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
+      settings.currentSettings.primaryMediaServer === MediaServerType.JELLYFIN
         ? 'Jellyfin'
-        : settings.currentSettings.mediaServerType === MediaServerType.EMBY
+        : settings.currentSettings.primaryMediaServer === MediaServerType.EMBY
           ? 'Emby'
           : undefined,
   };

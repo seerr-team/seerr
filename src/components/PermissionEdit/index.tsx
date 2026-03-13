@@ -144,18 +144,20 @@ export const PermissionEdit = ({
           id: 'viewwatchlists',
           name: intl.formatMessage(messages.viewwatchlists, {
             mediaServerName:
-              settings.currentSettings.mediaServerType === MediaServerType.PLEX
+              settings.currentSettings.primaryMediaServer ===
+              MediaServerType.PLEX
                 ? 'Plex'
-                : settings.currentSettings.mediaServerType ===
+                : settings.currentSettings.primaryMediaServer ===
                     MediaServerType.JELLYFIN
                   ? 'Jellyfin'
                   : 'Emby',
           }),
           description: intl.formatMessage(messages.viewwatchlistsDescription, {
             mediaServerName:
-              settings.currentSettings.mediaServerType === MediaServerType.PLEX
+              settings.currentSettings.primaryMediaServer ===
+              MediaServerType.PLEX
                 ? 'Plex'
-                : settings.currentSettings.mediaServerType ===
+                : settings.currentSettings.primaryMediaServer ===
                     MediaServerType.JELLYFIN
                   ? 'Jellyfin'
                   : 'Emby',

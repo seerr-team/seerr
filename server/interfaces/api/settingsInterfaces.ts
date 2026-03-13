@@ -26,19 +26,20 @@ export interface PublicSettingsResponse {
   jellyfinExternalHost?: string;
   jellyfinServerName?: string;
   jellyfinForgotPasswordUrl?: string;
+  plexServerName?: string;
   initialized: boolean;
   applicationTitle: string;
   applicationUrl: string;
   hideAvailable: boolean;
   hideBlocklisted: boolean;
   localLogin: boolean;
-  mediaServerLogin: boolean;
+  enabledAuthMethods: number[];
   movie4kEnabled: boolean;
   series4kEnabled: boolean;
   discoverRegion: string;
   streamingRegion: string;
   originalLanguage: string;
-  mediaServerType: number;
+  primaryMediaServer: number;
   partialRequestsEnabled: boolean;
   enableSpecialEpisodes: boolean;
   cacheImages: boolean;
@@ -46,7 +47,7 @@ export interface PublicSettingsResponse {
   enablePushRegistration: boolean;
   locale: string;
   emailEnabled: boolean;
-  newPlexLogin: boolean;
+  newUserLogin: boolean;
   youtubeUrl: string;
 }
 

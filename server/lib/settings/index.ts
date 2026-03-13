@@ -35,6 +35,7 @@ export interface PlexSettings {
   useSsl?: boolean;
   libraries: Library[];
   webAppUrl?: string;
+  adminToken?: string;
 }
 
 export interface JellyfinSettings {
@@ -135,14 +136,14 @@ export interface MainSettings {
   hideAvailable: boolean;
   hideBlocklisted: boolean;
   localLogin: boolean;
-  mediaServerLogin: boolean;
-  newPlexLogin: boolean;
+  newUserLogin: boolean;
+  enabledAuthMethods: number[];
   discoverRegion: string;
   streamingRegion: string;
   originalLanguage: string;
   blocklistedTags: string;
   blocklistedTagsLimit: number;
-  mediaServerType: number;
+  primaryMediaServer: number;
   partialRequestsEnabled: boolean;
   enableSpecialEpisodes: boolean;
   locale: string;
@@ -185,16 +186,17 @@ interface FullPublicSettings extends PublicSettings {
   hideAvailable: boolean;
   hideBlocklisted: boolean;
   localLogin: boolean;
-  mediaServerLogin: boolean;
+  enabledAuthMethods: number[];
   movie4kEnabled: boolean;
   series4kEnabled: boolean;
   discoverRegion: string;
   streamingRegion: string;
   originalLanguage: string;
-  mediaServerType: number;
+  primaryMediaServer: number;
   jellyfinExternalHost?: string;
   jellyfinForgotPasswordUrl?: string;
   jellyfinServerName?: string;
+  plexServerName?: string;
   partialRequestsEnabled: boolean;
   enableSpecialEpisodes: boolean;
   cacheImages: boolean;
@@ -203,7 +205,7 @@ interface FullPublicSettings extends PublicSettings {
   locale: string;
   emailEnabled: boolean;
   userEmailRequired: boolean;
-  newPlexLogin: boolean;
+  newUserLogin: boolean;
   youtubeUrl: string;
 }
 
@@ -395,14 +397,14 @@ class Settings {
         hideAvailable: false,
         hideBlocklisted: false,
         localLogin: true,
-        mediaServerLogin: true,
-        newPlexLogin: true,
+        newUserLogin: true,
+        enabledAuthMethods: [],
         discoverRegion: '',
         streamingRegion: '',
         originalLanguage: '',
         blocklistedTags: '',
         blocklistedTagsLimit: 50,
-        mediaServerType: MediaServerType.NOT_CONFIGURED,
+        primaryMediaServer: MediaServerType.NOT_CONFIGURED,
         partialRequestsEnabled: true,
         enableSpecialEpisodes: false,
         locale: 'en',
@@ -679,9 +681,11 @@ class Settings {
       hideAvailable: this.data.main.hideAvailable,
       hideBlocklisted: this.data.main.hideBlocklisted,
       localLogin: this.data.main.localLogin,
-      mediaServerLogin: this.data.main.mediaServerLogin,
+      enabledAuthMethods: this.data.main.enabledAuthMethods,
       jellyfinExternalHost: this.data.jellyfin.externalHostname,
       jellyfinForgotPasswordUrl: this.data.jellyfin.jellyfinForgotPasswordUrl,
+      jellyfinServerName: this.data.jellyfin.name || undefined,
+      plexServerName: this.data.plex.name || undefined,
       movie4kEnabled: this.data.radarr.some(
         (radarr) => radarr.is4k && radarr.isDefault
       ),
@@ -691,7 +695,7 @@ class Settings {
       discoverRegion: this.data.main.discoverRegion,
       streamingRegion: this.data.main.streamingRegion,
       originalLanguage: this.data.main.originalLanguage,
-      mediaServerType: this.main.mediaServerType,
+      primaryMediaServer: this.data.main.primaryMediaServer,
       partialRequestsEnabled: this.data.main.partialRequestsEnabled,
       enableSpecialEpisodes: this.data.main.enableSpecialEpisodes,
       cacheImages: this.data.main.cacheImages,
@@ -701,7 +705,7 @@ class Settings {
       emailEnabled: this.data.notifications.agents.email.enabled,
       userEmailRequired:
         this.data.notifications.agents.email.options.userEmailRequired,
-      newPlexLogin: this.data.main.newPlexLogin,
+      newUserLogin: this.data.main.newUserLogin,
       youtubeUrl: this.data.main.youtubeUrl,
     };
   }
@@ -748,6 +752,10 @@ class Settings {
 
   get vapidPrivate(): string {
     return this.data.vapidPrivate;
+  }
+
+  public isAuthMethodEnabled(type: number): boolean {
+    return this.data.main.enabledAuthMethods.includes(type);
   }
 
   public async regenerateApiKey(): Promise<MainSettings> {

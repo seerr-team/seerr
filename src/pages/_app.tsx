@@ -240,11 +240,11 @@ CoreApp.getInitialProps = async (initialProps) => {
     movie4kEnabled: false,
     series4kEnabled: false,
     localLogin: true,
-    mediaServerLogin: true,
+    enabledAuthMethods: [],
     discoverRegion: '',
     streamingRegion: '',
     originalLanguage: '',
-    mediaServerType: MediaServerType.NOT_CONFIGURED,
+    primaryMediaServer: MediaServerType.NOT_CONFIGURED,
     partialRequestsEnabled: true,
     enableSpecialEpisodes: false,
     cacheImages: false,
@@ -252,7 +252,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     enablePushRegistration: false,
     locale: 'en',
     emailEnabled: false,
-    newPlexLogin: true,
+    newUserLogin: true,
     youtubeUrl: '',
   };
 

@@ -112,16 +112,16 @@ const Setup = () => {
     }
 
     if (
-      settings.currentSettings.mediaServerType !==
+      settings.currentSettings.primaryMediaServer !==
       MediaServerType.NOT_CONFIGURED
     ) {
-      setMediaServerType(settings.currentSettings.mediaServerType);
+      setMediaServerType(settings.currentSettings.primaryMediaServer);
       if (currentStep < 3) {
         setCurrentStep(3);
       }
     }
   }, [
-    settings.currentSettings.mediaServerType,
+    settings.currentSettings.primaryMediaServer,
     settings.currentSettings.initialized,
     router,
     toasts,

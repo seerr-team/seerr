@@ -156,7 +156,7 @@ class JellyfinAPI extends ExternalAPI {
       }
     );
 
-    this.mediaServerType = settings.main.mediaServerType;
+    this.mediaServerType = settings.main.primaryMediaServer;
   }
 
   public async login(

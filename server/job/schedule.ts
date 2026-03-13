@@ -32,7 +32,7 @@ export const scheduledJobs: ScheduledJob[] = [];
 
 export const startJobs = (): void => {
   const jobs = getSettings().jobs;
-  const mediaServerType = getSettings().main.mediaServerType;
+  const mediaServerType = getSettings().main.primaryMediaServer;
 
   if (mediaServerType === MediaServerType.PLEX) {
     // Run recently added plex scan every 5 minutes

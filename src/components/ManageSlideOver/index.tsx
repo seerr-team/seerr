@@ -109,7 +109,7 @@ const ManageSlideOver = ({
   const intl = useIntl();
   const settings = useSettings();
   const { data: watchData } = useSWR<MediaWatchDataResponse>(
-    settings.currentSettings.mediaServerType === MediaServerType.PLEX &&
+    settings.currentSettings.primaryMediaServer === MediaServerType.PLEX &&
       data.mediaInfo &&
       hasPermission(Permission.ADMIN)
       ? `/api/v1/media/${data.mediaInfo.id}/watch_data`
@@ -707,10 +707,10 @@ const ManageSlideOver = ({
                         mediaType === 'movie' ? messages.movie : messages.tvshow
                       ),
                       mediaServerName:
-                        settings.currentSettings.mediaServerType ===
+                        settings.currentSettings.primaryMediaServer ===
                         MediaServerType.EMBY
                           ? 'Emby'
-                          : settings.currentSettings.mediaServerType ===
+                          : settings.currentSettings.primaryMediaServer ===
                               MediaServerType.PLEX
                             ? 'Plex'
                             : 'Jellyfin',

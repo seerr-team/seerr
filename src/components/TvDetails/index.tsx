@@ -328,11 +328,11 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     )?.flatrate ?? [];
 
   function getAvailableMediaServerName() {
-    if (settings.currentSettings.mediaServerType === MediaServerType.EMBY) {
+    if (settings.currentSettings.primaryMediaServer === MediaServerType.EMBY) {
       return intl.formatMessage(messages.play, { mediaServerName: 'Emby' });
     }
 
-    if (settings.currentSettings.mediaServerType === MediaServerType.PLEX) {
+    if (settings.currentSettings.primaryMediaServer === MediaServerType.PLEX) {
       return intl.formatMessage(messages.play, { mediaServerName: 'Plex' });
     }
 
@@ -340,11 +340,11 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   }
 
   function getAvailable4kMediaServerName() {
-    if (settings.currentSettings.mediaServerType === MediaServerType.EMBY) {
+    if (settings.currentSettings.primaryMediaServer === MediaServerType.EMBY) {
       return intl.formatMessage(messages.play, { mediaServerName: 'Emby' });
     }
 
-    if (settings.currentSettings.mediaServerType === MediaServerType.PLEX) {
+    if (settings.currentSettings.primaryMediaServer === MediaServerType.PLEX) {
       return intl.formatMessage(messages.play4k, { mediaServerName: 'Plex' });
     }
 

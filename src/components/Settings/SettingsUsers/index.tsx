@@ -55,18 +55,16 @@ const SettingsUsers = () => {
     .object()
     .shape({
       localLogin: yup.boolean(),
-      mediaServerLogin: yup.boolean(),
+      mediaServerLoginEnabled: yup.boolean(),
     })
     .test({
       name: 'atLeastOneAuth',
       test: function (values) {
-        const isValid = ['localLogin', 'mediaServerLogin'].some(
-          (field) => !!values[field]
-        );
+        const isValid = values.localLogin || values.mediaServerLoginEnabled;
 
         if (isValid) return true;
         return this.createError({
-          path: 'localLogin | mediaServerLogin',
+          path: 'localLogin | mediaServerLoginEnabled',
           message: intl.formatMessage(messages.atLeastOneAuth),
         });
       },
@@ -78,11 +76,11 @@ const SettingsUsers = () => {
 
   const mediaServerFormatValues = {
     mediaServerName:
-      settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
+      settings.currentSettings.primaryMediaServer === MediaServerType.JELLYFIN
         ? 'Jellyfin'
-        : settings.currentSettings.mediaServerType === MediaServerType.EMBY
+        : settings.currentSettings.primaryMediaServer === MediaServerType.EMBY
           ? 'Emby'
-          : settings.currentSettings.mediaServerType === MediaServerType.PLEX
+          : settings.currentSettings.primaryMediaServer === MediaServerType.PLEX
             ? 'Plex'
             : undefined,
   };
@@ -105,8 +103,9 @@ const SettingsUsers = () => {
         <Formik
           initialValues={{
             localLogin: data?.localLogin,
-            mediaServerLogin: data?.mediaServerLogin,
-            newPlexLogin: data?.newPlexLogin,
+            mediaServerLoginEnabled:
+              (data?.enabledAuthMethods?.length ?? 0) > 0,
+            newUserLogin: data?.newUserLogin,
             movieQuotaLimit: data?.defaultQuotas.movie.quotaLimit ?? 0,
             movieQuotaDays: data?.defaultQuotas.movie.quotaDays ?? 7,
             tvQuotaLimit: data?.defaultQuotas.tv.quotaLimit ?? 0,
@@ -119,8 +118,10 @@ const SettingsUsers = () => {
             try {
               await axios.post('/api/v1/settings/main', {
                 localLogin: values.localLogin,
-                mediaServerLogin: values.mediaServerLogin,
-                newPlexLogin: values.newPlexLogin,
+                enabledAuthMethods: values.mediaServerLoginEnabled
+                  ? [settings.currentSettings.primaryMediaServer]
+                  : [],
+                newUserLogin: values.newUserLogin,
                 defaultQuotas: {
                   movie: {
                     quotaLimit: values.movieQuotaLimit,
@@ -163,9 +164,13 @@ const SettingsUsers = () => {
                       <span className="label-tip">
                         {intl.formatMessage(messages.loginMethodsTip)}
                       </span>
-                      {'localLogin | mediaServerLogin' in errors && (
+                      {'localLogin | mediaServerLoginEnabled' in errors && (
                         <span className="error">
-                          {errors['localLogin | mediaServerLogin'] as string}
+                          {
+                            errors[
+                              'localLogin | mediaServerLoginEnabled'
+                            ] as string
+                          }
                         </span>
                       )}
                     </span>
@@ -183,7 +188,7 @@ const SettingsUsers = () => {
                         }
                       />
                       <LabeledCheckbox
-                        id="mediaServerLogin"
+                        id="mediaServerLoginEnabled"
                         className="mt-4"
                         label={intl.formatMessage(
                           messages.mediaServerLogin,
@@ -195,8 +200,8 @@ const SettingsUsers = () => {
                         )}
                         onChange={() =>
                           setFieldValue(
-                            'mediaServerLogin',
-                            !values.mediaServerLogin
+                            'mediaServerLoginEnabled',
+                            !values.mediaServerLoginEnabled
                           )
                         }
                       />
@@ -205,7 +210,7 @@ const SettingsUsers = () => {
                 </div>
 
                 <div className="form-row">
-                  <label htmlFor="newPlexLogin" className="checkbox-label">
+                  <label htmlFor="newUserLogin" className="checkbox-label">
                     {intl.formatMessage(
                       messages.newPlexLogin,
                       mediaServerFormatValues
@@ -220,10 +225,10 @@ const SettingsUsers = () => {
                   <div className="form-input-area">
                     <Field
                       type="checkbox"
-                      id="newPlexLogin"
-                      name="newPlexLogin"
+                      id="newUserLogin"
+                      name="newUserLogin"
                       onChange={() => {
-                        setFieldValue('newPlexLogin', !values.newPlexLogin);
+                        setFieldValue('newUserLogin', !values.newUserLogin);
                       }}
                     />
                   </div>

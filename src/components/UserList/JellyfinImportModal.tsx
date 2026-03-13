@@ -74,7 +74,7 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
           userCount: createdUsers.length,
           strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
           mediaServerName:
-            settings.currentSettings.mediaServerType === MediaServerType.EMBY
+            settings.currentSettings.primaryMediaServer === MediaServerType.EMBY
               ? 'Emby'
               : 'Jellyfin',
         }),
@@ -91,7 +91,7 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
       addToast(
         intl.formatMessage(messages.importfromJellyfinerror, {
           mediaServerName:
-            settings.currentSettings.mediaServerType === MediaServerType.EMBY
+            settings.currentSettings.primaryMediaServer === MediaServerType.EMBY
               ? 'Emby'
               : 'Jellyfin',
         }),
@@ -131,7 +131,7 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
       loading={!data && !error}
       title={intl.formatMessage(messages.importfromJellyfin, {
         mediaServerName:
-          settings.currentSettings.mediaServerType === MediaServerType.EMBY
+          settings.currentSettings.primaryMediaServer === MediaServerType.EMBY
             ? 'Emby'
             : 'Jellyfin',
       })}
@@ -146,11 +146,11 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
     >
       {data?.length ? (
         <>
-          {settings.currentSettings.newPlexLogin && (
+          {settings.currentSettings.newUserLogin && (
             <Alert
               title={intl.formatMessage(messages.newJellyfinsigninenabled, {
                 mediaServerName:
-                  settings.currentSettings.mediaServerType ===
+                  settings.currentSettings.primaryMediaServer ===
                   MediaServerType.EMBY
                     ? 'Emby'
                     : 'Jellyfin',
@@ -278,7 +278,8 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
         <Alert
           title={intl.formatMessage(messages.noJellyfinuserstoimport, {
             mediaServerName:
-              settings.currentSettings.mediaServerType === MediaServerType.EMBY
+              settings.currentSettings.primaryMediaServer ===
+              MediaServerType.EMBY
                 ? 'Emby'
                 : 'Jellyfin',
           })}

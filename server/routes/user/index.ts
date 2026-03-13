@@ -711,7 +711,7 @@ router.post(
             permissions: settings.main.defaultPermissions,
             avatar: `/avatarproxy/${jellyfinUser?.Id}`,
             userType:
-              settings.main.mediaServerType === MediaServerType.JELLYFIN
+              settings.main.primaryMediaServer === MediaServerType.JELLYFIN
                 ? UserType.JELLYFIN
                 : UserType.EMBY,
           });

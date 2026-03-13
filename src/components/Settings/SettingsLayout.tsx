@@ -39,7 +39,7 @@ const SettingsLayout = ({ children }: SettingsLayoutProps) => {
       route: '/settings/users',
       regex: /^\/settings\/users/,
     },
-    settings.currentSettings.mediaServerType === MediaServerType.PLEX
+    settings.currentSettings.primaryMediaServer === MediaServerType.PLEX
       ? {
           text: intl.formatMessage(messages.menuPlexSettings),
           route: '/settings/plex',
@@ -99,9 +99,9 @@ const SettingsLayout = ({ children }: SettingsLayoutProps) => {
   function getAvailableMediaServerName() {
     return intl.formatMessage(messages.menuJellyfinSettings, {
       mediaServerName:
-        settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
+        settings.currentSettings.primaryMediaServer === MediaServerType.JELLYFIN
           ? 'Jellyfin'
-          : settings.currentSettings.mediaServerType === MediaServerType.EMBY
+          : settings.currentSettings.primaryMediaServer === MediaServerType.EMBY
             ? 'Emby'
             : undefined,
     });

@@ -121,21 +121,22 @@ const UserLinkedAccountsSettings = () => {
         setTimeout(() => linkPlexAccount(), 1500);
       },
       hide:
-        settings.currentSettings.mediaServerType !== MediaServerType.PLEX ||
+        settings.currentSettings.primaryMediaServer !== MediaServerType.PLEX ||
         accounts.some((a) => a.type === LinkedAccountType.Plex),
     },
     {
       name: 'Jellyfin',
       action: () => setShowJellyfinModal(true),
       hide:
-        settings.currentSettings.mediaServerType !== MediaServerType.JELLYFIN ||
+        settings.currentSettings.primaryMediaServer !==
+          MediaServerType.JELLYFIN ||
         accounts.some((a) => a.type === LinkedAccountType.Jellyfin),
     },
     {
       name: 'Emby',
       action: () => setShowJellyfinModal(true),
       hide:
-        settings.currentSettings.mediaServerType !== MediaServerType.EMBY ||
+        settings.currentSettings.primaryMediaServer !== MediaServerType.EMBY ||
         accounts.some((a) => a.type === LinkedAccountType.Emby),
     },
   ].filter((l) => !l.hide);
