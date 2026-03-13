@@ -1,5 +1,11 @@
 import TheMovieDb from '@server/api/themoviedb';
-import type { TmdbSearchMultiResponse } from '@server/api/themoviedb/interfaces';
+import type {
+  TmdbCollectionResult,
+  TmdbMovieResult,
+  TmdbPersonResult,
+  TmdbSearchMultiResponse,
+  TmdbTvResult,
+} from '@server/api/themoviedb/interfaces';
 import Media from '@server/entity/Media';
 import { findSearchProvider } from '@server/lib/search';
 import logger from '@server/logger';
@@ -7,6 +13,58 @@ import { mapSearchResults } from '@server/models/Search';
 import { Router } from 'express';
 
 const searchRoutes = Router();
+
+type SearchResultItem =
+  | TmdbMovieResult
+  | TmdbTvResult
+  | TmdbPersonResult
+  | TmdbCollectionResult;
+
+const getResultTitle = (result: SearchResultItem): string => {
+  if ('title' in result) return result.title;
+  if ('name' in result) return result.name;
+  return '';
+};
+
+const getResultPopularity = (result: SearchResultItem): number => {
+  return 'popularity' in result ? result.popularity : 0;
+};
+
+const calculateSearchScore = (
+  result: SearchResultItem,
+  query: string
+): number => {
+  const title = getResultTitle(result).toLowerCase();
+  const popularity = getResultPopularity(result);
+
+  // Popularity is the main factor (normalized to make the boost meaningful)
+  let score = popularity * 10;
+
+  // Small boost for titles that start with the query
+  if (title.startsWith(query)) {
+    score += 15;
+  }
+
+  // Tiny boost for exact matches (but not enough to override popularity)
+  if (title === query) {
+    score += 5;
+  }
+
+  return score;
+};
+
+const sortResultsByRelevanceAndPopularity = (
+  results: SearchResultItem[],
+  query: string
+): SearchResultItem[] => {
+  const normalizedQuery = query.toLowerCase().trim();
+
+  return [...results].sort((a, b) => {
+    const scoreA = calculateSearchScore(a, normalizedQuery);
+    const scoreB = calculateSearchScore(b, normalizedQuery);
+    return scoreB - scoreA;
+  });
+};
 
 searchRoutes.get('/', async (req, res, next) => {
   const queryString = req.query.query as string;
@@ -33,16 +91,21 @@ searchRoutes.get('/', async (req, res, next) => {
       });
     }
 
+    const sortedResults = sortResultsByRelevanceAndPopularity(
+      results.results,
+      queryString
+    );
+
     const media = await Media.getRelatedMedia(
       req.user,
-      results.results.map((result) => result.id)
+      sortedResults.map((result) => result.id)
     );
 
     return res.status(200).json({
       page: results.page,
       totalPages: results.total_pages,
       totalResults: results.total_results,
-      results: mapSearchResults(results.results, media),
+      results: mapSearchResults(sortedResults, media),
     });
   } catch (e) {
     logger.debug('Something went wrong retrieving search results', {
