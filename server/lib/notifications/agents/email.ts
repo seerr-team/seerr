@@ -9,7 +9,11 @@ import logger from '@server/logger';
 import type { EmailOptions } from 'email-templates';
 import path from 'path';
 import validator from 'validator';
-import { Notification, shouldSendAdminNotification } from '..';
+import {
+  Notification,
+  hasNotificationType,
+  shouldSendAdminNotification,
+} from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
 import { BaseAgent } from './agent';
 
@@ -198,6 +202,17 @@ class EmailAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
+    const settings = this.getSettings();
+
+    // Check system-level notification type filtering
+    // Skip sending if this is a system notification and the type is not enabled
+    if (
+      payload.notifySystem &&
+      !hasNotificationType(type, settings.types ?? 0)
+    ) {
+      return true;
+    }
+
     if (payload.notifyUser) {
       if (
         !payload.notifyUser.settings ||

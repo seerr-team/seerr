@@ -1,6 +1,7 @@
 import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
+import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -48,6 +49,7 @@ const messages = defineMessages('components.Settings.Notifications', {
   pgpPasswordTip:
     'Sign encrypted email messages using <OpenPgpLink>OpenPGP</OpenPgpLink>',
   validationPgpPassword: 'You must provide a PGP password',
+  validationTypes: 'You must select at least one notification type',
 });
 
 export function OpenPgpLink(msg: React.ReactNode) {
@@ -129,6 +131,7 @@ const NotificationsEmail = () => {
       initialValues={{
         enabled: data.enabled,
         embedPoster: data.embedPoster,
+        types: data.types,
         userEmailRequired: data.options.userEmailRequired,
         emailFrom: data.options.emailFrom,
         smtpHost: data.options.smtpHost,
@@ -153,6 +156,7 @@ const NotificationsEmail = () => {
           await axios.post('/api/v1/settings/notifications/email', {
             enabled: values.enabled,
             embedPoster: values.embedPoster,
+            types: values.types,
             options: {
               userEmailRequired: values.userEmailRequired,
               emailFrom: values.emailFrom,
@@ -185,7 +189,15 @@ const NotificationsEmail = () => {
         }
       }}
     >
-      {({ errors, touched, isSubmitting, values, isValid }) => {
+      {({
+        errors,
+        touched,
+        isSubmitting,
+        values,
+        isValid,
+        setFieldValue,
+        setFieldTouched,
+      }) => {
         const testSettings = async () => {
           setIsTesting(true);
           let toastId: string | undefined;
@@ -203,6 +215,7 @@ const NotificationsEmail = () => {
             await axios.post('/api/v1/settings/notifications/email/test', {
               enabled: true,
               embedPoster: values.embedPoster,
+              types: values.types,
               options: {
                 emailFrom: values.emailFrom,
                 smtpHost: values.smtpHost,
@@ -492,6 +505,22 @@ const NotificationsEmail = () => {
                   )}
               </div>
             </div>
+            <NotificationTypeSelector
+              currentTypes={values.enabled ? values.types : 0}
+              onUpdate={(newTypes) => {
+                setFieldValue('types', newTypes);
+                setFieldTouched('types');
+
+                if (newTypes) {
+                  setFieldValue('enabled', true);
+                }
+              }}
+              error={
+                values.enabled && !values.types && touched.types
+                  ? intl.formatMessage(messages.validationTypes)
+                  : undefined
+              }
+            />
             <div className="actions">
               <div className="flex justify-end">
                 <span className="ml-3 inline-flex rounded-md shadow-sm">
@@ -515,7 +544,12 @@ const NotificationsEmail = () => {
                   <Button
                     buttonType="primary"
                     type="submit"
-                    disabled={isSubmitting || !isValid || isTesting}
+                    disabled={
+                      isSubmitting ||
+                      !isValid ||
+                      isTesting ||
+                      (values.enabled && !values.types)
+                    }
                   >
                     <ArrowDownOnSquareIcon />
                     <span>
