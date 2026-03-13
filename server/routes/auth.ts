@@ -488,18 +488,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
         apiKey,
       };
 
-      const existingServerIndex = settings.jellyfinServers.findIndex(
-        (server) => server.id === jellyfinServerId
-      );
-
-      if (existingServerIndex >= 0) {
-        settings.jellyfinServers[existingServerIndex] = jellyfinServer;
-      } else {
-        settings.jellyfinServers = [
-          ...settings.jellyfinServers,
-          jellyfinServer,
-        ];
-      }
+      settings.upsertJellyfinServer(jellyfinServer);
 
       if (user) {
         user.jellyfinServerId = jellyfinServerId;
@@ -769,9 +758,13 @@ authRoutes.post('/logout', async (req, res, next) => {
 
       if (user?.jellyfinUserId && user.jellyfinDeviceId) {
         try {
-          const jellyfinServer = settings.jellyfinServers.find(
-            (server) => server.id === user.jellyfinServerId
-          ) ?? settings.jellyfinServers[0];
+          const jellyfinServer =
+            settings.jellyfinServers.find(
+              (server) => server.id === user.jellyfinServerId
+            ) ??
+            (user.jellyfinServerId == null || user.jellyfinServerId === ''
+              ? settings.getPrimaryJellyfinLikeServer()
+              : undefined);
 
           if (!jellyfinServer) {
             logger.debug('Skipping Jellyfin device deletion without server', {

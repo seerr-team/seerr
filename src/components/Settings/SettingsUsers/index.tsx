@@ -35,12 +35,53 @@ const messages = defineMessages('components.Settings.SettingsUsers', {
     'Allow users to sign in using their {mediaServerName} account',
   atLeastOneAuth: 'At least one authentication method must be selected.',
   newUserLogin: 'Enable New User Sign-In',
-  newUserLoginTip:
-    'Allow users to sign in without first being imported',
+  newUserLoginTip: 'Allow users to sign in without first being imported',
   movieRequestLimitLabel: 'Global Movie Request Limit',
   tvRequestLimitLabel: 'Global Series Request Limit',
   defaultPermissions: 'Default Permissions',
   defaultPermissionsTip: 'Initial permissions assigned to new users',
+});
+
+type SettingsUsersFormValues = {
+  localLogin?: boolean;
+  plexLogin?: boolean;
+  jellyfinLogin?: boolean;
+  embyLogin?: boolean;
+  newUserLogin?: boolean;
+  movieQuotaLimit: number;
+  movieQuotaDays: number;
+  tvQuotaLimit: number;
+  tvQuotaDays: number;
+  defaultPermissions: number;
+};
+
+const getInitialProviderLogin = ({
+  providerLogin,
+  mediaServerLogin,
+  configured,
+}: {
+  providerLogin?: boolean;
+  mediaServerLogin?: boolean;
+  configured: boolean;
+}): boolean =>
+  configured &&
+  Boolean(mediaServerLogin && (providerLogin ?? mediaServerLogin));
+
+const getEffectiveProviderLogins = (
+  values: Pick<
+    SettingsUsersFormValues,
+    'plexLogin' | 'jellyfinLogin' | 'embyLogin'
+  >,
+  options: {
+    plexConfigured: boolean;
+    jellyfinConfigured: boolean;
+    embyConfigured: boolean;
+  }
+) => ({
+  effectivePlexLogin: options.plexConfigured && Boolean(values.plexLogin),
+  effectiveJellyfinLogin:
+    options.jellyfinConfigured && Boolean(values.jellyfinLogin),
+  effectiveEmbyLogin: options.embyConfigured && Boolean(values.embyLogin),
 });
 
 const SettingsUsers = () => {
@@ -73,9 +114,20 @@ const SettingsUsers = () => {
     .test({
       name: 'atLeastOneAuth',
       test: function (values) {
-        const isValid = ['localLogin', 'plexLogin', 'jellyfinLogin', 'embyLogin'].some(
-          (field) => !!values[field]
-        );
+        const {
+          effectivePlexLogin,
+          effectiveJellyfinLogin,
+          effectiveEmbyLogin,
+        } = getEffectiveProviderLogins(values, {
+          plexConfigured,
+          jellyfinConfigured,
+          embyConfigured,
+        });
+        const isValid =
+          Boolean(values.localLogin) ||
+          effectivePlexLogin ||
+          effectiveJellyfinLogin ||
+          effectiveEmbyLogin;
 
         if (isValid) return true;
         return this.createError({
@@ -107,9 +159,21 @@ const SettingsUsers = () => {
         <Formik
           initialValues={{
             localLogin: data?.localLogin,
-            plexLogin: data?.plexLogin ?? data?.mediaServerLogin,
-            jellyfinLogin: data?.jellyfinLogin ?? data?.mediaServerLogin,
-            embyLogin: data?.embyLogin ?? data?.mediaServerLogin,
+            plexLogin: getInitialProviderLogin({
+              providerLogin: data?.plexLogin,
+              mediaServerLogin: data?.mediaServerLogin,
+              configured: plexConfigured,
+            }),
+            jellyfinLogin: getInitialProviderLogin({
+              providerLogin: data?.jellyfinLogin,
+              mediaServerLogin: data?.mediaServerLogin,
+              configured: jellyfinConfigured,
+            }),
+            embyLogin: getInitialProviderLogin({
+              providerLogin: data?.embyLogin,
+              mediaServerLogin: data?.mediaServerLogin,
+              configured: embyConfigured,
+            }),
             newUserLogin: data?.newPlexLogin,
             movieQuotaLimit: data?.defaultQuotas.movie.quotaLimit ?? 0,
             movieQuotaDays: data?.defaultQuotas.movie.quotaDays ?? 7,
@@ -119,16 +183,27 @@ const SettingsUsers = () => {
           }}
           validationSchema={schema}
           enableReinitialize
-          onSubmit={async (values) => {
+          onSubmit={async (values: SettingsUsersFormValues) => {
             try {
+              const {
+                effectivePlexLogin,
+                effectiveJellyfinLogin,
+                effectiveEmbyLogin,
+              } = getEffectiveProviderLogins(values, {
+                plexConfigured,
+                jellyfinConfigured,
+                embyConfigured,
+              });
               const mediaServerLogin =
-                values.plexLogin || values.jellyfinLogin || values.embyLogin;
+                effectivePlexLogin ||
+                effectiveJellyfinLogin ||
+                effectiveEmbyLogin;
               await axios.post('/api/v1/settings/main', {
                 localLogin: values.localLogin,
                 mediaServerLogin,
-                plexLogin: values.plexLogin,
-                jellyfinLogin: values.jellyfinLogin,
-                embyLogin: values.embyLogin,
+                plexLogin: effectivePlexLogin,
+                jellyfinLogin: effectiveJellyfinLogin,
+                embyLogin: effectiveEmbyLogin,
                 newPlexLogin: values.newUserLogin,
                 defaultQuotas: {
                   movie: {
@@ -193,7 +268,9 @@ const SettingsUsers = () => {
                           id="plexLogin"
                           className="mt-4"
                           label={intl.formatMessage(messages.plexLogin)}
-                          description={intl.formatMessage(messages.plexLoginTip)}
+                          description={intl.formatMessage(
+                            messages.plexLoginTip
+                          )}
                           onChange={() =>
                             setFieldValue('plexLogin', !values.plexLogin)
                           }
@@ -213,7 +290,10 @@ const SettingsUsers = () => {
                             }
                           )}
                           onChange={() =>
-                            setFieldValue('jellyfinLogin', !values.jellyfinLogin)
+                            setFieldValue(
+                              'jellyfinLogin',
+                              !values.jellyfinLogin
+                            )
                           }
                         />
                       )}

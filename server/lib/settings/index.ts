@@ -668,11 +668,11 @@ class Settings {
   }
 
   get plexServers(): PlexServerSettings[] {
-    return this.data.plexServers;
+    return this.clonePlexServers(this.data.plexServers);
   }
 
   set plexServers(data: PlexServerSettings[]) {
-    this.data.plexServers = data;
+    this.data.plexServers = this.clonePlexServers(data);
     this.synchronizeMediaServerSettings();
   }
 
@@ -686,12 +686,113 @@ class Settings {
   }
 
   get jellyfinServers(): JellyfinServerSettings[] {
-    return this.data.jellyfinServers;
+    return this.cloneJellyfinServers(this.data.jellyfinServers);
   }
 
   set jellyfinServers(data: JellyfinServerSettings[]) {
-    this.data.jellyfinServers = data;
+    this.data.jellyfinServers = this.cloneJellyfinServers(data);
     this.synchronizeMediaServerSettings();
+  }
+
+  public upsertPlexServer(server: PlexServerSettings): void {
+    const existingServerIndex = this.data.plexServers.findIndex(
+      (candidate) => candidate.id === server.id
+    );
+
+    if (existingServerIndex >= 0) {
+      this.data.plexServers[existingServerIndex] = this.clonePlexServer(server);
+    } else {
+      this.data.plexServers.push(this.clonePlexServer(server));
+    }
+
+    this.synchronizeMediaServerSettings();
+  }
+
+  public updatePlexServer(
+    serverId: string,
+    updater: (server: PlexServerSettings) => PlexServerSettings
+  ): boolean {
+    const serverIndex = this.data.plexServers.findIndex(
+      (server) => server.id === serverId
+    );
+
+    if (serverIndex === -1) {
+      return false;
+    }
+
+    this.data.plexServers[serverIndex] = this.clonePlexServer(
+      updater(this.clonePlexServer(this.data.plexServers[serverIndex]))
+    );
+    this.synchronizeMediaServerSettings();
+
+    return true;
+  }
+
+  public removePlexServer(serverId: string): PlexServerSettings | undefined {
+    const serverIndex = this.data.plexServers.findIndex(
+      (server) => server.id === serverId
+    );
+
+    if (serverIndex === -1) {
+      return undefined;
+    }
+
+    const [removedServer] = this.data.plexServers.splice(serverIndex, 1);
+    this.synchronizeMediaServerSettings();
+
+    return this.clonePlexServer(removedServer);
+  }
+
+  public upsertJellyfinServer(server: JellyfinServerSettings): void {
+    const existingServerIndex = this.data.jellyfinServers.findIndex(
+      (candidate) => candidate.id === server.id
+    );
+
+    if (existingServerIndex >= 0) {
+      this.data.jellyfinServers[existingServerIndex] =
+        this.cloneJellyfinServer(server);
+    } else {
+      this.data.jellyfinServers.push(this.cloneJellyfinServer(server));
+    }
+
+    this.synchronizeMediaServerSettings();
+  }
+
+  public updateJellyfinServer(
+    serverId: string,
+    updater: (server: JellyfinServerSettings) => JellyfinServerSettings
+  ): boolean {
+    const serverIndex = this.data.jellyfinServers.findIndex(
+      (server) => server.id === serverId
+    );
+
+    if (serverIndex === -1) {
+      return false;
+    }
+
+    this.data.jellyfinServers[serverIndex] = this.cloneJellyfinServer(
+      updater(this.cloneJellyfinServer(this.data.jellyfinServers[serverIndex]))
+    );
+    this.synchronizeMediaServerSettings();
+
+    return true;
+  }
+
+  public removeJellyfinServer(
+    serverId: string
+  ): JellyfinServerSettings | undefined {
+    const serverIndex = this.data.jellyfinServers.findIndex(
+      (server) => server.id === serverId
+    );
+
+    if (serverIndex === -1) {
+      return undefined;
+    }
+
+    const [removedServer] = this.data.jellyfinServers.splice(serverIndex, 1);
+    this.synchronizeMediaServerSettings();
+
+    return this.cloneJellyfinServer(removedServer);
   }
 
   get tautulli(): TautulliSettings {
@@ -852,39 +953,39 @@ class Settings {
     }
   }
 
-  /**
-   * Settings Load
-   *
-   * This will load settings from file unless an optional argument of the object structure
-   * is passed in.
-   * @param overrideSettings If passed in, will override all existing settings with these
-   * @param raw If true, will load the settings without running migrations or generating missing
-   * values
-   */
-  public async load(
-    overrideSettings?: AllSettings,
-    raw = false
-  ): Promise<Settings> {
-    if (overrideSettings) {
-      this.data = overrideSettings;
-      return this;
-    }
+  private cloneLibraries(libraries: Library[] = []): Library[] {
+    return libraries.map((library) => ({ ...library }));
+  }
 
-    let data;
-    try {
-      data = await fs.readFile(SETTINGS_PATH, 'utf-8');
-    } catch {
-      await this.save();
-    }
+  private clonePlexServer(server: PlexServerSettings): PlexServerSettings {
+    return {
+      ...server,
+      libraries: this.cloneLibraries(server.libraries),
+    };
+  }
 
-    if (data && !raw) {
-      const parsedJson = JSON.parse(data);
-      const migratedData = await runMigrations(parsedJson, SETTINGS_PATH);
-      this.data = merge(this.data, migratedData);
-    } else if (data) {
-      this.data = JSON.parse(data);
-    }
+  private clonePlexServers(
+    data: PlexServerSettings[] = []
+  ): PlexServerSettings[] {
+    return data.map((server) => this.clonePlexServer(server));
+  }
 
+  private cloneJellyfinServer(
+    server: JellyfinServerSettings
+  ): JellyfinServerSettings {
+    return {
+      ...server,
+      libraries: this.cloneLibraries(server.libraries),
+    };
+  }
+
+  private cloneJellyfinServers(
+    data: JellyfinServerSettings[] = []
+  ): JellyfinServerSettings[] {
+    return data.map((server) => this.cloneJellyfinServer(server));
+  }
+
+  private async finalizeLoadedSettings(): Promise<void> {
     this.synchronizeMediaServerSettings();
 
     // generate keys and ids if it's missing
@@ -910,6 +1011,43 @@ class Settings {
     if (change) {
       await this.save();
     }
+  }
+
+  /**
+   * Settings Load
+   *
+   * This will load settings from file unless an optional argument of the object structure
+   * is passed in.
+   * @param overrideSettings If passed in, will override all existing settings with these
+   * @param raw If true, will load the settings without running migrations or generating missing
+   * values
+   */
+  public async load(
+    overrideSettings?: AllSettings,
+    raw = false
+  ): Promise<Settings> {
+    if (overrideSettings) {
+      this.data = overrideSettings;
+      await this.finalizeLoadedSettings();
+      return this;
+    }
+
+    let data;
+    try {
+      data = await fs.readFile(SETTINGS_PATH, 'utf-8');
+    } catch {
+      await this.save();
+    }
+
+    if (data && !raw) {
+      const parsedJson = JSON.parse(data);
+      const migratedData = await runMigrations(parsedJson, SETTINGS_PATH);
+      this.data = merge(this.data, migratedData);
+    } else if (data) {
+      this.data = JSON.parse(data);
+    }
+
+    await this.finalizeLoadedSettings();
 
     return this;
   }
@@ -922,7 +1060,7 @@ class Settings {
   }
 
   public getMediaServers(): MediaServerSettings[] {
-    return [...this.data.plexServers, ...this.data.jellyfinServers];
+    return [...this.plexServers, ...this.jellyfinServers];
   }
 
   public getMediaServerTypes(): number[] {
@@ -968,15 +1106,47 @@ class Settings {
   }
 
   public getPrimaryPlexServer(): PlexServerSettings | undefined {
-    return this.data.plexServers[0];
+    return this.data.plexServers[0]
+      ? this.clonePlexServer(this.data.plexServers[0])
+      : undefined;
   }
 
   public getPrimaryJellyfinLikeServer(
     mediaServerType?: MediaServerType.JELLYFIN | MediaServerType.EMBY
   ): JellyfinServerSettings | undefined {
-    return this.data.jellyfinServers.find((server) =>
-      mediaServerType ? server.mediaServerType === mediaServerType : true
+    const server = this.data.jellyfinServers.find((candidate) =>
+      mediaServerType ? candidate.mediaServerType === mediaServerType : true
     );
+
+    return server ? this.cloneJellyfinServer(server) : undefined;
+  }
+
+  private getLegacyJellyfinServerIndex(): number {
+    const legacyMediaServerType =
+      this.data.main.mediaServerType === MediaServerType.EMBY
+        ? MediaServerType.EMBY
+        : MediaServerType.JELLYFIN;
+
+    const exactMatchIndex = this.data.jellyfinServers.findIndex(
+      (server) =>
+        server.mediaServerType === legacyMediaServerType &&
+        (!this.data.jellyfin.serverId ||
+          server.serverId === this.data.jellyfin.serverId)
+    );
+
+    if (exactMatchIndex >= 0) {
+      return exactMatchIndex;
+    }
+
+    const typeMatchIndex = this.data.jellyfinServers.findIndex(
+      (server) => server.mediaServerType === legacyMediaServerType
+    );
+
+    if (typeMatchIndex >= 0) {
+      return typeMatchIndex;
+    }
+
+    return this.data.jellyfinServers[0] ? 0 : -1;
   }
 
   private synchronizeMediaServerSettings({
@@ -1084,12 +1254,15 @@ class Settings {
         ];
       }
 
-      if (this.data.jellyfinServers[0]) {
-        this.data.jellyfinServers[0] = {
-          ...this.data.jellyfinServers[0],
+      const legacyJellyfinServerIndex = this.getLegacyJellyfinServerIndex();
+      if (legacyJellyfinServerIndex >= 0) {
+        this.data.jellyfinServers[legacyJellyfinServerIndex] = {
+          ...this.data.jellyfinServers[legacyJellyfinServerIndex],
           ...this.data.jellyfin,
-          id: this.data.jellyfinServers[0].id,
-          mediaServerType: this.data.jellyfinServers[0].mediaServerType,
+          id: this.data.jellyfinServers[legacyJellyfinServerIndex].id,
+          mediaServerType:
+            this.data.jellyfinServers[legacyJellyfinServerIndex]
+              .mediaServerType,
         };
       } else if (
         this.data.jellyfin.ip ||

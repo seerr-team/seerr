@@ -3,7 +3,10 @@ import Modal from '@app/components/Common/Modal';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
-import type { PublicMediaServer } from '@app/utils/mediaServers';
+import {
+  getMediaServerDisplayName,
+  type PublicMediaServer,
+} from '@app/utils/mediaServers';
 import { Transition } from '@headlessui/react';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
@@ -58,7 +61,7 @@ const LinkJellyfinModal: React.FC<LinkJellyfinModalProps> = ({
   });
 
   const applicationName = settings.currentSettings.applicationTitle;
-  const mediaServerName = server.name;
+  const mediaServerName = getMediaServerDisplayName(server);
 
   return (
     <Transition

@@ -203,6 +203,10 @@ const UserLinkedAccountsSettings = () => {
   }
 
   const enableMediaServerUnlink = user?.id !== 1 && passwordInfo?.hasPassword;
+  const defaultJellyfinServer = getJellyfinLikeServers(
+    settings.currentSettings
+  )[0];
+  const jellyfinServer = selectedJellyfinServer ?? defaultJellyfinServer;
 
   return (
     <>
@@ -288,17 +292,17 @@ const UserLinkedAccountsSettings = () => {
         </div>
       )}
 
-      <LinkJellyfinModal
-        show={selectedJellyfinServer !== null}
-        server={
-          selectedJellyfinServer ?? settings.currentSettings.mediaServers[0]
-        }
-        onClose={() => setSelectedJellyfinServer(null)}
-        onSave={() => {
-          setSelectedJellyfinServer(null);
-          revalidateUser();
-        }}
-      />
+      {jellyfinServer && (
+        <LinkJellyfinModal
+          show={selectedJellyfinServer !== null}
+          server={jellyfinServer}
+          onClose={() => setSelectedJellyfinServer(null)}
+          onSave={() => {
+            setSelectedJellyfinServer(null);
+            revalidateUser();
+          }}
+        />
+      )}
     </>
   );
 };

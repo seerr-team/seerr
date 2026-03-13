@@ -115,7 +115,7 @@ userSettingsRoutes.post<
 
     const oldEmail = user.email;
     user.username = req.body.username;
-    if (!user.plexId && !user.plexUsername) {
+    if (user.userType === UserType.LOCAL) {
       user.email = req.body.email || user.jellyfinUsername || user.email;
     }
 

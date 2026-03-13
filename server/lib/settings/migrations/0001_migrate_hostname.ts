@@ -4,7 +4,7 @@ const migrateHostname = (settings: any): AllSettings => {
   if (settings.jellyfin?.hostname) {
     const { hostname } = settings.jellyfin;
     const protocolMatch = hostname.match(/^(https?):\/\//i);
-    const useSsl = protocolMatch?.[1].toLowerCase() === 'https';
+    const useSsl = protocolMatch && protocolMatch[1].toLowerCase() === 'https';
     const remainingUrl = hostname.replace(/^(https?):\/\//i, '');
     const urlMatch = remainingUrl.match(/^([^:]+)(:([0-9]+))?(\/.*)?$/);
 
@@ -14,7 +14,7 @@ const migrateHostname = (settings: any): AllSettings => {
       settings.jellyfin = {
         ...settings.jellyfin,
         ip,
-        port: Number(port || (useSsl ? 443 : 80)),
+        port: port || (useSsl ? 443 : 80),
         useSsl,
         urlBase: urlBase ? urlBase.replace(/\/$/, '') : '',
       };

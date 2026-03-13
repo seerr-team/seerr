@@ -153,11 +153,16 @@ const backfillLegacyJellyfinUsers = async (settings: any): Promise<void> => {
     // Users reference Seerr's configured server entry ID, not Jellyfin's
     // native serverId, so we backfill against primaryServer.id here.
     user.jellyfinServerId = primaryServer.id;
-    await userRepository.save(user);
+  }
+
+  if (legacyUsers.length > 0) {
+    await userRepository.save(legacyUsers);
   }
 };
 
-const migrateMultiMediaServers = async (settings: any): Promise<AllSettings> => {
+const migrateMultiMediaServers = async (
+  settings: any
+): Promise<AllSettings> => {
   if (!Array.isArray(settings.plexServers)) {
     settings.plexServers = [];
   }
@@ -216,8 +221,8 @@ const migrateMultiMediaServers = async (settings: any): Promise<AllSettings> => 
   }
   settings.main.mediaServerLogin = Boolean(
     settings.main.plexLogin ||
-      settings.main.jellyfinLogin ||
-      settings.main.embyLogin
+    settings.main.jellyfinLogin ||
+    settings.main.embyLogin
   );
 
   settings.main.mediaServerType = getPrimaryMediaServerType(settings);

@@ -12,12 +12,6 @@ const migrateApiTokens = async (settings: any): Promise<AllSettings> => {
     (mediaServerType === MediaServerType.JELLYFIN ||
       mediaServerType === MediaServerType.EMBY)
   ) {
-    const jellyfinSettings = settings.jellyfin;
-
-    if (!jellyfinSettings) {
-      return settings;
-    }
-
     const userRepository = getRepository(User);
     const admin = await userRepository.findOne({
       where: { id: 1 },
@@ -28,14 +22,14 @@ const migrateApiTokens = async (settings: any): Promise<AllSettings> => {
       return settings;
     }
     const jellyfinClient = new JellyfinAPI(
-      getHostname(jellyfinSettings),
+      getHostname(settings.jellyfin),
       admin.jellyfinAuthToken,
       admin.jellyfinDeviceId
     );
     jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
     try {
       const apiKey = await jellyfinClient.createApiToken('Seerr');
-      jellyfinSettings.apiKey = apiKey;
+      settings.jellyfin.apiKey = apiKey;
     } catch {
       throw new Error(
         "Failed to create Jellyfin API token from admin account. Please check your network configuration or edit your settings.json by adding an 'apiKey' field inside of the 'jellyfin' section to fix this issue."

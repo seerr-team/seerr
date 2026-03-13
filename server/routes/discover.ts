@@ -28,11 +28,7 @@ import {
   type Results,
 } from '@server/models/Search';
 import { mapNetwork } from '@server/models/Tv';
-import {
-  isCollection,
-  isMovie,
-  isPerson,
-} from '@server/utils/typeHelpers';
+import { isCollection, isMovie, isPerson } from '@server/utils/typeHelpers';
 import { Router } from 'express';
 import { sortBy } from 'lodash';
 import { z } from 'zod';
@@ -710,16 +706,13 @@ discoverRoutes.get('/trending', async (req, res, next) => {
       }),
       all: async () => ({
         data: await tmdb.getAllTrending({ page, language, timeWindow }),
-        mapper: (
-          result: TrendingResult,
-          media?: Media
-        ): Results | null => {
-          if (isMovie(result)) {
+        mapper: (result: TrendingResult, media?: Media): Results | null => {
+          if (isCollection(result)) {
+            return mapCollectionResult(result);
+          } else if (isMovie(result)) {
             return mapMovieResult(result, media);
           } else if (isPerson(result)) {
             return mapPersonResult(result);
-          } else if (isCollection(result)) {
-            return mapCollectionResult(result);
           } else if (result.media_type === 'tv') {
             return mapTvResult(result, media);
           }
@@ -754,12 +747,15 @@ discoverRoutes.get('/trending', async (req, res, next) => {
       totalResults: data.total_results,
       results: data.results
         .map((result) => {
-          // - If "type" is set (case: "movie" or "tv"), the mediaType must also match.
-          // - If "type" is not set (case: "all"), only filter by tmdbId.
-          const selectedMedia = media.find(
-            (med) =>
-              med.tmdbId === result.id && (type ? med.mediaType === type : true)
-          );
+          const resolvedType =
+            type ?? (result as { media_type?: string }).media_type;
+          const selectedMedia =
+            resolvedType === MediaType.MOVIE || resolvedType === MediaType.TV
+              ? media.find(
+                  (med) =>
+                    med.tmdbId === result.id && med.mediaType === resolvedType
+                )
+              : undefined;
 
           return mapper(result, selectedMedia);
         })

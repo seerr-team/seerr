@@ -265,15 +265,7 @@ settingsRoutes.post('/plex', async (req, res, next) => {
     plexServer.machineId = result.MediaContainer.machineIdentifier;
     plexServer.name = result.MediaContainer.friendlyName;
 
-    const existingServerIndex = settings.plexServers.findIndex(
-      (server) => server.id === plexServer.id
-    );
-
-    if (existingServerIndex >= 0) {
-      settings.plexServers[existingServerIndex] = plexServer;
-    } else {
-      settings.plexServers = [...settings.plexServers, plexServer];
-    }
+    settings.upsertPlexServer(plexServer);
 
     await settings.save();
   } catch (e) {
@@ -300,11 +292,9 @@ settingsRoutes.get('/plex/servers', (_req, res) => {
 
 settingsRoutes.delete('/plex/servers/:serverId', async (req, res, next) => {
   const settings = getSettings();
-  const serverIndex = settings.plexServers.findIndex(
-    (server) => server.id === req.params.serverId
-  );
-
-  if (serverIndex === -1) {
+  if (
+    !settings.plexServers.some((server) => server.id === req.params.serverId)
+  ) {
     return next({ status: 404, message: 'Plex server not found.' });
   }
 
@@ -315,7 +305,12 @@ settingsRoutes.delete('/plex/servers/:serverId', async (req, res, next) => {
     });
   }
 
-  const [removedServer] = settings.plexServers.splice(serverIndex, 1);
+  const removedServer = settings.removePlexServer(req.params.serverId);
+
+  if (!removedServer) {
+    return next({ status: 404, message: 'Plex server not found.' });
+  }
+
   await settings.save();
 
   return res.status(200).json(removedServer);
@@ -448,23 +443,29 @@ settingsRoutes.get('/plex/library', async (req, res) => {
     ? (req.query.enable as string).split(',')
     : [];
 
-  const serverIndex = settings.plexServers.findIndex(
-    (plexServer) => plexServer.id === server.id
-  );
-
-  if (serverIndex === -1 || !settings.plexServers[serverIndex]) {
+  if (!settings.plexServers.some((plexServer) => plexServer.id === server.id)) {
     return res.status(404).json({ message: 'Plex server not found.' });
   }
 
-  settings.plexServers[serverIndex].libraries = settings.plexServers[
-    serverIndex
-  ].libraries.map((library) => ({
-    ...library,
-    enabled: enabledLibraries.includes(library.id),
+  const updated = settings.updatePlexServer(server.id, (plexServer) => ({
+    ...plexServer,
+    libraries: plexServer.libraries.map((library) => ({
+      ...library,
+      enabled: enabledLibraries.includes(library.id),
+    })),
   }));
 
+  if (!updated) {
+    return res.status(404).json({ message: 'Plex server not found.' });
+  }
+
   await settings.save();
-  return res.status(200).json(settings.plexServers[serverIndex].libraries);
+  return res
+    .status(200)
+    .json(
+      settings.plexServers.find((plexServer) => plexServer.id === server.id)
+        ?.libraries ?? []
+    );
 });
 
 settingsRoutes.get('/plex/sync', (_req, res) => {
@@ -503,6 +504,12 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
   const userRepository = getRepository(User);
   const settings = getSettings();
   let jellyfinServerId: string | undefined;
+  const { username, password, ...jellyfinServerBody } =
+    req.body as Partial<JellyfinServerSettings> & {
+      username?: string;
+      password?: string;
+      serverType?: MediaServerType.JELLYFIN | MediaServerType.EMBY;
+    };
 
   try {
     const existingServer = getJellyfinServerFromRequest({
@@ -515,16 +522,9 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
     });
 
     const jellyfinServer: JellyfinServerSettings = {
-      ...(existingServer
-        ? existingServer
-        : {
-            id: req.body.id ?? randomUUID(),
-            mediaServerType:
-              req.body.mediaServerType ??
-              req.body.serverType ??
-              MediaServerType.JELLYFIN,
-          }),
-      ...req.body,
+      ...(existingServer ?? settings.jellyfin),
+      id: req.body.id ?? existingServer?.id ?? randomUUID(),
+      ...jellyfinServerBody,
       mediaServerType:
         req.body.mediaServerType ??
         req.body.serverType ??
@@ -538,17 +538,14 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
         ? admin.jellyfinDeviceId
         : Buffer.from('BOT_seerr').toString('base64');
 
-    if (!jellyfinServer.apiKey && req.body.username && req.body.password) {
+    if (!jellyfinServer.apiKey && username && password) {
       const authClient = new JellyfinAPI(
         jellyfinHostname,
         undefined,
         jellyfinDeviceId,
         jellyfinServer.mediaServerType
       );
-      const account = await authClient.login(
-        req.body.username,
-        req.body.password
-      );
+      const account = await authClient.login(username, password);
 
       if (!account.User.Policy.IsAdministrator) {
         throw new ApiError(403, ApiErrorCode.NotAdmin);
@@ -580,15 +577,7 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
     jellyfinServer.serverId = result.Id;
     jellyfinServer.name = result.ServerName;
 
-    const existingServerIndex = settings.jellyfinServers.findIndex(
-      (server) => server.id === jellyfinServer.id
-    );
-
-    if (existingServerIndex >= 0) {
-      settings.jellyfinServers[existingServerIndex] = jellyfinServer;
-    } else {
-      settings.jellyfinServers = [...settings.jellyfinServers, jellyfinServer];
-    }
+    settings.upsertJellyfinServer(jellyfinServer);
 
     await settings.save();
   } catch (e) {
@@ -698,42 +687,46 @@ settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
       };
     });
 
-    const refreshedServerIndex = settings.jellyfinServers.findIndex(
-      (jellyfinServer) => jellyfinServer.id === server.id
+    const updated = settings.updateJellyfinServer(
+      server.id,
+      (jellyfinServer) => ({
+        ...jellyfinServer,
+        libraries: newLibraries,
+      })
     );
 
-    if (
-      refreshedServerIndex === -1 ||
-      !settings.jellyfinServers[refreshedServerIndex]
-    ) {
+    if (!updated) {
       return res.status(404).json({ error: 'Jellyfin server not found.' });
     }
-
-    settings.jellyfinServers[refreshedServerIndex].libraries = newLibraries;
   }
 
   const enabledLibraries = req.query.enable
     ? (req.query.enable as string).split(',')
     : [];
 
-  const finalServerIndex = settings.jellyfinServers.findIndex(
-    (jellyfinServer) => jellyfinServer.id === server.id
+  const updated = settings.updateJellyfinServer(
+    server.id,
+    (jellyfinServer) => ({
+      ...jellyfinServer,
+      libraries: jellyfinServer.libraries.map((library) => ({
+        ...library,
+        enabled: enabledLibraries.includes(library.id),
+      })),
+    })
   );
 
-  if (finalServerIndex === -1 || !settings.jellyfinServers[finalServerIndex]) {
+  if (!updated) {
     return res.status(404).json({ error: 'Jellyfin server not found.' });
   }
-
-  settings.jellyfinServers[finalServerIndex].libraries =
-    settings.jellyfinServers[finalServerIndex].libraries.map((library) => ({
-      ...library,
-      enabled: enabledLibraries.includes(library.id),
-    }));
 
   await settings.save();
   return res
     .status(200)
-    .json(settings.jellyfinServers[finalServerIndex].libraries);
+    .json(
+      settings.jellyfinServers.find(
+        (jellyfinServer) => jellyfinServer.id === server.id
+      )?.libraries ?? []
+    );
 });
 
 settingsRoutes.get('/jellyfin/servers', (_req, res) => {
@@ -742,11 +735,11 @@ settingsRoutes.get('/jellyfin/servers', (_req, res) => {
 
 settingsRoutes.delete('/jellyfin/servers/:serverId', async (req, res, next) => {
   const settings = getSettings();
-  const serverIndex = settings.jellyfinServers.findIndex(
-    (server) => server.id === req.params.serverId
-  );
-
-  if (serverIndex === -1) {
+  if (
+    !settings.jellyfinServers.some(
+      (server) => server.id === req.params.serverId
+    )
+  ) {
     return next({ status: 404, message: 'Jellyfin server not found.' });
   }
 
@@ -761,7 +754,12 @@ settingsRoutes.delete('/jellyfin/servers/:serverId', async (req, res, next) => {
     });
   }
 
-  const [removedServer] = settings.jellyfinServers.splice(serverIndex, 1);
+  const removedServer = settings.removeJellyfinServer(req.params.serverId);
+
+  if (!removedServer) {
+    return next({ status: 404, message: 'Jellyfin server not found.' });
+  }
+
   clearAvatarImageProxyCache(removedServer.id);
   await settings.save();
 

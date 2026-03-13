@@ -180,10 +180,10 @@ class PlexAPI extends ExternalAPI {
         );
 
         if (serverIndex >= 0) {
-          settings.plexServers[serverIndex] = {
-            ...settings.plexServers[serverIndex],
+          settings.updatePlexServer(targetServerId, (server) => ({
+            ...server,
             libraries: newLibraries,
-          };
+          }));
         }
       } else {
         settings.plex = {
@@ -203,10 +203,10 @@ class PlexAPI extends ExternalAPI {
         );
 
         if (serverIndex >= 0) {
-          settings.plexServers[serverIndex] = {
-            ...settings.plexServers[serverIndex],
+          settings.updatePlexServer(targetServerId, (server) => ({
+            ...server,
             libraries: [],
-          };
+          }));
         }
       } else {
         settings.plex = {

@@ -371,6 +371,18 @@ components:
         - machineId
         - ip
         - port
+    PlexServerInstance:
+      allOf:
+        - $ref: '#/components/schemas/PlexSettings'
+        - type: object
+          properties:
+            mediaServerType:
+              type: number
+              enum: [1]
+              example: 1
+          required:
+            - id
+            - mediaServerType
     PlexConnection:
       type: object
       properties:
@@ -542,6 +554,18 @@ components:
           readOnly: true
       required:
         - id
+    JellyfinServerInstance:
+      allOf:
+        - $ref: '#/components/schemas/JellyfinSettings'
+        - type: object
+          properties:
+            mediaServerType:
+              type: number
+              enum: [2, 3]
+              example: 2
+          required:
+            - id
+            - mediaServerType
     MetadataSettings:
       type: object
       properties:
@@ -2334,7 +2358,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/JellyfinSettings'
+                  $ref: '#/components/schemas/JellyfinServerInstance'
   /settings/jellyfin/library:
     get:
       summary: Get Jellyfin libraries
@@ -2567,7 +2591,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/PlexSettings'
+                  $ref: '#/components/schemas/PlexServerInstance'
   /settings/plex/library:
     get:
       summary: Get Plex libraries
@@ -4382,7 +4406,6 @@ paths:
               type: object
               required:
                 - jellyfinUserIds
-                - serverId
               properties:
                 jellyfinUserIds:
                   type: array
@@ -4391,7 +4414,6 @@ paths:
                     type: string
                 serverId:
                   type: string
-                  nullable: true
       responses:
         '201':
           description: A list of the newly created users

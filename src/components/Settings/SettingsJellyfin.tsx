@@ -157,7 +157,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       hostname: Yup.string()
         .nullable()
         .required(intl.formatMessage(messages.validationHostnameRequired)),
-      port: Yup.number().when(['hostname'], ([hostname], schema) =>
+      port: Yup.number().when('hostname', (hostname, schema) =>
         hostname
           ? schema
               .typeError(intl.formatMessage(messages.validationPortRequired))
@@ -319,12 +319,9 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
     }
 
     await axios.post(
-      '/api/v1/settings/jellyfin/sync',
+      `/api/v1/settings/jellyfin/sync?serverId=${selectedServerId}`,
       {
         start: true,
-      },
-      {
-        params: { serverId: selectedServerId },
       }
     );
     revalidateSync();
@@ -336,12 +333,9 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
     }
 
     await axios.post(
-      '/api/v1/settings/jellyfin/sync',
+      `/api/v1/settings/jellyfin/sync?serverId=${selectedServerId}`,
       {
         cancel: true,
-      },
-      {
-        params: { serverId: selectedServerId },
       }
     );
     revalidateSync();
@@ -692,9 +686,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
                   )}
                   {'credentials' in errors &&
                     typeof errors.credentials === 'string' && (
-                      <div className="error">
-                        {errors.credentials}
-                      </div>
+                      <div className="error">{errors.credentials}</div>
                     )}
                 </div>
               </div>

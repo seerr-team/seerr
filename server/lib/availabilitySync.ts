@@ -26,6 +26,7 @@ class AvailabilitySync {
   private plexAdminToken?: string | null;
   private jellyfinAdminUserId?: string | null;
   private jellyfinAdminDeviceId?: string | null;
+  private quarantinedJellyfinServerIds: Set<string>;
   private sonarrSeasonsCache: Record<string, SonarrSeason[]>;
   private radarrServers: RadarrSettings[];
   private sonarrServers: SonarrSettings[];
@@ -97,6 +98,7 @@ class AvailabilitySync {
     this.plexAdminToken = undefined;
     this.jellyfinAdminUserId = undefined;
     this.jellyfinAdminDeviceId = undefined;
+    this.quarantinedJellyfinServerIds = new Set();
     this.sonarrSeasonsCache = {};
     this.radarrServers = settings.radarr.filter((server) => server.syncEnabled);
     this.sonarrServers = settings.sonarr.filter((server) => server.syncEnabled);
@@ -151,9 +153,8 @@ class AvailabilitySync {
               errorMessage: e.errorCode,
               serverId: server.id,
             });
-
-            this.running = false;
-            return;
+            this.quarantinedJellyfinServerIds.add(server.id);
+            continue;
           }
         }
       }
@@ -1000,6 +1001,26 @@ class AvailabilitySync {
     const jellyfinClient = this.getJellyfinClient(serverId);
     let existsInJellyfin = false;
     let preventSeasonSearch = false;
+
+    if (serverId && this.quarantinedJellyfinServerIds.has(serverId)) {
+      if (media.mediaType === 'tv') {
+        const seasonsMap: Map<number, boolean> = new Map(
+          media.seasons
+            .filter(
+              (season) =>
+                season[is4k ? 'status4k' : 'status'] ===
+                  MediaStatus.AVAILABLE ||
+                season[is4k ? 'status4k' : 'status'] ===
+                  MediaStatus.PARTIALLY_AVAILABLE
+            )
+            .map((season) => [season.seasonNumber, true] as const)
+        );
+
+        return { existsInJellyfin: true, seasonsMap };
+      }
+
+      return { existsInJellyfin: true };
+    }
 
     if (!ratingKey || !jellyfinClient) {
       return media.mediaType === 'tv'

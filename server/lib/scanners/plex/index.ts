@@ -142,17 +142,21 @@ class PlexScanner
               (plexServer) => plexServer.id === server.id
             );
 
-            settings.plexServers[serverIndex].libraries = settings.plexServers[
-              serverIndex
-            ].libraries.map((lib) => {
-              if (lib.id === library.id) {
-                return {
-                  ...lib,
-                  lastScan: Date.now(),
-                };
-              }
-              return lib;
-            });
+            if (serverIndex >= 0) {
+              settings.updatePlexServer(server.id, (plexServer) => ({
+                ...plexServer,
+                libraries: plexServer.libraries.map((lib) => {
+                  if (lib.id === library.id) {
+                    return {
+                      ...lib,
+                      lastScan: Date.now(),
+                    };
+                  }
+
+                  return lib;
+                }),
+              }));
+            }
 
             await settings.save();
           }
