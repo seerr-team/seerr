@@ -12,15 +12,28 @@ const writeMigrationWarning = (message: string): void => {
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
+const normalizeBaseUrl = (baseUrl?: string): string => {
+  if (!baseUrl) {
+    return '';
+  }
+
+  const trimmedBaseUrl = baseUrl.trim().replace(/^\/+/, '').replace(/\/+$/, '');
+
+  return trimmedBaseUrl.length > 0 ? `/${trimmedBaseUrl}` : '';
+};
+
 const buildArrUrl = (settings: {
   hostname: string;
   port: number;
   useSsl?: boolean;
   baseUrl?: string;
-}): string =>
-  `${settings.useSsl ? 'https' : 'http'}://${settings.hostname}:${
+}): string => {
+  const normalizedBaseUrl = normalizeBaseUrl(settings.baseUrl);
+
+  return `${settings.useSsl ? 'https' : 'http'}://${settings.hostname}:${
     settings.port
-  }${settings.baseUrl ?? ''}/api/v3`;
+  }${normalizedBaseUrl}/api/v3`;
+};
 
 const migrationArrTags = async (
   settings: LegacySettings
