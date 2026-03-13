@@ -30,24 +30,38 @@ const getResultPopularity = (result: SearchResultItem): number => {
   return 'popularity' in result ? result.popularity : 0;
 };
 
+const getResultVoteCount = (result: SearchResultItem): number => {
+  return 'vote_count' in result ? result.vote_count : 0;
+};
+
 const calculateSearchScore = (
   result: SearchResultItem,
   query: string
 ): number => {
   const title = getResultTitle(result).toLowerCase();
   const popularity = getResultPopularity(result);
+  const voteCount = getResultVoteCount(result);
 
-  // Popularity is the main factor (normalized to make the boost meaningful)
-  let score = popularity * 10;
+  // Combine popularity with vote count — vote count is a stronger signal
+  // of how well-known a title actually is
+  let score = popularity * 10 + voteCount * 5;
 
-  // Small boost for titles that start with the query
-  if (title.startsWith(query)) {
-    score += 15;
+  // Deprioritize person results for generic queries
+  if ('media_type' in result && result.media_type === 'person') {
+    score *= 0.5;
   }
 
-  // Tiny boost for exact matches (but not enough to override popularity)
-  if (title === query) {
-    score += 5;
+  // Boost for title starting with the query (word-boundary match)
+  if (title.startsWith(query + ' ') || title === query) {
+    score *= 1.5;
+  }
+  // Smaller boost for query appearing as a whole word anywhere in the title
+  else if (
+    new RegExp(`\\b${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(
+      title
+    )
+  ) {
+    score *= 1.2;
   }
 
   return score;
