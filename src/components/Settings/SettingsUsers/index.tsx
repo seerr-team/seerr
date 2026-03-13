@@ -28,13 +28,14 @@ const messages = defineMessages('components.Settings.SettingsUsers', {
   localLogin: 'Enable Local Sign-In',
   localLoginTip:
     'Allow users to sign in using their email address and password',
-  mediaServerLogin: 'Enable {mediaServerName} Sign-In',
-  mediaServerLoginTip:
+  plexLogin: 'Enable Plex Sign-In',
+  plexLoginTip: 'Allow users to sign in using their Plex account',
+  jellyfinLogin: 'Enable {mediaServerName} Sign-In',
+  jellyfinLoginTip:
     'Allow users to sign in using their {mediaServerName} account',
   atLeastOneAuth: 'At least one authentication method must be selected.',
-  newPlexLogin: 'Enable New {mediaServerName} Sign-In',
-  newPlexLoginTip:
-    'Allow {mediaServerName} users to sign in without first being imported',
+  newUserLogin: 'Enable New User Sign-In',
+  newUserLoginTip: 'Allow users to sign in without first being imported',
   movieRequestLimitLabel: 'Global Movie Request Limit',
   tvRequestLimitLabel: 'Global Series Request Limit',
   defaultPermissions: 'Default Permissions',
@@ -51,20 +52,40 @@ const SettingsUsers = () => {
   } = useSWR<MainSettings>('/api/v1/settings/main');
   const settings = useSettings();
 
+  const { primaryMediaServer, enabledAuthMethods: currentAuthMethods } =
+    settings.currentSettings;
+
+  const plexConfigured =
+    primaryMediaServer === MediaServerType.PLEX ||
+    currentAuthMethods.includes(MediaServerType.PLEX) ||
+    !!settings.currentSettings.plexServerName;
+  const jellyfinConfigured =
+    primaryMediaServer === MediaServerType.JELLYFIN ||
+    currentAuthMethods.includes(MediaServerType.JELLYFIN);
+  const embyConfigured =
+    primaryMediaServer === MediaServerType.EMBY ||
+    currentAuthMethods.includes(MediaServerType.EMBY);
+
   const schema = yup
     .object()
     .shape({
       localLogin: yup.boolean(),
-      mediaServerLoginEnabled: yup.boolean(),
+      plexEnabled: yup.boolean(),
+      jellyfinEnabled: yup.boolean(),
+      embyEnabled: yup.boolean(),
     })
     .test({
       name: 'atLeastOneAuth',
       test: function (values) {
-        const isValid = values.localLogin || values.mediaServerLoginEnabled;
+        const isValid =
+          values.localLogin ||
+          values.plexEnabled ||
+          values.jellyfinEnabled ||
+          values.embyEnabled;
 
         if (isValid) return true;
         return this.createError({
-          path: 'localLogin | mediaServerLoginEnabled',
+          path: 'localLogin',
           message: intl.formatMessage(messages.atLeastOneAuth),
         });
       },
@@ -74,16 +95,12 @@ const SettingsUsers = () => {
     return <LoadingSpinner />;
   }
 
-  const mediaServerFormatValues = {
-    mediaServerName:
-      settings.currentSettings.primaryMediaServer === MediaServerType.JELLYFIN
-        ? 'Jellyfin'
-        : settings.currentSettings.primaryMediaServer === MediaServerType.EMBY
-          ? 'Emby'
-          : settings.currentSettings.primaryMediaServer === MediaServerType.PLEX
-            ? 'Plex'
-            : undefined,
-  };
+  const enabledAuthMethods = data?.enabledAuthMethods ?? [];
+
+  const jellyfinMediaServerName =
+    primaryMediaServer === MediaServerType.EMBY || embyConfigured
+      ? 'Emby'
+      : 'Jellyfin';
 
   return (
     <>
@@ -103,8 +120,11 @@ const SettingsUsers = () => {
         <Formik
           initialValues={{
             localLogin: data?.localLogin,
-            mediaServerLoginEnabled:
-              (data?.enabledAuthMethods?.length ?? 0) > 0,
+            plexEnabled: enabledAuthMethods.includes(MediaServerType.PLEX),
+            jellyfinEnabled: enabledAuthMethods.includes(
+              MediaServerType.JELLYFIN
+            ),
+            embyEnabled: enabledAuthMethods.includes(MediaServerType.EMBY),
             newUserLogin: data?.newUserLogin,
             movieQuotaLimit: data?.defaultQuotas.movie.quotaLimit ?? 0,
             movieQuotaDays: data?.defaultQuotas.movie.quotaDays ?? 7,
@@ -116,11 +136,17 @@ const SettingsUsers = () => {
           enableReinitialize
           onSubmit={async (values) => {
             try {
+              const newEnabledAuthMethods: number[] = [];
+              if (values.plexEnabled)
+                newEnabledAuthMethods.push(MediaServerType.PLEX);
+              if (values.jellyfinEnabled)
+                newEnabledAuthMethods.push(MediaServerType.JELLYFIN);
+              if (values.embyEnabled)
+                newEnabledAuthMethods.push(MediaServerType.EMBY);
+
               await axios.post('/api/v1/settings/main', {
                 localLogin: values.localLogin,
-                enabledAuthMethods: values.mediaServerLoginEnabled
-                  ? [settings.currentSettings.primaryMediaServer]
-                  : [],
+                enabledAuthMethods: newEnabledAuthMethods,
                 newUserLogin: values.newUserLogin,
                 defaultQuotas: {
                   movie: {
@@ -164,13 +190,9 @@ const SettingsUsers = () => {
                       <span className="label-tip">
                         {intl.formatMessage(messages.loginMethodsTip)}
                       </span>
-                      {'localLogin | mediaServerLoginEnabled' in errors && (
+                      {'localLogin' in errors && (
                         <span className="error">
-                          {
-                            errors[
-                              'localLogin | mediaServerLoginEnabled'
-                            ] as string
-                          }
+                          {errors['localLogin'] as string}
                         </span>
                       )}
                     </span>
@@ -179,47 +201,54 @@ const SettingsUsers = () => {
                       <LabeledCheckbox
                         id="localLogin"
                         label={intl.formatMessage(messages.localLogin)}
-                        description={intl.formatMessage(
-                          messages.localLoginTip,
-                          mediaServerFormatValues
-                        )}
+                        description={intl.formatMessage(messages.localLoginTip)}
                         onChange={() =>
                           setFieldValue('localLogin', !values.localLogin)
                         }
                       />
-                      <LabeledCheckbox
-                        id="mediaServerLoginEnabled"
-                        className="mt-4"
-                        label={intl.formatMessage(
-                          messages.mediaServerLogin,
-                          mediaServerFormatValues
-                        )}
-                        description={intl.formatMessage(
-                          messages.mediaServerLoginTip,
-                          mediaServerFormatValues
-                        )}
-                        onChange={() =>
-                          setFieldValue(
-                            'mediaServerLoginEnabled',
-                            !values.mediaServerLoginEnabled
-                          )
-                        }
-                      />
+                      {plexConfigured && (
+                        <LabeledCheckbox
+                          id="plexEnabled"
+                          className="mt-4"
+                          label={intl.formatMessage(messages.plexLogin)}
+                          description={intl.formatMessage(
+                            messages.plexLoginTip
+                          )}
+                          onChange={() =>
+                            setFieldValue('plexEnabled', !values.plexEnabled)
+                          }
+                        />
+                      )}
+                      {(jellyfinConfigured || embyConfigured) && (
+                        <LabeledCheckbox
+                          id={
+                            embyConfigured ? 'embyEnabled' : 'jellyfinEnabled'
+                          }
+                          className="mt-4"
+                          label={intl.formatMessage(messages.jellyfinLogin, {
+                            mediaServerName: jellyfinMediaServerName,
+                          })}
+                          description={intl.formatMessage(
+                            messages.jellyfinLoginTip,
+                            { mediaServerName: jellyfinMediaServerName }
+                          )}
+                          onChange={() => {
+                            const field = embyConfigured
+                              ? 'embyEnabled'
+                              : 'jellyfinEnabled';
+                            setFieldValue(field, !values[field]);
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <div className="form-row">
                   <label htmlFor="newUserLogin" className="checkbox-label">
-                    {intl.formatMessage(
-                      messages.newPlexLogin,
-                      mediaServerFormatValues
-                    )}
+                    {intl.formatMessage(messages.newUserLogin)}
                     <span className="label-tip">
-                      {intl.formatMessage(
-                        messages.newPlexLoginTip,
-                        mediaServerFormatValues
-                      )}
+                      {intl.formatMessage(messages.newUserLoginTip)}
                     </span>
                   </label>
                   <div className="form-input-area">

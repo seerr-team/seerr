@@ -63,6 +63,16 @@ const filteredMainSettings = (
   return main;
 };
 
+const getPlexToken = async (): Promise<string> => {
+  const userRepository = getRepository(User);
+  const admin = await userRepository.findOneOrFail({
+    select: { id: true, plexToken: true },
+    where: { id: 1 },
+  });
+  const settings = getSettings();
+  return admin.plexToken || settings.plex.adminToken || '';
+};
+
 settingsRoutes.get('/main', (req, res, next) => {
   const settings = getSettings();
 
@@ -116,17 +126,13 @@ settingsRoutes.get('/plex', (_req, res) => {
 });
 
 settingsRoutes.post('/plex', async (req, res, next) => {
-  const userRepository = getRepository(User);
   const settings = getSettings();
   try {
-    const admin = await userRepository.findOneOrFail({
-      select: { id: true, plexToken: true },
-      where: { id: 1 },
-    });
+    const plexToken = await getPlexToken();
 
     Object.assign(settings.plex, req.body);
 
-    const plexClient = new PlexAPI({ plexToken: admin.plexToken });
+    const plexClient = new PlexAPI({ plexToken });
 
     const result = await plexClient.getStatus();
 
@@ -153,15 +159,9 @@ settingsRoutes.post('/plex', async (req, res, next) => {
 });
 
 settingsRoutes.get('/plex/devices/servers', async (req, res, next) => {
-  const userRepository = getRepository(User);
   try {
-    const admin = await userRepository.findOneOrFail({
-      select: { id: true, plexToken: true },
-      where: { id: 1 },
-    });
-    const plexTvClient = admin.plexToken
-      ? new PlexTvAPI(admin.plexToken)
-      : null;
+    const plexToken = await getPlexToken();
+    const plexTvClient = plexToken ? new PlexTvAPI(plexToken) : null;
     const devices = (await plexTvClient?.getDevices())?.filter((device) => {
       return device.provides.includes('server') && device.owned;
     });
@@ -198,7 +198,7 @@ settingsRoutes.get('/plex/devices/servers', async (req, res, next) => {
                 useSsl: connection.protocol === 'https',
               };
               const plexClient = new PlexAPI({
-                plexToken: admin.plexToken,
+                plexToken,
                 plexSettings: plexDeviceSettings,
                 timeout: 5000,
               });
@@ -233,12 +233,8 @@ settingsRoutes.get('/plex/library', async (req, res) => {
   const settings = getSettings();
 
   if (req.query.sync) {
-    const userRepository = getRepository(User);
-    const admin = await userRepository.findOneOrFail({
-      select: { id: true, plexToken: true },
-      where: { id: 1 },
-    });
-    const plexapi = new PlexAPI({ plexToken: admin.plexToken });
+    const plexToken = await getPlexToken();
+    const plexapi = new PlexAPI({ plexToken });
 
     await plexapi.syncLibraries();
   }
@@ -265,6 +261,70 @@ settingsRoutes.post('/plex/sync', (req, res) => {
     plexFullScanner.run();
   }
   return res.status(200).json(plexFullScanner.status());
+});
+
+settingsRoutes.post('/plex/auth', async (req, res, next) => {
+  const settings = getSettings();
+
+  try {
+    const { authToken } = req.body;
+
+    if (!authToken) {
+      return next({
+        status: 400,
+        message: 'Plex auth token is required.',
+      });
+    }
+
+    const plexTvClient = new PlexTvAPI(authToken);
+    const account = await plexTvClient.getUser();
+
+    if (!account?.username) {
+      throw new Error('Unable to verify Plex account');
+    }
+
+    settings.plex.adminToken = authToken;
+    await settings.save();
+
+    return res.status(200).json({
+      username: account.username,
+      email: account.email,
+    });
+  } catch (e) {
+    logger.error('Failed to authenticate Plex admin token', {
+      label: 'API',
+      errorMessage: e.message,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to authenticate with Plex.',
+    });
+  }
+});
+
+settingsRoutes.get('/plex/status', async (_req, res) => {
+  const settings = getSettings();
+  const plexToken = await getPlexToken().catch(() => '');
+
+  if (!plexToken) {
+    return res.status(200).json({ configured: false });
+  }
+
+  try {
+    const plexTvClient = new PlexTvAPI(plexToken);
+    const account = await plexTvClient.getUser();
+    return res.status(200).json({
+      configured: true,
+      serverName: settings.plex.name,
+      username: account?.username,
+    });
+  } catch {
+    return res.status(200).json({
+      configured: true,
+      serverName: settings.plex.name,
+      connectionError: true,
+    });
+  }
 });
 
 settingsRoutes.get('/jellyfin', (_req, res) => {
@@ -477,11 +537,8 @@ settingsRoutes.get(
     const qb = userRepository.createQueryBuilder('user');
 
     try {
-      const admin = await userRepository.findOneOrFail({
-        select: { id: true, plexToken: true },
-        where: { id: 1 },
-      });
-      const plexApi = new PlexTvAPI(admin.plexToken ?? '');
+      const plexToken = await getPlexToken();
+      const plexApi = new PlexTvAPI(plexToken);
       const plexUsers = (await plexApi.getUsers()).MediaContainer.User.map(
         (user) => user.$
       ).filter((user) => user.email);

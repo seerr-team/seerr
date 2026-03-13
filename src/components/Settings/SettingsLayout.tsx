@@ -28,6 +28,36 @@ type SettingsLayoutProps = {
 const SettingsLayout = ({ children }: SettingsLayoutProps) => {
   const intl = useIntl();
   const settings = useSettings();
+  const { primaryMediaServer, enabledAuthMethods } = settings.currentSettings;
+
+  const plexConfigured =
+    primaryMediaServer === MediaServerType.PLEX ||
+    enabledAuthMethods.includes(MediaServerType.PLEX);
+  const jellyfinConfigured =
+    primaryMediaServer === MediaServerType.JELLYFIN ||
+    enabledAuthMethods.includes(MediaServerType.JELLYFIN);
+  const embyConfigured =
+    primaryMediaServer === MediaServerType.EMBY ||
+    enabledAuthMethods.includes(MediaServerType.EMBY);
+
+  const mediaServerTabs: SettingsRoute[] = [];
+
+  if (plexConfigured) {
+    mediaServerTabs.push({
+      text: intl.formatMessage(messages.menuPlexSettings),
+      route: '/settings/plex',
+      regex: /^\/settings\/plex/,
+    });
+  }
+
+  if (jellyfinConfigured || embyConfigured) {
+    mediaServerTabs.push({
+      text: getAvailableMediaServerName(),
+      route: '/settings/jellyfin',
+      regex: /^\/settings\/jellyfin/,
+    });
+  }
+
   const settingsRoutes: SettingsRoute[] = [
     {
       text: intl.formatMessage(messages.menuGeneralSettings),
@@ -39,17 +69,7 @@ const SettingsLayout = ({ children }: SettingsLayoutProps) => {
       route: '/settings/users',
       regex: /^\/settings\/users/,
     },
-    settings.currentSettings.primaryMediaServer === MediaServerType.PLEX
-      ? {
-          text: intl.formatMessage(messages.menuPlexSettings),
-          route: '/settings/plex',
-          regex: /^\/settings\/plex/,
-        }
-      : {
-          text: getAvailableMediaServerName(),
-          route: '/settings/jellyfin',
-          regex: /^\/settings\/jellyfin/,
-        },
+    ...mediaServerTabs,
     {
       text: intl.formatMessage(messages.menuServices),
       route: '/settings/services',
@@ -97,13 +117,15 @@ const SettingsLayout = ({ children }: SettingsLayoutProps) => {
     </>
   );
   function getAvailableMediaServerName() {
+    const isJellyfin =
+      primaryMediaServer === MediaServerType.JELLYFIN ||
+      (jellyfinConfigured && !embyConfigured);
+    const isEmby =
+      primaryMediaServer === MediaServerType.EMBY ||
+      (embyConfigured && !jellyfinConfigured);
+
     return intl.formatMessage(messages.menuJellyfinSettings, {
-      mediaServerName:
-        settings.currentSettings.primaryMediaServer === MediaServerType.JELLYFIN
-          ? 'Jellyfin'
-          : settings.currentSettings.primaryMediaServer === MediaServerType.EMBY
-            ? 'Emby'
-            : undefined,
+      mediaServerName: isJellyfin ? 'Jellyfin' : isEmby ? 'Emby' : undefined,
     });
   }
 };

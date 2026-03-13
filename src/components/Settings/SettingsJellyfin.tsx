@@ -254,13 +254,16 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
     return <LoadingSpinner />;
   }
 
+  const { primaryMediaServer, enabledAuthMethods } = settings.currentSettings;
+  const isJellyfin =
+    primaryMediaServer === MediaServerType.JELLYFIN ||
+    enabledAuthMethods.includes(MediaServerType.JELLYFIN);
+  const isEmby =
+    primaryMediaServer === MediaServerType.EMBY ||
+    enabledAuthMethods.includes(MediaServerType.EMBY);
+
   const mediaServerFormatValues = {
-    mediaServerName:
-      settings.currentSettings.primaryMediaServer === MediaServerType.JELLYFIN
-        ? 'Jellyfin'
-        : settings.currentSettings.primaryMediaServer === MediaServerType.EMBY
-          ? 'Emby'
-          : undefined,
+    mediaServerName: isJellyfin ? 'Jellyfin' : isEmby ? 'Emby' : undefined,
   };
 
   return (
