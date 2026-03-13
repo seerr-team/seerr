@@ -117,6 +117,8 @@ class AvailabilitySync {
 
         if (!admin?.plexToken) {
           logger.error('Plex admin is not configured.');
+          this.running = false;
+          return;
         } else {
           this.plexAdminToken = admin.plexToken;
         }
