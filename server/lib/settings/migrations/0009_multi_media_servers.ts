@@ -47,8 +47,9 @@ const normalizeJellyfinServer = (
 ): JellyfinServerSettings => ({
   id: server.id ?? randomUUID(),
   mediaServerType:
-    server.mediaServerType === MediaServerType.EMBY
-      ? MediaServerType.EMBY
+    server.mediaServerType === MediaServerType.EMBY ||
+    server.mediaServerType === MediaServerType.JELLYFIN
+      ? server.mediaServerType
       : fallbackMediaServerType,
   name: server.name ?? '',
   ip: server.ip ?? '',
