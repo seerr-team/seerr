@@ -239,11 +239,12 @@ settingsRoutes.post('/plex', async (req, res, next) => {
     });
 
     const plexServer: PlexServerSettings = {
-      ...(existingServer ?? {
-        id: req.body.id ?? randomUUID(),
-        mediaServerType: MediaServerType.PLEX,
-      }),
-      ...(existingServer ?? settings.plex),
+      ...(existingServer
+        ? existingServer
+        : {
+            id: req.body.id ?? randomUUID(),
+            mediaServerType: MediaServerType.PLEX,
+          }),
       ...req.body,
       mediaServerType: MediaServerType.PLEX,
     };
@@ -506,14 +507,15 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
     });
 
     const jellyfinServer: JellyfinServerSettings = {
-      ...(existingServer ?? {
-        id: req.body.id ?? randomUUID(),
-        mediaServerType:
-          req.body.mediaServerType ??
-          req.body.serverType ??
-          MediaServerType.JELLYFIN,
-      }),
-      ...(existingServer ?? settings.jellyfin),
+      ...(existingServer
+        ? existingServer
+        : {
+            id: req.body.id ?? randomUUID(),
+            mediaServerType:
+              req.body.mediaServerType ??
+              req.body.serverType ??
+              MediaServerType.JELLYFIN,
+          }),
       ...req.body,
       mediaServerType:
         req.body.mediaServerType ??
