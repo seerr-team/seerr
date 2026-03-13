@@ -204,6 +204,22 @@ const migrateMultiMediaServers = async (settings: any): Promise<AllSettings> => 
     settings.main = {};
   }
 
+  const legacyMediaServerLogin = settings.main.mediaServerLogin ?? true;
+  if (settings.main.plexLogin === undefined) {
+    settings.main.plexLogin = legacyMediaServerLogin;
+  }
+  if (settings.main.jellyfinLogin === undefined) {
+    settings.main.jellyfinLogin = legacyMediaServerLogin;
+  }
+  if (settings.main.embyLogin === undefined) {
+    settings.main.embyLogin = legacyMediaServerLogin;
+  }
+  settings.main.mediaServerLogin = Boolean(
+    settings.main.plexLogin ||
+      settings.main.jellyfinLogin ||
+      settings.main.embyLogin
+  );
+
   settings.main.mediaServerType = getPrimaryMediaServerType(settings);
 
   return settings;

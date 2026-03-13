@@ -150,6 +150,9 @@ export interface MainSettings {
   hideBlocklisted: boolean;
   localLogin: boolean;
   mediaServerLogin: boolean;
+  plexLogin: boolean;
+  jellyfinLogin: boolean;
+  embyLogin: boolean;
   newPlexLogin: boolean;
   discoverRegion: string;
   streamingRegion: string;
@@ -208,6 +211,9 @@ interface FullPublicSettings extends PublicSettings {
   hideBlocklisted: boolean;
   localLogin: boolean;
   mediaServerLogin: boolean;
+  plexLogin: boolean;
+  jellyfinLogin: boolean;
+  embyLogin: boolean;
   movie4kEnabled: boolean;
   series4kEnabled: boolean;
   discoverRegion: string;
@@ -443,6 +449,9 @@ class Settings {
         hideBlocklisted: false,
         localLogin: true,
         mediaServerLogin: true,
+        plexLogin: true,
+        jellyfinLogin: true,
+        embyLogin: true,
         newPlexLogin: true,
         discoverRegion: '',
         streamingRegion: '',
@@ -737,6 +746,9 @@ class Settings {
       hideBlocklisted: this.data.main.hideBlocklisted,
       localLogin: this.data.main.localLogin,
       mediaServerLogin: this.data.main.mediaServerLogin,
+      plexLogin: this.data.main.plexLogin,
+      jellyfinLogin: this.data.main.jellyfinLogin,
+      embyLogin: this.data.main.embyLogin,
       movie4kEnabled: this.data.radarr.some(
         (radarr) => radarr.is4k && radarr.isDefault
       ),
@@ -933,6 +945,22 @@ class Settings {
     return MediaServerType.NOT_CONFIGURED;
   }
 
+  public isAuthMethodEnabled(
+    mediaServerType:
+      | MediaServerType.PLEX
+      | MediaServerType.JELLYFIN
+      | MediaServerType.EMBY
+  ): boolean {
+    switch (mediaServerType) {
+      case MediaServerType.PLEX:
+        return this.data.main.plexLogin;
+      case MediaServerType.JELLYFIN:
+        return this.data.main.jellyfinLogin;
+      case MediaServerType.EMBY:
+        return this.data.main.embyLogin;
+    }
+  }
+
   public getPrimaryPlexServer(): PlexServerSettings | undefined {
     return this.data.plexServers[0];
   }
@@ -948,6 +976,16 @@ class Settings {
   private synchronizeMediaServerSettings({
     syncLegacyFromArrays = true,
   }: { syncLegacyFromArrays?: boolean } = {}): void {
+    const legacyMediaServerLogin = this.data.main.mediaServerLogin ?? true;
+
+    this.data.main.plexLogin ??= legacyMediaServerLogin;
+    this.data.main.jellyfinLogin ??= legacyMediaServerLogin;
+    this.data.main.embyLogin ??= legacyMediaServerLogin;
+    this.data.main.mediaServerLogin =
+      this.data.main.plexLogin ||
+      this.data.main.jellyfinLogin ||
+      this.data.main.embyLogin;
+
     this.data.plexServers = (this.data.plexServers ?? []).map((server) => ({
       ...server,
       id: server.id || randomUUID(),

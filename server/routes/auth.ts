@@ -63,7 +63,7 @@ authRoutes.post('/plex', async (req, res, next) => {
 
   if (
     settings.main.mediaServerType != MediaServerType.NOT_CONFIGURED &&
-    (settings.main.mediaServerLogin === false ||
+    (!settings.isAuthMethodEnabled(MediaServerType.PLEX) ||
       settings.plexServers.length === 0)
   ) {
     return res.status(500).json({ error: 'Plex login is disabled' });
@@ -116,6 +116,28 @@ authRoutes.post('/plex', async (req, res, next) => {
         return next({
           status: 500,
           message: 'Something went wrong. Try again.',
+        });
+      }
+
+      if (
+        user &&
+        !user.plexId &&
+        user.userType !== UserType.PLEX &&
+        user.userType !== UserType.LOCAL
+      ) {
+        logger.warn(
+          'Plex login rejected: email already associated with a different auth method',
+          {
+            label: 'API',
+            ip: req.ip,
+            email: account.email,
+            existingUserType: user.userType,
+          }
+        );
+        return next({
+          status: 403,
+          message:
+            'This email is already associated with a different login method.',
         });
       }
 
@@ -275,7 +297,8 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
   if (
     // media server not configured, allow login for setup
     settings.main.mediaServerType != MediaServerType.NOT_CONFIGURED &&
-    (settings.main.mediaServerLogin === false || !hasConfiguredJellyfinServers)
+    (!hasConfiguredJellyfinServers ||
+      !settings.isAuthMethodEnabled(loginJellyfinMediaServerType))
   ) {
     return res.status(500).json({ error: 'Jellyfin login is disabled' });
   }

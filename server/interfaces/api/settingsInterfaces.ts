@@ -41,6 +41,9 @@ export interface PublicSettingsResponse {
   hideBlocklisted: boolean;
   localLogin: boolean;
   mediaServerLogin: boolean;
+  plexLogin: boolean;
+  jellyfinLogin: boolean;
+  embyLogin: boolean;
   movie4kEnabled: boolean;
   series4kEnabled: boolean;
   discoverRegion: string;
