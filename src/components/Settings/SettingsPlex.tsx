@@ -53,7 +53,8 @@ const messages = defineMessages('components.Settings', {
     'Only the owner account can connect Plex from Settings because the Plex token is stored on the owner account.',
   toastPlexAuthSuccess: 'Plex account connected successfully!',
   toastPlexAuthFailure: 'Failed to authenticate with Plex.',
-  toastPlexSyncFailure: 'Something went wrong while syncing Plex libraries.',
+  toastPlexSyncFailure:
+    'Something went wrong while syncing Plex libraries for {serverName}.',
   settingUpPlexDescription:
     'To set up Plex, you can either enter the details manually or select a server retrieved from <RegisterPlexTVLink>plex.tv</RegisterPlexTVLink>. Press the button to the right of the dropdown to fetch the list of available servers.',
   hostname: 'Hostname or IP Address',
@@ -247,6 +248,9 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
     data?.libraries
       ?.filter((library) => library.enabled)
       .map((library) => library.id) ?? [];
+  const hasAnyEnabledLibraries = Boolean(
+    plexServers?.some((server) => server.libraries.some((library) => library.enabled))
+  );
 
   const availablePresets = useMemo(() => {
     const finalPresets: PresetServerDisplay[] = [];
@@ -297,10 +301,22 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
         params,
       });
     } catch (e) {
-      addToast(intl.formatMessage(messages.toastPlexSyncFailure), {
-        autoDismiss: true,
-        appearance: 'error',
-      });
+      const failingServerName =
+        (serverId !== 'new'
+          ? plexServers?.find((server) => server.id === serverId)?.name
+          : undefined) ??
+        data?.name ??
+        intl.formatMessage(messages.plex);
+
+      addToast(
+        intl.formatMessage(messages.toastPlexSyncFailure, {
+          serverName: failingServerName,
+        }),
+        {
+          autoDismiss: true,
+          appearance: 'error',
+        }
+      );
     } finally {
       setIsSyncing(false);
       revalidate();
@@ -890,7 +906,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                     <Button
                       buttonType="warning"
                       onClick={() => startScan()}
-                      disabled={isSyncing || !activeLibraries.length}
+                      disabled={isSyncing || !hasAnyEnabledLibraries}
                     >
                       <MagnifyingGlassIcon />
                       <span>{intl.formatMessage(messages.startscan)}</span>

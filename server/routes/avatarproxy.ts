@@ -15,6 +15,14 @@ const router = Router();
 
 const avatarImageProxies = new Map<string, ImageProxy>();
 
+export function clearAvatarImageProxyCache(serverId: string) {
+  for (const cacheKey of avatarImageProxies.keys()) {
+    if (cacheKey.startsWith(`${serverId}:`)) {
+      avatarImageProxies.delete(cacheKey);
+    }
+  }
+}
+
 const getJellyfinServer = (serverId?: string) => {
   const settings = getSettings();
 

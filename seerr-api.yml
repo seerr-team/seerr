@@ -4364,14 +4364,18 @@ paths:
       tags:
         - users
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - jellyfinUserIds
+                - serverId
               properties:
                 jellyfinUserIds:
                   type: array
+                  minItems: 1
                   items:
                     type: string
                 serverId:

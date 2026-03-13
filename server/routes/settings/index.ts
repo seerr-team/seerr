@@ -31,6 +31,7 @@ import type {
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
+import { clearAvatarImageProxyCache } from '@server/routes/avatarproxy';
 import discoverSettingRoutes from '@server/routes/settings/discover';
 import { ApiError } from '@server/types/error';
 import { appDataPath } from '@server/utils/appDataVolume';
@@ -720,6 +721,7 @@ settingsRoutes.delete('/jellyfin/servers/:serverId', async (req, res, next) => {
   }
 
   const [removedServer] = settings.jellyfinServers.splice(serverIndex, 1);
+  clearAvatarImageProxyCache(removedServer.id);
   await settings.save();
 
   return res.status(200).json(removedServer);
