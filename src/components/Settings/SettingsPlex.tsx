@@ -83,7 +83,7 @@ const messages = defineMessages('components.Settings', {
   toastTautulliSettingsFailure:
     'Something went wrong while saving Tautulli settings.',
   servers: 'Servers',
-  addServer: 'Add New Plex Server',
+  addPlexServer: 'Add New Plex Server',
 });
 
 interface Library {
@@ -430,7 +430,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
               onChange={(event) => setSelectedServerId(event.target.value)}
             >
               <option value="new">
-                {intl.formatMessage(messages.addServer)}
+                {intl.formatMessage(messages.addPlexServer)}
               </option>
               {plexServers?.map((server) => (
                 <option key={server.id} value={server.id}>
