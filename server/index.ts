@@ -104,10 +104,11 @@ app
     }
 
     // Migrate library types
-    if (
-      settings.plex.libraries.length > 1 &&
-      !settings.plex.libraries[0].type
-    ) {
+    const plexServersNeedingLibraryTypeMigration = settings.plexServers.filter(
+      (server) => server.libraries.some((library) => !library.type)
+    );
+
+    if (plexServersNeedingLibraryTypeMigration.length > 0) {
       const userRepository = getRepository(User);
       const admin = await userRepository.findOne({
         select: { id: true, plexToken: true },
@@ -119,8 +120,14 @@ app
           label: 'Settings',
         });
 
-        const plexapi = new PlexAPI({ plexToken: admin.plexToken });
-        await plexapi.syncLibraries();
+        for (const server of plexServersNeedingLibraryTypeMigration) {
+          const plexapi = new PlexAPI({
+            plexToken: admin.plexToken,
+            plexSettings: server,
+            plexServerId: server.id,
+          });
+          await plexapi.syncLibraries(server.id);
+        }
       }
     }
 
