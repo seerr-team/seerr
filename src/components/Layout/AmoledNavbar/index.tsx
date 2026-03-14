@@ -54,7 +54,7 @@ const AmoledNavbar = () => {
       clear();
       setIsOpen(false);
     }
-  }, [searchExpanded, isDesktop]);
+  }, [searchExpanded, isDesktop, clear, setIsOpen]);
 
   // Close profile menu on outside click
   useEffect(() => {

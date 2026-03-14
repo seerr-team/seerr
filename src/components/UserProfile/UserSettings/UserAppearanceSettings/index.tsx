@@ -46,6 +46,8 @@ const UserAppearanceSettings = () => {
             return (
               <button
                 key={t.id}
+                type="button"
+                aria-pressed={isActive}
                 onClick={() => setTheme(t.id)}
                 className={`relative flex flex-col overflow-hidden rounded-xl border-2 text-left transition duration-200 focus:outline-none ${
                   isActive

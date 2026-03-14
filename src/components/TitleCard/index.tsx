@@ -342,7 +342,7 @@ const TitleCard = ({
             fill
           />
           {/* AMOLED circle badge — bottom left */}
-          <div className="title-card-amoled-badge pointer-events-none absolute bottom-2.5 left-2.5 z-50 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 backdrop-blur-md ring-1 ring-white/[0.12]">
+          <div aria-hidden="true" className="title-card-amoled-badge pointer-events-none absolute bottom-2.5 left-2.5 z-50 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 backdrop-blur-md ring-1 ring-white/[0.12]">
             <span
               className={`text-[10px] font-semibold ${
                 mediaType === 'movie' || mediaType === 'collection'
