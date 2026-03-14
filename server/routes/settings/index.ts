@@ -422,6 +422,10 @@ settingsRoutes.get('/plex/library', async (req, res) => {
   });
 
   if (!server) {
+    if (req.query.serverId) {
+      return res.status(404).json({ error: 'Plex server not found' });
+    }
+
     return res.status(200).json([]);
   }
 
@@ -645,6 +649,10 @@ settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
   });
 
   if (!server) {
+    if (req.query.serverId) {
+      return res.status(404).json({ error: 'Jellyfin server not found' });
+    }
+
     return res.status(200).json([]);
   }
 
