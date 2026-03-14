@@ -1010,6 +1010,10 @@ class AvailabilitySync {
 
     for (const serverId of this.getCandidatePlexServerIds(storedServerId)) {
       const plexSeasons = this.plexSeasonsCache[`${serverId}-${ratingKey}`];
+      if (plexSeasons && plexSeasons.length === 0) {
+        return true;
+      }
+
       const seasonIsAvailable = plexSeasons?.find(
         (plexSeason) => plexSeason.index === season.seasonNumber
       );
@@ -1145,6 +1149,10 @@ class AvailabilitySync {
     )) {
       const jellyfinSeasons =
         this.jellyfinSeasonsCache[`${serverId}-${ratingKey}`];
+      if (jellyfinSeasons && jellyfinSeasons.length === 0) {
+        return true;
+      }
+
       const seasonIsAvailable = jellyfinSeasons?.find(
         (jellyfinSeason) => jellyfinSeason.IndexNumber === season.seasonNumber
       );
