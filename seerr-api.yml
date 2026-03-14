@@ -371,6 +371,30 @@ components:
         - machineId
         - ip
         - port
+    PlexSettingsWrite:
+      type: object
+      description: |
+        Writable Plex server settings payload. Include `id` to update an existing configured Plex server; omit it to create a new server.
+      properties:
+        id:
+          type: string
+          format: uuid
+        ip:
+          type: string
+          example: '127.0.0.1'
+        port:
+          type: number
+          example: 32400
+        useSsl:
+          type: boolean
+          nullable: true
+        webAppUrl:
+          type: string
+          nullable: true
+          example: 'https://app.plex.tv/desktop'
+      required:
+        - ip
+        - port
     PlexServerInstance:
       allOf:
         - $ref: '#/components/schemas/PlexSettings'
@@ -554,6 +578,42 @@ components:
           readOnly: true
       required:
         - id
+    JellyfinSettingsWrite:
+      type: object
+      description: |
+        Writable Jellyfin or Emby server settings payload. Include `id` to update an existing configured server; omit it to create a new one.
+      properties:
+        id:
+          type: string
+          format: uuid
+        hostname:
+          type: string
+          example: 'http://my.jellyfin.host'
+        externalHostname:
+          type: string
+          example: 'http://my.jellyfin.host'
+        jellyfinForgotPasswordUrl:
+          type: string
+          example: 'http://my.jellyfin.host/web/index.html#!/forgotpassword.html'
+        apiKey:
+          type: string
+          example: 'my-api-key'
+        username:
+          type: string
+          example: 'admin'
+        password:
+          type: string
+          example: 'mypassword'
+        mediaServerType:
+          type: number
+          enum: [2, 3]
+          example: 2
+        serverType:
+          type: number
+          enum: [2, 3]
+          example: 2
+      required:
+        - hostname
     JellyfinServerInstance:
       allOf:
         - $ref: '#/components/schemas/JellyfinSettings'
@@ -2336,7 +2396,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JellyfinSettings'
+              $ref: '#/components/schemas/JellyfinSettingsWrite'
       responses:
         '200':
           description: 'Values were successfully updated'
@@ -2526,7 +2586,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PlexSettings'
+              $ref: '#/components/schemas/PlexSettingsWrite'
       responses:
         '200':
           description: 'Values were successfully updated'
