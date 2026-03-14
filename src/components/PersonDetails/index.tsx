@@ -241,33 +241,19 @@ const PersonDetails = () => {
     <>
       <PageTitle title={data.name} />
       {(sortedCrew || sortedCast) && (
-        <>
-          <div className="person-fader-standard absolute left-0 right-0 top-0 z-0 h-96">
-            <ImageFader
-              isDarker
-              backgroundImages={[...(sortedCast ?? []), ...(sortedCrew ?? [])]
-                .filter((media) => media.backdropPath)
-                .map(
-                  (media) =>
-                    `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${media.backdropPath}`
-                )
-                .slice(0, 6)}
-            />
-          </div>
-          <div className="person-fader-amoled absolute left-0 right-0 top-0 z-0 h-96 overflow-hidden">
-            <ImageFader
-              isDarker
-              backgroundImages={[...(sortedCast ?? []), ...(sortedCrew ?? [])]
-                .filter((media) => media.backdropPath)
-                .map(
-                  (media) =>
-                    `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${media.backdropPath}`
-                )
-                .slice(0, 6)}
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-gray-900" />
-          </div>
-        </>
+        <div className="absolute left-0 right-0 top-0 z-0 h-96 overflow-hidden">
+          <ImageFader
+            isDarker
+            backgroundImages={[...(sortedCast ?? []), ...(sortedCrew ?? [])]
+              .filter((media) => media.backdropPath)
+              .map(
+                (media) =>
+                  `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${media.backdropPath}`
+              )
+              .slice(0, 6)}
+          />
+          <div className="person-fader-amoled-overlay absolute inset-0 bg-gradient-to-b from-black/60 to-gray-900" />
+        </div>
       )}
       <div
         className={`relative z-10 mb-8 mt-4 flex flex-col items-center lg:flex-row ${

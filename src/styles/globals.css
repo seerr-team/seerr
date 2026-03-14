@@ -734,15 +734,12 @@
   display: none;
 }
 
-/* PersonDetails: show correct fader variant */
-.person-fader-amoled {
+/* PersonDetails: AMOLED gradient overlay — hidden by default, shown in AMOLED mode */
+.person-fader-amoled-overlay {
   display: none;
 }
-[data-theme='amoled-strix'] .person-fader-amoled {
+[data-theme='amoled-strix'] .person-fader-amoled-overlay {
   display: block;
-}
-[data-theme='amoled-strix'] .person-fader-standard {
-  display: none;
 }
 
 /* PersonDetails: profile photo shape in AMOLED (square rounded-xl vs circle) */
