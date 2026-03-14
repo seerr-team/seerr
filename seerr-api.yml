@@ -4451,9 +4451,9 @@ paths:
                   $ref: '#/components/schemas/User'
   /user/import-from-jellyfin:
     post:
-      summary: Import all users from Jellyfin
+      summary: Import Jellyfin users by IDs
       description: |
-        Fetches and imports users from the Jellyfin server.
+        Fetches and imports specific users from the Jellyfin server by their user IDs.
 
         Requires the `MANAGE_USERS` permission.
       tags:
@@ -4468,6 +4468,7 @@ paths:
                 - jellyfinUserIds
               properties:
                 jellyfinUserIds:
+                  description: The Jellyfin user IDs to import.
                   type: array
                   minItems: 1
                   items:
