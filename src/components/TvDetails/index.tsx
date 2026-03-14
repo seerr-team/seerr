@@ -174,6 +174,9 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     iOSPlexUrl4k: data?.mediaInfo?.iOSPlexUrl4k,
   });
 
+  const { theme } = useTheme();
+  const isAmoledTheme = theme === 'amoled-strix';
+
   if (!data && !error) {
     return <LoadingSpinner />;
   }
@@ -465,9 +468,6 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   const showHideButton = hasPermission([Permission.MANAGE_BLOCKLIST], {
     type: 'or',
   });
-
-  const { theme } = useTheme();
-  const isAmoledTheme = theme === 'amoled-strix';
 
   return (
     <>
@@ -1533,6 +1533,8 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                 data?.mediaInfo?.status !== MediaStatus.BLOCKLISTED && (
                   <Tooltip content={intl.formatMessage(globalMessages.addToBlocklist)}>
                     <button
+                      type="button"
+                      aria-label={intl.formatMessage(globalMessages.addToBlocklist)}
                       onClick={() => setShowBlocklistModal(true)}
                       className="z-40 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/[0.12] text-white/70 hover:text-white transition"
                     >
@@ -1546,6 +1548,8 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                     {toggleWatchlist ? (
                       <Tooltip content={intl.formatMessage(messages.addtowatchlist)}>
                         <button
+                          type="button"
+                          aria-label={intl.formatMessage(messages.addtowatchlist)}
                           onClick={onClickWatchlistBtn}
                           className="z-40 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/[0.12] text-white/70 hover:text-white transition"
                         >
@@ -1555,6 +1559,8 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                     ) : (
                       <Tooltip content={intl.formatMessage(messages.removefromwatchlist)}>
                         <button
+                          type="button"
+                          aria-label={intl.formatMessage(messages.removefromwatchlist)}
                           onClick={onClickDeleteWatchlistBtn}
                           className="z-40 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/[0.12] text-white/70 hover:text-white transition"
                         >
@@ -1589,6 +1595,8 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                 ) && (
                   <Tooltip content={intl.formatMessage(messages.reportissue)}>
                     <button
+                      type="button"
+                      aria-label={intl.formatMessage(messages.reportissue)}
                       onClick={() => setShowIssueModal(true)}
                       className="z-40 relative flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/[0.12] text-white/70 hover:text-white transition"
                     >
@@ -1605,6 +1613,8 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
               {hasPermission(Permission.MANAGE_REQUESTS) && data.mediaInfo && (
                 <Tooltip content={intl.formatMessage(messages.manageseries)}>
                   <button
+                    type="button"
+                    aria-label={intl.formatMessage(messages.manageseries)}
                     onClick={() => setShowManager(true)}
                     className="z-40 relative flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/[0.12] text-white/70 hover:text-white transition"
                   >

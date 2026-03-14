@@ -179,6 +179,9 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     iOSPlexUrl4k: data?.mediaInfo?.iOSPlexUrl4k,
   });
 
+  const { theme } = useTheme();
+  const isAmoledTheme = theme === 'amoled-strix';
+
   if (!data && !error) {
     return <LoadingSpinner />;
   }
@@ -434,9 +437,6 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   const showHideButton = hasPermission([Permission.MANAGE_BLOCKLIST], {
     type: 'or',
   });
-
-  const { theme } = useTheme();
-  const isAmoledTheme = theme === 'amoled-strix';
 
   return (
     <>
@@ -1297,6 +1297,8 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                   data?.mediaInfo?.status !== MediaStatus.BLOCKLISTED && (
                     <Tooltip content={intl.formatMessage(globalMessages.addToBlocklist)}>
                       <button
+                        type="button"
+                        aria-label={intl.formatMessage(globalMessages.addToBlocklist)}
                         onClick={() => setShowBlocklistModal(true)}
                         className="z-40 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/[0.12] text-white/70 hover:text-white transition"
                       >
@@ -1310,6 +1312,8 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                       {toggleWatchlist ? (
                         <Tooltip content={intl.formatMessage(messages.addtowatchlist)}>
                           <button
+                            type="button"
+                            aria-label={intl.formatMessage(messages.addtowatchlist)}
                             onClick={onClickWatchlistBtn}
                             className="z-40 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/[0.12] text-white/70 hover:text-white transition"
                           >
@@ -1319,6 +1323,8 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                       ) : (
                         <Tooltip content={intl.formatMessage(messages.removefromwatchlist)}>
                           <button
+                            type="button"
+                            aria-label={intl.formatMessage(messages.removefromwatchlist)}
                             onClick={onClickDeleteWatchlistBtn}
                             className="z-40 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/[0.12] text-white/70 hover:text-white transition"
                           >
