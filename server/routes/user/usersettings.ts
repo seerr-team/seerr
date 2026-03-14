@@ -378,10 +378,12 @@ userSettingsRoutes.delete<{ id: string }>(
         });
       }
 
-      user.userType =
-        user.jellyfinUserId || user.jellyfinUsername
-          ? getJellyfinLinkedUserType(user)
-          : UserType.LOCAL;
+      if (user.userType === UserType.PLEX) {
+        user.userType =
+          user.jellyfinUserId || user.jellyfinUsername
+            ? getJellyfinLinkedUserType(user)
+            : UserType.LOCAL;
+      }
       user.plexId = null;
       user.plexUsername = null;
       user.plexToken = null;
@@ -539,8 +541,13 @@ userSettingsRoutes.delete<{ id: string }>(
         });
       }
 
-      user.userType =
-        user.plexId || user.plexUsername ? UserType.PLEX : UserType.LOCAL;
+      if (
+        user.userType === UserType.JELLYFIN ||
+        user.userType === UserType.EMBY
+      ) {
+        user.userType =
+          user.plexId || user.plexUsername ? UserType.PLEX : UserType.LOCAL;
+      }
       user.jellyfinUserId = null;
       user.jellyfinServerId = null;
       user.jellyfinUsername = null;
