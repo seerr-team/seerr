@@ -53,6 +53,8 @@ const messages = defineMessages('components.Settings', {
     'Only the owner account can connect Plex from Settings because the Plex token is stored on the owner account.',
   toastPlexAuthSuccess: 'Plex account connected successfully!',
   toastPlexAuthFailure: 'Failed to authenticate with Plex.',
+  plexAuthStatusLoadFailure: 'Unable to load Plex authentication status.',
+  retryPlexAuthStatus: 'Retry',
   toastPlexSyncFailure:
     'Something went wrong while syncing Plex libraries for {serverName}.',
   settingUpPlexDescription:
@@ -157,8 +159,11 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
   );
   const { data: dataTautulli, mutate: revalidateTautulli } =
     useSWR<TautulliSettings>('/api/v1/settings/tautulli');
-  const { data: plexAuthStatus, mutate: revalidatePlexAuthStatus } =
-    useSWR<PlexAuthStatus>('/api/v1/settings/plex/login');
+  const {
+    data: plexAuthStatus,
+    error: plexAuthStatusError,
+    mutate: revalidatePlexAuthStatus,
+  } = useSWR<PlexAuthStatus>('/api/v1/settings/plex/login');
   const { data: dataSync, mutate: revalidateSync } = useSWR<SyncStatus>(
     '/api/v1/settings/plex/sync',
     {
@@ -458,10 +463,44 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
   };
 
   if (
-    !plexAuthStatus ||
+    (!plexAuthStatus && !plexAuthStatusError) ||
     (canManagePlexSettings && selectedServerId !== 'new' && !data && !error)
   ) {
     return <LoadingSpinner />;
+  }
+
+  if (plexAuthStatusError) {
+    return (
+      <>
+        <PageTitle
+          title={[
+            intl.formatMessage(messages.plex),
+            intl.formatMessage(globalMessages.settings),
+          ]}
+        />
+        <div className="mb-6">
+          <h3 className="heading">{intl.formatMessage(messages.plexsettings)}</h3>
+          <p className="description">
+            {intl.formatMessage(messages.plexsettingsDescription)}
+          </p>
+        </div>
+        <div className="section">
+          <Alert
+            type="error"
+            title={intl.formatMessage(messages.plexAuthStatusLoadFailure)}
+          >
+            <div className="mt-4 max-w-xs">
+              <Button
+                buttonType="primary"
+                onClick={() => revalidatePlexAuthStatus()}
+              >
+                {intl.formatMessage(messages.retryPlexAuthStatus)}
+              </Button>
+            </div>
+          </Alert>
+        </div>
+      </>
+    );
   }
 
   return (
