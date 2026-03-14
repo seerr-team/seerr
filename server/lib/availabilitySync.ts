@@ -101,9 +101,7 @@ class AvailabilitySync {
       (jellyfinServer) => jellyfinServer.id
     );
 
-    return serverId
-      ? Array.from(new Set([serverId, ...configuredServerIds]))
-      : configuredServerIds;
+    return serverId ? [serverId] : configuredServerIds;
   }
 
   async run() {
