@@ -68,8 +68,17 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   youtubeUrl: 'YouTube URL',
   youtubeUrlTip:
     'Base URL for YouTube videos if a self-hosted YouTube instance is used.',
+  downloadRefreshInterval: 'Download Progress Refresh Interval',
+  downloadRefreshIntervalTip:
+    'How often to poll for download progress updates (in seconds). Lower values update more frequently but increase server load.',
   validationUrl: 'You must provide a valid URL',
   validationUrlTrailingSlash: 'URL must not end in a trailing slash',
+  validationDownloadRefreshIntervalMin: 'Must be at least {min} second.',
+  validationDownloadRefreshIntervalMax: 'Must be at most {max} seconds.',
+  validationDownloadRefreshIntervalInteger:
+    'Must be a whole number of seconds.',
+  validationDownloadRefreshIntervalTypeError:
+    'Must be a whole number of seconds.',
 });
 
 const SettingsMain = () => {
@@ -118,6 +127,25 @@ const SettingsMain = () => {
         'no-trailing-slash',
         intl.formatMessage(messages.validationUrlTrailingSlash),
         (value) => !value || !value.endsWith('/')
+      ),
+    downloadRefreshInterval: Yup.number()
+      .typeError(
+        intl.formatMessage(messages.validationDownloadRefreshIntervalTypeError)
+      )
+      .integer(
+        intl.formatMessage(messages.validationDownloadRefreshIntervalInteger)
+      )
+      .min(
+        1,
+        intl.formatMessage(messages.validationDownloadRefreshIntervalMin, {
+          min: 1,
+        })
+      )
+      .max(
+        300,
+        intl.formatMessage(messages.validationDownloadRefreshIntervalMax, {
+          max: 300,
+        })
       ),
   });
 
@@ -175,6 +203,8 @@ const SettingsMain = () => {
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
+            downloadRefreshInterval:
+              (data?.downloadRefreshInterval ?? 15000) / 1000,
           }}
           enableReinitialize
           validationSchema={MainSettingsSchema}
@@ -195,6 +225,8 @@ const SettingsMain = () => {
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
+                downloadRefreshInterval:
+                  (values.downloadRefreshInterval ?? 15) * 1000,
               });
               mutate('/api/v1/settings/public');
               mutate('/api/v1/status');
@@ -533,6 +565,39 @@ const SettingsMain = () => {
                         );
                       }}
                     />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="downloadRefreshInterval"
+                    className="text-label"
+                  >
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.downloadRefreshInterval)}
+                    </span>
+                    <SettingsBadge badgeType="advanced" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.downloadRefreshIntervalTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      id="downloadRefreshInterval"
+                      name="downloadRefreshInterval"
+                      type="number"
+                      min={1}
+                      max={300}
+                      step={1}
+                      className="short"
+                      placeholder={15}
+                    />
+                    {errors.downloadRefreshInterval &&
+                      touched.downloadRefreshInterval &&
+                      typeof errors.downloadRefreshInterval === 'string' && (
+                        <div className="error">
+                          {errors.downloadRefreshInterval}
+                        </div>
+                      )}
                   </div>
                 </div>
                 <div className="form-row">

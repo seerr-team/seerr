@@ -147,6 +147,7 @@ export interface MainSettings {
   enableSpecialEpisodes: boolean;
   locale: string;
   youtubeUrl: string;
+  downloadRefreshInterval: number;
 }
 
 export interface ProxySettings {
@@ -205,6 +206,7 @@ interface FullPublicSettings extends PublicSettings {
   userEmailRequired: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  downloadRefreshInterval: number;
 }
 
 export interface NotificationAgentConfig {
@@ -375,7 +377,24 @@ const SETTINGS_PATH = process.env.CONFIG_DIRECTORY
   : path.join(__dirname, '../../../config/settings.json');
 
 class Settings {
+  private static readonly DEFAULT_DOWNLOAD_REFRESH_INTERVAL = 15000;
+  private static readonly MIN_DOWNLOAD_REFRESH_INTERVAL = 1000;
+  private static readonly MAX_DOWNLOAD_REFRESH_INTERVAL = 300000;
+
   private data: AllSettings;
+
+  private static normalizeDownloadRefreshInterval(value: unknown): number {
+    const interval = typeof value === 'number' ? value : Number(value);
+
+    if (!Number.isFinite(interval)) {
+      return Settings.DEFAULT_DOWNLOAD_REFRESH_INTERVAL;
+    }
+
+    return Math.min(
+      Settings.MAX_DOWNLOAD_REFRESH_INTERVAL,
+      Math.max(Settings.MIN_DOWNLOAD_REFRESH_INTERVAL, interval)
+    );
+  }
 
   constructor(initialSettings?: AllSettings) {
     this.data = {
@@ -407,6 +426,7 @@ class Settings {
         enableSpecialEpisodes: false,
         locale: 'en',
         youtubeUrl: '',
+        downloadRefreshInterval: Settings.DEFAULT_DOWNLOAD_REFRESH_INTERVAL,
       },
       plex: {
         name: '',
@@ -604,6 +624,10 @@ class Settings {
     };
     if (initialSettings) {
       this.data = merge(this.data, initialSettings);
+      this.data.main.downloadRefreshInterval =
+        Settings.normalizeDownloadRefreshInterval(
+          this.data.main.downloadRefreshInterval
+        );
     }
   }
 
@@ -612,7 +636,12 @@ class Settings {
   }
 
   set main(data: MainSettings) {
-    this.data.main = data;
+    this.data.main = {
+      ...data,
+      downloadRefreshInterval: Settings.normalizeDownloadRefreshInterval(
+        data.downloadRefreshInterval
+      ),
+    };
   }
 
   get plex(): PlexSettings {
@@ -703,6 +732,9 @@ class Settings {
         this.data.notifications.agents.email.options.userEmailRequired,
       newPlexLogin: this.data.main.newPlexLogin,
       youtubeUrl: this.data.main.youtubeUrl,
+      downloadRefreshInterval: Settings.normalizeDownloadRefreshInterval(
+        this.data.main.downloadRefreshInterval
+      ),
     };
   }
 

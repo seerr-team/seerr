@@ -5,6 +5,7 @@ import ConfirmButton from '@app/components/Common/ConfirmButton';
 import RequestModal from '@app/components/RequestModal';
 import StatusBadge from '@app/components/StatusBadge';
 import useDeepLinks from '@app/hooks/useDeepLinks';
+import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -299,6 +300,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
   });
   const { addToast } = useToasts();
   const intl = useIntl();
+  const settings = useSettings();
   const { user, hasPermission } = useUser();
   const [showEditModal, setShowEditModal] = useState(false);
   const url =
@@ -312,13 +314,21 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
     NonFunctionProperties<MediaRequest>
   >(`/api/v1/request/${request.id}`, {
     fallbackData: request,
-    refreshInterval: refreshIntervalHelper(
-      {
-        downloadStatus: request.media.downloadStatus,
-        downloadStatus4k: request.media.downloadStatus4k,
-      },
-      15000
-    ),
+    refreshInterval: (
+      latestData: NonFunctionProperties<MediaRequest> | undefined
+    ) =>
+      refreshIntervalHelper(
+        request.is4k
+          ? {
+              downloadStatus: undefined,
+              downloadStatus4k: latestData?.media.downloadStatus4k,
+            }
+          : {
+              downloadStatus: latestData?.media.downloadStatus,
+              downloadStatus4k: undefined,
+            },
+        settings.currentSettings.downloadRefreshInterval
+      ),
   });
 
   const [isRetrying, setRetrying] = useState(false);

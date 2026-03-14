@@ -31,6 +31,7 @@ const defaultSettings = {
   emailEnabled: false,
   newPlexLogin: true,
   youtubeUrl: '',
+  downloadRefreshInterval: 15000,
 };
 
 export const SettingsContext = React.createContext<SettingsContextProps>({

@@ -250,6 +250,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     emailEnabled: false,
     newPlexLogin: true,
     youtubeUrl: '',
+    downloadRefreshInterval: 15000,
   };
 
   if (ctx.res) {

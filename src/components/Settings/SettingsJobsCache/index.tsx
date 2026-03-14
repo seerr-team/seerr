@@ -383,28 +383,33 @@ const SettingsJobs = () => {
                 </label>
                 <div className="form-input-area">
                   {jobModalState.job?.interval === 'seconds' ? (
-                    <select
-                      name="jobScheduleSeconds"
-                      className="inline"
-                      value={jobModalState.scheduleSeconds}
-                      onChange={(e) =>
-                        dispatch({
-                          type: 'set',
-                          seconds: Number(e.target.value),
-                        })
-                      }
-                    >
-                      {[30, 45, 60].map((v) => (
-                        <option value={v} key={`jobScheduleSeconds-${v}`}>
-                          {intl.formatMessage(
-                            messages.editJobScheduleSelectorSeconds,
-                            {
-                              jobScheduleSeconds: v,
-                            }
-                          )}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex items-center">
+                      <input
+                        type="number"
+                        name="jobScheduleSeconds"
+                        className="short"
+                        min={1}
+                        max={59}
+                        value={jobModalState.scheduleSeconds}
+                        onChange={(e) =>
+                          dispatch({
+                            type: 'set',
+                            seconds: Math.max(
+                              1,
+                              Math.min(59, Number(e.target.value))
+                            ),
+                          })
+                        }
+                      />
+                      <span className="ml-2 text-gray-300">
+                        {intl.formatMessage(
+                          messages.editJobScheduleSelectorSeconds,
+                          {
+                            jobScheduleSeconds: jobModalState.scheduleSeconds,
+                          }
+                        )}
+                      </span>
+                    </div>
                   ) : jobModalState.job?.interval === 'minutes' ? (
                     <select
                       name="jobScheduleMinutes"
