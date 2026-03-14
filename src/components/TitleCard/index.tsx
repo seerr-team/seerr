@@ -382,7 +382,7 @@ const TitleCard = ({
                       >
                         <StarIcon className="h-3.5 w-3.5 text-amber-300" />
                       </button>
-                      <Button buttonType={'ghost'} className="title-card-standard-icon-btn z-40" buttonSize={'sm'} onClick={onClickWatchlistBtn}>
+                      <Button buttonType={'ghost'} className="title-card-standard-icon-btn z-40" buttonSize={'sm'} onClick={onClickWatchlistBtn} aria-label={intl.formatMessage(messages.addToWatchList)}>
                         <StarIcon className={'h-3 text-amber-300'} />
                       </Button>
                     </>
@@ -395,7 +395,7 @@ const TitleCard = ({
                       >
                         <MinusCircleIcon className="h-3.5 w-3.5 text-white/70" />
                       </button>
-                      <Button className="title-card-standard-icon-btn z-40" buttonSize={'sm'} onClick={onClickDeleteWatchlistBtn}>
+                      <Button className="title-card-standard-icon-btn z-40" buttonSize={'sm'} onClick={onClickDeleteWatchlistBtn} aria-label={intl.formatMessage(messages.removeFromWatchList)}>
                         <MinusCircleIcon className={'h-3'} />
                       </Button>
                     </>
@@ -413,7 +413,7 @@ const TitleCard = ({
                       >
                         <EyeSlashIcon className="h-3.5 w-3.5 text-white/70" />
                       </button>
-                      <Button buttonType={'ghost'} className="title-card-standard-icon-btn z-40" buttonSize={'sm'} onClick={() => setShowBlocklistModal(true)}>
+                      <Button buttonType={'ghost'} className="title-card-standard-icon-btn z-40" buttonSize={'sm'} onClick={() => setShowBlocklistModal(true)} aria-label={intl.formatMessage(globalMessages.blocklist)}>
                         <EyeSlashIcon className={'h-3'} />
                       </Button>
                     </>

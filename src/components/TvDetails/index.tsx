@@ -66,6 +66,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
+import useTheme from '@app/hooks/useTheme';
 
 const messages = defineMessages('components.TvDetails', {
   firstAirDate: 'First Air Date',
@@ -465,8 +466,12 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     type: 'or',
   });
 
+  const { theme } = useTheme();
+  const isAmoledTheme = theme === 'amoled-strix';
+
   return (
     <>
+    {!isAmoledTheme ? (
     <div
       className="tv-details-backdrop-section media-page"
       style={{
@@ -1362,7 +1367,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
       <div className="extra-bottom-space relative" />
     </div>
     ) : (
-    /* ── AMOLED full-bleed layout ── */
+    {/* ── AMOLED full-bleed layout ── */}
     <div className="relative bg-black">
       <PageTitle title={data.name} />
       <BlocklistModal
@@ -2245,6 +2250,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
       />
       <div className="extra-bottom-space relative" />
     </div>
+    )}
     </>
   );
 };

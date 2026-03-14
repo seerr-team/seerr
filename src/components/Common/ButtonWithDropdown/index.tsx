@@ -34,9 +34,9 @@ const ButtonWithDropdown = ({
       break;
     case 'glass':
       styleClasses.mainButtonClasses +=
-        ' bg-black/50 border-white/[0.12] text-white/70 backdrop-blur-md hover:text-white active:text-white';
+        ' bg-black/50 border-white/[0.12] text-white/70 backdrop-blur-md hover:text-white active:text-white focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black/60';
       styleClasses.dropdownSideButtonClasses =
-        'button-md border bg-black/50 border-white/[0.12] text-white/70 backdrop-blur-md hover:text-white active:text-white';
+        'button-md border bg-black/50 border-white/[0.12] text-white/70 backdrop-blur-md hover:text-white active:text-white focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black/60';
       break;
     default:
       styleClasses.mainButtonClasses +=

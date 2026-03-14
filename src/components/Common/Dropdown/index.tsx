@@ -26,7 +26,7 @@ const DropdownItem = ({
           buttonType === 'ghost'
             ? 'bg-transparent from-indigo-600 to-purple-600 hover:bg-gradient-to-br focus:border-gray-500'
             : buttonType === 'glass'
-              ? 'bg-black/70 hover:bg-black/80 backdrop-blur-md ring-1 ring-white/[0.12]'
+              ? 'bg-black/70 hover:bg-black/80 backdrop-blur-md ring-1 ring-white/[0.12] focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black/60'
               : 'bg-indigo-600 hover:bg-indigo-500 focus:border-indigo-700',
         ].join(' ')}
         {...props}

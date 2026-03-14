@@ -63,6 +63,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
+import useTheme from '@app/hooks/useTheme';
 
 const messages = defineMessages('components.MovieDetails', {
   originaltitle: 'Original Title',
@@ -434,8 +435,12 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     type: 'or',
   });
 
+  const { theme } = useTheme();
+  const isAmoledTheme = theme === 'amoled-strix';
+
   return (
     <>
+      {!isAmoledTheme ? (
       <div
         className="movie-details-backdrop-section media-page"
         style={{
@@ -1139,7 +1144,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
       <div className="extra-bottom-space relative" />
       </div>
       ) : (
-      /* ── AMOLED full-bleed layout ── */
+      {/* ── AMOLED full-bleed layout ── */}
       <div className="relative bg-black">
         <PageTitle title={data.title} />
         <IssueModal
@@ -1704,6 +1709,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
         />
         <div className="extra-bottom-space relative" />
       </div>
+      )}
     </>
   );
 };
