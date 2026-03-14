@@ -893,11 +893,13 @@ class AvailabilitySync {
                 const episodes = await plexClient.getChildrenMetadata(
                   season.ratingKey
                 );
-                const has4kEpisode = episodes?.some((episode) =>
-                  episode.Media?.some(
-                    (mediaItem) => (mediaItem.width ?? 0) >= 2000
-                  )
-                );
+                const has4kEpisode =
+                  episodes?.length === 0 ||
+                  episodes?.some((episode) =>
+                    episode.Media?.some(
+                      (mediaItem) => (mediaItem.width ?? 0) >= 2000
+                    )
+                  );
 
                 if (has4kEpisode) {
                   seasonsWith4kEpisodes.push(season);
