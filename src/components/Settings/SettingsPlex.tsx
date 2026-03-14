@@ -326,7 +326,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
       );
     } finally {
       setIsSyncing(false);
-      revalidate();
+      await Promise.all([revalidate(), revalidatePlexServers()]);
     }
   };
 
@@ -458,7 +458,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
       );
     } finally {
       setIsSyncing(false);
-      revalidate();
+      await Promise.all([revalidate(), revalidatePlexServers()]);
     }
   };
 
