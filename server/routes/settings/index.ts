@@ -233,7 +233,9 @@ settingsRoutes.post('/plex', async (req, res, next) => {
   const settings = getSettings();
   let plexServerId: string | undefined;
   try {
-    const existingServer = getPlexServerFromRequest({ serverId: req.body.id });
+    const existingServer = req.body.id
+      ? getPlexServerFromRequest({ serverId: req.body.id })
+      : undefined;
     const admin = await userRepository.findOneOrFail({
       select: { id: true, plexToken: true },
       where: { id: 1 },
@@ -516,9 +518,11 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
     };
 
   try {
-    const existingServer = getJellyfinServerFromRequest({
-      serverId: req.body.id,
-    });
+    const existingServer = req.body.id
+      ? getJellyfinServerFromRequest({
+          serverId: req.body.id,
+        })
+      : undefined;
     const admin = await userRepository.findOneOrFail({
       where: { id: 1 },
       select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
