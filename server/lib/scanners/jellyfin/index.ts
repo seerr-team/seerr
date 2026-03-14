@@ -37,6 +37,7 @@ class JellyfinScanner
   private libraries: Library[];
   private currentLibrary: Library;
   private currentServer?: JellyfinServerSettings;
+  private targetServerId?: string;
   private isRecentOnly = false;
   private processedAnidbSeason: Map<number, Map<number, number>>;
 
@@ -450,10 +451,16 @@ class JellyfinScanner
     }
   }
 
-  public async run(): Promise<void> {
+  private isStatusScopedToServer(serverId?: string): boolean {
+    return !serverId || !this.targetServerId || this.targetServerId === serverId;
+  }
+
+  public async run(serverId?: string): Promise<void> {
     const settings = getSettings();
-    const jellyfinServers = settings.jellyfinServers.filter((server) =>
-      server.libraries.some((library) => library.enabled)
+    const jellyfinServers = settings.jellyfinServers.filter(
+      (server) =>
+        (!serverId || server.id === serverId) &&
+        server.libraries.some((library) => library.enabled)
     );
 
     if (jellyfinServers.length === 0) {
@@ -461,6 +468,7 @@ class JellyfinScanner
     }
 
     const sessionId = this.startRun();
+    this.targetServerId = serverId;
 
     try {
       const userRepository = getRepository(User);
@@ -557,11 +565,24 @@ class JellyfinScanner
     } catch (e) {
       this.log('Sync interrupted', 'error', { errorMessage: e.message });
     } finally {
+      if (this.sessionId === sessionId) {
+        this.targetServerId = undefined;
+      }
       this.endRun(sessionId);
     }
   }
 
-  public status(): JellyfinSyncStatus {
+  public status(serverId?: string): JellyfinSyncStatus {
+    if (!this.isStatusScopedToServer(serverId)) {
+      return {
+        running: false,
+        progress: 0,
+        total: 0,
+        currentLibrary: undefined,
+        libraries: [],
+      };
+    }
+
     return {
       running: this.running,
       progress: this.progress,
@@ -569,6 +590,15 @@ class JellyfinScanner
       currentLibrary: this.currentLibrary,
       libraries: this.libraries,
     };
+  }
+
+  public cancel(serverId?: string): void {
+    if (!this.isStatusScopedToServer(serverId)) {
+      return;
+    }
+
+    this.targetServerId = undefined;
+    super.cancel();
   }
 }
 

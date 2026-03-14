@@ -875,17 +875,35 @@ settingsRoutes.get('/jellyfin/users', async (req, res) => {
   return res.status(200).json(users);
 });
 
-settingsRoutes.get('/jellyfin/sync', (_req, res) => {
-  return res.status(200).json(jellyfinFullScanner.status());
+settingsRoutes.get('/jellyfin/sync', (req, res) => {
+  const requestedServerId = req.query.serverId?.toString();
+  const server = getJellyfinServerFromRequest({
+    serverId: requestedServerId,
+  });
+
+  if (requestedServerId && !server) {
+    return res.status(404).json({ error: 'Jellyfin server not found' });
+  }
+
+  return res.status(200).json(jellyfinFullScanner.status(requestedServerId));
 });
 
 settingsRoutes.post('/jellyfin/sync', (req, res) => {
-  if (req.body.cancel) {
-    jellyfinFullScanner.cancel();
-  } else if (req.body.start) {
-    jellyfinFullScanner.run();
+  const requestedServerId = req.query.serverId?.toString();
+  const server = getJellyfinServerFromRequest({
+    serverId: requestedServerId,
+  });
+
+  if (requestedServerId && !server) {
+    return res.status(404).json({ error: 'Jellyfin server not found' });
   }
-  return res.status(200).json(jellyfinFullScanner.status());
+
+  if (req.body.cancel) {
+    jellyfinFullScanner.cancel(requestedServerId);
+  } else if (req.body.start) {
+    jellyfinFullScanner.run(requestedServerId);
+  }
+  return res.status(200).json(jellyfinFullScanner.status(requestedServerId));
 });
 settingsRoutes.get('/tautulli', (_req, res) => {
   const settings = getSettings();
