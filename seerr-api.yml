@@ -608,10 +608,13 @@ components:
           type: number
           enum: [2, 3]
           example: 2
+          description: Canonical media server type for this request. Use this field for new clients. If both `mediaServerType` and `serverType` are provided, `mediaServerType` takes precedence.
         serverType:
           type: number
           enum: [2, 3]
           example: 2
+          description: Deprecated legacy alias for `mediaServerType`. Only used when `mediaServerType` is omitted.
+          deprecated: true
       required:
         - hostname
     JellyfinServerInstance:
