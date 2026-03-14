@@ -453,6 +453,15 @@ settingsRoutes.get('/plex/library', async (req, res) => {
     return res.status(404).json({ message: 'Plex server not found.' });
   }
 
+  if (req.query.enable === undefined) {
+    return res
+      .status(200)
+      .json(
+        settings.plexServers.find((plexServer) => plexServer.id === server.id)
+          ?.libraries ?? []
+      );
+  }
+
   const updated = settings.updatePlexServer(server.id, (plexServer) => ({
     ...plexServer,
     libraries: plexServer.libraries.map((library) => ({
@@ -731,6 +740,20 @@ settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
   const enabledLibraries = req.query.enable
     ? (req.query.enable as string).split(',')
     : [];
+
+  if (req.query.enable === undefined) {
+    if (req.query.sync) {
+      await settings.save();
+    }
+
+    return res
+      .status(200)
+      .json(
+        settings.jellyfinServers.find(
+          (jellyfinServer) => jellyfinServer.id === server.id
+        )?.libraries ?? []
+      );
+  }
 
   const updated = settings.updateJellyfinServer(
     server.id,
