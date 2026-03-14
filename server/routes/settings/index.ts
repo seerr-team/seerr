@@ -800,6 +800,10 @@ settingsRoutes.get('/jellyfin/users', async (req, res) => {
   });
 
   if (!server) {
+    if (req.query.serverId) {
+      return res.status(404).json({ error: 'Jellyfin server not found' });
+    }
+
     return res.status(200).json([]);
   }
 
