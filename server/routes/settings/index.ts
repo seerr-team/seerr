@@ -510,7 +510,7 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
   const userRepository = getRepository(User);
   const settings = getSettings();
   let jellyfinServerId: string | undefined;
-  const { username, password, ...jellyfinServerBody } =
+  const { username, password, serverType, ...jellyfinServerBody } =
     req.body as Partial<JellyfinServerSettings> & {
       username?: string;
       password?: string;
@@ -531,7 +531,7 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
     const resolvedServerId = req.body.id ?? existingServer?.id ?? randomUUID();
     const resolvedMediaServerType =
       req.body.mediaServerType ??
-      req.body.serverType ??
+      serverType ??
       existingServer?.mediaServerType ??
       MediaServerType.JELLYFIN;
     const jellyfinServerBase: JellyfinServerSettings = existingServer ?? {
