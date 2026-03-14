@@ -654,6 +654,7 @@
 [data-theme='amoled-strix'] .issue-backdrop-overlay {
   --tw-gradient-from: rgba(0, 0, 0, 0.6);
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+
   background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), rgb(17, 24, 39));
 }
 

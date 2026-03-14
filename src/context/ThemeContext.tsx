@@ -1,11 +1,9 @@
-import React, { createContext, useCallback, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useState } from 'react';
 
 export type ThemeId = 'default' | 'amoled-strix';
 
 export interface ThemeDefinition {
   id: ThemeId;
-  name: string;
-  description: string;
   /** Preview swatch colors [bg, surface, accent] */
   swatches: [string, string, string];
 }
@@ -13,20 +11,33 @@ export interface ThemeDefinition {
 export const THEMES: ThemeDefinition[] = [
   {
     id: 'default',
-    name: 'Default',
-    description: 'Classic dark theme',
     swatches: ['#111827', '#1f2937', '#6366f1'],
   },
   {
     id: 'amoled-strix',
-    name: 'AMOLED Strix',
-    description: 'Pure black with violet accents, optimized for OLED displays',
     swatches: ['#000000', '#080808', '#8b5cf6'],
   },
 ];
 
 const STORAGE_KEY = 'seerr-theme';
 const DEFAULT_THEME: ThemeId = 'default';
+
+// Resolve persisted theme synchronously before first render to avoid flash
+function resolveInitialTheme(): ThemeId {
+  if (typeof window === 'undefined') return DEFAULT_THEME;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY) as ThemeId | null;
+    if (stored && THEMES.find((t) => t.id === stored)) {
+      document.documentElement.setAttribute('data-theme', stored);
+      return stored;
+    }
+  } catch {
+    // localStorage unavailable
+  }
+  return DEFAULT_THEME;
+}
+
+const initialTheme = resolveInitialTheme();
 
 export interface ThemeContextProps {
   theme: ThemeId;
@@ -39,14 +50,7 @@ export const ThemeContext = createContext<ThemeContextProps>({
 });
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setThemeState] = useState<ThemeId>(DEFAULT_THEME);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as ThemeId | null;
-    const resolved = stored && THEMES.find((t) => t.id === stored) ? stored : DEFAULT_THEME;
-    setThemeState(resolved);
-    document.documentElement.setAttribute('data-theme', resolved);
-  }, []);
+  const [theme, setThemeState] = useState<ThemeId>(initialTheme);
 
   const setTheme = useCallback((next: ThemeId) => {
     setThemeState(next);

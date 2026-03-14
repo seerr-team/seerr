@@ -15,6 +15,11 @@ class MyDocument extends Document {
       <Html>
         <Head />
         <body>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(){try{var t=localStorage.getItem('seerr-theme');if(t==='amoled-strix')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
+            }}
+          />
           <Main />
           <NextScript />
         </body>

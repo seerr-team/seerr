@@ -11,8 +11,13 @@ const messages = defineMessages(
     appearancesettings: 'Appearance Settings',
     themeLabel: 'Theme',
     themeTip: 'Choose how Seerr looks to you. This setting is stored locally in your browser.',
+    themeDefaultName: 'Default',
+    themeDefaultDescription: 'Classic dark theme',
+    themeAmoledStrixName: 'AMOLED Strix',
+    themeAmoledStrixDescription: 'Pure black with violet accents, optimized for OLED displays',
   }
 );
+
 
 const UserAppearanceSettings = () => {
   const intl = useIntl();
@@ -49,7 +54,7 @@ const UserAppearanceSettings = () => {
                 type="button"
                 aria-pressed={isActive}
                 onClick={() => setTheme(t.id)}
-                className={`relative flex flex-col overflow-hidden rounded-xl border-2 text-left transition duration-200 focus:outline-none ${
+                className={`relative flex flex-col overflow-hidden rounded-xl border-2 text-left transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
                   isActive
                     ? 'border-indigo-500 shadow-lg shadow-indigo-500/20'
                     : 'border-gray-700 hover:border-gray-500'
@@ -109,8 +114,16 @@ const UserAppearanceSettings = () => {
                   style={{ background: surfaceColor }}
                 >
                   <div>
-                    <p className="text-sm font-semibold text-gray-100">{t.name}</p>
-                    <p className="text-xs text-gray-400">{t.description}</p>
+                    <p className="text-sm font-semibold text-gray-100">
+                      {t.id === 'default'
+                        ? intl.formatMessage(messages.themeDefaultName)
+                        : intl.formatMessage(messages.themeAmoledStrixName)}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {t.id === 'default'
+                        ? intl.formatMessage(messages.themeDefaultDescription)
+                        : intl.formatMessage(messages.themeAmoledStrixDescription)}
+                    </p>
                   </div>
                   {/* Color swatches */}
                   <div className="flex gap-1">

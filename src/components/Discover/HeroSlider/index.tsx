@@ -158,11 +158,13 @@ const HeroSlider = () => {
           setCurrentStatus(s);
           setShowRequestModal(false);
           setRequestTarget(null);
+          isPaused.current = false;
         }}
         onUpdating={() => void 0}
         onCancel={() => {
           setShowRequestModal(false);
           setRequestTarget(null);
+          isPaused.current = false;
         }}
       />
 
@@ -266,6 +268,7 @@ const HeroSlider = () => {
               <button
                 onClick={() => {
                   setRequestTarget({ id: featured.id, type: isMovie ? 'movie' : 'tv' });
+                  isPaused.current = true;
                   setShowRequestModal(true);
                 }}
                 className="flex items-center gap-1.5 rounded-lg bg-indigo-600/90 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20 ring-1 ring-indigo-500/50 transition hover:bg-indigo-500"
