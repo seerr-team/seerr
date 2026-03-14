@@ -163,6 +163,14 @@ const backfillLegacyJellyfinUsers = async (settings: any): Promise<void> => {
 const migrateMultiMediaServers = async (
   settings: any
 ): Promise<AllSettings> => {
+  if (!Array.isArray(settings.migrations)) {
+    settings.migrations = [];
+  }
+
+  if (settings.migrations.includes('0009_multi_media_servers')) {
+    return settings;
+  }
+
   if (!Array.isArray(settings.plexServers)) {
     settings.plexServers = [];
   }
@@ -226,6 +234,8 @@ const migrateMultiMediaServers = async (
   );
 
   settings.main.mediaServerType = getPrimaryMediaServerType(settings);
+
+  settings.migrations.push('0009_multi_media_servers');
 
   return settings;
 };
