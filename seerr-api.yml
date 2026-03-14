@@ -572,7 +572,7 @@ components:
           readOnly: true
           items:
             $ref: '#/components/schemas/JellyfinLibrary'
-        serverID:
+        serverId:
           type: string
           readOnly: true
       required:
