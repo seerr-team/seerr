@@ -22,7 +22,7 @@ import * as Yup from 'yup';
 const messages = defineMessages('components.Settings', {
   jellyfinsettings: '{mediaServerName} Settings',
   jellyfinsettingsDescription:
-    'Configure the settings for your {mediaServerName} server. {mediaServerName} scans your {mediaServerName} libraries to see what content is available.',
+    'Configure the settings for your {mediaServerName} server. {mediaServerName} scans your {mediaServerName} libraries to see what content is available. You can also configure the internal and external endpoints for your {mediaServerName} server. In most cases, the external URL is different to the internal URL. A custom password reset URL can also be set for {mediaServerName} login, in case you would like to redirect to a different password reset page. You can also change the Jellyfin API key, which was automatically generated previously.',
   timeout: 'Timeout',
   save: 'Save Changes',
   saving: 'Saving…',
@@ -473,20 +473,6 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
           {intl.formatMessage(messages.scanbackground)}
         </div>
       )}
-      <div className="mb-6 mt-10">
-        <h3 className="heading">
-          {intl.formatMessage(
-            messages.jellyfinSettings,
-            mediaServerFormatValues
-          )}
-        </h3>
-        <p className="description">
-          {intl.formatMessage(
-            messages.jellyfinSettingsDescription,
-            mediaServerFormatValues
-          )}
-        </p>
-      </div>
       <Formik
         key={selectedServerId}
         initialValues={{
