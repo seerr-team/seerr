@@ -863,6 +863,7 @@ class AvailabilitySync {
 
         if (is4k) {
           const seasonsWith4kEpisodes: PlexMetadata[] = [];
+          let fetchFailed = false;
 
           for (const season of plexSeasons) {
             try {
@@ -879,8 +880,16 @@ class AvailabilitySync {
                 seasonsWith4kEpisodes.push(season);
               }
             } catch {
-              // If we can't fetch episodes for a season, continue checking other seasons
+              fetchFailed = true;
             }
+          }
+
+          if (
+            plexSeasons.length > 0 &&
+            seasonsWith4kEpisodes.length === 0 &&
+            fetchFailed
+          ) {
+            seasonsWith4kEpisodes.push(...plexSeasons);
           }
 
           this.plexSeasonsCache[cacheKey] = seasonsWith4kEpisodes;
@@ -935,25 +944,26 @@ class AvailabilitySync {
     // we will have to prevent the season check from happening
     if (media.mediaType === 'tv') {
       const seasonsMap: Map<number, boolean> = new Map();
+      const filteredSeasons = media.seasons.filter(
+        (season) =>
+          season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
+          season[is4k ? 'status4k' : 'status'] ===
+            MediaStatus.PARTIALLY_AVAILABLE
+      );
 
-      if (!preventSeasonSearch) {
-        const filteredSeasons = media.seasons.filter(
-          (season) =>
-            season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
-            season[is4k ? 'status4k' : 'status'] ===
-              MediaStatus.PARTIALLY_AVAILABLE
-        );
-
+      if (preventSeasonSearch) {
         for (const season of filteredSeasons) {
-          const seasonExists = await this.seasonExistsInPlex(
-            media,
-            season,
-            is4k
-          );
+          seasonsMap.set(season.seasonNumber, true);
+        }
 
-          if (seasonExists) {
-            seasonsMap.set(season.seasonNumber, true);
-          }
+        return { existsInPlex, seasonsMap };
+      }
+
+      for (const season of filteredSeasons) {
+        const seasonExists = await this.seasonExistsInPlex(media, season, is4k);
+
+        if (seasonExists) {
+          seasonsMap.set(season.seasonNumber, true);
         }
       }
 
@@ -1063,25 +1073,30 @@ class AvailabilitySync {
     // we will have to prevent the season check from happening
     if (media.mediaType === 'tv') {
       const seasonsMap: Map<number, boolean> = new Map();
+      const filteredSeasons = media.seasons.filter(
+        (season) =>
+          season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
+          season[is4k ? 'status4k' : 'status'] ===
+            MediaStatus.PARTIALLY_AVAILABLE
+      );
 
-      if (!preventSeasonSearch) {
-        const filteredSeasons = media.seasons.filter(
-          (season) =>
-            season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
-            season[is4k ? 'status4k' : 'status'] ===
-              MediaStatus.PARTIALLY_AVAILABLE
+      if (preventSeasonSearch) {
+        for (const season of filteredSeasons) {
+          seasonsMap.set(season.seasonNumber, true);
+        }
+
+        return { existsInJellyfin, seasonsMap };
+      }
+
+      for (const season of filteredSeasons) {
+        const seasonExists = await this.seasonExistsInJellyfin(
+          media,
+          season,
+          is4k
         );
 
-        for (const season of filteredSeasons) {
-          const seasonExists = await this.seasonExistsInJellyfin(
-            media,
-            season,
-            is4k
-          );
-
-          if (seasonExists) {
-            seasonsMap.set(season.seasonNumber, true);
-          }
+        if (seasonExists) {
+          seasonsMap.set(season.seasonNumber, true);
         }
       }
 
