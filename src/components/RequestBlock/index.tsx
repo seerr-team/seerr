@@ -288,7 +288,7 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
             <div className="mb-1 mt-4 text-sm">
               {intl.formatMessage(messages.requestoverrides)}
             </div>
-            <ul className="divide-y divide-gray-700 rounded-md bg-gray-800 px-2 text-xs">
+            <ul className={`divide-y divide-border-default border border-border-default rounded-md px-2 text-xs`}>
               {server && (
                 <li className="flex justify-between px-1 py-2">
                   <span className="font-bold">

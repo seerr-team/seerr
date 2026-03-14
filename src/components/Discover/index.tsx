@@ -1,4 +1,5 @@
 import Button from '@app/components/Common/Button';
+import HeroSlider from '@app/components/Discover/HeroSlider';
 import ConfirmButton from '@app/components/Common/ConfirmButton';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
@@ -15,6 +16,7 @@ import StudioSlider from '@app/components/Discover/StudioSlider';
 import TvGenreSlider from '@app/components/Discover/TvGenreSlider';
 import MediaSlider from '@app/components/MediaSlider';
 import { encodeURIExtraParams } from '@app/hooks/useDiscover';
+import useTheme from '@app/hooks/useTheme';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -54,6 +56,7 @@ const messages = defineMessages('components.Discover', {
 
 const Discover = () => {
   const intl = useIntl();
+  const { theme } = useTheme();
   const { hasPermission } = useUser();
   const { addToast } = useToasts();
   const {
@@ -123,6 +126,7 @@ const Discover = () => {
   return (
     <>
       <PageTitle title={intl.formatMessage(messages.discover)} />
+      {theme === 'amoled-strix' && <HeroSlider />}
       {hasPermission(Permission.ADMIN) && (
         <>
           {isEditing && (

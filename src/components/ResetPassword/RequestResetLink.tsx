@@ -39,7 +39,7 @@ const ResetPassword = () => {
   });
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-gray-900 py-14">
+    <div className="relative flex min-h-screen flex-col py-14 bg-app">
       <PageTitle title={intl.formatMessage(messages.passwordreset)} />
       <ImageFader
         forceOptimize
@@ -65,7 +65,7 @@ const ResetPassword = () => {
       </div>
       <div className="relative z-50 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div
-          className="bg-gray-800/50 shadow sm:rounded-lg"
+          className="shadow sm:rounded-lg bg-surface/80 ring-1 ring-ring-app/10"
           style={{ backdropFilter: 'blur(5px)' }}
         >
           <div className="px-10 py-8">

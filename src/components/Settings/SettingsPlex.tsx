@@ -513,7 +513,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                 </label>
                 <div className="form-input-area">
                   <div className="form-input-field">
-                    <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-gray-100 sm:text-sm">
+                    <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 px-3 text-gray-100 sm:text-sm border-border-default bg-input">
                       {values.useSsl ? 'https://' : 'http://'}
                     </span>
                     <Field
@@ -664,7 +664,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
         </p>
       </div>
       <div className="section">
-        <div className="rounded-md bg-gray-800 p-4">
+        <div className="rounded-md bg-surface p-4">
           <div className="relative mb-6 h-8 w-full overflow-hidden rounded-full bg-gray-600">
             {dataSync?.running && (
               <div
@@ -801,7 +801,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                     </label>
                     <div className="form-input-area">
                       <div className="form-input-field">
-                        <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-gray-100 sm:text-sm">
+                        <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 px-3 text-gray-100 sm:text-sm border-border-default bg-input">
                           {values.tautulliUseSsl ? 'https://' : 'http://'}
                         </span>
                         <Field

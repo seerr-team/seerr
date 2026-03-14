@@ -10,7 +10,7 @@ import {
 } from 'react';
 
 interface DropdownItemProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
-  buttonType?: 'primary' | 'ghost';
+  buttonType?: 'primary' | 'ghost' | 'glass';
 }
 
 const DropdownItem = ({
@@ -25,7 +25,9 @@ const DropdownItem = ({
           'button-md flex cursor-pointer items-center rounded px-4 py-2 text-sm leading-5 text-white focus:text-white focus:outline-none',
           buttonType === 'ghost'
             ? 'bg-transparent from-indigo-600 to-purple-600 hover:bg-gradient-to-br focus:border-gray-500'
-            : 'bg-indigo-600 hover:bg-indigo-500 focus:border-indigo-700',
+            : buttonType === 'glass'
+              ? 'bg-black/70 hover:bg-black/80 backdrop-blur-md ring-1 ring-white/[0.12]'
+              : 'bg-indigo-600 hover:bg-indigo-500 focus:border-indigo-700',
         ].join(' ')}
         {...props}
       >
@@ -36,7 +38,7 @@ const DropdownItem = ({
 };
 
 type DropdownItemsProps = HTMLAttributes<HTMLDivElement> & {
-  dropdownType: 'primary' | 'ghost';
+  dropdownType: 'primary' | 'ghost' | 'glass';
 };
 
 const DropdownItems = ({
@@ -59,7 +61,9 @@ const DropdownItems = ({
         className={[
           'absolute right-0 z-40 -mr-1 mt-2 w-56 origin-top-right rounded-md p-1 shadow-lg',
           dropdownType === 'ghost'
-            ? 'border border-gray-700 bg-gray-800/80 backdrop-blur'
+            ? 'border border-gray-700 bg-surface-raised/90 backdrop-blur'
+            : dropdownType === 'glass'
+              ? 'border border-white/[0.12] bg-black/80 backdrop-blur-md'
             : 'bg-indigo-600',
           className,
         ].join(' ')}
@@ -74,7 +78,7 @@ const DropdownItems = ({
 interface DropdownProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   text: React.ReactNode;
   dropdownIcon?: React.ReactNode;
-  buttonType?: 'primary' | 'ghost';
+  buttonType?: 'primary' | 'ghost' | 'glass';
 }
 
 const Dropdown = ({
@@ -95,6 +99,8 @@ const Dropdown = ({
           'button-md inline-flex h-full items-center space-x-2 rounded-md border px-4 py-2 text-sm font-medium leading-5 text-white transition duration-150 ease-in-out hover:z-20 focus:z-20 focus:outline-none',
           buttonType === 'ghost'
             ? 'border-gray-600 bg-transparent hover:border-gray-200 focus:border-gray-100 active:border-gray-100'
+            : buttonType === 'glass'
+              ? 'border-white/[0.12] bg-black/50 text-white/70 backdrop-blur-md hover:text-white active:text-white'
             : `focus:ring-blue border-indigo-500 bg-indigo-600/80 hover:border-indigo-500 hover:bg-indigo-600 active:border-indigo-700 active:bg-indigo-700`,
           className,
         ].join(' ')}

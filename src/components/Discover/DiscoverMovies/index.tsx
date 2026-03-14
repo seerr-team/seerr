@@ -16,7 +16,7 @@ import { BarsArrowDownIcon, FunnelIcon } from '@heroicons/react/24/solid';
 import type { SortOptions as TMDBSortOptions } from '@server/api/themoviedb';
 import type { MovieResult } from '@server/models/Search';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.Discover.DiscoverMovies', {
@@ -64,6 +64,17 @@ const DiscoverMovies = () => {
     preparedFilters
   );
   const [showFilters, setShowFilters] = useState(false);
+  const [backdropPath, setBackdropPath] = useState<string | null>(null);
+  const pickedRef = useRef(false);
+
+  useEffect(() => {
+    if (pickedRef.current || !titles?.length) return;
+    const withBackdrop = titles.filter((t) => (t as MovieResult).backdropPath);
+    if (!withBackdrop.length) return;
+    const pick = withBackdrop[Math.floor(Math.random() * withBackdrop.length)] as MovieResult;
+    setBackdropPath(pick.backdropPath ?? null);
+    pickedRef.current = true;
+  }, [titles]);
 
   if (error) {
     return <ErrorPage statusCode={500} />;
@@ -74,8 +85,29 @@ const DiscoverMovies = () => {
   return (
     <>
       <PageTitle title={title} />
+      {backdropPath && (
+        <div className="discover-movies-amoled-backdrop pointer-events-none fixed inset-x-0 top-0 h-[52vh] overflow-hidden" style={{ zIndex: 0 }}>
+          <img
+            src={`https://image.tmdb.org/t/p/w1280${backdropPath}`}
+            alt=""
+            className="h-full w-full object-cover object-top"
+            style={{ filter: 'blur(3px)', transform: 'scale(1.04)' }}
+          />
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0.92) 70%, #000 100%)',
+            }}
+          />
+        </div>
+      )}
+      <div className="discover-movies-content-wrapper">
       <div className="mb-4 flex flex-col justify-between lg:flex-row lg:items-end">
-        <Header>{title}</Header>
+        <h1 className="discover-movies-amoled-heading mt-5 text-4xl font-bold tracking-tight text-blue-300">{title}</h1>
+        <div className="discover-movies-standard-heading">
+          <Header>{title}</Header>
+        </div>
         <div className="mt-2 flex flex-grow flex-col sm:flex-row lg:flex-grow-0">
           <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
             <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-gray-100 sm:text-sm">
@@ -141,6 +173,7 @@ const DiscoverMovies = () => {
         isReachingEnd={isReachingEnd}
         onScrollBottom={fetchMore}
       />
+      </div>
     </>
   );
 };

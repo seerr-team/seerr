@@ -547,7 +547,7 @@ const UserList = () => {
             </Button>
           </div>
           <div className="mb-2 flex flex-grow lg:mb-0 lg:flex-grow-0">
-            <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
+            <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-border-default bg-input px-3 text-sm text-gray-100">
               <BarsArrowDownIcon className="h-6 w-6" />
             </span>
             <select

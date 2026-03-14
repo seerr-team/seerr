@@ -325,7 +325,7 @@ const AdvancedRequester = ({
                   value={selectedServer}
                   onChange={(e) => setSelectedServer(Number(e.target.value))}
                   onBlur={(e) => setSelectedServer(Number(e.target.value))}
-                  className="border-gray-700 bg-gray-800"
+                  className="border-border-default bg-input"
                 >
                   {data
                     .filter((server) => server.is4k === is4k)
@@ -357,7 +357,7 @@ const AdvancedRequester = ({
                   value={selectedProfile}
                   onChange={(e) => setSelectedProfile(Number(e.target.value))}
                   onBlur={(e) => setSelectedProfile(Number(e.target.value))}
-                  className="border-gray-700 bg-gray-800"
+                  className="border-border-default bg-input"
                   disabled={isValidating || !serverData}
                 >
                   {(isValidating || !serverData) && (
@@ -401,7 +401,7 @@ const AdvancedRequester = ({
                   value={selectedFolder}
                   onChange={(e) => setSelectedFolder(e.target.value)}
                   onBlur={(e) => setSelectedFolder(e.target.value)}
-                  className="border-gray-700 bg-gray-800"
+                  className="border-border-default bg-input"
                   disabled={isValidating || !serverData}
                 >
                   {(isValidating || !serverData) && (
@@ -459,7 +459,7 @@ const AdvancedRequester = ({
                     onBlur={(e) =>
                       setSelectedLanguage(parseInt(e.target.value))
                     }
-                    className="border-gray-700 bg-gray-800"
+                    className="border-border-default bg-input"
                     disabled={isValidating || !serverData}
                   >
                     {(isValidating || !serverData) && (
@@ -559,7 +559,7 @@ const AdvancedRequester = ({
                   </Listbox.Label>
                   <div className="relative">
                     <span className="inline-block w-full rounded-md shadow-sm">
-                      <Listbox.Button className="focus:shadow-outline-blue relative w-full cursor-default rounded-md border border-gray-700 bg-gray-800 py-2 pl-3 pr-10 text-left text-white transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none sm:text-sm sm:leading-5">
+                      <Listbox.Button className="focus:shadow-outline-blue relative w-full cursor-default rounded-md border border-border-default bg-input py-2 pl-3 pr-10 text-left text-white transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none sm:text-sm sm:leading-5">
                         <span className="flex items-center">
                           <CachedImage
                             type="avatar"
@@ -593,7 +593,7 @@ const AdvancedRequester = ({
                       leave="transition-opacity ease-in duration-100"
                       leaveFrom="opacity-100"
                       leaveTo="opacity-0"
-                      className="mt-1 w-full rounded-md border border-gray-700 bg-gray-800 shadow-lg"
+                      className="mt-1 w-full rounded-md border border-border-default bg-surface-raised shadow-lg"
                     >
                       <Listbox.Options
                         static

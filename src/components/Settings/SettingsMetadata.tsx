@@ -277,7 +277,7 @@ const SettingsMetadata = () => {
         </p>
       </div>
 
-      <div className="mb-6 rounded-lg bg-gray-800 p-4">
+      <div className="mb-6 p-4 rounded-lg bg-surface ring-1 ring-ring-app/10">
         <h4 className="mb-3 text-lg font-medium">
           {intl.formatMessage(messages.providerStatus)}
         </h4>

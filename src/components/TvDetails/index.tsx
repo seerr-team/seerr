@@ -82,6 +82,10 @@ const messages = defineMessages('components.TvDetails', {
   anime: 'Anime',
   network: '{networkCount, plural, one {Network} other {Networks}}',
   viewfullcrew: 'View Full Crew',
+  crew: 'Crew',
+  keywords: 'Keywords',
+  ratings: 'Ratings',
+  details: 'Details',
   play: 'Play on {mediaServerName}',
   play4k: 'Play 4K on {mediaServerName}',
   seasons: '{seasonCount, plural, one {# Season} other {# Seasons}}',
@@ -462,8 +466,9 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   });
 
   return (
+    <>
     <div
-      className="media-page"
+      className="tv-details-backdrop-section media-page"
       style={{
         height: 493,
       }}
@@ -478,13 +483,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
             fill
             priority
           />
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage:
-                'linear-gradient(180deg, rgba(17, 24, 39, 0.47) 0%, rgba(17, 24, 39, 1) 100%)',
-            }}
-          />
+          <div className="absolute inset-0 bg-gradient-to-b from-gray-900/50 to-gray-900" />
         </div>
       )}
       <PageTitle title={data.name} />
@@ -1362,6 +1361,891 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
       />
       <div className="extra-bottom-space relative" />
     </div>
+    ) : (
+    /* ── AMOLED full-bleed layout ── */
+    <div className="relative bg-black">
+      <PageTitle title={data.name} />
+      <BlocklistModal
+        tmdbId={data.id}
+        type="tv"
+        show={showBlocklistModal}
+        onCancel={closeBlocklistModal}
+        onComplete={onClickHideItemBtn}
+        isUpdating={isBlocklistUpdating}
+      />
+      <IssueModal
+        onCancel={() => setShowIssueModal(false)}
+        show={showIssueModal}
+        mediaType="tv"
+        tmdbId={data.id}
+      />
+      <RequestModal
+        tmdbId={data.id}
+        show={showRequestModal}
+        type="tv"
+        onComplete={() => {
+          revalidate();
+          setShowRequestModal(false);
+        }}
+        onCancel={() => setShowRequestModal(false)}
+      />
+      <ManageSlideOver
+        data={data}
+        mediaType="tv"
+        onClose={() => {
+          setShowManager(false);
+          router.push({
+            pathname: router.pathname,
+            query: { tvId: router.query.tvId },
+          });
+        }}
+        revalidate={() => revalidate()}
+        show={showManager}
+      />
+
+      {/* Hero — cinematic full-bleed */}
+      <div className="relative -mx-4 -mt-16 min-h-[100svh] sm:h-[82vh] sm:min-h-[520px] overflow-visible sm:overflow-hidden">
+        <CachedImage
+          type="tmdb"
+          alt=""
+          src={
+            data.backdropPath
+              ? `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data.backdropPath}`
+              : data.posterPath
+                ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.posterPath}`
+                : '/images/seerr_poster_not_found.png'
+          }
+          fill
+          style={{
+            objectFit: 'cover',
+            objectPosition: data.backdropPath ? 'center top' : 'center center',
+          }}
+          priority
+        />
+        <div className="absolute inset-0 bg-black/25" />
+        {/* Mobile: blur + black overlay from middle to bottom */}
+        <div
+          className="absolute inset-0 sm:hidden"
+          style={{
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            background: 'rgba(0,0,0,0.55)',
+            maskImage: 'linear-gradient(to bottom, transparent 0%, black 50%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 50%)',
+          }}
+        />
+        {/* Desktop top vignette */}
+        <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-black/70 to-transparent hidden sm:block" />
+        <div
+          className="absolute inset-x-0 bottom-0"
+          style={{
+            height: '65%',
+            background:
+              'linear-gradient(to top, #000 0%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0.4) 70%, transparent 100%)',
+          }}
+        />
+
+        {/* Poster + title + actions */}
+        <div className="absolute inset-0 flex flex-col justify-center gap-3 px-4 pt-28 sm:inset-auto sm:bottom-0 sm:left-0 sm:right-0 sm:flex-row sm:items-end sm:gap-5 sm:pb-8 sm:pt-0 sm:px-6 lg:px-8">
+          <div className="w-2/5 flex-shrink-0 overflow-hidden rounded-xl ring-1 ring-white/15 shadow-2xl mt-[50px] sm:mt-0 sm:w-32 lg:w-36">
+            <CachedImage
+              type="tmdb"
+              src={
+                data.posterPath
+                  ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.posterPath}`
+                  : '/images/seerr_poster_not_found.png'
+              }
+              alt=""
+              width={600}
+              height={900}
+              style={{ width: '100%', height: 'auto' }}
+              priority
+            />
+          </div>
+          <div className="flex-1 min-w-0 pb-1">
+            <div className="flex flex-wrap gap-2 mb-3">
+              <StatusBadge
+                status={data.mediaInfo?.status}
+                downloadItem={data.mediaInfo?.downloadStatus}
+                title={data.name}
+                inProgress={(data.mediaInfo?.downloadStatus ?? []).length > 0}
+                tmdbId={data.mediaInfo?.tmdbId}
+                mediaType="tv"
+                plexUrl={plexUrl}
+                serviceUrl={data.mediaInfo?.serviceUrl}
+              />
+              {settings.currentSettings.series4kEnabled &&
+                hasPermission(
+                  [
+                    Permission.MANAGE_REQUESTS,
+                    Permission.REQUEST_4K,
+                    Permission.REQUEST_4K_TV,
+                  ],
+                  { type: 'or' }
+                ) && (
+                  <StatusBadge
+                    status={data.mediaInfo?.status4k}
+                    downloadItem={data.mediaInfo?.downloadStatus4k}
+                    title={data.name}
+                    is4k
+                    inProgress={
+                      (data.mediaInfo?.downloadStatus4k ?? []).length > 0
+                    }
+                    tmdbId={data.mediaInfo?.tmdbId}
+                    mediaType="tv"
+                    plexUrl={plexUrl4k}
+                    serviceUrl={data.mediaInfo?.serviceUrl4k}
+                  />
+                )}
+            </div>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight leading-tight mb-2" data-testid="media-title">
+              {data.name}
+              {data.firstAirDate && (
+                <span className="ml-3 text-2xl sm:text-3xl font-normal text-white/40">
+                  ({data.firstAirDate.slice(0, 4)})
+                </span>
+              )}
+            </h1>
+            {seriesAttributes.length > 0 && (
+              <div className="flex items-center flex-wrap text-sm text-white/60 mb-5">
+                {seriesAttributes
+                  .map((t, k) => <span key={k}>{t}</span>)
+                  .reduce((prev, curr) => (
+                    <>
+                      {prev}
+                      <span className="mx-2 text-white/20">|</span>
+                      {curr}
+                    </>
+                  ))}
+              </div>
+            )}
+            <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+              {showHideButton &&
+                data?.mediaInfo?.status !== MediaStatus.PROCESSING &&
+                data?.mediaInfo?.status !== MediaStatus.AVAILABLE &&
+                data?.mediaInfo?.status !== MediaStatus.PARTIALLY_AVAILABLE &&
+                data?.mediaInfo?.status !== MediaStatus.PENDING &&
+                data?.mediaInfo?.status !== MediaStatus.BLOCKLISTED && (
+                  <Tooltip content={intl.formatMessage(globalMessages.addToBlocklist)}>
+                    <button
+                      onClick={() => setShowBlocklistModal(true)}
+                      className="z-40 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/[0.12] text-white/70 hover:text-white transition"
+                    >
+                      <EyeSlashIcon className="h-5 w-5" />
+                    </button>
+                  </Tooltip>
+                )}
+              {data?.mediaInfo?.status !== MediaStatus.BLOCKLISTED &&
+                user?.userType !== UserType.PLEX && (
+                  <>
+                    {toggleWatchlist ? (
+                      <Tooltip content={intl.formatMessage(messages.addtowatchlist)}>
+                        <button
+                          onClick={onClickWatchlistBtn}
+                          className="z-40 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/[0.12] text-white/70 hover:text-white transition"
+                        >
+                          {isUpdating ? <Spinner className="h-5 w-5" /> : <StarIcon className="h-5 w-5 text-amber-300" />}
+                        </button>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip content={intl.formatMessage(messages.removefromwatchlist)}>
+                        <button
+                          onClick={onClickDeleteWatchlistBtn}
+                          className="z-40 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/[0.12] text-white/70 hover:text-white transition"
+                        >
+                          {isUpdating ? <Spinner className="h-5 w-5" /> : <MinusCircleIcon className="h-5 w-5" />}
+                        </button>
+                      </Tooltip>
+                    )}
+                  </>
+                )}
+              <div className="z-20">
+                <PlayButton links={mediaLinks} />
+              </div>
+              <RequestButton
+                mediaType="tv"
+                onUpdate={() => revalidate()}
+                tmdbId={data?.id}
+                media={data?.mediaInfo}
+                isShowComplete={isComplete}
+                is4kShowComplete={is4kComplete}
+              />
+              {(data.mediaInfo?.status === MediaStatus.AVAILABLE ||
+                data.mediaInfo?.status === MediaStatus.PARTIALLY_AVAILABLE ||
+                (settings.currentSettings.series4kEnabled &&
+                  hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_TV], {
+                    type: 'or',
+                  }) &&
+                  (data.mediaInfo?.status4k === MediaStatus.AVAILABLE ||
+                    data?.mediaInfo?.status4k === MediaStatus.PARTIALLY_AVAILABLE))) &&
+                hasPermission(
+                  [Permission.CREATE_ISSUES, Permission.MANAGE_ISSUES],
+                  { type: 'or' }
+                ) && (
+                  <Tooltip content={intl.formatMessage(messages.reportissue)}>
+                    <button
+                      onClick={() => setShowIssueModal(true)}
+                      className="z-40 relative flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/[0.12] text-white/70 hover:text-white transition"
+                    >
+                      <ExclamationTriangleIcon className="h-5 w-5" />
+                      {(data.mediaInfo?.issues.filter((issue) => issue.status === IssueStatus.OPEN) ?? []).length > 0 && (
+                        <>
+                          <div className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-red-600" />
+                          <div className="absolute -right-1 -top-1 h-3 w-3 animate-ping rounded-full bg-red-600" />
+                        </>
+                      )}
+                    </button>
+                  </Tooltip>
+                )}
+              {hasPermission(Permission.MANAGE_REQUESTS) && data.mediaInfo && (
+                <Tooltip content={intl.formatMessage(messages.manageseries)}>
+                  <button
+                    onClick={() => setShowManager(true)}
+                    className="z-40 relative flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/[0.12] text-white/70 hover:text-white transition"
+                  >
+                    <CogIcon className="h-5 w-5" />
+                    {hasPermission(
+                      [Permission.MANAGE_ISSUES, Permission.VIEW_ISSUES],
+                      { type: 'or' }
+                    ) &&
+                      (
+                        data.mediaInfo?.issues.filter(
+                          (issue) => issue.status === IssueStatus.OPEN
+                        ) ?? []
+                      ).length > 0 && (
+                        <>
+                          <div className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-red-600" />
+                          <div className="absolute -right-1 -top-1 h-3 w-3 animate-ping rounded-full bg-red-600" />
+                        </>
+                      )}
+                  </button>
+                </Tooltip>
+              )}
+            </div>
+            {/* Overview — mobile only, shown in hero */}
+            <div className="sm:hidden mt-4">
+              <div className="flex items-center gap-2 mb-1.5">
+                <p className="text-xs font-semibold uppercase tracking-wider text-white/40">
+                  {intl.formatMessage(messages.overview)}
+                </p>
+                {data.tagline && (
+                  <>
+                    <span className="text-white/20">|</span>
+                    <p className="text-violet-400/80 text-xs font-medium italic truncate">{data.tagline}</p>
+                  </>
+                )}
+              </div>
+              <p className="text-xs leading-relaxed text-white/60">
+                {data.overview || intl.formatMessage(messages.overviewunavailable)}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="absolute absolute-bottom-shift inset-x-0 flex justify-center animate-bounce opacity-30 pointer-events-none">
+          <ChevronDownIcon className="h-5 w-5 text-white" />
+        </div>
+      </div>
+
+      {/* Content sections */}
+      <div className="divide-y divide-white/[0.06] pt-6 pb-8">
+        {/* Overview + crew + keywords */}
+        <div className="py-6">
+          <div className="hidden sm:flex items-center gap-2 mb-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-white/40">
+              {intl.formatMessage(messages.overview)}
+            </h2>
+            {data.tagline && (
+              <>
+                <span className="text-white/20">|</span>
+                <p className="text-violet-400/80 text-sm font-medium italic">
+                  {data.tagline}
+                </p>
+              </>
+            )}
+          </div>
+          <p className="hidden sm:block text-white/70 text-sm leading-relaxed">
+            {data.overview || intl.formatMessage(messages.overviewunavailable)}
+          </p>
+          {sortedCrew.length > 0 && (
+            <div className="relative -mt-[50px] pt-6 sm:mt-3">
+              <div className="absolute inset-x-0 top-0 border-t border-white/[0.12]" />
+              <div className="relative">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-white/30">{intl.formatMessage(messages.crew)}</h3>
+                  <Link
+                    href={`/tv/${data.id}/crew`}
+                    className="flex items-center gap-1 text-xs text-violet-400/70 hover:text-violet-300 transition-colors"
+                  >
+                    {intl.formatMessage(messages.viewfullcrew)}
+                    <ArrowRightCircleIcon className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3">
+                  {(data.createdBy.length > 0
+                    ? [
+                        ...data.createdBy.map(
+                          (person): Partial<Crew> => ({
+                            id: person.id,
+                            job: 'Creator',
+                            name: person.name,
+                          })
+                        ),
+                        ...sortedCrew,
+                      ]
+                    : sortedCrew
+                  )
+                    .slice(0, 6)
+                    .map((person) => (
+                      <div key={`crew-${person.job}-${person.id}`}>
+                        <div className="text-[11px] text-white/35 mb-0.5 uppercase tracking-wide">{person.job}</div>
+                        <Link href={`/person/${person.id}`} className="text-sm text-white/80 hover:text-violet-300 transition-colors">
+                          {person.name}
+                        </Link>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          )}
+          {data.keywords.length > 0 && (
+            <div className="mt-5">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/30 mb-2.5">{intl.formatMessage(messages.keywords)}</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {data.keywords.slice(0, 8).map((keyword) => (
+                  <Link
+                    href={`/discover/tv?keywords=${keyword.id}`}
+                    key={`keyword-id-${keyword.id}`}
+                    className="rounded-full px-2.5 py-0.5 text-xs text-white/50 ring-1 ring-white/10 hover:text-white/80 hover:ring-white/25 transition-colors"
+                  >
+                    {keyword.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Ratings + Facts */}
+        <div className="py-6 grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8">
+          {(!!data.voteCount ||
+            (ratingData?.criticsRating && !!ratingData?.criticsScore) ||
+            (ratingData?.audienceRating && !!ratingData?.audienceScore)) && (
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-4">{intl.formatMessage(messages.ratings)}</h2>
+              <div className="flex flex-wrap gap-5">
+                {ratingData?.criticsRating && !!ratingData?.criticsScore && (
+                  <Tooltip content={intl.formatMessage(messages.rtcriticsscore)}>
+                    <a
+                      href={ratingData.url}
+                      className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {ratingData.criticsRating === 'Rotten' ? <RTRotten className="w-6" /> : <RTFresh className="w-6" />}
+                      <span>{ratingData.criticsScore}%</span>
+                    </a>
+                  </Tooltip>
+                )}
+                {ratingData?.audienceRating && !!ratingData?.audienceScore && (
+                  <Tooltip content={intl.formatMessage(messages.rtaudiencescore)}>
+                    <a
+                      href={ratingData.url}
+                      className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {ratingData.audienceRating === 'Spilled' ? <RTAudRotten className="w-6" /> : <RTAudFresh className="w-6" />}
+                      <span>{ratingData.audienceScore}%</span>
+                    </a>
+                  </Tooltip>
+                )}
+                {!!data.voteCount && (
+                  <Tooltip content={intl.formatMessage(messages.tmdbuserscore)}>
+                    <a
+                      href={`https://www.themoviedb.org/tv/${data.id}?language=${locale}`}
+                      className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <TmdbLogo className="mr-1 w-6" />
+                      <span>{Math.round(data.voteAverage * 10)}%</span>
+                    </a>
+                  </Tooltip>
+                )}
+              </div>
+            </div>
+          )}
+          <div>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-4">{intl.formatMessage(messages.details)}</h2>
+            <dl className="space-y-2.5">
+              {data.originalName && data.originalLanguage !== locale.slice(0, 2) && (
+                <div className="flex justify-between text-sm">
+                  <dt className="text-white/40">{intl.formatMessage(messages.originaltitle)}</dt>
+                  <dd className="text-white/80 text-right ml-4">{data.originalName}</dd>
+                </div>
+              )}
+              {data.keywords.some((keyword) => keyword.id === ANIME_KEYWORD_ID) && (
+                <div className="flex justify-between text-sm">
+                  <dt className="text-white/40">{intl.formatMessage(messages.showtype)}</dt>
+                  <dd className="text-white/80">{intl.formatMessage(messages.anime)}</dd>
+                </div>
+              )}
+              <div className="flex justify-between text-sm">
+                <dt className="text-white/40">{intl.formatMessage(globalMessages.status)}</dt>
+                <dd className="text-white/80">{data.status}</dd>
+              </div>
+              {data.firstAirDate && (
+                <div className="flex justify-between text-sm">
+                  <dt className="text-white/40">{intl.formatMessage(messages.firstAirDate)}</dt>
+                  <dd className="text-white/80">
+                    {intl.formatDate(data.firstAirDate, {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      timeZone: 'UTC',
+                    })}
+                  </dd>
+                </div>
+              )}
+              {data.nextEpisodeToAir &&
+                data.nextEpisodeToAir.airDate &&
+                data.nextEpisodeToAir.airDate !== data.firstAirDate && (
+                  <div className="flex justify-between text-sm">
+                    <dt className="text-white/40">{intl.formatMessage(messages.nextAirDate)}</dt>
+                    <dd className="text-white/80">
+                      {intl.formatDate(data.nextEpisodeToAir.airDate, {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        timeZone: 'UTC',
+                      })}
+                    </dd>
+                  </div>
+                )}
+              {data.episodeRunTime.length > 0 && (
+                <div className="flex justify-between text-sm">
+                  <dt className="text-white/40">{intl.formatMessage(messages.episodeRuntime)}</dt>
+                  <dd className="text-white/80">
+                    {intl.formatMessage(messages.episodeRuntimeMinutes, {
+                      runtime: data.episodeRunTime[0],
+                    })}
+                  </dd>
+                </div>
+              )}
+              {data.originalLanguage && (
+                <div className="flex justify-between text-sm">
+                  <dt className="text-white/40">{intl.formatMessage(messages.originallanguage)}</dt>
+                  <dd className="text-white/80">
+                    <Link href={`/discover/tv/language/${data.originalLanguage}`} className="hover:text-violet-300 transition-colors">
+                      {intl.formatDisplayName(data.originalLanguage, {
+                        type: 'language',
+                        fallback: 'none',
+                      }) ??
+                        data.spokenLanguages.find(
+                          (lng) => lng.iso_639_1 === data.originalLanguage
+                        )?.name}
+                    </Link>
+                  </dd>
+                </div>
+              )}
+              {data.productionCountries.length > 0 && (
+                <div className="flex justify-between text-sm">
+                  <dt className="text-white/40">
+                    {intl.formatMessage(messages.productioncountries, {
+                      countryCount: data.productionCountries.length,
+                    })}
+                  </dt>
+                  <dd className="text-white/80 text-right">
+                    {data.productionCountries.map((c) => (
+                      <span className="flex items-center justify-end" key={`prodcountry-${c.iso_3166_1}`}>
+                        {countries.includes(c.iso_3166_1) && (
+                          <span className={`mr-1.5 text-xs leading-5 flag:${c.iso_3166_1}`} />
+                        )}
+                        <span>
+                          {intl.formatDisplayName(c.iso_3166_1, {
+                            type: 'region',
+                            fallback: 'none',
+                          }) ?? c.name}
+                        </span>
+                      </span>
+                    ))}
+                  </dd>
+                </div>
+              )}
+              {data.networks.length > 0 && (
+                <div className="flex justify-between text-sm">
+                  <dt className="text-white/40">
+                    {intl.formatMessage(messages.network, {
+                      networkCount: data.networks.length,
+                    })}
+                  </dt>
+                  <dd className="text-white/80 text-right">
+                    {data.networks
+                      .map((n) => (
+                        <Link
+                          href={`/discover/tv/network/${n.id}`}
+                          key={`network-${n.id}`}
+                          className="block hover:text-violet-300 transition-colors"
+                        >
+                          {n.name}
+                        </Link>
+                      ))}
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        </div>
+
+        {/* Seasons */}
+        <div className="py-6">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-4">
+            {intl.formatMessage(messages.seasonstitle)}
+          </h2>
+          <div className="flex w-full flex-col space-y-2">
+            {data.seasons
+              .slice()
+              .reverse()
+              .filter(
+                (season) =>
+                  settings.currentSettings.enableSpecialEpisodes ||
+                  season.seasonNumber !== 0
+              )
+              .map((season) => {
+                const show4k =
+                  settings.currentSettings.series4kEnabled &&
+                  hasPermission(
+                    [
+                      Permission.MANAGE_REQUESTS,
+                      Permission.REQUEST_4K,
+                      Permission.REQUEST_4K_TV,
+                    ],
+                    { type: 'or' }
+                  );
+                const mSeason = (data.mediaInfo?.seasons ?? []).find(
+                  (s) =>
+                    season.seasonNumber === s.seasonNumber &&
+                    s.status !== MediaStatus.UNKNOWN
+                );
+                const mSeason4k = (data.mediaInfo?.seasons ?? []).find(
+                  (s) =>
+                    season.seasonNumber === s.seasonNumber &&
+                    s.status4k !== MediaStatus.UNKNOWN
+                );
+                const request = (data.mediaInfo?.requests ?? [])
+                  .filter(
+                    (r) =>
+                      !!r.seasons.find(
+                        (s) => s.seasonNumber === season.seasonNumber
+                      ) && !r.is4k
+                  )
+                  .sort(
+                    (a, b) =>
+                      new Date(b.createdAt).getTime() -
+                      new Date(a.createdAt).getTime()
+                  )[0];
+                const request4k = (data.mediaInfo?.requests ?? [])
+                  .filter(
+                    (r) =>
+                      !!r.seasons.find(
+                        (s) => s.seasonNumber === season.seasonNumber
+                      ) && r.is4k
+                  )
+                  .sort(
+                    (a, b) =>
+                      new Date(b.createdAt).getTime() -
+                      new Date(a.createdAt).getTime()
+                  )[0];
+
+                if (season.episodeCount === 0) {
+                  return null;
+                }
+
+                return (
+                  <Disclosure key={`season-discoslure-${season.seasonNumber}`}>
+                    {({ open }) => (
+                      <>
+                        <Disclosure.Button
+                          className={`mt-2 flex w-full items-center justify-between space-x-2 border-gray-700 bg-gray-800 px-4 py-2 text-gray-200 ${
+                            open
+                              ? 'rounded-t-md border-l border-r border-t'
+                              : 'rounded-md border'
+                          }`}
+                        >
+                          <div className="flex flex-1 items-center space-x-2 text-lg">
+                            <span>
+                              {season.seasonNumber === 0
+                                ? intl.formatMessage(globalMessages.specials)
+                                : intl.formatMessage(messages.seasonnumber, {
+                                    seasonNumber: season.seasonNumber,
+                                  })}
+                            </span>
+                            <Badge badgeType="dark">
+                              {intl.formatMessage(messages.episodeCount, {
+                                episodeCount: season.episodeCount,
+                              })}
+                            </Badge>
+                          </div>
+                          {((!mSeason &&
+                            request?.status === MediaRequestStatus.APPROVED) ||
+                            mSeason?.status === MediaStatus.PROCESSING ||
+                            (request?.status === MediaRequestStatus.APPROVED &&
+                              mSeason?.status === MediaStatus.DELETED)) && (
+                            <>
+                              <div className="hidden md:flex">
+                                <Badge badgeType="primary">
+                                  {intl.formatMessage(globalMessages.requested)}
+                                </Badge>
+                              </div>
+                              <div className="flex md:hidden">
+                                <StatusBadgeMini status={MediaStatus.PROCESSING} />
+                              </div>
+                            </>
+                          )}
+                          {((!mSeason &&
+                            request?.status === MediaRequestStatus.PENDING) ||
+                            mSeason?.status === MediaStatus.PENDING) && (
+                            <>
+                              <div className="hidden md:flex">
+                                <Badge badgeType="warning">
+                                  {intl.formatMessage(globalMessages.pending)}
+                                </Badge>
+                              </div>
+                              <div className="flex md:hidden">
+                                <StatusBadgeMini status={MediaStatus.PENDING} />
+                              </div>
+                            </>
+                          )}
+                          {mSeason?.status === MediaStatus.PARTIALLY_AVAILABLE && (
+                            <>
+                              <div className="hidden md:flex">
+                                <Badge badgeType="success">
+                                  {intl.formatMessage(globalMessages.partiallyavailable)}
+                                </Badge>
+                              </div>
+                              <div className="flex md:hidden">
+                                <StatusBadgeMini status={MediaStatus.PARTIALLY_AVAILABLE} />
+                              </div>
+                            </>
+                          )}
+                          {mSeason?.status === MediaStatus.AVAILABLE && (
+                            <>
+                              <div className="hidden md:flex">
+                                <Badge badgeType="success">
+                                  {intl.formatMessage(globalMessages.available)}
+                                </Badge>
+                              </div>
+                              <div className="flex md:hidden">
+                                <StatusBadgeMini status={MediaStatus.AVAILABLE} />
+                              </div>
+                            </>
+                          )}
+                          {mSeason?.status === MediaStatus.DELETED &&
+                            request?.status !== MediaRequestStatus.APPROVED && (
+                              <>
+                                <div className="hidden md:flex">
+                                  <Badge badgeType="danger">
+                                    {intl.formatMessage(globalMessages.deleted)}
+                                  </Badge>
+                                </div>
+                                <div className="flex md:hidden">
+                                  <StatusBadgeMini status={MediaStatus.DELETED} />
+                                </div>
+                              </>
+                            )}
+                          {((!mSeason4k &&
+                            request4k?.status === MediaRequestStatus.APPROVED) ||
+                            mSeason4k?.status4k === MediaStatus.PROCESSING ||
+                            (request4k?.status === MediaRequestStatus.APPROVED &&
+                              mSeason4k?.status4k === MediaStatus.DELETED)) &&
+                            show4k && (
+                              <>
+                                <div className="hidden md:flex">
+                                  <Badge badgeType="primary">
+                                    {intl.formatMessage(messages.status4k, {
+                                      status: intl.formatMessage(globalMessages.requested),
+                                    })}
+                                  </Badge>
+                                </div>
+                                <div className="flex md:hidden">
+                                  <StatusBadgeMini status={MediaStatus.PROCESSING} is4k={true} />
+                                </div>
+                              </>
+                            )}
+                          {((!mSeason4k &&
+                            request4k?.status === MediaRequestStatus.PENDING) ||
+                            mSeason?.status4k === MediaStatus.PENDING) &&
+                            show4k && (
+                              <>
+                                <div className="hidden md:flex">
+                                  <Badge badgeType="warning">
+                                    {intl.formatMessage(messages.status4k, {
+                                      status: intl.formatMessage(globalMessages.pending),
+                                    })}
+                                  </Badge>
+                                </div>
+                                <div className="flex md:hidden">
+                                  <StatusBadgeMini status={MediaStatus.PENDING} is4k={true} />
+                                </div>
+                              </>
+                            )}
+                          {mSeason4k?.status4k === MediaStatus.PARTIALLY_AVAILABLE && show4k && (
+                            <>
+                              <div className="hidden md:flex">
+                                <Badge badgeType="success">
+                                  {intl.formatMessage(messages.status4k, {
+                                    status: intl.formatMessage(globalMessages.partiallyavailable),
+                                  })}
+                                </Badge>
+                              </div>
+                              <div className="flex md:hidden">
+                                <StatusBadgeMini status={MediaStatus.PARTIALLY_AVAILABLE} is4k={true} />
+                              </div>
+                            </>
+                          )}
+                          {mSeason4k?.status4k === MediaStatus.AVAILABLE && show4k && (
+                            <>
+                              <div className="hidden md:flex">
+                                <Badge badgeType="success">
+                                  {intl.formatMessage(messages.status4k, {
+                                    status: intl.formatMessage(globalMessages.available),
+                                  })}
+                                </Badge>
+                              </div>
+                              <div className="flex md:hidden">
+                                <StatusBadgeMini status={MediaStatus.AVAILABLE} is4k={true} />
+                              </div>
+                            </>
+                          )}
+                          {mSeason4k?.status4k === MediaStatus.DELETED &&
+                            request4k?.status !== MediaRequestStatus.APPROVED &&
+                            show4k && (
+                              <>
+                                <div className="hidden md:flex">
+                                  <Badge badgeType="danger">
+                                    {intl.formatMessage(messages.status4k, {
+                                      status: intl.formatMessage(globalMessages.deleted),
+                                    })}
+                                  </Badge>
+                                </div>
+                                <div className="flex md:hidden">
+                                  <StatusBadgeMini status={MediaStatus.DELETED} is4k={true} />
+                                </div>
+                              </>
+                            )}
+                          <ChevronDownIcon
+                            className={`${open ? 'rotate-180' : ''} h-6 w-6 text-gray-500`}
+                          />
+                        </Disclosure.Button>
+                        <Transition
+                          show={open}
+                          enter="transition-opacity duration-100 ease-out"
+                          enterFrom="opacity-0"
+                          enterTo="opacity-100"
+                          leave="transition-opacity duration-75 ease-out"
+                          leaveFrom="opacity-100"
+                          leaveTo="opacity-0"
+                          style={{ margin: '0px' }}
+                        >
+                          <Disclosure.Panel className="w-full rounded-b-md border-b border-l border-r border-gray-700 px-4 pb-2">
+                            <Season
+                              tvId={data.id}
+                              seasonNumber={season.seasonNumber}
+                            />
+                          </Disclosure.Panel>
+                        </Transition>
+                      </>
+                    )}
+                  </Disclosure>
+                );
+              })}
+          </div>
+        </div>
+
+        {/* Streaming providers */}
+        {!!streamingProviders.length && (
+          <div className="py-6">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-4">
+              {intl.formatMessage(messages.streamingproviders)}
+            </h2>
+            <div className="flex flex-wrap gap-4">
+              {streamingProviders.map((p) => (
+                <Tooltip content={p.name} key={`provider-${p.id}`}>
+                  <span className="opacity-60 hover:opacity-100 transition-opacity">
+                    <CachedImage
+                      type="tmdb"
+                      src={'https://image.tmdb.org/t/p/w45/' + p.logoPath}
+                      alt={p.name}
+                      width={40}
+                      height={40}
+                      className="rounded-lg"
+                    />
+                  </span>
+                </Tooltip>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* External links */}
+        <div className="py-6">
+          <ExternalLinkBlock
+            mediaType="tv"
+            tmdbId={data.id}
+            tvdbId={data.externalIds.tvdbId}
+            imdbId={data.externalIds.imdbId}
+            rtUrl={ratingData?.url}
+            mediaUrl={plexUrl ?? plexUrl4k}
+          />
+        </div>
+      </div>
+
+      {/* Cast */}
+      {data.credits.cast.length > 0 && (
+        <>
+          <div className="slider-header">
+            <Link
+              href="/tv/[tvId]/cast"
+              as={`/tv/${data.id}/cast`}
+              className="slider-title"
+            >
+              <span>{intl.formatMessage(messages.cast)}</span>
+              <ArrowRightCircleIcon />
+            </Link>
+          </div>
+          <Slider
+            sliderKey="cast"
+            isLoading={false}
+            isEmpty={false}
+            items={data.credits.cast.slice(0, 20).map((person) => (
+              <PersonCard
+                key={`cast-item-${person.id}`}
+                personId={person.id}
+                name={person.name}
+                subName={person.character}
+                profilePath={person.profilePath}
+              />
+            ))}
+          />
+        </>
+      )}
+      <MediaSlider
+        sliderKey="recommendations"
+        title={intl.formatMessage(messages.recommendations)}
+        url={`/api/v1/tv/${router.query.tvId}/recommendations`}
+        linkUrl={`/tv/${data.id}/recommendations`}
+        hideWhenEmpty
+      />
+      <MediaSlider
+        sliderKey="similar"
+        title={intl.formatMessage(messages.similar)}
+        url={`/api/v1/tv/${router.query.tvId}/similar`}
+        linkUrl={`/tv/${data.id}/similar`}
+        hideWhenEmpty
+      />
+      <div className="extra-bottom-space relative" />
+    </div>
+    </>
   );
 };
 

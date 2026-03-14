@@ -172,7 +172,7 @@ function JellyfinSetup({
                 </label>
                 <div className="mb-2 mt-1 sm:col-span-2 sm:mb-0 sm:mt-0">
                   <div className="flex rounded-md shadow-sm">
-                    <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-gray-100 sm:text-sm">
+                    <span className={`inline-flex cursor-default items-center rounded-l-md border border-r-0 px-3 text-gray-100 sm:text-sm border-border-default bg-input`}>
                       {values.useSsl ? 'https://' : 'http://'}
                     </span>
                     <Field

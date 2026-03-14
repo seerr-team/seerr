@@ -391,28 +391,30 @@ const RequestButton = ({
         }}
         onCancel={() => setShowRequest4kModal(false)}
       />
-      <ButtonWithDropdown
-        text={
-          <>
-            {buttonOne.svg}
-            <span>{buttonOne.text}</span>
-          </>
-        }
-        onClick={buttonOne.action}
-        className="ml-2"
-      >
-        {others && others.length > 0
-          ? others.map((button) => (
-              <ButtonWithDropdown.Item
-                onClick={button.action}
-                key={`request-option-${button.id}`}
-              >
-                {button.svg}
-                <span>{button.text}</span>
-              </ButtonWithDropdown.Item>
-            ))
-          : null}
-      </ButtonWithDropdown>
+      <div className="min-w-max shrink-0">
+        <ButtonWithDropdown
+          text={
+            <>
+              {buttonOne.svg}
+              <span className="whitespace-nowrap">{buttonOne.text}</span>
+            </>
+          }
+          onClick={buttonOne.action}
+          className="whitespace-nowrap"
+        >
+          {others && others.length > 0
+            ? others.map((button) => (
+                <ButtonWithDropdown.Item
+                  onClick={button.action}
+                  key={`request-option-${button.id}`}
+                >
+                  {button.svg}
+                  <span className="whitespace-nowrap">{button.text}</span>
+                </ButtonWithDropdown.Item>
+              ))
+            : null}
+        </ButtonWithDropdown>
+      </div>
     </>
   );
 };

@@ -97,7 +97,7 @@ const IssueComment = ({
         />
       </Link>
       <div className="relative flex-1">
-        <div className="w-full rounded-md shadow ring-1 ring-gray-500">
+        <div className={`w-full rounded-md shadow ring-1 ring-ring-app/10`}>
           {(isActiveUser || hasPermission(Permission.MANAGE_ISSUES)) && (
             <Menu
               as="div"
@@ -127,7 +127,7 @@ const IssueComment = ({
                   >
                     <Menu.Items
                       static
-                      className="absolute right-0 mt-2 w-56 origin-top-right rounded-md bg-gray-700 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                      className={`absolute right-0 mt-2 w-56 origin-top-right rounded-md shadow-lg ring-1 ring-opacity-5 focus:outline-none bg-surface-raised ring-black`}
                     >
                       <div className="py-1">
                         {isActiveUser && (
@@ -168,11 +168,11 @@ const IssueComment = ({
             </Menu>
           )}
           <div
-            className={`absolute top-3 z-10 h-3 w-3 rotate-45 bg-gray-800 shadow ring-1 ring-gray-500 ${
+            className={`absolute top-3 z-10 h-3 w-3 rotate-45 shadow ring-1 bg-surface ring-gray-500 ${
               isReversed ? '-left-1' : '-right-1'
             }`}
           />
-          <div className="relative z-20 w-full rounded-md bg-gray-800 py-4 pl-4 pr-8">
+          <div className={`relative z-20 w-full rounded-md py-4 pl-4 pr-8 bg-surface`}>
             {isEditing ? (
               <Formik
                 initialValues={{ newMessage: comment.message }}

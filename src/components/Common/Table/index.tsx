@@ -6,7 +6,7 @@ type TBodyProps = {
 
 const TBody = ({ children }: TBodyProps) => {
   return (
-    <tbody className="divide-y divide-gray-700 bg-gray-800">{children}</tbody>
+    <tbody className={`divide-y divide-border-default bg-surface`}>{children}</tbody>
   );
 };
 
@@ -16,7 +16,7 @@ const TH = ({
   ...props
 }: React.ComponentPropsWithoutRef<'th'>) => {
   const style = [
-    'px-4 py-3 bg-gray-500 text-left text-xs leading-4 font-medium text-gray-200 uppercase tracking-wider truncate',
+    `px-4 py-3 bg-surface-raised text-left text-xs leading-4 font-medium text-gray-200 uppercase tracking-wider truncate`,
   ];
 
   if (className) {

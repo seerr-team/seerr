@@ -91,7 +91,7 @@ const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
       <Transition.Child
         appear
         as="div"
-        className="fixed bottom-0 left-0 right-0 top-0 z-50 flex h-full w-full items-center justify-center bg-gray-800/70"
+        className={`fixed bottom-0 left-0 right-0 top-0 z-50 flex h-full w-full items-center justify-center bg-gray-800/70`}
         enter="transition-opacity duration-300"
         enterFrom="opacity-0"
         enterTo="opacity-100"
@@ -116,7 +116,7 @@ const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
           </div>
         </Transition>
         <Transition
-          className={`hide-scrollbar relative inline-block w-full overflow-auto bg-gray-800 px-4 pb-4 pt-4 text-left align-bottom shadow-xl ring-1 ring-gray-700 transition-all sm:my-8 sm:max-w-3xl sm:rounded-lg sm:align-middle ${dialogClass}`}
+          className={`hide-scrollbar relative inline-block w-full overflow-auto px-4 pb-4 pt-4 text-left align-bottom shadow-xl ring-1 transition-all sm:my-8 sm:max-w-3xl sm:rounded-lg sm:align-middle bg-surface ring-gray-700 ${dialogClass}`}
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-headline"
@@ -144,13 +144,7 @@ const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
                 fill
                 priority
               />
-              <div
-                className="absolute inset-0"
-                style={{
-                  backgroundImage:
-                    'linear-gradient(180deg, rgba(31, 41, 55, 0.75) 0%, rgba(31, 41, 55, 1) 100%)',
-                }}
-              />
+              <div className={`absolute inset-0 bg-gradient-to-b from-gray-800/75 to-gray-800`} />
             </div>
           )}
           <div className="relative -mx-4 overflow-x-hidden px-4 pt-0.5 sm:flex sm:items-center">

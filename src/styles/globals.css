@@ -3,16 +3,76 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── Default theme (exact Tailwind v3 gray + indigo defaults) ── */
+  :root,
+  [data-theme='default'] {
+    --gray-100: 243 244 246;
+    --gray-200: 229 231 235;
+    --gray-300: 209 213 219;
+    --gray-400: 156 163 175;
+    --gray-500: 107 114 128;
+    --gray-600: 75 85 99;
+    --gray-700: 55 65 81;
+    --gray-800: 31 41 55;
+    --gray-900: 17 24 39;
+    --indigo-400: 129 140 248;
+    --indigo-500: 99 102 241;
+    --indigo-600: 79 70 229;
+    --scrollbar-track: #1f2937;
+    --scrollbar-thumb: #4b5563;
+    --scrollbar-thumb-hover: #6b7280;
+    --sidebar-bg-from: rgba(31, 41, 55, 1);
+    --sidebar-bg-to: #131928;
+    /* Semantic surface tokens - bare RGB triplets to support Tailwind opacity modifiers */
+    --color-bg: 17 24 39;
+    --color-surface: 31 41 55;
+    --color-surface-raised: 55 65 81;
+    --color-input: 31 41 55; /* intentionally same as surface in default; diverges in amoled */
+    --color-border: 55 65 81;
+    --color-border-muted: 75 85 99;
+    --color-ring: 55 65 81;
+  }
+
+  /* ── AMOLED Strix theme — pure black + neon violet ── */
+  [data-theme='amoled-strix'] {
+    --gray-100: 240 240 240;
+    --gray-200: 200 200 200;
+    --gray-300: 170 170 170;
+    --gray-400: 120 120 120;
+    --gray-500: 60 60 60;
+    --gray-600: 28 28 28;
+    --gray-700: 18 18 18;
+    --gray-800: 8 8 8;
+    --gray-900: 0 0 0;
+    --indigo-400: 167 139 250;
+    --indigo-500: 139 92 246;
+    --indigo-600: 124 58 237;
+    --scrollbar-track: #000000;
+    --scrollbar-thumb: #2a1a4a;
+    --scrollbar-thumb-hover: #7c3aed;
+    --sidebar-bg-from: rgba(0, 0, 0, 1);
+    --sidebar-bg-to: #050008;
+    /* Semantic surface tokens - AMOLED values */
+    --color-bg: 0 0 0;
+    --color-surface: 14 14 14;
+    --color-surface-raised: 24 24 24;
+    --color-input: 10 10 10;
+    --color-border: 36 36 36;
+    --color-border-muted: 52 52 52;
+    --color-ring: 255 255 255;
+  }
+
   html {
     min-height: calc(100% + env(safe-area-inset-top));
     padding: env(safe-area-inset-top) env(safe-area-inset-right)
       calc(4rem + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+    scrollbar-gutter: stable;
     scrollbar-width: thin;
-    scrollbar-color: #4b5563 #1f2937;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   }
 
   html:hover {
-    scrollbar-color: #6b7280 #1f2937;
+    scrollbar-color: var(--scrollbar-thumb-hover) var(--scrollbar-track);
   }
 
   /* WebKit scrollbar styles */
@@ -21,15 +81,15 @@
   }
 
   html::-webkit-scrollbar-track {
-    background: #1f2937;
+    background: var(--scrollbar-track);
   }
 
   html::-webkit-scrollbar-thumb {
-    background-color: #4b5563;
+    background-color: var(--scrollbar-thumb);
   }
 
   html:hover::-webkit-scrollbar-thumb {
-    background-color: #6b7280;
+    background-color: var(--scrollbar-thumb-hover);
   }
 
   @media (min-width: 640px) {
@@ -62,7 +122,7 @@
     @apply border-r border-gray-700;
     padding-top: env(safe-area-inset-top);
     padding-left: env(safe-area-inset-left);
-    background: linear-gradient(180deg, rgba(31, 41, 55, 1) 0%, #131928 100%);
+    background: linear-gradient(180deg, var(--sidebar-bg-from) 0%, var(--sidebar-bg-to) 100%);
   }
 
   .slideover {
@@ -585,4 +645,192 @@
 
 .ptr--box {
   margin-bottom: -13px !important;
+}
+
+/* ── Structural AMOLED overrides ── */
+
+/* CollectionDetails / IssueDetails: darker gradient overlay */
+[data-theme='amoled-strix'] .collection-backdrop-overlay,
+[data-theme='amoled-strix'] .issue-backdrop-overlay {
+  --tw-gradient-from: rgba(0, 0, 0, 0.6);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), rgb(17, 24, 39));
+}
+
+/* Slider: hide nav arrows in AMOLED */
+[data-theme='amoled-strix'] .slider-nav-arrows {
+  display: none;
+}
+
+/* Layout: show AmoledNavbar, hide standard navbar; adjust main offset */
+.layout-amoled-navbar {
+  display: none;
+}
+[data-theme='amoled-strix'] .layout-amoled-navbar {
+  display: block;
+}
+[data-theme='amoled-strix'] .layout-standard-navbar {
+  display: none;
+}
+[data-theme='amoled-strix'] .layout-main {
+  top: 0;
+}
+/* Hero slider: in AMOLED mode, layout-main starts at top:0 so no negative margin needed */
+[data-theme='amoled-strix'] .hero-slider-root {
+  margin-top: 0;
+}
+
+/* MediaSlider: show AMOLED header, hide standard header */
+.media-slider-amoled-header {
+  display: none;
+}
+[data-theme='amoled-strix'] .media-slider-amoled-header {
+  display: flex;
+}
+[data-theme='amoled-strix'] .media-slider-standard-header {
+  display: none;
+}
+
+/* DiscoverMovies: show backdrop + relative wrapper + AMOLED heading */
+.discover-movies-amoled-backdrop {
+  display: none;
+}
+[data-theme='amoled-strix'] .discover-movies-amoled-backdrop {
+  display: block;
+}
+[data-theme='amoled-strix'] .discover-movies-content-wrapper {
+  position: relative;
+  z-index: 10;
+}
+.discover-movies-amoled-heading {
+  display: none;
+}
+[data-theme='amoled-strix'] .discover-movies-amoled-heading {
+  display: block;
+}
+[data-theme='amoled-strix'] .discover-movies-standard-heading {
+  display: none;
+}
+
+/* DiscoverTv: show backdrop + relative wrapper + AMOLED heading */
+.discover-tv-amoled-backdrop {
+  display: none;
+}
+[data-theme='amoled-strix'] .discover-tv-amoled-backdrop {
+  display: block;
+}
+[data-theme='amoled-strix'] .discover-tv-content-wrapper {
+  position: relative;
+  z-index: 10;
+}
+.discover-tv-amoled-heading {
+  display: none;
+}
+[data-theme='amoled-strix'] .discover-tv-amoled-heading {
+  display: block;
+}
+[data-theme='amoled-strix'] .discover-tv-standard-heading {
+  display: none;
+}
+
+/* PersonDetails: show correct fader variant */
+.person-fader-amoled {
+  display: none;
+}
+[data-theme='amoled-strix'] .person-fader-amoled {
+  display: block;
+}
+[data-theme='amoled-strix'] .person-fader-standard {
+  display: none;
+}
+
+/* PersonDetails: profile photo shape in AMOLED (square rounded-xl vs circle) */
+[data-theme='amoled-strix'] .person-profile-photo {
+  height: 10rem;
+  width: 10rem;
+  border-radius: 0.75rem;
+  --tw-ring-color: rgba(255, 255, 255, 0.1);
+}
+@media (min-width: 1024px) {
+  [data-theme='amoled-strix'] .person-profile-photo {
+    height: 13rem;
+    width: 13rem;
+  }
+}
+
+/* MovieDetails / TvDetails: hide backdrop hero section in AMOLED */
+[data-theme='amoled-strix'] .movie-details-backdrop-section,
+[data-theme='amoled-strix'] .tv-details-backdrop-section {
+  display: none;
+}
+
+/* TitleCard: rounded corners, ring and shadow */
+[data-theme='amoled-strix'] .title-card-inner {
+  border-radius: 0.5rem;
+  --tw-ring-color: rgba(255, 255, 255, 0.06);
+  --tw-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+[data-theme='amoled-strix'] .title-card-inner:is(.scale-105) {
+  --tw-shadow: 0 25px 50px -12px rgba(30, 27, 75, 0.6);
+  --tw-ring-color: rgba(99, 102, 241, 0.5);
+}
+
+/* TitleCard: AMOLED circle badge visible, standard badge hidden */
+.title-card-amoled-badge {
+  display: none;
+}
+[data-theme='amoled-strix'] .title-card-amoled-badge {
+  display: flex;
+}
+[data-theme='amoled-strix'] .title-card-media-type-badge {
+  display: none;
+}
+
+/* TitleCard: icon buttons */
+.title-card-amoled-icon-btn {
+  display: none;
+}
+[data-theme='amoled-strix'] .title-card-amoled-icon-btn {
+  display: flex;
+}
+[data-theme='amoled-strix'] .title-card-standard-icon-btn {
+  display: none;
+}
+
+/* TitleCard: loading overlay and detail overlay radius */
+[data-theme='amoled-strix'] .title-card-loading-overlay,
+[data-theme='amoled-strix'] .title-card-detail-overlay {
+  border-radius: 0.5rem;
+}
+
+/* TitleCard: detail link gradient */
+[data-theme='amoled-strix'] .title-card-detail-link {
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.5) 45%, rgba(0,0,0,0.96) 100%) !important;
+}
+
+/* TitleCard: content padding-bottom when request button shown */
+[data-theme='amoled-strix'] .title-card-content-pb {
+  padding-bottom: 3rem;
+}
+
+/* TitleCard: AMOLED compact title block vs standard title block */
+.title-card-amoled-title-block {
+  display: none;
+}
+[data-theme='amoled-strix'] .title-card-amoled-title-block {
+  display: block;
+}
+[data-theme='amoled-strix'] .title-card-standard-title-block {
+  display: none;
+}
+
+/* TitleCard: request button variants */
+.title-card-amoled-request-btn {
+  display: none;
+}
+[data-theme='amoled-strix'] .title-card-amoled-request-btn {
+  display: flex;
+}
+[data-theme='amoled-strix'] .title-card-standard-request-btn {
+  display: none;
 }

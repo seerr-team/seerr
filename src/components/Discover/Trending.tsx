@@ -52,7 +52,7 @@ const Trending = () => {
         <Header>{intl.formatMessage(messages.trending)}</Header>
         <div className="mt-2 flex flex-grow flex-col sm:flex-row lg:flex-grow-0">
           <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
-            <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
+            <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 px-3 text-sm text-gray-100 border-border-default bg-input">
               <CircleStackIcon className="h-6 w-6" />
             </span>
             <select
@@ -74,7 +74,7 @@ const Trending = () => {
             </select>
           </div>
           <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
-            <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
+            <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 px-3 text-sm text-gray-100 border-border-default bg-input">
               <FunnelIcon className="h-6 w-6" />
             </span>
             <select

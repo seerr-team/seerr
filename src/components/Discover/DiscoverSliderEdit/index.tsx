@@ -178,7 +178,7 @@ const DiscoverSliderEdit = ({
     <div
       key={`discover-slider-${slider.id}-editing`}
       data-testid="discover-slider-edit-mode"
-      className={`relative mb-4 rounded-lg bg-gray-800 shadow-md ${
+      className={`relative mb-4 rounded-lg shadow-md bg-surface ${
         isDragging ? 'opacity-0' : 'opacity-100'
       }`}
       {...dragProps}

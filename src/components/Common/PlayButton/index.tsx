@@ -18,11 +18,11 @@ const PlayButton = ({ links }: PlayButtonProps) => {
   return (
     <ButtonWithDropdown
       as="a"
-      buttonType="ghost"
+      buttonType="glass"
       text={
         <>
           {links[0].svg}
-          <span>{links[0].text}</span>
+          <span className="whitespace-nowrap">{links[0].text}</span>
         </>
       }
       href={links[0].url}
@@ -33,12 +33,12 @@ const PlayButton = ({ links }: PlayButtonProps) => {
           return (
             <ButtonWithDropdown.Item
               key={`play-button-dropdown-item-${i}`}
-              buttonType="ghost"
+              buttonType="glass"
               href={link.url}
               target="_blank"
             >
               {link.svg}
-              <span>{link.text}</span>
+              <span className="whitespace-nowrap">{link.text}</span>
             </ButtonWithDropdown.Item>
           );
         })}

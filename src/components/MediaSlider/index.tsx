@@ -4,7 +4,8 @@ import Slider from '@app/components/Slider';
 import TitleCard from '@app/components/TitleCard';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
-import { ArrowRightCircleIcon } from '@heroicons/react/24/outline';
+import defineMessages from '@app/utils/defineMessages';
+import { ArrowRightCircleIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { MediaStatus } from '@server/constants/media';
 import { Permission } from '@server/lib/permissions';
 import type {
@@ -14,7 +15,12 @@ import type {
 } from '@server/models/Search';
 import Link from 'next/link';
 import { useEffect } from 'react';
+import { useIntl } from 'react-intl';
 import useSWRInfinite from 'swr/infinite';
+
+const messages = defineMessages('components.MediaSlider', {
+  seeAll: 'See All',
+});
 
 interface MixedResult {
   page: number;
@@ -42,6 +48,7 @@ const MediaSlider = ({
   hideWhenEmpty = false,
   onNewTitles,
 }: MediaSliderProps) => {
+  const intl = useIntl();
   const settings = useSettings();
   const { hasPermission } = useUser();
   const { data, error, setSize, size } = useSWRInfinite<MixedResult>(
@@ -177,7 +184,24 @@ const MediaSlider = ({
 
   return (
     <>
-      <div className="slider-header">
+      <div className="media-slider-amoled-header relative mb-3 mt-8 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-4 w-0.5 rounded-full bg-indigo-500" />
+          <span className="text-sm font-semibold uppercase tracking-[0.14em] text-white/70">
+            {title}
+          </span>
+        </div>
+        {linkUrl && (
+          <Link
+            href={linkUrl}
+            className="flex items-center gap-1 text-xs font-medium text-white/35 transition hover:text-white/70"
+          >
+            {intl.formatMessage(messages.seeAll)}
+            <ChevronRightIcon className="h-3.5 w-3.5" />
+          </Link>
+        )}
+      </div>
+      <div className="media-slider-standard-header slider-header">
         {linkUrl ? (
           <Link href={linkUrl} className="slider-title min-w-0 pr-16">
             <span className="truncate">{title}</span>

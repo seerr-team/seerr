@@ -241,18 +241,33 @@ const PersonDetails = () => {
     <>
       <PageTitle title={data.name} />
       {(sortedCrew || sortedCast) && (
-        <div className="absolute left-0 right-0 top-0 z-0 h-96">
-          <ImageFader
-            isDarker
-            backgroundImages={[...(sortedCast ?? []), ...(sortedCrew ?? [])]
-              .filter((media) => media.backdropPath)
-              .map(
-                (media) =>
-                  `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${media.backdropPath}`
-              )
-              .slice(0, 6)}
-          />
-        </div>
+        <>
+          <div className="person-fader-standard absolute left-0 right-0 top-0 z-0 h-96">
+            <ImageFader
+              isDarker
+              backgroundImages={[...(sortedCast ?? []), ...(sortedCrew ?? [])]
+                .filter((media) => media.backdropPath)
+                .map(
+                  (media) =>
+                    `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${media.backdropPath}`
+                )
+                .slice(0, 6)}
+            />
+          </div>
+          <div className="person-fader-amoled absolute left-0 right-0 top-0 z-0 h-96 overflow-hidden">
+            <ImageFader
+              isDarker
+              backgroundImages={[...(sortedCast ?? []), ...(sortedCrew ?? [])]
+                .filter((media) => media.backdropPath)
+                .map(
+                  (media) =>
+                    `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${media.backdropPath}`
+                )
+                .slice(0, 6)}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-gray-900" />
+          </div>
+        </>
       )}
       <div
         className={`relative z-10 mb-8 mt-4 flex flex-col items-center lg:flex-row ${
@@ -260,7 +275,7 @@ const PersonDetails = () => {
         }`}
       >
         {data.profilePath && (
-          <div className="relative mb-6 mr-0 h-36 w-36 flex-shrink-0 overflow-hidden rounded-full ring-1 ring-gray-700 lg:mb-0 lg:mr-6 lg:h-44 lg:w-44">
+          <div className="person-profile-photo relative mb-6 mr-0 flex-shrink-0 overflow-hidden h-36 w-36 rounded-full ring-1 ring-gray-700 lg:mb-0 lg:mr-6 lg:h-44 lg:w-44">
             <CachedImage
               type="tmdb"
               src={`https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.profilePath}`}

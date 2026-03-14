@@ -287,7 +287,7 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
   if (!title && !error) {
     return (
       <div
-        className="h-64 w-full animate-pulse rounded-xl bg-gray-800 xl:h-28"
+        className="h-64 w-full animate-pulse rounded-xl bg-surface xl:h-28"
         ref={ref}
       />
     );
@@ -320,7 +320,7 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
   };
 
   return (
-    <div className="relative flex w-full flex-col justify-between overflow-hidden rounded-xl bg-gray-800 py-4 text-gray-400 shadow-md ring-1 ring-gray-700 xl:h-28 xl:flex-row">
+    <div className="relative flex w-full flex-col justify-between overflow-hidden py-4 text-gray-400 xl:h-28 xl:flex-row rounded-xl bg-surface shadow-md ring-1 ring-ring-app/10">
       {title && title.backdropPath && (
         <div className="absolute inset-0 z-0 w-full bg-cover bg-center xl:w-2/3">
           <CachedImage
@@ -330,13 +330,7 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             fill
           />
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage:
-                'linear-gradient(90deg, rgba(31, 41, 55, 0.47) 0%, rgba(31, 41, 55, 1) 100%)',
-            }}
-          />
+          <div className="absolute inset-0 bg-gradient-to-r from-surface/50 to-surface" />
         </div>
       )}
       <div className="relative flex w-full flex-col justify-between overflow-hidden sm:flex-row">

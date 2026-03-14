@@ -91,7 +91,7 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                       inputMode="email"
                       data-testid="email"
                       data-form-type="username,email"
-                      className="!bg-gray-700/80 placeholder:text-gray-400"
+                      className="!bg-input placeholder:text-gray-400"
                     />
                   </div>
                   {touched.email && values.email.match(/\s$/) && (
@@ -119,7 +119,7 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                       autoComplete="current-password"
                       data-testid="password"
                       data-form-type="password"
-                      className="!bg-gray-700/80 placeholder:text-gray-400"
+                      className="!bg-input placeholder:text-gray-400"
                       data-1pignore="false"
                       data-lpignore="false"
                     />

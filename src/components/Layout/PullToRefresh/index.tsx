@@ -117,7 +117,7 @@ const PullToRefresh = () => {
       <div
         className={`${
           refreshDiv.current?.classList.contains('loading') && 'animate-spin'
-        } relative -top-28 h-9 w-9 rounded-full border-4 border-gray-800 bg-gray-800 shadow-md shadow-black ring-1 ring-gray-700`}
+        } relative -top-28 h-9 w-9 rounded-full border-4 shadow-md shadow-black ring-1 border-border-default bg-surface-raised ring-ring-app/20`}
         style={{ animationDirection: 'reverse' }}
       >
         <ArrowPathIcon

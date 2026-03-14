@@ -71,7 +71,7 @@ const SlideOver = ({
                 ref={slideoverRef}
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex h-full flex-col rounded-lg bg-gray-800/80 shadow-xl ring-1 ring-gray-700 backdrop-blur">
+                <div className={`flex h-full flex-col rounded-lg shadow-xl ring-1 backdrop-blur bg-surface ring-gray-700`}>
                   <header className="space-y-1 border-b border-gray-700 px-4 py-4">
                     <div className="flex items-center justify-between space-x-3">
                       <h2 className="text-overseerr text-2xl font-bold leading-7">

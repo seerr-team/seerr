@@ -25,7 +25,7 @@ const Tooltip = ({
     });
 
   const tooltipStyle = [
-    'z-50 text-sm absolute font-normal bg-gray-800 px-2 py-1 rounded border border-gray-600 shadow text-gray-100',
+    `z-50 text-sm absolute font-normal px-2 py-1 rounded border shadow text-gray-100 bg-surface-raised border-gray-600`,
   ];
 
   if (className) {

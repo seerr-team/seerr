@@ -8,6 +8,7 @@ import ToastContainer from '@app/components/ToastContainer';
 import { InteractionProvider } from '@app/context/InteractionContext';
 import { LanguageContext } from '@app/context/LanguageContext';
 import { SettingsProvider } from '@app/context/SettingsContext';
+import { ThemeProvider } from '@app/context/ThemeContext';
 import { UserContext } from '@app/context/UserContext';
 import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
@@ -203,6 +204,7 @@ const CoreApp: Omit<NextAppComponentType, 'origGetInitialProps'> = ({
           messages={loadedMessages}
         >
           <LoadingBar />
+          <ThemeProvider>
           <SettingsProvider currentSettings={currentSettings}>
             <InteractionProvider>
               <ToastProvider components={{ Toast, ToastContainer }}>
@@ -222,6 +224,7 @@ const CoreApp: Omit<NextAppComponentType, 'origGetInitialProps'> = ({
               </ToastProvider>
             </InteractionProvider>
           </SettingsProvider>
+          </ThemeProvider>
         </IntlProvider>
       </LanguageContext.Provider>
     </SWRConfig>

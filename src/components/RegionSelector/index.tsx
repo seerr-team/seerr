@@ -94,7 +94,7 @@ const RegionSelector = ({
         {({ open }) => (
           <div className="relative">
             <span className="inline-block w-full rounded-md shadow-sm">
-              <Listbox.Button className="focus:shadow-outline-blue relative flex w-full cursor-default items-center rounded-md border border-gray-500 bg-gray-700 py-2 pl-3 pr-10 text-left text-white transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none sm:text-sm sm:leading-5">
+              <Listbox.Button className="focus:shadow-outline-blue relative flex w-full cursor-default items-center rounded-md border border-border-default bg-input py-2 pl-3 pr-10 text-left text-white transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none sm:text-sm sm:leading-5">
                 {((selectedRegion &&
                   countries.includes(selectedRegion?.iso_3166_1)) ||
                   (isUserSetting &&
@@ -131,7 +131,7 @@ const RegionSelector = ({
               leave="transition-opacity ease-in duration-100"
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
-              className="absolute mt-1 w-full rounded-md bg-gray-800 shadow-lg"
+              className="absolute mt-1 w-full rounded-md bg-surface-raised shadow-lg"
             >
               <Listbox.Options
                 static

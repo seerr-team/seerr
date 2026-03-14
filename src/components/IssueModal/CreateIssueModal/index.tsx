@@ -244,7 +244,7 @@ const CreateIssueModal = ({
               <RadioGroup.Label className="sr-only">
                 Select an Issue
               </RadioGroup.Label>
-              <div className="-space-y-px overflow-hidden rounded-md bg-gray-800/30">
+              <div className="-space-y-px overflow-hidden rounded-md bg-surface/50">
                 {issueOptions.map((setting, index) => (
                   <RadioGroup.Option
                     key={`issue-type-${setting.issueType}`}

@@ -140,7 +140,7 @@ const OverrideRuleTiles = ({
   return (
     <>
       {rules.map((rule) => (
-        <li className="flex h-full flex-col rounded-lg bg-gray-800 text-left shadow ring-1 ring-gray-500">
+        <li key={rule.id} className="flex h-full flex-col rounded-lg text-left shadow ring-1 bg-surface ring-ring-app/10">
           <div className="flex w-full flex-1 items-center justify-between space-x-6 p-6">
             <div className="flex-1 truncate">
               <span className="text-lg">
@@ -154,7 +154,7 @@ const OverrideRuleTiles = ({
                   <div className="inline-flex gap-2">
                     {rule.users.split(',').map((userId) => {
                       return (
-                        <span>
+                        <span key={userId}>
                           {
                             users?.find((user) => user.id === Number(userId))
                               ?.displayName
@@ -172,7 +172,7 @@ const OverrideRuleTiles = ({
                   </span>
                   <div className="inline-flex gap-2">
                     {rule.genre.split(',').map((genreId) => (
-                      <span>
+                      <span key={genreId}>
                         {genres?.find((g) => g.id === Number(genreId))?.name}
                       </span>
                     ))}
@@ -198,7 +198,7 @@ const OverrideRuleTiles = ({
                             type: 'language',
                             fallback: 'none',
                           }) ?? language.english_name;
-                        return <span>{languageName}</span>;
+                        return <span key={languageId}>{languageName}</span>;
                       })}
                   </div>
                 </p>
@@ -211,7 +211,7 @@ const OverrideRuleTiles = ({
                   <div className="inline-flex gap-2">
                     {rule.keywords.split(',').map((keywordId) => {
                       return (
-                        <span>
+                        <span key={keywordId}>
                           {
                             keywords?.find(
                               (keyword) => keyword.id === Number(keywordId)
@@ -257,7 +257,7 @@ const OverrideRuleTiles = ({
                   </span>
                   <div className="inline-flex gap-2">
                     {rule.tags.split(',').map((tag) => (
-                      <span>
+                      <span key={tag}>
                         {testResponses
                           .find(
                             (r) =>

@@ -128,7 +128,7 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
                         name="username"
                         type="text"
                         placeholder={intl.formatMessage(messages.username)}
-                        className="!bg-gray-700/80 placeholder:text-gray-400"
+                        className="!bg-input placeholder:text-gray-400"
                         data-form-type="username"
                       />
                     </div>
@@ -154,7 +154,7 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
                         type="password"
                         autoComplete="current-password"
                         placeholder={intl.formatMessage(messages.password)}
-                        className="!bg-gray-700/80 placeholder:text-gray-400"
+                        className="!bg-input placeholder:text-gray-400"
                         data-form-type="password"
                         data-1pignore="false"
                         data-lpignore="false"

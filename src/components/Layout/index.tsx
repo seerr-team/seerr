@@ -1,3 +1,4 @@
+import AmoledNavbar from '@app/components/Layout/AmoledNavbar';
 import MobileMenu from '@app/components/Layout/MobileMenu';
 import PullToRefresh from '@app/components/Layout/PullToRefresh';
 import SearchInput from '@app/components/Layout/SearchInput';
@@ -87,8 +88,11 @@ const Layout = ({ children }: LayoutProps) => {
 
       <div className="relative mb-16 flex w-0 min-w-0 flex-1 flex-col lg:ml-64">
         <PullToRefresh />
+        <div className="layout-amoled-navbar">
+          <AmoledNavbar />
+        </div>
         <div
-          className={`searchbar fixed left-0 right-0 top-0 z-10 flex flex-shrink-0 transition duration-300 ${
+          className={`layout-standard-navbar searchbar fixed left-0 right-0 top-0 z-10 flex flex-shrink-0 transition duration-300 ${
             isScrolled ? 'bg-gray-700/80' : 'bg-transparent'
           } lg:left-64`}
           style={{
@@ -122,9 +126,9 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
         </div>
 
-        <main className="relative top-16 z-0 focus:outline-none" tabIndex={0}>
+        <main className="layout-main relative z-0 top-16 focus:outline-none" tabIndex={0}>
           <div className="mb-6">
-            <div className="max-w-8xl mx-auto px-4">{children}</div>
+            <div className="layout-main-inner max-w-8xl mx-auto px-4">{children}</div>
           </div>
         </main>
       </div>

@@ -113,7 +113,7 @@ const ServerInstance = ({
   const serviceUrl = externalUrl ?? internalUrl;
 
   return (
-    <li className="col-span-1 rounded-lg bg-gray-800 shadow ring-1 ring-gray-500">
+    <li className="col-span-1 rounded-lg shadow ring-1 bg-surface ring-ring-app/10">
       <div className="flex w-full items-center justify-between space-x-6 p-6">
         <div className="flex-1 truncate">
           <div className="mb-2 flex items-center space-x-2">

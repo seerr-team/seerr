@@ -145,7 +145,7 @@ const Setup = () => {
   if (settings.currentSettings.initialized) return <></>;
 
   return (
-    <div className="relative flex min-h-screen flex-col justify-center bg-gray-900 py-12">
+    <div className="relative flex min-h-screen flex-col justify-center py-12 bg-app">
       <PageTitle title={intl.formatMessage(messages.setup)} />
       <ImageFader
         backgroundImages={
@@ -164,7 +164,7 @@ const Setup = () => {
         <AppDataWarning />
         <nav className="relative z-50">
           <ul
-            className="divide-y divide-gray-600 rounded-md border border-gray-600 bg-gray-800/50 md:flex md:divide-y-0"
+            className="divide-y divide-gray-600 rounded-md border border-gray-600 md:flex md:divide-y-0 bg-surface/80 ring-1 ring-ring-app/10"
             style={{ backdropFilter: 'blur(5px)' }}
           >
             <SetupSteps
@@ -193,7 +193,7 @@ const Setup = () => {
             />
           </ul>
         </nav>
-        <div className="mt-10 w-full rounded-md border border-gray-600 bg-gray-800/50 p-4 text-white">
+        <div className="mt-10 w-full rounded-md border border-gray-600 p-4 text-white bg-surface/80 ring-1 ring-ring-app/10">
           {currentStep === 1 && (
             <div className="flex flex-col items-center pb-6">
               <div className="mb-2 flex justify-center text-xl font-bold">

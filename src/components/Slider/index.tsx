@@ -149,28 +149,30 @@ const Slider = ({
 
   return (
     <div className="relative" data-testid="media-slider">
-      <div className="absolute right-0 -mt-10 flex text-gray-400">
-        <button
-          className={`${
-            scrollPos.isStart ? 'text-gray-800' : 'hover:text-white'
-          }`}
-          onClick={() => slide(Direction.LEFT)}
-          disabled={scrollPos.isStart}
-          type="button"
-        >
-          <ChevronLeftIcon className="h-6 w-6" />
-        </button>
-        <button
-          className={`${
-            scrollPos.isEnd ? 'text-gray-800' : 'hover:text-white'
-          }`}
-          onClick={() => slide(Direction.RIGHT)}
-          disabled={scrollPos.isEnd}
-          type="button"
-        >
-          <ChevronRightIcon className="h-6 w-6" />
-        </button>
-      </div>
+      <div className="slider-nav-arrows absolute right-0 -mt-10 flex text-gray-400">
+          <button
+            aria-label={intl.formatMessage(globalMessages.previous)}
+            className={`${
+              scrollPos.isStart ? 'text-gray-800' : 'hover:text-white'
+            }`}
+            onClick={() => slide(Direction.LEFT)}
+            disabled={scrollPos.isStart}
+            type="button"
+          >
+            <ChevronLeftIcon className="h-6 w-6" />
+          </button>
+          <button
+            aria-label={intl.formatMessage(globalMessages.next)}
+            className={`${
+              scrollPos.isEnd ? 'text-gray-800' : 'hover:text-white'
+            }`}
+            onClick={() => slide(Direction.RIGHT)}
+            disabled={scrollPos.isEnd}
+            type="button"
+          >
+            <ChevronRightIcon className="h-6 w-6" />
+          </button>
+        </div>
       <div
         className="hide-scrollbar relative -my-2 -ml-4 -mr-4 overflow-y-auto overflow-x-scroll overscroll-x-contain whitespace-nowrap px-2 py-2"
         ref={containerRef}

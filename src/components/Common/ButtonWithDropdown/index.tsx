@@ -7,7 +7,7 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from 'react';
 type ButtonWithDropdownProps = {
   text: React.ReactNode;
   dropdownIcon?: React.ReactNode;
-  buttonType?: 'primary' | 'ghost';
+  buttonType?: 'primary' | 'ghost' | 'glass';
 } & (
   | ({ as?: 'button' } & ButtonHTMLAttributes<HTMLButtonElement>)
   | ({ as: 'a' } & AnchorHTMLAttributes<HTMLAnchorElement>)
@@ -31,6 +31,12 @@ const ButtonWithDropdown = ({
       styleClasses.mainButtonClasses +=
         ' bg-transparent border-gray-600 hover:border-gray-200 focus:border-gray-100 active:border-gray-100';
       styleClasses.dropdownSideButtonClasses = styleClasses.mainButtonClasses;
+      break;
+    case 'glass':
+      styleClasses.mainButtonClasses +=
+        ' bg-black/50 border-white/[0.12] text-white/70 backdrop-blur-md hover:text-white active:text-white';
+      styleClasses.dropdownSideButtonClasses =
+        'button-md border bg-black/50 border-white/[0.12] text-white/70 backdrop-blur-md hover:text-white active:text-white';
       break;
     default:
       styleClasses.mainButtonClasses +=

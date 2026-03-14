@@ -330,7 +330,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
         }}
       />
       <div
-        className="relative flex w-72 overflow-hidden rounded-xl bg-gray-800 bg-cover bg-center p-4 text-gray-400 shadow ring-1 ring-gray-700 sm:w-96"
+        className="relative flex w-72 overflow-hidden bg-cover bg-center p-4 text-gray-400 shadow sm:w-96 rounded-xl bg-surface ring-1 ring-ring-app/10"
         data-testid="request-card"
       >
         {title.backdropPath && (
@@ -342,13 +342,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               fill
             />
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage:
-                  'linear-gradient(135deg, rgba(17, 24, 39, 0.47) 0%, rgba(17, 24, 39, 1) 75%)',
-              }}
-            />
+            <div className="absolute inset-0 bg-gradient-to-br from-surface/50 to-surface" />
           </div>
         )}
         <div

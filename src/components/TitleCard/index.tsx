@@ -18,8 +18,8 @@ import {
   EyeIcon,
   EyeSlashIcon,
   MinusCircleIcon,
-  StarIcon,
 } from '@heroicons/react/24/outline';
+import { StarIcon } from '@heroicons/react/24/solid';
 import { MediaStatus } from '@server/constants/media';
 import type { Watchlist } from '@server/entity/Watchlist';
 import type { MediaType } from '@server/models/Search';
@@ -47,6 +47,7 @@ interface TitleCardProps {
 
 const messages = defineMessages('components.TitleCard', {
   addToWatchList: 'Add to watchlist',
+  removeFromWatchList: 'Remove from watchlist',
   watchlistSuccess:
     '<strong>{title}</strong> added to watchlist  successfully!',
   watchlistDeleted:
@@ -61,6 +62,7 @@ const TitleCard = ({
   summary,
   year,
   title,
+  userScore,
   status,
   mediaType,
   isAddedToWatchlist = false,
@@ -303,7 +305,7 @@ const TitleCard = ({
         isUpdating={isUpdating}
       />
       <div
-        className={`relative transform-gpu cursor-default overflow-hidden rounded-xl bg-gray-800 bg-cover outline-none ring-1 transition duration-300 ${
+        className={`title-card-inner relative transform-gpu cursor-default overflow-hidden rounded-xl bg-gray-800 bg-cover outline-none ring-1 transition duration-300 ${
           showDetail
             ? 'scale-105 shadow-lg ring-gray-500'
             : 'scale-100 shadow ring-gray-700'
@@ -339,9 +341,22 @@ const TitleCard = ({
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             fill
           />
+          {/* AMOLED circle badge — bottom left */}
+          <div className="title-card-amoled-badge pointer-events-none absolute bottom-2.5 left-2.5 z-50 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 backdrop-blur-md ring-1 ring-white/[0.12]">
+            <span
+              className={`text-[10px] font-semibold ${
+                mediaType === 'movie' || mediaType === 'collection'
+                  ? 'text-blue-300'
+                  : 'text-violet-300'
+              }`}
+            >
+              {mediaType === 'movie' ? 'M' : mediaType === 'collection' ? 'C' : 'S'}
+            </span>
+          </div>
+
           <div className="absolute left-0 right-0 flex items-center justify-between p-2">
             <div
-              className={`pointer-events-none z-40 self-start rounded-full border shadow-md ${
+              className={`title-card-media-type-badge pointer-events-none z-40 self-start rounded-full border shadow-md ${
                 mediaType === 'movie' || mediaType === 'collection'
                   ? 'border-blue-500 bg-blue-600/80'
                   : 'border-purple-600 bg-purple-600/80'
@@ -356,39 +371,52 @@ const TitleCard = ({
               </div>
             </div>
             {showDetail && currentStatus !== MediaStatus.BLOCKLISTED && (
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1.5">
                 {user?.userType !== UserType.PLEX &&
                   (toggleWatchlist ? (
-                    <Button
-                      buttonType={'ghost'}
-                      className="z-40"
-                      buttonSize={'sm'}
-                      onClick={onClickWatchlistBtn}
-                    >
-                      <StarIcon className={'h-3 text-amber-300'} />
-                    </Button>
+                    <>
+                      <button
+                        aria-label={intl.formatMessage(messages.addToWatchList)}
+                        className="title-card-amoled-icon-btn z-40 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/[0.12] transition hover:bg-black/70"
+                        onClick={onClickWatchlistBtn}
+                      >
+                        <StarIcon className="h-3.5 w-3.5 text-amber-300" />
+                      </button>
+                      <Button buttonType={'ghost'} className="title-card-standard-icon-btn z-40" buttonSize={'sm'} onClick={onClickWatchlistBtn}>
+                        <StarIcon className={'h-3 text-amber-300'} />
+                      </Button>
+                    </>
                   ) : (
-                    <Button
-                      className="z-40"
-                      buttonSize={'sm'}
-                      onClick={onClickDeleteWatchlistBtn}
-                    >
-                      <MinusCircleIcon className={'h-3'} />
-                    </Button>
+                    <>
+                      <button
+                        aria-label={intl.formatMessage(messages.removeFromWatchList)}
+                        className="title-card-amoled-icon-btn z-40 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/[0.12] transition hover:bg-black/70"
+                        onClick={onClickDeleteWatchlistBtn}
+                      >
+                        <MinusCircleIcon className="h-3.5 w-3.5 text-white/70" />
+                      </button>
+                      <Button className="title-card-standard-icon-btn z-40" buttonSize={'sm'} onClick={onClickDeleteWatchlistBtn}>
+                        <MinusCircleIcon className={'h-3'} />
+                      </Button>
+                    </>
                   ))}
                 {showHideButton &&
                   currentStatus !== MediaStatus.PROCESSING &&
                   currentStatus !== MediaStatus.AVAILABLE &&
                   currentStatus !== MediaStatus.PARTIALLY_AVAILABLE &&
                   currentStatus !== MediaStatus.PENDING && (
-                    <Button
-                      buttonType={'ghost'}
-                      className="z-40"
-                      buttonSize={'sm'}
-                      onClick={() => setShowBlocklistModal(true)}
-                    >
-                      <EyeSlashIcon className={'h-3'} />
-                    </Button>
+                    <>
+                      <button
+                        aria-label={intl.formatMessage(globalMessages.blocklist)}
+                        className="title-card-amoled-icon-btn z-40 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/[0.12] transition hover:bg-black/70"
+                        onClick={() => setShowBlocklistModal(true)}
+                      >
+                        <EyeSlashIcon className="h-3.5 w-3.5 text-white/70" />
+                      </button>
+                      <Button buttonType={'ghost'} className="title-card-standard-icon-btn z-40" buttonSize={'sm'} onClick={() => setShowBlocklistModal(true)}>
+                        <EyeSlashIcon className={'h-3'} />
+                      </Button>
+                    </>
                   )}
               </div>
             )}
@@ -432,7 +460,7 @@ const TitleCard = ({
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-gray-800/75 text-white">
+            <div className="title-card-loading-overlay absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-gray-800/75 text-white">
               <Spinner className="h-10 w-10" />
             </div>
           </Transition>
@@ -447,7 +475,7 @@ const TitleCard = ({
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="absolute inset-0 overflow-hidden rounded-xl">
+            <div className="title-card-detail-overlay absolute inset-0 overflow-hidden rounded-xl">
               <Link
                 href={
                   mediaType === 'movie'
@@ -456,55 +484,88 @@ const TitleCard = ({
                       ? `/collection/${id}`
                       : `/tv/${id}`
                 }
-                className="absolute inset-0 h-full w-full cursor-pointer overflow-hidden text-left"
+                className="title-card-detail-link absolute inset-0 h-full w-full cursor-pointer overflow-hidden text-left"
                 style={{
-                  background:
-                    'linear-gradient(180deg, rgba(45, 55, 72, 0.4) 0%, rgba(45, 55, 72, 0.9) 100%)',
+                  background: 'linear-gradient(180deg, rgba(45, 55, 72, 0.4) 0%, rgba(45, 55, 72, 0.9) 100%)',
                 }}
               >
                 <div className="flex h-full w-full items-end">
                   <div
-                    className={`px-2 text-white ${
+                    className={`px-2.5 text-white ${
                       !showRequestButton ||
                       (currentStatus &&
                         currentStatus !== MediaStatus.UNKNOWN &&
                         currentStatus !== MediaStatus.DELETED)
-                        ? 'pb-2'
-                        : 'pb-11'
+                        ? 'pb-2.5'
+                        : 'title-card-content-pb pb-11'
                     }`}
                   >
-                    {year && <div className="text-sm font-medium">{year}</div>}
-
-                    <h1
-                      className="whitespace-normal text-xl font-bold leading-tight"
-                      style={{
-                        WebkitLineClamp: 3,
-                        display: '-webkit-box',
-                        overflow: 'hidden',
-                        WebkitBoxOrient: 'vertical',
-                        wordBreak: 'break-word',
-                      }}
-                      data-testid="title-card-title"
-                    >
-                      {title}
-                    </h1>
-                    <div
-                      className="whitespace-normal text-xs"
-                      style={{
-                        WebkitLineClamp:
-                          !showRequestButton ||
-                          (currentStatus &&
-                            currentStatus !== MediaStatus.UNKNOWN &&
-                            currentStatus !== MediaStatus.DELETED)
-                            ? 5
-                            : 3,
-                        display: '-webkit-box',
-                        overflow: 'hidden',
-                        WebkitBoxOrient: 'vertical',
-                        wordBreak: 'break-word',
-                      }}
-                    >
-                      {summary}
+                    {/* AMOLED compact title layout */}
+                    <div className="title-card-amoled-title-block">
+                      <h1
+                        className="mb-1 whitespace-normal text-sm font-bold leading-tight text-white"
+                        style={{
+                          WebkitLineClamp: 2,
+                          display: '-webkit-box',
+                          overflow: 'hidden',
+                          WebkitBoxOrient: 'vertical',
+                          wordBreak: 'break-word',
+                        }}
+                        data-testid="title-card-title-amoled"
+                      >
+                        {title}
+                      </h1>
+                      <div className="flex items-center gap-1.5">
+                        {year && (
+                          <span className="text-[11px] font-medium text-white/50">{year}</span>
+                        )}
+                        {year && userScore != null && userScore > 0 && (
+                          <span className="text-white/25">·</span>
+                        )}
+                        {userScore != null && userScore > 0 && (
+                          <span className="flex items-center gap-0.5">
+                            <StarIcon className="h-2.5 w-2.5 text-yellow-400/80" />
+                            <span className="text-[11px] font-semibold text-yellow-400/80">
+                              {userScore.toFixed(1)}
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {/* Standard title layout */}
+                    <div className="title-card-standard-title-block">
+                      {year && <div className="text-sm font-medium">{year}</div>}
+                      <h1
+                        className="whitespace-normal text-xl font-bold leading-tight"
+                        style={{
+                          WebkitLineClamp: 3,
+                          display: '-webkit-box',
+                          overflow: 'hidden',
+                          WebkitBoxOrient: 'vertical',
+                          wordBreak: 'break-word',
+                        }}
+                        data-testid="title-card-title"
+                      >
+                        {title}
+                      </h1>
+                      <div
+                        className="whitespace-normal text-xs"
+                        style={{
+                          WebkitLineClamp:
+                            !showRequestButton ||
+                            (currentStatus &&
+                              currentStatus !== MediaStatus.UNKNOWN &&
+                              currentStatus !== MediaStatus.DELETED)
+                              ? 5
+                              : 3,
+                          display: '-webkit-box',
+                          overflow: 'hidden',
+                          WebkitBoxOrient: 'vertical',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {summary}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -515,6 +576,17 @@ const TitleCard = ({
                   (!currentStatus ||
                     currentStatus === MediaStatus.UNKNOWN ||
                     currentStatus === MediaStatus.DELETED) && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShowRequestModal(true);
+                      }}
+                      className="title-card-amoled-request-btn flex w-full items-center justify-center gap-1.5 rounded-xl bg-indigo-600/70 py-1.5 text-xs font-semibold text-white backdrop-blur-sm ring-1 ring-indigo-500/40 transition hover:bg-indigo-500/80"
+                    >
+                      <ArrowDownTrayIcon className="h-3.5 w-3.5" />
+                      {intl.formatMessage(globalMessages.request)}
+                    </button>
                     <Button
                       buttonType="primary"
                       buttonSize="sm"
@@ -522,12 +594,13 @@ const TitleCard = ({
                         e.preventDefault();
                         setShowRequestModal(true);
                       }}
-                      className="h-7 w-full"
+                      className="title-card-standard-request-btn h-7 w-full"
                     >
                       <ArrowDownTrayIcon />
                       <span>{intl.formatMessage(globalMessages.request)}</span>
                     </Button>
-                  )}
+                  </>
+                )}
               </div>
             </div>
           </Transition>
