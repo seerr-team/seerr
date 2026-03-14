@@ -249,7 +249,9 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
       ?.filter((library) => library.enabled)
       .map((library) => library.id) ?? [];
   const hasAnyEnabledLibraries = Boolean(
-    plexServers?.some((server) => server.libraries.some((library) => library.enabled))
+    plexServers?.some((server) =>
+      server.libraries.some((library) => library.enabled)
+    )
   );
 
   const availablePresets = useMemo(() => {
@@ -457,9 +459,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
 
   if (
     !plexAuthStatus ||
-    (canManagePlexSettings &&
-      (!dataTautulli || (selectedServerId !== 'new' && !data)) &&
-      !error)
+    (canManagePlexSettings && selectedServerId !== 'new' && !data && !error)
   ) {
     return <LoadingSpinner />;
   }
