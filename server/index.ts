@@ -120,13 +120,36 @@ app
           label: 'Settings',
         });
 
+        const failedPlexLibraryTypeMigrations: string[] = [];
+
         for (const server of plexServersNeedingLibraryTypeMigration) {
-          const plexapi = new PlexAPI({
-            plexToken: admin.plexToken,
-            plexSettings: server,
-            plexServerId: server.id,
-          });
-          await plexapi.syncLibraries(server.id);
+          try {
+            const plexapi = new PlexAPI({
+              plexToken: admin.plexToken,
+              plexSettings: server,
+              plexServerId: server.id,
+            });
+            await plexapi.syncLibraries(server.id);
+          } catch (error) {
+            failedPlexLibraryTypeMigrations.push(server.id);
+            logger.error('Failed to migrate Plex library types for server.', {
+              label: 'Settings',
+              serverId: server.id,
+              hasPlexToken: Boolean(admin.plexToken),
+              errorMessage:
+                error instanceof Error ? error.message : 'Unknown error',
+            });
+          }
+        }
+
+        if (failedPlexLibraryTypeMigrations.length > 0) {
+          logger.warn(
+            'Plex library type migration failed for one or more servers during startup.',
+            {
+              label: 'Settings',
+              serverIds: failedPlexLibraryTypeMigrations,
+            }
+          );
         }
       }
     }
