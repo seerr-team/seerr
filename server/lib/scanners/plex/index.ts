@@ -251,6 +251,7 @@ class PlexScanner
   }
 
   private async processPlexMovie(plexitem: PlexLibraryItem) {
+    const currentServerId = this.currentServer?.id;
     const mediaIds = await this.getMediaIds(plexitem);
 
     const has4k = plexitem.Media.some(
@@ -261,14 +262,15 @@ class PlexScanner
       is4k: has4k && this.enable4kMovie,
       mediaAddedAt: new Date(plexitem.addedAt * 1000),
       ratingKey: plexitem.ratingKey,
-      plexServerId: this.currentServer?.id,
+      plexServerId: currentServerId,
       title: plexitem.title,
     });
   }
 
   private async processPlexMovieByTmdbId(
     plexitem: PlexMetadata,
-    tmdbId: number
+    tmdbId: number,
+    currentServerId = this.currentServer?.id
   ) {
     const has4k = plexitem.Media.some(
       (media) => media.videoResolution === '4k'
@@ -278,7 +280,7 @@ class PlexScanner
       is4k: has4k && this.enable4kMovie,
       mediaAddedAt: new Date(plexitem.addedAt * 1000),
       ratingKey: plexitem.ratingKey,
-      plexServerId: this.currentServer?.id,
+      plexServerId: currentServerId,
       title: plexitem.title,
     });
   }
@@ -320,6 +322,7 @@ class PlexScanner
   }
 
   private async processPlexShow(plexitem: PlexLibraryItem) {
+    const currentServerId = this.currentServer?.id;
     const ratingKey =
       plexitem.grandparentRatingKey ??
       plexitem.parentRatingKey ??
@@ -333,14 +336,18 @@ class PlexScanner
     // If the media is from HAMA, and doesn't have a TVDb ID, we will treat it
     // as a special HAMA movie
     if (mediaIds.tmdbId && !mediaIds.tvdbId && mediaIds.isHama) {
-      this.processHamaMovie(metadata, mediaIds.tmdbId);
+      await this.processHamaMovie(metadata, mediaIds.tmdbId, currentServerId);
       return;
     }
 
     // If the media is from HAMA and we have a TVDb ID, we will attempt
     // to process any specials that may exist
     if (mediaIds.tvdbId && mediaIds.isHama) {
-      await this.processHamaSpecials(metadata, mediaIds.tvdbId);
+      await this.processHamaSpecials(
+        metadata,
+        mediaIds.tvdbId,
+        currentServerId
+      );
     }
 
     const tvShow = await this.getTvShow({
@@ -403,7 +410,7 @@ class PlexScanner
         {
           mediaAddedAt: new Date(metadata.addedAt * 1000),
           ratingKey: ratingKey,
-          plexServerId: this.currentServer?.id,
+          plexServerId: currentServerId,
           title: metadata.title,
         }
       );
@@ -583,20 +590,32 @@ class PlexScanner
   // movies with hama agent actually are tv shows with at least one episode in it
   // try to get first episode of any season - cannot hardcode season or episode number
   // because sometimes user can have it in other season/ep than s01e01
-  private async processHamaMovie(metadata: PlexMetadata, tmdbId: number) {
+  private async processHamaMovie(
+    metadata: PlexMetadata,
+    tmdbId: number,
+    currentServerId = this.currentServer?.id
+  ) {
     const season = metadata.Children?.Metadata[0];
     if (season) {
       const episodes = await this.plexClient.getChildrenMetadata(
         season.ratingKey
       );
       if (episodes) {
-        await this.processPlexMovieByTmdbId(episodes[0], tmdbId);
+        await this.processPlexMovieByTmdbId(
+          episodes[0],
+          tmdbId,
+          currentServerId
+        );
       }
     }
   }
 
   // this adds all movie episodes from specials season for Hama agent
-  private async processHamaSpecials(metadata: PlexMetadata, tvdbId: number) {
+  private async processHamaSpecials(
+    metadata: PlexMetadata,
+    tvdbId: number,
+    currentServerId = this.currentServer?.id
+  ) {
     const specials = metadata.Children?.Metadata.find(
       (md) => Number(md.index) === 0
     );
@@ -609,12 +628,20 @@ class PlexScanner
           const special = animeList.getSpecialEpisode(tvdbId, episode.index);
           if (special) {
             if (special.tmdbId) {
-              await this.processPlexMovieByTmdbId(episode, special.tmdbId);
+              await this.processPlexMovieByTmdbId(
+                episode,
+                special.tmdbId,
+                currentServerId
+              );
             } else if (special.imdbId) {
               const tmdbMovie = await this.tmdb.getMediaByImdbId({
                 imdbId: special.imdbId,
               });
-              await this.processPlexMovieByTmdbId(episode, tmdbMovie.id);
+              await this.processPlexMovieByTmdbId(
+                episode,
+                tmdbMovie.id,
+                currentServerId
+              );
             }
           }
         }
