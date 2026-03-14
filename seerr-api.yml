@@ -368,7 +368,6 @@ components:
       required:
         - id
         - name
-        - machineId
         - ip
         - port
     PlexSettingsWrite:
