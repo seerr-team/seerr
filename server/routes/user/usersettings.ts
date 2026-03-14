@@ -299,7 +299,7 @@ userSettingsRoutes.post<{ authToken: string }>(
       !settings.isAuthMethodEnabled(MediaServerType.PLEX) ||
       settings.plexServers.length === 0
     ) {
-      return res.status(500).json({ message: 'Plex login is disabled' });
+      return res.status(400).json({ message: 'Plex login is disabled' });
     }
 
     try {
@@ -415,10 +415,10 @@ userSettingsRoutes.post<
   }
   // Make sure jellyfin login is enabled
   if (!selectedServer) {
-    return res.status(500).json({ message: 'Jellyfin/Emby login is disabled' });
+    return res.status(400).json({ message: 'Jellyfin/Emby login is disabled' });
   }
   if (!settings.isAuthMethodEnabled(selectedServer.mediaServerType)) {
-    return res.status(500).json({ message: 'Jellyfin/Emby login is disabled' });
+    return res.status(400).json({ message: 'Jellyfin/Emby login is disabled' });
   }
 
   // Do not allow linking of an already linked account
