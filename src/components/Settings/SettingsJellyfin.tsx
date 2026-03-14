@@ -241,7 +241,6 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
 
   useEffect(() => {
     if (
-      !isSetupSettings &&
       !hasInitializedServerSelection &&
       selectedServerId === 'new' &&
       jellyfinServers?.length === 1 &&
@@ -253,7 +252,6 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
     }
   }, [
     hasInitializedServerSelection,
-    isSetupSettings,
     jellyfinServers,
     selectedServerId,
   ]);
