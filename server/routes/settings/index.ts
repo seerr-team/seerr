@@ -520,16 +520,32 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
       select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
       order: { id: 'ASC' },
     });
+    const resolvedServerId = req.body.id ?? existingServer?.id ?? randomUUID();
+    const resolvedMediaServerType =
+      req.body.mediaServerType ??
+      req.body.serverType ??
+      existingServer?.mediaServerType ??
+      MediaServerType.JELLYFIN;
+    const jellyfinServerBase: JellyfinServerSettings = existingServer ?? {
+      id: resolvedServerId,
+      mediaServerType: resolvedMediaServerType,
+      name: '',
+      ip: '',
+      port: 8096,
+      useSsl: false,
+      urlBase: '',
+      externalHostname: '',
+      jellyfinForgotPasswordUrl: '',
+      libraries: [],
+      serverId: '',
+      apiKey: '',
+    };
 
     const jellyfinServer: JellyfinServerSettings = {
-      ...(existingServer ?? settings.jellyfin),
-      id: req.body.id ?? existingServer?.id ?? randomUUID(),
+      ...jellyfinServerBase,
+      id: resolvedServerId,
       ...jellyfinServerBody,
-      mediaServerType:
-        req.body.mediaServerType ??
-        req.body.serverType ??
-        existingServer?.mediaServerType ??
-        MediaServerType.JELLYFIN,
+      mediaServerType: resolvedMediaServerType,
     };
     jellyfinServerId = jellyfinServer.id;
     const jellyfinHostname = getHostname(jellyfinServer);
