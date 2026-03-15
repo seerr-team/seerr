@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddLoginToken1773570023580 implements MigrationInterface {
-  name = 'AddLoginToken1773570023580';
+export class AddLoginToken1773589719678 implements MigrationInterface {
+  name = 'AddLoginToken1773589719678';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP INDEX "IDX_03f7958328e311761b0de675fb"`);

@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddLoginToken1773570292337 implements MigrationInterface {
-  name = 'AddLoginToken1773570292337';
+export class AddLoginToken1773589831561 implements MigrationInterface {
+  name = 'AddLoginToken1773589831561';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
