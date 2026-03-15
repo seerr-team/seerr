@@ -15,6 +15,7 @@ import { ApiError } from '@server/types/error';
 import { getAppVersion } from '@server/utils/appVersion';
 import { getHostname } from '@server/utils/getHostname';
 import axios from 'axios';
+import { createHash } from 'crypto';
 import { Router } from 'express';
 import net from 'net';
 import validator from 'validator';
@@ -44,6 +45,47 @@ authRoutes.get('/me', isAuthenticated(), async (req, res) => {
   }
 
   return res.status(200).json(user);
+});
+
+authRoutes.post('/token', async (req, res, next) => {
+  const { token } = req.body as { token?: string };
+
+  if (!token) {
+    return next({
+      status: 400,
+      message: 'Login token is required.',
+    });
+  }
+
+  const userRepository = getRepository(User);
+
+  try {
+    const hashedToken = createHash('sha256').update(token).digest('hex');
+    const user = await userRepository.findOne({
+      where: { loginToken: hashedToken },
+    });
+
+    if (!user) {
+      return next({ status: 403, message: 'Invalid login token.' });
+    }
+
+    // Set logged in session
+    if (req.session) {
+      req.session.userId = user.id;
+    }
+
+    return res.status(200).json(user.filter());
+  } catch (e) {
+    logger.error('Something went wrong authenticating with login token', {
+      label: 'API',
+      errorMessage: e.message,
+      ip: req.ip,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to authenticate.',
+    });
+  }
 });
 
 authRoutes.post('/plex', async (req, res, next) => {

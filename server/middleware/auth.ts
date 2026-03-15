@@ -5,6 +5,7 @@ import type {
   PermissionCheckOptions,
 } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
+import { createHash } from 'crypto';
 
 export const checkUser: Middleware = async (req, _res, next) => {
   const settings = getSettings();
@@ -21,6 +22,15 @@ export const checkUser: Middleware = async (req, _res, next) => {
     }
 
     user = await userRepository.findOne({ where: { id: userId } });
+  } else if (req.header('X-Login-Token')) {
+    const userRepository = getRepository(User);
+    const hashedToken = createHash('sha256')
+      .update(req.header('X-Login-Token') as string)
+      .digest('hex');
+
+    user = await userRepository.findOne({
+      where: { loginToken: hashedToken },
+    });
   } else if (req.session?.userId) {
     const userRepository = getRepository(User);
 

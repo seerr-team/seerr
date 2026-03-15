@@ -20,10 +20,21 @@ import {
   isOwnProfile,
   isOwnProfileOrAdmin,
 } from '@server/utils/profileMiddleware';
+import { createHash, randomUUID } from 'crypto';
 import { Router } from 'express';
 import net from 'net';
 import { Not } from 'typeorm';
 import { canMakePermissionsChange } from '.';
+
+const isTokenManagementAllowed = (): Middleware => {
+  return (req, res, next) => {
+    const settings = getSettings();
+    if (settings.main.allowSelfLoginToken) {
+      return isOwnProfileOrAdmin()(req, res, next);
+    }
+    return isAuthenticated(Permission.MANAGE_USERS)(req, res, next);
+  };
+};
 
 const userSettingsRoutes = Router({ mergeParams: true });
 
@@ -699,6 +710,92 @@ userSettingsRoutes.post<
       return res.status(200).json({ permissions: user.permissions });
     } catch (e) {
       next({ status: 500, message: e.message });
+    }
+  }
+);
+
+userSettingsRoutes.get<{ id: string }, { hasToken: boolean }>(
+  '/token',
+  isTokenManagementAllowed(),
+  async (req, res, next) => {
+    const userRepository = getRepository(User);
+
+    try {
+      const user = await userRepository.findOne({
+        where: { id: Number(req.params.id) },
+        select: ['id', 'loginToken'],
+      });
+
+      if (!user) {
+        return next({ status: 404, message: 'User not found.' });
+      }
+
+      return res.status(200).json({ hasToken: user.loginToken != null });
+    } catch (e) {
+      return next({ status: 500, message: e.message });
+    }
+  }
+);
+
+userSettingsRoutes.post<{ id: string }, { loginToken: string }>(
+  '/token',
+  isTokenManagementAllowed(),
+  async (req, res, next) => {
+    const userRepository = getRepository(User);
+
+    try {
+      const user = await userRepository.findOne({
+        where: { id: Number(req.params.id) },
+      });
+
+      if (!user) {
+        return next({ status: 404, message: 'User not found.' });
+      }
+
+      const token = randomUUID();
+      user.loginToken = createHash('sha256').update(token).digest('hex');
+
+      await userRepository.save(user);
+
+      logger.info('Login token generated', {
+        label: 'User Settings',
+        userEmail: user.email,
+      });
+
+      return res.status(200).json({ loginToken: token });
+    } catch (e) {
+      return next({ status: 500, message: e.message });
+    }
+  }
+);
+
+userSettingsRoutes.delete<{ id: string }>(
+  '/token',
+  isTokenManagementAllowed(),
+  async (req, res, next) => {
+    const userRepository = getRepository(User);
+
+    try {
+      const user = await userRepository.findOne({
+        where: { id: Number(req.params.id) },
+      });
+
+      if (!user) {
+        return next({ status: 404, message: 'User not found.' });
+      }
+
+      user.loginToken = null;
+
+      await userRepository.save(user);
+
+      logger.info('Login token deleted', {
+        label: 'User Settings',
+        userEmail: user.email,
+      });
+
+      return res.status(204).send();
+    } catch (e) {
+      return next({ status: 500, message: e.message });
     }
   }
 );
