@@ -146,6 +146,7 @@ export interface MainSettings {
   partialRequestsEnabled: boolean;
   enableSpecialEpisodes: boolean;
   locale: string;
+  allowSelfLoginToken: boolean;
   youtubeUrl: string;
 }
 
@@ -204,6 +205,7 @@ interface FullPublicSettings extends PublicSettings {
   emailEnabled: boolean;
   userEmailRequired: boolean;
   newPlexLogin: boolean;
+  allowSelfLoginToken: boolean;
   youtubeUrl: string;
 }
 
@@ -406,6 +408,7 @@ class Settings {
         partialRequestsEnabled: true,
         enableSpecialEpisodes: false,
         locale: 'en',
+        allowSelfLoginToken: false,
         youtubeUrl: '',
       },
       plex: {
@@ -702,6 +705,7 @@ class Settings {
       userEmailRequired:
         this.data.notifications.agents.email.options.userEmailRequired,
       newPlexLogin: this.data.main.newPlexLogin,
+      allowSelfLoginToken: this.data.main.allowSelfLoginToken,
       youtubeUrl: this.data.main.youtubeUrl,
     };
   }

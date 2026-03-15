@@ -47,6 +47,7 @@ export interface PublicSettingsResponse {
   locale: string;
   emailEnabled: boolean;
   newPlexLogin: boolean;
+  allowSelfLoginToken: boolean;
   youtubeUrl: string;
 }
 
