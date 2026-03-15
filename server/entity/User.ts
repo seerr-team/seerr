@@ -47,6 +47,7 @@ export class User {
     'jellyfinDeviceId',
     'jellyfinAuthToken',
     'plexToken',
+    'loginToken',
     'settings',
   ];
 
