@@ -73,7 +73,7 @@ components:
           example: 1
         ratingKey:
           type: string
-        type:
+        mediaType:
           type: string
         title:
           type: string
@@ -89,6 +89,15 @@ components:
           readOnly: true
         requestedBy:
           $ref: '#/components/schemas/User'
+    UserUpdatePayload:
+      type: object
+      properties:
+        email:
+          type: string
+        username:
+          type: string
+        permissions:
+          type: number
     User:
       type: object
       properties:
@@ -129,15 +138,63 @@ components:
           type: string
           example: '2020-09-02T05:02:23.000Z'
           readOnly: true
+        settings:
+          $ref: '#/components/schemas/UserSettings'
+          nullable: true
         requestCount:
           type: number
           example: 5
           readOnly: true
+        displayName:
+          type: string
+          readOnly: true
+        jellyfinUsername:
+          type: string
+          nullable: true
+          readOnly: true
+        jellyfinUserId:
+          type: string
+          nullable: true
+          readOnly: true
+        plexId:
+          type: integer
+          nullable: true
+          readOnly: true
+        warnings:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        recoveryLinkExpirationDate:
+          type: string
+          nullable: true
+          readOnly: true
+        avatarETag:
+          type: string
+          nullable: true
+          readOnly: true
+        avatarVersion:
+          type: integer
+          nullable: true
+          readOnly: true
+        movieQuotaLimit:
+          type: number
+          nullable: true
+          readOnly: true
+        movieQuotaDays:
+          type: number
+          nullable: true
+          readOnly: true
+        tvQuotaLimit:
+          type: number
+          nullable: true
+          readOnly: true
+        tvQuotaDays:
+          type: number
+          nullable: true
+          readOnly: true
       required:
         - id
-        - email
-        - createdAt
-        - updatedAt
     UserSettings:
       type: object
       properties:
@@ -1263,6 +1320,32 @@ components:
           type: number
         rootFolder:
           type: string
+        type:
+          type: string
+          example: 'movie'
+          description: 'Type of the request (movie or tv)'
+          readOnly: true
+        languageProfileId:
+          type: number
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: number
+        isAutoRequest:
+          type: boolean
+        seasons:
+          type: array
+          items:
+            type: object
+        seasonCount:
+          type: number
+        profileName:
+          type: string
+          nullable: true
+        canRemove:
+          type: boolean
+      additionalProperties: true
       required:
         - id
         - status
@@ -1279,10 +1362,19 @@ components:
           type: number
           readOnly: true
           nullable: true
+        imdbId:
+          type: string
+          nullable: true
+          readOnly: true
+        mediaType:
+          type: string
+          readOnly: true
         status:
           type: number
           example: 0
           description: Availability of the media. 1 = `UNKNOWN`, 2 = `PENDING`, 3 = `PROCESSING`, 4 = `PARTIALLY_AVAILABLE`, 5 = `AVAILABLE`, 6 = `DELETED`
+        status4k:
+          type: number
         requests:
           type: array
           readOnly: true
@@ -1296,6 +1388,57 @@ components:
           type: string
           example: '2020-09-12T10:00:27.000Z'
           readOnly: true
+        lastSeasonChange:
+          type: string
+          nullable: true
+        mediaAddedAt:
+          type: string
+          nullable: true
+        serviceId:
+          type: number
+          nullable: true
+        serviceId4k:
+          type: number
+          nullable: true
+        externalServiceId:
+          type: number
+          nullable: true
+        externalServiceId4k:
+          type: number
+          nullable: true
+        externalServiceSlug:
+          type: string
+          nullable: true
+        externalServiceSlug4k:
+          type: string
+          nullable: true
+        ratingKey:
+          type: string
+          nullable: true
+        ratingKey4k:
+          type: string
+          nullable: true
+        jellyfinMediaId:
+          type: string
+          nullable: true
+        jellyfinMediaId4k:
+          type: string
+          nullable: true
+        serviceUrl:
+          type: string
+          nullable: true
+        downloadStatus:
+          type: array
+          items:
+            type: object
+        downloadStatus4k:
+          type: array
+          items:
+            type: object
+        mediaUrl:
+          type: string
+          nullable: true
+      additionalProperties: true
     Cast:
       type: object
       properties:
@@ -1624,8 +1767,12 @@ components:
           example: 1
         name:
           type: string
+        birthday:
+          type: string
+          nullable: true
         deathday:
           type: string
+          nullable: true
         knownForDepartment:
           type: string
         alsoKnownAs:
@@ -1633,21 +1780,25 @@ components:
           items:
             type: string
         gender:
-          type: string
+          type: number
         biography:
           type: string
         popularity:
-          type: string
+          type: number
         placeOfBirth:
           type: string
+          nullable: true
         profilePath:
           type: string
+          nullable: true
         adult:
           type: boolean
         imdbId:
           type: string
+          nullable: true
         homepage:
           type: string
+          nullable: true
     CreditCast:
       type: object
       properties:
@@ -1993,21 +2144,20 @@ components:
         webpush:
           type: number
     WatchProviders:
-      type: array
-      items:
-        type: object
-        properties:
-          iso_3166_1:
-            type: string
-          link:
-            type: string
-          buy:
-            type: array
-            items:
-              $ref: '#/components/schemas/WatchProviderDetails'
-          flatrate:
-            items:
-              $ref: '#/components/schemas/WatchProviderDetails'
+      type: object
+      properties:
+        iso_3166_1:
+          type: string
+        link:
+          type: string
+        buy:
+          type: array
+          items:
+            $ref: '#/components/schemas/WatchProviderDetails'
+        flatrate:
+          type: array
+          items:
+            $ref: '#/components/schemas/WatchProviderDetails'
     WatchProviderDetails:
       type: object
       properties:
@@ -2023,6 +2173,9 @@ components:
       type: object
       properties:
         id:
+          type: number
+          example: 1
+        status:
           type: number
           example: 1
         issueType:
@@ -2087,7 +2240,47 @@ components:
       type: object
       properties:
         id:
+          type: number
+          example: 1
+        users:
+          type: array
+          nullable: true
+          items:
+            type: number
+        genre:
+          type: number
+          nullable: true
+        language:
           type: string
+          nullable: true
+        keywords:
+          type: array
+          nullable: true
+          items:
+            type: number
+        profileId:
+          type: number
+          nullable: true
+        rootFolder:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          nullable: true
+          items:
+            type: number
+        radarrServiceId:
+          type: number
+          nullable: true
+        sonarrServiceId:
+          type: number
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     Certification:
       type: object
       properties:
@@ -4407,7 +4600,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/UserUpdatePayload'
       responses:
         '200':
           description: Successfully updated user details
@@ -7850,9 +8043,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/OverrideRule'
+                $ref: '#/components/schemas/OverrideRule'
   /overrideRule/{ruleId}:
     put:
       summary: Update override rule
@@ -7871,9 +8062,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/OverrideRule'
+                $ref: '#/components/schemas/OverrideRule'
     delete:
       summary: Delete override rule by ID
       description: Deletes the override rule with the provided ruleId.
