@@ -23,6 +23,9 @@ const messages = defineMessages('components.Settings.SettingsUsers', {
   userSettingsDescription: 'Configure global and default user settings.',
   toastSettingsSuccess: 'User settings saved successfully!',
   toastSettingsFailure: 'Something went wrong while saving settings.',
+  allowSelfLoginToken: 'Allow Users to Generate Login Tokens',
+  allowSelfLoginTokenTip:
+    'When disabled, only admins can generate login tokens on behalf of users',
   loginMethods: 'Login Methods',
   loginMethodsTip: 'Configure login methods for users.',
   localLogin: 'Enable Local Sign-In',
@@ -107,6 +110,7 @@ const SettingsUsers = () => {
             localLogin: data?.localLogin,
             mediaServerLogin: data?.mediaServerLogin,
             newPlexLogin: data?.newPlexLogin,
+            allowSelfLoginToken: data?.allowSelfLoginToken,
             movieQuotaLimit: data?.defaultQuotas.movie.quotaLimit ?? 0,
             movieQuotaDays: data?.defaultQuotas.movie.quotaDays ?? 7,
             tvQuotaLimit: data?.defaultQuotas.tv.quotaLimit ?? 0,
@@ -121,6 +125,7 @@ const SettingsUsers = () => {
                 localLogin: values.localLogin,
                 mediaServerLogin: values.mediaServerLogin,
                 newPlexLogin: values.newPlexLogin,
+                allowSelfLoginToken: values.allowSelfLoginToken,
                 defaultQuotas: {
                   movie: {
                     quotaLimit: values.movieQuotaLimit,
@@ -224,6 +229,30 @@ const SettingsUsers = () => {
                       name="newPlexLogin"
                       onChange={() => {
                         setFieldValue('newPlexLogin', !values.newPlexLogin);
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="allowSelfLoginToken"
+                    className="checkbox-label"
+                  >
+                    {intl.formatMessage(messages.allowSelfLoginToken)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.allowSelfLoginTokenTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="allowSelfLoginToken"
+                      name="allowSelfLoginToken"
+                      onChange={() => {
+                        setFieldValue(
+                          'allowSelfLoginToken',
+                          !values.allowSelfLoginToken
+                        );
                       }}
                     />
                   </div>

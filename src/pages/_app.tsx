@@ -17,7 +17,7 @@ import '@fontsource-variable/inter';
 import { MediaServerType } from '@server/constants/server';
 import type { PublicSettingsResponse } from '@server/interfaces/api/settingsInterfaces';
 import type { AvailableLocale } from '@server/types/languages';
-import axios from 'axios';
+import axios, { type AxiosResponse } from 'axios';
 import type { AppInitialProps, AppProps } from 'next/app';
 import App from 'next/app';
 import Head from 'next/head';
@@ -253,6 +253,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     locale: 'en',
     emailEnabled: false,
     newPlexLogin: true,
+    allowSelfLoginToken: false,
     youtubeUrl: '',
   };
 
@@ -277,18 +278,44 @@ CoreApp.getInitialProps = async (initialProps) => {
       }
     } else {
       try {
-        // Attempt to get the user by running a request to the local api
-        const response = await axios.get<User>(
-          `http://${process.env.HOST || 'localhost'}:${
-            process.env.PORT || 5055
-          }/api/v1/auth/me`,
-          {
-            headers:
-              ctx.req && ctx.req.headers.cookie
-                ? { cookie: ctx.req.headers.cookie }
-                : undefined,
+        const tokenParam = ctx.query?.token as string | undefined;
+        let response: AxiosResponse<User>;
+
+        if (tokenParam) {
+          response = await axios.post<User>(
+            `http://${process.env.HOST || 'localhost'}:${
+              process.env.PORT || 5055
+            }/api/v1/auth/token`,
+            { token: tokenParam }
+          );
+
+          const reqUrl = new URL(ctx.req?.url ?? '/', 'http://localhost');
+          reqUrl.searchParams.delete('token');
+          const redirectPath =
+            reqUrl.pathname + (reqUrl.search ? reqUrl.search : '');
+
+          const headers: Record<string, string | string[]> = {
+            Location: redirectPath,
+          };
+          if (response.headers['set-cookie']) {
+            headers['Set-Cookie'] = response.headers['set-cookie'];
           }
-        );
+          ctx.res.writeHead(307, headers);
+          ctx.res.end();
+        } else {
+          // Attempt to get the user by running a request to the local api
+          response = await axios.get<User>(
+            `http://${process.env.HOST || 'localhost'}:${
+              process.env.PORT || 5055
+            }/api/v1/auth/me`,
+            {
+              headers:
+                ctx.req && ctx.req.headers.cookie
+                  ? { cookie: ctx.req.headers.cookie }
+                  : undefined,
+            }
+          );
+        }
         user = response.data;
 
         if (router.pathname.match(/(setup|login)/)) {

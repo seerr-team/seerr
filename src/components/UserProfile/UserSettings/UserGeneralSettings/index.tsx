@@ -2,9 +2,11 @@ import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
+import SensitiveInput from '@app/components/Common/SensitiveInput';
 import LanguageSelector from '@app/components/LanguageSelector';
 import QuotaSelector from '@app/components/QuotaSelector';
 import RegionSelector from '@app/components/RegionSelector';
+import CopyButton from '@app/components/Settings/CopyButton';
 import { availableLanguages } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
@@ -12,7 +14,7 @@ import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
-import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
+import { ArrowDownOnSquareIcon, LinkIcon } from '@heroicons/react/24/outline';
 import { ApiErrorCode } from '@server/constants/error';
 import type { UserSettingsGeneralResponse } from '@server/interfaces/api/userSettingsInterfaces';
 import type { AvailableLocale } from '@server/types/languages';
@@ -73,6 +75,19 @@ const messages = defineMessages(
     plexwatchlistsyncseries: 'Auto-Request Series',
     plexwatchlistsyncseriestip:
       'Automatically request series on your <PlexWatchlistSupportLink>Plex Watchlist</PlexWatchlistSupportLink>',
+    usertoken: 'Login Token',
+    usertokentip:
+      'Use this token to log in automatically by appending ?token=YOUR_TOKEN to the URL',
+    generatetoken: 'Generate Login Token',
+    regeneratetoken: 'Regenerate Login Token',
+    deletetoken: 'Delete Login Token',
+    tokengenerated:
+      'Login token generated. Save it now, as it will not be shown again.',
+    tokendeleted: 'Login token deleted successfully!',
+    tokengenerateerror: 'Failed to generate login token.',
+    tokendeleteerror: 'Failed to delete login token.',
+    tokencopied: 'Copied login token to clipboard.',
+    tokenurlcopied: 'Copied login URL to clipboard.',
   }
 );
 
@@ -82,6 +97,9 @@ const UserGeneralSettings = () => {
   const { locale, setLocale } = useLocale();
   const [movieQuotaEnabled, setMovieQuotaEnabled] = useState(false);
   const [tvQuotaEnabled, setTvQuotaEnabled] = useState(false);
+  const [isGeneratingToken, setIsGeneratingToken] = useState(false);
+  const [isDeletingToken, setIsDeletingToken] = useState(false);
+  const [generatedToken, setGeneratedToken] = useState<string | null>(null);
   const router = useRouter();
   const {
     user,
@@ -99,6 +117,9 @@ const UserGeneralSettings = () => {
   } = useSWR<UserSettingsGeneralResponse>(
     user ? `/api/v1/user/${user?.id}/settings/main` : null
   );
+  const { data: tokenData, mutate: revalidateToken } = useSWR<{
+    hasToken: boolean;
+  }>(user ? `/api/v1/user/${user?.id}/settings/token` : null);
 
   const UserGeneralSettingsSchema = Yup.object().shape({
     email:
@@ -140,6 +161,48 @@ const UserGeneralSettings = () => {
   if (!data) {
     return <ErrorPage statusCode={500} />;
   }
+
+  const handleGenerateToken = async () => {
+    setIsGeneratingToken(true);
+    try {
+      const response = await axios.post<{
+        loginToken: string;
+      }>(`/api/v1/user/${user?.id}/settings/token`);
+      setGeneratedToken(response.data.loginToken);
+      addToast(intl.formatMessage(messages.tokengenerated), {
+        appearance: 'success',
+        autoDismiss: true,
+      });
+      revalidateToken();
+    } catch (e) {
+      addToast(intl.formatMessage(messages.tokengenerateerror), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    } finally {
+      setIsGeneratingToken(false);
+    }
+  };
+
+  const handleDeleteToken = async () => {
+    setIsDeletingToken(true);
+    try {
+      await axios.delete(`/api/v1/user/${user?.id}/settings/token`);
+      setGeneratedToken(null);
+      addToast(intl.formatMessage(messages.tokendeleted), {
+        autoDismiss: true,
+        appearance: 'success',
+      });
+      revalidateToken();
+    } catch (e) {
+      addToast(intl.formatMessage(messages.tokendeleteerror), {
+        autoDismiss: true,
+        appearance: 'error',
+      });
+    } finally {
+      setIsDeletingToken(false);
+    }
+  };
 
   return (
     <>
@@ -657,6 +720,68 @@ const UserGeneralSettings = () => {
           );
         }}
       </Formik>
+      {(currentSettings.allowSelfLoginToken ||
+        currentHasPermission(Permission.MANAGE_USERS)) && (
+        <div className="section mt-8">
+          <div className="form-row">
+            <label className="text-label">
+              <span>{intl.formatMessage(messages.usertoken)}</span>
+              <span className="label-tip">
+                {intl.formatMessage(messages.usertokentip)}
+              </span>
+            </label>
+            <div className="form-input-area">
+              <div className="flex flex-col space-y-2">
+                {generatedToken && (
+                  <div className="form-input-field">
+                    <SensitiveInput
+                      type="text"
+                      value={generatedToken}
+                      className="rounded-l-only"
+                      readOnly
+                    />
+                    <CopyButton
+                      textToCopy={generatedToken}
+                      toastMessage={intl.formatMessage(messages.tokencopied)}
+                      tooltipContent={intl.formatMessage(messages.tokencopied)}
+                    />
+                    <CopyButton
+                      textToCopy={`${currentSettings.applicationUrl || window.location.origin}/?token=${generatedToken}`}
+                      toastMessage={intl.formatMessage(messages.tokenurlcopied)}
+                      tooltipContent={intl.formatMessage(
+                        messages.tokenurlcopied
+                      )}
+                      icon={<LinkIcon />}
+                    />
+                  </div>
+                )}
+                <div className="flex space-x-2">
+                  <Button
+                    buttonType="primary"
+                    onClick={handleGenerateToken}
+                    disabled={isGeneratingToken}
+                  >
+                    {intl.formatMessage(
+                      tokenData?.hasToken
+                        ? messages.regeneratetoken
+                        : messages.generatetoken
+                    )}
+                  </Button>
+                  {tokenData?.hasToken && (
+                    <Button
+                      buttonType="danger"
+                      onClick={handleDeleteToken}
+                      disabled={isDeletingToken}
+                    >
+                      {intl.formatMessage(messages.deletetoken)}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
