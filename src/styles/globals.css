@@ -708,6 +708,7 @@
 }
 [data-theme='amoled-strix'] .discover-movies-amoled-heading {
   display: block;
+  margin-top: 72px;
 }
 [data-theme='amoled-strix'] .discover-movies-standard-heading {
   display: none;
@@ -729,6 +730,7 @@
 }
 [data-theme='amoled-strix'] .discover-tv-amoled-heading {
   display: block;
+  margin-top: 72px;
 }
 [data-theme='amoled-strix'] .discover-tv-standard-heading {
   display: none;
