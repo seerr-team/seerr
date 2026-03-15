@@ -9,7 +9,7 @@ type CopyButtonProps = {
   textToCopy: string;
   disabled?: boolean;
   toastMessage?: string;
-
+  icon?: React.ReactNode;
   tooltipContent?: React.ReactNode;
   tooltipConfig?: Partial<Config>;
 };
@@ -18,6 +18,7 @@ const CopyButton = ({
   textToCopy,
   disabled,
   toastMessage,
+  icon,
   tooltipContent,
   tooltipConfig,
 }: CopyButtonProps) => {
@@ -46,7 +47,7 @@ const CopyButton = ({
         type="button"
         disabled={disabled}
       >
-        <ClipboardDocumentIcon />
+        {icon ?? <ClipboardDocumentIcon />}
       </button>
     </Tooltip>
   );
