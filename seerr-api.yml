@@ -137,8 +137,9 @@ components:
           example: '2020-09-02T05:02:23.000Z'
           readOnly: true
         settings:
-          $ref: '#/components/schemas/UserSettings'
           nullable: true
+          allOf:
+            - $ref: '#/components/schemas/UserSettings'
         requestCount:
           type: number
           example: 5
@@ -5028,7 +5029,7 @@ paths:
                           example: 1
                         ratingKey:
                           type: string
-                        type:
+                        mediaType:
                           type: string
                         title:
                           type: string
@@ -6341,7 +6342,7 @@ paths:
                           example: 1
                         ratingKey:
                           type: string
-                        type:
+                        mediaType:
                           type: string
                         title:
                           type: string
