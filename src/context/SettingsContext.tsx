@@ -30,6 +30,7 @@ const defaultSettings = {
   locale: 'en',
   emailEnabled: false,
   newPlexLogin: true,
+  allowSelfLoginToken: false,
   youtubeUrl: '',
 };
 
