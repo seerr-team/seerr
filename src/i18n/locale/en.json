@@ -1046,7 +1046,7 @@
   "components.Settings.SettingsNetwork.validationDnsCacheMinTtl": "You must provide a valid minimum TTL",
   "components.Settings.SettingsNetwork.validationProxyPort": "You must provide a valid port",
   "components.Settings.SettingsUsers.allowSelfLoginToken": "Allow Users to Generate Login Tokens",
-  "components.Settings.SettingsUsers.allowSelfLoginTokenTip": "When disabled, only admins can generate login tokens on behalf of users",
+  "components.Settings.SettingsUsers.allowSelfLoginTokenTip": "When disabled, only users with the Manage Users permission can generate login tokens for other users",
   "components.Settings.SettingsUsers.atLeastOneAuth": "At least one authentication method must be selected.",
   "components.Settings.SettingsUsers.defaultPermissions": "Default Permissions",
   "components.Settings.SettingsUsers.defaultPermissionsTip": "Initial permissions assigned to new users",

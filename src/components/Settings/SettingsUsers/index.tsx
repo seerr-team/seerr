@@ -25,7 +25,7 @@ const messages = defineMessages('components.Settings.SettingsUsers', {
   toastSettingsFailure: 'Something went wrong while saving settings.',
   allowSelfLoginToken: 'Allow Users to Generate Login Tokens',
   allowSelfLoginTokenTip:
-    'When disabled, only admins can generate login tokens on behalf of users',
+    'When disabled, only users with the Manage Users permission can generate login tokens for other users',
   loginMethods: 'Login Methods',
   loginMethodsTip: 'Configure login methods for users.',
   localLogin: 'Enable Local Sign-In',
