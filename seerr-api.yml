@@ -92,8 +92,6 @@ components:
     UserUpdatePayload:
       type: object
       properties:
-        email:
-          type: string
         username:
           type: string
         permissions:
