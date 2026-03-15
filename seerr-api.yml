@@ -173,7 +173,7 @@ components:
           nullable: true
           readOnly: true
         avatarVersion:
-          type: integer
+          type: string
           nullable: true
           readOnly: true
         movieQuotaLimit:
