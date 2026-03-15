@@ -1144,7 +1144,6 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
       <div className="extra-bottom-space relative" />
       </div>
       ) : (
-      {/* ── AMOLED full-bleed layout ── */}
       <div className="relative bg-black">
         <PageTitle title={data.title} />
         <IssueModal

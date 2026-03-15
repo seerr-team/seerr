@@ -1367,7 +1367,6 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
       <div className="extra-bottom-space relative" />
     </div>
     ) : (
-    {/* ── AMOLED full-bleed layout ── */}
     <div className="relative bg-black">
       <PageTitle title={data.name} />
       <BlocklistModal
