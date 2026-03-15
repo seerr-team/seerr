@@ -47,6 +47,16 @@ Note that users with the **Manage Users** permission are exempt from request lim
 
 Users are also unable to modify their own request limits.
 
+## Login Token
+
+Users can generate a personal login token. The token can be passed as an `X-Login-Token` header, or by appending `?token=YOUR_TOKEN` to any Seerr URL to log in automatically.
+
+The token is only shown once upon generation. If the token is lost, a new one must be generated, which will invalidate the previous token.
+
+:::note
+Token generation may be restricted to administrators depending on the [Allow Users to Generate Login Tokens](/using-seerr/settings/users#allow-users-to-generate-login-tokens) setting.
+:::
+
 ## Password
 
 All "local users" are assigned passwords upon creation, but users imported from Plex can also optionally configure passwords to enable sign-in using their email address.

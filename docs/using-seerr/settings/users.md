@@ -36,6 +36,14 @@ Unless an override is configured, users are granted these global request limits.
 
 Note that users with the **Manage Users** permission are exempt from request limits, since that permission also grants the ability to submit requests on behalf of other users.
 
+## Allow Users to Generate Login Tokens
+
+When enabled, users can generate their own login tokens from their profile settings. A token can be used by passing it as an `X-Login-Token` header, or by appending `?token=YOUR_TOKEN` to any Seerr URL to log in automatically.
+
+When disabled, only users with the **Manage Users** permission can generate tokens on behalf of other users.
+
+This setting is **disabled** by default.
+
 ## Default Permissions
 
 Select the permissions you would like assigned to new users to have by default upon account creation.
