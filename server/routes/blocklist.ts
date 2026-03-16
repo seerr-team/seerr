@@ -161,6 +161,56 @@ blocklistRoutes.post(
 );
 
 blocklistRoutes.delete(
+  '/:id',
+  isAuthenticated([Permission.MANAGE_BLOCKLIST], {
+    type: 'or',
+  }),
+  async (req, res, next) => {
+    const mediaType = req.query.mediaType;
+    if (mediaType !== MediaType.MOVIE && mediaType !== MediaType.TV) {
+      return next({
+        status: 400,
+        message: 'Invalid or missing mediaType query parameter.',
+      });
+    }
+
+    try {
+      const blocklisteRepository = getRepository(Blocklist);
+
+      const blocklistItem = await blocklisteRepository.findOneOrFail({
+        where: {
+          tmdbId: Number(req.params.id),
+          mediaType,
+        },
+      });
+
+      await blocklisteRepository.remove(blocklistItem);
+
+      const mediaRepository = getRepository(Media);
+
+      const mediaItem = await mediaRepository.findOneOrFail({
+        where: {
+          tmdbId: Number(req.params.id),
+          mediaType: req.query.mediaType as MediaType,
+        },
+      });
+
+      await mediaRepository.remove(mediaItem);
+
+      return res.status(204).send();
+    } catch (e) {
+      if (e instanceof EntityNotFoundError) {
+        return next({
+          status: 404,
+          message: e.message,
+        });
+      }
+      return next({ status: 500, message: e.message });
+    }
+  }
+);
+
+blocklistRoutes.delete(
   '/collection/:id',
   isAuthenticated([Permission.MANAGE_BLOCKLIST], {
     type: 'or',
@@ -206,47 +256,6 @@ blocklistRoutes.delete(
         errorMessage: e.message,
         collectionId: req.params.id,
       });
-      return next({ status: 500, message: e.message });
-    }
-  }
-);
-
-blocklistRoutes.delete(
-  '/:id',
-  isAuthenticated([Permission.MANAGE_BLOCKLIST], {
-    type: 'or',
-  }),
-  async (req, res, next) => {
-    try {
-      const blocklistRepository = getRepository(Blocklist);
-      const mediaRepository = getRepository(Media);
-
-      const blocklistItem = await blocklistRepository.findOneOrFail({
-        where: { tmdbId: Number(req.params.id) },
-      });
-
-      await blocklistRepository.remove(blocklistItem);
-
-      try {
-        const mediaItem = await mediaRepository.findOneOrFail({
-          where: { tmdbId: Number(req.params.id) },
-        });
-
-        mediaItem.status = MediaStatus.UNKNOWN;
-        mediaItem.status4k = MediaStatus.UNKNOWN;
-        await mediaRepository.save(mediaItem);
-      } catch {
-        // Media entity doesn't exist, which is fine
-      }
-
-      return res.status(204).send();
-    } catch (e) {
-      if (e instanceof EntityNotFoundError) {
-        return next({
-          status: 404,
-          message: e.message,
-        });
-      }
       return next({ status: 500, message: e.message });
     }
   }
