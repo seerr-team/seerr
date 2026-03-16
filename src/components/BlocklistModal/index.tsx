@@ -92,8 +92,8 @@ const BlocklistModal = ({
           isCollection(data)
             ? data.name
             : isMovie(data)
-            ? data.title
-            : data?.name
+              ? data.title
+              : data?.name
         }`}
         onCancel={onCancel}
         onOk={onComplete}

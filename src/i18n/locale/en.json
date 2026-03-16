@@ -1601,6 +1601,7 @@
   "i18n.notrequested": "Not Requested",
   "i18n.open": "Open",
   "i18n.partiallyavailable": "Partially Available",
+  "i18n.partiallyblocklisted": "Partially Blocklisted",
   "i18n.pending": "Pending",
   "i18n.previous": "Previous",
   "i18n.processing": "Processing",

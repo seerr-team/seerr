@@ -60,6 +60,7 @@ const globalMessages = defineMessages('i18n', {
   resolved: 'Resolved',
   blocklist: 'Blocklist',
   blocklisted: 'Blocklisted',
+  partiallyblocklisted: 'Partially Blocklisted',
   blocklistSuccess: '<strong>{title}</strong> was successfully blocklisted.',
   blocklistError: 'Something went wrong. Please try again.',
   blocklistDuplicateError:

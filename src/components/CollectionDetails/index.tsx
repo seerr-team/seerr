@@ -171,6 +171,8 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
       part.mediaInfo && part.mediaInfo.status === MediaStatus.BLOCKLISTED
   );
   const isCollectionBlocklisted = blocklistedParts.length > 0;
+  const isCollectionPartiallyBlocklisted =
+    blocklistedParts.length > 0 && blocklistedParts.length < data.parts.length;
 
   if (isCollectionBlocklisted) {
     collectionStatus = MediaStatus.BLOCKLISTED;
@@ -340,6 +342,11 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
               status={collectionStatus}
               downloadItem={downloadStatus}
               title={titles}
+              statusLabelOverride={
+                isCollectionPartiallyBlocklisted
+                  ? intl.formatMessage(globalMessages.partiallyblocklisted)
+                  : undefined
+              }
               inProgress={data.parts.some(
                 (part) => (part.mediaInfo?.downloadStatus ?? []).length > 0
               )}
