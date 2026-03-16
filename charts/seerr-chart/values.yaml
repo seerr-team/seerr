@@ -173,3 +173,14 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+# -- DNS configuration for the pod
+dnsConfig: {}
+#  nameservers:
+#    - 8.8.8.8
+#    - 8.8.4.4
+#  searches:
+#    - ns.example.com
+#  options:
+#    - name: ndots
+#      value: "2"
