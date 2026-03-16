@@ -91,14 +91,6 @@ const TitleCard = ({
     setCurrentStatus(status);
   }, [status]);
 
-  // For collections, check if any movies in the collection are blacklisted
-  useEffect(() => {
-    if (mediaType === 'collection' && !status) {
-      // We could add a check here to determine collection blacklist status
-      // For now, we'll rely on the status prop being passed from parent components
-    }
-  }, [mediaType, status]);
-
   const requestComplete = useCallback((newStatus: MediaStatus) => {
     setCurrentStatus(newStatus);
     setShowRequestModal(false);
