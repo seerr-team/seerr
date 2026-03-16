@@ -493,6 +493,7 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
               userScore={title.voteAverage}
               year={title.releaseDate}
               mediaType={title.mediaType}
+              mutateParent={revalidate}
             />
           ))}
       />

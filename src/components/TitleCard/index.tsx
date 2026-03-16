@@ -204,6 +204,9 @@ const TitleCard = ({
           { appearance: 'success', autoDismiss: true }
         );
         setCurrentStatus(MediaStatus.BLOCKLISTED);
+        if (mutateParent) {
+          mutateParent();
+        }
       } catch (e) {
         if (e?.response?.status === 412) {
           addToast(
@@ -275,6 +278,9 @@ const TitleCard = ({
               { appearance: 'success', autoDismiss: true }
             );
             setCurrentStatus(MediaStatus.UNKNOWN);
+            if (mutateParent) {
+              mutateParent();
+            }
           } else {
             addToast(intl.formatMessage(globalMessages.blocklistError), {
               appearance: 'error',
