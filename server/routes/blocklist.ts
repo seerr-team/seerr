@@ -311,9 +311,7 @@ blocklistRoutes.delete(
             });
 
             if (mediaItem) {
-              mediaItem.status = MediaStatus.UNKNOWN;
-              mediaItem.status4k = MediaStatus.UNKNOWN;
-              await mediaRepository.save(mediaItem);
+              await mediaRepository.remove(mediaItem);
             }
           }
         })
