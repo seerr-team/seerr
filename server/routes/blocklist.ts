@@ -160,6 +160,76 @@ blocklistRoutes.post(
   }
 );
 
+blocklistRoutes.post(
+  '/collection/:id',
+  isAuthenticated([Permission.MANAGE_BLOCKLIST], {
+    type: 'or',
+  }),
+  async (req, res, next) => {
+    try {
+      const tmdb = new TheMovieDb();
+      const collection = await tmdb.getCollection({
+        collectionId: Number(req.params.id),
+        language: req.locale,
+      });
+
+      const blocklistRepository = getRepository(Blocklist);
+      const mediaRepository = getRepository(Media);
+
+      // Blocklist all movies in the collection
+      await Promise.all(
+        collection.parts.map(async (part) => {
+          const existingBlocklist = await blocklistRepository.findOne({
+            where: { tmdbId: part.id },
+          });
+
+          if (existingBlocklist) {
+            return;
+          }
+
+          const blocklist = new Blocklist({
+            tmdbId: part.id,
+            mediaType: MediaType.MOVIE,
+            title: part.title,
+            user: req.user,
+          });
+
+          await blocklistRepository.save(blocklist);
+
+          let media = await mediaRepository.findOne({
+            where: { tmdbId: part.id },
+          });
+
+          if (!media) {
+            media = new Media({
+              tmdbId: part.id,
+              status: MediaStatus.BLOCKLISTED,
+              status4k: MediaStatus.BLOCKLISTED,
+              mediaType: MediaType.MOVIE,
+              blocklist: Promise.resolve(blocklist),
+            });
+          } else {
+            media.status = MediaStatus.BLOCKLISTED;
+            media.status4k = MediaStatus.BLOCKLISTED;
+            media.blocklist = Promise.resolve(blocklist);
+          }
+
+          await mediaRepository.save(media);
+        })
+      );
+
+      return res.status(201).send();
+    } catch (e) {
+      logger.error('Error blocklisting collection', {
+        label: 'Blocklist',
+        errorMessage: e.message,
+        collectionId: req.params.id,
+      });
+      return next({ status: 500, message: e.message });
+    }
+  }
+);
+
 blocklistRoutes.delete(
   '/:id',
   isAuthenticated([Permission.MANAGE_BLOCKLIST], {
