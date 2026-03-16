@@ -131,14 +131,6 @@ blocklistRoutes.post(
     try {
       const values = blocklistAdd.parse(req.body);
 
-      const existingBlacklist = await getRepository(Blacklist).findOne({
-        where: { tmdbId: values.tmdbId },
-      });
-
-      if (existingBlacklist) {
-        return next({ status: 412, message: 'Item already blacklisted' });
-      }
-
       await Blocklist.addToBlocklist({
         blocklistRequest: values,
       });
@@ -168,8 +160,8 @@ blocklistRoutes.post(
   }
 );
 
-blacklistRoutes.delete(
-  '/:id',
+blocklistRoutes.delete(
+  '/collection/:id',
   isAuthenticated([Permission.MANAGE_BLOCKLIST], {
     type: 'or',
   }),
