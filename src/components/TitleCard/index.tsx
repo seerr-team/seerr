@@ -248,6 +248,9 @@ const TitleCard = ({
               { appearance: 'success', autoDismiss: true }
             );
             setCurrentStatus(MediaStatus.UNKNOWN);
+            if (mutateParent) {
+              mutateParent();
+            }
           } else {
             addToast(intl.formatMessage(globalMessages.blocklistError), {
               appearance: 'error',
