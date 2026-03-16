@@ -180,7 +180,7 @@ blocklistRoutes.post(
       await Promise.all(
         collection.parts.map(async (part) => {
           const existingBlocklist = await blocklistRepository.findOne({
-            where: { tmdbId: part.id },
+            where: { tmdbId: part.id, mediaType: MediaType.MOVIE },
           });
 
           if (existingBlocklist) {
@@ -197,7 +197,7 @@ blocklistRoutes.post(
           await blocklistRepository.save(blocklist);
 
           let media = await mediaRepository.findOne({
-            where: { tmdbId: part.id },
+            where: { tmdbId: part.id, mediaType: MediaType.MOVIE },
           });
 
           if (!media) {
@@ -300,14 +300,14 @@ blocklistRoutes.delete(
       await Promise.all(
         collection.parts.map(async (part) => {
           const blocklistItem = await blocklistRepository.findOne({
-            where: { tmdbId: part.id },
+            where: { tmdbId: part.id, mediaType: MediaType.MOVIE },
           });
 
           if (blocklistItem) {
             await blocklistRepository.remove(blocklistItem);
 
             const mediaItem = await mediaRepository.findOne({
-              where: { tmdbId: part.id },
+              where: { tmdbId: part.id, mediaType: MediaType.MOVIE },
             });
 
             if (mediaItem) {
