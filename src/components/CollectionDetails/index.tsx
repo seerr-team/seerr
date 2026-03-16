@@ -267,11 +267,6 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
     );
   }
 
-  const blocklistVisibility = hasPermission(
-    [Permission.MANAGE_BLOCKLIST, Permission.VIEW_BLOCKLIST],
-    { type: 'or' }
-  );
-
   return (
     <div
       className="media-page"
@@ -385,7 +380,7 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
           </span>
         </div>
         <div className="media-actions">
-          {blocklistVisibility &&
+          {hasPermission([Permission.MANAGE_BLOCKLIST], { type: 'or' }) &&
             (isCollectionBlocklisted ? (
               <Tooltip
                 content={
@@ -477,7 +472,12 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
         isEmpty={data.parts.length === 0}
         items={data.parts
           .filter((title) => {
-            if (!blocklistVisibility)
+            if (
+              !hasPermission(
+                [Permission.MANAGE_BLOCKLIST, Permission.VIEW_BLOCKLIST],
+                { type: 'or' }
+              )
+            )
               return title.mediaInfo?.status !== MediaStatus.BLOCKLISTED;
             return title;
           })
