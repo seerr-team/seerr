@@ -99,7 +99,7 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
       );
 
       revalidate();
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(globalMessages.blocklistError), {
         appearance: 'error',
         autoDismiss: true,
@@ -129,7 +129,7 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
       );
 
       revalidate();
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(globalMessages.blocklistError), {
         appearance: 'error',
         autoDismiss: true,

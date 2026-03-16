@@ -282,7 +282,7 @@ const TitleCard = ({
             });
           }
         }
-      } catch (e) {
+      } catch {
         addToast(intl.formatMessage(globalMessages.blocklistError), {
           appearance: 'error',
           autoDismiss: true,

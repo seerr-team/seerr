@@ -243,7 +243,7 @@ blocklistRoutes.delete(
         mediaItem.status = MediaStatus.UNKNOWN;
         mediaItem.status4k = MediaStatus.UNKNOWN;
         await mediaRepository.save(mediaItem);
-      } catch (mediaError) {
+      } catch {
         // Media entity doesn't exist, which is fine
       }
 
