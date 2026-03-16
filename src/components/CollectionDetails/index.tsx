@@ -1,4 +1,4 @@
-import BlacklistModal from '@app/components/BlacklistModal';
+import BlocklistModal from '@app/components/BlocklistModal';
 import Button from '@app/components/Common/Button';
 import ButtonWithDropdown from '@app/components/Common/ButtonWithDropdown';
 import CachedImage from '@app/components/Common/CachedImage';
@@ -49,8 +49,8 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
   const { hasPermission } = useUser();
   const [requestModal, setRequestModal] = useState(false);
   const [is4k, setIs4k] = useState(false);
-  const [showBlacklistModal, setShowBlacklistModal] = useState(false);
-  const [isBlacklistUpdating, setIsBlacklistUpdating] = useState(false);
+  const [showBlocklistModal, setShowBlocklistModal] = useState(false);
+  const [isBlocklistUpdating, setIsBlocklistUpdating] = useState(false);
   const { addToast } = useToasts();
 
   const returnCollectionDownloadItems = (data: Collection | undefined) => {
@@ -83,14 +83,14 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
     useSWR<{ id: number; name: string }[]>(`/api/v1/genres/movie`);
 
   const onClickHideItemBtn = async (): Promise<void> => {
-    setIsBlacklistUpdating(true);
+    setIsBlocklistUpdating(true);
 
     try {
-      await axios.post(`/api/v1/blacklist/collection/${data?.id}`);
+      await axios.post(`/api/v1/blocklist/collection/${data?.id}`);
 
       addToast(
         <span>
-          {intl.formatMessage(globalMessages.blacklistSuccess, {
+          {intl.formatMessage(globalMessages.blocklistSuccess, {
             title: data?.name,
             strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
           })}
@@ -100,27 +100,27 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
 
       revalidate();
     } catch (e) {
-      addToast(intl.formatMessage(globalMessages.blacklistError), {
+      addToast(intl.formatMessage(globalMessages.blocklistError), {
         appearance: 'error',
         autoDismiss: true,
       });
     }
 
-    setIsBlacklistUpdating(false);
-    setShowBlacklistModal(false);
+    setIsBlocklistUpdating(false);
+    setShowBlocklistModal(false);
   };
 
   const onClickUnblacklistBtn = async (): Promise<void> => {
     if (!data) return;
 
-    setIsBlacklistUpdating(true);
+    setIsBlocklistUpdating(true);
 
     try {
-      await axios.delete(`/api/v1/blacklist/collection/${data.id}`);
+      await axios.delete(`/api/v1/blocklist/collection/${data.id}`);
 
       addToast(
         <span>
-          {intl.formatMessage(globalMessages.removeFromBlacklistSuccess, {
+          {intl.formatMessage(globalMessages.removeFromBlocklistSuccess, {
             title: data.name,
             strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
           })}
@@ -130,13 +130,13 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
 
       revalidate();
     } catch (e) {
-      addToast(intl.formatMessage(globalMessages.blacklistError), {
+      addToast(intl.formatMessage(globalMessages.blocklistError), {
         appearance: 'error',
         autoDismiss: true,
       });
     }
 
-    setIsBlacklistUpdating(false);
+    setIsBlocklistUpdating(false);
   };
 
   const [downloadStatus, downloadStatus4k] = useMemo(() => {
@@ -166,14 +166,14 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
   let collectionStatus = MediaStatus.UNKNOWN;
   let collectionStatus4k = MediaStatus.UNKNOWN;
 
-  const blacklistedParts = data.parts.filter(
+  const blocklistedParts = data.parts.filter(
     (part) =>
-      part.mediaInfo && part.mediaInfo.status === MediaStatus.BLACKLISTED
+      part.mediaInfo && part.mediaInfo.status === MediaStatus.BLOCKLISTED
   );
-  const isCollectionBlacklisted = blacklistedParts.length > 0;
+  const isCollectionBlocklisted = blocklistedParts.length > 0;
 
-  if (isCollectionBlacklisted) {
-    collectionStatus = MediaStatus.BLACKLISTED;
+  if (isCollectionBlocklisted) {
+    collectionStatus = MediaStatus.BLOCKLISTED;
   } else if (
     data.parts.every(
       (part) =>
@@ -308,13 +308,13 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
         }}
         onCancel={() => setRequestModal(false)}
       />
-      <BlacklistModal
+      <BlocklistModal
         tmdbId={data.id}
         type="collection"
-        show={showBlacklistModal}
-        onCancel={() => setShowBlacklistModal(false)}
+        show={showBlocklistModal}
+        onCancel={() => setShowBlocklistModal(false)}
         onComplete={onClickHideItemBtn}
-        isUpdating={isBlacklistUpdating}
+        isUpdating={isBlocklistUpdating}
       />
 
       <div className="media-header">
@@ -378,14 +378,14 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
           </span>
         </div>
         <div className="media-actions">
-          {blacklistVisibility &&
-            (isCollectionBlacklisted ? (
+          {blocklistVisibility &&
+            (isCollectionBlocklisted ? (
               <Tooltip
                 content={
-                  blacklistedParts.length === data.parts.length
-                    ? intl.formatMessage(globalMessages.removefromBlacklist)
-                    : intl.formatMessage(globalMessages.removefromBlacklist) +
-                      ` (${blacklistedParts.length} movies)`
+                  blocklistedParts.length === data.parts.length
+                    ? intl.formatMessage(globalMessages.removefromBlocklist)
+                    : intl.formatMessage(globalMessages.removefromBlocklist) +
+                      ` (${blocklistedParts.length} movies)`
                 }
               >
                 <Button
@@ -393,21 +393,21 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
                   className="z-40 mr-2"
                   buttonSize="md"
                   onClick={onClickUnblacklistBtn}
-                  disabled={isBlacklistUpdating}
+                  disabled={isBlocklistUpdating}
                 >
                   <EyeIcon />
                 </Button>
               </Tooltip>
             ) : (
               <Tooltip
-                content={intl.formatMessage(globalMessages.addToBlacklist)}
+                content={intl.formatMessage(globalMessages.addToBlocklist)}
               >
                 <Button
                   buttonType="ghost"
                   className="z-40 mr-2"
                   buttonSize="md"
-                  onClick={() => setShowBlacklistModal(true)}
-                  disabled={isBlacklistUpdating}
+                  onClick={() => setShowBlocklistModal(true)}
+                  disabled={isBlocklistUpdating}
                 >
                   <EyeSlashIcon />
                 </Button>
