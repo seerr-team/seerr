@@ -253,6 +253,23 @@ components:
         versionCheck:
           type: boolean
           example: false
+        openIdProviders:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicOidcProvider'
+    PublicOidcProvider:
+      type: object
+      readOnly: true
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        logo:
+          type: string
+      required:
+        - slug
+        - name
     NetworkSettings:
       type: object
       properties:
