@@ -10,6 +10,13 @@ const searchRoutes = Router();
 
 searchRoutes.get('/', async (req, res, next) => {
   const queryString = req.query.query as string;
+  const searchType =
+    (req.query.searchType as
+      | 'all'
+      | 'movie'
+      | 'tv'
+      | 'person'
+      | 'collection') ?? 'all';
   const searchProvider = findSearchProvider(queryString.toLowerCase());
   let results: TmdbSearchMultiResponse;
 
@@ -26,11 +33,65 @@ searchRoutes.get('/', async (req, res, next) => {
     } else {
       const tmdb = new TheMovieDb();
 
-      results = await tmdb.searchMulti({
-        query: queryString,
-        page: Number(req.query.page),
-        language: (req.query.language as string) ?? req.locale,
-      });
+      if (searchType === 'movie') {
+        const movieResults = await tmdb.searchMovies({
+          query: queryString,
+          page: Number(req.query.page),
+          language: (req.query.language as string) ?? req.locale,
+        });
+        results = {
+          ...movieResults,
+          results: movieResults.results.map((r) => ({
+            ...r,
+            media_type: 'movie' as const,
+          })),
+        };
+      } else if (searchType === 'tv') {
+        const tvResults = await tmdb.searchTvShows({
+          query: queryString,
+          page: Number(req.query.page),
+          language: (req.query.language as string) ?? req.locale,
+        });
+        results = {
+          ...tvResults,
+          results: tvResults.results.map((r) => ({
+            ...r,
+            media_type: 'tv' as const,
+          })),
+        };
+      } else if (searchType === 'person') {
+        const personResults = await tmdb.searchPerson({
+          query: queryString,
+          page: Number(req.query.page),
+          language: (req.query.language as string) ?? req.locale,
+        });
+        results = {
+          ...personResults,
+          results: personResults.results.map((r) => ({
+            ...r,
+            media_type: 'person' as const,
+          })),
+        };
+      } else if (searchType === 'collection') {
+        const collectionResults = await tmdb.searchCollections({
+          query: queryString,
+          page: Number(req.query.page),
+          language: (req.query.language as string) ?? req.locale,
+        });
+        results = {
+          ...collectionResults,
+          results: collectionResults.results.map((r) => ({
+            ...r,
+            media_type: 'collection' as const,
+          })),
+        };
+      } else {
+        results = await tmdb.searchMulti({
+          query: queryString,
+          page: Number(req.query.page),
+          language: (req.query.language as string) ?? req.locale,
+        });
+      }
     }
 
     const media = await Media.getRelatedMedia(

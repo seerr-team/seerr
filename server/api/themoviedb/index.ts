@@ -18,8 +18,10 @@ import type {
   TmdbPersonDetails,
   TmdbProductionCompany,
   TmdbRegion,
+  TmdbSearchCollectionResponse,
   TmdbSearchMovieResponse,
   TmdbSearchMultiResponse,
+  TmdbSearchPersonResponse,
   TmdbSearchTvResponse,
   TmdbSeasonWithEpisodes,
   TmdbTvDetails,
@@ -218,6 +220,59 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
           first_air_date_year: year,
         },
       });
+
+      return data;
+    } catch {
+      return {
+        page: 1,
+        results: [],
+        total_pages: 1,
+        total_results: 0,
+      };
+    }
+  };
+
+  public searchPerson = async ({
+    query,
+    page = 1,
+    language = this.locale,
+  }: SearchOptions): Promise<TmdbSearchPersonResponse> => {
+    try {
+      const data = await this.get<TmdbSearchPersonResponse>('/search/person', {
+        params: {
+          query,
+          page,
+          language,
+        },
+      });
+
+      return data;
+    } catch {
+      return {
+        page: 1,
+        results: [],
+        total_pages: 1,
+        total_results: 0,
+      };
+    }
+  };
+
+  public searchCollections = async ({
+    query,
+    page = 1,
+    language = this.locale,
+  }: SearchOptions): Promise<TmdbSearchCollectionResponse> => {
+    try {
+      const data = await this.get<TmdbSearchCollectionResponse>(
+        '/search/collection',
+        {
+          params: {
+            query,
+            page,
+            language,
+          },
+        }
+      );
 
       return data;
     } catch {
