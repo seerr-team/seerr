@@ -16,6 +16,7 @@ import { MediaServerType } from '@server/constants/server';
 import axios from 'axios';
 import { useRouter } from 'next/dist/client/router';
 import Image from 'next/image';
+import type { ComponentType, SVGProps } from 'react';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
@@ -77,7 +78,7 @@ const Login = () => {
 
   const MediaServerLogo: Record<
     string,
-    React.FC<React.SVGProps<SVGSVGElement>>
+    ComponentType<SVGProps<SVGSVGElement>>
   > = {
     jellyfin: JellyfinLogo,
     emby: EmbyLogo,
