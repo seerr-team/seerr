@@ -1,10 +1,38 @@
 import TheMovieDb from '@server/api/themoviedb';
-import type { TmdbSearchMultiResponse } from '@server/api/themoviedb/interfaces';
+import type {
+  TmdbCollectionResult,
+  TmdbMovieResult,
+  TmdbPersonResult,
+  TmdbSearchMultiResponse,
+  TmdbTvResult,
+} from '@server/api/themoviedb/interfaces';
 import Media from '@server/entity/Media';
 import { findSearchProvider } from '@server/lib/search';
 import logger from '@server/logger';
 import { mapSearchResults } from '@server/models/Search';
 import { Router } from 'express';
+
+type SearchResponse<T> = {
+  page: number;
+  total_pages: number;
+  total_results: number;
+  results: T[];
+};
+
+function tagResults(
+  response: SearchResponse<
+    TmdbMovieResult | TmdbTvResult | TmdbPersonResult | TmdbCollectionResult
+  >,
+  mediaType: 'movie' | 'tv' | 'person' | 'collection'
+): TmdbSearchMultiResponse {
+  return {
+    ...response,
+    results: response.results.map((r) => ({
+      ...r,
+      media_type: mediaType,
+    })) as TmdbSearchMultiResponse['results'],
+  };
+}
 
 const searchRoutes = Router();
 
@@ -39,41 +67,16 @@ searchRoutes.get('/', async (req, res, next) => {
       };
 
       if (searchType === 'movie') {
-        const movieResults = await tmdb.searchMovies(searchParams);
-        results = {
-          ...movieResults,
-          results: movieResults.results.map((r) => ({
-            ...r,
-            media_type: 'movie' as const,
-          })),
-        };
+        results = tagResults(await tmdb.searchMovies(searchParams), 'movie');
       } else if (searchType === 'tv') {
-        const tvResults = await tmdb.searchTvShows(searchParams);
-        results = {
-          ...tvResults,
-          results: tvResults.results.map((r) => ({
-            ...r,
-            media_type: 'tv' as const,
-          })),
-        };
+        results = tagResults(await tmdb.searchTvShows(searchParams), 'tv');
       } else if (searchType === 'person') {
-        const personResults = await tmdb.searchPerson(searchParams);
-        results = {
-          ...personResults,
-          results: personResults.results.map((r) => ({
-            ...r,
-            media_type: 'person' as const,
-          })),
-        };
+        results = tagResults(await tmdb.searchPerson(searchParams), 'person');
       } else if (searchType === 'collection') {
-        const collectionResults = await tmdb.searchCollections(searchParams);
-        results = {
-          ...collectionResults,
-          results: collectionResults.results.map((r) => ({
-            ...r,
-            media_type: 'collection' as const,
-          })),
-        };
+        results = tagResults(
+          await tmdb.searchCollections(searchParams),
+          'collection'
+        );
       } else {
         results = await tmdb.searchMulti(searchParams);
       }
