@@ -711,9 +711,14 @@ router.post(
             email: jellyfinUser?.Name,
             permissions: settings.main.defaultPermissions,
             avatar: `/avatarproxy/${jellyfinUser?.Id}`,
-            userType: settings.isAuthMethodEnabled(MediaServerType.EMBY)
-              ? UserType.EMBY
-              : UserType.JELLYFIN,
+            userType:
+              settings.main.primaryMediaServer === MediaServerType.EMBY
+                ? UserType.EMBY
+                : settings.main.primaryMediaServer === MediaServerType.JELLYFIN
+                  ? UserType.JELLYFIN
+                  : settings.isAuthMethodEnabled(MediaServerType.EMBY)
+                    ? UserType.EMBY
+                    : UserType.JELLYFIN,
           });
 
           await userRepository.save(newUser);
