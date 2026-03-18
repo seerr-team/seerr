@@ -9,7 +9,10 @@ const checkOverseerrMerge = async (): Promise<boolean> => {
   // Load settings without running migrations
   const settings = await new Settings().load(undefined, true);
 
-  if (settings.main.primaryMediaServer) {
+  if (
+    settings.main.primaryMediaServer ||
+    (settings.main as unknown as Record<string, unknown>).mediaServerType
+  ) {
     return false; // The application has already been migrated
   }
 
