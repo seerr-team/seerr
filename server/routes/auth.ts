@@ -282,6 +282,18 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     return res.status(500).json({ error: 'No hostname provided.' });
   }
 
+  // Resolve the server type from the login request, falling back to primaryMediaServer
+  const resolvedServerType =
+    body.serverType === MediaServerType.JELLYFIN ||
+    body.serverType === MediaServerType.EMBY
+      ? body.serverType
+      : settings.main.primaryMediaServer;
+
+  const resolvedServerName =
+    resolvedServerType === MediaServerType.JELLYFIN
+      ? ServerType.JELLYFIN
+      : ServerType.EMBY;
+
   try {
     const hostname =
       settings.jellyfin.ip !== ''
@@ -440,15 +452,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     // User already exists, let's update their information
     else if (account.User.Id === user?.jellyfinUserId) {
       logger.info(
-        `Found matching ${
-          settings.main.primaryMediaServer === MediaServerType.JELLYFIN
-            ? ServerType.JELLYFIN
-            : ServerType.EMBY
-        } user; updating user with ${
-          settings.main.primaryMediaServer === MediaServerType.JELLYFIN
-            ? ServerType.JELLYFIN
-            : ServerType.EMBY
-        }`,
+        `Found matching ${resolvedServerName} user; updating user with ${resolvedServerName}`,
         {
           label: 'API',
           ip: req.ip,
@@ -494,7 +498,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
         jellyfinDeviceId: deviceId,
         permissions: settings.main.defaultPermissions,
         userType:
-          settings.main.primaryMediaServer === MediaServerType.JELLYFIN
+          resolvedServerType === MediaServerType.JELLYFIN
             ? UserType.JELLYFIN
             : UserType.EMBY,
       });
@@ -538,11 +542,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     switch (e.errorCode) {
       case ApiErrorCode.InvalidUrl:
         logger.error(
-          `The provided ${
-            settings.main.primaryMediaServer === MediaServerType.JELLYFIN
-              ? ServerType.JELLYFIN
-              : ServerType.EMBY
-          } is invalid or the server is not reachable.`,
+          `The provided ${resolvedServerName} is invalid or the server is not reachable.`,
           {
             label: 'Auth',
             error: e.errorCode,
