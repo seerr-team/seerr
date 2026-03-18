@@ -19,8 +19,6 @@ import { useIntl } from 'react-intl';
 const messages = defineMessages('components.Search', {
   search: 'Search',
   searchresults: 'Search Results',
-  timeWindowDay: 'Daily',
-  timeWindowWeek: 'Weekly',
 });
 
 type SearchType = 'all' | 'movie' | 'tv' | 'person' | 'collection';
