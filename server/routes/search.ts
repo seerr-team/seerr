@@ -32,13 +32,14 @@ searchRoutes.get('/', async (req, res, next) => {
       });
     } else {
       const tmdb = new TheMovieDb();
+      const searchParams = {
+        query: queryString,
+        page: Number(req.query.page),
+        language: (req.query.language as string) ?? req.locale,
+      };
 
       if (searchType === 'movie') {
-        const movieResults = await tmdb.searchMovies({
-          query: queryString,
-          page: Number(req.query.page),
-          language: (req.query.language as string) ?? req.locale,
-        });
+        const movieResults = await tmdb.searchMovies(searchParams);
         results = {
           ...movieResults,
           results: movieResults.results.map((r) => ({
@@ -47,11 +48,7 @@ searchRoutes.get('/', async (req, res, next) => {
           })),
         };
       } else if (searchType === 'tv') {
-        const tvResults = await tmdb.searchTvShows({
-          query: queryString,
-          page: Number(req.query.page),
-          language: (req.query.language as string) ?? req.locale,
-        });
+        const tvResults = await tmdb.searchTvShows(searchParams);
         results = {
           ...tvResults,
           results: tvResults.results.map((r) => ({
@@ -60,11 +57,7 @@ searchRoutes.get('/', async (req, res, next) => {
           })),
         };
       } else if (searchType === 'person') {
-        const personResults = await tmdb.searchPerson({
-          query: queryString,
-          page: Number(req.query.page),
-          language: (req.query.language as string) ?? req.locale,
-        });
+        const personResults = await tmdb.searchPerson(searchParams);
         results = {
           ...personResults,
           results: personResults.results.map((r) => ({
@@ -73,11 +66,7 @@ searchRoutes.get('/', async (req, res, next) => {
           })),
         };
       } else if (searchType === 'collection') {
-        const collectionResults = await tmdb.searchCollections({
-          query: queryString,
-          page: Number(req.query.page),
-          language: (req.query.language as string) ?? req.locale,
-        });
+        const collectionResults = await tmdb.searchCollections(searchParams);
         results = {
           ...collectionResults,
           results: collectionResults.results.map((r) => ({
@@ -86,11 +75,7 @@ searchRoutes.get('/', async (req, res, next) => {
           })),
         };
       } else {
-        results = await tmdb.searchMulti({
-          query: queryString,
-          page: Number(req.query.page),
-          language: (req.query.language as string) ?? req.locale,
-        });
+        results = await tmdb.searchMulti(searchParams);
       }
     }
 
