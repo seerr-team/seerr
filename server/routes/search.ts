@@ -38,6 +38,11 @@ const searchRoutes = Router();
 
 searchRoutes.get('/', async (req, res, next) => {
   const queryString = req.query.query as string;
+
+  if (!queryString) {
+    return next({ status: 400, message: 'query is required.' });
+  }
+
   const searchType =
     (req.query.searchType as
       | 'all'
