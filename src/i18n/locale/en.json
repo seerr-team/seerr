@@ -1595,6 +1595,8 @@
   "i18n.open": "Open",
   "i18n.partiallyavailable": "Partially Available",
   "i18n.pending": "Pending",
+  "i18n.person": "Person",
+  "i18n.persons": "People",
   "i18n.previous": "Previous",
   "i18n.processing": "Processing",
   "i18n.removeFromBlocklistSuccess": "<strong>{title}</strong> was successfully removed from the Blocklist.",
