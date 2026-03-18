@@ -263,15 +263,6 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     serverType?: number;
   };
 
-  // Check if Jellyfin/Emby login is enabled (allow during initial setup)
-  if (
-    settings.main.primaryMediaServer !== MediaServerType.NOT_CONFIGURED &&
-    !settings.isAuthMethodEnabled(MediaServerType.JELLYFIN) &&
-    !settings.isAuthMethodEnabled(MediaServerType.EMBY)
-  ) {
-    return res.status(500).json({ error: 'Jellyfin login is disabled' });
-  }
-
   if (!body.username) {
     return res.status(500).json({ error: 'You must provide an username' });
   } else if (settings.jellyfin.ip !== '' && body.hostname) {
@@ -283,11 +274,37 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
   }
 
   // Resolve the server type from the login request, falling back to primaryMediaServer
-  const resolvedServerType =
+  const requestedServerType =
     body.serverType === MediaServerType.JELLYFIN ||
     body.serverType === MediaServerType.EMBY
       ? body.serverType
-      : settings.main.primaryMediaServer;
+      : undefined;
+
+  const resolvedServerType =
+    requestedServerType ??
+    (settings.main.primaryMediaServer === MediaServerType.JELLYFIN ||
+    settings.main.primaryMediaServer === MediaServerType.EMBY
+      ? settings.main.primaryMediaServer
+      : undefined);
+
+  if (!resolvedServerType) {
+    return res
+      .status(500)
+      .json({ error: 'Invalid Jellyfin/Emby server type.' });
+  }
+
+  // Check if the resolved auth method is enabled (allow during initial setup)
+  if (
+    settings.main.primaryMediaServer !== MediaServerType.NOT_CONFIGURED &&
+    !settings.isAuthMethodEnabled(resolvedServerType)
+  ) {
+    return res.status(500).json({
+      error:
+        resolvedServerType === MediaServerType.JELLYFIN
+          ? 'Jellyfin login is disabled'
+          : 'Emby login is disabled',
+    });
+  }
 
   const resolvedServerName =
     resolvedServerType === MediaServerType.JELLYFIN
