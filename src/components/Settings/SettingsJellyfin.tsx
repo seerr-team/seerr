@@ -263,7 +263,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
     enabledAuthMethods.includes(MediaServerType.EMBY);
 
   const mediaServerFormatValues = {
-    mediaServerName: isJellyfin ? 'Jellyfin' : isEmby ? 'Emby' : undefined,
+    mediaServerName: isJellyfin ? 'Jellyfin' : isEmby ? 'Emby' : 'Jellyfin',
   };
 
   return (

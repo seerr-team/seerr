@@ -125,7 +125,11 @@ const SettingsLayout = ({ children }: SettingsLayoutProps) => {
       (embyConfigured && !jellyfinConfigured);
 
     return intl.formatMessage(messages.menuJellyfinSettings, {
-      mediaServerName: isJellyfin ? 'Jellyfin' : isEmby ? 'Emby' : undefined,
+      mediaServerName: isJellyfin
+        ? 'Jellyfin'
+        : isEmby
+          ? 'Emby'
+          : 'Jellyfin/Emby',
     });
   }
 };
