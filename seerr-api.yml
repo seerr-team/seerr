@@ -244,11 +244,15 @@ components:
           example: true
         primaryMediaServer:
           type: number
+          enum: [1, 2, 3, 4]
+          description: '1 = Plex, 2 = Jellyfin, 3 = Emby, 4 = Not Configured'
           example: 1
         enabledAuthMethods:
           type: array
+          uniqueItems: true
           items:
             type: number
+            enum: [1, 2, 3]
           example: [1]
         newUserLogin:
           type: boolean
@@ -2594,6 +2598,63 @@ paths:
                       type: string
                     thumb:
                       type: string
+  /settings/plex/auth:
+    post:
+      summary: Authenticate Plex admin token
+      description: |
+        Stores a Plex admin token for secondary Plex server configuration.
+        Verifies the token against Plex.tv and returns the associated account info.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - authToken
+              properties:
+                authToken:
+                  type: string
+      responses:
+        '200':
+          description: Plex account verified and token stored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                  email:
+                    type: string
+        '400':
+          description: Auth token missing
+        '500':
+          description: Unable to authenticate with Plex
+  /settings/plex/status:
+    get:
+      summary: Get Plex connection status
+      description: Returns whether Plex is configured and basic connection info.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: Plex status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  configured:
+                    type: boolean
+                  serverName:
+                    type: string
+                  username:
+                    type: string
+                  connectionError:
+                    type: boolean
   /settings/metadatas:
     get:
       summary: Get Metadata settings
