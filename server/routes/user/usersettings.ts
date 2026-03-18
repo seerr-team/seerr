@@ -276,7 +276,7 @@ userSettingsRoutes.post<{ authToken: string }>(
       return res.status(404).json({ code: ApiErrorCode.Unauthorized });
     }
     // Make sure Plex login is enabled
-    if (settings.main.primaryMediaServer !== MediaServerType.PLEX) {
+    if (!settings.isAuthMethodEnabled(MediaServerType.PLEX)) {
       return res.status(500).json({ message: 'Plex login is disabled' });
     }
 
@@ -320,7 +320,7 @@ userSettingsRoutes.delete<{ id: string }>(
     const userRepository = getRepository(User);
 
     // Make sure Plex login is enabled
-    if (settings.main.primaryMediaServer !== MediaServerType.PLEX) {
+    if (!settings.isAuthMethodEnabled(MediaServerType.PLEX)) {
       return res.status(500).json({ message: 'Plex login is disabled' });
     }
 
@@ -373,10 +373,10 @@ userSettingsRoutes.post<{ username: string; password: string }>(
     if (!req.user) {
       return res.status(401).json({ code: ApiErrorCode.Unauthorized });
     }
-    // Make sure jellyfin login is enabled
+    // Make sure jellyfin/emby login is enabled
     if (
-      settings.main.primaryMediaServer !== MediaServerType.JELLYFIN &&
-      settings.main.primaryMediaServer !== MediaServerType.EMBY
+      !settings.isAuthMethodEnabled(MediaServerType.JELLYFIN) &&
+      !settings.isAuthMethodEnabled(MediaServerType.EMBY)
     ) {
       return res
         .status(500)
@@ -468,10 +468,10 @@ userSettingsRoutes.delete<{ id: string }>(
     const settings = getSettings();
     const userRepository = getRepository(User);
 
-    // Make sure jellyfin login is enabled
+    // Make sure jellyfin/emby login is enabled
     if (
-      settings.main.primaryMediaServer !== MediaServerType.JELLYFIN &&
-      settings.main.primaryMediaServer !== MediaServerType.EMBY
+      !settings.isAuthMethodEnabled(MediaServerType.JELLYFIN) &&
+      !settings.isAuthMethodEnabled(MediaServerType.EMBY)
     ) {
       return res
         .status(500)

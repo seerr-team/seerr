@@ -90,6 +90,9 @@ authRoutes.post('/plex', async (req, res, next) => {
       });
 
       settings.main.primaryMediaServer = MediaServerType.PLEX;
+      if (!settings.main.enabledAuthMethods.includes(MediaServerType.PLEX)) {
+        settings.main.enabledAuthMethods.push(MediaServerType.PLEX);
+      }
       await settings.save();
       startJobs();
 
@@ -348,6 +351,9 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
         throw new ApiError(500, ApiErrorCode.NoAdminUser);
       }
       settings.main.primaryMediaServer = body.serverType;
+      if (!settings.main.enabledAuthMethods.includes(body.serverType)) {
+        settings.main.enabledAuthMethods.push(body.serverType);
+      }
 
       if (missingAdminUser) {
         logger.info(
