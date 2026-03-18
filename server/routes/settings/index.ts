@@ -64,13 +64,18 @@ const filteredMainSettings = (
 };
 
 const getPlexToken = async (): Promise<string> => {
+  const settings = getSettings();
+
+  if (settings.plex.adminToken) {
+    return settings.plex.adminToken;
+  }
+
   const userRepository = getRepository(User);
-  const admin = await userRepository.findOneOrFail({
+  const admin = await userRepository.findOne({
     select: { id: true, plexToken: true },
     where: { id: 1 },
   });
-  const settings = getSettings();
-  return admin.plexToken || settings.plex.adminToken || '';
+  return admin?.plexToken ?? '';
 };
 
 settingsRoutes.get('/main', (req, res, next) => {
