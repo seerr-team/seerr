@@ -235,6 +235,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
   public searchPerson = async ({
     query,
     page = 1,
+    includeAdult = false,
     language = this.locale,
   }: SearchOptions): Promise<TmdbSearchPersonResponse> => {
     try {
@@ -242,6 +243,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
         params: {
           query,
           page,
+          include_adult: includeAdult,
           language,
         },
       });
@@ -260,6 +262,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
   public searchCollections = async ({
     query,
     page = 1,
+    includeAdult = false,
     language = this.locale,
   }: SearchOptions): Promise<TmdbSearchCollectionResponse> => {
     try {
@@ -269,6 +272,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
           params: {
             query,
             page,
+            include_adult: includeAdult,
             language,
           },
         }
