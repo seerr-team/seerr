@@ -62,18 +62,74 @@ searchRoutes.get('/', async (req, res, next) => {
 
 searchRoutes.get('/keyword', async (req, res, next) => {
   const tmdb = new TheMovieDb();
+  const BATCH_SIZE = 3;
+  const REQUEST_TIMEOUT = 5000;
 
   try {
-    const results = await tmdb.searchKeyword({
+    const searchResults = await tmdb.searchKeyword({
       query: req.query.query as string,
       page: Number(req.query.page),
     });
 
-    return res.status(200).json(results);
+    const resultWithContent: (typeof searchResults.results[0] | null)[] = [];
+    const keywordCache = new Map<number, boolean>();
+
+    for (let i = 0; i < searchResults.results.length; i += BATCH_SIZE) {
+      const batch = searchResults.results.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.allSettled(
+        batch.map(async (result) => {
+          try {
+            if (keywordCache.has(result.id)) {
+              const hasContent = keywordCache.get(result.id);
+              return hasContent ? result : null;
+            }
+            const timeoutPromise = new Promise<{ results: unknown[] }>(
+              (_, reject) => {
+                setTimeout(
+                  () => reject(new Error('Keyword check timeout')),
+                  REQUEST_TIMEOUT
+                );
+              }
+            );
+
+            const mediaPromise = tmdb.getMoviesByKeyword({
+              keywordId: result.id,
+            });
+
+            const media = await Promise.race([mediaPromise, timeoutPromise]);
+            const hasContent = media.results.length > 0;
+            keywordCache.set(result.id, hasContent);
+            return hasContent ? result : null;
+          } catch (e) {
+            logger.warn('Failed to fetch media for keyword', {
+              label: 'API',
+              keywordId: result.id,
+              errorMessage: e instanceof Error ? e.message : 'Unknown error',
+            });
+            return null;
+          }
+        })
+      );
+      for (const settledResult of batchResults) {
+        if (settledResult.status === 'fulfilled') {
+          resultWithContent.push(settledResult.value);
+        } else {
+          resultWithContent.push(null);
+        }
+      }
+    }
+
+    const filteredResults = resultWithContent.filter((k) => k !== null);
+
+    return res.status(200).json({
+      ...searchResults,
+      results: filteredResults,
+      total_results: filteredResults.length,
+    });
   } catch (e) {
     logger.debug('Something went wrong retrieving keyword search results', {
       label: 'API',
-      errorMessage: e.message,
+      errorMessage: e instanceof Error ? e.message : 'Unknown error',
       query: req.query.query,
     });
     return next({
