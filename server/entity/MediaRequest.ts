@@ -19,6 +19,7 @@ import {
   AfterInsert,
   AfterLoad,
   AfterUpdate,
+  BeforeUpdate,
   Column,
   Entity,
   Index,
@@ -613,6 +614,11 @@ export class MediaRequest {
 
   constructor(init?: Partial<MediaRequest>) {
     Object.assign(this, init);
+  }
+
+  @BeforeUpdate()
+  public touchUpdatedAt(): void {
+    this.updatedAt = new Date();
   }
 
   @AfterInsert()
