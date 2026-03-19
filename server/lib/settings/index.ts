@@ -226,6 +226,7 @@ export interface NotificationAgentDiscord extends NotificationAgentConfig {
     webhookUrl: string;
     webhookRoleId?: string;
     enableMentions: boolean;
+    threadMappings?: Record<string, string>;
   };
 }
 
@@ -469,6 +470,7 @@ class Settings {
               webhookUrl: '',
               webhookRoleId: '',
               enableMentions: true,
+              threadMappings: {},
             },
           },
           slack: {

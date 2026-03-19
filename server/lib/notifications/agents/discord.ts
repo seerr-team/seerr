@@ -299,7 +299,15 @@ class DiscordAgent
         userMentions.push(`<@&${settings.options.webhookRoleId}>`);
       }
 
-      await axios.post(settings.options.webhookUrl, {
+      const notificationType = Notification[type];
+      const threadId = settings.options.threadMappings?.[notificationType];
+      
+      // Append thread_id to webhook URL if configured
+      const webhookUrl = threadId 
+        ? `${settings.options.webhookUrl}?thread_id=${threadId}`
+        : settings.options.webhookUrl;
+
+      await axios.post(webhookUrl, {
         username: settings.options.botUsername
           ? settings.options.botUsername
           : getSettings().main.applicationTitle,

@@ -33,6 +33,11 @@ const messages = defineMessages('components.Settings.Notifications', {
   validationWebhookRoleId: 'You must provide a valid Discord Role ID',
   validationTypes: 'You must select at least one notification type',
   enableMentions: 'Enable Mentions',
+  threadSettings: 'Thread Settings',
+  treadSettingsTip: 'Configure Discord threads for different notification types (optional)',
+  threadId: 'Thread ID',
+  threadIdTip:
+    'Leave empty to send to main channel. Get ID by enabling Developer Mode in Discord',
 });
 
 const NotificationsDiscord = () => {
@@ -82,6 +87,7 @@ const NotificationsDiscord = () => {
         webhookUrl: data.options.webhookUrl,
         webhookRoleId: data?.options.webhookRoleId,
         enableMentions: data?.options.enableMentions,
+        threadMappings: data?.options.threadMappings || {},
       }}
       validationSchema={NotificationsDiscordSchema}
       onSubmit={async (values) => {
@@ -96,6 +102,7 @@ const NotificationsDiscord = () => {
               webhookUrl: values.webhookUrl,
               webhookRoleId: values.webhookRoleId,
               enableMentions: values.enableMentions,
+              threadMappings: values.threadMappings,
             },
           });
 
@@ -146,6 +153,7 @@ const NotificationsDiscord = () => {
                 webhookUrl: values.webhookUrl,
                 webhookRoleId: values.webhookRoleId,
                 enableMentions: values.enableMentions,
+                threadMappings: values.threadMappings,
               },
             });
 
