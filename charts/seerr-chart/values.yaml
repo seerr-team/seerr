@@ -184,3 +184,13 @@ dnsConfig: {}
 #  options:
 #    - name: ndots
 #      value: "2"
+
+# -- Priority class for pod scheduling
+# Determines scheduling priority and preemption behavior
+priorityClassName: null
+# priorityClassName: system-cluster-critical
+
+# -- Host users configuration
+# Controls if pod uses host's user/group ID namespace (security-sensitive)
+hostUsers: null
+# hostUsers: false

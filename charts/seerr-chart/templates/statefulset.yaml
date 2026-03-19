@@ -123,3 +123,9 @@ spec:
       dnsConfig:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
+      {{- if ne .Values.hostUsers nil }}
+      hostUsers: {{ .Values.hostUsers }}
+      {{- end }}
