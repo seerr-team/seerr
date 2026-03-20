@@ -141,4 +141,32 @@ describe('POST /request/:requestId/:status', () => {
       savedRequest.updatedAt.getTime() > pendingRequest.updatedAt.getTime()
     );
   });
+
+  it('refreshes updatedAt when a request is declined', async () => {
+    const requestRepository = getRepository(MediaRequest);
+    const pendingRequest = await createPendingRequest();
+    const previousUpdatedAt = pendingRequest.updatedAt.toISOString();
+    const agent = await authenticatedAgent('admin@seerr.dev', 'test1234');
+
+    const res = await agent.post(`/request/${pendingRequest.id}/decline`);
+
+    assert.strictEqual(res.status, 200);
+    assert.notStrictEqual(res.body.updatedAt, previousUpdatedAt);
+    assert.ok(
+      new Date(res.body.updatedAt).getTime() >
+        new Date(previousUpdatedAt).getTime()
+    );
+    assert.strictEqual(res.body.modifiedBy.email, 'admin@seerr.dev');
+
+    const savedRequest = await requestRepository.findOneOrFail({
+      where: { id: pendingRequest.id },
+      relations: { modifiedBy: true },
+    });
+
+    assert.strictEqual(savedRequest.status, MediaRequestStatus.DECLINED);
+    assert.strictEqual(savedRequest.modifiedBy?.email, 'admin@seerr.dev');
+    assert.ok(
+      savedRequest.updatedAt.getTime() > pendingRequest.updatedAt.getTime()
+    );
+  });
 });
