@@ -73,7 +73,7 @@ jobs:
 
             This usually happens when you've added or modified translation strings in your code but haven't updated the translation file.
 
-            Please run `pnpm i18n:extract` and commit the changes.
+            Please run `pnpm i18n:extract` and/or `pnpm i18n:extract:server` and commit the changes.
         run: |
           retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
           check_failed=0; node bin/check-i18n.js || check_failed=$?

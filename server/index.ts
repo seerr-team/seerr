@@ -5,6 +5,7 @@ import DiscoverSlider from '@server/entity/DiscoverSlider';
 import { Session } from '@server/entity/Session';
 import { User } from '@server/entity/User';
 import { startJobs } from '@server/job/schedule';
+import { initI18n } from '@server/lib/i18n';
 import notificationManager from '@server/lib/notifications';
 import DiscordAgent from '@server/lib/notifications/agents/discord';
 import EmailAgent from '@server/lib/notifications/agents/email';
@@ -81,6 +82,8 @@ app
     // Load Settings
     const settings = await getSettings().load();
     restartFlag.initializeSettings(settings);
+
+    initI18n();
 
     if (settings.network.forceIpv4First) {
       axios.defaults.httpAgent = new http.Agent({ family: 4 });
