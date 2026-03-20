@@ -59,6 +59,8 @@ After restoring your `db/db.sqlite3` file and, optionally, the `settings.json` f
 ├── cache            <-- Optional
 ├── db
 │   └── db.sqlite3
+│   └── db.sqlite3-shm
+│   └── db.sqlite3-wal
 ├── logs             <-- Optional
 └── settings.json    <-- Optional (required if you want to avoid reconfiguring Seerr)
 ```
