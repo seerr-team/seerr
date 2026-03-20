@@ -32,7 +32,7 @@ class NtfyAgent
     const settings = this.getSettings();
     const intl = getIntl(settings.options.locale as AvailableLocale);
     const { applicationUrl } = getSettings().main;
-    const { embedPoster } = getSettings().notifications.agents.ntfy;
+    const embedPoster = settings.embedPoster;
 
     const topic = settings.options.topic;
     const priority = settings.options.priority ?? 3;

@@ -360,7 +360,7 @@ class WebPushAgent
                 ),
                 'utf-8'
               );
-              webPushNotification(sub, notificationBadgePayload);
+              await webPushNotification(sub, notificationBadgePayload);
             })
           );
         }
@@ -391,7 +391,7 @@ class WebPushAgent
             JSON.stringify(this.getNotificationPayload(type, payload, locale)),
             'utf-8'
           );
-          webPushNotification(sub, notificationPayload);
+          await webPushNotification(sub, notificationPayload);
         })
       );
     }

@@ -43,7 +43,10 @@ async function extractMessages(
 
 async function processMessages(dir: string): Promise<string> {
   const files = await getFiles(dir);
-  const extractedMessagesGroups = await Promise.all(files.map(extractMessages));
+  const tsFiles = files.filter((f) => /\.tsx?$/.test(f));
+  const extractedMessagesGroups = await Promise.all(
+    tsFiles.map(extractMessages)
+  );
 
   const result: Record<string, string> = {};
 

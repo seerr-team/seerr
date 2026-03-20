@@ -29,6 +29,12 @@ export function initI18n(): void {
       )
     );
   }
+
+  if (!intls.has('en')) {
+    throw new Error(
+      'Failed to initialize English locale - en.json is required'
+    );
+  }
 }
 
 export function getIntl(locale?: AvailableLocale): IntlInstance {

@@ -68,7 +68,7 @@ class SlackAgent
     const settings = this.getSettings();
     const intl = getIntl(settings.options.locale);
     const { applicationUrl, applicationTitle } = getSettings().main;
-    const { embedPoster } = getSettings().notifications.agents.slack;
+    const embedPoster = settings.embedPoster;
 
     const fields: EmbedField[] = [];
 
