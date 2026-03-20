@@ -1,6 +1,15 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { User } from './User';
 
+@Index('IDX_linked_accounts_provider_sub', ['provider', 'sub'], {
+  unique: true,
+})
 @Entity('linked_accounts')
 export class LinkedAccount {
   constructor(options: Omit<LinkedAccount, 'id'>) {
@@ -10,6 +19,7 @@ export class LinkedAccount {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Index()
   @ManyToOne(() => User, (user) => user.linkedAccounts, { onDelete: 'CASCADE' })
   user: User;
 
