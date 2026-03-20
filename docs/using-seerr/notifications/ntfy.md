@@ -34,4 +34,4 @@ Please refer to the [ntfy.sh API documentation](https://docs.ntfy.sh/) for more 
 
 ### Notification Language
 
-Sets the language for notifications sent to this ntfy server.`
+Sets the language for notifications sent to this ntfy server.
