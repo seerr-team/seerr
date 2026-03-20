@@ -85,7 +85,7 @@ const NotificationsDiscord = () => {
         webhookRoleId: data?.options.webhookRoleId,
         enableMentions: data?.options.enableMentions,
         locale: data?.options.locale || 'en',
-        useUserLocale: data?.options.useUserLocale || false,
+        useUserLocale: data?.options.useUserLocale ?? false,
       }}
       validationSchema={NotificationsDiscordSchema}
       onSubmit={async (values) => {
