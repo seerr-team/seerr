@@ -29,3 +29,11 @@ If you would like to override the name you configured for your bot in Discord, y
 ### Bot Avatar URL (optional)
 
 Similar to the bot username, you can override the avatar for your bot.
+
+### Use Notification Recipient Locale
+
+When enabled, notifications will be sent in the language of the user who triggered the notification (e.g., the user who made the request or reported the issue) based on their display language setting. When disabled, the **Notification Language** setting below is used instead.
+
+### Notification Language
+
+Sets the language for all notifications sent to this Discord channel. This option is only available when **Use Notification Recipient Locale** is disabled.
