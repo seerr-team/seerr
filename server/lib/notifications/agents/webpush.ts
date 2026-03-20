@@ -86,7 +86,7 @@ class WebPushAgent
 
     const issueType = payload.issue
       ? payload.issue.issueType !== IssueType.OTHER
-        ? intl.formatMessage(globalMessages.issueType, {
+        ? intl.formatMessage(globalMessages.issueTypeName, {
             type: IssueTypeName[payload.issue.issueType].toLowerCase(),
           })
         : intl.formatMessage(globalMessages.issue)
