@@ -57,7 +57,7 @@ async function processMessages(dir: string): Promise<string> {
     }
   }
 
-  return JSON.stringify(result, null, '  ') + '\n';
+  return JSON.stringify(result, Object.keys(result).sort(), '  ') + '\n';
 }
 
 async function saveMessages() {
