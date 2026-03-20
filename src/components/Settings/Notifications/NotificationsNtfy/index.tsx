@@ -102,7 +102,7 @@ const NotificationsNtfy = () => {
         authMethodToken: data?.options.authMethodToken,
         token: data?.options.token,
         priority: data?.options.priority,
-        locale: data?.options.locale,
+        locale: data?.options.locale ?? 'en',
       }}
       validationSchema={NotificationsNtfySchema}
       onSubmit={async (values) => {
