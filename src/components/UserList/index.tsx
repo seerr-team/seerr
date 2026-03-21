@@ -881,7 +881,6 @@ const UserList = () => {
                 <Button
                   buttonType="warning"
                   disabled={user.id === 1 && currentUser?.id !== 1}
-                  className="flex-1"
                   onClick={() =>
                     router.push(
                       '/users/[userId]/settings',
@@ -893,7 +892,6 @@ const UserList = () => {
                 </Button>
                 <Button
                   buttonType="danger"
-                  className="flex-1"
                   disabled={
                     user.id === 1 ||
                     (currentUser?.id !== 1 &&
