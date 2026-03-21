@@ -23,9 +23,10 @@ import { Fragment, useEffect, useRef } from 'react';
 import { useIntl } from 'react-intl';
 
 export const menuMessages = defineMessages('components.Layout.Sidebar', {
-  dashboard: 'Discover',
+  dashboard: 'New Releases',
   browsemovies: 'Movies',
-  browsetv: 'Series',
+  browsetv: 'TV Shows',
+  kidfriendly: 'Kid Friendly',
   requests: 'Requests',
   blocklist: 'Blocklist',
   issues: 'Issues',
@@ -71,6 +72,13 @@ const SidebarLinks: SidebarLinkProps[] = [
     messagesKey: 'browsetv',
     svgIcon: <TvIcon className="mr-3 h-6 w-6" />,
     activeRegExp: /^\/discover\/tv$/,
+  },
+  {
+    href: '/discover/movies?genre=10751',
+    as: '/discover/movies',
+    messagesKey: 'kidfriendly',
+    svgIcon: <SparklesIcon className="mr-3 h-6 w-6" />,
+    activeRegExp: /^\/discover\/movies$/,
   },
   {
     href: '/requests',
@@ -131,16 +139,12 @@ const Sidebar = ({
   const router = useRouter();
   const intl = useIntl();
   const { hasPermission } = useUser();
+
   useClickOutside(navRef, () => setClosed());
 
   useEffect(() => {
-    if (openIssuesCount) {
-      revalidateIssueCount();
-    }
-
-    if (pendingRequestsCount) {
-      revalidateRequestsCount();
-    }
+    if (openIssuesCount) revalidateIssueCount();
+    if (pendingRequestsCount) revalidateRequestsCount();
   }, [
     revalidateIssueCount,
     revalidateRequestsCount,
@@ -148,8 +152,19 @@ const Sidebar = ({
     openIssuesCount,
   ]);
 
+  const linkBase =
+    'group flex items-center rounded-lg px-2.5 py-2 text-base lg:text-lg font-medium leading-6 text-slate-100 transition duration-150 ease-in-out focus:outline-none';
+  const linkActive =
+    'bg-gradient-to-r from-cyan-400/20 via-violet-400/20 to-pink-400/20 text-white ring-1 ring-cyan-300/30 shadow-[0_0_0_1px_rgba(51,209,255,0.2),0_8px_22px_rgba(51,209,255,0.18)]';
+  const linkIdle =
+    'hover:bg-[#2a3762]/70 focus:bg-[#2a3762]/70 text-slate-200 hover:text-white';
+
+  const badgeBase =
+    'rounded-md border border-cyan-300/30 bg-gradient-to-r from-cyan-400/20 to-violet-400/20 text-cyan-100';
+
   return (
     <>
+      {/* Mobile Sidebar */}
       <div className="lg:hidden">
         <Transition as={Fragment} show={open}>
           <div className="fixed inset-0 z-40 flex">
@@ -162,10 +177,9 @@ const Sidebar = ({
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
             >
-              <div className="fixed inset-0">
-                <div className="absolute inset-0 bg-gray-900 opacity-90" />
-              </div>
+              <div className="fixed inset-0 bg-[#0a1020]/85 backdrop-blur-[2px]" />
             </Transition.Child>
+
             <Transition.Child
               as="div"
               enter="transition-transform ease-in-out duration-300"
@@ -176,28 +190,30 @@ const Sidebar = ({
               leaveTo="-translate-x-full"
             >
               <>
-                <div className="sidebar relative flex h-full w-full max-w-xs flex-1 flex-col bg-gray-800">
+                <div className="sidebar relative flex h-full w-full max-w-xs flex-1 flex-col bg-[#17203b]/95 shadow-2xl">
                   <div className="sidebar-close-button absolute right-0 -mr-14 p-1">
                     <button
-                      className="flex h-12 w-12 items-center justify-center rounded-full focus:bg-gray-600 focus:outline-none"
+                      className="flex h-12 w-12 items-center justify-center rounded-full text-slate-100 transition hover:bg-[#2a3762] focus:bg-[#2a3762] focus:outline-none"
                       aria-label="Close sidebar"
                       onClick={() => setClosed()}
                     >
-                      <XMarkIcon className="h-6 w-6 text-white" />
+                      <XMarkIcon className="h-6 w-6" />
                     </button>
                   </div>
+
                   <div
                     ref={navRef}
                     className="flex flex-1 flex-col overflow-y-auto pb-8 pt-4 sm:pb-4"
                   >
                     <div className="flex flex-shrink-0 items-center px-2">
-                      <span className="w-full px-4 text-xl text-gray-50">
+                      <span className="w-full px-4 text-xl text-slate-50">
                         <Link href="/" className="relative block h-24 w-64">
                           <Image src="/logo_full.svg" alt="Logo" fill />
                         </Link>
                       </span>
                     </div>
-                    <nav className="mt-10 flex-1 space-y-4 px-4">
+
+                    <nav className="mt-10 flex-1 space-y-3 px-4">
                       {SidebarLinks.filter((link) =>
                         link.requiredPermission
                           ? hasPermission(link.requiredPermission, {
@@ -205,6 +221,10 @@ const Sidebar = ({
                             })
                           : true
                       ).map((sidebarLink) => {
+                        const isActive = !!router.pathname.match(
+                          sidebarLink.activeRegExp
+                        );
+
                         return (
                           <Link
                             key={`mobile-${sidebarLink.messagesKey}`}
@@ -212,17 +232,11 @@ const Sidebar = ({
                             as={sidebarLink.as}
                             onClick={() => setClosed()}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                setClosed();
-                              }
+                              if (e.key === 'Enter') setClosed();
                             }}
                             role="button"
                             tabIndex={0}
-                            className={`flex items-center rounded-md px-2 py-2 text-base font-medium leading-6 text-white transition duration-150 ease-in-out focus:outline-none ${
-                              router.pathname.match(sidebarLink.activeRegExp)
-                                ? 'bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
-                                : 'hover:bg-gray-700 focus:bg-gray-700'
-                            } `}
+                            className={`${linkBase} ${isActive ? linkActive : linkIdle}`}
                             data-testid={`${sidebarLink.dataTestId}-mobile`}
                           >
                             {sidebarLink.svgIcon}
@@ -233,6 +247,7 @@ const Sidebar = ({
                         );
                       })}
                     </nav>
+
                     <div className="px-2">
                       <UserWarnings onClick={() => setClosed()} />
                     </div>
@@ -244,27 +259,27 @@ const Sidebar = ({
                     )}
                   </div>
                 </div>
-                <div className="w-14 flex-shrink-0">
-                  {/* <!-- Force sidebar to shrink to fit close icon --> */}
-                </div>
+                <div className="w-14 flex-shrink-0" />
               </>
             </Transition.Child>
           </div>
         </Transition>
       </div>
 
+      {/* Desktop Sidebar */}
       <div className="fixed bottom-0 left-0 top-0 z-30 hidden lg:flex lg:flex-shrink-0">
-        <div className="sidebar flex w-64 flex-col">
+        <div className="sidebar flex w-64 flex-col border-r border-[#2a3762] bg-[#17203b]/95">
           <div className="flex h-0 flex-1 flex-col">
             <div className="flex flex-1 flex-col overflow-y-auto pb-4">
               <div className="flex flex-shrink-0 items-center">
-                <span className="w-full px-4 py-2 text-2xl text-gray-50">
+                <span className="w-full px-4 py-2 text-2xl text-slate-50">
                   <Link href="/" className="relative block h-24">
                     <Image src="/logo_full.svg" alt="Logo" fill />
                   </Link>
                 </span>
               </div>
-              <nav className="mt-8 flex-1 space-y-4 px-4">
+
+              <nav className="mt-8 flex-1 space-y-3 px-4">
                 {SidebarLinks.filter((link) =>
                   link.requiredPermission
                     ? hasPermission(link.requiredPermission, {
@@ -272,48 +287,38 @@ const Sidebar = ({
                       })
                     : true
                 ).map((sidebarLink) => {
+                  const isActive = !!router.pathname.match(
+                    sidebarLink.activeRegExp
+                  );
+
                   return (
                     <Link
                       key={`desktop-${sidebarLink.messagesKey}`}
                       href={sidebarLink.href}
                       as={sidebarLink.as}
-                      className={`group flex items-center rounded-md px-2 py-2 text-lg font-medium leading-6 text-white transition duration-150 ease-in-out focus:outline-none ${
-                        router.pathname.match(sidebarLink.activeRegExp)
-                          ? 'bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
-                          : 'hover:bg-gray-700 focus:bg-gray-700'
-                      } `}
+                      className={`${linkBase} ${isActive ? linkActive : linkIdle}`}
                       data-testid={sidebarLink.dataTestId}
                     >
                       {sidebarLink.svgIcon}
                       {intl.formatMessage(
                         menuMessages[sidebarLink.messagesKey]
                       )}
+
                       {sidebarLink.messagesKey === 'requests' &&
                         pendingRequestsCount > 0 &&
                         hasPermission(Permission.MANAGE_REQUESTS) && (
                           <div className="ml-auto flex">
-                            <Badge
-                              className={`rounded-md bg-gradient-to-br ${
-                                router.pathname.match(sidebarLink.activeRegExp)
-                                  ? 'border-indigo-600 from-indigo-700 to-purple-700'
-                                  : 'border-indigo-500 from-indigo-600 to-purple-600'
-                              }`}
-                            >
+                            <Badge className={badgeBase}>
                               {pendingRequestsCount}
                             </Badge>
                           </div>
                         )}
+
                       {sidebarLink.messagesKey === 'issues' &&
                         openIssuesCount > 0 &&
                         hasPermission(Permission.MANAGE_ISSUES) && (
                           <div className="ml-auto flex">
-                            <Badge
-                              className={`rounded-md bg-gradient-to-br ${
-                                router.pathname.match(sidebarLink.activeRegExp)
-                                  ? 'border-indigo-600 from-indigo-700 to-purple-700'
-                                  : 'border-indigo-500 from-indigo-600 to-purple-600'
-                              }`}
-                            >
+                            <Badge className={badgeBase}>
                               {openIssuesCount}
                             </Badge>
                           </div>
@@ -322,9 +327,11 @@ const Sidebar = ({
                   );
                 })}
               </nav>
+
               <div className="px-2">
                 <UserWarnings />
               </div>
+
               {hasPermission(Permission.ADMIN) && (
                 <div className="px-2">
                   <VersionStatus />

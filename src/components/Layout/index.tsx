@@ -23,17 +23,15 @@ const Layout = ({ children }: LayoutProps) => {
   const router = useRouter();
   const { currentSettings } = useSettings();
   const { setLocale } = useLocale();
+
   const { data: requestResponse, mutate: revalidateRequestsCount } = useSWR(
     '/api/v1/request/count',
-    {
-      revalidateOnMount: true,
-    }
+    { revalidateOnMount: true }
   );
+
   const { data: issueResponse, mutate: revalidateIssueCount } = useSWR(
     '/api/v1/issue/count',
-    {
-      revalidateOnMount: true,
-    }
+    { revalidateOnMount: true }
   );
 
   useEffect(() => {
@@ -48,26 +46,22 @@ const Layout = ({ children }: LayoutProps) => {
 
   useEffect(() => {
     const updateScrolled = () => {
-      if (window.pageYOffset > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      setIsScrolled(window.pageYOffset > 20);
     };
 
     window.addEventListener('scroll', updateScrolled, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', updateScrolled);
-    };
+    return () => window.removeEventListener('scroll', updateScrolled);
   }, []);
 
   return (
-    <div className="flex h-full min-h-full min-w-0 bg-gray-900">
-      <div className="pwa-only fixed inset-0 z-20 h-1 w-full border-gray-700 md:border-t" />
-      <div className="absolute top-0 h-64 w-full bg-gradient-to-bl from-gray-800 to-gray-900">
-        <div className="relative inset-0 h-full w-full bg-gradient-to-t from-gray-900 to-transparent" />
-      </div>
+    <div className="relative flex h-full min-h-full min-w-0 overflow-hidden bg-[#0d1326] text-slate-100">
+      {/* PWA top line */}
+      <div className="pwa-only fixed inset-0 z-20 h-1 w-full border-[#2a3762] md:border-t" />
+
+      {/* Family Glow background layers */}
+      <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_top_left,rgba(51,209,255,0.14),transparent_34%),radial-gradient(circle_at_top_right,rgba(167,139,250,0.12),transparent_36%),radial-gradient(circle_at_bottom,rgba(255,122,162,0.10),transparent_42%)]" />
+      <div className="pointer-events-none absolute top-0 z-0 h-72 w-full bg-gradient-to-b from-[#1f2b4f]/70 via-[#17203b]/30 to-transparent" />
+
       <Sidebar
         open={isSidebarOpen}
         setClosed={() => setSidebarOpen(false)}
@@ -76,6 +70,7 @@ const Layout = ({ children }: LayoutProps) => {
         revalidateIssueCount={() => revalidateIssueCount()}
         revalidateRequestsCount={() => revalidateRequestsCount()}
       />
+
       <div className="sm:hidden">
         <MobileMenu
           pendingRequestsCount={requestResponse?.pending ?? 0}
@@ -87,35 +82,41 @@ const Layout = ({ children }: LayoutProps) => {
 
       <div className="relative mb-16 flex w-0 min-w-0 flex-1 flex-col lg:ml-64">
         <PullToRefresh />
+
         <div
-          className={`searchbar fixed left-0 right-0 top-0 z-10 flex flex-shrink-0 transition duration-300 ${
-            isScrolled ? 'bg-gray-700/80' : 'bg-transparent'
+          className={`searchbar fixed left-0 right-0 top-0 z-10 flex flex-shrink-0 border-b transition duration-300 ${
+            isScrolled
+              ? 'border-[#2a3762]/80 bg-[#17203b]/70'
+              : 'border-transparent bg-transparent'
           } lg:left-64`}
           style={{
-            backdropFilter: isScrolled ? 'blur(5px)' : undefined,
-            WebkitBackdropFilter: isScrolled ? 'blur(5px)' : undefined,
+            backdropFilter: isScrolled ? 'blur(10px)' : undefined,
+            WebkitBackdropFilter: isScrolled ? 'blur(10px)' : undefined,
           }}
         >
           <div className="flex flex-1 items-center justify-between px-4 md:pl-4 md:pr-4">
             <button
-              className={`mr-2 hidden text-white sm:block ${
-                isScrolled ? 'opacity-90' : 'opacity-70'
-              } transition duration-300 focus:outline-none lg:hidden`}
+              className={`mr-2 hidden text-slate-100 sm:block ${
+                isScrolled ? 'opacity-95' : 'opacity-75'
+              } transition duration-300 hover:text-cyan-300 focus:outline-none lg:hidden`}
               aria-label="Open sidebar"
               onClick={() => setSidebarOpen(true)}
               data-testid="sidebar-toggle"
             >
               <Bars3BottomLeftIcon className="h-7 w-7" />
             </button>
+
             <button
-              className={`mr-2 text-white ${
-                isScrolled ? 'opacity-90' : 'opacity-70'
-              } pwa-only transition duration-300 hover:text-white focus:text-white focus:outline-none`}
+              className={`mr-2 text-slate-100 ${
+                isScrolled ? 'opacity-95' : 'opacity-75'
+              } pwa-only transition duration-300 hover:text-cyan-300 focus:text-cyan-300 focus:outline-none`}
               onClick={() => router.back()}
             >
               <ArrowLeftIcon className="w-7" />
             </button>
+
             <SearchInput />
+
             <div className="flex items-center">
               <UserDropdown />
             </div>

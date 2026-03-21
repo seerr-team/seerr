@@ -1,93 +1,53 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const defaultTheme = require('tailwindcss/defaultTheme');
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  mode: 'jit',
   content: [
-    './node_modules/@seerr-team/react-tailwindcss-datepicker/dist/index.esm.js',
-    './src/pages/**/*.{ts,tsx}',
-    './src/components/**/*.{ts,tsx}',
+    './src/**/*.{js,ts,jsx,tsx}',
+    './pages/**/*.{js,ts,jsx,tsx}',
+    './components/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {
-      transitionProperty: {
-        'max-height': 'max-height',
-        width: 'width',
+      colors: {
+        looky: {
+          bg: '#0d1326',
+          surface: '#17203b',
+          surface2: '#1f2b4f',
+          text: '#f3f6ff',
+          muted: '#aeb7d6',
+          primary: '#33d1ff',
+          secondary: '#ff7aa2',
+          accent: '#a78bfa',
+          success: '#34d399',
+          warning: '#fbbf24',
+          danger: '#f87171',
+        },
       },
       fontFamily: {
-        sans: ['Inter Variable', ...defaultTheme.fontFamily.sans],
+        sans: [
+          'Inter',
+          'ui-sans-serif',
+          'system-ui',
+          'Segoe UI',
+          'Roboto',
+          'Arial',
+          'sans-serif',
+        ],
       },
-      typography: (theme) => ({
-        DEFAULT: {
-          css: {
-            color: theme('colors.gray.300'),
-            a: {
-              color: theme('colors.indigo.500'),
-              '&:hover': {
-                color: theme('colors.indigo.400'),
-              },
-            },
-
-            h1: {
-              color: theme('colors.gray.300'),
-            },
-            h2: {
-              color: theme('colors.gray.300'),
-            },
-            h3: {
-              color: theme('colors.gray.300'),
-            },
-            h4: {
-              color: theme('colors.gray.300'),
-            },
-            h5: {
-              color: theme('colors.gray.300'),
-            },
-            h6: {
-              color: theme('colors.gray.300'),
-            },
-
-            strong: {
-              color: theme('colors.gray.400'),
-            },
-
-            code: {
-              color: theme('colors.gray.300'),
-            },
-
-            figcaption: {
-              color: theme('colors.gray.500'),
-            },
-          },
-        },
-      }),
-    },
-    aspectRatio: {
-      auto: 'auto',
-      square: '1 / 1',
-      video: '16 / 9',
-      1: '1',
-      2: '2',
-      3: '3',
-      4: '4',
-      5: '5',
-      6: '6',
-      7: '7',
-      8: '8',
-      9: '9',
-      10: '10',
-      11: '11',
-      12: '12',
-      13: '13',
-      14: '14',
-      15: '15',
-      16: '16',
+      borderRadius: {
+        looky: '16px',
+        'looky-lg': '20px',
+      },
+      boxShadow: {
+        looky: '0 10px 28px rgba(0,0,0,.25)',
+        'looky-strong': '0 14px 34px rgba(0,0,0,.45)',
+      },
+      backgroundImage: {
+        'looky-glow':
+          'radial-gradient(1000px 640px at 0% 0%, rgba(51,209,255,.18), transparent 42%), radial-gradient(860px 620px at 100% 0%, rgba(167,139,250,.16), transparent 40%), radial-gradient(700px 500px at 50% 100%, rgba(255,122,162,.12), transparent 45%)',
+      },
     },
   },
-  plugins: [
-    require('@tailwindcss/forms'),
-    require('@tailwindcss/typography'),
-    require('@tailwindcss/aspect-ratio'),
-  ],
+  plugins: [],
 };

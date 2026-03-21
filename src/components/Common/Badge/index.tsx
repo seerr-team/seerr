@@ -20,57 +20,61 @@ const Badge = (
   ref?: React.Ref<HTMLElement>
 ) => {
   const badgeStyle = [
-    'px-2 inline-flex text-xs leading-5 font-semibold rounded-full whitespace-nowrap',
+    'inline-flex whitespace-nowrap rounded-full border px-2 text-xs font-semibold leading-5',
+    'ring-1 ring-white/5',
   ];
 
   if (href) {
-    badgeStyle.push('transition cursor-pointer !no-underline');
+    badgeStyle.push('cursor-pointer transition !no-underline');
   } else {
     badgeStyle.push('cursor-default');
   }
 
   switch (badgeType) {
     case 'danger':
-      badgeStyle.push('bg-red-600/80 border-red-500 border !text-red-100');
-      if (href) {
-        badgeStyle.push('hover:bg-red-500');
-      }
+      badgeStyle.push(
+        'border-red-400/40 bg-red-500/20 !text-red-100 shadow-[0_0_0_1px_rgba(248,113,113,0.15)]'
+      );
+      if (href) badgeStyle.push('hover:bg-red-500/30');
       break;
+
     case 'warning':
       badgeStyle.push(
-        'bg-yellow-500/80 border-yellow-500 border !text-yellow-100'
+        'border-amber-300/40 bg-amber-500/20 !text-amber-100 shadow-[0_0_0_1px_rgba(251,191,36,0.15)]'
       );
-      if (href) {
-        badgeStyle.push('hover:bg-yellow-500');
-      }
+      if (href) badgeStyle.push('hover:bg-amber-500/30');
       break;
+
     case 'success':
       badgeStyle.push(
-        'bg-green-500/80 border border-green-500 !text-green-100'
+        'border-emerald-300/40 bg-emerald-500/20 !text-emerald-100 shadow-[0_0_0_1px_rgba(52,211,153,0.15)]'
       );
-      if (href) {
-        badgeStyle.push('hover:bg-green-500');
-      }
+      if (href) badgeStyle.push('hover:bg-emerald-500/30');
       break;
+
     case 'dark':
-      badgeStyle.push('bg-gray-900 !text-gray-400');
-      if (href) {
-        badgeStyle.push('hover:bg-gray-800');
-      }
+      badgeStyle.push(
+        'border-[#2a3762] bg-[#0f1630] !text-slate-300 shadow-[0_0_0_1px_rgba(42,55,98,0.2)]'
+      );
+      if (href) badgeStyle.push('hover:bg-[#17203b]');
       break;
+
     case 'light':
-      badgeStyle.push('bg-gray-700 !text-gray-300');
-      if (href) {
-        badgeStyle.push('hover:bg-gray-600');
-      }
+      badgeStyle.push(
+        'border-[#3d4f82] bg-[#1f2b4f] !text-slate-200 shadow-[0_0_0_1px_rgba(61,79,130,0.2)]'
+      );
+      if (href) badgeStyle.push('hover:bg-[#2a3762]');
       break;
+
+    case 'primary':
+    case 'default':
     default:
       badgeStyle.push(
-        'bg-indigo-500/80 border border-indigo-500 !text-indigo-100'
+        'border-cyan-300/35 bg-gradient-to-r from-cyan-400/25 to-violet-400/25 !text-cyan-100 shadow-[0_0_0_1px_rgba(51,209,255,0.18)]'
       );
-      if (href) {
-        badgeStyle.push('hover:bg-indigo-500');
-      }
+      if (href)
+        badgeStyle.push('hover:from-cyan-400/35 hover:to-violet-400/35');
+      break;
   }
 
   if (className) {

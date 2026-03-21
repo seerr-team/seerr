@@ -39,6 +39,8 @@ const VersionStatus = ({ onClick }: VersionStatusProps) => {
         ? intl.formatMessage(messages.streamdevelop)
         : intl.formatMessage(messages.streamstable);
 
+  const hasUpdate = data.updateAvailable;
+
   return (
     <Link
       href="/settings/about"
@@ -50,10 +52,10 @@ const VersionStatus = ({ onClick }: VersionStatusProps) => {
       }}
       role="button"
       tabIndex={0}
-      className={`mx-2 flex items-center rounded-lg p-2 text-xs ring-1 ring-gray-700 transition duration-300 ${
-        data.updateAvailable
-          ? 'bg-yellow-500 text-white hover:bg-yellow-400'
-          : 'bg-gray-900 text-gray-300 hover:bg-gray-800'
+      className={`mx-2 flex items-center rounded-lg border p-2 text-xs ring-1 transition duration-300 ${
+        hasUpdate
+          ? 'border-amber-300/30 bg-gradient-to-r from-amber-500/20 to-rose-500/20 text-amber-100 ring-amber-200/10 hover:from-amber-400/25 hover:to-rose-400/25'
+          : 'border-[#2a3762] bg-[#0f1630]/80 text-slate-200 ring-cyan-300/10 hover:bg-[#17203b]'
       }`}
     >
       {data.commitTag === 'local' ? (
@@ -63,6 +65,7 @@ const VersionStatus = ({ onClick }: VersionStatusProps) => {
       ) : (
         <ServerIcon className="h-6 w-6" />
       )}
+
       <div className="flex min-w-0 flex-1 flex-col truncate px-2 last:pr-0">
         <span className="font-bold">{versionStream}</span>
         <span className="truncate">
@@ -75,13 +78,14 @@ const VersionStatus = ({ onClick }: VersionStatusProps) => {
           ) : data.commitsBehind === -1 ? (
             intl.formatMessage(messages.outofdate)
           ) : (
-            <code className="bg-transparent p-0">
+            <code className="bg-transparent p-0 text-inherit">
               {data.version.replace('develop-', '')}
             </code>
           )}
         </span>
       </div>
-      {data.updateAvailable && <ArrowUpCircleIcon className="h-6 w-6" />}
+
+      {hasUpdate && <ArrowUpCircleIcon className="h-6 w-6 text-amber-300" />}
     </Link>
   );
 };

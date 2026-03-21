@@ -46,11 +46,18 @@ const UserDropdown = () => {
     }
   };
 
+  const menuItemClass = (active: boolean) =>
+    `flex items-center rounded-lg px-4 py-2.5 text-sm font-medium transition duration-150 ease-in-out ${
+      active
+        ? 'bg-gradient-to-r from-cyan-400/20 via-violet-400/20 to-pink-400/20 text-white ring-1 ring-cyan-300/30'
+        : 'text-slate-200 hover:bg-[#2a3762]/70 hover:text-white'
+    }`;
+
   return (
     <Menu as="div" className="relative ml-3">
       <div>
         <Menu.Button
-          className="flex max-w-xs items-center rounded-full text-sm ring-1 ring-gray-700 hover:ring-gray-500 focus:outline-none focus:ring-gray-500"
+          className="flex max-w-xs items-center rounded-full text-sm ring-1 ring-[#3d4f82] transition hover:ring-cyan-400/70 focus:outline-none focus:ring-cyan-400"
           data-testid="user-menu"
         >
           <CachedImage
@@ -63,6 +70,7 @@ const UserDropdown = () => {
           />
         </Menu.Button>
       </div>
+
       <Transition
         as={Fragment}
         enter="transition ease-out duration-100"
@@ -73,8 +81,8 @@ const UserDropdown = () => {
         leaveTo="opacity-0 scale-95"
         appear
       >
-        <Menu.Items className="absolute right-0 mt-2 w-72 origin-top-right rounded-md shadow-lg">
-          <div className="divide-y divide-gray-700 rounded-md bg-gray-800/80 ring-1 ring-gray-700 backdrop-blur">
+        <Menu.Items className="absolute right-0 mt-2 w-72 origin-top-right rounded-xl shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
+          <div className="divide-y divide-[#2a3762] rounded-xl border border-[#2a3762] bg-[#17203b]/90 ring-1 ring-cyan-300/10 backdrop-blur-md">
             <div className="flex flex-col space-y-4 px-4 py-4">
               <div className="flex items-center space-x-2">
                 <CachedImage
@@ -86,28 +94,26 @@ const UserDropdown = () => {
                   height={40}
                 />
                 <div className="flex min-w-0 flex-col">
-                  <span className="truncate text-xl font-semibold text-gray-200">
+                  <span className="truncate text-xl font-semibold text-slate-100">
                     {user?.displayName}
                   </span>
                   {user?.displayName?.toLowerCase() !== user?.email && (
-                    <span className="truncate text-sm text-gray-400">
+                    <span className="truncate text-sm text-slate-300">
                       {user?.email}
                     </span>
                   )}
                 </div>
               </div>
+
               {user && <MiniQuotaDisplay userId={user?.id} />}
             </div>
-            <div className="p-1">
+
+            <div className="p-2">
               <Menu.Item>
                 {({ active }) => (
                   <ForwardedLink
-                    href={`/profile`}
-                    className={`flex items-center rounded px-4 py-2 text-sm font-medium text-gray-200 transition duration-150 ease-in-out ${
-                      active
-                        ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white'
-                        : ''
-                    }`}
+                    href="/profile"
+                    className={menuItemClass(active)}
                     data-testid="user-menu-profile"
                   >
                     <UserIcon className="mr-2 inline h-5 w-5" />
@@ -115,6 +121,7 @@ const UserDropdown = () => {
                   </ForwardedLink>
                 )}
               </Menu.Item>
+
               <Menu.Item>
                 {({ active }) => (
                   <ForwardedLink
@@ -126,11 +133,7 @@ const UserDropdown = () => {
                         ? `/users/${user?.id}/requests?filter=all`
                         : '/requests'
                     }
-                    className={`flex items-center rounded px-4 py-2 text-sm font-medium text-gray-200 transition duration-150 ease-in-out ${
-                      active
-                        ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white'
-                        : ''
-                    }`}
+                    className={menuItemClass(active)}
                     data-testid="user-menu-settings"
                   >
                     <ClockIcon className="mr-2 inline h-5 w-5" />
@@ -138,15 +141,12 @@ const UserDropdown = () => {
                   </ForwardedLink>
                 )}
               </Menu.Item>
+
               <Menu.Item>
                 {({ active }) => (
                   <ForwardedLink
-                    href={`/profile/settings`}
-                    className={`flex items-center rounded px-4 py-2 text-sm font-medium text-gray-200 transition duration-150 ease-in-out ${
-                      active
-                        ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white'
-                        : ''
-                    }`}
+                    href="/profile/settings"
+                    className={menuItemClass(active)}
                     data-testid="user-menu-settings"
                   >
                     <CogIcon className="mr-2 inline h-5 w-5" />
@@ -154,15 +154,12 @@ const UserDropdown = () => {
                   </ForwardedLink>
                 )}
               </Menu.Item>
+
               <Menu.Item>
                 {({ active }) => (
                   <a
                     href="#"
-                    className={`flex items-center rounded px-4 py-2 text-sm font-medium text-gray-200 transition duration-150 ease-in-out ${
-                      active
-                        ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white'
-                        : ''
-                    }`}
+                    className={menuItemClass(active)}
                     onClick={() => logout()}
                   >
                     <ArrowRightOnRectangleIcon className="mr-2 inline h-5 w-5" />

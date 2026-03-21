@@ -27,7 +27,7 @@ const PlexLoginButton = ({
 
   return (
     <Button
-      className="relative flex-1 border-[#cc7b19] bg-[rgba(204,123,25,0.3)] hover:border-[#cc7b19] hover:bg-[rgba(204,123,25,0.7)] disabled:opacity-50"
+      className="relative flex-1 rounded-lg border border-[#f9a23f]/45 bg-gradient-to-r from-[#f9a23f]/20 to-[#ff7aa2]/15 text-slate-100 shadow-[0_8px_24px_rgba(249,162,63,0.18)] transition hover:border-[#f9a23f]/70 hover:from-[#f9a23f]/35 hover:to-[#ff7aa2]/25 hover:text-white disabled:opacity-50"
       onClick={login}
       disabled={loading || isProcessing}
       data-testid="plex-login-button"
