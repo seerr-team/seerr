@@ -275,7 +275,7 @@ npm install -g pm2
 ```
 2. Start seerr with PM2:
 ```powershell
-pm2 start dist/index.js --name seerr  --node-args="--NODE_ENV=production"
+set NODE_ENV=production && pm2 start dist/index.js --name seerr
 ```
 3. Save the process list:
 ```powershell
