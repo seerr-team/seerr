@@ -157,8 +157,8 @@ class RottenTomatoes extends ExternalAPI {
         criticsRating: movie.rottenTomatoes.certifiedFresh
           ? 'Certified Fresh'
           : movie.rottenTomatoes.criticsScore >= 60
-          ? 'Fresh'
-          : 'Rotten',
+            ? 'Fresh'
+            : 'Rotten',
         criticsScore: movie.rottenTomatoes.criticsScore,
         audienceRating:
           movie.rottenTomatoes.audienceScore >= 60 ? 'Upright' : 'Spilled',
@@ -167,7 +167,8 @@ class RottenTomatoes extends ExternalAPI {
       };
     } catch (e) {
       throw new Error(
-        `[RT API] Failed to retrieve movie ratings: ${e.message}`
+        `[RT API] Failed to retrieve movie ratings: ${e.message}`,
+        { cause: e }
       );
     }
   }
@@ -205,7 +206,9 @@ class RottenTomatoes extends ExternalAPI {
         year: Number(tvshow.releaseYear),
       };
     } catch (e) {
-      throw new Error(`[RT API] Failed to retrieve tv ratings: ${e.message}`);
+      throw new Error(`[RT API] Failed to retrieve tv ratings: ${e.message}`, {
+        cause: e,
+      });
     }
   }
 }

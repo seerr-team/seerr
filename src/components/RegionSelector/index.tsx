@@ -83,19 +83,14 @@ const RegionSelector = ({
     }
   }, [value, regions, allRegion]);
 
-  useEffect(() => {
-    if (onChange && regions) {
-      if (selectedRegion) {
-        onChange(name, selectedRegion.iso_3166_1);
-      } else {
-        onChange(name, '');
-      }
-    }
-  }, [onChange, selectedRegion, name, regions]);
+  const handleRegionSelect = (region: Region | null) => {
+    setSelectedRegion(region);
+    onChange?.(name, region?.iso_3166_1 ?? '');
+  };
 
   return (
     <div className="z-40 w-full">
-      <Listbox as="div" value={selectedRegion} onChange={setSelectedRegion}>
+      <Listbox as="div" value={selectedRegion} onChange={handleRegionSelect}>
         {({ open }) => (
           <div className="relative">
             <span className="inline-block w-full rounded-md shadow-sm">
@@ -118,12 +113,12 @@ const RegionSelector = ({
                   {selectedRegion && selectedRegion.iso_3166_1 !== 'all'
                     ? regionName(selectedRegion.iso_3166_1)
                     : isUserSetting && selectedRegion?.iso_3166_1 !== 'all'
-                    ? intl.formatMessage(messages.regionServerDefault, {
-                        region: regionValue
-                          ? regionName(regionValue)
-                          : intl.formatMessage(messages.regionDefault),
-                      })
-                    : intl.formatMessage(messages.regionDefault)}
+                      ? intl.formatMessage(messages.regionServerDefault, {
+                          region: regionValue
+                            ? regionName(regionValue)
+                            : intl.formatMessage(messages.regionDefault),
+                        })
+                      : intl.formatMessage(messages.regionDefault)}
                 </span>
                 <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500">
                   <ChevronDownIcon className="h-5 w-5" />

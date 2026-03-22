@@ -65,8 +65,8 @@ function JellyfinSetup({
       serverType === MediaServerType.JELLYFIN
         ? ServerType.JELLYFIN
         : serverType === MediaServerType.EMBY
-        ? ServerType.EMBY
-        : 'Media Server',
+          ? ServerType.EMBY
+          : 'Media Server',
   };
 
   const LoginSchema = Yup.object().shape({
@@ -128,7 +128,7 @@ function JellyfinSetup({
             serverType: serverType,
           });
         } catch (e) {
-          let errorMessage = null;
+          let errorMessage = messages.loginerror;
           switch (e?.response?.data?.message) {
             case ApiErrorCode.InvalidUrl:
               errorMessage = messages.invalidurlerror;
@@ -141,9 +141,6 @@ function JellyfinSetup({
               break;
             case ApiErrorCode.NoAdminUser:
               errorMessage = messages.noadminerror;
-              break;
-            default:
-              errorMessage = messages.loginerror;
               break;
           }
 
@@ -170,7 +167,7 @@ function JellyfinSetup({
                     mediaServerFormatValues
                   )}
                 </label>
-                <div className="mt-1 mb-2 sm:col-span-2 sm:mb-0 sm:mt-0">
+                <div className="mb-2 mt-1 sm:col-span-2 sm:mb-0 sm:mt-0">
                   <div className="flex rounded-md shadow-sm">
                     <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-gray-100 sm:text-sm">
                       {values.useSsl ? 'https://' : 'http://'}
@@ -218,7 +215,7 @@ function JellyfinSetup({
             <label htmlFor="useSsl" className="text-label mt-2">
               {intl.formatMessage(messages.enablessl)}
             </label>
-            <div className="mt-1 mb-2 sm:col-span-2">
+            <div className="mb-2 mt-1 sm:col-span-2">
               <div className="flex rounded-md shadow-sm">
                 <Field
                   id="useSsl"
@@ -234,7 +231,7 @@ function JellyfinSetup({
             <label htmlFor="urlBase" className="text-label mt-1">
               {intl.formatMessage(messages.urlBase)}
             </label>
-            <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0">
+            <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
               <div className="flex rounded-md shadow-sm">
                 <Field
                   type="text"
@@ -287,7 +284,7 @@ function JellyfinSetup({
             <label htmlFor="username" className="text-label">
               {intl.formatMessage(messages.username)}
             </label>
-            <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0">
+            <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
               <div className="flex rounded-md shadow-sm">
                 <Field
                   id="username"
@@ -308,7 +305,7 @@ function JellyfinSetup({
             <label htmlFor="password" className="text-label">
               {intl.formatMessage(messages.password)}
             </label>
-            <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0">
+            <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
               <div className="flexrounded-md shadow-sm">
                 <Field
                   id="password"

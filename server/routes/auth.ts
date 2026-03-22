@@ -244,8 +244,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     (settings.main.mediaServerLogin === false ||
       // media server is neither jellyfin or emby
       (settings.main.mediaServerType !== MediaServerType.JELLYFIN &&
-        settings.main.mediaServerType !== MediaServerType.EMBY &&
-        settings.jellyfin.ip !== ''))
+        settings.main.mediaServerType !== MediaServerType.EMBY))
   ) {
     return res.status(500).json({ error: 'Jellyfin login is disabled' });
   }
@@ -739,7 +738,7 @@ authRoutes.post('/reset-password', async (req, res, next) => {
 
   if (user) {
     await user.resetPassword();
-    userRepository.save(user);
+    await userRepository.save(user);
     logger.info('Successfully sent password reset link', {
       label: 'API',
       ip: req.ip,
@@ -804,7 +803,7 @@ authRoutes.post('/reset-password/:guid', async (req, res, next) => {
   }
   user.recoveryLinkExpirationDate = null;
   await user.setPassword(req.body.password);
-  userRepository.save(user);
+  await userRepository.save(user);
   logger.info('Successfully reset password', {
     label: 'API',
     ip: req.ip,

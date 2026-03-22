@@ -78,6 +78,7 @@ const messages = defineMessages('components.Settings.SonarrModal', {
   animeTags: 'Anime Tags',
   notagoptions: 'No tags.',
   selecttags: 'Select tags',
+  monitorNewItems: 'Monitor New Seasons',
 });
 
 interface SonarrModalProps {
@@ -182,7 +183,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
             autoDismiss: true,
           });
         }
-      } catch (e) {
+      } catch {
         setIsValidated(false);
         if (initialLoad.current) {
           addToast(intl.formatMessage(messages.toastSonarrTestFailure), {
@@ -247,6 +248,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
           syncEnabled: sonarr?.syncEnabled ?? false,
           enableSearch: !sonarr?.preventSearch,
           tagRequests: sonarr?.tagRequests ?? false,
+          monitorNewItems: sonarr?.monitorNewItems ?? 'all',
         }}
         validationSchema={SonarrSettingsSchema}
         onSubmit={async (values) => {
@@ -290,6 +292,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
               syncEnabled: values.syncEnabled,
               preventSearch: !values.enableSearch,
               tagRequests: values.tagRequests,
+              monitorNewItems: values.monitorNewItems,
             };
             if (!sonarr) {
               await axios.post('/api/v1/settings/sonarr', submission);
@@ -301,7 +304,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
             }
 
             onSave();
-          } catch (e) {
+          } catch {
             // set error here
           }
         }}
@@ -323,8 +326,8 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                 isSubmitting
                   ? intl.formatMessage(globalMessages.saving)
                   : sonarr
-                  ? intl.formatMessage(globalMessages.save)
-                  : intl.formatMessage(messages.add)
+                    ? intl.formatMessage(globalMessages.save)
+                    : intl.formatMessage(messages.add)
               }
               secondaryButtonType="warning"
               secondaryText={
@@ -572,20 +575,29 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                           {isTesting
                             ? intl.formatMessage(messages.loadingprofiles)
                             : !isValidated
-                            ? intl.formatMessage(
-                                messages.testFirstQualityProfiles
-                              )
-                            : intl.formatMessage(messages.selectQualityProfile)}
+                              ? intl.formatMessage(
+                                  messages.testFirstQualityProfiles
+                                )
+                              : intl.formatMessage(
+                                  messages.selectQualityProfile
+                                )}
                         </option>
                         {testResponse.profiles.length > 0 &&
-                          testResponse.profiles.map((profile) => (
-                            <option
-                              key={`loaded-profile-${profile.id}`}
-                              value={profile.id}
-                            >
-                              {profile.name}
-                            </option>
-                          ))}
+                          testResponse.profiles
+                            .toSorted((a, b) =>
+                              a.name.localeCompare(b.name, intl.locale, {
+                                numeric: true,
+                                sensitivity: 'base',
+                              })
+                            )
+                            .map((profile) => (
+                              <option
+                                key={`loaded-profile-${profile.id}`}
+                                value={profile.id}
+                              >
+                                {profile.name}
+                              </option>
+                            ))}
                       </Field>
                     </div>
                     {errors.activeProfileId &&
@@ -612,8 +624,10 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                           {isTesting
                             ? intl.formatMessage(messages.loadingrootfolders)
                             : !isValidated
-                            ? intl.formatMessage(messages.testFirstRootFolders)
-                            : intl.formatMessage(messages.selectRootFolder)}
+                              ? intl.formatMessage(
+                                  messages.testFirstRootFolders
+                                )
+                              : intl.formatMessage(messages.selectRootFolder)}
                         </option>
                         {testResponse.rootFolders.length > 0 &&
                           testResponse.rootFolders.map((folder) => (
@@ -656,12 +670,12 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                                   messages.loadinglanguageprofiles
                                 )
                               : !isValidated
-                              ? intl.formatMessage(
-                                  messages.testFirstLanguageProfiles
-                                )
-                              : intl.formatMessage(
-                                  messages.selectLanguageProfile
-                                )}
+                                ? intl.formatMessage(
+                                    messages.testFirstLanguageProfiles
+                                  )
+                                : intl.formatMessage(
+                                    messages.selectLanguageProfile
+                                  )}
                           </option>
                           {testResponse.languageProfiles.length > 0 &&
                             testResponse.languageProfiles.map((language) => (
@@ -703,8 +717,8 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                         !isValidated
                           ? intl.formatMessage(messages.testFirstTags)
                           : isTesting
-                          ? intl.formatMessage(messages.loadingTags)
-                          : intl.formatMessage(messages.selecttags)
+                            ? intl.formatMessage(messages.loadingTags)
+                            : intl.formatMessage(messages.selecttags)
                       }
                       isLoading={isTesting}
                       className="react-select-container"
@@ -780,20 +794,29 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                           {isTesting
                             ? intl.formatMessage(messages.loadingprofiles)
                             : !isValidated
-                            ? intl.formatMessage(
-                                messages.testFirstQualityProfiles
-                              )
-                            : intl.formatMessage(messages.selectQualityProfile)}
+                              ? intl.formatMessage(
+                                  messages.testFirstQualityProfiles
+                                )
+                              : intl.formatMessage(
+                                  messages.selectQualityProfile
+                                )}
                         </option>
                         {testResponse.profiles.length > 0 &&
-                          testResponse.profiles.map((profile) => (
-                            <option
-                              key={`loaded-profile-${profile.id}`}
-                              value={profile.id}
-                            >
-                              {profile.name}
-                            </option>
-                          ))}
+                          testResponse.profiles
+                            .toSorted((a, b) =>
+                              a.name.localeCompare(b.name, intl.locale, {
+                                numeric: true,
+                                sensitivity: 'base',
+                              })
+                            )
+                            .map((profile) => (
+                              <option
+                                key={`loaded-profile-anime-${profile.id}`}
+                                value={profile.id}
+                              >
+                                {profile.name}
+                              </option>
+                            ))}
                       </Field>
                     </div>
                     {errors.activeAnimeProfileId &&
@@ -820,8 +843,10 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                           {isTesting
                             ? intl.formatMessage(messages.loadingrootfolders)
                             : !isValidated
-                            ? intl.formatMessage(messages.testFirstRootFolders)
-                            : intl.formatMessage(messages.selectRootFolder)}
+                              ? intl.formatMessage(
+                                  messages.testFirstRootFolders
+                                )
+                              : intl.formatMessage(messages.selectRootFolder)}
                         </option>
                         {testResponse.rootFolders.length > 0 &&
                           testResponse.rootFolders.map((folder) => (
@@ -862,12 +887,12 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                                   messages.loadinglanguageprofiles
                                 )
                               : !isValidated
-                              ? intl.formatMessage(
-                                  messages.testFirstLanguageProfiles
-                                )
-                              : intl.formatMessage(
-                                  messages.selectLanguageProfile
-                                )}
+                                ? intl.formatMessage(
+                                    messages.testFirstLanguageProfiles
+                                  )
+                                : intl.formatMessage(
+                                    messages.selectLanguageProfile
+                                  )}
                           </option>
                           {testResponse.languageProfiles.length > 0 &&
                             testResponse.languageProfiles.map((language) => (
@@ -909,8 +934,8 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                         !isValidated
                           ? intl.formatMessage(messages.testFirstTags)
                           : isTesting
-                          ? intl.formatMessage(messages.loadingTags)
-                          : intl.formatMessage(messages.selecttags)
+                            ? intl.formatMessage(messages.loadingTags)
+                            : intl.formatMessage(messages.selecttags)
                       }
                       isLoading={isTesting}
                       className="react-select-container"
@@ -963,6 +988,27 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                       name="enableSeasonFolders"
                     />
                   </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="monitorNewItems" className="text-label">
+                    {intl.formatMessage(messages.monitorNewItems)}
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <Field
+                        as="select"
+                        id="monitorNewItems"
+                        name="monitorNewItems"
+                        disabled={!isValidated || isTesting}
+                      >
+                        <option value="all">All</option>
+                        <option value="none">None</option>
+                      </Field>
+                    </div>
+                  </div>
+                  {errors.monitorNewItems && touched.monitorNewItems && (
+                    <div className="error">{errors.monitorNewItems}</div>
+                  )}
                 </div>
                 <div className="form-row">
                   <label htmlFor="externalUrl" className="text-label">

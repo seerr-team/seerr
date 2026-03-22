@@ -3,7 +3,7 @@ import type { NotificationAgentNtfy } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
-import { hasNotificationType, Notification } from '..';
+import { Notification, hasNotificationType } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
 import { BaseAgent } from './agent';
 
@@ -27,7 +27,7 @@ class NtfyAgent
     const { embedPoster } = settings.notifications.agents.ntfy;
 
     const topic = this.getSettings().options.topic;
-    const priority = 3;
+    const priority = this.getSettings().options.priority ?? 3;
 
     const title = payload.event
       ? `${payload.event} - ${payload.subject}`

@@ -109,40 +109,40 @@ const LanguageSelector = ({
               isFixed: true,
             }
           : (value === '' || !value || value === 'server') && isUserSettings
-          ? {
-              value: 'server',
-              label: intl.formatMessage(messages.languageServerDefault, {
-                language: serverValue
-                  ? serverValue
-                      .split('|')
-                      .map((value) => languageName(value))
-                      .reduce((prev, curr) =>
-                        intl.formatMessage(globalMessages.delimitedlist, {
-                          a: prev,
-                          b: curr,
-                        })
-                      )
-                  : intl.formatMessage(messages.originalLanguageDefault),
-              }),
-              isFixed: true,
-            }
-          : (value
-              ?.split('|')
-              .map((code) => {
-                const matchedLanguage = sortedLanguages?.find(
-                  (lang) => lang.iso_639_1 === code
-                );
+            ? {
+                value: 'server',
+                label: intl.formatMessage(messages.languageServerDefault, {
+                  language: serverValue
+                    ? serverValue
+                        .split('|')
+                        .map((value) => languageName(value))
+                        .reduce((prev, curr) =>
+                          intl.formatMessage(globalMessages.delimitedlist, {
+                            a: prev,
+                            b: curr,
+                          })
+                        )
+                    : intl.formatMessage(messages.originalLanguageDefault),
+                }),
+                isFixed: true,
+              }
+            : (value
+                ?.split('|')
+                .map((code) => {
+                  const matchedLanguage = sortedLanguages?.find(
+                    (lang) => lang.iso_639_1 === code
+                  );
 
-                if (!matchedLanguage) {
-                  return undefined;
-                }
+                  if (!matchedLanguage) {
+                    return undefined;
+                  }
 
-                return {
-                  label: matchedLanguage.name,
-                  value: matchedLanguage.iso_639_1,
-                };
-              })
-              .filter((option) => option !== undefined) as OptionType[])
+                  return {
+                    label: matchedLanguage.name,
+                    value: matchedLanguage.iso_639_1,
+                  };
+                })
+                .filter((option) => option !== undefined) as OptionType[])
       }
       onChange={(value, options) => {
         if (

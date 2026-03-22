@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: trivy-scan-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -48,7 +48,7 @@ jobs:
             trivy-${{ runner.os }}-
 
       - name: Run Trivy image scan
-        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
         with:
           image-ref: ghcr.io/${{ github.repository }}:latest
           format: sarif
@@ -56,6 +56,6 @@ jobs:
           ignore-unfixed: true
 
       - name: Upload SARIF to code scanning
-        uses: github/codeql-action/upload-sarif@e296a935590eb16afc0c0108289f68c87e2a89a5 # v4.30.7
+        uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v4.32.6
         with:
           sarif_file: trivy.sarif

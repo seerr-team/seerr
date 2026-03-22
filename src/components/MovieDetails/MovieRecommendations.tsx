@@ -2,7 +2,7 @@ import Header from '@app/components/Common/Header';
 import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
-import Error from '@app/pages/_error';
+import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import type { MovieDetails } from '@server/models/Movie';
 import type { MovieResult } from '@server/models/Search';
@@ -34,7 +34,7 @@ const MovieRecommendations = () => {
   );
 
   if (error) {
-    return <Error statusCode={500} />;
+    return <ErrorPage statusCode={500} />;
   }
 
   return (
@@ -42,7 +42,7 @@ const MovieRecommendations = () => {
       <PageTitle
         title={[intl.formatMessage(messages.recommendations), movieData?.title]}
       />
-      <div className="mt-1 mb-5">
+      <div className="mb-5 mt-1">
         <Header
           subtext={
             <Link href={`/movie/${movieData?.id}`} className="hover:underline">

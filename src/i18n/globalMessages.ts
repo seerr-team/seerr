@@ -51,22 +51,23 @@ const globalMessages = defineMessages('i18n', {
   settings: 'Settings',
   usersettings: 'User Settings',
   delimitedlist: '{a}, {b}',
+  error: 'Something went wrong. Please try again.',
   showingresults:
     'Showing <strong>{from}</strong> to <strong>{to}</strong> of <strong>{total}</strong> results',
   resultsperpage: 'Display {pageSize} results per page',
   noresults: 'No results.',
   open: 'Open',
   resolved: 'Resolved',
-  blacklist: 'Blacklist',
-  blacklisted: 'Blacklisted',
-  blacklistSuccess: '<strong>{title}</strong> was successfully blacklisted.',
-  blacklistError: 'Something went wrong. Please try again.',
-  blacklistDuplicateError:
-    '<strong>{title}</strong> has already been blacklisted.',
-  removeFromBlacklistSuccess:
-    '<strong>{title}</strong> was successfully removed from the Blacklist.',
-  addToBlacklist: 'Add to Blacklist',
-  removefromBlacklist: 'Remove from Blacklist',
+  blocklist: 'Blocklist',
+  blocklisted: 'Blocklisted',
+  blocklistSuccess: '<strong>{title}</strong> was successfully blocklisted.',
+  blocklistError: 'Something went wrong. Please try again.',
+  blocklistDuplicateError:
+    '<strong>{title}</strong> has already been blocklisted.',
+  removeFromBlocklistSuccess:
+    '<strong>{title}</strong> was successfully removed from the Blocklist.',
+  addToBlocklist: 'Add to Blocklist',
+  removefromBlocklist: 'Remove from Blocklist',
   specials: 'Specials',
 });
 

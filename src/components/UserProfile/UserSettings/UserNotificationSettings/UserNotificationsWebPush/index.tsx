@@ -95,7 +95,7 @@ const UserWebPushSettings = () => {
       } else {
         throw new Error('Subscription failed');
       }
-    } catch (error) {
+    } catch {
       addToast(intl.formatMessage(messages.enablingwebpusherror), {
         appearance: 'error',
         autoDismiss: true,
@@ -135,7 +135,7 @@ const UserWebPushSettings = () => {
         autoDismiss: true,
         appearance: 'success',
       });
-    } catch (error) {
+    } catch {
       addToast(intl.formatMessage(messages.disablingwebpusherror), {
         autoDismiss: true,
         appearance: 'error',
@@ -157,7 +157,7 @@ const UserWebPushSettings = () => {
         autoDismiss: true,
         appearance: 'success',
       });
-    } catch (error) {
+    } catch {
       addToast(intl.formatMessage(messages.subscriptiondeleteerror), {
         autoDismiss: true,
         appearance: 'error',
@@ -202,7 +202,7 @@ const UserWebPushSettings = () => {
     if (user?.id) {
       verifyWebPush();
     }
-  }, [user?.id, currentSettings]);
+  }, [user?.id, currentSettings, dataDevices]);
 
   useEffect(() => {
     const getSubscriptionEndpoint = async () => {
@@ -272,7 +272,7 @@ const UserWebPushSettings = () => {
               appearance: 'success',
               autoDismiss: true,
             });
-          } catch (e) {
+          } catch {
             addToast(intl.formatMessage(messages.webpushsettingsfailed), {
               appearance: 'error',
               autoDismiss: true,
@@ -350,7 +350,7 @@ const UserWebPushSettings = () => {
           );
         }}
       </Formik>
-      <div className="mt-10 mb-6">
+      <div className="mb-6 mt-10">
         <h3 className="heading">
           {intl.formatMessage(messages.managedevices)}
         </h3>

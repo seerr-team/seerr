@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddMediaRequestIsAutoRequestedField1660714479373
-  implements MigrationInterface
-{
+export class AddMediaRequestIsAutoRequestedField1660714479373 implements MigrationInterface {
   name = 'AddMediaRequestIsAutoRequestedField1660714479373';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -16,7 +16,12 @@ const config: Config = {
   deploymentBranch: 'gh-pages',
 
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+    },
+  },
 
   i18n: {
     defaultLocale: 'en',
@@ -64,12 +69,17 @@ const config: Config = {
     navbar: {
       logo: {
         alt: 'Seerr',
-        src: 'img/logo.svg',
+        src: 'img/logo_full.svg',
       },
       items: [
         {
           to: 'blog',
           label: 'Blog',
+          position: 'right',
+        },
+        {
+          href: 'https://discord.gg/seerr',
+          label: 'Discord',
           position: 'right',
         },
         {
@@ -123,7 +133,14 @@ const config: Config = {
     prism: {
       theme: prismThemes.shadesOfPurple,
       darkTheme: prismThemes.shadesOfPurple,
-      additionalLanguages: ['bash', 'powershell', 'yaml', 'nix', 'nginx'],
+      additionalLanguages: [
+        'bash',
+        'powershell',
+        'yaml',
+        'nix',
+        'nginx',
+        'batch',
+      ],
     },
   } satisfies Preset.ThemeConfig,
 };

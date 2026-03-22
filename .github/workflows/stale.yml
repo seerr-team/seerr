@@ -9,7 +9,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: close-stale-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - uses: actions/stale@5f858e3efba33a5ca4407a664cc011ad407f2008 # v10.1.0
+      - uses: actions/stale@b5d41d4e1d5dceea10e7104786b73624c18a190f # v10.2.0
         with:
           any-of-labels: "pending author's response"
           exempt-issue-labels: 'confirmed'

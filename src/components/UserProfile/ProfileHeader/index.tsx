@@ -38,7 +38,7 @@ const ProfileHeader = ({ user, isSettingsPage }: ProfileHeaderProps) => {
   }
 
   return (
-    <div className="relative z-40 mt-6 mb-12 lg:flex lg:items-end lg:justify-between lg:space-x-5">
+    <div className="relative z-40 mb-12 mt-6 lg:flex lg:items-end lg:justify-between lg:space-x-5">
       <div className="flex items-end justify-items-end space-x-5">
         <div className="flex-shrink-0">
           <div className="relative">
@@ -53,7 +53,7 @@ const ProfileHeader = ({ user, isSettingsPage }: ProfileHeaderProps) => {
             <span
               className="absolute inset-0 rounded-full shadow-inner"
               aria-hidden="true"
-            ></span>
+            />
           </div>
         </div>
         <div className="pt-1.5">
@@ -81,7 +81,7 @@ const ProfileHeader = ({ user, isSettingsPage }: ProfileHeaderProps) => {
           </p>
         </div>
       </div>
-      <div className="justify-stretch mt-6 flex flex-col-reverse space-y-4 space-y-reverse lg:flex-row lg:justify-end lg:space-y-0 lg:space-x-3 lg:space-x-reverse">
+      <div className="mt-6 flex flex-col-reverse justify-stretch space-y-4 space-y-reverse lg:flex-row lg:justify-end lg:space-x-3 lg:space-y-0 lg:space-x-reverse">
         {(loggedInUser?.id === user.id ||
           (user.id !== 1 && hasPermission(Permission.MANAGE_USERS))) &&
         !isSettingsPage ? (

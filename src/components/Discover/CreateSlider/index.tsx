@@ -349,7 +349,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
           );
           onCreate();
           resetForm();
-        } catch (e) {
+        } catch {
           addToast(
             intl.formatMessage(slider ? messages.editfail : messages.addfail),
             {
@@ -528,7 +528,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                 typeof errors.data === 'string' && (
                   <div className="error">{errors.data}</div>
                 )}
-              <div className="flex-1"></div>
+              <div className="flex-1" />
               {resultCount === 0 ? (
                 <Tooltip content={intl.formatMessage(messages.needresults)}>
                   <div>

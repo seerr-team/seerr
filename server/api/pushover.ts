@@ -21,7 +21,7 @@ export const mapSounds = (sounds: {
       ({
         name,
         description,
-      } as PushoverSound)
+      }) as PushoverSound
   );
 
 class PushoverAPI extends ExternalAPI {
@@ -48,7 +48,9 @@ class PushoverAPI extends ExternalAPI {
 
       return mapSounds(data.sounds);
     } catch (e) {
-      throw new Error(`[Pushover] Failed to retrieve sounds: ${e.message}`);
+      throw new Error(`[Pushover] Failed to retrieve sounds: ${e.message}`, {
+        cause: e,
+      });
     }
   }
 }

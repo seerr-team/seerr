@@ -2,7 +2,7 @@ import Header from '@app/components/Common/Header';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import PersonCard from '@app/components/PersonCard';
-import Error from '@app/pages/_error';
+import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import type { TvDetails } from '@server/models/Tv';
 import Link from 'next/link';
@@ -24,7 +24,7 @@ const TvCast = () => {
   }
 
   if (!data) {
-    return <Error statusCode={404} />;
+    return <ErrorPage statusCode={404} />;
   }
 
   return (
@@ -32,7 +32,7 @@ const TvCast = () => {
       <PageTitle
         title={[intl.formatMessage(messages.fullseriescast), data.name]}
       />
-      <div className="mt-1 mb-5">
+      <div className="mb-5 mt-1">
         <Header
           subtext={
             <Link href={`/tv/${data.id}`} className="hover:underline">

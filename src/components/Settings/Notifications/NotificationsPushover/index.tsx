@@ -49,7 +49,12 @@ const NotificationsPushover = () => {
   const { data: soundsData } = useSWR<PushoverSound[]>(
     data?.options.accessToken
       ? `/api/v1/settings/notifications/pushover/sounds?token=${data.options.accessToken}`
-      : null
+      : null,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      shouldRetryOnError: false,
+    }
   );
 
   const NotificationsPushoverSchema = Yup.object().shape({
@@ -110,7 +115,7 @@ const NotificationsPushover = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.pushoversettingsfailed), {
             appearance: 'error',
             autoDismiss: true,
@@ -161,7 +166,7 @@ const NotificationsPushover = () => {
               autoDismiss: true,
               appearance: 'success',
             });
-          } catch (e) {
+          } catch {
             if (toastId) {
               removeToast(toastId);
             }

@@ -17,7 +17,7 @@ import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { Router } from 'express';
 import type { FindOneOptions } from 'typeorm';
-import { In } from 'typeorm';
+import { In, IsNull, Not } from 'typeorm';
 
 const mediaRoutes = Router();
 
@@ -48,8 +48,6 @@ mediaRoutes.get('/', async (req, res, next) => {
     case 'pending':
       statusFilter = MediaStatus.PENDING;
       break;
-    default:
-      statusFilter = undefined;
   }
 
   let sortFilter: FindOneOptions<Media>['order'] = {
@@ -68,12 +66,18 @@ mediaRoutes.get('/', async (req, res, next) => {
       };
   }
 
+  let whereClause: FindOneOptions<Media>['where'];
+  if (statusFilter || req.query.sort === 'mediaAdded') {
+    whereClause = {};
+    if (statusFilter) whereClause.status = statusFilter;
+    if (req.query.sort === 'mediaAdded')
+      whereClause.mediaAddedAt = Not(IsNull());
+  }
+
   try {
     const [media, mediaCount] = await mediaRepository.findAndCount({
       order: sortFilter,
-      where: statusFilter && {
-        status: statusFilter,
-      },
+      where: whereClause,
       take: pageSize,
       skip,
     });
@@ -174,7 +178,12 @@ mediaRoutes.delete(
         where: { id: Number(req.params.id) },
       });
 
-      await mediaRepository.remove(media);
+      if (media.status === MediaStatus.BLOCKLISTED) {
+        media.resetServiceData();
+        await mediaRepository.save(media);
+      } else {
+        await mediaRepository.remove(media);
+      }
 
       return res.status(204).send();
     } catch (e) {
@@ -310,12 +319,12 @@ mediaRoutes.get<{ id: string }, MediaWatchDataResponse>(
       if (media.ratingKey) {
         const watchStats = await tautulli.getMediaWatchStats(media.ratingKey);
         const watchUsers = await tautulli.getMediaWatchUsers(media.ratingKey);
+        const plexIds = watchUsers.map((u) => u.user_id);
+        if (!plexIds.length) plexIds.push(-1);
 
         const users = await userRepository
           .createQueryBuilder('user')
-          .where('user.plexId IN (:...plexIds)', {
-            plexIds: watchUsers.map((u) => u.user_id),
-          })
+          .where('user.plexId IN (:...plexIds)', { plexIds })
           .getMany();
 
         const playCount =
@@ -342,12 +351,12 @@ mediaRoutes.get<{ id: string }, MediaWatchDataResponse>(
         const watchUsers4k = await tautulli.getMediaWatchUsers(
           media.ratingKey4k
         );
+        const plexIds4k = watchUsers4k.map((u) => u.user_id);
+        if (!plexIds4k.length) plexIds4k.push(-1);
 
         const users = await userRepository
           .createQueryBuilder('user')
-          .where('user.plexId IN (:...plexIds)', {
-            plexIds: watchUsers4k.map((u) => u.user_id),
-          })
+          .where('user.plexId IN (:...plexIds)', { plexIds: plexIds4k })
           .getMany();
 
         const playCount =

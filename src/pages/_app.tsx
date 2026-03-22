@@ -13,6 +13,7 @@ import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
 import '@app/styles/globals.css';
 import { polyfillIntl } from '@app/utils/polyfillIntl';
+import '@fontsource-variable/inter';
 import { MediaServerType } from '@server/constants/server';
 import type { PublicSettingsResponse } from '@server/interfaces/api/settingsInterfaces';
 import type { AvailableLocale } from '@server/types/languages';
@@ -64,6 +65,8 @@ const loadLocaleData = (locale: AvailableLocale): Promise<any> => {
       return import('../i18n/locale/ja.json');
     case 'ko':
       return import('../i18n/locale/ko.json');
+    case 'lb':
+      return import('../i18n/locale/lb.json');
     case 'lt':
       return import('../i18n/locale/lt.json');
     case 'nb-NO':
@@ -90,6 +93,8 @@ const loadLocaleData = (locale: AvailableLocale): Promise<any> => {
       return import('../i18n/locale/tr.json');
     case 'uk':
       return import('../i18n/locale/uk.json');
+    case 'vi':
+      return import('../i18n/locale/vi.json');
     case 'zh-CN':
       return import('../i18n/locale/zh_Hans.json');
     case 'zh-TW':
@@ -206,7 +211,7 @@ const CoreApp: Omit<NextAppComponentType, 'origGetInitialProps'> = ({
                   <meta
                     name="viewport"
                     content="initial-scale=1, viewport-fit=cover, width=device-width"
-                  ></meta>
+                  />
                   <PWAHeader
                     applicationTitle={currentSettings.applicationTitle}
                   />
@@ -231,7 +236,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     applicationTitle: '',
     applicationUrl: '',
     hideAvailable: false,
-    hideBlacklisted: false,
+    hideBlocklisted: false,
     movie4kEnabled: false,
     series4kEnabled: false,
     localLogin: true,
@@ -292,7 +297,7 @@ CoreApp.getInitialProps = async (initialProps) => {
           });
           ctx.res.end();
         }
-      } catch (e) {
+      } catch {
         // If there is no user, and ctx.res is set (to check if we are on the server side)
         // _AND_ we are not already on the login or setup route, redirect to /login with a 307
         // before anything actually renders
@@ -307,9 +312,8 @@ CoreApp.getInitialProps = async (initialProps) => {
   }
 
   // Run the default getInitialProps for the main nextjs initialProps
-  const appInitialProps: AppInitialProps = await App.getInitialProps(
-    initialProps
-  );
+  const appInitialProps: AppInitialProps =
+    await App.getInitialProps(initialProps);
 
   const locale = user?.settings?.locale
     ? user.settings.locale

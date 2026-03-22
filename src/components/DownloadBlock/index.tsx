@@ -29,12 +29,12 @@ const DownloadBlock = ({
         {hasPermission(Permission.ADMIN)
           ? downloadItem.title
           : downloadItem.episode
-          ? intl.formatMessage(messages.formattedTitle, {
-              title,
-              seasonNumber: downloadItem?.episode?.seasonNumber,
-              episodeNumber: downloadItem?.episode?.episodeNumber,
-            })
-          : title}
+            ? intl.formatMessage(messages.formattedTitle, {
+                title,
+                seasonNumber: downloadItem?.episode?.seasonNumber,
+                episodeNumber: downloadItem?.episode?.episodeNumber,
+              })
+            : title}
       </div>
       <div className="relative mb-2 h-6 min-w-0 overflow-hidden rounded-full bg-gray-700">
         <div

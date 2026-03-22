@@ -2,6 +2,7 @@ import { DbAwareColumn } from '@server/utils/DbColumnHelper';
 import {
   Column,
   Entity,
+  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
   Unique,
@@ -18,6 +19,7 @@ export class UserPushSubscription {
     eager: true,
     onDelete: 'CASCADE',
   })
+  @Index()
   public user: User;
 
   @Column()

@@ -63,6 +63,10 @@ export const availableLanguages: AvailableLanguageObject = {
     code: 'it',
     display: 'Italiano',
   },
+  lb: {
+    code: 'lb',
+    display: 'Lëtzebuergesch',
+  },
   lt: {
     code: 'lt',
     display: 'Lietuvių',
@@ -134,6 +138,10 @@ export const availableLanguages: AvailableLanguageObject = {
   uk: {
     code: 'uk',
     display: 'українська мова',
+  },
+  vi: {
+    code: 'vi',
+    display: 'Tiếng Việt',
   },
   'zh-TW': {
     code: 'zh-TW',

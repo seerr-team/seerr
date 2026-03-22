@@ -46,7 +46,7 @@ const SlideOver = ({
     >
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
       <div
-        className={`fixed inset-0 z-50 overflow-hidden bg-gray-800 bg-opacity-70`}
+        className={`fixed inset-0 z-50 overflow-hidden bg-gray-800/70`}
         onClick={() => onClose()}
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
@@ -71,8 +71,8 @@ const SlideOver = ({
                 ref={slideoverRef}
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex h-full flex-col rounded-lg bg-gray-800 bg-opacity-80 shadow-xl ring-1 ring-gray-700 backdrop-blur">
-                  <header className="space-y-1 border-b border-gray-700 py-4 px-4">
+                <div className="flex h-full flex-col rounded-lg bg-gray-800/80 shadow-xl ring-1 ring-gray-700 backdrop-blur">
+                  <header className="space-y-1 border-b border-gray-700 px-4 py-4">
                     <div className="flex items-center justify-between space-x-3">
                       <h2 className="text-overseerr text-2xl font-bold leading-7">
                         {title}

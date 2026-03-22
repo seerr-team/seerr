@@ -12,8 +12,7 @@ interface AlertProps {
 
 const Alert = ({ title, children, type }: AlertProps) => {
   let design = {
-    bgColor:
-      'border border-yellow-500 backdrop-blur bg-yellow-400 bg-opacity-20',
+    bgColor: 'border border-yellow-500 backdrop-blur bg-yellow-400/20',
     titleColor: 'text-yellow-100',
     textColor: 'text-yellow-300',
     svg: <ExclamationTriangleIcon className="h-5 w-5" />,
@@ -22,8 +21,7 @@ const Alert = ({ title, children, type }: AlertProps) => {
   switch (type) {
     case 'info':
       design = {
-        bgColor:
-          'border border-indigo-500 backdrop-blur bg-indigo-400 bg-opacity-20',
+        bgColor: 'border border-indigo-500 backdrop-blur bg-indigo-400/20',
         titleColor: 'text-gray-100',
         textColor: 'text-gray-300',
         svg: <InformationCircleIcon className="h-5 w-5" />,

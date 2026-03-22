@@ -81,10 +81,10 @@ const SettingsUsers = () => {
       settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
         ? 'Jellyfin'
         : settings.currentSettings.mediaServerType === MediaServerType.EMBY
-        ? 'Emby'
-        : settings.currentSettings.mediaServerType === MediaServerType.PLEX
-        ? 'Plex'
-        : undefined,
+          ? 'Emby'
+          : settings.currentSettings.mediaServerType === MediaServerType.PLEX
+            ? 'Plex'
+            : undefined,
   };
 
   return (
@@ -139,7 +139,7 @@ const SettingsUsers = () => {
                 autoDismiss: true,
                 appearance: 'success',
               });
-            } catch (e) {
+            } catch {
               addToast(intl.formatMessage(messages.toastSettingsFailure), {
                 autoDismiss: true,
                 appearance: 'error',

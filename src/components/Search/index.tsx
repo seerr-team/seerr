@@ -2,7 +2,7 @@ import Header from '@app/components/Common/Header';
 import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
-import Error from '@app/pages/_error';
+import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import type {
   MovieResult,
@@ -34,17 +34,17 @@ const Search = () => {
     {
       query: router.query.query,
     },
-    { hideAvailable: false, hideBlacklisted: false }
+    { hideAvailable: false, hideBlocklisted: false }
   );
 
   if (error) {
-    return <Error statusCode={500} />;
+    return <ErrorPage statusCode={500} />;
   }
 
   return (
     <>
       <PageTitle title={intl.formatMessage(messages.search)} />
-      <div className="mt-1 mb-5">
+      <div className="mb-5 mt-1">
         <Header>{intl.formatMessage(messages.searchresults)}</Header>
       </div>
       <ListView

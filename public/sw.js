@@ -3,7 +3,7 @@
 // previously cached resources to be updated from the network.
 // This variable is intentionally declared and unused.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const OFFLINE_VERSION = 4;
+const OFFLINE_VERSION = 5;
 const CACHE_NAME = 'offline';
 // Customize this with a different URL if needed.
 const OFFLINE_URL = '/offline.html';

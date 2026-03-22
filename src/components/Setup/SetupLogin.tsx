@@ -41,12 +41,17 @@ const SetupLogin: React.FC<LoginWithMediaServerProps> = ({
 
   useEffect(() => {
     const login = async () => {
-      const response = await axios.post('/api/v1/auth/plex', {
-        authToken: authToken,
-      });
+      try {
+        const response = await axios.post('/api/v1/auth/plex', {
+          authToken: authToken,
+        });
 
-      if (response.data?.email) {
-        revalidate();
+        if (response.data?.id) {
+          const { data: user } = await axios.get('/api/v1/auth/me');
+          revalidate(user, false);
+        }
+      } catch {
+        // auth failed silently and user can attempt again
       }
     };
     if (authToken && mediaServerType == MediaServerType.PLEX) {

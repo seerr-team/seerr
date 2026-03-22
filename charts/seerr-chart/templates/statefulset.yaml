@@ -103,7 +103,7 @@ spec:
       volumes:
         - name: config
           persistentVolumeClaim:
-            claimName: {{ include "seerr.configPersistenceName" . }}
+            claimName: {{ if .Values.config.persistence.existingClaim }}{{ .Values.config.persistence.existingClaim }}{{- else }}{{ include "seerr.configPersistenceName" . }}{{- end }}
       {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
       {{- end }}

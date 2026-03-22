@@ -3,9 +3,10 @@ import CachedImage from '@app/components/Common/CachedImage';
 import ImageFader from '@app/components/Common/ImageFader';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
+import ExternalLinkBlock from '@app/components/ExternalLinkBlock';
 import TitleCard from '@app/components/TitleCard';
 import globalMessages from '@app/i18n/globalMessages';
-import Error from '@app/pages/_error';
+import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import { CircleStackIcon } from '@heroicons/react/24/solid';
 import type { PersonCombinedCreditsResponse } from '@server/interfaces/api/personInterfaces';
@@ -91,7 +92,7 @@ const PersonDetails = () => {
   }
 
   if (!data) {
-    return <Error statusCode={404} />;
+    return <ErrorPage statusCode={404} />;
   }
 
   const personAttributes: string[] = [];
@@ -241,7 +242,7 @@ const PersonDetails = () => {
     <>
       <PageTitle title={data.name} />
       {(sortedCrew || sortedCast) && (
-        <div className="absolute top-0 left-0 right-0 z-0 h-96">
+        <div className="absolute left-0 right-0 top-0 z-0 h-96">
           <ImageFader
             isDarker
             backgroundImages={[...(sortedCast ?? []), ...(sortedCrew ?? [])]
@@ -255,7 +256,7 @@ const PersonDetails = () => {
         </div>
       )}
       <div
-        className={`relative z-10 mt-4 mb-8 flex flex-col items-center lg:flex-row ${
+        className={`relative z-10 mb-8 mt-4 flex flex-col items-center lg:flex-row ${
           data.biography ? 'lg:items-start' : ''
         }`}
       >
@@ -277,7 +278,16 @@ const PersonDetails = () => {
               {mediaTypePicker}
             </div>
           </div>
-          <div className="mt-1 mb-2 space-y-1 text-xs text-white sm:text-sm lg:text-base">
+          <div className="flex w-full items-center justify-center lg:justify-between">
+            <div className="mb-3 mt-3">
+              <ExternalLinkBlock
+                mediaType="person"
+                tmdbId={data.id}
+                imdbId={data.imdbId}
+              />
+            </div>
+          </div>
+          <div className="mb-2 mt-1 space-y-1 text-xs text-white sm:text-sm lg:text-base">
             <div>{personAttributes.join(' | ')}</div>
             {(data.alsoKnownAs ?? []).length > 0 && (
               <div>

@@ -29,6 +29,8 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
   trustProxyTip:
     'Allow Seerr to correctly register client IP addresses behind a proxy',
   proxyEnabled: 'HTTP(S) Proxy',
+  proxyEnabledTip:
+    'Send ALL outgoing HTTP/HTTPS requests through a proxy server (host/port). Does NOT enable HTTPS, SSL, or certificate configuration.',
   proxyHostname: 'Proxy Hostname',
   proxyPort: 'Proxy Port',
   proxySsl: 'Use SSL For Proxy',
@@ -38,6 +40,8 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
   proxyBypassFilterTip:
     "Use ',' as a separator, and '*.' as a wildcard for subdomains",
   proxyBypassLocalAddresses: 'Bypass Proxy for Local Addresses',
+  validationDnsCacheMinTtl: 'You must provide a valid minimum TTL',
+  validationDnsCacheMaxTtl: 'You must provide a valid maximum TTL',
   validationProxyPort: 'You must provide a valid port',
   networkDisclaimer:
     'Network parameters from your container/system should be used instead of these settings. See the {docs} for more information.',
@@ -52,6 +56,10 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
     'Do NOT enable this if you are experiencing issues with DNS lookups',
   dnsCacheForceMinTtl: 'DNS Cache Minimum TTL',
   dnsCacheForceMaxTtl: 'DNS Cache Maximum TTL',
+  apiRequestTimeout: 'API Request Timeout',
+  apiRequestTimeoutTip:
+    'Maximum time (in seconds) to wait for responses from external services like Radarr/Sonarr. Set to 0 for no timeout.',
+  validationApiRequestTimeout: 'You must provide a valid timeout value',
 });
 
 const SettingsNetwork = () => {
@@ -64,12 +72,33 @@ const SettingsNetwork = () => {
   } = useSWR<NetworkSettings>('/api/v1/settings/network');
 
   const NetworkSettingsSchema = Yup.object().shape({
+    dnsCacheForceMinTtl: Yup.number().when('dnsCacheEnabled', {
+      is: true,
+      then: Yup.number()
+        .typeError(intl.formatMessage(messages.validationDnsCacheMinTtl))
+        .required(intl.formatMessage(messages.validationDnsCacheMinTtl))
+        .min(0),
+    }),
+    dnsCacheForceMaxTtl: Yup.number().when('dnsCacheEnabled', {
+      is: true,
+      then: Yup.number()
+        .typeError(intl.formatMessage(messages.validationDnsCacheMaxTtl))
+        .required(intl.formatMessage(messages.validationDnsCacheMaxTtl))
+        .min(-1),
+    }),
     proxyPort: Yup.number().when('proxyEnabled', {
       is: (proxyEnabled: boolean) => proxyEnabled,
-      then: Yup.number().required(
-        intl.formatMessage(messages.validationProxyPort)
-      ),
+      then: Yup.number()
+        .typeError(intl.formatMessage(messages.validationProxyPort))
+        .integer(intl.formatMessage(messages.validationProxyPort))
+        .min(1, intl.formatMessage(messages.validationProxyPort))
+        .max(65535, intl.formatMessage(messages.validationProxyPort))
+        .required(intl.formatMessage(messages.validationProxyPort)),
     }),
+    apiRequestTimeout: Yup.number()
+      .typeError(intl.formatMessage(messages.validationApiRequestTimeout))
+      .required(intl.formatMessage(messages.validationApiRequestTimeout))
+      .min(0, intl.formatMessage(messages.validationApiRequestTimeout)),
   });
 
   if (!data && !error) {
@@ -109,6 +138,10 @@ const SettingsNetwork = () => {
             proxyPassword: data?.proxy?.password,
             proxyBypassFilter: data?.proxy?.bypassFilter,
             proxyBypassLocalAddresses: data?.proxy?.bypassLocalAddresses,
+            apiRequestTimeout:
+              data?.apiRequestTimeout !== undefined
+                ? data.apiRequestTimeout / 1000
+                : 10,
           }}
           enableReinitialize
           validationSchema={NetworkSettingsSchema}
@@ -120,8 +153,8 @@ const SettingsNetwork = () => {
                 trustProxy: values.trustProxy,
                 dnsCache: {
                   enabled: values.dnsCacheEnabled,
-                  forceMinTtl: values.dnsCacheForceMinTtl,
-                  forceMaxTtl: values.dnsCacheForceMaxTtl,
+                  forceMinTtl: Number(values.dnsCacheForceMinTtl),
+                  forceMaxTtl: Number(values.dnsCacheForceMaxTtl),
                 },
                 proxy: {
                   enabled: values.proxyEnabled,
@@ -133,6 +166,7 @@ const SettingsNetwork = () => {
                   bypassFilter: values.proxyBypassFilter,
                   bypassLocalAddresses: values.proxyBypassLocalAddresses,
                 },
+                apiRequestTimeout: Number(values.apiRequestTimeout) * 1000,
               });
               mutate('/api/v1/settings/public');
               mutate('/api/v1/status');
@@ -141,7 +175,7 @@ const SettingsNetwork = () => {
                 autoDismiss: true,
                 appearance: 'success',
               });
-            } catch (e) {
+            } catch {
               addToast(intl.formatMessage(messages.toastSettingsFailure), {
                 autoDismiss: true,
                 appearance: 'error',
@@ -268,58 +302,83 @@ const SettingsNetwork = () => {
                 </div>
                 {values.dnsCacheEnabled && (
                   <>
-                    <div className="mr-2 ml-4">
+                    <div className="ml-4 mr-2">
                       <div className="form-row">
                         <label
                           htmlFor="dnsCacheForceMinTtl"
-                          className="checkbox-label"
+                          className="text-label"
                         >
                           {intl.formatMessage(messages.dnsCacheForceMinTtl)}
                         </label>
                         <div className="form-input-area">
-                          <div className="form-input-field">
-                            <Field
-                              id="dnsCacheForceMinTtl"
-                              name="dnsCacheForceMinTtl"
-                              type="text"
-                            />
-                          </div>
-                          {errors.dnsCacheForceMinTtl &&
-                            touched.dnsCacheForceMinTtl &&
-                            typeof errors.dnsCacheForceMinTtl === 'string' && (
-                              <div className="error">
-                                {errors.dnsCacheForceMinTtl}
-                              </div>
-                            )}
+                          <Field
+                            id="dnsCacheForceMinTtl"
+                            name="dnsCacheForceMinTtl"
+                            type="text"
+                            inputMode="numeric"
+                            className="short"
+                          />
                         </div>
+                        {errors.dnsCacheForceMinTtl &&
+                          touched.dnsCacheForceMinTtl &&
+                          typeof errors.dnsCacheForceMinTtl === 'string' && (
+                            <div className="error">
+                              {errors.dnsCacheForceMinTtl}
+                            </div>
+                          )}
                       </div>
                       <div className="form-row">
                         <label
                           htmlFor="dnsCacheForceMaxTtl"
-                          className="checkbox-label"
+                          className="text-label"
                         >
                           {intl.formatMessage(messages.dnsCacheForceMaxTtl)}
                         </label>
                         <div className="form-input-area">
-                          <div className="form-input-field">
-                            <Field
-                              id="dnsCacheForceMaxTtl"
-                              name="dnsCacheForceMaxTtl"
-                              type="text"
-                            />
-                          </div>
-                          {errors.dnsCacheForceMaxTtl &&
-                            touched.dnsCacheForceMaxTtl &&
-                            typeof errors.dnsCacheForceMaxTtl === 'string' && (
-                              <div className="error">
-                                {errors.dnsCacheForceMaxTtl}
-                              </div>
-                            )}
+                          <Field
+                            id="dnsCacheForceMaxTtl"
+                            name="dnsCacheForceMaxTtl"
+                            type="text"
+                            inputMode="text"
+                            className="short"
+                          />
                         </div>
+                        {errors.dnsCacheForceMaxTtl &&
+                          touched.dnsCacheForceMaxTtl &&
+                          typeof errors.dnsCacheForceMaxTtl === 'string' && (
+                            <div className="error">
+                              {errors.dnsCacheForceMaxTtl}
+                            </div>
+                          )}
                       </div>
                     </div>
                   </>
                 )}
+                <div className="form-row">
+                  <label htmlFor="apiRequestTimeout" className="text-label">
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.apiRequestTimeout)}
+                    </span>
+                    <SettingsBadge badgeType="restartRequired" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.apiRequestTimeoutTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      id="apiRequestTimeout"
+                      name="apiRequestTimeout"
+                      type="text"
+                      inputMode="numeric"
+                      className="short"
+                    />
+                  </div>
+                  {errors.apiRequestTimeout &&
+                    touched.apiRequestTimeout &&
+                    typeof errors.apiRequestTimeout === 'string' && (
+                      <div className="error">{errors.apiRequestTimeout}</div>
+                    )}
+                </div>
                 <div className="form-row">
                   <label htmlFor="proxyEnabled" className="checkbox-label">
                     <span className="mr-2">
@@ -327,6 +386,9 @@ const SettingsNetwork = () => {
                     </span>
                     <SettingsBadge badgeType="advanced" className="mr-2" />
                     <SettingsBadge badgeType="restartRequired" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.proxyEnabledTip)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <Field
@@ -341,7 +403,7 @@ const SettingsNetwork = () => {
                 </div>
                 {values.proxyEnabled && (
                   <>
-                    <div className="mr-2 ml-4">
+                    <div className="ml-4 mr-2">
                       <div className="form-row">
                         <label
                           htmlFor="proxyHostname"
@@ -371,13 +433,13 @@ const SettingsNetwork = () => {
                           {intl.formatMessage(messages.proxyPort)}
                         </label>
                         <div className="form-input-area">
-                          <div className="form-input-field">
-                            <Field
-                              id="proxyPort"
-                              name="proxyPort"
-                              type="text"
-                            />
-                          </div>
+                          <Field
+                            id="proxyPort"
+                            name="proxyPort"
+                            type="text"
+                            inputMode="numeric"
+                            className="short"
+                          />
                           {errors.proxyPort &&
                             touched.proxyPort &&
                             typeof errors.proxyPort === 'string' && (
