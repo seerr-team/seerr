@@ -34,6 +34,8 @@ import useSWR from 'swr';
 const messages = defineMessages('components.CollectionDetails', {
   overview: 'Overview',
   numberofmovies: '{count} Movies',
+  removefromblocklistpartialcount:
+    '{removeLabel} ({count, plural, one {# movie} other {# movies}})',
   requestcollection: 'Request Collection',
   requestcollection4k: 'Request Collection in 4K',
 });
@@ -386,8 +388,15 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
                 content={
                   blocklistedParts.length === data.parts.length
                     ? intl.formatMessage(globalMessages.removefromBlocklist)
-                    : intl.formatMessage(globalMessages.removefromBlocklist) +
-                      ` (${blocklistedParts.length} movies)`
+                    : intl.formatMessage(
+                        messages.removefromblocklistpartialcount,
+                        {
+                          removeLabel: intl.formatMessage(
+                            globalMessages.removefromBlocklist
+                          ),
+                          count: blocklistedParts.length,
+                        }
+                      )
                 }
               >
                 <Button

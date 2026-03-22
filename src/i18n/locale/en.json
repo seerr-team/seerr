@@ -18,6 +18,7 @@
   "components.Blocklist.showAllBlocklisted": "Show All Blocklisted Media",
   "components.CollectionDetails.numberofmovies": "{count} Movies",
   "components.CollectionDetails.overview": "Overview",
+  "components.CollectionDetails.removefromblocklistpartialcount": "{removeLabel} ({count, plural, one {# movie} other {# movies}})",
   "components.CollectionDetails.requestcollection": "Request Collection",
   "components.CollectionDetails.requestcollection4k": "Request Collection in 4K",
   "components.Discover.CreateSlider.addSlider": "Add Slider",
