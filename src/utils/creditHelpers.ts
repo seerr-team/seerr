@@ -16,8 +16,8 @@ export const sortCrewPriority = (crew: Crew[]): Crew[] => {
   return crew
     .filter((person) => priorityJobs.includes(person.job))
     .sort((a, b) => {
-      const aScore = priorityJobs.findIndex((job) => job.includes(a.job));
-      const bScore = priorityJobs.findIndex((job) => job.includes(b.job));
+      const aScore = priorityJobs.indexOf(a.job);
+      const bScore = priorityJobs.indexOf(b.job);
 
       return aScore - bScore;
     });
