@@ -8,7 +8,7 @@ import { Permission } from '@server/lib/permissions';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { Router } from 'express';
-import { EntityNotFoundError, QueryFailedError } from 'typeorm';
+import { EntityNotFoundError, In, QueryFailedError } from 'typeorm';
 import { z } from 'zod';
 
 const blocklistRoutes = Router();
@@ -176,14 +176,30 @@ blocklistRoutes.post(
       const blocklistRepository = getRepository(Blocklist);
       const mediaRepository = getRepository(Media);
 
-      // Blocklist all movies in the collection
-      await Promise.all(
-        collection.parts.map(async (part) => {
-          const existingBlocklist = await blocklistRepository.findOne({
-            where: { tmdbId: part.id, mediaType: MediaType.MOVIE },
-          });
+      const uniqueParts = [
+        ...new Map(collection.parts.map((p) => [p.id, p])).values(),
+      ];
+      const partIds = uniqueParts.map((p) => p.id);
+      if (partIds.length === 0) {
+        return res.status(201).send();
+      }
 
-          if (existingBlocklist) {
+      const [existingBlocklists, existingMedia] = await Promise.all([
+        blocklistRepository.find({
+          where: { tmdbId: In(partIds), mediaType: MediaType.MOVIE },
+        }),
+        mediaRepository.find({
+          where: { tmdbId: In(partIds), mediaType: MediaType.MOVIE },
+        }),
+      ]);
+      const blocklistByTmdbId = new Map(
+        existingBlocklists.map((b) => [b.tmdbId, b])
+      );
+      const mediaByTmdbId = new Map(existingMedia.map((m) => [m.tmdbId, m]));
+
+      await Promise.all(
+        uniqueParts.map(async (part) => {
+          if (blocklistByTmdbId.has(part.id)) {
             return;
           }
 
@@ -212,10 +228,7 @@ blocklistRoutes.post(
             blocklist = row;
           }
 
-          let media = await mediaRepository.findOne({
-            where: { tmdbId: part.id, mediaType: MediaType.MOVIE },
-          });
-
+          let media = mediaByTmdbId.get(part.id);
           if (!media) {
             media = new Media({
               tmdbId: part.id,
@@ -312,7 +325,6 @@ blocklistRoutes.delete(
       const blocklistRepository = getRepository(Blocklist);
       const mediaRepository = getRepository(Media);
 
-      // Remove all movies in the collection from blocklist
       await Promise.all(
         collection.parts.map(async (part) => {
           const blocklistItem = await blocklistRepository.findOne({
