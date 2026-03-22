@@ -60,8 +60,16 @@ describe('sortCrewPriority', () => {
       makeCrew('Producer', 'Producer A'),
     ];
     const result = sortCrewPriority(crew);
+    assert.equal(result.length, 3);
     assert.equal(result[0].job, 'Director');
     assert.ok(result.slice(1).every((c) => c.job === 'Producer'));
+    assert.deepEqual(
+      result
+        .slice(1)
+        .map((c) => c.name)
+        .sort(),
+      ['Producer A', 'Producer B']
+    );
   });
 
   it('correctly ranks Producer, Co-Producer, and Executive Producer independently', () => {
