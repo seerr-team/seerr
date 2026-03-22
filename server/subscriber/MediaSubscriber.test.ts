@@ -16,20 +16,23 @@ setupTestDb();
 
 async function createMedia(
   status: MediaStatus,
-  mediaType = MediaType.MOVIE
+  mediaType = MediaType.MOVIE,
+  status4k = MediaStatus.UNKNOWN
 ): Promise<Media> {
   const mediaRepo = getRepository(Media);
   const media = new Media();
   media.tmdbId = Math.floor(Math.random() * 900000) + 100000;
   media.mediaType = mediaType;
   media.status = status;
+  media.status4k = status4k;
   return mediaRepo.save(media);
 }
 
 async function createMovieRequest(
   requestedBy: User,
   media: Media,
-  status: MediaRequestStatus
+  status: MediaRequestStatus,
+  is4k = false
 ): Promise<MediaRequest> {
   const requestRepo = getRepository(MediaRequest);
   const req = new MediaRequest({
@@ -37,7 +40,7 @@ async function createMovieRequest(
     requestedBy,
     status,
     type: MediaType.MOVIE,
-    is4k: false,
+    is4k,
   });
   return requestRepo.save(req);
 }
@@ -61,7 +64,6 @@ describe('MediaSubscriber', () => {
       where: { email: 'admin@seerr.dev' },
     });
 
-    // Create media in PENDING state with a matching PENDING request
     const media = await createMedia(MediaStatus.PENDING);
     const mediaRequest = await createMovieRequest(
       user,
@@ -69,11 +71,39 @@ describe('MediaSubscriber', () => {
       MediaRequestStatus.PENDING
     );
 
-    // Transition PENDING → AVAILABLE.
-    // beforeUpdate auto-approves the PENDING request (updateChildRequestStatus).
-    // afterUpdate then marks the APPROVED request COMPLETED (updateRelatedMediaRequest).
-    // Both calls must be awaited for the final COMPLETED state to be visible.
+    // beforeUpdate auto-approves PENDING request; afterUpdate marks it COMPLETED
     media.status = MediaStatus.AVAILABLE;
+    await mediaRepo.save(media);
+
+    const reloaded = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(reloaded.status, MediaRequestStatus.COMPLETED);
+  });
+
+  it('processes a PENDING 4K request to COMPLETED when media 4K status transitions PENDING -> AVAILABLE', async () => {
+    const userRepo = getRepository(User);
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+
+    const user = await userRepo.findOneOrFail({
+      where: { email: 'admin@seerr.dev' },
+    });
+
+    // status stays UNKNOWN; only status4k goes PENDING → AVAILABLE
+    const media = await createMedia(
+      MediaStatus.UNKNOWN,
+      MediaType.MOVIE,
+      MediaStatus.PENDING
+    );
+    const mediaRequest = await createMovieRequest(
+      user,
+      media,
+      MediaRequestStatus.PENDING,
+      true
+    );
+
+    media.status4k = MediaStatus.AVAILABLE;
     await mediaRepo.save(media);
 
     const reloaded = await requestRepo.findOneOrFail({
@@ -105,6 +135,36 @@ describe('MediaSubscriber', () => {
     );
 
     media.status = MediaStatus.AVAILABLE;
+    await mediaRepo.save(media);
+
+    const reloaded = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(reloaded.status, MediaRequestStatus.COMPLETED);
+  });
+
+  it('marks an APPROVED 4K request COMPLETED when media 4K status transitions PROCESSING -> AVAILABLE', async () => {
+    const userRepo = getRepository(User);
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+
+    const user = await userRepo.findOneOrFail({
+      where: { email: 'admin@seerr.dev' },
+    });
+
+    const media = await createMedia(
+      MediaStatus.UNKNOWN,
+      MediaType.MOVIE,
+      MediaStatus.PROCESSING
+    );
+    const mediaRequest = await createMovieRequest(
+      user,
+      media,
+      MediaRequestStatus.APPROVED,
+      true
+    );
+
+    media.status4k = MediaStatus.AVAILABLE;
     await mediaRepo.save(media);
 
     const reloaded = await requestRepo.findOneOrFail({
