@@ -710,6 +710,11 @@ components:
         initialized:
           type: boolean
           example: false
+        plexClientIdentifier:
+          type: string
+          format: uuid
+          description: Instance Plex OAuth client id
+          example: 6919275e-142a-48d8-be6b-93594cbd4626
     MovieResult:
       type: object
       required:

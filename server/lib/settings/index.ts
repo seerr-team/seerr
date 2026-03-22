@@ -211,6 +211,7 @@ interface FullPublicSettings extends PublicSettings {
   userEmailRequired: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  plexClientIdentifier: string;
 }
 
 export interface NotificationAgentConfig {
@@ -360,6 +361,7 @@ export type JobId =
 
 export interface AllSettings {
   clientId: string;
+  sessionSecret?: string;
   vapidPublic: string;
   vapidPrivate: string;
   main: MainSettings;
@@ -387,6 +389,7 @@ class Settings {
   constructor(initialSettings?: AllSettings) {
     this.data = {
       clientId: randomUUID(),
+      sessionSecret: randomUUID(),
       vapidPrivate: '',
       vapidPublic: '',
       main: {
@@ -713,6 +716,7 @@ class Settings {
         this.data.notifications.agents.email.options.userEmailRequired,
       newPlexLogin: this.data.main.newPlexLogin,
       youtubeUrl: this.data.main.youtubeUrl,
+      plexClientIdentifier: this.data.clientId,
     };
   }
 
@@ -750,6 +754,10 @@ class Settings {
 
   get clientId(): string {
     return this.data.clientId;
+  }
+
+  get sessionSecret(): string {
+    return this.data.sessionSecret!;
   }
 
   get vapidPublic(): string {
@@ -819,6 +827,10 @@ class Settings {
     }
     if (!this.data.clientId) {
       this.data.clientId = randomUUID();
+      change = true;
+    }
+    if (!this.data.sessionSecret) {
+      this.data.sessionSecret = randomUUID();
       change = true;
     }
     if (!this.data.vapidPublic || !this.data.vapidPrivate) {
