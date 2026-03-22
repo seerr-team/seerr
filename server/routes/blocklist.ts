@@ -187,14 +187,30 @@ blocklistRoutes.post(
             return;
           }
 
-          const blocklist = new Blocklist({
+          let blocklist = new Blocklist({
             tmdbId: part.id,
             mediaType: MediaType.MOVIE,
             title: part.title,
             user: req.user,
           });
 
-          await blocklistRepository.save(blocklist);
+          try {
+            await blocklistRepository.save(blocklist);
+          } catch (error) {
+            if (
+              !(error instanceof QueryFailedError) ||
+              error.driverError.errno !== 19
+            ) {
+              throw error;
+            }
+            const row = await blocklistRepository.findOne({
+              where: { tmdbId: part.id, mediaType: MediaType.MOVIE },
+            });
+            if (!row) {
+              throw error;
+            }
+            blocklist = row;
+          }
 
           let media = await mediaRepository.findOne({
             where: { tmdbId: part.id, mediaType: MediaType.MOVIE },
