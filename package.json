@@ -19,6 +19,7 @@
     "migration:run": "ts-node -r tsconfig-paths/register --project server/tsconfig.json ./node_modules/typeorm/cli.js migration:run -d server/datasource.ts",
     "format": "prettier --log-level warn --write --cache .",
     "format:check": "prettier --check --cache .",
+    "test": "vitest run",
     "typecheck": "pnpm typecheck:server && pnpm typecheck:client",
     "typecheck:server": "tsc --project server/tsconfig.json --noEmit",
     "typecheck:client": "tsc --noEmit",
@@ -172,7 +173,8 @@
     "ts-node": "10.9.2",
     "tsc-alias": "1.8.16",
     "tsconfig-paths": "4.2.0",
-    "typescript": "5.4.5"
+    "typescript": "5.4.5",
+    "vitest": "^2.1.0"
   },
   "engines": {
     "node": "^22.0.0",
