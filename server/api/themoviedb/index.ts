@@ -23,6 +23,7 @@ import type {
   TmdbRegion,
   TmdbSearchMovieResponse,
   TmdbSearchMultiResponse,
+  TmdbSearchResponseV4,
   TmdbSearchTvResponse,
   TmdbSeasonWithEpisodes,
   TmdbTvDetails,
@@ -491,6 +492,11 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     }
   }
 
+  public async getListV4(listId: number, parameters: { page: number; language: string; }): Promise<TmdbSearchResponseV4> {
+    const v4Url = `https://api.themoviedb.org/4/list/${listId}`;
+    return this.get<TmdbSearchResponseV4>(v4Url, parameters);
+  }
+
   public getDiscoverMovies = async ({
     sortBy = 'popularity.desc',
     page = 1,
@@ -540,8 +546,8 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
             originalLanguage && originalLanguage !== 'all'
               ? originalLanguage
               : originalLanguage === 'all'
-              ? undefined
-              : this.originalLanguage,
+                ? undefined
+                : this.originalLanguage,
           // Set our release date values, but check if one is set and not the other,
           // so we can force a past date or a future date. TMDB Requires both values if one is set!
           'primary_release_date.gte':
@@ -634,8 +640,8 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
             originalLanguage && originalLanguage !== 'all'
               ? originalLanguage
               : originalLanguage === 'all'
-              ? undefined
-              : this.originalLanguage,
+                ? undefined
+                : this.originalLanguage,
           include_null_first_air_dates: includeEmptyReleaseDate,
           with_genres: genre,
           with_networks: network,
@@ -774,44 +780,21 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
   }: {
     listId: number;
     language?: string;
-  }): Promise<{
-    page: number;
-    total_pages: number;
-    total_results: number;
-    results: (
-      | TmdbMovieResult
-      | TmdbTvResult
-      | TmdbPersonResult
-      | TmdbCollectionResult
-    )[];
-  }> => {
+  }): Promise<TmdbSearchMultiResponse> => {
     try {
-      const data = await this.get<any>(`/list/${listId}`, {
+      const data = await this.get<TmdbSearchMultiResponse>(`/list/${listId}`, {
         params: {
           language,
         },
       });
 
-      // The API does not provide pagination on lists so we normalise here.
-      const items =
-        data?.items ??
-        ([] as (
-          | TmdbMovieResult
-          | TmdbTvResult
-          | TmdbPersonResult
-          | TmdbCollectionResult
-        )[]);
+      const items = data?.results ?? [];
 
       return {
         page: 1,
         total_pages: 1,
         total_results: items.length,
-        results: items as (
-          | TmdbMovieResult
-          | TmdbTvResult
-          | TmdbPersonResult
-          | TmdbCollectionResult
-        )[],
+        results: items
       };
     } catch (e) {
       throw new Error(`[TMDB] Failed to fetch list: ${e.message}`);
@@ -824,15 +807,15 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     language = this.locale,
   }:
     | {
-        externalId: string;
-        type: 'imdb';
-        language?: string;
-      }
+      externalId: string;
+      type: 'imdb';
+      language?: string;
+    }
     | {
-        externalId: number;
-        type: 'tvdb';
-        language?: string;
-      }): Promise<TmdbExternalIdResponse> {
+      externalId: number;
+      type: 'tvdb';
+      language?: string;
+    }): Promise<TmdbExternalIdResponse> {
     try {
       const data = await this.get<TmdbExternalIdResponse>(
         `/find/${externalId}`,

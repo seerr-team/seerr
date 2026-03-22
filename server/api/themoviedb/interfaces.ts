@@ -73,6 +73,13 @@ export interface TmdbSearchTvResponse extends TmdbPaginatedResponse {
   results: TmdbTvResult[];
 }
 
+export interface TmdbSearchResponseV4 extends TmdbPaginatedResponse {
+  results?: {
+    id: number;
+    media_type: 'movie' | 'tv' | 'person' | 'collection';
+  }[];
+}
+
 export interface TmdbUpcomingMoviesResponse extends TmdbPaginatedResponse {
   dates: {
     maximum: string;
@@ -200,13 +207,13 @@ export interface TmdbVideo {
   site: 'YouTube';
   size: number;
   type:
-    | 'Clip'
-    | 'Teaser'
-    | 'Trailer'
-    | 'Featurette'
-    | 'Opening Credits'
-    | 'Behind the Scenes'
-    | 'Bloopers';
+  | 'Clip'
+  | 'Teaser'
+  | 'Trailer'
+  | 'Featurette'
+  | 'Opening Credits'
+  | 'Behind the Scenes'
+  | 'Bloopers';
 }
 
 export interface TmdbTvEpisodeResult {

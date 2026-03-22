@@ -1,7 +1,7 @@
 import PlexTvAPI from '@server/api/plextv';
 import type { SortOptions } from '@server/api/themoviedb';
 import TheMovieDb from '@server/api/themoviedb';
-import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
+import type { TmdbKeyword, TmdbSearchMultiResponse } from '@server/api/themoviedb/interfaces';
 import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
@@ -33,15 +33,15 @@ export const createTmdbWithRegionLanguage = (user?: User): TheMovieDb => {
     user?.settings?.streamingRegion === 'all'
       ? ''
       : user?.settings?.streamingRegion
-      ? user?.settings?.streamingRegion
-      : settings.main.discoverRegion;
+        ? user?.settings?.streamingRegion
+        : settings.main.discoverRegion;
 
   const originalLanguage =
     user?.settings?.originalLanguage === 'all'
       ? ''
       : user?.settings?.originalLanguage
-      ? user?.settings?.originalLanguage
-      : settings.main.originalLanguage;
+        ? user?.settings?.originalLanguage
+        : settings.main.originalLanguage;
 
   return new TheMovieDb({
     discoverRegion,
@@ -690,23 +690,23 @@ discoverRoutes.get('/trending', async (req, res, next) => {
       results: data.results.map((result) =>
         isMovie(result)
           ? mapMovieResult(
-              result,
-              media.find(
-                (med) =>
-                  med.tmdbId === result.id && med.mediaType === MediaType.MOVIE
-              )
+            result,
+            media.find(
+              (med) =>
+                med.tmdbId === result.id && med.mediaType === MediaType.MOVIE
             )
+          )
           : isPerson(result)
-          ? mapPersonResult(result)
-          : isCollection(result)
-          ? mapCollectionResult(result)
-          : mapTvResult(
-              result,
-              media.find(
-                (med) =>
-                  med.tmdbId === result.id && med.mediaType === MediaType.TV
+            ? mapPersonResult(result)
+            : isCollection(result)
+              ? mapCollectionResult(result)
+              : mapTvResult(
+                result,
+                media.find(
+                  (med) =>
+                    med.tmdbId === result.id && med.mediaType === MediaType.TV
+                )
               )
-            )
       ),
     });
   } catch (e) {
@@ -932,7 +932,7 @@ discoverRoutes.get<{ listId: string }>(
     const page = req.query.page ? Number(req.query.page) || 1 : 1;
 
     try {
-      let data: { results: any[] } | null = null;
+      let data: TmdbSearchMultiResponse | null = null;
 
       // 1) v3: all items come without pagination
       try {
@@ -944,28 +944,19 @@ discoverRoutes.get<{ listId: string }>(
 
       // 2) fallback to v4 if v3 is empty or failed
       if (!data || !Array.isArray(data.results) || data.results.length === 0) {
-        // use the existing Axios instance of the TMDB client (proxy/timeouts are preserved)
-        const axiosInstance: any = (tmdb as any).axios;
-        const v4Url = `https://api.themoviedb.org/4/list/${listId}`;
-
         try {
-          const resp = await axiosInstance.get(v4Url, {
-            params: { page, language },
+          const resp = await tmdb.getListV4(listId, {
+            page, language,
           });
 
-          const v4 = resp.data as {
-            page?: number;
-            total_pages?: number;
-            total_results?: number;
-            results?: { id: number; media_type: string }[];
-          };
+          const v4 = resp;
 
           const media = await Media.getRelatedMedia(
             req.user,
-            (v4.results ?? []).map((r) => r.id)
+            (resp.results ?? []).map((r) => r.id)
           );
 
-          const mappedResults = (v4.results ?? []).map((r) => {
+          const mappedResults = (resp.results ?? []).map((r) => {
             switch (r.media_type) {
               case 'movie':
                 return mapMovieResult(
@@ -991,7 +982,7 @@ discoverRoutes.get<{ listId: string }>(
           return res.status(200).json({
             page: v4.page ?? 1,
             totalPages: v4.total_pages ?? 1,
-            totalResults: mappedResults.length,
+            totalResults: v4.total_results ?? 0,
             results: mappedResults,
           });
         } catch {
@@ -1009,22 +1000,22 @@ discoverRoutes.get<{ listId: string }>(
         const mappedResults = data.results.map((result) =>
           isMovie(result)
             ? mapMovieResult(
-                result,
-                media.find(
-                  (m) =>
-                    m.tmdbId === result.id && m.mediaType === MediaType.MOVIE
-                )
+              result,
+              media.find(
+                (m) =>
+                  m.tmdbId === result.id && m.mediaType === MediaType.MOVIE
               )
+            )
             : isPerson(result)
-            ? mapPersonResult(result)
-            : isCollection(result)
-            ? mapCollectionResult(result)
-            : mapTvResult(
-                result,
-                media.find(
-                  (m) => m.tmdbId === result.id && m.mediaType === MediaType.TV
+              ? mapPersonResult(result)
+              : isCollection(result)
+                ? mapCollectionResult(result)
+                : mapTvResult(
+                  result,
+                  media.find(
+                    (m) => m.tmdbId === result.id && m.mediaType === MediaType.TV
+                  )
                 )
-              )
         );
 
         return res.status(200).json({
