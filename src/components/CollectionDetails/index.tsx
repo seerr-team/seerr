@@ -233,6 +233,11 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
         part.mediaInfo.status4k === MediaStatus.UNKNOWN
     ).length > 0;
 
+  const blocklistVisibility = hasPermission(
+    [Permission.MANAGE_BLOCKLIST, Permission.VIEW_BLOCKLIST],
+    { type: 'or' }
+  );
+
   const collectionAttributes: React.ReactNode[] = [];
 
   collectionAttributes.push(
@@ -481,13 +486,9 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
         isEmpty={data.parts.length === 0}
         items={data.parts
           .filter((title) => {
-            if (
-              !hasPermission(
-                [Permission.MANAGE_BLOCKLIST, Permission.VIEW_BLOCKLIST],
-                { type: 'or' }
-              )
-            )
+            if (!blocklistVisibility) {
               return title.mediaInfo?.status !== MediaStatus.BLOCKLISTED;
+            }
             return title;
           })
           .map((title) => (
