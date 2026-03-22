@@ -1009,7 +1009,13 @@ discoverRoutes.get<{ listId: string }>(
 
           const media = await Media.getRelatedMedia(
             req.user,
-            (resp.results ?? []).map((r) => r.id)
+            (resp.results ?? [])
+              .filter((r) => r.media_type === 'movie' || r.media_type === 'tv')
+              .map((r) => ({
+                tmdbId: r.id,
+                mediaType:
+                  r.media_type === 'movie' ? MediaType.MOVIE : MediaType.TV,
+              }))
           );
 
           const mappedResults = (resp.results ?? []).map((r) => {
@@ -1050,7 +1056,12 @@ discoverRoutes.get<{ listId: string }>(
       if (data && Array.isArray(data.results) && data.results.length > 0) {
         const media = await Media.getRelatedMedia(
           req.user,
-          data.results.map((r) => r.id)
+          data.results
+            .filter((r) => isMovie(r) || r.media_type === 'tv')
+            .map((r) => ({
+              tmdbId: r.id,
+              mediaType: isMovie(r) ? MediaType.MOVIE : MediaType.TV,
+            }))
         );
 
         const mappedResults = data.results.map((result) =>
