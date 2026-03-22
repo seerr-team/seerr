@@ -1,6 +1,6 @@
 import TheMovieDb from '@server/api/themoviedb';
 import { MediaStatus, MediaType } from '@server/constants/media';
-import { getRepository } from '@server/datasource';
+import dataSource, { getRepository } from '@server/datasource';
 import { Blocklist } from '@server/entity/Blocklist';
 import Media from '@server/entity/Media';
 import type { BlocklistResultsResponse } from '@server/interfaces/api/blocklistInterfaces';
@@ -173,9 +173,6 @@ blocklistRoutes.post(
         language: req.locale,
       });
 
-      const blocklistRepository = getRepository(Blocklist);
-      const mediaRepository = getRepository(Media);
-
       const uniqueParts = [
         ...new Map(collection.parts.map((p) => [p.id, p])).values(),
       ];
@@ -184,68 +181,73 @@ blocklistRoutes.post(
         return res.status(201).send();
       }
 
-      const [existingBlocklists, existingMedia] = await Promise.all([
-        blocklistRepository.find({
-          where: { tmdbId: In(partIds), mediaType: MediaType.MOVIE },
-        }),
-        mediaRepository.find({
-          where: { tmdbId: In(partIds), mediaType: MediaType.MOVIE },
-        }),
-      ]);
-      const blocklistByTmdbId = new Map(
-        existingBlocklists.map((b) => [b.tmdbId, b])
-      );
-      const mediaByTmdbId = new Map(existingMedia.map((m) => [m.tmdbId, m]));
+      await dataSource.transaction(async (em) => {
+        const blocklistRepository = em.getRepository(Blocklist);
+        const mediaRepository = em.getRepository(Media);
 
-      await Promise.all(
-        uniqueParts.map(async (part) => {
-          if (blocklistByTmdbId.has(part.id)) {
-            return;
-          }
+        const [existingBlocklists, existingMedia] = await Promise.all([
+          blocklistRepository.find({
+            where: { tmdbId: In(partIds), mediaType: MediaType.MOVIE },
+          }),
+          mediaRepository.find({
+            where: { tmdbId: In(partIds), mediaType: MediaType.MOVIE },
+          }),
+        ]);
+        const blocklistByTmdbId = new Map(
+          existingBlocklists.map((b) => [b.tmdbId, b])
+        );
+        const mediaByTmdbId = new Map(existingMedia.map((m) => [m.tmdbId, m]));
 
-          let blocklist = new Blocklist({
-            tmdbId: part.id,
-            mediaType: MediaType.MOVIE,
-            title: part.title,
-            user: req.user,
-          });
-
-          try {
-            await blocklistRepository.save(blocklist);
-          } catch (error) {
-            if (
-              !(error instanceof QueryFailedError) ||
-              error.driverError.errno !== 19
-            ) {
-              throw error;
+        await Promise.all(
+          uniqueParts.map(async (part) => {
+            if (blocklistByTmdbId.has(part.id)) {
+              return;
             }
-            const row = await blocklistRepository.findOne({
-              where: { tmdbId: part.id, mediaType: MediaType.MOVIE },
-            });
-            if (!row) {
-              throw error;
-            }
-            blocklist = row;
-          }
 
-          let media = mediaByTmdbId.get(part.id);
-          if (!media) {
-            media = new Media({
+            let blocklist = new Blocklist({
               tmdbId: part.id,
-              status: MediaStatus.BLOCKLISTED,
-              status4k: MediaStatus.BLOCKLISTED,
               mediaType: MediaType.MOVIE,
-              blocklist: Promise.resolve(blocklist),
+              title: part.title,
+              user: req.user,
             });
-          } else {
-            media.status = MediaStatus.BLOCKLISTED;
-            media.status4k = MediaStatus.BLOCKLISTED;
-            media.blocklist = Promise.resolve(blocklist);
-          }
 
-          await mediaRepository.save(media);
-        })
-      );
+            try {
+              await blocklistRepository.save(blocklist);
+            } catch (error) {
+              if (
+                !(error instanceof QueryFailedError) ||
+                error.driverError.errno !== 19
+              ) {
+                throw error;
+              }
+              const row = await blocklistRepository.findOne({
+                where: { tmdbId: part.id, mediaType: MediaType.MOVIE },
+              });
+              if (!row) {
+                throw error;
+              }
+              blocklist = row;
+            }
+
+            let media = mediaByTmdbId.get(part.id);
+            if (!media) {
+              media = new Media({
+                tmdbId: part.id,
+                status: MediaStatus.BLOCKLISTED,
+                status4k: MediaStatus.BLOCKLISTED,
+                mediaType: MediaType.MOVIE,
+                blocklist: Promise.resolve(blocklist),
+              });
+            } else {
+              media.status = MediaStatus.BLOCKLISTED;
+              media.status4k = MediaStatus.BLOCKLISTED;
+              media.blocklist = Promise.resolve(blocklist);
+            }
+
+            await mediaRepository.save(media);
+          })
+        );
+      });
 
       return res.status(201).send();
     } catch (e) {
@@ -322,28 +324,30 @@ blocklistRoutes.delete(
         language: req.locale,
       });
 
-      const blocklistRepository = getRepository(Blocklist);
-      const mediaRepository = getRepository(Media);
+      await dataSource.transaction(async (em) => {
+        const blocklistRepository = em.getRepository(Blocklist);
+        const mediaRepository = em.getRepository(Media);
 
-      await Promise.all(
-        collection.parts.map(async (part) => {
-          const blocklistItem = await blocklistRepository.findOne({
-            where: { tmdbId: part.id, mediaType: MediaType.MOVIE },
-          });
-
-          if (blocklistItem) {
-            await blocklistRepository.remove(blocklistItem);
-
-            const mediaItem = await mediaRepository.findOne({
+        await Promise.all(
+          collection.parts.map(async (part) => {
+            const blocklistItem = await blocklistRepository.findOne({
               where: { tmdbId: part.id, mediaType: MediaType.MOVIE },
             });
 
-            if (mediaItem) {
-              await mediaRepository.remove(mediaItem);
+            if (blocklistItem) {
+              await blocklistRepository.remove(blocklistItem);
+
+              const mediaItem = await mediaRepository.findOne({
+                where: { tmdbId: part.id, mediaType: MediaType.MOVIE },
+              });
+
+              if (mediaItem) {
+                await mediaRepository.remove(mediaItem);
+              }
             }
-          }
-        })
-      );
+          })
+        );
+      });
 
       return res.status(204).send();
     } catch (e) {
