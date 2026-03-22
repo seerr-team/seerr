@@ -494,7 +494,9 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
 
   public async getListV4(listId: number, parameters: { page: number; language: string; }): Promise<TmdbSearchResponseV4> {
     const v4Url = `https://api.themoviedb.org/4/list/${listId}`;
-    return this.get<TmdbSearchResponseV4>(v4Url, parameters);
+    return this.get<TmdbSearchResponseV4>(v4Url, {
+      params: parameters,
+    });
   }
 
   public getDiscoverMovies = async ({
