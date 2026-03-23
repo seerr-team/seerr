@@ -82,11 +82,11 @@ class PlexOAuth {
   public async login(plexClientIdentifier: string): Promise<string> {
     try {
       this.initializeHeaders(plexClientIdentifier);
+      await this.getPin();
     } catch (e) {
       this.closePopup();
       throw e;
     }
-    await this.getPin();
 
     if (!this.plexHeaders || !this.pin) {
       throw new Error('Unable to call login if class is not initialized.');
