@@ -1,7 +1,7 @@
 import { MediaServerType } from '@server/constants/server';
 import { Permission } from '@server/lib/permissions';
 import { runMigrations } from '@server/lib/settings/migrator';
-import { randomUUID } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
 import fs from 'fs/promises';
 import { mergeWith } from 'lodash';
 import path from 'path';
@@ -389,7 +389,7 @@ class Settings {
   constructor(initialSettings?: AllSettings) {
     this.data = {
       clientId: randomUUID(),
-      sessionSecret: randomUUID(),
+      sessionSecret: randomBytes(32).toString('hex'),
       vapidPrivate: '',
       vapidPublic: '',
       main: {
@@ -830,7 +830,7 @@ class Settings {
       change = true;
     }
     if (!this.data.sessionSecret) {
-      this.data.sessionSecret = randomUUID();
+      this.data.sessionSecret = randomBytes(32).toString('hex');
       change = true;
     }
     if (!this.data.vapidPublic || !this.data.vapidPrivate) {

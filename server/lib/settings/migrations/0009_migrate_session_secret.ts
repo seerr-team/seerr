@@ -1,5 +1,5 @@
 import type { AllSettings } from '@server/lib/settings';
-import { randomUUID } from 'crypto';
+import { randomBytes } from 'crypto';
 
 export default function migrateSessionSecret(
   settings: AllSettings
@@ -7,5 +7,5 @@ export default function migrateSessionSecret(
   if (settings.sessionSecret) {
     return settings;
   }
-  return { ...settings, sessionSecret: randomUUID() };
+  return { ...settings, sessionSecret: randomBytes(32).toString('hex') };
 }
