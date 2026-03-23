@@ -310,88 +310,6 @@ const TitleCard = ({
         onComplete={onClickHideItemBtn}
         isUpdating={isUpdating}
       />
-      <Transition
-        as={Fragment}
-        show={requestJustSucceeded}
-        enter="transition-all ease-out duration-300"
-        enterFrom="opacity-0 scale-75"
-        enterTo="opacity-100 scale-100"
-        leave="transition-all ease-in duration-500"
-        leaveFrom="opacity-100 scale-100"
-        leaveTo="opacity-0 scale-75"
-      >
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* backdrop */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-          />
-
-          {/* centered popup card */}
-          <div
-            role="status"
-            aria-live="polite"
-            className="relative flex flex-col items-center justify-center rounded-2xl px-16 py-12 text-white shadow-2xl"
-            style={{
-              background:
-                'linear-gradient(135deg, rgba(6,182,212,0.95) 0%, rgba(124,58,237,0.95) 50%, rgba(236,72,153,0.95) 100%)',
-            }}
-          >
-            {/* pulsing ring behind the icon */}
-            <div
-              aria-hidden="true"
-              className="absolute h-44 w-44 animate-ping rounded-full bg-white/20"
-            />
-
-            {/* bouncing check icon — large */}
-            <CheckCircleIcon className="relative h-36 w-36 animate-bounce drop-shadow-2xl" />
-
-            {/* label */}
-            <p
-              className="mt-6 text-2xl font-bold tracking-widest drop-shadow-lg"
-              aria-label="Requested! Party popper"
-            >
-              Requested!{' '}
-              <span role="img" aria-hidden="true">
-                🎉
-              </span>
-            </p>
-
-            {/* sparkle dots — staggered ping */}
-            <span
-              aria-hidden="true"
-              className="absolute left-6 top-6 h-3 w-3 animate-ping rounded-full bg-yellow-300"
-              style={{ animationDelay: '0.05s' }}
-            />
-            <span
-              aria-hidden="true"
-              className="absolute right-8 top-8 h-2.5 w-2.5 animate-ping rounded-full bg-pink-300"
-              style={{ animationDelay: '0.3s' }}
-            />
-            <span
-              aria-hidden="true"
-              className="absolute bottom-8 left-8 h-3 w-3 animate-ping rounded-full bg-cyan-300"
-              style={{ animationDelay: '0.15s' }}
-            />
-            <span
-              aria-hidden="true"
-              className="absolute bottom-6 right-6 h-2.5 w-2.5 animate-ping rounded-full bg-white"
-              style={{ animationDelay: '0.45s' }}
-            />
-            <span
-              aria-hidden="true"
-              className="absolute left-1/2 top-4 h-2.5 w-2.5 animate-ping rounded-full bg-violet-300"
-              style={{ animationDelay: '0.25s' }}
-            />
-            <span
-              aria-hidden="true"
-              className="absolute bottom-4 left-1/3 h-2 w-2 animate-ping rounded-full bg-lime-300"
-              style={{ animationDelay: '0.4s' }}
-            />
-          </div>
-        </div>
-      </Transition>
-
       <div
         className={`relative transform-gpu cursor-default overflow-hidden rounded-xl bg-gray-800 bg-cover outline-none ring-1 transition duration-300 ${
           showDetail
@@ -524,6 +442,71 @@ const TitleCard = ({
           >
             <div className="absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-gray-800/75 text-white">
               <Spinner className="h-10 w-10" />
+            </div>
+          </Transition>
+
+          <Transition
+            as={Fragment}
+            show={requestJustSucceeded}
+            enter="transition-all ease-out duration-300"
+            enterFrom="opacity-0 scale-75"
+            enterTo="opacity-100 scale-100"
+            leave="transition-all ease-in duration-500"
+            leaveFrom="opacity-100 scale-100"
+            leaveTo="opacity-0 scale-75"
+          >
+            <div
+              className="absolute inset-0 z-40 flex flex-col items-center justify-center rounded-xl text-white"
+              style={{
+                background:
+                  'linear-gradient(135deg, rgba(6,182,212,0.92) 0%, rgba(124,58,237,0.92) 50%, rgba(236,72,153,0.92) 100%)',
+              }}
+            >
+              {/* pulsing ring behind the icon */}
+              <div
+                aria-hidden="true"
+                className="absolute h-16 w-16 animate-ping rounded-full bg-white/25"
+              />
+
+              {/* bouncing check icon */}
+              <CheckCircleIcon className="relative h-14 w-14 animate-bounce drop-shadow-xl" />
+
+              {/* label */}
+              <p className="mt-3 text-xs font-bold tracking-widest drop-shadow">
+                Requested! 🎉
+              </p>
+
+              {/* sparkle dots — staggered ping */}
+              <span
+                aria-hidden="true"
+                className="absolute left-4 top-4 h-2 w-2 animate-ping rounded-full bg-yellow-300"
+                style={{ animationDelay: '0.05s' }}
+              />
+              <span
+                aria-hidden="true"
+                className="absolute right-5 top-5 h-1.5 w-1.5 animate-ping rounded-full bg-pink-300"
+                style={{ animationDelay: '0.3s' }}
+              />
+              <span
+                aria-hidden="true"
+                className="absolute bottom-5 left-5 h-2 w-2 animate-ping rounded-full bg-cyan-300"
+                style={{ animationDelay: '0.15s' }}
+              />
+              <span
+                aria-hidden="true"
+                className="absolute bottom-4 right-4 h-1.5 w-1.5 animate-ping rounded-full bg-white"
+                style={{ animationDelay: '0.45s' }}
+              />
+              <span
+                aria-hidden="true"
+                className="absolute left-1/2 top-3 h-1.5 w-1.5 animate-ping rounded-full bg-violet-300"
+                style={{ animationDelay: '0.25s' }}
+              />
+              <span
+                aria-hidden="true"
+                className="absolute bottom-3 left-1/3 h-1 w-1 animate-ping rounded-full bg-lime-300"
+                style={{ animationDelay: '0.4s' }}
+              />
             </div>
           </Transition>
 
