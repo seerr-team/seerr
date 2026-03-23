@@ -80,7 +80,12 @@ class PlexOAuth {
   }
 
   public async login(plexClientIdentifier: string): Promise<string> {
-    this.initializeHeaders(plexClientIdentifier);
+    try {
+      this.initializeHeaders(plexClientIdentifier);
+    } catch (e) {
+      this.closePopup();
+      throw e;
+    }
     await this.getPin();
 
     if (!this.plexHeaders || !this.pin) {
