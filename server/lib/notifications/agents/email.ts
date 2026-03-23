@@ -208,7 +208,7 @@ class EmailAgent
     // Skip sending if this is a system notification and the type is not enabled
     if (
       payload.notifySystem &&
-      !hasNotificationType(type, settings.types ?? 0)
+      !hasNotificationType(settings.types ?? 0, type)
     ) {
       return true;
     }
