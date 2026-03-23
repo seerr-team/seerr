@@ -10,7 +10,7 @@ import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import MediaRequest from '@server/entity/MediaRequest';
-import type Season from '@server/entity/Season';
+import Season from '@server/entity/Season';
 import { User } from '@server/entity/User';
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
@@ -28,6 +28,14 @@ class AvailabilitySync {
   private sonarrSeasonsCache: Record<string, SonarrSeason[]>;
   private radarrServers: RadarrSettings[];
   private sonarrServers: SonarrSettings[];
+
+  private getMediaServerKey(is4k: boolean, mediaServerType: MediaServerType) {
+    if (mediaServerType === MediaServerType.PLEX) {
+      return is4k ? 'ratingKey4k' : 'ratingKey';
+    }
+
+    return is4k ? 'jellyfinMediaId4k' : 'jellyfinMediaId';
+  }
 
   async run() {
     const settings = getSettings();
@@ -398,6 +406,20 @@ class AvailabilitySync {
           }
         }
       }
+
+      for await (const media of this.loadOrphanedMediaPaginated(pageSize)) {
+        if (!this.running) {
+          throw new Error('Job aborted');
+        }
+
+        if (media.mediaType === 'movie') {
+          await this.syncOrphanedMovieRequests(media, mediaServerType);
+        }
+
+        if (media.mediaType === 'tv') {
+          await this.syncOrphanedSeriesRequests(media, mediaServerType);
+        }
+      }
     } catch (ex) {
       logger.error('Failed to complete availability sync.', {
         errorMessage: ex.message,
@@ -439,6 +461,341 @@ class AvailabilitySync {
       }));
       offset += pageSize;
     } while (mediaPage.length > 0);
+  }
+
+  private async *loadOrphanedMediaPaginated(pageSize: number) {
+    let lastId = 0;
+    const mediaRepository = getRepository(Media);
+
+    let mediaPage: Media[];
+
+    do {
+      mediaPage = await mediaRepository
+        .createQueryBuilder('media')
+        .leftJoinAndSelect('media.seasons', 'season')
+        .leftJoin('media.requests', 'request')
+        .where(
+          '(media.status = :processing OR media.status4k = :processing OR season.status = :processing OR season.status4k = :processing)',
+          {
+            processing: MediaStatus.PROCESSING,
+          }
+        )
+        .andWhere('media.id > :lastId', { lastId })
+        .andWhere('request.status = :requestStatus', {
+          requestStatus: MediaRequestStatus.APPROVED,
+        })
+        .distinct(true)
+        .orderBy('media.id', 'ASC')
+        .take(pageSize)
+        .getMany();
+
+      yield* mediaPage;
+      lastId = mediaPage.at(-1)?.id ?? lastId;
+    } while (mediaPage.length > 0);
+  }
+
+  private async syncOrphanedMovieRequests(
+    media: Media,
+    mediaServerType: MediaServerType
+  ): Promise<void> {
+    await this.syncOrphanedMovieVariant(media, false, mediaServerType);
+    await this.syncOrphanedMovieVariant(media, true, mediaServerType);
+  }
+
+  private async syncOrphanedMovieVariant(
+    media: Media,
+    is4k: boolean,
+    mediaServerType: MediaServerType
+  ): Promise<void> {
+    const statusKey = is4k ? 'status4k' : 'status';
+    const mediaServerKey = this.getMediaServerKey(is4k, mediaServerType);
+    const approvedRequests = await this.getApprovedRequests(media.id, is4k);
+
+    if (
+      media[statusKey] !== MediaStatus.PROCESSING ||
+      media[mediaServerKey] ||
+      approvedRequests.length === 0
+    ) {
+      return;
+    }
+
+    const existsInRadarr = await this.mediaExistsInLinkedRadarr(media, is4k);
+
+    if (existsInRadarr !== false) {
+      return;
+    }
+
+    await this.markOrphanedMovieDeleted(media, is4k);
+  }
+
+  private async syncOrphanedSeriesRequests(
+    media: Media,
+    mediaServerType: MediaServerType
+  ): Promise<void> {
+    await this.syncOrphanedSeriesVariant(media, false, mediaServerType);
+    await this.syncOrphanedSeriesVariant(media, true, mediaServerType);
+  }
+
+  private async syncOrphanedSeriesVariant(
+    media: Media,
+    is4k: boolean,
+    mediaServerType: MediaServerType
+  ): Promise<void> {
+    const statusKey = is4k ? 'status4k' : 'status';
+    const mediaServerKey = this.getMediaServerKey(is4k, mediaServerType);
+    const approvedRequests = await this.getApprovedRequests(media.id, is4k);
+
+    if (media[mediaServerKey] || approvedRequests.length === 0) {
+      return;
+    }
+
+    const requestedSeasonNumbers = new Set(
+      approvedRequests.flatMap((request) =>
+        request.seasons.map((season) => season.seasonNumber)
+      )
+    );
+
+    const hasOrphanCandidateSeason = [...requestedSeasonNumbers].some(
+      (seasonNumber) => {
+        const matchingSeason = media.seasons.find(
+          (season) => season.seasonNumber === seasonNumber
+        );
+
+        return (
+          !matchingSeason ||
+          matchingSeason[statusKey] === MediaStatus.PROCESSING
+        );
+      }
+    );
+
+    if (!hasOrphanCandidateSeason) {
+      return;
+    }
+
+    const existsInSonarr = await this.mediaExistsInLinkedSonarr(media, is4k);
+
+    if (existsInSonarr !== false) {
+      return;
+    }
+
+    await this.markOrphanedSeriesDeleted(media, approvedRequests, is4k);
+  }
+
+  private async getApprovedRequests(mediaId: number, is4k: boolean) {
+    const requestRepository = getRepository(MediaRequest);
+
+    return requestRepository.find({
+      where: {
+        media: { id: mediaId },
+        is4k,
+        status: MediaRequestStatus.APPROVED,
+      },
+      relations: {
+        seasons: true,
+      },
+    });
+  }
+
+  private async mediaExistsInLinkedRadarr(
+    media: Media,
+    is4k: boolean
+  ): Promise<boolean | undefined> {
+    const serviceId = is4k ? media.serviceId4k : media.serviceId;
+    const externalServiceId = is4k
+      ? media.externalServiceId4k
+      : media.externalServiceId;
+
+    if (serviceId == null || externalServiceId == null) {
+      return undefined;
+    }
+
+    const server = this.radarrServers.find(
+      (radarrServer) =>
+        radarrServer.id === serviceId && radarrServer.is4k === is4k
+    );
+
+    if (!server) {
+      return undefined;
+    }
+
+    const radarrAPI = new RadarrAPI({
+      apiKey: server.apiKey,
+      url: RadarrAPI.buildUrl(server, '/api/v3'),
+    });
+
+    try {
+      await radarrAPI.getMovie({ id: externalServiceId });
+
+      return true;
+    } catch (ex) {
+      if (ex.message.includes('404')) {
+        return false;
+      }
+
+      logger.debug(
+        `Failure retrieving the linked ${is4k ? '4K' : 'non-4K'} movie [TMDB ID ${
+          media.tmdbId
+        }] from Radarr during orphaned request sync.`,
+        {
+          errorMessage: ex.message,
+          label: 'Availability Sync',
+        }
+      );
+
+      return undefined;
+    }
+  }
+
+  private async mediaExistsInLinkedSonarr(
+    media: Media,
+    is4k: boolean
+  ): Promise<boolean | undefined> {
+    const serviceId = is4k ? media.serviceId4k : media.serviceId;
+    const externalServiceId = is4k
+      ? media.externalServiceId4k
+      : media.externalServiceId;
+
+    if (serviceId == null || externalServiceId == null) {
+      return undefined;
+    }
+
+    const server = this.sonarrServers.find(
+      (sonarrServer) =>
+        sonarrServer.id === serviceId && sonarrServer.is4k === is4k
+    );
+
+    if (!server) {
+      return undefined;
+    }
+
+    const sonarrAPI = new SonarrAPI({
+      apiKey: server.apiKey,
+      url: SonarrAPI.buildUrl(server, '/api/v3'),
+    });
+
+    try {
+      await sonarrAPI.getSeriesById(externalServiceId);
+
+      return true;
+    } catch (ex) {
+      if (ex.message.includes('404')) {
+        return false;
+      }
+
+      logger.debug(
+        `Failure retrieving the linked ${is4k ? '4K' : 'non-4K'} show [TMDB ID ${
+          media.tmdbId
+        }] from Sonarr during orphaned request sync.`,
+        {
+          errorMessage: ex.message,
+          label: 'Availability Sync',
+        }
+      );
+
+      return undefined;
+    }
+  }
+
+  private async markOrphanedMovieDeleted(
+    media: Media,
+    is4k: boolean
+  ): Promise<void> {
+    const mediaRepository = getRepository(Media);
+    const mediaRecord = await mediaRepository.findOne({
+      where: { id: media.id },
+      relations: { seasons: true },
+    });
+
+    if (!mediaRecord) {
+      return;
+    }
+
+    mediaRecord[is4k ? 'status4k' : 'status'] = MediaStatus.DELETED;
+    mediaRecord[is4k ? 'serviceId4k' : 'serviceId'] = null;
+    mediaRecord[is4k ? 'externalServiceId4k' : 'externalServiceId'] = null;
+    mediaRecord[is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'] = null;
+
+    logger.info(
+      `The ${is4k ? '4K' : 'non-4K'} movie [TMDB ID ${media.tmdbId}] was removed from Radarr while it was still processing. Marking it as deleted.`,
+      { label: 'AvailabilitySync' }
+    );
+
+    await mediaRepository.save(mediaRecord);
+  }
+
+  private async markOrphanedSeriesDeleted(
+    media: Media,
+    approvedRequests: MediaRequest[],
+    is4k: boolean
+  ): Promise<void> {
+    const mediaRepository = getRepository(Media);
+    const mediaRecord = await mediaRepository.findOne({
+      where: { id: media.id },
+      relations: { seasons: true },
+    });
+
+    if (!mediaRecord) {
+      return;
+    }
+
+    const statusKey = is4k ? 'status4k' : 'status';
+    const requestedSeasonNumbers = new Set(
+      approvedRequests.flatMap((request) =>
+        request.seasons.map((season) => season.seasonNumber)
+      )
+    );
+
+    for (const seasonNumber of requestedSeasonNumbers) {
+      let matchingSeason = mediaRecord.seasons.find(
+        (season) => season.seasonNumber === seasonNumber
+      );
+
+      if (!matchingSeason) {
+        matchingSeason = new Season({ seasonNumber });
+        mediaRecord.seasons.push(matchingSeason);
+      }
+
+      if (
+        matchingSeason[statusKey] !== MediaStatus.AVAILABLE &&
+        matchingSeason[statusKey] !== MediaStatus.PARTIALLY_AVAILABLE
+      ) {
+        matchingSeason[statusKey] = MediaStatus.DELETED;
+      }
+    }
+
+    const variantStatuses = mediaRecord.seasons.map(
+      (season) => season[statusKey]
+    );
+    const hasAvailableSeason = variantStatuses.some(
+      (status) =>
+        status === MediaStatus.AVAILABLE ||
+        status === MediaStatus.PARTIALLY_AVAILABLE
+    );
+    const hasProcessingSeason = variantStatuses.some(
+      (status) => status === MediaStatus.PROCESSING
+    );
+    const hasDeletedSeason = variantStatuses.some(
+      (status) => status === MediaStatus.DELETED
+    );
+
+    mediaRecord[statusKey] = hasAvailableSeason
+      ? MediaStatus.PARTIALLY_AVAILABLE
+      : hasProcessingSeason
+        ? MediaStatus.PROCESSING
+        : hasDeletedSeason
+          ? MediaStatus.DELETED
+          : MediaStatus.UNKNOWN;
+    mediaRecord[is4k ? 'serviceId4k' : 'serviceId'] = null;
+    mediaRecord[is4k ? 'externalServiceId4k' : 'externalServiceId'] = null;
+    mediaRecord[is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'] = null;
+    mediaRecord.lastSeasonChange = new Date();
+
+    logger.info(
+      `The ${is4k ? '4K' : 'non-4K'} show [TMDB ID ${media.tmdbId}] was removed from Sonarr while requested seasons were still processing. Marking them as deleted.`,
+      { label: 'AvailabilitySync' }
+    );
+
+    await mediaRepository.save(mediaRecord);
   }
 
   private async mediaUpdater(
