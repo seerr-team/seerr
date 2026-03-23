@@ -75,16 +75,16 @@ const SidebarLinks: SidebarLinkProps[] = [
     activeRegExp: /^\/discover\/tv$/,
   },
   {
-    href: '/discover/watchlist',
-    messagesKey: 'watchlist',
-    svgIcon: <BookmarkIcon className="mr-3 h-6 w-6" />,
-    activeRegExp: /^\/discover\/watchlist$/,
-  },
-  {
     href: '/requests',
     messagesKey: 'requests',
     svgIcon: <ClockIcon className="mr-3 h-6 w-6" />,
     activeRegExp: /^\/requests/,
+  },
+  {
+    href: '/discover/watchlist',
+    messagesKey: 'watchlist',
+    svgIcon: <BookmarkIcon className="mr-3 h-6 w-6" />,
+    activeRegExp: /^\/discover\/watchlist$/,
   },
   {
     href: '/blocklist',
