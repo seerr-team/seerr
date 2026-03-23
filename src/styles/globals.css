@@ -3,16 +3,59 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── Default theme (Tailwind v3 gray + indigo defaults) ── */
+  :root,
+  [data-theme='default'] {
+    --gray-100: 243 244 246;
+    --gray-200: 229 231 235;
+    --gray-300: 209 213 219;
+    --gray-400: 156 163 175;
+    --gray-500: 107 114 128;
+    --gray-600: 75 85 99;
+    --gray-700: 55 65 81;
+    --gray-800: 31 41 55;
+    --gray-900: 17 24 39;
+    --indigo-400: 129 140 248;
+    --indigo-500: 99 102 241;
+    --indigo-600: 79 70 229;
+    --scrollbar-track: #1f2937;
+    --scrollbar-thumb: #4b5563;
+    --scrollbar-thumb-hover: #6b7280;
+    --sidebar-bg-from: rgba(31, 41, 55, 1);
+    --sidebar-bg-to: #131928;
+  }
+
+  /* ── AMOLED Strix theme — pure black + neon violet ── */
+  [data-theme='amoled-strix'] {
+    --gray-100: 240 240 240;
+    --gray-200: 200 200 200;
+    --gray-300: 170 170 170;
+    --gray-400: 120 120 120;
+    --gray-500: 60 60 60;
+    --gray-600: 28 28 28;
+    --gray-700: 18 18 18;
+    --gray-800: 8 8 8;
+    --gray-900: 0 0 0;
+    --indigo-400: 167 139 250;
+    --indigo-500: 139 92 246;
+    --indigo-600: 124 58 237;
+    --scrollbar-track: #000000;
+    --scrollbar-thumb: #2a1a4a;
+    --scrollbar-thumb-hover: #7c3aed;
+    --sidebar-bg-from: rgba(0, 0, 0, 1);
+    --sidebar-bg-to: #050008;
+  }
+
   html {
     min-height: calc(100% + env(safe-area-inset-top));
     padding: env(safe-area-inset-top) env(safe-area-inset-right)
       calc(4rem + env(safe-area-inset-bottom)) env(safe-area-inset-left);
     scrollbar-width: thin;
-    scrollbar-color: #4b5563 #1f2937;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   }
 
   html:hover {
-    scrollbar-color: #6b7280 #1f2937;
+    scrollbar-color: var(--scrollbar-thumb-hover) var(--scrollbar-track);
   }
 
   /* WebKit scrollbar styles */
@@ -21,15 +64,15 @@
   }
 
   html::-webkit-scrollbar-track {
-    background: #1f2937;
+    background: var(--scrollbar-track);
   }
 
   html::-webkit-scrollbar-thumb {
-    background-color: #4b5563;
+    background-color: var(--scrollbar-thumb);
   }
 
   html:hover::-webkit-scrollbar-thumb {
-    background-color: #6b7280;
+    background-color: var(--scrollbar-thumb-hover);
   }
 
   @media (min-width: 640px) {
@@ -62,7 +105,7 @@
     @apply border-r border-gray-700;
     padding-top: env(safe-area-inset-top);
     padding-left: env(safe-area-inset-left);
-    background: linear-gradient(180deg, rgba(31, 41, 55, 1) 0%, #131928 100%);
+    background: linear-gradient(180deg, var(--sidebar-bg-from) 0%, var(--sidebar-bg-to) 100%);
   }
 
   .slideover {

@@ -463,7 +463,7 @@ const TitleCard = ({
                 className="absolute inset-0 h-full w-full cursor-pointer overflow-hidden text-left"
                 style={{
                   background:
-                    'linear-gradient(180deg, rgba(45, 55, 72, 0.4) 0%, rgba(45, 55, 72, 0.9) 100%)',
+                    'linear-gradient(180deg, rgb(var(--gray-700) / 0.4) 0%, rgb(var(--gray-700) / 0.9) 100%)',
                 }}
               >
                 <div className="flex h-full w-full items-end">

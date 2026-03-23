@@ -8,6 +8,7 @@ import ToastContainer from '@app/components/ToastContainer';
 import { InteractionProvider } from '@app/context/InteractionContext';
 import { LanguageContext } from '@app/context/LanguageContext';
 import { SettingsProvider } from '@app/context/SettingsContext';
+import { ThemeProvider } from '@app/context/ThemeContext';
 import { UserContext } from '@app/context/UserContext';
 import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
@@ -218,7 +219,9 @@ const CoreApp: Omit<NextAppComponentType, 'origGetInitialProps'> = ({
                 </Head>
                 <StatusChecker />
                 <ServiceWorkerSetup />
-                <UserContext initialUser={user}>{component}</UserContext>
+                <ThemeProvider>
+                  <UserContext initialUser={user}>{component}</UserContext>
+                </ThemeProvider>
               </ToastProvider>
             </InteractionProvider>
           </SettingsProvider>

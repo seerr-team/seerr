@@ -34,13 +34,9 @@ const ImageFader: ForwardRefRenderFunction<HTMLDivElement, ImageFaderProps> = (
     };
   }, [backgroundImages, rotationSpeed]);
 
-  let gradient =
-    'linear-gradient(180deg, rgba(45, 55, 72, 0.47) 0%, #1A202E 100%)';
-
-  if (isDarker) {
-    gradient =
-      'linear-gradient(180deg, rgba(17, 24, 39, 0.47) 0%, rgba(17, 24, 39, 1) 100%)';
-  }
+  const gradient = isDarker
+    ? 'linear-gradient(180deg, rgb(var(--gray-900) / 0.47) 0%, rgb(var(--gray-900)) 100%)'
+    : 'linear-gradient(180deg, rgb(var(--gray-700) / 0.47) 0%, rgb(var(--gray-900)) 100%)';
 
   let overrides = {};
 

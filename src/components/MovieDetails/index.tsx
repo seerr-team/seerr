@@ -448,13 +448,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
             fill
             priority
           />
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage:
-                'linear-gradient(180deg, rgba(17, 24, 39, 0.47) 0%, rgba(17, 24, 39, 1) 100%)',
-            }}
-          />
+          <div className="absolute inset-0 bg-gradient-to-b from-gray-900/50 to-gray-900" />
         </div>
       )}
       <PageTitle title={data.title} />
@@ -747,13 +741,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                       }}
                       fill
                     />
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        backgroundImage:
-                          'linear-gradient(180deg, rgba(31, 41, 55, 0.47) 0%, rgba(31, 41, 55, 0.80) 100%)',
-                      }}
-                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-gray-800/50 to-gray-800/80" />
                   </div>
                   <div className="relative z-10 flex h-full items-center justify-between p-4 text-gray-200 transition duration-300 group-hover:text-white">
                     <div>{data.collection.name}</div>
