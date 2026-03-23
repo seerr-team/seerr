@@ -6,8 +6,8 @@ import { Permission, useUser } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import {
-  ClockIcon,
   BookmarkIcon,
+  ClockIcon,
   CogIcon,
   ExclamationTriangleIcon,
   EyeSlashIcon,
