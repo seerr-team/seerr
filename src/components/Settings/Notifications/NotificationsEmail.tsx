@@ -131,7 +131,7 @@ const NotificationsEmail = () => {
       initialValues={{
         enabled: data.enabled,
         embedPoster: data.embedPoster,
-        types: data.types,
+        types: data.types ?? 0,
         userEmailRequired: data.options.userEmailRequired,
         emailFrom: data.options.emailFrom,
         smtpHost: data.options.smtpHost,
