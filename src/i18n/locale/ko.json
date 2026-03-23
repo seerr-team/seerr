@@ -284,7 +284,6 @@
   "components.Settings.RadarrModal.validationBaseUrlTrailingSlash": "URL 기반은 슬래시로 끝나지 않아야 합니다",
   "components.Settings.SettingsAbout.Releases.viewchangelog": "변경 로그 보기",
   "components.Settings.SettingsAbout.Releases.viewongithub": "GitHub에서 보기",
-  "components.Settings.SettingsAbout.betawarning": "현재 베타 소프트웨어입니다. 기능이 손상되거나 불안정할 수 있습니다. 문제가 있으면 GitHub에서 보고하세요!",
   "components.Settings.SettingsJobsCache.cachehits": "조회 수",
   "components.Settings.SettingsJobsCache.jobsandcache": "작업 및 캐시",
   "components.Settings.SettingsJobsCache.jobstarted": "{jobname}이(가) 시작되었습니다.",

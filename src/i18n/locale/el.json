@@ -762,7 +762,6 @@
   "i18n.test": "Δοκιμή",
   "i18n.status": "Κατάσταση",
   "i18n.showingresults": "Εμφάνιση <strong>{from}</strong> έως <strong>{to}</strong> από <strong>{total}</strong> αποτελέσματα",
-  "components.Settings.SettingsAbout.betawarning": "Αυτό είναι λογισμικό BETA. Οι λειτουργίες ενδέχεται να είναι σπασμένες ή/και ασταθείς. Παρακαλώ αναφέρετε τυχόν προβλήματα με το GitHub!",
   "components.StatusBadge.status": "{status}",
   "components.Settings.validationUrlBaseLeadingSlash": "Η βάση URL πρέπει να έχει μια κάθετο μπροστά",
   "components.UserProfile.UserSettings.UserGeneralSettings.plexwatchlistsyncmovies": "Αυτόματη αίτηση ταινιών",

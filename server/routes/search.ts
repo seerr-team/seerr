@@ -35,7 +35,10 @@ searchRoutes.get('/', async (req, res, next) => {
 
     const media = await Media.getRelatedMedia(
       req.user,
-      results.results.map((result) => result.id)
+      results.results.map((result) => ({
+        tmdbId: result.id,
+        mediaType: result.media_type,
+      }))
     );
 
     return res.status(200).json({

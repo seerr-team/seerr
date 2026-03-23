@@ -740,7 +740,6 @@
   "components.PermissionEdit.requestTv": "Solicitar Series",
   "components.PermissionEdit.requestMoviesDescription": "Conceder permisos para solicitar películas que no sean 4K.",
   "components.PermissionEdit.requestMovies": "Solicitar películas",
-  "components.Settings.SettingsAbout.betawarning": "¡Este es un software BETA. Algunas funcionalidades podrían fallar. Por favor, reporta cualquier problema en Github!",
   "components.RequestList.RequestItem.requesteddate": "Solicitado",
   "components.RequestCard.failedretry": "Algo fue mal al reintentar la solicitud.",
   "components.NotificationTypeSelector.usermediarequestedDescription": "Notificar cuando otros usuarios envíen nuevas solicitudes que requieran aprobación.",

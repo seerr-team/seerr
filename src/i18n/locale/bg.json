@@ -708,7 +708,6 @@
   "components.Settings.RadarrModal.apiKey": "API ключ",
   "components.MovieDetails.streamingproviders": "В момента се излъчва по",
   "components.NotificationTypeSelector.notificationTypes": "Видове известия",
-  "components.Settings.SettingsAbout.betawarning": "Това е BETA софтуер. Функциите може да са повредени и/или нестабилни. Моля, докладвайте за проблеми в GitHub!",
   "components.Settings.RadarrModal.selectQualityProfile": "Изберете профил за качество",
   "components.Settings.RadarrModal.validationApplicationUrlTrailingSlash": "URL адресът не трябва да завършва с наклонена черта в края",
   "components.Settings.SettingsJobsCache.cache": "Кеш",

@@ -341,7 +341,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
           );
           onCreate();
           resetForm();
-        } catch (e) {
+        } catch {
           addToast(
             intl.formatMessage(slider ? messages.editfail : messages.addfail),
             {

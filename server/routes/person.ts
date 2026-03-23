@@ -43,12 +43,22 @@ personRoutes.get('/:id/combined_credits', async (req, res, next) => {
 
     const castMedia = await Media.getRelatedMedia(
       req.user,
-      combinedCredits.cast.map((result) => result.id)
+      combinedCredits.cast
+        .filter((result) => result.media_type)
+        .map((result) => ({
+          tmdbId: result.id,
+          mediaType: result.media_type!,
+        }))
     );
 
     const crewMedia = await Media.getRelatedMedia(
       req.user,
-      combinedCredits.crew.map((result) => result.id)
+      combinedCredits.crew
+        .filter((result) => result.media_type)
+        .map((result) => ({
+          tmdbId: result.id,
+          mediaType: result.media_type!,
+        }))
     );
 
     return res.status(200).json({

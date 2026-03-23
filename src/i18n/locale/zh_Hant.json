@@ -779,7 +779,6 @@
   "components.NotificationTypeSelector.usermediaavailableDescription": "當您請求的媒體可觀看時取得通知。",
   "components.NotificationTypeSelector.usermediaapprovedDescription": "當您的請求獲批准時取得通知。",
   "components.NotificationTypeSelector.usermediaAutoApprovedDescription": "當其他使用者提出自動獲批准的請求時取得通知。",
-  "components.Settings.SettingsAbout.betawarning": "這是測試版軟體，有些功能可能損壞或不穩定。請在 GitHub 上回報問題！",
   "components.Layout.LanguagePicker.displaylanguage": "顯示語言",
   "components.MovieDetails.showmore": "顯示更多",
   "components.MovieDetails.showless": "顯示更少",

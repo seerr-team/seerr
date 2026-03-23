@@ -183,7 +183,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
             autoDismiss: true,
           });
         }
-      } catch (e) {
+      } catch {
         setIsValidated(false);
         if (initialLoad.current) {
           addToast(intl.formatMessage(messages.toastSonarrTestFailure), {
@@ -304,7 +304,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
             }
 
             onSave();
-          } catch (e) {
+          } catch {
             // set error here
           }
         }}
@@ -583,14 +583,21 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                                 )}
                         </option>
                         {testResponse.profiles.length > 0 &&
-                          testResponse.profiles.map((profile) => (
-                            <option
-                              key={`loaded-profile-${profile.id}`}
-                              value={profile.id}
-                            >
-                              {profile.name}
-                            </option>
-                          ))}
+                          testResponse.profiles
+                            .toSorted((a, b) =>
+                              a.name.localeCompare(b.name, intl.locale, {
+                                numeric: true,
+                                sensitivity: 'base',
+                              })
+                            )
+                            .map((profile) => (
+                              <option
+                                key={`loaded-profile-${profile.id}`}
+                                value={profile.id}
+                              >
+                                {profile.name}
+                              </option>
+                            ))}
                       </Field>
                     </div>
                     {errors.activeProfileId &&
@@ -795,14 +802,21 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                                 )}
                         </option>
                         {testResponse.profiles.length > 0 &&
-                          testResponse.profiles.map((profile) => (
-                            <option
-                              key={`loaded-profile-${profile.id}`}
-                              value={profile.id}
-                            >
-                              {profile.name}
-                            </option>
-                          ))}
+                          testResponse.profiles
+                            .toSorted((a, b) =>
+                              a.name.localeCompare(b.name, intl.locale, {
+                                numeric: true,
+                                sensitivity: 'base',
+                              })
+                            )
+                            .map((profile) => (
+                              <option
+                                key={`loaded-profile-anime-${profile.id}`}
+                                value={profile.id}
+                              >
+                                {profile.name}
+                              </option>
+                            ))}
                       </Field>
                     </div>
                     {errors.activeAnimeProfileId &&

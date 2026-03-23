@@ -382,6 +382,10 @@
     @apply mt-2 text-sm text-red-500;
   }
 
+  .warning {
+    @apply mt-2 text-sm text-yellow-500;
+  }
+
   .form-group {
     @apply mt-6 text-white;
   }

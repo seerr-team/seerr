@@ -125,7 +125,7 @@ const NotificationsNtfy = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.ntfysettingsfailed), {
             appearance: 'error',
             autoDismiss: true,
@@ -180,7 +180,7 @@ const NotificationsNtfy = () => {
               autoDismiss: true,
               appearance: 'success',
             });
-          } catch (e) {
+          } catch {
             if (toastId) {
               removeToast(toastId);
             }

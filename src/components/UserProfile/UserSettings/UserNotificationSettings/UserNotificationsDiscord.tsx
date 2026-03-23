@@ -84,7 +84,7 @@ const UserNotificationsDiscord = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.discordsettingsfailed), {
             appearance: 'error',
             autoDismiss: true,

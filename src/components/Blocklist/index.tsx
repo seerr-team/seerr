@@ -10,7 +10,7 @@ import useDebouncedState from '@app/hooks/useDebouncedState';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
-import Error from '@app/pages/_error';
+import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import {
   ChevronLeftIcon,
@@ -90,7 +90,7 @@ const Blocklist = () => {
   // check if there's no data and no errors in the table
   // so as to show a spinner inside the table and not refresh the whole component
   if (!data && error) {
-    return <Error statusCode={500} />;
+    return <ErrorPage statusCode={500} />;
   }
 
   const searchItem = (e: ChangeEvent<HTMLInputElement>) => {
@@ -178,7 +178,10 @@ const Blocklist = () => {
       ) : (
         data.results.map((item: BlocklistItem) => {
           return (
-            <div className="py-2" key={`request-list-${item.tmdbId}`}>
+            <div
+              className="py-2"
+              key={`request-list-${item.mediaType}-${item.tmdbId}`}
+            >
               <BlocklistedItem item={item} revalidateList={revalidate} />
             </div>
           );
@@ -297,7 +300,9 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
     setIsUpdating(true);
 
     try {
-      await axios.delete(`/api/v1/blocklist/${tmdbId}`);
+      await axios.delete(
+        `/api/v1/blocklist/${tmdbId}?mediaType=${item.mediaType}`
+      );
 
       addToast(
         <span>

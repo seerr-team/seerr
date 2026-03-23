@@ -154,7 +154,9 @@ class AnimeListMapping {
         { label: 'Anime-List Sync' }
       );
     } catch (e) {
-      throw new Error(`Failed to load Anime-List mappings: ${e.message}`);
+      throw new Error(`Failed to load Anime-List mappings: ${e.message}`, {
+        cause: e,
+      });
     }
   };
 
@@ -173,7 +175,9 @@ class AnimeListMapping {
         response.data.pipe(writer);
       });
     } catch (e) {
-      throw new Error(`Failed to download Anime-List mapping: ${e.message}`);
+      throw new Error(`Failed to download Anime-List mapping: ${e.message}`, {
+        cause: e,
+      });
     }
   };
 

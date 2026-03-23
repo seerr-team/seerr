@@ -173,7 +173,7 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
             autoDismiss: true,
           });
         }
-      } catch (e) {
+      } catch {
         setIsValidated(false);
         if (initialLoad.current) {
           addToast(intl.formatMessage(messages.toastRadarrTestFailure), {
@@ -268,7 +268,7 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
             }
 
             onSave();
-          } catch (e) {
+          } catch {
             // set error here
           }
         }}
@@ -526,14 +526,21 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                                 )}
                         </option>
                         {testResponse.profiles.length > 0 &&
-                          testResponse.profiles.map((profile) => (
-                            <option
-                              key={`loaded-profile-${profile.id}`}
-                              value={profile.id}
-                            >
-                              {profile.name}
-                            </option>
-                          ))}
+                          testResponse.profiles
+                            .toSorted((a, b) =>
+                              a.name.localeCompare(b.name, intl.locale, {
+                                numeric: true,
+                                sensitivity: 'base',
+                              })
+                            )
+                            .map((profile) => (
+                              <option
+                                key={`loaded-profile-${profile.id}`}
+                                value={profile.id}
+                              >
+                                {profile.name}
+                              </option>
+                            ))}
                       </Field>
                     </div>
                     {errors.activeProfileId &&

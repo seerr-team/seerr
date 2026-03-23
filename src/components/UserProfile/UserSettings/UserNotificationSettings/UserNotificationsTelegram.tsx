@@ -108,7 +108,7 @@ const UserTelegramSettings = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.telegramsettingsfailed), {
             appearance: 'error',
             autoDismiss: true,
