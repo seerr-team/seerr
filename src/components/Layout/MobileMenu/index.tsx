@@ -4,6 +4,7 @@ import useClickOutside from '@app/hooks/useClickOutside';
 import { Permission, useUser } from '@app/hooks/useUser';
 import { Transition } from '@headlessui/react';
 import {
+  BookmarkIcon,
   ClockIcon,
   CogIcon,
   EllipsisHorizontalIcon,
@@ -15,6 +16,7 @@ import {
   UsersIcon,
 } from '@heroicons/react/24/outline';
 import {
+  BookmarkIcon as FilledBookmarkIcon,
   ClockIcon as FilledClockIcon,
   CogIcon as FilledCogIcon,
   ExclamationTriangleIcon as FilledExclamationTriangleIcon,
@@ -91,6 +93,13 @@ const MobileMenu = ({
       svgIcon: <TvIcon className="h-6 w-6" />,
       svgIconSelected: <FilledTvIcon className="h-6 w-6" />,
       activeRegExp: /^\/discover\/tv$/,
+    },
+    {
+      href: '/discover/watchlist',
+      content: intl.formatMessage(menuMessages.watchlist),
+      svgIcon: <BookmarkIcon className="h-6 w-6" />,
+      svgIconSelected: <FilledBookmarkIcon className="h-6 w-6" />,
+      activeRegExp: /^\/discover\/watchlist$/,
     },
     {
       href: '/requests',
