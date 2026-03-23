@@ -229,6 +229,7 @@
   "components.Layout.Sidebar.requests": "Requests",
   "components.Layout.Sidebar.settings": "Settings",
   "components.Layout.Sidebar.users": "Users",
+  "components.Layout.Sidebar.watchlist": "Watchlist",
   "components.Layout.UserDropdown.MiniQuotaDisplay.movierequests": "Movie Requests",
   "components.Layout.UserDropdown.MiniQuotaDisplay.seriesrequests": "Series Requests",
   "components.Layout.UserDropdown.myprofile": "Profile",
