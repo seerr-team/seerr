@@ -96,7 +96,7 @@ const TitleCard = ({
     setCurrentStatus(newStatus);
     setShowRequestModal(false);
     setRequestJustSucceeded(true);
-    setTimeout(() => setRequestJustSucceeded(false), 2500);
+    setTimeout(() => setRequestJustSucceeded(false), 3000);
   }, []);
 
   const requestUpdating = useCallback(
@@ -455,8 +455,58 @@ const TitleCard = ({
             leaveFrom="opacity-100 scale-100"
             leaveTo="opacity-0 scale-75"
           >
-            <div className="absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-green-600/85 text-white">
-              <CheckCircleIcon className="h-16 w-16 drop-shadow-lg" />
+            <div
+              className="absolute inset-0 z-40 flex flex-col items-center justify-center rounded-xl text-white"
+              style={{
+                background:
+                  'linear-gradient(135deg, rgba(6,182,212,0.92) 0%, rgba(124,58,237,0.92) 50%, rgba(236,72,153,0.92) 100%)',
+              }}
+            >
+              {/* pulsing ring behind the icon */}
+              <div
+                aria-hidden="true"
+                className="absolute h-16 w-16 animate-ping rounded-full bg-white/25"
+              />
+
+              {/* bouncing check icon */}
+              <CheckCircleIcon className="relative h-14 w-14 animate-bounce drop-shadow-xl" />
+
+              {/* label */}
+              <p className="mt-3 text-xs font-bold tracking-widest drop-shadow">
+                Requested! 🎉
+              </p>
+
+              {/* sparkle dots — staggered ping */}
+              <span
+                aria-hidden="true"
+                className="absolute left-4 top-4 h-2 w-2 animate-ping rounded-full bg-yellow-300"
+                style={{ animationDelay: '0.05s' }}
+              />
+              <span
+                aria-hidden="true"
+                className="absolute right-5 top-5 h-1.5 w-1.5 animate-ping rounded-full bg-pink-300"
+                style={{ animationDelay: '0.3s' }}
+              />
+              <span
+                aria-hidden="true"
+                className="absolute bottom-5 left-5 h-2 w-2 animate-ping rounded-full bg-cyan-300"
+                style={{ animationDelay: '0.15s' }}
+              />
+              <span
+                aria-hidden="true"
+                className="absolute bottom-4 right-4 h-1.5 w-1.5 animate-ping rounded-full bg-white"
+                style={{ animationDelay: '0.45s' }}
+              />
+              <span
+                aria-hidden="true"
+                className="absolute left-1/2 top-3 h-1.5 w-1.5 animate-ping rounded-full bg-violet-300"
+                style={{ animationDelay: '0.25s' }}
+              />
+              <span
+                aria-hidden="true"
+                className="absolute bottom-3 left-1/3 h-1 w-1 animate-ping rounded-full bg-lime-300"
+                style={{ animationDelay: '0.4s' }}
+              />
             </div>
           </Transition>
 
