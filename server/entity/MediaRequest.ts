@@ -37,6 +37,7 @@ export class QuotaRestrictedError extends Error {}
 export class DuplicateMediaRequestError extends Error {}
 export class NoSeasonsAvailableError extends Error {}
 export class BlocklistedMediaError extends Error {}
+export class SeasonLimitError extends Error {}
 
 type MediaRequestOptions = {
   isAutoRequest?: boolean;
@@ -435,6 +436,17 @@ export class MediaRequest {
 
       if (finalSeasons.length === 0) {
         throw new NoSeasonsAvailableError('No seasons available to request');
+      } else if (
+        requestUser.hasPermission(Permission.LIMIT_ONE_SEASON) &&
+        !requestUser.hasPermission(
+          [Permission.MANAGE_REQUESTS, Permission.ADMIN],
+          { type: 'or' }
+        ) &&
+        finalSeasons.length > 1
+      ) {
+        throw new SeasonLimitError(
+          'You can only request one season at a time.'
+        );
       } else if (
         quotas.tv.limit &&
         finalSeasons.length > (quotas.tv.remaining ?? 0)

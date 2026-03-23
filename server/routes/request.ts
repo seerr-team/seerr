@@ -14,6 +14,7 @@ import {
   NoSeasonsAvailableError,
   QuotaRestrictedError,
   RequestPermissionError,
+  SeasonLimitError,
 } from '@server/entity/MediaRequest';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
@@ -321,6 +322,7 @@ requestRoutes.post<never, MediaRequest, MediaRequestBody>(
       switch (error.constructor) {
         case RequestPermissionError:
         case QuotaRestrictedError:
+        case SeasonLimitError:
           return next({ status: 403, message: error.message });
         case DuplicateMediaRequestError:
           return next({ status: 409, message: error.message });
@@ -561,6 +563,21 @@ requestRoutes.put<{ requestId: string }>(
           return next({
             status: 202,
             message: 'No seasons available to request',
+          });
+        }
+
+        // Enforce one-season limit on the user the request belongs to
+        if (
+          requestUser.hasPermission(Permission.LIMIT_ONE_SEASON) &&
+          !requestUser.hasPermission(
+            [Permission.MANAGE_REQUESTS, Permission.ADMIN],
+            { type: 'or' }
+          ) &&
+          filteredSeasons.length > 1
+        ) {
+          return next({
+            status: 403,
+            message: 'You can only request one season at a time.',
           });
         }
 

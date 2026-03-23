@@ -85,6 +85,9 @@ export const messages = defineMessages('components.PermissionEdit', {
   viewblocklistedItems: 'View blocklisted media.',
   viewblocklistedItemsDescription:
     'Grant permission to view blocklisted media.',
+  limitOneSeason: 'Limit One Season',
+  limitOneSeasonDescription:
+    'Restrict series requests to one season at a time. Useful when paired with a prefetch service to automatically request additional seasons based on watch progress.',
 });
 
 interface PermissionEditProps {
@@ -181,6 +184,23 @@ export const PermissionEdit = ({
           name: intl.formatMessage(messages.requestTv),
           description: intl.formatMessage(messages.requestTvDescription),
           permission: Permission.REQUEST_TV,
+        },
+      ],
+    },
+    {
+      id: 'limit-one-season',
+      name: intl.formatMessage(messages.limitOneSeason),
+      description: intl.formatMessage(messages.limitOneSeasonDescription),
+      permission: Permission.LIMIT_ONE_SEASON,
+      requires: [
+        {
+          permissions: [
+            Permission.REQUEST,
+            Permission.REQUEST_TV,
+            Permission.REQUEST_4K,
+            Permission.REQUEST_4K_TV,
+          ],
+          type: 'or',
         },
       ],
     },
