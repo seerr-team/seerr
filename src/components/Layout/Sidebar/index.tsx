@@ -7,6 +7,7 @@ import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import {
   ClockIcon,
+  BookmarkIcon,
   CogIcon,
   ExclamationTriangleIcon,
   EyeSlashIcon,
@@ -26,6 +27,7 @@ export const menuMessages = defineMessages('components.Layout.Sidebar', {
   dashboard: 'Discover',
   browsemovies: 'Movies',
   browsetv: 'Series',
+  watchlist: 'Watchlist',
   requests: 'Requests',
   blocklist: 'Blocklist',
   issues: 'Issues',
@@ -71,6 +73,12 @@ const SidebarLinks: SidebarLinkProps[] = [
     messagesKey: 'browsetv',
     svgIcon: <TvIcon className="mr-3 h-6 w-6" />,
     activeRegExp: /^\/discover\/tv$/,
+  },
+  {
+    href: '/discover/watchlist',
+    messagesKey: 'watchlist',
+    svgIcon: <BookmarkIcon className="mr-3 h-6 w-6" />,
+    activeRegExp: /^\/discover\/watchlist$/,
   },
   {
     href: '/requests',
