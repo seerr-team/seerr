@@ -29,7 +29,7 @@ class PlexOAuth {
   private authToken?: string;
 
   public initializeHeaders(plexClientIdentifier: string): void {
-    if (!window) {
+    if (typeof window === 'undefined') {
       throw new Error(
         'Window is not defined. Are you calling this in the browser?'
       );
@@ -159,7 +159,7 @@ class PlexOAuth {
     w: number;
     h: number;
   }): Window | void {
-    if (!window) {
+    if (typeof window === 'undefined') {
       throw new Error(
         'Window is undefined. Are you running this in the browser?'
       );
