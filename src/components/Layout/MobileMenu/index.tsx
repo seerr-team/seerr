@@ -95,18 +95,18 @@ const MobileMenu = ({
       activeRegExp: /^\/discover\/tv$/,
     },
     {
-      href: '/discover/watchlist',
-      content: intl.formatMessage(menuMessages.watchlist),
-      svgIcon: <BookmarkIcon className="h-6 w-6" />,
-      svgIconSelected: <FilledBookmarkIcon className="h-6 w-6" />,
-      activeRegExp: /^\/discover\/watchlist$/,
-    },
-    {
       href: '/requests',
       content: intl.formatMessage(menuMessages.requests),
       svgIcon: <ClockIcon className="h-6 w-6" />,
       svgIconSelected: <FilledClockIcon className="h-6 w-6" />,
       activeRegExp: /^\/requests/,
+    },
+    {
+      href: '/discover/watchlist',
+      content: intl.formatMessage(menuMessages.watchlist),
+      svgIcon: <BookmarkIcon className="h-6 w-6" />,
+      svgIconSelected: <FilledBookmarkIcon className="h-6 w-6" />,
+      activeRegExp: /^\/discover\/watchlist$/,
     },
     {
       href: '/blocklist',
