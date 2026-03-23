@@ -7,8 +7,6 @@ import {
   ClockIcon,
   CogIcon,
   EllipsisHorizontalIcon,
-  ExclamationTriangleIcon,
-  EyeSlashIcon,
   FilmIcon,
   SparklesIcon,
   TvIcon,
@@ -17,8 +15,6 @@ import {
 import {
   ClockIcon as FilledClockIcon,
   CogIcon as FilledCogIcon,
-  ExclamationTriangleIcon as FilledExclamationTriangleIcon,
-  EyeSlashIcon as FilledEyeSlashIcon,
   FilmIcon as FilledFilmIcon,
   SparklesIcon as FilledSparklesIcon,
   TvIcon as FilledTvIcon,
@@ -32,8 +28,6 @@ import { useIntl } from 'react-intl';
 
 interface MobileMenuProps {
   pendingRequestsCount: number;
-  openIssuesCount: number;
-  revalidateIssueCount: () => void;
   revalidateRequestsCount: () => void;
 }
 
@@ -51,8 +45,6 @@ interface MenuLink {
 
 const MobileMenu = ({
   pendingRequestsCount,
-  openIssuesCount,
-  revalidateIssueCount,
   revalidateRequestsCount,
 }: MobileMenuProps) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -99,31 +91,6 @@ const MobileMenu = ({
       activeRegExp: /^\/requests/,
     },
     {
-      href: '/blocklist',
-      content: intl.formatMessage(menuMessages.blocklist),
-      svgIcon: <EyeSlashIcon className="h-6 w-6" />,
-      svgIconSelected: <FilledEyeSlashIcon className="h-6 w-6" />,
-      activeRegExp: /^\/blocklist/,
-      requiredPermission: [
-        Permission.MANAGE_BLOCKLIST,
-        Permission.VIEW_BLOCKLIST,
-      ],
-      permissionType: 'or',
-    },
-    {
-      href: '/issues',
-      content: intl.formatMessage(menuMessages.issues),
-      svgIcon: <ExclamationTriangleIcon className="h-6 w-6" />,
-      svgIconSelected: <FilledExclamationTriangleIcon className="h-6 w-6" />,
-      activeRegExp: /^\/issues/,
-      requiredPermission: [
-        Permission.MANAGE_ISSUES,
-        Permission.CREATE_ISSUES,
-        Permission.VIEW_ISSUES,
-      ],
-      permissionType: 'or',
-    },
-    {
       href: '/users',
       content: intl.formatMessage(menuMessages.users),
       svgIcon: <UsersIcon className="h-6 w-6" />,
@@ -152,13 +119,10 @@ const MobileMenu = ({
   );
 
   useEffect(() => {
-    if (openIssuesCount) revalidateIssueCount();
     if (pendingRequestsCount) revalidateRequestsCount();
   }, [
-    revalidateIssueCount,
     revalidateRequestsCount,
     pendingRequestsCount,
-    openIssuesCount,
   ]);
 
   return (
@@ -204,16 +168,6 @@ const MobileMenu = ({
                   <div className="ml-auto flex">
                     <Badge className="rounded-md border border-cyan-300/30 bg-gradient-to-r from-cyan-400/20 to-violet-400/20 text-cyan-100">
                       {pendingRequestsCount}
-                    </Badge>
-                  </div>
-                )}
-
-              {link.href === '/issues' &&
-                openIssuesCount > 0 &&
-                hasPermission(Permission.MANAGE_ISSUES) && (
-                  <div className="ml-auto flex">
-                    <Badge className="rounded-md border border-cyan-300/30 bg-gradient-to-r from-cyan-400/20 to-violet-400/20 text-cyan-100">
-                      {openIssuesCount}
                     </Badge>
                   </div>
                 )}

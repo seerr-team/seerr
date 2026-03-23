@@ -8,9 +8,8 @@ import { Transition } from '@headlessui/react';
 import {
   ClockIcon,
   CogIcon,
-  ExclamationTriangleIcon,
-  EyeSlashIcon,
   FilmIcon,
+  HeartIcon,
   SparklesIcon,
   TvIcon,
   UsersIcon,
@@ -38,8 +37,6 @@ interface SidebarProps {
   open?: boolean;
   setClosed: () => void;
   pendingRequestsCount: number;
-  openIssuesCount: number;
-  revalidateIssueCount: () => void;
   revalidateRequestsCount: () => void;
 }
 
@@ -77,7 +74,7 @@ const SidebarLinks: SidebarLinkProps[] = [
     href: '/discover/movies?genre=10751',
     as: '/discover/movies',
     messagesKey: 'kidfriendly',
-    svgIcon: <SparklesIcon className="mr-3 h-6 w-6" />,
+    svgIcon: <HeartIcon className="mr-3 h-6 w-6" />,
     activeRegExp: /^\/discover\/movies$/,
   },
   {
@@ -85,29 +82,6 @@ const SidebarLinks: SidebarLinkProps[] = [
     messagesKey: 'requests',
     svgIcon: <ClockIcon className="mr-3 h-6 w-6" />,
     activeRegExp: /^\/requests/,
-  },
-  {
-    href: '/blocklist',
-    messagesKey: 'blocklist',
-    svgIcon: <EyeSlashIcon className="mr-3 h-6 w-6" />,
-    activeRegExp: /^\/blocklist/,
-    requiredPermission: [
-      Permission.MANAGE_BLOCKLIST,
-      Permission.VIEW_BLOCKLIST,
-    ],
-    permissionType: 'or',
-  },
-  {
-    href: '/issues',
-    messagesKey: 'issues',
-    svgIcon: <ExclamationTriangleIcon className="mr-3 h-6 w-6" />,
-    activeRegExp: /^\/issues/,
-    requiredPermission: [
-      Permission.MANAGE_ISSUES,
-      Permission.CREATE_ISSUES,
-      Permission.VIEW_ISSUES,
-    ],
-    permissionType: 'or',
   },
   {
     href: '/users',
@@ -131,8 +105,6 @@ const Sidebar = ({
   open,
   setClosed,
   pendingRequestsCount,
-  openIssuesCount,
-  revalidateIssueCount,
   revalidateRequestsCount,
 }: SidebarProps) => {
   const navRef = useRef<HTMLDivElement>(null);
@@ -143,13 +115,10 @@ const Sidebar = ({
   useClickOutside(navRef, () => setClosed());
 
   useEffect(() => {
-    if (openIssuesCount) revalidateIssueCount();
     if (pendingRequestsCount) revalidateRequestsCount();
   }, [
-    revalidateIssueCount,
     revalidateRequestsCount,
     pendingRequestsCount,
-    openIssuesCount,
   ]);
 
   const linkBase =
@@ -310,16 +279,6 @@ const Sidebar = ({
                           <div className="ml-auto flex">
                             <Badge className={badgeBase}>
                               {pendingRequestsCount}
-                            </Badge>
-                          </div>
-                        )}
-
-                      {sidebarLink.messagesKey === 'issues' &&
-                        openIssuesCount > 0 &&
-                        hasPermission(Permission.MANAGE_ISSUES) && (
-                          <div className="ml-auto flex">
-                            <Badge className={badgeBase}>
-                              {openIssuesCount}
                             </Badge>
                           </div>
                         )}

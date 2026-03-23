@@ -15,6 +15,7 @@ import { withProperties } from '@app/utils/typeHelpers';
 import { Transition } from '@headlessui/react';
 import {
   ArrowDownTrayIcon,
+  CheckCircleIcon,
   EyeIcon,
   EyeSlashIcon,
   MinusCircleIcon,
@@ -75,6 +76,7 @@ const TitleCard = ({
   const [currentStatus, setCurrentStatus] = useState(status);
   const [showDetail, setShowDetail] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestJustSucceeded, setRequestJustSucceeded] = useState(false);
   const { addToast } = useToasts();
   const [toggleWatchlist, setToggleWatchlist] =
     useState<boolean>(!isAddedToWatchlist);
@@ -93,6 +95,8 @@ const TitleCard = ({
   const requestComplete = useCallback((newStatus: MediaStatus) => {
     setCurrentStatus(newStatus);
     setShowRequestModal(false);
+    setRequestJustSucceeded(true);
+    setTimeout(() => setRequestJustSucceeded(false), 2500);
   }, []);
 
   const requestUpdating = useCallback(
@@ -438,6 +442,21 @@ const TitleCard = ({
           >
             <div className="absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-gray-800/75 text-white">
               <Spinner className="h-10 w-10" />
+            </div>
+          </Transition>
+
+          <Transition
+            as={Fragment}
+            show={requestJustSucceeded}
+            enter="transition-all ease-out duration-300"
+            enterFrom="opacity-0 scale-75"
+            enterTo="opacity-100 scale-100"
+            leave="transition-all ease-in duration-500"
+            leaveFrom="opacity-100 scale-100"
+            leaveTo="opacity-0 scale-75"
+          >
+            <div className="absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-green-600/85 text-white">
+              <CheckCircleIcon className="h-16 w-16 drop-shadow-lg" />
             </div>
           </Transition>
 
