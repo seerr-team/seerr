@@ -29,11 +29,6 @@ const Layout = ({ children }: LayoutProps) => {
     { revalidateOnMount: true }
   );
 
-  const { data: issueResponse, mutate: revalidateIssueCount } = useSWR(
-    '/api/v1/issue/count',
-    { revalidateOnMount: true }
-  );
-
   useEffect(() => {
     if (setLocale && user) {
       setLocale(
@@ -66,16 +61,12 @@ const Layout = ({ children }: LayoutProps) => {
         open={isSidebarOpen}
         setClosed={() => setSidebarOpen(false)}
         pendingRequestsCount={requestResponse?.pending ?? 0}
-        openIssuesCount={issueResponse?.open ?? 0}
-        revalidateIssueCount={() => revalidateIssueCount()}
         revalidateRequestsCount={() => revalidateRequestsCount()}
       />
 
       <div className="sm:hidden">
         <MobileMenu
           pendingRequestsCount={requestResponse?.pending ?? 0}
-          openIssuesCount={issueResponse?.open ?? 0}
-          revalidateIssueCount={() => revalidateIssueCount()}
           revalidateRequestsCount={() => revalidateRequestsCount()}
         />
       </div>
