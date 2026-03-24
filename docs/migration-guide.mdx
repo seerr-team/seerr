@@ -55,7 +55,7 @@ Since the container now runs as the `node` user (UID 1000), you must ensure your
 If you're migrating from a previous installation, you may need to update the ownership of your config folder:
 
 ```bash
-docker run --rm -v /path/to/appdata/config:/data alpine chown -R 1000:1000 /data
+docker run --rm -v /path/to/appdata/config:/app/config alpine chown -R 1000:1000 /app/config
 ```
 
 This ensures the `node` user (UID 1000) owns the config directory and can read and write to it.
