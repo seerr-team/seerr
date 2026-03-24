@@ -83,7 +83,7 @@ async function authenticatedAgent(email: string, password: string) {
   return agent;
 }
 
-async function createPendingRequest() {
+async function createRequest(status = MediaRequestStatus.PENDING) {
   const mediaRepository = getRepository(Media);
   const requestRepository = getRepository(MediaRequest);
   const userRepository = getRepository(User);
@@ -103,7 +103,7 @@ async function createPendingRequest() {
   const seededRequest = await requestRepository.save(
     new MediaRequest({
       type: MediaType.MOVIE,
-      status: MediaRequestStatus.PENDING,
+      status,
       media,
       requestedBy,
       is4k: false,
@@ -121,7 +121,7 @@ async function createPendingRequest() {
 describe('POST /request/:requestId/:status', () => {
   it('refreshes updatedAt when a request is approved', async () => {
     const requestRepository = getRepository(MediaRequest);
-    const pendingRequest = await createPendingRequest();
+    const pendingRequest = await createRequest();
     const previousUpdatedAt = pendingRequest.updatedAt.toISOString();
     const agent = await authenticatedAgent('admin@seerr.dev', 'test1234');
 
@@ -149,7 +149,7 @@ describe('POST /request/:requestId/:status', () => {
 
   it('refreshes updatedAt when a request is declined', async () => {
     const requestRepository = getRepository(MediaRequest);
-    const pendingRequest = await createPendingRequest();
+    const pendingRequest = await createRequest();
     const previousUpdatedAt = pendingRequest.updatedAt.toISOString();
     const agent = await authenticatedAgent('admin@seerr.dev', 'test1234');
 
@@ -172,6 +172,34 @@ describe('POST /request/:requestId/:status', () => {
     assert.strictEqual(savedRequest.modifiedBy?.email, 'admin@seerr.dev');
     assert.ok(
       savedRequest.updatedAt.getTime() > pendingRequest.updatedAt.getTime()
+    );
+  });
+});
+
+describe('POST /request/:requestId/retry', () => {
+  it('refreshes updatedAt when a request is retried', async () => {
+    const requestRepository = getRepository(MediaRequest);
+    const failedRequest = await createRequest(MediaRequestStatus.FAILED);
+    const previousUpdatedAt = failedRequest.updatedAt.toISOString();
+    const agent = await authenticatedAgent('admin@seerr.dev', 'test1234');
+
+    const res = await agent.post(`/request/${failedRequest.id}/retry`);
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.status, MediaRequestStatus.APPROVED);
+    assert.notStrictEqual(res.body.updatedAt, previousUpdatedAt);
+    assert.ok(
+      new Date(res.body.updatedAt).getTime() >
+        new Date(previousUpdatedAt).getTime()
+    );
+
+    const savedRequest = await requestRepository.findOneOrFail({
+      where: { id: failedRequest.id },
+    });
+
+    assert.strictEqual(savedRequest.status, MediaRequestStatus.APPROVED);
+    assert.ok(
+      savedRequest.updatedAt.getTime() > failedRequest.updatedAt.getTime()
     );
   });
 });

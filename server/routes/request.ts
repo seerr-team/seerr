@@ -646,6 +646,7 @@ requestRoutes.post<{
 
       // this also triggers updating the parent media's status & sending to *arr
       request.status = MediaRequestStatus.APPROVED;
+      request.updatedAt = new Date();
       await requestRepository.save(request);
 
       return res.status(200).json(request);
@@ -690,6 +691,7 @@ requestRoutes.post<{
 
       request.status = newStatus;
       request.modifiedBy = req.user;
+      request.updatedAt = new Date();
       await requestRepository.save(request);
 
       return res.status(200).json(request);
