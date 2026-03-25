@@ -192,12 +192,15 @@ describe('POST /request/:requestId/retry', () => {
       new Date(res.body.updatedAt).getTime() >
         new Date(previousUpdatedAt).getTime()
     );
+    assert.strictEqual(res.body.modifiedBy.email, 'admin@seerr.dev');
 
     const savedRequest = await requestRepository.findOneOrFail({
       where: { id: failedRequest.id },
+      relations: { modifiedBy: true },
     });
 
     assert.strictEqual(savedRequest.status, MediaRequestStatus.APPROVED);
+    assert.strictEqual(savedRequest.modifiedBy?.email, 'admin@seerr.dev');
     assert.ok(
       savedRequest.updatedAt.getTime() > failedRequest.updatedAt.getTime()
     );
