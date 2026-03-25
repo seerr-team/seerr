@@ -36,11 +36,6 @@ function createApp() {
       secret: 'test-secret',
       resave: false,
       saveUninitialized: false,
-      cookie: {
-        httpOnly: true,
-        sameSite: 'strict',
-        secure: 'auto',
-      },
     })
   );
   app.use(checkUser);
