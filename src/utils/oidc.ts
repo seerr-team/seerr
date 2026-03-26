@@ -81,6 +81,12 @@ export async function processOidcCallback(
 ): Promise<
   { type: 'success' } | { type: 'error'; errorCode: string | undefined }
 > {
+  const params = new URLSearchParams(window.location.search);
+  const errorParam = params.get('error');
+  if (errorParam != null) {
+    return { type: 'error', errorCode: ApiErrorCode.OidcAuthorizationFailed };
+  }
+
   try {
     await axios.post(
       `/api/v1/auth/oidc/callback/${encodeURIComponent(providerSlug)}`,
