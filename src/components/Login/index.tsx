@@ -175,7 +175,7 @@ const Login = () => {
       </div>
       <div className="relative z-50 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div
-          className="bg-gray-800/50 shadow sm:rounded-lg"
+          className="overflow-hidden bg-gray-800/50 shadow sm:rounded-lg"
           style={{ backdropFilter: 'blur(5px)' }}
         >
           <>
@@ -189,7 +189,7 @@ const Login = () => {
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
             >
-              <div className="mb-4 rounded-md bg-red-600 p-4">
+              <div className="bg-red-600 p-4">
                 <div className="flex">
                   <div className="flex-shrink-0">
                     <XCircleIcon className="h-5 w-5 text-red-300" />
