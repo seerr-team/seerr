@@ -837,6 +837,9 @@ const getOidcRedirectUrl = (req: Request) => {
   );
 };
 
+const OIDC_STATE_KEY = 'oidc-state';
+const OIDC_CODE_VERIFIER_KEY = 'oidc-code-verifier';
+
 authRoutes.get('/oidc/login/:slug', async (req, res, next) => {
   const settings = getSettings();
   const provider = settings.oidc.providers.find(
@@ -880,10 +883,10 @@ authRoutes.get('/oidc/login/:slug', async (req, res, next) => {
   const code_verifier = openIdClient.randomPKCECodeVerifier();
   const code_challenge =
     await openIdClient.calculatePKCECodeChallenge(code_verifier);
-  res.cookie('oidc-code-verifier', code_verifier, {
-    maxAge: 60000,
+  res.cookie(OIDC_CODE_VERIFIER_KEY, code_verifier, {
     httpOnly: true,
     secure: req.protocol === 'https',
+    signed: true,
   });
 
   const callbackUrl = getOidcRedirectUrl(req);
@@ -904,10 +907,10 @@ authRoutes.get('/oidc/login/:slug', async (req, res, next) => {
   if (!config.serverMetadata().supportsPKCE()) {
     const state = openIdClient.randomState();
     parameters.state = state;
-    res.cookie('oidc-state', state, {
-      maxAge: 60000,
+    res.cookie(OIDC_STATE_KEY, state, {
       httpOnly: true,
       secure: req.protocol === 'https',
+      signed: true,
     });
   }
 
@@ -978,8 +981,11 @@ authRoutes.post(
       });
     }
 
-    const pkceCodeVerifier = req.cookies['oidc-code-verifier'];
-    const expectedState = req.cookies['oidc-state'];
+    const pkceCodeVerifier: string | undefined =
+      req.signedCookies[OIDC_CODE_VERIFIER_KEY];
+    const expectedState: string | undefined = req.signedCookies[OIDC_STATE_KEY];
+    res.clearCookie(OIDC_CODE_VERIFIER_KEY);
+    res.clearCookie(OIDC_STATE_KEY);
 
     const redirectUrl = new URL(req.body.callbackUrl);
 
