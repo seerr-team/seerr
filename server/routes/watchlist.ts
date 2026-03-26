@@ -7,6 +7,7 @@ import logger from '@server/logger';
 import { Router } from 'express';
 import { QueryFailedError } from 'typeorm';
 
+import { MediaType } from '@server/constants/media';
 import { watchlistCreate } from '@server/interfaces/api/watchlistCreate';
 
 const watchlistRoutes = Router();
@@ -57,12 +58,24 @@ watchlistRoutes.delete('/:tmdbId', async (req, res, next) => {
     });
   }
   try {
-    await Watchlist.deleteWatchlist(Number(req.params.tmdbId), req.user);
+    const mediaType = req.query.mediaType;
+    if (mediaType !== MediaType.MOVIE && mediaType !== MediaType.TV) {
+      return next({
+        status: 400,
+        message: 'Invalid mediaType query parameter.',
+      });
+    }
+
+    await Watchlist.deleteWatchlist(
+      Number(req.params.tmdbId),
+      mediaType,
+      req.user
+    );
     return res.status(204).send();
   } catch (e) {
     if (e instanceof NotFoundError) {
       return next({
-        status: 401,
+        status: 404,
         message: e.message,
       });
     }

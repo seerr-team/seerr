@@ -1,4 +1,4 @@
 declare module '@dr.pogodin/csurf' {
-  import csrf = require('csurf');
+  import csrf from 'csurf';
   export = csrf;
 }

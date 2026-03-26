@@ -115,7 +115,7 @@ const NotificationsPushover = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.pushoversettingsfailed), {
             appearance: 'error',
             autoDismiss: true,
@@ -166,7 +166,7 @@ const NotificationsPushover = () => {
               autoDismiss: true,
               appearance: 'success',
             });
-          } catch (e) {
+          } catch {
             if (toastId) {
               removeToast(toastId);
             }

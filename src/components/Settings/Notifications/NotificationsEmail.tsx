@@ -175,7 +175,7 @@ const NotificationsEmail = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.emailsettingsfailed), {
             appearance: 'error',
             autoDismiss: true,
@@ -226,7 +226,7 @@ const NotificationsEmail = () => {
               autoDismiss: true,
               appearance: 'success',
             });
-          } catch (e) {
+          } catch {
             if (toastId) {
               removeToast(toastId);
             }

@@ -125,7 +125,7 @@ const TitleCard = ({
           { appearance: 'success', autoDismiss: true }
         );
       }
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.watchlistError), {
         appearance: 'error',
         autoDismiss: true,
@@ -139,7 +139,9 @@ const TitleCard = ({
   const onClickDeleteWatchlistBtn = async (): Promise<void> => {
     setIsUpdating(true);
     try {
-      const response = await axios.delete<Watchlist>('/api/v1/watchlist/' + id);
+      const response = await axios.delete<Watchlist>(
+        `/api/v1/watchlist/${id}?mediaType=${mediaType}`
+      );
 
       if (response.status === 204) {
         addToast(
@@ -152,7 +154,7 @@ const TitleCard = ({
           { appearance: 'info', autoDismiss: true }
         );
       }
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.watchlistError), {
         appearance: 'error',
         autoDismiss: true,
@@ -223,7 +225,9 @@ const TitleCard = ({
     const topNode = cardRef.current;
 
     if (topNode) {
-      const res = await axios.delete('/api/v1/blocklist/' + id);
+      const res = await axios.delete(
+        `/api/v1/blocklist/${id}?mediaType=${mediaType}`
+      );
 
       if (res.status === 204) {
         addToast(

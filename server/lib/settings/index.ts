@@ -3,9 +3,15 @@ import { Permission } from '@server/lib/permissions';
 import { runMigrations } from '@server/lib/settings/migrator';
 import { randomUUID } from 'crypto';
 import fs from 'fs/promises';
-import { merge } from 'lodash';
+import { mergeWith } from 'lodash';
 import path from 'path';
 import webpush from 'web-push';
+
+// Prevents stale array entries when incoming data has fewer elements
+const mergeSettings = <T>(current: T, incoming: Partial<T>): T =>
+  mergeWith({}, current, incoming, (_objValue, srcValue) =>
+    Array.isArray(srcValue) ? srcValue : undefined
+  ) as T;
 
 export interface Library {
   id: string;
@@ -376,6 +382,7 @@ const SETTINGS_PATH = process.env.CONFIG_DIRECTORY
 
 class Settings {
   private data: AllSettings;
+  private saveLock: Promise<void> = Promise.resolve();
 
   constructor(initialSettings?: AllSettings) {
     this.data = {
@@ -603,7 +610,7 @@ class Settings {
       migrations: [],
     };
     if (initialSettings) {
-      this.data = merge(this.data, initialSettings);
+      this.data = mergeSettings(this.data, initialSettings);
     }
   }
 
@@ -612,7 +619,7 @@ class Settings {
   }
 
   set main(data: MainSettings) {
-    this.data.main = data;
+    this.data.main = mergeSettings(this.data.main, data);
   }
 
   get plex(): PlexSettings {
@@ -620,7 +627,7 @@ class Settings {
   }
 
   set plex(data: PlexSettings) {
-    this.data.plex = data;
+    this.data.plex = mergeSettings(this.data.plex, data);
   }
 
   get jellyfin(): JellyfinSettings {
@@ -628,7 +635,7 @@ class Settings {
   }
 
   set jellyfin(data: JellyfinSettings) {
-    this.data.jellyfin = data;
+    this.data.jellyfin = mergeSettings(this.data.jellyfin, data);
   }
 
   get tautulli(): TautulliSettings {
@@ -636,7 +643,7 @@ class Settings {
   }
 
   set tautulli(data: TautulliSettings) {
-    this.data.tautulli = data;
+    this.data.tautulli = mergeSettings(this.data.tautulli, data);
   }
 
   get metadataSettings(): MetadataSettings {
@@ -644,7 +651,10 @@ class Settings {
   }
 
   set metadataSettings(data: MetadataSettings) {
-    this.data.metadataSettings = data;
+    this.data.metadataSettings = mergeSettings(
+      this.data.metadataSettings,
+      data
+    );
   }
 
   get radarr(): RadarrSettings[] {
@@ -668,7 +678,7 @@ class Settings {
   }
 
   set public(data: PublicSettings) {
-    this.data.public = data;
+    this.data.public = mergeSettings(this.data.public, data);
   }
 
   get fullPublicSettings(): FullPublicSettings {
@@ -711,7 +721,7 @@ class Settings {
   }
 
   set notifications(data: NotificationSettings) {
-    this.data.notifications = data;
+    this.data.notifications = mergeSettings(this.data.notifications, data);
   }
 
   get jobs(): Record<JobId, JobSettings> {
@@ -719,7 +729,7 @@ class Settings {
   }
 
   set jobs(data: Record<JobId, JobSettings>) {
-    this.data.jobs = data;
+    this.data.jobs = mergeSettings(this.data.jobs, data);
   }
 
   get network(): NetworkSettings {
@@ -727,7 +737,7 @@ class Settings {
   }
 
   set network(data: NetworkSettings) {
-    this.data.network = data;
+    this.data.network = mergeSettings(this.data.network, data);
   }
 
   get migrations(): string[] {
@@ -792,7 +802,7 @@ class Settings {
     if (data && !raw) {
       const parsedJson = JSON.parse(data);
       const migratedData = await runMigrations(parsedJson, SETTINGS_PATH);
-      this.data = merge(this.data, migratedData);
+      this.data = mergeSettings(this.data, migratedData);
     } else if (data) {
       this.data = JSON.parse(data);
     }
@@ -825,9 +835,17 @@ class Settings {
   }
 
   public async save(): Promise<void> {
-    const tmp = SETTINGS_PATH + '.tmp';
-    await fs.writeFile(tmp, JSON.stringify(this.data, undefined, ' '));
-    await fs.rename(tmp, SETTINGS_PATH);
+    const savePromise = this.saveLock.then(async () => {
+      const tmp = SETTINGS_PATH + '.tmp';
+      await fs.writeFile(tmp, JSON.stringify(this.data, undefined, ' '));
+      await fs.rename(tmp, SETTINGS_PATH);
+    });
+
+    this.saveLock = savePromise.catch(() => {
+      // Keep the chain alive so future saves aren't blocked by past failures
+    });
+
+    return savePromise;
   }
 }
 

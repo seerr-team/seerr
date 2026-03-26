@@ -782,7 +782,6 @@
   "components.NotificationTypeSelector.usermediaavailableDescription": "Få meddelanden när dina medieförfrågningar blir tillgängliga.",
   "components.NotificationTypeSelector.usermediaapprovedDescription": "Få meddelanden när dina medieförfrågningar godkänns.",
   "components.NotificationTypeSelector.usermediaAutoApprovedDescription": "Få meddelanden när andra användare skickar nya medieförfrågningar som automatiskt godkänns.",
-  "components.Settings.SettingsAbout.betawarning": "Detta är BETA-mjukvara. Funktioner kan vara trasiga och/eller instabila. Vänligen rapportera eventuella problem på GitHub!",
   "components.Layout.LanguagePicker.displaylanguage": "Visningsspråk",
   "components.MovieDetails.showmore": "Visa mer",
   "components.MovieDetails.showless": "Visa mindre",
@@ -1612,5 +1611,18 @@
   "i18n.removeFromBlocklistSuccess": "<strong>{title}</strong> har tagits bort från blocklistan.",
   "components.Settings.SettingsNetwork.apiRequestTimeout": "Tidsgräns för API-förfrågningar",
   "components.Settings.SettingsNetwork.apiRequestTimeoutTip": "Maximal tid (i sekunder) att vänta på svar från externa tjänster som Radarr och Sonarr. Ange 0 för ingen tidsgräns.",
-  "components.Settings.SettingsNetwork.validationApiRequestTimeout": "Du måste ange ett giltigt värde för tidsgränsen"
+  "components.Settings.SettingsNetwork.validationApiRequestTimeout": "Du måste ange ett giltigt värde för tidsgränsen",
+  "components.Settings.SonarrModal.monitorNewItems": "Bevaka nya säsonger",
+  "components.Settings.Notifications.NotificationsNtfy.priority": "Prioritet",
+  "components.Settings.Notifications.NotificationsNtfy.validationPriorityRequired": "Du måste ange en prioritet mellan 1 och 5",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersValue": "Header-värde",
+  "components.Discover.timeWindowDay": "Dagligen",
+  "components.Discover.timeWindowWeek": "Veckovis",
+  "components.Settings.Notifications.NotificationsWebhook.customHeaders": "Anpassade headers",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersAdd": "Lägg till header",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersAuthConflict": "Du kan inte använda både Authorization-headern och en egen Authorization-header. Ta bort en av dem.",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersIncomplete": "Alla headers måste ha både namn och värde",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersKey": "Headernamn",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersRemove": "Ta bort",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersTip": "Lägg till anpassade HTTP-headers som ska inkluderas i webhook-förfrågningar"
 }

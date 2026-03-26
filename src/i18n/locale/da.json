@@ -447,7 +447,6 @@
   "components.Settings.RadarrModal.syncEnabled": "Aktivér scanning",
   "components.Settings.RadarrModal.validationMinimumAvailabilityRequired": "Du skal vælge en minimumstilgængelighed",
   "components.Settings.RadarrModal.validationRootFolderRequired": "Du skal vælge en rodmappe",
-  "components.Settings.SettingsAbout.betawarning": "Dette er BETA-software. Funktionerne kan være defekte og/eller ustabile. Rapportér venligst eventuelle problemer på GitHub!",
   "components.Settings.RadarrModal.validationNameRequired": "Du skal angive et servernavn",
   "components.Settings.SettingsJobsCache.command": "Kommando",
   "components.Settings.SettingsJobsCache.download-sync-reset": "Nulstil downloadsynkronisering",
@@ -1612,5 +1611,18 @@
   "i18n.removefromBlocklist": "Fjern fra skjulningslisten",
   "components.Settings.SettingsNetwork.apiRequestTimeout": "Timeout for API-anmodning",
   "components.Settings.SettingsNetwork.apiRequestTimeoutTip": "Maksimal tid (i sekunder) at vente på svar fra eksterne tjenester som Radarr/Sonarr. Sæt til 0 for ingen timeout.",
-  "components.Settings.SettingsNetwork.validationApiRequestTimeout": "Du skal angive en gyldig timeout-værdi"
+  "components.Settings.SettingsNetwork.validationApiRequestTimeout": "Du skal angive en gyldig timeout-værdi",
+  "components.Settings.SonarrModal.monitorNewItems": "Overvåg nye sæsoner",
+  "components.Settings.Notifications.NotificationsNtfy.priority": "Prioritet",
+  "components.Settings.Notifications.NotificationsNtfy.validationPriorityRequired": "Angiv en prioritet mellem 1 og 5",
+  "components.Discover.timeWindowDay": "Dagligt",
+  "components.Discover.timeWindowWeek": "Ugentligt",
+  "components.Settings.Notifications.NotificationsWebhook.customHeaders": "Brugerdefinerede headers",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersAdd": "Tilføj header",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersAuthConflict": "Du kan ikke bruge både Authorization-headeren og en brugerdefineret Authorization-header. Fjern venligst den ene.",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersIncomplete": "Alle headers skal have både navn og værdi",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersKey": "Header-navn",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersRemove": "Fjern",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersTip": "Tilføj brugerdefinerede HTTP-headers, som skal inkluderes i webhook-anmodninger",
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersValue": "Header-værdi"
 }

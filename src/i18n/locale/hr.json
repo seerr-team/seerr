@@ -683,7 +683,6 @@
   "components.Settings.SettingsAbout.Releases.viewongithub": "Prikaz na GitHubu",
   "components.Settings.SettingsAbout.about": "Informacije",
   "components.Settings.SettingsAbout.appDataPath": "Mapa podataka",
-  "components.Settings.SettingsAbout.betawarning": "Ovo je BETA softver. Značajke su možda pokvarene i/ili nestabilne. Prijavi sve probleme na GitHub!",
   "components.Settings.SettingsAbout.totalrequests": "Ukupno zahtjeva",
   "components.Settings.SettingsAbout.uptodate": "Aktualno",
   "components.Settings.SettingsJobsCache.cacheDescription": "Seerr sprema zahtjeve na eksterne točke pristupa API-u za optimiranje izvedbe i izbjegavanje upućivanja nepotrebnih API poziva.",

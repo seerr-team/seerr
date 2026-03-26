@@ -539,7 +539,6 @@
   "components.Settings.SettingsAbout.Releases.viewongithub": "رؤية المحتوى على GitHub",
   "components.Settings.SettingsAbout.about": "حول",
   "components.Settings.SettingsAbout.appDataPath": "مكان تخزين البيانات",
-  "components.Settings.SettingsAbout.betawarning": "هذا اصدار تجريبي. بعض الخصائص المتقدمة غير مستقرة أو قد لا تعمل. الرجاء الابلاغ عن اي مشاكل على GitHub!",
   "components.Settings.SettingsAbout.documentation": "الوثائق",
   "components.Settings.SettingsAbout.gettingsupport": "الحصول على دعم",
   "components.Settings.SettingsAbout.githubdiscussions": "نقاشات GitHub",

@@ -168,36 +168,80 @@ or the Docker Desktop app:
 
 Then, create and start the Seerr container:
 <Tabs groupId="docker-methods" queryString>
-  <TabItem value="docker-cli" label="Docker CLI">
-```bash
-docker run -d \
-  --name seerr \
-  --init \
-  -e LOG_LEVEL=debug \
-  -e TZ=Asia/Tashkent \
-  -e PORT=5055 \
-  -p 5055:5055 \
-  -v seerr-data:/app/config \
-  --restart unless-stopped \
-  --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1" \
-  --health-start-period 20s \
-  --health-timeout 3s \
-  --health-interval 15s \
-  --health-retries 3 \
+  <TabItem value="docker-cli" label="Docker CLI (PowerShell)">
+```powershell
+docker run -d `
+  --name seerr `
+  --init `
+  -e LOG_LEVEL=debug `
+  -e TZ=Asia/Tashkent `
+  -e PORT=5055 `
+  -p 5055:5055 `
+  -v seerr-data:/app/config `
+  --restart unless-stopped `
+  --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1" `
+  --health-start-period 20s `
+  --health-timeout 3s `
+  --health-interval 15s `
+  --health-retries 3 `
   ghcr.io/seerr-team/seerr:latest
 ```
 
 The argument `-e PORT=5055` is optional.
 
 #### Updating:
+
+Stop and remove the existing container:
+```powershell
+docker stop seerr; docker rm seerr
+```
 Pull the latest image:
-```bash
-docker compose pull seerr
+```powershell
+docker pull ghcr.io/seerr-team/seerr:latest
 ```
-Then, restart all services defined in the Compose file:
-```bash
-docker compose up -d
+Finally, run the container with the same parameters originally used to create the container:
+```powershell
+docker run -d ...
 ```
+
+  </TabItem>
+
+  <TabItem value="docker-cli-cmd" label="Docker CLI (CMD)">
+```batch
+docker run -d ^
+  --name seerr ^
+  --init ^
+  -e LOG_LEVEL=debug ^
+  -e TZ=Asia/Tashkent ^
+  -e PORT=5055 ^
+  -p 5055:5055 ^
+  -v seerr-data:/app/config ^
+  --restart unless-stopped ^
+  --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1" ^
+  --health-start-period 20s ^
+  --health-timeout 3s ^
+  --health-interval 15s ^
+  --health-retries 3 ^
+  ghcr.io/seerr-team/seerr:latest
+```
+
+The argument `-e PORT=5055` is optional.
+
+#### Updating:
+
+Stop and remove the existing container:
+```batch
+docker stop seerr && docker rm seerr
+```
+Pull the latest image:
+```batch
+docker pull ghcr.io/seerr-team/seerr:latest
+```
+Finally, run the container with the same parameters originally used to create the container:
+```batch
+docker run -d ...
+```
+
   </TabItem>
 
   <TabItem value="docker-compose" label="Docker Compose">

@@ -782,7 +782,6 @@
   "components.NotificationTypeSelector.usermediadeclinedDescription": "Een melding ontvangen wanneer je media-aanvragen worden geweigerd.",
   "components.NotificationTypeSelector.usermediaavailableDescription": "Een melding ontvangen wanneer je media-aanvragen beschikbaar zijn.",
   "components.NotificationTypeSelector.usermediaAutoApprovedDescription": "Een melding ontvangen wanneer andere gebruikers nieuwe media-aanvragen indienen die automatisch worden goedgekeurd.",
-  "components.Settings.SettingsAbout.betawarning": "Dit is BETA-software. Functies kunnen kapot en/of instabiel zijn. Meld eventuele problemen op GitHub!",
   "components.Layout.LanguagePicker.displaylanguage": "Weergavetaal",
   "components.MovieDetails.showmore": "Meer tonen",
   "components.MovieDetails.showless": "Minder tonen",

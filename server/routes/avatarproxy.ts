@@ -61,7 +61,7 @@ export async function checkAvatarChanged(
       if (headResponse.status !== 200) {
         return { changed: false };
       }
-    } catch (error) {
+    } catch {
       return { changed: false };
     }
 

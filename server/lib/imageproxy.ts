@@ -254,7 +254,7 @@ class ImageProxy {
           imageBuffer: buffer,
         };
       }
-    } catch (e) {
+    } catch {
       // No files. Treat as empty cache.
     }
 
