@@ -957,7 +957,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     ) {
       entity.seasons.forEach((season) => {
         season.status = MediaRequestStatus.APPROVED;
-        seasonRequestRepository.save(season);
+        await seasonRequestRepository.save(season);
       });
     }
   }
