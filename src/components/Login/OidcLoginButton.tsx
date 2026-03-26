@@ -53,12 +53,15 @@ export default function OidcLoginButton({
   useEffect(() => {
     if (loading) return;
 
-    if (query.code != null && getOidcProviderSlug() === provider.slug) {
+    // OIDC provider has redirected back with an authorization code or error
+    const isCallback = query.code != null || query.error != null;
+
+    if (isCallback && getOidcProviderSlug() === provider.slug) {
       clearOidcProviderSlug();
-      // OIDC provider has redirected back with an authorization code
       handleCallback();
-    } else if (query.code == null && query.provider === provider.slug) {
-      // Support direct redirect via ?provider=slug query param
+    }
+    // Support direct redirect via ?provider=slug query param
+    else if (!isCallback && query.provider === provider.slug) {
       redirectToLogin();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
