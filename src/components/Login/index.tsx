@@ -1,6 +1,7 @@
 import EmbyLogo from '@app/assets/services/emby-icon-only.svg';
 import JellyfinLogo from '@app/assets/services/jellyfin-icon.svg';
 import PlexLogo from '@app/assets/services/plex.svg';
+import ButtonWithLoader from '@app/components/Common/ButtonWithLoader';
 import ImageFader from '@app/components/Common/ImageFader';
 import PageTitle from '@app/components/Common/PageTitle';
 import LanguagePicker from '@app/components/Layout/LanguagePicker';
@@ -21,7 +22,6 @@ import { useEffect, useRef, useState, type JSX } from 'react';
 import { useIntl } from 'react-intl';
 import { CSSTransition, SwitchTransition } from 'react-transition-group';
 import useSWR from 'swr';
-import LoginButton from './LoginButton';
 
 const messages = defineMessages('components.Login', {
   signin: 'Sign In',
@@ -122,7 +122,7 @@ const Login = () => {
       ) : (
         settings.currentSettings.localLogin &&
         (mediaServerLogin ? (
-          <LoginButton
+          <ButtonWithLoader
             key="seerr"
             data-testid="seerr-login-button"
             onClick={() => setMediaServerLogin(false)}
@@ -134,16 +134,16 @@ const Login = () => {
               className="mr-2 h-5"
             />
             <span>{settings.currentSettings.applicationTitle}</span>
-          </LoginButton>
+          </ButtonWithLoader>
         ) : (
-          <LoginButton
+          <ButtonWithLoader
             key="mediaserver"
             data-testid="mediaserver-login-button"
             onClick={() => setMediaServerLogin(true)}
           >
             <MediaServerLogo />
             <span>{mediaServerName}</span>
-          </LoginButton>
+          </ButtonWithLoader>
         ))
       )),
     ...settings.currentSettings.openIdProviders.map((provider) => (
