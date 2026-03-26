@@ -125,6 +125,7 @@ const Login = () => {
           <ButtonWithLoader
             key="seerr"
             data-testid="seerr-login-button"
+            className="min-w-0 flex-grow"
             onClick={() => setMediaServerLogin(false)}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -139,6 +140,7 @@ const Login = () => {
           <ButtonWithLoader
             key="mediaserver"
             data-testid="mediaserver-login-button"
+            className="min-w-0 flex-grow"
             onClick={() => setMediaServerLogin(true)}
           >
             <MediaServerLogo />
