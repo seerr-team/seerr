@@ -95,8 +95,13 @@ const UserLinkedAccountsSettings = () => {
   useEffect(() => {
     if (!router.isReady) return;
     const code = router.query.code;
+    const error = router.query.error;
     const providerSlug = getOidcProviderSlug();
-    if (typeof code !== 'string' || providerSlug == null) return;
+    if (
+      (typeof code !== 'string' && typeof error !== 'string') ||
+      providerSlug == null
+    )
+      return;
     clearOidcProviderSlug();
 
     // Strip the OIDC params from the URL immediately
