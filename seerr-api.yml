@@ -4162,7 +4162,7 @@ paths:
           allowReserved: true
           schema:
             type: string
-            format: uri
+            format: uri-reference
           description: URL to redirect to after login. Defaults to /login if not specified.
       responses:
         '200':
