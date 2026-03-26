@@ -1,9 +1,9 @@
 import PlexIcon from '@app/assets/services/plex.svg';
+import ButtonWithLoader from '@app/components/Common/ButtonWithLoader';
 import usePlexLogin from '@app/hooks/usePlexLogin';
 import defineMessages from '@app/utils/defineMessages';
 import { Fragment } from 'react';
 import { FormattedMessage } from 'react-intl';
-import LoginButton from './LoginButton';
 
 const messages = defineMessages('components.Login', {
   loginwithapp: 'Login with {appName}',
@@ -25,7 +25,7 @@ const PlexLoginButton = ({
   const { loading, login } = usePlexLogin({ onAuthToken, onError });
 
   return (
-    <LoginButton
+    <ButtonWithLoader
       className="border-[#cc7b19] bg-[rgba(204,123,25,0.3)] hover:border-[#cc7b19] hover:bg-[rgba(204,123,25,0.7)]"
       onClick={login}
       loading={loading || isProcessing}
@@ -53,7 +53,7 @@ const PlexLoginButton = ({
       ) : (
         <PlexIcon className="w-8" />
       )}
-    </LoginButton>
+    </ButtonWithLoader>
   );
 };
 

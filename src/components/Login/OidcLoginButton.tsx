@@ -1,3 +1,4 @@
+import ButtonWithLoader from '@app/components/Common/ButtonWithLoader';
 import {
   clearOidcProviderSlug,
   getOidcErrorMessage,
@@ -9,7 +10,6 @@ import type { PublicOidcProvider } from '@server/lib/settings';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
-import LoginButton from './LoginButton';
 
 type OidcLoginButtonProps = {
   provider: PublicOidcProvider;
@@ -65,7 +65,7 @@ export default function OidcLoginButton({
   }, []);
 
   return (
-    <LoginButton loading={loading} onClick={() => redirectToLogin()}>
+    <ButtonWithLoader loading={loading} onClick={() => redirectToLogin()}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={provider.logo || '/images/openid.svg'}
@@ -73,6 +73,6 @@ export default function OidcLoginButton({
         className="mr-2 max-h-5 w-5"
       />
       <span className="min-w-0 truncate">{provider.name}</span>
-    </LoginButton>
+    </ButtonWithLoader>
   );
 }
