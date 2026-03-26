@@ -4176,6 +4176,24 @@ paths:
                     type: string
         '403':
           description: OpenID Connect sign-in is disabled or provider not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: 'UNAUTHORIZED'
+        '500':
+          description: An error occurred while creating the authorization redirect
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: 'OIDC_AUTHORIZATION_FAILED'
   /auth/oidc/callback/{slug}:
     post:
       summary: Handle OpenID Connect callback
@@ -5459,6 +5477,8 @@ paths:
       responses:
         '204':
           description: Unlinking account succeeded
+        '403':
+          description: Insufficient permissions
         '404':
           description: User or linked account does not exist
   /user/{userId}/settings/notifications:
