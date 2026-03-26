@@ -1,3 +1,4 @@
+import { apiUrl } from '@app/utils/apiUrl';
 import { MediaServerType } from '@server/constants/server';
 import type { PublicSettingsResponse } from '@server/interfaces/api/settingsInterfaces';
 import React from 'react';
@@ -42,7 +43,7 @@ export const SettingsProvider = ({
   currentSettings,
 }: SettingsContextProps) => {
   const { data, error } = useSWR<PublicSettingsResponse>(
-    '/api/v1/settings/public',
+    apiUrl('/settings/public'),
     { fallbackData: currentSettings }
   );
 

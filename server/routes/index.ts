@@ -5,6 +5,7 @@ import type {
   TmdbMovieResult,
   TmdbTvResult,
 } from '@server/api/themoviedb/interfaces';
+import { API_BASE_PATH } from '@server/constants/routes';
 import { getRepository } from '@server/datasource';
 import DiscoverSlider from '@server/entity/DiscoverSlider';
 import type { StatusResponse } from '@server/interfaces/api/settingsInterfaces';
@@ -157,8 +158,8 @@ router.use(
   '/blacklist',
   isAuthenticated(),
   deprecatedRoute({
-    oldPath: '/api/v1/blacklist',
-    newPath: '/api/v1/blocklist',
+    oldPath: `${API_BASE_PATH}/blacklist`,
+    newPath: `${API_BASE_PATH}/blocklist`,
     sunsetDate: '2026-06-01',
   }),
   blocklistRoutes

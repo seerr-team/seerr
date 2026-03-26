@@ -1,5 +1,6 @@
 import TitleCard from '@app/components/TitleCard';
 import { Permission, useUser } from '@app/hooks/useUser';
+import { apiUrl } from '@app/utils/apiUrl';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
 import { useInView } from 'react-intersection-observer';
@@ -34,7 +35,7 @@ const TmdbTitleCard = ({
     triggerOnce: true,
   });
   const url =
-    type === 'movie' ? `/api/v1/movie/${tmdbId}` : `/api/v1/tv/${tmdbId}`;
+    type === 'movie' ? apiUrl(`/movie/${tmdbId}`) : apiUrl(`/tv/${tmdbId}`);
   const { data: title, error } = useSWR<MovieDetails | TvDetails>(
     inView ? `${url}` : null
   );

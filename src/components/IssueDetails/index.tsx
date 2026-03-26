@@ -12,6 +12,7 @@ import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import {
@@ -84,11 +85,11 @@ const IssueDetails = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { user: currentUser, hasPermission } = useUser();
   const { data: issueData, mutate: revalidateIssue } = useSWR<Issue>(
-    `/api/v1/issue/${router.query.issueId}`
+    apiUrl(`/issue/${router.query.issueId}`)
   );
   const { data, error } = useSWR<MovieDetails | TvDetails>(
     issueData?.media.tmdbId
-      ? `/api/v1/${issueData.media.mediaType}/${issueData.media.tmdbId}`
+      ? apiUrl(`/${issueData.media.mediaType}/${issueData.media.tmdbId}`)
       : null
   );
 
@@ -122,7 +123,7 @@ const IssueDetails = () => {
 
   const editFirstComment = async (newMessage: string) => {
     try {
-      await axios.put(`/api/v1/issueComment/${firstComment.id}`, {
+      await axios.put(apiUrl(`/issueComment/${firstComment.id}`), {
         message: newMessage,
       });
 
@@ -141,14 +142,14 @@ const IssueDetails = () => {
 
   const updateIssueStatus = async (newStatus: 'open' | 'resolved') => {
     try {
-      await axios.post(`/api/v1/issue/${issueData.id}/${newStatus}`);
+      await axios.post(apiUrl(`/issue/${issueData.id}/${newStatus}`));
 
       addToast(intl.formatMessage(messages.toaststatusupdated), {
         appearance: 'success',
         autoDismiss: true,
       });
       revalidateIssue();
-      mutate('/api/v1/issue/count');
+      mutate(apiUrl('/issue/count'));
     } catch {
       addToast(intl.formatMessage(messages.toaststatusupdatefailed), {
         appearance: 'error',
@@ -159,8 +160,8 @@ const IssueDetails = () => {
 
   const deleteIssue = async () => {
     try {
-      await axios.delete(`/api/v1/issue/${issueData.id}`);
-      mutate('/api/v1/issue/count');
+      await axios.delete(apiUrl(`/issue/${issueData.id}`));
+      mutate(apiUrl('/issue/count'));
 
       addToast(intl.formatMessage(messages.toastissuedeleted), {
         appearance: 'success',
@@ -494,7 +495,7 @@ const IssueDetails = () => {
                 }}
                 validationSchema={CommentSchema}
                 onSubmit={async (values, { resetForm }) => {
-                  await axios.post(`/api/v1/issue/${issueData?.id}/comment`, {
+                  await axios.post(apiUrl(`/issue/${issueData?.id}/comment`), {
                     message: values.message,
                   });
                   revalidateIssue();

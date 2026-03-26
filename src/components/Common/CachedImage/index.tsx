@@ -1,4 +1,5 @@
 import useSettings from '@app/hooks/useSettings';
+import { IMAGE_PROXY_PATH } from '@server/constants/routes';
 import type { ImageLoader, ImageProps } from 'next/image';
 import Image from 'next/image';
 
@@ -22,14 +23,17 @@ const CachedImage = ({ src, type, ...props }: CachedImageProps) => {
     // tmdb stuff
     imageUrl =
       currentSettings.cacheImages && !src.startsWith('/')
-        ? src.replace(/^https:\/\/image\.tmdb\.org\//, '/imageproxy/tmdb/')
+        ? src.replace(
+            /^https:\/\/image\.tmdb\.org\//,
+            `${IMAGE_PROXY_PATH}/tmdb/`
+          )
         : src;
   } else if (type === 'tvdb') {
     imageUrl =
       currentSettings.cacheImages && !src.startsWith('/')
         ? src.replace(
             /^https:\/\/artworks\.thetvdb\.com\//,
-            '/imageproxy/tvdb/'
+            `${IMAGE_PROXY_PATH}/tvdb/`
           )
         : src;
   } else if (type === 'avatar') {

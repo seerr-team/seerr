@@ -7,6 +7,7 @@ import SensitiveInput from '@app/components/Common/SensitiveInput';
 import LibraryItem from '@app/components/Settings/LibraryItem';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
@@ -121,11 +122,11 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR<PlexSettings>('/api/v1/settings/plex');
+  } = useSWR<PlexSettings>(apiUrl('/settings/plex'));
   const { data: dataTautulli, mutate: revalidateTautulli } =
-    useSWR<TautulliSettings>('/api/v1/settings/tautulli');
+    useSWR<TautulliSettings>(apiUrl('/settings/tautulli'));
   const { data: dataSync, mutate: revalidateSync } = useSWR<SyncStatus>(
-    '/api/v1/settings/plex/sync',
+    apiUrl('/settings/plex/sync'),
     {
       refreshInterval: 1000,
     }
@@ -242,7 +243,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
       params.enable = activeLibraries.join(',');
     }
 
-    await axios.get('/api/v1/settings/plex/library', {
+    await axios.get(apiUrl('/settings/plex/library'), {
       params,
     });
     setIsSyncing(false);
@@ -264,7 +265,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
         }
       );
       const response = await axios.get<PlexDevice[]>(
-        '/api/v1/settings/plex/devices/servers'
+        apiUrl('/settings/plex/devices/servers')
       );
       if (response.data) {
         setAvailableServers(response.data);
@@ -290,14 +291,14 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
   };
 
   const startScan = async () => {
-    await axios.post('/api/v1/settings/plex/sync', {
+    await axios.post(apiUrl('/settings/plex/sync'), {
       start: true,
     });
     revalidateSync();
   };
 
   const cancelScan = async () => {
-    await axios.post('/api/v1/settings/plex/sync', {
+    await axios.post(apiUrl('/settings/plex/sync'), {
       cancel: true,
     });
     revalidateSync();
@@ -314,11 +315,11 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           .join(',');
       }
 
-      await axios.get('/api/v1/settings/plex/library', {
+      await axios.get(apiUrl('/settings/plex/library'), {
         params,
       });
     } else {
-      await axios.get('/api/v1/settings/plex/library', {
+      await axios.get(apiUrl('/settings/plex/library'), {
         params: {
           enable: [...activeLibraries, libraryId].join(','),
         },
@@ -391,7 +392,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                 toastId = id;
               }
             );
-            await axios.post('/api/v1/settings/plex', {
+            await axios.post(apiUrl('/settings/plex'), {
               ip: values.hostname,
               port: Number(values.port),
               useSsl: values.useSsl,
@@ -754,7 +755,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
             validationSchema={TautulliSettingsSchema}
             onSubmit={async (values) => {
               try {
-                await axios.post('/api/v1/settings/tautulli', {
+                await axios.post(apiUrl('/settings/tautulli'), {
                   hostname: values.tautulliHostname,
                   port: Number(values.tautulliPort),
                   useSsl: values.tautulliUseSsl,

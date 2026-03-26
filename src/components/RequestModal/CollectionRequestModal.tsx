@@ -7,6 +7,7 @@ import AdvancedRequester from '@app/components/RequestModal/AdvancedRequester';
 import QuotaDisplay from '@app/components/RequestModal/QuotaDisplay';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
@@ -51,7 +52,7 @@ const CollectionRequestModal = ({
     useState<RequestOverrides | null>(null);
   const [selectedParts, setSelectedParts] = useState<number[]>([]);
   const { addToast } = useToasts();
-  const { data, error } = useSWR<Collection>(`/api/v1/collection/${tmdbId}`, {
+  const { data, error } = useSWR<Collection>(apiUrl(`/collection/${tmdbId}`), {
     revalidateOnMount: true,
   });
   const intl = useIntl();
@@ -59,7 +60,7 @@ const CollectionRequestModal = ({
   const { data: quota } = useSWR<QuotaResponse>(
     user &&
       (!requestOverrides?.user?.id || hasPermission(Permission.MANAGE_USERS))
-      ? `/api/v1/user/${requestOverrides?.user?.id ?? user.id}/quota`
+      ? apiUrl(`/user/${requestOverrides?.user?.id ?? user.id}/quota`)
       : null
   );
 
@@ -202,7 +203,7 @@ const CollectionRequestModal = ({
         (
           data?.parts.filter((part) => selectedParts.includes(part.id)) ?? []
         ).map(async (part) => {
-          await axios.post<MediaRequest>('/api/v1/request', {
+          await axios.post<MediaRequest>(apiUrl('/request'), {
             mediaId: part.id,
             mediaType: 'movie',
             is4k,
@@ -217,7 +218,7 @@ const CollectionRequestModal = ({
             ? MediaStatus.UNKNOWN
             : MediaStatus.PARTIALLY_AVAILABLE
         );
-        mutate('/api/v1/request/count');
+        mutate(apiUrl('/request/count'));
       }
 
       addToast(

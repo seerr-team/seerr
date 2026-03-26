@@ -11,6 +11,7 @@ import FilterSlideover from '@app/components/Discover/FilterSlideover';
 import useDiscover from '@app/hooks/useDiscover';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { BarsArrowDownIcon, FunnelIcon } from '@heroicons/react/24/solid';
 import type { SortOptions as TMDBSortOptions } from '@server/api/themoviedb';
@@ -59,7 +60,7 @@ const DiscoverTv = () => {
     titles,
     fetchMore,
     error,
-  } = useDiscover<TvResult, never, FilterOptions>('/api/v1/discover/tv', {
+  } = useDiscover<TvResult, never, FilterOptions>(apiUrl('/discover/tv'), {
     ...preparedFilters,
   });
 

@@ -10,6 +10,7 @@ import LocalLogin from '@app/components/Login/LocalLogin';
 import PlexLoginButton from '@app/components/Login/PlexLoginButton';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import { XCircleIcon } from '@heroicons/react/24/solid';
@@ -51,7 +52,7 @@ const Login = () => {
     const login = async () => {
       setProcessing(true);
       try {
-        const response = await axios.post('/api/v1/auth/plex', { authToken });
+        const response = await axios.post(apiUrl('/auth/plex'), { authToken });
 
         if (response.data?.id) {
           revalidate();
@@ -75,7 +76,7 @@ const Login = () => {
     }
   }, [user, router]);
 
-  const { data: backdrops } = useSWR<string[]>('/api/v1/backdrops', {
+  const { data: backdrops } = useSWR<string[]>(apiUrl('/backdrops'), {
     refreshInterval: 0,
     refreshWhenHidden: false,
     revalidateOnFocus: false,

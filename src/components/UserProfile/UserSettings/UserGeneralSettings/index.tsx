@@ -11,6 +11,7 @@ import useSettings from '@app/hooks/useSettings';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import { ApiErrorCode } from '@server/constants/error';
@@ -97,7 +98,7 @@ const UserGeneralSettings = () => {
     error,
     mutate: revalidate,
   } = useSWR<UserSettingsGeneralResponse>(
-    user ? `/api/v1/user/${user?.id}/settings/main` : null
+    user ? apiUrl(`/user/${user?.id}/settings/main`) : null
   );
 
   const UserGeneralSettingsSchema = Yup.object().shape({
@@ -174,7 +175,7 @@ const UserGeneralSettings = () => {
         enableReinitialize
         onSubmit={async (values) => {
           try {
-            await axios.post(`/api/v1/user/${user?.id}/settings/main`, {
+            await axios.post(apiUrl(`/user/${user?.id}/settings/main`), {
               username: values.displayName,
               email:
                 values.email || user?.jellyfinUsername || user?.plexUsername,

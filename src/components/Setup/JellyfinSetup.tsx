@@ -1,5 +1,6 @@
 import Button from '@app/components/Common/Button';
 import Tooltip from '@app/components/Common/Tooltip';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { InformationCircleIcon } from '@heroicons/react/24/solid';
 import { ApiErrorCode } from '@server/constants/error';
@@ -117,7 +118,7 @@ function JellyfinSetup({
       validationSchema={LoginSchema}
       onSubmit={async (values) => {
         try {
-          await axios.post('/api/v1/auth/jellyfin', {
+          await axios.post(apiUrl('/auth/jellyfin'), {
             username: values.username,
             password: values.password,
             hostname: values.hostname,

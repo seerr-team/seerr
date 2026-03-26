@@ -1,6 +1,7 @@
 import InfinityIcon from '@app/assets/infinity.svg';
 import { SmallLoadingSpinner } from '@app/components/Common/LoadingSpinner';
 import ProgressCircle from '@app/components/Common/ProgressCircle';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
 import { useIntl } from 'react-intl';
@@ -20,7 +21,9 @@ type MiniQuotaDisplayProps = {
 
 const MiniQuotaDisplay = ({ userId }: MiniQuotaDisplayProps) => {
   const intl = useIntl();
-  const { data, error } = useSWR<QuotaResponse>(`/api/v1/user/${userId}/quota`);
+  const { data, error } = useSWR<QuotaResponse>(
+    apiUrl(`/user/${userId}/quota`)
+  );
 
   if (error) {
     return null;

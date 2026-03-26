@@ -3,6 +3,7 @@ import ImageFader from '@app/components/Common/ImageFader';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import LanguagePicker from '@app/components/Layout/LanguagePicker';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { LifebuoyIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
@@ -101,7 +102,7 @@ const ResetPassword = () => {
                 validationSchema={ResetSchema}
                 onSubmit={async (values) => {
                   const response = await axios.post(
-                    `/api/v1/auth/reset-password/${guid}`,
+                    apiUrl(`/auth/reset-password/${guid}`),
                     {
                       password: values.password,
                     }

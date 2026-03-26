@@ -2,6 +2,7 @@ import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
@@ -38,7 +39,7 @@ const NotificationsSlack = () => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR('/api/v1/settings/notifications/slack');
+  } = useSWR(apiUrl('/settings/notifications/slack'));
 
   const NotificationsSlackSchema = Yup.object().shape({
     webhookUrl: Yup.string()
@@ -67,7 +68,7 @@ const NotificationsSlack = () => {
       validationSchema={NotificationsSlackSchema}
       onSubmit={async (values) => {
         try {
-          await axios.post('/api/v1/settings/notifications/slack', {
+          await axios.post(apiUrl('/settings/notifications/slack'), {
             enabled: values.enabled,
             embedPoster: values.embedPoster,
             types: values.types,
@@ -112,7 +113,7 @@ const NotificationsSlack = () => {
                 toastId = id;
               }
             );
-            await axios.post('/api/v1/settings/notifications/slack/test', {
+            await axios.post(apiUrl('/settings/notifications/slack/test'), {
               enabled: true,
               embedPoster: values.embedPoster,
               types: values.types,

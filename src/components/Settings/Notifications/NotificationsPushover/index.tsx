@@ -2,6 +2,7 @@ import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
 import type { PushoverSound } from '@server/api/pushover';
@@ -45,10 +46,12 @@ const NotificationsPushover = () => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR('/api/v1/settings/notifications/pushover');
+  } = useSWR(apiUrl('/settings/notifications/pushover'));
   const { data: soundsData } = useSWR<PushoverSound[]>(
     data?.options.accessToken
-      ? `/api/v1/settings/notifications/pushover/sounds?token=${data.options.accessToken}`
+      ? apiUrl(
+          `/settings/notifications/pushover/sounds?token=${data.options.accessToken}`
+        )
       : null,
     {
       revalidateOnFocus: false,
@@ -101,7 +104,7 @@ const NotificationsPushover = () => {
       validationSchema={NotificationsPushoverSchema}
       onSubmit={async (values) => {
         try {
-          await axios.post('/api/v1/settings/notifications/pushover', {
+          await axios.post(apiUrl('/settings/notifications/pushover'), {
             enabled: values.enabled,
             embedPoster: values.embedPoster,
             types: values.types,
@@ -148,7 +151,7 @@ const NotificationsPushover = () => {
                 toastId = id;
               }
             );
-            await axios.post('/api/v1/settings/notifications/pushover/test', {
+            await axios.post(apiUrl('/settings/notifications/pushover/test'), {
               enabled: true,
               embedPoster: values.embedPoster,
               types: values.types,

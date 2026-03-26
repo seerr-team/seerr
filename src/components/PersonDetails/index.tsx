@@ -7,6 +7,7 @@ import ExternalLinkBlock from '@app/components/ExternalLinkBlock';
 import TitleCard from '@app/components/TitleCard';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { CircleStackIcon } from '@heroicons/react/24/solid';
 import type { PersonCombinedCreditsResponse } from '@server/interfaces/api/personInterfaces';
@@ -34,13 +35,13 @@ const PersonDetails = () => {
   const router = useRouter();
   const [currentMediaType, setCurrentMediaType] = useState<string>('all');
   const { data, error } = useSWR<PersonDetailsType>(
-    `/api/v1/person/${router.query.personId}`
+    apiUrl(`/person/${router.query.personId}`)
   );
   const [showBio, setShowBio] = useState(false);
 
   const { data: combinedCredits, error: errorCombinedCredits } =
     useSWR<PersonCombinedCreditsResponse>(
-      `/api/v1/person/${router.query.personId}/combined_credits`
+      apiUrl(`/person/${router.query.personId}/combined_credits`)
     );
 
   const sortedCast = useMemo(() => {

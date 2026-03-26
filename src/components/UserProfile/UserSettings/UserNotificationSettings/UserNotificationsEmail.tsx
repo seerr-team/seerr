@@ -8,6 +8,7 @@ import { OpenPgpLink } from '@app/components/Settings/Notifications/Notification
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import type { UserSettingsNotificationsResponse } from '@server/interfaces/api/userSettingsInterfaces';
@@ -41,7 +42,7 @@ const UserEmailSettings = () => {
     error,
     mutate: revalidate,
   } = useSWR<UserSettingsNotificationsResponse>(
-    user ? `/api/v1/user/${user?.id}/settings/notifications` : null
+    user ? apiUrl(`/user/${user?.id}/settings/notifications`) : null
   );
 
   const UserNotificationsEmailSchema = Yup.object().shape({
@@ -67,7 +68,7 @@ const UserEmailSettings = () => {
       enableReinitialize
       onSubmit={async (values) => {
         try {
-          await axios.post(`/api/v1/user/${user?.id}/settings/notifications`, {
+          await axios.post(apiUrl(`/user/${user?.id}/settings/notifications`), {
             pgpKey: values.pgpKey,
             discordId: data?.discordId,
             pushbulletAccessToken: data?.pushbulletAccessToken,

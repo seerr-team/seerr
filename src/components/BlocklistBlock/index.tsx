@@ -5,6 +5,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import Tooltip from '@app/components/Common/Tooltip';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { CalendarIcon, TrashIcon, UserIcon } from '@heroicons/react/24/solid';
 import type { MediaType } from '@server/constants/media';
@@ -39,14 +40,14 @@ const BlocklistBlock = ({
   const [isUpdating, setIsUpdating] = useState(false);
   const { addToast } = useToasts();
   const { data } = useSWR<Blocklist>(
-    `/api/v1/blocklist/${tmdbId}?mediaType=${mediaType}`
+    apiUrl(`/blocklist/${tmdbId}?mediaType=${mediaType}`)
   );
 
   const removeFromBlocklist = async (tmdbId: number, title?: string) => {
     setIsUpdating(true);
 
     try {
-      await axios.delete(`/api/v1/blocklist/${tmdbId}?mediaType=${mediaType}`);
+      await axios.delete(apiUrl(`/blocklist/${tmdbId}?mediaType=${mediaType}`));
 
       addToast(
         <span>

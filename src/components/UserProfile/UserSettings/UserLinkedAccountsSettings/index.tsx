@@ -8,6 +8,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import useSettings from '@app/hooks/useSettings';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import PlexOAuth from '@app/utils/plex';
 import { TrashIcon } from '@heroicons/react/24/solid';
@@ -60,7 +61,7 @@ const UserLinkedAccountsSettings = () => {
     revalidate: revalidateUser,
   } = useUser({ id: Number(router.query.userId) });
   const { data: passwordInfo } = useSWR<{ hasPassword: boolean }>(
-    user ? `/api/v1/user/${user?.id}/settings/password` : null
+    user ? apiUrl(`/user/${user?.id}/settings/password`) : null
   );
   const [showJellyfinModal, setShowJellyfinModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +94,7 @@ const UserLinkedAccountsSettings = () => {
     try {
       const authToken = await plexOAuth.login();
       await axios.post(
-        `/api/v1/user/${user?.id}/settings/linked-accounts/plex`,
+        apiUrl(`/user/${user?.id}/settings/linked-accounts/plex`),
         {
           authToken,
         }
@@ -143,7 +144,7 @@ const UserLinkedAccountsSettings = () => {
   const deleteRequest = async (account: string) => {
     try {
       await axios.delete(
-        `/api/v1/user/${user?.id}/settings/linked-accounts/${account}`
+        apiUrl(`/user/${user?.id}/settings/linked-accounts/${account}`)
       );
     } catch {
       setError(intl.formatMessage(messages.deleteFailed));

@@ -3,6 +3,7 @@ import PermissionEdit from '@app/components/PermissionEdit';
 import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { hasPermission } from '@server/lib/permissions';
 import axios from 'axios';
@@ -46,7 +47,7 @@ const BulkEditModal = ({
   const updateUsers = async () => {
     try {
       setIsSaving(true);
-      const { data: updated } = await axios.put<User[]>(`/api/v1/user`, {
+      const { data: updated } = await axios.put<User[]>(apiUrl(`/user`), {
         ids: selectedUserIds,
         permissions: currentPermission,
       });

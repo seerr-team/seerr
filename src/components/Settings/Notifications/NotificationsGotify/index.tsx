@@ -2,6 +2,7 @@ import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/solid';
@@ -41,7 +42,7 @@ const NotificationsGotify = () => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR('/api/v1/settings/notifications/gotify');
+  } = useSWR(apiUrl('/settings/notifications/gotify'));
 
   const NotificationsGotifySchema = Yup.object().shape({
     url: Yup.string()
@@ -96,7 +97,7 @@ const NotificationsGotify = () => {
       validationSchema={NotificationsGotifySchema}
       onSubmit={async (values) => {
         try {
-          await axios.post('/api/v1/settings/notifications/gotify', {
+          await axios.post(apiUrl('/settings/notifications/gotify'), {
             enabled: values.enabled,
             types: values.types,
             options: {
@@ -142,7 +143,7 @@ const NotificationsGotify = () => {
                 toastId = id;
               }
             );
-            await axios.post('/api/v1/settings/notifications/gotify/test', {
+            await axios.post(apiUrl('/settings/notifications/gotify/test'), {
               enabled: true,
               types: values.types,
               options: {

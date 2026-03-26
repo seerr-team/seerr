@@ -1,4 +1,5 @@
 import { SmallLoadingSpinner } from '@app/components/Common/LoadingSpinner';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { Region } from '@server/lib/settings';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -76,9 +77,9 @@ const CertificationSelector: React.FC<CertificationSelectorProps> = ({
     data: certificationData,
     error: certificationError,
     isLoading: certificationLoading,
-  } = useSWR<CertificationResponse>(`/api/v1/certifications/${type}`);
+  } = useSWR<CertificationResponse>(apiUrl(`/certifications/${type}`));
 
-  const { data: regionsData } = useSWR<Region[]>('/api/v1/regions');
+  const { data: regionsData } = useSWR<Region[]>(apiUrl('/regions'));
 
   // Get the country name from its code
   const getCountryName = useCallback(

@@ -11,6 +11,7 @@ import OverrideRuleTiles from '@app/components/Settings/OverrideRule/OverrideRul
 import RadarrModal from '@app/components/Settings/RadarrModal';
 import SonarrModal from '@app/components/Settings/SonarrModal';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import { PencilIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/solid';
@@ -209,14 +210,14 @@ const SettingsServices = () => {
     data: radarrData,
     error: radarrError,
     mutate: revalidateRadarr,
-  } = useSWR<RadarrSettings[]>('/api/v1/settings/radarr');
+  } = useSWR<RadarrSettings[]>(apiUrl('/settings/radarr'));
   const {
     data: sonarrData,
     error: sonarrError,
     mutate: revalidateSonarr,
-  } = useSWR<SonarrSettings[]>('/api/v1/settings/sonarr');
+  } = useSWR<SonarrSettings[]>(apiUrl('/settings/sonarr'));
   const { data: rules, mutate: revalidate } =
-    useSWR<OverrideRuleResultsResponse>('/api/v1/overrideRule');
+    useSWR<OverrideRuleResultsResponse>(apiUrl('/overrideRule'));
   const [editRadarrModal, setEditRadarrModal] = useState<{
     open: boolean;
     radarr: RadarrSettings | null;
@@ -250,12 +251,14 @@ const SettingsServices = () => {
 
   const deleteServer = async () => {
     await axios.delete(
-      `/api/v1/settings/${deleteServerModal.type}/${deleteServerModal.serverId}`
+      apiUrl(
+        `/settings/${deleteServerModal.type}/${deleteServerModal.serverId}`
+      )
     );
     setDeleteServerModal({ open: false, serverId: null, type: 'radarr' });
     revalidateRadarr();
     revalidateSonarr();
-    mutate('/api/v1/settings/public');
+    mutate(apiUrl('/settings/public'));
   };
 
   return (
@@ -285,7 +288,7 @@ const SettingsServices = () => {
           }}
           onSave={() => {
             revalidateRadarr();
-            mutate('/api/v1/settings/public');
+            mutate(apiUrl('/settings/public'));
             setEditRadarrModal({ open: false, radarr: null });
           }}
         />
@@ -299,7 +302,7 @@ const SettingsServices = () => {
           }}
           onSave={() => {
             revalidateSonarr();
-            mutate('/api/v1/settings/public');
+            mutate(apiUrl('/settings/public'));
             setEditSonarrModal({ open: false, sonarr: null });
           }}
         />

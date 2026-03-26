@@ -7,6 +7,7 @@ import StatusBadge from '@app/components/StatusBadge';
 import useDeepLinks from '@app/hooks/useDeepLinks';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
 import { withProperties } from '@app/utils/typeHelpers';
@@ -74,10 +75,10 @@ const RequestCardError = ({ requestData }: RequestCardErrorProps) => {
   });
 
   const deleteRequest = async () => {
-    await axios.delete(`/api/v1/media/${requestData?.media.id}`);
-    mutate('/api/v1/media?filter=allavailable&take=20&sort=mediaAdded');
-    mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
-    mutate('/api/v1/request/count');
+    await axios.delete(apiUrl(`/media/${requestData?.media.id}`));
+    mutate(apiUrl('/media?filter=allavailable&take=20&sort=mediaAdded'));
+    mutate(apiUrl('/request?filter=all&take=10&sort=modified&skip=0'));
+    mutate(apiUrl('/request/count'));
   };
 
   return (
@@ -228,8 +229,8 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const url =
     request.type === 'movie'
-      ? `/api/v1/movie/${request.media.tmdbId}`
-      : `/api/v1/tv/${request.media.tmdbId}`;
+      ? apiUrl(`/movie/${request.media.tmdbId}`)
+      : apiUrl(`/tv/${request.media.tmdbId}`);
 
   const { data: title, error } = useSWR<MovieDetails | TvDetails>(
     inView ? `${url}` : null
@@ -239,7 +240,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
     error: requestError,
     mutate: revalidate,
   } = useSWR<NonFunctionProperties<MediaRequest>>(
-    `/api/v1/request/${request.id}`,
+    apiUrl(`/request/${request.id}`),
     {
       fallbackData: request,
       refreshInterval: refreshIntervalHelper(
@@ -260,25 +261,25 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
   });
 
   const modifyRequest = async (type: 'approve' | 'decline') => {
-    const response = await axios.post(`/api/v1/request/${request.id}/${type}`);
+    const response = await axios.post(apiUrl(`/request/${request.id}/${type}`));
 
     if (response) {
       revalidate();
-      mutate('/api/v1/request/count');
+      mutate(apiUrl('/request/count'));
     }
   };
 
   const deleteRequest = async () => {
-    await axios.delete(`/api/v1/request/${request.id}`);
-    mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
-    mutate('/api/v1/request/count');
+    await axios.delete(apiUrl(`/request/${request.id}`));
+    mutate(apiUrl('/request?filter=all&take=10&sort=modified&skip=0'));
+    mutate(apiUrl('/request/count'));
   };
 
   const retryRequest = async () => {
     setRetrying(true);
 
     try {
-      const response = await axios.post(`/api/v1/request/${request.id}/retry`);
+      const response = await axios.post(apiUrl(`/request/${request.id}/retry`));
 
       if (response) {
         revalidate();

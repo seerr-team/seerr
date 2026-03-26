@@ -9,6 +9,7 @@ import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
 
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { formatBytes } from '@app/utils/numberHelpers';
 import { Transition } from '@headlessui/react';
@@ -184,12 +185,12 @@ const SettingsJobs = () => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR<Job[]>('/api/v1/settings/jobs', {
+  } = useSWR<Job[]>(apiUrl('/settings/jobs'), {
     refreshInterval: 5000,
   });
-  const { data: appData } = useSWR('/api/v1/status/appdata');
+  const { data: appData } = useSWR(apiUrl('/status/appdata'));
   const { data: cacheData, mutate: cacheRevalidate } = useSWR<CacheResponse>(
-    '/api/v1/settings/cache',
+    apiUrl('/settings/cache'),
     {
       refreshInterval: 10000,
     }
@@ -224,7 +225,7 @@ const SettingsJobs = () => {
   }
 
   const runJob = async (job: Job) => {
-    await axios.post(`/api/v1/settings/jobs/${job.id}/run`);
+    await axios.post(apiUrl(`/settings/jobs/${job.id}/run`));
     addToast(
       intl.formatMessage(messages.jobstarted, {
         jobname: intl.formatMessage(messages[job.id] ?? messages.unknownJob),
@@ -238,7 +239,7 @@ const SettingsJobs = () => {
   };
 
   const cancelJob = async (job: Job) => {
-    await axios.post(`/api/v1/settings/jobs/${job.id}/cancel`);
+    await axios.post(apiUrl(`/settings/jobs/${job.id}/cancel`));
     addToast(
       intl.formatMessage(messages.jobcancelled, {
         jobname: intl.formatMessage(messages[job.id] ?? messages.unknownJob),
@@ -252,7 +253,7 @@ const SettingsJobs = () => {
   };
 
   const flushCache = async (cache: CacheItem) => {
-    await axios.post(`/api/v1/settings/cache/${cache.id}/flush`);
+    await axios.post(apiUrl(`/settings/cache/${cache.id}/flush`));
     addToast(
       intl.formatMessage(messages.cacheflushed, { cachename: cache.name }),
       {
@@ -264,7 +265,7 @@ const SettingsJobs = () => {
   };
 
   const flushDnsCache = async (hostname: string) => {
-    await axios.post(`/api/v1/settings/cache/dns/${hostname}/flush`);
+    await axios.post(apiUrl(`/settings/cache/dns/${hostname}/flush`));
     addToast(
       intl.formatMessage(messages.dnscacheflushed, { hostname: hostname }),
       {
@@ -295,7 +296,7 @@ const SettingsJobs = () => {
 
       setIsSaving(true);
       await axios.post(
-        `/api/v1/settings/jobs/${jobModalState.job.id}/schedule`,
+        apiUrl(`/settings/jobs/${jobModalState.job.id}/schedule`),
         {
           schedule: jobScheduleCron.join(' '),
         }

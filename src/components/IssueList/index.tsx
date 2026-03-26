@@ -5,6 +5,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import IssueItem from '@app/components/IssueList/IssueItem';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import {
   BarsArrowDownIcon,
@@ -45,9 +46,11 @@ const IssueList = () => {
   const updateQueryParams = useUpdateQueryParams({ page: page.toString() });
 
   const { data, error } = useSWR<IssueResultsResponse>(
-    `/api/v1/issue?take=${currentPageSize}&skip=${
-      pageIndex * currentPageSize
-    }&filter=${currentFilter}&sort=${currentSort}`
+    apiUrl(
+      `/issue?take=${currentPageSize}&skip=${
+        pageIndex * currentPageSize
+      }&filter=${currentFilter}&sort=${currentSort}`
+    )
   );
 
   // Restore last set filter values on component mount

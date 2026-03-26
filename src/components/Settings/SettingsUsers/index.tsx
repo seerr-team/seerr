@@ -6,6 +6,7 @@ import PermissionEdit from '@app/components/PermissionEdit';
 import QuotaSelector from '@app/components/QuotaSelector';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import { MediaServerType } from '@server/constants/server';
@@ -48,7 +49,7 @@ const SettingsUsers = () => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR<MainSettings>('/api/v1/settings/main');
+  } = useSWR<MainSettings>(apiUrl('/settings/main'));
   const settings = useSettings();
 
   const schema = yup
@@ -117,7 +118,7 @@ const SettingsUsers = () => {
           enableReinitialize
           onSubmit={async (values) => {
             try {
-              await axios.post('/api/v1/settings/main', {
+              await axios.post(apiUrl('/settings/main'), {
                 localLogin: values.localLogin,
                 mediaServerLogin: values.mediaServerLogin,
                 newPlexLogin: values.newPlexLogin,
@@ -133,7 +134,7 @@ const SettingsUsers = () => {
                 },
                 defaultPermissions: values.defaultPermissions,
               });
-              mutate('/api/v1/settings/public');
+              mutate(apiUrl('/settings/public'));
 
               addToast(intl.formatMessage(messages.toastSettingsSuccess), {
                 autoDismiss: true,

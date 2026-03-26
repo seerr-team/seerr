@@ -1,4 +1,5 @@
 import useSettings from '@app/hooks/useSettings';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { Listbox, Transition } from '@headlessui/react';
 import { CheckIcon, ChevronDownIcon } from '@heroicons/react/24/solid';
@@ -37,7 +38,7 @@ const RegionSelector = ({
   const { currentSettings } = useSettings();
   const intl = useIntl();
   const { data: regions } = useSWR<Region[]>(
-    watchProviders ? '/api/v1/watchproviders/regions' : '/api/v1/regions'
+    watchProviders ? apiUrl('/watchproviders/regions') : apiUrl('/regions')
   );
   const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
 

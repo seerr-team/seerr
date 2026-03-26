@@ -4,6 +4,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { MovieResult } from '@server/models/Search';
 import { useRouter } from 'next/router';
@@ -34,7 +35,7 @@ const DiscoverMovieLanguage = () => {
         name: string;
       };
     }
-  >(`/api/v1/discover/movies/language/${router.query.language}`);
+  >(apiUrl(`/discover/movies/language/${router.query.language}`));
 
   if (error) {
     return <ErrorPage statusCode={500} />;

@@ -12,6 +12,7 @@ import { UserContext } from '@app/context/UserContext';
 import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
 import '@app/styles/globals.css';
+import { apiUrl } from '@app/utils/apiUrl';
 import { polyfillIntl } from '@app/utils/polyfillIntl';
 import '@fontsource-variable/inter';
 import { MediaServerType } from '@server/constants/server';
@@ -140,7 +141,7 @@ const CoreApp: Omit<NextAppComponentType, 'origGetInitialProps'> = ({
 
   useEffect(() => {
     const requestsCount = async () => {
-      const response = await axios.get('/api/v1/request/count');
+      const response = await axios.get(apiUrl('/request/count'));
       return response.data;
     };
 
@@ -194,7 +195,7 @@ const CoreApp: Omit<NextAppComponentType, 'origGetInitialProps'> = ({
       value={{
         fetcher: (url) => axios.get(url).then((res) => res.data),
         fallback: {
-          '/api/v1/auth/me': user,
+          [apiUrl('/auth/me')]: user,
         },
       }}
     >
@@ -263,7 +264,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     const response = await axios.get<PublicSettingsResponse>(
       `http://${process.env.HOST || 'localhost'}:${
         process.env.PORT || 5055
-      }/api/v1/settings/public`
+      }${apiUrl('/settings/public')}`
     );
 
     currentSettings = response.data;
@@ -283,7 +284,7 @@ CoreApp.getInitialProps = async (initialProps) => {
         const response = await axios.get<User>(
           `http://${process.env.HOST || 'localhost'}:${
             process.env.PORT || 5055
-          }/api/v1/auth/me`,
+          }${apiUrl('/auth/me')}`,
           {
             headers:
               ctx.req && ctx.req.headers.cookie

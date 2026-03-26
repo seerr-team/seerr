@@ -2,6 +2,7 @@ import Alert from '@app/components/Common/Alert';
 import CachedImage from '@app/components/Common/CachedImage';
 import Modal from '@app/components/Common/Modal';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { SonarrSeries } from '@server/api/servarr/sonarr';
 import { useIntl } from 'react-intl';
@@ -36,7 +37,7 @@ const SearchByNameModal = ({
 }: SearchByNameModalProps) => {
   const intl = useIntl();
   const { data, error } = useSWR<SonarrSeries[]>(
-    `/api/v1/service/sonarr/lookup/${tmdbId}`
+    apiUrl(`/service/sonarr/lookup/${tmdbId}`)
   );
 
   const handleClick = (tvdbId: number) => {

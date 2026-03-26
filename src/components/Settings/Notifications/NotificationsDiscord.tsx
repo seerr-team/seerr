@@ -3,6 +3,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
@@ -44,7 +45,7 @@ const NotificationsDiscord = () => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR('/api/v1/settings/notifications/discord');
+  } = useSWR(apiUrl('/settings/notifications/discord'));
 
   const NotificationsDiscordSchema = Yup.object().shape({
     botAvatarUrl: Yup.string()
@@ -86,7 +87,7 @@ const NotificationsDiscord = () => {
       validationSchema={NotificationsDiscordSchema}
       onSubmit={async (values) => {
         try {
-          await axios.post('/api/v1/settings/notifications/discord', {
+          await axios.post(apiUrl('/settings/notifications/discord'), {
             enabled: values.enabled,
             embedPoster: values.embedPoster,
             types: values.types,
@@ -136,7 +137,7 @@ const NotificationsDiscord = () => {
                 toastId = id;
               }
             );
-            await axios.post('/api/v1/settings/notifications/discord/test', {
+            await axios.post(apiUrl('/settings/notifications/discord/test'), {
               enabled: true,
               embedPoster: values.embedPoster,
               types: values.types,

@@ -2,6 +2,7 @@ import Modal from '@app/components/Common/Modal';
 import Tooltip from '@app/components/Common/Tooltip';
 import CopyButton from '@app/components/Settings/CopyButton';
 import { encodeURIExtraParams } from '@app/hooks/useDiscover';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import { ArrowDownIcon } from '@heroicons/react/24/solid';
@@ -128,7 +129,7 @@ const ControlledKeywordSelector = ({
       const keywords = await Promise.all(
         defaultValue.split(',').map(async (keywordId) => {
           const { data } = await axios.get<Keyword | null>(
-            `/api/v1/keyword/${keywordId}`
+            apiUrl(`/keyword/${keywordId}`)
           );
           return data;
         })
@@ -151,7 +152,7 @@ const ControlledKeywordSelector = ({
 
   const loadKeywordOptions = async (inputValue: string) => {
     const { data } = await axios.get<TmdbKeywordSearchResponse>(
-      `/api/v1/search/keyword?query=${encodeURIExtraParams(inputValue)}`
+      apiUrl(`/search/keyword?query=${encodeURIExtraParams(inputValue)}`)
     );
 
     return data.results.map((result) => ({
@@ -270,7 +271,7 @@ const BlocklistedTagImportForm = forwardRef<
       formValue.split(',').map(async (keywordId) => {
         try {
           const { data } = await axios.get<Keyword>(
-            `/api/v1/keyword/${keywordId}`
+            apiUrl(`/keyword/${keywordId}`)
           );
           return {
             label: data.name,

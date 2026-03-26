@@ -6,6 +6,7 @@ import MetadataSelector, {
   MetadataProviderType,
 } from '@app/components/MetadataSelector';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
@@ -70,7 +71,7 @@ const SettingsMetadata = () => {
     useState<ProviderResponse>(defaultStatus);
 
   const { data, error } = useSWR<MetadataSettings>(
-    '/api/v1/settings/metadatas',
+    apiUrl('/settings/metadatas'),
     async (url: string) => {
       const response = await axios.get<{
         tv: MetadataProviderType;
@@ -105,7 +106,7 @@ const SettingsMetadata = () => {
       const response = await axios.post<{
         success: boolean;
         tests: ProviderResponse;
-      }>('/api/v1/settings/metadatas/test', testData);
+      }>(apiUrl('/settings/metadatas/test'), testData);
 
       const newStatus: ProviderResponse = {
         tmdb: useTmdb ? response.data.tests.tmdb : 'not tested',
@@ -150,7 +151,7 @@ const SettingsMetadata = () => {
           tvdb: ProviderStatus;
           tmdb: ProviderStatus;
         };
-      }>('/api/v1/settings/metadatas', {
+      }>(apiUrl('/settings/metadatas'), {
         tv: values.tv,
         anime: values.anime,
       });

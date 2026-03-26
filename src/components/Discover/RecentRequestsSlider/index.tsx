@@ -2,6 +2,7 @@ import { sliderTitles } from '@app/components/Discover/constants';
 import RequestCard from '@app/components/RequestCard';
 import Slider from '@app/components/Slider';
 import { Permission, useUser } from '@app/hooks/useUser';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import {
   ArrowRightCircleIcon,
@@ -22,7 +23,7 @@ const RecentRequestsSlider = () => {
   const { hasPermission } = useUser();
   const { data: requests, error: requestError } =
     useSWR<RequestResultsResponse>(
-      '/api/v1/request?filter=all&take=10&sort=modified&skip=0',
+      apiUrl('/request?filter=all&take=10&sort=modified&skip=0'),
       {
         revalidateOnMount: true,
       }

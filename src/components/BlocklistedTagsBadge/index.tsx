@@ -1,5 +1,6 @@
 import Badge from '@app/components/Common/Badge';
 import Tooltip from '@app/components/Common/Tooltip';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { TagIcon } from '@heroicons/react/20/solid';
 import type { BlocklistItem } from '@server/interfaces/api/blocklistInterfaces';
@@ -30,7 +31,7 @@ const BlocklistedTagsBadge = ({ data }: BlocklistedTagsBadgeProps) => {
     Promise.all(
       keywordIds.map(async (keywordId) => {
         const { data } = await axios.get<Keyword | null>(
-          `/api/v1/keyword/${keywordId}`
+          apiUrl(`/keyword/${keywordId}`)
         );
         return data?.name || `[Invalid: ${keywordId}]`;
       })

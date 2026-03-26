@@ -10,6 +10,7 @@ import Placeholder from '@app/components/TitleCard/Placeholder';
 import { useIsTouch } from '@app/hooks/useIsTouch';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { withProperties } from '@app/utils/typeHelpers';
 import { Transition } from '@headlessui/react';
@@ -108,12 +109,12 @@ const TitleCard = ({
   const onClickWatchlistBtn = async (): Promise<void> => {
     setIsUpdating(true);
     try {
-      const response = await axios.post<Watchlist>('/api/v1/watchlist', {
+      const response = await axios.post<Watchlist>(apiUrl('/watchlist'), {
         tmdbId: id,
         mediaType,
         title,
       });
-      mutate('/api/v1/discover/watchlist');
+      mutate(apiUrl('/discover/watchlist'));
       if (response.data) {
         addToast(
           <span>
@@ -140,7 +141,7 @@ const TitleCard = ({
     setIsUpdating(true);
     try {
       const response = await axios.delete<Watchlist>(
-        `/api/v1/watchlist/${id}?mediaType=${mediaType}`
+        apiUrl(`/watchlist/${id}?mediaType=${mediaType}`)
       );
 
       if (response.status === 204) {
@@ -161,7 +162,7 @@ const TitleCard = ({
       });
     } finally {
       setIsUpdating(false);
-      mutate('/api/v1/discover/watchlist');
+      mutate(apiUrl('/discover/watchlist'));
       if (mutateParent) {
         mutateParent();
       }
@@ -176,9 +177,9 @@ const TitleCard = ({
     if (topNode) {
       try {
         if (mediaType === 'collection') {
-          await axios.post(`/api/v1/blocklist/collection/${id}`);
+          await axios.post(apiUrl(`/blocklist/collection/${id}`));
         } else {
-          await axios.post('/api/v1/blocklist', {
+          await axios.post(apiUrl('/blocklist'), {
             tmdbId: id,
             mediaType,
             title,
@@ -234,7 +235,9 @@ const TitleCard = ({
     if (topNode) {
       try {
         if (mediaType === 'collection') {
-          const res = await axios.delete(`/api/v1/blocklist/collection/${id}`);
+          const res = await axios.delete(
+            apiUrl(`/blocklist/collection/${id}`)
+          );
 
           if (res.status === 204) {
             addToast(
@@ -258,7 +261,7 @@ const TitleCard = ({
           }
         } else {
           const res = await axios.delete(
-            `/api/v1/blocklist/${id}?mediaType=${mediaType}`
+            apiUrl(`/blocklist/${id}?mediaType=${mediaType}`)
           );
 
           if (res.status === 204) {

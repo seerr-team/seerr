@@ -8,6 +8,7 @@ import SearchByNameModal from '@app/components/RequestModal/SearchByNameModal';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
@@ -74,7 +75,7 @@ const TvRequestModal = ({
   const editingSeasons: number[] = (editRequest?.seasons ?? []).map(
     (season) => season.seasonNumber
   );
-  const { data, error } = useSWR<TvDetails>(`/api/v1/tv/${tmdbId}`);
+  const { data, error } = useSWR<TvDetails>(apiUrl(`/tv/${tmdbId}`));
   const [requestOverrides, setRequestOverrides] =
     useState<RequestOverrides | null>(null);
   const [selectedSeasons, setSelectedSeasons] = useState<number[]>(
@@ -91,7 +92,7 @@ const TvRequestModal = ({
   const { data: quota } = useSWR<QuotaResponse>(
     user &&
       (!requestOverrides?.user?.id || hasPermission(Permission.MANAGE_USERS))
-      ? `/api/v1/user/${requestOverrides?.user?.id ?? user.id}/quota`
+      ? apiUrl(`/user/${requestOverrides?.user?.id ?? user.id}/quota`)
       : null
   );
 
@@ -107,12 +108,12 @@ const TvRequestModal = ({
 
     if (onUpdating) {
       onUpdating(true);
-      mutate('/api/v1/request/count');
+      mutate(apiUrl('/request/count'));
     }
 
     try {
       if (selectedSeasons.length > 0) {
-        await axios.put(`/api/v1/request/${editRequest.id}`, {
+        await axios.put(apiUrl(`/request/${editRequest.id}`), {
           mediaType: 'tv',
           serverId: requestOverrides?.server,
           profileId: requestOverrides?.profile,
@@ -124,13 +125,13 @@ const TvRequestModal = ({
         });
 
         if (alsoApproveRequest) {
-          await axios.post(`/api/v1/request/${editRequest.id}/approve`);
+          await axios.post(apiUrl(`/request/${editRequest.id}/approve`));
         }
       } else {
-        await axios.delete(`/api/v1/request/${editRequest.id}`);
+        await axios.delete(apiUrl(`/request/${editRequest.id}`));
       }
-      mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
-      mutate('/api/v1/request/count');
+      mutate(apiUrl('/request?filter=all&take=10&sort=modified&skip=0'));
+      mutate(apiUrl('/request/count'));
 
       addToast(
         <span>
@@ -179,7 +180,7 @@ const TvRequestModal = ({
 
     if (onUpdating) {
       onUpdating(true);
-      mutate('/api/v1/request/count');
+      mutate(apiUrl('/request/count'));
     }
 
     try {
@@ -194,7 +195,7 @@ const TvRequestModal = ({
           tags: requestOverrides.tags,
         };
       }
-      const response = await axios.post<MediaRequest>('/api/v1/request', {
+      const response = await axios.post<MediaRequest>(apiUrl('/request'), {
         mediaId: data?.id,
         tvdbId: tvdbId ?? data?.externalIds.tvdbId,
         mediaType: 'tv',
@@ -207,7 +208,7 @@ const TvRequestModal = ({
             ),
         ...overrideParams,
       });
-      mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
+      mutate(apiUrl('/request?filter=all&take=10&sort=modified&skip=0'));
 
       if (response.data) {
         if (onComplete) {

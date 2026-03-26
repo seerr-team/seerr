@@ -7,6 +7,7 @@ import RequestItem from '@app/components/RequestList/RequestItem';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import {
@@ -76,15 +77,17 @@ const RequestList = () => {
     error,
     mutate: revalidate,
   } = useSWR<RequestResultsResponse>(
-    `/api/v1/request?take=${currentPageSize}&skip=${
-      pageIndex * currentPageSize
-    }&filter=${currentFilter}&mediaType=${currentMediaType}&sort=${currentSort}&sortDirection=${currentSortDirection}${
-      router.pathname.startsWith('/profile')
-        ? `&requestedBy=${currentUser?.id}`
-        : router.query.userId
-          ? `&requestedBy=${router.query.userId}`
-          : ''
-    }`
+    apiUrl(
+      `/request?take=${currentPageSize}&skip=${
+        pageIndex * currentPageSize
+      }&filter=${currentFilter}&mediaType=${currentMediaType}&sort=${currentSort}&sortDirection=${currentSortDirection}${
+        router.pathname.startsWith('/profile')
+          ? `&requestedBy=${currentUser?.id}`
+          : router.query.userId
+            ? `&requestedBy=${router.query.userId}`
+            : ''
+      }`
+    )
   );
 
   // Restore last set filter values on component mount

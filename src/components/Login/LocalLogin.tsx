@@ -1,6 +1,7 @@
 import Button from '@app/components/Common/Button';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import useSettings from '@app/hooks/useSettings';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/solid';
@@ -57,7 +58,7 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
       validateOnBlur={false}
       onSubmit={async (values) => {
         try {
-          await axios.post('/api/v1/auth/local', {
+          await axios.post(apiUrl('/auth/local'), {
             email: values.email,
             password: values.password,
           });

@@ -1,4 +1,5 @@
 import TvDetails from '@app/components/TvDetails';
+import { apiUrl } from '@app/utils/apiUrl';
 import type { TvDetails as TvDetailsType } from '@server/models/Tv';
 import axios from 'axios';
 import type { GetServerSideProps, NextPage } from 'next';
@@ -17,7 +18,7 @@ export const getServerSideProps: GetServerSideProps<TvPageProps> = async (
   const response = await axios.get<TvDetailsType>(
     `http://${process.env.HOST || 'localhost'}:${
       process.env.PORT || 5055
-    }/api/v1/tv/${ctx.query.tvId}`,
+    }${apiUrl(`/tv/${ctx.query.tvId}`)}`,
     {
       headers: ctx.req?.headers?.cookie
         ? { cookie: ctx.req.headers.cookie }

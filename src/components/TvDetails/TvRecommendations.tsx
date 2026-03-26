@@ -3,6 +3,7 @@ import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { TvResult } from '@server/models/Search';
 import type { TvDetails } from '@server/models/Tv';
@@ -18,7 +19,9 @@ const messages = defineMessages('components.TvDetails', {
 const TvRecommendations = () => {
   const router = useRouter();
   const intl = useIntl();
-  const { data: tvData } = useSWR<TvDetails>(`/api/v1/tv/${router.query.tvId}`);
+  const { data: tvData } = useSWR<TvDetails>(
+    apiUrl(`/tv/${router.query.tvId}`)
+  );
   const {
     isLoadingInitialData,
     isEmpty,
@@ -27,7 +30,7 @@ const TvRecommendations = () => {
     titles,
     fetchMore,
     error,
-  } = useDiscover<TvResult>(`/api/v1/tv/${router.query.tvId}/recommendations`);
+  } = useDiscover<TvResult>(apiUrl(`/tv/${router.query.tvId}/recommendations`));
 
   if (error) {
     return <ErrorPage statusCode={500} />;

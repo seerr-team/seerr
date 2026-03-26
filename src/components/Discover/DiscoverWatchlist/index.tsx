@@ -4,6 +4,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
 import { useUser } from '@app/hooks/useUser';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { WatchlistItem } from '@server/interfaces/api/discoverInterfaces';
 import Link from 'next/link';
@@ -33,13 +34,15 @@ const DiscoverWatchlist = () => {
     error,
     mutate,
   } = useDiscover<WatchlistItem>(
-    `/api/v1/${
-      router.pathname.startsWith('/profile')
-        ? `user/${currentUser?.id}`
-        : router.query.userId
-          ? `user/${router.query.userId}`
-          : 'discover'
-    }/watchlist`
+    apiUrl(
+      `/${
+        router.pathname.startsWith('/profile')
+          ? `user/${currentUser?.id}`
+          : router.query.userId
+            ? `user/${router.query.userId}`
+            : 'discover'
+      }/watchlist`
+    )
   );
 
   if (error) {

@@ -1,6 +1,7 @@
 import CachedImage from '@app/components/Common/CachedImage';
 import MiniQuotaDisplay from '@app/components/Layout/UserDropdown/MiniQuotaDisplay';
 import { Permission, useUser } from '@app/hooks/useUser';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { Menu, Transition } from '@headlessui/react';
 import {
@@ -39,7 +40,7 @@ const UserDropdown = () => {
   const { user, revalidate, hasPermission } = useUser();
 
   const logout = async () => {
-    const response = await axios.post('/api/v1/auth/logout');
+    const response = await axios.post(apiUrl('/auth/logout'));
 
     if (response.data?.status === 'ok') {
       revalidate();

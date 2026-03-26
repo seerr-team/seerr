@@ -4,6 +4,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { TvResult } from '@server/models/Search';
 import { useRouter } from 'next/router';
@@ -27,7 +28,7 @@ const DiscoverTvGenre = () => {
     error,
     firstResultData,
   } = useDiscover<TvResult, { genre: { id: number; name: string } }>(
-    `/api/v1/discover/tv/genre/${router.query.genreId}`
+    apiUrl(`/discover/tv/genre/${router.query.genreId}`)
   );
 
   if (error) {

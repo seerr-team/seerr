@@ -3,6 +3,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
@@ -66,7 +67,7 @@ const NotificationsEmail = () => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR('/api/v1/settings/notifications/email');
+  } = useSWR(apiUrl('/settings/notifications/email'));
 
   const NotificationsEmailSchema = Yup.object().shape(
     {
@@ -150,7 +151,7 @@ const NotificationsEmail = () => {
       validationSchema={NotificationsEmailSchema}
       onSubmit={async (values) => {
         try {
-          await axios.post('/api/v1/settings/notifications/email', {
+          await axios.post(apiUrl('/settings/notifications/email'), {
             enabled: values.enabled,
             embedPoster: values.embedPoster,
             options: {
@@ -169,7 +170,7 @@ const NotificationsEmail = () => {
               pgpPassword: values.pgpPassword,
             },
           });
-          mutate('/api/v1/settings/public');
+          mutate(apiUrl('/settings/public'));
 
           addToast(intl.formatMessage(messages.emailsettingssaved), {
             appearance: 'success',
@@ -200,7 +201,7 @@ const NotificationsEmail = () => {
                 toastId = id;
               }
             );
-            await axios.post('/api/v1/settings/notifications/email/test', {
+            await axios.post(apiUrl('/settings/notifications/email/test'), {
               enabled: true,
               embedPoster: values.embedPoster,
               options: {

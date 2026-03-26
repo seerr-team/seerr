@@ -7,6 +7,7 @@ import StatusBadge from '@app/components/StatusBadge';
 import useDeepLinks from '@app/hooks/useDeepLinks';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
 import {
@@ -65,9 +66,9 @@ const RequestItemError = ({
   const { hasPermission } = useUser();
 
   const deleteRequest = async () => {
-    await axios.delete(`/api/v1/media/${requestData?.media.id}`);
+    await axios.delete(apiUrl(`/media/${requestData?.media.id}`));
     revalidateList();
-    mutate('/api/v1/request/count');
+    mutate(apiUrl('/request/count'));
   };
 
   const { mediaUrl: plexUrl, mediaUrl4k: plexUrl4k } = useDeepLinks({
@@ -303,14 +304,14 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const url =
     request.type === 'movie'
-      ? `/api/v1/movie/${request.media.tmdbId}`
-      : `/api/v1/tv/${request.media.tmdbId}`;
+      ? apiUrl(`/movie/${request.media.tmdbId}`)
+      : apiUrl(`/tv/${request.media.tmdbId}`);
   const { data: title, error } = useSWR<MovieDetails | TvDetails>(
     inView ? url : null
   );
   const { data: requestData, mutate: revalidate } = useSWR<
     NonFunctionProperties<MediaRequest>
-  >(`/api/v1/request/${request.id}`, {
+  >(apiUrl(`/request/${request.id}`), {
     fallbackData: request,
     refreshInterval: refreshIntervalHelper(
       {
@@ -324,27 +325,27 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
   const [isRetrying, setRetrying] = useState(false);
 
   const modifyRequest = async (type: 'approve' | 'decline') => {
-    const response = await axios.post(`/api/v1/request/${request.id}/${type}`);
+    const response = await axios.post(apiUrl(`/request/${request.id}/${type}`));
 
     if (response) {
       revalidate();
-      mutate('/api/v1/request/count');
+      mutate(apiUrl('/request/count'));
     }
   };
 
   const deleteRequest = async () => {
-    await axios.delete(`/api/v1/request/${request.id}`);
+    await axios.delete(apiUrl(`/request/${request.id}`));
 
     revalidateList();
-    mutate('/api/v1/request/count');
+    mutate(apiUrl('/request/count'));
   };
 
   const deleteMediaFile = async () => {
     if (request.media) {
       await axios.delete(
-        `/api/v1/media/${request.media.id}/file?is4k=${request.is4k}`
+        apiUrl(`/media/${request.media.id}/file?is4k=${request.is4k}`)
       );
-      await axios.delete(`/api/v1/media/${request.media.id}`);
+      await axios.delete(apiUrl(`/media/${request.media.id}`));
       revalidateList();
     }
   };
@@ -353,7 +354,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
     setRetrying(true);
 
     try {
-      const result = await axios.post(`/api/v1/request/${request.id}/retry`);
+      const result = await axios.post(apiUrl(`/request/${request.id}/retry`));
       revalidate(result.data);
     } catch {
       addToast(intl.formatMessage(messages.failedretry), {

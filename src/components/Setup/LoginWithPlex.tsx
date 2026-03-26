@@ -1,5 +1,6 @@
 import PlexLoginButton from '@app/components/Login/PlexLoginButton';
 import { useUser } from '@app/hooks/useUser';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
@@ -26,9 +27,9 @@ const LoginWithPlex = ({ onComplete }: LoginWithPlexProps) => {
   useEffect(() => {
     const login = async () => {
       try {
-        const response = await axios.post('/api/v1/auth/plex', { authToken });
+        const response = await axios.post(apiUrl('/auth/plex'), { authToken });
         if (response.data?.id) {
-          const { data: user } = await axios.get('/api/v1/auth/me');
+          const { data: user } = await axios.get(apiUrl('/auth/me'));
           revalidate(user, false);
         }
       } catch {

@@ -3,6 +3,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
 import {
@@ -120,7 +121,7 @@ const NotificationsWebhook = () => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR('/api/v1/settings/notifications/webhook');
+  } = useSWR(apiUrl('/settings/notifications/webhook'));
 
   const NotificationsWebhookSchema = Yup.object().shape({
     webhookUrl: Yup.string()
@@ -219,7 +220,7 @@ const NotificationsWebhook = () => {
       validationSchema={NotificationsWebhookSchema}
       onSubmit={async (values) => {
         try {
-          await axios.post('/api/v1/settings/notifications/webhook', {
+          await axios.post(apiUrl('/settings/notifications/webhook'), {
             enabled: values.enabled,
             types: values.types,
             options: {
@@ -286,7 +287,7 @@ const NotificationsWebhook = () => {
                 toastId = id;
               }
             );
-            await axios.post('/api/v1/settings/notifications/webhook/test', {
+            await axios.post(apiUrl('/settings/notifications/webhook/test'), {
               enabled: true,
               types: values.types,
               options: {

@@ -28,6 +28,7 @@ import useSettings from '@app/hooks/useSettings';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import { sortCrewPriority } from '@app/utils/creditHelpers';
 import defineMessages from '@app/utils/defineMessages';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
@@ -137,7 +138,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR<MovieDetailsType>(`/api/v1/movie/${router.query.movieId}`, {
+  } = useSWR<MovieDetailsType>(apiUrl(`/movie/${router.query.movieId}`), {
     fallbackData: movie,
     refreshInterval: refreshIntervalHelper(
       {
@@ -149,7 +150,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   });
 
   const { data: ratingData } = useSWR<RatingResponse>(
-    `/api/v1/movie/${router.query.movieId}/ratingscombined`
+    apiUrl(`/movie/${router.query.movieId}/ratingscombined`)
   );
 
   const sortedCrew = useMemo(
@@ -327,7 +328,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     setIsUpdating(true);
 
     try {
-      const response = await axios.post('/api/v1/watchlist', {
+      const response = await axios.post(apiUrl('/watchlist'), {
         tmdbId: movie?.id,
         mediaType: MediaType.MOVIE,
         title: movie?.title,
@@ -359,7 +360,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     setIsUpdating(true);
     try {
       await axios.delete(
-        `/api/v1/watchlist/${movie?.id}?mediaType=${MediaType.MOVIE}`
+        apiUrl(`/watchlist/${movie?.id}?mediaType=${MediaType.MOVIE}`)
       );
 
       addToast(
@@ -386,7 +387,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     setIsBlocklistUpdating(true);
 
     try {
-      await axios.post('/api/v1/blocklist', {
+      await axios.post(apiUrl('/blocklist'), {
         tmdbId: movie?.id,
         mediaType: 'movie',
         title: movie?.title,
@@ -1133,14 +1134,14 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
       <MediaSlider
         sliderKey="recommendations"
         title={intl.formatMessage(messages.recommendations)}
-        url={`/api/v1/movie/${router.query.movieId}/recommendations`}
+        url={apiUrl(`/movie/${router.query.movieId}/recommendations`)}
         linkUrl={`/movie/${data.id}/recommendations`}
         hideWhenEmpty
       />
       <MediaSlider
         sliderKey="similar"
         title={intl.formatMessage(messages.similar)}
-        url={`/api/v1/movie/${router.query.movieId}/similar`}
+        url={apiUrl(`/movie/${router.query.movieId}/similar`)}
         linkUrl={`/movie/${data.id}/similar`}
         hideWhenEmpty
       />

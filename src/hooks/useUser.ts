@@ -1,3 +1,4 @@
+import { apiUrl } from '@app/utils/apiUrl';
 import { UserType } from '@server/constants/user';
 import type { PermissionCheckOptions } from '@server/lib/permissions';
 import { hasPermission, Permission } from '@server/lib/permissions';
@@ -66,7 +67,7 @@ export const useUser = ({
     data,
     error,
     mutate: revalidate,
-  } = useSWR<User>(id ? `/api/v1/user/${id}` : `/api/v1/auth/me`, {
+  } = useSWR<User>(id ? apiUrl(`/user/${id}`) : apiUrl('/auth/me'), {
     fallbackData: initialData,
     refreshInterval: !isAuthPage ? 30000 : 0,
     revalidateOnFocus: !isAuthPage,

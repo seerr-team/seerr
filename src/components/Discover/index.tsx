@@ -17,6 +17,7 @@ import MediaSlider from '@app/components/MediaSlider';
 import { encodeURIExtraParams } from '@app/hooks/useDiscover';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import {
@@ -60,7 +61,7 @@ const Discover = () => {
     data: discoverData,
     error: discoverError,
     mutate,
-  } = useSWR<DiscoverSlider[]>('/api/v1/settings/discover');
+  } = useSWR<DiscoverSlider[]>(apiUrl('/settings/discover'));
   const [sliders, setSliders] = useState<Partial<DiscoverSlider>[]>([]);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -76,7 +77,7 @@ const Discover = () => {
 
   const updateSliders = async () => {
     try {
-      await axios.post('/api/v1/settings/discover', sliders);
+      await axios.post(apiUrl('/settings/discover'), sliders);
 
       addToast(intl.formatMessage(messages.updatesuccess), {
         appearance: 'success',
@@ -94,7 +95,7 @@ const Discover = () => {
 
   const resetSliders = async () => {
     try {
-      await axios.get('/api/v1/settings/discover/reset');
+      await axios.get(apiUrl('/settings/discover/reset'));
 
       addToast(intl.formatMessage(messages.resetsuccess), {
         appearance: 'success',
@@ -224,7 +225,7 @@ const Discover = () => {
               <MediaSlider
                 sliderKey="trending"
                 title={intl.formatMessage(sliderTitles.trending)}
-                url="/api/v1/discover/trending"
+                url={apiUrl('/discover/trending')}
                 linkUrl="/discover/trending"
               />
             );
@@ -234,7 +235,7 @@ const Discover = () => {
               <MediaSlider
                 sliderKey="popular-movies"
                 title={intl.formatMessage(sliderTitles.popularmovies)}
-                url="/api/v1/discover/movies"
+                url={apiUrl('/discover/movies')}
                 linkUrl="/discover/movies"
               />
             );
@@ -248,7 +249,7 @@ const Discover = () => {
                 sliderKey="upcoming"
                 title={intl.formatMessage(sliderTitles.upcoming)}
                 linkUrl={`/discover/movies?primaryReleaseDateGte=${upcomingDate}`}
-                url="/api/v1/discover/movies"
+                url={apiUrl('/discover/movies')}
                 extraParams={`primaryReleaseDateGte=${upcomingDate}`}
               />
             );
@@ -261,7 +262,7 @@ const Discover = () => {
               <MediaSlider
                 sliderKey="popular-tv"
                 title={intl.formatMessage(sliderTitles.populartv)}
-                url="/api/v1/discover/tv"
+                url={apiUrl('/discover/tv')}
                 linkUrl="/discover/tv"
               />
             );
@@ -275,7 +276,7 @@ const Discover = () => {
                 sliderKey="upcoming-tv"
                 title={intl.formatMessage(sliderTitles.upcomingtv)}
                 linkUrl={`/discover/tv?firstAirDateGte=${upcomingDate}`}
-                url="/api/v1/discover/tv"
+                url={apiUrl('/discover/tv')}
                 extraParams={`firstAirDateGte=${upcomingDate}`}
               />
             );
@@ -288,7 +289,7 @@ const Discover = () => {
               <MediaSlider
                 sliderKey={`custom-slider-${slider.id}`}
                 title={slider.title ?? ''}
-                url="/api/v1/discover/movies"
+                url={apiUrl('/discover/movies')}
                 extraParams={
                   slider.data
                     ? `keywords=${encodeURIExtraParams(slider.data)}`
@@ -303,7 +304,7 @@ const Discover = () => {
               <MediaSlider
                 sliderKey={`custom-slider-${slider.id}`}
                 title={slider.title ?? ''}
-                url="/api/v1/discover/tv"
+                url={apiUrl('/discover/tv')}
                 extraParams={
                   slider.data
                     ? `keywords=${encodeURIExtraParams(slider.data)}`
@@ -318,7 +319,7 @@ const Discover = () => {
               <MediaSlider
                 sliderKey={`custom-slider-${slider.id}`}
                 title={slider.title ?? ''}
-                url={`/api/v1/discover/movies`}
+                url={apiUrl(`/discover/movies`)}
                 extraParams={`genre=${slider.data}`}
                 linkUrl={`/discover/movies?genre=${slider.data}`}
               />
@@ -329,7 +330,7 @@ const Discover = () => {
               <MediaSlider
                 sliderKey={`custom-slider-${slider.id}`}
                 title={slider.title ?? ''}
-                url={`/api/v1/discover/tv`}
+                url={apiUrl(`/discover/tv`)}
                 extraParams={`genre=${slider.data}`}
                 linkUrl={`/discover/tv?genre=${slider.data}`}
               />
@@ -340,7 +341,7 @@ const Discover = () => {
               <MediaSlider
                 sliderKey={`custom-slider-${slider.id}`}
                 title={slider.title ?? ''}
-                url={`/api/v1/discover/movies/studio/${slider.data}`}
+                url={apiUrl(`/discover/movies/studio/${slider.data}`)}
                 linkUrl={`/discover/movies/studio/${slider.data}`}
               />
             );
@@ -350,7 +351,7 @@ const Discover = () => {
               <MediaSlider
                 sliderKey={`custom-slider-${slider.id}`}
                 title={slider.title ?? ''}
-                url={`/api/v1/discover/tv/network/${slider.data}`}
+                url={apiUrl(`/discover/tv/network/${slider.data}`)}
                 linkUrl={`/discover/tv/network/${slider.data}`}
               />
             );
@@ -360,7 +361,7 @@ const Discover = () => {
               <MediaSlider
                 sliderKey={`custom-slider-${slider.id}`}
                 title={slider.title ?? ''}
-                url="/api/v1/search"
+                url={apiUrl('/search')}
                 extraParams={`query=${slider.data}`}
                 linkUrl={`/search?query=${slider.data}`}
               />
@@ -371,7 +372,7 @@ const Discover = () => {
               <MediaSlider
                 sliderKey={`custom-slider-${slider.id}`}
                 title={slider.title ?? ''}
-                url="/api/v1/discover/movies"
+                url={apiUrl('/discover/movies')}
                 extraParams={`watchRegion=${
                   slider.data?.split(',')[0]
                 }&watchProviders=${slider.data?.split(',')[1]}`}
@@ -386,7 +387,7 @@ const Discover = () => {
               <MediaSlider
                 sliderKey={`custom-slider-${slider.id}`}
                 title={slider.title ?? ''}
-                url="/api/v1/discover/tv"
+                url={apiUrl('/discover/tv')}
                 extraParams={`watchRegion=${
                   slider.data?.split(',')[0]
                 }&watchProviders=${slider.data?.split(',')[1]}`}

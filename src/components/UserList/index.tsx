@@ -15,6 +15,7 @@ import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import type { User } from '@app/hooks/useUser';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import {
@@ -129,9 +130,11 @@ const UserList = () => {
     error,
     mutate: revalidate,
   } = useSWR<UserResultsResponse>(
-    `/api/v1/user?take=${currentPageSize}&skip=${
-      pageIndex * currentPageSize
-    }&sort=${currentSort}&sortDirection=${sortDirection}`
+    apiUrl(
+      `/user?take=${currentPageSize}&skip=${
+        pageIndex * currentPageSize
+      }&sort=${currentSort}&sortDirection=${sortDirection}`
+    )
   );
 
   const handleSortChange = (sortKey: Sort) => {
@@ -285,7 +288,7 @@ const UserList = () => {
     setDeleting(true);
 
     try {
-      await axios.delete(`/api/v1/user/${deleteModal.user?.id}`);
+      await axios.delete(apiUrl(`/user/${deleteModal.user?.id}`));
 
       addToast(intl.formatMessage(messages.userdeleted), {
         autoDismiss: true,
@@ -391,7 +394,7 @@ const UserList = () => {
           validationSchema={CreateUserSchema}
           onSubmit={async (values) => {
             try {
-              await axios.post('/api/v1/user', {
+              await axios.post(apiUrl('/user'), {
                 username: values.username,
                 email: values.email,
                 password: values.genpassword ? null : values.password,

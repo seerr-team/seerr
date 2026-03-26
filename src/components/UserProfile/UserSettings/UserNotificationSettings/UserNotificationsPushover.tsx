@@ -4,6 +4,7 @@ import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { PushoverSound } from '@server/api/pushover';
 import type { UserSettingsNotificationsResponse } from '@server/interfaces/api/userSettingsInterfaces';
@@ -45,11 +46,13 @@ const UserPushoverSettings = () => {
     error,
     mutate: revalidate,
   } = useSWR<UserSettingsNotificationsResponse>(
-    user ? `/api/v1/user/${user?.id}/settings/notifications` : null
+    user ? apiUrl(`/user/${user?.id}/settings/notifications`) : null
   );
   const { data: soundsData } = useSWR<PushoverSound[]>(
     data?.pushoverApplicationToken
-      ? `/api/v1/settings/notifications/pushover/sounds?token=${data.pushoverApplicationToken}`
+      ? apiUrl(
+          `/settings/notifications/pushover/sounds?token=${data.pushoverApplicationToken}`
+        )
       : null
   );
 
@@ -97,7 +100,7 @@ const UserPushoverSettings = () => {
       enableReinitialize
       onSubmit={async (values) => {
         try {
-          await axios.post(`/api/v1/user/${user?.id}/settings/notifications`, {
+          await axios.post(apiUrl(`/user/${user?.id}/settings/notifications`), {
             pgpKey: data?.pgpKey,
             discordId: data?.discordId,
             pushbulletAccessToken: data?.pushbulletAccessToken,

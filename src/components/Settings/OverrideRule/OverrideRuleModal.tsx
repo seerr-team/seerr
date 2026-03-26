@@ -8,6 +8,7 @@ import {
 import type { DVRTestResponse } from '@app/components/Settings/SettingsServices';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import type OverrideRule from '@server/entity/OverrideRule';
@@ -96,7 +97,7 @@ const OverrideRuleModal = ({
       setIsTesting(true);
       try {
         const response = await axios.post<DVRTestResponse>(
-          `/api/v1/settings/${type}/test`,
+          apiUrl(`/settings/${type}/test`),
           {
             hostname,
             apiKey,
@@ -178,13 +179,13 @@ const OverrideRuleModal = ({
               sonarrServiceId: values.sonarrServiceId,
             };
             if (!rule) {
-              await axios.post('/api/v1/overrideRule', submission);
+              await axios.post(apiUrl('/overrideRule'), submission);
               addToast(intl.formatMessage(messages.ruleCreated), {
                 appearance: 'success',
                 autoDismiss: true,
               });
             } else {
-              await axios.put(`/api/v1/overrideRule/${rule.id}`, submission);
+              await axios.put(apiUrl(`/overrideRule/${rule.id}`), submission);
               addToast(intl.formatMessage(messages.ruleUpdated), {
                 appearance: 'success',
                 autoDismiss: true,

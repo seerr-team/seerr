@@ -1,5 +1,6 @@
 import Button from '@app/components/Common/Button';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { CheckIcon, TrashIcon } from '@heroicons/react/24/solid';
 import axios from 'axios';
@@ -25,9 +26,9 @@ const ErrorCard = ({ id, tmdbId, tvdbId, type, canExpand }: ErrorCardProps) => {
   const intl = useIntl();
 
   const deleteMedia = async () => {
-    await axios.delete(`/api/v1/media/${id}`);
-    mutate('/api/v1/media?filter=allavailable&take=20&sort=mediaAdded');
-    mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
+    await axios.delete(apiUrl(`/media/${id}`));
+    mutate(apiUrl('/media?filter=allavailable&take=20&sort=mediaAdded'));
+    mutate(apiUrl('/request?filter=all&take=10&sort=modified&skip=0'));
   };
 
   return (

@@ -4,6 +4,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import { genreColorMap } from '@app/components/Discover/constants';
 import GenreCard from '@app/components/GenreCard';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { GenreSliderItem } from '@server/interfaces/api/discoverInterfaces';
 import { useIntl } from 'react-intl';
@@ -16,7 +17,7 @@ const messages = defineMessages('components.Discover.TvGenreList', {
 const TvGenreList = () => {
   const intl = useIntl();
   const { data, error } = useSWR<GenreSliderItem[]>(
-    `/api/v1/discover/genreslider/tv`
+    apiUrl(`/discover/genreslider/tv`)
   );
 
   if (!data && !error) {

@@ -6,6 +6,7 @@ import UserDropdown from '@app/components/Layout/UserDropdown';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
+import { apiUrl } from '@app/utils/apiUrl';
 import { ArrowLeftIcon, Bars3BottomLeftIcon } from '@heroicons/react/24/solid';
 import type { AvailableLocale } from '@server/types/languages';
 import { useRouter } from 'next/router';
@@ -24,13 +25,13 @@ const Layout = ({ children }: LayoutProps) => {
   const { currentSettings } = useSettings();
   const { setLocale } = useLocale();
   const { data: requestResponse, mutate: revalidateRequestsCount } = useSWR(
-    '/api/v1/request/count',
+    apiUrl('/request/count'),
     {
       revalidateOnMount: true,
     }
   );
   const { data: issueResponse, mutate: revalidateIssueCount } = useSWR(
-    '/api/v1/issue/count',
+    apiUrl('/issue/count'),
     {
       revalidateOnMount: true,
     }

@@ -6,6 +6,7 @@ import PermissionEdit from '@app/components/PermissionEdit';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
@@ -38,7 +39,7 @@ const UserPermissions = () => {
     error,
     mutate: revalidate,
   } = useSWR<{ permissions?: number }>(
-    user ? `/api/v1/user/${user?.id}/settings/permissions` : null
+    user ? apiUrl(`/user/${user?.id}/settings/permissions`) : null
   );
 
   if (!data && !error) {
@@ -84,7 +85,7 @@ const UserPermissions = () => {
         enableReinitialize
         onSubmit={async (values) => {
           try {
-            await axios.post(`/api/v1/user/${user?.id}/settings/permissions`, {
+            await axios.post(apiUrl(`/user/${user?.id}/settings/permissions`), {
               permissions: values.currentPermissions ?? 0,
             });
 

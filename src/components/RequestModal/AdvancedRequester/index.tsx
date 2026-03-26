@@ -4,6 +4,7 @@ import { SmallLoadingSpinner } from '@app/components/Common/LoadingSpinner';
 import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { formatBytes } from '@app/utils/numberHelpers';
 import { Listbox, Transition } from '@headlessui/react';
@@ -69,7 +70,7 @@ const AdvancedRequester = ({
   const intl = useIntl();
   const { user: currentUser, hasPermission: currentHasPermission } = useUser();
   const { data, error } = useSWR<ServiceCommonServer[]>(
-    `/api/v1/service/${type === 'movie' ? 'radarr' : 'sonarr'}`,
+    apiUrl(`/service/${type === 'movie' ? 'radarr' : 'sonarr'}`),
     {
       refreshInterval: 0,
       refreshWhenHidden: false,
@@ -100,9 +101,11 @@ const AdvancedRequester = ({
   const { data: serverData, isValidating } =
     useSWR<ServiceCommonServerWithDetails>(
       selectedServer !== null
-        ? `/api/v1/service/${
-            type === 'movie' ? 'radarr' : 'sonarr'
-          }/${selectedServer}`
+        ? apiUrl(
+            `/service/${
+              type === 'movie' ? 'radarr' : 'sonarr'
+            }/${selectedServer}`
+          )
         : null,
       {
         refreshInterval: 0,
@@ -117,7 +120,7 @@ const AdvancedRequester = ({
 
   const { data: userData } = useSWR<UserResultsResponse>(
     currentHasPermission([Permission.MANAGE_REQUESTS, Permission.MANAGE_USERS])
-      ? '/api/v1/user?take=1000&sort=displayname'
+      ? apiUrl('/user?take=1000&sort=displayname')
       : null
   );
   const filteredUserData = useMemo(

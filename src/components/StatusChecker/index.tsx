@@ -2,6 +2,7 @@ import Modal from '@app/components/Common/Modal';
 import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import type { StatusResponse } from '@server/interfaces/api/settingsInterfaces';
@@ -23,7 +24,7 @@ const StatusChecker = () => {
   const intl = useIntl();
   const settings = useSettings();
   const { hasPermission } = useUser();
-  const { data, error } = useSWR<StatusResponse>('/api/v1/status', {
+  const { data, error } = useSWR<StatusResponse>(apiUrl('/status'), {
     refreshInterval: 60 * 1000,
   });
   const [alertDismissed, setAlertDismissed] = useState(false);

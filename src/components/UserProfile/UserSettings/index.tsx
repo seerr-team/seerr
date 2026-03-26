@@ -8,6 +8,7 @@ import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { UserSettingsNotificationsResponse } from '@server/interfaces/api/userSettingsInterfaces';
 import { hasPermission, Permission } from '@server/lib/permissions';
@@ -36,7 +37,7 @@ const UserSettings = ({ children }: UserSettingsProps) => {
   const { user, error } = useUser({ id: Number(router.query.userId) });
   const intl = useIntl();
   const { data } = useSWR<UserSettingsNotificationsResponse>(
-    user ? `/api/v1/user/${user?.id}/settings/notifications` : null
+    user ? apiUrl(`/user/${user?.id}/settings/notifications`) : null
   );
 
   if (!user && !error) {

@@ -2,6 +2,7 @@ import Alert from '@app/components/Common/Alert';
 import Modal from '@app/components/Common/Modal';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import axios from 'axios';
 import Image from 'next/image';
@@ -40,7 +41,7 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
       email: string;
       thumb: string;
     }[]
-  >(`/api/v1/settings/plex/users`, {
+  >(apiUrl(`/settings/plex/users`), {
     revalidateOnMount: true,
   });
 
@@ -49,7 +50,7 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
 
     try {
       const { data: createdUsers } = await axios.post(
-        '/api/v1/user/import-from-plex',
+        apiUrl('/user/import-from-plex'),
         { plexIds: selectedUsers }
       );
 

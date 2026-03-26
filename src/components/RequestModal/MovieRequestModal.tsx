@@ -5,6 +5,7 @@ import AdvancedRequester from '@app/components/RequestModal/AdvancedRequester';
 import QuotaDisplay from '@app/components/RequestModal/QuotaDisplay';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { MediaStatus } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
@@ -58,7 +59,7 @@ const MovieRequestModal = ({
   const [requestOverrides, setRequestOverrides] =
     useState<RequestOverrides | null>(null);
   const { addToast } = useToasts();
-  const { data, error } = useSWR<MovieDetails>(`/api/v1/movie/${tmdbId}`, {
+  const { data, error } = useSWR<MovieDetails>(apiUrl(`/movie/${tmdbId}`), {
     revalidateOnMount: true,
   });
   const intl = useIntl();
@@ -66,7 +67,7 @@ const MovieRequestModal = ({
   const { data: quota } = useSWR<QuotaResponse>(
     user &&
       (!requestOverrides?.user?.id || hasPermission(Permission.MANAGE_USERS))
-      ? `/api/v1/user/${requestOverrides?.user?.id ?? user.id}/quota`
+      ? apiUrl(`/user/${requestOverrides?.user?.id ?? user.id}/quota`)
       : null
   );
 
@@ -90,14 +91,14 @@ const MovieRequestModal = ({
           tags: requestOverrides.tags,
         };
       }
-      const response = await axios.post<MediaRequest>('/api/v1/request', {
+      const response = await axios.post<MediaRequest>(apiUrl('/request'), {
         mediaId: data?.id,
         mediaType: 'movie',
         is4k,
         ...overrideParams,
       });
-      mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
-      mutate('/api/v1/request/count');
+      mutate(apiUrl('/request?filter=all&take=10&sort=modified&skip=0'));
+      mutate(apiUrl('/request/count'));
 
       if (response.data) {
         if (onComplete) {
@@ -148,10 +149,10 @@ const MovieRequestModal = ({
 
     try {
       const response = await axios.delete<MediaRequest>(
-        `/api/v1/request/${editRequest?.id}`
+        apiUrl(`/request/${editRequest?.id}`)
       );
-      mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
-      mutate('/api/v1/request/count');
+      mutate(apiUrl('/request?filter=all&take=10&sort=modified&skip=0'));
+      mutate(apiUrl('/request/count'));
 
       if (response.status === 204) {
         if (onComplete) {
@@ -176,7 +177,7 @@ const MovieRequestModal = ({
     setIsUpdating(true);
 
     try {
-      await axios.put(`/api/v1/request/${editRequest?.id}`, {
+      await axios.put(apiUrl(`/request/${editRequest?.id}`), {
         mediaType: 'movie',
         serverId: requestOverrides?.server,
         profileId: requestOverrides?.profile,
@@ -186,10 +187,10 @@ const MovieRequestModal = ({
       });
 
       if (alsoApproveRequest) {
-        await axios.post(`/api/v1/request/${editRequest?.id}/approve`);
+        await axios.post(apiUrl(`/request/${editRequest?.id}/approve`));
       }
-      mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
-      mutate('/api/v1/request/count');
+      mutate(apiUrl('/request?filter=all&take=10&sort=modified&skip=0'));
+      mutate(apiUrl('/request/count'));
 
       addToast(
         <span>

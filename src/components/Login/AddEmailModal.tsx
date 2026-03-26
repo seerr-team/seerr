@@ -1,5 +1,6 @@
 import Modal from '@app/components/Common/Modal';
 import useSettings from '@app/hooks/useSettings';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import axios from 'axios';
@@ -63,7 +64,7 @@ const AddEmailModal: React.FC<AddEmailModalProps> = ({
         validationSchema={EmailSettingsSchema}
         onSubmit={async (values) => {
           try {
-            await axios.post('/api/v1/auth/jellyfin', {
+            await axios.post(apiUrl('/auth/jellyfin'), {
               username: username,
               password: password,
               email: values.email,

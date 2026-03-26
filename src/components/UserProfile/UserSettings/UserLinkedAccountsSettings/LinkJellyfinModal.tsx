@@ -2,6 +2,7 @@ import Alert from '@app/components/Common/Alert';
 import Modal from '@app/components/Common/Modal';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import { MediaServerType } from '@server/constants/server';
@@ -82,7 +83,7 @@ const LinkJellyfinModal: React.FC<LinkJellyfinModalProps> = ({
           try {
             setError(null);
             await axios.post(
-              `/api/v1/user/${user?.id}/settings/linked-accounts/jellyfin`,
+              apiUrl(`/user/${user?.id}/settings/linked-accounts/jellyfin`),
               {
                 username,
                 password,

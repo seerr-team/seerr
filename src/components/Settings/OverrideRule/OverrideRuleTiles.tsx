@@ -1,5 +1,6 @@
 import type { DVRTestResponse } from '@app/components/Settings/SettingsServices';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 import type { TmdbGenre } from '@server/api/themoviedb/interfaces';
@@ -53,8 +54,8 @@ const OverrideRuleTiles = ({
   const intl = useIntl();
   const [users, setUsers] = useState<User[] | null>(null);
   const [keywords, setKeywords] = useState<Keyword[] | null>(null);
-  const { data: languages } = useSWR<Language[]>('/api/v1/languages');
-  const { data: genres } = useSWR<TmdbGenre[]>('/api/v1/genres/movie');
+  const { data: languages } = useSWR<Language[]>(apiUrl('/languages'));
+  const { data: genres } = useSWR<TmdbGenre[]>(apiUrl('/genres/movie'));
   const [testResponses, setTestResponses] = useState<
     (DVRTestResponse & { type: string; id: number })[]
   >([]);
@@ -66,11 +67,13 @@ const OverrideRuleTiles = ({
       const { hostname, port, apiKey, baseUrl, useSsl = false } = service;
       try {
         const response = await axios.post<DVRTestResponse>(
-          `/api/v1/settings/${
-            radarrServices.includes(service as RadarrSettings)
-              ? 'radarr'
-              : 'sonarr'
-          }/test`,
+          apiUrl(
+            `/settings/${
+              radarrServices.includes(service as RadarrSettings)
+                ? 'radarr'
+                : 'sonarr'
+            }/test`
+          ),
           {
             hostname,
             apiKey,
@@ -114,7 +117,7 @@ const OverrideRuleTiles = ({
           .filter((keywordId) => keywordId)
           .map(async (keywordId) => {
             const response = await axios.get<Keyword | null>(
-              `/api/v1/keyword/${keywordId}`
+              apiUrl(`/keyword/${keywordId}`)
             );
             return response.data;
           })
@@ -129,7 +132,7 @@ const OverrideRuleTiles = ({
         .join(',');
       if (allUsersFromRules) {
         const response = await axios.get(
-          `/api/v1/user?includeIds=${encodeURIComponent(allUsersFromRules)}`
+          apiUrl(`/user?includeIds=${encodeURIComponent(allUsersFromRules)}`)
         );
         const users: User[] = response.data.results;
         setUsers(users);
@@ -289,7 +292,7 @@ const OverrideRuleTiles = ({
               <div className="-ml-px flex w-0 flex-1">
                 <button
                   onClick={async () => {
-                    await axios.delete(`/api/v1/overrideRule/${rule.id}`);
+                    await axios.delete(apiUrl(`/overrideRule/${rule.id}`));
                     revalidate();
                   }}
                   className="focus:ring-blue relative inline-flex w-0 flex-1 items-center justify-center rounded-br-lg border border-transparent py-4 text-sm font-medium leading-5 text-gray-200 transition duration-150 ease-in-out hover:text-white focus:z-10 focus:border-gray-500 focus:outline-none"

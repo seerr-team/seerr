@@ -1,5 +1,6 @@
 import Spinner from '@app/assets/spinner.svg';
 import Tag from '@app/components/Common/Tag';
+import { apiUrl } from '@app/utils/apiUrl';
 import { BuildingOffice2Icon } from '@heroicons/react/24/outline';
 import type { ProductionCompany, TvNetwork } from '@server/models/common';
 import useSWR from 'swr';
@@ -11,7 +12,7 @@ type CompanyTagProps = {
 
 const CompanyTag = ({ companyId, type }: CompanyTagProps) => {
   const { data, error } = useSWR<TvNetwork | ProductionCompany>(
-    `/api/v1/${type}/${companyId}`
+    apiUrl(`/${type}/${companyId}`)
   );
 
   if (!data && !error) {

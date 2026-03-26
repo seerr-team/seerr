@@ -9,6 +9,7 @@ import useDebouncedState from '@app/hooks/useDebouncedState';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import {
@@ -79,18 +80,20 @@ const SettingsLogs = () => {
   };
 
   const { data, error } = useSWR<LogsResultsResponse>(
-    `/api/v1/settings/logs?take=${currentPageSize}&skip=${
-      pageIndex * currentPageSize
-    }&filter=${currentFilter}${
-      debouncedSearchFilter ? `&search=${debouncedSearchFilter}` : ''
-    }`,
+    apiUrl(
+      `/settings/logs?take=${currentPageSize}&skip=${
+        pageIndex * currentPageSize
+      }&filter=${currentFilter}${
+        debouncedSearchFilter ? `&search=${debouncedSearchFilter}` : ''
+      }`
+    ),
     {
       refreshInterval: refreshInterval,
       revalidateOnFocus: false,
     }
   );
 
-  const { data: appData } = useSWR('/api/v1/status/appdata');
+  const { data: appData } = useSWR(apiUrl('/status/appdata'));
 
   useEffect(() => {
     const filterString = window.localStorage.getItem('logs-display-settings');

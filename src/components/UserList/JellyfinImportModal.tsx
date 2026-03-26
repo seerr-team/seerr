@@ -3,6 +3,7 @@ import CachedImage from '@app/components/Common/CachedImage';
 import Modal from '@app/components/Common/Modal';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { MediaServerType } from '@server/constants/server';
 import type { UserResultsResponse } from '@server/interfaces/api/userInterfaces';
@@ -48,12 +49,12 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
       email: string;
       thumb: string;
     }[]
-  >(`/api/v1/settings/jellyfin/users`, {
+  >(apiUrl(`/settings/jellyfin/users`), {
     revalidateOnMount: true,
   });
 
   const { data: existingUsers } = useSWR<UserResultsResponse>(
-    `/api/v1/user?take=${children}`
+    apiUrl(`/user?take=${children}`)
   );
 
   const importUsers = async () => {
@@ -61,7 +62,7 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
 
     try {
       const { data: createdUsers } = await axios.post(
-        '/api/v1/user/import-from-jellyfin',
+        apiUrl('/user/import-from-jellyfin'),
         { jellyfinUserIds: selectedUsers }
       );
 

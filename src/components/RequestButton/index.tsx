@@ -3,6 +3,7 @@ import RequestModal from '@app/components/RequestModal';
 import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import {
@@ -96,11 +97,11 @@ const RequestButton = ({
     request: MediaRequest,
     type: 'approve' | 'decline'
   ) => {
-    const response = await axios.post(`/api/v1/request/${request.id}/${type}`);
+    const response = await axios.post(apiUrl(`/request/${request.id}/${type}`));
 
     if (response) {
       onUpdate();
-      mutate('/api/v1/request/count');
+      mutate(apiUrl('/request/count'));
     }
   };
 
@@ -114,12 +115,12 @@ const RequestButton = ({
 
     await Promise.all(
       requests.map(async (request) => {
-        return axios.post(`/api/v1/request/${request.id}/${type}`);
+        return axios.post(apiUrl(`/request/${request.id}/${type}`));
       })
     );
 
     onUpdate();
-    mutate('/api/v1/request/count');
+    mutate(apiUrl('/request/count'));
   };
 
   const buttons: ButtonOption[] = [];

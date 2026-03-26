@@ -1,5 +1,11 @@
 import csurf from '@dr.pogodin/csurf';
 import PlexAPI from '@server/api/plexapi';
+import {
+  API_BASE_PATH,
+  API_DOCS_PATH,
+  AVATAR_PROXY_PATH,
+  IMAGE_PROXY_PATH,
+} from '@server/constants/routes';
 import dataSource, { getRepository, isPgsql } from '@server/datasource';
 import DiscoverSlider from '@server/entity/DiscoverSlider';
 import { Session } from '@server/entity/Session';
@@ -219,7 +225,7 @@ app
       })
     );
     const apiDocs = YAML.load(API_SPEC_PATH);
-    server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(apiDocs));
+    server.use(API_DOCS_PATH, swaggerUi.serve, swaggerUi.setup(apiDocs));
     server.use(
       OpenApiValidator.middleware({
         apiSpec: API_SPEC_PATH,
@@ -238,11 +244,11 @@ app
       };
       next();
     });
-    server.use('/api/v1', routes);
+    server.use(API_BASE_PATH, routes);
 
     // Do not set cookies so CDNs can cache them
-    server.use('/imageproxy', clearCookies, imageproxy);
-    server.use('/avatarproxy', clearCookies, avatarproxy);
+    server.use(IMAGE_PROXY_PATH, clearCookies, imageproxy);
+    server.use(AVATAR_PROXY_PATH, clearCookies, avatarproxy);
 
     server.get('*', (req, res) => handle(req, res));
     server.use(

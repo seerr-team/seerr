@@ -11,6 +11,7 @@ import { availableLanguages } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
@@ -81,9 +82,9 @@ const SettingsMain = () => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR<MainSettings>('/api/v1/settings/main');
+  } = useSWR<MainSettings>(apiUrl('/settings/main'));
   const { data: userData } = useSWR<UserSettingsGeneralResponse>(
-    currentUser ? `/api/v1/user/${currentUser.id}/settings/main` : null
+    currentUser ? apiUrl(`/user/${currentUser.id}/settings/main`) : null
   );
 
   const MainSettingsSchema = Yup.object().shape({
@@ -123,7 +124,7 @@ const SettingsMain = () => {
 
   const regenerate = async () => {
     try {
-      await axios.post('/api/v1/settings/main/regenerate');
+      await axios.post(apiUrl('/settings/main/regenerate'));
 
       revalidate();
       addToast(intl.formatMessage(messages.toastApiKeySuccess), {
@@ -180,7 +181,7 @@ const SettingsMain = () => {
           validationSchema={MainSettingsSchema}
           onSubmit={async (values) => {
             try {
-              await axios.post('/api/v1/settings/main', {
+              await axios.post(apiUrl('/settings/main'), {
                 applicationTitle: values.applicationTitle,
                 applicationUrl: values.applicationUrl,
                 hideAvailable: values.hideAvailable,
@@ -196,8 +197,8 @@ const SettingsMain = () => {
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
               });
-              mutate('/api/v1/settings/public');
-              mutate('/api/v1/status');
+              mutate(apiUrl('/settings/public'));
+              mutate(apiUrl('/status'));
 
               if (setLocale) {
                 setLocale(

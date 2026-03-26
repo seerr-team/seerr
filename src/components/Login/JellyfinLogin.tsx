@@ -1,6 +1,7 @@
 import Button from '@app/components/Common/Button';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import useSettings from '@app/hooks/useSettings';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/solid';
@@ -74,7 +75,7 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
         validateOnBlur={false}
         onSubmit={async (values) => {
           try {
-            await axios.post('/api/v1/auth/jellyfin', {
+            await axios.post(apiUrl('/auth/jellyfin'), {
               username: values.username,
               password: values.password,
               email: values.username,

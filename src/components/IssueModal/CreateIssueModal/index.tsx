@@ -4,6 +4,7 @@ import { issueOptions } from '@app/components/IssueModal/constants';
 import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { RadioGroup } from '@headlessui/react';
 import { ArrowRightCircleIcon } from '@heroicons/react/24/solid';
@@ -63,7 +64,7 @@ const CreateIssueModal = ({
   const { hasPermission } = useUser();
   const { addToast } = useToasts();
   const { data, error } = useSWR<MovieDetails | TvDetails>(
-    tmdbId ? `/api/v1/${mediaType}/${tmdbId}` : null
+    tmdbId ? apiUrl(`/${mediaType}/${tmdbId}`) : null
   );
 
   if (!tmdbId) {
@@ -101,7 +102,7 @@ const CreateIssueModal = ({
       validationSchema={CreateIssueModalSchema}
       onSubmit={async (values) => {
         try {
-          const newIssue = await axios.post<Issue>('/api/v1/issue', {
+          const newIssue = await axios.post<Issue>(apiUrl('/issue'), {
             issueType: values.selectedIssue.issueType,
             message: values.message,
             mediaId: data?.mediaInfo?.id,
@@ -132,7 +133,7 @@ const CreateIssueModal = ({
               }
             );
 
-            mutate('/api/v1/issue/count');
+            mutate(apiUrl('/issue/count'));
           }
 
           if (onCancel) {

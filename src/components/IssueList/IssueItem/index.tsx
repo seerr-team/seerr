@@ -5,6 +5,7 @@ import Tooltip from '@app/components/Common/Tooltip';
 import { issueOptions } from '@app/components/IssueModal/constants';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { EyeIcon } from '@heroicons/react/24/solid';
 import { IssueStatus } from '@server/constants/issue';
@@ -46,8 +47,8 @@ const IssueItem = ({ issue }: IssueItemProps) => {
   });
   const url =
     issue.media.mediaType === 'movie'
-      ? `/api/v1/movie/${issue.media.tmdbId}`
-      : `/api/v1/tv/${issue.media.tmdbId}`;
+      ? apiUrl(`/movie/${issue.media.tmdbId}`)
+      : apiUrl(`/tv/${issue.media.tmdbId}`);
   const { data: title, error } = useSWR<MovieDetails | TvDetails>(
     inView ? url : null
   );

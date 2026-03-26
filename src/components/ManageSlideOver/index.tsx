@@ -10,6 +10,7 @@ import RequestBlock from '@app/components/RequestBlock';
 import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { Bars4Icon, ServerIcon } from '@heroicons/react/24/outline';
 import {
@@ -112,19 +113,19 @@ const ManageSlideOver = ({
     settings.currentSettings.mediaServerType === MediaServerType.PLEX &&
       data.mediaInfo &&
       hasPermission(Permission.ADMIN)
-      ? `/api/v1/media/${data.mediaInfo.id}/watch_data`
+      ? apiUrl(`/media/${data.mediaInfo.id}/watch_data`)
       : null
   );
   const { data: radarrData } = useSWR<RadarrSettings[]>(
-    hasPermission(Permission.ADMIN) ? '/api/v1/settings/radarr' : null
+    hasPermission(Permission.ADMIN) ? apiUrl('/settings/radarr') : null
   );
   const { data: sonarrData } = useSWR<SonarrSettings[]>(
-    hasPermission(Permission.ADMIN) ? '/api/v1/settings/sonarr' : null
+    hasPermission(Permission.ADMIN) ? apiUrl('/settings/sonarr') : null
   );
 
   const deleteMedia = async () => {
     if (data.mediaInfo) {
-      await axios.delete(`/api/v1/media/${data.mediaInfo.id}`);
+      await axios.delete(apiUrl(`/media/${data.mediaInfo.id}`));
       revalidate();
       onClose();
     }
@@ -133,9 +134,9 @@ const ManageSlideOver = ({
   const deleteMediaFile = async (is4k = false) => {
     if (data.mediaInfo) {
       await axios.delete(
-        `/api/v1/media/${data.mediaInfo.id}/file?is4k=${is4k}`
+        apiUrl(`/media/${data.mediaInfo.id}/file?is4k=${is4k}`)
       );
-      await axios.delete(`/api/v1/media/${data.mediaInfo.id}`);
+      await axios.delete(apiUrl(`/media/${data.mediaInfo.id}`));
       revalidate();
       onClose();
     }
@@ -189,7 +190,7 @@ const ManageSlideOver = ({
 
   const markAvailable = async (is4k = false) => {
     if (data.mediaInfo) {
-      await axios.post(`/api/v1/media/${data.mediaInfo?.id}/available`, {
+      await axios.post(apiUrl(`/media/${data.mediaInfo?.id}/available`), {
         is4k,
         ...(mediaType === 'tv' && {
           seasons: data.seasons.filter((season) => season.seasonNumber !== 0),

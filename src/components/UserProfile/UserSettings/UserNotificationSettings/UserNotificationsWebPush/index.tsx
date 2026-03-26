@@ -8,6 +8,7 @@ import DeviceItem from '@app/components/UserProfile/UserSettings/UserNotificatio
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import {
   getPushSubscription,
@@ -64,7 +65,7 @@ const UserWebPushSettings = () => {
     error,
     mutate: revalidate,
   } = useSWR<UserSettingsNotificationsResponse>(
-    user ? `/api/v1/user/${user?.id}/settings/notifications` : null
+    user ? apiUrl(`/user/${user?.id}/settings/notifications`) : null
   );
   const { data: dataDevices, mutate: revalidateDevices } = useSWR<
     {
@@ -74,7 +75,7 @@ const UserWebPushSettings = () => {
       userAgent: string;
       createdAt: Date;
     }[]
-  >(`/api/v1/user/${user?.id}/pushSubscriptions`, { revalidateOnMount: true });
+  >(apiUrl(`/user/${user?.id}/pushSubscriptions`), { revalidateOnMount: true });
 
   // Subscribes to the push manager
   // Will only add to the database if subscribing for the first time
@@ -122,9 +123,11 @@ const UserWebPushSettings = () => {
       if (endpointToDelete) {
         try {
           await axios.delete(
-            `/api/v1/user/${user?.id}/pushSubscription/${encodeURIComponent(
-              endpointToDelete
-            )}`
+            apiUrl(
+              `/user/${user?.id}/pushSubscription/${encodeURIComponent(
+                endpointToDelete
+              )}`
+            )
           );
         } catch {
           // Ignore deletion failures - backend cleanup is best effort
@@ -148,9 +151,9 @@ const UserWebPushSettings = () => {
   const deletePushSubscriptionFromBackend = async (endpoint: string) => {
     try {
       await axios.delete(
-        `/api/v1/user/${user?.id}/pushSubscription/${encodeURIComponent(
-          endpoint
-        )}`
+        apiUrl(
+          `/user/${user?.id}/pushSubscription/${encodeURIComponent(endpoint)}`
+        )
       );
 
       addToast(intl.formatMessage(messages.subscriptiondeleted), {
@@ -253,7 +256,7 @@ const UserWebPushSettings = () => {
         onSubmit={async (values) => {
           try {
             await axios.post(
-              `/api/v1/user/${user?.id}/settings/notifications`,
+              apiUrl(`/user/${user?.id}/settings/notifications`),
               {
                 pgpKey: data?.pgpKey,
                 discordId: data?.discordId,
@@ -267,7 +270,7 @@ const UserWebPushSettings = () => {
                 },
               }
             );
-            mutate('/api/v1/settings/public');
+            mutate(apiUrl('/settings/public'));
             addToast(intl.formatMessage(messages.webpushsettingssaved), {
               appearance: 'success',
               autoDismiss: true,

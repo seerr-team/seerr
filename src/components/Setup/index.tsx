@@ -12,6 +12,7 @@ import SettingsServices from '@app/components/Settings/SettingsServices';
 import SetupSteps from '@app/components/Setup/SetupSteps';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { MediaServerType } from '@server/constants/server';
 import type { Library } from '@server/lib/settings';
@@ -59,13 +60,13 @@ const Setup = () => {
   const finishSetup = async () => {
     setIsUpdating(true);
     const response = await axios.post<{ initialized: boolean }>(
-      '/api/v1/settings/initialize'
+      apiUrl('/settings/initialize')
     );
 
     setIsUpdating(false);
     if (response.data.initialized) {
-      await axios.post('/api/v1/settings/main', { locale });
-      mutate('/api/v1/settings/public');
+      await axios.post(apiUrl('/settings/main'), { locale });
+      mutate(apiUrl('/settings/public'));
 
       router.push('/');
     }
@@ -74,9 +75,9 @@ const Setup = () => {
   const validateLibraries = useCallback(async () => {
     try {
       const endpointMap: Record<MediaServerType, string> = {
-        [MediaServerType.JELLYFIN]: '/api/v1/settings/jellyfin',
-        [MediaServerType.EMBY]: '/api/v1/settings/jellyfin',
-        [MediaServerType.PLEX]: '/api/v1/settings/plex',
+        [MediaServerType.JELLYFIN]: apiUrl('/settings/jellyfin'),
+        [MediaServerType.EMBY]: apiUrl('/settings/jellyfin'),
+        [MediaServerType.PLEX]: apiUrl('/settings/plex'),
         [MediaServerType.NOT_CONFIGURED]: '',
       };
 
@@ -100,7 +101,7 @@ const Setup = () => {
     }
   }, [intl, mediaServerType, toasts]);
 
-  const { data: backdrops } = useSWR<string[]>('/api/v1/backdrops', {
+  const { data: backdrops } = useSWR<string[]>(apiUrl('/backdrops'), {
     refreshInterval: 0,
     refreshWhenHidden: false,
     revalidateOnFocus: false,

@@ -31,6 +31,7 @@ import useSettings from '@app/hooks/useSettings';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import { sortCrewPriority } from '@app/utils/creditHelpers';
 import defineMessages from '@app/utils/defineMessages';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
@@ -133,7 +134,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR<TvDetailsType>(`/api/v1/tv/${router.query.tvId}`, {
+  } = useSWR<TvDetailsType>(apiUrl(`/tv/${router.query.tvId}`), {
     fallbackData: tv,
     refreshInterval: refreshIntervalHelper(
       {
@@ -145,7 +146,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   });
 
   const { data: ratingData } = useSWR<RTRating>(
-    `/api/v1/tv/${router.query.tvId}/ratings`
+    apiUrl(`/tv/${router.query.tvId}/ratings`)
   );
 
   const sortedCrew = useMemo(
@@ -355,7 +356,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     setIsUpdating(true);
 
     try {
-      await axios.post('/api/v1/watchlist', {
+      await axios.post(apiUrl('/watchlist'), {
         tmdbId: tv?.id,
         mediaType: MediaType.TV,
         title: tv?.name,
@@ -387,7 +388,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
 
     try {
       await axios.delete(
-        `/api/v1/watchlist/${tv?.id}?mediaType=${MediaType.TV}`
+        apiUrl(`/watchlist/${tv?.id}?mediaType=${MediaType.TV}`)
       );
 
       addToast(
@@ -416,7 +417,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     setIsBlocklistUpdating(true);
 
     try {
-      const res = await axios.post('/api/v1/blocklist', {
+      const res = await axios.post(apiUrl('/blocklist'), {
         tmdbId: tv?.id,
         mediaType: 'tv',
         title: tv?.name,
@@ -1351,14 +1352,14 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
       <MediaSlider
         sliderKey="recommendations"
         title={intl.formatMessage(messages.recommendations)}
-        url={`/api/v1/tv/${router.query.tvId}/recommendations`}
+        url={apiUrl(`/tv/${router.query.tvId}/recommendations`)}
         linkUrl={`/tv/${data.id}/recommendations`}
         hideWhenEmpty
       />
       <MediaSlider
         sliderKey="similar"
         title={intl.formatMessage(messages.similar)}
-        url={`/api/v1/tv/${router.query.tvId}/similar`}
+        url={apiUrl(`/tv/${router.query.tvId}/similar`)}
         linkUrl={`/tv/${data.id}/similar`}
         hideWhenEmpty
       />

@@ -3,6 +3,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import PersonCard from '@app/components/PersonCard';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { TvDetails } from '@server/models/Tv';
 import Link from 'next/link';
@@ -17,7 +18,7 @@ const messages = defineMessages('components.TvDetails.TvCrew', {
 const TvCrew = () => {
   const router = useRouter();
   const intl = useIntl();
-  const { data, error } = useSWR<TvDetails>(`/api/v1/tv/${router.query.tvId}`);
+  const { data, error } = useSWR<TvDetails>(apiUrl(`/tv/${router.query.tvId}`));
 
   if (!data && !error) {
     return <LoadingSpinner />;

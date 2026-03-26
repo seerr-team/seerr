@@ -1,3 +1,4 @@
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import {
   ArrowUpCircleIcon,
@@ -24,7 +25,7 @@ interface VersionStatusProps {
 
 const VersionStatus = ({ onClick }: VersionStatusProps) => {
   const intl = useIntl();
-  const { data } = useSWR<StatusResponse>('/api/v1/status', {
+  const { data } = useSWR<StatusResponse>(apiUrl('/status'), {
     refreshInterval: 60 * 1000,
   });
 

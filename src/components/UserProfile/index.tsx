@@ -8,6 +8,7 @@ import TmdbTitleCard from '@app/components/TitleCard/TmdbTitleCard';
 import ProfileHeader from '@app/components/UserProfile/ProfileHeader';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowRightCircleIcon } from '@heroicons/react/24/outline';
 import type { WatchlistResponse } from '@server/interfaces/api/discoverInterfaces';
@@ -60,7 +61,7 @@ const UserProfile = () => {
           [Permission.MANAGE_REQUESTS, Permission.REQUEST_VIEW],
           { type: 'or' }
         ))
-      ? `/api/v1/user/${user?.id}/requests?take=10&skip=0`
+      ? apiUrl(`/user/${user?.id}/requests?take=10&skip=0`)
       : null
   );
   const { data: quota } = useSWR<QuotaResponse>(
@@ -70,14 +71,14 @@ const UserProfile = () => {
           [Permission.MANAGE_USERS, Permission.MANAGE_REQUESTS],
           { type: 'and' }
         ))
-      ? `/api/v1/user/${user.id}/quota`
+      ? apiUrl(`/user/${user.id}/quota`)
       : null
   );
   const { data: watchData, error: watchDataError } =
     useSWR<UserWatchDataResponse>(
       user?.userType === UserType.PLEX &&
         (user.id === currentUser?.id || currentHasPermission(Permission.ADMIN))
-        ? `/api/v1/user/${user.id}/watch_data`
+        ? apiUrl(`/user/${user.id}/watch_data`)
         : null
     );
 
@@ -90,7 +91,7 @@ const UserProfile = () => {
             type: 'or',
           }
         )
-        ? `/api/v1/user/${user?.id}/watchlist`
+        ? apiUrl(`/user/${user?.id}/watchlist`)
         : null,
       {
         revalidateOnMount: true,

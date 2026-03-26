@@ -3,6 +3,7 @@ import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type {
   MovieResult,
@@ -30,7 +31,7 @@ const Search = () => {
     fetchMore,
     error,
   } = useDiscover<MovieResult | TvResult | PersonResult>(
-    `/api/v1/search`,
+    apiUrl(`/search`),
     {
       query: router.query.query,
     },

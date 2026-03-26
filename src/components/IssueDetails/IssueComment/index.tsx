@@ -3,6 +3,7 @@ import CachedImage from '@app/components/Common/CachedImage';
 import Modal from '@app/components/Common/Modal';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { Menu, Transition } from '@headlessui/react';
 import { EllipsisVerticalIcon } from '@heroicons/react/24/solid';
@@ -50,7 +51,7 @@ const IssueComment = ({
 
   const deleteComment = async () => {
     try {
-      await axios.delete(`/api/v1/issueComment/${comment.id}`);
+      await axios.delete(apiUrl(`/issueComment/${comment.id}`));
     } catch {
       // something went wrong deleting the comment
     } finally {
@@ -177,7 +178,7 @@ const IssueComment = ({
               <Formik
                 initialValues={{ newMessage: comment.message }}
                 onSubmit={async (values) => {
-                  await axios.put(`/api/v1/issueComment/${comment.id}`, {
+                  await axios.put(apiUrl(`/issueComment/${comment.id}`), {
                     message: values.newMessage,
                   });
 

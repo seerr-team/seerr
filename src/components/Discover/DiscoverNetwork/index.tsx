@@ -5,6 +5,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { TvNetwork } from '@server/models/common';
 import type { TvResult } from '@server/models/Search';
@@ -29,7 +30,7 @@ const DiscoverTvNetwork = () => {
     error,
     firstResultData,
   } = useDiscover<TvResult, { network: TvNetwork }>(
-    `/api/v1/discover/tv/network/${router.query.networkId}`
+    apiUrl(`/discover/tv/network/${router.query.networkId}`)
   );
 
   if (error) {

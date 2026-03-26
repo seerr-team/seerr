@@ -3,6 +3,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import PersonCard from '@app/components/PersonCard';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { MovieDetails } from '@server/models/Movie';
 import Link from 'next/link';
@@ -18,7 +19,7 @@ const MovieCrew = () => {
   const router = useRouter();
   const intl = useIntl();
   const { data, error } = useSWR<MovieDetails>(
-    `/api/v1/movie/${router.query.movieId}`
+    apiUrl(`/movie/${router.query.movieId}`)
   );
 
   if (!data && !error) {

@@ -5,6 +5,7 @@ import SensitiveInput from '@app/components/Common/SensitiveInput';
 import LibraryItem from '@app/components/Settings/LibraryItem';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
@@ -99,9 +100,9 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
     data,
     error,
     mutate: revalidate,
-  } = useSWR<JellyfinSettings>('/api/v1/settings/jellyfin');
+  } = useSWR<JellyfinSettings>(apiUrl('/settings/jellyfin'));
   const { data: dataSync, mutate: revalidateSync } = useSWR<SyncStatus>(
-    '/api/v1/settings/jellyfin/sync',
+    apiUrl('/settings/jellyfin/sync'),
     {
       refreshInterval: 1000,
     }
@@ -170,7 +171,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
     }
 
     try {
-      await axios.get('/api/v1/settings/jellyfin/library', {
+      await axios.get(apiUrl('/settings/jellyfin/library'), {
         params,
       });
       setIsSyncing(false);
@@ -209,14 +210,14 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
   };
 
   const startScan = async () => {
-    await axios.post('/api/v1/settings/jellyfin/sync', {
+    await axios.post(apiUrl('/settings/jellyfin/sync'), {
       start: true,
     });
     revalidateSync();
   };
 
   const cancelScan = async () => {
-    await axios.post('/api/v1/settings/jellyfin/sync', {
+    await axios.post(apiUrl('/settings/jellyfin/sync'), {
       cancel: true,
     });
     revalidateSync();
@@ -233,11 +234,11 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
           .join(',');
       }
 
-      await axios.get('/api/v1/settings/jellyfin/library', {
+      await axios.get(apiUrl('/settings/jellyfin/library'), {
         params,
       });
     } else {
-      await axios.get('/api/v1/settings/jellyfin/library', {
+      await axios.get(apiUrl('/settings/jellyfin/library'), {
         params: {
           enable: [...activeLibraries, libraryId].join(','),
         },
@@ -451,7 +452,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
         validationSchema={JellyfinSettingsSchema}
         onSubmit={async (values) => {
           try {
-            await axios.post('/api/v1/settings/jellyfin', {
+            await axios.post(apiUrl('/settings/jellyfin'), {
               ip: values.hostname,
               port: Number(values.port),
               useSsl: values.useSsl,

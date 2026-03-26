@@ -3,6 +3,7 @@ import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { MovieResult } from '@server/models/Search';
 import { useIntl } from 'react-intl';
@@ -22,7 +23,7 @@ const UpcomingMovies = () => {
     titles,
     fetchMore,
     error,
-  } = useDiscover<MovieResult>('/api/v1/discover/movies/upcoming');
+  } = useDiscover<MovieResult>(apiUrl('/discover/movies/upcoming'));
 
   if (error) {
     return <ErrorPage statusCode={500} />;

@@ -1,3 +1,4 @@
+import { apiUrl } from '@app/utils/apiUrl';
 import type { UserPushSubscription } from '@server/entity/UserPushSubscription';
 import type { PublicSettingsResponse } from '@server/interfaces/api/settingsInterfaces';
 import axios from 'axios';
@@ -56,7 +57,7 @@ export const verifyPushSubscription = async (
     const endpoint = subscription.endpoint;
 
     const { data } = await axios.get<UserPushSubscription>(
-      `/api/v1/user/${userId}/pushSubscription/${encodeURIComponent(endpoint)}`
+      apiUrl(`/user/${userId}/pushSubscription/${encodeURIComponent(endpoint)}`)
     );
 
     return data.endpoint === endpoint;
@@ -93,9 +94,11 @@ export const verifyAndResubscribePushSubscription = async (
       if (oldEndpoint) {
         try {
           await axios.delete(
-            `/api/v1/user/${userId}/pushSubscription/${encodeURIComponent(
-              oldEndpoint
-            )}`
+            apiUrl(
+              `/user/${userId}/pushSubscription/${encodeURIComponent(
+                oldEndpoint
+              )}`
+            )
           );
         } catch {
           // Ignore errors when deleting old endpoint (it might not exist)
@@ -140,7 +143,7 @@ export const subscribeToPushNotifications = async (
     const { endpoint, keys } = subscription.toJSON();
 
     if (keys?.p256dh && keys?.auth) {
-      await axios.post('/api/v1/user/registerPushSubscription', {
+      await axios.post(apiUrl('/user/registerPushSubscription'), {
         endpoint,
         p256dh: keys.p256dh,
         auth: keys.auth,

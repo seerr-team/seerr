@@ -2,6 +2,7 @@ import Modal from '@app/components/Common/Modal';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import type { RadarrTestResponse } from '@app/components/Settings/SettingsServices';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
 import { Transition } from '@headlessui/react';
@@ -155,7 +156,7 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
       setIsTesting(true);
       try {
         const response = await axios.post<RadarrTestResponse>(
-          '/api/v1/settings/radarr/test',
+          apiUrl('/settings/radarr/test'),
           {
             hostname,
             apiKey,
@@ -259,10 +260,10 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
               tagRequests: values.tagRequests,
             };
             if (!radarr) {
-              await axios.post('/api/v1/settings/radarr', submission);
+              await axios.post(apiUrl('/settings/radarr'), submission);
             } else {
               await axios.put(
-                `/api/v1/settings/radarr/${radarr.id}`,
+                apiUrl(`/settings/radarr/${radarr.id}`),
                 submission
               );
             }

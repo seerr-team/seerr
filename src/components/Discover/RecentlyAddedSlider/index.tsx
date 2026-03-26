@@ -1,6 +1,7 @@
 import Slider from '@app/components/Slider';
 import TmdbTitleCard from '@app/components/TitleCard/TmdbTitleCard';
 import { Permission, useUser } from '@app/hooks/useUser';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { MediaResultsResponse } from '@server/interfaces/api/mediaInterfaces';
 import { useIntl } from 'react-intl';
@@ -14,7 +15,7 @@ const RecentlyAddedSlider = () => {
   const intl = useIntl();
   const { hasPermission } = useUser();
   const { data: media, error: mediaError } = useSWR<MediaResultsResponse>(
-    '/api/v1/media?filter=allavailable&take=20&sort=mediaAdded',
+    apiUrl('/media?filter=allavailable&take=20&sort=mediaAdded'),
     { revalidateOnMount: true }
   );
 

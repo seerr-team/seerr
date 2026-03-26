@@ -11,6 +11,7 @@ import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import {
   ChevronLeftIcon,
@@ -76,11 +77,13 @@ const Blocklist = () => {
     error,
     mutate: revalidate,
   } = useSWR<BlocklistResultsResponse>(
-    `/api/v1/blocklist/?take=${currentPageSize}&skip=${
-      pageIndex * currentPageSize
-    }&filter=${currentFilter}${
-      debouncedSearchFilter ? `&search=${debouncedSearchFilter}` : ''
-    }`,
+    apiUrl(
+      `/blocklist?take=${currentPageSize}&skip=${
+        pageIndex * currentPageSize
+      }&filter=${currentFilter}${
+        debouncedSearchFilter ? `&search=${debouncedSearchFilter}` : ''
+      }`
+    ),
     {
       refreshInterval: 0,
       revalidateOnFocus: false,
@@ -281,8 +284,8 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
 
   const url =
     item.mediaType === 'movie'
-      ? `/api/v1/movie/${item.tmdbId}`
-      : `/api/v1/tv/${item.tmdbId}`;
+      ? apiUrl(`/movie/${item.tmdbId}`)
+      : apiUrl(`/tv/${item.tmdbId}`);
   const { data: title, error } = useSWR<MovieDetails | TvDetails>(
     inView ? url : null
   );
@@ -301,7 +304,7 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
 
     try {
       await axios.delete(
-        `/api/v1/blocklist/${tmdbId}?mediaType=${item.mediaType}`
+        apiUrl(`/blocklist/${tmdbId}?mediaType=${item.mediaType}`)
       );
 
       addToast(

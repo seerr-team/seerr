@@ -1,3 +1,4 @@
+import { apiUrl } from '@app/utils/apiUrl';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type {
   ServiceCommonServer,
@@ -14,13 +15,15 @@ interface OverrideStatus {
 
 const useRequestOverride = (request: MediaRequest): OverrideStatus => {
   const { data: allServers } = useSWR<ServiceCommonServer[]>(
-    `/api/v1/service/${request.type === 'movie' ? 'radarr' : 'sonarr'}`
+    apiUrl(`/service/${request.type === 'movie' ? 'radarr' : 'sonarr'}`)
   );
 
   const { data } = useSWR<ServiceCommonServerWithDetails>(
-    `/api/v1/service/${request.type === 'movie' ? 'radarr' : 'sonarr'}/${
-      request.serverId
-    }`
+    apiUrl(
+      `/service/${request.type === 'movie' ? 'radarr' : 'sonarr'}/${
+        request.serverId
+      }`
+    )
   );
 
   if (!data || !allServers) {

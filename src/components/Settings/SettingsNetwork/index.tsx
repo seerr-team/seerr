@@ -4,6 +4,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import Tooltip from '@app/components/Common/Tooltip';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import type { NetworkSettings } from '@server/lib/settings';
@@ -69,7 +70,7 @@ const SettingsNetwork = () => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR<NetworkSettings>('/api/v1/settings/network');
+  } = useSWR<NetworkSettings>(apiUrl('/settings/network'));
 
   const NetworkSettingsSchema = Yup.object().shape({
     dnsCacheForceMinTtl: Yup.number().when('dnsCacheEnabled', {
@@ -147,7 +148,7 @@ const SettingsNetwork = () => {
           validationSchema={NetworkSettingsSchema}
           onSubmit={async (values) => {
             try {
-              await axios.post('/api/v1/settings/network', {
+              await axios.post(apiUrl('/settings/network'), {
                 csrfProtection: values.csrfProtection,
                 forceIpv4First: values.forceIpv4First,
                 trustProxy: values.trustProxy,
@@ -168,8 +169,8 @@ const SettingsNetwork = () => {
                 },
                 apiRequestTimeout: Number(values.apiRequestTimeout) * 1000,
               });
-              mutate('/api/v1/settings/public');
-              mutate('/api/v1/status');
+              mutate(apiUrl('/settings/public'));
+              mutate(apiUrl('/status'));
 
               addToast(intl.formatMessage(messages.toastSettingsSuccess), {
                 autoDismiss: true,

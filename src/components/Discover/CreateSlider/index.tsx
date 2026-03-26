@@ -4,6 +4,7 @@ import { sliderTitles } from '@app/components/Discover/constants';
 import MediaSlider from '@app/components/MediaSlider';
 import { WatchProviderSelector } from '@app/components/Selector';
 import { encodeURIExtraParams } from '@app/hooks/useDiscover';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type {
   TmdbCompanySearchResponse,
@@ -78,7 +79,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
         const keywords = await Promise.all(
           slider.data.split(',').map(async (keywordId) => {
             const keyword = await axios.get<Keyword | null>(
-              `/api/v1/keyword/${keywordId}`
+              apiUrl(`/keyword/${keywordId}`)
             );
             return keyword.data;
           })
@@ -102,9 +103,13 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
         }
 
         const response = await axios.get<TmdbGenre[]>(
-          `/api/v1/genres/${
-            slider.type === DiscoverSliderType.TMDB_MOVIE_GENRE ? 'movie' : 'tv'
-          }`
+          apiUrl(
+            `/genres/${
+              slider.type === DiscoverSliderType.TMDB_MOVIE_GENRE
+                ? 'movie'
+                : 'tv'
+            }`
+          )
         );
 
         const genre = response.data.find(
@@ -125,7 +130,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
         }
 
         const response = await axios.get<ProductionCompany>(
-          `/api/v1/studio/${slider.data}`
+          apiUrl(`/studio/${slider.data}`)
         );
 
         const studio = response.data;
@@ -172,7 +177,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
 
   const loadKeywordOptions = async (inputValue: string) => {
     const results = await axios.get<TmdbKeywordSearchResponse>(
-      '/api/v1/search/keyword',
+      apiUrl('/search/keyword'),
       {
         params: {
           query: encodeURIExtraParams(inputValue),
@@ -192,7 +197,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
     }
 
     const results = await axios.get<TmdbCompanySearchResponse>(
-      '/api/v1/search/company',
+      apiUrl('/search/company'),
       {
         params: {
           query: encodeURIExtraParams(inputValue),
@@ -208,7 +213,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
 
   const loadMovieGenreOptions = async () => {
     const results = await axios.get<GenreSliderItem[]>(
-      '/api/v1/discover/genreslider/movie'
+      apiUrl('/discover/genreslider/movie')
     );
 
     return results.data.map((result) => ({
@@ -219,7 +224,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
 
   const loadTvGenreOptions = async () => {
     const results = await axios.get<GenreSliderItem[]>(
-      '/api/v1/discover/genreslider/tv'
+      apiUrl('/discover/genreslider/tv')
     );
 
     return results.data.map((result) => ({
@@ -232,7 +237,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
     {
       type: DiscoverSliderType.TMDB_MOVIE_KEYWORD,
       title: intl.formatMessage(sliderTitles.tmdbmoviekeyword),
-      dataUrl: '/api/v1/discover/movies',
+      dataUrl: apiUrl('/discover/movies'),
       params: 'keywords=$value',
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
       dataPlaceholderText: intl.formatMessage(messages.providetmdbkeywordid),
@@ -240,7 +245,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
     {
       type: DiscoverSliderType.TMDB_TV_KEYWORD,
       title: intl.formatMessage(sliderTitles.tmdbtvkeyword),
-      dataUrl: '/api/v1/discover/tv',
+      dataUrl: apiUrl('/discover/tv'),
       params: 'keywords=$value',
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
       dataPlaceholderText: intl.formatMessage(messages.providetmdbkeywordid),
@@ -248,35 +253,35 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
     {
       type: DiscoverSliderType.TMDB_MOVIE_GENRE,
       title: intl.formatMessage(sliderTitles.tmdbmoviegenre),
-      dataUrl: '/api/v1/discover/movies/genre/$value',
+      dataUrl: apiUrl('/discover/movies/genre/$value'),
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
       dataPlaceholderText: intl.formatMessage(messages.providetmdbgenreid),
     },
     {
       type: DiscoverSliderType.TMDB_TV_GENRE,
       title: intl.formatMessage(sliderTitles.tmdbtvgenre),
-      dataUrl: '/api/v1/discover/tv/genre/$value',
+      dataUrl: apiUrl('/discover/tv/genre/$value'),
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
       dataPlaceholderText: intl.formatMessage(messages.providetmdbgenreid),
     },
     {
       type: DiscoverSliderType.TMDB_STUDIO,
       title: intl.formatMessage(sliderTitles.tmdbstudio),
-      dataUrl: '/api/v1/discover/movies/studio/$value',
+      dataUrl: apiUrl('/discover/movies/studio/$value'),
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
       dataPlaceholderText: intl.formatMessage(messages.providetmdbstudio),
     },
     {
       type: DiscoverSliderType.TMDB_NETWORK,
       title: intl.formatMessage(sliderTitles.tmdbnetwork),
-      dataUrl: '/api/v1/discover/tv/network/$value',
+      dataUrl: apiUrl('/discover/tv/network/$value'),
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
       dataPlaceholderText: intl.formatMessage(messages.providetmdbnetwork),
     },
     {
       type: DiscoverSliderType.TMDB_SEARCH,
       title: intl.formatMessage(sliderTitles.tmdbsearch),
-      dataUrl: '/api/v1/search',
+      dataUrl: apiUrl('/search'),
       params: 'query=$value',
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
       dataPlaceholderText: intl.formatMessage(messages.providetmdbsearch),
@@ -284,14 +289,14 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
     {
       type: DiscoverSliderType.TMDB_MOVIE_STREAMING_SERVICES,
       title: intl.formatMessage(sliderTitles.tmdbmoviestreamingservices),
-      dataUrl: '/api/v1/discover/movies',
+      dataUrl: apiUrl('/discover/movies'),
       params: 'watchRegion=$regionValue&watchProviders=$providersValue',
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
     },
     {
       type: DiscoverSliderType.TMDB_TV_STREAMING_SERVICES,
       title: intl.formatMessage(sliderTitles.tmdbtvstreamingservices),
-      dataUrl: '/api/v1/discover/tv',
+      dataUrl: apiUrl('/discover/tv'),
       params: 'watchRegion=$regionValue&watchProviders=$providersValue',
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
     },
@@ -317,13 +322,13 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
       onSubmit={async (values, { resetForm }) => {
         try {
           if (slider) {
-            await axios.put(`/api/v1/settings/discover/${slider.id}`, {
+            await axios.put(apiUrl(`/settings/discover/${slider.id}`), {
               type: Number(values.sliderType),
               title: values.title,
               data: values.data,
             });
           } else {
-            await axios.post('/api/v1/settings/discover/add', {
+            await axios.post(apiUrl('/settings/discover/add'), {
               type: Number(values.sliderType),
               title: values.title,
               data: values.data,

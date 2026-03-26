@@ -13,6 +13,7 @@ import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
 import {
@@ -72,7 +73,7 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR<Collection>(`/api/v1/collection/${router.query.collectionId}`, {
+  } = useSWR<Collection>(apiUrl(`/collection/${router.query.collectionId}`), {
     fallbackData: collection,
     revalidateOnMount: true,
     refreshInterval: refreshIntervalHelper(
@@ -81,8 +82,9 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
     ),
   });
 
-  const { data: genres } =
-    useSWR<{ id: number; name: string }[]>(`/api/v1/genres/movie`);
+  const { data: genres } = useSWR<{ id: number; name: string }[]>(
+    apiUrl(`/genres/movie`)
+  );
 
   const onClickHideItemBtn = async (): Promise<void> => {
     setIsBlocklistUpdating(true);

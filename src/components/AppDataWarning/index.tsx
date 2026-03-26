@@ -1,4 +1,5 @@
 import Alert from '@app/components/Common/Alert';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
@@ -11,7 +12,7 @@ const messages = defineMessages('components.AppDataWarning', {
 const AppDataWarning = () => {
   const intl = useIntl();
   const { data, error } = useSWR<{ appData: boolean; appDataPath: string }>(
-    '/api/v1/status/appdata'
+    apiUrl('/status/appdata')
   );
 
   if (!data && !error) {

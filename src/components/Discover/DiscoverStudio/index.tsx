@@ -5,6 +5,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { ProductionCompany } from '@server/models/common';
 import type { MovieResult } from '@server/models/Search';
@@ -29,7 +30,7 @@ const DiscoverMovieStudio = () => {
     error,
     firstResultData,
   } = useDiscover<MovieResult, { studio: ProductionCompany }>(
-    `/api/v1/discover/movies/studio/${router.query.studioId}`
+    apiUrl(`/discover/movies/studio/${router.query.studioId}`)
   );
 
   if (error) {

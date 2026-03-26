@@ -9,6 +9,7 @@ import SettingsTabs from '@app/components/Common/SettingsTabs';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { CloudIcon, EnvelopeIcon } from '@heroicons/react/24/solid';
 import type { UserSettingsNotificationsResponse } from '@server/interfaces/api/userSettingsInterfaces';
@@ -37,7 +38,7 @@ const UserNotificationSettings = ({
   const router = useRouter();
   const { user } = useUser({ id: Number(router.query.userId) });
   const { data, error } = useSWR<UserSettingsNotificationsResponse>(
-    user ? `/api/v1/user/${user?.id}/settings/notifications` : null
+    user ? apiUrl(`/user/${user?.id}/settings/notifications`) : null
   );
 
   const settingsRoutes: SettingsRoute[] = [

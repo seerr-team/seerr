@@ -6,6 +6,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import Releases from '@app/components/Settings/SettingsAbout/Releases';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type {
   SettingsAboutResponse,
@@ -36,10 +37,10 @@ const messages = defineMessages('components.Settings.SettingsAbout', {
 const SettingsAbout = () => {
   const intl = useIntl();
   const { data, error } = useSWR<SettingsAboutResponse>(
-    '/api/v1/settings/about'
+    apiUrl('/settings/about')
   );
 
-  const { data: status } = useSWR<StatusResponse>('/api/v1/status');
+  const { data: status } = useSWR<StatusResponse>(apiUrl('/status'));
 
   if (!data && !error) {
     return <LoadingSpinner />;

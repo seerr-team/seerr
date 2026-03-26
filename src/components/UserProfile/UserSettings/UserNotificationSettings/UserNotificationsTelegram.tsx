@@ -3,6 +3,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import type { UserSettingsNotificationsResponse } from '@server/interfaces/api/userSettingsInterfaces';
@@ -43,7 +44,7 @@ const UserTelegramSettings = () => {
     error,
     mutate: revalidate,
   } = useSWR<UserSettingsNotificationsResponse>(
-    user ? `/api/v1/user/${user?.id}/settings/notifications` : null
+    user ? apiUrl(`/user/${user?.id}/settings/notifications`) : null
   );
 
   const UserNotificationsTelegramSchema = Yup.object().shape({
@@ -91,7 +92,7 @@ const UserTelegramSettings = () => {
       enableReinitialize
       onSubmit={async (values) => {
         try {
-          await axios.post(`/api/v1/user/${user?.id}/settings/notifications`, {
+          await axios.post(apiUrl(`/user/${user?.id}/settings/notifications`), {
             pgpKey: data?.pgpKey,
             discordId: data?.discordId,
             pushbulletAccessToken: data?.pushbulletAccessToken,

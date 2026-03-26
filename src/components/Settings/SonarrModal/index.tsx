@@ -2,6 +2,7 @@ import Modal from '@app/components/Common/Modal';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import type { SonarrTestResponse } from '@app/components/Settings/SettingsServices';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
 import { Transition } from '@headlessui/react';
@@ -165,7 +166,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
       setIsTesting(true);
       try {
         const response = await axios.post<SonarrTestResponse>(
-          '/api/v1/settings/sonarr/test',
+          apiUrl('/settings/sonarr/test'),
           {
             hostname,
             apiKey,
@@ -295,10 +296,10 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
               monitorNewItems: values.monitorNewItems,
             };
             if (!sonarr) {
-              await axios.post('/api/v1/settings/sonarr', submission);
+              await axios.post(apiUrl('/settings/sonarr'), submission);
             } else {
               await axios.put(
-                `/api/v1/settings/sonarr/${sonarr.id}`,
+                apiUrl(`/settings/sonarr/${sonarr.id}`),
                 submission
               );
             }

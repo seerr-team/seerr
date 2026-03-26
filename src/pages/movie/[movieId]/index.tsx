@@ -1,4 +1,5 @@
 import MovieDetails from '@app/components/MovieDetails';
+import { apiUrl } from '@app/utils/apiUrl';
 import type { MovieDetails as MovieDetailsType } from '@server/models/Movie';
 import axios from 'axios';
 import type { GetServerSideProps, NextPage } from 'next';
@@ -17,7 +18,7 @@ export const getServerSideProps: GetServerSideProps<MoviePageProps> = async (
   const response = await axios.get<MovieDetailsType>(
     `http://${process.env.HOST || 'localhost'}:${
       process.env.PORT || 5055
-    }/api/v1/movie/${ctx.query.movieId}`,
+    }${apiUrl(`/movie/${ctx.query.movieId}`)}`,
     {
       headers: ctx.req?.headers?.cookie
         ? { cookie: ctx.req.headers.cookie }

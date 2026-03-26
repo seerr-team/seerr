@@ -2,6 +2,7 @@ import Alert from '@app/components/Common/Alert';
 import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
@@ -35,7 +36,7 @@ const NotificationsWebPush = () => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR('/api/v1/settings/notifications/webpush');
+  } = useSWR(apiUrl('/settings/notifications/webpush'));
 
   useEffect(() => {
     setIsHttps(window.location.protocol.startsWith('https'));
@@ -60,12 +61,12 @@ const NotificationsWebPush = () => {
         }}
         onSubmit={async (values) => {
           try {
-            await axios.post('/api/v1/settings/notifications/webpush', {
+            await axios.post(apiUrl('/settings/notifications/webpush'), {
               enabled: values.enabled,
               embedPoster: values.embedPoster,
               options: {},
             });
-            mutate('/api/v1/settings/public');
+            mutate(apiUrl('/settings/public'));
             addToast(intl.formatMessage(messages.webpushsettingssaved), {
               appearance: 'success',
               autoDismiss: true,
@@ -95,7 +96,7 @@ const NotificationsWebPush = () => {
                   toastId = id;
                 }
               );
-              await axios.post('/api/v1/settings/notifications/webpush/test', {
+              await axios.post(apiUrl('/settings/notifications/webpush/test'), {
                 enabled: true,
                 embedPoster: values.embedPoster,
                 options: {},

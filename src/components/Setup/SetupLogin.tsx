@@ -2,6 +2,7 @@ import Button from '@app/components/Common/Button';
 import PlexLoginButton from '@app/components/Login/PlexLoginButton';
 import JellyfinSetup from '@app/components/Setup/JellyfinSetup';
 import { useUser } from '@app/hooks/useUser';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { MediaServerType } from '@server/constants/server';
 import axios from 'axios';
@@ -42,12 +43,12 @@ const SetupLogin: React.FC<LoginWithMediaServerProps> = ({
   useEffect(() => {
     const login = async () => {
       try {
-        const response = await axios.post('/api/v1/auth/plex', {
+        const response = await axios.post(apiUrl('/auth/plex'), {
           authToken: authToken,
         });
 
         if (response.data?.id) {
-          const { data: user } = await axios.get('/api/v1/auth/me');
+          const { data: user } = await axios.get(apiUrl('/auth/me'));
           revalidate(user, false);
         }
       } catch {

@@ -6,6 +6,7 @@ import RequestModal from '@app/components/RequestModal';
 import useRequestOverride from '@app/hooks/useRequestOverride';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import {
   CalendarIcon,
@@ -55,22 +56,22 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
 
   const updateRequest = async (type: 'approve' | 'decline'): Promise<void> => {
     setIsUpdating(true);
-    await axios.post(`/api/v1/request/${request.id}/${type}`);
+    await axios.post(apiUrl(`/request/${request.id}/${type}`));
 
     if (onUpdate) {
       onUpdate();
-      mutate('/api/v1/request/count');
+      mutate(apiUrl('/request/count'));
     }
     setIsUpdating(false);
   };
 
   const deleteRequest = async () => {
     setIsUpdating(true);
-    await axios.delete(`/api/v1/request/${request.id}`);
+    await axios.delete(apiUrl(`/request/${request.id}`));
 
     if (onUpdate) {
       onUpdate();
-      mutate('/api/v1/request/count');
+      mutate(apiUrl('/request/count'));
     }
 
     setIsUpdating(false);

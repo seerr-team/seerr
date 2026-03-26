@@ -3,6 +3,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
@@ -48,7 +49,7 @@ const NotificationsNtfy = () => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR<NotificationAgentNtfy>('/api/v1/settings/notifications/ntfy');
+  } = useSWR<NotificationAgentNtfy>(apiUrl('/settings/notifications/ntfy'));
 
   const NotificationsNtfySchema = Yup.object().shape({
     url: Yup.string()
@@ -105,7 +106,7 @@ const NotificationsNtfy = () => {
       validationSchema={NotificationsNtfySchema}
       onSubmit={async (values) => {
         try {
-          await axios.post('/api/v1/settings/notifications/ntfy', {
+          await axios.post(apiUrl('/settings/notifications/ntfy'), {
             enabled: values.enabled,
             embedPoster: values.embedPoster,
             types: values.types,
@@ -158,7 +159,7 @@ const NotificationsNtfy = () => {
                 toastId = id;
               }
             );
-            await axios.post('/api/v1/settings/notifications/ntfy/test', {
+            await axios.post(apiUrl('/settings/notifications/ntfy/test'), {
               enabled: true,
               types: values.types,
               options: {

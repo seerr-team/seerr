@@ -4,6 +4,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { CircleStackIcon, FunnelIcon } from '@heroicons/react/24/solid';
 import type {
@@ -37,7 +38,7 @@ const Trending = () => {
     fetchMore,
     error,
   } = useDiscover<MovieResult | TvResult | PersonResult>(
-    '/api/v1/discover/trending',
+    apiUrl('/discover/trending'),
     { mediaType: currentMediaType, timeWindow: currentTimeWindow }
   );
 

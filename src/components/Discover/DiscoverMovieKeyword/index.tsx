@@ -4,6 +4,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover, { encodeURIExtraParams } from '@app/hooks/useDiscover';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
 import type { MovieResult } from '@server/models/Search';
@@ -28,7 +29,7 @@ const DiscoverMovieKeyword = () => {
     error,
     firstResultData,
   } = useDiscover<MovieResult, { keywords: TmdbKeyword[] }>(
-    `/api/v1/discover/movies`,
+    apiUrl(`/discover/movies`),
     {
       keywords: encodeURIExtraParams(router.query.keywords as string),
     }

@@ -4,6 +4,7 @@ import Tooltip from '@app/components/Common/Tooltip';
 import RegionSelector from '@app/components/RegionSelector';
 import { encodeURIExtraParams } from '@app/hooks/useDiscover';
 import useSettings from '@app/hooks/useSettings';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/20/solid';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
@@ -81,7 +82,7 @@ export const CompanySelector = ({
       }
 
       const response = await axios.get<ProductionCompany>(
-        `/api/v1/studio/${defaultValue}`
+        apiUrl(`/studio/${defaultValue}`)
       );
 
       const studio = response.data;
@@ -103,7 +104,7 @@ export const CompanySelector = ({
     }
 
     const results = await axios.get<TmdbCompanySearchResponse>(
-      '/api/v1/search/company',
+      apiUrl('/search/company'),
       {
         params: {
           query: encodeURIExtraParams(inputValue),
@@ -167,7 +168,7 @@ export const GenreSelector = ({
 
       const genres = defaultValue.split(',');
 
-      const response = await axios.get<TmdbGenre[]>(`/api/v1/genres/${type}`);
+      const response = await axios.get<TmdbGenre[]>(apiUrl(`/genres/${type}`));
 
       const genreData = genres
         .filter((genre) => response.data.find((gd) => gd.id === Number(genre)))
@@ -184,7 +185,7 @@ export const GenreSelector = ({
   }, [defaultValue, type]);
 
   const loadGenreOptions = async (inputValue: string) => {
-    const results = await axios.get<TmdbGenre[]>(`/api/v1/genres/${type}`);
+    const results = await axios.get<TmdbGenre[]>(apiUrl(`/genres/${type}`));
 
     return results.data
       .map((result) => ({
@@ -307,7 +308,7 @@ export const KeywordSelector = ({
       const keywords = await Promise.all(
         defaultValue.split(',').map(async (keywordId) => {
           const keyword = await axios.get<Keyword | null>(
-            `/api/v1/keyword/${keywordId}`
+            apiUrl(`/keyword/${keywordId}`)
           );
           return keyword.data;
         })
@@ -330,7 +331,7 @@ export const KeywordSelector = ({
 
   const loadKeywordOptions = async (inputValue: string) => {
     const results = await axios.get<TmdbKeywordSearchResponse>(
-      '/api/v1/search/keyword',
+      apiUrl('/search/keyword'),
       {
         params: {
           query: encodeURIExtraParams(inputValue),
@@ -395,9 +396,11 @@ export const WatchProviderSelector = ({
     activeProviders ?? []
   );
   const { data, isLoading } = useSWR<WatchProviderDetails[]>(
-    `/api/v1/watchproviders/${
-      type === 'movie' ? 'movies' : 'tv'
-    }?watchRegion=${watchRegion}`
+    apiUrl(
+      `/watchproviders/${
+        type === 'movie' ? 'movies' : 'tv'
+      }?watchRegion=${watchRegion}`
+    )
   );
 
   useEffect(() => {
@@ -578,7 +581,7 @@ export const UserSelector = ({
       const users = defaultValue.split(',');
 
       const res = await axios.get(
-        `/api/v1/user?includeIds=${encodeURIComponent(defaultValue)}`
+        apiUrl(`/user?includeIds=${encodeURIComponent(defaultValue)}`)
       );
       const response: UserResultsResponse = res.data;
 
@@ -598,7 +601,7 @@ export const UserSelector = ({
 
   const loadUserOptions = async (inputValue: string) => {
     const res = await axios.get(
-      `/api/v1/user${inputValue ? `?q=${encodeURIComponent(inputValue)}` : ''}`
+      apiUrl(`/user${inputValue ? `?q=${encodeURIComponent(inputValue)}` : ''}`)
     );
     const results: UserResultsResponse = res.data;
 

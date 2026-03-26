@@ -6,6 +6,7 @@ import SensitiveInput from '@app/components/Common/SensitiveInput';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
@@ -53,7 +54,7 @@ const UserPasswordChange = () => {
     error,
     mutate: revalidate,
   } = useSWR<{ hasPassword: boolean }>(
-    user ? `/api/v1/user/${user?.id}/settings/password` : null
+    user ? apiUrl(`/user/${user?.id}/settings/password`) : null
   );
 
   const PasswordChangeSchema = Yup.object().shape({
@@ -123,7 +124,7 @@ const UserPasswordChange = () => {
         enableReinitialize
         onSubmit={async (values, { resetForm }) => {
           try {
-            await axios.post(`/api/v1/user/${user?.id}/settings/password`, {
+            await axios.post(apiUrl(`/user/${user?.id}/settings/password`), {
               currentPassword: values.currentPassword,
               newPassword: values.newPassword,
               confirmPassword: values.confirmPassword,

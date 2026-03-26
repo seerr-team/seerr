@@ -3,6 +3,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
@@ -41,7 +42,7 @@ const NotificationsPushbullet = () => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR('/api/v1/settings/notifications/pushbullet');
+  } = useSWR(apiUrl('/settings/notifications/pushbullet'));
 
   const NotificationsPushbulletSchema = Yup.object().shape({
     accessToken: Yup.string().when('enabled', {
@@ -68,7 +69,7 @@ const NotificationsPushbullet = () => {
       validationSchema={NotificationsPushbulletSchema}
       onSubmit={async (values) => {
         try {
-          await axios.post('/api/v1/settings/notifications/pushbullet', {
+          await axios.post(apiUrl('/settings/notifications/pushbullet'), {
             enabled: values.enabled,
             types: values.types,
             options: {
@@ -113,14 +114,17 @@ const NotificationsPushbullet = () => {
                 toastId = id;
               }
             );
-            await axios.post('/api/v1/settings/notifications/pushbullet/test', {
-              enabled: true,
-              types: values.types,
-              options: {
-                accessToken: values.accessToken,
-                channelTag: values.channelTag,
-              },
-            });
+            await axios.post(
+              apiUrl('/settings/notifications/pushbullet/test'),
+              {
+                enabled: true,
+                types: values.types,
+                options: {
+                  accessToken: values.accessToken,
+                  channelTag: values.channelTag,
+                },
+              }
+            );
 
             if (toastId) {
               removeToast(toastId);

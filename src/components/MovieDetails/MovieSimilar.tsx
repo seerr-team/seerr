@@ -3,6 +3,7 @@ import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
 import ErrorPage from '@app/pages/_error';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { MovieDetails } from '@server/models/Movie';
 import type { MovieResult } from '@server/models/Search';
@@ -19,7 +20,7 @@ const MovieSimilar = () => {
   const router = useRouter();
   const intl = useIntl();
   const { data: movieData } = useSWR<MovieDetails>(
-    `/api/v1/movie/${router.query.movieId}`
+    apiUrl(`/movie/${router.query.movieId}`)
   );
   const {
     isLoadingInitialData,
@@ -29,7 +30,9 @@ const MovieSimilar = () => {
     titles,
     fetchMore,
     error,
-  } = useDiscover<MovieResult>(`/api/v1/movie/${router.query.movieId}/similar`);
+  } = useDiscover<MovieResult>(
+    apiUrl(`/movie/${router.query.movieId}/similar`)
+  );
 
   if (error) {
     return <ErrorPage statusCode={500} />;

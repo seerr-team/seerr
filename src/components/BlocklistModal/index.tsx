@@ -1,5 +1,6 @@
 import Modal from '@app/components/Common/Modal';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 
@@ -59,7 +60,7 @@ const BlocklistModal = ({
       if (!show) return;
       try {
         setError(null);
-        const response = await axios.get(`/api/v1/${type}/${tmdbId}`);
+        const response = await axios.get(apiUrl(`/${type}/${tmdbId}`));
         setData(response.data);
       } catch (err) {
         setError(err);

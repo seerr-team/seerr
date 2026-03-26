@@ -8,6 +8,7 @@ import CreateSlider from '@app/components/Discover/CreateSlider';
 import GenreTag from '@app/components/GenreTag';
 import KeywordTag from '@app/components/KeywordTag';
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import {
@@ -78,7 +79,7 @@ const DiscoverSliderEdit = ({
 
   const deleteSlider = async () => {
     try {
-      await axios.delete(`/api/v1/settings/discover/${slider.id}`);
+      await axios.delete(apiUrl(`/settings/discover/${slider.id}`));
       addToast(intl.formatMessage(messages.deletesuccess), {
         appearance: 'success',
         autoDismiss: true,

@@ -1,4 +1,5 @@
 import CollectionDetails from '@app/components/CollectionDetails';
+import { apiUrl } from '@app/utils/apiUrl';
 import type { Collection } from '@server/models/Collection';
 import axios from 'axios';
 import type { GetServerSideProps, NextPage } from 'next';
@@ -17,7 +18,7 @@ export const getServerSideProps: GetServerSideProps<
   const response = await axios.get<Collection>(
     `http://${process.env.HOST || 'localhost'}:${
       process.env.PORT || 5055
-    }/api/v1/collection/${ctx.query.collectionId}`,
+    }${apiUrl(`/collection/${ctx.query.collectionId}`)}`,
     {
       headers: ctx.req?.headers?.cookie
         ? { cookie: ctx.req.headers.cookie }

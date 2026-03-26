@@ -1,4 +1,5 @@
 import globalMessages from '@app/i18n/globalMessages';
+import { apiUrl } from '@app/utils/apiUrl';
 import defineMessages from '@app/utils/defineMessages';
 import type { Language } from '@server/lib/settings';
 import { sortBy } from 'lodash';
@@ -44,7 +45,7 @@ const LanguageSelector = ({
   isDisabled,
 }: LanguageSelectorProps) => {
   const intl = useIntl();
-  const { data: languages } = useSWR<Language[]>('/api/v1/languages');
+  const { data: languages } = useSWR<Language[]>(apiUrl('/languages'));
 
   const sortedLanguages = useMemo(() => {
     languages?.forEach((language) => {
