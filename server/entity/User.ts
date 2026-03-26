@@ -104,7 +104,7 @@ export class User {
   @Column({ type: 'varchar', nullable: true, select: false })
   public plexToken?: string | null;
 
-  @OneToMany(() => LinkedAccount, (link) => link.user)
+  @OneToMany(() => LinkedAccount, (link) => link.user, { cascade: true })
   public linkedAccounts: LinkedAccount[];
 
   @Column({ type: 'integer', default: 0 })

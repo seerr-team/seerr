@@ -1217,6 +1217,7 @@ authRoutes.post(
       const avatar =
         fullUserInfo.picture ??
         gravatarUrl(fullUserInfo.email, { default: 'mm', size: 200 });
+
       user = new User({
         avatar: avatar,
         username: fullUserInfo.preferred_username,
@@ -1225,7 +1226,6 @@ authRoutes.post(
         plexToken: '',
         userType: UserType.LOCAL,
       });
-      await userRepository.save(user);
 
       const linkedAccount = new LinkedAccount({
         user,
@@ -1233,7 +1233,6 @@ authRoutes.post(
         sub: fullUserInfo.sub,
         username: fullUserInfo.preferred_username ?? fullUserInfo.email,
       });
-      await linkedAccountsRepository.save(linkedAccount);
 
       user.linkedAccounts = [linkedAccount];
       await userRepository.save(user);
