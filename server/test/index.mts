@@ -85,6 +85,8 @@ const stream = run({
     join(BASE_DIR, 'server/migration/**'),
   ],
   testNamePatterns: opts.testNamePattern,
+  // ensure test process doesn't hang when tests fail
+  forceExit: true,
 });
 
 // In CI, write a JUnit report to a file for use by GitHub
