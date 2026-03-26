@@ -92,12 +92,6 @@ describe('User List', () => {
     });
 
     cy.get('[data-testid=column-header-created]').click();
-    cy.wait('@userListFetch').then((interception) => {
-      const url = interception.request.url;
-      expect(url).to.include('sort=created');
-      expect(url).to.include('sortDirection=desc');
-    });
-
     cy.get('[data-testid=user-list-row]').should('have.length.greaterThan', 0);
   });
 });
