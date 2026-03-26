@@ -33,6 +33,12 @@ Be sure to replace `/path/to/appdata/config` in the below examples with a valid 
 
     The `TZ` environment variable value should also be set to the [TZ database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) of your time zone!
 
+    Alternatively, you can mount your host's timezone file instead of setting the `TZ` variable:
+    - **Debian/Ubuntu:** `-v /etc/timezone:/etc/timezone:ro`
+    - **Alpine/RHEL:** `-v /etc/localtime:/etc/localtime:ro`
+
+    Seerr will automatically detect the timezone from these files if `TZ` is not set.
+
 :::
 
 import Tabs from '@theme/Tabs';

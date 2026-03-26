@@ -55,4 +55,5 @@ RUN touch config/DOCKER && \
 
 EXPOSE 5055
 
+ENTRYPOINT [ "/app/docker-entrypoint.sh" ]
 CMD [ "npm", "start" ]
