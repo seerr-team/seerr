@@ -880,6 +880,7 @@ authRoutes.get('/oidc/login/:slug', async (req, res, next) => {
     });
   }
 
+  // Use of PKCE is backwards compatible even if the AS doesn't support it.
   const code_verifier = openIdClient.randomPKCECodeVerifier();
   const code_challenge =
     await openIdClient.calculatePKCECodeChallenge(code_verifier);
@@ -898,21 +899,14 @@ authRoutes.get('/oidc/login/:slug', async (req, res, next) => {
     code_challenge_method: 'S256',
   };
 
-  /**
-   * We cannot be sure the server supports PKCE so we're going to use state too.
-   * Use of PKCE is backwards compatible even if the AS doesn't support it which
-   * is why we're using it regardless. Like PKCE, random state must be generated
-   * for every redirect to the authorization_endpoint.
-   */
-  if (!config.serverMetadata().supportsPKCE()) {
-    const state = openIdClient.randomState();
-    parameters.state = state;
-    res.cookie(OIDC_STATE_KEY, state, {
-      httpOnly: true,
-      secure: req.protocol === 'https',
-      signed: true,
-    });
-  }
+  // State prevents CSRF attacks
+  const state = openIdClient.randomState();
+  parameters.state = state;
+  res.cookie(OIDC_STATE_KEY, state, {
+    httpOnly: true,
+    secure: req.protocol === 'https',
+    signed: true,
+  });
 
   let redirectUrl: URL;
   try {
