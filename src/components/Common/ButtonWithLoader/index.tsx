@@ -18,7 +18,7 @@ export default function ButtonWithLoader({
   return (
     <Button
       className={twMerge(
-        'relative min-w-0 flex-grow bg-transparent disabled:opacity-50',
+        'relative bg-transparent disabled:opacity-50',
         className
       )}
       disabled={loading || disabled}
