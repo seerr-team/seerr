@@ -3,18 +3,18 @@ import { SmallLoadingSpinner } from '@app/components/Common/LoadingSpinner';
 import { type PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-export type LoginButtonProps = ButtonProps<'button'> &
+export type ButtonWithLoaderProps = ButtonProps<'button'> &
   PropsWithChildren<{
     loading?: boolean;
   }>;
 
-export default function LoginButton({
+export default function ButtonWithLoader({
   loading,
   className,
   disabled,
   children,
   ...buttonProps
-}: LoginButtonProps) {
+}: ButtonWithLoaderProps) {
   return (
     <Button
       className={twMerge(
