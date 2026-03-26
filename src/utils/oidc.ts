@@ -43,18 +43,18 @@ export function getOidcErrorMessage(
 /**
  * Initiates the OIDC login flow by fetching the authorization URL from the
  * server and redirecting the browser to the OIDC provider. Stores the provider
- * slug in localStorage so the callback page can identify which provider is
+ * slug in sessionStorage so the callback page can identify which provider is
  * completing the flow.
  */
 export async function initiateOidcLogin(
   providerSlug: string,
   returnUrl: string
 ): Promise<void> {
-  localStorage.setItem(OIDC_PROVIDER_KEY, providerSlug);
   const res = await axios.get<{ redirectUrl: string }>(
     `/api/v1/auth/oidc/login/${encodeURIComponent(providerSlug)}`,
     { params: { returnUrl } }
   );
+  sessionStorage.setItem(OIDC_PROVIDER_KEY, providerSlug);
   window.location.href = res.data.redirectUrl;
 }
 
@@ -62,14 +62,14 @@ export async function initiateOidcLogin(
  * Returns the provider slug stored by initiateOidcLogin.
  */
 export function getOidcProviderSlug(): string | null {
-  return localStorage.getItem(OIDC_PROVIDER_KEY);
+  return sessionStorage.getItem(OIDC_PROVIDER_KEY);
 }
 
 /**
  * Clears the provider slug stored by initiateOidcLogin.
  */
 export function clearOidcProviderSlug(): void {
-  localStorage.removeItem(OIDC_PROVIDER_KEY);
+  sessionStorage.removeItem(OIDC_PROVIDER_KEY);
 }
 
 /**
