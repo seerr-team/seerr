@@ -344,9 +344,14 @@ userSettingsRoutes.delete<{ id: string }>(
         });
       }
 
-      if (!user.email || !user.password) {
+      const linkedAccountsRepository = getRepository(LinkedAccount);
+      const oidcAccountCount = await linkedAccountsRepository.count({
+        where: { user: { id: user.id } },
+      });
+      if (!user.password && oidcAccountCount === 0) {
         return res.status(400).json({
-          message: 'User does not have a local email or password set.',
+          message:
+            'User does not have a local password or other linked account.',
         });
       }
 
@@ -498,9 +503,14 @@ userSettingsRoutes.delete<{ id: string }>(
         });
       }
 
-      if (!user.email || !user.password) {
+      const linkedAccountsRepository = getRepository(LinkedAccount);
+      const oidcAccountCount = await linkedAccountsRepository.count({
+        where: { user: { id: user.id } },
+      });
+      if (!user.password && oidcAccountCount === 0) {
         return res.status(400).json({
-          message: 'User does not have a local email or password set.',
+          message:
+            'User does not have a local password or other linked account.',
         });
       }
 
@@ -639,15 +649,46 @@ userSettingsRoutes.delete<{ id: string; acctId: string }>(
   '/linked-accounts/:acctId',
   isOwnProfileOrAdmin(),
   async (req, res) => {
+    const settings = getSettings();
+    const userRepository = getRepository(User);
     const linkedAccountsRepository = getRepository(LinkedAccount);
+    const acctId = Number(req.params.acctId);
+
+    const user = await userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.password')
+      .leftJoinAndSelect('user.linkedAccounts', 'linkedAccounts')
+      .where({ id: Number(req.params.id) })
+      .getOne();
+
+    if (!user) {
+      return res.status(404).send();
+    }
+
+    const remainingOidcCount = user.linkedAccounts.filter(
+      (a) => a.id !== acctId
+    ).length;
+    const hasMediaServer =
+      (settings.main.mediaServerType === MediaServerType.PLEX &&
+        !!user.plexId) ||
+      ([MediaServerType.JELLYFIN, MediaServerType.EMBY].includes(
+        settings.main.mediaServerType
+      ) &&
+        !!user.jellyfinUserId);
+    if (!user.password && remainingOidcCount === 0 && !hasMediaServer) {
+      return res.status(400).json({
+        message: 'User does not have a local password or other linked account.',
+      });
+    }
+
     const condition: FindOptionsWhere<LinkedAccount> = {
-      id: Number(req.params.acctId),
+      id: acctId,
       user: {
         id: Number(req.params.id),
       },
     };
 
-    if (await linkedAccountsRepository.exist({ where: condition })) {
+    if (await linkedAccountsRepository.exists({ where: condition })) {
       await linkedAccountsRepository.delete(condition);
       return res.status(204).send();
     } else {
