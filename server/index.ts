@@ -266,7 +266,7 @@ app
         res.status(err.status || 500).json({
           message: err.message,
           errors: err.errors,
-          ...(err.error != null && { error: err.error }),
+          ...(err.error && { error: err.error }),
         });
       }
     );
