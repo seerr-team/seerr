@@ -29,7 +29,10 @@ export default function OidcLoginButton({
   const redirectToLogin = useCallback(async () => {
     setLoading(true);
     try {
-      await initiateOidcLogin(provider.slug, window.location.href);
+      await initiateOidcLogin(
+        provider.slug,
+        new URL(window.location.pathname, window.location.origin).toString()
+      );
     } catch (e) {
       setLoading(false);
       const errorCode = (e as { response?: { data?: { error?: string } } })
