@@ -195,6 +195,17 @@ export class User {
     });
   }
 
+  public getActiveLinkedAccounts(): LinkedAccount[] {
+    const settings = getSettings();
+    if (!settings.main.oidcLogin) {
+      return [];
+    }
+    const activeProviderSlugs = settings.oidc.providers.map((p) => p.slug);
+    return (this.linkedAccounts ?? []).filter((a) =>
+      activeProviderSlugs.includes(a.provider)
+    );
+  }
+
   public async setPassword(password: string): Promise<void> {
     const hashedPassword = await bcrypt.hash(password, 12);
     this.password = hashedPassword;
