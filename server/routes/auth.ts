@@ -1127,9 +1127,11 @@ authRoutes.post(
 
     // Create user if one doesn't already exist
     if (!user && fullUserInfo.email != null && provider.newUserLogin) {
+      const normalizedEmail = fullUserInfo.email.trim().toLowerCase();
+
       // Check if a user with this email already exists
       const existingUser = await userRepository.findOne({
-        where: { email: fullUserInfo.email },
+        where: { email: normalizedEmail },
       });
 
       if (existingUser) {
@@ -1139,19 +1141,19 @@ authRoutes.post(
         });
       }
 
-      logger.info(`Creating user for ${fullUserInfo.email}`, {
+      logger.info(`Creating user for ${normalizedEmail}`, {
         ip: req.ip,
-        email: fullUserInfo.email,
+        email: normalizedEmail,
       });
 
       const avatar =
         fullUserInfo.picture ??
-        gravatarUrl(fullUserInfo.email, { default: 'mm', size: 200 });
+        gravatarUrl(normalizedEmail, { default: 'mm', size: 200 });
 
       user = new User({
         avatar: avatar,
         username: fullUserInfo.preferred_username,
-        email: fullUserInfo.email,
+        email: normalizedEmail,
         permissions: settings.main.defaultPermissions,
         plexToken: '',
         userType: UserType.LOCAL,
