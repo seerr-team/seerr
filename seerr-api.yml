@@ -5324,7 +5324,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/LinkedAccount'
         '403':
-          description: Invalid credentials
+          description: Insufficient permissions
   /user/{userId}/settings/linked-accounts/plex:
     post:
       summary: Link the provided Plex account to the current user
