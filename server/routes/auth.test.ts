@@ -1206,5 +1206,63 @@ describe('OpenID Connect', () => {
       assert.strictEqual(response.status, 403);
       assert.strictEqual(response.body.error, ApiErrorCode.Unauthorized);
     });
+
+    it('rejects callback when correlation cookies are missing', async function () {
+      await setupFetchMock();
+
+      const callbackUrl = new URL(OIDC_REDIRECT_URL);
+      callbackUrl.searchParams.set('code', '123456');
+      callbackUrl.searchParams.set('state', 'somestate');
+
+      // Send callback with no signed cookies at all
+      const response = await request(app)
+        .post('/auth/oidc/callback/test')
+        .set('Accept', 'application/json')
+        .send({ callbackUrl: callbackUrl.toString() });
+
+      assert.strictEqual(response.status, 400);
+      assert.strictEqual(
+        response.body.error,
+        ApiErrorCode.OidcAuthorizationFailed
+      );
+    });
+
+    it('rejects callback when only one correlation cookie is present', async function () {
+      await setupFetchMock();
+
+      // Perform login to get only the state cookie
+      const loginResponse = await request(app)
+        .get('/auth/oidc/login/test')
+        .set('Accept', 'application/json');
+
+      assert.strictEqual(loginResponse.status, 200);
+
+      const redirectUrl = new URL(loginResponse.body.redirectUrl);
+      const state = redirectUrl.searchParams.get('state');
+
+      // Extract only the state cookie, dropping the PKCE verifier cookie
+      const cookies = loginResponse.get('Set-Cookie');
+      assert.notStrictEqual(cookies, undefined);
+      const stateCookieOnly = cookies!
+        .filter((c) => c.includes('oidc-state'))
+        .map((c) => c.split(';')[0])
+        .join('; ');
+
+      const callbackUrl = new URL(OIDC_REDIRECT_URL);
+      callbackUrl.searchParams.set('code', '123456');
+      if (state) callbackUrl.searchParams.set('state', state);
+
+      const response = await request(app)
+        .post('/auth/oidc/callback/test')
+        .set('Accept', 'application/json')
+        .set('Cookie', stateCookieOnly)
+        .send({ callbackUrl: callbackUrl.toString() });
+
+      assert.strictEqual(response.status, 400);
+      assert.strictEqual(
+        response.body.error,
+        ApiErrorCode.OidcAuthorizationFailed
+      );
+    });
   });
 });

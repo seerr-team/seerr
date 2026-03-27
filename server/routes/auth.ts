@@ -978,6 +978,19 @@ authRoutes.post(
     const pkceCodeVerifier: string | undefined =
       req.signedCookies[OIDC_CODE_VERIFIER_KEY];
     const expectedState: string | undefined = req.signedCookies[OIDC_STATE_KEY];
+
+    if (!pkceCodeVerifier || !expectedState) {
+      logger.warn('Rejected OIDC callback without correlation cookies', {
+        label: 'Auth',
+        provider: provider.slug,
+        ip: req.ip,
+      });
+      return next({
+        status: 400,
+        error: ApiErrorCode.OidcAuthorizationFailed,
+      });
+    }
+
     res.clearCookie(OIDC_CODE_VERIFIER_KEY);
     res.clearCookie(OIDC_STATE_KEY);
 
