@@ -283,7 +283,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
       if (response) {
         revalidate();
       }
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.failedretry), {
         autoDismiss: true,
         appearance: 'error',

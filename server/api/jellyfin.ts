@@ -101,6 +101,7 @@ export interface JellyfinMediaSource {
 export interface JellyfinLibraryItemExtended extends JellyfinLibraryItem {
   ProviderIds: {
     Tmdb?: string;
+    TheMovieDb?: string;
     Imdb?: string;
     Tvdb?: string;
     AniDB?: string;
@@ -296,7 +297,7 @@ class JellyfinAPI extends ExternalAPI {
       const mediaFolderResponse = await this.get<any>(`/Library/MediaFolders`);
 
       return this.mapLibraries(mediaFolderResponse.Items);
-    } catch (mediaFoldersResponseError) {
+    } catch {
       // fallback to user views to get libraries
       // this only and maybe/depending on factors affects LDAP users
       try {

@@ -84,7 +84,7 @@ const Discover = () => {
       });
       setIsEditing(false);
       mutate();
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.updatefailed), {
         appearance: 'error',
         autoDismiss: true,
@@ -102,7 +102,7 @@ const Discover = () => {
       });
       setIsEditing(false);
       mutate();
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.resetfailed), {
         appearance: 'error',
         autoDismiss: true,
@@ -424,19 +424,21 @@ const Discover = () => {
                 const tempSliders = sliders.slice();
 
                 tempSliders.splice(originalPosition, 1);
-                hasClickedArrows
-                  ? tempSliders.splice(
-                      position === 'Above' ? index - 1 : index + 1,
-                      0,
-                      originalItem
-                    )
-                  : tempSliders.splice(
-                      position === 'Above' && index > originalPosition
-                        ? Math.max(index - 1, 0)
-                        : index,
-                      0,
-                      originalItem
-                    );
+                if (hasClickedArrows) {
+                  tempSliders.splice(
+                    position === 'Above' ? index - 1 : index + 1,
+                    0,
+                    originalItem
+                  );
+                } else {
+                  tempSliders.splice(
+                    position === 'Above' && index > originalPosition
+                      ? Math.max(index - 1, 0)
+                      : index,
+                    0,
+                    originalItem
+                  );
+                }
 
                 setSliders(tempSliders);
               }}

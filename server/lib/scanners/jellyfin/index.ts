@@ -61,7 +61,9 @@ class JellyfinScanner
     }
 
     const anidbId = Number(metadata.ProviderIds.AniDB ?? null);
-    let tmdbId = Number(metadata.ProviderIds.Tmdb ?? null);
+    let tmdbId = Number(
+      metadata.ProviderIds.Tmdb || metadata.ProviderIds.TheMovieDb || null
+    );
     let imdbId = metadata.ProviderIds.Imdb;
 
     // We use anidb only if we have the anidbId and nothing else
@@ -230,10 +232,12 @@ class JellyfinScanner
         return;
       }
 
-      if (metadata.ProviderIds.Tmdb) {
+      if (metadata.ProviderIds.Tmdb || metadata.ProviderIds.TheMovieDb) {
         try {
           tvShow = await this.getTvShow({
-            tmdbId: Number(metadata.ProviderIds.Tmdb),
+            tmdbId: Number(
+              metadata.ProviderIds.Tmdb || metadata.ProviderIds.TheMovieDb
+            ),
           });
         } catch {
           this.log('Unable to find TMDb ID for this title.', 'debug', {

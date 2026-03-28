@@ -113,7 +113,7 @@ const UserPushoverSettings = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.pushoversettingsfailed), {
             appearance: 'error',
             autoDismiss: true,

@@ -402,19 +402,17 @@ class PlexScanner
       }
     }
 
-    if (mediaIds.tvdbId) {
-      await this.processShow(
-        mediaIds.tmdbId,
-        mediaIds.tvdbId ?? tvShow.external_ids.tvdb_id,
-        processableSeasons,
-        {
-          mediaAddedAt: new Date(metadata.addedAt * 1000),
-          ratingKey: ratingKey,
-          plexServerId: currentServerId,
-          title: metadata.title,
-        }
-      );
-    }
+    await this.processShow(
+      mediaIds.tmdbId,
+      mediaIds.tvdbId ?? tvShow.external_ids.tvdb_id,
+      processableSeasons,
+      {
+        mediaAddedAt: new Date(metadata.addedAt * 1000),
+        ratingKey: ratingKey,
+        plexServerId: currentServerId,
+        title: metadata.title,
+      }
+    );
   }
 
   private async getMediaIds(plexitem: PlexLibraryItem): Promise<MediaIds> {

@@ -69,7 +69,7 @@ const messages = defineMessages('components.Settings', {
   scan: 'Sync Libraries',
   manualscan: 'Global Manual Library Scan',
   manualscanDescription:
-    "Normally, this will only be run once every 24 hours. This scan runs across all configured Plex servers, while Seerr checks recently added content more aggressively. If this is your first time configuring Plex, a one-time full manual library scan is recommended!",
+    'Normally, this will only be run once every 24 hours. This scan runs across all configured Plex servers, while Seerr checks recently added content more aggressively. If this is your first time configuring Plex, a one-time full manual library scan is recommended!',
   notrunning: 'No Global Scan Running',
   currentlibrary: 'Current Library: {name}',
   librariesRemaining: 'Libraries Remaining: {count}',
@@ -357,7 +357,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
         autoDismiss: true,
         appearance: 'success',
       });
-    } catch (e) {
+    } catch {
       if (toastId) {
         removeToast(toastId);
       }
@@ -476,7 +476,9 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           ]}
         />
         <div className="mb-6">
-          <h3 className="heading">{intl.formatMessage(messages.plexsettings)}</h3>
+          <h3 className="heading">
+            {intl.formatMessage(messages.plexsettings)}
+          </h3>
           <p className="description">
             {intl.formatMessage(messages.plexsettingsDescription)}
           </p>

@@ -70,7 +70,7 @@ const AddEmailModal: React.FC<AddEmailModalProps> = ({
             });
 
             onSave();
-          } catch (e) {
+          } catch {
             // set error here
           }
         }}

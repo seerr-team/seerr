@@ -88,7 +88,7 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
       if (onComplete) {
         onComplete();
       }
-    } catch (e) {
+    } catch {
       addToast(
         intl.formatMessage(messages.importfromJellyfinerror, {
           mediaServerName,

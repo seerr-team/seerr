@@ -205,7 +205,7 @@ class PlexTvAPI extends ExternalAPI {
         label: 'Plex.tv API',
         errorMessage: e.message,
       });
-      throw new Error('Invalid auth token');
+      throw new Error('Invalid auth token', { cause: e });
     }
   }
 
@@ -221,7 +221,7 @@ class PlexTvAPI extends ExternalAPI {
         `Something went wrong while getting the account from plex.tv: ${e.message}`,
         { label: 'Plex.tv API' }
       );
-      throw new Error('Invalid auth token');
+      throw new Error('Invalid auth token', { cause: e });
     }
   }
 

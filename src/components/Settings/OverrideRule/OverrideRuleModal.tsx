@@ -108,7 +108,7 @@ const OverrideRuleModal = ({
 
         setIsValidated(true);
         setTestResponse(response.data);
-      } catch (e) {
+      } catch {
         setIsValidated(false);
       } finally {
         setIsTesting(false);
@@ -191,7 +191,7 @@ const OverrideRuleModal = ({
               });
             }
             onClose();
-          } catch (e) {
+          } catch {
             // set error here
           }
         }}

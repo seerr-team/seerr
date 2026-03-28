@@ -48,8 +48,6 @@ mediaRoutes.get('/', async (req, res, next) => {
     case 'pending':
       statusFilter = MediaStatus.PENDING;
       break;
-    default:
-      statusFilter = undefined;
   }
 
   let sortFilter: FindOneOptions<Media>['order'] = {
