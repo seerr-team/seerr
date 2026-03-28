@@ -47,6 +47,15 @@ servers:
         default: http://localhost:5055
 
 components:
+  parameters:
+    serverId:
+      in: query
+      name: serverId
+      description: Optional configured media server ID used to target a specific Plex or Jellyfin/Emby server.
+      schema:
+        type: string
+        format: uuid
+        nullable: true
   schemas:
     Blocklist:
       type: object
@@ -2375,12 +2384,7 @@ paths:
       tags:
         - settings
       parameters:
-        - in: query
-          name: serverId
-          description: Retrieves the settings for a specific Jellyfin or Emby server
-          schema:
-            type: string
-            nullable: true
+        - $ref: '#/components/parameters/serverId'
       responses:
         '200':
           description: OK
@@ -2428,12 +2432,7 @@ paths:
       tags:
         - settings
       parameters:
-        - in: query
-          name: serverId
-          description: Retrieves or syncs libraries for a specific Jellyfin or Emby server
-          schema:
-            type: string
-            nullable: true
+        - $ref: '#/components/parameters/serverId'
         - in: query
           name: sync
           description: Syncs the current libraries with the current Jellyfin server
@@ -2465,12 +2464,7 @@ paths:
         - settings
         - users
       parameters:
-        - in: query
-          name: serverId
-          description: Retrieves users from a specific Jellyfin or Emby server
-          schema:
-            type: string
-            nullable: true
+        - $ref: '#/components/parameters/serverId'
       responses:
         '200':
           description: Jellyfin users returned
@@ -2565,12 +2559,7 @@ paths:
       tags:
         - settings
       parameters:
-        - in: query
-          name: serverId
-          description: Retrieves the settings for a specific Plex server
-          schema:
-            type: string
-            nullable: true
+        - $ref: '#/components/parameters/serverId'
       responses:
         '200':
           description: OK
@@ -2661,12 +2650,7 @@ paths:
       tags:
         - settings
       parameters:
-        - in: query
-          name: serverId
-          description: Retrieves or syncs libraries for a specific Plex server
-          schema:
-            type: string
-            nullable: true
+        - $ref: '#/components/parameters/serverId'
         - in: query
           name: sync
           description: Syncs the current libraries with the current Plex server
@@ -2785,10 +2769,7 @@ paths:
         - settings
         - users
       parameters:
-        - in: query
-          name: serverId
-          schema:
-            type: string
+        - $ref: '#/components/parameters/serverId'
       responses:
         '200':
           description: Plex users
