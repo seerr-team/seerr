@@ -44,7 +44,7 @@ This value should be set to the port that your Radarr/Sonarr server listens on. 
 
 #### Use SSL
 
-Enable this setting to connect to Radarr/Sonarr via HTTPS rather than HTTP. Note that self-signed certificates are _not_ supported.
+Enable this setting to connect to Radarr/Sonarr via HTTPS rather than HTTP. Self-signed certificates are not trusted by default, but you can configure Seerr to accept them. See [Self-Signed Certificates](/using-seerr/advanced/self-signed-certificates) for details.
 
 #### API Key
 
