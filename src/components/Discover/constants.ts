@@ -233,19 +233,19 @@ export const countActiveFilters = (filterValues: FilterOptions): number => {
   let totalCount = 0;
   const clonedFilters = Object.assign({}, filterValues);
 
-  if (clonedFilters.voteAverageGte || filterValues.voteAverageLte) {
+  if (clonedFilters.voteAverageGte || clonedFilters.voteAverageLte) {
     totalCount += 1;
     delete clonedFilters.voteAverageGte;
     delete clonedFilters.voteAverageLte;
   }
 
-  if (clonedFilters.voteCountGte || filterValues.voteCountLte) {
+  if (clonedFilters.voteCountGte || clonedFilters.voteCountLte) {
     totalCount += 1;
     delete clonedFilters.voteCountGte;
     delete clonedFilters.voteCountLte;
   }
 
-  if (clonedFilters.withRuntimeGte || filterValues.withRuntimeLte) {
+  if (clonedFilters.withRuntimeGte || clonedFilters.withRuntimeLte) {
     totalCount += 1;
     delete clonedFilters.withRuntimeGte;
     delete clonedFilters.withRuntimeLte;

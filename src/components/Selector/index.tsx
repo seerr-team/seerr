@@ -394,9 +394,11 @@ export const WatchProviderSelector = ({
   const [activeProvider, setActiveProvider] = useState<number[]>(
     activeProviders ?? []
   );
+  useEffect(() => {
+    setActiveProvider(activeProviders ?? []);
+  }, [activeProviders]);
   const { data, isLoading } = useSWR<WatchProviderDetails[]>(
-    `/api/v1/watchproviders/${
-      type === 'movie' ? 'movies' : 'tv'
+    `/api/v1/watchproviders/${type === 'movie' ? 'movies' : 'tv'
     }?watchRegion=${watchRegion}`
   );
 
@@ -452,11 +454,10 @@ export const WatchProviderSelector = ({
                   key={`prodiver-${provider.id}`}
                 >
                   <div
-                    className={`provider-container relative w-full cursor-pointer rounded-lg ring-1 ${
-                      isActive
+                    className={`provider-container relative w-full cursor-pointer rounded-lg ring-1 ${isActive
                         ? 'bg-gray-600 ring-indigo-500 hover:bg-gray-500'
                         : 'bg-gray-700 ring-gray-500 hover:bg-gray-600'
-                    }`}
+                      }`}
                     onClick={() => toggleProvider(provider.id)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
@@ -495,11 +496,10 @@ export const WatchProviderSelector = ({
                     key={`prodiver-${provider.id}`}
                   >
                     <div
-                      className={`provider-container relative w-full cursor-pointer rounded-lg ring-1 transition ${
-                        isActive
+                      className={`provider-container relative w-full cursor-pointer rounded-lg ring-1 transition ${isActive
                           ? 'bg-gray-600 ring-indigo-500 hover:bg-gray-500'
                           : 'bg-gray-700 ring-gray-500 hover:bg-gray-600'
-                      }`}
+                        }`}
                       onClick={() => toggleProvider(provider.id)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
