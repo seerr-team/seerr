@@ -1,0 +1,283 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: "PR Validation"
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - edited
+      - synchronize
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semantic-title:
+    name: Validate PR Title
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: write
+      issues: write
+    steps:
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+        id: lint_pr_title
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        if: always() && steps.lint_pr_title.outputs.error_message != null
+        env:
+          ERROR_MESSAGE: ${{ steps.lint_pr_title.outputs.error_message }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const message = process.env.ERROR_MESSAGE;
+            const prNumber = context.payload.pull_request.number;
+
+            const body = [
+              `### PR Title Validation Failed\n`,
+              message,
+              `\n---\n`,
+              `PR titles must follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).`,
+              `*This check will re-run when you update your PR title.*`,
+            ].join('\n');
+
+            const allComments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                per_page: 100,
+              }
+            );
+
+            const botComment = allComments.find(
+              c => c.user.type === 'Bot' && c.body && c.body.includes('### PR Title Validation Failed')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
+
+      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        if: always() && steps.lint_pr_title.outputs.error_message == null
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+
+            const allComments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                per_page: 100,
+              }
+            );
+
+            const botComment = allComments.find(
+              c => c.user.type === 'Bot' && c.body && c.body.includes('### PR Title Validation Failed')
+            );
+
+            if (botComment) {
+              await github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+              });
+            }
+
+  template-check:
+    name: Validate PR Template
+    if: github.event.action != 'synchronize'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: 'package.json'
+
+      - name: Skip bot PRs
+        id: bot-check
+        if: github.event.pull_request.user.type == 'Bot'
+        run: echo "skip=true" >> "$GITHUB_OUTPUT"
+
+      - name: Write PR body to file
+        if: steps.bot-check.outputs.skip != 'true'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: printf '%s' "$PR_BODY" > /tmp/pr-body.txt
+
+      - name: Run template check
+        if: steps.bot-check.outputs.skip != 'true'
+        id: check
+        env:
+          AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
+        run: |
+          set +e
+          ISSUES=$(node bin/check-pr-template.mjs /tmp/pr-body.txt)
+          EXIT_CODE=$?
+          echo "exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+          {
+            echo 'issues<<EOF'
+            printf '%s\n' "$ISSUES"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Label and comment on failure
+        if: steps.bot-check.outputs.skip != 'true' && steps.check.outputs.exit_code != '0'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          ISSUES_JSON: ${{ steps.check.outputs.issues }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issues = JSON.parse(process.env.ISSUES_JSON);
+            const author = process.env.PR_AUTHOR;
+            const prNumber = context.payload.pull_request.number;
+            const LABEL = 'blocked:template';
+
+            const issueList = issues.map(i => `- ${i}`).join('\n');
+
+            const commentBody = [
+              `Hey @${author}, thanks for submitting this PR! However, it looks like the PR template hasn't been fully filled out.\n`,
+              `### Issues found:\n`,
+              issueList,
+              `\n---\n`,
+              `**Please update your PR description to follow the [PR template](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/develop/.github/PULL_REQUEST_TEMPLATE.md).**`,
+              `Incomplete or missing PR descriptions may indicate insufficient review of the changes, and PRs that do not follow the template **may be closed without review**.`,
+              `See our [Contributing Guide](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/develop/CONTRIBUTING.md) for more details.\n`,
+              `*This check will automatically re-run when you edit your PR description.*`,
+            ].join('\n');
+
+            const allComments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                per_page: 100,
+              }
+            );
+
+            const botComment = allComments.find(
+              c => c.user.type === 'Bot' && c.body && c.body.includes('### Issues found:')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: commentBody,
+              });
+            }
+
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                labels: [LABEL],
+              });
+            } catch (e) {
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: LABEL,
+                  color: 'B60205',
+                  description: 'PR template not properly filled out',
+                });
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  labels: [LABEL],
+                });
+              } catch (e2) {
+                console.log('Could not create/add label:', e2.message);
+              }
+            }
+
+            core.setFailed('PR template is not properly filled out.');
+
+      - name: Remove label on success
+        if: steps.bot-check.outputs.skip != 'true' && steps.check.outputs.exit_code == '0'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const LABEL = 'blocked:template';
+
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                name: LABEL,
+              });
+            } catch (e) {
+              console.log('Could not remove label', e.message);
+            }
+
+            const allComments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                per_page: 100,
+              }
+            );
+
+            const botComment = allComments.find(
+              c => c.user.type === 'Bot' && c.body && c.body.includes('### Issues found:')
+            );
+
+            if (botComment) {
+              await github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+              });
+            }
