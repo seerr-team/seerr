@@ -31,7 +31,6 @@ import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
-import { hasCountryFlag } from '@app/utils/countryFlags';
 import { sortCrewPriority } from '@app/utils/creditHelpers';
 import defineMessages from '@app/utils/defineMessages';
 import { getMediaServerDisplayName } from '@app/utils/mediaServers';
@@ -60,6 +59,7 @@ import {
 import type { TvDetails as TvDetailsType } from '@server/models/Tv';
 import type { Crew } from '@server/models/common';
 import axios from 'axios';
+import { countries } from 'country-flag-icons';
 import 'country-flag-icons/3x2/flags.css';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -1258,7 +1258,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                         className="flex items-center justify-end"
                         key={`prodcountry-${c.iso_3166_1}`}
                       >
-                        {hasCountryFlag(c.iso_3166_1) && (
+                        {countries.includes(c.iso_3166_1) && (
                           <span
                             className={`mr-1.5 text-xs leading-5 flag:${c.iso_3166_1}`}
                           />
