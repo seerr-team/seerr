@@ -59,6 +59,7 @@ export interface JellyfinSettings {
   libraries: Library[];
   serverId: string;
   apiKey: string;
+  jellyfinUserId?: string;
 }
 
 export interface JellyfinServerSettings extends JellyfinSettings {
@@ -996,10 +997,8 @@ class Settings {
   }
 
   private async finalizeLoadedSettings(): Promise<void> {
-    this.synchronizeMediaServerSettings();
-
     // generate keys and ids if it's missing
-    let change = false;
+    let change = this.synchronizeMediaServerSettings();
     if (!this.data.main.apiKey) {
       this.data.main.apiKey = this.generateApiKey();
       change = true;
@@ -1170,7 +1169,14 @@ class Settings {
 
   private synchronizeMediaServerSettings({
     syncLegacyFromArrays = true,
-  }: { syncLegacyFromArrays?: boolean } = {}): void {
+  }: { syncLegacyFromArrays?: boolean } = {}): boolean {
+    const originalState = JSON.stringify({
+      main: this.data.main,
+      plex: this.data.plex,
+      jellyfin: this.data.jellyfin,
+      plexServers: this.data.plexServers,
+      jellyfinServers: this.data.jellyfinServers,
+    });
     const legacyMediaServerLogin = this.data.main.mediaServerLogin ?? true;
 
     this.data.main.plexLogin ??= legacyMediaServerLogin;
@@ -1300,6 +1306,17 @@ class Settings {
         ];
       }
     }
+
+    return (
+      originalState !==
+      JSON.stringify({
+        main: this.data.main,
+        plex: this.data.plex,
+        jellyfin: this.data.jellyfin,
+        plexServers: this.data.plexServers,
+        jellyfinServers: this.data.jellyfinServers,
+      })
+    );
   }
 }
 

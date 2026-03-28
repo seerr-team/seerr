@@ -94,10 +94,9 @@ authRoutes.post('/plex', async (req, res, next) => {
       });
 
       settings.main.mediaServerType = MediaServerType.PLEX;
-      await settings.save();
-      startJobs();
-
       await userRepository.save(user);
+      await settings.save();
+      await startJobs();
     } else {
       const mainUser = await userRepository.findOneOrFail({
         select: { id: true, plexToken: true, plexId: true, email: true },
@@ -486,6 +485,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
           configuredServer?.jellyfinForgotPasswordUrl ?? '',
         libraries: configuredServer?.libraries ?? [],
         apiKey,
+        jellyfinUserId: account.User.Id,
       };
 
       settings.upsertJellyfinServer(jellyfinServer);
@@ -497,7 +497,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       }
 
       await settings.save();
-      startJobs();
+      await startJobs();
     }
     // User already exists, let's update their information
     else if (account.User.Id === user?.jellyfinUserId) {

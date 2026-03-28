@@ -14,6 +14,8 @@ import { DbAwareColumn } from '@server/utils/DbColumnHelper';
 import { getHostname } from '@server/utils/getHostname';
 import {
   AfterLoad,
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   Entity,
   Index,
@@ -32,6 +34,13 @@ export interface MediaLink {
   url: string;
   iOSPlexUrl?: string;
   tautulliUrl?: string;
+}
+
+export interface MediaSource {
+  mediaServerId?: string | null;
+  mediaServerType: MediaServerType;
+  ratingKey?: string | null;
+  jellyfinMediaId?: string | null;
 }
 
 @Entity()
@@ -206,6 +215,12 @@ class Media {
   @Column({ nullable: true, type: 'varchar' })
   public jellyfinServerId4k?: string | null;
 
+  @Column({ nullable: true, type: 'simple-json' })
+  public mediaSources?: MediaSource[] | null;
+
+  @Column({ nullable: true, type: 'simple-json' })
+  public mediaSources4k?: MediaSource[] | null;
+
   public serviceUrl?: string;
   public serviceUrl4k?: string;
   public downloadStatus?: DownloadingItem[] = [];
@@ -238,25 +253,227 @@ class Media {
     this.externalServiceSlug4k = null;
     this.ratingKey = null;
     this.ratingKey4k = null;
+    this.plexServerId = null;
+    this.plexServerId4k = null;
     this.jellyfinMediaId = null;
     this.jellyfinMediaId4k = null;
+    this.jellyfinServerId = null;
+    this.jellyfinServerId4k = null;
+    this.mediaSources = null;
+    this.mediaSources4k = null;
+  }
+
+  private getLegacyMediaSources(is4k: boolean): MediaSource[] {
+    const legacySources: MediaSource[] = [];
+    const ratingKey = is4k ? this.ratingKey4k : this.ratingKey;
+    const plexServerId = is4k ? this.plexServerId4k : this.plexServerId;
+    const jellyfinMediaId = is4k
+      ? this.jellyfinMediaId4k
+      : this.jellyfinMediaId;
+    const jellyfinServerId = is4k
+      ? this.jellyfinServerId4k
+      : this.jellyfinServerId;
+
+    if (ratingKey) {
+      legacySources.push({
+        mediaServerId: plexServerId,
+        mediaServerType: MediaServerType.PLEX,
+        ratingKey,
+      });
+    }
+
+    if (jellyfinMediaId) {
+      legacySources.push({
+        mediaServerId: jellyfinServerId,
+        mediaServerType:
+          this.getPrimaryJellyfinLikeMediaServerType(is4k) ??
+          MediaServerType.JELLYFIN,
+        jellyfinMediaId,
+      });
+    }
+
+    return legacySources;
+  }
+
+  private normalizeMediaSources(
+    sources: MediaSource[] | null | undefined,
+    is4k: boolean
+  ): MediaSource[] {
+    const normalized = [...(sources ?? []), ...this.getLegacyMediaSources(is4k)]
+      .filter((source): source is MediaSource =>
+        Boolean(
+          source &&
+          source.mediaServerType &&
+          (source.ratingKey || source.jellyfinMediaId)
+        )
+      )
+      .map((source) => ({
+        mediaServerId:
+          typeof source.mediaServerId === 'string' &&
+          source.mediaServerId.length > 0
+            ? source.mediaServerId
+            : null,
+        mediaServerType:
+          source.mediaServerType === MediaServerType.EMBY
+            ? MediaServerType.EMBY
+            : source.mediaServerType === MediaServerType.PLEX
+              ? MediaServerType.PLEX
+              : MediaServerType.JELLYFIN,
+        ratingKey: source.ratingKey ?? null,
+        jellyfinMediaId: source.jellyfinMediaId ?? null,
+      }));
+
+    const deduped = new Map<string, MediaSource>();
+
+    for (const source of normalized) {
+      const key = [
+        source.mediaServerType,
+        source.mediaServerId ?? '',
+        source.ratingKey ?? '',
+        source.jellyfinMediaId ?? '',
+      ].join(':');
+      deduped.set(key, source);
+    }
+
+    return [...deduped.values()];
+  }
+
+  private getPrimaryJellyfinLikeMediaServerType(
+    is4k: boolean
+  ): MediaServerType | undefined {
+    const sources = is4k ? this.mediaSources4k : this.mediaSources;
+    const jellyfinLikeSource = sources?.find(
+      (source) =>
+        source.mediaServerType === MediaServerType.JELLYFIN ||
+        source.mediaServerType === MediaServerType.EMBY
+    );
+
+    if (jellyfinLikeSource) {
+      return jellyfinLikeSource.mediaServerType;
+    }
+
+    if (this.mediaServerType === MediaServerType.EMBY) {
+      return MediaServerType.EMBY;
+    }
+
+    if (this.mediaServerType4k === MediaServerType.EMBY) {
+      return MediaServerType.EMBY;
+    }
+
+    return undefined;
+  }
+
+  public getMediaSources(is4k = false): MediaSource[] {
+    return this.normalizeMediaSources(
+      is4k ? this.mediaSources4k : this.mediaSources,
+      is4k
+    );
+  }
+
+  public getPlexMediaSources(is4k = false): MediaSource[] {
+    return this.getMediaSources(is4k).filter(
+      (source) => source.mediaServerType === MediaServerType.PLEX
+    );
+  }
+
+  public getJellyfinMediaSources(is4k = false): MediaSource[] {
+    return this.getMediaSources(is4k).filter(
+      (source) =>
+        source.mediaServerType === MediaServerType.JELLYFIN ||
+        source.mediaServerType === MediaServerType.EMBY
+    );
+  }
+
+  public upsertMediaSource(source: MediaSource & { is4k?: boolean }): boolean {
+    const { is4k = false, ...nextSource } = source;
+    const sources = this.getMediaSources(is4k);
+    const sourceIndex = sources.findIndex(
+      (existingSource) =>
+        existingSource.mediaServerType === nextSource.mediaServerType &&
+        existingSource.mediaServerId === (nextSource.mediaServerId ?? null) &&
+        existingSource.ratingKey === (nextSource.ratingKey ?? null) &&
+        existingSource.jellyfinMediaId === (nextSource.jellyfinMediaId ?? null)
+    );
+
+    if (sourceIndex >= 0) {
+      return false;
+    }
+
+    const updatedSources = this.normalizeMediaSources(
+      [...sources, nextSource],
+      is4k
+    );
+
+    if (is4k) {
+      this.mediaSources4k = updatedSources;
+    } else {
+      this.mediaSources = updatedSources;
+    }
+
+    this.syncLegacyMediaSourceFields();
+    return true;
+  }
+
+  public clearMediaSources(is4k = false): void {
+    if (is4k) {
+      this.mediaSources4k = [];
+    } else {
+      this.mediaSources = [];
+    }
+
+    this.syncLegacyMediaSourceFields();
+  }
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  public syncLegacyMediaSourceFields(): void {
+    this.mediaSources = this.normalizeMediaSources(this.mediaSources, false);
+    this.mediaSources4k = this.normalizeMediaSources(this.mediaSources4k, true);
+
+    const primaryPlexSource = this.getPlexMediaSources(false)[0];
+    const primaryPlexSource4k = this.getPlexMediaSources(true)[0];
+    const primaryJellyfinSource = this.getJellyfinMediaSources(false)[0];
+    const primaryJellyfinSource4k = this.getJellyfinMediaSources(true)[0];
+
+    this.ratingKey = primaryPlexSource?.ratingKey ?? null;
+    this.ratingKey4k = primaryPlexSource4k?.ratingKey ?? null;
+    this.plexServerId = primaryPlexSource?.mediaServerId ?? null;
+    this.plexServerId4k = primaryPlexSource4k?.mediaServerId ?? null;
+    this.jellyfinMediaId = primaryJellyfinSource?.jellyfinMediaId ?? null;
+    this.jellyfinMediaId4k = primaryJellyfinSource4k?.jellyfinMediaId ?? null;
+    this.jellyfinServerId = primaryJellyfinSource?.mediaServerId ?? null;
+    this.jellyfinServerId4k = primaryJellyfinSource4k?.mediaServerId ?? null;
   }
 
   @AfterLoad()
   public setPlexUrls(): void {
+    this.syncLegacyMediaSourceFields();
+
     const settings = getSettings();
     const { externalUrl: tautulliUrl } = getSettings().tautulli;
     const mediaServerTypes = settings.getMediaServerTypes();
     const preferredMediaServerType =
       mediaServerTypes[0] ?? MediaServerType.NOT_CONFIGURED;
 
-    const buildPlexUrls = (
-      ratingKey: string,
-      serverId?: string | null
-    ): MediaLink | null => {
-      const server =
-        settings.plexServers.find((plex) => plex.id === serverId) ??
-        settings.getPrimaryPlexServer();
+    this.mediaUrls = [];
+    this.mediaUrls4k = [];
+    this.mediaUrl = undefined;
+    this.mediaUrl4k = undefined;
+    this.iOSPlexUrl = undefined;
+    this.iOSPlexUrl4k = undefined;
+    this.tautulliUrl = undefined;
+    this.tautulliUrl4k = undefined;
+    this.mediaServerType = undefined;
+    this.mediaServerType4k = undefined;
+
+    const buildPlexUrls = (source: MediaSource): MediaLink | null => {
+      if (!source.ratingKey) {
+        return null;
+      }
+
+      const server = source.mediaServerId
+        ? settings.plexServers.find((plex) => plex.id === source.mediaServerId)
+        : settings.getPrimaryPlexServer();
 
       if (!server?.machineId) {
         return null;
@@ -268,21 +485,24 @@ class Media {
         mediaServerType: MediaServerType.PLEX,
         url: `${
           server.webAppUrl ? server.webAppUrl : 'https://app.plex.tv/desktop'
-        }#!/server/${server.machineId}/details?key=%2Flibrary%2Fmetadata%2F${ratingKey}`,
-        iOSPlexUrl: `plex://preplay/?metadataKey=%2Flibrary%2Fmetadata%2F${ratingKey}&server=${server.machineId}`,
+        }#!/server/${server.machineId}/details?key=%2Flibrary%2Fmetadata%2F${source.ratingKey}`,
+        iOSPlexUrl: `plex://preplay/?metadataKey=%2Flibrary%2Fmetadata%2F${source.ratingKey}&server=${server.machineId}`,
         tautulliUrl: tautulliUrl
-          ? `${tautulliUrl}/info?rating_key=${ratingKey}`
+          ? `${tautulliUrl}/info?rating_key=${source.ratingKey}`
           : undefined,
       };
     };
 
-    const buildJellyfinUrls = (
-      jellyfinMediaId: string,
-      serverId?: string | null
-    ): MediaLink | null => {
-      const server =
-        settings.jellyfinServers.find((jellyfin) => jellyfin.id === serverId) ??
-        settings.getPrimaryJellyfinLikeServer();
+    const buildJellyfinUrls = (source: MediaSource): MediaLink | null => {
+      if (!source.jellyfinMediaId) {
+        return null;
+      }
+
+      const server = source.mediaServerId
+        ? settings.jellyfinServers.find(
+            (jellyfin) => jellyfin.id === source.mediaServerId
+          )
+        : settings.getPrimaryJellyfinLikeServer();
 
       if (!server?.serverId) {
         return null;
@@ -299,7 +519,7 @@ class Media {
         mediaServerId: server.id,
         mediaServerName: server.name,
         mediaServerType: server.mediaServerType,
-        url: `${jellyfinHost}/web/index.html#!/${pageName}?id=${jellyfinMediaId}&context=home&serverId=${server.serverId}`,
+        url: `${jellyfinHost}/web/index.html#!/${pageName}?id=${source.jellyfinMediaId}&context=home&serverId=${server.serverId}`,
       };
     };
 
@@ -308,29 +528,25 @@ class Media {
         ? ['plex', 'jellyfin']
         : ['jellyfin', 'plex'];
 
-    const getAvailableUrls = (
-      ratingKey?: string | null,
-      plexServerId?: string | null,
-      jellyfinMediaId?: string | null,
-      jellyfinServerId?: string | null
-    ): MediaLink[] => {
+    const getAvailableUrls = (sources: MediaSource[]): MediaLink[] => {
       const availableUrls: MediaLink[] = [];
 
       for (const family of preferredFamilies) {
-        if (family === 'plex' && ratingKey) {
-          const plexUrls = buildPlexUrls(ratingKey, plexServerId);
-          if (plexUrls) {
-            availableUrls.push(plexUrls);
-          }
-        }
+        const matchingSources = sources.filter((source) =>
+          family === 'plex'
+            ? source.mediaServerType === MediaServerType.PLEX
+            : source.mediaServerType === MediaServerType.JELLYFIN ||
+              source.mediaServerType === MediaServerType.EMBY
+        );
 
-        if (family === 'jellyfin' && jellyfinMediaId) {
-          const jellyfinUrls = buildJellyfinUrls(
-            jellyfinMediaId,
-            jellyfinServerId
-          );
-          if (jellyfinUrls) {
-            availableUrls.push(jellyfinUrls);
+        for (const source of matchingSources) {
+          const mediaLink =
+            family === 'plex'
+              ? buildPlexUrls(source)
+              : buildJellyfinUrls(source);
+
+          if (mediaLink) {
+            availableUrls.push(mediaLink);
           }
         }
       }
@@ -338,12 +554,7 @@ class Media {
       return availableUrls;
     };
 
-    const standardUrls = getAvailableUrls(
-      this.ratingKey,
-      this.plexServerId,
-      this.jellyfinMediaId,
-      this.jellyfinServerId
-    );
+    const standardUrls = getAvailableUrls(this.getMediaSources(false));
 
     if (standardUrls.length > 0) {
       this.mediaUrls = standardUrls;
@@ -353,12 +564,7 @@ class Media {
       this.tautulliUrl = standardUrls[0].tautulliUrl;
     }
 
-    const fourKUrls = getAvailableUrls(
-      this.ratingKey4k,
-      this.plexServerId4k,
-      this.jellyfinMediaId4k,
-      this.jellyfinServerId4k
-    );
+    const fourKUrls = getAvailableUrls(this.getMediaSources(true));
 
     if (fourKUrls.length > 0) {
       this.mediaUrls4k = fourKUrls;

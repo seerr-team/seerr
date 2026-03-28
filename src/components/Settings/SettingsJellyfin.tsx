@@ -242,7 +242,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
   useEffect(() => {
     if (
       !hasInitializedServerSelection &&
-      (isSetupSettings || selectedServerId !== 'new') &&
+      (isSetupSettings || selectedServerId === 'new') &&
       jellyfinServers?.length &&
       jellyfinServers?.[0]
     ) {
@@ -348,14 +348,9 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
     setIsSyncing(true);
     if (activeLibraries.includes(libraryId)) {
       const params: { enable?: string; serverId?: string } = {
+        enable: activeLibraries.filter((id) => id !== libraryId).join(','),
         serverId: selectedServerId,
       };
-
-      if (activeLibraries.length > 1) {
-        params.enable = activeLibraries
-          .filter((id) => id !== libraryId)
-          .join(',');
-      }
 
       await axios.get('/api/v1/settings/jellyfin/library', {
         params,

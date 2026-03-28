@@ -57,6 +57,14 @@ components:
         format: uuid
         nullable: true
   schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Something went wrong.
+      required:
+        - message
     Blocklist:
       type: object
       properties:
@@ -561,21 +569,27 @@ components:
           type: string
           example: 'Main Server'
           readOnly: true
-        hostname:
+        ip:
           type: string
-          example: 'http://my.jellyfin.host'
+          example: '127.0.0.1'
+        port:
+          type: number
+          example: 8096
+        useSsl:
+          type: boolean
+          nullable: true
+        urlBase:
+          type: string
+          example: '/jellyfin'
         externalHostname:
           type: string
           example: 'http://my.jellyfin.host'
         jellyfinForgotPasswordUrl:
           type: string
           example: 'http://my.jellyfin.host/web/index.html#!/forgotpassword.html'
-        adminUser:
+        apiKey:
           type: string
-          example: 'admin'
-        adminPass:
-          type: string
-          example: 'mypassword'
+          example: 'my-api-key'
         libraries:
           type: array
           readOnly: true
@@ -586,6 +600,12 @@ components:
           readOnly: true
       required:
         - id
+        - name
+        - ip
+        - port
+        - libraries
+        - serverId
+        - apiKey
     JellyfinSettingsWrite:
       type: object
       description: |
@@ -594,9 +614,18 @@ components:
         id:
           type: string
           format: uuid
-        hostname:
+        ip:
           type: string
-          example: 'http://my.jellyfin.host'
+          example: '127.0.0.1'
+        port:
+          type: number
+          example: 8096
+        useSsl:
+          type: boolean
+          nullable: true
+        urlBase:
+          type: string
+          example: '/jellyfin'
         externalHostname:
           type: string
           example: 'http://my.jellyfin.host'
@@ -624,7 +653,7 @@ components:
           description: Deprecated legacy alias for `mediaServerType`. Only used when `mediaServerType` is omitted.
           deprecated: true
       required:
-        - hostname
+        - ip
     JellyfinServerInstance:
       allOf:
         - $ref: '#/components/schemas/JellyfinSettings'
@@ -828,6 +857,51 @@ components:
         initialized:
           type: boolean
           example: false
+        mediaServerLogin:
+          type: boolean
+          example: true
+        plexLogin:
+          type: boolean
+          example: true
+        jellyfinLogin:
+          type: boolean
+          example: true
+        embyLogin:
+          type: boolean
+          example: true
+        mediaServerTypes:
+          type: array
+          items:
+            type: number
+            enum: [1, 2, 3]
+          example: [1, 2]
+        mediaServers:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicMediaServerSettings'
+    PublicMediaServerSettings:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 8b6308fd-72dd-4c87-a4b9-7a440bc8be1c
+        mediaServerType:
+          type: number
+          enum: [1, 2, 3]
+          example: 2
+        name:
+          type: string
+          example: Jellyfin
+        externalHostname:
+          type: string
+          example: 'http://my.jellyfin.host'
+        jellyfinForgotPasswordUrl:
+          type: string
+          example: 'http://my.jellyfin.host/web/index.html#!/forgotpassword.html'
+      required:
+        - id
+        - mediaServerType
+        - name
     MovieResult:
       type: object
       required:
@@ -2628,6 +2702,24 @@ paths:
       responses:
         '204':
           description: Plex authentication stored successfully
+        '400':
+          description: Authentication token was not provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Only the owner may authenticate Plex for settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Plex authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /settings/plex/servers:
     get:
       summary: Get Plex servers

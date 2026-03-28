@@ -1,5 +1,6 @@
 import TheMovieDb from '@server/api/themoviedb';
 import { MediaStatus, MediaType } from '@server/constants/media';
+import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import Season from '@server/entity/Season';
@@ -37,6 +38,7 @@ interface ProcessOptions {
   plexServerId?: string;
   jellyfinMediaId?: string;
   jellyfinServerId?: string;
+  jellyfinMediaServerType?: MediaServerType.JELLYFIN | MediaServerType.EMBY;
   imdbId?: string;
   serviceId?: number;
   externalServiceId?: number;
@@ -102,6 +104,7 @@ class BaseScanner<T> {
       plexServerId,
       jellyfinMediaId,
       jellyfinServerId,
+      jellyfinMediaServerType,
       imdbId,
       serviceId,
       externalServiceId,
@@ -135,40 +138,25 @@ class BaseScanner<T> {
           changedExisting = true;
         }
 
-        if (
-          ratingKey &&
-          existing[is4k ? 'ratingKey4k' : 'ratingKey'] !== ratingKey
-        ) {
-          existing[is4k ? 'ratingKey4k' : 'ratingKey'] = ratingKey;
-          changedExisting = true;
+        if (ratingKey) {
+          changedExisting =
+            existing.upsertMediaSource({
+              is4k,
+              mediaServerId: plexServerId,
+              mediaServerType: MediaServerType.PLEX,
+              ratingKey,
+            }) || changedExisting;
         }
 
-        if (
-          plexServerId &&
-          existing[is4k ? 'plexServerId4k' : 'plexServerId'] !== plexServerId
-        ) {
-          existing[is4k ? 'plexServerId4k' : 'plexServerId'] = plexServerId;
-          changedExisting = true;
-        }
-
-        if (
-          jellyfinMediaId &&
-          existing[is4k ? 'jellyfinMediaId4k' : 'jellyfinMediaId'] !==
-            jellyfinMediaId
-        ) {
-          existing[is4k ? 'jellyfinMediaId4k' : 'jellyfinMediaId'] =
-            jellyfinMediaId;
-          changedExisting = true;
-        }
-
-        if (
-          jellyfinServerId &&
-          existing[is4k ? 'jellyfinServerId4k' : 'jellyfinServerId'] !==
-            jellyfinServerId
-        ) {
-          existing[is4k ? 'jellyfinServerId4k' : 'jellyfinServerId'] =
-            jellyfinServerId;
-          changedExisting = true;
+        if (jellyfinMediaId) {
+          changedExisting =
+            existing.upsertMediaSource({
+              is4k,
+              mediaServerId: jellyfinServerId,
+              mediaServerType:
+                jellyfinMediaServerType ?? MediaServerType.JELLYFIN,
+              jellyfinMediaId,
+            }) || changedExisting;
         }
 
         if (imdbId && !existing.imdbId) {
@@ -243,21 +231,22 @@ class BaseScanner<T> {
         }
 
         if (ratingKey) {
-          newMedia.ratingKey = !is4k ? ratingKey : undefined;
-          newMedia.ratingKey4k =
-            is4k && this.enable4kMovie ? ratingKey : undefined;
-          newMedia.plexServerId = !is4k ? plexServerId : undefined;
-          newMedia.plexServerId4k =
-            is4k && this.enable4kMovie ? plexServerId : undefined;
+          newMedia.upsertMediaSource({
+            is4k,
+            mediaServerId: plexServerId,
+            mediaServerType: MediaServerType.PLEX,
+            ratingKey,
+          });
         }
 
         if (jellyfinMediaId) {
-          newMedia.jellyfinMediaId = !is4k ? jellyfinMediaId : undefined;
-          newMedia.jellyfinMediaId4k =
-            is4k && this.enable4kMovie ? jellyfinMediaId : undefined;
-          newMedia.jellyfinServerId = !is4k ? jellyfinServerId : undefined;
-          newMedia.jellyfinServerId4k =
-            is4k && this.enable4kMovie ? jellyfinServerId : undefined;
+          newMedia.upsertMediaSource({
+            is4k,
+            mediaServerId: jellyfinServerId,
+            mediaServerType:
+              jellyfinMediaServerType ?? MediaServerType.JELLYFIN,
+            jellyfinMediaId,
+          });
         }
 
         await mediaRepository.save(newMedia);
@@ -286,6 +275,7 @@ class BaseScanner<T> {
       plexServerId,
       jellyfinMediaId,
       jellyfinServerId,
+      jellyfinMediaServerType,
       serviceId,
       externalServiceId,
       externalServiceSlug,
@@ -317,69 +307,45 @@ class BaseScanner<T> {
           (es) => es.seasonNumber === season.seasonNumber
         );
 
-        // We update the rating keys and jellyfinMediaId in the seasons loop because we need episode counts
-        if (media && season.episodes > 0 && media.ratingKey !== ratingKey) {
-          media.ratingKey = ratingKey;
+        if (media && season.episodes > 0 && ratingKey) {
+          media.upsertMediaSource({
+            mediaServerId: plexServerId,
+            mediaServerType: MediaServerType.PLEX,
+            ratingKey,
+          });
         }
 
-        if (
-          media &&
-          season.episodes > 0 &&
-          media.plexServerId !== plexServerId
-        ) {
-          media.plexServerId = plexServerId;
+        if (media && season.episodes4k > 0 && this.enable4kShow && ratingKey) {
+          media.upsertMediaSource({
+            is4k: true,
+            mediaServerId: plexServerId,
+            mediaServerType: MediaServerType.PLEX,
+            ratingKey,
+          });
         }
 
-        if (
-          media &&
-          season.episodes4k > 0 &&
-          this.enable4kShow &&
-          media.ratingKey4k !== ratingKey
-        ) {
-          media.ratingKey4k = ratingKey;
-        }
-
-        if (
-          media &&
-          season.episodes4k > 0 &&
-          this.enable4kShow &&
-          media.plexServerId4k !== plexServerId
-        ) {
-          media.plexServerId4k = plexServerId;
-        }
-
-        if (
-          media &&
-          season.episodes > 0 &&
-          media.jellyfinMediaId !== jellyfinMediaId
-        ) {
-          media.jellyfinMediaId = jellyfinMediaId;
-        }
-
-        if (
-          media &&
-          season.episodes > 0 &&
-          media.jellyfinServerId !== jellyfinServerId
-        ) {
-          media.jellyfinServerId = jellyfinServerId;
+        if (media && season.episodes > 0 && jellyfinMediaId) {
+          media.upsertMediaSource({
+            mediaServerId: jellyfinServerId,
+            mediaServerType:
+              jellyfinMediaServerType ?? MediaServerType.JELLYFIN,
+            jellyfinMediaId,
+          });
         }
 
         if (
           media &&
           season.episodes4k > 0 &&
           this.enable4kShow &&
-          media.jellyfinMediaId4k !== jellyfinMediaId
+          jellyfinMediaId
         ) {
-          media.jellyfinMediaId4k = jellyfinMediaId;
-        }
-
-        if (
-          media &&
-          season.episodes4k > 0 &&
-          this.enable4kShow &&
-          media.jellyfinServerId4k !== jellyfinServerId
-        ) {
-          media.jellyfinServerId4k = jellyfinServerId;
+          media.upsertMediaSource({
+            is4k: true,
+            mediaServerId: jellyfinServerId,
+            mediaServerType:
+              jellyfinMediaServerType ?? MediaServerType.JELLYFIN,
+            jellyfinMediaId,
+          });
         }
 
         if (existingSeason) {
@@ -587,70 +553,6 @@ class BaseScanner<T> {
           externalServiceId4k: is4k ? externalServiceId : undefined,
           externalServiceSlug: !is4k ? externalServiceSlug : undefined,
           externalServiceSlug4k: is4k ? externalServiceSlug : undefined,
-          ratingKey: newSeasons.some(
-            (sn) =>
-              sn.status === MediaStatus.PARTIALLY_AVAILABLE ||
-              sn.status === MediaStatus.AVAILABLE
-          )
-            ? ratingKey
-            : undefined,
-          plexServerId: newSeasons.some(
-            (sn) =>
-              sn.status === MediaStatus.PARTIALLY_AVAILABLE ||
-              sn.status === MediaStatus.AVAILABLE
-          )
-            ? plexServerId
-            : undefined,
-          ratingKey4k:
-            this.enable4kShow &&
-            newSeasons.some(
-              (sn) =>
-                sn.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
-                sn.status4k === MediaStatus.AVAILABLE
-            )
-              ? ratingKey
-              : undefined,
-          plexServerId4k:
-            this.enable4kShow &&
-            newSeasons.some(
-              (sn) =>
-                sn.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
-                sn.status4k === MediaStatus.AVAILABLE
-            )
-              ? plexServerId
-              : undefined,
-          jellyfinMediaId: newSeasons.some(
-            (sn) =>
-              sn.status === MediaStatus.PARTIALLY_AVAILABLE ||
-              sn.status === MediaStatus.AVAILABLE
-          )
-            ? jellyfinMediaId
-            : undefined,
-          jellyfinServerId: newSeasons.some(
-            (sn) =>
-              sn.status === MediaStatus.PARTIALLY_AVAILABLE ||
-              sn.status === MediaStatus.AVAILABLE
-          )
-            ? jellyfinServerId
-            : undefined,
-          jellyfinMediaId4k:
-            this.enable4kShow &&
-            newSeasons.some(
-              (sn) =>
-                sn.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
-                sn.status4k === MediaStatus.AVAILABLE
-            )
-              ? jellyfinMediaId
-              : undefined,
-          jellyfinServerId4k:
-            this.enable4kShow &&
-            newSeasons.some(
-              (sn) =>
-                sn.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
-                sn.status4k === MediaStatus.AVAILABLE
-            )
-              ? jellyfinServerId
-              : undefined,
           status: isAllStandardSeasonsAvailable
             ? MediaStatus.AVAILABLE
             : newSeasons.some(
@@ -680,6 +582,73 @@ class BaseScanner<T> {
                   ? MediaStatus.PROCESSING
                   : MediaStatus.UNKNOWN,
         });
+
+        if (
+          newSeasons.some(
+            (sn) =>
+              sn.status === MediaStatus.PARTIALLY_AVAILABLE ||
+              sn.status === MediaStatus.AVAILABLE
+          ) &&
+          ratingKey
+        ) {
+          newMedia.upsertMediaSource({
+            mediaServerId: plexServerId,
+            mediaServerType: MediaServerType.PLEX,
+            ratingKey,
+          });
+        }
+
+        if (
+          this.enable4kShow &&
+          newSeasons.some(
+            (sn) =>
+              sn.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
+              sn.status4k === MediaStatus.AVAILABLE
+          ) &&
+          ratingKey
+        ) {
+          newMedia.upsertMediaSource({
+            is4k: true,
+            mediaServerId: plexServerId,
+            mediaServerType: MediaServerType.PLEX,
+            ratingKey,
+          });
+        }
+
+        if (
+          newSeasons.some(
+            (sn) =>
+              sn.status === MediaStatus.PARTIALLY_AVAILABLE ||
+              sn.status === MediaStatus.AVAILABLE
+          ) &&
+          jellyfinMediaId
+        ) {
+          newMedia.upsertMediaSource({
+            mediaServerId: jellyfinServerId,
+            mediaServerType:
+              jellyfinMediaServerType ?? MediaServerType.JELLYFIN,
+            jellyfinMediaId,
+          });
+        }
+
+        if (
+          this.enable4kShow &&
+          newSeasons.some(
+            (sn) =>
+              sn.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
+              sn.status4k === MediaStatus.AVAILABLE
+          ) &&
+          jellyfinMediaId
+        ) {
+          newMedia.upsertMediaSource({
+            is4k: true,
+            mediaServerId: jellyfinServerId,
+            mediaServerType:
+              jellyfinMediaServerType ?? MediaServerType.JELLYFIN,
+            jellyfinMediaId,
+          });
+        }
+
         await mediaRepository.save(newMedia);
         this.log(`Saved ${title}`);
       }

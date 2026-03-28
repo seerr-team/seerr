@@ -224,7 +224,7 @@ class JellyfinAPI extends ExternalAPI {
   }
 
   private async getActiveUserId(): Promise<string> {
-    if (this.userId) {
+    if (typeof this.userId === 'string' && this.userId.length > 0) {
       return this.userId;
     }
 
@@ -279,7 +279,7 @@ class JellyfinAPI extends ExternalAPI {
   public async getUser(): Promise<JellyfinUserResponse> {
     try {
       const userReponse = await this.get<JellyfinUserResponse>(
-        `/Users/${this.userId ?? 'Me'}`
+        `/Users/${this.userId && this.userId.length > 0 ? this.userId : 'Me'}`
       );
       return userReponse;
     } catch (e) {
@@ -302,7 +302,9 @@ class JellyfinAPI extends ExternalAPI {
       // this only and maybe/depending on factors affects LDAP users
       try {
         const mediaFolderResponse = await this.get<any>(
-          `/Users/${this.userId ?? 'Me'}/Views`
+          `/Users/${
+            this.userId && this.userId.length > 0 ? this.userId : 'Me'
+          }/Views`
         );
 
         return this.mapLibraries(mediaFolderResponse.Items);

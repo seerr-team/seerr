@@ -45,12 +45,11 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
   const settings = useSettings();
   const jellyfinServers = useMemo(
     () =>
-      settings.currentSettings.mediaServers.filter(
-        (server) =>
-          serverType
-            ? server.mediaServerType === serverType
-            : server.mediaServerType === MediaServerType.JELLYFIN ||
-              server.mediaServerType === MediaServerType.EMBY
+      settings.currentSettings.mediaServers.filter((server) =>
+        serverType
+          ? server.mediaServerType === serverType
+          : server.mediaServerType === MediaServerType.JELLYFIN ||
+            server.mediaServerType === MediaServerType.EMBY
       ),
     [serverType, settings.currentSettings.mediaServers]
   );
@@ -101,6 +100,7 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
               password: values.password,
               email: values.username,
               serverId: selectedServer?.id,
+              serverType: resolvedServerType,
             });
           } catch (e) {
             let errorMessage = messages.loginerror;
@@ -143,6 +143,9 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
 
                   {jellyfinServers.length > 1 && (
                     <div className="mb-4 mt-1">
+                      <label htmlFor="serverId" className="label-tip pb-2">
+                        {intl.formatMessage(messages.server)}
+                      </label>
                       <div className="form-input-field">
                         <select
                           id="serverId"
@@ -159,9 +162,6 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
                             </option>
                           ))}
                         </select>
-                      </div>
-                      <div className="label-tip pt-2">
-                        {intl.formatMessage(messages.server)}
                       </div>
                     </div>
                   )}

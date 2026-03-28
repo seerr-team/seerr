@@ -670,8 +670,29 @@ router.post(
       const createdUsers: User[] = [];
       for (const rawUser of plexUsersResponse.MediaContainer.User) {
         const account = rawUser.$;
+        const matchingServer = rawUser.Server?.find((server) => {
+          const machineIdentifier =
+            server?.$?.machineIdentifier ??
+            (server?.$ as { machineId?: string } | undefined)?.machineId;
 
-        if (account.email) {
+          return machineIdentifier === plexServer.machineId;
+        });
+        const serverMachineId =
+          matchingServer?.$?.machineIdentifier ??
+          (matchingServer?.$ as { machineId?: string } | undefined)?.machineId;
+
+        if (account.email && serverMachineId) {
+          const isSelectedPlexUser =
+            !body?.plexIds || body.plexIds.includes(account.id);
+          const hasAccess = await mainPlexTv.checkUserAccess(
+            parseInt(account.id),
+            serverMachineId
+          );
+
+          if (!isSelectedPlexUser || !hasAccess) {
+            continue;
+          }
+
           const user = await userRepository
             .createQueryBuilder('user')
             .where('user.plexId = :id', { id: account.id })
@@ -687,25 +708,18 @@ router.post(
             user.plexId = parseInt(account.id);
             user.plexUsername = account.username;
             await userRepository.save(user);
-          } else if (!body?.plexIds || body.plexIds.includes(account.id)) {
-            if (
-              await mainPlexTv.checkUserAccess(
-                parseInt(account.id),
-                plexServer.machineId
-              )
-            ) {
-              const newUser = new User({
-                plexUsername: account.username,
-                email: account.email,
-                permissions: settings.main.defaultPermissions,
-                plexId: parseInt(account.id),
-                plexToken: '',
-                avatar: account.thumb,
-                userType: UserType.PLEX,
-              });
-              await userRepository.save(newUser);
-              createdUsers.push(newUser);
-            }
+          } else {
+            const newUser = new User({
+              plexUsername: account.username,
+              email: account.email,
+              permissions: settings.main.defaultPermissions,
+              plexId: parseInt(account.id),
+              plexToken: '',
+              avatar: account.thumb,
+              userType: UserType.PLEX,
+            });
+            await userRepository.save(newUser);
+            createdUsers.push(newUser);
           }
         }
       }
@@ -747,12 +761,16 @@ router.post(
         admin.jellyfinDeviceId ?? '',
         jellyfinServer.mediaServerType
       );
-      jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
+      jellyfinClient.setUserId(
+        jellyfinServer.jellyfinUserId ?? admin.jellyfinUserId ?? ''
+      );
 
       //const jellyfinUsersResponse = await jellyfinClient.getUsers();
       const createdUsers: User[] = [];
 
-      jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
+      jellyfinClient.setUserId(
+        jellyfinServer.jellyfinUserId ?? admin.jellyfinUserId ?? ''
+      );
       const jellyfinUsers = await jellyfinClient.getUsers();
 
       const jellyfinUsersById = new Map(

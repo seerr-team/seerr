@@ -102,6 +102,8 @@ interface Library {
   id: string;
   name: string;
   enabled: boolean;
+  serverId: string;
+  compositeId: string;
 }
 
 interface SyncStatus {
@@ -952,7 +954,8 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                             ? dataSync.libraries.slice(
                                 dataSync.libraries.findIndex(
                                   (library) =>
-                                    library.id === dataSync.currentLibrary?.id
+                                    library.compositeId ===
+                                    dataSync.currentLibrary?.compositeId
                                 ) + 1
                               ).length
                             : 0,
@@ -992,6 +995,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                 </p>
               </div>
               <Formik
+                enableReinitialize
                 initialValues={{
                   tautulliHostname: dataTautulli?.hostname,
                   tautulliPort: dataTautulli?.port ?? 8181,

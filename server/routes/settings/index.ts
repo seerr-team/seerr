@@ -100,6 +100,22 @@ const getJellyfinServerFromRequest = ({
   return settings.getPrimaryJellyfinLikeServer();
 };
 
+const findPlexServerByMachineId = (
+  machineId: string,
+  excludeServerId?: string
+): PlexServerSettings | undefined =>
+  getSettings().plexServers.find(
+    (server) => server.machineId === machineId && server.id !== excludeServerId
+  );
+
+const findJellyfinServerByServerId = (
+  serverId: string,
+  excludeServerId?: string
+): JellyfinServerSettings | undefined =>
+  getSettings().jellyfinServers.find(
+    (server) => server.serverId === serverId && server.id !== excludeServerId
+  );
+
 settingsRoutes.get('/main', (req, res, next) => {
   const settings = getSettings();
 
@@ -267,6 +283,16 @@ settingsRoutes.post('/plex', async (req, res, next) => {
     plexServer.machineId = result.MediaContainer.machineIdentifier;
     plexServer.name = result.MediaContainer.friendlyName;
 
+    const duplicateServer = findPlexServerByMachineId(
+      plexServer.machineId,
+      plexServer.id
+    );
+    if (duplicateServer) {
+      return res.status(409).json({
+        message: 'Plex server is already configured.',
+      });
+    }
+
     settings.upsertPlexServer(plexServer);
 
     await settings.save();
@@ -281,11 +307,13 @@ settingsRoutes.post('/plex', async (req, res, next) => {
     });
   }
 
-  return res
-    .status(200)
-    .json(
-      getPlexServerFromRequest({ serverId: plexServerId }) ?? settings.plex
-    );
+  const savedServer = getPlexServerFromRequest({ serverId: plexServerId });
+
+  if (!savedServer) {
+    return res.status(404).json({ error: 'Plex server not found' });
+  }
+
+  return res.status(200).json(savedServer);
 });
 
 settingsRoutes.get('/plex/servers', (_req, res) => {
@@ -412,7 +440,10 @@ settingsRoutes.get('/plex/devices/servers', async (req, res, next) => {
 });
 
 settingsRoutes.get('/plex/library', async (req, res) => {
-  if (req.query.sync && req.user?.id !== 1) {
+  if (
+    (req.query.sync || req.query.enable !== undefined) &&
+    req.user?.id !== 1
+  ) {
     return res.status(403).json({
       message: 'Only the owner can sync Plex libraries from settings.',
     });
@@ -483,11 +514,30 @@ settingsRoutes.get('/plex/library', async (req, res) => {
     );
 });
 
-settingsRoutes.get('/plex/sync', (_req, res) => {
-  return res.status(200).json(plexFullScanner.status());
+settingsRoutes.get('/plex/sync', (req, res) => {
+  const requestedServerId = req.query.serverId?.toString();
+  const server = getPlexServerFromRequest({
+    serverId: requestedServerId,
+  });
+
+  if (requestedServerId && !server) {
+    return res.status(404).json({ error: 'Plex server not found' });
+  }
+
+  return res.status(200).json(plexFullScanner.status(requestedServerId));
 });
 
 settingsRoutes.post('/plex/sync', (req, res) => {
+  const requestedServerId =
+    req.query.serverId?.toString() ?? req.body?.serverId?.toString();
+  const server = getPlexServerFromRequest({
+    serverId: requestedServerId,
+  });
+
+  if (requestedServerId && !server) {
+    return res.status(404).json({ error: 'Plex server not found' });
+  }
+
   if (req.user?.id !== 1) {
     return res.status(403).json({
       message: 'Only the owner can run Plex scans from settings.',
@@ -495,11 +545,11 @@ settingsRoutes.post('/plex/sync', (req, res) => {
   }
 
   if (req.body.cancel) {
-    plexFullScanner.cancel();
+    plexFullScanner.cancel(requestedServerId);
   } else if (req.body.start) {
-    plexFullScanner.run();
+    plexFullScanner.run(requestedServerId);
   }
-  return res.status(200).json(plexFullScanner.status());
+  return res.status(200).json(plexFullScanner.status(requestedServerId));
 });
 
 settingsRoutes.get('/jellyfin', (req, res) => {
@@ -584,6 +634,8 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
         throw new ApiError(403, ApiErrorCode.NotAdmin);
       }
 
+      jellyfinServer.jellyfinUserId = account.User.Id;
+
       const authenticatedClient = new JellyfinAPI(
         jellyfinHostname,
         account.AccessToken,
@@ -609,6 +661,16 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
 
     jellyfinServer.serverId = result.Id;
     jellyfinServer.name = result.ServerName;
+
+    const duplicateServer = findJellyfinServerByServerId(
+      jellyfinServer.serverId,
+      jellyfinServer.id
+    );
+    if (duplicateServer) {
+      return res.status(409).json({
+        message: 'Jellyfin server is already configured.',
+      });
+    }
 
     settings.upsertJellyfinServer(jellyfinServer);
 
@@ -691,7 +753,9 @@ settingsRoutes.get('/jellyfin/library', async (req, res, next) => {
       server.mediaServerType
     );
 
-    jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
+    jellyfinClient.setUserId(
+      server.jellyfinUserId ?? admin.jellyfinUserId ?? ''
+    );
 
     const libraries = await jellyfinClient.getLibraries();
 
@@ -843,7 +907,7 @@ settingsRoutes.get('/jellyfin/users', async (req, res) => {
     server.mediaServerType
   );
 
-  jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
+  jellyfinClient.setUserId(server.jellyfinUserId ?? admin.jellyfinUserId ?? '');
   const resp = await jellyfinClient.getUsers();
   const jellyfinUsers = resp.users.map((user) => ({
     username: user.Name || user.Id,

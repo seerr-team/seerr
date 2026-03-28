@@ -25,7 +25,7 @@ import { getHostname } from '@server/utils/getHostname';
 import { uniqWith } from 'lodash';
 
 interface JellyfinSyncStatus extends StatusBase {
-  currentLibrary: Library;
+  currentLibrary?: Library;
   libraries: Library[];
 }
 
@@ -154,6 +154,7 @@ class JellyfinScanner
           mediaAddedAt,
           jellyfinMediaId: metadata.Id,
           jellyfinServerId: this.currentServer?.id,
+          jellyfinMediaServerType: this.currentServer?.mediaServerType,
           imdbId,
           title: metadata.Name,
         });
@@ -165,6 +166,7 @@ class JellyfinScanner
           mediaAddedAt,
           jellyfinMediaId: metadata.Id,
           jellyfinServerId: this.currentServer?.id,
+          jellyfinMediaServerType: this.currentServer?.mediaServerType,
           imdbId,
           title: metadata.Name,
         });
@@ -424,6 +426,7 @@ class JellyfinScanner
               : undefined,
             jellyfinMediaId: Id,
             jellyfinServerId: this.currentServer?.id,
+            jellyfinMediaServerType: this.currentServer?.mediaServerType,
             title: tvShow.name,
           }
         );
@@ -456,7 +459,9 @@ class JellyfinScanner
   }
 
   private isStatusScopedToServer(serverId?: string): boolean {
-    return !serverId || !this.targetServerId || this.targetServerId === serverId;
+    return (
+      !serverId || !this.targetServerId || this.targetServerId === serverId
+    );
   }
 
   public async run(serverId?: string): Promise<void> {
@@ -502,8 +507,9 @@ class JellyfinScanner
             server.mediaServerType
           );
 
-          if (admin.jellyfinUserId) {
-            this.jfClient.setUserId(admin.jellyfinUserId);
+          const adminUserId = server.jellyfinUserId ?? admin.jellyfinUserId;
+          if (adminUserId) {
+            this.jfClient.setUserId(adminUserId);
           }
 
           const serverLibraries = server.libraries.filter(
@@ -541,9 +547,13 @@ class JellyfinScanner
             for (const library of serverLibraries) {
               this.currentLibrary = library;
               this.processedAnidbSeason = new Map();
-              this.log(`Beginning to process library: ${library.name}`, 'info', {
-                serverId: server.id,
-              });
+              this.log(
+                `Beginning to process library: ${library.name}`,
+                'info',
+                {
+                  serverId: server.id,
+                }
+              );
               this.items = await this.jfClient.getLibraryContents(library.id);
               await this.loop(this.processItem.bind(this), { sessionId });
             }

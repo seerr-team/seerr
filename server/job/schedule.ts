@@ -1,3 +1,5 @@
+import { getRepository } from '@server/datasource';
+import { User } from '@server/entity/User';
 import blocklistedTagsProcessor from '@server/job/blocklistedTagsProcessor';
 import availabilitySync from '@server/lib/availabilitySync';
 import downloadTracker from '@server/lib/downloadtracker';
@@ -29,11 +31,16 @@ interface ScheduledJob {
 
 export const scheduledJobs: ScheduledJob[] = [];
 
-export const startJobs = (): void => {
+export const startJobs = async (): Promise<void> => {
   const jobs = getSettings().jobs;
   const settings = getSettings();
   const hasPlexServers = settings.plexServers.length > 0;
   const hasJellyfinServers = settings.jellyfinServers.length > 0;
+  const owner = await getRepository(User).findOne({
+    select: { id: true, plexToken: true },
+    where: { id: 1 },
+  });
+  const hasPlexAuth = Boolean(owner?.plexToken);
 
   if (hasPlexServers) {
     // Run recently added plex scan every 5 minutes
@@ -72,7 +79,9 @@ export const startJobs = (): void => {
       running: () => plexFullScanner.status().running,
       cancelFn: () => plexFullScanner.cancel(),
     });
+  }
 
+  if (hasPlexAuth) {
     scheduledJobs.push({
       id: 'plex-refresh-token',
       name: 'Plex Refresh Token',
@@ -87,7 +96,6 @@ export const startJobs = (): void => {
       }),
     });
 
-    // Watchlist Sync
     scheduledJobs.push({
       id: 'plex-watchlist-sync',
       name: 'Plex Watchlist Sync',

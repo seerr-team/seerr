@@ -171,7 +171,7 @@ app
     const userRepository = getRepository(User);
     const totalUsers = await userRepository.count();
     if (totalUsers > 0) {
-      startJobs();
+      await startJobs();
     } else {
       logger.info(
         `Skipping starting the scheduled jobs as we have no Plex/Jellyfin/Emby servers setup yet`,
