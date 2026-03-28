@@ -417,12 +417,9 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
     try {
       if (activeLibraries.includes(libraryId)) {
         const params: { enable?: string; serverId?: string } = {};
-
-        if (activeLibraries.length > 1) {
-          params.enable = activeLibraries
-            .filter((id) => id !== libraryId)
-            .join(',');
-        }
+        params.enable = activeLibraries
+          .filter((id) => id !== libraryId)
+          .join(',');
 
         params.serverId = selectedServerId;
 
