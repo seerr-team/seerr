@@ -78,7 +78,8 @@ const UserLinkedAccountsSettings = () => {
         type: LinkedAccountType.Plex,
         username: user.plexUsername,
       });
-    // Jellyfin and Emby both store the linked username in jellyfinUsername
+    // Jellyfin and Emby both store the linked username in jellyfinUsername; do
+    // not gate on user.userType or LOCAL/Plex users with a linked server stay hidden.
     if (user.jellyfinUsername) {
       const treatAsEmby =
         user.userType === UserType.EMBY ||
