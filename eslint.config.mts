@@ -86,6 +86,38 @@ export default defineConfig(
       ],
     },
   },
+  // Enforce route constants in client code (src/)
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/utils/apiUrl.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "Literal[value=/^\\/api\\/v1/], TemplateLiteral[quasis.0.value.raw=/^\\/api\\/v1/]",
+          message:
+            'Use apiUrl() from @app/utils/apiUrl instead of hardcoded /api/v1 paths.',
+        },
+      ],
+    },
+  },
+  // Enforce route constants in server code (excluding the constants definition)
+  {
+    files: ['server/**/*.ts'],
+    ignores: ['server/constants/routes.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "Literal[value=/^\\/api\\/v1/], TemplateLiteral[quasis.0.value.raw=/^\\/api\\/v1/]",
+          message:
+            'Use API_BASE_PATH from @server/constants/routes instead of hardcoded /api/v1 paths.',
+        },
+      ],
+    },
+  },
   prettier,
   {
     linterOptions: {

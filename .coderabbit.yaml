@@ -1,0 +1,17 @@
+reviews:
+  path_instructions:
+    - path: 'src/**'
+      instructions: |
+        Flag any hardcoded '/api/v1' string literals in client code.
+        All API paths should use the apiUrl() helper from src/utils/apiUrl.ts.
+        Example: apiUrl('/discover/movies') instead of '/api/v1/discover/movies'.
+    - path: 'server/index.ts'
+      instructions: |
+        Flag any hardcoded '/api/v1', '/api-docs', '/imageproxy', or '/avatarproxy'
+        string literals in route mounts. All route paths should reference constants
+        from server/constants/routes.ts.
+    - path: 'server/routes/**'
+      instructions: |
+        Flag any hardcoded '/api/v1', '/api-docs', '/imageproxy', or '/avatarproxy'
+        string literals. Route paths should reference constants from
+        server/constants/routes.ts.
