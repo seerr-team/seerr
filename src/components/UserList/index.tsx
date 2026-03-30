@@ -99,7 +99,7 @@ const messages = defineMessages('components.UserList', {
   linkedToPlex: 'Plex linked',
   linkedToJellyfinEmby: 'Jellyfin/Emby linked',
   switchMediaServerTip:
-    'Users with "Plex linked" or "Jellyfin/Emby linked" can sign in after you switch media server in {generalSettings}.',
+    'Only users linked to the target media server (for example, users with the "Plex linked" badge when switching to Plex) can sign in after you switch media server in {generalSettings}.',
 });
 
 type Sort =
