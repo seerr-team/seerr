@@ -53,6 +53,8 @@ const messages = defineMessages('components.Settings', {
   switchMediaServerButton: 'Switch media server',
   switchToPlex: 'Switch to Plex',
   checkUsersLink: 'Users',
+  profileLabel: 'Profile',
+  linkedAccountsLabel: 'Linked accounts',
 });
 
 type StepsVariant = 'plex' | 'jellyfinEmbyToPlex' | 'jellyfinEmbyToOther';
@@ -171,9 +173,15 @@ const SwitchMediaServerSection = () => {
   };
 
   const linkValues = {
-    profile: <strong className="font-semibold text-gray-300">Profile</strong>,
+    profile: (
+      <strong className="font-semibold text-gray-300">
+        {intl.formatMessage(messages.profileLabel)}
+      </strong>
+    ),
     linkedAccounts: (
-      <strong className="font-semibold text-gray-300">Linked accounts</strong>
+      <strong className="font-semibold text-gray-300">
+        {intl.formatMessage(messages.linkedAccountsLabel)}
+      </strong>
     ),
     users: (
       <Link
