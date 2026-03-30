@@ -25,7 +25,12 @@ import ImageProxy from '@server/lib/imageproxy';
 import { Permission } from '@server/lib/permissions';
 import { jellyfinFullScanner } from '@server/lib/scanners/jellyfin';
 import { plexFullScanner } from '@server/lib/scanners/plex';
-import type { JobId, Library, MainSettings } from '@server/lib/settings';
+import type {
+  JobId,
+  Library,
+  MainSettings,
+  PlexSettings,
+} from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
@@ -137,7 +142,10 @@ settingsRoutes.post('/plex', async (req, res, next) => {
       where: { id: 1 },
     });
 
-    Object.assign(settings.plex, plexBody);
+    const tempPlex: PlexSettings = {
+      ...settings.plex,
+      ...(plexBody as Partial<PlexSettings>),
+    };
 
     const token =
       settings.main.mediaServerType !== MediaServerType.PLEX &&
@@ -152,7 +160,10 @@ settingsRoutes.post('/plex', async (req, res, next) => {
       });
     }
 
-    const plexClient = new PlexAPI({ plexToken: token });
+    const plexClient = new PlexAPI({
+      plexToken: token,
+      plexSettings: tempPlex,
+    });
 
     const result = await plexClient.getStatus();
 
@@ -160,8 +171,10 @@ settingsRoutes.post('/plex', async (req, res, next) => {
       throw new Error('Server not found');
     }
 
-    settings.plex.machineId = result.MediaContainer.machineIdentifier;
-    settings.plex.name = result.MediaContainer.friendlyName;
+    Object.assign(settings.plex, tempPlex, {
+      machineId: result.MediaContainer.machineIdentifier,
+      name: result.MediaContainer.friendlyName,
+    });
 
     await settings.save();
   } catch (e) {
