@@ -108,11 +108,15 @@ class PlexOAuth {
       code: this.pin.code,
     };
 
-    if (this.popup) {
-      this.popup.location.href = `https://app.plex.tv/auth/#!?${this.encodeData(
-        params
-      )}`;
+    if (!this.popup) {
+      throw new Error(
+        'Unable to open the Plex login window. Please allow popups for this site and try again.'
+      );
     }
+
+    this.popup.location.href = `https://app.plex.tv/auth/#!?${this.encodeData(
+      params
+    )}`;
 
     return this.pinPoll();
   }
@@ -136,7 +140,7 @@ class PlexOAuth {
           this.authToken = response.data.authToken as string;
           this.closePopup();
           resolve(this.authToken);
-        } else if (!response.data?.authToken && !this.popup?.closed) {
+        } else if (this.popup && !this.popup.closed) {
           setTimeout(executePoll, 1000, resolve, reject);
         } else {
           reject(new Error('Popup closed without completing login'));
