@@ -587,12 +587,7 @@ settingsRoutes.post(
         });
       }
       if (target === 'plex') {
-        const admin = await getRepository(User).findOne({
-          where: { id: 1 },
-          select: { plexToken: true },
-        });
-        const plexConfigured =
-          (settings.plex?.name ?? settings.plex?.ip) || admin?.plexToken;
+        const plexConfigured = settings.plex?.name ?? settings.plex?.ip;
         if (!plexConfigured) {
           return res.status(400).json({
             error:
