@@ -1,6 +1,6 @@
 # seerr-chart
 
-![Version: 3.3.0](https://img.shields.io/badge/Version-3.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v3.1.0](https://img.shields.io/badge/AppVersion-v3.1.0-informational?style=flat-square)
+![Version: 3.3.1](https://img.shields.io/badge/Version-3.3.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v3.1.0](https://img.shields.io/badge/AppVersion-v3.1.0-informational?style=flat-square)
 
 Seerr helm chart for Kubernetes
 
@@ -73,8 +73,8 @@ If `replicaCount` value was used - remove it. Helm update should work fine after
 | podLabels | object | `{}` |  |
 | podSecurityContext.fsGroup | int | `1000` |  |
 | podSecurityContext.fsGroupChangePolicy | string | `"OnRootMismatch"` |  |
-| probes.livenessProbe | object | `{}` | Configure liveness probe |
-| probes.readinessProbe | object | `{}` | Configure readiness probe |
+| probes.livenessProbe | object | `{"initialDelaySeconds":20,"periodSeconds":15,"timeoutSeconds":3}` | Configure liveness probe |
+| probes.readinessProbe | object | `{"initialDelaySeconds":60,"periodSeconds":15,"timeoutSeconds":3}` | Configure readiness probe |
 | probes.startupProbe | string | `nil` | Configure startup probe |
 | resources | object | `{}` |  |
 | route.main.additionalRules | list | `[]` |  |
