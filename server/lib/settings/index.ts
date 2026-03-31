@@ -389,7 +389,7 @@ class Settings {
   constructor(initialSettings?: AllSettings) {
     this.data = {
       clientId: randomUUID(),
-      sessionSecret: randomBytes(32).toString('hex'),
+      sessionSecret: '',
       vapidPrivate: '',
       vapidPublic: '',
       main: {
