@@ -10,7 +10,7 @@ import TabItem from '@theme/TabItem';
 
 # Self-Signed Certificates
 
-If your media server or services (Radarr, Sonarr, etc.) use self-signed SSL certificates, Seerr will reject the connection because it does not trust them by default. The recommended fix is to add your CA certificate to Node.js. As a last resort, you can disable certificate validation entirely.
+If your media server or services (Radarr, Sonarr, etc.) use self-signed SSL certificates, Seerr will reject the connection because it does not trust them by default. The recommended fix is to add your CA certificate to Node.js.
 
 ---
 
@@ -21,7 +21,7 @@ The `NODE_EXTRA_CA_CERTS` environment variable tells Node.js to trust additional
 You will need to mount your certificate file (in PEM format) into the container and set the environment variable to point to it.
 
 :::note
-These examples show only the certificate-related configuration. For a complete setup, see the [Docker installation guide](/getting-started/docker).
+These examples show only the certificate-related configuration. For a complete setup, see the [Getting Started](/getting-started) guide.
 :::
 
 <Tabs>
@@ -61,40 +61,3 @@ The certificate must be in PEM format. Open it in a text editor — if it starts
 :::
 
 For more details, see the [Node.js documentation on adding CA certificates](https://nodejs.org/en/learn/http/enterprise-network-configuration#adding-additional-ca-certificates).
-
----
-
-## Alternative: Disable Certificate Validation
-
-If you cannot get `NODE_EXTRA_CA_CERTS` working, you can disable certificate validation entirely by setting `NODE_TLS_REJECT_UNAUTHORIZED=0`.
-
-<Tabs>
-<TabItem value="docker-cli" label="Docker CLI">
-
-```bash
-docker run -d \
-  --name seerr \
-  -e NODE_TLS_REJECT_UNAUTHORIZED=0 \
-  -p 5055:5055 \
-  ghcr.io/seerr-team/seerr:latest
-```
-
-</TabItem>
-<TabItem value="docker-compose" label="Docker Compose">
-
-```yaml
-services:
-  seerr:
-    image: ghcr.io/seerr-team/seerr:latest
-    environment:
-      - NODE_TLS_REJECT_UNAUTHORIZED=0
-    ports:
-      - 5055:5055
-```
-
-</TabItem>
-</Tabs>
-
-:::warning
-This disables **all** certificate validation for every outgoing HTTPS connection from Seerr, including connections to external APIs like TMDb. Prefer the `NODE_EXTRA_CA_CERTS` approach whenever possible.
-:::
