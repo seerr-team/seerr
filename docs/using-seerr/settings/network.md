@@ -19,6 +19,12 @@ You can enable the DNS caching settings in the Network tab of the Seerr settings
 - **Force Minimum TTL**: Set a minimum time-to-live (TTL) in seconds for DNS cache entries. This ensures that frequently accessed DNS records are cached for a longer period, reducing the need for repeated lookups. Default is 0.
 - **Force Maximum TTL**: Set a maximum time-to-live (TTL) in seconds for DNS cache entries. This prevents infrequently accessed DNS records from being cached indefinitely, allowing for more up-to-date information to be retrieved. Default is -1 (unlimited).
 
+## Force IPv4 resolution first
+
+Sometimes there are configuration issues with IPv6 that prevent the hostname resolution from working correctly.
+
+You can force resolution to prefer IPv4 by going to `Settings > Network`, enabling `Force IPv4 Resolution First`, and then restarting Seerr.
+
 ## HTTP(S) Proxy
 
 If you can't change your DNS servers or force IPV4 resolution, you can use Seerr through a proxy.
@@ -46,12 +52,6 @@ One caveat, however, is that HTTPS is required, meaning that once this setting i
 If you enable this setting and find yourself unable to access Seerr, you can disable the setting by modifying `settings.json` in `/app/config`.
 
 This setting is **disabled** by default.
-
-## Force IPV4 resolution first
-
-Sometimes there are configuration issues with IPV6 that prevent the hostname resolution from working correctly.
-
-You can force resolution to prefer IPv4 by going to `Settings > Network`, enabling `Force IPv4 Resolution First`, and then restarting Seerr.
 
 ## API Request Timeout
 
