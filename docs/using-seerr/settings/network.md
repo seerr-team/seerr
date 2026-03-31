@@ -10,7 +10,7 @@ Network-related settings are available in the **Network** tab under **Settings**
 
 ## DNS Caching
 
-Seerr uses DNS caching to improve performance and reduce the number of DNS lookups required for external API calls. This can help speed up response times and reduce load on DNS servers, when something like a Pi-hole is used as a DNS resolver.
+Seerr allows you to enable DNS caching if you are experiencing DNS-related issues. When enabled, it improves performance and reduces the number of DNS lookups required for external API calls. This can help speed up response times and reduce the load on DNS servers, especially when a local resolver like Pi-hole is used.
 
 ### Configuration
 
