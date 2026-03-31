@@ -25,7 +25,7 @@ If you can't change your DNS servers or force IPV4 resolution, you can use Seerr
 
 In some places (like China), the ISP blocks not only the DNS resolution but also the connection to the TMDB API.
 
-### Enable Proxy Support
+## Enable Proxy Support
 
 If you have Seerr behind a reverse proxy, enable this setting to allow Seerr to correctly register client IP addresses. For details, please see the [Express Documentation](https://expressjs.com/en/guide/behind-proxies.html).
 
@@ -47,7 +47,7 @@ If you enable this setting and find yourself unable to access Seerr, you can dis
 
 This setting is **disabled** by default.
 
-### Force IPV4 resolution first
+## Force IPV4 resolution first
 
 Sometimes there are configuration issues with IPV6 that prevent the hostname resolution from working correctly.
 
@@ -55,7 +55,6 @@ You can try to force the resolution to use IPV4 first by going to `Settings > Ne
 
 ## API Request Timeout
 
-Sets the timeout (in milliseconds) for outgoing HTTP requests made by Seerr to external APIs (such as TMDB, Radarr, Sonarr, etc.). If a request takes longer than this value, it will be aborted and an error will be returned.
+The API Request Timeout setting defines the maximum time (in seconds) Seerr will wait for a response from external services, such as Radarr or Sonarr. The default value is 10 seconds, though it can be entirely disabled by setting it to 0. Please note that any changes to this value require restarting Seerr to take effect.
 
-The default timeout is `5000` ms (5 seconds). Increasing this value can help in slow network environments, but may cause the UI to feel less responsive when a service is down.
-
+Enforcing a timeout ensures the Seerr interface remains responsive and prevents infinite loading states when a connected service unexpectedly goes offline. Conversely, you may want to increase this value if you frequently experience failed requests due to your external services being slow to respond, which often happens when they are under heavy load or querying network-mounted storage.
