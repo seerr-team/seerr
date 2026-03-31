@@ -108,7 +108,7 @@ class PlexOAuth {
       code: this.pin.code,
     };
 
-    if (!this.popup) {
+    if (!this.popup || this.popup.closed) {
       throw new Error(
         'Unable to open the Plex login window. Please allow popups for this site and try again.'
       );
