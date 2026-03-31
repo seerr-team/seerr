@@ -51,7 +51,7 @@ This setting is **disabled** by default.
 
 Sometimes there are configuration issues with IPV6 that prevent the hostname resolution from working correctly.
 
-You can try to force the resolution to use IPV4 first by going to `Settings > Networking > Advanced Networking` and enabling `Force IPv4 Resolution First` setting and restarting Seerr.
+You can force resolution to prefer IPv4 by going to `Settings > Network`, enabling `Force IPv4 Resolution First`, and then restarting Seerr.
 
 ## API Request Timeout
 
