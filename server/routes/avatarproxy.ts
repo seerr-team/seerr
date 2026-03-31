@@ -141,13 +141,16 @@ router.get('/:jellyfinUserId', async (req, res) => {
 
     const jellyfinAvatarUrl = getJellyfinAvatarUrl(req.params.jellyfinUserId);
 
-    let imageData = await avatarImageCache.getImage(
-      jellyfinAvatarUrl,
-      fallbackUrl
-    );
-
-    if (imageData.meta.extension === 'json') {
-      // this is a 404
+    let imageData;
+    if (user?.avatarVersion) {
+      imageData = await avatarImageCache.getImage(
+        jellyfinAvatarUrl,
+        fallbackUrl
+      );
+      if (imageData.meta.extension === 'json') {
+        imageData = await avatarImageCache.getImage(fallbackUrl);
+      }
+    } else {
       imageData = await avatarImageCache.getImage(fallbackUrl);
     }
 
