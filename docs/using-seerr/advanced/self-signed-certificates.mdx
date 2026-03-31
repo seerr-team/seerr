@@ -12,11 +12,9 @@ import TabItem from '@theme/TabItem';
 
 If your media server or services (Radarr, Sonarr, etc.) use self-signed SSL certificates, Seerr will reject the connection because it does not trust them by default. The recommended fix is to add your CA certificate to Node.js.
 
----
+## Add Your CA Certificate
 
-## Recommended: Add Your CA Certificate
-
-The `NODE_EXTRA_CA_CERTS` environment variable tells Node.js to trust additional Certificate Authority (CA) certificates. This is the recommended approach because it keeps certificate validation active while trusting your specific certificate.
+The `NODE_EXTRA_CA_CERTS` environment variable tells Node.js to trust additional Certificate Authority (CA) certificates. This approach keeps certificate validation active while trusting your specific certificate.
 
 You will need to mount your certificate file (in PEM format) into the container and set the environment variable to point to it.
 
