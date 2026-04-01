@@ -80,7 +80,7 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
               email: values.username,
             });
           } catch (e) {
-            let errorMessage = null;
+            let errorMessage = messages.loginerror;
             switch (e?.response?.data?.message) {
               case ApiErrorCode.InvalidUrl:
                 errorMessage = messages.invalidurlerror;
@@ -93,9 +93,6 @@ const JellyfinLogin: React.FC<JellyfinLoginProps> = ({
                 break;
               case ApiErrorCode.NoAdminUser:
                 errorMessage = messages.noadminerror;
-                break;
-              default:
-                errorMessage = messages.loginerror;
                 break;
             }
             toasts.addToast(

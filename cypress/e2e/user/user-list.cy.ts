@@ -36,7 +36,7 @@ describe('User List', () => {
     cy.get('#email').type(testUser.emailAddress);
     cy.get('#password').type(testUser.password);
 
-    cy.intercept('/api/v1/user?take=10&skip=0&sort=displayname').as('user');
+    cy.intercept('/api/v1/user*').as('user');
 
     cy.get('[data-testid=modal-ok-button]').click();
 
@@ -56,7 +56,7 @@ describe('User List', () => {
 
     cy.get('[data-testid=modal-title]').should('contain', `Delete User`);
 
-    cy.intercept('/api/v1/user?take=10&skip=0&sort=displayname').as('user');
+    cy.intercept('/api/v1/user*').as('user');
 
     cy.get('[data-testid=modal-ok-button]').should('contain', 'Delete').click();
 
@@ -66,5 +66,43 @@ describe('User List', () => {
     cy.get('[data-testid=user-list-row]')
       .contains(testUser.emailAddress)
       .should('not.exist');
+  });
+
+  it('sorts by column headers and updates request params and row order', () => {
+    cy.intercept('GET', '/api/v1/user?*').as('userListFetch');
+
+    cy.visit('/users');
+    cy.wait('@userListFetch');
+
+    cy.get('[data-testid=column-header-displayname]').click();
+    cy.wait('@userListFetch').then((interception) => {
+      const url = interception.request.url;
+      expect(url).to.include('sort=displayname');
+      expect(url).to.include('sortDirection=asc');
+    });
+
+    cy.get(
+      '[data-testid=user-list-row] [data-testid=user-list-username-link]'
+    ).then(($links) => {
+      const displayNames = $links
+        .toArray()
+        .map((el) => (el as HTMLElement).innerText.trim().toLowerCase());
+      const sortedAsc = [...displayNames].sort((a, b) => a.localeCompare(b));
+      expect(displayNames).to.deep.equal(sortedAsc);
+    });
+
+    cy.get('[data-testid=column-header-created]').click();
+
+    cy.window().then((win) => {
+      const rawSettings = win.localStorage.getItem('ul-filter-settings');
+      expect(
+        rawSettings,
+        'ul-filter-settings should be stored in localStorage'
+      ).to.be.a('string');
+
+      const settings = JSON.parse(rawSettings as string);
+      expect(settings.currentSort).to.equal('created');
+      expect(settings.sortDirection).to.equal('asc');
+    });
   });
 });

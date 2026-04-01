@@ -1,0 +1,96 @@
+---
+title: Nix Package Manager (Advanced)
+description: Install Seerr using Nixpkgs
+sidebar_position: 4
+---
+
+import { SeerrVersion, NixpkgVersion } from '@site/src/components/SeerrVersion';
+import Admonition from '@theme/Admonition';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Nix Package Manager
+:::warning
+This method is not recommended for most users. It is intended for advanced users who are using NixOS distribution.
+:::
+
+:::danger
+The seerr service and package are available in the unstable channel only and will be officially included in the 26.05 release.
+:::
+
+Refer to [NixOS documentation](https://search.nixos.org/options?channel=unstable&query=seerr)
+
+<!--
+export const VersionMismatchWarning = () => {
+  let seerrVersion = null;
+  let nixpkgVersions = null;
+  try {
+    seerrVersion = SeerrVersion();
+    nixpkgVersions = NixpkgVersion();
+  } catch (err) {
+    return (
+      <Admonition type="error">
+        Failed to load version information. Error: {err.message || JSON.stringify(err)}
+      </Admonition>
+    );
+  }
+    if (!nixpkgVersions || nixpkgVersions.error) {
+    return (
+      <Admonition type="error">
+        Failed to fetch Nixpkg versions: {nixpkgVersions?.error || 'Unknown error'}
+      </Admonition>
+    );
+  }
+  const isUnstableUpToDate = seerrVersion === nixpkgVersions.unstable;
+  const isStableUpToDate = seerrVersion === nixpkgVersions.stable;
+  return (
+     <>
+      {!isStableUpToDate ? (
+  <Admonition type="warning">
+    The{' '}
+    <a href="https://github.com/NixOS/nixpkgs/blob/nixos-26.05/pkgs/by-name/se/seerr/package.nix#L23">
+      upstream Seerr Nix Stable Package (v{nixpkgVersions.stable})
+    </a>{' '}
+    is not <b>up-to-date</b>. If you want to use <b>Seerr v{seerrVersion}</b>,{' '}
+    {isUnstableUpToDate ? (
+      <>
+        consider using the{' '}
+        <a href="https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/by-name/se/seerr/package.nix">
+          unstable package
+        </a>{' '}
+        instead.
+      </>
+    ) : (
+      <>
+        you will need to{' '} override the package derivation.
+      </>
+    )}
+  </Admonition>
+) : null}
+    </>
+  );
+};
+
+<VersionMismatchWarning />
+-->
+
+## Installation
+To get up and running with seerr using Nix, you can add the following to your `configuration.nix`:
+```nix
+{ config, pkgs, ... }:
+{
+  services.seerr.enable = true;
+}
+```
+
+After adding the configuration to your `configuration.nix`, you can run the following command to install seerr:
+```bash
+nixos-rebuild switch
+```
+After rebuild is complete seerr should be running, verify that it is with the following command.
+```bash
+systemctl status seerr
+```
+:::info
+You can now access Seerr by visiting `http://localhost:5055` in your web browser.
+:::

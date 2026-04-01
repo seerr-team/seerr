@@ -157,7 +157,7 @@ npm install -g pm2
 ```
 2. Start seerr with PM2:
 ```bash
-pm2 start dist/index.js --name seerr --node-args="--NODE_ENV=production"
+NODE_ENV=production pm2 start dist/index.js --name seerr
 ```
 3. Save the process list:
 ```bash
@@ -206,7 +206,7 @@ git checkout main
 3. Install the dependencies:
 ```powershell
 npm install -g win-node-env
-set CYPRESS_INSTALL_BINARY=0 && pnpm install --frozen-lockfile
+$env:CYPRESS_INSTALL_BINARY = 0; pnpm install --frozen-lockfile
 ```
 4. Build the project:
 ```powershell
@@ -230,7 +230,7 @@ You can now access Seerr by visiting `http://localhost:5055` in your web browser
   <TabItem value="task-scheduler" label="Task Scheduler">
 To run seerr as a bat script:
 1. Create a file named `start-seerr.bat` in the seerr directory:
-```bat
+```batch
 @echo off
 set PORT=5055
 set NODE_ENV=production
@@ -275,7 +275,7 @@ npm install -g pm2
 ```
 2. Start seerr with PM2:
 ```powershell
-pm2 start dist/index.js --name seerr  --node-args="--NODE_ENV=production"
+$env:NODE_ENV = "production"; pm2 start dist/index.js --name seerr
 ```
 3. Save the process list:
 ```powershell

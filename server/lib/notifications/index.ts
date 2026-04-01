@@ -23,7 +23,7 @@ export const hasNotificationType = (
   types: Notification | Notification[],
   value: number
 ): boolean => {
-  let total = 0;
+  let total: number;
 
   // If we are not checking any notifications, bail out and return true
   if (types === 0) {

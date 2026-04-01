@@ -80,7 +80,7 @@ const NotificationsPushbullet = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.pushbulletSettingsFailed), {
             appearance: 'error',
             autoDismiss: true,
@@ -129,7 +129,7 @@ const NotificationsPushbullet = () => {
               autoDismiss: true,
               appearance: 'success',
             });
-          } catch (e) {
+          } catch {
             if (toastId) {
               removeToast(toastId);
             }

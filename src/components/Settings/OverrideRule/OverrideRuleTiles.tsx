@@ -135,7 +135,7 @@ const OverrideRuleTiles = ({
         setUsers(users);
       }
     })();
-  }, [rules, users]);
+  }, [rules]);
 
   return (
     <>

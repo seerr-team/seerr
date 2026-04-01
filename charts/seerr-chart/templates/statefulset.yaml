@@ -44,7 +44,7 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /
+              path: /api/v1/status
               port: http
             {{- if .Values.probes.livenessProbe.initialDelaySeconds }}
             initialDelaySeconds: {{ .Values.probes.livenessProbe.initialDelaySeconds }}
@@ -63,7 +63,7 @@ spec:
             {{- end }}
           readinessProbe:
             httpGet:
-              path: /
+              path: /api/v1/status
               port: http
             {{- if .Values.probes.readinessProbe.initialDelaySeconds }}
             initialDelaySeconds: {{ .Values.probes.readinessProbe.initialDelaySeconds }}

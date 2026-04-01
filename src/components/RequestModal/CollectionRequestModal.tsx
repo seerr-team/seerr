@@ -229,7 +229,7 @@ const CollectionRequestModal = ({
         </span>,
         { appearance: 'success', autoDismiss: true }
       );
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.requesterror), {
         appearance: 'error',
         autoDismiss: true,

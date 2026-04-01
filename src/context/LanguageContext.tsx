@@ -39,6 +39,10 @@ export const availableLanguages: AvailableLanguageObject = {
     code: 'es-MX',
     display: 'Español (Latinoamérica)',
   },
+  et: {
+    code: 'et',
+    display: 'Eesti',
+  },
   fi: {
     code: 'fi',
     display: 'Finnish',
