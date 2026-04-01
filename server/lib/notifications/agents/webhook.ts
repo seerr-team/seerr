@@ -225,9 +225,25 @@ class WebhookAgent
         });
       }
 
+      // Build the payload first
+      const finalPayload = this.buildPayload(type, payload);
+
+      // Group 1: Validated requests (BOTH manual and auto-approved)
+      if (
+        type === Notification.MEDIA_APPROVED ||
+        type === Notification.MEDIA_AUTO_APPROVED
+      ) {
+        finalPayload.number = process.env.WHATSAPP_GROUP_APPROVED;
+      }
+      // Group 2: Available requests
+      else if (type === Notification.MEDIA_AVAILABLE) {
+        finalPayload.number = process.env.WHATSAPP_GROUP_AVAILABLE;
+      }
+
+      // Send the modified payload
       await axios.post(
         webhookUrl,
-        this.buildPayload(type, payload),
+        finalPayload,
         Object.keys(headers).length > 0 ? { headers } : undefined
       );
 
