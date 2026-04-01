@@ -296,7 +296,7 @@ export class User {
             requestedBy: {
               id: this.id,
             },
-            createdAt: AfterDate(movieDate),
+            ...(movieQuotaDays ? { createdAt: AfterDate(movieDate) } : {}),
             type: MediaType.MOVIE,
             status: Not(MediaRequestStatus.DECLINED),
           },
@@ -314,24 +314,29 @@ export class User {
       tvDate.setDate(tvDate.getDate() - tvQuotaDays);
     }
     const tvQuotaStartDate = tvDate.toJSON();
+    const tvQuotaUsedQuery = requestRepository
+      .createQueryBuilder('request')
+      .leftJoin('request.seasons', 'seasons')
+      .leftJoin('request.requestedBy', 'requestedBy')
+      .where('request.type = :requestType', {
+        requestType: MediaType.TV,
+      })
+      .andWhere('requestedBy.id = :userId', {
+        userId: this.id,
+      })
+      .andWhere('request.status != :declinedStatus', {
+        declinedStatus: MediaRequestStatus.DECLINED,
+      });
+
+    if (tvQuotaDays) {
+      tvQuotaUsedQuery.andWhere('request.createdAt > :date', {
+        date: tvQuotaStartDate,
+      });
+    }
+
     const tvQuotaUsed = tvQuotaLimit
       ? (
-          await requestRepository
-            .createQueryBuilder('request')
-            .leftJoin('request.seasons', 'seasons')
-            .leftJoin('request.requestedBy', 'requestedBy')
-            .where('request.type = :requestType', {
-              requestType: MediaType.TV,
-            })
-            .andWhere('requestedBy.id = :userId', {
-              userId: this.id,
-            })
-            .andWhere('request.createdAt > :date', {
-              date: tvQuotaStartDate,
-            })
-            .andWhere('request.status != :declinedStatus', {
-              declinedStatus: MediaRequestStatus.DECLINED,
-            })
+          await tvQuotaUsedQuery
             .addSelect((subQuery) => {
               return subQuery
                 .select('COUNT(season.id)', 'seasonCount')
@@ -351,10 +356,9 @@ export class User {
         remaining: movieQuotaLimit
           ? Math.max(0, movieQuotaLimit - movieQuotaUsed)
           : undefined,
-        restricted:
+        restricted: !!(
           movieQuotaLimit && movieQuotaLimit - movieQuotaUsed <= 0
-            ? true
-            : false,
+        ),
       },
       tv: {
         days: tvQuotaDays,
@@ -363,8 +367,7 @@ export class User {
         remaining: tvQuotaLimit
           ? Math.max(0, tvQuotaLimit - tvQuotaUsed)
           : undefined,
-        restricted:
-          tvQuotaLimit && tvQuotaLimit - tvQuotaUsed <= 0 ? true : false,
+        restricted: !!(tvQuotaLimit && tvQuotaLimit - tvQuotaUsed <= 0),
       },
     };
   }
