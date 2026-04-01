@@ -34,9 +34,9 @@ export const NixpkgVersion = () => {
     const fetchVersion = async () => {
       try {
         const unstableUrl =
-          'https://raw.githubusercontent.com/NixOS/nixpkgs/refs/heads/nixos-unstable/pkgs/by-name/je/jellyseerr/package.nix';
+          'https://raw.githubusercontent.com/NixOS/nixpkgs/refs/heads/nixos-unstable/pkgs/by-name/se/seerr/package.nix';
         const stableUrl =
-          'https://raw.githubusercontent.com/NixOS/nixpkgs/refs/heads/nixos-25.05/pkgs/by-name/je/jellyseerr/package.nix';
+          'https://raw.githubusercontent.com/NixOS/nixpkgs/refs/heads/nixos-26.05/pkgs/by-name/se/seerr/package.nix';
 
         const [unstableResponse, stableResponse] = await Promise.all([
           fetch(unstableUrl),
