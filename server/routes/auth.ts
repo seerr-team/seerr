@@ -203,6 +203,7 @@ authRoutes.post('/plex', async (req, res, next) => {
     // Set logged in session
     if (req.session) {
       req.session.userId = user.id;
+      await new Promise<void>((resolve) => req.session.save(resolve));
     }
 
     return res.status(200).json(user?.filter() ?? {});
@@ -505,6 +506,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     // Set logged in session
     if (req.session) {
       req.session.userId = user?.id;
+      await new Promise<void>((resolve) => req.session.save(resolve));
     }
 
     return res.status(200).json(user?.filter() ?? {});
@@ -628,6 +630,7 @@ authRoutes.post('/local', async (req, res, next) => {
     // Set logged in session
     if (user && req.session) {
       req.session.userId = user.id;
+      await new Promise<void>((resolve) => req.session.save(resolve));
     }
 
     return res.status(200).json(user?.filter() ?? {});
