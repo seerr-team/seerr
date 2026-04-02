@@ -18,14 +18,16 @@ import { EventSubscriber, In } from 'typeorm';
 export class MediaSubscriber implements EntitySubscriberInterface<Media> {
   private async updateChildRequestStatus(
     manager: EntityManager,
-    event: Media,
+    media: Media,
     is4k: boolean
   ) {
     const requestRepository = manager.getRepository(MediaRequest);
 
     const requests = await requestRepository.find({
-      where: { media: { id: event.id } },
+      where: { media: { id: media.id } },
     });
+
+    const toSave: MediaRequest[] = [];
 
     for (const request of requests) {
       if (
@@ -33,8 +35,12 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
         request.status === MediaRequestStatus.PENDING
       ) {
         request.status = MediaRequestStatus.APPROVED;
-        await requestRepository.save(request);
+        toSave.push(request);
       }
+    }
+
+    if (toSave.length > 0) {
+      await requestRepository.save(toSave);
     }
   }
 
