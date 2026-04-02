@@ -31,6 +31,8 @@ function createApp() {
       secret: 'test-secret',
       resave: false,
       saveUninitialized: false,
+      // secure: false is intentional -- supertest uses HTTP, not HTTPS
+      cookie: { secure: false },
     })
   );
   app.use(checkUser);
@@ -61,10 +63,17 @@ before(async () => {
 setupTestDb();
 
 async function authenticatedAgent(email: string, password: string) {
-  const agent = request.agent(app);
-  const res = await agent.post('/auth/local').send({ email, password });
-  assert.strictEqual(res.status, 200);
-  return agent;
+  const settings = getSettings();
+  const priorLocalLogin = settings.main.localLogin;
+  settings.main.localLogin = true;
+  try {
+    const agent = request.agent(app);
+    const res = await agent.post('/auth/local').send({ email, password });
+    assert.strictEqual(res.status, 200);
+    return agent;
+  } finally {
+    settings.main.localLogin = priorLocalLogin;
+  }
 }
 
 /** Creates a minimal movie request owned by the given user. */
