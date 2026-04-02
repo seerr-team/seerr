@@ -316,7 +316,6 @@ export class User {
     const tvQuotaStartDate = tvDate.toJSON();
     const tvQuotaUsedQuery = requestRepository
       .createQueryBuilder('request')
-      .leftJoin('request.seasons', 'seasons')
       .leftJoin('request.requestedBy', 'requestedBy')
       .where('request.type = :requestType', {
         requestType: MediaType.TV,
