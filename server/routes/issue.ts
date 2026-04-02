@@ -147,58 +147,29 @@ issueRoutes.post<
   }
 );
 
-issueRoutes.get('/count', async (req, res, next) => {
+issueRoutes.get('/count', async (_req, res, next) => {
   const issueRepository = getRepository(Issue);
 
   try {
-    const query = issueRepository.createQueryBuilder('issue');
-
-    const totalCount = await query.getCount();
-
-    const videoCount = await query
-      .where('issue.issueType = :issueType', {
-        issueType: IssueType.VIDEO,
-      })
-      .getCount();
-
-    const audioCount = await query
-      .where('issue.issueType = :issueType', {
-        issueType: IssueType.AUDIO,
-      })
-      .getCount();
-
-    const subtitlesCount = await query
-      .where('issue.issueType = :issueType', {
-        issueType: IssueType.SUBTITLES,
-      })
-      .getCount();
-
-    const othersCount = await query
-      .where('issue.issueType = :issueType', {
-        issueType: IssueType.OTHER,
-      })
-      .getCount();
-
-    const openCount = await query
-      .where('issue.status = :issueStatus', {
-        issueStatus: IssueStatus.OPEN,
-      })
-      .getCount();
-
-    const closedCount = await query
-      .where('issue.status = :issueStatus', {
-        issueStatus: IssueStatus.RESOLVED,
-      })
-      .getCount();
+    const [total, video, audio, subtitles, others, open, closed] =
+      await Promise.all([
+        issueRepository.count(),
+        issueRepository.count({ where: { issueType: IssueType.VIDEO } }),
+        issueRepository.count({ where: { issueType: IssueType.AUDIO } }),
+        issueRepository.count({ where: { issueType: IssueType.SUBTITLES } }),
+        issueRepository.count({ where: { issueType: IssueType.OTHER } }),
+        issueRepository.count({ where: { status: IssueStatus.OPEN } }),
+        issueRepository.count({ where: { status: IssueStatus.RESOLVED } }),
+      ]);
 
     return res.status(200).json({
-      total: totalCount,
-      video: videoCount,
-      audio: audioCount,
-      subtitles: subtitlesCount,
-      others: othersCount,
-      open: openCount,
-      closed: closedCount,
+      total,
+      video,
+      audio,
+      subtitles,
+      others,
+      open,
+      closed,
     });
   } catch (e) {
     logger.debug('Something went wrong retrieving issue counts.', {

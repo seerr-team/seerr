@@ -339,82 +339,66 @@ requestRoutes.get('/count', async (_req, res, next) => {
   const requestRepository = getRepository(MediaRequest);
 
   try {
-    const query = requestRepository
-      .createQueryBuilder('request')
-      .innerJoinAndSelect('request.media', 'media');
-
-    const totalCount = await query.getCount();
-
-    const movieCount = await query
-      .where('request.type = :requestType', {
-        requestType: MediaType.MOVIE,
-      })
-      .getCount();
-
-    const tvCount = await query
-      .where('request.type = :requestType', {
-        requestType: MediaType.TV,
-      })
-      .getCount();
-
-    const pendingCount = await query
-      .where('request.status = :requestStatus', {
-        requestStatus: MediaRequestStatus.PENDING,
-      })
-      .getCount();
-
-    const approvedCount = await query
-      .where('request.status = :requestStatus', {
-        requestStatus: MediaRequestStatus.APPROVED,
-      })
-      .getCount();
-
-    const declinedCount = await query
-      .where('request.status = :requestStatus', {
-        requestStatus: MediaRequestStatus.DECLINED,
-      })
-      .getCount();
-
-    const processingCount = await query
-      .where('request.status = :requestStatus', {
-        requestStatus: MediaRequestStatus.APPROVED,
-      })
-      .andWhere(
-        '((request.is4k = false AND media.status != :availableStatus) OR (request.is4k = true AND media.status4k != :availableStatus))',
-        {
-          availableStatus: MediaStatus.AVAILABLE,
-        }
-      )
-      .getCount();
-
-    const availableCount = await query
-      .where('request.status = :requestStatus', {
-        requestStatus: MediaRequestStatus.APPROVED,
-      })
-      .andWhere(
-        '((request.is4k = false AND media.status = :availableStatus) OR (request.is4k = true AND media.status4k = :availableStatus))',
-        {
-          availableStatus: MediaStatus.AVAILABLE,
-        }
-      )
-      .getCount();
-
-    const completedCount = await query
-      .where('request.status = :requestStatus', {
-        requestStatus: MediaRequestStatus.COMPLETED,
-      })
-      .getCount();
+    const [
+      total,
+      movie,
+      tv,
+      pending,
+      approved,
+      declined,
+      processing,
+      available,
+      completed,
+    ] = await Promise.all([
+      requestRepository.count(),
+      requestRepository.count({ where: { type: MediaType.MOVIE } }),
+      requestRepository.count({ where: { type: MediaType.TV } }),
+      requestRepository.count({
+        where: { status: MediaRequestStatus.PENDING },
+      }),
+      requestRepository.count({
+        where: { status: MediaRequestStatus.APPROVED },
+      }),
+      requestRepository.count({
+        where: { status: MediaRequestStatus.DECLINED },
+      }),
+      requestRepository
+        .createQueryBuilder('request')
+        .innerJoin('request.media', 'media')
+        .where('request.status = :status', {
+          status: MediaRequestStatus.APPROVED,
+        })
+        .andWhere(
+          '(request.is4k = false AND media.status != :available) OR (request.is4k = true AND media.status4k != :available)',
+          { available: MediaStatus.AVAILABLE }
+        )
+        .getCount(),
+      requestRepository
+        .createQueryBuilder('request')
+        .innerJoin('request.media', 'media')
+        .where('request.status = :status', {
+          status: MediaRequestStatus.APPROVED,
+        })
+        .andWhere(
+          '(request.is4k = false AND media.status = :available) OR (request.is4k = true AND media.status4k = :available)',
+          { available: MediaStatus.AVAILABLE }
+        )
+        .getCount(),
+      requestRepository.count({
+        where: { status: MediaRequestStatus.COMPLETED },
+      }),
+    ]);
 
     return res.status(200).json({
-      total: totalCount,
-      movie: movieCount,
-      tv: tvCount,
-      pending: pendingCount,
-      approved: approvedCount,
-      declined: declinedCount,
-      processing: processingCount,
-      available: availableCount,
-      completed: completedCount,
+      total,
+      movie,
+      tv,
+      pending,
+      approved,
+      declined,
+      processing,
+      available,
+      completed,
     });
   } catch (e) {
     logger.error('Something went wrong retrieving request counts', {
