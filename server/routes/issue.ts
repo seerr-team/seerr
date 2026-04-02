@@ -323,6 +323,7 @@ issueRoutes.post<{ issueId: string; status: string }, Issue>(
     try {
       const issue = await issueRepository.findOneOrFail({
         where: { id: Number(req.params.issueId) },
+        relations: { comments: true },
       });
 
       if (

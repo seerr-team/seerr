@@ -27,7 +27,7 @@ export class IssueCommentSubscriber implements EntitySubscriberInterface<IssueCo
       const issue = (
         await getRepository(IssueComment).findOneOrFail({
           where: { id: entity.id },
-          relations: { issue: true },
+          relations: { issue: { comments: true } },
         })
       ).issue;
 

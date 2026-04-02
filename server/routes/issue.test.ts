@@ -7,6 +7,7 @@ import Issue from '@server/entity/Issue';
 import IssueComment from '@server/entity/IssueComment';
 import Media from '@server/entity/Media';
 import { User } from '@server/entity/User';
+import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import { checkUser } from '@server/middleware/auth';
 import { setupTestDb } from '@server/test/db';
@@ -104,7 +105,7 @@ describe('POST /issue/:issueId/comment', () => {
     assert.strictEqual(res.body.comments[1].message, 'follow-up comment');
   });
 
-  it('returns 404 for a non-existent issue', async () => {
+  it('returns 500 for a non-existent issue', async () => {
     const agent = await adminAgent();
 
     const res = await agent
@@ -157,7 +158,7 @@ describe('DELETE /issue/:issueId', () => {
 
     // Give creator CREATE_ISSUES but not MANAGE_ISSUES so they can reach the route
     // handler but be blocked by the reply-count guard
-    creator.permissions = 4194304; // Permission.CREATE_ISSUES
+    creator.permissions = Permission.CREATE_ISSUES;
     await userRepo.save(creator);
 
     const settings = getSettings();
