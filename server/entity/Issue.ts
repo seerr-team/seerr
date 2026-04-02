@@ -56,7 +56,6 @@ class Issue {
 
   @OneToMany(() => IssueComment, (comment) => comment.issue, {
     cascade: true,
-    eager: true,
   })
   public comments: IssueComment[];
 
