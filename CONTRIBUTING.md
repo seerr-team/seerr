@@ -263,4 +263,4 @@ DB_TYPE="postgres" DB_USER=postgres DB_PASS=postgres pnpm migration:generate ser
 
 ## Attribution
 
-This contribution guide was inspired by the [Next.js](https://github.com/vercel/next.js), [Radarr](https://github.com/Radarr/Radarr), and [Ghostty](https://github.com/ghostty-org/ghostty) contribution guides. In addition, our AI policy was draws from [Jellyfin's LLM policies](https://jellyfin.org/docs/general/contributing/llm-policies/).
+This contribution guide was inspired by the [Next.js](https://github.com/vercel/next.js), [Radarr](https://github.com/Radarr/Radarr), and [Ghostty](https://github.com/ghostty-org/ghostty) contribution guides. In addition, our AI policy draws from [Jellyfin's LLM policies](https://jellyfin.org/docs/general/contributing/llm-policies/).
