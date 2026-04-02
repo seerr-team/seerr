@@ -23,6 +23,8 @@ function createApp() {
       secret: 'test-secret',
       resave: false,
       saveUninitialized: false,
+      // secure: false is intentional -- supertest uses HTTP, not HTTPS
+      cookie: { secure: false },
     })
   );
   app.use(checkUser);
@@ -56,11 +58,15 @@ setupTestDb();
 async function authenticatedAgent(email: string, password: string) {
   const agent = request.agent(app);
   const settings = getSettings();
+  const prevLocalLogin = settings.main.localLogin;
   settings.main.localLogin = true;
-
-  const res = await agent.post('/auth/local').send({ email, password });
-  assert.strictEqual(res.status, 200);
-  return agent;
+  try {
+    const res = await agent.post('/auth/local').send({ email, password });
+    assert.strictEqual(res.status, 200);
+    return agent;
+  } finally {
+    settings.main.localLogin = prevLocalLogin;
+  }
 }
 
 describe('POST /user/:id/settings/notifications', () => {
