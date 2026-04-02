@@ -1,36 +1,46 @@
-name: Sync Upstream & Build Docker Image
+name: Build Custom Release
 
 on:
-  schedule:
-    - cron: '0 3 * * *'
   workflow_dispatch:
+    inputs:
+      upstream_tag:
+        description: 'Official release tag to build (e.g., v3.1.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write
   packages: write
 
 jobs:
-  sync-and-build:
+  build-custom-release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: main
 
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Sync with official Seerr upstream
+      - name: Fetch Official Tag and Merge
         run: |
           git remote add upstream https://github.com/seerr-team/seerr.git
-          git fetch upstream
-          # This merges the official updates while keeping your webhook hack!
-          git merge upstream/main --no-edit || echo "Merge conflict detected. You may need to resolve manually."
-          git push origin main
+          # Fetch the specific tag typed in the UI
+          git fetch upstream tag ${{ inputs.upstream_tag }}
+
+          # Merge release tag into branch
+          git merge ${{ inputs.upstream_tag }} --no-edit || echo "Merge conflict detected. Need to resolve manually."
+
+          # Push updated code to branch
+          git push origin HEAD
+
+          # Create git tag and push it
+          git tag ${{ inputs.upstream_tag }}-custom-webhook
+          git push origin ${{ inputs.upstream_tag }}-custom-webhook
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -42,21 +52,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=raw,value=latest
-            type=sha
-
-      - name: Build and push Custom Image
+      - name: Build and push Custom Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ inputs.upstream_tag }}-custom-webhook
+            ghcr.io/${{ github.repository }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
