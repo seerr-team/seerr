@@ -338,6 +338,21 @@ requestRoutes.post<never, MediaRequest, MediaRequestBody>(
 requestRoutes.get('/count', async (_req, res, next) => {
   const requestRepository = getRepository(MediaRequest);
 
+  const approvedMediaStatusCount = (isAvailable: boolean) =>
+    requestRepository
+      .createQueryBuilder('request')
+      .innerJoin('request.media', 'media')
+      .where('request.status = :status', {
+        status: MediaRequestStatus.APPROVED,
+      })
+      .andWhere(
+        isAvailable
+          ? '(request.is4k = false AND media.status = :available) OR (request.is4k = true AND media.status4k = :available)'
+          : '(request.is4k = false AND media.status != :available) OR (request.is4k = true AND media.status4k != :available)',
+        { available: MediaStatus.AVAILABLE }
+      )
+      .getCount();
+
   try {
     const [
       total,
@@ -362,28 +377,8 @@ requestRoutes.get('/count', async (_req, res, next) => {
       requestRepository.count({
         where: { status: MediaRequestStatus.DECLINED },
       }),
-      requestRepository
-        .createQueryBuilder('request')
-        .innerJoin('request.media', 'media')
-        .where('request.status = :status', {
-          status: MediaRequestStatus.APPROVED,
-        })
-        .andWhere(
-          '(request.is4k = false AND media.status != :available) OR (request.is4k = true AND media.status4k != :available)',
-          { available: MediaStatus.AVAILABLE }
-        )
-        .getCount(),
-      requestRepository
-        .createQueryBuilder('request')
-        .innerJoin('request.media', 'media')
-        .where('request.status = :status', {
-          status: MediaRequestStatus.APPROVED,
-        })
-        .andWhere(
-          '(request.is4k = false AND media.status = :available) OR (request.is4k = true AND media.status4k = :available)',
-          { available: MediaStatus.AVAILABLE }
-        )
-        .getCount(),
+      approvedMediaStatusCount(false),
+      approvedMediaStatusCount(true),
       requestRepository.count({
         where: { status: MediaRequestStatus.COMPLETED },
       }),

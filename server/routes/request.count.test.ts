@@ -30,6 +30,8 @@ function createApp() {
       secret: 'test-secret',
       resave: false,
       saveUninitialized: false,
+      // secure: false is intentional -- supertest uses HTTP, not HTTPS
+      cookie: { secure: false },
     })
   );
   app.use(checkUser);
@@ -60,11 +62,15 @@ setupTestDb();
 async function authenticatedAgent(email: string, password: string) {
   const agent = request.agent(app);
   const settings = getSettings();
+  const prevLocalLogin = settings.main.localLogin;
   settings.main.localLogin = true;
-
-  const res = await agent.post('/auth/local').send({ email, password });
-  assert.strictEqual(res.status, 200);
-  return agent;
+  try {
+    const res = await agent.post('/auth/local').send({ email, password });
+    assert.strictEqual(res.status, 200);
+    return agent;
+  } finally {
+    settings.main.localLogin = prevLocalLogin;
+  }
 }
 
 async function createTestMedia(
@@ -84,7 +90,8 @@ async function createMediaRequest(
   user: User,
   media: Media,
   type: MediaType,
-  status: MediaRequestStatus = MediaRequestStatus.PENDING
+  status: MediaRequestStatus = MediaRequestStatus.PENDING,
+  is4k = false
 ): Promise<MediaRequest> {
   const requestRepository = getRepository(MediaRequest);
   const req = new MediaRequest({
@@ -92,7 +99,7 @@ async function createMediaRequest(
     media,
     requestedBy: user,
     status,
-    is4k: false,
+    is4k,
     seasons: [],
   });
   return requestRepository.save(req);
@@ -178,5 +185,68 @@ describe('GET /request/count', () => {
     assert.strictEqual(res.body.approved, 1);
     assert.strictEqual(res.body.declined, 1);
     assert.strictEqual(res.body.completed, 0);
+  });
+
+  it('counts processing and available correctly for HD and 4K requests', async () => {
+    const agent = await authenticatedAgent('admin@seerr.dev', 'test1234');
+
+    const user = await getRepository(User).findOneOrFail({
+      where: { email: 'admin@seerr.dev' },
+    });
+    const mediaRepo = getRepository(Media);
+
+    // HD approved, media not yet available (processing)
+    const hdProcessing = await createTestMedia(300001, MediaType.MOVIE);
+    hdProcessing.status = MediaStatus.PROCESSING;
+    await mediaRepo.save(hdProcessing);
+    await createMediaRequest(
+      user,
+      hdProcessing,
+      MediaType.MOVIE,
+      MediaRequestStatus.APPROVED,
+      false
+    );
+
+    // HD approved, media available
+    const hdAvailable = await createTestMedia(300002, MediaType.MOVIE);
+    hdAvailable.status = MediaStatus.AVAILABLE;
+    await mediaRepo.save(hdAvailable);
+    await createMediaRequest(
+      user,
+      hdAvailable,
+      MediaType.MOVIE,
+      MediaRequestStatus.APPROVED,
+      false
+    );
+
+    // 4K approved, 4K media not yet available (processing)
+    const fourKProcessing = await createTestMedia(300003, MediaType.MOVIE);
+    fourKProcessing.status4k = MediaStatus.PROCESSING;
+    await mediaRepo.save(fourKProcessing);
+    await createMediaRequest(
+      user,
+      fourKProcessing,
+      MediaType.MOVIE,
+      MediaRequestStatus.APPROVED,
+      true
+    );
+
+    // 4K approved, 4K media available
+    const fourKAvailable = await createTestMedia(300004, MediaType.MOVIE);
+    fourKAvailable.status4k = MediaStatus.AVAILABLE;
+    await mediaRepo.save(fourKAvailable);
+    await createMediaRequest(
+      user,
+      fourKAvailable,
+      MediaType.MOVIE,
+      MediaRequestStatus.APPROVED,
+      true
+    );
+
+    const res = await agent.get('/request/count');
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.processing, 2);
+    assert.strictEqual(res.body.available, 2);
   });
 });
