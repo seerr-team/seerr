@@ -58,7 +58,7 @@ if (!testingContent) {
 const checklistMatch = body.match(/## Checklist:\s*\n([\s\S]*?)$/);
 const checklistContent = checklistMatch ? checklistMatch[1] : '';
 
-const totalBoxes = (checklistContent.match(/- \[[ x]\]/g) || []).length;
+const totalBoxes = (checklistContent.match(/- \[[ x]\]/gi) || []).length;
 const checkedBoxes = (checklistContent.match(/- \[x\]/gi) || []).length;
 
 if (totalBoxes === 0) {
