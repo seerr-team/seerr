@@ -45,6 +45,22 @@ type MediaRequestOptions = {
 
 @Entity()
 export class MediaRequest {
+  /**
+   * Throws SeasonLimitError if the user has LIMIT_ONE_SEASON permission
+   * (and is not an admin/request manager) and is requesting more than one season.
+   */
+  public static validateSeasonLimit(user: User, seasons: number[]): void {
+    if (
+      user.hasPermission(Permission.LIMIT_ONE_SEASON) &&
+      !user.hasPermission([Permission.MANAGE_REQUESTS, Permission.ADMIN], {
+        type: 'or',
+      }) &&
+      seasons.length > 1
+    ) {
+      throw new SeasonLimitError('You can only request one season at a time.');
+    }
+  }
+
   public static async request(
     requestBody: MediaRequestBody,
     user: User,
@@ -436,21 +452,11 @@ export class MediaRequest {
 
       if (finalSeasons.length === 0) {
         throw new NoSeasonsAvailableError('No seasons available to request');
-      } else if (
-        requestUser.hasPermission(Permission.LIMIT_ONE_SEASON) &&
-        !requestUser.hasPermission(
-          [Permission.MANAGE_REQUESTS, Permission.ADMIN],
-          { type: 'or' }
-        ) &&
-        finalSeasons.length > 1
-      ) {
-        throw new SeasonLimitError(
-          'You can only request one season at a time.'
-        );
-      } else if (
-        quotas.tv.limit &&
-        finalSeasons.length > (quotas.tv.remaining ?? 0)
-      ) {
+      }
+
+      MediaRequest.validateSeasonLimit(requestUser, finalSeasons);
+
+      if (quotas.tv.limit && finalSeasons.length > (quotas.tv.remaining ?? 0)) {
         throw new QuotaRestrictedError('Series Quota exceeded.');
       }
 

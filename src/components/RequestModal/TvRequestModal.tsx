@@ -15,7 +15,10 @@ import type { MediaRequest } from '@server/entity/MediaRequest';
 import type SeasonRequest from '@server/entity/SeasonRequest';
 import type { NonFunctionProperties } from '@server/interfaces/api/common';
 import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
-import { Permission } from '@server/lib/permissions';
+import {
+  Permission,
+  hasPermission as checkPermission,
+} from '@server/lib/permissions';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
 import { useState } from 'react';
@@ -281,11 +284,15 @@ const TvRequestModal = ({
   const isSelectedSeason = (seasonNumber: number): boolean =>
     selectedSeasons.includes(seasonNumber);
 
+  const effectivePermissions =
+    requestOverrides?.user?.permissions ?? user?.permissions ?? 0;
   const isOneSeasonLimited =
-    hasPermission(Permission.LIMIT_ONE_SEASON) &&
-    !hasPermission([Permission.MANAGE_REQUESTS, Permission.ADMIN], {
-      type: 'or',
-    });
+    checkPermission(Permission.LIMIT_ONE_SEASON, effectivePermissions) &&
+    !checkPermission(
+      [Permission.MANAGE_REQUESTS, Permission.ADMIN],
+      effectivePermissions,
+      { type: 'or' }
+    );
 
   const toggleSeason = (seasonNumber: number): void => {
     // If this season already has a pending request, don't allow it to be toggled
@@ -294,10 +301,12 @@ const TvRequestModal = ({
     }
 
     // If there are no more remaining requests available, block toggle
+    // (skip when isOneSeasonLimited and replacing an existing selection)
     if (
       quota?.tv.limit &&
       currentlyRemaining <= 0 &&
-      !isSelectedSeason(seasonNumber)
+      !isSelectedSeason(seasonNumber) &&
+      !(isOneSeasonLimited && selectedSeasons.length > 0)
     ) {
       return;
     }
@@ -526,6 +535,7 @@ const TvRequestModal = ({
           quota={quota?.tv}
           remaining={
             !settings.currentSettings.partialRequestsEnabled &&
+            !isOneSeasonLimited &&
             unrequestedSeasons.length > (quota?.tv.remaining ?? 0)
               ? 0
               : currentlyRemaining
@@ -537,6 +547,7 @@ const TvRequestModal = ({
           }
           overLimit={
             !settings.currentSettings.partialRequestsEnabled &&
+            !isOneSeasonLimited &&
             unrequestedSeasons.length > (quota?.tv.remaining ?? 0)
               ? unrequestedSeasons.length
               : undefined
@@ -600,7 +611,10 @@ const TvRequestModal = ({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-700">
+                <tbody
+                  className="divide-y divide-gray-700"
+                  {...(isOneSeasonLimited ? { role: 'radiogroup' } : {})}
+                >
                   {data?.seasons
                     .filter(
                       (season) =>
@@ -636,7 +650,7 @@ const TvRequestModal = ({
                             }`}
                           >
                             <span
-                              role="checkbox"
+                              role={isOneSeasonLimited ? 'radio' : 'checkbox'}
                               tabIndex={0}
                               aria-checked={
                                 !!mediaSeason ||

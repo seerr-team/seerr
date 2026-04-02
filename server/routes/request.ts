@@ -566,19 +566,16 @@ requestRoutes.put<{ requestId: string }>(
           });
         }
 
-        // Enforce one-season limit on the user the request belongs to
-        if (
-          requestUser.hasPermission(Permission.LIMIT_ONE_SEASON) &&
-          !requestUser.hasPermission(
-            [Permission.MANAGE_REQUESTS, Permission.ADMIN],
-            { type: 'or' }
-          ) &&
-          filteredSeasons.length > 1
-        ) {
-          return next({
-            status: 403,
-            message: 'You can only request one season at a time.',
-          });
+        try {
+          MediaRequest.validateSeasonLimit(
+            requestUser as User,
+            filteredSeasons
+          );
+        } catch (error) {
+          if (error instanceof SeasonLimitError) {
+            return next({ status: 403, message: error.message });
+          }
+          throw error;
         }
 
         const newSeasons = requestedSeasons.filter(
