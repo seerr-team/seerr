@@ -55,16 +55,12 @@ class ImageProxy {
       }
     } catch (e) {
       if (e.code === 'ENOENT') {
-        logger.error('Directory not found', {
-          label: 'Image Cache',
-          message: e.message,
-        });
-      } else {
-        logger.error('Failed to read directory', {
-          label: 'Image Cache',
-          message: e.message,
-        });
+        return;
       }
+      logger.error('Failed to read directory', {
+        label: 'Image Cache',
+        message: e.message,
+      });
     }
 
     logger.info(`Cleared ${deletedImages} stale image(s) from cache '${key}'`, {

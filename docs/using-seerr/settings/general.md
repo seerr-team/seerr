@@ -24,28 +24,6 @@ Set this to the externally-accessible URL of your Seerr instance.
 
 You must configure this setting in order to enable password reset and generation emails.
 
-## Enable Proxy Support
-
-If you have Seerr behind a reverse proxy, enable this setting to allow Seerr to correctly register client IP addresses. For details, please see the [Express Documentation](https://expressjs.com/en/guide/behind-proxies.html).
-
-This setting is **disabled** by default.
-
-## Enable CSRF Protection
-
-:::warning
-**This is an advanced setting.** Please only enable this setting if you are familiar with CSRF protection and how it works.
-:::
-
-CSRF stands for [cross-site request forgery](https://en.wikipedia.org/wiki/Cross-site_request_forgery). When this setting is enabled, all external API access that alters Seerr application data is blocked.
-
-If you do not use Seerr integrations with third-party applications to add/modify/delete requests or users, you can consider enabling this setting to protect against malicious attacks.
-
-One caveat, however, is that HTTPS is required, meaning that once this setting is enabled, you will no longer be able to access your Seerr instance over _HTTP_ (including using an IP address and port number).
-
-If you enable this setting and find yourself unable to access Seerr, you can disable the setting by modifying `settings.json` in `/app/config`.
-
-This setting is **disabled** by default.
-
 ## Enable Image Caching
 
 When enabled, Jellseerr will proxy and cache images from pre-configured sources (such as TMDB). This can use a significant amount of disk space.
