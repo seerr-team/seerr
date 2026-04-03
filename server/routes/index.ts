@@ -47,6 +47,12 @@ const router = Router();
 
 router.use(checkUser);
 
+router.get('/health', (_req, res) => {
+  return res.status(200).json({
+    status: 'ok',
+  });
+});
+
 router.get<unknown, StatusResponse>('/status', async (req, res) => {
   const githubApi = new GithubAPI();
 
