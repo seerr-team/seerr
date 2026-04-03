@@ -138,11 +138,14 @@ class JellyfinAPI extends ExternalAPI {
         ? deviceId
         : Buffer.from('BOT_seerr').toString('base64');
 
-    let authHeaderVal: string;
+    const version =
+      settings.main.mediaServerType === MediaServerType.EMBY
+        ? '1.0.0'
+        : getAppVersion();
+
+    let authHeaderVal = `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="${safeDeviceId}", Version="${version}"`;
     if (authToken) {
-      authHeaderVal = `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="${safeDeviceId}", Version="${getAppVersion()}", Token="${authToken}"`;
-    } else {
-      authHeaderVal = `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="${safeDeviceId}", Version="${getAppVersion()}"`;
+      authHeaderVal += `, Token="${authToken}"`;
     }
 
     super(
