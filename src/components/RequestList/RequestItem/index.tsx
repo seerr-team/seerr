@@ -324,26 +324,23 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
   });
 
   const [isRetrying, setRetrying] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [updatingType, setUpdatingType] = useState<
+    'approve' | 'decline' | null
+  >(null);
 
   const modifyRequest = async (type: 'approve' | 'decline') => {
-    setIsUpdating(true);
+    setUpdatingType(type);
     try {
-      const response = await axios.post(
-        `/api/v1/request/${request.id}/${type}`
-      );
-
-      if (response) {
-        revalidate();
-        mutate('/api/v1/request/count');
-      }
+      await axios.post(`/api/v1/request/${request.id}/${type}`);
+      revalidate();
+      mutate('/api/v1/request/count');
     } catch {
       addToast(intl.formatMessage(messages.failedmodify), {
         autoDismiss: true,
         appearance: 'error',
       });
     } finally {
-      setIsUpdating(false);
+      setUpdatingType(null);
     }
   };
 
@@ -729,9 +726,9 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                     className="w-full"
                     buttonType="success"
                     onClick={() => modifyRequest('approve')}
-                    disabled={isUpdating}
+                    disabled={updatingType !== null}
                   >
-                    {isUpdating ? <Spinner /> : <CheckIcon />}
+                    {updatingType === 'approve' ? <Spinner /> : <CheckIcon />}
                     <span>{intl.formatMessage(globalMessages.approve)}</span>
                   </Button>
                 </span>
@@ -740,9 +737,9 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                     className="w-full"
                     buttonType="danger"
                     onClick={() => modifyRequest('decline')}
-                    disabled={isUpdating}
+                    disabled={updatingType !== null}
                   >
-                    {isUpdating ? <Spinner /> : <XMarkIcon />}
+                    {updatingType === 'decline' ? <Spinner /> : <XMarkIcon />}
                     <span>{intl.formatMessage(globalMessages.decline)}</span>
                   </Button>
                 </span>
@@ -758,7 +755,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                   className="w-full"
                   buttonType="primary"
                   onClick={() => setShowEditModal(true)}
-                  disabled={isUpdating}
+                  disabled={updatingType !== null}
                 >
                   <PencilIcon />
                   <span>{intl.formatMessage(messages.editrequest)}</span>

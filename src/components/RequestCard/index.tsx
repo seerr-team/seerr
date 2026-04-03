@@ -227,7 +227,9 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
   const { user, hasPermission } = useUser();
   const { addToast } = useToasts();
   const [isRetrying, setRetrying] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [updatingType, setUpdatingType] = useState<
+    'approve' | 'decline' | null
+  >(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const url =
     request.type === 'movie'
@@ -263,23 +265,18 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
   });
 
   const modifyRequest = async (type: 'approve' | 'decline') => {
-    setIsUpdating(true);
+    setUpdatingType(type);
     try {
-      const response = await axios.post(
-        `/api/v1/request/${request.id}/${type}`
-      );
-
-      if (response) {
-        revalidate();
-        mutate('/api/v1/request/count');
-      }
+      await axios.post(`/api/v1/request/${request.id}/${type}`);
+      revalidate();
+      mutate('/api/v1/request/count');
     } catch {
       addToast(intl.formatMessage(messages.failedmodify), {
         autoDismiss: true,
         appearance: 'error',
       });
     } finally {
-      setIsUpdating(false);
+      setUpdatingType(null);
     }
   };
 
@@ -512,9 +509,9 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                       buttonSize="sm"
                       className="hidden sm:block"
                       onClick={() => modifyRequest('approve')}
-                      disabled={isUpdating}
+                      disabled={updatingType !== null}
                     >
-                      {isUpdating ? <Spinner /> : <CheckIcon />}
+                      {updatingType === 'approve' ? <Spinner /> : <CheckIcon />}
                       <span>{intl.formatMessage(globalMessages.approve)}</span>
                     </Button>
                     <Tooltip
@@ -525,9 +522,13 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                         buttonSize="sm"
                         className="sm:hidden"
                         onClick={() => modifyRequest('approve')}
-                        disabled={isUpdating}
+                        disabled={updatingType !== null}
                       >
-                        {isUpdating ? <Spinner /> : <CheckIcon />}
+                        {updatingType === 'approve' ? (
+                          <Spinner />
+                        ) : (
+                          <CheckIcon />
+                        )}
                       </Button>
                     </Tooltip>
                   </div>
@@ -537,9 +538,9 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                       buttonSize="sm"
                       className="hidden sm:block"
                       onClick={() => modifyRequest('decline')}
-                      disabled={isUpdating}
+                      disabled={updatingType !== null}
                     >
-                      {isUpdating ? <Spinner /> : <XMarkIcon />}
+                      {updatingType === 'decline' ? <Spinner /> : <XMarkIcon />}
                       <span>{intl.formatMessage(globalMessages.decline)}</span>
                     </Button>
                     <Tooltip
@@ -550,9 +551,13 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                         buttonSize="sm"
                         className="sm:hidden"
                         onClick={() => modifyRequest('decline')}
-                        disabled={isUpdating}
+                        disabled={updatingType !== null}
                       >
-                        {isUpdating ? <Spinner /> : <XMarkIcon />}
+                        {updatingType === 'decline' ? (
+                          <Spinner />
+                        ) : (
+                          <XMarkIcon />
+                        )}
                       </Button>
                     </Tooltip>
                   </div>
@@ -570,7 +575,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                       buttonSize="sm"
                       className="hidden sm:block"
                       onClick={() => setShowEditModal(true)}
-                      disabled={isUpdating}
+                      disabled={updatingType !== null}
                     >
                       <PencilIcon />
                       <span>{intl.formatMessage(globalMessages.edit)}</span>
@@ -582,7 +587,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                       buttonSize="sm"
                       className="sm:hidden"
                       onClick={() => setShowEditModal(true)}
-                      disabled={isUpdating}
+                      disabled={updatingType !== null}
                     >
                       <PencilIcon />
                     </Button>
