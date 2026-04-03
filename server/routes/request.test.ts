@@ -212,3 +212,56 @@ describe('PUT /request/:requestId (movie)', () => {
     assert.strictEqual(saved.rootFolder, '/updated/movies');
   });
 });
+
+describe('POST /request/:requestId/:status', () => {
+  const cases = [
+    { action: 'approve', expected: MediaRequestStatus.APPROVED },
+    { action: 'decline', expected: MediaRequestStatus.DECLINED },
+  ] as const;
+
+  for (const { action, expected } of cases) {
+    it(`transitions to ${action}d and records the acting user`, async () => {
+      const repo = getRepository(MediaRequest);
+      const pending = await seedRequest();
+      const admin = await loginAs('admin@seerr.dev', 'test1234');
+
+      const res = await admin.post(`/request/${pending.id}/${action}`);
+
+      assert.strictEqual(res.status, 200);
+      assert.strictEqual(res.body.status, expected);
+      assert.strictEqual(res.body.modifiedBy.email, 'admin@seerr.dev');
+
+      const persisted = await repo.findOneOrFail({
+        where: { id: pending.id },
+        relations: { modifiedBy: true },
+      });
+
+      assert.strictEqual(persisted.status, expected);
+      assert.strictEqual(persisted.modifiedBy?.email, 'admin@seerr.dev');
+      assert.ok(persisted.updatedAt > pending.updatedAt);
+    });
+  }
+});
+
+describe('POST /request/:requestId/retry', () => {
+  it('re-approves a failed request and records the acting user', async () => {
+    const repo = getRepository(MediaRequest);
+    const failed = await seedRequest(MediaRequestStatus.FAILED);
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+
+    const res = await admin.post(`/request/${failed.id}/retry`);
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.status, MediaRequestStatus.APPROVED);
+    assert.strictEqual(res.body.modifiedBy.email, 'admin@seerr.dev');
+
+    const persisted = await repo.findOneOrFail({
+      where: { id: failed.id },
+      relations: { modifiedBy: true },
+    });
+
+    assert.strictEqual(persisted.status, MediaRequestStatus.APPROVED);
+    assert.strictEqual(persisted.modifiedBy?.email, 'admin@seerr.dev');
+    assert.ok(persisted.updatedAt > failed.updatedAt);
+  });
+});
