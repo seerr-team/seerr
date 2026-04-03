@@ -1,3 +1,4 @@
+import Spinner from '@app/assets/spinner.svg';
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
@@ -225,6 +226,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
   const { user, hasPermission } = useUser();
   const { addToast } = useToasts();
   const [isRetrying, setRetrying] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const url =
     request.type === 'movie'
@@ -260,11 +262,18 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
   });
 
   const modifyRequest = async (type: 'approve' | 'decline') => {
-    const response = await axios.post(`/api/v1/request/${request.id}/${type}`);
+    setIsUpdating(true);
+    try {
+      const response = await axios.post(
+        `/api/v1/request/${request.id}/${type}`
+      );
 
-    if (response) {
-      revalidate();
-      mutate('/api/v1/request/count');
+      if (response) {
+        revalidate();
+        mutate('/api/v1/request/count');
+      }
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -497,8 +506,9 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                       buttonSize="sm"
                       className="hidden sm:block"
                       onClick={() => modifyRequest('approve')}
+                      disabled={isUpdating}
                     >
-                      <CheckIcon />
+                      {isUpdating ? <Spinner /> : <CheckIcon />}
                       <span>{intl.formatMessage(globalMessages.approve)}</span>
                     </Button>
                     <Tooltip
@@ -509,8 +519,9 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                         buttonSize="sm"
                         className="sm:hidden"
                         onClick={() => modifyRequest('approve')}
+                        disabled={isUpdating}
                       >
-                        <CheckIcon />
+                        {isUpdating ? <Spinner /> : <CheckIcon />}
                       </Button>
                     </Tooltip>
                   </div>
@@ -520,8 +531,9 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                       buttonSize="sm"
                       className="hidden sm:block"
                       onClick={() => modifyRequest('decline')}
+                      disabled={isUpdating}
                     >
-                      <XMarkIcon />
+                      {isUpdating ? <Spinner /> : <XMarkIcon />}
                       <span>{intl.formatMessage(globalMessages.decline)}</span>
                     </Button>
                     <Tooltip
@@ -532,8 +544,9 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                         buttonSize="sm"
                         className="sm:hidden"
                         onClick={() => modifyRequest('decline')}
+                        disabled={isUpdating}
                       >
-                        <XMarkIcon />
+                        {isUpdating ? <Spinner /> : <XMarkIcon />}
                       </Button>
                     </Tooltip>
                   </div>
@@ -551,6 +564,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                       buttonSize="sm"
                       className="hidden sm:block"
                       onClick={() => setShowEditModal(true)}
+                      disabled={isUpdating}
                     >
                       <PencilIcon />
                       <span>{intl.formatMessage(globalMessages.edit)}</span>
@@ -562,6 +576,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                       buttonSize="sm"
                       className="sm:hidden"
                       onClick={() => setShowEditModal(true)}
+                      disabled={isUpdating}
                     >
                       <PencilIcon />
                     </Button>
