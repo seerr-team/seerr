@@ -34,6 +34,7 @@ import useSWR, { mutate } from 'swr';
 const messages = defineMessages('components.RequestCard', {
   seasons: '{seasonCount, plural, one {Season} other {Seasons}}',
   failedretry: 'Something went wrong while retrying the request.',
+  failedmodify: 'Something went wrong while modifying the request.',
   mediaerror: '{mediaType} Not Found',
   tmdbid: 'TMDB ID',
   tvdbid: 'TheTVDB ID',
@@ -272,6 +273,11 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
         revalidate();
         mutate('/api/v1/request/count');
       }
+    } catch {
+      addToast(intl.formatMessage(messages.failedmodify), {
+        autoDismiss: true,
+        appearance: 'error',
+      });
     } finally {
       setIsUpdating(false);
     }

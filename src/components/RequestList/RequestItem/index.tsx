@@ -34,6 +34,7 @@ import useSWR, { mutate } from 'swr';
 const messages = defineMessages('components.RequestList.RequestItem', {
   seasons: '{seasonCount, plural, one {Season} other {Seasons}}',
   failedretry: 'Something went wrong while retrying the request.',
+  failedmodify: 'Something went wrong while modifying the request.',
   requested: 'Requested',
   requesteddate: 'Requested',
   modified: 'Modified',
@@ -336,6 +337,11 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
         revalidate();
         mutate('/api/v1/request/count');
       }
+    } catch {
+      addToast(intl.formatMessage(messages.failedmodify), {
+        autoDismiss: true,
+        appearance: 'error',
+      });
     } finally {
       setIsUpdating(false);
     }
