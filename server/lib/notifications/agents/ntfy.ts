@@ -43,9 +43,6 @@ class NtfyAgent
     let message = payload.message ?? '';
 
     if (payload.request) {
-      if (message) {
-        message = `**${intl.formatMessage(globalMessages.description)}:**\n${message}`;
-      }
       message += `${message ? '\n\n' : ''}**${intl.formatMessage(globalMessages.requestedBy)}:** ${this.escapeMarkdown(payload.request.requestedBy.displayName)}`;
 
       let status = '';
