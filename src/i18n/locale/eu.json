@@ -1193,9 +1193,6 @@
   "components.UserList.localuser": "Erabiltzaile lokala",
   "components.UserList.mediaServerUser": "{mediaServerName} erabiltzailea",
   "components.UserList.plexuser": "Plex erabiltzailea",
-  "components.UserList.sortCreated": "Batze data",
-  "components.UserList.sortDisplayName": "Bistaratze izena",
-  "components.UserList.sortRequests": "Eskaera zenbakia",
   "components.UserList.userlist": "Erabiltzaileen zerrenda",
   "components.UserList.validationEmail": "Helbide elektronikoa beharrezkoa da",
   "components.UserList.usercreatedsuccess": "Erabiltzailea ondo sortu da!",
@@ -1624,5 +1621,7 @@
   "components.Settings.Notifications.NotificationsWebhook.customHeadersKey": "Goiburuaren izena",
   "components.Settings.Notifications.NotificationsWebhook.customHeadersRemove": "Kendu",
   "components.Settings.Notifications.NotificationsWebhook.customHeadersTip": "Gehitu HTTP goiburu pertsonalizatuak webhook eskaeretan sartzeko",
-  "components.Settings.Notifications.NotificationsWebhook.customHeadersValue": "Goiburuaren balioa"
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersValue": "Goiburuaren balioa",
+  "components.Login.tipEmailHasTrailingWhitespace": "E-posta hutsune batekin amaitzen da",
+  "components.Login.tipUsernameHasTrailingWhitespace": "Erabiltzaile-izena hutsune batekin amaitzen da"
 }
