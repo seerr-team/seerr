@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { before, describe, it } from 'node:test';
+import { before, beforeEach, describe, it, mock } from 'node:test';
 
 import {
   MediaRequestStatus,
@@ -17,9 +17,14 @@ import type { Express } from 'express';
 import express from 'express';
 import session from 'express-session';
 import request from 'supertest';
-
 import authRoutes from './auth';
 import requestRoutes from './request';
+
+const sendNotificationMock = mock.method(
+  MediaRequest,
+  'sendNotification',
+  async () => undefined
+).mock;
 
 let app: Express;
 
@@ -31,8 +36,6 @@ function createApp() {
       secret: 'test-secret',
       resave: false,
       saveUninitialized: false,
-      // secure: false is intentional -- supertest uses HTTP, not HTTPS
-      cookie: { secure: false },
     })
   );
   app.use(checkUser);
@@ -56,16 +59,19 @@ function createApp() {
 
 before(async () => {
   app = createApp();
-  const settings = getSettings();
-  settings.main.localLogin = true;
+});
+
+beforeEach(() => {
+  sendNotificationMock.resetCalls();
 });
 
 setupTestDb();
 
-async function authenticatedAgent(email: string, password: string) {
+async function loginAs(email: string, password: string) {
   const settings = getSettings();
   const priorLocalLogin = settings.main.localLogin;
   settings.main.localLogin = true;
+
   try {
     const agent = request.agent(app);
     const res = await agent.post('/auth/local').send({ email, password });
@@ -76,55 +82,55 @@ async function authenticatedAgent(email: string, password: string) {
   }
 }
 
-/** Creates a minimal movie request owned by the given user. */
-async function createMovieRequest(
-  requestedBy: User,
-  status = MediaRequestStatus.PENDING
-): Promise<MediaRequest> {
+async function seedRequest(status = MediaRequestStatus.PENDING) {
+  const userRepo = getRepository(User);
   const mediaRepo = getRepository(Media);
   const requestRepo = getRepository(MediaRequest);
 
-  let media = await mediaRepo.findOne({ where: { tmdbId: 99999 } });
-  if (!media) {
-    media = new Media();
-    media.tmdbId = 99999;
-    media.mediaType = MediaType.MOVIE;
-    media.status = MediaStatus.UNKNOWN;
-    await mediaRepo.save(media);
-  }
-
-  const mediaRequest = new MediaRequest({
-    media,
-    requestedBy,
-    status,
-    type: MediaType.MOVIE,
-    is4k: false,
+  const requestedBy = await userRepo.findOneOrFail({
+    where: { email: 'friend@seerr.dev' },
   });
-  return requestRepo.save(mediaRequest);
+
+  const media = await mediaRepo.save(
+    new Media({
+      mediaType: MediaType.MOVIE,
+      tmdbId: 12345,
+      status: MediaStatus.UNKNOWN,
+      status4k: MediaStatus.UNKNOWN,
+    })
+  );
+
+  const created = await requestRepo.save(
+    new MediaRequest({
+      type: MediaType.MOVIE,
+      status,
+      media,
+      requestedBy,
+      is4k: false,
+      updatedAt: new Date('2025-03-01T00:00:00.000Z'),
+    })
+  );
+
+  return requestRepo.findOneOrFail({
+    where: { id: created.id },
+    relations: { requestedBy: true, modifiedBy: true },
+  });
 }
 
 describe('DELETE /request/:requestId', () => {
   it('allows the owner to delete their own pending request', async () => {
-    const userRepo = getRepository(User);
-    const owner = await userRepo.findOneOrFail({
-      where: { email: 'friend@seerr.dev' },
-    });
-    const mediaRequest = await createMovieRequest(owner);
+    const mediaRequest = await seedRequest();
 
-    const agent = await authenticatedAgent('friend@seerr.dev', 'test1234');
+    const agent = await loginAs('friend@seerr.dev', 'test1234');
     const res = await agent.delete(`/request/${mediaRequest.id}`);
 
     assert.strictEqual(res.status, 204);
   });
 
   it('allows an admin to delete any pending request', async () => {
-    const userRepo = getRepository(User);
-    const owner = await userRepo.findOneOrFail({
-      where: { email: 'friend@seerr.dev' },
-    });
-    const mediaRequest = await createMovieRequest(owner);
+    const mediaRequest = await seedRequest();
 
-    const agent = await authenticatedAgent('admin@seerr.dev', 'test1234');
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
     const res = await agent.delete(`/request/${mediaRequest.id}`);
 
     assert.strictEqual(res.status, 204);
@@ -132,36 +138,50 @@ describe('DELETE /request/:requestId', () => {
 
   it('prevents a non-owner non-admin from deleting a pending request', async () => {
     const userRepo = getRepository(User);
-    // admin creates the request; friend tries to delete it
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+
+    // Create a request owned by admin, then try to delete as friend
     const owner = await userRepo.findOneOrFail({
       where: { email: 'admin@seerr.dev' },
     });
-    const mediaRequest = await createMovieRequest(owner);
 
-    const agent = await authenticatedAgent('friend@seerr.dev', 'test1234');
+    const media = await mediaRepo.save(
+      new Media({
+        mediaType: MediaType.MOVIE,
+        tmdbId: 54321,
+        status: MediaStatus.UNKNOWN,
+        status4k: MediaStatus.UNKNOWN,
+      })
+    );
+
+    const mediaRequest = await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.PENDING,
+        media,
+        requestedBy: owner,
+        is4k: false,
+      })
+    );
+
+    const agent = await loginAs('friend@seerr.dev', 'test1234');
     const res = await agent.delete(`/request/${mediaRequest.id}`);
 
     assert.strictEqual(res.status, 401);
   });
 
   it('prevents the owner from deleting an approved request', async () => {
-    const userRepo = getRepository(User);
-    const owner = await userRepo.findOneOrFail({
-      where: { email: 'friend@seerr.dev' },
-    });
-    const mediaRequest = await createMovieRequest(
-      owner,
-      MediaRequestStatus.APPROVED
-    );
+    const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
 
-    const agent = await authenticatedAgent('friend@seerr.dev', 'test1234');
+    const agent = await loginAs('friend@seerr.dev', 'test1234');
     const res = await agent.delete(`/request/${mediaRequest.id}`);
 
     assert.strictEqual(res.status, 401);
   });
 
   it('returns 404 for a non-existent request', async () => {
-    const agent = await authenticatedAgent('admin@seerr.dev', 'test1234');
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
     const res = await agent.delete('/request/99999999');
 
     assert.strictEqual(res.status, 404);
@@ -170,14 +190,10 @@ describe('DELETE /request/:requestId', () => {
 
 describe('PUT /request/:requestId (movie)', () => {
   it('persists server and root folder changes to the database', async () => {
-    const userRepo = getRepository(User);
     const requestRepo = getRepository(MediaRequest);
-    const owner = await userRepo.findOneOrFail({
-      where: { email: 'admin@seerr.dev' },
-    });
-    const mediaRequest = await createMovieRequest(owner);
+    const mediaRequest = await seedRequest();
 
-    const agent = await authenticatedAgent('admin@seerr.dev', 'test1234');
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
     const res = await agent.put(`/request/${mediaRequest.id}`).send({
       mediaType: MediaType.MOVIE,
       serverId: 3,
