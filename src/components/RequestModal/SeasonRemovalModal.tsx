@@ -120,7 +120,8 @@ const SeasonRemovalModal = ({
                         aria-checked={isAllSeasons()}
                         onClick={() => toggleAllSeasons()}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === 'Space') {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
                             toggleAllSeasons();
                           }
                         }}
@@ -180,7 +181,8 @@ const SeasonRemovalModal = ({
                               }
                               onClick={() => toggleSeason(season.seasonNumber)}
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === 'Space') {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
                                   toggleSeason(season.seasonNumber);
                                 }
                               }}

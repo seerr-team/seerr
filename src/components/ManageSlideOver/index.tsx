@@ -89,6 +89,7 @@ const messages = defineMessages('components.ManageSlideOver', {
   removalPendingDescription:
     'A removal request for this {mediaType} is already pending approval.',
   requestSeasonRemoval: 'Request Season Removal',
+  requestSeasonRemoval4k: 'Request 4K Season Removal',
   removeAllSeasons: 'Remove All Seasons',
 });
 
@@ -102,6 +103,8 @@ interface RemovalRequestSectionProps {
   requestRemoval: (is4k: boolean, seasons?: number[]) => void;
   showSeasonRemovalModal: boolean;
   setShowSeasonRemovalModal: (show: boolean) => void;
+  showSeasonRemovalModal4k: boolean;
+  setShowSeasonRemovalModal4k: (show: boolean) => void;
 }
 
 const RemovalRequestSection = ({
@@ -110,6 +113,8 @@ const RemovalRequestSection = ({
   requestRemoval,
   showSeasonRemovalModal,
   setShowSeasonRemovalModal,
+  showSeasonRemovalModal4k,
+  setShowSeasonRemovalModal4k,
 }: RemovalRequestSectionProps) => {
   const { hasPermission } = useUser();
   const intl = useIntl();
@@ -135,6 +140,16 @@ const RemovalRequestSection = ({
             s.seasonNumber !== 0 &&
             (s.status === MediaStatus.AVAILABLE ||
               s.status === MediaStatus.PARTIALLY_AVAILABLE)
+        ) ?? [])
+      : [];
+
+  const availableSeasons4k =
+    mediaType === 'tv'
+      ? (data.mediaInfo?.seasons?.filter(
+          (s) =>
+            s.seasonNumber !== 0 &&
+            (s.status4k === MediaStatus.AVAILABLE ||
+              s.status4k === MediaStatus.PARTIALLY_AVAILABLE)
         ) ?? [])
       : [];
 
@@ -208,25 +223,50 @@ const RemovalRequestSection = ({
             )}
           </>
         )}
-        {data.mediaInfo?.status4k === MediaStatus.AVAILABLE &&
+        {(data.mediaInfo?.status4k === MediaStatus.AVAILABLE ||
+          data.mediaInfo?.status4k === MediaStatus.PARTIALLY_AVAILABLE) &&
           settings.currentSettings.series4kEnabled && (
-            <div>
-              {pendingRemoval4k ? (
-                <Button buttonType="warning" className="w-full" disabled>
-                  <TrashIcon />
-                  <span>{intl.formatMessage(messages.removalPending)}</span>
-                </Button>
-              ) : (
-                <ConfirmButton
-                  onClick={() => requestRemoval(true)}
-                  confirmText={intl.formatMessage(globalMessages.areyousure)}
+            <>
+              <div>
+                {pendingRemoval4k ? (
+                  <Button buttonType="warning" className="w-full" disabled>
+                    <TrashIcon />
+                    <span>{intl.formatMessage(messages.removalPending)}</span>
+                  </Button>
+                ) : (
+                  <ConfirmButton
+                    onClick={() => requestRemoval(true)}
+                    confirmText={intl.formatMessage(globalMessages.areyousure)}
+                    className="w-full"
+                  >
+                    <TrashIcon />
+                    <span>{intl.formatMessage(messages.requestRemoval4k)}</span>
+                  </ConfirmButton>
+                )}
+              </div>
+              {mediaType === 'tv' && availableSeasons4k.length > 0 && (
+                <Button
+                  onClick={() => setShowSeasonRemovalModal4k(true)}
                   className="w-full"
                 >
                   <TrashIcon />
-                  <span>{intl.formatMessage(messages.requestRemoval4k)}</span>
-                </ConfirmButton>
+                  <span>
+                    {intl.formatMessage(messages.requestSeasonRemoval4k)}
+                  </span>
+                </Button>
               )}
-            </div>
+              {showSeasonRemovalModal4k && !isMovie(data) && (
+                <SeasonRemovalModal
+                  data={data}
+                  is4k={true}
+                  onCancel={() => setShowSeasonRemovalModal4k(false)}
+                  onComplete={(seasons) => {
+                    setShowSeasonRemovalModal4k(false);
+                    requestRemoval(true, seasons);
+                  }}
+                />
+              )}
+            </>
           )}
         <div className="mt-1 text-xs text-gray-400">
           {intl.formatMessage(messages.requestRemovalDescription, {
@@ -272,6 +312,8 @@ const ManageSlideOver = ({
   const intl = useIntl();
   const settings = useSettings();
   const [showSeasonRemovalModal, setShowSeasonRemovalModal] = useState(false);
+  const [showSeasonRemovalModal4k, setShowSeasonRemovalModal4k] =
+    useState(false);
   const { data: watchData } = useSWR<MediaWatchDataResponse>(
     settings.currentSettings.mediaServerType === MediaServerType.PLEX &&
       data.mediaInfo &&
@@ -414,7 +456,7 @@ const ManageSlideOver = ({
         ),
       })}
       onClose={() => {
-        if (!showSeasonRemovalModal) {
+        if (!showSeasonRemovalModal && !showSeasonRemovalModal4k) {
           onClose();
         }
       }}
@@ -877,6 +919,8 @@ const ManageSlideOver = ({
               requestRemoval={requestRemoval}
               showSeasonRemovalModal={showSeasonRemovalModal}
               setShowSeasonRemovalModal={setShowSeasonRemovalModal}
+              showSeasonRemovalModal4k={showSeasonRemovalModal4k}
+              setShowSeasonRemovalModal4k={setShowSeasonRemovalModal4k}
             />
           )}
         {hasPermission(Permission.ADMIN) &&

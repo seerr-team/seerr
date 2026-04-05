@@ -44,6 +44,9 @@ export class AddMediaRemovalRequest1775397575694 implements MigrationInterface {
       `ALTER TABLE "media_removal_request" DROP CONSTRAINT "FK_78decd4e1901d80cfdce43b079f"`
     );
     await queryRunner.query(
+      `UPDATE "user" SET "permissions" = "permissions" & 2147483647 WHERE "permissions" > 2147483647`
+    );
+    await queryRunner.query(
       `ALTER TABLE "user" ALTER COLUMN "permissions" TYPE integer`
     );
     await queryRunner.query(

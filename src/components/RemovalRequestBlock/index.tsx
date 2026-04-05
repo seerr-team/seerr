@@ -35,7 +35,7 @@ const RemovalRequestBlock = ({
   request,
   onUpdate,
 }: RemovalRequestBlockProps) => {
-  const { hasPermission } = useUser();
+  const { user, hasPermission } = useUser();
   const intl = useIntl();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -139,6 +139,7 @@ const RemovalRequestBlock = ({
                   buttonSize="sm"
                   disabled={isLoading}
                   onClick={() => updateRequest('approve')}
+                  aria-label={intl.formatMessage(messages.approve)}
                 >
                   <CheckIcon className="h-4 w-4" />
                 </Button>
@@ -149,6 +150,7 @@ const RemovalRequestBlock = ({
                   buttonSize="sm"
                   disabled={isLoading}
                   onClick={() => updateRequest('decline')}
+                  aria-label={intl.formatMessage(messages.decline)}
                 >
                   <XMarkIcon className="h-4 w-4" />
                 </Button>
@@ -168,16 +170,20 @@ const RemovalRequestBlock = ({
               </Button>
             </Tooltip>
           )}
-        <Tooltip content={intl.formatMessage(messages.delete)}>
-          <Button
-            buttonType="danger"
-            buttonSize="sm"
-            disabled={isLoading}
-            onClick={() => deleteRequest()}
-          >
-            <TrashIcon className="h-4 w-4" />
-          </Button>
-        </Tooltip>
+        {(hasPermission(Permission.MANAGE_REQUESTS) ||
+          request.requestedBy?.id === user?.id) && (
+          <Tooltip content={intl.formatMessage(messages.delete)}>
+            <Button
+              buttonType="danger"
+              buttonSize="sm"
+              disabled={isLoading}
+              onClick={() => deleteRequest()}
+              aria-label={intl.formatMessage(messages.delete)}
+            >
+              <TrashIcon className="h-4 w-4" />
+            </Button>
+          </Tooltip>
+        )}
       </div>
     </div>
   );

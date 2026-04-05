@@ -1,4 +1,4 @@
-import { MediaRemovalRequestStatus } from '@server/constants/media';
+import { MediaRemovalRequestStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRemovalRequest } from '@server/entity/MediaRemovalRequest';
@@ -9,6 +9,7 @@ import { isAuthenticated } from '@server/middleware/auth';
 import { Router } from 'express';
 
 const MAX_REASON_LENGTH = 1000;
+const MAX_PAGE_SIZE = 100;
 
 const removalRequestRoutes = Router();
 
@@ -16,8 +17,14 @@ const removalRequestRoutes = Router();
 removalRequestRoutes.get('/', async (req, res, next) => {
   try {
     const removalRequestRepository = getRepository(MediaRemovalRequest);
-    const pageSize = req.query.take ? Number(req.query.take) : 10;
-    const skip = req.query.skip ? Number(req.query.skip) : 0;
+    const rawTake = Number(req.query.take);
+    const rawSkip = Number(req.query.skip);
+    const pageSize =
+      Number.isFinite(rawTake) && rawTake > 0
+        ? Math.min(Math.floor(rawTake), MAX_PAGE_SIZE)
+        : 10;
+    const skip =
+      Number.isFinite(rawSkip) && rawSkip >= 0 ? Math.floor(rawSkip) : 0;
 
     let statusFilter: MediaRemovalRequestStatus[];
 
@@ -121,12 +128,12 @@ removalRequestRoutes.post(
         if (
           !Array.isArray(seasons) ||
           seasons.some(
-            (s) => typeof s !== 'number' || !Number.isInteger(s) || s < 0
+            (s) => typeof s !== 'number' || !Number.isInteger(s) || s < 1
           )
         ) {
           return next({
             status: 400,
-            message: 'Seasons must be an array of non-negative integers.',
+            message: 'Seasons must be an array of positive integers.',
           });
         }
       }
@@ -137,6 +144,14 @@ removalRequestRoutes.post(
 
       if (!media) {
         return next({ status: 404, message: 'Media not found.' });
+      }
+
+      // Reject seasons for movie media
+      if (seasons?.length && media.mediaType === MediaType.MOVIE) {
+        return next({
+          status: 400,
+          message: 'Season-level removal is not supported for movies.',
+        });
       }
 
       // Unless user has REMOVAL_ALL, restrict to media they originally requested
@@ -389,7 +404,7 @@ removalRequestRoutes.post(
 // DELETE /removal-request/:id - Delete a removal request
 removalRequestRoutes.delete(
   '/:id',
-  isAuthenticated(Permission.REQUEST_REMOVAL),
+  isAuthenticated(),
   async (req, res, next) => {
     try {
       const removalRequestRepository = getRepository(MediaRemovalRequest);

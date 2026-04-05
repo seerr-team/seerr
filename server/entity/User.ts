@@ -104,8 +104,17 @@ export class User {
     type: 'bigint',
     default: 0,
     transformer: {
-      to: (value: number): number => value,
-      from: (value: string | number | null): number => Number(value ?? 0),
+      to: (value: bigint | number | string | null | undefined): string =>
+        String(value ?? 0),
+      from: (value: string | number | bigint | null): number => {
+        const n = Number(value ?? 0);
+        if (!Number.isSafeInteger(n)) {
+          throw new Error(
+            `Permission value ${value} exceeds Number.MAX_SAFE_INTEGER`
+          );
+        }
+        return n;
+      },
     },
   })
   public permissions = 0;

@@ -438,14 +438,21 @@ class SonarrAPI extends ServarrBase<{
       }
 
       const episodes = await this.getEpisodes(series.id);
-      const episodeFileIds = episodes
-        .filter(
-          (ep) =>
-            seasonNumbers.includes(ep.seasonNumber) &&
-            ep.hasFile &&
-            ep.episodeFileId > 0
-        )
+      const targetEpisodes = episodes.filter((ep) =>
+        seasonNumbers.includes(ep.seasonNumber)
+      );
+      const episodeFileIds = targetEpisodes
+        .filter((ep) => ep.hasFile && ep.episodeFileId > 0)
         .map((ep) => ep.episodeFileId);
+
+      // Unmonitor the affected episodes before deleting files
+      const episodeIds = targetEpisodes.map((ep) => ep.id);
+      if (episodeIds.length > 0) {
+        await this.axios.put('/episode/monitor', {
+          episodeIds,
+          monitored: false,
+        });
+      }
 
       // Delete episode files
       for (const fileId of [...new Set(episodeFileIds)]) {

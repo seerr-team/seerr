@@ -20,6 +20,7 @@ import {
   Index,
   ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 export { MediaRemovalRequestStatus };
@@ -69,11 +70,7 @@ export class MediaRemovalRequest {
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
-  @DbAwareColumn({
-    type: 'datetime',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
+  @UpdateDateColumn()
   public updatedAt: Date;
 
   constructor(init?: Partial<MediaRemovalRequest>) {
