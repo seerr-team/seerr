@@ -10,6 +10,7 @@ export interface PermissionItem {
   permission: Permission;
   children?: PermissionItem[];
   requires?: PermissionRequirement[];
+  childrenAutoCheck?: boolean;
 }
 
 interface PermissionRequirement {
@@ -43,6 +44,7 @@ const PermissionOption = ({
     Permission.AUTO_APPROVE_4K,
     Permission.AUTO_APPROVE_4K_MOVIE,
     Permission.AUTO_APPROVE_4K_TV,
+    Permission.AUTO_APPROVE_REMOVAL,
   ];
 
   let disabled = false;
@@ -58,7 +60,9 @@ const PermissionOption = ({
     (autoApprovePermissions.includes(option.permission) &&
       hasPermission(Permission.MANAGE_REQUESTS, currentPermission)) ||
     // Selecting a parent permission automatically selects all children
+    // (unless parent has childrenAutoCheck set to false)
     (!!parent?.permission &&
+      parent.childrenAutoCheck !== false &&
       hasPermission(parent.permission, currentPermission))
   ) {
     disabled = true;

@@ -85,6 +85,15 @@ export const messages = defineMessages('components.PermissionEdit', {
   viewblocklistedItems: 'View blocklisted media.',
   viewblocklistedItemsDescription:
     'Grant permission to view blocklisted media.',
+  requestRemoval: 'Request Removal',
+  requestRemovalDescription:
+    'Grant permission to request the removal of media the user originally requested.',
+  removalAll: 'Request Removal for All Media',
+  removalAllDescription:
+    'Allow requesting removal of any media, not just media originally requested by this user.',
+  autoApproveRemoval: 'Auto-Approve Removal',
+  autoApproveRemovalDescription:
+    'Grant automatic approval for media removal requests.',
 });
 
 interface PermissionEditProps {
@@ -352,6 +361,39 @@ export const PermissionEdit = ({
             messages.viewblocklistedItemsDescription
           ),
           permission: Permission.VIEW_BLOCKLIST,
+        },
+      ],
+    },
+    {
+      id: 'requestremoval',
+      name: intl.formatMessage(messages.requestRemoval),
+      description: intl.formatMessage(messages.requestRemovalDescription),
+      permission: Permission.REQUEST_REMOVAL,
+      childrenAutoCheck: false,
+      children: [
+        {
+          id: 'removalall',
+          name: intl.formatMessage(messages.removalAll),
+          description: intl.formatMessage(messages.removalAllDescription),
+          permission: Permission.REMOVAL_ALL,
+          requires: [
+            {
+              permissions: [Permission.REQUEST_REMOVAL],
+            },
+          ],
+        },
+        {
+          id: 'autoapproveremoval',
+          name: intl.formatMessage(messages.autoApproveRemoval),
+          description: intl.formatMessage(
+            messages.autoApproveRemovalDescription
+          ),
+          permission: Permission.AUTO_APPROVE_REMOVAL,
+          requires: [
+            {
+              permissions: [Permission.REQUEST_REMOVAL],
+            },
+          ],
         },
       ],
     },
