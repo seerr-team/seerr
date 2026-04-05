@@ -96,6 +96,154 @@ const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
   return (movie as MovieDetails).title !== undefined;
 };
 
+interface RemovalRequestSectionProps {
+  data: MovieDetails | TvDetails;
+  mediaType: 'movie' | 'tv';
+  requestRemoval: (is4k: boolean, seasons?: number[]) => void;
+  showSeasonRemovalModal: boolean;
+  setShowSeasonRemovalModal: (show: boolean) => void;
+}
+
+const RemovalRequestSection = ({
+  data,
+  mediaType,
+  requestRemoval,
+  showSeasonRemovalModal,
+  setShowSeasonRemovalModal,
+}: RemovalRequestSectionProps) => {
+  const { hasPermission } = useUser();
+  const intl = useIntl();
+  const settings = useSettings();
+
+  const pendingRemoval = data.mediaInfo?.removalRequests?.find(
+    (rr) =>
+      rr.status === MediaRemovalRequestStatus.PENDING &&
+      !rr.is4k &&
+      !rr.seasons?.length
+  );
+  const pendingRemoval4k = data.mediaInfo?.removalRequests?.find(
+    (rr) =>
+      rr.status === MediaRemovalRequestStatus.PENDING &&
+      rr.is4k &&
+      !rr.seasons?.length
+  );
+
+  const availableSeasons =
+    mediaType === 'tv'
+      ? (data.mediaInfo?.seasons?.filter(
+          (s) =>
+            s.seasonNumber !== 0 &&
+            (s.status === MediaStatus.AVAILABLE ||
+              s.status === MediaStatus.PARTIALLY_AVAILABLE)
+        ) ?? [])
+      : [];
+
+  return (
+    <div>
+      <h3 className="mb-2 text-xl font-bold">
+        {intl.formatMessage(messages.requestRemoval)}
+      </h3>
+      <div className="space-y-2">
+        {mediaType === 'movie' &&
+          data.mediaInfo?.status === MediaStatus.AVAILABLE && (
+            <div>
+              {pendingRemoval ? (
+                <Button buttonType="warning" className="w-full" disabled>
+                  <TrashIcon />
+                  <span>{intl.formatMessage(messages.removalPending)}</span>
+                </Button>
+              ) : (
+                <ConfirmButton
+                  onClick={() => requestRemoval(false)}
+                  confirmText={intl.formatMessage(globalMessages.areyousure)}
+                  className="w-full"
+                >
+                  <TrashIcon />
+                  <span>{intl.formatMessage(messages.requestRemoval)}</span>
+                </ConfirmButton>
+              )}
+            </div>
+          )}
+        {mediaType === 'tv' && (
+          <>
+            {(data.mediaInfo?.status === MediaStatus.AVAILABLE ||
+              data.mediaInfo?.status === MediaStatus.PARTIALLY_AVAILABLE) && (
+              <div>
+                {pendingRemoval ? (
+                  <Button buttonType="warning" className="w-full" disabled>
+                    <TrashIcon />
+                    <span>{intl.formatMessage(messages.removeAllSeasons)}</span>
+                  </Button>
+                ) : (
+                  <ConfirmButton
+                    onClick={() => requestRemoval(false)}
+                    confirmText={intl.formatMessage(globalMessages.areyousure)}
+                    className="w-full"
+                  >
+                    <TrashIcon />
+                    <span>{intl.formatMessage(messages.removeAllSeasons)}</span>
+                  </ConfirmButton>
+                )}
+              </div>
+            )}
+            {availableSeasons.length > 0 && (
+              <Button
+                onClick={() => setShowSeasonRemovalModal(true)}
+                className="w-full"
+              >
+                <TrashIcon />
+                <span>{intl.formatMessage(messages.requestSeasonRemoval)}</span>
+              </Button>
+            )}
+            {showSeasonRemovalModal && !isMovie(data) && (
+              <SeasonRemovalModal
+                data={data}
+                is4k={false}
+                onCancel={() => setShowSeasonRemovalModal(false)}
+                onComplete={(seasons) => {
+                  setShowSeasonRemovalModal(false);
+                  requestRemoval(false, seasons);
+                }}
+              />
+            )}
+          </>
+        )}
+        {data.mediaInfo?.status4k === MediaStatus.AVAILABLE &&
+          settings.currentSettings.series4kEnabled && (
+            <div>
+              {pendingRemoval4k ? (
+                <Button buttonType="warning" className="w-full" disabled>
+                  <TrashIcon />
+                  <span>{intl.formatMessage(messages.removalPending)}</span>
+                </Button>
+              ) : (
+                <ConfirmButton
+                  onClick={() => requestRemoval(true)}
+                  confirmText={intl.formatMessage(globalMessages.areyousure)}
+                  className="w-full"
+                >
+                  <TrashIcon />
+                  <span>{intl.formatMessage(messages.requestRemoval4k)}</span>
+                </ConfirmButton>
+              )}
+            </div>
+          )}
+        <div className="mt-1 text-xs text-gray-400">
+          {intl.formatMessage(messages.requestRemovalDescription, {
+            mediaType: intl.formatMessage(
+              mediaType === 'movie' ? messages.movie : messages.tvshow
+            ),
+            arr: mediaType === 'movie' ? 'Radarr' : 'Sonarr',
+            autoApproved: hasPermission(Permission.AUTO_APPROVE_REMOVAL)
+              ? 'true'
+              : 'false',
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface ManageSlideOverProps {
   // mediaType: 'movie' | 'tv';
   show?: boolean;
@@ -165,7 +313,10 @@ const ManageSlideOver = ({
           is4k,
           ...(seasons?.length && { seasons }),
         });
-      } catch {
+      } catch (e) {
+        if (!axios.isAxiosError(e) || e.response?.status !== 409) {
+          throw e;
+        }
         // 409 = duplicate pending request; revalidate to show pending state
       }
       revalidate();
@@ -719,171 +870,15 @@ const ManageSlideOver = ({
             hasPermission(Permission.ADMIN) ||
             data.mediaInfo.requests?.some(
               (r) => r.requestedBy.id === currentUser?.id
-            )) &&
-          (() => {
-            const pendingRemoval = data.mediaInfo?.removalRequests?.find(
-              (rr) =>
-                rr.status === MediaRemovalRequestStatus.PENDING &&
-                !rr.is4k &&
-                !rr.seasons?.length
-            );
-            const pendingRemoval4k = data.mediaInfo?.removalRequests?.find(
-              (rr) =>
-                rr.status === MediaRemovalRequestStatus.PENDING &&
-                rr.is4k &&
-                !rr.seasons?.length
-            );
-
-            const availableSeasons =
-              mediaType === 'tv'
-                ? (data.mediaInfo?.seasons?.filter(
-                    (s) =>
-                      s.seasonNumber !== 0 &&
-                      (s.status === MediaStatus.AVAILABLE ||
-                        s.status === MediaStatus.PARTIALLY_AVAILABLE)
-                  ) ?? [])
-                : [];
-
-            return (
-              <div>
-                <h3 className="mb-2 text-xl font-bold">
-                  {intl.formatMessage(messages.requestRemoval)}
-                </h3>
-                <div className="space-y-2">
-                  {mediaType === 'movie' &&
-                    data.mediaInfo.status === MediaStatus.AVAILABLE && (
-                      <div>
-                        {pendingRemoval ? (
-                          <Button
-                            buttonType="warning"
-                            className="w-full"
-                            disabled
-                          >
-                            <TrashIcon />
-                            <span>
-                              {intl.formatMessage(messages.removalPending)}
-                            </span>
-                          </Button>
-                        ) : (
-                          <ConfirmButton
-                            onClick={() => requestRemoval(false)}
-                            confirmText={intl.formatMessage(
-                              globalMessages.areyousure
-                            )}
-                            className="w-full"
-                          >
-                            <TrashIcon />
-                            <span>
-                              {intl.formatMessage(messages.requestRemoval)}
-                            </span>
-                          </ConfirmButton>
-                        )}
-                      </div>
-                    )}
-                  {mediaType === 'tv' && (
-                    <>
-                      {(data.mediaInfo.status === MediaStatus.AVAILABLE ||
-                        data.mediaInfo.status ===
-                          MediaStatus.PARTIALLY_AVAILABLE) && (
-                        <div>
-                          {pendingRemoval ? (
-                            <Button
-                              buttonType="warning"
-                              className="w-full"
-                              disabled
-                            >
-                              <TrashIcon />
-                              <span>
-                                {intl.formatMessage(messages.removeAllSeasons)}
-                              </span>
-                            </Button>
-                          ) : (
-                            <ConfirmButton
-                              onClick={() => requestRemoval(false)}
-                              confirmText={intl.formatMessage(
-                                globalMessages.areyousure
-                              )}
-                              className="w-full"
-                            >
-                              <TrashIcon />
-                              <span>
-                                {intl.formatMessage(messages.removeAllSeasons)}
-                              </span>
-                            </ConfirmButton>
-                          )}
-                        </div>
-                      )}
-                      {availableSeasons.length > 0 && (
-                        <Button
-                          onClick={() => setShowSeasonRemovalModal(true)}
-                          className="w-full"
-                        >
-                          <TrashIcon />
-                          <span>
-                            {intl.formatMessage(messages.requestSeasonRemoval)}
-                          </span>
-                        </Button>
-                      )}
-                      {showSeasonRemovalModal && !isMovie(data) && (
-                        <SeasonRemovalModal
-                          data={data}
-                          is4k={false}
-                          onCancel={() => setShowSeasonRemovalModal(false)}
-                          onComplete={(seasons) => {
-                            setShowSeasonRemovalModal(false);
-                            requestRemoval(false, seasons);
-                          }}
-                        />
-                      )}
-                    </>
-                  )}
-                  {data.mediaInfo.status4k === MediaStatus.AVAILABLE &&
-                    settings.currentSettings.series4kEnabled && (
-                      <div>
-                        {pendingRemoval4k ? (
-                          <Button
-                            buttonType="warning"
-                            className="w-full"
-                            disabled
-                          >
-                            <TrashIcon />
-                            <span>
-                              {intl.formatMessage(messages.removalPending)}
-                            </span>
-                          </Button>
-                        ) : (
-                          <ConfirmButton
-                            onClick={() => requestRemoval(true)}
-                            confirmText={intl.formatMessage(
-                              globalMessages.areyousure
-                            )}
-                            className="w-full"
-                          >
-                            <TrashIcon />
-                            <span>
-                              {intl.formatMessage(messages.requestRemoval4k)}
-                            </span>
-                          </ConfirmButton>
-                        )}
-                      </div>
-                    )}
-                  <div className="mt-1 text-xs text-gray-400">
-                    {intl.formatMessage(messages.requestRemovalDescription, {
-                      mediaType: intl.formatMessage(
-                        mediaType === 'movie' ? messages.movie : messages.tvshow
-                      ),
-                      arr: mediaType === 'movie' ? 'Radarr' : 'Sonarr',
-                      autoApproved: hasPermission(
-                        Permission.AUTO_APPROVE_REMOVAL
-                      )
-                        ? 'true'
-                        : 'false',
-                    })}
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
+            )) && (
+            <RemovalRequestSection
+              data={data}
+              mediaType={mediaType}
+              requestRemoval={requestRemoval}
+              showSeasonRemovalModal={showSeasonRemovalModal}
+              setShowSeasonRemovalModal={setShowSeasonRemovalModal}
+            />
+          )}
         {hasPermission(Permission.ADMIN) &&
           data?.mediaInfo &&
           data.mediaInfo.status !== MediaStatus.BLOCKLISTED && (

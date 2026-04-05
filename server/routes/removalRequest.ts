@@ -8,6 +8,8 @@ import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { Router } from 'express';
 
+const MAX_REASON_LENGTH = 1000;
+
 const removalRequestRoutes = Router();
 
 // GET /removal-request - List removal requests
@@ -108,6 +110,27 @@ removalRequestRoutes.post(
         return next({ status: 400, message: 'mediaId is required.' });
       }
 
+      if (reason && reason.length > MAX_REASON_LENGTH) {
+        return next({
+          status: 400,
+          message: `Reason must be ${MAX_REASON_LENGTH} characters or fewer.`,
+        });
+      }
+
+      if (seasons) {
+        if (
+          !Array.isArray(seasons) ||
+          seasons.some(
+            (s) => typeof s !== 'number' || !Number.isInteger(s) || s < 0
+          )
+        ) {
+          return next({
+            status: 400,
+            message: 'Seasons must be an array of non-negative integers.',
+          });
+        }
+      }
+
       const media = await mediaRepository.findOne({
         where: { id: mediaId },
       });
@@ -139,7 +162,7 @@ removalRequestRoutes.post(
       }
 
       // Check for existing pending removal request for this media/is4k combo
-      const existing = await removalRequestRepository.findOne({
+      const existingRequests = await removalRequestRepository.find({
         where: {
           media: { id: media.id },
           is4k: is4k ?? false,
@@ -147,10 +170,35 @@ removalRequestRoutes.post(
         },
       });
 
-      if (existing) {
+      // Check for exact duplicate (full-media removal already pending)
+      const hasFullPending = existingRequests.some((r) => !r.seasons?.length);
+      if (hasFullPending) {
         return next({
           status: 409,
           message: 'A pending removal request already exists for this media.',
+        });
+      }
+
+      // If this is a season request, check for overlap with existing season requests
+      if (seasons?.length) {
+        const alreadyPendingSeasons = new Set(
+          existingRequests.flatMap((r) => r.seasons ?? [])
+        );
+        const overlapping = seasons.filter((s) => alreadyPendingSeasons.has(s));
+        if (overlapping.length > 0) {
+          return next({
+            status: 409,
+            message: `Seasons ${overlapping.join(', ')} already have pending removal requests.`,
+          });
+        }
+      }
+
+      // If this is a full removal but season requests exist, reject
+      if (!seasons?.length && existingRequests.some((r) => r.seasons?.length)) {
+        return next({
+          status: 409,
+          message:
+            'There are pending season-level removal requests for this media. Resolve those first.',
         });
       }
 
@@ -182,11 +230,15 @@ removalRequestRoutes.post(
           });
           removalRequest.status = MediaRemovalRequestStatus.FAILED;
           await removalRequestRepository.save(removalRequest);
-          return res.status(201).json(removalRequest);
         }
       }
 
-      return res.status(201).json(removalRequest);
+      // Reload to get fresh state (media may have been deleted by executeRemoval)
+      const saved = await removalRequestRepository.findOne({
+        where: { id: removalRequest.id },
+      });
+
+      return res.status(201).json(saved ?? removalRequest);
     } catch (e) {
       logger.error('Failed to create removal request', {
         label: 'API',
@@ -231,10 +283,14 @@ removalRequestRoutes.post(
         });
         removalRequest.status = MediaRemovalRequestStatus.FAILED;
         await removalRequestRepository.save(removalRequest);
-        return res.status(200).json(removalRequest);
       }
 
-      return res.status(200).json(removalRequest);
+      // Reload to get fresh state
+      const saved = await removalRequestRepository.findOne({
+        where: { id: removalRequest.id },
+      });
+
+      return res.status(200).json(saved ?? removalRequest);
     } catch (e) {
       logger.error('Failed to approve removal request', {
         label: 'API',
@@ -312,10 +368,14 @@ removalRequestRoutes.post(
         });
         removalRequest.status = MediaRemovalRequestStatus.FAILED;
         await removalRequestRepository.save(removalRequest);
-        return res.status(200).json(removalRequest);
       }
 
-      return res.status(200).json(removalRequest);
+      // Reload to get fresh state
+      const saved = await removalRequestRepository.findOne({
+        where: { id: removalRequest.id },
+      });
+
+      return res.status(200).json(saved ?? removalRequest);
     } catch (e) {
       logger.error('Failed to retry removal request', {
         label: 'API',
@@ -327,35 +387,39 @@ removalRequestRoutes.post(
 );
 
 // DELETE /removal-request/:id - Delete a removal request
-removalRequestRoutes.delete('/:id', async (req, res, next) => {
-  try {
-    const removalRequestRepository = getRepository(MediaRemovalRequest);
+removalRequestRoutes.delete(
+  '/:id',
+  isAuthenticated(Permission.REQUEST_REMOVAL),
+  async (req, res, next) => {
+    try {
+      const removalRequestRepository = getRepository(MediaRemovalRequest);
 
-    const removalRequest = await removalRequestRepository.findOneOrFail({
-      where: { id: Number(req.params.id) },
-    });
-
-    // Only the requester or an admin/manage-requests user can delete
-    if (
-      !req.user?.hasPermission(Permission.MANAGE_REQUESTS) &&
-      removalRequest.requestedBy.id !== req.user?.id
-    ) {
-      return next({
-        status: 403,
-        message: 'You do not have permission to delete this removal request.',
+      const removalRequest = await removalRequestRepository.findOneOrFail({
+        where: { id: Number(req.params.id) },
       });
+
+      // Only the requester or an admin/manage-requests user can delete
+      if (
+        !req.user?.hasPermission(Permission.MANAGE_REQUESTS) &&
+        removalRequest.requestedBy.id !== req.user?.id
+      ) {
+        return next({
+          status: 403,
+          message: 'You do not have permission to delete this removal request.',
+        });
+      }
+
+      await removalRequestRepository.remove(removalRequest);
+
+      return res.status(204).send();
+    } catch (e) {
+      logger.error('Failed to delete removal request', {
+        label: 'API',
+        errorMessage: e.message,
+      });
+      next({ status: 404, message: 'Removal request not found.' });
     }
-
-    await removalRequestRepository.remove(removalRequest);
-
-    return res.status(204).send();
-  } catch (e) {
-    logger.error('Failed to delete removal request', {
-      label: 'API',
-      errorMessage: e.message,
-    });
-    next({ status: 404, message: 'Removal request not found.' });
   }
-});
+);
 
 export default removalRequestRoutes;

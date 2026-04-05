@@ -10,6 +10,7 @@ import { MediaRemovalRequestStatus } from '@server/constants/media';
 import type { MediaRemovalRequest } from '@server/entity/MediaRemovalRequest';
 import axios from 'axios';
 import Link from 'next/link';
+import { useState } from 'react';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.RemovalRequestBlock', {
@@ -36,17 +37,33 @@ const RemovalRequestBlock = ({
 }: RemovalRequestBlockProps) => {
   const { hasPermission } = useUser();
   const intl = useIntl();
+  const [isLoading, setIsLoading] = useState(false);
 
   const updateRequest = async (
     action: 'approve' | 'decline' | 'retry'
   ): Promise<void> => {
-    await axios.post(`/api/v1/removal-request/${request.id}/${action}`);
-    onUpdate?.();
+    setIsLoading(true);
+    try {
+      await axios.post(`/api/v1/removal-request/${request.id}/${action}`);
+      onUpdate?.();
+    } catch {
+      // Revalidate to sync UI state even on error
+      onUpdate?.();
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const deleteRequest = async (): Promise<void> => {
-    await axios.delete(`/api/v1/removal-request/${request.id}`);
-    onUpdate?.();
+    setIsLoading(true);
+    try {
+      await axios.delete(`/api/v1/removal-request/${request.id}`);
+      onUpdate?.();
+    } catch {
+      onUpdate?.();
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const statusBadge = (() => {
@@ -120,6 +137,7 @@ const RemovalRequestBlock = ({
                 <Button
                   buttonType="success"
                   buttonSize="sm"
+                  disabled={isLoading}
                   onClick={() => updateRequest('approve')}
                 >
                   <CheckIcon className="h-4 w-4" />
@@ -129,6 +147,7 @@ const RemovalRequestBlock = ({
                 <Button
                   buttonType="danger"
                   buttonSize="sm"
+                  disabled={isLoading}
                   onClick={() => updateRequest('decline')}
                 >
                   <XMarkIcon className="h-4 w-4" />
@@ -142,6 +161,7 @@ const RemovalRequestBlock = ({
               <Button
                 buttonType="primary"
                 buttonSize="sm"
+                disabled={isLoading}
                 onClick={() => updateRequest('retry')}
               >
                 {intl.formatMessage(globalMessages.retry)}
@@ -152,6 +172,7 @@ const RemovalRequestBlock = ({
           <Button
             buttonType="danger"
             buttonSize="sm"
+            disabled={isLoading}
             onClick={() => deleteRequest()}
           >
             <TrashIcon className="h-4 w-4" />

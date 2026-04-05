@@ -700,6 +700,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
           ) &&
             (hasPermission(Permission.REMOVAL_ALL) ||
               hasPermission(Permission.MANAGE_REQUESTS) ||
+              hasPermission(Permission.ADMIN) ||
               data.mediaInfo?.requests?.some(
                 (r) => r.requestedBy.id === user?.id
               )) &&

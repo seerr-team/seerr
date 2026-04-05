@@ -6,7 +6,7 @@ import {
   MediaStatus,
   MediaType,
 } from '@server/constants/media';
-import { getRepository } from '@server/datasource';
+import dataSource from '@server/datasource';
 import Media from '@server/entity/Media';
 import Season from '@server/entity/Season';
 import { User } from '@server/entity/User';
@@ -85,7 +85,6 @@ export class MediaRemovalRequest {
    */
   public async executeRemoval(): Promise<void> {
     const settings = getSettings();
-    const mediaRepository = getRepository(Media);
 
     const media = this.media;
     const isMovie = media.mediaType === MediaType.MOVIE;
@@ -100,20 +99,10 @@ export class MediaRemovalRequest {
         serviceSettings = settings.radarr.find(
           (radarr) => radarr.id === specificServiceId
         );
-        if (!serviceSettings) {
-          serviceSettings = settings.radarr.find(
-            (radarr) => radarr.isDefault && radarr.is4k === this.is4k
-          );
-        }
       } else {
         serviceSettings = settings.sonarr.find(
           (sonarr) => sonarr.id === specificServiceId
         );
-        if (!serviceSettings) {
-          serviceSettings = settings.sonarr.find(
-            (sonarr) => sonarr.isDefault && sonarr.is4k === this.is4k
-          );
-        }
       }
 
       if (serviceSettings) {
@@ -154,65 +143,69 @@ export class MediaRemovalRequest {
       );
     }
 
-    // Update seerr data
-    if (isSeasonRemoval) {
-      // Per-season removal: update season statuses, don't delete the whole media
-      const seasonRepository = getRepository(Season);
-      for (const seasonNumber of this.seasons!) {
-        const season = media.seasons?.find(
-          (s) => s.seasonNumber === seasonNumber
-        );
-        if (season) {
-          if (this.is4k) {
-            season.status4k = MediaStatus.DELETED;
-          } else {
-            season.status = MediaStatus.DELETED;
+    // Update seerr data in a transaction
+    await dataSource.transaction(async (em) => {
+      const mediaRepository = em.getRepository(Media);
+
+      if (isSeasonRemoval) {
+        // Per-season removal: update season statuses, don't delete the whole media
+        const seasonRepository = em.getRepository(Season);
+        for (const seasonNumber of this.seasons!) {
+          const season = media.seasons?.find(
+            (s) => s.seasonNumber === seasonNumber
+          );
+          if (season) {
+            if (this.is4k) {
+              season.status4k = MediaStatus.DELETED;
+            } else {
+              season.status = MediaStatus.DELETED;
+            }
+            await seasonRepository.save(season);
           }
-          await seasonRepository.save(season);
         }
-      }
 
-      // Check if all seasons are now deleted/unknown — if so, reset media status
-      const updatedMedia = await mediaRepository.findOne({
-        where: { id: media.id },
-        relations: { seasons: true },
-      });
-      if (updatedMedia) {
-        const statusField = this.is4k ? 'status4k' : 'status';
-        const hasRemaining = updatedMedia.seasons.some(
-          (s) =>
-            s[statusField] !== MediaStatus.UNKNOWN &&
-            s[statusField] !== MediaStatus.DELETED
+        // Check if all seasons are now deleted/unknown — if so, reset media status
+        const updatedMedia = await mediaRepository.findOne({
+          where: { id: media.id },
+          relations: { seasons: true },
+        });
+        if (updatedMedia) {
+          const statusField = this.is4k ? 'status4k' : 'status';
+          const hasRemaining = updatedMedia.seasons.some(
+            (s) =>
+              s[statusField] !== MediaStatus.UNKNOWN &&
+              s[statusField] !== MediaStatus.DELETED
+          );
+          if (!hasRemaining) {
+            updatedMedia[statusField] = MediaStatus.DELETED;
+            await mediaRepository.save(updatedMedia);
+          } else {
+            updatedMedia[statusField] = MediaStatus.PARTIALLY_AVAILABLE;
+            await mediaRepository.save(updatedMedia);
+          }
+        }
+
+        logger.info(
+          `Season removal request executed for seasons ${this.seasons!.join(', ')}`,
+          {
+            label: 'MediaRemovalRequest',
+            mediaId: media.id,
+            tmdbId: media.tmdbId,
+            requestId: this.id,
+          }
         );
-        if (!hasRemaining) {
-          updatedMedia[statusField] = MediaStatus.DELETED;
-          await mediaRepository.save(updatedMedia);
-        } else {
-          updatedMedia[statusField] = MediaStatus.PARTIALLY_AVAILABLE;
-          await mediaRepository.save(updatedMedia);
-        }
-      }
+      } else {
+        // Full media removal
+        await mediaRepository.remove(media);
 
-      logger.info(
-        `Season removal request executed for seasons ${this.seasons!.join(', ')}`,
-        {
+        logger.info('Media removal request executed successfully', {
           label: 'MediaRemovalRequest',
           mediaId: media.id,
           tmdbId: media.tmdbId,
           requestId: this.id,
-        }
-      );
-    } else {
-      // Full media removal
-      await mediaRepository.remove(media);
-
-      logger.info('Media removal request executed successfully', {
-        label: 'MediaRemovalRequest',
-        mediaId: media.id,
-        tmdbId: media.tmdbId,
-        requestId: this.id,
-      });
-    }
+        });
+      }
+    });
   }
 
   /**
