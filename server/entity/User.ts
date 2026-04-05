@@ -100,7 +100,14 @@ export class User {
   @Column({ type: 'varchar', nullable: true, select: false })
   public plexToken?: string | null;
 
-  @Column({ type: 'integer', default: 0 })
+  @Column({
+    type: 'bigint',
+    default: 0,
+    transformer: {
+      to: (value: number): number => value,
+      from: (value: string | number | null): number => Number(value ?? 0),
+    },
+  })
   public permissions = 0;
 
   @Column()
