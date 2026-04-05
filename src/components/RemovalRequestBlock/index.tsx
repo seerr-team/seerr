@@ -93,30 +93,24 @@ const RemovalRequestBlock = ({
           </Tooltip>
         )}
         {request.requestedBy && (
-          <Link
-            href={`/users/${request.requestedBy.id}`}
-            className="flex shrink-0 items-center space-x-1.5 hover:underline"
+          <Tooltip
+            content={`${request.requestedBy.displayName} – ${intl.formatDate(request.createdAt, { year: 'numeric', month: 'short', day: 'numeric' })}`}
           >
-            <CachedImage
-              type="avatar"
-              src={request.requestedBy.avatar}
-              alt={request.requestedBy.displayName}
-              className="h-5 w-5 rounded-full object-cover"
-              width={20}
-              height={20}
-            />
-            <span className="truncate text-sm text-white">
-              {request.requestedBy.displayName}
-            </span>
-          </Link>
+            <Link
+              href={`/users/${request.requestedBy.id}`}
+              className="shrink-0"
+            >
+              <CachedImage
+                type="avatar"
+                src={request.requestedBy.avatar}
+                alt={request.requestedBy.displayName}
+                className="h-5 w-5 rounded-full object-cover"
+                width={20}
+                height={20}
+              />
+            </Link>
+          </Tooltip>
         )}
-        <span className="hidden text-xs sm:inline">
-          {intl.formatDate(request.createdAt, {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          })}
-        </span>
       </div>
       <div className="flex shrink-0 items-center space-x-1">
         {hasPermission(Permission.MANAGE_REQUESTS) &&
