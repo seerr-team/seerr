@@ -3,6 +3,7 @@ import Header from '@app/components/Common/Header';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import Tooltip from '@app/components/Common/Tooltip';
+import RemovalRequestBlock from '@app/components/RemovalRequestBlock';
 import RequestItem from '@app/components/RequestList/RequestItem';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import { Permission, useUser } from '@app/hooks/useUser';
@@ -18,6 +19,7 @@ import {
   CircleStackIcon,
   FunnelIcon,
 } from '@heroicons/react/24/solid';
+import type { MediaRemovalRequest } from '@server/entity/MediaRemovalRequest';
 import type { RequestResultsResponse } from '@server/interfaces/api/requestInterfaces';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -33,6 +35,7 @@ const messages = defineMessages('components.RequestList', {
   sortDirection: 'Toggle Sort Direction',
   unableToConnect:
     'Unable to connect to {services}. Some information may be unavailable.',
+  pendingRemovalRequests: 'Pending Removal Requests',
 });
 
 enum Filter {
@@ -85,6 +88,20 @@ const RequestList = () => {
           ? `&requestedBy=${router.query.userId}`
           : ''
     }`
+  );
+
+  const { data: removalData, mutate: revalidateRemovals } = useSWR<{
+    pageInfo: {
+      pages: number;
+      pageSize: number;
+      results: number;
+      page: number;
+    };
+    results: MediaRemovalRequest[];
+  }>(
+    hasPermission(Permission.MANAGE_REQUESTS)
+      ? '/api/v1/removal-request?filter=pending&take=20'
+      : null
   );
 
   // Restore last set filter values on component mount
@@ -309,6 +326,32 @@ const RequestList = () => {
             </span>
           </div>
         )}
+
+      {removalData && removalData.results.length > 0 && (
+        <div className="mb-4">
+          <h3 className="mb-2 text-lg font-bold text-white">
+            {intl.formatMessage(messages.pendingRemovalRequests)}
+          </h3>
+          <div className="overflow-hidden rounded-md border border-gray-700 shadow">
+            <ul>
+              {removalData.results.map((removalRequest) => (
+                <li
+                  key={`removal-request-${removalRequest.id}`}
+                  className="border-b border-gray-700 last:border-b-0"
+                >
+                  <RemovalRequestBlock
+                    request={removalRequest}
+                    onUpdate={() => {
+                      revalidateRemovals();
+                      revalidate();
+                    }}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
       {data.results.map((request) => {
         return (
