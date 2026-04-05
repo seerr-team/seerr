@@ -650,7 +650,15 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                 </Button>
               </Tooltip>
             )}
-          {hasPermission(Permission.MANAGE_REQUESTS) &&
+          {hasPermission(
+            [Permission.MANAGE_REQUESTS, Permission.REQUEST_REMOVAL],
+            { type: 'or' }
+          ) &&
+            (hasPermission(Permission.REMOVAL_ALL) ||
+              hasPermission(Permission.MANAGE_REQUESTS) ||
+              data.mediaInfo?.requests?.some(
+                (r) => r.requestedBy.id === user?.id
+              )) &&
             data.mediaInfo &&
             (data.mediaInfo.jellyfinMediaId ||
               data.mediaInfo.jellyfinMediaId4k ||
