@@ -427,6 +427,48 @@ class SonarrAPI extends ServarrBase<{
     }
   };
 
+  public removeSeasonFiles = async (
+    tvdbId: number,
+    seasonNumbers: number[]
+  ): Promise<void> => {
+    try {
+      const series = await this.getSeriesByTvdbId(tvdbId);
+      if (!series.id) {
+        throw new Error('Series not found in Sonarr');
+      }
+
+      const episodes = await this.getEpisodes(series.id);
+      const episodeFileIds = episodes
+        .filter(
+          (ep) =>
+            seasonNumbers.includes(ep.seasonNumber) &&
+            ep.hasFile &&
+            ep.episodeFileId > 0
+        )
+        .map((ep) => ep.episodeFileId);
+
+      // Delete episode files
+      for (const fileId of [...new Set(episodeFileIds)]) {
+        await this.axios.delete(`/episodefile/${fileId}`);
+      }
+
+      // Unmonitor the seasons
+      series.seasons = series.seasons.map((s) => ({
+        ...s,
+        monitored: seasonNumbers.includes(s.seasonNumber) ? false : s.monitored,
+      }));
+      await this.axios.put(`/series/${series.id}`, series);
+
+      logger.info(
+        `[Sonarr] Removed files for seasons ${seasonNumbers.join(', ')} of ${series.title}`
+      );
+    } catch (e) {
+      throw new Error(`[Sonarr] Failed to remove season files: ${e.message}`, {
+        cause: e,
+      });
+    }
+  };
+
   public clearCache = ({
     tvdbId,
     externalId,
