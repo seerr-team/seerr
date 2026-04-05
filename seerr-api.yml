@@ -6245,6 +6245,160 @@ paths:
                           type: string
                         title:
                           type: string
+  /removal-request:
+    get:
+      summary: Get all removal requests
+      description: |
+        Returns all removal requests if the user has the `ADMIN` or `MANAGE_REQUESTS` permissions. Otherwise, only the logged-in user's removal requests are returned.
+      tags:
+        - removal-request
+      parameters:
+        - in: query
+          name: take
+          schema:
+            type: number
+            nullable: true
+            example: 20
+        - in: query
+          name: skip
+          schema:
+            type: number
+            nullable: true
+            example: 0
+        - in: query
+          name: filter
+          schema:
+            type: string
+            enum: [pending, approved, declined, failed, all]
+            nullable: true
+      responses:
+        '200':
+          description: Removal requests returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pageInfo:
+                    $ref: '#/components/schemas/PageInfo'
+                  results:
+                    type: array
+                    items:
+                      type: object
+    post:
+      summary: Create a removal request
+      description: |
+        Creates a new removal request. Requires the `REQUEST_REMOVAL` permission.
+      tags:
+        - removal-request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - mediaId
+              properties:
+                mediaId:
+                  type: number
+                  example: 1
+                is4k:
+                  type: boolean
+                  default: false
+                reason:
+                  type: string
+                  nullable: true
+                seasons:
+                  type: array
+                  items:
+                    type: number
+                  nullable: true
+      responses:
+        '201':
+          description: Removal request created
+          content:
+            application/json:
+              schema:
+                type: object
+        '409':
+          description: A pending removal request already exists for this media
+  /removal-request/{requestId}/approve:
+    post:
+      summary: Approve a removal request
+      description: |
+        Approves a removal request and executes the media removal. Requires the `MANAGE_REQUESTS` permission.
+      tags:
+        - removal-request
+      parameters:
+        - in: path
+          name: requestId
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Removal request approved
+          content:
+            application/json:
+              schema:
+                type: object
+  /removal-request/{requestId}/decline:
+    post:
+      summary: Decline a removal request
+      description: |
+        Declines a removal request. Requires the `MANAGE_REQUESTS` permission.
+      tags:
+        - removal-request
+      parameters:
+        - in: path
+          name: requestId
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Removal request declined
+          content:
+            application/json:
+              schema:
+                type: object
+  /removal-request/{requestId}/retry:
+    post:
+      summary: Retry a failed removal request
+      description: |
+        Retries a previously failed removal request. Requires the `MANAGE_REQUESTS` permission.
+      tags:
+        - removal-request
+      parameters:
+        - in: path
+          name: requestId
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Removal request retried
+          content:
+            application/json:
+              schema:
+                type: object
+  /removal-request/{requestId}:
+    delete:
+      summary: Delete a removal request
+      description: |
+        Deletes a removal request. The requester or a user with `MANAGE_REQUESTS` permission can delete.
+      tags:
+        - removal-request
+      parameters:
+        - in: path
+          name: requestId
+          required: true
+          schema:
+            type: number
+      responses:
+        '204':
+          description: Removal request deleted
   /request:
     get:
       summary: Get all requests
