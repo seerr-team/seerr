@@ -67,6 +67,10 @@ removalRequestRoutes.get('/', async (req, res, next) => {
       query = query.andWhere('requestedBy.id = :userId', {
         userId: req.user?.id,
       });
+    } else if (req.query.requestedBy) {
+      query = query.andWhere('requestedBy.id = :userId', {
+        userId: Number(req.query.requestedBy),
+      });
     }
 
     const [results, totalCount] = await query

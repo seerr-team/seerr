@@ -6258,6 +6258,7 @@ paths:
           schema:
             type: number
             nullable: true
+            maximum: 100
             example: 20
         - in: query
           name: skip
@@ -6270,6 +6271,12 @@ paths:
           schema:
             type: string
             enum: [pending, approved, declined, failed, all]
+            nullable: true
+        - in: query
+          name: requestedBy
+          description: Filter removal requests by the ID of the user who created them. Only available for users with `MANAGE_REQUESTS` or `REQUEST_VIEW` permissions.
+          schema:
+            type: number
             nullable: true
       responses:
         '200':
@@ -6311,8 +6318,10 @@ paths:
                   nullable: true
                 seasons:
                   type: array
+                  description: Season numbers to request removal for. Only valid for TV media. Must be positive integers.
                   items:
                     type: number
+                    minimum: 1
                   nullable: true
       responses:
         '201':
@@ -6321,6 +6330,8 @@ paths:
             application/json:
               schema:
                 type: object
+        '400':
+          description: Invalid input (e.g. seasons provided for a movie, invalid season numbers, or reason too long)
         '409':
           description: A pending removal request already exists for this media
   /removal-request/{requestId}/approve:

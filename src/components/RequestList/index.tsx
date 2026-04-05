@@ -90,6 +90,12 @@ const RequestList = () => {
     }`
   );
 
+  const removalRequestScope = router.pathname.startsWith('/profile')
+    ? `&requestedBy=${currentUser?.id}`
+    : router.query.userId
+      ? `&requestedBy=${router.query.userId}`
+      : '';
+
   const { data: removalData, mutate: revalidateRemovals } = useSWR<{
     pageInfo: {
       pages: number;
@@ -100,7 +106,7 @@ const RequestList = () => {
     results: MediaRemovalRequest[];
   }>(
     hasPermission(Permission.MANAGE_REQUESTS)
-      ? '/api/v1/removal-request?filter=pending&take=20'
+      ? `/api/v1/removal-request?filter=pending&take=20${removalRequestScope}`
       : null
   );
 
