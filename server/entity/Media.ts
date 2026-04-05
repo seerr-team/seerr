@@ -22,6 +22,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import Issue from './Issue';
+import { MediaRemovalRequest } from './MediaRemovalRequest';
 import { MediaRequest } from './MediaRequest';
 import Season from './Season';
 
@@ -70,7 +71,7 @@ class Media {
     try {
       const media = await mediaRepository.findOne({
         where: { tmdbId: id, mediaType: mediaType },
-        relations: { requests: true, issues: true },
+        relations: { requests: true, issues: true, removalRequests: true },
       });
 
       return media ?? undefined;
@@ -110,6 +111,13 @@ class Media {
     cascade: ['insert', 'remove'],
   })
   public requests: MediaRequest[];
+
+  @OneToMany(
+    () => MediaRemovalRequest,
+    (removalRequest) => removalRequest.media,
+    { cascade: ['insert', 'remove'] }
+  )
+  public removalRequests: MediaRemovalRequest[];
 
   @OneToMany(() => Watchlist, (watchlist) => watchlist.media)
   public watchlists: null | Watchlist[];
