@@ -10,7 +10,7 @@ import type { DownloadingItem } from '@server/lib/downloadtracker';
 import downloadTracker from '@server/lib/downloadtracker';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import { DbAwareColumn } from '@server/utils/DbColumnHelper';
+import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
 import { getHostname } from '@server/utils/getHostname';
 import {
   AfterLoad,
@@ -20,6 +20,7 @@ import {
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import Issue from './Issue';
 import { MediaRemovalRequest } from './MediaRemovalRequest';
@@ -137,11 +138,7 @@ class Media {
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
-  @DbAwareColumn({
-    type: 'datetime',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
+  @UpdateDateColumn({ type: resolveDbType('datetime') })
   public updatedAt: Date;
 
   /**
