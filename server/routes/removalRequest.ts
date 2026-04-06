@@ -183,6 +183,7 @@ removalRequestRoutes.post(
           where: {
             media: { id: media.id },
             requestedBy: { id: req.user!.id },
+            is4k: is4k ?? false,
           },
         });
 
@@ -296,6 +297,7 @@ removalRequestRoutes.post(
 
       const removalRequest = await removalRequestRepository.findOneOrFail({
         where: { id: Number(req.params.id) },
+        relations: { media: { seasons: true } },
       });
 
       if (removalRequest.status !== MediaRemovalRequestStatus.PENDING) {
@@ -388,6 +390,7 @@ removalRequestRoutes.post(
 
       const removalRequest = await removalRequestRepository.findOneOrFail({
         where: { id: Number(req.params.id) },
+        relations: { media: { seasons: true } },
       });
 
       if (removalRequest.status !== MediaRemovalRequestStatus.FAILED) {
