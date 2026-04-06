@@ -20,8 +20,6 @@ serviceRoutes.get('/radarr', async (req, res) => {
       name: radarr.name,
       is4k: radarr.is4k,
       isDefault: radarr.isDefault,
-      activeDirectory: radarr.activeDirectory,
-      activeProfileId: radarr.activeProfileId,
       activeTags: radarr.tags ?? [],
     })
   );
@@ -60,8 +58,6 @@ serviceRoutes.get<{ radarrId: string }>(
         name: radarrSettings.name,
         is4k: radarrSettings.is4k,
         isDefault: radarrSettings.isDefault,
-        activeDirectory: radarrSettings.activeDirectory,
-        activeProfileId: radarrSettings.activeProfileId,
         activeTags: radarrSettings.tags,
       },
       profiles: profiles.map((profile) => ({
@@ -88,12 +84,6 @@ serviceRoutes.get('/sonarr', async (req, res) => {
       name: sonarr.name,
       is4k: sonarr.is4k,
       isDefault: sonarr.isDefault,
-      activeDirectory: sonarr.activeDirectory,
-      activeProfileId: sonarr.activeProfileId,
-      activeAnimeProfileId: sonarr.activeAnimeProfileId,
-      activeAnimeDirectory: sonarr.activeAnimeDirectory,
-      activeLanguageProfileId: sonarr.activeLanguageProfileId,
-      activeAnimeLanguageProfileId: sonarr.activeAnimeLanguageProfileId,
       activeTags: [],
     })
   );
@@ -138,15 +128,7 @@ serviceRoutes.get<{ sonarrId: string }>(
           name: sonarrSettings.name,
           is4k: sonarrSettings.is4k,
           isDefault: sonarrSettings.isDefault,
-          activeDirectory: sonarrSettings.activeDirectory,
-          activeProfileId: sonarrSettings.activeProfileId,
-          activeAnimeProfileId: sonarrSettings.activeAnimeProfileId,
-          activeAnimeDirectory: sonarrSettings.activeAnimeDirectory,
-          activeLanguageProfileId: sonarrSettings.activeLanguageProfileId,
-          activeAnimeLanguageProfileId:
-            sonarrSettings.activeAnimeLanguageProfileId,
           activeTags: sonarrSettings.tags,
-          activeAnimeTags: sonarrSettings.animeTags,
         },
         profiles: profiles.map((profile) => ({
           id: profile.id,

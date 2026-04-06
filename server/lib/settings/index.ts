@@ -66,9 +66,6 @@ export interface DVRSettings {
   apiKey: string;
   useSsl: boolean;
   baseUrl?: string;
-  activeProfileId: number;
-  activeProfileName: string;
-  activeDirectory: string;
   tags: number[];
   is4k: boolean;
   isDefault: boolean;
@@ -86,12 +83,6 @@ export interface RadarrSettings extends DVRSettings {
 export interface SonarrSettings extends DVRSettings {
   seriesType: 'standard' | 'daily' | 'anime';
   animeSeriesType: 'standard' | 'daily' | 'anime';
-  activeAnimeProfileId?: number;
-  activeAnimeProfileName?: string;
-  activeAnimeDirectory?: string;
-  activeAnimeLanguageProfileId?: number;
-  activeLanguageProfileId?: number;
-  animeTags?: number[];
   enableSeasonFolders: boolean;
 }
 

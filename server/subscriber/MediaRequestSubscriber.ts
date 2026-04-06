@@ -238,15 +238,11 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           return;
         }
 
-        let rootFolder = radarrSettings.activeDirectory;
-        let qualityProfile = radarrSettings.activeProfileId;
+        let rootFolder = '';
+        let qualityProfile = -1;
         let tags = radarrSettings.tags ? [...radarrSettings.tags] : [];
 
-        if (
-          entity.rootFolder &&
-          entity.rootFolder !== '' &&
-          entity.rootFolder !== radarrSettings.activeDirectory
-        ) {
+        if (entity.rootFolder && entity.rootFolder !== '') {
           rootFolder = entity.rootFolder;
           logger.info(`Request has an override root folder: ${rootFolder}`, {
             label: 'Media Request',
@@ -255,10 +251,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           });
         }
 
-        if (
-          entity.profileId &&
-          entity.profileId !== radarrSettings.activeProfileId
-        ) {
+        if (entity.profileId) {
           qualityProfile = entity.profileId;
           logger.info(
             `Request has an override quality profile ID: ${qualityProfile}`,
@@ -566,26 +559,10 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           seriesType = sonarrSettings.animeSeriesType ?? 'anime';
         }
 
-        let rootFolder =
-          seriesType === 'anime' && sonarrSettings.activeAnimeDirectory
-            ? sonarrSettings.activeAnimeDirectory
-            : sonarrSettings.activeDirectory;
-        let qualityProfile =
-          seriesType === 'anime' && sonarrSettings.activeAnimeProfileId
-            ? sonarrSettings.activeAnimeProfileId
-            : sonarrSettings.activeProfileId;
-        let languageProfile =
-          seriesType === 'anime' && sonarrSettings.activeAnimeLanguageProfileId
-            ? sonarrSettings.activeAnimeLanguageProfileId
-            : sonarrSettings.activeLanguageProfileId;
-        let tags =
-          seriesType === 'anime'
-            ? sonarrSettings.animeTags
-              ? [...sonarrSettings.animeTags]
-              : []
-            : sonarrSettings.tags
-              ? [...sonarrSettings.tags]
-              : [];
+        let rootFolder = '';
+        let qualityProfile = -1;
+        let languageProfile = -1;
+        let tags = sonarrSettings.tags ? [...sonarrSettings.tags] : [];
 
         if (
           entity.rootFolder &&
