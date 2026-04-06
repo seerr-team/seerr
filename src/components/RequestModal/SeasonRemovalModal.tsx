@@ -48,7 +48,8 @@ const SeasonRemovalModal = ({
   const pendingSeasonRemovals = (seasonNumber: number) =>
     data.mediaInfo?.removalRequests?.some(
       (rr) =>
-        rr.status === MediaRemovalRequestStatus.PENDING &&
+        (rr.status === MediaRemovalRequestStatus.PENDING ||
+          rr.status === MediaRemovalRequestStatus.PARTIALLY_REMOVED) &&
         !rr.is4k === !is4k &&
         rr.seasons?.includes(seasonNumber)
     );

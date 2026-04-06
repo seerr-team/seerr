@@ -26,4 +26,5 @@ export enum MediaRemovalRequestStatus {
   APPROVED,
   DECLINED,
   FAILED,
+  PARTIALLY_REMOVED,
 }

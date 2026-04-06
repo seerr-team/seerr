@@ -486,6 +486,7 @@
   "components.RemovalRequestBlock.declined": "Declined",
   "components.RemovalRequestBlock.delete": "Delete Request",
   "components.RemovalRequestBlock.failed": "Failed",
+  "components.RemovalRequestBlock.partiallyRemoved": "Pending Removal",
   "components.RemovalRequestBlock.pending": "Pending",
   "components.RemovalRequestBlock.removal": "Removal",
   "components.RemovalRequestBlock.removal4k": "4K Removal",

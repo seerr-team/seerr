@@ -21,6 +21,7 @@ const messages = defineMessages('components.RemovalRequestBlock', {
   approved: 'Approved',
   declined: 'Declined',
   failed: 'Failed',
+  partiallyRemoved: 'Pending Removal',
   removal: 'Removal',
   removal4k: '4K Removal',
   seasons: '{count, plural, one {Season {seasons}} other {{count} Seasons}}',
@@ -90,6 +91,12 @@ const RemovalRequestBlock = ({
         return (
           <Badge badgeType="danger">
             {intl.formatMessage(messages.failed)}
+          </Badge>
+        );
+      case MediaRemovalRequestStatus.PARTIALLY_REMOVED:
+        return (
+          <Badge badgeType="warning">
+            {intl.formatMessage(messages.partiallyRemoved)}
           </Badge>
         );
     }

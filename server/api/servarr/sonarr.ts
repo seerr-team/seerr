@@ -427,6 +427,29 @@ class SonarrAPI extends ServarrBase<{
     }
   };
 
+  public removeTagFromSeries = async (
+    tvdbId: number,
+    tagId: number
+  ): Promise<void> => {
+    try {
+      const series = await this.getSeriesByTvdbId(tvdbId);
+      if (!series.id) {
+        throw new Error('Series not found in Sonarr');
+      }
+      const updatedTags = series.tags.filter((t) => t !== tagId);
+      await this.axios.put(`/series/${series.id}`, {
+        ...series,
+        tags: updatedTags,
+      });
+      logger.info(`[Sonarr] Removed tag ${tagId} from series ${series.title}`);
+    } catch (e) {
+      throw new Error(
+        `[Sonarr] Failed to remove tag from series: ${e.message}`,
+        { cause: e }
+      );
+    }
+  };
+
   public removeSeasonFiles = async (
     tvdbId: number,
     seasonNumbers: number[]

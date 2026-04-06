@@ -15,7 +15,7 @@ const MAX_PAGE_SIZE = 100;
 const removalRequestRoutes = Router();
 
 // GET /removal-request - List removal requests
-removalRequestRoutes.get('/', async (req, res, next) => {
+removalRequestRoutes.get('/', isAuthenticated(), async (req, res, next) => {
   try {
     const removalRequestRepository = getRepository(MediaRemovalRequest);
     const rawTake = Number(req.query.take);
@@ -42,12 +42,16 @@ removalRequestRoutes.get('/', async (req, res, next) => {
       case 'failed':
         statusFilter = [MediaRemovalRequestStatus.FAILED];
         break;
+      case 'partially-removed':
+        statusFilter = [MediaRemovalRequestStatus.PARTIALLY_REMOVED];
+        break;
       default:
         statusFilter = [
           MediaRemovalRequestStatus.PENDING,
           MediaRemovalRequestStatus.APPROVED,
           MediaRemovalRequestStatus.DECLINED,
           MediaRemovalRequestStatus.FAILED,
+          MediaRemovalRequestStatus.PARTIALLY_REMOVED,
         ];
     }
 
@@ -196,7 +200,7 @@ removalRequestRoutes.post(
         }
       }
 
-      // Check for existing pending/approved removal request for this media/is4k combo
+      // Check for existing pending/approved/partially-removed removal requests for this media/is4k combo
       const existingRequests = await removalRequestRepository.find({
         where: {
           media: { id: media.id },
@@ -204,23 +208,29 @@ removalRequestRoutes.post(
           status: In([
             MediaRemovalRequestStatus.PENDING,
             MediaRemovalRequestStatus.APPROVED,
+            MediaRemovalRequestStatus.PARTIALLY_REMOVED,
           ]),
         },
       });
 
-      // Check for exact duplicate (full-media removal already pending)
-      const hasFullPending = existingRequests.some((r) => !r.seasons?.length);
-      if (hasFullPending) {
+      // Block same user from submitting a duplicate removal request
+      const userAlreadyRequested = existingRequests.some(
+        (r) => r.requestedBy.id === req.user!.id
+      );
+      if (userAlreadyRequested) {
         return next({
           status: 409,
-          message: 'A pending removal request already exists for this media.',
+          message: 'You already have a pending removal request for this media.',
         });
       }
 
-      // If this is a season request, check for overlap with existing season requests
+      // If this is a season request, check for overlap with THIS user's existing season requests
       if (seasons?.length) {
+        const userExisting = existingRequests.filter(
+          (r) => r.requestedBy.id === req.user!.id
+        );
         const alreadyPendingSeasons = new Set(
-          existingRequests.flatMap((r) => r.seasons ?? [])
+          userExisting.flatMap((r) => r.seasons ?? [])
         );
         const overlapping = seasons.filter((s) => alreadyPendingSeasons.has(s));
         if (overlapping.length > 0) {
@@ -229,15 +239,6 @@ removalRequestRoutes.post(
             message: `Seasons ${overlapping.join(', ')} already have pending removal requests.`,
           });
         }
-      }
-
-      // If this is a full removal but season requests exist, reject
-      if (!seasons?.length && existingRequests.some((r) => r.seasons?.length)) {
-        return next({
-          status: 409,
-          message:
-            'There are pending season-level removal requests for this media. Resolve those first.',
-        });
       }
 
       const autoApprove = MediaRemovalRequest.shouldAutoApprove(req.user);
@@ -260,6 +261,8 @@ removalRequestRoutes.post(
       if (autoApprove) {
         try {
           await removalRequest.executeRemoval();
+          // executeRemoval may set status to PARTIALLY_REMOVED
+          await removalRequestRepository.save(removalRequest);
         } catch (e) {
           logger.error('Failed to execute auto-approved removal request', {
             label: 'MediaRemovalRequest',
@@ -314,6 +317,8 @@ removalRequestRoutes.post(
       // Execute the removal
       try {
         await removalRequest.executeRemoval();
+        // executeRemoval may set status to PARTIALLY_REMOVED
+        await removalRequestRepository.save(removalRequest);
       } catch (e) {
         logger.error('Failed to execute approved removal request', {
           label: 'MediaRemovalRequest',
@@ -406,6 +411,8 @@ removalRequestRoutes.post(
 
       try {
         await removalRequest.executeRemoval();
+        // executeRemoval may set status to PARTIALLY_REMOVED
+        await removalRequestRepository.save(removalRequest);
       } catch (e) {
         logger.error('Failed to execute retried removal request', {
           label: 'MediaRemovalRequest',

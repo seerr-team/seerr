@@ -284,6 +284,26 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
     }
   };
 
+  public removeTagFromMovie = async (
+    tmdbId: number,
+    tagId: number
+  ): Promise<void> => {
+    try {
+      const movie = await this.getMovieByTmdbId(tmdbId);
+      const updatedTags = movie.tags.filter((t) => t !== tagId);
+      await this.axios.put(`/movie`, {
+        ...movie,
+        tags: updatedTags,
+      });
+      logger.info(`[Radarr] Removed tag ${tagId} from movie ${movie.title}`);
+    } catch (e) {
+      throw new Error(
+        `[Radarr] Failed to remove tag from movie: ${e.message}`,
+        { cause: e }
+      );
+    }
+  };
+
   public clearCache = ({
     tmdbId,
     externalId,
