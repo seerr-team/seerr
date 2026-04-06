@@ -1,5 +1,7 @@
 import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
+import TheMovieDb from '@server/api/themoviedb';
+import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -21,7 +23,9 @@ import type {
   MediaRequestBody,
   RequestResultsResponse,
 } from '@server/interfaces/api/requestInterfaces';
+import type { RouteResponse } from '@server/interfaces/api/routeInterfaces';
 import { Permission } from '@server/lib/permissions';
+import { resolveRoute } from '@server/lib/routingResolver';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
@@ -294,6 +298,73 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
             })),
         },
       });
+    } catch (e) {
+      next({ status: 500, message: e.message });
+    }
+  }
+);
+
+requestRoutes.get<Record<string, unknown>, RouteResponse>(
+  '/resolved-route',
+  async (req, res, next) => {
+    if (!req.user) {
+      return next({
+        status: 401,
+        message: 'You must be logged in to request the default routing rule.',
+      });
+    }
+
+    try {
+      const userId = req.query.userId ? Number(req.query.userId) : null;
+      const is4k = req.query.is4k ? Boolean(req.query.is4k) : false;
+      const mediaId = req.query.mediaId ? Number(req.query.mediaId) : null;
+      const mediaType =
+        (req.query.mediaType as MediaType | MediaType.MOVIE) || MediaType.MOVIE;
+
+      if (!mediaId)
+        return next({
+          status: 404,
+          message: 'MediaId is missing.',
+        });
+
+      const tmdb = new TheMovieDb();
+      const userRepository = getRepository(User);
+
+      if (userId) {
+        req.user = await userRepository.findOneOrFail({
+          where: { id: userId },
+        });
+      }
+
+      if (!req.user) {
+        throw new Error('User missing from request context.');
+      }
+
+      const tmdbMedia =
+        mediaType === MediaType.MOVIE
+          ? await tmdb.getMovie({ movieId: mediaId })
+          : await tmdb.getTvShow({ tvId: mediaId });
+
+      // apply routing rules to determine request settings (server/profile/folder/tags)
+      let tmdbKeywords: number[] = [];
+      if ('keywords' in tmdbMedia.keywords) {
+        tmdbKeywords = tmdbMedia.keywords.keywords.map(
+          (k: TmdbKeyword) => k.id
+        );
+      } else if ('results' in tmdbMedia.keywords) {
+        tmdbKeywords = tmdbMedia.keywords.results.map((k: TmdbKeyword) => k.id);
+      }
+
+      const route = await resolveRoute({
+        serviceType: mediaType === MediaType.MOVIE ? 'radarr' : 'sonarr',
+        is4k: is4k ?? false,
+        userId: req.user.id,
+        genres: tmdbMedia.genres.map((g) => g.id),
+        language: tmdbMedia.original_language,
+        keywords: tmdbKeywords,
+      });
+
+      return res.status(200).json(route);
     } catch (e) {
       next({ status: 500, message: e.message });
     }

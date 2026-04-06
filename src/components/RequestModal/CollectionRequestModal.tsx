@@ -521,6 +521,9 @@ const CollectionRequestModal = ({
         hasPermission(Permission.MANAGE_REQUESTS)) && (
         <AdvancedRequester
           type="movie"
+          mediaId={
+            data?.parts.find((part) => selectedParts.includes(part.id))?.id
+          }
           is4k={is4k}
           onChange={(overrides) => {
             setRequestOverrides(overrides);

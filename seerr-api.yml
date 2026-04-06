@@ -6356,6 +6356,65 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MediaRequest'
+  /request/resolved-route:
+    get:
+      summary: Get the default resolved route for a request
+      description: |
+        Returns the first route used when a new request, for this media, would be inserted.
+      tags:
+        - request
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: integer # Changed from number to integer
+            nullable: true
+            example: 20
+        - in: query
+          name: is4k
+          schema:
+            type: boolean
+            nullable: true
+            example: true
+        - in: query
+          name: mediaType
+          schema:
+            type: string
+            enum: [movie, tv]
+            nullable: true
+            default: all
+        - in: query
+          name: mediaId
+          schema:
+            type: integer # Changed from number to integer
+            nullable: false
+            example: 20
+      responses:
+        '200':
+          description: Resolved route
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  serviceId:
+                    type: integer
+                  profileId:
+                    type: integer
+                    nullable: true
+                  rootFolder:
+                    type: string
+                    nullable: true
+                  seriesType:
+                    type: string
+                    nullable: true
+                  tags:
+                    type: array
+                    items:
+                      type: integer
+                  minimumAvailability:
+                    type: string
+                    nullable: true
   /request/count:
     get:
       summary: Gets request counts

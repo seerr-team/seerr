@@ -8,6 +8,7 @@ import defineMessages from '@app/utils/defineMessages';
 import { formatBytes } from '@app/utils/numberHelpers';
 import { Listbox, Transition } from '@headlessui/react';
 import { CheckIcon, ChevronDownIcon } from '@heroicons/react/24/solid';
+import type { RouteResponse } from '@server/interfaces/api/routeInterfaces';
 import type {
   ServiceCommonServer,
   ServiceCommonServerWithDetails,
@@ -51,6 +52,7 @@ export type RequestOverrides = {
 
 interface AdvancedRequesterProps {
   type: 'movie' | 'tv';
+  mediaId?: number | null | undefined;
   is4k: boolean;
   isAnime?: boolean;
   defaultOverrides?: RequestOverrides;
@@ -60,6 +62,7 @@ interface AdvancedRequesterProps {
 
 const AdvancedRequester = ({
   type,
+  mediaId,
   is4k = false,
   isAnime = false,
   defaultOverrides,
@@ -77,6 +80,16 @@ const AdvancedRequester = ({
       revalidateOnMount: true,
     }
   );
+  const { data: resolvedRoute } = useSWR<RouteResponse>(
+    `/api/v1/request/resolved-route?userId=${currentUser?.id}&mediaId=${mediaId}&mediaType=${type}&is4k=${is4k}`,
+    {
+      refreshInterval: 0,
+      refreshWhenHidden: false,
+      revalidateOnFocus: false,
+      revalidateOnMount: true,
+    }
+  );
+
   const [selectedServer, setSelectedServer] = useState<number | null>(
     defaultOverrides?.server !== undefined && defaultOverrides?.server >= 0
       ? defaultOverrides?.server
@@ -120,6 +133,7 @@ const AdvancedRequester = ({
       ? '/api/v1/user?take=1000&sort=displayname'
       : null
   );
+
   const filteredUserData = useMemo(
     () =>
       userData?.results.filter((user) =>
@@ -153,9 +167,9 @@ const AdvancedRequester = ({
   }, [filteredUserData]);
 
   useEffect(() => {
-    let defaultServer = data?.find(
-      (server) => server.isDefault && is4k === server.is4k
-    );
+    let defaultServer =
+      data?.find((x) => x.id === resolvedRoute?.serviceId) ??
+      data?.find((server) => server.isDefault && is4k === server.is4k);
 
     if (!defaultServer && (data ?? []).length > 0) {
       defaultServer = data?.[0];
@@ -168,34 +182,26 @@ const AdvancedRequester = ({
     ) {
       setSelectedServer(defaultServer.id);
     }
-  }, [data]);
+  }, [data, resolvedRoute]);
 
   useEffect(() => {
     if (serverData) {
-      const defaultProfile = serverData.profiles.find(
-        (profile) =>
-          profile.id ===
-          (isAnime && serverData.server.activeAnimeProfileId
-            ? serverData.server.activeAnimeProfileId
-            : serverData.server.activeProfileId)
-      );
-      const defaultFolder = serverData.rootFolders.find(
-        (folder) =>
-          folder.path ===
-          (isAnime && serverData.server.activeAnimeDirectory
-            ? serverData.server.activeAnimeDirectory
-            : serverData.server.activeDirectory)
-      );
-      const defaultLanguage = serverData.languageProfiles?.find(
-        (language) =>
-          language.id ===
-          (isAnime && serverData.server.activeAnimeLanguageProfileId
-            ? serverData.server.activeAnimeLanguageProfileId
-            : serverData.server.activeLanguageProfileId)
-      );
-      const defaultTags = isAnime
-        ? serverData.server.activeAnimeTags
-        : serverData.server.activeTags;
+      const defaultProfile =
+        serverData.profiles.find((x) => x.id === resolvedRoute?.profileId) ??
+        serverData.profiles.find((profile) => profile.id === selectedProfile) ??
+        serverData.profiles.find(() => true);
+
+      const defaultFolder =
+        serverData.rootFolders.find(
+          (folder) => folder.path === selectedFolder
+        ) ?? serverData.rootFolders.find(() => true);
+
+      const defaultLanguage =
+        serverData.languageProfiles?.find(
+          (language) => language.id === selectedLanguage
+        ) ?? serverData.languageProfiles?.find(() => true);
+
+      const defaultTags = serverData.server.activeTags;
 
       const applyOverrides =
         defaultOverrides &&
@@ -234,7 +240,7 @@ const AdvancedRequester = ({
         setSelectedTags(defaultTags);
       }
     }
-  }, [serverData]);
+  }, [serverData, resolvedRoute]);
 
   useEffect(() => {
     if (defaultOverrides && defaultOverrides.server != null) {

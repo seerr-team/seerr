@@ -727,6 +727,7 @@ const TvRequestModal = ({
         hasPermission(Permission.MANAGE_REQUESTS)) && (
         <AdvancedRequester
           type="tv"
+          mediaId={data?.id}
           is4k={is4k}
           isAnime={data?.keywords.some(
             (keyword) => keyword.id === ANIME_KEYWORD_ID
