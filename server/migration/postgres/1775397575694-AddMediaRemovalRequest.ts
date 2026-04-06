@@ -23,7 +23,7 @@ export class AddMediaRemovalRequest1775397575694 implements MigrationInterface {
       `ALTER TABLE "user" ALTER COLUMN "permissions" TYPE bigint`
     );
     await queryRunner.query(
-      `ALTER TABLE "media_removal_request" ADD CONSTRAINT "FK_78decd4e1901d80cfdce43b079f" FOREIGN KEY ("mediaId") REFERENCES "media"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
+      `ALTER TABLE "media_removal_request" ADD CONSTRAINT "FK_78decd4e1901d80cfdce43b079f" FOREIGN KEY ("mediaId") REFERENCES "media"("id") ON DELETE SET NULL ON UPDATE NO ACTION`
     );
     await queryRunner.query(
       `ALTER TABLE "media_removal_request" ADD CONSTRAINT "FK_148182cef7f27b27b1fdacd7de1" FOREIGN KEY ("requestedById") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`

@@ -6249,7 +6249,7 @@ paths:
     get:
       summary: Get all removal requests
       description: |
-        Returns all removal requests if the user has the `ADMIN` or `MANAGE_REQUESTS` permissions. Otherwise, only the logged-in user's removal requests are returned.
+        Returns all removal requests if the user has the `ADMIN`, `MANAGE_REQUESTS`, or `REQUEST_VIEW` permissions. Otherwise, only the logged-in user's removal requests are returned.
       tags:
         - removal-request
       parameters:

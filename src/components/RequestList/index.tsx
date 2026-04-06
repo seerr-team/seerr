@@ -370,27 +370,28 @@ const RequestList = () => {
         );
       })}
 
-      {data.results.length === 0 && (
-        <div className="flex w-full flex-col items-center justify-center py-24 text-white">
-          <span className="text-2xl text-gray-400">
-            {intl.formatMessage(globalMessages.noresults)}
-          </span>
-          {(currentFilter !== Filter.ALL ||
-            currentMediaType !== Filter.ALL) && (
-            <div className="mt-4">
-              <Button
-                buttonType="primary"
-                onClick={() => {
-                  setCurrentFilter(Filter.ALL);
-                  setCurrentMediaType(Filter.ALL);
-                }}
-              >
-                {intl.formatMessage(messages.showallrequests)}
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
+      {data.results.length === 0 &&
+        (!removalData || removalData.results.length === 0) && (
+          <div className="flex w-full flex-col items-center justify-center py-24 text-white">
+            <span className="text-2xl text-gray-400">
+              {intl.formatMessage(globalMessages.noresults)}
+            </span>
+            {(currentFilter !== Filter.ALL ||
+              currentMediaType !== Filter.ALL) && (
+              <div className="mt-4">
+                <Button
+                  buttonType="primary"
+                  onClick={() => {
+                    setCurrentFilter(Filter.ALL);
+                    setCurrentMediaType(Filter.ALL);
+                  }}
+                >
+                  {intl.formatMessage(messages.showallrequests)}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       <div className="actions">
         <nav
           className="mb-3 flex flex-col items-center space-y-3 sm:flex-row sm:space-y-0"

@@ -34,7 +34,7 @@ export class MediaRemovalRequest {
   @Index()
   public status: MediaRemovalRequestStatus;
 
-  @ManyToOne(() => Media, { eager: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Media, { eager: true, nullable: true, onDelete: 'SET NULL' })
   @Index()
   public media: Media;
 

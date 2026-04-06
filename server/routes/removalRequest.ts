@@ -7,6 +7,7 @@ import { Permission, hasPermission } from '@server/lib/permissions';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { Router } from 'express';
+import { EntityNotFoundError, In } from 'typeorm';
 
 const MAX_REASON_LENGTH = 1000;
 const MAX_PAGE_SIZE = 100;
@@ -131,19 +132,21 @@ removalRequestRoutes.post(
       if (seasons) {
         if (
           !Array.isArray(seasons) ||
+          seasons.length === 0 ||
           seasons.some(
             (s) => typeof s !== 'number' || !Number.isInteger(s) || s < 1
           )
         ) {
           return next({
             status: 400,
-            message: 'Seasons must be an array of positive integers.',
+            message: 'Seasons must be a non-empty array of positive integers.',
           });
         }
       }
 
       const media = await mediaRepository.findOne({
         where: { id: mediaId },
+        relations: { seasons: true },
       });
 
       if (!media) {
@@ -156,6 +159,18 @@ removalRequestRoutes.post(
           status: 400,
           message: 'Season-level removal is not supported for movies.',
         });
+      }
+
+      // Validate that requested season numbers exist on the media
+      if (seasons?.length && media.seasons) {
+        const knownSeasons = new Set(media.seasons.map((s) => s.seasonNumber));
+        const unknown = seasons.filter((s) => !knownSeasons.has(s));
+        if (unknown.length > 0) {
+          return next({
+            status: 400,
+            message: `Unknown season numbers: ${unknown.join(', ')}.`,
+          });
+        }
       }
 
       // Unless user has REMOVAL_ALL, restrict to media they originally requested
@@ -180,12 +195,15 @@ removalRequestRoutes.post(
         }
       }
 
-      // Check for existing pending removal request for this media/is4k combo
+      // Check for existing pending/approved removal request for this media/is4k combo
       const existingRequests = await removalRequestRepository.find({
         where: {
           media: { id: media.id },
           is4k: is4k ?? false,
-          status: MediaRemovalRequestStatus.PENDING,
+          status: In([
+            MediaRemovalRequestStatus.PENDING,
+            MediaRemovalRequestStatus.APPROVED,
+          ]),
         },
       });
 
@@ -311,11 +329,14 @@ removalRequestRoutes.post(
 
       return res.status(200).json(saved ?? removalRequest);
     } catch (e) {
+      if (e instanceof EntityNotFoundError) {
+        return next({ status: 404, message: 'Removal request not found.' });
+      }
       logger.error('Failed to approve removal request', {
         label: 'API',
         errorMessage: e.message,
       });
-      next({ status: 404, message: 'Removal request not found.' });
+      next({ status: 500, message: e.message });
     }
   }
 );
@@ -345,11 +366,14 @@ removalRequestRoutes.post(
 
       return res.status(200).json(removalRequest);
     } catch (e) {
+      if (e instanceof EntityNotFoundError) {
+        return next({ status: 404, message: 'Removal request not found.' });
+      }
       logger.error('Failed to decline removal request', {
         label: 'API',
         errorMessage: e.message,
       });
-      next({ status: 404, message: 'Removal request not found.' });
+      next({ status: 500, message: e.message });
     }
   }
 );
@@ -396,11 +420,14 @@ removalRequestRoutes.post(
 
       return res.status(200).json(saved ?? removalRequest);
     } catch (e) {
+      if (e instanceof EntityNotFoundError) {
+        return next({ status: 404, message: 'Removal request not found.' });
+      }
       logger.error('Failed to retry removal request', {
         label: 'API',
         errorMessage: e.message,
       });
-      next({ status: 404, message: 'Removal request not found.' });
+      next({ status: 500, message: e.message });
     }
   }
 );
@@ -432,11 +459,14 @@ removalRequestRoutes.delete(
 
       return res.status(204).send();
     } catch (e) {
+      if (e instanceof EntityNotFoundError) {
+        return next({ status: 404, message: 'Removal request not found.' });
+      }
       logger.error('Failed to delete removal request', {
         label: 'API',
         errorMessage: e.message,
       });
-      next({ status: 404, message: 'Removal request not found.' });
+      next({ status: 500, message: e.message });
     }
   }
 );
