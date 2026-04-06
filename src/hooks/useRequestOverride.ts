@@ -40,18 +40,11 @@ const useRequestOverride = (request: MediaRequest): OverrideStatus => {
       activeServer && request.serverId !== defaultServer?.id
         ? activeServer.name
         : undefined,
-    profile:
-      defaultServer?.activeProfileId !== request.profileId
-        ? data.profiles.find((profile) => profile.id === request.profileId)
-            ?.name
-        : undefined,
-    rootFolder:
-      defaultServer?.activeDirectory !== request.rootFolder
-        ? request.rootFolder
-        : undefined,
+    profile: data.profiles.find((profile) => profile.id === request.profileId)
+      ?.name,
+    rootFolder: request.rootFolder,
     languageProfile:
-      request.type === 'tv' &&
-      defaultServer?.activeLanguageProfileId !== request.languageProfileId
+      request.type === 'tv'
         ? data.languageProfiles?.find(
             (profile) => profile.id === request.languageProfileId
           )?.name
