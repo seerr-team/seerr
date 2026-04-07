@@ -738,7 +738,6 @@
   "components.UserList.passwordinfodescription": "Skonfiguruj adres URL aplikacji i włącz powiadomienia e-mail, aby umożliwić automatyczne generowanie hasła.",
   "components.UserList.plexuser": "Użytkownik Plex",
   "components.UserList.role": "Rola",
-  "components.UserList.sortRequests": "Liczba próśb",
   "components.UserProfile.UserSettings.UserNotificationSettings.validationPushbulletAccessToken": "Musisz podać token dostępu",
   "components.UserProfile.UserSettings.UserNotificationSettings.validationPushoverApplicationToken": "Musisz podać prawidłowy token aplikacji",
   "components.UserProfile.recentrequests": "Ostatnie prośby",
@@ -883,7 +882,6 @@
   "components.UserList.deleteconfirm": "Czy na pewno chcesz usunąć tego użytkownika? Wszystkie jego dane zostaną trwale usunięte.",
   "components.TvDetails.cast": "Obsada",
   "components.TvDetails.watchtrailer": "Obejrzyj zwiastun",
-  "components.UserList.sortCreated": "Data dołączenia",
   "components.UserList.importfromplexerror": "Coś poszło nie tak podczas importowania użytkowników Plex.",
   "components.UserProfile.UserSettings.UserGeneralSettings.toastSettingsFailure": "Coś poszło nie tak podczas zapisywania ustawień.",
   "components.UserProfile.UserSettings.UserNotificationSettings.discordId": "Identyfikator użytkownika",
@@ -892,7 +890,6 @@
   "components.UserProfile.UserSettings.UserNotificationSettings.discordIdTip": "<FindDiscordIdLink>Wielocyfrowy numer ID</FindDiscordIdLink> powiązany z Twoim kontem użytkownika",
   "components.UserList.importfromplex": "Importuj użytkowników Plex",
   "i18n.available": "Dostępny",
-  "components.UserList.sortDisplayName": "Wyświetlana nazwa",
   "components.UserList.totalrequests": "Prośby",
   "components.UserProfile.UserSettings.UserGeneralSettings.admin": "Administrator",
   "components.UserProfile.UserSettings.UserGeneralSettings.applanguage": "Język wyświetlania",
@@ -1560,5 +1557,8 @@
   "components.Settings.SettingsAbout.supportseerr": "",
   "components.Settings.SettingsNetwork.validationDnsCacheMaxTtl": "",
   "components.Settings.SettingsNetwork.validationDnsCacheMinTtl": "",
-  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.activesubscription": ""
+  "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.activesubscription": "",
+  "components.Layout.Sidebar.blocklist": "Pomijaj",
+  "components.PermissionEdit.manageblocklist": "Zarządzaj pomijanymi",
+  "components.PermissionEdit.manageblocklistDescription": "Nadaj uprawnienia do zarządzania pomijanymi."
 }

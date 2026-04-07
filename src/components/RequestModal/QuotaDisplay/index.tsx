@@ -12,9 +12,9 @@ const messages = defineMessages('components.RequestModal.QuotaDisplay', {
   movielimit: '{limit, plural, one {movie} other {movies}}',
   seasonlimit: '{limit, plural, one {season} other {seasons}}',
   allowedRequests:
-    'You are allowed to request <strong>{limit}</strong> {type} every <strong>{days}</strong> days.',
+    'You are allowed to request <strong>{limit}</strong> {type}{days, plural, =0 {} one { every day} other { every <strong>{days}</strong> days}}.',
   allowedRequestsUser:
-    'This user is allowed to request <strong>{limit}</strong> {type} every <strong>{days}</strong> days.',
+    'This user is allowed to request <strong>{limit}</strong> {type}{days, plural, =0 {} one { every day} other { every <strong>{days}</strong> days}}.',
   quotaLink:
     'You can view a summary of your request limits on your <ProfileLink>profile page</ProfileLink>.',
   quotaLinkUser:

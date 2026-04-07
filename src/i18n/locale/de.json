@@ -895,9 +895,6 @@
   "components.UserList.passwordinfodescription": "Konfiguriere eine Anwendungs-URL und aktiviere E-Mail-Benachrichtigungen, um die automatische Passwortgenerierung zu ermöglichen.",
   "components.UserList.plexuser": "Plex-Benutzer",
   "components.UserList.role": "Rolle",
-  "components.UserList.sortCreated": "Beitrittsdatum",
-  "components.UserList.sortDisplayName": "Anzeigename",
-  "components.UserList.sortRequests": "Anzahl der Anfragen",
   "components.UserList.totalrequests": "Anfragen",
   "components.UserList.user": "Benutzer",
   "components.UserList.usercreatedfailed": "Beim Erstellen des Benutzers ist etwas schief gelaufen.",
@@ -1624,5 +1621,7 @@
   "components.Settings.Notifications.NotificationsWebhook.customHeadersKey": "Kopfzeilenname",
   "components.Settings.Notifications.NotificationsWebhook.customHeadersRemove": "Entfernen",
   "components.Settings.Notifications.NotificationsWebhook.customHeadersTip": "Benutzerdefinierte HTTP-Header hinzufügen, die in Webhook-Anfragen enthalten sein sollen",
-  "components.Settings.Notifications.NotificationsWebhook.customHeadersValue": "Header-Wert"
+  "components.Settings.Notifications.NotificationsWebhook.customHeadersValue": "Header-Wert",
+  "components.Login.tipUsernameHasTrailingWhitespace": "Der Benutzername endet mit einem Leerzeichen",
+  "components.Login.tipEmailHasTrailingWhitespace": "Die E-Mail endet mit Leerzeichen"
 }
