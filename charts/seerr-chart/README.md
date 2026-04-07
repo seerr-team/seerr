@@ -44,12 +44,13 @@ If `replicaCount` value was used - remove it. Helm update should work fine after
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` |  |
-| config | object | `{"persistence":{"accessModes":["ReadWriteOnce"],"annotations":{},"existingClaim":"","name":"","size":"5Gi","volumeName":""}}` | Creating PVC to store configuration |
+| config | object | `{"persistence":{"accessModes":["ReadWriteOnce"],"annotations":{},"existingClaim":"","name":"","size":"5Gi","subPath":"","volumeName":""}}` | Creating PVC to store configuration |
 | config.persistence.accessModes | list | `["ReadWriteOnce"]` | Access modes of persistent disk |
 | config.persistence.annotations | object | `{}` | Annotations for PVCs |
 | config.persistence.existingClaim | string | `""` | Specify an existing `PersistentVolumeClaim` to use. If this value is provided, the default PVC will not be created |
 | config.persistence.name | string | `""` | Config name |
 | config.persistence.size | string | `"5Gi"` | Size of persistent disk |
+| config.persistence.subPath | string | `""` | Subpath of the pvc which should be mounted |
 | config.persistence.volumeName | string | `""` | Name of the permanent volume to reference in the claim. Can be used to bind to existing volumes. |
 | extraEnv | list | `[]` | Environment variables to add to the seerr pods |
 | extraEnvFrom | list | `[]` | Environment variables from secrets or configmaps to add to the seerr pods |
