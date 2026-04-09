@@ -236,7 +236,23 @@ function fakePlexEpisodes(count: number): PlexMetadata[] {
     viewedLeafCount: 0,
     addedAt: 0,
     updatedAt: 0,
-    Media: [],
+    Media: [
+      {
+        id: i,
+        duration: 2400,
+        bitrate: 4000,
+        width: 1920,
+        height: 1080,
+        aspectRatio: 1.78,
+        audioChannels: 2,
+        audioCodec: 'aac',
+        videoCodec: 'h264',
+        videoResolution: '1080',
+        container: 'mkv',
+        videoFrameRate: '24p',
+        videoProfile: 'high',
+      },
+    ],
   }));
 }
 
