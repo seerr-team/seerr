@@ -59,15 +59,23 @@ const AddEmailModal: React.FC<AddEmailModalProps> = ({ onClose, onSave }) => {
         initialValues={{ email: '' }}
         validationSchema={EmailSchema}
         onSubmit={async (values) => {
+          if (!user?.id) {
+            addToast(intl.formatMessage(messages.saveFailed), {
+              autoDismiss: true,
+              appearance: 'error',
+            });
+            return;
+          }
+
           try {
             const { data: current } = await axios.get(
-              `/api/v1/user/${user?.id}/settings/main`
+              `/api/v1/user/${user.id}/settings/main`
             );
-            await axios.post(`/api/v1/user/${user?.id}/settings/main`, {
+            await axios.post(`/api/v1/user/${user.id}/settings/main`, {
               ...current,
               email: values.email,
             });
-            await mutate(`/api/v1/user/${user?.id}/settings/main`);
+            await mutate(`/api/v1/user/${user.id}/settings/main`);
             onSave();
           } catch (e) {
             addToast(
