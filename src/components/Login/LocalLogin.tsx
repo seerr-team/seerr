@@ -22,6 +22,7 @@ const messages = defineMessages('components.Login', {
   jellyfinLocalLoginHint:
     "If you haven't set an email address in your profile, use your {mediaServerName} username instead.",
   loginerror: 'Something went wrong while trying to sign in.',
+  credentialerror: 'The email address or password is incorrect.',
   tipEmailHasTrailingWhitespace: 'The email ends with whitespace',
   signingin: 'Signing In…',
   signin: 'Sign In',
@@ -64,8 +65,14 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
             email: values.email,
             password: values.password,
           });
-        } catch {
-          setLoginError(intl.formatMessage(messages.loginerror));
+        } catch (e) {
+          setLoginError(
+            intl.formatMessage(
+              axios.isAxiosError(e) && e.response?.status === 403
+                ? messages.credentialerror
+                : messages.loginerror
+            )
+          );
         } finally {
           revalidate();
         }
