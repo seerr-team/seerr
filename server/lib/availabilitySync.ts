@@ -950,12 +950,24 @@ class AvailabilitySync {
       plexSeasons = this.plexSeasonsCache[ratingKey4k];
     }
 
-    const seasonIsAvailable = plexSeasons?.find(
+    const seasonMeta = plexSeasons?.find(
       (plexSeason) => plexSeason.index === season.seasonNumber
     );
 
-    if (seasonIsAvailable) {
-      seasonExistsInPlex = true;
+    if (seasonMeta) {
+      // Season metadata exists, but verify it has actual episode files.
+      // This is to ensure we don't keep seasons marked as available
+      // when all episode files have been removed in Plex.
+      try {
+        const episodes = await this.plexClient?.getChildrenMetadata(
+          seasonMeta.ratingKey
+        );
+
+        seasonExistsInPlex = episodes?.length > 0;
+      } catch {
+        // If we can't fetch episodes, assume the season exists to avoid false removal
+        seasonExistsInPlex = true;
+      }
     }
 
     return seasonExistsInPlex;
@@ -1067,12 +1079,29 @@ class AvailabilitySync {
       jellyfinSeasons = this.jellyfinSeasonsCache[ratingKey4k];
     }
 
-    const seasonIsAvailable = jellyfinSeasons?.find(
+    const seasonMeta = jellyfinSeasons?.find(
       (jellyfinSeason) => jellyfinSeason.IndexNumber === season.seasonNumber
     );
 
-    if (seasonIsAvailable) {
-      seasonExistsInJellyfin = true;
+    if (seasonMeta) {
+      // Season metadata exists, but we need to verify it has actual episode files.
+      // Sometimes Jellyfin keeps season entries even after all episodes are deleted.
+      // getEpisodes already filters out virtual episodes.
+      const seriesId = is4k ? ratingKey4k : ratingKey;
+
+      if (seriesId) {
+        try {
+          const episodes = await this.jellyfinClient.getEpisodes(
+            seriesId,
+            seasonMeta.Id
+          );
+
+          seasonExistsInJellyfin = episodes.length > 0;
+        } catch {
+          // If we can't fetch episodes, assume the season exists to avoid false removal
+          seasonExistsInJellyfin = true;
+        }
+      }
     }
 
     return seasonExistsInJellyfin;
