@@ -25,6 +25,7 @@ const KeyMap: Record<string, string | KeyMapFunction> = {
   notifyuser_avatar: 'notifyUser.avatar',
   notifyuser_settings_discordId: 'notifyUser.settings.discordId',
   notifyuser_settings_telegramChatId: 'notifyUser.settings.telegramChatId',
+  media_imdbid: 'media.imdbId',
   media_tmdbid: 'media.tmdbId',
   media_tvdbid: 'media.tvdbId',
   media_type: 'media.mediaType',

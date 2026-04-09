@@ -37,6 +37,7 @@ const defaultPayload = {
   image: '{{image}}',
   '{{media}}': {
     media_type: '{{media_type}}',
+    imdbId: '{{media_imdbid}}',
     tmdbId: '{{media_tmdbid}}',
     tvdbId: '{{media_tvdbid}}',
     jellyfinMediaId: '{{media_jellyfinMediaId}}',
