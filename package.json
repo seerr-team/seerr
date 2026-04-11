@@ -71,7 +71,7 @@
     "mime": "^4.1.0",
     "nanoid": "^5.1.7",
     "next": "16.2.6",
-    "ip-address": "^10.0.1",
+    "ip-address": "^10.1.0",
     "node-cache": "5.1.2",
     "node-gyp": "12.2.0",
     "node-schedule": "2.1.1",
