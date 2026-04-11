@@ -2,6 +2,7 @@ import NodeCache from 'node-cache';
 
 export type AvailableCacheIds =
   | 'tmdb'
+  | 'flixpatrol'
   | 'radarr'
   | 'sonarr'
   | 'rt'
@@ -47,6 +48,10 @@ class CacheManager {
     tmdb: new Cache('tmdb', 'The Movie Database API', {
       stdTtl: 21600,
       checkPeriod: 60 * 30,
+    }),
+    flixpatrol: new Cache('flixpatrol', 'FlixPatrol', {
+      stdTtl: 1800,
+      checkPeriod: 60 * 15,
     }),
     radarr: new Cache('radarr', 'Radarr API'),
     sonarr: new Cache('sonarr', 'Sonarr API'),

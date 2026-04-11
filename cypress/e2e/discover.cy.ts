@@ -16,9 +16,94 @@ const clickFirstTitleCardInSlider = (sliderTitle: string): void => {
     });
 };
 
+const movieStreamingCollections = {
+  results: [
+    {
+      id: 'netflix-top-10',
+      title: 'Netflix Top 10',
+      mediaType: 'movie',
+      items: [
+        {
+          id: 361743,
+          key: 'netflix-top-10-361743-0',
+          rank: 1,
+          ratingKey: 'netflix-top-10-361743-0',
+          tmdbId: 361743,
+          mediaType: 'movie',
+          title: 'Top Gun: Maverick',
+        },
+      ],
+    },
+  ],
+};
+
+const tvStreamingCollections = {
+  results: [
+    {
+      id: 'netflix-top-10',
+      title: 'Netflix Top 10',
+      mediaType: 'tv',
+      items: [
+        {
+          id: 66732,
+          key: 'netflix-top-10-66732-0',
+          rank: 1,
+          ratingKey: 'netflix-top-10-66732-0',
+          tmdbId: 66732,
+          mediaType: 'tv',
+          title: 'Stranger Things',
+        },
+      ],
+    },
+  ],
+};
+
 describe('Discover', () => {
   beforeEach(() => {
     cy.loginAsAdmin();
+  });
+
+  it('navigates to a movie streaming collection page', () => {
+    cy.intercept(
+      '/api/v1/discover/movies/collections',
+      movieStreamingCollections
+    );
+    cy.intercept(
+      '/api/v1/discover/movies/collection/netflix-top-10',
+      movieStreamingCollections.results[0]
+    );
+    cy.intercept('/api/v1/movie/361743').as('getMovieCollectionItem');
+    cy.visit('/discover/movies');
+
+    cy.contains('.slider-header', 'Netflix Top 10').find('a').click();
+
+    cy.url().should('include', '/discover/movies/collection/netflix-top-10');
+    cy.get('[data-testid=page-header]').should('contain', 'Netflix Top 10');
+    cy.wait('@getMovieCollectionItem');
+    cy.get('.cards-vertical [data-testid=title-card]').should(
+      'have.length.at.least',
+      1
+    );
+  });
+
+  it('navigates to a tv streaming collection page', () => {
+    cy.intercept('/api/v1/discover/tv/collections', tvStreamingCollections);
+    cy.intercept(
+      '/api/v1/discover/tv/collection/netflix-top-10',
+      tvStreamingCollections.results[0]
+    );
+    cy.intercept('/api/v1/tv/66732').as('getTvCollectionItem');
+    cy.visit('/discover/tv');
+
+    cy.contains('.slider-header', 'Netflix Top 10').find('a').click();
+
+    cy.url().should('include', '/discover/tv/collection/netflix-top-10');
+    cy.get('[data-testid=page-header]').should('contain', 'Netflix Top 10');
+    cy.wait('@getTvCollectionItem');
+    cy.get('.cards-vertical [data-testid=title-card]').should(
+      'have.length.at.least',
+      1
+    );
   });
 
   it('loads a trending item', () => {

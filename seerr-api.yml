@@ -48,6 +48,43 @@ servers:
 
 components:
   schemas:
+    StreamingCollectionItem:
+      type: object
+      properties:
+        id:
+          type: number
+          example: 1
+        ratingKey:
+          type: string
+        tmdbId:
+          type: number
+          example: 1
+        mediaType:
+          type: string
+          enum: [movie, tv]
+        title:
+          type: string
+        rank:
+          type: number
+          example: 1
+        key:
+          type: string
+    StreamingCollection:
+      type: object
+      properties:
+        id:
+          type: string
+          example: netflix-top-10
+        title:
+          type: string
+          example: Netflix Top 10
+        mediaType:
+          type: string
+          enum: [movie, tv]
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/StreamingCollectionItem'
     Blocklist:
       type: object
       properties:
@@ -5706,6 +5743,43 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/MovieResult'
+  /discover/movies/collections:
+    get:
+      summary: Get movie streaming collections
+      description: Returns top 10 lists from streaming platforms for movies.
+      tags:
+        - search
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StreamingCollection'
+  /discover/movies/collection/{collectionId}:
+    get:
+      summary: Get a movie streaming collection
+      description: Returns a single streaming platform top 10 list for movies.
+      tags:
+        - search
+      parameters:
+        - in: path
+          name: collectionId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamingCollection'
   /discover/tv:
     get:
       summary: Discover TV shows
@@ -6037,6 +6111,43 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/TvResult'
+  /discover/tv/collections:
+    get:
+      summary: Get TV streaming collections
+      description: Returns top 10 lists from streaming platforms for TV shows.
+      tags:
+        - search
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StreamingCollection'
+  /discover/tv/collection/{collectionId}:
+    get:
+      summary: Get a TV streaming collection
+      description: Returns a single streaming platform top 10 list for TV shows.
+      tags:
+        - search
+      parameters:
+        - in: path
+          name: collectionId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamingCollection'
   /discover/trending:
     get:
       summary: Trending movies and TV

@@ -2,12 +2,13 @@ import Button from '@app/components/Common/Button';
 import Header from '@app/components/Common/Header';
 import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
+import FilterSlideover from '@app/components/Discover/FilterSlideover';
+import StreamingCollections from '@app/components/Discover/StreamingCollections';
 import type { FilterOptions } from '@app/components/Discover/constants';
 import {
   countActiveFilters,
   prepareFilterValues,
 } from '@app/components/Discover/constants';
-import FilterSlideover from '@app/components/Discover/FilterSlideover';
 import useDiscover from '@app/hooks/useDiscover';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import ErrorPage from '@app/pages/_error';
@@ -74,6 +75,7 @@ const DiscoverMovies = () => {
   return (
     <>
       <PageTitle title={title} />
+      <StreamingCollections mediaType="movie" />
       <div className="mb-4 flex flex-col justify-between lg:flex-row lg:items-end">
         <Header>{title}</Header>
         <div className="mt-2 flex flex-grow flex-col sm:flex-row lg:flex-grow-0">
