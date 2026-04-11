@@ -85,6 +85,9 @@ export const messages = defineMessages('components.PermissionEdit', {
   viewblocklistedItems: 'View blocklisted media.',
   viewblocklistedItemsDescription:
     'Grant permission to view blocklisted media.',
+  managemedia: 'Manage Media',
+  managemediaDescription:
+    'Grant permission to manage media. Users with this permission can delete media from Radarr/Sonarr and mark media as available.',
 });
 
 interface PermissionEditProps {
@@ -115,6 +118,12 @@ export const PermissionEdit = ({
       name: intl.formatMessage(messages.users),
       description: intl.formatMessage(messages.usersDescription),
       permission: Permission.MANAGE_USERS,
+    },
+    {
+      id: 'managemedia',
+      name: intl.formatMessage(messages.managemedia),
+      description: intl.formatMessage(messages.managemediaDescription),
+      permission: Permission.MANAGE_MEDIA,
     },
     {
       id: 'managerequest',
