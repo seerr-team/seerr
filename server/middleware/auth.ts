@@ -12,29 +12,19 @@ export const checkUser: Middleware = async (req, _res, next) => {
 
   const userRepository = getRepository(User);
   let trustedProxy = false;
-  // Client IP addresses are appended in this header.
-  // The first header should be the client IP and the last header
-  // should be the address of proxy just upstream of us. We use that
-  // address to figure out if it should be trusted
-  let proxyIP = req.socket.remoteAddress;
 
-  const ipHeader = req.header('X-Forwarded-For');
-  if (ipHeader) {
-    const lastComma = ipHeader.lastIndexOf(',');
-    if (lastComma != -1) {
-      proxyIP = ipHeader.slice(lastComma + 1).trim();
-    } else {
-      proxyIP = ipHeader.trim();
-    }
-  }
+  // Check if the remoteSocketAddress we received the request
+  // from is trusted!
+  const socketAddress = req.socket.remoteAddress;
 
-  if (proxyIP && proxyIP.indexOf('.') != -1) {
+  if (socketAddress && socketAddress.indexOf('.') != -1) {
     trustedProxy =
-      proxyIP == '127.0.0.1' ||
-      settings.network.trustedProxies.v4.includes(proxyIP);
-  } else if (proxyIP) {
+      socketAddress == '127.0.0.1' ||
+      settings.network.trustedProxies.v4.includes(socketAddress);
+  } else if (socketAddress) {
     trustedProxy =
-      proxyIP == '::1' || settings.network.trustedProxies.v6.includes(proxyIP);
+      socketAddress == '::1' ||
+      settings.network.trustedProxies.v6.includes(socketAddress);
   }
 
   if (req.header('X-API-Key') === settings.main.apiKey) {
