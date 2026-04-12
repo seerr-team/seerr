@@ -5,6 +5,7 @@ import type {
   PermissionCheckOptions,
 } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
+import * as net from 'net';
 
 export const checkUser: Middleware = async (req, _res, next) => {
   const settings = getSettings();
@@ -15,15 +16,15 @@ export const checkUser: Middleware = async (req, _res, next) => {
 
   // Check if the remoteSocketAddress we received the request
   // from is trusted!
-  const socketAddress = req.socket.remoteAddress;
+  const socketAddress = req.socket.remoteAddress || '';
 
-  if (socketAddress && socketAddress.indexOf('.') != -1) {
+  if (net.isIPv4(socketAddress)) {
     trustedProxy =
-      socketAddress == '127.0.0.1' ||
+      socketAddress === '127.0.0.1' ||
       settings.network.trustedProxies.v4.includes(socketAddress);
-  } else if (socketAddress) {
+  } else if (net.isIPv6(socketAddress)) {
     trustedProxy =
-      socketAddress == '::1' ||
+      socketAddress === '::1' ||
       settings.network.trustedProxies.v6.includes(socketAddress);
   }
 
@@ -45,8 +46,8 @@ export const checkUser: Middleware = async (req, _res, next) => {
     settings.network.forwardAuth.enabled &&
     trustedProxy
   ) {
-    const hasUserHeader = settings.network.forwardAuth.userHeader != '';
-    const hasEmailHeader = settings.network.forwardAuth.emailHeader != '';
+    const hasUserHeader = settings.network.forwardAuth.userHeader !== '';
+    const hasEmailHeader = settings.network.forwardAuth.emailHeader !== '';
     const userValue =
       (hasUserHeader && req.header(settings.network.forwardAuth.userHeader)) ??
       '';
@@ -58,7 +59,7 @@ export const checkUser: Middleware = async (req, _res, next) => {
     let query: object[] = [];
 
     if (hasUserHeader && hasEmailHeader) {
-      if (emailValue != '' && userValue != '') {
+      if (emailValue !== '' && userValue !== '') {
         // email & user header was specified so we must verify both
         query = [
           {
@@ -71,7 +72,7 @@ export const checkUser: Middleware = async (req, _res, next) => {
           },
         ];
       }
-    } else if (hasUserHeader && userValue != '') {
+    } else if (hasUserHeader && userValue !== '') {
       query = [
         {
           jellyfinUsername: userValue,
@@ -80,7 +81,7 @@ export const checkUser: Middleware = async (req, _res, next) => {
           plexUsername: userValue,
         },
       ];
-    } else if (hasEmailHeader && emailValue != '') {
+    } else if (hasEmailHeader && emailValue !== '') {
       query = [
         {
           email: emailValue,
