@@ -18,6 +18,7 @@ import Tooltip from '@app/components/Common/Tooltip';
 import ExternalLinkBlock from '@app/components/ExternalLinkBlock';
 import IssueModal from '@app/components/IssueModal';
 import ManageSlideOver from '@app/components/ManageSlideOver';
+import MediaRequestSummary from '@app/components/MediaRequestSummary';
 import MediaSlider from '@app/components/MediaSlider';
 import PersonCard from '@app/components/PersonCard';
 import RequestButton from '@app/components/RequestButton';
@@ -1318,6 +1319,19 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
               />
             </div>
           </div>
+          <MediaRequestSummary
+            requests={
+              hasPermission(
+                [Permission.MANAGE_REQUESTS, Permission.REQUEST_VIEW],
+                { type: 'or' }
+              )
+                ? data.mediaInfo?.requests
+                : data.mediaInfo?.requests?.filter(
+                    (r) => r.requestedBy?.id === user?.id
+                  )
+            }
+            currentUserId={user?.id}
+          />
         </div>
       </div>
       {data.credits.cast.length > 0 && (
