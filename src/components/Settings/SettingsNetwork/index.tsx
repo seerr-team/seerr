@@ -6,7 +6,6 @@ import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { ForwardAuthAllowlist } from '@app/utils/forwardAuthList';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import type { NetworkSettings } from '@server/lib/settings';
 import axios from 'axios';
@@ -765,25 +764,16 @@ const SettingsNetwork = () => {
                             </label>
                             <div className="form-input-area">
                               <div className="form-input-field">
-                                <select
+                                <Field
                                   className="inline"
                                   id="forwardAuthUserHeader"
                                   name="forwardAuthUserHeader"
+                                  type="text"
+                                  list="forwardauth-autocomplete-options"
+                                  autoComplete="off"
+                                  placeholder="e.g. Remote-User (Case Insensitive)"
                                   value={values.forwardAuthUserHeader ?? ''}
-                                  onChange={(e) => {
-                                    setFieldValue(
-                                      'forwardAuthUserHeader',
-                                      e.target.value
-                                    );
-                                  }}
-                                >
-                                  <option value="">--Do not use--</option>
-                                  {ForwardAuthAllowlist.map((item) => (
-                                    <option value={item} key={item}>
-                                      {item}
-                                    </option>
-                                  ))}
-                                </select>
+                                />
                               </div>
                             </div>
                           </div>
@@ -804,28 +794,27 @@ const SettingsNetwork = () => {
                             </label>
                             <div className="form-input-area">
                               <div className="form-input-field">
-                                <select
+                                <Field
                                   className="inline"
                                   id="forwardAuthEmailHeader"
                                   name="forwardAuthEmailHeader"
+                                  type="text"
+                                  list="forwardauth-autocomplete-options"
+                                  autoComplete="off"
+                                  placeholder="e.g. Remote-Email (Case Insensitive)"
                                   value={values.forwardAuthEmailHeader ?? ''}
-                                  onChange={(e) => {
-                                    setFieldValue(
-                                      'forwardAuthEmailHeader',
-                                      e.target.value
-                                    );
-                                  }}
-                                >
-                                  <option value="">--Do not use--</option>
-                                  {ForwardAuthAllowlist.map((item) => (
-                                    <option value={item} key={item}>
-                                      {item}
-                                    </option>
-                                  ))}
-                                </select>
+                                />
                               </div>
                             </div>
                           </div>
+                          <datalist id="forwardauth-autocomplete-options">
+                            <option value="remote-user" />
+                            <option value="remote-email" />
+                            <option value="remote-name" />
+                            <option value="cf-access-authenticated-user-email" />
+                            <option value="x-authentik-username" />
+                            <option value="x-authentik-email" />
+                          </datalist>
                           {errors['forwardAuthHeaders'] &&
                             typeof errors.forwardAuthHeaders === 'string' && (
                               <div className="error">

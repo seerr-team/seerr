@@ -21,6 +21,7 @@ import checkOverseerrMerge from '@server/lib/overseerrMerge';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import clearCookies from '@server/middleware/clearcookies';
+import { addForwardAuthHeaders } from '@server/middleware/forwardauth';
 import routes from '@server/routes';
 import avatarproxy from '@server/routes/avatarproxy';
 import imageproxy from '@server/routes/imageproxy';
@@ -165,6 +166,7 @@ app
     server.use(cookieParser());
     server.use(express.json());
     server.use(express.urlencoded({ extended: true }));
+    server.use(addForwardAuthHeaders);
     server.use((req, _res, next) => {
       try {
         const descriptor = Object.getOwnPropertyDescriptor(req, 'ip');

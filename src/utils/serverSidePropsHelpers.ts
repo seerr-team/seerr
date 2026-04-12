@@ -4,7 +4,6 @@ import type {
   PreviewData,
 } from 'next';
 import type { ParsedUrlQuery } from 'querystring';
-import { ForwardAuthAllowlist } from './forwardAuthList';
 
 export const getAuthHeaders = (
   ctx: NextPageContext | GetServerSidePropsContext<ParsedUrlQuery, PreviewData>
@@ -16,18 +15,23 @@ export const getAuthHeaders = (
   const forwardAuthVars: {
     [key: string]: string | string[] | undefined;
   } = {};
-  for (const header of ForwardAuthAllowlist) {
-    if (ctx.req.headers[header]) {
-      forwardAuthVars[header] = ctx.req.headers[header] as string;
+
+  const forwardAuth = ctx.req?.forwardAuth;
+
+  if (forwardAuth) {
+    const { userHeader, emailHeader } = forwardAuth;
+
+    if (ctx.req.headers[userHeader]) {
+      forwardAuthVars[userHeader] = ctx.req.headers[userHeader];
+    }
+    if (ctx.req.headers[emailHeader]) {
+      forwardAuthVars[emailHeader] = ctx.req.headers[emailHeader];
     }
   }
 
   return {
     ...(ctx.req.headers.cookie && {
       cookie: ctx.req.headers.cookie,
-    }),
-    ...(ctx.req.headers['x-forwarded-for'] && {
-      'x-forwarded-for': ctx.req.headers['x-forwarded-for'] as string,
     }),
     ...forwardAuthVars,
   };
