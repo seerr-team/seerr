@@ -90,6 +90,24 @@ async function seedIssue(
   return issueRepo.save(issue);
 }
 
+describe('GET /issue', () => {
+  it('includes comments for each issue in the list response', async () => {
+    const issue = await seedIssue(['description comment']);
+    const agent = await adminAgent();
+
+    const res = await agent.get('/issue');
+
+    assert.strictEqual(res.status, 200);
+    const returned = res.body.results.find(
+      (i: { id: number }) => i.id === issue.id
+    );
+    assert.ok(returned, 'seeded issue should appear in list');
+    assert.ok(Array.isArray(returned.comments), 'comments should be loaded');
+    assert.strictEqual(returned.comments.length, 1);
+    assert.strictEqual(returned.comments[0].message, 'description comment');
+  });
+});
+
 describe('POST /issue/:issueId/comment', () => {
   it('adds a comment to an existing issue', async () => {
     const issue = await seedIssue();
