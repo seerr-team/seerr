@@ -121,6 +121,9 @@ class PushoverAgent
         case Notification.MEDIA_AVAILABLE:
           status = 'Available';
           break;
+        case Notification.MEDIA_AIRED_EPISODE_AVAILABLE:
+          status = 'Episode Available';
+          break;
         case Notification.MEDIA_DECLINED:
           status = 'Declined';
           priority = 1;
