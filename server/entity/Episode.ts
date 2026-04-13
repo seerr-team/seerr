@@ -6,6 +6,7 @@ import {
   Index,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 import Season from './Season';
 
@@ -18,6 +19,7 @@ import Season from './Season';
  * Originally introduced in PR #1671 by 0xSysR3ll.
  */
 @Entity()
+@Unique(['season', 'episodeNumber'])
 class Episode {
   @PrimaryGeneratedColumn()
   public id: number;
