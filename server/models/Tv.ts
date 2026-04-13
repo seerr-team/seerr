@@ -7,6 +7,7 @@ import type {
   TmdbTvSeasonResult,
 } from '@server/api/themoviedb/interfaces';
 import type Media from '@server/entity/Media';
+import type { VoteActionType } from '@server/entity/Vote';
 import type { Video } from './Movie';
 import type {
   Cast,
@@ -112,6 +113,7 @@ export interface TvDetails {
   mediaInfo?: Media;
   watchProviders?: WatchProviders[];
   onUserWatchlist?: boolean;
+  userVote?: VoteActionType;
 }
 
 const mapEpisodeResult = (episode: TmdbTvEpisodeResult): Episode => ({
@@ -163,7 +165,8 @@ export const mapNetwork = (network: TmdbNetwork): TvNetwork => ({
 export const mapTvDetails = (
   show: TmdbTvDetails,
   media?: Media,
-  userWatchlist?: boolean
+  userWatchlist?: boolean,
+  userVote?: VoteActionType
 ): TvDetails => ({
   createdBy: show.created_by,
   episodeRunTime: show.episode_run_time,
@@ -226,4 +229,5 @@ export const mapTvDetails = (
   mediaInfo: media,
   watchProviders: mapWatchProviders(show['watch/providers']?.results ?? {}),
   onUserWatchlist: userWatchlist,
+  userVote,
 });

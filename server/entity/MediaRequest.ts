@@ -8,6 +8,7 @@ import {
 } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import OverrideRule from '@server/entity/OverrideRule';
+import { Vote, VoteActionType } from '@server/entity/Vote';
 import type { MediaRequestBody } from '@server/interfaces/api/requestInterfaces';
 import notificationManager, { Notification } from '@server/lib/notifications';
 import { Permission } from '@server/lib/permissions';
@@ -44,6 +45,37 @@ type MediaRequestOptions = {
 
 @Entity()
 export class MediaRequest {
+  private static async upsertInterestedVote(
+    user: User,
+    tmdbId: number,
+    mediaType: MediaType
+  ): Promise<void> {
+    const voteRepository = getRepository(Vote);
+    const existingVote = await voteRepository.findOne({
+      where: {
+        user: { id: user.id },
+        tmdbId,
+        mediaType,
+      },
+    });
+
+    if (existingVote) {
+      existingVote.actionType = VoteActionType.INTERESTED;
+      existingVote.updatedAt = new Date();
+      await voteRepository.save(existingVote);
+      return;
+    }
+
+    await voteRepository.save(
+      new Vote({
+        user,
+        tmdbId,
+        mediaType,
+        actionType: VoteActionType.INTERESTED,
+      })
+    );
+  }
+
   public static async request(
     requestBody: MediaRequestBody,
     user: User,
@@ -376,6 +408,26 @@ export class MediaRequest {
       });
 
       await requestRepository.save(request);
+      if (settings.main.enableVoting) {
+        try {
+          await MediaRequest.upsertInterestedVote(
+            requestUser,
+            requestBody.mediaId,
+            requestBody.mediaType
+          );
+        } catch (e) {
+          logger.warn(
+            'Failed to create or update interested vote from request.',
+            {
+              label: 'Media Request',
+              requestId: request.id,
+              tmdbId: requestBody.mediaId,
+              mediaType: requestBody.mediaType,
+              errorMessage: e instanceof Error ? e.message : undefined,
+            }
+          );
+        }
+      }
       return request;
     } else {
       const tmdbMediaShow = tmdbMedia as Awaited<
@@ -507,6 +559,26 @@ export class MediaRequest {
       });
 
       await requestRepository.save(request);
+      if (settings.main.enableVoting) {
+        try {
+          await MediaRequest.upsertInterestedVote(
+            requestUser,
+            requestBody.mediaId,
+            requestBody.mediaType
+          );
+        } catch (e) {
+          logger.warn(
+            'Failed to create or update interested vote from request.',
+            {
+              label: 'Media Request',
+              requestId: request.id,
+              tmdbId: requestBody.mediaId,
+              mediaType: requestBody.mediaType,
+              errorMessage: e instanceof Error ? e.message : undefined,
+            }
+          );
+        }
+      }
       return request;
     }
   }

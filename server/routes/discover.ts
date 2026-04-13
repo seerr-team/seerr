@@ -6,6 +6,7 @@ import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { User } from '@server/entity/User';
+import { Vote, VoteActionType } from '@server/entity/Vote';
 import { Watchlist } from '@server/entity/Watchlist';
 import type {
   GenreSliderItem,
@@ -16,8 +17,10 @@ import logger from '@server/logger';
 import { mapProductionCompany } from '@server/models/Movie';
 import {
   mapCollectionResult,
+  mapMovieDetailsToResult,
   mapMovieResult,
   mapPersonResult,
+  mapTvDetailsToResult,
   mapTvResult,
 } from '@server/models/Search';
 import { mapNetwork } from '@server/models/Tv';
@@ -84,6 +87,7 @@ export type FilterOptions = z.infer<typeof QueryFilterOptions>;
 const ApiQuerySchema = QueryFilterOptions.omit({
   certificationMode: true,
 });
+const NOT_INTERESTED_PENALTY_WEIGHT = 0.5;
 
 discoverRoutes.get('/movies', async (req, res, next) => {
   const tmdb = createTmdbWithRegionLanguage(req.user);
@@ -770,6 +774,121 @@ discoverRoutes.get('/trending', async (req, res, next) => {
     return next({
       status: 500,
       message: 'Unable to retrieve trending items.',
+    });
+  }
+});
+
+discoverRoutes.get('/popular', async (req, res, next) => {
+  const tmdb = createTmdbWithRegionLanguage(req.user);
+  const itemsPerPage = 20;
+  const page = Number(req.query.page) || 1;
+  const skip = (page - 1) * itemsPerPage;
+
+  try {
+    const voteRepository = getRepository(Vote);
+    const groupedVotes = voteRepository
+      .createQueryBuilder('vote')
+      .select('vote.tmdbId', 'tmdbId')
+      .addSelect('vote.mediaType', 'mediaType')
+      .addSelect('MAX(vote.createdAt)', 'lastVotedAt')
+      .addSelect(
+        `SUM(CASE
+          WHEN vote.actionType = :interestedAction THEN 1
+          WHEN vote.actionType = :notInterestedAction THEN -${NOT_INTERESTED_PENALTY_WEIGHT}
+          ELSE 0
+        END)`,
+        'score'
+      )
+      .where('vote.actionType IN (:...actionTypes)', {
+        actionTypes: [VoteActionType.INTERESTED, VoteActionType.NOT_INTERESTED],
+        interestedAction: VoteActionType.INTERESTED,
+        notInterestedAction: VoteActionType.NOT_INTERESTED,
+      })
+      .groupBy('vote.tmdbId')
+      .addGroupBy('vote.mediaType')
+      .having(
+        `SUM(CASE
+          WHEN vote.actionType = :interestedAction THEN 1
+          WHEN vote.actionType = :notInterestedAction THEN -${NOT_INTERESTED_PENALTY_WEIGHT}
+          ELSE 0
+        END) > 0`
+      );
+
+    const totalResults = (await groupedVotes.clone().getRawMany()).length;
+    const voteRows = await groupedVotes
+      .orderBy('score', 'DESC')
+      .addOrderBy('lastVotedAt', 'DESC')
+      .offset(skip)
+      .limit(itemsPerPage)
+      .getRawMany<{
+        tmdbId: string;
+        mediaType: MediaType;
+      }>();
+
+    const media = await Media.getRelatedMedia(
+      req.user,
+      voteRows.map((item) => Number(item.tmdbId))
+    );
+
+    const mappedResults = await Promise.all(
+      voteRows.map(async (voteRow) => {
+        try {
+          if (voteRow.mediaType === MediaType.MOVIE) {
+            const movie = await tmdb.getMovie({
+              movieId: Number(voteRow.tmdbId),
+              language: (req.query.language as string) ?? req.locale,
+            });
+
+            return mapMovieResult(
+              mapMovieDetailsToResult(movie),
+              media.find(
+                (med) =>
+                  med.tmdbId === movie.id && med.mediaType === MediaType.MOVIE
+              )
+            );
+          }
+
+          const tv = await tmdb.getTvShow({
+            tvId: Number(voteRow.tmdbId),
+            language: (req.query.language as string) ?? req.locale,
+          });
+
+          return mapTvResult(
+            mapTvDetailsToResult(tv),
+            media.find(
+              (med) => med.tmdbId === tv.id && med.mediaType === MediaType.TV
+            )
+          );
+        } catch (error) {
+          logger.debug('Unable to map popular-on-server title from votes.', {
+            label: 'API',
+            tmdbId: Number(voteRow.tmdbId),
+            mediaType: voteRow.mediaType,
+            errorMessage: error instanceof Error ? error.message : undefined,
+          });
+          return null;
+        }
+      })
+    );
+
+    const results = mappedResults.filter(
+      (result): result is NonNullable<typeof result> => result !== null
+    );
+
+    return res.status(200).json({
+      page,
+      totalPages: Math.ceil(totalResults / itemsPerPage),
+      totalResults,
+      results,
+    });
+  } catch (e) {
+    logger.debug('Something went wrong retrieving popular titles from votes', {
+      label: 'API',
+      errorMessage: e.message,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to retrieve popular titles from votes.',
     });
   }
 });

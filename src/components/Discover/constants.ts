@@ -69,6 +69,7 @@ export const genreColorMap: Record<number, [string, string]> = {
 export const sliderTitles = defineMessages('components.Discover', {
   recentrequests: 'Recent Requests',
   popularmovies: 'Popular Movies',
+  popularonserver: 'Popular On This Server',
   populartv: 'Popular Series',
   upcomingtv: 'Upcoming Series',
   recentlyAdded: 'Recently Added',

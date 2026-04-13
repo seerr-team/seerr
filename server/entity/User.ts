@@ -30,6 +30,7 @@ import { MediaRequest } from './MediaRequest';
 import SeasonRequest from './SeasonRequest';
 import { UserPushSubscription } from './UserPushSubscription';
 import { UserSettings } from './UserSettings';
+import { Vote } from './Vote';
 
 @Entity()
 export class User {
@@ -121,6 +122,9 @@ export class User {
 
   @OneToMany(() => Watchlist, (watchlist) => watchlist.requestedBy)
   public watchlists: Watchlist[];
+
+  @OneToMany(() => Vote, (vote) => vote.user)
+  public votes: Vote[];
 
   @Column({ nullable: true })
   public movieQuotaLimit?: number;

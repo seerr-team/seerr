@@ -28,6 +28,13 @@ class DiscoverSlider {
           slider,
         });
         await sliderRepository.save(new DiscoverSlider(slider));
+      } else if (
+        existingSlider.isBuiltIn &&
+        typeof slider.order === 'number' &&
+        existingSlider.order !== slider.order
+      ) {
+        existingSlider.order = slider.order;
+        await sliderRepository.save(existingSlider);
       }
     }
   }
