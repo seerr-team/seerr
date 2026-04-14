@@ -59,9 +59,10 @@ async function adminAgent() {
   const settings = getSettings();
   settings.main.localLogin = true;
   const agent = request.agent(app);
-  await agent
+  const res = await agent
     .post('/auth/local')
     .send({ email: 'admin@seerr.dev', password: 'test1234' });
+  assert.strictEqual(res.status, 200);
   return agent;
 }
 
