@@ -74,26 +74,32 @@ const SettingsNetwork = () => {
   const NetworkSettingsSchema = Yup.object().shape({
     dnsCacheForceMinTtl: Yup.number().when('dnsCacheEnabled', {
       is: true,
-      then: Yup.number()
-        .typeError(intl.formatMessage(messages.validationDnsCacheMinTtl))
-        .required(intl.formatMessage(messages.validationDnsCacheMinTtl))
-        .min(0),
+      then: (schema) =>
+        schema
+          .typeError(intl.formatMessage(messages.validationDnsCacheMinTtl))
+          .required(intl.formatMessage(messages.validationDnsCacheMinTtl))
+          .min(0),
+      otherwise: (schema) => schema.nullable(),
     }),
     dnsCacheForceMaxTtl: Yup.number().when('dnsCacheEnabled', {
       is: true,
-      then: Yup.number()
-        .typeError(intl.formatMessage(messages.validationDnsCacheMaxTtl))
-        .required(intl.formatMessage(messages.validationDnsCacheMaxTtl))
-        .min(-1),
+      then: (schema) =>
+        schema
+          .typeError(intl.formatMessage(messages.validationDnsCacheMaxTtl))
+          .required(intl.formatMessage(messages.validationDnsCacheMaxTtl))
+          .min(-1),
+      otherwise: (schema) => schema.nullable(),
     }),
     proxyPort: Yup.number().when('proxyEnabled', {
       is: (proxyEnabled: boolean) => proxyEnabled,
-      then: Yup.number()
-        .typeError(intl.formatMessage(messages.validationProxyPort))
-        .integer(intl.formatMessage(messages.validationProxyPort))
-        .min(1, intl.formatMessage(messages.validationProxyPort))
-        .max(65535, intl.formatMessage(messages.validationProxyPort))
-        .required(intl.formatMessage(messages.validationProxyPort)),
+      then: (schema) =>
+        schema
+          .typeError(intl.formatMessage(messages.validationProxyPort))
+          .integer(intl.formatMessage(messages.validationProxyPort))
+          .min(1, intl.formatMessage(messages.validationProxyPort))
+          .max(65535, intl.formatMessage(messages.validationProxyPort))
+          .required(intl.formatMessage(messages.validationProxyPort)),
+      otherwise: (schema) => schema.nullable(),
     }),
     apiRequestTimeout: Yup.number()
       .typeError(intl.formatMessage(messages.validationApiRequestTimeout))

@@ -46,10 +46,11 @@ const NotificationsPushbullet = () => {
   const NotificationsPushbulletSchema = Yup.object().shape({
     accessToken: Yup.string().when('enabled', {
       is: true,
-      then: Yup.string()
-        .nullable()
-        .required(intl.formatMessage(messages.validationAccessTokenRequired)),
-      otherwise: Yup.string().nullable(),
+      then: (schema) =>
+        schema
+          .nullable()
+          .required(intl.formatMessage(messages.validationAccessTokenRequired)),
+      otherwise: (schema) => schema.nullable(),
     }),
   });
 
