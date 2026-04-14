@@ -42,6 +42,11 @@ const sanitizeDisplayName = (displayName: string): string => {
 
 @EventSubscriber()
 export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRequest> {
+  private static readonly ACTIVE_STATUSES = new Set([
+    MediaStatus.AVAILABLE,
+    MediaStatus.PARTIALLY_AVAILABLE,
+    MediaStatus.PROCESSING,
+  ]);
   private async notifyAvailableMovie(
     entity: MediaRequest,
     event?: UpdateEvent<MediaRequest>
@@ -952,13 +957,29 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       relations: { requests: true },
     });
 
+    const hasStandardRequests = fullMedia.requests.some((r) => !r.is4k);
+    const has4kRequests = fullMedia.requests.some((r) => r.is4k);
+
+    // If no requests remain at all and the media isn't actively
+    // available or being processed, delete the orphaned entry so
+    // users can submit a fresh request for this title.
+    if (
+      !hasStandardRequests &&
+      !has4kRequests &&
+      !MediaRequestSubscriber.ACTIVE_STATUSES.has(fullMedia.status) &&
+      !MediaRequestSubscriber.ACTIVE_STATUSES.has(fullMedia.status4k)
+    ) {
+      await manager.remove(fullMedia);
+      return;
+    }
+
     const needsStatusUpdate =
-      !fullMedia.requests.some((request) => !request.is4k) &&
-      fullMedia.status !== MediaStatus.AVAILABLE;
+      !hasStandardRequests &&
+      !MediaRequestSubscriber.ACTIVE_STATUSES.has(fullMedia.status);
 
     const needs4kStatusUpdate =
-      !fullMedia.requests.some((request) => request.is4k) &&
-      fullMedia.status4k !== MediaStatus.AVAILABLE;
+      !has4kRequests &&
+      !MediaRequestSubscriber.ACTIVE_STATUSES.has(fullMedia.status4k);
 
     if (needsStatusUpdate || needs4kStatusUpdate) {
       // Re-fetch WITHOUT requests to avoid cascade issues on save
