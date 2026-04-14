@@ -348,8 +348,8 @@ requestRoutes.get('/count', async (_req, res, next) => {
         })
         .andWhere(
           isAvailable
-            ? '(request.is4k = false AND media.status = :available) OR (request.is4k = true AND media.status4k = :available)'
-            : '(request.is4k = false AND media.status != :available) OR (request.is4k = true AND media.status4k != :available)',
+            ? '((request.is4k = false AND media.status = :available) OR (request.is4k = true AND media.status4k = :available))'
+            : '((request.is4k = false AND media.status != :available) OR (request.is4k = true AND media.status4k != :available))',
           { available: MediaStatus.AVAILABLE }
         )
         .getCount();
