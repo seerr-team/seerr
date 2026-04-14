@@ -117,6 +117,184 @@ async function seedRequest(status = MediaRequestStatus.PENDING) {
   });
 }
 
+async function createTestMedia(
+  tmdbId: number,
+  mediaType: MediaType = MediaType.MOVIE
+): Promise<Media> {
+  const mediaRepository = getRepository(Media);
+  const media = new Media();
+  media.tmdbId = tmdbId;
+  media.mediaType = mediaType;
+  media.status = MediaStatus.UNKNOWN;
+  media.status4k = MediaStatus.UNKNOWN;
+  return mediaRepository.save(media);
+}
+
+async function createMediaRequest(
+  user: User,
+  media: Media,
+  type: MediaType,
+  status: MediaRequestStatus = MediaRequestStatus.PENDING,
+  is4k = false
+): Promise<MediaRequest> {
+  const requestRepository = getRepository(MediaRequest);
+  const req = new MediaRequest({
+    type,
+    media,
+    requestedBy: user,
+    status,
+    is4k,
+    seasons: [],
+  });
+  return requestRepository.save(req);
+}
+
+describe('GET /request/count', () => {
+  it('returns zero counts when no requests exist', async () => {
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+
+    const res = await agent.get('/request/count');
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.total, 0);
+    assert.strictEqual(res.body.movie, 0);
+    assert.strictEqual(res.body.tv, 0);
+    assert.strictEqual(res.body.pending, 0);
+    assert.strictEqual(res.body.approved, 0);
+    assert.strictEqual(res.body.declined, 0);
+    assert.strictEqual(res.body.processing, 0);
+    assert.strictEqual(res.body.available, 0);
+    assert.strictEqual(res.body.completed, 0);
+  });
+
+  it('counts requests by type', async () => {
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+
+    const userRepository = getRepository(User);
+    const user = await userRepository.findOneOrFail({
+      where: { email: 'admin@seerr.dev' },
+    });
+
+    const movieMedia = await createTestMedia(100001, MediaType.MOVIE);
+    const tvMedia = await createTestMedia(100002, MediaType.TV);
+
+    await createMediaRequest(user, movieMedia, MediaType.MOVIE);
+    await createMediaRequest(user, movieMedia, MediaType.MOVIE);
+    await createMediaRequest(user, tvMedia, MediaType.TV);
+
+    const res = await agent.get('/request/count');
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.total, 3);
+    assert.strictEqual(res.body.movie, 2);
+    assert.strictEqual(res.body.tv, 1);
+  });
+
+  it('counts requests by status', async () => {
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+
+    const userRepository = getRepository(User);
+    const user = await userRepository.findOneOrFail({
+      where: { email: 'admin@seerr.dev' },
+    });
+
+    const media1 = await createTestMedia(200001, MediaType.MOVIE);
+    const media2 = await createTestMedia(200002, MediaType.MOVIE);
+    const media3 = await createTestMedia(200003, MediaType.MOVIE);
+
+    await createMediaRequest(
+      user,
+      media1,
+      MediaType.MOVIE,
+      MediaRequestStatus.PENDING
+    );
+    await createMediaRequest(
+      user,
+      media2,
+      MediaType.MOVIE,
+      MediaRequestStatus.APPROVED
+    );
+    await createMediaRequest(
+      user,
+      media3,
+      MediaType.MOVIE,
+      MediaRequestStatus.DECLINED
+    );
+
+    const res = await agent.get('/request/count');
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.total, 3);
+    assert.strictEqual(res.body.pending, 1);
+    assert.strictEqual(res.body.approved, 1);
+    assert.strictEqual(res.body.declined, 1);
+    assert.strictEqual(res.body.completed, 0);
+  });
+
+  it('counts processing and available correctly for HD and 4K requests', async () => {
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+
+    const user = await getRepository(User).findOneOrFail({
+      where: { email: 'admin@seerr.dev' },
+    });
+    const mediaRepo = getRepository(Media);
+
+    // HD approved, media not yet available (processing)
+    const hdProcessing = await createTestMedia(300001, MediaType.MOVIE);
+    hdProcessing.status = MediaStatus.PROCESSING;
+    await mediaRepo.save(hdProcessing);
+    await createMediaRequest(
+      user,
+      hdProcessing,
+      MediaType.MOVIE,
+      MediaRequestStatus.APPROVED,
+      false
+    );
+
+    // HD approved, media available
+    const hdAvailable = await createTestMedia(300002, MediaType.MOVIE);
+    hdAvailable.status = MediaStatus.AVAILABLE;
+    await mediaRepo.save(hdAvailable);
+    await createMediaRequest(
+      user,
+      hdAvailable,
+      MediaType.MOVIE,
+      MediaRequestStatus.APPROVED,
+      false
+    );
+
+    // 4K approved, 4K media not yet available (processing)
+    const fourKProcessing = await createTestMedia(300003, MediaType.MOVIE);
+    fourKProcessing.status4k = MediaStatus.PROCESSING;
+    await mediaRepo.save(fourKProcessing);
+    await createMediaRequest(
+      user,
+      fourKProcessing,
+      MediaType.MOVIE,
+      MediaRequestStatus.APPROVED,
+      true
+    );
+
+    // 4K approved, 4K media available
+    const fourKAvailable = await createTestMedia(300004, MediaType.MOVIE);
+    fourKAvailable.status4k = MediaStatus.AVAILABLE;
+    await mediaRepo.save(fourKAvailable);
+    await createMediaRequest(
+      user,
+      fourKAvailable,
+      MediaType.MOVIE,
+      MediaRequestStatus.APPROVED,
+      true
+    );
+
+    const res = await agent.get('/request/count');
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.processing, 2);
+    assert.strictEqual(res.body.available, 2);
+  });
+});
+
 describe('DELETE /request/:requestId', () => {
   it('allows the owner to delete their own pending request', async () => {
     const mediaRequest = await seedRequest();
