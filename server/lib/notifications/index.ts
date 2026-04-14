@@ -1,4 +1,5 @@
-import type { User } from '@server/entity/User';
+import { getRepository } from '@server/datasource';
+import { User } from '@server/entity/User';
 import { Permission } from '@server/lib/permissions';
 import logger from '@server/logger';
 import type { NotificationAgent, NotificationPayload } from './agents/agent';
@@ -97,14 +98,23 @@ class NotificationManager {
     logger.info('Registered notification agents', { label: 'Notifications' });
   };
 
-  public sendNotification(
+  public async sendNotification(
     type: Notification,
     payload: NotificationPayload
-  ): void {
+  ): Promise<void> {
     logger.info(`Sending notification(s) for ${Notification[type]}`, {
       label: 'Notifications',
       subject: payload.subject,
     });
+
+    if (
+      payload.notifyAdmin ||
+      type === Notification.MEDIA_APPROVED ||
+      type === Notification.MEDIA_DECLINED
+    ) {
+      const userRepository = getRepository(User);
+      payload.adminUsers = await userRepository.find();
+    }
 
     this.activeAgents.forEach((agent) => {
       if (agent.shouldSend()) {

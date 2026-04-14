@@ -1,7 +1,5 @@
 import { IssueType, IssueTypeName } from '@server/constants/issue';
 import { MediaType } from '@server/constants/media';
-import { getRepository } from '@server/datasource';
-import { User } from '@server/entity/User';
 import PreparedEmail from '@server/lib/email';
 import type { NotificationAgentEmail } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
@@ -255,8 +253,7 @@ class EmailAgent
     }
 
     if (payload.notifyAdmin) {
-      const userRepository = getRepository(User);
-      const users = await userRepository.find();
+      const users = payload.adminUsers ?? [];
 
       await Promise.all(
         users

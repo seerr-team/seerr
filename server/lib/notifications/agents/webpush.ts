@@ -168,9 +168,7 @@ class WebPushAgent
 
     const mainUser = await userRepository.findOne({ where: { id: 1 } });
 
-    const requestRepository = getRepository(MediaRequest);
-
-    const pendingRequests = await requestRepository.find({
+    const pendingRequestsCount = await getRepository(MediaRequest).count({
       where: { status: MediaRequestStatus.PENDING },
     });
 
@@ -246,7 +244,7 @@ class WebPushAgent
       type === Notification.MEDIA_APPROVED ||
       type === Notification.MEDIA_DECLINED
     ) {
-      const users = await userRepository.find();
+      const users = payload.adminUsers ?? [];
 
       const manageUsers = users.filter(
         (user) =>
@@ -292,7 +290,7 @@ class WebPushAgent
                 notifySystem: false,
                 notifyAdmin: true,
                 isAdmin: true,
-                pendingRequestsCount: pendingRequests.length,
+                pendingRequestsCount,
               })
             ),
             'utf-8'
@@ -317,7 +315,7 @@ class WebPushAgent
       );
 
       if (type === Notification.MEDIA_PENDING) {
-        payload = { ...payload, pendingRequestsCount: pendingRequests.length };
+        payload = { ...payload, pendingRequestsCount };
       }
 
       const notificationPayload = Buffer.from(

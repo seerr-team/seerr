@@ -1,6 +1,4 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
-import { getRepository } from '@server/datasource';
-import { User } from '@server/entity/User';
 import type { NotificationAgentDiscord } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -276,8 +274,7 @@ class DiscordAgent
         }
 
         if (payload.notifyAdmin) {
-          const userRepository = getRepository(User);
-          const users = await userRepository.find();
+          const users = payload.adminUsers ?? [];
 
           userMentions.push(
             ...users
