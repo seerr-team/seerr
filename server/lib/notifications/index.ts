@@ -98,22 +98,36 @@ class NotificationManager {
     logger.info('Registered notification agents', { label: 'Notifications' });
   };
 
-  public async sendNotification(
+  public sendNotification(
     type: Notification,
     payload: NotificationPayload
-  ): Promise<void> {
+  ): void {
     logger.info(`Sending notification(s) for ${Notification[type]}`, {
       label: 'Notifications',
       subject: payload.subject,
     });
 
+    void this.dispatchNotification(type, payload);
+  }
+
+  private async dispatchNotification(
+    type: Notification,
+    payload: NotificationPayload
+  ): Promise<void> {
     if (
       payload.notifyAdmin ||
       type === Notification.MEDIA_APPROVED ||
       type === Notification.MEDIA_DECLINED
     ) {
-      const userRepository = getRepository(User);
-      payload.adminUsers = await userRepository.find();
+      try {
+        payload.adminUsers = await getRepository(User).find();
+      } catch (e) {
+        logger.error('Failed to preload admin users for notification', {
+          label: 'Notifications',
+          errorMessage: e instanceof Error ? e.message : String(e),
+        });
+        payload.adminUsers = [];
+      }
     }
 
     this.activeAgents.forEach((agent) => {

@@ -168,9 +168,14 @@ class WebPushAgent
 
     const mainUser = await userRepository.findOne({ where: { id: 1 } });
 
-    const pendingRequestsCount = await getRepository(MediaRequest).count({
-      where: { status: MediaRequestStatus.PENDING },
-    });
+    const pendingRequestsCount =
+      type === Notification.MEDIA_PENDING ||
+      type === Notification.MEDIA_APPROVED ||
+      type === Notification.MEDIA_DECLINED
+        ? await getRepository(MediaRequest).count({
+            where: { status: MediaRequestStatus.PENDING },
+          })
+        : 0;
 
     const webPushNotification = async (
       pushSub: UserPushSubscription,
