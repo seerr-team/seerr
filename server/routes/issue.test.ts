@@ -138,10 +138,40 @@ describe('POST /issue/:issueId/comment', () => {
 
 describe('DELETE /issue/:issueId', () => {
   it('allows the creator to delete an issue with only one comment', async () => {
-    const issue = await seedIssue(['only comment']);
-    const agent = await adminAgent();
+    const userRepo = getRepository(User);
+    const mediaRepo = getRepository(Media);
+    const issueRepo = getRepository(Issue);
+    const commentRepo = getRepository(IssueComment);
 
-    const res = await agent.delete(`/issue/${issue.id}`);
+    const creator = await userRepo.findOneOrFail({
+      where: { email: 'friend@seerr.dev' },
+    });
+    creator.permissions = Permission.CREATE_ISSUES;
+    await userRepo.save(creator);
+
+    const media = mediaRepo.create({ tmdbId: 3, mediaType: MediaType.MOVIE });
+    await mediaRepo.save(media);
+
+    const issue = issueRepo.create({
+      issueType: 1,
+      createdBy: creator,
+      media,
+    });
+    await issueRepo.save(issue);
+
+    await commentRepo.save(
+      commentRepo.create({ message: 'only comment', user: creator, issue })
+    );
+
+    const settings = getSettings();
+    settings.main.localLogin = true;
+    const friendAgent = request.agent(app);
+    const loginRes = await friendAgent
+      .post('/auth/local')
+      .send({ email: 'friend@seerr.dev', password: 'test1234' });
+    assert.strictEqual(loginRes.status, 200);
+
+    const res = await friendAgent.delete(`/issue/${issue.id}`);
 
     assert.strictEqual(res.status, 204);
   });
