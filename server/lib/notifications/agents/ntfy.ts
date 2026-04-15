@@ -69,7 +69,11 @@ class NtfyAgent
         message += `\n**${intl.formatMessage(globalMessages.requestStatus)}:** ${status}`;
       }
     } else if (payload.comment) {
-      message += `\n**${intl.formatMessage(globalMessages.commentFrom, { userName: payload.comment.user.displayName })}:**\n${payload.comment.message}`;
+      message += `\n**${this.escapeMarkdown(
+        intl.formatMessage(globalMessages.commentFrom, {
+          userName: payload.comment.user.displayName,
+        })
+      )}:**\n${payload.comment.message}`;
     } else if (payload.issue) {
       message += `\n\n**${intl.formatMessage(globalMessages.reportedBy)}:** ${this.escapeMarkdown(payload.issue.createdBy.displayName)}`;
       message += `\n**${intl.formatMessage(globalMessages.issueType)}:** ${IssueTypeName[payload.issue.issueType]}`;
