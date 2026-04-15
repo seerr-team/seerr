@@ -32,11 +32,11 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
   trustedProxies: 'Trusted Proxies',
   forwardAuthEnabled: 'Enable Proxy Forward Authentication',
   forwardAuthEnabledTip:
-    'Authenticate as the user specified by the header. Only enable when secured behind a trusted proxy.',
+    'Authenticate as the user specified by the headers. Only enable when secured behind a trusted proxy.',
   userHeaderName: 'User Header Name',
   userHeaderNameTip: 'Matched against Jellyfin or Plex Username',
   emailHeaderName: 'Email Header Name',
-  emailHeaderNameTip: 'Matched against email',
+  emailHeaderNameTip: 'Matched against Email',
   proxyEnabled: 'HTTP(S) Proxy',
   proxyEnabledTip:
     'Send ALL outgoing HTTP/HTTPS requests through a proxy server (host/port). Does NOT enable HTTPS, SSL, or certificate configuration.',
@@ -53,9 +53,6 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
   validationDnsCacheMaxTtl: 'You must provide a valid maximum TTL',
   validationProxyPort: 'You must provide a valid port',
   validationForwardAuthUserHeader: 'You must provide a user header name',
-  advancedNetworkSettings: 'Advanced Network Settings',
-  networkDisclaimer:
-    'Network parameters from your container/system should be used instead of these settings. See the {docs} for more information.',
   docs: 'documentation',
   forceIpv4First: 'Force IPv4 Resolution First',
   forceIpv4FirstTip:
@@ -335,6 +332,146 @@ const SettingsNetwork = () => {
                     />
                   </div>
                 </div>
+                {values.trustProxy && (
+                  <>
+                    <div className="ml-4 mr-2">
+                      <div className="form-row">
+                        <label
+                          htmlFor="trustedProxies"
+                          className="checkbox-label"
+                        >
+                          <span className="mr-2">
+                            {intl.formatMessage(messages.trustedProxies)}
+                          </span>
+                          <SettingsBadge
+                            badgeType="advanced"
+                            className="mr-2"
+                          />
+                        </label>
+                        <div className="form-input-area">
+                          <Field
+                            type="text"
+                            id="trustedProxies"
+                            name="trustedProxies"
+                          />
+                        </div>
+                        {errors.trustedProxies &&
+                          touched.trustedProxies &&
+                          typeof errors.trustedProxies === 'string' && (
+                            <div className="error">{errors.trustedProxies}</div>
+                          )}
+                      </div>
+                      <div className="form-row">
+                        <label
+                          htmlFor="forwardAuthEnabled"
+                          className="checkbox-label"
+                        >
+                          <span className="mr-2">
+                            {intl.formatMessage(messages.forwardAuthEnabled)}
+                          </span>
+                          <SettingsBadge
+                            badgeType="advanced"
+                            className="mr-2"
+                          />
+                          <span className="label-tip">
+                            {intl.formatMessage(messages.forwardAuthEnabledTip)}
+                          </span>
+                        </label>
+                        <div className="form-input-area">
+                          <Field
+                            type="checkbox"
+                            id="forwardAuthEnabled"
+                            name="forwardAuthEnabled"
+                            onChange={() => {
+                              setFieldValue(
+                                'forwardAuthEnabled',
+                                !values.forwardAuthEnabled
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    {values.forwardAuthEnabled && (
+                      <>
+                        <div className="ml-6 mr-2">
+                          <div className="form-row">
+                            <label
+                              htmlFor="forwardAuthUserHeader"
+                              className="text-label"
+                            >
+                              <span className="mr-2">
+                                {intl.formatMessage(messages.userHeaderName)}
+                              </span>
+                              <SettingsBadge badgeType="advanced" />
+                              <span className="label-tip">
+                                {intl.formatMessage(messages.userHeaderNameTip)}
+                              </span>
+                            </label>
+                            <div className="form-input-area">
+                              <div className="form-input-field">
+                                <Field
+                                  className="inline"
+                                  id="forwardAuthUserHeader"
+                                  name="forwardAuthUserHeader"
+                                  type="text"
+                                  list="forwardauth-autocomplete-options"
+                                  autoComplete="off"
+                                  placeholder="e.g. Remote-User (Case Insensitive)"
+                                  value={values.forwardAuthUserHeader ?? ''}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="form-row">
+                            <label
+                              htmlFor="forwardAuthEmailHeader"
+                              className="text-label"
+                            >
+                              <span className="mr-2">
+                                {intl.formatMessage(messages.emailHeaderName)}
+                              </span>
+                              <SettingsBadge badgeType="advanced" />
+                              <span className="label-tip">
+                                {intl.formatMessage(
+                                  messages.emailHeaderNameTip
+                                )}
+                              </span>
+                            </label>
+                            <div className="form-input-area">
+                              <div className="form-input-field">
+                                <Field
+                                  className="inline"
+                                  id="forwardAuthEmailHeader"
+                                  name="forwardAuthEmailHeader"
+                                  type="text"
+                                  list="forwardauth-autocomplete-options"
+                                  autoComplete="off"
+                                  placeholder="e.g. Remote-Email (Case Insensitive)"
+                                  value={values.forwardAuthEmailHeader ?? ''}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <datalist id="forwardauth-autocomplete-options">
+                            <option value="Remote-User" />
+                            <option value="Remote-Email" />
+                            <option value="Remote-Name" />
+                            <option value="Cf-Access-Authenticated-User-Email" />
+                            <option value="X-authentik-username" />
+                            <option value="X-authentik-email" />
+                          </datalist>
+                          {errors['forwardAuthHeaders'] &&
+                            typeof errors.forwardAuthHeaders === 'string' && (
+                              <div className="error">
+                                {errors.forwardAuthHeaders}
+                              </div>
+                            )}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
                 <div className="form-row">
                   <label htmlFor="csrfProtection" className="checkbox-label">
                     <span className="mr-2">
@@ -675,155 +812,6 @@ const SettingsNetwork = () => {
                         </div>
                       </div>
                     </div>
-                  </>
-                )}
-                <h3 className="heading mt-10">
-                  {intl.formatMessage(messages.advancedNetworkSettings)}
-                </h3>
-                <p className="description">
-                  {intl.formatMessage(messages.networkDisclaimer, {
-                    docs: (
-                      <a
-                        href="https://docs.jellyseerr.dev/troubleshooting"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-white"
-                      >
-                        {intl.formatMessage(messages.docs)}
-                      </a>
-                    ),
-                  })}
-                </p>
-                {values.trustProxy && (
-                  <>
-                    <div className="form-row">
-                      <label
-                        htmlFor="trustedProxies"
-                        className="checkbox-label"
-                      >
-                        <span className="mr-2">
-                          {intl.formatMessage(messages.trustedProxies)}
-                        </span>
-                        <SettingsBadge badgeType="advanced" className="mr-2" />
-                      </label>
-                      <div className="form-input-area">
-                        <Field
-                          type="text"
-                          id="trustedProxies"
-                          name="trustedProxies"
-                        />
-                      </div>
-                      {errors.trustedProxies &&
-                        touched.trustedProxies &&
-                        typeof errors.trustedProxies === 'string' && (
-                          <div className="error">{errors.trustedProxies}</div>
-                        )}
-                    </div>
-                    <div className="form-row">
-                      <label
-                        htmlFor="forwardAuthEnabled"
-                        className="checkbox-label"
-                      >
-                        <span className="mr-2">
-                          {intl.formatMessage(messages.forwardAuthEnabled)}
-                        </span>
-                        <SettingsBadge badgeType="advanced" className="mr-2" />
-                        <span className="label-tip">
-                          {intl.formatMessage(messages.forwardAuthEnabledTip)}
-                        </span>
-                      </label>
-                      <div className="form-input-area">
-                        <Field
-                          type="checkbox"
-                          id="forwardAuthEnabled"
-                          name="forwardAuthEnabled"
-                          onChange={() => {
-                            setFieldValue(
-                              'forwardAuthEnabled',
-                              !values.forwardAuthEnabled
-                            );
-                          }}
-                        />
-                      </div>
-                    </div>
-                    {values.forwardAuthEnabled && (
-                      <>
-                        <div className="ml-4 mr-2">
-                          <div className="form-row">
-                            <label
-                              htmlFor="forwardAuthUserHeader"
-                              className="text-label"
-                            >
-                              <span className="mr-2">
-                                {intl.formatMessage(messages.userHeaderName)}
-                              </span>
-                              <SettingsBadge badgeType="advanced" />
-                              <span className="label-tip">
-                                {intl.formatMessage(messages.userHeaderNameTip)}
-                              </span>
-                            </label>
-                            <div className="form-input-area">
-                              <div className="form-input-field">
-                                <Field
-                                  className="inline"
-                                  id="forwardAuthUserHeader"
-                                  name="forwardAuthUserHeader"
-                                  type="text"
-                                  list="forwardauth-autocomplete-options"
-                                  autoComplete="off"
-                                  placeholder="e.g. Remote-User (Case Insensitive)"
-                                  value={values.forwardAuthUserHeader ?? ''}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="form-row">
-                            <label
-                              htmlFor="forwardAuthEmailHeader"
-                              className="text-label"
-                            >
-                              <span className="mr-2">
-                                {intl.formatMessage(messages.emailHeaderName)}
-                              </span>
-                              <SettingsBadge badgeType="advanced" />
-                              <span className="label-tip">
-                                {intl.formatMessage(
-                                  messages.emailHeaderNameTip
-                                )}
-                              </span>
-                            </label>
-                            <div className="form-input-area">
-                              <div className="form-input-field">
-                                <Field
-                                  className="inline"
-                                  id="forwardAuthEmailHeader"
-                                  name="forwardAuthEmailHeader"
-                                  type="text"
-                                  list="forwardauth-autocomplete-options"
-                                  autoComplete="off"
-                                  placeholder="e.g. Remote-Email (Case Insensitive)"
-                                  value={values.forwardAuthEmailHeader ?? ''}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          <datalist id="forwardauth-autocomplete-options">
-                            <option value="remote-user" />
-                            <option value="remote-email" />
-                            <option value="remote-name" />
-                            <option value="cf-access-authenticated-user-email" />
-                            <option value="x-authentik-username" />
-                            <option value="x-authentik-email" />
-                          </datalist>
-                          {errors['forwardAuthHeaders'] &&
-                            typeof errors.forwardAuthHeaders === 'string' && (
-                              <div className="error">
-                                {errors.forwardAuthHeaders}
-                              </div>
-                            )}
-                        </div>
-                      </>
-                    )}
                   </>
                 )}
                 <div className="actions">

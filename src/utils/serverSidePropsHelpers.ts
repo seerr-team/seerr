@@ -20,12 +20,14 @@ export const getAuthHeaders = (
 
   if (forwardAuth) {
     const { userHeader, emailHeader } = forwardAuth;
+    const user = userHeader.toLowerCase();
+    const email = emailHeader.toLowerCase();
 
-    if (ctx.req.headers[userHeader]) {
-      forwardAuthVars[userHeader] = ctx.req.headers[userHeader];
+    if (ctx.req.headers[user]) {
+      forwardAuthVars[user] = ctx.req.headers[user];
     }
-    if (ctx.req.headers[emailHeader]) {
-      forwardAuthVars[emailHeader] = ctx.req.headers[emailHeader];
+    if (ctx.req.headers[email]) {
+      forwardAuthVars[email] = ctx.req.headers[email];
     }
   }
 

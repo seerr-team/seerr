@@ -46,15 +46,14 @@ export const checkUser: Middleware = async (req, _res, next) => {
     settings.network.forwardAuth.enabled &&
     trustedProxy
   ) {
-    const hasUserHeader = settings.network.forwardAuth.userHeader !== '';
-    const hasEmailHeader = settings.network.forwardAuth.emailHeader !== '';
-    const userValue =
-      (hasUserHeader && req.header(settings.network.forwardAuth.userHeader)) ??
-      '';
-    const emailValue =
-      (hasEmailHeader &&
-        req.header(settings.network.forwardAuth.emailHeader)) ??
-      '';
+    let { userHeader, emailHeader } = settings.network.forwardAuth;
+    userHeader = userHeader.toLowerCase();
+    emailHeader = emailHeader.toLowerCase();
+
+    const hasUserHeader = userHeader !== '';
+    const hasEmailHeader = emailHeader !== '';
+    const userValue = (hasUserHeader && req.header(userHeader)) ?? '';
+    const emailValue = (hasEmailHeader && req.header(emailHeader)) ?? '';
 
     let query: object[] = [];
 

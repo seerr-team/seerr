@@ -91,6 +91,11 @@ settingsRoutes.get('/network', (req, res) => {
 settingsRoutes.post('/network', async (req, res) => {
   const settings = getSettings();
 
+  // The merge operation performs a union of existing values
+  // and the new values set by the user.
+  // It will not delete a value when the user deletes it
+  // because that value still exists in local config.
+  // So, it is necessary to clear this.
   settings.network.trustedProxies = { v4: [], v6: [] };
   settings.network = merge(settings.network, req.body);
   await settings.save();
