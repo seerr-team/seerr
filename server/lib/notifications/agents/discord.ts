@@ -1,8 +1,8 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
-import { getIntl } from '@server/lib/i18n';
-import globalMessages from '@server/lib/i18n/globalMessages';
+import { getIntl } from '@server/i18n';
+import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentDiscord } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';

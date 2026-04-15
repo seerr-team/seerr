@@ -2,51 +2,43 @@
 /* eslint-disable @typescript-eslint/no-require-imports, no-console */
 /**
  * Check that i18n locale files are in sync with extracted messages.
- * Runs extract scripts and compares en.json; exits 1 if they differ.
+ * Runs extract script and compares en.json files; exits 1 if they differ.
  */
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
 const targets = [
-  {
-    localePath: path.join(__dirname, '..', 'src', 'i18n', 'locale', 'en.json'),
-    script: 'pnpm i18n:extract',
-  },
-  {
-    localePath: path.join(
-      __dirname,
-      '..',
-      'server',
-      'lib',
-      'i18n',
-      'locale',
-      'en.json'
-    ),
-    script: 'pnpm i18n:extract:server',
-  },
+  path.join(__dirname, '..', 'src', 'i18n', 'locale', 'en.json'),
+  path.join(__dirname, '..', 'server', 'i18n', 'locale', 'en.json'),
 ];
 
-for (const { localePath, script } of targets) {
-  const backupPath = `${localePath}.bak`;
-  try {
-    fs.copyFileSync(localePath, backupPath);
-    execSync(script, { stdio: 'inherit' });
+const backups = targets.map((p) => `${p}.bak`);
 
-    const original = fs.readFileSync(backupPath, 'utf8');
-    const extracted = fs.readFileSync(localePath, 'utf8');
-    fs.unlinkSync(backupPath);
+try {
+  targets.forEach((p, i) => fs.copyFileSync(p, backups[i]));
+  execSync('pnpm i18n:extract', { stdio: 'inherit' });
+
+  let outOfSync = false;
+  for (let i = 0; i < targets.length; i++) {
+    const original = fs.readFileSync(backups[i], 'utf8');
+    const extracted = fs.readFileSync(targets[i], 'utf8');
+    fs.unlinkSync(backups[i]);
 
     if (original !== extracted) {
       console.error(
-        `i18n messages are out of sync. Please run '${script}' and commit the changes.`
+        `i18n messages are out of sync for ${path.basename(path.dirname(path.dirname(targets[i])))}. Please run 'pnpm i18n:extract' and commit the changes.`
       );
-      process.exit(1);
+      outOfSync = true;
     }
-  } catch (err) {
-    if (fs.existsSync(backupPath)) {
-      fs.unlinkSync(backupPath);
-    }
-    throw err;
   }
+
+  if (outOfSync) {
+    process.exit(1);
+  }
+} catch (err) {
+  backups.forEach((b) => {
+    if (fs.existsSync(b)) fs.unlinkSync(b);
+  });
+  throw err;
 }

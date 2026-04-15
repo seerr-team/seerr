@@ -1,5 +1,5 @@
 import type { User } from '@server/entity/User';
-import { defineMessages, getIntl } from '@server/lib/i18n';
+import { defineMessages, getIntl } from '@server/i18n';
 import { Notification } from '@server/lib/notifications';
 import type { NotificationAgent } from '@server/lib/notifications/agents/agent';
 import DiscordAgent from '@server/lib/notifications/agents/discord';

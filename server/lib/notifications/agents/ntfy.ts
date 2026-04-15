@@ -1,6 +1,6 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
-import { getIntl } from '@server/lib/i18n';
-import globalMessages from '@server/lib/i18n/globalMessages';
+import { getIntl } from '@server/i18n';
+import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentNtfy } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';

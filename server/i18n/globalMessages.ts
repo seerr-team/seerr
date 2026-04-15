@@ -1,4 +1,4 @@
-import { defineMessages } from '@server/lib/i18n';
+import { defineMessages } from '@server/i18n';
 
 const globalMessages = defineMessages('notifications.common', {
   requestedBy: 'Requested By',
