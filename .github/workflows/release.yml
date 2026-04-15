@@ -147,7 +147,9 @@ jobs:
             ${{ env.DOCKER_HUB }}
             ghcr.io/${{ github.repository }}
           tags: |
-            type=raw,value=${{ env.VERSION }}
+            type=semver,pattern={{raw}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
           labels: |
             org.opencontainers.image.created=${{ steps.ts.outputs.TIMESTAMP }}
 

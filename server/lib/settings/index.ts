@@ -146,6 +146,8 @@ export interface MainSettings {
   discoverRegion: string;
   streamingRegion: string;
   originalLanguage: string;
+  blocklistRegion: string;
+  blocklistLanguage: string;
   blocklistedTags: string;
   blocklistedTagsLimit: number;
   mediaServerType: number;
@@ -410,6 +412,8 @@ class Settings {
         discoverRegion: '',
         streamingRegion: '',
         originalLanguage: '',
+        blocklistRegion: '',
+        blocklistLanguage: '',
         blocklistedTags: '',
         blocklistedTagsLimit: 50,
         mediaServerType: MediaServerType.NOT_CONFIGURED,
@@ -807,16 +811,22 @@ class Settings {
       await this.save();
     }
 
+    let change = false;
     if (data && !raw) {
       const parsedJson = JSON.parse(data);
       const migratedData = await runMigrations(parsedJson, SETTINGS_PATH);
-      this.data = mergeSettings(this.data, migratedData);
+      const merged = mergeSettings(this.data, migratedData);
+
+      if (JSON.stringify(merged) !== JSON.stringify(migratedData)) {
+        change = true;
+      }
+
+      this.data = merged;
     } else if (data) {
       this.data = JSON.parse(data);
     }
 
     // generate keys and ids if it's missing
-    let change = false;
     if (!this.data.main.apiKey) {
       this.data.main.apiKey = this.generateApiKey();
       change = true;
