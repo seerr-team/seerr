@@ -18,6 +18,7 @@ import {
   AfterLoad,
   Column,
   Entity,
+  Index,
   Not,
   OneToMany,
   OneToOne,
@@ -86,9 +87,11 @@ export class User {
   @Column({ type: 'integer', default: UserType.PLEX })
   public userType: UserType;
 
+  @Index('IDX_user_plexId')
   @Column({ type: 'integer', nullable: true, select: true })
   public plexId?: number | null;
 
+  @Index('IDX_user_jellyfinUserId')
   @Column({ type: 'varchar', nullable: true })
   public jellyfinUserId?: string | null;
 
