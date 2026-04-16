@@ -35,6 +35,9 @@ jobs:
 
       - name: Get tag version
         id: git-cliff
+        env:
+          # In order to avoid hitting the GitHub API rate limit
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag_version=$(git-cliff -c .github/cliff.toml --bumped-version --unreleased)
           echo "Next tag version is ${tag_version}"
