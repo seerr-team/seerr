@@ -98,6 +98,7 @@ These following special variables are only included in media-related notificatio
 | Variable                      | Value                                                                                                          |
 | ------------------------------| -------------------------------------------------------------------------------------------------------------- |
 | `{{media_type}}`              | The media type (`movie` or `tv`)                                                                               |
+| `{{media_imdbid}}`            | The media's IMDb ID                                                                                            |
 | `{{media_tmdbid}}`            | The media's TMDB ID                                                                                            |
 | `{{media_tvdbid}}`            | The media's TheTVDB ID                                                                                         |
 | `{{media_status}}`            | The media's availability status (`UNKNOWN`, `PENDING`, `PROCESSING`, `PARTIALLY_AVAILABLE`, or `AVAILABLE`)    |

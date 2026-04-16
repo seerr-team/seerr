@@ -203,7 +203,7 @@ app
     server.use(
       '/api',
       session({
-        secret: settings.clientId,
+        secret: settings.sessionSecret,
         resave: false,
         saveUninitialized: false,
         cookie: {

@@ -49,6 +49,15 @@ export const createTmdbWithRegionLanguage = (user?: User): TheMovieDb => {
   });
 };
 
+export const createTmdbWithBlocklistSettings = (): TheMovieDb => {
+  const settings = getSettings();
+
+  return new TheMovieDb({
+    discoverRegion: settings.main.blocklistRegion,
+    originalLanguage: settings.main.blocklistLanguage,
+  });
+};
+
 const discoverRoutes = Router();
 
 const QueryFilterOptions = z.object({
@@ -124,7 +133,10 @@ discoverRoutes.get('/movies', async (req, res, next) => {
 
     const media = await Media.getRelatedMedia(
       req.user,
-      data.results.map((result) => result.id)
+      data.results.map((result) => ({
+        tmdbId: result.id,
+        mediaType: MediaType.MOVIE,
+      }))
     );
 
     let keywordData: TmdbKeyword[] = [];
@@ -193,7 +205,10 @@ discoverRoutes.get<{ language: string }>(
 
       const media = await Media.getRelatedMedia(
         req.user,
-        data.results.map((result) => result.id)
+        data.results.map((result) => ({
+          tmdbId: result.id,
+          mediaType: MediaType.MOVIE,
+        }))
       );
 
       return res.status(200).json({
@@ -251,7 +266,10 @@ discoverRoutes.get<{ genreId: string }>(
 
       const media = await Media.getRelatedMedia(
         req.user,
-        data.results.map((result) => result.id)
+        data.results.map((result) => ({
+          tmdbId: result.id,
+          mediaType: MediaType.MOVIE,
+        }))
       );
 
       return res.status(200).json({
@@ -299,7 +317,10 @@ discoverRoutes.get<{ studioId: string }>(
 
       const media = await Media.getRelatedMedia(
         req.user,
-        data.results.map((result) => result.id)
+        data.results.map((result) => ({
+          tmdbId: result.id,
+          mediaType: MediaType.MOVIE,
+        }))
       );
 
       return res.status(200).json({
@@ -349,7 +370,10 @@ discoverRoutes.get('/movies/upcoming', async (req, res, next) => {
 
     const media = await Media.getRelatedMedia(
       req.user,
-      data.results.map((result) => result.id)
+      data.results.map((result) => ({
+        tmdbId: result.id,
+        mediaType: MediaType.MOVIE,
+      }))
     );
 
     return res.status(200).json({
@@ -417,7 +441,10 @@ discoverRoutes.get('/tv', async (req, res, next) => {
 
     const media = await Media.getRelatedMedia(
       req.user,
-      data.results.map((result) => result.id)
+      data.results.map((result) => ({
+        tmdbId: result.id,
+        mediaType: MediaType.TV,
+      }))
     );
 
     let keywordData: TmdbKeyword[] = [];
@@ -485,7 +512,10 @@ discoverRoutes.get<{ language: string }>(
 
       const media = await Media.getRelatedMedia(
         req.user,
-        data.results.map((result) => result.id)
+        data.results.map((result) => ({
+          tmdbId: result.id,
+          mediaType: MediaType.TV,
+        }))
       );
 
       return res.status(200).json({
@@ -543,7 +573,10 @@ discoverRoutes.get<{ genreId: string }>(
 
       const media = await Media.getRelatedMedia(
         req.user,
-        data.results.map((result) => result.id)
+        data.results.map((result) => ({
+          tmdbId: result.id,
+          mediaType: MediaType.TV,
+        }))
       );
 
       return res.status(200).json({
@@ -591,7 +624,10 @@ discoverRoutes.get<{ networkId: string }>(
 
       const media = await Media.getRelatedMedia(
         req.user,
-        data.results.map((result) => result.id)
+        data.results.map((result) => ({
+          tmdbId: result.id,
+          mediaType: MediaType.TV,
+        }))
       );
 
       return res.status(200).json({
@@ -641,7 +677,10 @@ discoverRoutes.get('/tv/upcoming', async (req, res, next) => {
 
     const media = await Media.getRelatedMedia(
       req.user,
-      data.results.map((result) => result.id)
+      data.results.map((result) => ({
+        tmdbId: result.id,
+        mediaType: MediaType.TV,
+      }))
     );
 
     return res.status(200).json({
@@ -711,7 +750,10 @@ discoverRoutes.get('/trending', async (req, res, next) => {
 
     const media = await Media.getRelatedMedia(
       req.user,
-      data.results.map((result) => result.id)
+      data.results.map((result) => ({
+        tmdbId: result.id,
+        mediaType: isMovie(result) ? MediaType.MOVIE : MediaType.TV,
+      }))
     );
 
     return res.status(200).json({
@@ -755,7 +797,10 @@ discoverRoutes.get<{ keywordId: string }>(
 
       const media = await Media.getRelatedMedia(
         req.user,
-        data.results.map((result) => result.id)
+        data.results.map((result) => ({
+          tmdbId: result.id,
+          mediaType: MediaType.MOVIE,
+        }))
       );
 
       return res.status(200).json({
@@ -879,7 +924,7 @@ discoverRoutes.get<Record<string, unknown>, WatchlistResponse>(
   async (req, res) => {
     const userRepository = getRepository(User);
     const itemsPerPage = 20;
-    const page = Number(req.query.page) ?? 1;
+    const page = req.query.page ? Number(req.query.page) : 1;
     const offset = (page - 1) * itemsPerPage;
 
     const activeUser = await userRepository.findOne({

@@ -3,6 +3,7 @@ import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
+import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
@@ -19,6 +20,8 @@ import * as Yup from 'yup';
 const messages = defineMessages(
   'components.UserProfile.UserSettings.UserPasswordChange',
   {
+    localPasswordDescription:
+      'This password is used for signing in with the {applicationTitle} local login form. It is separate from your media server password.',
     password: 'Password',
     currentpassword: 'Current Password',
     newpassword: 'New Password',
@@ -44,6 +47,7 @@ const messages = defineMessages(
 
 const UserPasswordChange = () => {
   const intl = useIntl();
+  const settings = useSettings();
   const { addToast } = useToasts();
   const router = useRouter();
   const { user: currentUser } = useUser();
@@ -112,6 +116,11 @@ const UserPasswordChange = () => {
       />
       <div className="mb-6">
         <h3 className="heading">{intl.formatMessage(messages.password)}</h3>
+        <p className="mt-1 text-sm text-gray-400">
+          {intl.formatMessage(messages.localPasswordDescription, {
+            applicationTitle: settings.currentSettings.applicationTitle,
+          })}
+        </p>
       </div>
       <Formik
         initialValues={{
@@ -133,7 +142,7 @@ const UserPasswordChange = () => {
               autoDismiss: true,
               appearance: 'success',
             });
-          } catch (e) {
+          } catch {
             addToast(
               intl.formatMessage(
                 data.hasPassword && user?.id === currentUser?.id

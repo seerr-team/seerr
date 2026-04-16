@@ -9,6 +9,7 @@ export type AvailableLocale =
   | 'el'
   | 'es'
   | 'es-MX'
+  | 'et'
   | 'fi'
   | 'fr'
   | 'hr'
@@ -18,6 +19,7 @@ export type AvailableLocale =
   | 'it'
   | 'ja'
   | 'ko'
+  | 'lb'
   | 'lt'
   | 'nb-NO'
   | 'nl'
@@ -32,4 +34,5 @@ export type AvailableLocale =
   | 'tr'
   | 'uk'
   | 'zh-CN'
-  | 'zh-TW';
+  | 'zh-TW'
+  | 'vi';

@@ -5,7 +5,7 @@ import Media from '@server/entity/Media';
 import { User } from '@server/entity/User';
 import type { WatchlistItem } from '@server/interfaces/api/discoverInterfaces';
 import logger from '@server/logger';
-import { DbAwareColumn } from '@server/utils/DbColumnHelper';
+import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
 import {
   Column,
   Entity,
@@ -13,6 +13,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   Unique,
+  UpdateDateColumn,
 } from 'typeorm';
 import type { ZodNumber, ZodOptional, ZodString } from 'zod';
 
@@ -25,7 +26,7 @@ export class NotFoundError extends Error {
 }
 
 @Entity()
-@Unique('UNIQUE_USER_DB', ['tmdbId', 'requestedBy'])
+@Unique('UNIQUE_USER_DB', ['tmdbId', 'mediaType', 'requestedBy'])
 export class Watchlist implements WatchlistItem {
   @PrimaryGeneratedColumn()
   id: number;
@@ -60,11 +61,7 @@ export class Watchlist implements WatchlistItem {
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
-  @DbAwareColumn({
-    type: 'datetime',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
+  @UpdateDateColumn({ type: resolveDbType('datetime') })
   public updatedAt: Date;
 
   constructor(init?: Partial<Watchlist>) {
@@ -142,11 +139,13 @@ export class Watchlist implements WatchlistItem {
 
   public static async deleteWatchlist(
     tmdbId: Watchlist['tmdbId'],
+    mediaType: MediaType,
     user: User
   ): Promise<Watchlist | null> {
     const watchlistRepository = getRepository(this);
     const watchlist = await watchlistRepository.findOneBy({
       tmdbId,
+      mediaType,
       requestedBy: { id: user.id },
     });
     if (!watchlist) {

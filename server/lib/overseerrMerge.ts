@@ -36,7 +36,7 @@ const checkOverseerrMerge = async (): Promise<boolean> => {
   // We have to replace Jellyseerr migrations not working with Overseerr with a custom one
   try {
     // Filter out the Jellyseerr migrations and replace them with the Seerr migration
-    // eslint-disable-next-line @typescript-eslint/ban-types
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     const newMigrations: MixedList<string | Function> = migrations
       ?.filter(
         (migration) =>
@@ -87,6 +87,27 @@ const checkOverseerrMerge = async (): Promise<boolean> => {
     await dbConnection.query('PRAGMA foreign_keys=OFF');
     await dbConnection.runMigrations();
     await dbConnection.query('PRAGMA foreign_keys=ON');
+  }
+
+  // Fix corrupted quota values carried over from Overseerr
+  try {
+    await dbConnection.query(
+      `UPDATE user SET movieQuotaLimit = NULL WHERE typeof(movieQuotaLimit) = 'text'`
+    );
+    await dbConnection.query(
+      `UPDATE user SET movieQuotaDays = NULL WHERE typeof(movieQuotaDays) = 'text'`
+    );
+    await dbConnection.query(
+      `UPDATE user SET tvQuotaLimit = NULL WHERE typeof(tvQuotaLimit) = 'text'`
+    );
+    await dbConnection.query(
+      `UPDATE user SET tvQuotaDays = NULL WHERE typeof(tvQuotaDays) = 'text'`
+    );
+  } catch (error) {
+    logger.error('Failed to clean up corrupted quota values', {
+      label: 'Seerr Migration',
+      error: error.message,
+    });
   }
 
   // MediaStatus.Blacklisted was added before MediaStatus.Deleted in Jellyseerr

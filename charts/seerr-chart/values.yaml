@@ -13,19 +13,19 @@ fullnameOverride: ''
 # Liveness / Readiness / Startup Probes
 probes:
   # -- Configure liveness probe
-  livenessProbe: {}
-  # initialDelaySeconds: 60
-  # periodSeconds: 30
-  # timeoutSeconds: 5
-  # successThreshold: 1
-  # failureThreshold: 5
+  livenessProbe:
+    initialDelaySeconds: 20
+    periodSeconds: 15
+    timeoutSeconds: 3
+    # successThreshold: 1
+    # failureThreshold: 3
   # -- Configure readiness probe
-  readinessProbe: {}
-  # initialDelaySeconds: 60
-  # periodSeconds: 30
-  # timeoutSeconds: 5
-  # successThreshold: 1
-  # failureThreshold: 5
+  readinessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 15
+    timeoutSeconds: 3
+    # successThreshold: 1
+    # failureThreshold: 3
   # -- Configure startup probe
   startupProbe: null
   #  tcpSocket:
@@ -88,6 +88,8 @@ config:
     volumeName: ''
     # -- Specify an existing `PersistentVolumeClaim` to use. If this value is provided, the default PVC will not be created
     existingClaim: ''
+    # -- Subpath of the pvc which should be mounted
+    subPath: ''
 
 ingress:
   enabled: false

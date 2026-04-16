@@ -29,12 +29,15 @@ jobs:
           persist-credentials: false
 
       - name: Install git-cliff
-        uses: taiki-e/install-action@d9c7e4de96b8ff27364cd0b5890e9280b99adbb3 # v2.68.11
+        uses: taiki-e/install-action@a37010ded18ff788be4440302bd6830b1ae50d8b # v2.68.25
         with:
           tool: git-cliff
 
       - name: Get tag version
         id: git-cliff
+        env:
+          # In order to avoid hitting the GitHub API rate limit
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag_version=$(git-cliff -c .github/cliff.toml --bumped-version --unreleased)
           echo "Next tag version is ${tag_version}"

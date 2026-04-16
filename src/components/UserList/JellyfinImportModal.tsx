@@ -24,6 +24,8 @@ const messages = defineMessages('components.UserList', {
     'Something went wrong while importing {mediaServerName} users.',
   importedfromJellyfin:
     '<strong>{userCount}</strong> {mediaServerName} {userCount, plural, one {user} other {users}} imported successfully!',
+  importedUsersNoPassword:
+    'Imported users do not have a {applicationTitle} password set. If you disable {mediaServerName} sign-in, they will need to set a password from their profile or via a password reset link.',
   user: 'User',
   noJellyfinuserstoimport: 'There are no {mediaServerName} users to import.',
   newJellyfinsigninenabled:
@@ -84,10 +86,24 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
         }
       );
 
+      addToast(
+        intl.formatMessage(messages.importedUsersNoPassword, {
+          applicationTitle: settings.currentSettings.applicationTitle,
+          mediaServerName:
+            settings.currentSettings.mediaServerType === MediaServerType.EMBY
+              ? 'Emby'
+              : 'Jellyfin',
+        }),
+        {
+          autoDismiss: false,
+          appearance: 'warning',
+        }
+      );
+
       if (onComplete) {
         onComplete();
       }
-    } catch (e) {
+    } catch {
       addToast(
         intl.formatMessage(messages.importfromJellyfinerror, {
           mediaServerName:
