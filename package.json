@@ -117,8 +117,8 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "@commitlint/cli": "17.4.4",
-    "@commitlint/config-conventional": "17.4.4",
+    "@commitlint/cli": "20.5.0",
+    "@commitlint/config-conventional": "20.5.0",
     "@eslint/js": "9.39.3",
     "@next/eslint-plugin-next": "^16.1.6",
     "@tailwindcss/aspect-ratio": "^0.4.2",
