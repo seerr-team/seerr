@@ -378,20 +378,14 @@ issueRoutes.delete(
     const issueRepository = getRepository(Issue);
 
     try {
-      const issueCommentRepository = getRepository(IssueComment);
-
       const issue = await issueRepository.findOneOrFail({
         where: { id: Number(req.params.issueId) },
-        relations: { createdBy: true },
-      });
-
-      const commentCount = await issueCommentRepository.count({
-        where: { issue: { id: issue.id } },
+        relations: { createdBy: true, comments: true },
       });
 
       if (
         !req.user?.hasPermission(Permission.MANAGE_ISSUES) &&
-        (issue.createdBy.id !== req.user?.id || commentCount > 1)
+        (issue.createdBy.id !== req.user?.id || issue.comments.length > 1)
       ) {
         return next({
           status: 401,
