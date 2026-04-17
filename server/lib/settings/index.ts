@@ -238,6 +238,14 @@ export interface NotificationAgentSlack extends NotificationAgentConfig {
   };
 }
 
+export interface NotificationAgentApprise extends NotificationAgentConfig {
+  options: {
+    url: string;
+    apiToken?: string;
+    tags?: string;
+  };
+}
+
 export interface NotificationAgentEmail extends NotificationAgentConfig {
   options: {
     userEmailRequired: boolean;
@@ -313,6 +321,7 @@ export interface NotificationAgentNtfy extends NotificationAgentConfig {
 }
 
 export enum NotificationAgentKey {
+  APPRISE = 'apprise',
   DISCORD = 'discord',
   EMAIL = 'email',
   GOTIFY = 'gotify',
@@ -326,6 +335,7 @@ export enum NotificationAgentKey {
 }
 
 interface NotificationAgents {
+  apprise: NotificationAgentApprise;
   discord: NotificationAgentDiscord;
   email: NotificationAgentEmail;
   gotify: NotificationAgentGotify;
@@ -548,6 +558,15 @@ class Settings {
               url: '',
               topic: '',
               priority: 3,
+            },
+          },
+          apprise: {
+            enabled: false,
+            embedPoster: false,
+            types: 0,
+            options: {
+              url: '',
+              apiToken: '',
             },
           },
         },

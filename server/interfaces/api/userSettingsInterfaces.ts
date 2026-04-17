@@ -3,6 +3,8 @@ import type { NotificationAgentKey } from '@server/lib/settings';
 export interface UserSettingsGeneralResponse {
   username?: string;
   email?: string;
+  appriseTags?: string;
+  appriseStatelessURL?: string;
   discordId?: string;
   locale?: string;
   discoverRegion?: string;
@@ -24,6 +26,12 @@ export type NotificationAgentTypes = Record<NotificationAgentKey, number>;
 export interface UserSettingsNotificationsResponse {
   emailEnabled?: boolean;
   pgpKey?: string;
+  appriseEnabled?: boolean;
+  appriseEnabledTypes?: number;
+  appriseURL?: string;
+  appriseAPIToken?: string;
+  appriseTags?: string;
+  appriseStatelessURL?: string;
   discordEnabled?: boolean;
   discordEnabledTypes?: number;
   discordId?: string;

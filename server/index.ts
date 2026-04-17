@@ -6,6 +6,7 @@ import { Session } from '@server/entity/Session';
 import { User } from '@server/entity/User';
 import { startJobs } from '@server/job/schedule';
 import notificationManager from '@server/lib/notifications';
+import AppriseAgent from '@server/lib/notifications/agents/apprise';
 import DiscordAgent from '@server/lib/notifications/agents/discord';
 import EmailAgent from '@server/lib/notifications/agents/email';
 import GotifyAgent from '@server/lib/notifications/agents/gotify';
@@ -126,6 +127,7 @@ app
 
     // Register Notification Agents
     notificationManager.registerAgents([
+      new AppriseAgent(),
       new DiscordAgent(),
       new EmailAgent(),
       new GotifyAgent(),

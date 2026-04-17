@@ -47,6 +47,8 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
 
       return res.status(200).json({
         username: user.username,
+        appriseTags: user.settings?.appriseTags,
+        appriseStatelessURL: user.settings?.appriseStatelessURL,
         email: user.email,
         discordId: user.settings?.discordId,
         locale: user.settings?.locale,
@@ -536,6 +538,12 @@ userSettingsRoutes.get<{ id: string }, UserSettingsNotificationsResponse>(
 
       return res.status(200).json({
         emailEnabled: settings.email.enabled,
+        appriseTags: user.settings?.appriseTags,
+        appriseStatelessURL: user.settings?.appriseStatelessURL,
+        appriseEnabled: settings?.apprise.enabled,
+        appriseEnabledTypes: settings?.apprise.enabled
+          ? settings.apprise.types
+          : 0,
         pgpKey: user.settings?.pgpKey,
         discordEnabled:
           settings?.discord.enabled && settings.discord.options.enableMentions,
@@ -588,6 +596,8 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
       if (!user.settings) {
         user.settings = new UserSettings({
           user: req.user,
+          appriseTags: req.body.appriseTags,
+          appriseStatelessURL: req.body.appriseStatelessURL,
           pgpKey: req.body.pgpKey,
           discordId: req.body.discordId,
           pushbulletAccessToken: req.body.pushbulletAccessToken,
@@ -600,6 +610,8 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
         });
       } else {
         user.settings.pgpKey = req.body.pgpKey;
+        user.settings.appriseTags = req.body.appriseTags;
+        user.settings.appriseStatelessURL = req.body.appriseStatelessURL;
         user.settings.discordId = req.body.discordId;
         user.settings.pushbulletAccessToken = req.body.pushbulletAccessToken;
         user.settings.pushoverApplicationToken =
@@ -621,6 +633,8 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
 
       return res.status(200).json({
         pgpKey: user.settings.pgpKey,
+        appriseTags: user.settings?.appriseTags,
+        appriseStatelessURL: user.settings?.appriseStatelessURL,
         discordId: user.settings.discordId,
         pushbulletAccessToken: user.settings.pushbulletAccessToken,
         pushoverApplicationToken: user.settings.pushoverApplicationToken,
