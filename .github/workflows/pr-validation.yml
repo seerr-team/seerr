@@ -1,6 +1,6 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: "PR Validation"
+name: 'PR Validation'
 
 on:
   pull_request_target:
@@ -110,7 +110,7 @@ jobs:
 
   template-check:
     name: Validate PR Template
-    if: github.event.action != 'synchronize'
+    if: github.event.action != 'synchronize' && github.actor != 'renovate[bot]'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
