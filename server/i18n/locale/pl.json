@@ -1,1 +1,14 @@
-{}
+{
+  "notifications.agents.email.approvedRequest": "Twój wniosek o {mediaType} został zatwierdzony:",
+  "notifications.agents.email.approvedRequest4k": "Twój wniosek o {mediaType} w 4K został zatwierdzony:",
+  "notifications.common.requestStatus": "Status prośby",
+  "notifications.common.requestedBy": "Żądane przez",
+  "notifications.common.resolved": "Rozwiązane",
+  "notifications.common.series": "serial",
+  "notifications.common.viewIssue": "Zobacz zgłoszenie w {applicationTitle}",
+  "notifications.common.viewMedia": "Zobacz media w {applicationTitle}",
+  "notifications.agents.email.autoApproved": "Nowe żądanie dotyczące {mediaType} zostało automatycznie zatwierdzone:",
+  "notifications.agents.email.autoApproved4k": "Nowe żądanie dotyczące {mediaType} w rozdzielczości 4K zostało automatycznie zatwierdzone:",
+  "notifications.agents.email.autoRequested": "Nowe żądanie dotyczące {mediaType} zostało automatycznie wysłane:",
+  "notifications.agents.email.autoRequested4k": "Nowe żądanie dla {mediaType} w rozdzielczości 4K zostało automatycznie wysłane:"
+}
