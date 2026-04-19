@@ -1,3 +1,4 @@
+import Alert from '@app/components/Common/Alert';
 import Button from '@app/components/Common/Button';
 import LabeledCheckbox from '@app/components/Common/LabeledCheckbox';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
@@ -39,6 +40,8 @@ const messages = defineMessages('components.Settings.SettingsUsers', {
   tvRequestLimitLabel: 'Global Series Request Limit',
   defaultPermissions: 'Default Permissions',
   defaultPermissionsTip: 'Initial permissions assigned to new users',
+  disabledMediaServerLoginWarning:
+    'Some users may not have a {applicationTitle} password set. Disabling {mediaServerName} sign-in could lock them out. Affected users will need to set a password from their profile or via a password reset link.',
 });
 
 const SettingsUsers = () => {
@@ -200,6 +203,21 @@ const SettingsUsers = () => {
                           )
                         }
                       />
+                      {!values.mediaServerLogin && values.localLogin && (
+                        <div className="mt-4">
+                          <Alert
+                            title={intl.formatMessage(
+                              messages.disabledMediaServerLoginWarning,
+                              {
+                                applicationTitle:
+                                  settings.currentSettings.applicationTitle,
+                                ...mediaServerFormatValues,
+                              }
+                            )}
+                            type="warning"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

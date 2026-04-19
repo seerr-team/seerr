@@ -225,7 +225,7 @@ const NotificationsWebhook = () => {
             types: values.types,
             options: {
               webhookUrl: values.webhookUrl,
-              jsonPayload: JSON.stringify(values.jsonPayload),
+              jsonPayload: values.jsonPayload,
               authHeader: values.authHeader,
               customHeaders: (values.customHeaders ?? [])
                 .map((h: { key: string; value: string }) => ({
@@ -292,7 +292,7 @@ const NotificationsWebhook = () => {
               types: values.types,
               options: {
                 webhookUrl: values.webhookUrl,
-                jsonPayload: JSON.stringify(values.jsonPayload),
+                jsonPayload: values.jsonPayload,
                 authHeader: values.authHeader,
                 customHeaders: (values.customHeaders ?? [])
                   .map((h: { key: string; value: string }) => ({

@@ -48,6 +48,7 @@ export interface PublicSettingsResponse {
   emailEnabled: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  plexClientIdentifier: string;
 }
 
 export interface CacheItem {

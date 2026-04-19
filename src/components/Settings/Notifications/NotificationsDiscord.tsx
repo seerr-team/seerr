@@ -1,6 +1,7 @@
 import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
+import { availableLanguages } from '@app/context/LanguageContext';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -24,6 +25,7 @@ const messages = defineMessages('components.Settings.Notifications', {
   webhookRoleId: 'Notification Role ID',
   webhookRoleIdTip:
     'The role ID to mention in the webhook message. Leave empty to disable mentions',
+  useUserLocale: 'Use Notification Recipient Locale',
   discordsettingssaved: 'Discord notification settings saved successfully!',
   discordsettingsfailed: 'Discord notification settings failed to save.',
   toastDiscordTestSending: 'Sending Discord test notification…',
@@ -82,6 +84,8 @@ const NotificationsDiscord = () => {
         webhookUrl: data.options.webhookUrl,
         webhookRoleId: data?.options.webhookRoleId,
         enableMentions: data?.options.enableMentions,
+        locale: data?.options.locale || 'en',
+        useUserLocale: data?.options.useUserLocale ?? false,
       }}
       validationSchema={NotificationsDiscordSchema}
       onSubmit={async (values) => {
@@ -96,6 +100,8 @@ const NotificationsDiscord = () => {
               webhookUrl: values.webhookUrl,
               webhookRoleId: values.webhookRoleId,
               enableMentions: values.enableMentions,
+              locale: values.locale,
+              useUserLocale: values.useUserLocale,
             },
           });
 
@@ -146,6 +152,8 @@ const NotificationsDiscord = () => {
                 webhookUrl: values.webhookUrl,
                 webhookRoleId: values.webhookRoleId,
                 enableMentions: values.enableMentions,
+                locale: values.locale,
+                useUserLocale: values.useUserLocale,
               },
             });
 
@@ -295,6 +303,44 @@ const NotificationsDiscord = () => {
                 />
               </div>
             </div>
+            <div className="form-row">
+              <label htmlFor="useUserLocale" className="checkbox-label">
+                {intl.formatMessage(messages.useUserLocale)}
+              </label>
+              <div className="form-input-area">
+                <Field
+                  type="checkbox"
+                  id="useUserLocale"
+                  name="useUserLocale"
+                />
+              </div>
+            </div>
+            {!values.useUserLocale && (
+              <div className="form-row">
+                <label htmlFor="locale" className="text-label">
+                  {intl.formatMessage(globalMessages.notificationLocale)}
+                </label>
+                <div className="form-input-area">
+                  <div className="form-input-field">
+                    <Field as="select" id="locale" name="locale">
+                      {(
+                        Object.keys(
+                          availableLanguages
+                        ) as (keyof typeof availableLanguages)[]
+                      ).map((key) => (
+                        <option
+                          key={key}
+                          value={availableLanguages[key].code}
+                          lang={availableLanguages[key].code}
+                        >
+                          {availableLanguages[key].display}
+                        </option>
+                      ))}
+                    </Field>
+                  </div>
+                </div>
+              </div>
+            )}
             <NotificationTypeSelector
               currentTypes={values.enabled ? values.types : 0}
               onUpdate={(newTypes) => {

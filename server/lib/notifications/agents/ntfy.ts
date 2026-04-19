@@ -1,7 +1,10 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
+import { getIntl } from '@server/i18n';
+import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentNtfy } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import type { AvailableLocale } from '@server/types/languages';
 import axios from 'axios';
 import { Notification, hasNotificationType } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
@@ -26,12 +29,13 @@ class NtfyAgent
   }
 
   private buildPayload(type: Notification, payload: NotificationPayload) {
-    const settings = getSettings();
-    const { applicationUrl } = settings.main;
-    const { embedPoster } = settings.notifications.agents.ntfy;
+    const settings = this.getSettings();
+    const intl = getIntl(settings.options.locale as AvailableLocale);
+    const { applicationUrl } = getSettings().main;
+    const embedPoster = settings.embedPoster;
 
-    const topic = this.getSettings().options.topic;
-    const priority = this.getSettings().options.priority ?? 3;
+    const topic = settings.options.topic;
+    const priority = settings.options.priority ?? 3;
 
     const title = payload.event
       ? `${payload.event} - ${payload.subject}`
@@ -39,48 +43,44 @@ class NtfyAgent
     let message = payload.message ?? '';
 
     if (payload.request) {
-      if (message) {
-        message = `**Description:**\n${message}`;
-      }
-      message += `${message ? '\n\n' : ''}**Requested By:** ${this.escapeMarkdown(payload.request.requestedBy.displayName)}`;
+      message += `${message ? '\n\n' : ''}**${intl.formatMessage(globalMessages.requestedBy)}:** ${this.escapeMarkdown(payload.request.requestedBy.displayName)}`;
 
       let status = '';
       switch (type) {
         case Notification.MEDIA_PENDING:
-          status = 'Pending Approval';
+          status = intl.formatMessage(globalMessages.pendingApproval);
           break;
         case Notification.MEDIA_APPROVED:
         case Notification.MEDIA_AUTO_APPROVED:
-          status = 'Processing';
+          status = intl.formatMessage(globalMessages.processing);
           break;
         case Notification.MEDIA_AVAILABLE:
-          status = 'Available';
+          status = intl.formatMessage(globalMessages.available);
           break;
         case Notification.MEDIA_DECLINED:
-          status = 'Declined';
+          status = intl.formatMessage(globalMessages.declined);
           break;
         case Notification.MEDIA_FAILED:
-          status = 'Failed';
+          status = intl.formatMessage(globalMessages.failed);
           break;
       }
 
       if (status) {
-        message += `\n**Request Status:** ${status}`;
+        message += `\n**${intl.formatMessage(globalMessages.requestStatus)}:** ${status}`;
       }
     } else if (payload.comment) {
-      if (message) {
-        message = `**Description:**\n${message}\n\n`;
-      }
-      message += `**Comment:**\n${payload.comment.message}`;
-      message += `\n\n**Comment from:** ${this.escapeMarkdown(payload.comment.user.displayName)}`;
+      message += `\n**${this.escapeMarkdown(
+        intl.formatMessage(globalMessages.commentFrom, {
+          userName: payload.comment.user.displayName,
+        })
+      )}:**\n${payload.comment.message}`;
     } else if (payload.issue) {
-      if (message) {
-        message = `**Description:**\n${message}`;
-      }
-      message += `${message ? '\n\n' : ''}**Reported By:** ${this.escapeMarkdown(payload.issue.createdBy.displayName)}`;
-      message += `\n**Issue Type:** ${IssueTypeName[payload.issue.issueType]}`;
-      message += `\n**Issue Status:** ${
-        payload.issue.status === IssueStatus.OPEN ? 'Open' : 'Resolved'
+      message += `\n\n**${intl.formatMessage(globalMessages.reportedBy)}:** ${this.escapeMarkdown(payload.issue.createdBy.displayName)}`;
+      message += `\n**${intl.formatMessage(globalMessages.issueType)}:** ${IssueTypeName[payload.issue.issueType]}`;
+      message += `\n**${intl.formatMessage(globalMessages.issueStatus)}:** ${
+        payload.issue.status === IssueStatus.OPEN
+          ? intl.formatMessage(globalMessages.open)
+          : intl.formatMessage(globalMessages.resolved)
       }`;
     }
 
