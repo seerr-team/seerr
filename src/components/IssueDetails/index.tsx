@@ -68,6 +68,12 @@ const messages = defineMessages('components.IssueDetails', {
   deleteissueconfirm: 'Are you sure you want to delete this issue?',
   toastissuedeleted: 'Issue deleted successfully!',
   toastissuedeletefailed: 'Something went wrong while deleting the issue.',
+  markasfailed: 'Mark as Failed & Redownload',
+  markasfailedconfirm:
+    'This will ask Radarr/Sonarr to blocklist the current release and download a new one. Continue?',
+  toastredownloadsuccess: 'Redownload requested. The issue has been resolved.',
+  toastredownloadfailed:
+    'Something went wrong while requesting the redownload.',
   nocomments: 'No comments.',
   unknownissuetype: 'Unknown',
   commentplaceholder: 'Add a comment…',
@@ -82,6 +88,8 @@ const IssueDetails = () => {
   const router = useRouter();
   const intl = useIntl();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showRedownloadModal, setShowRedownloadModal] = useState(false);
+  const [isRedownloading, setIsRedownloading] = useState(false);
   const { user: currentUser, hasPermission } = useUser();
   const { data: issueData, mutate: revalidateIssue } = useSWR<Issue>(
     `/api/v1/issue/${router.query.issueId}`
@@ -175,6 +183,27 @@ const IssueDetails = () => {
     }
   };
 
+  const redownloadIssue = async () => {
+    setIsRedownloading(true);
+    try {
+      await axios.post(`/api/v1/issue/${issueData.id}/redownload`);
+      addToast(intl.formatMessage(messages.toastredownloadsuccess), {
+        appearance: 'success',
+        autoDismiss: true,
+      });
+      revalidateIssue();
+      mutate('/api/v1/issue/count');
+      setShowRedownloadModal(false);
+    } catch {
+      addToast(intl.formatMessage(messages.toastredownloadfailed), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    } finally {
+      setIsRedownloading(false);
+    }
+  };
+
   const title = isMovie(data) ? data.title : data.name;
   const releaseYear = isMovie(data) ? data.releaseDate : data.firstAirDate;
 
@@ -204,6 +233,27 @@ const IssueDetails = () => {
           okButtonType="danger"
         >
           {intl.formatMessage(messages.deleteissueconfirm)}
+        </Modal>
+      </Transition>
+      <Transition
+        as="div"
+        enter="transition-opacity duration-300"
+        enterFrom="opacity-0"
+        enterTo="opacity-100"
+        leave="transition-opacity duration-300"
+        leaveFrom="opacity-100"
+        leaveTo="opacity-0"
+        show={showRedownloadModal}
+      >
+        <Modal
+          title={intl.formatMessage(messages.markasfailed)}
+          onCancel={() => setShowRedownloadModal(false)}
+          onOk={() => redownloadIssue()}
+          okText={intl.formatMessage(messages.markasfailed)}
+          okButtonType="danger"
+          okDisabled={isRedownloading}
+        >
+          {intl.formatMessage(messages.markasfailedconfirm)}
         </Modal>
       </Transition>
       {data.backdropPath && (
@@ -371,6 +421,18 @@ const IssueDetails = () => {
               </div>
             </div>
             <div className="mb-6 mt-4 flex flex-col space-y-2">
+              {issueData?.media.serviceUrl &&
+                hasPermission(Permission.ADMIN) &&
+                issueData.status === IssueStatus.OPEN && (
+                  <Button
+                    buttonType="danger"
+                    className="w-full"
+                    onClick={() => setShowRedownloadModal(true)}
+                  >
+                    <ArrowPathIcon />
+                    <span>{intl.formatMessage(messages.markasfailed)}</span>
+                  </Button>
+                )}
               {issueData?.media.mediaUrl && (
                 <Button
                   as="a"
@@ -637,6 +699,18 @@ const IssueDetails = () => {
             </div>
           </div>
           <div className="mb-6 mt-4 flex flex-col space-y-2">
+            {issueData?.media.serviceUrl &&
+              hasPermission(Permission.ADMIN) &&
+              issueData.status === IssueStatus.OPEN && (
+                <Button
+                  buttonType="danger"
+                  className="w-full"
+                  onClick={() => setShowRedownloadModal(true)}
+                >
+                  <ArrowPathIcon />
+                  <span>{intl.formatMessage(messages.markasfailed)}</span>
+                </Button>
+              )}
             {issueData?.media.mediaUrl && (
               <Button
                 as="a"
