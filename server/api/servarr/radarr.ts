@@ -269,6 +269,21 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
       );
     }
   }
+  public async deleteMovieFile(movieFileId: number): Promise<void> {
+    try {
+      await this.axios.delete(`/movieFile/${movieFileId}`);
+      logger.info('Deleted Radarr movie file.', {
+        label: 'Radarr API',
+        movieFileId,
+      });
+    } catch (e) {
+      throw new Error(
+        `[Radarr] Failed to delete movie file ${movieFileId}: ${e.message}`,
+        { cause: e }
+      );
+    }
+  }
+
   public removeMovie = async (tmdbId: number): Promise<void> => {
     const { id, title } = await this.getMovieByTmdbId(tmdbId);
 

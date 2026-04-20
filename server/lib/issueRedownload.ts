@@ -74,9 +74,13 @@ export async function triggerRedownload(issue: Issue): Promise<void> {
         movieId: media.externalServiceId,
       });
     }
-    // Always trigger a search explicitly — Sonarr/Radarr's auto re-search
-    // after history/failed is best-effort (skipped when no release currently
-    // available, cutoff met, monitoring off, etc.).
+    // Delete the on-disk file so Radarr treats the movie as missing.
+    // Blocklisting alone doesn't remove the file, and Radarr won't search
+    // for a replacement while it still has the release.
+    const movie = await radarr.getMovie({ id: media.externalServiceId });
+    if (movie.movieFile) {
+      await radarr.deleteMovieFile(movie.movieFile.id);
+    }
     await radarr.searchMovie(media.externalServiceId);
     return;
   }
@@ -91,10 +95,11 @@ export async function triggerRedownload(issue: Issue): Promise<void> {
     apiKey: server.apiKey,
   });
 
+  const allEpisodes = await sonarr.getEpisodes(media.externalServiceId);
+
   let targetEpisodeId: number | undefined;
   if (scope.seasonNumber !== undefined && scope.episodeNumber !== undefined) {
-    const episodes = await sonarr.getEpisodes(media.externalServiceId);
-    const match = episodes.find(
+    const match = allEpisodes.find(
       (e) =>
         e.seasonNumber === scope.seasonNumber &&
         e.episodeNumber === scope.episodeNumber
@@ -107,6 +112,22 @@ export async function triggerRedownload(issue: Issue): Promise<void> {
     }
     targetEpisodeId = match.id;
   }
+
+  // Collect the on-disk files that should be removed so Sonarr re-searches.
+  // Scope: single episode, whole season, or whole series.
+  const episodesInScope = allEpisodes.filter((e) => {
+    if (targetEpisodeId !== undefined) return e.id === targetEpisodeId;
+    if (scope.seasonNumber !== undefined)
+      return e.seasonNumber === scope.seasonNumber;
+    return true;
+  });
+  const episodeFileIdsToDelete = Array.from(
+    new Set(
+      episodesInScope
+        .map((e) => e.episodeFileId)
+        .filter((id): id is number => !!id && id > 0)
+    )
+  );
 
   let grabbedId: number | undefined;
   if (targetEpisodeId !== undefined) {
@@ -145,8 +166,13 @@ export async function triggerRedownload(issue: Issue): Promise<void> {
     });
   }
 
-  // Always trigger a search explicitly at the right scope — Sonarr's auto
-  // re-search after history/failed is best-effort and often skipped.
+  // Delete on-disk episode files in scope so Sonarr treats them as missing
+  // and actually searches for replacements. Blocklisting alone leaves the
+  // existing file, which prevents a re-search.
+  for (const fileId of episodeFileIdsToDelete) {
+    await sonarr.deleteEpisodeFile(fileId);
+  }
+
   if (targetEpisodeId !== undefined) {
     await sonarr.searchEpisodes([targetEpisodeId]);
   } else if (scope.seasonNumber !== undefined) {

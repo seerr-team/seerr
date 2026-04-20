@@ -415,6 +415,21 @@ class SonarrAPI extends ServarrBase<{
     }
   }
 
+  public async deleteEpisodeFile(episodeFileId: number): Promise<void> {
+    try {
+      await this.axios.delete(`/episodeFile/${episodeFileId}`);
+      logger.info('Deleted Sonarr episode file.', {
+        label: 'Sonarr API',
+        episodeFileId,
+      });
+    } catch (e) {
+      throw new Error(
+        `[Sonarr] Failed to delete episode file ${episodeFileId}: ${e.message}`,
+        { cause: e }
+      );
+    }
+  }
+
   public async monitorEpisodes(episodeIds: number[]): Promise<void> {
     try {
       await this.axios.put('/episode/monitor', {
