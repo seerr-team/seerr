@@ -1,6 +1,7 @@
 import { MediaServerType } from '@server/constants/server';
 import { Permission } from '@server/lib/permissions';
 import { runMigrations } from '@server/lib/settings/migrator';
+import type { AvailableLocale } from '@server/types/languages';
 import { randomBytes, randomUUID } from 'crypto';
 import fs from 'fs/promises';
 import { mergeWith } from 'lodash';
@@ -229,12 +230,15 @@ export interface NotificationAgentDiscord extends NotificationAgentConfig {
     webhookUrl: string;
     webhookRoleId?: string;
     enableMentions: boolean;
+    locale: AvailableLocale;
+    useUserLocale: boolean;
   };
 }
 
 export interface NotificationAgentSlack extends NotificationAgentConfig {
   options: {
     webhookUrl: string;
+    locale: AvailableLocale;
   };
 }
 
@@ -296,6 +300,7 @@ export interface NotificationAgentGotify extends NotificationAgentConfig {
     url: string;
     token: string;
     priority: number;
+    locale: AvailableLocale;
   };
 }
 
@@ -309,6 +314,7 @@ export interface NotificationAgentNtfy extends NotificationAgentConfig {
     authMethodToken?: boolean;
     token?: string;
     priority?: number;
+    locale: AvailableLocale;
   };
 }
 
@@ -476,6 +482,8 @@ class Settings {
               webhookUrl: '',
               webhookRoleId: '',
               enableMentions: true,
+              locale: 'en',
+              useUserLocale: true,
             },
           },
           slack: {
@@ -484,6 +492,7 @@ class Settings {
             types: 0,
             options: {
               webhookUrl: '',
+              locale: 'en',
             },
           },
           telegram: {
@@ -538,6 +547,7 @@ class Settings {
               url: '',
               token: '',
               priority: 0,
+              locale: 'en',
             },
           },
           ntfy: {
@@ -548,6 +558,7 @@ class Settings {
               url: '',
               topic: '',
               priority: 3,
+              locale: 'en',
             },
           },
         },

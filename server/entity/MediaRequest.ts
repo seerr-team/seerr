@@ -552,7 +552,6 @@ export class MediaRequest {
 
   @ManyToOne(() => User, {
     nullable: true,
-    cascade: true,
     eager: true,
     onDelete: 'SET NULL',
   })
