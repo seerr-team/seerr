@@ -14,7 +14,7 @@ To use Fail2ban with Seerr, create a new file named `seerr.local` in your Fail2b
 
 ```
 [Definition]
-failregex = .*\[warn\]\[API\]\: Failed sign-in attempt.*"ip":"<HOST>"
+failregex = .*\[warn\]\[(API|Auth)\]\: Failed sign-in attempt.*"ip":"<HOST>"
 ```
 
 You can then add a jail using this filter in `jail.local`. Please see the [Fail2ban documentation](https://github.com/fail2ban/fail2ban/wiki) for details on how to configure the jail.
