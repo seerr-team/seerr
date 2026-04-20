@@ -8,6 +8,10 @@ import type {
   IssueRequestBody,
   IssueResultsResponse,
 } from '@server/interfaces/api/issueInterfaces';
+import {
+  RedownloadError,
+  triggerRedownload,
+} from '@server/lib/issueRedownload';
 import { Permission } from '@server/lib/permissions';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
@@ -320,6 +324,68 @@ issueRoutes.post<{ issueId: string }, Issue, { message: string }>(
         errorMessage: e.message,
       });
       next({ status: 500, message: 'Issue not found.' });
+    }
+  }
+);
+
+issueRoutes.post<{ issueId: string }, Issue>(
+  '/:issueId/redownload',
+  isAuthenticated(Permission.ADMIN),
+  async (req, res, next) => {
+    if (!req.user) {
+      return next({ status: 500, message: 'User missing from request.' });
+    }
+
+    const issueRepository = getRepository(Issue);
+
+    try {
+      const issue = await issueRepository.findOneOrFail({
+        where: { id: Number(req.params.issueId) },
+      });
+
+      try {
+        await triggerRedownload(issue);
+      } catch (e) {
+        if (e instanceof RedownloadError) {
+          return next({ status: e.status, message: e.message });
+        }
+        logger.error('Failed to trigger redownload for issue.', {
+          label: 'API',
+          issueId: issue.id,
+          errorMessage: e.message,
+        });
+        return next({
+          status: 502,
+          message: 'Failed to contact Radarr/Sonarr to trigger redownload.',
+        });
+      }
+
+      const scopeDescription =
+        issue.problemSeason > 0
+          ? issue.problemEpisode > 0
+            ? `season ${issue.problemSeason}, episode ${issue.problemEpisode}`
+            : `season ${issue.problemSeason}`
+          : 'this media';
+
+      issue.comments = [
+        ...issue.comments,
+        new IssueComment({
+          user: req.user,
+          message: `Marked as failed and requested redownload for ${scopeDescription}. The previous release has been blocklisted in the downloader.`,
+        }),
+      ];
+      issue.status = IssueStatus.RESOLVED;
+      issue.modifiedBy = req.user;
+
+      await issueRepository.save(issue);
+
+      return res.status(200).json(issue);
+    } catch (e) {
+      logger.error('Failed to process issue redownload request.', {
+        label: 'API',
+        errorMessage: e.message,
+      });
+      next({ status: 404, message: 'Issue not found.' });
     }
   }
 );
