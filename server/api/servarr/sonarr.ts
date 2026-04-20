@@ -377,6 +377,10 @@ class SonarrAPI extends ServarrBase<{
           seasonNumber,
         }
       );
+      throw new Error(
+        `[Sonarr] Failed to execute season search for series ${seriesId}, season ${seasonNumber}: ${e.message}`,
+        { cause: e }
+      );
     }
   }
 
@@ -395,6 +399,10 @@ class SonarrAPI extends ServarrBase<{
           errorMessage: e.message,
           episodeIds,
         }
+      );
+      throw new Error(
+        `[Sonarr] Failed to execute episode search for episode IDs ${episodeIds.join(', ')}: ${e.message}`,
+        { cause: e }
       );
     }
   }

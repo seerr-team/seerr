@@ -265,6 +265,16 @@ describe('POST /issue/:issueId/redownload', () => {
     assert.strictEqual(triggerRedownloadMock.callCount(), 0);
   });
 
+  it('returns 409 when the issue is already resolved', async () => {
+    const issue = await seedIssue({ status: IssueStatus.RESOLVED });
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+
+    const res = await agent.post(`/issue/${issue.id}/redownload`);
+
+    assert.strictEqual(res.status, 409);
+    assert.strictEqual(triggerRedownloadMock.callCount(), 0);
+  });
+
   it('allows an admin to trigger a redownload and resolves the issue', async () => {
     const issue = await seedIssue();
     const agent = await loginAs('admin@seerr.dev', 'test1234');

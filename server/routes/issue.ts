@@ -343,6 +343,13 @@ issueRoutes.post<{ issueId: string }, Issue>(
         where: { id: Number(req.params.issueId) },
       });
 
+      if (issue.status !== IssueStatus.OPEN) {
+        return next({
+          status: 409,
+          message: 'Only open issues can be marked as failed and redownloaded.',
+        });
+      }
+
       try {
         await triggerRedownload(issue);
       } catch (e) {
