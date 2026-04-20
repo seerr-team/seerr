@@ -356,6 +356,49 @@ class SonarrAPI extends ServarrBase<{
     }
   }
 
+  public async searchSeason(
+    seriesId: number,
+    seasonNumber: number
+  ): Promise<void> {
+    logger.info('Executing season search command.', {
+      label: 'Sonarr API',
+      seriesId,
+      seasonNumber,
+    });
+    try {
+      await this.runCommand('SeasonSearch', { seriesId, seasonNumber });
+    } catch (e) {
+      logger.error(
+        'Something went wrong while executing Sonarr season search.',
+        {
+          label: 'Sonarr API',
+          errorMessage: e.message,
+          seriesId,
+          seasonNumber,
+        }
+      );
+    }
+  }
+
+  public async searchEpisodes(episodeIds: number[]): Promise<void> {
+    logger.info('Executing episode search command.', {
+      label: 'Sonarr API',
+      episodeIds,
+    });
+    try {
+      await this.runCommand('EpisodeSearch', { episodeIds });
+    } catch (e) {
+      logger.error(
+        'Something went wrong while executing Sonarr episode search.',
+        {
+          label: 'Sonarr API',
+          errorMessage: e.message,
+          episodeIds,
+        }
+      );
+    }
+  }
+
   public async getEpisodes(seriesId: number): Promise<EpisodeResult[]> {
     try {
       const response = await this.axios.get<EpisodeResult[]>('/episode', {
