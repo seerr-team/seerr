@@ -122,6 +122,11 @@ class WebPushAgent
           mediaType,
         });
         break;
+      case Notification.MEDIA_AIRED_EPISODE_AVAILABLE:
+        message = `A new episode of your ${
+          is4k ? '4K ' : ''
+        }series request is now available!`;
+        break;
       case Notification.MEDIA_DECLINED:
         message = intl.formatMessage(messages.declined, {
           quality,

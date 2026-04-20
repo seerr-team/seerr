@@ -154,6 +154,11 @@ class EmailAgent
             { mediaType }
           );
           break;
+        case Notification.MEDIA_AIRED_EPISODE_AVAILABLE:
+          body = `A new episode of the following series ${
+            is4k ? 'in 4K ' : ''
+          }is now available:`;
+          break;
         case Notification.MEDIA_DECLINED:
           body = intl.formatMessage(
             is4k ? messages.declinedRequest4k : messages.declinedRequest,

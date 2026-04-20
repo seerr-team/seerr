@@ -26,9 +26,9 @@ const messages = defineMessages('components.NotificationTypeSelector', {
     'Get notified when other users submit new media requests which are automatically approved.',
   mediaavailable: 'Request Available',
   mediaavailableDescription:
-    'Send notifications when media requests become available.',
+    'Send notifications when movie or full series requests become available.',
   usermediaavailableDescription:
-    'Get notified when your media requests become available.',
+    'Get notified when your movie or full series requests become available.',
   mediafailed: 'Request Processing Failed',
   mediafailedDescription:
     'Send notifications when media requests fail to be added to Radarr or Sonarr.',
@@ -64,6 +64,11 @@ const messages = defineMessages('components.NotificationTypeSelector', {
   mediaautorequested: 'Request Automatically Submitted',
   mediaautorequestedDescription:
     'Get notified when new media requests are automatically submitted for items on Your Watchlist.',
+  mediaepisodeavailable: 'Newly Aired Episode Available',
+  mediaepisodeavailableDescription:
+    'Send notifications when newly aired episodes become available for a requested series.',
+  usermediaepisodeavailableDescription:
+    'Get notified as newly aired episodes become available for a series you requested.',
 });
 
 export const hasNotificationType = (
@@ -106,6 +111,7 @@ export enum Notification {
   ISSUE_RESOLVED = 1024,
   ISSUE_REOPENED = 2048,
   MEDIA_AUTO_REQUESTED = 4096,
+  MEDIA_AIRED_EPISODE_AVAILABLE = 8192,
 }
 
 export const ALL_NOTIFICATIONS = Object.values(Notification)
@@ -272,6 +278,17 @@ const NotificationTypeSelector = ({
             : messages.mediaavailableDescription
         ),
         value: Notification.MEDIA_AVAILABLE,
+        hasNotifyUser: true,
+      },
+      {
+        id: 'media-episode-available',
+        name: intl.formatMessage(messages.mediaepisodeavailable),
+        description: intl.formatMessage(
+          user
+            ? messages.usermediaepisodeavailableDescription
+            : messages.mediaepisodeavailableDescription
+        ),
+        value: Notification.MEDIA_AIRED_EPISODE_AVAILABLE,
         hasNotifyUser: true,
       },
       {

@@ -145,6 +145,10 @@ class DiscordAgent
           color = EmbedColors.GREEN;
           status = intl.formatMessage(globalMessages.available);
           break;
+        case Notification.MEDIA_AIRED_EPISODE_AVAILABLE:
+          color = EmbedColors.BLUE;
+          status = 'Episode Available';
+          break;
         case Notification.MEDIA_DECLINED:
           color = EmbedColors.RED;
           status = intl.formatMessage(globalMessages.declined);

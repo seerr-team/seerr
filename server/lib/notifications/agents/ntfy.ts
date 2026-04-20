@@ -57,6 +57,9 @@ class NtfyAgent
         case Notification.MEDIA_AVAILABLE:
           status = intl.formatMessage(globalMessages.available);
           break;
+        case Notification.MEDIA_AIRED_EPISODE_AVAILABLE:
+          status = 'Episode Available';
+          break;
         case Notification.MEDIA_DECLINED:
           status = intl.formatMessage(globalMessages.declined);
           break;

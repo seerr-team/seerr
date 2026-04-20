@@ -5,19 +5,27 @@ import {
   Entity,
   Index,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
-import Episode from './Episode';
-import Media from './Media';
+import Season from './Season';
 
+/**
+ * Tracks the availability status of individual TV episodes.
+ * Each episode belongs to a Season and records whether it is available
+ * in standard and/or 4K quality. This entity enables per-episode
+ * notifications rather than waiting for an entire season to complete.
+ *
+ * Originally introduced in PR #1671 by 0xSysR3ll.
+ */
 @Entity()
-class Season {
+@Unique(['season', 'episodeNumber'])
+class Episode {
   @PrimaryGeneratedColumn()
   public id: number;
 
   @Column()
-  public seasonNumber: number;
+  public episodeNumber: number;
 
   @Column({ type: 'int', default: MediaStatus.UNKNOWN })
   public status: MediaStatus;
@@ -25,17 +33,12 @@ class Season {
   @Column({ type: 'int', default: MediaStatus.UNKNOWN })
   public status4k: MediaStatus;
 
-  @ManyToOne(() => Media, (media) => media.seasons, {
-    onDelete: 'CASCADE',
-  })
   @Index()
-  public media: Promise<Media>;
-
-  /** Individual episode availability records for this season. */
-  @OneToMany(() => Episode, (episode) => episode.season, {
-    cascade: true,
+  @ManyToOne(() => Season, (season: Season) => season.episodes, {
+    onDelete: 'CASCADE',
+    nullable: true,
   })
-  public episodes?: Episode[];
+  public season?: Promise<Season>;
 
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
@@ -47,9 +50,11 @@ class Season {
   })
   public updatedAt: Date;
 
-  constructor(init?: Partial<Season>) {
-    Object.assign(this, init);
+  constructor(init?: Partial<Episode>) {
+    if (init) {
+      Object.assign(this, init);
+    }
   }
 }
 
-export default Season;
+export default Episode;
