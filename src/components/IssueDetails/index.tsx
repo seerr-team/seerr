@@ -421,7 +421,7 @@ const IssueDetails = () => {
               </div>
             </div>
             <div className="mb-6 mt-4 flex flex-col space-y-2">
-              {issueData?.media.serviceUrl &&
+              {issueData?.media.serviceId != null &&
                 hasPermission(Permission.ADMIN) &&
                 issueData.status === IssueStatus.OPEN && (
                   <Button
@@ -699,7 +699,7 @@ const IssueDetails = () => {
             </div>
           </div>
           <div className="mb-6 mt-4 flex flex-col space-y-2">
-            {issueData?.media.serviceUrl &&
+            {issueData?.media.serviceId != null &&
               hasPermission(Permission.ADMIN) &&
               issueData.status === IssueStatus.OPEN && (
                 <Button
