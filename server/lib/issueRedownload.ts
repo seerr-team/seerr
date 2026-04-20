@@ -63,21 +63,21 @@ export async function triggerRedownload(issue: Issue): Promise<void> {
     const grabbed = history.find((h) => h.eventType === 'grabbed');
     if (grabbed) {
       await radarr.markGrabAsFailed(grabbed.id);
-      logger.info(
-        'Marked Radarr grab as failed; blocklist + re-search triggered.',
-        {
-          label: 'Issue Redownload',
-          movieId: media.externalServiceId,
-          historyId: grabbed.id,
-        }
-      );
+      logger.info('Marked Radarr grab as failed; release blocklisted.', {
+        label: 'Issue Redownload',
+        movieId: media.externalServiceId,
+        historyId: grabbed.id,
+      });
     } else {
-      logger.info('No grabbed history found; triggering fresh movie search.', {
+      logger.info('No grabbed history found for movie.', {
         label: 'Issue Redownload',
         movieId: media.externalServiceId,
       });
-      await radarr.searchMovie(media.externalServiceId);
     }
+    // Always trigger a search explicitly — Sonarr/Radarr's auto re-search
+    // after history/failed is best-effort (skipped when no release currently
+    // available, cutoff met, monitoring off, etc.).
+    await radarr.searchMovie(media.externalServiceId);
     return;
   }
 
@@ -132,23 +132,21 @@ export async function triggerRedownload(issue: Issue): Promise<void> {
 
   if (grabbedId !== undefined) {
     await sonarr.markGrabAsFailed(grabbedId);
-    logger.info(
-      'Marked Sonarr grab as failed; blocklist + re-search triggered.',
-      {
-        label: 'Issue Redownload',
-        seriesId: media.externalServiceId,
-        historyId: grabbedId,
-      }
-    );
-    return;
+    logger.info('Marked Sonarr grab as failed; release blocklisted.', {
+      label: 'Issue Redownload',
+      seriesId: media.externalServiceId,
+      historyId: grabbedId,
+    });
+  } else {
+    logger.info('No grabbed history found for scope.', {
+      label: 'Issue Redownload',
+      seriesId: media.externalServiceId,
+      scope,
+    });
   }
 
-  // Fallback: no prior grab found; just trigger a fresh search of the scope.
-  logger.info('No grabbed history found; triggering fresh Sonarr search.', {
-    label: 'Issue Redownload',
-    seriesId: media.externalServiceId,
-    scope,
-  });
+  // Always trigger a search explicitly at the right scope — Sonarr's auto
+  // re-search after history/failed is best-effort and often skipped.
   if (targetEpisodeId !== undefined) {
     await sonarr.searchEpisodes([targetEpisodeId]);
   } else if (scope.seasonNumber !== undefined) {
