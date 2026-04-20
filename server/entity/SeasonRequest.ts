@@ -30,7 +30,10 @@ class SeasonRequest {
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
-  @UpdateDateColumn({ type: resolveDbType('datetime') })
+  @UpdateDateColumn({
+    type: resolveDbType('datetime'),
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   public updatedAt: Date;
 
   constructor(init?: Partial<SeasonRequest>) {
