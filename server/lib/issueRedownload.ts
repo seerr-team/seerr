@@ -9,6 +9,7 @@ export class RedownloadError extends Error {
   public readonly status: number;
   constructor(message: string, status = 500) {
     super(message);
+    this.name = 'RedownloadError';
     this.status = status;
   }
 }
@@ -57,6 +58,7 @@ export async function triggerRedownload(issue: Issue): Promise<void> {
 
     const history = await radarr.getHistory({
       movieId: media.externalServiceId,
+      pageSize: 200,
     });
     const grabbed = history.find((h) => h.eventType === 'grabbed');
     if (grabbed) {
