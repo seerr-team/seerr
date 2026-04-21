@@ -131,7 +131,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/lodash": "4.17.24",
     "@types/mime": "^3.0.4",
-    "@types/node": "22.10.5",
+    "@types/node": "22.19.0",
     "@types/node-schedule": "2.1.8",
     "@types/nodemailer": "^8.0.0",
     "@types/react": "^18.3.28",
