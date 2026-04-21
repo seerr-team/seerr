@@ -143,11 +143,13 @@ class JellyfinScanner
         });
       });
 
+      const hasUnknownResolution = !metadata.MediaSources || metadata.MediaSources.length === 0;
+      
       const mediaAddedAt = metadata.DateCreated
         ? new Date(metadata.DateCreated)
         : undefined;
 
-      if (hasOtherResolution || (!this.enable4kMovie && has4k)) {
+      if (hasOtherResolution || hasUnknownResolution || (!this.enable4kMovie && has4k)) {  
         await this.processMovie(tmdbId, {
           is4k: false,
           mediaAddedAt,
