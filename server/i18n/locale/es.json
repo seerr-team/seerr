@@ -1,1 +1,23 @@
-{}
+{
+  "notifications.test.message": "Probando, 1, 2, 3. Se recibe alto y claro?",
+  "notifications.test.subject": "Notificación de prueba",
+  "notifications.common.resolved": "Resuelto",
+  "notifications.common.series": "series",
+  "notifications.common.viewIssue": "Ver problema in {applicationTitle}",
+  "notifications.common.viewMedia": "Ver medios in {applicationTitle}",
+  "notifications.common.processing": "Procesando",
+  "notifications.common.reportedBy": "Reportado por",
+  "notifications.common.requestStatus": "Estado de la petición",
+  "notifications.common.requestedBy": "Pedido por",
+  "notifications.common.open": "Abiertas",
+  "notifications.common.openIn": "Abiertas in {applicationTitle}",
+  "notifications.common.pendingApproval": "Pendientes de aprobación",
+  "notifications.common.issueType": "Tipo de problema",
+  "notifications.common.movie": "película",
+  "notifications.common.failed": "Fallidas",
+  "notifications.common.issue": "problema",
+  "notifications.common.issueStatus": "Estado del problema",
+  "notifications.common.available": "Disponible",
+  "notifications.common.commentFrom": "Comentario de {userName}",
+  "notifications.common.declined": "Declinado"
+}
