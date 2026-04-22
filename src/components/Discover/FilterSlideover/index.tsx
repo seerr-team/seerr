@@ -47,7 +47,7 @@ const messages = defineMessages('components.Discover.FilterSlideover', {
   voteCount: 'Number of votes between {minValue} and {maxValue}',
   status: 'Status',
   certification: 'Content Rating',
-  availability: 'Availabilty',
+  availability: 'Availability',
 });
 
 type FilterSlideoverProps = {
