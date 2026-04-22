@@ -5,6 +5,7 @@ import type { FilterOptions } from '@app/components/Discover/constants';
 import { countActiveFilters } from '@app/components/Discover/constants';
 import LanguageSelector from '@app/components/LanguageSelector';
 import {
+  AvailabilitySelector,
   CompanySelector,
   GenreSelector,
   KeywordSelector,
@@ -20,6 +21,7 @@ import {
 import defineMessages from '@app/utils/defineMessages';
 import { XCircleIcon } from '@heroicons/react/24/outline';
 import Datepicker from '@seerr-team/react-tailwindcss-datepicker';
+import { DiscoverAvailabilityFilter } from '@server/constants/discover';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.Discover.FilterSlideover', {
@@ -45,6 +47,7 @@ const messages = defineMessages('components.Discover.FilterSlideover', {
   voteCount: 'Number of votes between {minValue} and {maxValue}',
   status: 'Status',
   certification: 'Content Rating',
+  availability: 'Availabilty',
 });
 
 type FilterSlideoverProps = {
@@ -80,6 +83,18 @@ const FilterSlideover = ({
       onClose={() => onClose()}
     >
       <div className="flex flex-col space-y-4">
+        <span className="text-lg font-semibold">
+          {intl.formatMessage(messages.availability)}
+        </span>
+        <AvailabilitySelector
+          value={currentFilters.availability as DiscoverAvailabilityFilter}
+          onChange={(value) => {
+            updateQueryParams(
+              'availability',
+              value !== DiscoverAvailabilityFilter.ALL ? value : undefined
+            );
+          }}
+        />
         <div>
           <div className="mb-2 text-lg font-semibold">
             {intl.formatMessage(

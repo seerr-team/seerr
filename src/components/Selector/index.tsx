@@ -632,4 +632,5 @@ export const UserSelector = ({
   );
 };
 
+export { default as AvailabilitySelector } from './AvailabilitySelector';
 export { default as USCertificationSelector } from './USCertificationSelector';
