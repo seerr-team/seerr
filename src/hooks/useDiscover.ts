@@ -124,7 +124,11 @@ const useDiscover = <
     return [...a, ...results];
   }, [] as T[]);
 
-  if (settings.currentSettings.hideAvailable && hideAvailable) {
+  if (
+    settings.currentSettings.hideAvailable &&
+    hideAvailable &&
+    availability === DiscoverAvailabilityFilter.ALL
+  ) {
     titles = titles.filter(
       (i) =>
         (i.mediaType === 'movie' || i.mediaType === 'tv') &&
