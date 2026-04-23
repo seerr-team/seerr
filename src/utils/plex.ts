@@ -140,10 +140,10 @@ class PlexOAuth {
           this.authToken = response.data.authToken as string;
           this.closePopup();
           resolve(this.authToken);
-        } else if (this.popup && !this.popup.closed) {
-          setTimeout(executePoll, 1000, resolve, reject);
         } else {
-          reject(new Error('Popup closed without completing login'));
+          // popup.closed is unreliable once the popup navigates to app.plex.tv
+          // under COOP same-origin-allow-popups; rely on pin expiry via catch
+          setTimeout(executePoll, 1000, resolve, reject);
         }
       } catch (e) {
         this.closePopup();
