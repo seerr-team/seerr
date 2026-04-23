@@ -115,12 +115,6 @@ class WatchlistSync {
 
     for (const mediaItem of unavailableItems) {
       try {
-        logger.info("Creating media request from user's Plex Watchlist", {
-          label: 'Watchlist Sync',
-          userId: user.id,
-          mediaTitle: mediaItem.title,
-        });
-
         if (mediaItem.type === 'show' && !mediaItem.tvdbId) {
           throw new Error('Missing TVDB ID from Plex Metadata');
         }
@@ -156,6 +150,12 @@ class WatchlistSync {
           user,
           { isAutoRequest: true }
         );
+
+        logger.info("Created media request from user's Plex Watchlist", {
+          label: 'Watchlist Sync',
+          userId: user.id,
+          mediaTitle: mediaItem.title,
+        });
       } catch (e) {
         if (!(e instanceof Error)) {
           continue;

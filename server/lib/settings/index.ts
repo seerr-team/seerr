@@ -1,7 +1,8 @@
 import { MediaServerType } from '@server/constants/server';
 import { Permission } from '@server/lib/permissions';
 import { runMigrations } from '@server/lib/settings/migrator';
-import { randomUUID } from 'crypto';
+import type { AvailableLocale } from '@server/types/languages';
+import { randomBytes, randomUUID } from 'crypto';
 import fs from 'fs/promises';
 import { mergeWith } from 'lodash';
 import path from 'path';
@@ -146,6 +147,8 @@ export interface MainSettings {
   discoverRegion: string;
   streamingRegion: string;
   originalLanguage: string;
+  blocklistRegion: string;
+  blocklistLanguage: string;
   blocklistedTags: string;
   blocklistedTagsLimit: number;
   mediaServerType: number;
@@ -211,6 +214,7 @@ interface FullPublicSettings extends PublicSettings {
   userEmailRequired: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  plexClientIdentifier: string;
 }
 
 export interface NotificationAgentConfig {
@@ -226,12 +230,15 @@ export interface NotificationAgentDiscord extends NotificationAgentConfig {
     webhookUrl: string;
     webhookRoleId?: string;
     enableMentions: boolean;
+    locale: AvailableLocale;
+    useUserLocale: boolean;
   };
 }
 
 export interface NotificationAgentSlack extends NotificationAgentConfig {
   options: {
     webhookUrl: string;
+    locale: AvailableLocale;
   };
 }
 
@@ -293,6 +300,7 @@ export interface NotificationAgentGotify extends NotificationAgentConfig {
     url: string;
     token: string;
     priority: number;
+    locale: AvailableLocale;
   };
 }
 
@@ -306,6 +314,7 @@ export interface NotificationAgentNtfy extends NotificationAgentConfig {
     authMethodToken?: boolean;
     token?: string;
     priority?: number;
+    locale: AvailableLocale;
   };
 }
 
@@ -360,6 +369,7 @@ export type JobId =
 
 export interface AllSettings {
   clientId: string;
+  sessionSecret?: string;
   vapidPublic: string;
   vapidPrivate: string;
   main: MainSettings;
@@ -387,6 +397,7 @@ class Settings {
   constructor(initialSettings?: AllSettings) {
     this.data = {
       clientId: randomUUID(),
+      sessionSecret: '',
       vapidPrivate: '',
       vapidPublic: '',
       main: {
@@ -407,6 +418,8 @@ class Settings {
         discoverRegion: '',
         streamingRegion: '',
         originalLanguage: '',
+        blocklistRegion: '',
+        blocklistLanguage: '',
         blocklistedTags: '',
         blocklistedTagsLimit: 50,
         mediaServerType: MediaServerType.NOT_CONFIGURED,
@@ -469,6 +482,8 @@ class Settings {
               webhookUrl: '',
               webhookRoleId: '',
               enableMentions: true,
+              locale: 'en',
+              useUserLocale: true,
             },
           },
           slack: {
@@ -477,6 +492,7 @@ class Settings {
             types: 0,
             options: {
               webhookUrl: '',
+              locale: 'en',
             },
           },
           telegram: {
@@ -531,6 +547,7 @@ class Settings {
               url: '',
               token: '',
               priority: 0,
+              locale: 'en',
             },
           },
           ntfy: {
@@ -541,6 +558,7 @@ class Settings {
               url: '',
               topic: '',
               priority: 3,
+              locale: 'en',
             },
           },
         },
@@ -713,6 +731,7 @@ class Settings {
         this.data.notifications.agents.email.options.userEmailRequired,
       newPlexLogin: this.data.main.newPlexLogin,
       youtubeUrl: this.data.main.youtubeUrl,
+      plexClientIdentifier: this.data.clientId,
     };
   }
 
@@ -750,6 +769,10 @@ class Settings {
 
   get clientId(): string {
     return this.data.clientId;
+  }
+
+  get sessionSecret(): string {
+    return this.data.sessionSecret!;
   }
 
   get vapidPublic(): string {
@@ -799,16 +822,22 @@ class Settings {
       await this.save();
     }
 
+    let change = false;
     if (data && !raw) {
       const parsedJson = JSON.parse(data);
       const migratedData = await runMigrations(parsedJson, SETTINGS_PATH);
-      this.data = mergeSettings(this.data, migratedData);
+      const merged = mergeSettings(this.data, migratedData);
+
+      if (JSON.stringify(merged) !== JSON.stringify(migratedData)) {
+        change = true;
+      }
+
+      this.data = merged;
     } else if (data) {
       this.data = JSON.parse(data);
     }
 
     // generate keys and ids if it's missing
-    let change = false;
     if (!this.data.main.apiKey) {
       this.data.main.apiKey = this.generateApiKey();
       change = true;
@@ -819,6 +848,10 @@ class Settings {
     }
     if (!this.data.clientId) {
       this.data.clientId = randomUUID();
+      change = true;
+    }
+    if (!this.data.sessionSecret) {
+      this.data.sessionSecret = randomBytes(32).toString('hex');
       change = true;
     }
     if (!this.data.vapidPublic || !this.data.vapidPrivate) {

@@ -2,9 +2,12 @@ import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { MediaStatus } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
+import { getIntl } from '@server/i18n';
+import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentTelegram } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import type { AvailableLocale } from '@server/types/languages';
 import axios from 'axios';
 import {
   Notification,
@@ -63,8 +66,10 @@ class TelegramAgent
 
   private getNotificationPayload(
     type: Notification,
-    payload: NotificationPayload
+    payload: NotificationPayload,
+    locale?: AvailableLocale
   ): Partial<TelegramMessagePayload | TelegramPhotoPayload> {
+    const intl = getIntl(locale);
     const settings = getSettings();
     const { applicationUrl, applicationTitle } = settings.main;
     const { embedPoster } = settings.notifications.agents.telegram;
@@ -78,51 +83,61 @@ class TelegramAgent
     }
 
     if (payload.request) {
-      message += `\n\n\*Requested By:\* ${this.escapeText(
-        payload.request?.requestedBy.displayName
-      )}`;
+      message += `\n\n\*${this.escapeText(
+        intl.formatMessage(globalMessages.requestedBy)
+      )}:\* ${this.escapeText(payload.request?.requestedBy.displayName)}`;
 
       let status = '';
       switch (type) {
         case Notification.MEDIA_AUTO_REQUESTED:
           status =
             payload.media?.status === MediaStatus.PENDING
-              ? 'Pending Approval'
-              : 'Processing';
+              ? intl.formatMessage(globalMessages.pendingApproval)
+              : intl.formatMessage(globalMessages.processing);
           break;
         case Notification.MEDIA_PENDING:
-          status = 'Pending Approval';
+          status = intl.formatMessage(globalMessages.pendingApproval);
           break;
         case Notification.MEDIA_APPROVED:
         case Notification.MEDIA_AUTO_APPROVED:
-          status = 'Processing';
+          status = intl.formatMessage(globalMessages.processing);
           break;
         case Notification.MEDIA_AVAILABLE:
-          status = 'Available';
+          status = intl.formatMessage(globalMessages.available);
           break;
         case Notification.MEDIA_DECLINED:
-          status = 'Declined';
+          status = intl.formatMessage(globalMessages.declined);
           break;
         case Notification.MEDIA_FAILED:
-          status = 'Failed';
+          status = intl.formatMessage(globalMessages.failed);
           break;
       }
 
       if (status) {
-        message += `\n\*Request Status:\* ${status}`;
+        message += `\n\*${this.escapeText(
+          intl.formatMessage(globalMessages.requestStatus)
+        )}:\* ${this.escapeText(status)}`;
       }
     } else if (payload.comment) {
-      message += `\n\n\*Comment from ${this.escapeText(
-        payload.comment.user.displayName
+      message += `\n\n\*${this.escapeText(
+        intl.formatMessage(globalMessages.commentFrom, {
+          userName: payload.comment.user.displayName,
+        })
       )}:\* ${this.escapeText(payload.comment.message)}`;
     } else if (payload.issue) {
-      message += `\n\n\*Reported By:\* ${this.escapeText(
-        payload.issue.createdBy.displayName
+      message += `\n\n\*${this.escapeText(
+        intl.formatMessage(globalMessages.reportedBy)
+      )}:\* ${this.escapeText(payload.issue.createdBy.displayName)}`;
+      message += `\n\*${this.escapeText(
+        intl.formatMessage(globalMessages.issueType)
+      )}:\* ${this.escapeText(IssueTypeName[payload.issue.issueType])}`;
+      message += `\n\*${this.escapeText(
+        intl.formatMessage(globalMessages.issueStatus)
+      )}:\* ${this.escapeText(
+        payload.issue.status === IssueStatus.OPEN
+          ? intl.formatMessage(globalMessages.open)
+          : intl.formatMessage(globalMessages.resolved)
       )}`;
-      message += `\n\*Issue Type:\* ${IssueTypeName[payload.issue.issueType]}`;
-      message += `\n\*Issue Status:\* ${
-        payload.issue.status === IssueStatus.OPEN ? 'Open' : 'Resolved'
-      }`;
     }
 
     for (const extra of payload.extra ?? []) {
@@ -138,9 +153,12 @@ class TelegramAgent
       : undefined;
 
     if (url) {
-      message += `\n\n\[View ${
-        payload.issue ? 'Issue' : 'Media'
-      } in ${this.escapeText(applicationTitle)}\]\(${url}\)`;
+      message += `\n\n\[${this.escapeText(
+        intl.formatMessage(
+          payload.issue ? globalMessages.viewIssue : globalMessages.viewMedia,
+          { applicationTitle }
+        )
+      )}\]\(${url}\)`;
     }
     /* eslint-enable */
 
@@ -164,7 +182,6 @@ class TelegramAgent
     const endpoint = `${this.baseUrl}bot${settings.options.botAPI}/${
       settings.embedPoster && payload.image ? 'sendPhoto' : 'sendMessage'
     }`;
-    const notificationPayload = this.getNotificationPayload(type, payload);
 
     // Send system notification
     if (
@@ -179,6 +196,8 @@ class TelegramAgent
       });
 
       try {
+        const notificationPayload = this.getNotificationPayload(type, payload);
+
         await axios.post(endpoint, {
           ...notificationPayload,
           chat_id: settings.options.chatId,
@@ -215,6 +234,12 @@ class TelegramAgent
         });
 
         try {
+          const notificationPayload = this.getNotificationPayload(
+            type,
+            payload,
+            payload.notifyUser.settings?.locale as AvailableLocale
+          );
+
           await axios.post(endpoint, {
             ...notificationPayload,
             chat_id: payload.notifyUser.settings.telegramChatId,
@@ -264,6 +289,12 @@ class TelegramAgent
               });
 
               try {
+                const notificationPayload = this.getNotificationPayload(
+                  type,
+                  payload,
+                  user.settings?.locale as AvailableLocale
+                );
+
                 await axios.post(endpoint, {
                   ...notificationPayload,
                   chat_id: user.settings.telegramChatId,

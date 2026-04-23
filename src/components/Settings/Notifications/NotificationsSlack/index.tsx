@@ -1,6 +1,7 @@
 import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
+import { availableLanguages } from '@app/context/LanguageContext';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
@@ -63,6 +64,7 @@ const NotificationsSlack = () => {
         embedPoster: data.embedPoster,
         types: data.types,
         webhookUrl: data.options.webhookUrl,
+        locale: data?.options.locale ?? 'en',
       }}
       validationSchema={NotificationsSlackSchema}
       onSubmit={async (values) => {
@@ -73,6 +75,7 @@ const NotificationsSlack = () => {
             types: values.types,
             options: {
               webhookUrl: values.webhookUrl,
+              locale: values.locale,
             },
           });
           addToast(intl.formatMessage(messages.slacksettingssaved), {
@@ -118,6 +121,7 @@ const NotificationsSlack = () => {
               types: values.types,
               options: {
                 webhookUrl: values.webhookUrl,
+                locale: values.locale,
               },
             });
 
@@ -193,6 +197,30 @@ const NotificationsSlack = () => {
                   typeof errors.webhookUrl === 'string' && (
                     <div className="error">{errors.webhookUrl}</div>
                   )}
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="locale" className="text-label">
+                {intl.formatMessage(globalMessages.notificationLocale)}
+              </label>
+              <div className="form-input-area">
+                <div className="form-input-field">
+                  <Field as="select" id="locale" name="locale">
+                    {(
+                      Object.keys(
+                        availableLanguages
+                      ) as (keyof typeof availableLanguages)[]
+                    ).map((key) => (
+                      <option
+                        key={key}
+                        value={availableLanguages[key].code}
+                        lang={availableLanguages[key].code}
+                      >
+                        {availableLanguages[key].display}
+                      </option>
+                    ))}
+                  </Field>
+                </div>
               </div>
             </div>
             <NotificationTypeSelector

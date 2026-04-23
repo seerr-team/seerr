@@ -1,7 +1,10 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
+import { getIntl } from '@server/i18n';
+import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentNtfy } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import type { AvailableLocale } from '@server/types/languages';
 import axios from 'axios';
 import { Notification, hasNotificationType } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
@@ -21,13 +24,18 @@ class NtfyAgent
     return settings.notifications.agents.ntfy;
   }
 
-  private buildPayload(type: Notification, payload: NotificationPayload) {
-    const settings = getSettings();
-    const { applicationUrl } = settings.main;
-    const { embedPoster } = settings.notifications.agents.ntfy;
+  private escapeMarkdown(text: string): string {
+    return text.replace(/([\\`*_{}[\]()#+\-.!|>~<])/g, '\\$1');
+  }
 
-    const topic = this.getSettings().options.topic;
-    const priority = this.getSettings().options.priority ?? 3;
+  private buildPayload(type: Notification, payload: NotificationPayload) {
+    const settings = this.getSettings();
+    const intl = getIntl(settings.options.locale as AvailableLocale);
+    const { applicationUrl } = getSettings().main;
+    const embedPoster = settings.embedPoster;
+
+    const topic = settings.options.topic;
+    const priority = settings.options.priority ?? 3;
 
     const title = payload.event
       ? `${payload.event} - ${payload.subject}`
@@ -35,38 +43,44 @@ class NtfyAgent
     let message = payload.message ?? '';
 
     if (payload.request) {
-      message += `\n\nRequested By: ${payload.request.requestedBy.displayName}`;
+      message += `${message ? '\n\n' : ''}**${intl.formatMessage(globalMessages.requestedBy)}:** ${this.escapeMarkdown(payload.request.requestedBy.displayName)}`;
 
       let status = '';
       switch (type) {
         case Notification.MEDIA_PENDING:
-          status = 'Pending Approval';
+          status = intl.formatMessage(globalMessages.pendingApproval);
           break;
         case Notification.MEDIA_APPROVED:
         case Notification.MEDIA_AUTO_APPROVED:
-          status = 'Processing';
+          status = intl.formatMessage(globalMessages.processing);
           break;
         case Notification.MEDIA_AVAILABLE:
-          status = 'Available';
+          status = intl.formatMessage(globalMessages.available);
           break;
         case Notification.MEDIA_DECLINED:
-          status = 'Declined';
+          status = intl.formatMessage(globalMessages.declined);
           break;
         case Notification.MEDIA_FAILED:
-          status = 'Failed';
+          status = intl.formatMessage(globalMessages.failed);
           break;
       }
 
       if (status) {
-        message += `\nRequest Status: ${status}`;
+        message += `\n**${intl.formatMessage(globalMessages.requestStatus)}:** ${status}`;
       }
     } else if (payload.comment) {
-      message += `\nComment from ${payload.comment.user.displayName}:\n${payload.comment.message}`;
+      message += `\n**${this.escapeMarkdown(
+        intl.formatMessage(globalMessages.commentFrom, {
+          userName: payload.comment.user.displayName,
+        })
+      )}:**\n${payload.comment.message}`;
     } else if (payload.issue) {
-      message += `\n\nReported By: ${payload.issue.createdBy.displayName}`;
-      message += `\nIssue Type: ${IssueTypeName[payload.issue.issueType]}`;
-      message += `\nIssue Status: ${
-        payload.issue.status === IssueStatus.OPEN ? 'Open' : 'Resolved'
+      message += `\n\n**${intl.formatMessage(globalMessages.reportedBy)}:** ${this.escapeMarkdown(payload.issue.createdBy.displayName)}`;
+      message += `\n**${intl.formatMessage(globalMessages.issueType)}:** ${IssueTypeName[payload.issue.issueType]}`;
+      message += `\n**${intl.formatMessage(globalMessages.issueStatus)}:** ${
+        payload.issue.status === IssueStatus.OPEN
+          ? intl.formatMessage(globalMessages.open)
+          : intl.formatMessage(globalMessages.resolved)
       }`;
     }
 
@@ -86,6 +100,7 @@ class NtfyAgent
       priority,
       title,
       message,
+      markdown: true,
       attach,
       click,
     };

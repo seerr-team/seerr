@@ -156,13 +156,17 @@ export interface IMDBRating {
  */
 class IMDBRadarrProxy extends ExternalAPI {
   constructor() {
-    super('https://api.radarr.video/v1', {
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      nodeCache: cacheManager.getCache('imdb').data,
-    });
+    super(
+      'https://api.radarr.video/v1',
+      {},
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        nodeCache: cacheManager.getCache('imdb').data,
+      }
+    );
   }
 
   /**

@@ -706,10 +706,18 @@ components:
           example: A Label
     PublicSettings:
       type: object
+      required:
+        - initialized
+        - plexClientIdentifier
       properties:
         initialized:
           type: boolean
           example: false
+        plexClientIdentifier:
+          type: string
+          format: uuid
+          description: Instance Plex OAuth client identifier
+          example: 6919275e-142a-48d8-be6b-93594cbd4626
     MovieResult:
       type: object
       required:
@@ -4798,6 +4806,49 @@ paths:
       responses:
         '204':
           description: Succesfully removed media item
+  /blocklist/collection/{collectionId}:
+    post:
+      summary: Add collection to blocklist
+      description: Adds all movies in a collection to the blocklist
+      tags:
+        - blocklist
+      parameters:
+        - in: path
+          name: collectionId
+          description: Collection ID
+          required: true
+          example: '1424991'
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Successfully added collection to blocklist
+        '500':
+          description: Error adding collection to blocklist
+    delete:
+      summary: Remove collection from blocklist
+      description: Removes all movies in a collection from the blocklist
+      tags:
+        - blocklist
+      parameters:
+        - in: path
+          name: collectionId
+          description: Collection ID
+          required: true
+          example: '1424991'
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successfully removed collection from blocklist
+        '500':
+          description: Error removing collection from blocklist
   /watchlist:
     post:
       summary: Add media to watchlist

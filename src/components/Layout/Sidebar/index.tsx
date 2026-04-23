@@ -1,5 +1,4 @@
 import Badge from '@app/components/Common/Badge';
-import UserWarnings from '@app/components/Layout/UserWarnings';
 import VersionStatus from '@app/components/Layout/VersionStatus';
 import useClickOutside from '@app/hooks/useClickOutside';
 import { Permission, useUser } from '@app/hooks/useUser';
@@ -241,10 +240,6 @@ const Sidebar = ({
                         );
                       })}
                     </nav>
-                    <div className="px-2">
-                      <UserWarnings onClick={() => setClosed()} />
-                    </div>
-
                     {hasPermission(Permission.ADMIN) && (
                       <div className="px-2">
                         <VersionStatus onClick={() => setClosed()} />
@@ -330,9 +325,6 @@ const Sidebar = ({
                   );
                 })}
               </nav>
-              <div className="px-2">
-                <UserWarnings />
-              </div>
               {hasPermission(Permission.ADMIN) && (
                 <div className="px-2">
                   <VersionStatus />

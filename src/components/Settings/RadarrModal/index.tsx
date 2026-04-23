@@ -49,6 +49,8 @@ const messages = defineMessages('components.Settings.RadarrModal', {
   rootfolder: 'Root Folder',
   minimumAvailability: 'Minimum Availability',
   server4k: '4K Server',
+  server4kHelp:
+    'Only if you have a separate 4K instance. Leave unchecked for a single server.',
   selectQualityProfile: 'Select quality profile',
   selectRootFolder: 'Select root folder',
   selectMinimumAvailability: 'Select minimum availability',
@@ -72,6 +74,15 @@ const messages = defineMessages('components.Settings.RadarrModal', {
   announced: 'Announced',
   inCinemas: 'In Cinemas',
   released: 'Released',
+  apiKeyHelp: 'Find it in Radarr: Settings > General > Security > API Key',
+  baseUrlHelp:
+    'If you set a URL Base in Radarr (Settings > General > Host), enter it here (e.g. /radarr). Leave blank otherwise.',
+  externalUrlHelp:
+    'For clickable links on media pages when the hostname is not reachable from outside your network.',
+  syncEnabledHelp:
+    'Scan Radarr for existing media and request status so users cannot request content already available.',
+  enableSearchHelp:
+    'Automatically trigger a search in Radarr when a request is approved.',
 });
 
 interface RadarrModalProps {
@@ -350,6 +361,9 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                 <div className="form-row">
                   <label htmlFor="is4k" className="checkbox-label">
                     {intl.formatMessage(messages.server4k)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.server4kHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <Field type="checkbox" id="is4k" name="is4k" />
@@ -457,6 +471,9 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                   <label htmlFor="apiKey" className="text-label">
                     {intl.formatMessage(messages.apiKey)}
                     <span className="label-required">*</span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.apiKeyHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <div className="form-input-field">
@@ -480,6 +497,9 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                 <div className="form-row">
                   <label htmlFor="baseUrl" className="text-label">
                     {intl.formatMessage(messages.baseUrl)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.baseUrlHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <div className="form-input-field">
@@ -681,6 +701,9 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                 <div className="form-row">
                   <label htmlFor="externalUrl" className="text-label">
                     {intl.formatMessage(messages.externalUrl)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.externalUrlHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <div className="form-input-field">
@@ -701,6 +724,9 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                 <div className="form-row">
                   <label htmlFor="syncEnabled" className="checkbox-label">
                     {intl.formatMessage(messages.syncEnabled)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.syncEnabledHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <Field
@@ -713,6 +739,9 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                 <div className="form-row">
                   <label htmlFor="enableSearch" className="checkbox-label">
                     {intl.formatMessage(messages.enableSearch)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.enableSearchHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <Field

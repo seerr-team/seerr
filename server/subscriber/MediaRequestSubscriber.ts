@@ -936,10 +936,10 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       media.mediaType === MediaType.TV &&
       entity.status === MediaRequestStatus.APPROVED
     ) {
-      entity.seasons.forEach((season) => {
+      for (const season of entity.seasons) {
         season.status = MediaRequestStatus.APPROVED;
-        seasonRequestRepository.save(season);
-      });
+        await seasonRequestRepository.save(season);
+      }
     }
   }
 

@@ -2,6 +2,8 @@ import Modal from '@app/components/Common/Modal';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
+
+import type { Collection } from '@server/models/Collection';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
@@ -21,8 +23,18 @@ const messages = defineMessages('component.BlocklistModal', {
   blocklisting: 'Blocklisting',
 });
 
+const isCollection = (
+  data: MovieDetails | TvDetails | Collection | null
+): data is Collection => {
+  return (
+    data !== null &&
+    data !== undefined &&
+    (data as Collection).parts !== undefined
+  );
+};
+
 const isMovie = (
-  movie: MovieDetails | TvDetails | null
+  movie: MovieDetails | TvDetails | Collection | null
 ): movie is MovieDetails => {
   if (!movie) return false;
   return (movie as MovieDetails).title !== undefined;
@@ -37,7 +49,9 @@ const BlocklistModal = ({
   isUpdating,
 }: BlocklistModalProps) => {
   const intl = useIntl();
-  const [data, setData] = useState<TvDetails | MovieDetails | null>(null);
+  const [data, setData] = useState<
+    TvDetails | MovieDetails | Collection | null
+  >(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -68,11 +82,19 @@ const BlocklistModal = ({
         loading={!data && !error}
         backgroundClickable
         title={`${intl.formatMessage(globalMessages.blocklist)} ${
-          isMovie(data)
-            ? intl.formatMessage(globalMessages.movie)
-            : intl.formatMessage(globalMessages.tvshow)
+          type === 'collection'
+            ? intl.formatMessage(globalMessages.collection)
+            : isMovie(data)
+              ? intl.formatMessage(globalMessages.movie)
+              : intl.formatMessage(globalMessages.tvshow)
         }`}
-        subTitle={`${isMovie(data) ? data.title : data?.name}`}
+        subTitle={`${
+          isCollection(data)
+            ? data.name
+            : isMovie(data)
+              ? data.title
+              : data?.name
+        }`}
         onCancel={onCancel}
         onOk={onComplete}
         okText={

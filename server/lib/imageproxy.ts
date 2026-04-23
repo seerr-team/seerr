@@ -1,6 +1,6 @@
 import logger from '@server/logger';
 import { requestInterceptorFunction } from '@server/utils/customProxyAgent';
-import axios from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 import rateLimit, { type rateLimitOptions } from 'axios-rate-limit';
 import { createHash } from 'crypto';
 import { promises } from 'fs';
@@ -55,16 +55,12 @@ class ImageProxy {
       }
     } catch (e) {
       if (e.code === 'ENOENT') {
-        logger.error('Directory not found', {
-          label: 'Image Cache',
-          message: e.message,
-        });
-      } else {
-        logger.error('Failed to read directory', {
-          label: 'Image Cache',
-          message: e.message,
-        });
+        return;
       }
+      logger.error('Failed to read directory', {
+        label: 'Image Cache',
+        message: e.message,
+      });
     }
 
     logger.info(`Cleared ${deletedImages} stale image(s) from cache '${key}'`, {
@@ -132,7 +128,7 @@ class ImageProxy {
     return 0;
   }
 
-  private axios;
+  private axios: AxiosInstance;
   private cacheVersion;
   private key;
 

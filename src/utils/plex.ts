@@ -20,19 +20,6 @@ export interface PlexPin {
   code: string;
 }
 
-const uuidv4 = (): string => {
-  return ((1e7).toString() + -1e3 + -4e3 + -8e3 + -1e11).replace(
-    /[018]/g,
-    function (c) {
-      return (
-        parseInt(c) ^
-        (window.crypto.getRandomValues(new Uint8Array(1))[0] &
-          (15 >> (parseInt(c) / 4)))
-      ).toString(16);
-    }
-  );
-};
-
 class PlexOAuth {
   private plexHeaders?: PlexHeaders;
 
@@ -41,18 +28,17 @@ class PlexOAuth {
 
   private authToken?: string;
 
-  public initializeHeaders(): void {
-    if (!window) {
+  public initializeHeaders(plexClientIdentifier: string): void {
+    if (typeof window === 'undefined') {
       throw new Error(
         'Window is not defined. Are you calling this in the browser?'
       );
     }
 
-    let clientId = localStorage.getItem('plex-client-id');
-    if (!clientId) {
-      const uuid = uuidv4();
-      localStorage.setItem('plex-client-id', uuid);
-      clientId = uuid;
+    if (!plexClientIdentifier) {
+      throw new Error(
+        'Plex client identifier missing. Reload the page and try again.'
+      );
     }
 
     const browser = Bowser.getParser(window.navigator.userAgent);
@@ -60,7 +46,7 @@ class PlexOAuth {
       Accept: 'application/json',
       'X-Plex-Product': 'Seerr',
       'X-Plex-Version': 'Plex OAuth',
-      'X-Plex-Client-Identifier': clientId,
+      'X-Plex-Client-Identifier': plexClientIdentifier,
       'X-Plex-Model': 'Plex OAuth',
       'X-Plex-Platform': browser.getBrowserName(),
       'X-Plex-Platform-Version': browser.getBrowserVersion() || 'Unknown',
@@ -93,9 +79,14 @@ class PlexOAuth {
     this.openPopup({ title: 'Plex Auth', w: 600, h: 700 });
   }
 
-  public async login(): Promise<string> {
-    this.initializeHeaders();
-    await this.getPin();
+  public async login(plexClientIdentifier: string): Promise<string> {
+    try {
+      this.initializeHeaders(plexClientIdentifier);
+      await this.getPin();
+    } catch (e) {
+      this.closePopup();
+      throw e;
+    }
 
     if (!this.plexHeaders || !this.pin) {
       throw new Error('Unable to call login if class is not initialized.');
@@ -117,11 +108,15 @@ class PlexOAuth {
       code: this.pin.code,
     };
 
-    if (this.popup) {
-      this.popup.location.href = `https://app.plex.tv/auth/#!?${this.encodeData(
-        params
-      )}`;
+    if (!this.popup || this.popup.closed) {
+      throw new Error(
+        'Unable to open the Plex login window. Please allow popups for this site and try again.'
+      );
     }
+
+    this.popup.location.href = `https://app.plex.tv/auth/#!?${this.encodeData(
+      params
+    )}`;
 
     return this.pinPoll();
   }
@@ -145,7 +140,7 @@ class PlexOAuth {
           this.authToken = response.data.authToken as string;
           this.closePopup();
           resolve(this.authToken);
-        } else if (!response.data?.authToken && !this.popup?.closed) {
+        } else if (this.popup && !this.popup.closed) {
           setTimeout(executePoll, 1000, resolve, reject);
         } else {
           reject(new Error('Popup closed without completing login'));
@@ -173,7 +168,7 @@ class PlexOAuth {
     w: number;
     h: number;
   }): Window | void {
-    if (!window) {
+    if (typeof window === 'undefined') {
       throw new Error(
         'Window is undefined. Are you running this in the browser?'
       );

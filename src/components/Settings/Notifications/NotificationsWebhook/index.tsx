@@ -37,6 +37,7 @@ const defaultPayload = {
   image: '{{image}}',
   '{{media}}': {
     media_type: '{{media_type}}',
+    imdbId: '{{media_imdbid}}',
     tmdbId: '{{media_tmdbid}}',
     tvdbId: '{{media_tvdbid}}',
     jellyfinMediaId: '{{media_jellyfinMediaId}}',
@@ -224,7 +225,7 @@ const NotificationsWebhook = () => {
             types: values.types,
             options: {
               webhookUrl: values.webhookUrl,
-              jsonPayload: JSON.stringify(values.jsonPayload),
+              jsonPayload: values.jsonPayload,
               authHeader: values.authHeader,
               customHeaders: (values.customHeaders ?? [])
                 .map((h: { key: string; value: string }) => ({
@@ -291,7 +292,7 @@ const NotificationsWebhook = () => {
               types: values.types,
               options: {
                 webhookUrl: values.webhookUrl,
-                jsonPayload: JSON.stringify(values.jsonPayload),
+                jsonPayload: values.jsonPayload,
                 authHeader: values.authHeader,
                 customHeaders: (values.customHeaders ?? [])
                   .map((h: { key: string; value: string }) => ({

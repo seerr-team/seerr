@@ -20,6 +20,8 @@ const messages = defineMessages('components.UserList', {
   importfromplexerror: 'Something went wrong while importing Plex users.',
   importedfromplex:
     '<strong>{userCount}</strong> Plex {userCount, plural, one {user} other {users}} imported successfully!',
+  importedPlexUsersNoPassword:
+    'Imported users do not have a {applicationTitle} password set. If you disable Plex sign-in, they will need to set a password from their profile or via a password reset link.',
   user: 'User',
   nouserstoimport: 'There are no Plex users to import.',
   newplexsigninenabled:
@@ -65,6 +67,16 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
         {
           autoDismiss: true,
           appearance: 'success',
+        }
+      );
+
+      addToast(
+        intl.formatMessage(messages.importedPlexUsersNoPassword, {
+          applicationTitle: settings.currentSettings.applicationTitle,
+        }),
+        {
+          autoDismiss: false,
+          appearance: 'warning',
         }
       );
 

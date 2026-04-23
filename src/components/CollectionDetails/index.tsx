@@ -1,7 +1,10 @@
+import BlocklistModal from '@app/components/BlocklistModal';
+import Button from '@app/components/Common/Button';
 import ButtonWithDropdown from '@app/components/Common/ButtonWithDropdown';
 import CachedImage from '@app/components/Common/CachedImage';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
+import Tooltip from '@app/components/Common/Tooltip';
 import RequestModal from '@app/components/RequestModal';
 import Slider from '@app/components/Slider';
 import StatusBadge from '@app/components/StatusBadge';
@@ -12,19 +15,27 @@ import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
-import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowDownTrayIcon,
+  EyeIcon,
+  EyeSlashIcon,
+} from '@heroicons/react/24/outline';
 import { MediaStatus } from '@server/constants/media';
 import type { Collection } from '@server/models/Collection';
+import axios from 'axios';
 import { uniq } from 'lodash';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
+import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
 const messages = defineMessages('components.CollectionDetails', {
   overview: 'Overview',
   numberofmovies: '{count} Movies',
+  removefromblocklistpartialcount:
+    '{removeLabel} ({count, plural, one {# movie} other {# movies}})',
   requestcollection: 'Request Collection',
   requestcollection4k: 'Request Collection in 4K',
 });
@@ -40,6 +51,9 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
   const { hasPermission } = useUser();
   const [requestModal, setRequestModal] = useState(false);
   const [is4k, setIs4k] = useState(false);
+  const [showBlocklistModal, setShowBlocklistModal] = useState(false);
+  const [isBlocklistUpdating, setIsBlocklistUpdating] = useState(false);
+  const { addToast } = useToasts();
 
   const returnCollectionDownloadItems = (data: Collection | undefined) => {
     const [downloadStatus, downloadStatus4k] = [
@@ -70,6 +84,63 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
   const { data: genres } =
     useSWR<{ id: number; name: string }[]>(`/api/v1/genres/movie`);
 
+  const onClickHideItemBtn = async (): Promise<void> => {
+    setIsBlocklistUpdating(true);
+
+    try {
+      await axios.post(`/api/v1/blocklist/collection/${data?.id}`);
+
+      addToast(
+        <span>
+          {intl.formatMessage(globalMessages.blocklistSuccess, {
+            title: data?.name,
+            strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+          })}
+        </span>,
+        { appearance: 'success', autoDismiss: true }
+      );
+
+      revalidate();
+    } catch {
+      addToast(intl.formatMessage(globalMessages.blocklistError), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    }
+
+    setIsBlocklistUpdating(false);
+    setShowBlocklistModal(false);
+  };
+
+  const onClickUnblocklistBtn = async (): Promise<void> => {
+    if (!data) return;
+
+    setIsBlocklistUpdating(true);
+
+    try {
+      await axios.delete(`/api/v1/blocklist/collection/${data.id}`);
+
+      addToast(
+        <span>
+          {intl.formatMessage(globalMessages.removeFromBlocklistSuccess, {
+            title: data.name,
+            strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+          })}
+        </span>,
+        { appearance: 'success', autoDismiss: true }
+      );
+
+      revalidate();
+    } catch {
+      addToast(intl.formatMessage(globalMessages.blocklistError), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    }
+
+    setIsBlocklistUpdating(false);
+  };
+
   const [downloadStatus, downloadStatus4k] = useMemo(() => {
     const downloadItems = returnCollectionDownloadItems(data);
     return [downloadItems.downloadStatus, downloadItems.downloadStatus4k];
@@ -97,7 +168,17 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
   let collectionStatus = MediaStatus.UNKNOWN;
   let collectionStatus4k = MediaStatus.UNKNOWN;
 
-  if (
+  const blocklistedParts = data.parts.filter(
+    (part) =>
+      part.mediaInfo && part.mediaInfo.status === MediaStatus.BLOCKLISTED
+  );
+  const isCollectionBlocklisted = blocklistedParts.length > 0;
+  const isCollectionPartiallyBlocklisted =
+    blocklistedParts.length > 0 && blocklistedParts.length < data.parts.length;
+
+  if (isCollectionBlocklisted) {
+    collectionStatus = MediaStatus.BLOCKLISTED;
+  } else if (
     data.parts.every(
       (part) =>
         part.mediaInfo && part.mediaInfo.status === MediaStatus.AVAILABLE
@@ -152,6 +233,11 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
         part.mediaInfo.status4k === MediaStatus.UNKNOWN
     ).length > 0;
 
+  const blocklistVisibility = hasPermission(
+    [Permission.MANAGE_BLOCKLIST, Permission.VIEW_BLOCKLIST],
+    { type: 'or' }
+  );
+
   const collectionAttributes: React.ReactNode[] = [];
 
   collectionAttributes.push(
@@ -187,11 +273,6 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
         ))
     );
   }
-
-  const blocklistVisibility = hasPermission(
-    [Permission.MANAGE_BLOCKLIST, Permission.VIEW_BLOCKLIST],
-    { type: 'or' }
-  );
 
   return (
     <div
@@ -231,6 +312,15 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
         }}
         onCancel={() => setRequestModal(false)}
       />
+      <BlocklistModal
+        tmdbId={data.id}
+        type="collection"
+        show={showBlocklistModal}
+        onCancel={() => setShowBlocklistModal(false)}
+        onComplete={onClickHideItemBtn}
+        isUpdating={isBlocklistUpdating}
+      />
+
       <div className="media-header">
         <div className="media-poster">
           <CachedImage
@@ -254,6 +344,11 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
               status={collectionStatus}
               downloadItem={downloadStatus}
               title={titles}
+              statusLabelOverride={
+                isCollectionPartiallyBlocklisted
+                  ? intl.formatMessage(globalMessages.partiallyblocklisted)
+                  : undefined
+              }
               inProgress={data.parts.some(
                 (part) => (part.mediaInfo?.downloadStatus ?? []).length > 0
               )}
@@ -292,6 +387,48 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
           </span>
         </div>
         <div className="media-actions">
+          {hasPermission([Permission.MANAGE_BLOCKLIST], { type: 'or' }) &&
+            (isCollectionBlocklisted ? (
+              <Tooltip
+                content={
+                  blocklistedParts.length === data.parts.length
+                    ? intl.formatMessage(globalMessages.removefromBlocklist)
+                    : intl.formatMessage(
+                        messages.removefromblocklistpartialcount,
+                        {
+                          removeLabel: intl.formatMessage(
+                            globalMessages.removefromBlocklist
+                          ),
+                          count: blocklistedParts.length,
+                        }
+                      )
+                }
+              >
+                <Button
+                  buttonType="ghost"
+                  className="z-40 mr-2"
+                  buttonSize="md"
+                  onClick={onClickUnblocklistBtn}
+                  disabled={isBlocklistUpdating}
+                >
+                  <EyeIcon />
+                </Button>
+              </Tooltip>
+            ) : (
+              <Tooltip
+                content={intl.formatMessage(globalMessages.addToBlocklist)}
+              >
+                <Button
+                  buttonType="ghost"
+                  className="z-40 mr-2"
+                  buttonSize="md"
+                  onClick={() => setShowBlocklistModal(true)}
+                  disabled={isBlocklistUpdating}
+                >
+                  <EyeSlashIcon />
+                </Button>
+              </Tooltip>
+            ))}
           {(hasRequestable || hasRequestable4k) && (
             <ButtonWithDropdown
               buttonType="primary"
@@ -349,8 +486,9 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
         isEmpty={data.parts.length === 0}
         items={data.parts
           .filter((title) => {
-            if (!blocklistVisibility)
+            if (!blocklistVisibility) {
               return title.mediaInfo?.status !== MediaStatus.BLOCKLISTED;
+            }
             return title;
           })
           .map((title) => (
@@ -365,6 +503,7 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
               userScore={title.voteAverage}
               year={title.releaseDate}
               mediaType={title.mediaType}
+              mutateParent={revalidate}
             />
           ))}
       />
