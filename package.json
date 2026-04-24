@@ -94,6 +94,7 @@
     "react-transition-group": "^4.4.5",
     "react-truncate-markup": "5.1.2",
     "react-use-clipboard": "1.0.9",
+    "reflect-metadata": "^0.2.2",
     "semver": "7.7.4",
     "sharp": "^0.34.5",
     "sqlite3": "^5.1.7",
