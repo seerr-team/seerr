@@ -1,1 +1,7 @@
-{}
+{
+  "notifications.agents.email.approvedRequest": "Sinu {mediaType} taotlus on heaks kiidetud:",
+  "notifications.agents.email.approvedRequest4k": "Sinu {mediaType} 4K-taotlus on heaks kiidetud:",
+  "notifications.agents.email.autoApproved": "Uus {mediaType} taotlus on automaatselt heaks kiidetud:",
+  "notifications.agents.email.autoApproved4k": "Uus {mediaType} 4K-taotlus on automaatselt heaks kiidetud:",
+  "notifications.agents.email.autoRequested": "Uus {mediaType} taotlus esitati automaatselt:"
+}
