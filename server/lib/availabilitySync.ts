@@ -951,6 +951,7 @@ class AvailabilitySync {
               if (toSave.length > 0) {
                 await episodeRepository.save(toSave);
               }
+              break;
             } catch (err) {
               logger.error('Failed to update episode availability', {
                 label: 'Availability Sync',
