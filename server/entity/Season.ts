@@ -5,9 +5,11 @@ import {
   Entity,
   Index,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import Episode from './Episode';
 import Media from './Media';
 
 @Entity()
@@ -29,6 +31,12 @@ class Season {
   })
   @Index()
   public media: Promise<Media>;
+
+  @OneToMany(() => Episode, (episode) => episode.season, {
+    cascade: true,
+    eager: true,
+  })
+  public episodes: Episode[];
 
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
