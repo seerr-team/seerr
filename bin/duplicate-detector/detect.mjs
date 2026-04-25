@@ -188,9 +188,7 @@ function formatComment(candidates) {
     '',
     'A maintainer will review this. If this is **not** a duplicate, no action is needed.',
     '',
-    `<!-- duplicate-bot: candidates=${candidates
-      .map((c) => c.number)
-      .join(',')} -->`
+    `<!-- duplicate-bot: candidates=${candidates.map((c) => c.number).join(',')} -->`
   );
 
   return lines.join('\n');
