@@ -2,6 +2,7 @@ import AirDateBadge from '@app/components/AirDateBadge';
 import Badge from '@app/components/Common/Badge';
 import CachedImage from '@app/components/Common/CachedImage';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
+import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import type { SeasonWithEpisodes } from '@server/models/Tv';
@@ -20,6 +21,7 @@ type SeasonProps = {
 
 const Season = ({ seasonNumber, tvId }: SeasonProps) => {
   const intl = useIntl();
+  const settings = useSettings();
   const { data, error } = useSWR<SeasonWithEpisodes>(
     `/api/v1/tv/${tvId}/season/${seasonNumber}`
   );
@@ -54,13 +56,14 @@ const Season = ({ seasonNumber, tvId }: SeasonProps) => {
                     {episode.airDate && (
                       <AirDateBadge airDate={episode.airDate} />
                     )}
-                    <Badge badgeType={episode.available ? 'success' : 'danger'}>
-                      {intl.formatMessage(
-                        episode.available
-                          ? globalMessages.available
-                          : globalMessages.unavailable
+                    {settings.currentSettings.enableEpisodeAvailability &&
+                      episode.airDate &&
+                      new Date(episode.airDate) <= new Date() &&
+                      episode.available && (
+                        <Badge badgeType="success">
+                          {intl.formatMessage(globalMessages.available)}
+                        </Badge>
                       )}
-                    </Badge>
                   </div>
                   {episode.overview && <p>{episode.overview}</p>}
                 </div>
