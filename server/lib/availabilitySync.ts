@@ -787,17 +787,12 @@ class AvailabilitySync {
         }
 
         if (sonarr && serviceId) {
-          this.sonarrSeasonsCache[`${server.id}-${serviceId}`] =
-            sonarr.seasons;
+          this.sonarrSeasonsCache[`${server.id}-${serviceId}`] = sonarr.seasons;
 
-          if (
-            shouldTrackEpisodes &&
-            sonarr.statistics.episodeFileCount > 0
-          ) {
+          if (shouldTrackEpisodes && sonarr.statistics.episodeFileCount > 0) {
             try {
-              const episodes = await sonarrAPI.getEpisodesBySeriesId(serviceId);
-              this.sonarrEpisodesCache[`${server.id}-${serviceId}`] =
-                episodes;
+              const episodes = await sonarrAPI.getEpisodes(serviceId);
+              this.sonarrEpisodesCache[`${server.id}-${serviceId}`] = episodes;
             } catch (err) {
               logger.error('Failed to fetch episodes for caching', {
                 label: 'Availability Sync',
