@@ -155,6 +155,7 @@ export interface MainSettings {
   mediaServerType: number;
   partialRequestsEnabled: boolean;
   enableSpecialEpisodes: boolean;
+  enableEpisodeAvailability: boolean;
   locale: string;
   youtubeUrl: string;
   versionCheck: boolean;
@@ -209,6 +210,7 @@ interface FullPublicSettings extends PublicSettings {
   jellyfinServerName?: string;
   partialRequestsEnabled: boolean;
   enableSpecialEpisodes: boolean;
+  enableEpisodeAvailability: boolean;
   cacheImages: boolean;
   vapidPublic: string;
   enablePushRegistration: boolean;
@@ -433,6 +435,7 @@ class Settings {
         mediaServerType: MediaServerType.NOT_CONFIGURED,
         partialRequestsEnabled: true,
         enableSpecialEpisodes: false,
+        enableEpisodeAvailability: false,
         locale: 'en',
         youtubeUrl: '',
         versionCheck: true,
@@ -734,6 +737,7 @@ class Settings {
       mediaServerType: this.main.mediaServerType,
       partialRequestsEnabled: this.data.main.partialRequestsEnabled,
       enableSpecialEpisodes: this.data.main.enableSpecialEpisodes,
+      enableEpisodeAvailability: this.data.main.enableEpisodeAvailability,
       cacheImages: this.data.main.cacheImages,
       vapidPublic: this.vapidPublic,
       enablePushRegistration: this.data.notifications.agents.webpush.enabled,
