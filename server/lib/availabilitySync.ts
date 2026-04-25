@@ -19,7 +19,7 @@ import MediaRequest from '@server/entity/MediaRequest';
 import type Season from '@server/entity/Season';
 import { User } from '@server/entity/User';
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
-import { getSettings } from '@server/lib/settings';
+import { MetadataProviderType, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { getHostname } from '@server/utils/getHostname';
 
@@ -836,6 +836,12 @@ class AvailabilitySync {
     let seasonExists = false;
     const episodeRepository = getRepository(Episode);
 
+    const settings = getSettings();
+    const shouldTrackEpisodes =
+      settings.main.enableEpisodeAvailability &&
+      (settings.metadataSettings.tv === MetadataProviderType.TVDB ||
+        settings.metadataSettings.anime === MetadataProviderType.TVDB);
+
     // Check each sonarr instance to see if the media still exists
     // If found, we will assume the media exists and prevent removal
     // We can use the cache we built when we fetched the series with mediaExistsInSonarr
@@ -884,48 +890,50 @@ class AvailabilitySync {
             return seasonExists;
           }
 
-          const episodes = await sonarrApi.getEpisodesBySeriesId(serviceId);
+          if (shouldTrackEpisodes) {
+            const episodes = await sonarrApi.getEpisodesBySeriesId(serviceId);
 
-          for (const ep of episodes) {
-            if (ep.seasonNumber === season.seasonNumber) {
-              const existingEpisode = await episodeRepository.findOne({
-                where: {
-                  episodeNumber: ep.episodeNumber,
-                  season: { id: season.id },
-                },
-                relations: ['season'],
-              });
+            for (const ep of episodes) {
+              if (ep.seasonNumber === season.seasonNumber) {
+                const existingEpisode = await episodeRepository.findOne({
+                  where: {
+                    episodeNumber: ep.episodeNumber,
+                    season: { id: season.id },
+                  },
+                  relations: ['season'],
+                });
 
-              if (existingEpisode) {
-                existingEpisode[is4k ? 'status4k' : 'status'] = ep.hasFile
-                  ? MediaStatus.AVAILABLE
-                  : MediaStatus.UNKNOWN;
-                await episodeRepository.save(existingEpisode);
-              } else {
-                const newEpisode = new Episode();
-                newEpisode.episodeNumber = ep.episodeNumber;
-                newEpisode.status = is4k
-                  ? MediaStatus.UNKNOWN
-                  : ep.hasFile
+                if (existingEpisode) {
+                  existingEpisode[is4k ? 'status4k' : 'status'] = ep.hasFile
                     ? MediaStatus.AVAILABLE
                     : MediaStatus.UNKNOWN;
-                newEpisode.status4k = is4k
-                  ? ep.hasFile
-                    ? MediaStatus.AVAILABLE
-                    : MediaStatus.UNKNOWN
-                  : MediaStatus.UNKNOWN;
-                newEpisode.season = Promise.resolve(season);
+                  await episodeRepository.save(existingEpisode);
+                } else {
+                  const newEpisode = new Episode();
+                  newEpisode.episodeNumber = ep.episodeNumber;
+                  newEpisode.status = is4k
+                    ? MediaStatus.UNKNOWN
+                    : ep.hasFile
+                      ? MediaStatus.AVAILABLE
+                      : MediaStatus.UNKNOWN;
+                  newEpisode.status4k = is4k
+                    ? ep.hasFile
+                      ? MediaStatus.AVAILABLE
+                      : MediaStatus.UNKNOWN
+                    : MediaStatus.UNKNOWN;
+                  newEpisode.season = Promise.resolve(season);
 
-                try {
-                  await episodeRepository.save(newEpisode);
-                } catch (saveError) {
-                  logger.error('Failed to save new episode', {
-                    label: 'Availability Sync',
-                    errorMessage: saveError.message,
-                    tvId: media.tmdbId,
-                    seasonNumber: season.seasonNumber,
-                    episodeNumber: ep.episodeNumber,
-                  });
+                  try {
+                    await episodeRepository.save(newEpisode);
+                  } catch (saveError) {
+                    logger.error('Failed to save new episode', {
+                      label: 'Availability Sync',
+                      errorMessage: saveError.message,
+                      tvId: media.tmdbId,
+                      seasonNumber: season.seasonNumber,
+                      episodeNumber: ep.episodeNumber,
+                    });
+                  }
                 }
               }
             }
