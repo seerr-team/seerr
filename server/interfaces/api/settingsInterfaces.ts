@@ -50,6 +50,10 @@ export interface PublicSettingsResponse {
   newPlexLogin: boolean;
   youtubeUrl: string;
   versionCheck: boolean;
+  metadataSettings: {
+    tv: string;
+    anime: string;
+  };
   plexClientIdentifier: string;
 }
 
