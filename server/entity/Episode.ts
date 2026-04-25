@@ -10,7 +10,6 @@ import {
 import Season from './Season';
 
 @Entity()
-@Index(['season'])
 class Episode {
   @PrimaryGeneratedColumn()
   public id: number;
@@ -24,6 +23,7 @@ class Episode {
   @Column({ type: 'int', default: MediaStatus.UNKNOWN })
   public status4k: MediaStatus;
 
+  @Index()
   @ManyToOne(() => Season, (season: Season) => season.episodes, {
     onDelete: 'CASCADE',
     nullable: true,
