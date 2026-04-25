@@ -464,7 +464,6 @@ class SonarrAPI extends ServarrBase<{
       });
     }
   };
-
 }
 
 export default SonarrAPI;
