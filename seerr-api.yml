@@ -1413,6 +1413,7 @@ components:
         id:
           type: integer
           example: 0
+          readOnly: true
         agent:
           type: string
           enum:

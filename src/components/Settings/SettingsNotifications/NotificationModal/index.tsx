@@ -64,10 +64,15 @@ const NotificationModal = ({
   const { addToast, removeToast } = useToasts();
 
   const onSave = async (submitData: NotificationAgentConfig) => {
+    const instance = {
+      ...submitData,
+      id: undefined,
+    };
+
     try {
       await axios.post(
         `/api/v1/settings/notification/${submitData.id}`,
-        submitData
+        instance
       );
 
       addToast(intl.formatMessage(messages.toastSaveSuccess), {
@@ -85,8 +90,13 @@ const NotificationModal = ({
   };
 
   const onCreate = async (submitData: NotificationAgentConfig) => {
+    const instance = {
+      ...submitData,
+      id: undefined,
+    };
+
     try {
-      await axios.post(`/api/v1/settings/notification`, submitData);
+      await axios.post(`/api/v1/settings/notification`, instance);
 
       addToast(intl.formatMessage(messages.toastCreateSuccess), {
         appearance: 'success',
@@ -104,6 +114,11 @@ const NotificationModal = ({
 
   const onTest = async (testData: NotificationAgentConfig) => {
     let toastId: string | undefined;
+    const instance = {
+      ...testData,
+      id: undefined,
+    };
+
     try {
       addToast(
         intl.formatMessage(messages.toastTestSending),
@@ -115,7 +130,7 @@ const NotificationModal = ({
           toastId = id;
         }
       );
-      await axios.post('/api/v1/settings/notification/test', testData);
+      await axios.post('/api/v1/settings/notification/test', instance);
 
       if (toastId) {
         removeToast(toastId);
