@@ -1,5 +1,6 @@
 {
   "clientId": "6919275e-142a-48d8-be6b-93594cbd4626",
+  "sessionSecret": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
   "vapidPrivate": "tmnslaO8ZWN6bNbSEv_rolPeBTlNxOwCCAHrM9oZz3M",
   "vapidPublic": "BK_EpP8NDm9waor2zn6_S28o3ZYv4kCkJOfYpO3pt3W6jnPmxrgTLANUBNbbyaNatPnSQ12De9CeqSYQrqWzHTs",
   "main": {

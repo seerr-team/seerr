@@ -67,19 +67,27 @@ class WatchlistSync {
 
     const mediaItems = await Media.getRelatedMedia(
       user,
-      response.items.map((i) => i.tmdbId)
+      response.items.map((i) => ({
+        tmdbId: i.tmdbId,
+        mediaType: i.type === 'show' ? MediaType.TV : MediaType.MOVIE,
+      }))
     );
 
     const watchlistTmdbIds = response.items.map((i) => i.tmdbId);
 
     const requestRepository = getRepository(MediaRequest);
-    const existingAutoRequests = await requestRepository
-      .createQueryBuilder('request')
-      .leftJoinAndSelect('request.media', 'media')
-      .where('request.requestedBy = :userId', { userId: user.id })
-      .andWhere('request.isAutoRequest = true')
-      .andWhere('media.tmdbId IN (:...tmdbIds)', { tmdbIds: watchlistTmdbIds })
-      .getMany();
+    const existingAutoRequests: MediaRequest[] =
+      watchlistTmdbIds.length > 0
+        ? await requestRepository
+            .createQueryBuilder('request')
+            .leftJoinAndSelect('request.media', 'media')
+            .where('request.requestedBy = :userId', { userId: user.id })
+            .andWhere('request.isAutoRequest = true')
+            .andWhere('media.tmdbId IN (:...tmdbIds)', {
+              tmdbIds: watchlistTmdbIds,
+            })
+            .getMany()
+        : [];
 
     const autoRequestedTmdbIds = new Set(
       existingAutoRequests
@@ -87,28 +95,26 @@ class WatchlistSync {
         .map((r) => `${r.media.mediaType}:${r.media.tmdbId}`)
     );
 
-    const unavailableItems = response.items.filter(
-      (i) =>
-        !autoRequestedTmdbIds.has(
-          `${i.type === 'show' ? MediaType.TV : MediaType.MOVIE}:${i.tmdbId}`
-        ) &&
+    const unavailableItems = response.items.filter((i) => {
+      const itemMediaType = i.type === 'show' ? MediaType.TV : MediaType.MOVIE;
+
+      return (
+        !autoRequestedTmdbIds.has(`${itemMediaType}:${i.tmdbId}`) &&
         !mediaItems.find(
           (m) =>
             m.tmdbId === i.tmdbId &&
+            m.mediaType === itemMediaType &&
             (m.status === MediaStatus.BLOCKLISTED ||
-              (m.status !== MediaStatus.UNKNOWN && m.mediaType === 'movie') ||
-              (m.mediaType === 'tv' && m.status === MediaStatus.AVAILABLE))
+              (itemMediaType === MediaType.MOVIE &&
+                m.status !== MediaStatus.UNKNOWN) ||
+              (itemMediaType === MediaType.TV &&
+                m.status === MediaStatus.AVAILABLE))
         )
-    );
+      );
+    });
 
     for (const mediaItem of unavailableItems) {
       try {
-        logger.info("Creating media request from user's Plex Watchlist", {
-          label: 'Watchlist Sync',
-          userId: user.id,
-          mediaTitle: mediaItem.title,
-        });
-
         if (mediaItem.type === 'show' && !mediaItem.tvdbId) {
           throw new Error('Missing TVDB ID from Plex Metadata');
         }
@@ -144,6 +150,12 @@ class WatchlistSync {
           user,
           { isAutoRequest: true }
         );
+
+        logger.info("Created media request from user's Plex Watchlist", {
+          label: 'Watchlist Sync',
+          userId: user.id,
+          mediaTitle: mediaItem.title,
+        });
       } catch (e) {
         if (!(e instanceof Error)) {
           continue;

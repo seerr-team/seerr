@@ -3,7 +3,7 @@ import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
 import globalMessages from '@app/i18n/globalMessages';
-import Error from '@app/pages/_error';
+import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import type { TvResult } from '@server/models/Search';
 import { useRouter } from 'next/router';
@@ -37,7 +37,7 @@ const DiscoverTvLanguage = () => {
   >(`/api/v1/discover/tv/language/${router.query.language}`);
 
   if (error) {
-    return <Error statusCode={500} />;
+    return <ErrorPage statusCode={500} />;
   }
 
   const title = isLoadingInitialData

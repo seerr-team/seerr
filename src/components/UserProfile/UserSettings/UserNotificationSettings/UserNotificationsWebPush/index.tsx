@@ -95,7 +95,7 @@ const UserWebPushSettings = () => {
       } else {
         throw new Error('Subscription failed');
       }
-    } catch (error) {
+    } catch {
       addToast(intl.formatMessage(messages.enablingwebpusherror), {
         appearance: 'error',
         autoDismiss: true,
@@ -135,7 +135,7 @@ const UserWebPushSettings = () => {
         autoDismiss: true,
         appearance: 'success',
       });
-    } catch (error) {
+    } catch {
       addToast(intl.formatMessage(messages.disablingwebpusherror), {
         autoDismiss: true,
         appearance: 'error',
@@ -157,7 +157,7 @@ const UserWebPushSettings = () => {
         autoDismiss: true,
         appearance: 'success',
       });
-    } catch (error) {
+    } catch {
       addToast(intl.formatMessage(messages.subscriptiondeleteerror), {
         autoDismiss: true,
         appearance: 'error',
@@ -272,7 +272,7 @@ const UserWebPushSettings = () => {
               appearance: 'success',
               autoDismiss: true,
             });
-          } catch (e) {
+          } catch {
             addToast(intl.formatMessage(messages.webpushsettingsfailed), {
               appearance: 'error',
               autoDismiss: true,

@@ -1,3 +1,5 @@
+import type { AvailableLocale } from '@server/types/languages';
+
 export interface Library {
   id: string;
   name: string;
@@ -40,6 +42,7 @@ export interface JellyfinSettings {
   serverId: string;
   apiKey: string;
 }
+
 export interface TautulliSettings {
   hostname?: string;
   port?: number;
@@ -92,6 +95,27 @@ interface Quota {
   quotaDays?: number;
 }
 
+export enum MetadataProviderType {
+  TMDB = 'tmdb',
+  TVDB = 'tvdb',
+}
+
+export interface MetadataSettings {
+  tv: MetadataProviderType;
+  anime: MetadataProviderType;
+}
+
+export interface ProxySettings {
+  enabled: boolean;
+  hostname: string;
+  port: number;
+  useSsl: boolean;
+  user: string;
+  password: string;
+  bypassFilter: string;
+  bypassLocalAddresses: boolean;
+}
+
 export interface MainSettings {
   apiKey: string;
   applicationTitle: string;
@@ -110,6 +134,8 @@ export interface MainSettings {
   discoverRegion: string;
   streamingRegion: string;
   originalLanguage: string;
+  blocklistRegion: string;
+  blocklistLanguage: string;
   blocklistedTags: string;
   blocklistedTagsLimit: number;
   mediaServerType: number;
@@ -117,16 +143,6 @@ export interface MainSettings {
   enableSpecialEpisodes: boolean;
   locale: string;
   youtubeUrl: string;
-}
-
-export enum MetadataProviderType {
-  TMDB = 'tmdb',
-  TVDB = 'tvdb',
-}
-
-export interface MetadataSettings {
-  tv: MetadataProviderType;
-  anime: MetadataProviderType;
 }
 
 export interface ProxySettings {
@@ -185,6 +201,7 @@ export interface FullPublicSettings extends PublicSettings {
   userEmailRequired: boolean;
   newPlexLogin: boolean;
   youtubeUrl: string;
+  plexClientIdentifier: string;
 }
 
 export interface NotificationAgentConfig {
@@ -205,12 +222,15 @@ export interface NotificationAgentDiscord extends NotificationAgentConfig {
     webhookUrl: string;
     webhookRoleId?: string;
     enableMentions: boolean;
+    locale: AvailableLocale;
+    useUserLocale: boolean;
   };
 }
 
 export interface NotificationAgentSlack extends NotificationAgentConfig {
   options: {
     webhookUrl: string;
+    locale: AvailableLocale;
   };
 }
 
@@ -262,6 +282,7 @@ export interface NotificationAgentWebhook extends NotificationAgentConfig {
     webhookUrl: string;
     jsonPayload: string;
     authHeader?: string;
+    customHeaders?: { key: string; value: string }[];
     supportVariables?: boolean;
   };
 }
@@ -271,6 +292,7 @@ export interface NotificationAgentGotify extends NotificationAgentConfig {
     url: string;
     token: string;
     priority: number;
+    locale: AvailableLocale;
   };
 }
 
@@ -283,6 +305,8 @@ export interface NotificationAgentNtfy extends NotificationAgentConfig {
     password?: string;
     authMethodToken?: boolean;
     token?: string;
+    priority?: number;
+    locale: AvailableLocale;
   };
 }
 
@@ -338,6 +362,7 @@ export type JobId =
 
 export interface AllSettings {
   clientId: string;
+  sessionSecret?: string;
   vapidPublic: string;
   vapidPrivate: string;
   main: MainSettings;

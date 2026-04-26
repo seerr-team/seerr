@@ -80,29 +80,24 @@ class PGPEncryptor extends Transform {
       let previousHeader: string[] = [];
       for (let i = 0; i < linesInHeader.length; i++) {
         const line = linesInHeader[i];
-        /**
-         * If it is a multi-line header (current line starts with whitespace)
-         * or it's the first line in the iteration
-         * add the current line with previous header and move on
-         */
+
         if (/^\s/.test(line) || i === 0) {
           previousHeader.push(line);
-          continue;
+        } else {
+          if (
+            /^(content-type|content-transfer-encoding):/i.test(
+              previousHeader[0]
+            )
+          ) {
+            contentHeaders.push(previousHeader);
+          } else {
+            emailHeaders.push(previousHeader);
+          }
+          previousHeader = [line];
         }
+      }
 
-        /**
-         * This is done to prevent the last header
-         * from being missed
-         */
-        if (i === linesInHeader.length - 1) {
-          previousHeader.push(line);
-        }
-
-        /**
-         * We need to seperate the actual content headers
-         * so that we can add it as a header for the encrypted content
-         * So that the content will be displayed properly after decryption
-         */
+      if (previousHeader.length > 0) {
         if (
           /^(content-type|content-transfer-encoding):/i.test(previousHeader[0])
         ) {
@@ -110,7 +105,6 @@ class PGPEncryptor extends Transform {
         } else {
           emailHeaders.push(previousHeader);
         }
-        previousHeader = [line];
       }
 
       // Generate a new boundary for the email content

@@ -47,6 +47,8 @@ const loadLocaleData = (locale: AvailableLocale): Promise<any> => {
       return import('../i18n/locale/es.json');
     case 'es-MX':
       return import('../i18n/locale/es_MX.json');
+    case 'et':
+      return import('../i18n/locale/et.json');
     case 'fi':
       return import('../i18n/locale/fi.json');
     case 'fr':
@@ -65,6 +67,8 @@ const loadLocaleData = (locale: AvailableLocale): Promise<any> => {
       return import('../i18n/locale/ja.json');
     case 'ko':
       return import('../i18n/locale/ko.json');
+    case 'lb':
+      return import('../i18n/locale/lb.json');
     case 'lt':
       return import('../i18n/locale/lt.json');
     case 'nb-NO':
@@ -91,6 +95,8 @@ const loadLocaleData = (locale: AvailableLocale): Promise<any> => {
       return import('../i18n/locale/tr.json');
     case 'uk':
       return import('../i18n/locale/uk.json');
+    case 'vi':
+      return import('../i18n/locale/vi.json');
     case 'zh-CN':
       return import('../i18n/locale/zh_Hans.json');
     case 'zh-TW':
@@ -250,6 +256,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     emailEnabled: false,
     newPlexLogin: true,
     youtubeUrl: '',
+    plexClientIdentifier: '',
   };
 
   if (ctx.res) {
@@ -293,7 +300,7 @@ CoreApp.getInitialProps = async (initialProps) => {
           });
           ctx.res.end();
         }
-      } catch (e) {
+      } catch {
         // If there is no user, and ctx.res is set (to check if we are on the server side)
         // _AND_ we are not already on the login or setup route, redirect to /login with a 307
         // before anything actually renders

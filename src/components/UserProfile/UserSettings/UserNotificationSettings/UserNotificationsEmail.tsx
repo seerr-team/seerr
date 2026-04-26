@@ -83,7 +83,7 @@ const UserEmailSettings = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.emailsettingsfailed), {
             appearance: 'error',
             autoDismiss: true,

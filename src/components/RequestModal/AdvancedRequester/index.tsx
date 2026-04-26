@@ -367,24 +367,31 @@ const AdvancedRequester = ({
                   )}
                   {!isValidating &&
                     serverData &&
-                    serverData.profiles.map((profile) => (
-                      <option
-                        key={`profile-list${profile.id}`}
-                        value={profile.id}
-                      >
-                        {isAnime &&
-                        serverData.server.activeAnimeProfileId === profile.id
-                          ? intl.formatMessage(messages.default, {
-                              name: profile.name,
-                            })
-                          : !isAnime &&
-                              serverData.server.activeProfileId === profile.id
+                    serverData.profiles
+                      .toSorted((a, b) =>
+                        a.name.localeCompare(b.name, intl.locale, {
+                          numeric: true,
+                          sensitivity: 'base',
+                        })
+                      )
+                      .map((profile) => (
+                        <option
+                          key={`profile-list${profile.id}`}
+                          value={profile.id}
+                        >
+                          {isAnime &&
+                          serverData.server.activeAnimeProfileId === profile.id
                             ? intl.formatMessage(messages.default, {
                                 name: profile.name,
                               })
-                            : profile.name}
-                      </option>
-                    ))}
+                            : !isAnime &&
+                                serverData.server.activeProfileId === profile.id
+                              ? intl.formatMessage(messages.default, {
+                                  name: profile.name,
+                                })
+                              : profile.name}
+                        </option>
+                      ))}
                 </select>
               </div>
             )}

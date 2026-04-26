@@ -125,7 +125,7 @@ const TitleCard = ({
           { appearance: 'success', autoDismiss: true }
         );
       }
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.watchlistError), {
         appearance: 'error',
         autoDismiss: true,
@@ -139,7 +139,9 @@ const TitleCard = ({
   const onClickDeleteWatchlistBtn = async (): Promise<void> => {
     setIsUpdating(true);
     try {
-      const response = await axios.delete<Watchlist>('/api/v1/watchlist/' + id);
+      const response = await axios.delete<Watchlist>(
+        `/api/v1/watchlist/${id}?mediaType=${mediaType}`
+      );
 
       if (response.status === 204) {
         addToast(
@@ -152,7 +154,7 @@ const TitleCard = ({
           { appearance: 'info', autoDismiss: true }
         );
       }
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.watchlistError), {
         appearance: 'error',
         autoDismiss: true,
@@ -173,12 +175,16 @@ const TitleCard = ({
 
     if (topNode) {
       try {
-        await axios.post('/api/v1/blocklist', {
-          tmdbId: id,
-          mediaType,
-          title,
-          user: user?.id,
-        });
+        if (mediaType === 'collection') {
+          await axios.post(`/api/v1/blocklist/collection/${id}`);
+        } else {
+          await axios.post('/api/v1/blocklist', {
+            tmdbId: id,
+            mediaType,
+            title,
+            user: user?.id,
+          });
+        }
         addToast(
           <span>
             {intl.formatMessage(globalMessages.blocklistSuccess, {
@@ -189,6 +195,9 @@ const TitleCard = ({
           { appearance: 'success', autoDismiss: true }
         );
         setCurrentStatus(MediaStatus.BLOCKLISTED);
+        if (mutateParent) {
+          mutateParent();
+        }
       } catch (e) {
         if (e?.response?.status === 412) {
           addToast(
@@ -223,20 +232,57 @@ const TitleCard = ({
     const topNode = cardRef.current;
 
     if (topNode) {
-      const res = await axios.delete('/api/v1/blocklist/' + id);
+      try {
+        if (mediaType === 'collection') {
+          const res = await axios.delete(`/api/v1/blocklist/collection/${id}`);
 
-      if (res.status === 204) {
-        addToast(
-          <span>
-            {intl.formatMessage(globalMessages.removeFromBlocklistSuccess, {
-              title,
-              strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
-            })}
-          </span>,
-          { appearance: 'success', autoDismiss: true }
-        );
-        setCurrentStatus(MediaStatus.UNKNOWN);
-      } else {
+          if (res.status === 204) {
+            addToast(
+              <span>
+                {intl.formatMessage(globalMessages.removeFromBlocklistSuccess, {
+                  title,
+                  strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+                })}
+              </span>,
+              { appearance: 'success', autoDismiss: true }
+            );
+            setCurrentStatus(MediaStatus.UNKNOWN);
+            if (mutateParent) {
+              mutateParent();
+            }
+          } else {
+            addToast(intl.formatMessage(globalMessages.blocklistError), {
+              appearance: 'error',
+              autoDismiss: true,
+            });
+          }
+        } else {
+          const res = await axios.delete(
+            `/api/v1/blocklist/${id}?mediaType=${mediaType}`
+          );
+
+          if (res.status === 204) {
+            addToast(
+              <span>
+                {intl.formatMessage(globalMessages.removeFromBlocklistSuccess, {
+                  title,
+                  strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+                })}
+              </span>,
+              { appearance: 'success', autoDismiss: true }
+            );
+            setCurrentStatus(MediaStatus.UNKNOWN);
+            if (mutateParent) {
+              mutateParent();
+            }
+          } else {
+            addToast(intl.formatMessage(globalMessages.blocklistError), {
+              appearance: 'error',
+              autoDismiss: true,
+            });
+          }
+        }
+      } catch {
         addToast(intl.formatMessage(globalMessages.blocklistError), {
           appearance: 'error',
           autoDismiss: true,

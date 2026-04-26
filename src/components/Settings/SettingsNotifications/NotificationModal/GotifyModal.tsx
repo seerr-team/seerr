@@ -1,6 +1,7 @@
 import Modal from '@app/components/Common/Modal';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import { NotificationModalType } from '@app/components/Settings/SettingsNotifications/NotificationModal';
+import { availableLanguages } from '@app/context/LanguageContext';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -31,8 +32,8 @@ interface GotifyModalProps {
   type: NotificationModalType;
   data: NotificationAgentGotify;
   onClose: () => void;
-  onTest: (testData: NotificationAgentGotify) => void;
-  onSave: (submitData: NotificationAgentGotify) => void;
+  onTest: (testData: NotificationAgentGotify) => Promise<void>;
+  onSave: (submitData: NotificationAgentGotify) => Promise<void>;
 }
 
 const GotifyModal = ({
@@ -48,10 +49,11 @@ const GotifyModal = ({
     url: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.gotifyValidationUrlRequired)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.gotifyValidationUrlRequired)),
+        otherwise: (schema) => schema.nullable(),
       })
       .test(
         'valid-url',
@@ -65,21 +67,23 @@ const GotifyModal = ({
       ),
     token: Yup.string().when('enabled', {
       is: true,
-      then: Yup.string()
-        .nullable()
-        .required(intl.formatMessage(messages.gotifyValidationTokenRequired)),
-      otherwise: Yup.string().nullable(),
+      then: (schema) =>
+        schema
+          .nullable()
+          .required(intl.formatMessage(messages.gotifyValidationTokenRequired)),
+      otherwise: (schema) => schema.nullable(),
     }),
     priority: Yup.string().when('enabled', {
       is: true,
-      then: Yup.string()
-        .nullable()
-        .min(0)
-        .max(9)
-        .required(
-          intl.formatMessage(messages.gotifyValidationPriorityRequired)
-        ),
-      otherwise: Yup.string().nullable(),
+      then: (schema) =>
+        schema
+          .nullable()
+          .min(0)
+          .max(9)
+          .required(
+            intl.formatMessage(messages.gotifyValidationPriorityRequired)
+          ),
+      otherwise: (schema) => schema.nullable(),
     }),
   });
 
@@ -95,6 +99,7 @@ const GotifyModal = ({
         url: data.options.url,
         token: data.options.token,
         priority: data.options.priority,
+        locale: data?.options.locale ?? 'en',
       }}
       validationSchema={NotificationsGotifySchema}
       onSubmit={async (values) => {
@@ -110,6 +115,7 @@ const GotifyModal = ({
             url: values.url,
             token: values.token,
             priority: Number(values.priority),
+            locale: values.locale,
           },
         });
       }}
@@ -149,6 +155,7 @@ const GotifyModal = ({
                   url: values.url,
                   token: values.token,
                   priority: Number(values.priority),
+                  locale: values.locale,
                 },
               })
             }
@@ -157,8 +164,8 @@ const GotifyModal = ({
               isSubmitting
                 ? intl.formatMessage(globalMessages.saving)
                 : type === NotificationModalType.EDIT
-                ? intl.formatMessage(globalMessages.save)
-                : intl.formatMessage(messages.createInstance)
+                  ? intl.formatMessage(globalMessages.save)
+                  : intl.formatMessage(messages.createInstance)
             }
             onOk={() => {
               handleSubmit();
@@ -230,6 +237,30 @@ const GotifyModal = ({
                     typeof errors.priority === 'string' && (
                       <div className="error">{errors.priority}</div>
                     )}
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="locale" className="text-label">
+                  {intl.formatMessage(globalMessages.notificationLocale)}
+                </label>
+                <div className="form-input-area">
+                  <div className="form-input-field">
+                    <Field as="select" id="locale" name="locale">
+                      {(
+                        Object.keys(
+                          availableLanguages
+                        ) as (keyof typeof availableLanguages)[]
+                      ).map((key) => (
+                        <option
+                          key={key}
+                          value={availableLanguages[key].code}
+                          lang={availableLanguages[key].code}
+                        >
+                          {availableLanguages[key].display}
+                        </option>
+                      ))}
+                    </Field>
+                  </div>
                 </div>
               </div>
               <NotificationTypeSelector

@@ -43,8 +43,8 @@ interface TelegramModalProps {
   type: NotificationModalType;
   data: NotificationAgentTelegram;
   onClose: () => void;
-  onTest: (testData: NotificationAgentTelegram) => void;
-  onSave: (submitData: NotificationAgentTelegram) => void;
+  onTest: (testData: NotificationAgentTelegram) => Promise<void>;
+  onSave: (submitData: NotificationAgentTelegram) => Promise<void>;
 }
 
 const TelegramModal = ({
@@ -59,37 +59,32 @@ const TelegramModal = ({
   const NotificationsTelegramSchema = Yup.object().shape({
     botAPI: Yup.string().when('enabled', {
       is: true,
-      then: Yup.string()
-        .nullable()
-        .required(
-          intl.formatMessage(messages.telegramValidationBotAPIRequired)
-        ),
-      otherwise: Yup.string().nullable(),
+      then: (schema) =>
+        schema
+          .nullable()
+          .required(
+            intl.formatMessage(messages.telegramValidationBotAPIRequired)
+          ),
+      otherwise: (schema) => schema.nullable(),
     }),
     chatId: Yup.string()
       .when(['enabled', 'types'], {
         is: (enabled: boolean, types: number) => enabled && !!types,
-        then: Yup.string()
-          .nullable()
-          .required(
-            intl.formatMessage(messages.telegramValidationChatIdRequired)
-          ),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(
+              intl.formatMessage(messages.telegramValidationChatIdRequired)
+            ),
+        otherwise: (schema) => schema.nullable(),
       })
       .matches(
         /^-?\d+$/,
         intl.formatMessage(messages.telegramValidationChatIdRequired)
       ),
     messageThreadId: Yup.string()
-      .when(['enabled', 'types'], {
-        is: (enabled: boolean, types: number) => enabled && !!types,
-        then: Yup.string()
-          .nullable()
-          .required(
-            intl.formatMessage(messages.telegramValidationMessageThreadId)
-          ),
-        otherwise: Yup.string().nullable(),
-      })
+      .transform((v) => v || null)
+      .nullable()
       .matches(
         /^\d+$/,
         intl.formatMessage(messages.telegramValidationMessageThreadId)

@@ -24,14 +24,18 @@ const KeyMap: Record<string, string | KeyMapFunction> = {
   notifyuser_avatar: 'notifyUser.avatar',
   notifyuser_settings_discordId: 'notifyUser.settings.discordId',
   notifyuser_settings_telegramChatId: 'notifyUser.settings.telegramChatId',
+  media_imdbid: 'media.imdbId',
   media_tmdbid: 'media.tmdbId',
   media_tvdbid: 'media.tvdbId',
   media_type: 'media.mediaType',
+  media_jellyfinMediaId: (payload) =>
+    payload.media?.jellyfinMediaId ?? payload.media?.jellyfinMediaId4k ?? '',
   media_status: (payload) =>
     payload.media ? MediaStatus[payload.media.status] : '',
   media_status4k: (payload) =>
     payload.media ? MediaStatus[payload.media.status4k] : '',
   request_id: 'request.id',
+  requestedBy_jellyfinUserId: 'request.requestedBy.jellyfinUserId',
   requestedBy_username: 'request.requestedBy.displayName',
   requestedBy_email: 'request.requestedBy.email',
   requestedBy_avatar: 'request.requestedBy.avatar',
@@ -181,16 +185,36 @@ class WebhookAgent
     }
 
     try {
+      const headers: Record<string, string> = {};
+
+      if (settings.options.authHeader) {
+        headers.Authorization = settings.options.authHeader;
+      }
+
+      if (
+        settings.options.customHeaders &&
+        settings.options.customHeaders.length > 0
+      ) {
+        settings.options.customHeaders.forEach((header) => {
+          const key = header.key?.trim();
+          const value = header.value?.trim();
+
+          if (key && value) {
+            // Don't override Authorization header if it's already set via authHeader
+            if (
+              key.toLowerCase() !== 'authorization' ||
+              !settings.options.authHeader
+            ) {
+              headers[key] = value;
+            }
+          }
+        });
+      }
+
       await axios.post(
         webhookUrl,
         this.buildPayload(type, payload),
-        settings.options.authHeader
-          ? {
-              headers: {
-                Authorization: settings.options.authHeader,
-              },
-            }
-          : undefined
+        Object.keys(headers).length > 0 ? { headers } : undefined
       );
 
       return true;

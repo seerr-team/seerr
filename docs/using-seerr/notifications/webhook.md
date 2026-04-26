@@ -22,6 +22,17 @@ This is typically not needed. Please refer to your webhook provider's documentat
 
 This value will be sent as an `Authorization` HTTP header.
 
+### Custom Headers (optional)
+
+You can add additional custom HTTP headers to be sent with each webhook request. This is useful for API keys, custom authentication schemes, or any other headers your webhook endpoint requires.
+
+- Click "Add Header" to add a new header
+- Enter the header name and value
+
+:::warning
+You cannot configure both the **Authorization Header** field and a custom `Authorization` header in Custom Headers at the same time. You must choose one method.
+:::
+
 ### JSON Payload
 
 Customize the JSON payload to suit your needs. Seerr provides several [template variables](#template-variables) for use in the payload, which will be replaced with the relevant data when the notifications are triggered.
@@ -84,13 +95,15 @@ The `{{media}}` will be `null` if there is no relevant media object for the noti
 
 These following special variables are only included in media-related notifications, such as requests.
 
-| Variable             | Value                                                                                                          |
-| -------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `{{media_type}}`     | The media type (`movie` or `tv`)                                                                               |
-| `{{media_tmdbid}}`   | The media's TMDB ID                                                                                            |
-| `{{media_tvdbid}}`   | The media's TheTVDB ID                                                                                         |
-| `{{media_status}}`   | The media's availability status (`UNKNOWN`, `PENDING`, `PROCESSING`, `PARTIALLY_AVAILABLE`, or `AVAILABLE`)    |
-| `{{media_status4k}}` | The media's 4K availability status (`UNKNOWN`, `PENDING`, `PROCESSING`, `PARTIALLY_AVAILABLE`, or `AVAILABLE`) |
+| Variable                      | Value                                                                                                          |
+| ------------------------------| -------------------------------------------------------------------------------------------------------------- |
+| `{{media_type}}`              | The media type (`movie` or `tv`)                                                                               |
+| `{{media_imdbid}}`            | The media's IMDb ID                                                                                            |
+| `{{media_tmdbid}}`            | The media's TMDB ID                                                                                            |
+| `{{media_tvdbid}}`            | The media's TheTVDB ID                                                                                         |
+| `{{media_status}}`            | The media's availability status (`UNKNOWN`, `PENDING`, `PROCESSING`, `PARTIALLY_AVAILABLE`, or `AVAILABLE`)    |
+| `{{media_status4k}}`          | The media's 4K availability status (`UNKNOWN`, `PENDING`, `PROCESSING`, `PARTIALLY_AVAILABLE`, or `AVAILABLE`) |
+| `{{media_jellyfinMediaId}}`   | The media's Jellyfin Media ID                                                                                  |
 
 #### Request
 
@@ -104,6 +117,7 @@ The following special variables are only included in request-related notificatio
 | `{{requestedBy_username}}`                | The requesting user's username                  |
 | `{{requestedBy_email}}`                   | The requesting user's email address             |
 | `{{requestedBy_avatar}}`                  | The requesting user's avatar URL                |
+| `{{requestedBy_jellyfinUserId}}`          | The requesting user's Jellyfin User ID          |
 | `{{requestedBy_settings_discordId}}`      | The requesting user's Discord ID (if set)       |
 | `{{requestedBy_settings_telegramChatId}}` | The requesting user's Telegram Chat ID (if set) |
 

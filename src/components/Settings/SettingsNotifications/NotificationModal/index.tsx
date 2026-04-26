@@ -74,7 +74,7 @@ const NotificationModal = ({
         appearance: 'success',
         autoDismiss: true,
       });
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.toastSaveFail), {
         appearance: 'error',
         autoDismiss: true,
@@ -92,7 +92,7 @@ const NotificationModal = ({
         appearance: 'success',
         autoDismiss: true,
       });
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.toastCreateFail), {
         appearance: 'error',
         autoDismiss: true,
@@ -124,7 +124,7 @@ const NotificationModal = ({
         autoDismiss: true,
         appearance: 'success',
       });
-    } catch (e) {
+    } catch {
       if (toastId) {
         removeToast(toastId);
       }

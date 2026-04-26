@@ -60,8 +60,8 @@ interface EmailModalProps {
   type: NotificationModalType;
   data: NotificationAgentEmail;
   onClose: () => void;
-  onTest: (testData: NotificationAgentEmail) => void;
-  onSave: (submitData: NotificationAgentEmail) => void;
+  onTest: (testData: NotificationAgentEmail) => Promise<void>;
+  onSave: (submitData: NotificationAgentEmail) => Promise<void>;
 }
 
 const EmailModal = ({
@@ -78,10 +78,11 @@ const EmailModal = ({
       emailFrom: Yup.string()
         .when('enabled', {
           is: true,
-          then: Yup.string()
-            .nullable()
-            .required(intl.formatMessage(messages.emailValidation)),
-          otherwise: Yup.string().nullable(),
+          then: (schema) =>
+            schema
+              .nullable()
+              .required(intl.formatMessage(messages.emailValidation)),
+          otherwise: (schema) => schema.nullable(),
         })
         .test(
           'email',
@@ -90,31 +91,34 @@ const EmailModal = ({
         ),
       smtpHost: Yup.string().when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(
-            intl.formatMessage(messages.emailValidationSmtpHostRequired)
-          ),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(
+              intl.formatMessage(messages.emailValidationSmtpHostRequired)
+            ),
+        otherwise: (schema) => schema.nullable(),
       }),
       smtpPort: Yup.number().when('enabled', {
         is: true,
-        then: Yup.number()
-          .nullable()
-          .required(
-            intl.formatMessage(messages.emailValidationSmtpPortRequired)
-          ),
-        otherwise: Yup.number().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(
+              intl.formatMessage(messages.emailValidationSmtpPortRequired)
+            ),
+        otherwise: (schema) => schema.nullable(),
       }),
       pgpPrivateKey: Yup.string()
         .when('pgpPassword', {
           is: (value: unknown) => !!value,
-          then: Yup.string()
-            .nullable()
-            .required(
-              intl.formatMessage(messages.emailValidationPgpPrivateKey)
-            ),
-          otherwise: Yup.string().nullable(),
+          then: (schema) =>
+            schema
+              .nullable()
+              .required(
+                intl.formatMessage(messages.emailValidationPgpPrivateKey)
+              ),
+          otherwise: (schema) => schema.nullable(),
         })
         .matches(
           /-----BEGIN PGP PRIVATE KEY BLOCK-----.+-----END PGP PRIVATE KEY BLOCK-----/s,
@@ -122,10 +126,11 @@ const EmailModal = ({
         ),
       pgpPassword: Yup.string().when('pgpPrivateKey', {
         is: (value: unknown) => !!value,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.emailValidationPgpPassword)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.emailValidationPgpPassword)),
+        otherwise: (schema) => schema.nullable(),
       }),
     },
     [['pgpPrivateKey', 'pgpPassword']]

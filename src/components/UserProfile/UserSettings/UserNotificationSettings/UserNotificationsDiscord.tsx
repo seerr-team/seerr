@@ -44,10 +44,11 @@ const UserNotificationsDiscord = () => {
     discordId: Yup.string()
       .when('types', {
         is: (types: number) => !!types,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationDiscordId)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationDiscordId)),
+        otherwise: (schema) => schema.nullable(),
       })
       .matches(/^\d{17,19}$/, intl.formatMessage(messages.validationDiscordId)),
   });
@@ -84,7 +85,7 @@ const UserNotificationsDiscord = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.discordsettingsfailed), {
             appearance: 'error',
             autoDismiss: true,

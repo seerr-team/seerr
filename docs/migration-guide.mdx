@@ -39,6 +39,8 @@ Our Docker images are available with the following tags:
 
 - `latest`: Always points to the most recent stable release.
 - Version tags (e.g., `v3.0.0`): For specific stable versions.
+- Major version aliases (e.g., `v3`): Alias for the latest stable release in the respective major version series.
+- Minor version aliases (e.g., `v3.0`): Alias for the latest stable release in the respective minor version series.
 - `develop`: Rolling release/nightly builds for using the latest changes (use with caution).
 :::
 
@@ -53,6 +55,7 @@ Changes :
 Since the container now runs as the `node` user (UID 1000), you must ensure your config folder has the correct permissions. The `node` user must have read and write access to the `/app/config` directory.
 
 If you're migrating from a previous installation, you may need to update the ownership of your config folder:
+
 ```bash
 docker run --rm -v /path/to/appdata/config:/data alpine chown -R 1000:1000 /data
 ```
@@ -81,7 +84,7 @@ Summary of changes :
       volumes:
         - /path/to/appdata/config:/app/config
       healthcheck:
-        test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1
+        test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/settings/public || exit 1
         start_period: 20s
         timeout: 3s
         interval: 15s
@@ -106,6 +109,7 @@ Summary of changes :
 </Tabs>
 
 ### Windows
+
 Summary of changes :
 <Tabs groupId="docker-methods" queryString>
   <TabItem value="docker-compose" label="Docker compose">
@@ -124,7 +128,7 @@ Summary of changes :
       volumes:
         - seerr-data:/app/config
       healthcheck:
-        test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1
+        test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/settings/public || exit 1
         start_period: 20s
         timeout: 3s
         interval: 15s
@@ -136,17 +140,32 @@ Summary of changes :
       external: true
   ```
   </TabItem>
-  <TabItem value="docker-cli" label="Docker CLI">
-  ```bash {2-3,8,10}
-  docker run -d \
-    --name seerr \
-    --init \
-    -e LOG_LEVEL=debug \
-    -e TZ=Asia/Tashkent \
-    -e PORT=5055 \
-    -p 5055:5055 \
-    -v seerr-data:/app/config \
-    --restart unless-stopped \
+  <TabItem value="docker-cli" label="Docker CLI (PowerShell)">
+  ```powershell {2-3,8,10}
+  docker run -d `
+    --name seerr `
+    --init `
+    -e LOG_LEVEL=debug `
+    -e TZ=Asia/Tashkent `
+    -e PORT=5055 `
+    -p 5055:5055 `
+    -v seerr-data:/app/config `
+    --restart unless-stopped `
+    ghcr.io/seerr-team/seerr:latest
+  ```
+  </TabItem>
+
+  <TabItem value="docker-cli-cmd" label="Docker CLI (CMD)">
+  ```batch {2-3,8,10}
+  docker run -d ^
+    --name seerr ^
+    --init ^
+    -e LOG_LEVEL=debug ^
+    -e TZ=Asia/Tashkent ^
+    -e PORT=5055 ^
+    -p 5055:5055 ^
+    -v seerr-data:/app/config ^
+    --restart unless-stopped ^
     ghcr.io/seerr-team/seerr:latest
   ```
   </TabItem>
@@ -199,15 +218,17 @@ Summary of changes :
   </TabItem>
 </Tabs>
 
+## Nix
+
+Refer to [Seerr Documentation](/getting-started/nixpkg), all of our examples have been updated to reflect the below change.
+
+The seerr service and package are available in the unstable channel and will be officially included in the 26.05 release.
+
 ## Third-party installation methods
 
 :::warning
 Third-party installation methods are maintained by the community. The Seerr team is not responsible for these packages.
 :::
-
-### Nix
-
-Waiting for https://github.com/NixOS/nixpkgs/pull/450096 and https://github.com/NixOS/nixpkgs/pull/450093
 
 ### AUR
 

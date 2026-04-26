@@ -97,7 +97,12 @@ export const startJobs = (): void => {
         logger.info('Starting scheduled job: Plex Watchlist Sync', {
           label: 'Jobs',
         });
-        watchlistSync.syncWatchlist();
+        watchlistSync.syncWatchlist().catch((e) => {
+          logger.error('Failed to sync watchlists', {
+            label: 'Plex Watchlist Sync',
+            errorMessage: e.message,
+          });
+        });
       }),
     });
   } else if (

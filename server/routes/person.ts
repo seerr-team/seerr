@@ -43,12 +43,22 @@ personRoutes.get('/:id/combined_credits', async (req, res, next) => {
 
     const castMedia = await Media.getRelatedMedia(
       req.user,
-      combinedCredits.cast.map((result) => result.id)
+      combinedCredits.cast
+        .filter((result) => result.media_type)
+        .map((result) => ({
+          tmdbId: result.id,
+          mediaType: result.media_type!,
+        }))
     );
 
     const crewMedia = await Media.getRelatedMedia(
       req.user,
-      combinedCredits.crew.map((result) => result.id)
+      combinedCredits.crew
+        .filter((result) => result.media_type)
+        .map((result) => ({
+          tmdbId: result.id,
+          mediaType: result.media_type!,
+        }))
     );
 
     return res.status(200).json({
@@ -62,7 +72,7 @@ personRoutes.get('/:id/combined_credits', async (req, res, next) => {
             )
           )
         )
-        .filter((item) => !item.adult),
+        .filter((item) => !item.adult && item.character !== 'Thanks'),
       crew: combinedCredits.crew
         .map((result) =>
           mapCrewCredits(
@@ -73,7 +83,7 @@ personRoutes.get('/:id/combined_credits', async (req, res, next) => {
             )
           )
         )
-        .filter((item) => !item.adult),
+        .filter((item) => !item.adult && item.job !== 'Thanks'),
       id: combinedCredits.id,
     });
   } catch (e) {

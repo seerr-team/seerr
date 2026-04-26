@@ -7,7 +7,7 @@ import ProfileHeader from '@app/components/UserProfile/ProfileHeader';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
-import Error from '@app/pages/_error';
+import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import type { UserSettingsNotificationsResponse } from '@server/interfaces/api/userSettingsInterfaces';
 import { hasPermission, Permission } from '@server/lib/permissions';
@@ -44,7 +44,7 @@ const UserSettings = ({ children }: UserSettingsProps) => {
   }
 
   if (!user) {
-    return <Error statusCode={500} />;
+    return <ErrorPage statusCode={500} />;
   }
 
   const settingsRoutes: SettingsRoute[] = [

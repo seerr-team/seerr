@@ -38,8 +38,8 @@ interface PushoverModalProps {
   type: NotificationModalType;
   data: NotificationAgentPushover;
   onClose: () => void;
-  onTest: (testData: NotificationAgentPushover) => void;
-  onSave: (submitData: NotificationAgentPushover) => void;
+  onTest: (testData: NotificationAgentPushover) => Promise<void>;
+  onSave: (submitData: NotificationAgentPushover) => Promise<void>;
 }
 
 const PushoverModal = ({
@@ -60,12 +60,13 @@ const PushoverModal = ({
     accessToken: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(
-            intl.formatMessage(messages.pushoverValidationAccessTokenRequired)
-          ),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(
+              intl.formatMessage(messages.pushoverValidationAccessTokenRequired)
+            ),
+        otherwise: (schema) => schema.nullable(),
       })
       .matches(
         /^[a-z\d]{30}$/i,
@@ -74,12 +75,13 @@ const PushoverModal = ({
     userToken: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(
-            intl.formatMessage(messages.pushoverValidationUserTokenRequired)
-          ),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(
+              intl.formatMessage(messages.pushoverValidationUserTokenRequired)
+            ),
+        otherwise: (schema) => schema.nullable(),
       })
       .matches(
         /^[a-z\d]{30}$/i,
@@ -162,8 +164,8 @@ const PushoverModal = ({
               isSubmitting
                 ? intl.formatMessage(globalMessages.saving)
                 : type === NotificationModalType.EDIT
-                ? intl.formatMessage(globalMessages.save)
-                : intl.formatMessage(messages.createInstance)
+                  ? intl.formatMessage(globalMessages.save)
+                  : intl.formatMessage(messages.createInstance)
             }
             onOk={() => {
               handleSubmit();

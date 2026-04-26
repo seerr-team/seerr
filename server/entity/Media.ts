@@ -10,7 +10,7 @@ import type { DownloadingItem } from '@server/lib/downloadtracker';
 import downloadTracker from '@server/lib/downloadtracker';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import { DbAwareColumn } from '@server/utils/DbColumnHelper';
+import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
 import { getHostname } from '@server/utils/getHostname';
 import {
   AfterLoad,
@@ -20,6 +20,7 @@ import {
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import Issue from './Issue';
 import { MediaRequest } from './MediaRequest';
@@ -30,21 +31,16 @@ import Season from './Season';
 class Media {
   public static async getRelatedMedia(
     user: User | undefined,
-    tmdbIds: number | number[]
+    items: { tmdbId: number; mediaType: string }[]
   ): Promise<Media[]> {
     const mediaRepository = getRepository(Media);
 
     try {
-      let finalIds: number[];
-      if (!Array.isArray(tmdbIds)) {
-        finalIds = [tmdbIds];
-      } else {
-        finalIds = tmdbIds;
-      }
-
-      if (finalIds.length === 0) {
+      if (items.length === 0) {
         return [];
       }
+
+      const finalIds = [...new Set(items.map((i) => i.tmdbId))];
 
       const media = await mediaRepository
         .createQueryBuilder('media')
@@ -57,7 +53,9 @@ class Media {
         .where(' media.tmdbId in (:...finalIds)', { finalIds })
         .getMany();
 
-      return media;
+      return media.filter((m) =>
+        items.some((i) => i.tmdbId === m.tmdbId && i.mediaType === m.mediaType)
+      );
     } catch (e) {
       logger.error(e.message);
       return [];
@@ -132,10 +130,9 @@ class Media {
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
-  @DbAwareColumn({
-    type: 'datetime',
+  @UpdateDateColumn({
+    type: resolveDbType('datetime'),
     default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
   })
   public updatedAt: Date;
 
@@ -237,19 +234,19 @@ class Media {
         if (tautulliUrl) {
           this.tautulliUrl = `${tautulliUrl}/info?rating_key=${this.ratingKey}`;
         }
+      }
 
-        if (this.ratingKey4k) {
-          this.mediaUrl4k = `${
-            webAppUrl ? webAppUrl : 'https://app.plex.tv/desktop'
-          }#!/server/${machineId}/details?key=%2Flibrary%2Fmetadata%2F${
-            this.ratingKey4k
-          }`;
+      if (this.ratingKey4k) {
+        this.mediaUrl4k = `${
+          webAppUrl ? webAppUrl : 'https://app.plex.tv/desktop'
+        }#!/server/${machineId}/details?key=%2Flibrary%2Fmetadata%2F${
+          this.ratingKey4k
+        }`;
 
-          this.iOSPlexUrl4k = `plex://preplay/?metadataKey=%2Flibrary%2Fmetadata%2F${this.ratingKey4k}&server=${machineId}`;
+        this.iOSPlexUrl4k = `plex://preplay/?metadataKey=%2Flibrary%2Fmetadata%2F${this.ratingKey4k}&server=${machineId}`;
 
-          if (tautulliUrl) {
-            this.tautulliUrl4k = `${tautulliUrl}/info?rating_key=${this.ratingKey4k}`;
-          }
+        if (tautulliUrl) {
+          this.tautulliUrl4k = `${tautulliUrl}/info?rating_key=${this.ratingKey4k}`;
         }
       }
     } else {

@@ -706,10 +706,18 @@ components:
           example: A Label
     PublicSettings:
       type: object
+      required:
+        - initialized
+        - plexClientIdentifier
       properties:
         initialized:
           type: boolean
           example: false
+        plexClientIdentifier:
+          type: string
+          format: uuid
+          description: Instance Plex OAuth client identifier
+          example: 6919275e-142a-48d8-be6b-93594cbd4626
     MovieResult:
       type: object
       required:
@@ -1405,7 +1413,6 @@ components:
         id:
           type: integer
           example: 0
-          readOnly: true
         agent:
           type: string
           enum:
@@ -3855,8 +3862,16 @@ paths:
           name: sort
           schema:
             type: string
-            enum: [created, updated, requests, displayname]
+            enum: [created, updated, requests, displayname, usertype, role]
             default: created
+        - in: query
+          name: sortDirection
+          description: |
+            Sort direction. When omitted, the server chooses the direction per sort
+            field (e.g. displayname defaults to asc, requests/updated to desc).
+          schema:
+            type: string
+            enum: [asc, desc]
         - in: query
           name: q
           required: false
@@ -4358,6 +4373,14 @@ paths:
           example: '1'
           schema:
             type: string
+        - in: query
+          name: mediaType
+          required: true
+          schema:
+            type: string
+            enum:
+              - movie
+              - tv
       responses:
         '200':
           description: Blocklist details in JSON
@@ -4373,6 +4396,14 @@ paths:
           example: '1'
           schema:
             type: string
+        - in: query
+          name: mediaType
+          required: true
+          schema:
+            type: string
+            enum:
+              - movie
+              - tv
       responses:
         '204':
           description: Succesfully removed media item
@@ -4475,6 +4506,14 @@ paths:
           example: '1'
           schema:
             type: string
+        - in: query
+          name: mediaType
+          required: true
+          schema:
+            type: string
+            enum:
+              - movie
+              - tv
       responses:
         '200':
           description: Blocklist details in JSON
@@ -4493,9 +4532,60 @@ paths:
           example: '1'
           schema:
             type: string
+        - in: query
+          name: mediaType
+          required: true
+          schema:
+            type: string
+            enum:
+              - movie
+              - tv
       responses:
         '204':
           description: Succesfully removed media item
+  /blocklist/collection/{collectionId}:
+    post:
+      summary: Add collection to blocklist
+      description: Adds all movies in a collection to the blocklist
+      tags:
+        - blocklist
+      parameters:
+        - in: path
+          name: collectionId
+          description: Collection ID
+          required: true
+          example: '1424991'
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Successfully added collection to blocklist
+        '500':
+          description: Error adding collection to blocklist
+    delete:
+      summary: Remove collection from blocklist
+      description: Removes all movies in a collection from the blocklist
+      tags:
+        - blocklist
+      parameters:
+        - in: path
+          name: collectionId
+          description: Collection ID
+          required: true
+          example: '1424991'
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successfully removed collection from blocklist
+        '500':
+          description: Error removing collection from blocklist
   /watchlist:
     post:
       summary: Add media to watchlist
@@ -4528,6 +4618,14 @@ paths:
           example: '1'
           schema:
             type: string
+        - in: query
+          name: mediaType
+          required: true
+          schema:
+            type: string
+            enum:
+              - movie
+              - tv
       responses:
         '204':
           description: Succesfully removed watchlist item
@@ -5702,6 +5800,23 @@ paths:
           schema:
             type: string
             example: en
+        - in: query
+          name: mediaType
+          schema:
+            type: string
+            enum:
+              - all
+              - movie
+              - tv
+            default: all
+        - in: query
+          name: timeWindow
+          schema:
+            type: string
+            enum:
+              - day
+              - week
+            default: day
       responses:
         '200':
           description: Results

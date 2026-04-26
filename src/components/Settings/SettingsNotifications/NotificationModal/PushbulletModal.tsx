@@ -29,8 +29,8 @@ interface PushbulletModalProps {
   type: NotificationModalType;
   data: NotificationAgentPushbullet;
   onClose: () => void;
-  onTest: (testData: NotificationAgentPushbullet) => void;
-  onSave: (submitData: NotificationAgentPushbullet) => void;
+  onTest: (testData: NotificationAgentPushbullet) => Promise<void>;
+  onSave: (submitData: NotificationAgentPushbullet) => Promise<void>;
 }
 
 const PushbulletModal = ({
@@ -45,12 +45,13 @@ const PushbulletModal = ({
   const NotificationsPushbulletSchema = Yup.object().shape({
     accessToken: Yup.string().when('enabled', {
       is: true,
-      then: Yup.string()
-        .nullable()
-        .required(
-          intl.formatMessage(messages.pushbulletValidationAccessTokenRequired)
-        ),
-      otherwise: Yup.string().nullable(),
+      then: (schema) =>
+        schema
+          .nullable()
+          .required(
+            intl.formatMessage(messages.pushbulletValidationAccessTokenRequired)
+          ),
+      otherwise: (schema) => schema.nullable(),
     }),
   });
 
@@ -125,8 +126,8 @@ const PushbulletModal = ({
               isSubmitting
                 ? intl.formatMessage(globalMessages.saving)
                 : type === NotificationModalType.EDIT
-                ? intl.formatMessage(globalMessages.save)
-                : intl.formatMessage(messages.createInstance)
+                  ? intl.formatMessage(globalMessages.save)
+                  : intl.formatMessage(messages.createInstance)
             }
             onOk={() => {
               handleSubmit();

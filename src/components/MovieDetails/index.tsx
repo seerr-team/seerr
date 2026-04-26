@@ -344,7 +344,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
           { appearance: 'success', autoDismiss: true }
         );
       }
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.watchlistError), {
         appearance: 'error',
         autoDismiss: true,
@@ -358,7 +358,9 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   const onClickDeleteWatchlistBtn = async (): Promise<void> => {
     setIsUpdating(true);
     try {
-      await axios.delete(`/api/v1/watchlist/${movie?.id}`);
+      await axios.delete(
+        `/api/v1/watchlist/${movie?.id}?mediaType=${MediaType.MOVIE}`
+      );
 
       addToast(
         <span>
@@ -369,7 +371,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
         </span>,
         { appearance: 'info', autoDismiss: true }
       );
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.watchlistError), {
         appearance: 'error',
         autoDismiss: true,

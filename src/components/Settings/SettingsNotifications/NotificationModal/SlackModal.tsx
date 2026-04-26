@@ -1,6 +1,7 @@
 import Modal from '@app/components/Common/Modal';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import { NotificationModalType } from '@app/components/Settings/SettingsNotifications/NotificationModal';
+import { availableLanguages } from '@app/context/LanguageContext';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import type { NotificationAgentSlack } from '@server/interfaces/settings';
@@ -28,8 +29,8 @@ interface SlackModalProps {
   type: NotificationModalType;
   data: NotificationAgentSlack;
   onClose: () => void;
-  onTest: (testData: NotificationAgentSlack) => void;
-  onSave: (submitData: NotificationAgentSlack) => void;
+  onTest: (testData: NotificationAgentSlack) => Promise<void>;
+  onSave: (submitData: NotificationAgentSlack) => Promise<void>;
 }
 
 const SlackModal = ({
@@ -45,10 +46,11 @@ const SlackModal = ({
     webhookUrl: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.slackValidationWebhookUrl)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.slackValidationWebhookUrl)),
+        otherwise: (schema) => schema.nullable(),
       })
       .url(intl.formatMessage(messages.slackValidationWebhookUrl)),
   });
@@ -64,6 +66,7 @@ const SlackModal = ({
         default: data.default,
         embedPoster: data.embedPoster,
         webhookUrl: data.options.webhookUrl,
+        locale: data?.options.locale ?? 'en',
       }}
       validationSchema={NotificationsSlackSchema}
       onSubmit={async (values) => {
@@ -77,6 +80,7 @@ const SlackModal = ({
           embedPoster: values.embedPoster,
           options: {
             webhookUrl: values.webhookUrl,
+            locale: values.locale,
           },
         });
       }}
@@ -114,6 +118,7 @@ const SlackModal = ({
                 embedPoster: values.embedPoster,
                 options: {
                   webhookUrl: values.webhookUrl,
+                  locale: values.locale,
                 },
               })
             }
@@ -122,8 +127,8 @@ const SlackModal = ({
               isSubmitting
                 ? intl.formatMessage(globalMessages.saving)
                 : type === NotificationModalType.EDIT
-                ? intl.formatMessage(globalMessages.save)
-                : intl.formatMessage(messages.createInstance)
+                  ? intl.formatMessage(globalMessages.save)
+                  : intl.formatMessage(messages.createInstance)
             }
             onOk={() => {
               handleSubmit();
@@ -182,6 +187,30 @@ const SlackModal = ({
                     typeof errors.webhookUrl === 'string' && (
                       <div className="error">{errors.webhookUrl}</div>
                     )}
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="locale" className="text-label">
+                  {intl.formatMessage(globalMessages.notificationLocale)}
+                </label>
+                <div className="form-input-area">
+                  <div className="form-input-field">
+                    <Field as="select" id="locale" name="locale">
+                      {(
+                        Object.keys(
+                          availableLanguages
+                        ) as (keyof typeof availableLanguages)[]
+                      ).map((key) => (
+                        <option
+                          key={key}
+                          value={availableLanguages[key].code}
+                          lang={availableLanguages[key].code}
+                        >
+                          {availableLanguages[key].display}
+                        </option>
+                      ))}
+                    </Field>
+                  </div>
                 </div>
               </div>
               <NotificationTypeSelector

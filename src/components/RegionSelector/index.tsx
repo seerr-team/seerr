@@ -83,19 +83,14 @@ const RegionSelector = ({
     }
   }, [value, regions, allRegion]);
 
-  useEffect(() => {
-    if (onChange && regions) {
-      if (selectedRegion) {
-        onChange(name, selectedRegion.iso_3166_1);
-      } else {
-        onChange(name, '');
-      }
-    }
-  }, [onChange, selectedRegion, name, regions]);
+  const handleRegionSelect = (region: Region | null) => {
+    setSelectedRegion(region);
+    onChange?.(name, region?.iso_3166_1 ?? '');
+  };
 
   return (
-    <div className="z-40 w-full">
-      <Listbox as="div" value={selectedRegion} onChange={setSelectedRegion}>
+    <div className="w-full">
+      <Listbox as="div" value={selectedRegion} onChange={handleRegionSelect}>
         {({ open }) => (
           <div className="relative">
             <span className="inline-block w-full rounded-md shadow-sm">
@@ -136,7 +131,7 @@ const RegionSelector = ({
               leave="transition-opacity ease-in duration-100"
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
-              className="absolute mt-1 w-full rounded-md bg-gray-800 shadow-lg"
+              className="absolute z-50 mt-1 w-full rounded-md bg-gray-800 shadow-lg"
             >
               <Listbox.Options
                 static

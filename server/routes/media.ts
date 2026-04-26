@@ -17,7 +17,7 @@ import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { Router } from 'express';
 import type { FindOneOptions } from 'typeorm';
-import { In } from 'typeorm';
+import { In, IsNull, Not } from 'typeorm';
 
 const mediaRoutes = Router();
 
@@ -48,8 +48,6 @@ mediaRoutes.get('/', async (req, res, next) => {
     case 'pending':
       statusFilter = MediaStatus.PENDING;
       break;
-    default:
-      statusFilter = undefined;
   }
 
   let sortFilter: FindOneOptions<Media>['order'] = {
@@ -68,12 +66,18 @@ mediaRoutes.get('/', async (req, res, next) => {
       };
   }
 
+  let whereClause: FindOneOptions<Media>['where'];
+  if (statusFilter || req.query.sort === 'mediaAdded') {
+    whereClause = {};
+    if (statusFilter) whereClause.status = statusFilter;
+    if (req.query.sort === 'mediaAdded')
+      whereClause.mediaAddedAt = Not(IsNull());
+  }
+
   try {
     const [media, mediaCount] = await mediaRepository.findAndCount({
       order: sortFilter,
-      where: statusFilter && {
-        status: statusFilter,
-      },
+      where: whereClause,
       take: pageSize,
       skip,
     });

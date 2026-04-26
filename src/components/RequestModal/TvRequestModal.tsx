@@ -158,7 +158,7 @@ const TvRequestModal = ({
       if (onComplete) {
         onComplete(MediaStatus.PENDING);
       }
-    } catch (e) {
+    } catch {
       addToast(<span>{intl.formatMessage(messages.errorediting)}</span>, {
         appearance: 'error',
         autoDismiss: true,
@@ -224,7 +224,7 @@ const TvRequestModal = ({
           { appearance: 'success', autoDismiss: true }
         );
       }
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.requesterror), {
         appearance: 'error',
         autoDismiss: true,

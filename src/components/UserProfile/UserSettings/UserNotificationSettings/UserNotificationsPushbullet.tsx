@@ -44,10 +44,13 @@ const UserPushbulletSettings = () => {
   const UserNotificationsPushbulletSchema = Yup.object().shape({
     pushbulletAccessToken: Yup.string().when('types', {
       is: (types: number) => !!types,
-      then: Yup.string()
-        .nullable()
-        .required(intl.formatMessage(messages.validationPushbulletAccessToken)),
-      otherwise: Yup.string().nullable(),
+      then: (schema) =>
+        schema
+          .nullable()
+          .required(
+            intl.formatMessage(messages.validationPushbulletAccessToken)
+          ),
+      otherwise: (schema) => schema.nullable(),
     }),
   });
 
@@ -81,7 +84,7 @@ const UserPushbulletSettings = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.pushbulletsettingsfailed), {
             appearance: 'error',
             autoDismiss: true,
