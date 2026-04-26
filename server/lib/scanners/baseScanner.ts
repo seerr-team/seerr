@@ -450,13 +450,22 @@ class BaseScanner<T> {
 
         // Check the actual season objects instead scanner input
         // to determine overall availability status
+        // UNKNOWN seasons are treated as neutral (no signal) rather than
+        // blockers, so a stale/orphan placeholder season can't hold the
+        // show at PARTIALLY_AVAILABLE indefinitely.
         const isAllStandardSeasonsAvailable =
           nonSpecialSeasons.length > 0 &&
-          nonSpecialSeasons.every((s) => s.status === MediaStatus.AVAILABLE);
+          nonSpecialSeasons
+            .filter((s) => s.status !== MediaStatus.UNKNOWN)
+            .every((s) => s.status === MediaStatus.AVAILABLE) &&
+          nonSpecialSeasons.some((s) => s.status === MediaStatus.AVAILABLE);
 
         const isAll4kSeasonsAvailable =
           nonSpecialSeasons.length > 0 &&
-          nonSpecialSeasons.every((s) => s.status4k === MediaStatus.AVAILABLE);
+          nonSpecialSeasons
+            .filter((s) => s.status4k !== MediaStatus.UNKNOWN)
+            .every((s) => s.status4k === MediaStatus.AVAILABLE) &&
+          nonSpecialSeasons.some((s) => s.status4k === MediaStatus.AVAILABLE);
 
         media.status = isAllStandardSeasonsAvailable
           ? MediaStatus.AVAILABLE
@@ -503,11 +512,17 @@ class BaseScanner<T> {
 
         const isAllStandardSeasonsAvailable =
           nonSpecialNewSeasons.length > 0 &&
-          nonSpecialNewSeasons.every((s) => s.status === MediaStatus.AVAILABLE);
+          nonSpecialNewSeasons
+            .filter((s) => s.status !== MediaStatus.UNKNOWN)
+            .every((s) => s.status === MediaStatus.AVAILABLE) &&
+          nonSpecialNewSeasons.some((s) => s.status === MediaStatus.AVAILABLE);
 
         const isAll4kSeasonsAvailable =
           nonSpecialNewSeasons.length > 0 &&
-          nonSpecialNewSeasons.every(
+          nonSpecialNewSeasons
+            .filter((s) => s.status4k !== MediaStatus.UNKNOWN)
+            .every((s) => s.status4k === MediaStatus.AVAILABLE) &&
+          nonSpecialNewSeasons.some(
             (s) => s.status4k === MediaStatus.AVAILABLE
           );
 
