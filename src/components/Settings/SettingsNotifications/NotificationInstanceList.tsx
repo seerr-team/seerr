@@ -224,15 +224,7 @@ function NotificationInstanceList({
                 onClick={() => {
                   toggleInstanceDefault(instance);
                 }}
-                disabled={
-                  !instance.enabled ||
-                  instances.findIndex(
-                    (result) =>
-                      result.agent === instance.agent &&
-                      result.default &&
-                      result.id !== instance.id
-                  ) !== -1
-                }
+                disabled={!instance.enabled}
                 checked={instance.default}
               />
             </Table.TD>

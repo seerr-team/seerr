@@ -5,6 +5,7 @@ import type { NotificationAgentConfig } from '@server/interfaces/settings';
 import notificationManager, {
   Notification,
   createAccordingNotificationAgent,
+  retrieveDefaultNotificationInstanceSettings,
 } from '@server/lib/notifications';
 import type { NotificationAgent } from '@server/lib/notifications/agents/agent';
 import { getSettings } from '@server/lib/settings';
@@ -107,6 +108,13 @@ notificationRoutes.post('/', async (req, res, next) => {
 
   notificationManager.registerAgent(notificationAgent);
 
+  if (request.default) {
+    const defaultInstance = retrieveDefaultNotificationInstanceSettings(
+      request.agent
+    );
+    defaultInstance.default = false;
+  }
+
   const notificationInstanceIndex = instances.length;
   instances[notificationInstanceIndex] = request;
   await settings.save();
@@ -187,8 +195,14 @@ notificationRoutes.post<{ id: string }>('/:id', async (req, res, next) => {
     notificationInstanceId
   );
 
-  instances[notificationInstanceIndex] = request;
+  if (request.default) {
+    const defaultInstance = retrieveDefaultNotificationInstanceSettings(
+      request.agent
+    );
+    defaultInstance.default = false;
+  }
 
+  instances[notificationInstanceIndex] = request;
   await settings.save();
 
   res.status(200).json(instances[notificationInstanceIndex]);
@@ -206,9 +220,9 @@ notificationRoutes.delete<{ id: string }>('/:id', async (req, res, next) => {
     return next({ status: 404, message: 'Notifications instance not found' });
   }
 
-  instances.splice(notificationInstanceIndex, 1);
   notificationManager.unregisterAgent(Number(req.params.id));
 
+  instances.splice(notificationInstanceIndex, 1);
   await settings.save();
 
   res.status(200).send();
