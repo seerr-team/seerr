@@ -2361,7 +2361,7 @@ paths:
               $ref: '#/components/schemas/MainSettings'
       responses:
         '200':
-          description: 'Values were sucessfully updated'
+          description: 'Values were successfully updated'
           content:
             application/json:
               schema:
@@ -2392,7 +2392,7 @@ paths:
               $ref: '#/components/schemas/NetworkSettings'
       responses:
         '200':
-          description: 'Values were sucessfully updated'
+          description: 'Values were successfully updated'
           content:
             application/json:
               schema:
@@ -3466,7 +3466,7 @@ paths:
               $ref: '#/components/schemas/NotificationInstance'
       responses:
         '200':
-          description: 'Notification instance was sucessfully added'
+          description: 'Notification instance was successfully added'
           content:
             application/json:
               schema:
@@ -3526,7 +3526,7 @@ paths:
               $ref: '#/components/schemas/NotificationInstance'
       responses:
         '200':
-          description: 'Notification instance was sucessfully added or updated'
+          description: 'Notification instance was successfully added or updated'
           content:
             application/json:
               schema:
@@ -3545,7 +3545,7 @@ paths:
             example: 0
       responses:
         '200':
-          description: 'Notification instance was sucessfully deleted'
+          description: 'Notification instance was successfully deleted'
   /settings/discover:
     get:
       summary: Get all discover sliders
