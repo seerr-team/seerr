@@ -1463,6 +1463,12 @@ components:
                   type: string
                 enableMentions:
                   type: boolean
+                locale:
+                  type: string
+                  example: en
+                useUserLocale:
+                  type: boolean
+                  example: true
         slack:
           type: object
           properties:
@@ -1480,6 +1486,9 @@ components:
               properties:
                 webhookUrl:
                   type: string
+                locale:
+                  type: string
+                  example: en
         webpush:
           type: object
           properties:
@@ -1509,13 +1518,25 @@ components:
               properties:
                 webhookUrl:
                   type: string
-                authHeader:
-                  type: string
                 jsonPayload:
                   type: string
+                authHeader:
+                  type: string
+                  nullable: true
+                customHeaders:
+                  type: array
+                  nullable: true
+                  items:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                      value:
+                        type: string
                 supportVariables:
                   type: boolean
                   example: false
+                  nullable: true
         telegram:
           type: object
           properties:
@@ -1601,6 +1622,14 @@ components:
                   type: string
                 token:
                   type: string
+                priority:
+                  type: integer
+                  minimum: 0
+                  maximum: 9
+                  example: 5
+                locale:
+                  type: string
+                  example: en
         ntfy:
           type: object
           properties:
@@ -1622,14 +1651,28 @@ components:
                   type: string
                 authMethodUsernamePassword:
                   type: boolean
+                  nullable: true
                 username:
                   type: string
+                  nullable: true
                 password:
                   type: string
+                  nullable: true
                 authMethodToken:
                   type: boolean
+                  nullable: true
                 token:
                   type: string
+                  nullable: true
+                priority:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  nullable: true
+                  example: 3
+                locale:
+                  type: string
+                  example: en
         lunasea:
           type: object
           properties:
@@ -1664,12 +1707,12 @@ components:
             options:
               type: object
               properties:
+                userEmailRequired:
+                  type: boolean
+                  example: false
                 emailFrom:
                   type: string
                   example: no-reply@example.com
-                senderName:
-                  type: string
-                  example: Jellyseerr
                 smtpHost:
                   type: string
                   example: 127.0.0.1
@@ -1694,6 +1737,15 @@ components:
                 allowSelfSigned:
                   type: boolean
                   example: false
+                senderName:
+                  type: string
+                  example: Jellyseerr
+                pgpPrivateKey:
+                  type: string
+                  nullable: true
+                pgpPassword:
+                  type: string
+                  nullable: true
     Job:
       type: object
       properties:
