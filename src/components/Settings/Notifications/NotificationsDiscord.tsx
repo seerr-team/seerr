@@ -55,10 +55,11 @@ const NotificationsDiscord = () => {
     webhookUrl: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationUrl)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationUrl)),
+        otherwise: (schema) => schema.nullable(),
       })
       .url(intl.formatMessage(messages.validationUrl)),
     webhookRoleId: Yup.string()

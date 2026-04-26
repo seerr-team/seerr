@@ -55,10 +55,11 @@ const NotificationsNtfy = () => {
     url: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationNtfyUrl)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationNtfyUrl)),
+        otherwise: (schema) => schema.nullable(),
       })
       .test(
         'valid-url',
@@ -68,19 +69,22 @@ const NotificationsNtfy = () => {
     topic: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationNtfyUrl)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationNtfyTopic)),
+        otherwise: (schema) => schema.nullable(),
       })
       .defined(intl.formatMessage(messages.validationNtfyTopic)),
     priority: Yup.number().when('enabled', {
       is: true,
-      then: Yup.number()
-        .min(1)
-        .max(5)
-        .required(intl.formatMessage(messages.validationPriorityRequired)),
-      otherwise: Yup.number().nullable(),
+      then: (schema) =>
+        schema
+          .nullable()
+          .min(1)
+          .max(5)
+          .required(intl.formatMessage(messages.validationPriorityRequired)),
+      otherwise: (schema) => schema.nullable(),
     }),
   });
 
