@@ -77,7 +77,7 @@ function NotificationInstanceList({
         autoDismiss: true,
         appearance: 'success',
       });
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.instanceDeleteError), {
         autoDismiss: true,
         appearance: 'error',
@@ -112,7 +112,7 @@ function NotificationInstanceList({
         autoDismiss: true,
         appearance: 'success',
       });
-    } catch (e) {
+    } catch {
       if (toastId) {
         removeToast(toastId);
       }
@@ -123,8 +123,12 @@ function NotificationInstanceList({
     }
   };
 
-  const toggleInstanceEnabled = async (instance: NotificationAgentConfig) => {
-    instance.enabled = !instance.enabled;
+  const toggleInstanceEnabled = async (toggleData: NotificationAgentConfig) => {
+    const instance = {
+      ...toggleData,
+      id: undefined,
+      enabled: !toggleData.enabled,
+    };
 
     if (!instance.enabled) {
       instance.default = false;
@@ -132,7 +136,7 @@ function NotificationInstanceList({
 
     try {
       await axios.post(
-        `/api/v1/settings/notification/${instance.id}`,
+        `/api/v1/settings/notification/${toggleData.id}`,
         instance
       );
 
@@ -140,7 +144,7 @@ function NotificationInstanceList({
         appearance: 'success',
         autoDismiss: true,
       });
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.toastEnabledToggleFailed), {
         appearance: 'error',
         autoDismiss: true,
@@ -150,23 +154,16 @@ function NotificationInstanceList({
     }
   };
 
-  const toggleInstanceDefault = async (instance: NotificationAgentConfig) => {
-    const currentDefault = instances.find(
-      (result) =>
-        result.agent === instance.agent &&
-        result.default &&
-        result.id !== instance.id
-    );
-
-    if (currentDefault) {
-      return;
-    }
-
-    instance.default = !instance.default;
+  const toggleInstanceDefault = async (toggleData: NotificationAgentConfig) => {
+    const instance = {
+      ...toggleData,
+      id: undefined,
+      default: !toggleData.default,
+    };
 
     try {
       await axios.post(
-        `/api/v1/settings/notification/${instance.id}`,
+        `/api/v1/settings/notification/${toggleData.id}`,
         instance
       );
 
@@ -174,7 +171,7 @@ function NotificationInstanceList({
         appearance: 'success',
         autoDismiss: true,
       });
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.toastDefaultToggleFailed), {
         appearance: 'error',
         autoDismiss: true,
