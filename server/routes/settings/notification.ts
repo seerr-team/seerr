@@ -148,7 +148,7 @@ notificationRoutes.get<{ id: string }>('/:id', (req, res, next) => {
   );
 
   if (!notificationInstance) {
-    return next({ status: '404', message: 'Notifications instance not found' });
+    return next({ status: '404', message: 'Notification instance not found' });
   }
 
   res.status(200).json(notificationInstance);
@@ -159,48 +159,33 @@ notificationRoutes.post<{ id: string }>('/:id', async (req, res, next) => {
   const instances = settings.notification.instances;
 
   const notificationInstanceId = Number(req.params.id);
-  let notificationInstanceIndex = instances.findIndex(
+  const notificationInstanceIndex = instances.findIndex(
     (instance) => instance.id === notificationInstanceId
   );
 
   const request = req.body;
   request.id = notificationInstanceId;
 
-  // instance was not found -> register new one with new id
   if (notificationInstanceIndex === -1) {
-    const notificationAgent = createAccordingNotificationAgent(
-      request,
-      notificationInstanceId
-    );
-
-    if (!notificationAgent) {
-      return next({
-        status: 500,
-        message: 'A valid agent is missing from the request.',
-      });
-    }
-
-    notificationManager.registerAgent(notificationAgent);
-
-    notificationInstanceIndex = instances.length;
-  } else {
-    const notificationAgent = createAccordingNotificationAgent(
-      request,
-      notificationInstanceId
-    );
-
-    if (!notificationAgent) {
-      return next({
-        status: 500,
-        message: 'A valid agent is missing from the request.',
-      });
-    }
-
-    notificationManager.reregisterAgent(
-      notificationAgent,
-      notificationInstanceId
-    );
+    return next({ status: 404, message: 'Notification instance not found' });
   }
+
+  const notificationAgent = createAccordingNotificationAgent(
+    request,
+    notificationInstanceId
+  );
+
+  if (!notificationAgent) {
+    return next({
+      status: 500,
+      message: 'A valid agent is missing from the request.',
+    });
+  }
+
+  notificationManager.reregisterAgent(
+    notificationAgent,
+    notificationInstanceId
+  );
 
   instances[notificationInstanceIndex] = request;
 
