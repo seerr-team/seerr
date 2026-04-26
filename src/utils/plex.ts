@@ -122,6 +122,10 @@ class PlexOAuth {
   }
 
   private async pinPoll(): Promise<string> {
+    // popup.closed is unreliable under COOP same-origin-allow-popups once the
+    // popup navigates to app.plex.tv; bound polling by expiresAt with a 15m
+    // hard fallback.
+    const deadline = Date.now() + 15 * 60 * 1000;
     const executePoll = async (
       resolve: (authToken: string) => void,
       reject: (e: Error) => void
@@ -141,8 +145,14 @@ class PlexOAuth {
           this.closePopup();
           resolve(this.authToken);
         } else {
-          // popup.closed is unreliable once the popup navigates to app.plex.tv
-          // under COOP same-origin-allow-popups; rely on pin expiry via catch
+          const expiresAt = response.data?.expiresAt
+            ? Date.parse(response.data.expiresAt)
+            : deadline;
+          if (Date.now() >= Math.min(expiresAt, deadline)) {
+            this.closePopup();
+            reject(new Error('Plex PIN expired before login completed.'));
+            return;
+          }
           setTimeout(executePoll, 1000, resolve, reject);
         }
       } catch (e) {
