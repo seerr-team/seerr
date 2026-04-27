@@ -127,10 +127,11 @@ const NotificationsWebhook = () => {
     webhookUrl: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationWebhookUrl)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationWebhookUrl)),
+        otherwise: (schema) => schema.nullable(),
       })
       .test(
         'valid-url',
@@ -183,10 +184,13 @@ const NotificationsWebhook = () => {
     jsonPayload: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationJsonPayloadRequired)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(
+              intl.formatMessage(messages.validationJsonPayloadRequired)
+            ),
+        otherwise: (schema) => schema.nullable(),
       })
       .test(
         'validate-json',

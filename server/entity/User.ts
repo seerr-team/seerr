@@ -12,8 +12,8 @@ import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
 import { AfterDate } from '@server/utils/dateHelpers';
 import bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
+import { nanoid } from 'nanoid';
 import path from 'path';
-import { default as generatePassword } from 'secure-random-password';
 import {
   AfterLoad,
   Column,
@@ -196,7 +196,7 @@ export class User {
   }
 
   public async generatePassword(): Promise<void> {
-    const password = generatePassword.randomPassword({ length: 16 });
+    const password = nanoid(16);
     await this.setPassword(password);
 
     const { applicationTitle, applicationUrl } = getSettings().main;

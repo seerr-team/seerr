@@ -40,7 +40,7 @@ jobs:
           persist-credentials: false
 
       - name: Pnpm Setup
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
       - name: Set up Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
@@ -90,7 +90,7 @@ jobs:
     name: Lint & Test Build
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    container: node:22.22.1-alpine3.23@sha256:8094c002d08262dba12645a3b4a15cd6cd627d30bc782f53229a2ec13ee22a00
+    container: node:22.22.2-alpine3.23@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -98,7 +98,7 @@ jobs:
           persist-credentials: false
 
       - name: Pnpm Setup
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
       - name: Get pnpm store directory
         shell: sh
@@ -131,7 +131,7 @@ jobs:
     name: Unit Tests
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    container: node:22.22.1-alpine3.23@sha256:8094c002d08262dba12645a3b4a15cd6cd627d30bc782f53229a2ec13ee22a00
+    container: node:22.22.2-alpine3.23@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f
     permissions:
       checks: write
     steps:
@@ -141,7 +141,7 @@ jobs:
           persist-credentials: false
 
       - name: Pnpm Setup
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
       - name: Get pnpm store directory
         shell: sh
@@ -167,7 +167,7 @@ jobs:
         run: pnpm test
 
       - name: Publish test report
-        uses: mikepenz/action-junit-report@49b2ca06f62aa7ef83ae6769a2179271e160d8e4 # v6.3.1
+        uses: mikepenz/action-junit-report@bccf2e31636835cf0874589931c4116687171386 # v6.4.0
         if: success() || failure() # always run even if the previous step fails
         with:
           report_paths: 'report.xml'

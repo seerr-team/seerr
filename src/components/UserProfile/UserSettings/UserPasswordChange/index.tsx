@@ -74,7 +74,7 @@ const UserPasswordChange = () => {
     confirmPassword: Yup.string()
       .required(intl.formatMessage(messages.validationConfirmPassword))
       .oneOf(
-        [Yup.ref('newPassword'), null],
+        [Yup.ref('newPassword'), ''],
         intl.formatMessage(messages.validationConfirmPasswordSame)
       ),
   });

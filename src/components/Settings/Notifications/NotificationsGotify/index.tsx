@@ -48,10 +48,11 @@ const NotificationsGotify = () => {
     url: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationUrlRequired)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationUrlRequired)),
+        otherwise: (schema) => schema.nullable(),
       })
       .test(
         'valid-url',
@@ -65,19 +66,21 @@ const NotificationsGotify = () => {
       ),
     token: Yup.string().when('enabled', {
       is: true,
-      then: Yup.string()
-        .nullable()
-        .required(intl.formatMessage(messages.validationTokenRequired)),
-      otherwise: Yup.string().nullable(),
+      then: (schema) =>
+        schema
+          .nullable()
+          .required(intl.formatMessage(messages.validationTokenRequired)),
+      otherwise: (schema) => schema.nullable(),
     }),
     priority: Yup.string().when('enabled', {
       is: true,
-      then: Yup.string()
-        .nullable()
-        .min(0)
-        .max(9)
-        .required(intl.formatMessage(messages.validationPriorityRequired)),
-      otherwise: Yup.string().nullable(),
+      then: (schema) =>
+        schema
+          .nullable()
+          .min(0)
+          .max(9)
+          .required(intl.formatMessage(messages.validationPriorityRequired)),
+      otherwise: (schema) => schema.nullable(),
     }),
   });
 
