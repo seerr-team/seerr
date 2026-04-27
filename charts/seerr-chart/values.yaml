@@ -90,6 +90,8 @@ config:
     existingClaim: ''
     # -- Subpath of the pvc which should be mounted
     subPath: ''
+    # -- Storage class for the PVC. Set to "-" to disable dynamic provisioning. Uses default storage class if no value is provided
+    storageClass: ''
 
 ingress:
   enabled: false

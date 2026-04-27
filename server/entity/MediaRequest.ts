@@ -534,7 +534,6 @@ export class MediaRequest {
 
   @ManyToOne(() => User, {
     nullable: true,
-    cascade: true,
     eager: true,
     onDelete: 'SET NULL',
   })
@@ -544,7 +543,10 @@ export class MediaRequest {
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
-  @UpdateDateColumn({ type: resolveDbType('datetime') })
+  @UpdateDateColumn({
+    type: resolveDbType('datetime'),
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   public updatedAt: Date;
 
   @Column({ type: 'varchar' })
@@ -665,10 +667,18 @@ export class MediaRequest {
         return;
       }
 
-      if (media[this.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE) {
-        logger.warn(
-          'Media became available before request was approved. Skipping approval notification',
+      if (
+        this.status === MediaRequestStatus.APPROVED &&
+        media[this.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
+      ) {
+        logger.info(
+          'Media is already available. Sending availability notification instead of approval.',
           { label: 'Media Request', requestId: this.id, mediaId: this.media.id }
+        );
+        MediaRequest.sendNotification(
+          this,
+          media,
+          Notification.MEDIA_AVAILABLE
         );
         return;
       }
@@ -725,6 +735,10 @@ export class MediaRequest {
       let notifySystem = true;
 
       switch (type) {
+        case Notification.MEDIA_AVAILABLE:
+          event = `${entity.is4k ? '4K ' : ''}${mediaType} Now Available`;
+          notifyAdmin = false;
+          break;
         case Notification.MEDIA_APPROVED:
           event = `${entity.is4k ? '4K ' : ''}${mediaType} Request Approved`;
           notifyAdmin = false;

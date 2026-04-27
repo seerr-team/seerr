@@ -1,1 +1,23 @@
-{}
+{
+  "notifications.agents.email.approvedRequest": "Ваш запрос на {mediaType} был одобрен:",
+  "notifications.agents.email.approvedRequest4k": "Вша запрос на {mediaType} в 4K был одобрен:",
+  "notifications.agents.email.autoApproved": "Новый запрос на {mediaType} был автоматически одобрен:",
+  "notifications.agents.email.autoApproved4k": "Новый запрос на {mediaType} в 4K был автоматически одобрен:",
+  "notifications.agents.email.autoRequested": "Новый запрос на {mediaType} автоматически сформирован:",
+  "notifications.agents.email.autoRequested4k": "Новый запрос на {mediaType} в 4K автоматически сформирован:",
+  "notifications.agents.email.availableRequest": "Ваш запрос на {mediaType} стал доступен:",
+  "notifications.agents.email.availableRequest4k": "Ваш запрос на {mediaType} в 4K стал доступен:",
+  "notifications.agents.email.declinedRequest": "Ваш запрос на {mediaType} был отклонён:",
+  "notifications.agents.email.declinedRequest4k": "Ваш запрос на {mediaType} в 4K был отклонён:",
+  "notifications.agents.email.failedRequest": "Не удалось добавить запрос на {mediaType} в {service}:",
+  "notifications.agents.email.failedRequest4k": "Не удалось добавить запрос на {mediaType} в 4K в {service}:",
+  "notifications.agents.email.issue": "проблема",
+  "notifications.agents.email.issueComment": "{userName} оставил комментарий в {issueType} для {mediaType} {subject}:",
+  "notifications.agents.email.issueCreated": "Новый {issueType} был создан пользователем {userName} для {mediaType} {subject}:",
+  "notifications.agents.email.issueReopened": "{issueType} для {mediaType} {subject} был переоткрыт {userName}.",
+  "notifications.agents.email.issueResolved": "{issueType} для {mediaType} {subject} помечен {userName} как решённый!",
+  "notifications.agents.email.issueType": "Проблема {type}",
+  "notifications.agents.email.pendingRequest": "Новый запрос на {mediaType} ожидает одобрения:",
+  "notifications.agents.email.pendingRequest4k": "Новый запрос на {mediaType} в 4K ожидает одобрения:",
+  "notifications.agents.webpush.approved": "Ваш {quality}{mediaType} был одобрен."
+}
