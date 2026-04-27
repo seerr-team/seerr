@@ -295,7 +295,7 @@ export const KeywordSelector = ({
 }: BaseSelectorMultiProps | BaseSelectorSingleProps) => {
   const intl = useIntl();
   const [selectedValue, setSelectedValue] = useState<
-    MultiValue<SingleVal> | SingleValue<SingleVal> | null
+    MultiValue<SingleVal> | SingleValue<SingleVal>
   >(null);
 
   useEffect(() => {
