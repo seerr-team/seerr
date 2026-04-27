@@ -98,12 +98,34 @@ interface UsersResponse {
   };
 }
 
-interface WatchlistResponse {
+interface HomeUsersResponse {
   MediaContainer: {
-    totalSize: number;
-    Metadata?: {
-      ratingKey: string;
+    User: {
+      $: {
+        id: string;
+        uuid: string;
+        title: string;
+        username: string;
+        email: string;
+        thumb: string;
+      };
     }[];
+  };
+}
+
+interface WatchlistResponse {
+  data: {
+    user: {
+      watchlist: {
+        nodes: {
+          id: string;
+        }[];
+        pageInfo: {
+          hasNextPage: boolean;
+          endCursor: string;
+        };
+      };
+    };
   };
 }
 
@@ -115,6 +137,7 @@ type PlexMetadataItem = {
     id: `imdb://tt${number}` | `tmdb://${number}` | `tvdb://${number}`;
   }[];
 };
+
 interface MetadataResponse {
   MediaContainer: {
     Metadata?: PlexMetadataItem[];
@@ -268,33 +291,63 @@ class PlexTvAPI extends ExternalAPI {
     return parsedXml;
   }
 
-  public async getWatchlist({
-    offset = 0,
-    size = 20,
-  }: { offset?: number; size?: number } = {}): Promise<{
-    offset: number;
-    size: number;
+  public async getHomeUsers(): Promise<HomeUsersResponse> {
+    const response = await this.axios.get('/api/home/users', {
+      transformResponse: [],
+      responseType: 'text',
+    });
+
+    const parsedXml = (await xml2js.parseStringPromise(
+      response.data
+    )) as HomeUsersResponse;
+    return parsedXml;
+  }
+
+  public async getWatchlist(
+    uuid: string,
+    {
+      first = 20,
+      after = undefined,
+    }: { first?: number; after?: number | undefined } = {}
+  ): Promise<{
+    first: number;
+    after: number | undefined;
+    endCursor: string | undefined;
     totalSize: number;
     items: PlexWatchlistItem[];
   }> {
     try {
       const watchlistCache = cacheManager.getCache('plexwatchlist');
-      let cachedWatchlist = watchlistCache.data.get<PlexWatchlistCache>(
-        this.authToken
-      );
+      let cachedWatchlist = watchlistCache.data.get<PlexWatchlistCache>(uuid);
 
-      const response = await this.axios.get<WatchlistResponse>(
-        '/library/sections/watchlist/all',
+      const response = await this.axios.post<WatchlistResponse>(
+        '/api',
         {
-          params: {
-            'X-Plex-Container-Start': offset,
-            'X-Plex-Container-Size': size,
+          query: `query GetWatchlistHub($uuid: ID = "", $first: PaginationInt!, $after: String) {
+                      user(id: $uuid) {
+                          watchlist(first: $first, after: $after) {
+                              nodes {
+                                  ...itemFields
+                              }
+                              pageInfo {
+                                  hasNextPage
+                                  endCursor
+                              }
+                          }
+                      }
+                  }
+
+                  fragment itemFields on MetadataItem {
+                      id
+                  }`,
+          variables: {
+            uuid: uuid,
+            first: first,
+            after: after,
           },
-          headers: {
-            'If-None-Match': cachedWatchlist?.etag,
-          },
-          baseURL: 'https://discover.provider.plex.tv',
-          validateStatus: (status) => status < 400, // Allow HTTP 304 to return without error
+        },
+        {
+          baseURL: 'https://community.plex.tv',
         }
       );
 
@@ -305,19 +358,16 @@ class PlexTvAPI extends ExternalAPI {
           response: response.data,
         };
 
-        watchlistCache.data.set<PlexWatchlistCache>(
-          this.authToken,
-          cachedWatchlist
-        );
+        watchlistCache.data.set<PlexWatchlistCache>(uuid, cachedWatchlist);
       }
 
       const watchlistDetails = await Promise.all(
-        (cachedWatchlist?.response.MediaContainer.Metadata ?? []).map(
+        (cachedWatchlist?.response.data.user.watchlist.nodes ?? []).map(
           async (watchlistItem) => {
             let detailedResponse: MetadataResponse;
             try {
               detailedResponse = await this.getRolling<MetadataResponse>(
-                `/library/metadata/${watchlistItem.ratingKey}`,
+                `/library/metadata/${watchlistItem.id}`,
                 {
                   baseURL: 'https://discover.provider.plex.tv',
                 }
@@ -325,7 +375,7 @@ class PlexTvAPI extends ExternalAPI {
             } catch (e) {
               if (e.response?.status === 404) {
                 logger.warn(
-                  `Item with ratingKey ${watchlistItem.ratingKey} not found, it may have been removed from the server.`,
+                  `Item with id ${watchlistItem.id} not found, it may have been removed from the server.`,
                   { label: 'Plex.TV Metadata API' }
                 );
                 return null;
@@ -373,9 +423,12 @@ class PlexTvAPI extends ExternalAPI {
       ) as PlexWatchlistItem[];
 
       return {
-        offset,
-        size,
-        totalSize: cachedWatchlist?.response.MediaContainer.totalSize ?? 0,
+        first,
+        after,
+        endCursor:
+          cachedWatchlist?.response.data.user.watchlist.pageInfo.endCursor,
+        totalSize:
+          cachedWatchlist?.response.data.user.watchlist.nodes.length ?? 0,
         items: filteredList,
       };
     } catch (e) {
@@ -384,8 +437,9 @@ class PlexTvAPI extends ExternalAPI {
         errorMessage: e.message,
       });
       return {
-        offset,
-        size,
+        first,
+        after,
+        endCursor: undefined,
         totalSize: 0,
         items: [],
       };

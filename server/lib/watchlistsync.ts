@@ -1,5 +1,6 @@
 import PlexTvAPI from '@server/api/plextv';
 import { MediaStatus, MediaType } from '@server/constants/media';
+import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import {
@@ -18,22 +19,29 @@ class WatchlistSync {
   public async syncWatchlist() {
     const userRepository = getRepository(User);
 
+    // taken from auth.ts
+    const mainUser = await userRepository.findOneOrFail({
+      select: { id: true, plexToken: true },
+      where: { id: 1 },
+    });
+
     // Get users who actually have plex tokens
     const users = await userRepository
       .createQueryBuilder('user')
       .addSelect('user.plexToken')
+      .addSelect('user.plexUuid')
       .leftJoinAndSelect('user.settings', 'settings')
-      .where("user.plexToken != ''")
+      .where('user.userType = :userType', { userType: UserType.PLEX })
       .getMany();
 
     for (const user of users) {
-      await this.syncUserWatchlist(user);
+      await this.syncUserWatchlist(user, mainUser.plexToken ?? '');
     }
   }
 
-  private async syncUserWatchlist(user: User) {
-    if (!user.plexToken) {
-      logger.warn('Skipping user watchlist sync for user without plex token', {
+  private async syncUserWatchlist(user: User, mainPlexToken: string) {
+    if (!user.plexUuid) {
+      logger.warn('Skipping user watchlist sync for user without plex uuid', {
         label: 'Plex Watchlist Sync',
         user: user.displayName,
       });
@@ -61,9 +69,12 @@ class WatchlistSync {
       return;
     }
 
-    const plexTvApi = new PlexTvAPI(user.plexToken);
+    // token sync if the user has a token, else fallback to sync using the main user's token
+    const plexTvApi = user.plexToken
+      ? new PlexTvAPI(user.plexToken)
+      : new PlexTvAPI(mainPlexToken);
 
-    const response = await plexTvApi.getWatchlist({ size: 20 });
+    const response = await plexTvApi.getWatchlist(user.plexUuid);
 
     const mediaItems = await Media.getRelatedMedia(
       user,

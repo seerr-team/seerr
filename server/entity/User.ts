@@ -43,6 +43,7 @@ export class User {
   static readonly filteredFields: string[] = [
     'email',
     'plexId',
+    'plexUuid',
     'password',
     'resetPasswordGuid',
     'jellyfinDeviceId',
@@ -88,6 +89,9 @@ export class User {
 
   @Column({ type: 'integer', nullable: true, select: true })
   public plexId?: number | null;
+
+  @Column({ type: 'varchar', nullable: true, select: false })
+  public plexUuid?: string | null;
 
   @Column({ type: 'varchar', nullable: true })
   public jellyfinUserId?: string | null;

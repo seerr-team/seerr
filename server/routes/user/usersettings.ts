@@ -304,6 +304,7 @@ userSettingsRoutes.post<{ authToken: string }>(
     // valid plex user found, link to current user
     user.userType = UserType.PLEX;
     user.plexId = account.id;
+    user.plexUuid = account.uuid;
     user.plexUsername = account.username;
     user.plexToken = account.authToken;
     await userRepository.save(user);
