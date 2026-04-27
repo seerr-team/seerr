@@ -294,9 +294,6 @@ export const KeywordSelector = ({
   onChange,
 }: BaseSelectorMultiProps | BaseSelectorSingleProps) => {
   const intl = useIntl();
-  const [defaultDataValue, setDefaultDataValue] = useState<
-    { label: string; value: number }[] | null
-  >(null);
   const [selectedValue, setSelectedValue] = useState<
     MultiValue<SingleVal> | SingleValue<SingleVal> | null
   >(null);
@@ -304,7 +301,6 @@ export const KeywordSelector = ({
   useEffect(() => {
     const loadDefaultKeywords = async (): Promise<void> => {
       if (!defaultValue) {
-        setDefaultDataValue(null);
         setSelectedValue(null);
         return;
       }
@@ -327,7 +323,6 @@ export const KeywordSelector = ({
         value: keyword.id,
       }));
 
-      setDefaultDataValue(nextValue);
       setSelectedValue(isMulti ? nextValue : (nextValue[0] ?? null));
     };
 
@@ -362,7 +357,6 @@ export const KeywordSelector = ({
           ? intl.formatMessage(messages.starttyping)
           : intl.formatMessage(messages.nooptions)
       }
-      defaultValue={defaultDataValue}
       value={selectedValue}
       loadOptions={loadKeywordOptions}
       placeholder={intl.formatMessage(messages.searchKeywords)}
