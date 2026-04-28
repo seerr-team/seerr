@@ -6,7 +6,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "postinstall": "next telemetry disable",
-    "dev": "nodemon -e ts --watch server --watch seerr-api.yml -e .json,.ts,.yml -x ts-node -r tsconfig-paths/register --files --project server/tsconfig.json server/index.ts",
+    "dev": "nodemon -e ts,json,yml --watch server --watch seerr-api.yml --exec 'ts-node -r tsconfig-paths/register --files --project server/tsconfig.json server/index.ts'",
     "build:server": "tsc --project server/tsconfig.json && copyfiles -u 2 server/templates/**/*.{html,pug} dist/templates && copyfiles -u 2 \"server/i18n/locale/*.json\" dist/i18n && tsc-alias -p server/tsconfig.json",
     "build:next": "next build",
     "build": "pnpm build:next && pnpm build:server",
@@ -37,9 +37,7 @@
     "@dr.pogodin/csurf": "^1.16.9",
     "@fontsource-variable/inter": "^5.2.8",
     "@formatjs/intl": "^4.1.4",
-    "@formatjs/intl-displaynames": "7.3.2",
     "@formatjs/intl-locale": "5.3.2",
-    "@formatjs/intl-pluralrules": "6.3.2",
     "@headlessui/react": "1.7.19",
     "@heroicons/react": "2.2.0",
     "@react-spring/web": "^10.0.3",
