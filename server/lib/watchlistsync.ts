@@ -25,6 +25,41 @@ class WatchlistSync {
       where: { id: 1 },
     });
 
+    // Old imported plex users may not have plex uuids stored in the db
+    const users = await userRepository
+      .createQueryBuilder('user')
+      .where('user.userType = :userType', { userType: UserType.PLEX })
+      .andWhere('user.plexUuid IS NULL')
+      .getMany();
+
+    if (users.length > 0) {
+      logger.warn(
+        'Found plex users without assigned uuids. Obtaining corresponding uuids.',
+        {
+          label: 'Plex Watchlist Sync',
+        }
+      );
+
+      const mainPlexTv = new PlexTvAPI(mainUser.plexToken ?? '');
+
+      const plexHomeUsersResponse = await mainPlexTv.getHomeUsers();
+      for (const rawUser of plexHomeUsersResponse.MediaContainer.User) {
+        const account = rawUser.$;
+
+        if (account.email) {
+          const user = await userRepository
+            .createQueryBuilder('user')
+            .where('user.plexId = :id', { id: account.id })
+            .getOne();
+
+          if (user) {
+            user.plexUuid = account.uuid;
+            await userRepository.save(user);
+          }
+        }
+      }
+    }
+
     // Get users who actually have plex tokens
     const users = await userRepository
       .createQueryBuilder('user')
