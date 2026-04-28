@@ -26,13 +26,13 @@ class WatchlistSync {
     });
 
     // Old imported plex users may not have plex uuids stored in the db
-    const users = await userRepository
+    const nullUsers = await userRepository
       .createQueryBuilder('user')
       .where('user.userType = :userType', { userType: UserType.PLEX })
       .andWhere('user.plexUuid IS NULL')
       .getMany();
 
-    if (users.length > 0) {
+    if (nullUsers.length > 0) {
       logger.warn(
         'Found plex users without assigned uuids. Obtaining corresponding uuids.',
         {
