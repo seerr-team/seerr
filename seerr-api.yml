@@ -522,17 +522,14 @@ components:
     MetadataSettings:
       type: object
       properties:
-        settings:
-          type: object
-          properties:
-            tv:
-              type: string
-              enum: [tvdb, tmdb]
-              example: 'tvdb'
-            anime:
-              type: string
-              enum: [tvdb, tmdb]
-              example: 'tvdb'
+        tv:
+          type: string
+          enum: [tvdb, tmdb]
+          example: 'tvdb'
+        anime:
+          type: string
+          enum: [tvdb, tmdb]
+          example: 'tvdb'
     TautulliSettings:
       type: object
       properties:
