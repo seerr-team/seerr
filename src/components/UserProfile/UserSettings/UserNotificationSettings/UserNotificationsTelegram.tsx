@@ -62,7 +62,11 @@ const UserTelegramSettings = () => {
       ),
     telegramMessageThreadId: Yup.string()
       .transform((v) => v || null)
-      .nullable(),
+      .nullable()
+      .matches(
+        /^\d+$/,
+        intl.formatMessage(messages.validationTelegramMessageThreadId)
+      ),
   });
 
   if (!data && !error) {
