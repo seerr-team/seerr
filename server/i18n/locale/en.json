@@ -51,7 +51,5 @@
   "notifications.common.resolved": "Resolved",
   "notifications.common.series": "series",
   "notifications.common.viewIssue": "View Issue in {applicationTitle}",
-  "notifications.common.viewMedia": "View Media in {applicationTitle}",
-  "notifications.test.message": "Check check, 1, 2, 3. Are we coming in clear?",
-  "notifications.test.subject": "Test Notification"
+  "notifications.common.viewMedia": "View Media in {applicationTitle}"
 }

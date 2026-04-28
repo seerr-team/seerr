@@ -48,7 +48,6 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
       return res.status(200).json({
         username: user.username,
         email: user.email,
-        discordId: user.settings?.discordId,
         locale: user.settings?.locale,
         discoverRegion: user.settings?.discoverRegion,
         streamingRegion: user.settings?.streamingRegion,
@@ -122,7 +121,6 @@ userSettingsRoutes.post<
     if (!user.settings) {
       user.settings = new UserSettings({
         user: req.user,
-        discordId: req.body.discordId,
         locale: req.body.locale,
         discoverRegion: req.body.discoverRegion,
         streamingRegion: req.body.streamingRegion,
@@ -131,7 +129,6 @@ userSettingsRoutes.post<
         watchlistSyncTv: req.body.watchlistSyncTv,
       });
     } else {
-      user.settings.discordId = req.body.discordId;
       user.settings.locale = req.body.locale;
       user.settings.discoverRegion = req.body.discoverRegion;
       user.settings.streamingRegion = req.body.streamingRegion;
@@ -144,7 +141,6 @@ userSettingsRoutes.post<
 
     return res.status(200).json({
       username: savedUser.username,
-      discordId: savedUser.settings?.discordId,
       locale: savedUser.settings?.locale,
       discoverRegion: savedUser.settings?.discoverRegion,
       streamingRegion: savedUser.settings?.streamingRegion,
@@ -543,7 +539,7 @@ userSettingsRoutes.get<{ id: string }, UserSettingsNotificationsResponse>(
           settings?.discord.enabled && settings.discord.options.enableMentions
             ? settings.discord.types
             : 0,
-        discordId: user.settings?.discordId,
+        discordIds: user.settings?.discordIds ?? [],
         pushbulletAccessToken: user.settings?.pushbulletAccessToken,
         pushoverApplicationToken: user.settings?.pushoverApplicationToken,
         pushoverUserKey: user.settings?.pushoverUserKey,
@@ -585,11 +581,14 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
         });
       }
 
+      const discordIds =
+        req.body.discordIds?.filter((id: string) => id !== '') ?? [];
+
       if (!user.settings) {
         user.settings = new UserSettings({
           user: req.user,
           pgpKey: req.body.pgpKey,
-          discordId: req.body.discordId,
+          discordIds,
           pushbulletAccessToken: req.body.pushbulletAccessToken,
           pushoverApplicationToken: req.body.pushoverApplicationToken,
           pushoverUserKey: req.body.pushoverUserKey,
@@ -600,7 +599,7 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
         });
       } else {
         user.settings.pgpKey = req.body.pgpKey;
-        user.settings.discordId = req.body.discordId;
+        user.settings.discordIds = discordIds;
         user.settings.pushbulletAccessToken = req.body.pushbulletAccessToken;
         user.settings.pushoverApplicationToken =
           req.body.pushoverApplicationToken;
@@ -621,7 +620,7 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
 
       return res.status(200).json({
         pgpKey: user.settings.pgpKey,
-        discordId: user.settings.discordId,
+        discordIds: user.settings.discordIds ?? [],
         pushbulletAccessToken: user.settings.pushbulletAccessToken,
         pushoverApplicationToken: user.settings.pushoverApplicationToken,
         pushoverUserKey: user.settings.pushoverUserKey,

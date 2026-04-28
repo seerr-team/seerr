@@ -50,19 +50,25 @@ const UserTelegramSettings = () => {
     telegramChatId: Yup.string()
       .when('types', {
         is: (types: number) => !!types,
-        then: (schema) =>
-          schema
-            .nullable()
-            .required(intl.formatMessage(messages.validationTelegramChatId)),
-        otherwise: (schema) => schema.nullable(),
+        then: Yup.string()
+          .nullable()
+          .required(intl.formatMessage(messages.validationTelegramChatId)),
+        otherwise: Yup.string().nullable(),
       })
       .matches(
         /^-?\d+$/,
         intl.formatMessage(messages.validationTelegramChatId)
       ),
     telegramMessageThreadId: Yup.string()
-      .transform((v) => v || null)
-      .nullable()
+      .when(['types'], {
+        is: (enabled: boolean, types: number) => enabled && !!types,
+        then: Yup.string()
+          .nullable()
+          .required(
+            intl.formatMessage(messages.validationTelegramMessageThreadId)
+          ),
+        otherwise: Yup.string().nullable(),
+      })
       .matches(
         /^\d+$/,
         intl.formatMessage(messages.validationTelegramMessageThreadId)
@@ -87,7 +93,7 @@ const UserTelegramSettings = () => {
         try {
           await axios.post(`/api/v1/user/${user?.id}/settings/notifications`, {
             pgpKey: data?.pgpKey,
-            discordId: data?.discordId,
+            discordIds: data?.discordIds,
             pushbulletAccessToken: data?.pushbulletAccessToken,
             pushoverApplicationToken: data?.pushoverApplicationToken,
             pushoverUserKey: data?.pushoverUserKey,

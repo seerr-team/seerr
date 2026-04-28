@@ -1,5 +1,4 @@
 import type { User } from '@server/entity/User';
-import { defineMessages, getIntl } from '@server/i18n';
 import { Notification } from '@server/lib/notifications';
 import type { NotificationAgent } from '@server/lib/notifications/agents/agent';
 import DiscordAgent from '@server/lib/notifications/agents/discord';
@@ -13,27 +12,18 @@ import TelegramAgent from '@server/lib/notifications/agents/telegram';
 import WebhookAgent from '@server/lib/notifications/agents/webhook';
 import WebPushAgent from '@server/lib/notifications/agents/webpush';
 import { getSettings } from '@server/lib/settings';
-import type { AvailableLocale } from '@server/types/languages';
 import { Router } from 'express';
 
 const notificationRoutes = Router();
 
-const messages = defineMessages('notifications.test', {
-  subject: 'Test Notification',
-  message: 'Check check, 1, 2, 3. Are we coming in clear?',
-});
-
-const sendTestNotification = async (agent: NotificationAgent, user: User) => {
-  const intl = getIntl(user.settings?.locale as AvailableLocale);
-
-  return await agent.send(Notification.TEST_NOTIFICATION, {
+const sendTestNotification = async (agent: NotificationAgent, user: User) =>
+  await agent.send(Notification.TEST_NOTIFICATION, {
     notifySystem: true,
     notifyAdmin: false,
     notifyUser: user,
-    subject: intl.formatMessage(messages.subject),
-    message: intl.formatMessage(messages.message),
+    subject: 'Test Notification',
+    message: 'Check check, 1, 2, 3. Are we coming in clear?',
   });
-};
 
 notificationRoutes.get('/discord', (_req, res) => {
   const settings = getSettings();
@@ -307,9 +297,9 @@ notificationRoutes.post('/webhook', async (req, res, next) => {
       embedPoster: req.body.embedPoster,
       types: req.body.types,
       options: {
-        jsonPayload: Buffer.from(
-          JSON.stringify(req.body.options.jsonPayload)
-        ).toString('base64'),
+        jsonPayload: Buffer.from(req.body.options.jsonPayload).toString(
+          'base64'
+        ),
         webhookUrl: req.body.options.webhookUrl,
         authHeader: req.body.options.authHeader,
         customHeaders: req.body.options.customHeaders ?? [],
@@ -340,9 +330,9 @@ notificationRoutes.post('/webhook/test', async (req, res, next) => {
       embedPoster: req.body.embedPoster,
       types: req.body.types,
       options: {
-        jsonPayload: Buffer.from(
-          JSON.stringify(req.body.options.jsonPayload)
-        ).toString('base64'),
+        jsonPayload: Buffer.from(req.body.options.jsonPayload).toString(
+          'base64'
+        ),
         webhookUrl: req.body.options.webhookUrl,
         authHeader: req.body.options.authHeader,
         customHeaders: req.body.options.customHeaders ?? [],

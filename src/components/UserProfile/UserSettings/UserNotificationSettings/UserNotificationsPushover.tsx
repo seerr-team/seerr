@@ -57,13 +57,12 @@ const UserPushoverSettings = () => {
     pushoverApplicationToken: Yup.string()
       .when('types', {
         is: (types: number) => !!types,
-        then: (schema) =>
-          schema
-            .nullable()
-            .required(
-              intl.formatMessage(messages.validationPushoverApplicationToken)
-            ),
-        otherwise: (schema) => schema.nullable(),
+        then: Yup.string()
+          .nullable()
+          .required(
+            intl.formatMessage(messages.validationPushoverApplicationToken)
+          ),
+        otherwise: Yup.string().nullable(),
       })
       .matches(
         /^[a-z\d]{30}$/i,
@@ -72,11 +71,10 @@ const UserPushoverSettings = () => {
     pushoverUserKey: Yup.string()
       .when('types', {
         is: (types: number) => !!types,
-        then: (schema) =>
-          schema
-            .nullable()
-            .required(intl.formatMessage(messages.validationPushoverUserKey)),
-        otherwise: (schema) => schema.nullable(),
+        then: Yup.string()
+          .nullable()
+          .required(intl.formatMessage(messages.validationPushoverUserKey)),
+        otherwise: Yup.string().nullable(),
       })
       .matches(
         /^[a-z\d]{30}$/i,
@@ -101,7 +99,7 @@ const UserPushoverSettings = () => {
         try {
           await axios.post(`/api/v1/user/${user?.id}/settings/notifications`, {
             pgpKey: data?.pgpKey,
-            discordId: data?.discordId,
+            discordIds: data?.discordIds,
             pushbulletAccessToken: data?.pushbulletAccessToken,
             pushoverApplicationToken: values.pushoverApplicationToken,
             pushoverUserKey: values.pushoverUserKey,

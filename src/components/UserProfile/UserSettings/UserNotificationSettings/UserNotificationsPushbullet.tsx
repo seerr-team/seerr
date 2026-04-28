@@ -44,13 +44,10 @@ const UserPushbulletSettings = () => {
   const UserNotificationsPushbulletSchema = Yup.object().shape({
     pushbulletAccessToken: Yup.string().when('types', {
       is: (types: number) => !!types,
-      then: (schema) =>
-        schema
-          .nullable()
-          .required(
-            intl.formatMessage(messages.validationPushbulletAccessToken)
-          ),
-      otherwise: (schema) => schema.nullable(),
+      then: Yup.string()
+        .nullable()
+        .required(intl.formatMessage(messages.validationPushbulletAccessToken)),
+      otherwise: Yup.string().nullable(),
     }),
   });
 
@@ -70,7 +67,7 @@ const UserPushbulletSettings = () => {
         try {
           await axios.post(`/api/v1/user/${user?.id}/settings/notifications`, {
             pgpKey: data?.pgpKey,
-            discordId: data?.discordId,
+            discordIds: data?.discordIds,
             pushbulletAccessToken: values.pushbulletAccessToken,
             pushoverApplicationToken: data?.pushoverApplicationToken,
             pushoverUserKey: data?.pushoverUserKey,
