@@ -57,12 +57,13 @@ const UserPushoverSettings = () => {
     pushoverApplicationToken: Yup.string()
       .when('types', {
         is: (types: number) => !!types,
-        then: Yup.string()
-          .nullable()
-          .required(
-            intl.formatMessage(messages.validationPushoverApplicationToken)
-          ),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(
+              intl.formatMessage(messages.validationPushoverApplicationToken)
+            ),
+        otherwise: (schema) => schema.nullable(),
       })
       .matches(
         /^[a-z\d]{30}$/i,
@@ -71,10 +72,11 @@ const UserPushoverSettings = () => {
     pushoverUserKey: Yup.string()
       .when('types', {
         is: (types: number) => !!types,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationPushoverUserKey)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationPushoverUserKey)),
+        otherwise: (schema) => schema.nullable(),
       })
       .matches(
         /^[a-z\d]{30}$/i,
