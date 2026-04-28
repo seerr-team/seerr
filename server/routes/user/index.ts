@@ -426,8 +426,13 @@ router.get<{ jellyfinUserId: string }>(
     try {
       const userRepository = getRepository(User);
 
+      const jellyfinUserId = normalizeJellyfinGuid(req.params.jellyfinUserId);
+      if (!jellyfinUserId) {
+        return next({ status: 400, message: 'Invalid Jellyfin User ID.' });
+      }
+
       const user = await userRepository.findOneOrFail({
-        where: { jellyfinUserId: req.params.jellyfinUserId },
+        where: { jellyfinUserId },
       });
 
       return res
