@@ -22,7 +22,7 @@ import type {
 import type { JobId } from '@server/lib/settings';
 import axios from 'axios';
 import cronstrue from 'cronstrue/i18n';
-import { formatDuration, intervalToDuration } from 'date-fns';
+import humanizeDuration from 'humanize-duration';
 import { Fragment, useReducer, useState } from 'react';
 import type { MessageDescriptor } from 'react-intl';
 import { FormattedRelativeTime, useIntl } from 'react-intl';
@@ -319,14 +319,10 @@ const SettingsJobs = () => {
   };
 
   const formatAge = (milliseconds: number): string => {
-    const duration = intervalToDuration({
-      start: 0,
-      end: milliseconds,
-    });
-
-    return formatDuration(duration, {
-      format: ['minutes', 'seconds'],
-      zero: false,
+    return humanizeDuration(milliseconds, {
+      units: ['m', 's'],
+      round: true,
+      language: locale,
     });
   };
 
