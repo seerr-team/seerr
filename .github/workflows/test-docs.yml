@@ -1,6 +1,6 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: Test Docs deployment
+name: Test Docs
 
 on:
   pull_request:
@@ -18,8 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-deploy:
-    name: Test deployment
+  test-build:
+    name: Test build
     runs-on: ubuntu-24.04
     permissions:
       contents: read
