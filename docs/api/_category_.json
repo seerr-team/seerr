@@ -1,0 +1,9 @@
+{
+  "label": "REST API documentation",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "title": "REST API documentation",
+    "description": "Create integrations with the Seerr REST API."
+  }
+}

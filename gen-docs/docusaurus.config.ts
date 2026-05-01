@@ -1,5 +1,6 @@
 import type * as Preset from '@docusaurus/preset-classic';
 import type { Config } from '@docusaurus/types';
+import type * as OpenApiPlugin from 'docusaurus-plugin-openapi-docs';
 import { themes as prismThemes } from 'prism-react-renderer';
 
 const config: Config = {
@@ -37,12 +38,35 @@ const config: Config = {
           routeBasePath: '/',
           path: '../docs',
           editUrl: 'https://github.com/seerr-team/seerr/edit/develop/docs/',
+          docItemComponent: '@theme/ApiItem',
         },
         pages: false,
         theme: {
           customCss: './src/css/custom.css',
         },
       } satisfies Preset.Options,
+    ],
+  ],
+
+  plugins: [
+    [
+      'docusaurus-plugin-openapi-docs',
+      {
+        id: 'api',
+        docsPluginId: 'classic',
+        config: {
+          seerr: {
+            specPath: '../seerr-api.yml',
+            outputDir: '../docs/api',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+            },
+            downloadUrl:
+              'https://raw.githubusercontent.com/seerr-team/seerr/refs/heads/develop/seerr-api.yml',
+            hideSendButton: true,
+          } satisfies OpenApiPlugin.Options,
+        },
+      },
     ],
   ],
 
@@ -58,6 +82,7 @@ const config: Config = {
         explicitSearchResultPath: true,
       },
     ],
+    'docusaurus-theme-openapi-docs',
   ],
 
   themeConfig: {

@@ -10,6 +10,7 @@ on:
     paths:
       - 'docs/**'
       - 'gen-docs/**'
+      - 'seerr-api.yml'
 
 permissions:
   contents: read
@@ -57,7 +58,7 @@ jobs:
 
       - name: Build website
         working-directory: gen-docs
-        run: pnpm build
+        run: pnpm gen-api-docs all && pnpm build
 
       - name: Upload Build Artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b6 # v4.0.0
