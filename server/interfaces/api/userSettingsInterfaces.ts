@@ -4,6 +4,7 @@ export interface UserSettingsGeneralResponse {
   username?: string;
   email?: string;
   locale?: string;
+  mediaLocale?: string;
   discoverRegion?: string;
   streamingRegion?: string;
   originalLanguage?: string;
