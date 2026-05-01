@@ -152,10 +152,12 @@ components:
         locale:
           type: string
           nullable: true
+          description: User-specific UI display language override
           example: 'en'
         mediaLocale:
           type: string
           nullable: true
+          description: User-specific content language override for media metadata
           example: 'en'
         discoverRegion:
           type: string
