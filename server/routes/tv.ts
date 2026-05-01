@@ -16,7 +16,7 @@ const tvRoutes = Router();
 
 tvRoutes.get('/:id', async (req, res, next) => {
   const tmdb = new TheMovieDb();
-  const mediaLocale = req.user?.settings?.mediaLocale ?? req.locale;
+  const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
 
   try {
     const tmdbTv = await tmdb.getTvShow({
@@ -29,7 +29,7 @@ tvRoutes.get('/:id', async (req, res, next) => {
       : await getMetadataProvider('tv');
     const tv = await metadataProvider.getTvShow({
       tvId: Number(req.params.id),
-      language: (req.query.language as string) ?? mediaLocale,
+      language: (req.query.language as string) || mediaLocale,
     });
     const media = await Media.getMedia(tv.id, MediaType.TV);
 
@@ -68,7 +68,7 @@ tvRoutes.get('/:id', async (req, res, next) => {
 });
 
 tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
-  const mediaLocale = req.user?.settings?.mediaLocale ?? req.locale;
+  const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
 
   try {
     const tmdb = new TheMovieDb();
@@ -84,7 +84,7 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
     const season = await metadataProvider.getTvSeason({
       tvId: Number(req.params.id),
       seasonNumber: Number(req.params.seasonNumber),
-      language: (req.query.language as string) ?? mediaLocale,
+      language: (req.query.language as string) || mediaLocale,
     });
 
     return res.status(200).json(mapSeasonWithEpisodes(season));
@@ -104,13 +104,13 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
 
 tvRoutes.get('/:id/recommendations', async (req, res, next) => {
   const tmdb = new TheMovieDb();
-  const mediaLocale = req.user?.settings?.mediaLocale ?? req.locale;
+  const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
 
   try {
     const results = await tmdb.getTvRecommendations({
       tvId: Number(req.params.id),
       page: Number(req.query.page),
-      language: (req.query.language as string) ?? mediaLocale,
+      language: (req.query.language as string) || mediaLocale,
     });
 
     const media = await Media.getRelatedMedia(
@@ -150,13 +150,13 @@ tvRoutes.get('/:id/recommendations', async (req, res, next) => {
 
 tvRoutes.get('/:id/similar', async (req, res, next) => {
   const tmdb = new TheMovieDb();
-  const mediaLocale = req.user?.settings?.mediaLocale ?? req.locale;
+  const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
 
   try {
     const results = await tmdb.getTvSimilar({
       tvId: Number(req.params.id),
       page: Number(req.query.page),
-      language: (req.query.language as string) ?? mediaLocale,
+      language: (req.query.language as string) || mediaLocale,
     });
 
     const media = await Media.getRelatedMedia(

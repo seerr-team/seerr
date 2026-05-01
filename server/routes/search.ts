@@ -10,7 +10,7 @@ const searchRoutes = Router();
 
 searchRoutes.get('/', async (req, res, next) => {
   const queryString = req.query.query as string;
-  const mediaLocale = req.user?.settings?.mediaLocale ?? req.locale;
+  const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
   const searchProvider = findSearchProvider(queryString.toLowerCase());
   let results: TmdbSearchMultiResponse;
 
@@ -21,7 +21,7 @@ searchRoutes.get('/', async (req, res, next) => {
         .match(searchProvider.pattern) as RegExpMatchArray;
       results = await searchProvider.search({
         id,
-        language: (req.query.language as string) ?? mediaLocale,
+        language: (req.query.language as string) || mediaLocale,
         query: queryString,
       });
     } else {
@@ -30,7 +30,7 @@ searchRoutes.get('/', async (req, res, next) => {
       results = await tmdb.searchMulti({
         query: queryString,
         page: Number(req.query.page),
-        language: (req.query.language as string) ?? mediaLocale,
+        language: (req.query.language as string) || mediaLocale,
       });
     }
 
