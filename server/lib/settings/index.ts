@@ -156,6 +156,7 @@ export interface MainSettings {
   enableSpecialEpisodes: boolean;
   locale: string;
   youtubeUrl: string;
+  prioritizeRadarrSonarr: boolean;
 }
 
 export interface ProxySettings {
@@ -427,6 +428,7 @@ class Settings {
         enableSpecialEpisodes: false,
         locale: 'en',
         youtubeUrl: '',
+        prioritizeRadarrSonarr: false,
       },
       plex: {
         name: '',
