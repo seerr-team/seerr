@@ -70,6 +70,14 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   validationApplicationUrlTrailingSlash: 'URL must not end in a trailing slash',
   partialRequestsEnabled: 'Allow Partial Series Requests',
   enableSpecialEpisodes: 'Allow Special Episodes Requests',
+  defaultWatchlistSyncMovies:
+    'Default: Auto-Request Movies added to Plex Watchlist',
+  defaultWatchlistSyncMoviesTip:
+    'Default value applied to newly-created users. Existing users are unaffected; each user can override on their own profile.',
+  defaultWatchlistSyncTv:
+    'Default: Auto-Request Series added to Plex Watchlist',
+  defaultWatchlistSyncTvTip:
+    'Default value applied to newly-created users. Existing users are unaffected; each user can override on their own profile.',
   locale: 'Display Language',
   youtubeUrl: 'YouTube URL',
   youtubeUrlTip:
@@ -181,6 +189,8 @@ const SettingsMain = () => {
             blocklistedTagsLimit: data?.blocklistedTagsLimit || 50,
             partialRequestsEnabled: data?.partialRequestsEnabled,
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
+            defaultWatchlistSyncMovies: data?.defaultWatchlistSyncMovies,
+            defaultWatchlistSyncTv: data?.defaultWatchlistSyncTv,
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
           }}
@@ -203,6 +213,8 @@ const SettingsMain = () => {
                 blocklistedTagsLimit: values.blocklistedTagsLimit,
                 partialRequestsEnabled: values.partialRequestsEnabled,
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
+                defaultWatchlistSyncMovies: values.defaultWatchlistSyncMovies,
+                defaultWatchlistSyncTv: values.defaultWatchlistSyncTv,
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
               });
@@ -579,6 +591,60 @@ const SettingsMain = () => {
                         setFieldValue(
                           'enableSpecialEpisodes',
                           !values.enableSpecialEpisodes
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="defaultWatchlistSyncMovies"
+                    className="checkbox-label"
+                  >
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.defaultWatchlistSyncMovies)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(
+                        messages.defaultWatchlistSyncMoviesTip
+                      )}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="defaultWatchlistSyncMovies"
+                      name="defaultWatchlistSyncMovies"
+                      onChange={() => {
+                        setFieldValue(
+                          'defaultWatchlistSyncMovies',
+                          !values.defaultWatchlistSyncMovies
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="defaultWatchlistSyncTv"
+                    className="checkbox-label"
+                  >
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.defaultWatchlistSyncTv)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.defaultWatchlistSyncTvTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="defaultWatchlistSyncTv"
+                      name="defaultWatchlistSyncTv"
+                      onChange={() => {
+                        setFieldValue(
+                          'defaultWatchlistSyncTv',
+                          !values.defaultWatchlistSyncTv
                         );
                       }}
                     />
