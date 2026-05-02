@@ -702,6 +702,9 @@ components:
           example: A Label
     PublicSettings:
       type: object
+      required:
+        - initialized
+        - plexClientIdentifier
       properties:
         initialized:
           type: boolean
