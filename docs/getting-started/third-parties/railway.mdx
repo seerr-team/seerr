@@ -1,0 +1,122 @@
+# Railway
+
+:::warning
+Third-party installation methods are maintained by the community. The Seerr team is not responsible for these packages.
+:::
+
+:::warning
+This method is not recommended for most users. It is intended for users who want to host Seerr on [Railway](https://railway.app), a cloud platform-as-a-service.
+:::
+
+## The Problem with Railway Volumes
+
+Railway mounts persistent volumes as the `root` user. Seerr's official Docker image
+runs as the `node` user (UID 1000), which means it cannot write to the config
+directory (`/app/config`) at startup, causing an `EACCES` permission error.
+
+The workaround is a minimal Dockerfile wrapper that sets `USER root`, allowing the
+container to write to the Railway-mounted volume.
+
+## Prerequisites
+
+- A [Railway](https://railway.app) account
+- A [GitHub](https://github.com) account
+
+## Setup
+
+### 1. Create the wrapper repository
+
+Create a new public GitHub repository (e.g. `seerr-railway`) containing a single
+`Dockerfile`:
+
+```dockerfile
+FROM ghcr.io/seerr-team/seerr:latest
+USER root
+```
+
+A ready-to-use example is available at
+[github.com/morganhowson/seerr-railway](https://github.com/morganhowson/seerr-railway).
+You can fork it directly rather than creating your own.
+
+### 2. Deploy on Railway
+
+1. Log in to Railway and create a new project
+2. Click **New Service → GitHub Repo** and select your `seerr-railway` repository
+3. Railway will detect the Dockerfile and build automatically
+
+### 3. Add a persistent volume
+
+1. Click your Seerr service → **Volumes → Add Volume**
+2. Set the mount path to `/app/config`
+
+This is where Seerr stores its SQLite database and configuration. Without it, all
+settings will be lost on redeploy.
+
+### 4. Configure environment variables
+
+Add the following environment variables to your service:
+
+| Variable | Value |
+|---|---|
+| `TZ` | Your timezone (e.g. `Europe/London`) |
+| `LOG_LEVEL` | `info` |
+| `PORT` | `5055` (optional) |
+
+### 5. Generate a public URL
+
+Go to **Settings → Networking → Generate Domain** to expose Seerr publicly.
+
+### 6. Access Seerr
+
+Once deployed, open your Railway-generated URL to complete the Seerr setup wizard.
+
+## Configuration
+
+Seerr's configuration and SQLite database are stored in the Railway volume at
+`/app/config`. No external database service is required.
+
+:::info
+Seerr also supports PostgreSQL if you prefer a managed database. See
+[Configuring Databases](../../extending-seerr/database-config) for details.
+:::
+
+## Updating
+
+Railway can redeploy automatically when the base image updates, but the simplest
+manual approach is:
+
+1. Go to your service in Railway
+2. Click **Deploy → Redeploy**
+
+Railway will pull the latest build of your Dockerfile, which in turn pulls
+`ghcr.io/seerr-team/seerr:latest`.
+
+:::tip
+To keep Seerr updated automatically, enable **Auto-Deploy** in your Railway service
+settings so that any push to your wrapper repository triggers a fresh build.
+:::
+
+## Troubleshooting
+
+### Permission denied on `/app/config`
+
+If you see `EACCES: permission denied, mkdir '/app/config/logs/'` in the logs, the
+`USER root` line is missing from your Dockerfile. Ensure your Dockerfile matches the
+example above and redeploy.
+
+### Settings lost after redeploy
+
+Your volume is either not attached or mounted at the wrong path. Confirm a volume
+exists and is mounted at exactly `/app/config`.
+
+## Uninstallation
+
+To remove Seerr from Railway:
+
+1. Open your project in Railway
+2. Click the Seerr service → **Settings → Delete Service**
+
+:::caution
+Deleting the service will also delete the attached volume and all Seerr data,
+including your configuration and request history. Export any data you need beforehand.
+:::
