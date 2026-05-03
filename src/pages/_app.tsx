@@ -323,7 +323,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     : currentSettings.locale;
 
   const messages = await loadLocaleData(locale as AvailableLocale);
-  await polyfillIntl(locale);
+  await polyfillIntl();
 
   return { ...appInitialProps, user, messages, locale, currentSettings };
 };

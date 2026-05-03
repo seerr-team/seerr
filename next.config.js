@@ -13,6 +13,7 @@ module.exports = {
       { hostname: 'plex.tv' },
     ],
   },
+  transpilePackages: ['country-flag-icons'],
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,
