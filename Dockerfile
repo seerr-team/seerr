@@ -15,6 +15,7 @@ FROM base AS prod-deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store CI=true pnpm install --prod --frozen-lockfile --
 
 # Remove large native modules for linux-x64-gnu platform (we use alpine which is musl-based)
+# not supported in pnpm for now due to this bug: https://github.com/pnpm/pnpm/issues/9654
 RUN du -shL ./node_modules/.pnpm/* | grep '[0-9]M.*' | grep 'linux-x64-gnu@' | awk '{print $2}' | xargs rm -rf
 # Remove large module files not needed for production
 RUN if [ -d node_modules/.pnpm ]; then \
