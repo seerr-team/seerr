@@ -18,6 +18,8 @@ Our Docker images are available with the following tags:
 
 - `latest`: Always points to the most recent stable release.
 - Version tags (e.g., `v3.0.0`): For specific stable versions.
+- Major version aliases (e.g., `v3`): Alias for the latest stable release in the respective major version series.
+- Minor version aliases (e.g., `v3.0`): Alias for the latest stable release in the respective minor version series.
 - `develop`: Rolling release/nightly builds for using the latest changes (use with caution).
 :::
 
@@ -163,7 +165,7 @@ docker volume create seerr-data
 or the Docker Desktop app:
 1. Open the Docker Desktop app
 2. Head to the Volumes tab
-3. Click on the "New Volume" button near the top right
+3. Click on the "Create a volume" in the center of the page. Or if you have other volumes already, click on the "Create" button on the top right of the page.
 4. Enter a name for the volume (example: `seerr-data`) and hit "Create"
 
 Then, create and start the Seerr container:

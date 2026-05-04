@@ -32,6 +32,7 @@ const defaultSettings = {
   emailEnabled: false,
   newPlexLogin: true,
   youtubeUrl: '',
+  plexClientIdentifier: '',
 };
 
 export const SettingsContext = React.createContext<SettingsContextProps>({

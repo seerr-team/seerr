@@ -103,11 +103,11 @@ const ExternalLinkBlock = ({
           <RTLogo />
         </a>
       )}
-      {tmdbId && mediaType !== 'person' && (
+      {imdbId && mediaType !== 'person' && (
         <a
-          href={`https://trakt.tv/search/tmdb/${tmdbId}?id_type=${
-            mediaType === 'movie' ? 'movie' : 'show'
-          }`}
+          href={`https://trakt.tv/${
+            mediaType === 'movie' ? 'movies' : 'shows'
+          }/${imdbId}`}
           className="w-8 opacity-50 transition duration-300 hover:opacity-100"
           target="_blank"
           rel="noreferrer"

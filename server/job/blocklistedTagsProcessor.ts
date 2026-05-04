@@ -14,7 +14,7 @@ import type {
 } from '@server/lib/scanners/baseScanner';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import { createTmdbWithRegionLanguage } from '@server/routes/discover';
+import { createTmdbWithBlocklistSettings } from '@server/routes/discover';
 import type { EntityManager } from 'typeorm';
 
 const TMDB_API_DELAY_MS = 250;
@@ -65,7 +65,7 @@ class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
   }
 
   private async createBlocklistEntries(em: EntityManager) {
-    const tmdb = createTmdbWithRegionLanguage();
+    const tmdb = createTmdbWithBlocklistSettings();
 
     const settings = getSettings();
     const blocklistedTags = settings.main.blocklistedTags;

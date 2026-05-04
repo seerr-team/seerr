@@ -1634,5 +1634,6 @@
   "components.UserList.toggleSortDirection": "Klik opnieuw om {direction} te sorteren",
   "components.UserList.toggleSortDirectionAria": "Sorteerrichting wijzigen",
   "i18n.error": "Er is iets misgegaan. Probeer het opnieuw.",
-  "components.Login.tipEmailHasTrailingWhitespace": "De email eindigt met een witruimte"
+  "components.Login.tipEmailHasTrailingWhitespace": "De email eindigt met een witruimte",
+  "i18n.partiallyblocklisted": "Gedeeltelijk op de Blocklist"
 }

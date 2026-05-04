@@ -1,4 +1,6 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
+import { getIntl } from '@server/i18n';
+import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentGotify } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -47,8 +49,9 @@ class GotifyAgent
     type: Notification,
     payload: NotificationPayload
   ): GotifyPayload {
-    const { applicationUrl, applicationTitle } = getSettings().main;
     const settings = this.getSettings();
+    const intl = getIntl(settings.options.locale);
+    const { applicationUrl, applicationTitle } = getSettings().main;
     const priority = settings.options.priority ?? 1;
 
     const title = payload.event
@@ -58,40 +61,40 @@ class GotifyAgent
     let message = payload.message ? `${payload.message}  \n\n` : '';
 
     if (payload.request) {
-      message += `\n**Requested By:** ${payload.request.requestedBy.displayName}  `;
+      message += `\n**${intl.formatMessage(globalMessages.requestedBy)}:** ${payload.request.requestedBy.displayName}  `;
 
       let status = '';
       switch (type) {
         case Notification.MEDIA_PENDING:
-          status = 'Pending Approval';
+          status = intl.formatMessage(globalMessages.pendingApproval);
           break;
         case Notification.MEDIA_APPROVED:
         case Notification.MEDIA_AUTO_APPROVED:
-          status = 'Processing';
+          status = intl.formatMessage(globalMessages.processing);
           break;
         case Notification.MEDIA_AVAILABLE:
-          status = 'Available';
+          status = intl.formatMessage(globalMessages.available);
           break;
         case Notification.MEDIA_DECLINED:
-          status = 'Declined';
+          status = intl.formatMessage(globalMessages.declined);
           break;
         case Notification.MEDIA_FAILED:
-          status = 'Failed';
+          status = intl.formatMessage(globalMessages.failed);
           break;
       }
 
       if (status) {
-        message += `\n**Request Status:** ${status}  `;
+        message += `\n**${intl.formatMessage(globalMessages.requestStatus)}:** ${status}  `;
       }
     } else if (payload.comment) {
-      message += `\nComment from ${payload.comment.user.displayName}:\n${payload.comment.message}  `;
+      message += `\n${intl.formatMessage(globalMessages.commentFrom, { userName: payload.comment.user.displayName })}:\n${payload.comment.message}  `;
     } else if (payload.issue) {
-      message += `\n\n**Reported By:** ${payload.issue.createdBy.displayName}  `;
-      message += `\n**Issue Type:** ${
-        IssueTypeName[payload.issue.issueType]
-      }  `;
-      message += `\n**Issue Status:** ${
-        payload.issue.status === IssueStatus.OPEN ? 'Open' : 'Resolved'
+      message += `\n\n**${intl.formatMessage(globalMessages.reportedBy)}:** ${payload.issue.createdBy.displayName}  `;
+      message += `\n**${intl.formatMessage(globalMessages.issueType)}:** ${IssueTypeName[payload.issue.issueType]}  `;
+      message += `\n**${intl.formatMessage(globalMessages.issueStatus)}:** ${
+        payload.issue.status === IssueStatus.OPEN
+          ? intl.formatMessage(globalMessages.open)
+          : intl.formatMessage(globalMessages.resolved)
       }  `;
     }
 
@@ -103,7 +106,7 @@ class GotifyAgent
       const actionUrl = `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`;
       const displayUrl =
         actionUrl.length > 40 ? `${actionUrl.slice(0, 41)}...` : actionUrl;
-      message += `\n\n**Open in ${applicationTitle}:** [${displayUrl}](${actionUrl})  `;
+      message += `\n\n**${intl.formatMessage(globalMessages.openIn, { applicationTitle })}:** [${displayUrl}](${actionUrl})  `;
     }
 
     return {

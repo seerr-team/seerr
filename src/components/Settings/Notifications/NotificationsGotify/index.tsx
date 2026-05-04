@@ -1,6 +1,7 @@
 import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
+import { availableLanguages } from '@app/context/LanguageContext';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -47,10 +48,11 @@ const NotificationsGotify = () => {
     url: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationUrlRequired)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationUrlRequired)),
+        otherwise: (schema) => schema.nullable(),
       })
       .test(
         'valid-url',
@@ -64,19 +66,21 @@ const NotificationsGotify = () => {
       ),
     token: Yup.string().when('enabled', {
       is: true,
-      then: Yup.string()
-        .nullable()
-        .required(intl.formatMessage(messages.validationTokenRequired)),
-      otherwise: Yup.string().nullable(),
+      then: (schema) =>
+        schema
+          .nullable()
+          .required(intl.formatMessage(messages.validationTokenRequired)),
+      otherwise: (schema) => schema.nullable(),
     }),
     priority: Yup.string().when('enabled', {
       is: true,
-      then: Yup.string()
-        .nullable()
-        .min(0)
-        .max(9)
-        .required(intl.formatMessage(messages.validationPriorityRequired)),
-      otherwise: Yup.string().nullable(),
+      then: (schema) =>
+        schema
+          .nullable()
+          .min(0)
+          .max(9)
+          .required(intl.formatMessage(messages.validationPriorityRequired)),
+      otherwise: (schema) => schema.nullable(),
     }),
   });
 
@@ -92,6 +96,7 @@ const NotificationsGotify = () => {
         url: data?.options.url,
         token: data?.options.token,
         priority: data?.options.priority,
+        locale: data?.options.locale ?? 'en',
       }}
       validationSchema={NotificationsGotifySchema}
       onSubmit={async (values) => {
@@ -103,6 +108,7 @@ const NotificationsGotify = () => {
               url: values.url,
               token: values.token,
               priority: Number(values.priority),
+              locale: values.locale,
             },
           });
           addToast(intl.formatMessage(messages.gotifysettingssaved), {
@@ -149,6 +155,7 @@ const NotificationsGotify = () => {
                 url: values.url,
                 token: values.token,
                 priority: Number(values.priority),
+                locale: values.locale,
               },
             });
 
@@ -237,6 +244,30 @@ const NotificationsGotify = () => {
                   typeof errors.priority === 'string' && (
                     <div className="error">{errors.priority}</div>
                   )}
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="locale" className="text-label">
+                {intl.formatMessage(globalMessages.notificationLocale)}
+              </label>
+              <div className="form-input-area">
+                <div className="form-input-field">
+                  <Field as="select" id="locale" name="locale">
+                    {(
+                      Object.keys(
+                        availableLanguages
+                      ) as (keyof typeof availableLanguages)[]
+                    ).map((key) => (
+                      <option
+                        key={key}
+                        value={availableLanguages[key].code}
+                        lang={availableLanguages[key].code}
+                      >
+                        {availableLanguages[key].display}
+                      </option>
+                    ))}
+                  </Field>
+                </div>
               </div>
             </div>
             <NotificationTypeSelector

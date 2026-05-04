@@ -40,6 +40,15 @@ Set the default display language for Seerr. Users can override this setting in t
 
 These settings filter content shown on the "Discover" home page based on regional availability and original language, respectively. The Streaming Region filters the available streaming providers on the media page. Users can override these global settings by configuring these same options in their user settings.
 
+## Blocklist Region and Blocklist Language
+
+These settings control the region and language used specifically for blocklist content scanning. The "Process Blocklisted Tags" job uses these settings to determine which content to scan for blocklisting, independent of the general Discover settings.
+
+- **Blocklist Region**: The region used for blocklist content scanning. Leave empty to scan all regions.
+- **Blocklist Language**: The language used for blocklist content scanning. Leave empty to scan all languages.
+
+These settings are separate from the general "Discover Region" and "Discover Language" settings, allowing you to blocklist content from specific regions/languages regardless of what users see in their Discover pages.
+
 ## Blocklist Content with Tags and Limit Content Blocklisted per Tag
 
 These settings blocklist any TV shows or movies that have one of the entered tags. The "Process Blocklisted Tags" job adds entries to the blocklist based on the configured blocklisted tags. If a blocklisted tag is removed, any media blocklisted under that tag will be removed from the blocklist when the "Process Blocklisted Tags" job runs.

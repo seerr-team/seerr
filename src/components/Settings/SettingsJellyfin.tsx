@@ -116,13 +116,15 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       .required(intl.formatMessage(messages.validationHostnameRequired)),
     port: Yup.number().when(['hostname'], {
       is: (value: unknown) => !!value,
-      then: Yup.number()
-        .typeError(intl.formatMessage(messages.validationPortRequired))
-        .nullable()
-        .required(intl.formatMessage(messages.validationPortRequired)),
-      otherwise: Yup.number()
-        .typeError(intl.formatMessage(messages.validationPortRequired))
-        .nullable(),
+      then: (schema) =>
+        schema
+          .typeError(intl.formatMessage(messages.validationPortRequired))
+          .nullable()
+          .required(intl.formatMessage(messages.validationPortRequired)),
+      otherwise: (schema) =>
+        schema
+          .typeError(intl.formatMessage(messages.validationPortRequired))
+          .nullable(),
     }),
     urlBase: Yup.string()
       .test(

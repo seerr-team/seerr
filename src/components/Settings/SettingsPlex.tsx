@@ -150,10 +150,13 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
       tautulliHostname: Yup.string()
         .when(['tautulliPort', 'tautulliApiKey'], {
           is: (value: unknown) => !!value,
-          then: Yup.string()
-            .nullable()
-            .required(intl.formatMessage(messages.validationHostnameRequired)),
-          otherwise: Yup.string().nullable(),
+          then: (schema) =>
+            schema
+              .nullable()
+              .required(
+                intl.formatMessage(messages.validationHostnameRequired)
+              ),
+          otherwise: (schema) => schema.nullable(),
         })
         .matches(
           /^(([a-z]|\d|_|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*)?([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])$/i,
@@ -161,13 +164,15 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
         ),
       tautulliPort: Yup.number().when(['tautulliHostname', 'tautulliApiKey'], {
         is: (value: unknown) => !!value,
-        then: Yup.number()
-          .typeError(intl.formatMessage(messages.validationPortRequired))
-          .nullable()
-          .required(intl.formatMessage(messages.validationPortRequired)),
-        otherwise: Yup.number()
-          .typeError(intl.formatMessage(messages.validationPortRequired))
-          .nullable(),
+        then: (schema) =>
+          schema
+            .typeError(intl.formatMessage(messages.validationPortRequired))
+            .nullable()
+            .required(intl.formatMessage(messages.validationPortRequired)),
+        otherwise: (schema) =>
+          schema
+            .typeError(intl.formatMessage(messages.validationPortRequired))
+            .nullable(),
       }),
       tautulliUrlBase: Yup.string()
         .test(
@@ -182,10 +187,11 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
         ),
       tautulliApiKey: Yup.string().when(['tautulliHostname', 'tautulliPort'], {
         is: (value: unknown) => !!value,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationApiKey)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationApiKey)),
+        otherwise: (schema) => schema.nullable(),
       }),
       tautulliExternalUrl: Yup.string()
         .test(
