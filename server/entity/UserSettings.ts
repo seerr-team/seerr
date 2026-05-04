@@ -37,6 +37,9 @@ export class UserSettings {
   public streamingRegion?: string;
 
   @Column({ nullable: true })
+  public excludedWatchProviders?: string;
+
+  @Column({ nullable: true })
   public originalLanguage?: string;
 
   @Column({ nullable: true })
