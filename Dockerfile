@@ -12,7 +12,7 @@ WORKDIR /app
 
 FROM base AS prod-deps
 
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store CI=true pnpm install --prod --frozen-lockfile --
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store CI=true pnpm install --prod --frozen-lockfile
 
 # Remove large native modules for linux-x64-gnu platform (we use alpine which is musl-based)
 # not supported in pnpm for now due to this bug: https://github.com/pnpm/pnpm/issues/9654
