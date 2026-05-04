@@ -41,6 +41,7 @@ interface ProcessOptions {
   externalServiceSlug?: string;
   title?: string;
   processing?: boolean;
+  hasFile?: boolean;
 }
 
 export interface ProcessableSeason {
@@ -104,6 +105,7 @@ class BaseScanner<T> {
       externalServiceSlug,
       processing = false,
       title = 'Unknown Title',
+      hasFile = true,
     }: ProcessOptions = {}
   ): Promise<void> {
     const mediaRepository = getRepository(Media);
@@ -115,15 +117,28 @@ class BaseScanner<T> {
         let changedExisting = false;
 
         if (existing[is4k ? 'status4k' : 'status'] !== MediaStatus.AVAILABLE) {
-          existing[is4k ? 'status4k' : 'status'] = !processing
-            ? MediaStatus.AVAILABLE
-            : existing[is4k ? 'status4k' : 'status'] === MediaStatus.DELETED
-              ? MediaStatus.DELETED
-              : MediaStatus.PROCESSING;
-          if (mediaAddedAt) {
-            existing.mediaAddedAt = mediaAddedAt;
+          const statusField = is4k ? 'status4k' : 'status';
+          const previousStatus = existing[statusField];
+
+          existing[statusField] =
+            !processing && hasFile
+              ? MediaStatus.AVAILABLE
+              : !processing &&
+                  !hasFile &&
+                  previousStatus === MediaStatus.PROCESSING
+                ? MediaStatus.UNKNOWN
+                : processing
+                  ? previousStatus === MediaStatus.DELETED
+                    ? MediaStatus.DELETED
+                    : MediaStatus.PROCESSING
+                  : previousStatus;
+
+          if (existing[statusField] !== previousStatus) {
+            if (mediaAddedAt) {
+              existing.mediaAddedAt = mediaAddedAt;
+            }
+            changedExisting = true;
           }
-          changedExisting = true;
         }
 
         if (!changedExisting && !existing.mediaAddedAt && mediaAddedAt) {
@@ -192,6 +207,10 @@ class BaseScanner<T> {
           this.log(`Title already exists and no changes detected for ${title}`);
         }
       } else {
+        if (!processing && !hasFile) {
+          return;
+        }
+
         const newMedia = new Media();
         newMedia.tmdbId = tmdbId;
         newMedia.imdbId = imdbId;
@@ -450,13 +469,22 @@ class BaseScanner<T> {
 
         // Check the actual season objects instead scanner input
         // to determine overall availability status
+        // UNKNOWN seasons are treated as neutral (no signal) rather than
+        // blockers, so a stale/orphan placeholder season can't hold the
+        // show at PARTIALLY_AVAILABLE indefinitely.
         const isAllStandardSeasonsAvailable =
           nonSpecialSeasons.length > 0 &&
-          nonSpecialSeasons.every((s) => s.status === MediaStatus.AVAILABLE);
+          nonSpecialSeasons
+            .filter((s) => s.status !== MediaStatus.UNKNOWN)
+            .every((s) => s.status === MediaStatus.AVAILABLE) &&
+          nonSpecialSeasons.some((s) => s.status === MediaStatus.AVAILABLE);
 
         const isAll4kSeasonsAvailable =
           nonSpecialSeasons.length > 0 &&
-          nonSpecialSeasons.every((s) => s.status4k === MediaStatus.AVAILABLE);
+          nonSpecialSeasons
+            .filter((s) => s.status4k !== MediaStatus.UNKNOWN)
+            .every((s) => s.status4k === MediaStatus.AVAILABLE) &&
+          nonSpecialSeasons.some((s) => s.status4k === MediaStatus.AVAILABLE);
 
         media.status = isAllStandardSeasonsAvailable
           ? MediaStatus.AVAILABLE
@@ -503,11 +531,17 @@ class BaseScanner<T> {
 
         const isAllStandardSeasonsAvailable =
           nonSpecialNewSeasons.length > 0 &&
-          nonSpecialNewSeasons.every((s) => s.status === MediaStatus.AVAILABLE);
+          nonSpecialNewSeasons
+            .filter((s) => s.status !== MediaStatus.UNKNOWN)
+            .every((s) => s.status === MediaStatus.AVAILABLE) &&
+          nonSpecialNewSeasons.some((s) => s.status === MediaStatus.AVAILABLE);
 
         const isAll4kSeasonsAvailable =
           nonSpecialNewSeasons.length > 0 &&
-          nonSpecialNewSeasons.every(
+          nonSpecialNewSeasons
+            .filter((s) => s.status4k !== MediaStatus.UNKNOWN)
+            .every((s) => s.status4k === MediaStatus.AVAILABLE) &&
+          nonSpecialNewSeasons.some(
             (s) => s.status4k === MediaStatus.AVAILABLE
           );
 
