@@ -1,5 +1,6 @@
 import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
+import { ApiErrorCode } from '@server/constants/error';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -553,19 +554,13 @@ requestRoutes.put<{ requestId: string }>(
         // Check if max seasons per request is set and enforce limit for new seasons only
         const settings = getSettings();
         if (
-          settings.main.maxSeasonsPerRequest &&
           settings.main.maxSeasonsPerRequest > 0 &&
           newSeasons.length > settings.main.maxSeasonsPerRequest &&
-          !req.user?.hasPermission(
-            [Permission.MANAGE_REQUESTS, Permission.ADMIN],
-            {
-              type: 'or',
-            }
-          )
+          !req.user?.hasPermission(Permission.MANAGE_REQUESTS)
         ) {
           return next({
             status: 403,
-            message: `Season limit of ${settings.main.maxSeasonsPerRequest} exceeded`,
+            message: ApiErrorCode.SeasonLimitExceeded,
           });
         }
 

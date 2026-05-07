@@ -32,6 +32,7 @@ const defaultSettings = {
   newPlexLogin: true,
   youtubeUrl: '',
   plexClientIdentifier: '',
+  maxSeasonsPerRequest: 0,
 };
 
 export const SettingsContext = React.createContext<SettingsContextProps>({

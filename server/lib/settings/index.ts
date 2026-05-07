@@ -156,7 +156,7 @@ export interface MainSettings {
   enableSpecialEpisodes: boolean;
   locale: string;
   youtubeUrl: string;
-  maxSeasonsPerRequest?: number;
+  maxSeasonsPerRequest: number;
 }
 
 export interface ProxySettings {
@@ -216,7 +216,7 @@ interface FullPublicSettings extends PublicSettings {
   newPlexLogin: boolean;
   youtubeUrl: string;
   plexClientIdentifier: string;
-  maxSeasonsPerRequest?: number;
+  maxSeasonsPerRequest: number;
 }
 
 export interface NotificationAgentConfig {
@@ -429,6 +429,7 @@ class Settings {
         enableSpecialEpisodes: false,
         locale: 'en',
         youtubeUrl: '',
+        maxSeasonsPerRequest: 0,
       },
       plex: {
         name: '',

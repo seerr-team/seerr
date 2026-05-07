@@ -109,30 +109,6 @@ const TvRequestModal = ({
       return;
     }
 
-    // Determine which seasons are new (not in the current request)
-    const newSeasons = selectedSeasons.filter(
-      (sn) => !editingSeasons.includes(sn)
-    );
-
-    // Check if the number of new seasons exceeds the limit
-    if (
-      settings.currentSettings.maxSeasonsPerRequest &&
-      settings.currentSettings.maxSeasonsPerRequest > 0 &&
-      newSeasons.length > settings.currentSettings.maxSeasonsPerRequest &&
-      settings.currentSettings.partialRequestsEnabled &&
-      !hasPermission([Permission.MANAGE_REQUESTS, Permission.ADMIN], {
-        type: 'or',
-      })
-    ) {
-      addToast(
-        intl.formatMessage(messages.tooManySeasons, {
-          limit: settings.currentSettings.maxSeasonsPerRequest,
-        }),
-        { appearance: 'error', autoDismiss: true }
-      );
-      return;
-    }
-
     if (onUpdating) {
       onUpdating(true);
       mutate('/api/v1/request/count');
@@ -186,14 +162,16 @@ const TvRequestModal = ({
         onComplete(MediaStatus.PENDING);
       }
     } catch (e) {
-      if (e instanceof Error && e.message?.includes('Season limit of')) {
-        const limitMatch = e.message.match(/Season limit of (\d+) exceeded/);
-        const limit = limitMatch ? Number(limitMatch[1]) : 1;
-
-        addToast(intl.formatMessage(messages.seasonsLimitError, { limit }), {
-          appearance: 'error',
-          autoDismiss: true,
-        });
+      if (e?.response?.data?.message === 'SEASON_LIMIT_EXCEEDED') {
+        addToast(
+          intl.formatMessage(messages.seasonsLimitError, {
+            limit: settings.currentSettings.maxSeasonsPerRequest,
+          }),
+          {
+            appearance: 'error',
+            autoDismiss: true,
+          }
+        );
       } else {
         addToast(<span>{intl.formatMessage(messages.errorediting)}</span>, {
           appearance: 'error',
@@ -212,25 +190,6 @@ const TvRequestModal = ({
       settings.currentSettings.partialRequestsEnabled &&
       selectedSeasons.length === 0
     ) {
-      return;
-    }
-
-    // Check if the number of seasons exceeds the limit
-    if (
-      settings.currentSettings.maxSeasonsPerRequest &&
-      settings.currentSettings.maxSeasonsPerRequest > 0 &&
-      selectedSeasons.length > settings.currentSettings.maxSeasonsPerRequest &&
-      settings.currentSettings.partialRequestsEnabled &&
-      !hasPermission([Permission.MANAGE_REQUESTS, Permission.ADMIN], {
-        type: 'or',
-      })
-    ) {
-      addToast(
-        intl.formatMessage(messages.tooManySeasons, {
-          limit: settings.currentSettings.maxSeasonsPerRequest,
-        }),
-        { appearance: 'error', autoDismiss: true }
-      );
       return;
     }
 
@@ -280,14 +239,16 @@ const TvRequestModal = ({
         );
       }
     } catch (e) {
-      if (e instanceof Error && e.message?.includes('Season limit of')) {
-        const limitMatch = e.message.match(/Season limit of (\d+) exceeded/);
-        const limit = limitMatch ? Number(limitMatch[1]) : 1;
-
-        addToast(intl.formatMessage(messages.seasonsLimitError, { limit }), {
-          appearance: 'error',
-          autoDismiss: true,
-        });
+      if (e?.response?.data?.message === 'SEASON_LIMIT_EXCEEDED') {
+        addToast(
+          intl.formatMessage(messages.seasonsLimitError, {
+            limit: settings.currentSettings.maxSeasonsPerRequest,
+          }),
+          {
+            appearance: 'error',
+            autoDismiss: true,
+          }
+        );
       } else {
         addToast(intl.formatMessage(messages.requesterror), {
           appearance: 'error',
@@ -351,6 +312,31 @@ const TvRequestModal = ({
       return;
     }
 
+    const newSeasons = selectedSeasons.includes(seasonNumber)
+      ? selectedSeasons.filter((sn) => sn !== seasonNumber)
+      : [...selectedSeasons, seasonNumber];
+    const notEditedSeasons = selectedSeasons.filter(
+      (sn) => !editingSeasons.includes(sn)
+    );
+
+    // If the user is trying to select more seasons than the maxSeasonsPerRequest setting allows, block toggle
+    // If the season is already part of the request, allow to keep it toggled.
+    if (
+      settings.currentSettings.maxSeasonsPerRequest > 0 &&
+      newSeasons.length > settings.currentSettings.maxSeasonsPerRequest &&
+      (!editingSeasons.includes(seasonNumber) || notEditedSeasons.length > 0) &&
+      settings.currentSettings.partialRequestsEnabled &&
+      !hasPermission(Permission.MANAGE_REQUESTS)
+    ) {
+      addToast(
+        intl.formatMessage(messages.tooManySeasons, {
+          limit: settings.currentSettings.maxSeasonsPerRequest,
+        }),
+        { appearance: 'error', autoDismiss: true }
+      );
+      return;
+    }
+
     // If there are no more remaining requests available, block toggle
     if (
       quota?.tv.limit &&
@@ -360,13 +346,7 @@ const TvRequestModal = ({
       return;
     }
 
-    if (selectedSeasons.includes(seasonNumber)) {
-      setSelectedSeasons((seasons) =>
-        seasons.filter((sn) => sn !== seasonNumber)
-      );
-    } else {
-      setSelectedSeasons((seasons) => [...seasons, seasonNumber]);
-    }
+    setSelectedSeasons(newSeasons);
   };
 
   const unrequestedSeasons = getAllSeasons().filter(
@@ -379,6 +359,24 @@ const TvRequestModal = ({
       quota?.tv.limit &&
       (quota?.tv.remaining ?? 0) < unrequestedSeasons.length
     ) {
+      return;
+    }
+
+    const newSeasons = getAllSeasons().filter(
+      (season) => !getAllRequestedSeasons().includes(season)
+    );
+    if (
+      settings.currentSettings.maxSeasonsPerRequest > 0 &&
+      newSeasons.length > settings.currentSettings.maxSeasonsPerRequest &&
+      settings.currentSettings.partialRequestsEnabled &&
+      !hasPermission(Permission.MANAGE_REQUESTS)
+    ) {
+      addToast(
+        intl.formatMessage(messages.tooManySeasons, {
+          limit: settings.currentSettings.maxSeasonsPerRequest,
+        }),
+        { appearance: 'error', autoDismiss: true }
+      );
       return;
     }
 

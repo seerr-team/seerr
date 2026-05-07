@@ -8,5 +8,6 @@ export enum ApiErrorCode {
   SyncErrorGroupedFolders = 'SYNC_ERROR_GROUPED_FOLDERS',
   SyncErrorNoLibraries = 'SYNC_ERROR_NO_LIBRARIES',
   Unauthorized = 'UNAUTHORIZED',
+  SeasonLimitExceeded = 'SEASON_LIMIT_EXCEEDED',
   Unknown = 'UNKNOWN',
 }
