@@ -190,6 +190,8 @@ app
             httpOnly: true,
             sameSite: true,
             secure: !dev,
+            key: '_csrf',
+            path: '/',
           },
         })
       );
@@ -249,7 +251,7 @@ app
     server.use('/imageproxy', clearCookies, imageproxy);
     server.use('/avatarproxy', clearCookies, avatarproxy);
 
-    server.get('*', (req, res) => handle(req, res));
+    server.get('*path', (req, res) => handle(req, res));
     server.use(
       (
         err: { status: number; message: string; errors: string[] },
