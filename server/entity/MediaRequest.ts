@@ -392,17 +392,6 @@ export class MediaRequest {
         requestedSeasons = requestedSeasons.filter((sn) => sn > 0);
       }
 
-      // Check if max seasons per request is set and enforce limit
-      if (
-        settings.main.maxSeasonsPerRequest > 0 &&
-        requestedSeasons.length > settings.main.maxSeasonsPerRequest &&
-        !user.hasPermission(Permission.MANAGE_REQUESTS)
-      ) {
-        throw new SeasonLimitError(
-          `Season limit of ${settings.main.maxSeasonsPerRequest} exceeded.`
-        );
-      }
-
       let existingSeasons: number[] = [];
 
       // We need to check existing requests on this title to make sure we don't double up on seasons that were
@@ -444,6 +433,17 @@ export class MediaRequest {
       const finalSeasons = requestedSeasons.filter(
         (rs) => !existingSeasons.includes(rs)
       );
+
+      // Check if max seasons per request is set and enforce limit
+      if (
+        settings.main.maxSeasonsPerRequest > 0 &&
+        finalSeasons.length > settings.main.maxSeasonsPerRequest &&
+        !user.hasPermission(Permission.MANAGE_REQUESTS)
+      ) {
+        throw new SeasonLimitError(
+          `Season limit of ${settings.main.maxSeasonsPerRequest} exceeded.`
+        );
+      }
 
       if (finalSeasons.length === 0) {
         throw new NoSeasonsAvailableError('No seasons available to request');
