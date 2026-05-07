@@ -49,7 +49,7 @@ export interface PublicSettingsResponse {
   newPlexLogin: boolean;
   youtubeUrl: string;
   plexClientIdentifier: string;
-  maxSeasonsPerRequest?: number;
+  maxSeasonsPerRequest: number;
 }
 
 export interface CacheItem {
