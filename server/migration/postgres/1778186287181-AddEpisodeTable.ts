@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddEpisodeTable1777101511335 implements MigrationInterface {
-  name = 'AddEpisodeTable1777101511335';
+export class AddEpisodeTable1778186287181 implements MigrationInterface {
+  name = 'AddEpisodeTable1778186287181';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -9,9 +9,6 @@ export class AddEpisodeTable1777101511335 implements MigrationInterface {
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_e73d28c1e5e3c85125163f7c9c" ON "episode" ("seasonId") `
-    );
-    await queryRunner.query(
-      `ALTER TABLE "session" ADD "destroyedAt" TIMESTAMP`
     );
     await queryRunner.query(
       `ALTER TABLE "episode" ADD CONSTRAINT "FK_e73d28c1e5e3c85125163f7c9cd" FOREIGN KEY ("seasonId") REFERENCES "season"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
@@ -22,7 +19,6 @@ export class AddEpisodeTable1777101511335 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "episode" DROP CONSTRAINT "FK_e73d28c1e5e3c85125163f7c9cd"`
     );
-    await queryRunner.query(`ALTER TABLE "session" DROP COLUMN "destroyedAt"`);
     await queryRunner.query(
       `DROP INDEX "public"."IDX_e73d28c1e5e3c85125163f7c9c"`
     );
