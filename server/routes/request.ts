@@ -551,19 +551,6 @@ requestRoutes.put<{ requestId: string }>(
           (sn) => !request.seasons.map((s) => s.seasonNumber).includes(sn)
         );
 
-        // Check if max seasons per request is set and enforce limit for new seasons only
-        const settings = getSettings();
-        if (
-          settings.main.maxSeasonsPerRequest > 0 &&
-          newSeasons.length > settings.main.maxSeasonsPerRequest &&
-          !req.user?.hasPermission(Permission.MANAGE_REQUESTS)
-        ) {
-          return next({
-            status: 403,
-            message: ApiErrorCode.SeasonLimitExceeded,
-          });
-        }
-
         // Get all requested seasons that are not part of this request we are editing
         const existingSeasons = media.requests
           .filter(
@@ -584,6 +571,22 @@ requestRoutes.put<{ requestId: string }>(
         const filteredSeasons = requestedSeasons.filter(
           (rs) => !existingSeasons.includes(rs)
         );
+
+        // Check if max seasons per request is set and enforce limit for new seasons only
+        const newExistingSeasons = newSeasons.filter(
+          (sn) => !existingSeasons.includes(sn)
+        );
+        const settings = getSettings();
+        if (
+          settings.main.maxSeasonsPerRequest > 0 &&
+          newExistingSeasons.length > settings.main.maxSeasonsPerRequest &&
+          !req.user?.hasPermission(Permission.MANAGE_REQUESTS)
+        ) {
+          return next({
+            status: 403,
+            message: ApiErrorCode.SeasonLimitExceeded,
+          });
+        }
 
         if (filteredSeasons.length === 0) {
           return next({
