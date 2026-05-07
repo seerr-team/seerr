@@ -194,8 +194,7 @@ const TvRequestModal = ({
           appearance: 'error',
           autoDismiss: true,
         });
-      }
-      else {
+      } else {
         addToast(<span>{intl.formatMessage(messages.errorediting)}</span>, {
           appearance: 'error',
           autoDismiss: true,
@@ -289,8 +288,7 @@ const TvRequestModal = ({
           appearance: 'error',
           autoDismiss: true,
         });
-      }
-      else {
+      } else {
         addToast(intl.formatMessage(messages.requesterror), {
           appearance: 'error',
           autoDismiss: true,
