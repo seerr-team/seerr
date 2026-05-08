@@ -283,6 +283,10 @@ describe('POST /issue/:issueId/redownload', () => {
 
     assert.strictEqual(res.status, 200);
     assert.strictEqual(triggerRedownloadMock.callCount(), 1);
+    const [calledIssue] = triggerRedownloadMock.calls[0].arguments as [
+      { id: number },
+    ];
+    assert.strictEqual(calledIssue.id, issue.id);
 
     const updated = await getRepository(Issue).findOneOrFail({
       where: { id: issue.id },
