@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type JSX } from 'react';
 import AnimateHeight from 'react-animate-height';
 
 export interface AccordionProps {

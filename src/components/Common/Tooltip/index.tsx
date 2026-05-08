@@ -5,7 +5,7 @@ import { usePopperTooltip } from 'react-popper-tooltip';
 
 type TooltipProps = {
   content: React.ReactNode;
-  children: React.ReactElement;
+  children: React.ReactElement<any>;
   tooltipConfig?: Partial<Config>;
   className?: string;
 };

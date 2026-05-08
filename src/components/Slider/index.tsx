@@ -3,7 +3,7 @@ import globalMessages from '@app/i18n/globalMessages';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useSpring } from '@react-spring/web';
 import { debounce } from 'lodash';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { useIntl } from 'react-intl';
 
 interface SliderProps {

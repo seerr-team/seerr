@@ -1,7 +1,6 @@
-/**
- * @type {import('next').NextConfig}
- */
-module.exports = {
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
   env: {
     commitTag: process.env.COMMIT_TAG || 'local',
   },
@@ -14,17 +13,18 @@ module.exports = {
     ],
   },
   transpilePackages: ['country-flag-icons'],
-  webpack(config) {
-    config.module.rules.push({
-      test: /\.svg$/,
-      issuer: /\.(js|ts)x?$/,
-      use: ['@svgr/webpack'],
-    });
-
-    return config;
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
+      },
+    },
   },
   experimental: {
     scrollRestoration: true,
     largePageDataBytes: 512 * 1000,
   },
 };
+
+export default nextConfig;
