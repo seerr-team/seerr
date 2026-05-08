@@ -107,24 +107,18 @@ interface WatchlistResponse {
   };
 }
 
+type PlexMetadataItem = {
+  ratingKey: string;
+  type: 'movie' | 'show';
+  title: string;
+  Guid?: {
+    id: `imdb://tt${number}` | `tmdb://${number}` | `tvdb://${number}`;
+  }[];
+};
 interface MetadataResponse {
   MediaContainer: {
-    Metadata?: {
-      ratingKey: string;
-      type: 'movie' | 'show';
-      title: string;
-      Guid?: {
-        id: `imdb://tt${number}` | `tmdb://${number}` | `tvdb://${number}`;
-      }[];
-    }[];
-    Video?: {
-      ratingKey: string;
-      type: 'movie' | 'show';
-      title: string;
-      Guid?: {
-        id: `imdb://tt${number}` | `tmdb://${number}` | `tvdb://${number}`;
-      }[];
-    }[];
+    Metadata?: PlexMetadataItem[];
+    Video?: PlexMetadataItem[];
   };
 }
 
