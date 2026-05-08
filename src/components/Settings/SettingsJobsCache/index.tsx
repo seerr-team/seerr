@@ -8,6 +8,7 @@ import Table from '@app/components/Common/Table';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
 
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { formatBytes } from '@app/utils/numberHelpers';
@@ -26,7 +27,6 @@ import humanizeDuration from 'humanize-duration';
 import { Fragment, useReducer, useState } from 'react';
 import type { MessageDescriptor } from 'react-intl';
 import { FormattedRelativeTime, useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
 const messages: { [messageName: string]: MessageDescriptor } = defineMessages(

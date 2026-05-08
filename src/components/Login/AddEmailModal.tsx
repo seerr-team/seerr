@@ -1,4 +1,5 @@
 import Modal from '@app/components/Common/Modal';
+import useToasts from '@app/hooks/useToasts';
 import { useUser } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
@@ -6,7 +7,6 @@ import { ApiErrorCode } from '@server/constants/error';
 import axios from 'axios';
 import { Field, Formik } from 'formik';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import { mutate } from 'swr';
 import validator from 'validator';
 import * as Yup from 'yup';

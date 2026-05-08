@@ -10,6 +10,7 @@ import Slider from '@app/components/Slider';
 import StatusBadge from '@app/components/StatusBadge';
 import TitleCard from '@app/components/TitleCard';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
@@ -28,7 +29,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
 const messages = defineMessages('components.CollectionDetails', {

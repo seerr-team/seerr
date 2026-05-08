@@ -25,6 +25,7 @@ import StatusBadge from '@app/components/StatusBadge';
 import useDeepLinks from '@app/hooks/useDeepLinks';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
@@ -60,7 +61,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
 const messages = defineMessages('components.MovieDetails', {

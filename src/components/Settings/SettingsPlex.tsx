@@ -6,6 +6,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import LibraryItem from '@app/components/Settings/LibraryItem';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -22,7 +23,6 @@ import { Field, Formik } from 'formik';
 import { orderBy } from 'lodash';
 import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
 
