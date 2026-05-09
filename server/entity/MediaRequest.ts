@@ -578,7 +578,7 @@ export class MediaRequest {
   @Column({ nullable: true })
   public languageProfileId: number;
 
-  @Column({ nullable: true })
+  @Column({ type: 'boolean', nullable: true })
   public autoSearch: boolean | null;
 
   @Column({
