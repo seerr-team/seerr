@@ -1,6 +1,7 @@
 import Modal from '@app/components/Common/Modal';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import type { RadarrTestResponse } from '@app/components/Settings/SettingsServices';
+import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -38,6 +39,8 @@ const messages = defineMessages('components.Settings.RadarrModal', {
   defaultserver: 'Default Server',
   default4kserver: 'Default 4K Server',
   servername: 'Server Name',
+  requestButtonLabel: 'Request Button Label',
+  requestButtonLabelPlaceholder: 'in 4K',
   hostname: 'Hostname or IP Address',
   port: 'Port',
   ssl: 'Use SSL',
@@ -91,8 +94,21 @@ interface RadarrModalProps {
   onSave: () => void;
 }
 
+const shouldShowRequestLabelField = ({
+  isDefault,
+  is4k,
+  movie4kEnabled,
+  radarrIs4k,
+}: {
+  isDefault: boolean;
+  is4k: boolean;
+  movie4kEnabled: boolean;
+  radarrIs4k?: boolean;
+}) => isDefault && (is4k || (movie4kEnabled && !radarrIs4k));
+
 const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
   const intl = useIntl();
+  const settings = useSettings();
   const initialLoad = useRef(false);
   const { addToast } = useToasts();
   const [isValidated, setIsValidated] = useState(radarr ? true : false);
@@ -227,6 +243,7 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
       <Formik
         initialValues={{
           name: radarr?.name,
+          requestLabel: radarr?.requestLabel ?? '',
           hostname: radarr?.hostname,
           port: radarr?.port ?? 7878,
           ssl: radarr?.useSsl ?? false,
@@ -249,9 +266,18 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
             const profileName = testResponse.profiles.find(
               (profile) => profile.id === Number(values.activeProfileId)
             )?.name;
+            const showRequestLabelField = shouldShowRequestLabelField({
+              isDefault: values.isDefault,
+              is4k: values.is4k,
+              movie4kEnabled: settings.currentSettings.movie4kEnabled,
+              radarrIs4k: radarr?.is4k,
+            });
 
             const submission = {
               name: values.name,
+              requestLabel: showRequestLabelField
+                ? values.requestLabel?.trim() || undefined
+                : undefined,
               hostname: values.hostname,
               port: Number(values.port),
               apiKey: values.apiKey,
@@ -293,6 +319,13 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
           isSubmitting,
           isValid,
         }) => {
+          const showRequestLabelField = shouldShowRequestLabelField({
+            isDefault: values.isDefault,
+            is4k: values.is4k,
+            movie4kEnabled: settings.currentSettings.movie4kEnabled,
+            radarrIs4k: radarr?.is4k,
+          });
+
           return (
             <Modal
               onCancel={onClose}
@@ -369,6 +402,26 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                     <Field type="checkbox" id="is4k" name="is4k" />
                   </div>
                 </div>
+                {showRequestLabelField && (
+                  <div className="form-row">
+                    <label htmlFor="requestLabel" className="text-label">
+                      {intl.formatMessage(messages.requestButtonLabel)}
+                    </label>
+                    <div className="form-input-area">
+                      <div className="form-input-field">
+                        <Field
+                          id="requestLabel"
+                          name="requestLabel"
+                          type="text"
+                          autoComplete="off"
+                          placeholder={intl.formatMessage(
+                            messages.requestButtonLabelPlaceholder
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="form-row">
                   <label htmlFor="name" className="text-label">
                     {intl.formatMessage(messages.servername)}

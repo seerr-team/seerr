@@ -30,6 +30,15 @@ If you have separate 4K Radarr/Sonarr servers, you need to designate default 4K 
 
 Only select this option if you have separate non-4K and 4K servers. If you only have a single Radarr/Sonarr server, do _not_ check this box!
 
+#### Request Button Label (optional)
+
+Use this field to customize the text shown on request buttons when using separate non-4K and 4K servers.
+
+- If left empty, Seerr uses the normal localized defaults (for example, `Request` and `Request in 4K`).
+- If set, Seerr appends your custom text to the localized base request text (for example, `Request [in English]` and `Request [in French]`).
+
+This field is only shown for servers marked as default when a 4K server of the same type is active.
+
 #### Server Name
 
 Enter a friendly name for the Radarr/Sonarr server.
