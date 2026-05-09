@@ -360,11 +360,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           return;
         }
 
-        let searchNow = entity.autoSearch;
-        if (entity.autoSearch === null || entity.autoSearch === undefined) {
-          // fallback to radarr settings if not set on the request (old requests)
-          searchNow = !radarrSettings.preventSearch;
-        }
+        const searchNow = entity.autoSearch ?? !radarrSettings.preventSearch;
 
         logger.debug('SearchNow: ' + searchNow);
 
@@ -708,11 +704,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           }
         }
 
-        let searchNow = entity.autoSearch;
-        if (entity.autoSearch === null || entity.autoSearch === undefined) {
-          // fallback to sonarr settings if not set on the request (old requests)
-          searchNow = !sonarrSettings.preventSearch;
-        }
+        const searchNow = entity.autoSearch ?? !sonarrSettings.preventSearch;
 
         const sonarrSeriesOptions: AddSeriesOptions = {
           profileId: qualityProfile,

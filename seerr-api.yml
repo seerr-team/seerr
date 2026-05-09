@@ -1273,6 +1273,7 @@ components:
           type: string
         autoSearch:
           type: boolean
+          nullable: true
           example: false
       required:
         - id
@@ -6405,6 +6406,10 @@ paths:
                 userId:
                   type: number
                   nullable: true
+                autoSearch:
+                  type: boolean
+                  nullable: true
+                  example: false
               required:
                 - mediaType
                 - mediaId
@@ -6511,6 +6516,10 @@ paths:
                 userId:
                   type: number
                   nullable: true
+                autoSearch:
+                  type: boolean
+                  nullable: true
+                  example: false
               required:
                 - mediaType
       responses:

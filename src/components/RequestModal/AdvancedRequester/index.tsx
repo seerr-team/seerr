@@ -237,7 +237,9 @@ const AdvancedRequester = ({
       ) {
         setSelectedTags(defaultTags);
       }
-      setAutoSearch(!serverData.server.preventSearch);
+      if (!applyOverrides || defaultOverrides.autoSearch === undefined) {
+        setAutoSearch(!serverData.server.preventSearch);
+      }
     }
   }, [serverData]);
 
@@ -261,12 +263,17 @@ const AdvancedRequester = ({
     if (defaultOverrides && defaultOverrides.tags != null) {
       setSelectedTags(defaultOverrides.tags);
     }
+
+    if (defaultOverrides && defaultOverrides.autoSearch !== undefined) {
+      setAutoSearch(defaultOverrides.autoSearch);
+    }
   }, [
     defaultOverrides?.server,
     defaultOverrides?.folder,
     defaultOverrides?.profile,
     defaultOverrides?.language,
     defaultOverrides?.tags,
+    defaultOverrides?.autoSearch,
   ]);
 
   useEffect(() => {

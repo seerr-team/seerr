@@ -579,7 +579,7 @@ export class MediaRequest {
   public languageProfileId: number;
 
   @Column({ nullable: true })
-  public autoSearch: boolean;
+  public autoSearch: boolean | null;
 
   @Column({
     type: 'text',

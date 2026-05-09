@@ -504,8 +504,13 @@ requestRoutes.put<{ requestId: string }>(
           where: { id: req.body.userId },
         });
       }
-      // Adds override for automatic searching
-      if (req.body?.autoSearch !== undefined) {
+      if (
+        req.body?.autoSearch !== undefined &&
+        req.user?.hasPermission(
+          [Permission.REQUEST_ADVANCED, Permission.MANAGE_REQUESTS],
+          { type: 'or' }
+        )
+      ) {
         request.autoSearch = req.body.autoSearch;
       }
 
