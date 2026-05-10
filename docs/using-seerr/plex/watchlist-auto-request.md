@@ -60,8 +60,8 @@ Contact your administrator to verify you have been granted:
 - Seerr will automatically create requests for new items
 - You'll receive notifications when items are auto-requested
 
-:::warning Watchlist Not Accessible
-If you receive the error "User's watchlist is not accessible." when saving your settings at the end of Step 2, you have not fulfilled prerequisite #1.
+:::warning Watchlist Inaccessible
+If you receive the error "User's watchlist is not accessible." when saving your settings at the end of Step 2, you have not fulfilled the first prerequisite.
 :::
 
 ## How It Works

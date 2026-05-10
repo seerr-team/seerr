@@ -308,10 +308,10 @@ class PlexTvAPI extends ExternalAPI {
     {
       first = 20,
       after = undefined,
-    }: { first?: number; after?: number | undefined } = {}
+    }: { first?: number; after?: string | undefined } = {}
   ): Promise<{
     first: number;
-    after: number | undefined;
+    after: string | undefined;
     endCursor: string | undefined;
     totalSize: number;
     items: PlexWatchlistItem[];
