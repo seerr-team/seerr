@@ -26,6 +26,10 @@ If a role ID is specified, it will be included in the webhook message. See [Disc
 
 If you would like to override the name you configured for your bot in Discord, you may set this value to whatever you like!
 
+### Thread ID (optional)
+
+Instead of posting notifications to the webhook's channel you can specify a thready ID to post notifications to a specific thread in that channel.
+
 ### Bot Avatar URL (optional)
 
 Similar to the bot username, you can override the avatar for your bot.
