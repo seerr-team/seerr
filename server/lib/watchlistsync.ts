@@ -46,16 +46,14 @@ class WatchlistSync {
       for (const rawUser of plexHomeUsersResponse.MediaContainer.User) {
         const account = rawUser.$;
 
-        if (account.email) {
-          const user = await userRepository
-            .createQueryBuilder('user')
-            .where('user.plexId = :id', { id: account.id })
-            .getOne();
+        const user = await userRepository
+          .createQueryBuilder('user')
+          .where('user.plexId = :id', { id: account.id })
+          .getOne();
 
-          if (user) {
-            user.plexUuid = account.uuid;
-            await userRepository.save(user);
-          }
+        if (user) {
+          user.plexUuid = account.uuid;
+          await userRepository.save(user);
         }
       }
     }

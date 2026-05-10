@@ -14,7 +14,10 @@ This feature is only available for Plex users. Local users cannot use the Watchl
 
 ## Prerequisites
 
-- You must have logged into Seerr at least once with your Plex account
+- You must have _one_ of the following
+  - You have logged into Seerr at least once with your Plex account
+  - You are Plex friends with your administrator and have kept the default setting to share your Plex Watchlist with friends
+  - You have your Plex Watchlist set to public
 - Your administrator must have granted you the necessary permissions
 - Your Plex account must have access to the Plex server configured in Seerr
 
@@ -57,6 +60,10 @@ Contact your administrator to verify you have been granted:
 - Seerr will automatically create requests for new items
 - You'll receive notifications when items are auto-requested
 
+:::warning Watchlist Not Accessible
+If you receive the error "User's watchlist is not accessible." when saving your settings at the end of Step 2, you have not fulfilled prerequisite #1.
+:::
+
 ## How It Works
 
 Once properly configured, Seerr will:
@@ -90,6 +97,6 @@ Auto-request only works for standard quality content. 4K content must be request
 
 - Local users cannot use this feature
 - 4K content requires manual requests
-- Users must have logged into Seerr with their Plex account
+- Users must have logged into Seerr with their Plex account or have made their watchlist accessible to their administrator's Plex account
 - Respects user request limits and quotas
 - Won't request content already in your libraries

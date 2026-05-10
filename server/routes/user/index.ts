@@ -689,6 +689,7 @@ router.post(
             user.avatar = account.thumb;
             user.email = account.email;
             user.plexUsername = account.username;
+            user.plexUuid = account.uuid;
 
             // In case the user was previously a local account
             if (user.userType === UserType.LOCAL) {

@@ -150,7 +150,7 @@ userSettingsRoutes.post<
         for (const rawUser of plexHomeUsersResponse.MediaContainer.User) {
           const account = rawUser.$;
 
-          if (account.email && Number(account.id) === user.plexId) {
+          if (Number(account.id) === user.plexId) {
             user.plexUuid = account.uuid;
             await userRepository.save(user);
             break;

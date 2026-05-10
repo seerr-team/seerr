@@ -390,7 +390,7 @@ class PlexTvAPI extends ExternalAPI {
 
             if (!metadata) {
               logger.warn(
-                `Item with ratingKey ${watchlistItem.ratingKey} returned no metadata, skipping.`,
+                `Item with id ${watchlistItem.id} returned no metadata, skipping.`,
                 { label: 'Plex.TV Metadata API' }
               );
               return null;

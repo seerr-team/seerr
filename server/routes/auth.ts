@@ -132,6 +132,7 @@ authRoutes.post('/plex', async (req, res, next) => {
                 email: user.email,
                 userId: user.id,
                 plexId: account.id,
+                plexUuid: account.uuid,
                 plexUsername: account.username,
               }
             );
@@ -139,6 +140,7 @@ authRoutes.post('/plex', async (req, res, next) => {
 
           user.plexToken = body.authToken;
           user.plexId = account.id;
+          user.plexUuid = account.uuid;
           user.avatar = account.thumb;
           user.email = account.email;
           user.plexUsername = account.username;
@@ -153,6 +155,7 @@ authRoutes.post('/plex', async (req, res, next) => {
               ip: req.ip,
               email: account.email,
               plexId: account.id,
+              plexUuid: account.uuid,
               plexUsername: account.username,
             }
           );
@@ -168,6 +171,7 @@ authRoutes.post('/plex', async (req, res, next) => {
               ip: req.ip,
               email: account.email,
               plexId: account.id,
+              plexUuid: account.uuid,
               plexUsername: account.username,
             }
           );
@@ -192,6 +196,7 @@ authRoutes.post('/plex', async (req, res, next) => {
             ip: req.ip,
             email: account.email,
             plexId: account.id,
+            plexUuid: account.uuid,
             plexUsername: account.username,
           }
         );
