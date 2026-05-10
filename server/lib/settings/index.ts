@@ -229,6 +229,7 @@ export interface NotificationAgentDiscord extends NotificationAgentConfig {
     botAvatarUrl?: string;
     webhookUrl: string;
     webhookRoleId?: string;
+    webhookThreadId?: number;
     enableMentions: boolean;
     locale: AvailableLocale;
     useUserLocale: boolean;

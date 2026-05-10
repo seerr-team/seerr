@@ -35,6 +35,7 @@ const messages = defineMessages('components.Settings.Notifications', {
   validationWebhookRoleId: 'You must provide a valid Discord Role ID',
   validationTypes: 'You must select at least one notification type',
   enableMentions: 'Enable Mentions',
+  messageThreadId: 'Thread/Topic ID',
 });
 
 const NotificationsDiscord = () => {
@@ -84,6 +85,7 @@ const NotificationsDiscord = () => {
         botAvatarUrl: data?.options.botAvatarUrl,
         webhookUrl: data.options.webhookUrl,
         webhookRoleId: data?.options.webhookRoleId,
+        webhookThreadId: data?.options.webhookThreadId,
         enableMentions: data?.options.enableMentions,
         locale: data?.options.locale || 'en',
         useUserLocale: data?.options.useUserLocale ?? false,
@@ -100,6 +102,7 @@ const NotificationsDiscord = () => {
               botAvatarUrl: values.botAvatarUrl,
               webhookUrl: values.webhookUrl,
               webhookRoleId: values.webhookRoleId,
+              webhookThreadId: values.webhookThreadId,
               enableMentions: values.enableMentions,
               locale: values.locale,
               useUserLocale: values.useUserLocale,
@@ -152,6 +155,7 @@ const NotificationsDiscord = () => {
                 botAvatarUrl: values.botAvatarUrl,
                 webhookUrl: values.webhookUrl,
                 webhookRoleId: values.webhookRoleId,
+                webhookThreadId: values.webhookThreadId,
                 enableMentions: values.enableMentions,
                 locale: values.locale,
                 useUserLocale: values.useUserLocale,
@@ -254,6 +258,26 @@ const NotificationsDiscord = () => {
                   touched.botUsername &&
                   typeof errors.botUsername === 'string' && (
                     <div className="error">{errors.botUsername}</div>
+                  )}
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="threadId" className="text-label">
+                {intl.formatMessage(messages.messageThreadId)}
+              </label>
+              <div className="form-input-area">
+                <div className="form-input-field">
+                  <Field
+                    id="webhookThreadId"
+                    name="webhookThreadId"
+                    type="text"
+                    inputMode="numeric"
+                  />
+                </div>
+                {errors.webhookThreadId &&
+                  touched.webhookThreadId &&
+                  typeof errors.webhookThreadId === 'string' && (
+                    <div className="error">{errors.webhookThreadId}</div>
                   )}
               </div>
             </div>
