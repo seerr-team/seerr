@@ -28,7 +28,7 @@ If you would like to override the name you configured for your bot in Discord, y
 
 ### Thread ID (optional)
 
-Instead of posting notifications to the webhook's channel you can specify a thready ID to post notifications to a specific thread in that channel.
+Instead of posting notifications to the webhook's channel you can specify a thread ID to post notifications to a specific thread in that channel.
 
 ### Bot Avatar URL (optional)
 
