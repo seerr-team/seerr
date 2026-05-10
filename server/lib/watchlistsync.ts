@@ -19,7 +19,7 @@ class WatchlistSync {
   public async syncWatchlist() {
     const userRepository = getRepository(User);
 
-    // taken from auth.ts
+    // Taken from auth.ts
     const mainUser = await userRepository.findOneOrFail({
       select: { id: true, plexToken: true },
       where: { id: 1 },
@@ -104,12 +104,30 @@ class WatchlistSync {
       return;
     }
 
-    // token sync if the user has a token, else fallback to sync using the main user's token
+    // Token sync if the user has a token, else fallback to sync using the main user's token
     const plexTvApi = user.plexToken
       ? new PlexTvAPI(user.plexToken)
       : new PlexTvAPI(mainPlexToken);
 
     const response = await plexTvApi.getWatchlist(user.plexUuid);
+
+    // endCursor will be undefined if the GQL query fails to return Watchlist data
+    if (response.endCursor === undefined && user.settings) {
+      user.settings.watchlistSyncMovies = false;
+      user.settings.watchlistSyncTv = false;
+
+      const userRepository = getRepository(User);
+      await userRepository.save(user);
+
+      logger.warn(
+        'Disabling watchlist sync for user because access is denied',
+        {
+          label: 'Plex Watchlist Sync',
+          user: user.displayName,
+        }
+      );
+      return;
+    }
 
     const mediaItems = await Media.getRelatedMedia(
       user,

@@ -114,7 +114,7 @@ interface HomeUsersResponse {
 }
 
 interface WatchlistResponse {
-  data: {
+  data?: {
     user: {
       watchlist: {
         nodes: {
@@ -126,7 +126,7 @@ interface WatchlistResponse {
         };
       };
     };
-  };
+  } | null;
 }
 
 type PlexMetadataItem = {
@@ -362,7 +362,7 @@ class PlexTvAPI extends ExternalAPI {
       }
 
       const watchlistDetails = await Promise.all(
-        (cachedWatchlist?.response.data.user.watchlist.nodes ?? []).map(
+        (cachedWatchlist?.response.data?.user.watchlist.nodes ?? []).map(
           async (watchlistItem) => {
             let detailedResponse: MetadataResponse;
             try {
@@ -426,9 +426,9 @@ class PlexTvAPI extends ExternalAPI {
         first,
         after,
         endCursor:
-          cachedWatchlist?.response.data.user.watchlist.pageInfo.endCursor,
+          cachedWatchlist?.response.data?.user.watchlist.pageInfo.endCursor,
         totalSize:
-          cachedWatchlist?.response.data.user.watchlist.nodes.length ?? 0,
+          cachedWatchlist?.response.data?.user.watchlist.nodes.length ?? 0,
         items: filteredList,
       };
     } catch (e) {

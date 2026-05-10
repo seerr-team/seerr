@@ -48,6 +48,7 @@ const messages = defineMessages(
     toastSettingsFailureEmail: 'This email is already taken!',
     toastSettingsFailureEmailEmpty:
       'Another user already has this username. You must set an email',
+    toastSettingsWatchlistAccessDenied: "User's watchlist is not accessible.",
     region: 'Discover Region',
     regionTip: 'Filter content by regional availability',
     discoverRegion: 'Discover Region',
@@ -224,6 +225,16 @@ const UserGeneralSettings = () => {
                   }
                 );
               }
+            } else if (
+              e?.response?.data?.message === ApiErrorCode.WatchlistAccessDenied
+            ) {
+              addToast(
+                intl.formatMessage(messages.toastSettingsWatchlistAccessDenied),
+                {
+                  autoDismiss: true,
+                  appearance: 'error',
+                }
+              );
             } else {
               addToast(intl.formatMessage(messages.toastSettingsFailure), {
                 autoDismiss: true,

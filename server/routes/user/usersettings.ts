@@ -82,6 +82,18 @@ userSettingsRoutes.post<
       where: { id: Number(req.params.id) },
     });
 
+    if (user) {
+      const hiddenFields = await userRepository.findOne({
+        select: { id: true, plexToken: true, plexUuid: true },
+        where: { id: Number(req.params.id) },
+      });
+
+      if (hiddenFields) {
+        user.plexToken = hiddenFields.plexToken;
+        user.plexUuid = hiddenFields.plexUuid;
+      }
+    }
+
     if (!user) {
       return next({ status: 404, message: 'User not found.' });
     }
@@ -117,6 +129,41 @@ userSettingsRoutes.post<
       user.movieQuotaLimit = req.body.movieQuotaLimit;
       user.tvQuotaDays = req.body.tvQuotaDays;
       user.tvQuotaLimit = req.body.tvQuotaLimit;
+    }
+
+    // Cannot enable Plex Watchlist Sync without access
+    if (req.body.watchlistSyncMovies || req.body.watchlistSyncTv) {
+      // Taken from auth.ts
+      const mainUser = await userRepository.findOneOrFail({
+        select: { id: true, plexToken: true },
+        where: { id: 1 },
+      });
+
+      const plexTvApi = user.plexToken
+        ? new PlexTvAPI(user.plexToken)
+        : new PlexTvAPI(mainUser.plexToken ?? '');
+
+      // If a user has updated from an old version of Seerr and has not run the
+      // plexwatchlistsync job at least once, there may be a null value in the plexUuid column
+      if (!user.plexUuid) {
+        const plexHomeUsersResponse = await plexTvApi.getHomeUsers();
+        for (const rawUser of plexHomeUsersResponse.MediaContainer.User) {
+          const account = rawUser.$;
+
+          if (account.email && Number(account.id) === user.plexId) {
+            user.plexUuid = account.uuid;
+            await userRepository.save(user);
+            break;
+          }
+        }
+      }
+
+      const response = await plexTvApi.getWatchlist(user.plexUuid ?? '');
+
+      // endCursor will be undefined if the GQL query fails to return Watchlist data
+      if (response.endCursor === undefined) {
+        throw new ApiError(400, ApiErrorCode.WatchlistAccessDenied);
+      }
     }
 
     if (!user.settings) {
