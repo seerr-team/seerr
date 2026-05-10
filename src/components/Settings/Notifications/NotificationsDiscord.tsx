@@ -36,6 +36,7 @@ const messages = defineMessages('components.Settings.Notifications', {
   validationTypes: 'You must select at least one notification type',
   enableMentions: 'Enable Mentions',
   messageThreadId: 'Thread/Topic ID',
+  validationWebhookThreadId: 'You must provide a valid Discord Thread ID',
 });
 
 const NotificationsDiscord = () => {
@@ -63,6 +64,12 @@ const NotificationsDiscord = () => {
         otherwise: (schema) => schema.nullable(),
       })
       .url(intl.formatMessage(messages.validationUrl)),
+    webhookThreadId: Yup.string()
+      .nullable()
+      .matches(
+        /^\d{17,19}$/,
+        intl.formatMessage(messages.validationWebhookThreadId)
+      ),
     webhookRoleId: Yup.string()
       .nullable()
       .matches(
