@@ -262,7 +262,7 @@ const NotificationsDiscord = () => {
               </div>
             </div>
             <div className="form-row">
-              <label htmlFor="threadId" className="text-label">
+              <label htmlFor="webhookThreadId" className="text-label">
                 {intl.formatMessage(messages.messageThreadId)}
               </label>
               <div className="form-input-area">
