@@ -1306,7 +1306,7 @@
   "components.Setup.librarieserror": "Validation failed. Please toggle the libraries again to continue.",
   "components.Setup.servertype": "Choose Server Type",
   "components.Setup.setup": "Setup",
-  "components.Setup.signin": "Sign In",
+  "components.Setup.signin": "Sign in to your account",
   "components.Setup.signinMessage": "Get started by signing in",
   "components.Setup.signinWithEmby": "Enter your Emby details",
   "components.Setup.signinWithJellyfin": "Enter your Jellyfin details",
