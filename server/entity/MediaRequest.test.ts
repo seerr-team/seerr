@@ -46,7 +46,7 @@ async function seedRequester(movieQuotaLimit: number): Promise<User> {
   const userRepository = getRepository(User);
 
   const requester = await userRepository.findOneOrFail({
-    where: { email: 'friend@seerr.dev' },
+    where: { email: 'demo@seerr.dev' },
   });
   requester.movieQuotaLimit = movieQuotaLimit;
 

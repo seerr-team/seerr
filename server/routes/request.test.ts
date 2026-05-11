@@ -193,7 +193,7 @@ async function seedRequest(status = MediaRequestStatus.PENDING) {
   const requestRepo = getRepository(MediaRequest);
 
   const requestedBy = await userRepo.findOneOrFail({
-    where: { email: 'friend@seerr.dev' },
+    where: { email: 'demo@seerr.dev' },
   });
 
   const media = await mediaRepo.save(
@@ -226,7 +226,7 @@ describe('DELETE /request/:requestId', () => {
   it('allows the owner to delete their own pending request', async () => {
     const mediaRequest = await seedRequest();
 
-    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
     const res = await agent.delete(`/request/${mediaRequest.id}`);
 
     assert.strictEqual(res.status, 204);
@@ -270,7 +270,7 @@ describe('DELETE /request/:requestId', () => {
       })
     );
 
-    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
     const res = await agent.delete(`/request/${mediaRequest.id}`);
 
     assert.strictEqual(res.status, 401);
@@ -279,7 +279,7 @@ describe('DELETE /request/:requestId', () => {
   it('prevents the owner from deleting an approved request', async () => {
     const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
 
-    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
     const res = await agent.delete(`/request/${mediaRequest.id}`);
 
     assert.strictEqual(res.status, 401);
@@ -349,7 +349,7 @@ describe('PUT /request/:requestId (tv)', () => {
       where: { email: 'admin@seerr.dev' },
     });
     const otherUser = await userRepo.findOneOrFail({
-      where: { email: 'friend@seerr.dev' },
+      where: { email: 'demo@seerr.dev' },
     });
 
     const media = await mediaRepo.save(
@@ -798,7 +798,7 @@ describe('POST /request (movie), override rules', () => {
 
     const userRepo = getRepository(User);
     const friend = await userRepo.findOneOrFail({
-      where: { email: 'friend@seerr.dev' },
+      where: { email: 'demo@seerr.dev' },
     });
 
     const overrideRuleRepo = getRepository(OverrideRule);
@@ -810,7 +810,7 @@ describe('POST /request (movie), override rules', () => {
       })
     );
 
-    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
     const res = await agent.post('/request').send({
       mediaType: MediaType.MOVIE,
       mediaId: 88001,
@@ -826,7 +826,7 @@ describe('POST /request (movie), override rules', () => {
 
     const userRepo = getRepository(User);
     const friend = await userRepo.findOneOrFail({
-      where: { email: 'friend@seerr.dev' },
+      where: { email: 'demo@seerr.dev' },
     });
 
     const overrideRuleRepo = getRepository(OverrideRule);
@@ -838,7 +838,7 @@ describe('POST /request (movie), override rules', () => {
       })
     );
 
-    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
     const res = await agent.post('/request').send({
       mediaType: MediaType.MOVIE,
       mediaId: 88002,
@@ -854,7 +854,7 @@ describe('POST /request (movie), override rules', () => {
 
     const userRepo = getRepository(User);
     const friend = await userRepo.findOneOrFail({
-      where: { email: 'friend@seerr.dev' },
+      where: { email: 'demo@seerr.dev' },
     });
 
     const overrideRuleRepo = getRepository(OverrideRule);
@@ -866,7 +866,7 @@ describe('POST /request (movie), override rules', () => {
       })
     );
 
-    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
     const res = await agent.post('/request').send({
       mediaType: MediaType.MOVIE,
       mediaId: 88005,
@@ -884,7 +884,7 @@ describe('POST /request (tv), override rules', () => {
 
     const userRepo = getRepository(User);
     const friend = await userRepo.findOneOrFail({
-      where: { email: 'friend@seerr.dev' },
+      where: { email: 'demo@seerr.dev' },
     });
 
     const overrideRuleRepo = getRepository(OverrideRule);
@@ -896,7 +896,7 @@ describe('POST /request (tv), override rules', () => {
       })
     );
 
-    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
     const res = await agent.post('/request').send({
       mediaType: MediaType.TV,
       mediaId: 88003,
@@ -913,7 +913,7 @@ describe('POST /request (tv), override rules', () => {
 
     const userRepo = getRepository(User);
     const friend = await userRepo.findOneOrFail({
-      where: { email: 'friend@seerr.dev' },
+      where: { email: 'demo@seerr.dev' },
     });
 
     const overrideRuleRepo = getRepository(OverrideRule);
@@ -925,7 +925,7 @@ describe('POST /request (tv), override rules', () => {
       })
     );
 
-    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
     const res = await agent.post('/request').send({
       mediaType: MediaType.TV,
       mediaId: 88004,
@@ -942,7 +942,7 @@ describe('POST /request (tv), override rules', () => {
 
     const userRepo = getRepository(User);
     const friend = await userRepo.findOneOrFail({
-      where: { email: 'friend@seerr.dev' },
+      where: { email: 'demo@seerr.dev' },
     });
 
     const overrideRuleRepo = getRepository(OverrideRule);
@@ -954,7 +954,7 @@ describe('POST /request (tv), override rules', () => {
       })
     );
 
-    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
     const res = await agent.post('/request').send({
       mediaType: MediaType.TV,
       mediaId: 88006,
@@ -1029,7 +1029,7 @@ describe('DELETE /request/:requestId, orphaned season status reset', () => {
     });
     assert.strictEqual(updated.seasons[0].status, MediaStatus.UNKNOWN);
 
-    const friend = await loginAs('friend@seerr.dev', 'test1234');
+    const friend = await loginAs('demo@seerr.dev', 'test1234');
     const reRequest = await friend.post('/request').send({
       mediaType: MediaType.TV,
       mediaId: 99101,
