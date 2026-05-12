@@ -110,6 +110,7 @@ const messages = defineMessages(
     templatevariablehelp: 'Template Variable Help',
     validationWebhookUrl: 'You must provide a valid URL',
     validationTypes: 'You must select at least one notification type',
+    webhookSettingsLoadError: 'Failed to load webhook settings. Please check your configuration and try refreshing',
   }
 );
 
@@ -209,9 +210,13 @@ const NotificationsWebhook = () => {
   if (error) {
     return (
       <div className="mb-6 rounded-md bg-red-500 p-4 text-white">
-        Failed to load webhook settings. Please check your configuration and try refreshing.
+        {intl.formatMessage(messages.webhookSettingsLoadError)}
       </div>
     );
+  }
+
+  if (!data) {
+    return <LoadingSpinner />;
   }
 
   return (
