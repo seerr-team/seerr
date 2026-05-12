@@ -287,7 +287,9 @@ notificationRoutes.get('/webhook', (_req, res) => {
       jsonPayload: (() => {
         try {
           return JSON.parse(
-            Buffer.from(webhookSettings.options.jsonPayload, 'base64').toString('utf8')
+            Buffer.from(webhookSettings.options.jsonPayload, 'base64').toString(
+              'utf8'
+            )
           );
         } catch {
           return '';

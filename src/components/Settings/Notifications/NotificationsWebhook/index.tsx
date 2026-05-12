@@ -110,7 +110,8 @@ const messages = defineMessages(
     templatevariablehelp: 'Template Variable Help',
     validationWebhookUrl: 'You must provide a valid URL',
     validationTypes: 'You must select at least one notification type',
-    webhookSettingsLoadError: 'Failed to load webhook settings. Please check your configuration and try refreshing',
+    webhookSettingsLoadError:
+      'Failed to load webhook settings. Please check your configuration and try refreshing',
   }
 );
 
