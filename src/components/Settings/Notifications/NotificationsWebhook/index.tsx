@@ -206,8 +206,12 @@ const NotificationsWebhook = () => {
       ),
   });
 
-  if (!data && !error) {
-    return <LoadingSpinner />;
+  if (error) {
+    return (
+      <div className="mb-6 rounded-md bg-red-500 p-4 text-white">
+        Failed to load webhook settings. Please check your configuration and try refreshing.
+      </div>
+    );
   }
 
   return (
