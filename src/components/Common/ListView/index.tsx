@@ -5,7 +5,10 @@ import { Permission, useUser } from '@app/hooks/useUser';
 import useVerticalScroll from '@app/hooks/useVerticalScroll';
 import globalMessages from '@app/i18n/globalMessages';
 import { MediaStatus } from '@server/constants/media';
-import type { WatchlistItem } from '@server/interfaces/api/discoverInterfaces';
+import type {
+  FavoriteItem,
+  WatchlistItem,
+} from '@server/interfaces/api/discoverInterfaces';
 import type {
   CollectionResult,
   MovieResult,
@@ -17,6 +20,7 @@ import { useIntl } from 'react-intl';
 type ListViewProps = {
   items?: (TvResult | MovieResult | PersonResult | CollectionResult)[];
   plexItems?: WatchlistItem[];
+  favoriteItems?: FavoriteItem[];
   isEmpty?: boolean;
   isLoading?: boolean;
   isReachingEnd?: boolean;
@@ -31,6 +35,7 @@ const ListView = ({
   onScrollBottom,
   isReachingEnd,
   plexItems,
+  favoriteItems,
   mutateParent,
 }: ListViewProps) => {
   const intl = useIntl();
@@ -58,6 +63,19 @@ const ListView = ({
                 tmdbId={title.tmdbId}
                 type={title.mediaType}
                 isAddedToWatchlist={true}
+                canExpand
+                mutateParent={mutateParent}
+              />
+            </li>
+          );
+        })}
+        {favoriteItems?.map((title) => {
+          return (
+            <li key={`fav-${title.id}`}>
+              <TmdbTitleCard
+                id={title.tmdbId}
+                tmdbId={title.tmdbId}
+                type={title.mediaType}
                 canExpand
                 mutateParent={mutateParent}
               />

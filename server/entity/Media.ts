@@ -4,6 +4,7 @@ import { MediaStatus, MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import { Blocklist } from '@server/entity/Blocklist';
+import { Favorites } from '@server/entity/Favorites';
 import type { User } from '@server/entity/User';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { DownloadingItem } from '@server/lib/downloadtracker';
@@ -114,6 +115,9 @@ class Media {
 
   @OneToMany(() => Watchlist, (watchlist) => watchlist.media)
   public watchlists: null | Watchlist[];
+
+  @OneToMany(() => Favorites, (favorite) => favorite.media)
+  public favorites: null | Favorites[];
 
   @OneToMany(() => Season, (season) => season.media, {
     cascade: true,

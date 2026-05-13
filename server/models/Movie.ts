@@ -86,6 +86,7 @@ export interface MovieDetails {
   watchProviders?: WatchProviders[];
   keywords: Keyword[];
   onUserWatchlist?: boolean;
+  onUserFavorites?: boolean;
 }
 
 export const mapProductionCompany = (
@@ -103,7 +104,8 @@ export const mapProductionCompany = (
 export const mapMovieDetails = (
   movie: TmdbMovieDetails,
   media?: Media,
-  userWatchlist?: boolean
+  userWatchlist?: boolean,
+  userFavorites?: boolean
 ): MovieDetails => ({
   id: movie.id,
   adult: movie.adult,
@@ -151,4 +153,5 @@ export const mapMovieDetails = (
     name: keyword.name,
   })),
   onUserWatchlist: userWatchlist,
+  onUserFavorites: userFavorites,
 });

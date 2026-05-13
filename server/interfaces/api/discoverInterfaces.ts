@@ -18,3 +18,17 @@ export interface WatchlistResponse {
   totalResults: number;
   results: WatchlistItem[];
 }
+
+export interface FavoriteItem {
+  id: number;
+  tmdbId: number;
+  mediaType: 'movie' | 'tv';
+  title: string;
+}
+
+export interface FavoriteResponse {
+  page: number;
+  totalPages: number;
+  totalResults: number;
+  results: FavoriteItem[];
+}
