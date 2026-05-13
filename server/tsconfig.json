@@ -8,7 +8,7 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@server/*": ["./*"]
+      "@server/*": ["*"]
     }
   },
   "include": ["**/*.ts"]
