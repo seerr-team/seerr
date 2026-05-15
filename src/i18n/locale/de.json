@@ -516,8 +516,6 @@
   "components.Settings.Notifications.senderName": "Absendername",
   "components.Settings.Notifications.smtpHost": "SMTP-Host",
   "components.Settings.Notifications.smtpPort": "SMTP-Port",
-  "components.Settings.Notifications.usePublicLogo": "Öffentliches Seerr-Logo statt Logo von der Instanz verwenden",
-  "components.Settings.Notifications.usePublicLogoTip": "Wenn deine Seerr-Instanz nicht öffentlich erreichbar ist, aktiviere diese Option, damit E-Mail-Clients außerhalb deines Netzwerks das Bild anzeigen können. Das Bild wird aus dem öffentlichen GitHub-Repository geladen.",
   "components.Settings.Notifications.telegramsettingsfailed": "Telegram-Benachrichtigungseinstellungen konnten nicht gespeichert werden.",
   "components.Settings.Notifications.telegramsettingssaved": "Telegram-Benachrichtigungseinstellungen erfolgreich gespeichert!",
   "components.Settings.Notifications.toastDiscordTestFailed": "Discord Testbenachrichtigung fehlgeschlagen.",
