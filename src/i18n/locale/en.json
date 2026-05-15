@@ -775,6 +775,8 @@
   "components.Settings.Notifications.toastTelegramTestFailed": "Telegram test notification failed to send.",
   "components.Settings.Notifications.toastTelegramTestSending": "Sending Telegram test notification…",
   "components.Settings.Notifications.toastTelegramTestSuccess": "Telegram test notification sent!",
+  "components.Settings.Notifications.usePublicLogo": "Use public Seerr logo instead of instance logo",
+  "components.Settings.Notifications.usePublicLogoTip": "If your Seerr instance is not publicly accessible, enable this option so email clients outside your network can display the image. The image will be pulled from the public GitHub repository.",
   "components.Settings.Notifications.useUserLocale": "Use Notification Recipient Locale",
   "components.Settings.Notifications.userEmailRequired": "Require user email",
   "components.Settings.Notifications.validationBotAPIRequired": "You must provide a bot authorization token",
