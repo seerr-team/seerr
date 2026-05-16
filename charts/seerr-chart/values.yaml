@@ -70,6 +70,7 @@ securityContext:
 service:
   type: ClusterIP
   port: 80
+  annotations: {}
 
 # -- Creating PVC to store configuration
 config:

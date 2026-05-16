@@ -35,6 +35,7 @@ DB_PORT="5432" # (optional) The port to connect to. The default is "5432".
 DB_USER= # (required) Username used to connect to the database.
 DB_PASS= # (required) Password of the user used to connect to the database.
 DB_NAME="seerr" # (optional) The name of the database to connect to. The default is "seerr".
+DB_POOL_SIZE="10" # (optional) The number of connections to maintain in the connection pool. The default is "10".
 DB_LOG_QUERIES="false" # (optional) Whether to log the DB queries for debugging. The default is "false".
 ```
 
@@ -48,6 +49,7 @@ DB_SOCKET_PATH="/var/run/postgresql" # (required) The path to the PostgreSQL Uni
 DB_USER= # (required) Username used to connect to the database.
 DB_PASS= # (optional) Password of the user used to connect to the database, depending on the server's authentication configuration.
 DB_NAME="seerr" # (optional) The name of the database to connect to. The default is "seerr".
+DB_POOL_SIZE="10" # (optional) The number of connections to maintain in the connection pool. The default is "10".
 DB_LOG_QUERIES="false" # (optional) Whether to log the DB queries for debugging. The default is "false".
 ```
 

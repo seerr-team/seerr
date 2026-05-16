@@ -21,9 +21,11 @@ class AvailabilitySync {
   public running = false;
   private plexClient: PlexAPI;
   private plexSeasonsCache: Record<string, PlexMetadata[]>;
+  private plexEpisodeExistsCache: Record<string, boolean>;
 
   private jellyfinClient: JellyfinAPI;
   private jellyfinSeasonsCache: Record<string, JellyfinLibraryItem[]>;
+  private jellyfinEpisodeExistsCache: Record<string, boolean>;
 
   private sonarrSeasonsCache: Record<string, SonarrSeason[]>;
   private radarrServers: RadarrSettings[];
@@ -34,7 +36,9 @@ class AvailabilitySync {
     const mediaServerType = getSettings().main.mediaServerType;
     this.running = true;
     this.plexSeasonsCache = {};
+    this.plexEpisodeExistsCache = {};
     this.jellyfinSeasonsCache = {};
+    this.jellyfinEpisodeExistsCache = {};
     this.sonarrSeasonsCache = {};
     this.radarrServers = settings.radarr.filter((server) => server.syncEnabled);
     this.sonarrServers = settings.sonarr.filter((server) => server.syncEnabled);
@@ -939,7 +943,6 @@ class AvailabilitySync {
     const ratingKey4k = media.ratingKey4k;
     let seasonExistsInPlex = false;
 
-    // Check each plex instance to see if the season exists
     let plexSeasons: PlexMetadata[] | undefined;
 
     if (ratingKey && !is4k) {
@@ -950,12 +953,33 @@ class AvailabilitySync {
       plexSeasons = this.plexSeasonsCache[ratingKey4k];
     }
 
-    const seasonIsAvailable = plexSeasons?.find(
+    const seasonMeta = plexSeasons?.find(
       (plexSeason) => plexSeason.index === season.seasonNumber
     );
 
-    if (seasonIsAvailable) {
-      seasonExistsInPlex = true;
+    if (seasonMeta) {
+      const cacheKey = seasonMeta.ratingKey;
+
+      if (cacheKey in this.plexEpisodeExistsCache) {
+        seasonExistsInPlex = this.plexEpisodeExistsCache[cacheKey];
+      } else {
+        try {
+          // Season metadata exists, but we need to verify it has actual
+          // episode files. Plex can keep empty season entries.
+          const episodes = await this.plexClient?.getChildrenMetadata(
+            seasonMeta.ratingKey
+          );
+
+          seasonExistsInPlex =
+            episodes?.some((episode) => episode.Media?.length > 0) ?? false;
+        } catch {
+          // If we can't fetch episodes, assume the season exists
+          // to avoid false removal
+          seasonExistsInPlex = true;
+        }
+
+        this.plexEpisodeExistsCache[cacheKey] = seasonExistsInPlex;
+      }
     }
 
     return seasonExistsInPlex;
@@ -1056,7 +1080,6 @@ class AvailabilitySync {
     const ratingKey4k = media.jellyfinMediaId4k;
     let seasonExistsInJellyfin = false;
 
-    // Check each jellyfin instance to see if the season exists
     let jellyfinSeasons: JellyfinLibraryItem[] | undefined;
 
     if (ratingKey && !is4k) {
@@ -1067,12 +1090,39 @@ class AvailabilitySync {
       jellyfinSeasons = this.jellyfinSeasonsCache[ratingKey4k];
     }
 
-    const seasonIsAvailable = jellyfinSeasons?.find(
+    const seasonMeta = jellyfinSeasons?.find(
       (jellyfinSeason) => jellyfinSeason.IndexNumber === season.seasonNumber
     );
 
-    if (seasonIsAvailable) {
-      seasonExistsInJellyfin = true;
+    if (seasonMeta) {
+      const seriesId = is4k ? ratingKey4k : ratingKey;
+
+      if (seriesId) {
+        const cacheKey = `${seriesId}-${seasonMeta.Id}`;
+
+        if (cacheKey in this.jellyfinEpisodeExistsCache) {
+          seasonExistsInJellyfin = this.jellyfinEpisodeExistsCache[cacheKey];
+        } else {
+          try {
+            // Season metadata exists, but we need to verify it has actual
+            // episode files. Jellyfin keeps season entries even after all
+            // episodes are deleted. getEpisodes already filters out
+            // virtual episodes.
+            const episodes = await this.jellyfinClient.getEpisodes(
+              seriesId,
+              seasonMeta.Id
+            );
+
+            seasonExistsInJellyfin = episodes.length > 0;
+          } catch {
+            // If we can't fetch episodes, assume the season exists
+            // to avoid false removal
+            seasonExistsInJellyfin = true;
+          }
+
+          this.jellyfinEpisodeExistsCache[cacheKey] = seasonExistsInJellyfin;
+        }
+      }
     }
 
     return seasonExistsInJellyfin;
