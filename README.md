@@ -34,7 +34,7 @@ With more features on the way! Check out our [issue tracker](/../../issues) to s
 
 Check out our documentation for instructions on how to install and run Seerr:
 
-https://docs.seerr.dev/getting-started/
+https://docs.seerr.dev/getting-started
 
 ## Preview
 
