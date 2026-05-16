@@ -59,4 +59,4 @@ jobs:
       - name: Build website
         run: |
           cd gen-docs
-          pnpm gen-api-docs all && pnpm build
+          pnpm gen-api-docs && pnpm build
