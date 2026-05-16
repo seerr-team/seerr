@@ -45,6 +45,19 @@ const config: Config = {
           path: '../docs',
           editUrl: 'https://github.com/seerr-team/seerr/edit/develop/docs/',
           docItemComponent: '@theme/ApiItem',
+          async sidebarItemsGenerator({
+            defaultSidebarItemsGenerator,
+            ...args
+          }) {
+            const items = await defaultSidebarItemsGenerator(args);
+            return items.filter(
+              (item) =>
+                !(
+                  item.type === 'category' &&
+                  item.label?.toLowerCase() === 'api'
+                )
+            );
+          },
         },
         pages: false,
         theme: {
@@ -104,6 +117,11 @@ const config: Config = {
       },
       items: [
         {
+          to: '/api/seerr-api',
+          label: 'REST API',
+          position: 'right',
+        },
+        {
           to: 'blog',
           label: 'Blog',
           position: 'right',
@@ -129,6 +147,10 @@ const config: Config = {
             {
               label: 'Documentation',
               to: '/',
+            },
+            {
+              label: 'REST API',
+              to: '/api/seerr-api',
             },
           ],
         },
