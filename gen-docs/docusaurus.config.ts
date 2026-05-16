@@ -10,7 +10,7 @@ const config: Config = {
 
   url: 'https://docs.seerr.dev',
   baseUrl: '/',
-  trailingSlash: false,
+  trailingSlash: true,
 
   future: {
     faster: {
