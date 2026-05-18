@@ -9,28 +9,43 @@ import {
   type HTMLAttributes,
 } from 'react';
 
-interface DropdownItemProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
+type DropdownItemProps = (
+  | AnchorHTMLAttributes<HTMLAnchorElement>
+  | ButtonHTMLAttributes<HTMLButtonElement>
+) & {
   buttonType?: 'primary' | 'ghost';
-}
+  href?: string;
+};
 
 const DropdownItem = ({
   children,
   buttonType = 'primary',
   ...props
 }: DropdownItemProps) => {
+  const className = [
+    'button-md flex cursor-pointer items-center rounded px-4 py-2 text-sm leading-5 text-white focus:text-white focus:outline-none',
+    buttonType === 'ghost'
+      ? 'bg-transparent from-indigo-600 to-purple-600 hover:bg-gradient-to-br focus:border-gray-500'
+      : 'bg-indigo-600 hover:bg-indigo-500 focus:border-indigo-700',
+  ].join(' ');
   return (
     <Menu.Item>
-      <a
-        className={[
-          'button-md flex cursor-pointer items-center rounded px-4 py-2 text-sm leading-5 text-white focus:text-white focus:outline-none',
-          buttonType === 'ghost'
-            ? 'bg-transparent from-indigo-600 to-purple-600 hover:bg-gradient-to-br focus:border-gray-500'
-            : 'bg-indigo-600 hover:bg-indigo-500 focus:border-indigo-700',
-        ].join(' ')}
-        {...props}
-      >
-        {children}
-      </a>
+      {props.href ? (
+        <a
+          className={className}
+          {...(props as AnchorHTMLAttributes<HTMLAnchorElement>)}
+        >
+          {children}
+        </a>
+      ) : (
+        <button
+          type="button"
+          className={`w-full text-left ${className}`}
+          {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}
+        >
+          {children}
+        </button>
+      )}
     </Menu.Item>
   );
 };

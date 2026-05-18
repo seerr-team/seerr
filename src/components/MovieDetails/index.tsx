@@ -140,6 +140,8 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   );
   const [isBlocklistUpdating, setIsBlocklistUpdating] =
     useState<boolean>(false);
+  const [isPlexWatchlistUpdating, setIsPlexWatchlistUpdating] =
+    useState<boolean>(false);
   const [showBlocklistModal, setShowBlocklistModal] = useState(false);
   const { addToast } = useToasts();
 
@@ -247,8 +249,8 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     });
   }
 
-  if (user?.userType === UserType.PLEX) {
-    const onPlexWatchlist = plexWatchlistData?.onWatchlist ?? false;
+  if (user?.userType === UserType.PLEX && plexWatchlistData) {
+    const onPlexWatchlist = plexWatchlistData.onWatchlist;
     mediaLinks.push({
       text: intl.formatMessage(
         onPlexWatchlist
@@ -257,10 +259,14 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
       ),
       svg: <BookmarkIcon />,
       onClick: async () => {
+        if (isPlexWatchlistUpdating) {
+          return;
+        }
+        setIsPlexWatchlistUpdating(true);
         try {
           if (onPlexWatchlist) {
             await axios.delete('/api/v1/watchlist/plex', {
-              data: { tmdbId: data.id, mediaType: MediaType.MOVIE },
+              params: { tmdbId: data.id, mediaType: MediaType.MOVIE },
             });
             addToast(
               intl.formatMessage(messages.removeFromPlexWatchlistSuccess, {
@@ -295,6 +301,8 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
             ),
             { appearance: 'error', autoDismiss: true }
           );
+        } finally {
+          setIsPlexWatchlistUpdating(false);
         }
       },
     });

@@ -8,12 +8,7 @@ export const watchlistCreate = z.object({
   title: z.coerce.string().optional(),
 });
 
-export const plexWatchlistAction = z.object({
+export const plexWatchlistArgs = z.object({
   tmdbId: z.coerce.number().int().positive(),
-  mediaType: z.nativeEnum(MediaType),
-});
-
-export const plexWatchlistStatusQuery = z.object({
-  tmdbId: z.coerce.number().int().positive(),
-  mediaType: z.nativeEnum(MediaType),
+  mediaType: z.enum([MediaType.MOVIE, MediaType.TV]),
 });

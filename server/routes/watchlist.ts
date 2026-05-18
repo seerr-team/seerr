@@ -8,8 +8,7 @@ import {
   Watchlist,
 } from '@server/entity/Watchlist';
 import {
-  plexWatchlistAction,
-  plexWatchlistStatusQuery,
+  plexWatchlistArgs,
   watchlistCreate,
 } from '@server/interfaces/api/watchlistCreate';
 import logger from '@server/logger';
@@ -40,7 +39,7 @@ watchlistRoutes.get('/plex/status', async (req, res, next) => {
     return next({ status: 401, message: 'You must be logged in.' });
   }
 
-  const parsed = plexWatchlistStatusQuery.safeParse(req.query);
+  const parsed = plexWatchlistArgs.safeParse(req.query);
   if (!parsed.success) {
     return next({ status: 400, message: 'Invalid tmdbId or mediaType.' });
   }
@@ -110,7 +109,7 @@ watchlistRoutes.post('/plex', async (req, res, next) => {
     return next({ status: 401, message: 'You must be logged in.' });
   }
 
-  const parsed = plexWatchlistAction.safeParse(req.body);
+  const parsed = plexWatchlistArgs.safeParse(req.body);
   if (!parsed.success) {
     return next({ status: 400, message: 'Invalid tmdbId or mediaType.' });
   }
@@ -145,7 +144,7 @@ watchlistRoutes.delete('/plex', async (req, res, next) => {
     return next({ status: 401, message: 'You must be logged in.' });
   }
 
-  const parsed = plexWatchlistAction.safeParse(req.body);
+  const parsed = plexWatchlistArgs.safeParse(req.query);
   if (!parsed.success) {
     return next({ status: 400, message: 'Invalid tmdbId or mediaType.' });
   }

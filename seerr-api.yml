@@ -4902,6 +4902,7 @@ paths:
           required: true
           schema:
             type: integer
+            minimum: 1
             example: 550
         - in: query
           name: mediaType
@@ -4943,6 +4944,7 @@ paths:
               properties:
                 tmdbId:
                   type: integer
+                  minimum: 1
                   example: 550
                 mediaType:
                   type: string
@@ -4958,29 +4960,29 @@ paths:
           description: Unauthorized
         '403':
           description: No linked Plex account
+        '500':
+          description: Failed to update Plex watchlist
     delete:
       summary: Remove media from Plex watchlist
       description: Removes the specified media item from the authenticated Plex user's watchlist.
       tags:
         - watchlist
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - tmdbId
-                - mediaType
-              properties:
-                tmdbId:
-                  type: integer
-                  example: 550
-                mediaType:
-                  type: string
-                  enum:
-                    - movie
-                    - tv
+      parameters:
+        - in: query
+          name: tmdbId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            example: 550
+        - in: query
+          name: mediaType
+          required: true
+          schema:
+            type: string
+            enum:
+              - movie
+              - tv
       responses:
         '204':
           description: Successfully removed from Plex watchlist
@@ -4990,6 +4992,8 @@ paths:
           description: Unauthorized
         '403':
           description: No linked Plex account
+        '500':
+          description: Failed to update Plex watchlist
   /watchlist/{tmdbId}:
     delete:
       summary: Delete watchlist item

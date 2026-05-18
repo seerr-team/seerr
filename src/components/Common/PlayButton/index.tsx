@@ -4,12 +4,14 @@ interface PlayButtonProps {
   links: PlayButtonLink[];
 }
 
-export interface PlayButtonLink {
+type PlayButtonLinkBase = {
   text: string;
-  url?: string;
-  onClick?: () => void;
   svg: React.ReactNode;
-}
+};
+
+export type PlayButtonLink =
+  | (PlayButtonLinkBase & { url: string; onClick?: () => void })
+  | (PlayButtonLinkBase & { url?: never; onClick: () => void });
 
 const PlayButton = ({ links }: PlayButtonProps) => {
   if (!links || !links.length) {

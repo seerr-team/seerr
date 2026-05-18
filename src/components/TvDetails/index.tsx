@@ -136,6 +136,8 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   );
   const [isBlocklistUpdating, setIsBlocklistUpdating] =
     useState<boolean>(false);
+  const [isPlexWatchlistUpdating, setIsPlexWatchlistUpdating] =
+    useState<boolean>(false);
   const [showBlocklistModal, setShowBlocklistModal] = useState(false);
   const { addToast } = useToasts();
 
@@ -242,8 +244,8 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     });
   }
 
-  if (user?.userType === UserType.PLEX) {
-    const onPlexWatchlist = plexWatchlistData?.onWatchlist ?? false;
+  if (user?.userType === UserType.PLEX && plexWatchlistData) {
+    const onPlexWatchlist = plexWatchlistData.onWatchlist;
     mediaLinks.push({
       text: intl.formatMessage(
         onPlexWatchlist
@@ -252,10 +254,14 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
       ),
       svg: <BookmarkIcon />,
       onClick: async () => {
+        if (isPlexWatchlistUpdating) {
+          return;
+        }
+        setIsPlexWatchlistUpdating(true);
         try {
           if (onPlexWatchlist) {
             await axios.delete('/api/v1/watchlist/plex', {
-              data: { tmdbId: data.id, mediaType: MediaType.TV },
+              params: { tmdbId: data.id, mediaType: MediaType.TV },
             });
             addToast(
               intl.formatMessage(messages.removeFromPlexWatchlistSuccess, {
@@ -290,6 +296,8 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
             ),
             { appearance: 'error', autoDismiss: true }
           );
+        } finally {
+          setIsPlexWatchlistUpdating(false);
         }
       },
     });

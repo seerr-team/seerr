@@ -438,41 +438,30 @@ class PlexTvAPI extends ExternalAPI {
     mediaType: 'movie' | 'show'
   ): Promise<boolean> {
     const clientId = randomUUID();
-    try {
-      const match = await this.getPlexRatingKey(tmdbId, mediaType, clientId);
-      if (!match) {
-        return false;
-      }
-      const response = await this.axios.get<{
-        MediaContainer: {
-          UserState?: { watchlistedAt?: number | string }[];
-          userState?: { watchlistedAt?: number | string };
-        };
-      }>(`/library/metadata/${match.ratingKey}/userState`, {
-        baseURL: 'https://discover.provider.plex.tv',
-        params: { 'X-Plex-Token': this.authToken },
-        headers: {
-          'X-Plex-Client-Identifier': clientId,
-          'X-Plex-Product': 'Seerr',
-        },
-      });
-      const state =
-        response.data.MediaContainer.UserState?.[0] ??
-        response.data.MediaContainer.userState;
-      const watchlistedAt = state?.watchlistedAt;
-      return (
-        watchlistedAt != null && watchlistedAt !== 0 && watchlistedAt !== '0'
-      );
-    } catch (e) {
-      logger.debug('Plex watchlist status check failed', {
-        label: 'Plex.TV Metadata API',
-        tmdbId,
-        mediaType,
-        status: e.response?.status,
-        message: e.message,
-      });
+    const match = await this.getPlexRatingKey(tmdbId, mediaType, clientId);
+    if (!match) {
       return false;
     }
+    const response = await this.axios.get<{
+      MediaContainer: {
+        UserState?: { watchlistedAt?: number | string }[];
+        userState?: { watchlistedAt?: number | string };
+      };
+    }>(`/library/metadata/${match.ratingKey}/userState`, {
+      baseURL: 'https://discover.provider.plex.tv',
+      params: { 'X-Plex-Token': this.authToken },
+      headers: {
+        'X-Plex-Client-Identifier': clientId,
+        'X-Plex-Product': 'Seerr',
+      },
+    });
+    const state =
+      response.data.MediaContainer.UserState?.[0] ??
+      response.data.MediaContainer.userState;
+    const watchlistedAt = state?.watchlistedAt;
+    return (
+      watchlistedAt != null && watchlistedAt !== 0 && watchlistedAt !== '0'
+    );
   }
 
   public async addToPlexWatchlist(
