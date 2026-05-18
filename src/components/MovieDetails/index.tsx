@@ -34,6 +34,7 @@ import defineMessages from '@app/utils/defineMessages';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
 import {
   ArrowRightCircleIcon,
+  BookmarkIcon,
   CloudIcon,
   CogIcon,
   ExclamationTriangleIcon,
@@ -106,6 +107,15 @@ const messages = defineMessages('components.MovieDetails', {
   watchlistError: 'Something went wrong. Please try again.',
   removefromwatchlist: 'Remove From Watchlist',
   addtowatchlist: 'Add To Watchlist',
+  addToPlexWatchlist: 'Add to Plex Watchlist',
+  removeFromPlexWatchlist: 'Remove from Plex Watchlist',
+  addToPlexWatchlistSuccess:
+    '<strong>{title}</strong> added to Plex watchlist!',
+  removeFromPlexWatchlistSuccess:
+    '<strong>{title}</strong> removed from Plex watchlist!',
+  addToPlexWatchlistError: 'Failed to add to Plex watchlist. Please try again.',
+  removeFromPlexWatchlistError:
+    'Failed to remove from Plex watchlist. Please try again.',
 });
 
 interface MovieDetailsProps {
@@ -150,6 +160,14 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
 
   const { data: ratingData } = useSWR<RatingResponse>(
     `/api/v1/movie/${router.query.movieId}/ratingscombined`
+  );
+
+  const { data: plexWatchlistData, mutate: mutatePlexWatchlist } = useSWR<{
+    onWatchlist: boolean;
+  }>(
+    user?.userType === UserType.PLEX && router.query.movieId
+      ? `/api/v1/watchlist/plex/status?tmdbId=${router.query.movieId}&mediaType=movie`
+      : null
   );
 
   const sortedCrew = useMemo(
@@ -226,6 +244,59 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
       text: intl.formatMessage(messages.watchtrailer),
       url: trailerUrl,
       svg: <FilmIcon />,
+    });
+  }
+
+  if (user?.userType === UserType.PLEX) {
+    const onPlexWatchlist = plexWatchlistData?.onWatchlist ?? false;
+    mediaLinks.push({
+      text: intl.formatMessage(
+        onPlexWatchlist
+          ? messages.removeFromPlexWatchlist
+          : messages.addToPlexWatchlist
+      ),
+      svg: <BookmarkIcon />,
+      onClick: async () => {
+        try {
+          if (onPlexWatchlist) {
+            await axios.delete('/api/v1/watchlist/plex', {
+              data: { tmdbId: data.id, mediaType: MediaType.MOVIE },
+            });
+            addToast(
+              intl.formatMessage(messages.removeFromPlexWatchlistSuccess, {
+                title: data.title,
+                strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+              }),
+              { appearance: 'success', autoDismiss: true }
+            );
+          } else {
+            await axios.post('/api/v1/watchlist/plex', {
+              tmdbId: data.id,
+              mediaType: MediaType.MOVIE,
+            });
+            addToast(
+              intl.formatMessage(messages.addToPlexWatchlistSuccess, {
+                title: data.title,
+                strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+              }),
+              { appearance: 'success', autoDismiss: true }
+            );
+          }
+          mutatePlexWatchlist(
+            { onWatchlist: !onPlexWatchlist },
+            { revalidate: false }
+          );
+        } catch {
+          addToast(
+            intl.formatMessage(
+              onPlexWatchlist
+                ? messages.removeFromPlexWatchlistError
+                : messages.addToPlexWatchlistError
+            ),
+            { appearance: 'error', autoDismiss: true }
+          );
+        }
+      },
     });
   }
 

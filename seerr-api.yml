@@ -4890,6 +4890,106 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Watchlist'
+  /watchlist/plex/status:
+    get:
+      summary: Check Plex watchlist status
+      description: Returns whether the specified media item is on the authenticated Plex user's watchlist.
+      tags:
+        - watchlist
+      parameters:
+        - in: query
+          name: tmdbId
+          required: true
+          schema:
+            type: integer
+            example: 550
+        - in: query
+          name: mediaType
+          required: true
+          schema:
+            type: string
+            enum:
+              - movie
+              - tv
+      responses:
+        '200':
+          description: Watchlist status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  onWatchlist:
+                    type: boolean
+        '400':
+          description: Invalid tmdbId or mediaType
+        '401':
+          description: Unauthorized
+  /watchlist/plex:
+    post:
+      summary: Add media to Plex watchlist
+      description: Adds the specified media item to the authenticated Plex user's watchlist.
+      tags:
+        - watchlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tmdbId
+                - mediaType
+              properties:
+                tmdbId:
+                  type: integer
+                  example: 550
+                mediaType:
+                  type: string
+                  enum:
+                    - movie
+                    - tv
+      responses:
+        '204':
+          description: Successfully added to Plex watchlist
+        '400':
+          description: Invalid tmdbId or mediaType
+        '401':
+          description: Unauthorized
+        '403':
+          description: No linked Plex account
+    delete:
+      summary: Remove media from Plex watchlist
+      description: Removes the specified media item from the authenticated Plex user's watchlist.
+      tags:
+        - watchlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tmdbId
+                - mediaType
+              properties:
+                tmdbId:
+                  type: integer
+                  example: 550
+                mediaType:
+                  type: string
+                  enum:
+                    - movie
+                    - tv
+      responses:
+        '204':
+          description: Successfully removed from Plex watchlist
+        '400':
+          description: Invalid tmdbId or mediaType
+        '401':
+          description: Unauthorized
+        '403':
+          description: No linked Plex account
   /watchlist/{tmdbId}:
     delete:
       summary: Delete watchlist item

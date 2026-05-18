@@ -109,8 +109,10 @@ interface WatchlistResponse {
 
 type PlexMetadataItem = {
   ratingKey: string;
+  guid?: string;
   type: 'movie' | 'show';
   title: string;
+  onWatchlist?: boolean;
   Guid?: {
     id: `imdb://tt${number}` | `tmdb://${number}` | `tvdb://${number}`;
   }[];
@@ -390,6 +392,221 @@ class PlexTvAPI extends ExternalAPI {
         items: [],
       };
     }
+  }
+
+  private async getPlexRatingKey(
+    tmdbId: number,
+    mediaType: 'movie' | 'show',
+    clientId: string
+  ): Promise<{ ratingKey: string; guid: string | undefined } | null> {
+    const type = mediaType === 'movie' ? 1 : 2;
+    try {
+      const matchesResponse = await this.axios.get<MetadataResponse>(
+        `/library/metadata/matches`,
+        {
+          baseURL: 'https://discover.provider.plex.tv',
+          params: { type, guid: `tmdb://${tmdbId}` },
+          headers: {
+            'X-Plex-Client-Identifier': clientId,
+            'X-Plex-Product': 'Seerr',
+          },
+        }
+      );
+      const item =
+        matchesResponse.data.MediaContainer.Metadata?.[0] ??
+        matchesResponse.data.MediaContainer.Video?.[0];
+      if (!item?.ratingKey) {
+        return null;
+      }
+      return { ratingKey: item.ratingKey, guid: item.guid };
+    } catch (e) {
+      logger.debug('Plex metadata match lookup failed', {
+        label: 'Plex.TV Metadata API',
+        tmdbId,
+        mediaType,
+        status: e.response?.status,
+        message: e.message,
+      });
+      throw new Error(
+        `Plex metadata lookup failed: ${e.response?.status ?? ''} ${e.message}`
+      );
+    }
+  }
+
+  public async isOnPlexWatchlist(
+    tmdbId: number,
+    mediaType: 'movie' | 'show'
+  ): Promise<boolean> {
+    const clientId = randomUUID();
+    try {
+      const match = await this.getPlexRatingKey(tmdbId, mediaType, clientId);
+      if (!match) {
+        return false;
+      }
+      const response = await this.axios.get<{
+        MediaContainer: {
+          UserState?: { watchlistedAt?: number | string }[];
+          userState?: { watchlistedAt?: number | string };
+        };
+      }>(`/library/metadata/${match.ratingKey}/userState`, {
+        baseURL: 'https://discover.provider.plex.tv',
+        params: { 'X-Plex-Token': this.authToken },
+        headers: {
+          'X-Plex-Client-Identifier': clientId,
+          'X-Plex-Product': 'Seerr',
+        },
+      });
+      const state =
+        response.data.MediaContainer.UserState?.[0] ??
+        response.data.MediaContainer.userState;
+      const watchlistedAt = state?.watchlistedAt;
+      return (
+        watchlistedAt != null && watchlistedAt !== 0 && watchlistedAt !== '0'
+      );
+    } catch (e) {
+      logger.debug('Plex watchlist status check failed', {
+        label: 'Plex.TV Metadata API',
+        tmdbId,
+        mediaType,
+        status: e.response?.status,
+        message: e.message,
+      });
+      return false;
+    }
+  }
+
+  public async addToPlexWatchlist(
+    tmdbId: number,
+    mediaType: 'movie' | 'show'
+  ): Promise<void> {
+    const clientId = randomUUID();
+    const match = await this.getPlexRatingKey(tmdbId, mediaType, clientId);
+    if (!match) {
+      throw new Error(
+        `Could not find Plex ratingKey for tmdb://${tmdbId} (${mediaType})`
+      );
+    }
+    const { ratingKey, guid } = match;
+
+    const identifiers = [guid, ratingKey].filter((id): id is string => !!id);
+    let lastError: unknown;
+
+    for (const identifier of identifiers) {
+      try {
+        await this.axios.put('/actions/addToWatchlist', null, {
+          baseURL: 'https://discover.provider.plex.tv',
+          params: {
+            ratingKey: identifier,
+            'X-Plex-Token': this.authToken,
+          },
+          headers: {
+            'X-Plex-Client-Identifier': clientId,
+            'X-Plex-Product': 'Seerr',
+            'Content-Type': undefined,
+          },
+        });
+        lastError = undefined;
+        break;
+      } catch (e) {
+        lastError = e;
+        logger.error('Plex addToWatchlist call failed', {
+          label: 'Plex.TV Metadata API',
+          tmdbId,
+          mediaType,
+          ratingKey,
+          guid,
+          attemptedIdentifier: identifier,
+          status: e.response?.status,
+          data: e.response?.data,
+          message: e.message,
+        });
+      }
+    }
+
+    if (lastError) {
+      const e = lastError as {
+        response?: { status?: number };
+        message?: string;
+      };
+      throw new Error(
+        `Plex addToWatchlist failed: ${e.response?.status ?? ''} ${e.message}`
+      );
+    }
+
+    logger.debug('Added item to Plex watchlist', {
+      label: 'Plex.TV Metadata API',
+      tmdbId,
+      mediaType,
+      ratingKey,
+      guid,
+    });
+  }
+
+  public async removeFromPlexWatchlist(
+    tmdbId: number,
+    mediaType: 'movie' | 'show'
+  ): Promise<void> {
+    const clientId = randomUUID();
+    const match = await this.getPlexRatingKey(tmdbId, mediaType, clientId);
+    if (!match) {
+      throw new Error(
+        `Could not find Plex ratingKey for tmdb://${tmdbId} (${mediaType})`
+      );
+    }
+    const { ratingKey, guid } = match;
+
+    const identifiers = [guid, ratingKey].filter((id): id is string => !!id);
+    let lastError: unknown;
+
+    for (const identifier of identifiers) {
+      try {
+        await this.axios.put('/actions/removeFromWatchlist', null, {
+          baseURL: 'https://discover.provider.plex.tv',
+          params: {
+            ratingKey: identifier,
+            'X-Plex-Token': this.authToken,
+          },
+          headers: {
+            'X-Plex-Client-Identifier': clientId,
+            'X-Plex-Product': 'Seerr',
+            'Content-Type': undefined,
+          },
+        });
+        lastError = undefined;
+        break;
+      } catch (e) {
+        lastError = e;
+        logger.error('Plex removeFromWatchlist call failed', {
+          label: 'Plex.TV Metadata API',
+          tmdbId,
+          mediaType,
+          ratingKey,
+          guid,
+          attemptedIdentifier: identifier,
+          status: e.response?.status,
+          data: e.response?.data,
+          message: e.message,
+        });
+      }
+    }
+
+    if (lastError) {
+      const e = lastError as {
+        response?: { status?: number };
+        message?: string;
+      };
+      throw new Error(
+        `Plex removeFromWatchlist failed: ${e.response?.status ?? ''} ${e.message}`
+      );
+    }
+
+    logger.debug('Removed item from Plex watchlist', {
+      label: 'Plex.TV Metadata API',
+      tmdbId,
+      mediaType,
+      ratingKey,
+      guid,
+    });
   }
 
   public async pingToken() {
