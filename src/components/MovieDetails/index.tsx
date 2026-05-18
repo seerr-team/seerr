@@ -59,7 +59,7 @@ import 'country-flag-icons/3x2/flags.css';
 import { uniqBy } from 'lodash';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
 
@@ -279,12 +279,12 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
           </Link>
         ))
         .reduce((prev, curr) => (
-          <>
+          <Fragment key={`${prev.key}-${curr.key}`}>
             {intl.formatMessage(globalMessages.delimitedlist, {
               a: prev,
               b: curr,
             })}
-          </>
+          </Fragment>
         ))
     );
   }
@@ -553,11 +553,11 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
               movieAttributes
                 .map((t, k) => <span key={k}>{t}</span>)
                 .reduce((prev, curr) => (
-                  <>
+                  <Fragment key={`${prev.key}-${curr.key}`}>
                     {prev}
                     <span>|</span>
                     {curr}
-                  </>
+                  </Fragment>
                 ))}
           </span>
         </div>
@@ -1067,7 +1067,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                 <span className="media-fact-value flex flex-row flex-wrap gap-5">
                   {streamingProviders.map((p) => {
                     return (
-                      <Tooltip content={p.name}>
+                      <Tooltip content={p.name} key={`tooltip-${p.id}`}>
                         <span
                           className="opacity-50 transition duration-300 hover:opacity-100"
                           key={`provider-${p.id}`}
