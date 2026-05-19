@@ -181,10 +181,9 @@ authRoutes.post('/plex', async (req, res, next) => {
             userType: UserType.PLEX,
           });
 
-          await userRepository.save(user);
-
           // Apply default watchlist-sync flags so new users don't hit
-          // the silent-skip in WatchlistSync.syncUserWatchlist.
+          // the silent-skip in WatchlistSync.syncUserWatchlist. Settings
+          // are cascade-persisted by the User -> UserSettings relation.
           user.settings = new UserSettings({
             watchlistSyncMovies: settings.main.defaultWatchlistSyncMovies,
             watchlistSyncTv: settings.main.defaultWatchlistSyncTv,
@@ -488,10 +487,10 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       if (passedExplicitPassword) {
         await user.setPassword(body.password ?? '');
       }
-      await userRepository.save(user);
 
       // Apply default watchlist-sync flags so new users don't hit
-      // the silent-skip in WatchlistSync.syncUserWatchlist.
+      // the silent-skip in WatchlistSync.syncUserWatchlist. Settings
+      // are cascade-persisted by the User -> UserSettings relation.
       user.settings = new UserSettings({
         watchlistSyncMovies: settings.main.defaultWatchlistSyncMovies,
         watchlistSyncTv: settings.main.defaultWatchlistSyncTv,

@@ -8,8 +8,8 @@ import dataSource, { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import { User } from '@server/entity/User';
-import { UserSettings } from '@server/entity/UserSettings';
 import { UserPushSubscription } from '@server/entity/UserPushSubscription';
+import { UserSettings } from '@server/entity/UserSettings';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { WatchlistResponse } from '@server/interfaces/api/discoverInterfaces';
 import type {
@@ -684,7 +684,6 @@ router.post(
                 avatar: account.thumb,
                 userType: UserType.PLEX,
               });
-              await userRepository.save(newUser);
               newUser.settings = new UserSettings({
                 watchlistSyncMovies: settings.main.defaultWatchlistSyncMovies,
                 watchlistSyncTv: settings.main.defaultWatchlistSyncTv,
@@ -769,7 +768,6 @@ router.post(
                 : UserType.EMBY,
           });
 
-          await userRepository.save(newUser);
           newUser.settings = new UserSettings({
             watchlistSyncMovies: settings.main.defaultWatchlistSyncMovies,
             watchlistSyncTv: settings.main.defaultWatchlistSyncTv,

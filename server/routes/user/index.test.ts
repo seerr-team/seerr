@@ -24,6 +24,7 @@ function createApp() {
       secret: 'test-secret',
       resave: false,
       saveUninitialized: false,
+      cookie: { secure: 'auto' },
     })
   );
   app.use(checkUser);
