@@ -43,27 +43,26 @@ const PosterLightbox = ({
       leaveTo="opacity-0"
     >
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 sm:p-8"
-        onClick={onClose}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8"
         role="dialog"
         aria-modal="true"
         aria-label={alt || 'Poster preview'}
       >
         <button
           type="button"
-          className="absolute right-4 top-4 z-10 rounded-full bg-gray-800/80 p-2 text-white hover:bg-gray-700/80 focus:outline-none focus:ring-2 focus:ring-white"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
+          className="absolute inset-0 z-0 cursor-zoom-out bg-black/90 focus:outline-none"
+          onClick={onClose}
+          aria-label="Close poster preview"
+        />
+        <button
+          type="button"
+          className="absolute right-4 top-4 z-20 rounded-full bg-gray-800/80 p-2 text-white hover:bg-gray-700/80 focus:outline-none focus:ring-2 focus:ring-white"
+          onClick={onClose}
           aria-label="Close poster preview"
         >
           <XMarkIcon className="h-6 w-6" />
         </button>
-        <div
-          className="relative flex h-full w-full items-center justify-center"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="pointer-events-none relative z-10 flex h-full w-full items-center justify-center">
           <CachedImage
             type="tmdb"
             src={
