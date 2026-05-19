@@ -12,6 +12,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import type { PlayButtonLink } from '@app/components/Common/PlayButton';
 import PlayButton from '@app/components/Common/PlayButton';
+import PosterLightbox from '@app/components/Common/PosterLightbox';
 import Tag from '@app/components/Common/Tag';
 import Tooltip from '@app/components/Common/Tooltip';
 import ExternalLinkBlock from '@app/components/ExternalLinkBlock';
@@ -131,6 +132,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   const [isBlocklistUpdating, setIsBlocklistUpdating] =
     useState<boolean>(false);
   const [showBlocklistModal, setShowBlocklistModal] = useState(false);
+  const [showPosterLightbox, setShowPosterLightbox] = useState(false);
   const { addToast } = useToasts();
 
   const {
@@ -485,8 +487,19 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
         onComplete={onClickHideItemBtn}
         isUpdating={isBlocklistUpdating}
       />
+      <PosterLightbox
+        show={showPosterLightbox}
+        posterPath={data.posterPath}
+        alt={data.title}
+        onClose={() => setShowPosterLightbox(false)}
+      />
       <div className="media-header">
-        <div className="media-poster">
+        <button
+          type="button"
+          className="media-poster cursor-zoom-in border-0 bg-transparent p-0 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          onClick={() => setShowPosterLightbox(true)}
+          aria-label={`Expand ${data.title} poster`}
+        >
           <CachedImage
             type="tmdb"
             src={
@@ -501,7 +514,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
             height={900}
             priority
           />
-        </div>
+        </button>
         <div className="media-title">
           <div className="media-status">
             <StatusBadge

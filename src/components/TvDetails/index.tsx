@@ -12,6 +12,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import type { PlayButtonLink } from '@app/components/Common/PlayButton';
 import PlayButton from '@app/components/Common/PlayButton';
+import PosterLightbox from '@app/components/Common/PosterLightbox';
 import StatusBadgeMini from '@app/components/Common/StatusBadgeMini';
 import Tag from '@app/components/Common/Tag';
 import Tooltip from '@app/components/Common/Tooltip';
@@ -127,6 +128,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   const [isBlocklistUpdating, setIsBlocklistUpdating] =
     useState<boolean>(false);
   const [showBlocklistModal, setShowBlocklistModal] = useState(false);
+  const [showPosterLightbox, setShowPosterLightbox] = useState(false);
   const { addToast } = useToasts();
 
   const {
@@ -527,8 +529,19 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
         revalidate={() => revalidate()}
         show={showManager}
       />
+      <PosterLightbox
+        show={showPosterLightbox}
+        posterPath={data.posterPath}
+        alt={data.name}
+        onClose={() => setShowPosterLightbox(false)}
+      />
       <div className="media-header">
-        <div className="media-poster">
+        <button
+          type="button"
+          className="media-poster cursor-zoom-in border-0 bg-transparent p-0 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          onClick={() => setShowPosterLightbox(true)}
+          aria-label={`Expand ${data.name} poster`}
+        >
           <CachedImage
             type="tmdb"
             src={
@@ -543,7 +556,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
             height={900}
             priority
           />
-        </div>
+        </button>
         <div className="media-title">
           <div className="media-status">
             <StatusBadge
