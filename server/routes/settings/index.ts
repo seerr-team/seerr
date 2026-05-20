@@ -75,9 +75,25 @@ settingsRoutes.get('/main', (req, res, next) => {
 
 settingsRoutes.post('/main', async (req, res) => {
   const settings = getSettings();
+  const { applyToExistingUsers, ...bodyWithoutFlag } = req.body;
 
-  settings.main = merge(settings.main, req.body);
+  settings.main = merge(settings.main, bodyWithoutFlag);
   await settings.save();
+
+  if (
+    applyToExistingUsers &&
+    bodyWithoutFlag.defaultPermissions !== undefined
+  ) {
+    const userRepository = getRepository(User);
+    await userRepository
+      .createQueryBuilder()
+      .update(User)
+      .set({ permissions: bodyWithoutFlag.defaultPermissions })
+      .where('(permissions & :adminFlag) = 0', {
+        adminFlag: Permission.ADMIN,
+      })
+      .execute();
+  }
 
   return res.status(200).json(settings.main);
 });

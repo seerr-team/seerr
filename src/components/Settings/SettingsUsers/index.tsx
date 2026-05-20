@@ -9,11 +9,15 @@ import useSettings from '@app/hooks/useSettings';
 import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowDownOnSquareIcon,
+  ArrowPathIcon,
+} from '@heroicons/react/24/outline';
 import { MediaServerType } from '@server/constants/server';
 import type { MainSettings } from '@server/lib/settings';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
+import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import useSWR, { mutate } from 'swr';
 import * as yup from 'yup';
@@ -40,6 +44,11 @@ const messages = defineMessages('components.Settings.SettingsUsers', {
   tvRequestLimitLabel: 'Global Series Request Limit',
   defaultPermissions: 'Default Permissions',
   defaultPermissionsTip: 'Initial permissions assigned to new users',
+  syncPermissionsButton: 'Sync to Existing Users',
+  syncPermissionsSuccess:
+    'Default permissions have been applied to all non-admin users.',
+  syncPermissionsFailure:
+    'Something went wrong while syncing permissions to existing users.',
   disabledMediaServerLoginWarning:
     'Some users may not have a {applicationTitle} password set. Disabling {mediaServerName} sign-in could lock them out. Affected users will need to set a password from their profile or via a password reset link.',
 });
@@ -53,6 +62,7 @@ const SettingsUsers = () => {
     mutate: revalidate,
   } = useSWR<MainSettings>('/api/v1/settings/main');
   const settings = useSettings();
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const schema = yup
     .object()
@@ -153,6 +163,30 @@ const SettingsUsers = () => {
           }}
         >
           {({ isSubmitting, isValid, values, errors, setFieldValue }) => {
+            const handleSyncPermissions = async () => {
+              setIsSyncing(true);
+              try {
+                await axios.post('/api/v1/settings/main', {
+                  defaultPermissions: values.defaultPermissions,
+                  applyToExistingUsers: true,
+                });
+                mutate('/api/v1/settings/public');
+
+                addToast(intl.formatMessage(messages.syncPermissionsSuccess), {
+                  autoDismiss: true,
+                  appearance: 'success',
+                });
+              } catch {
+                addToast(intl.formatMessage(messages.syncPermissionsFailure), {
+                  autoDismiss: true,
+                  appearance: 'error',
+                });
+              } finally {
+                revalidate();
+                setIsSyncing(false);
+              }
+            };
+
             return (
               <Form className="section">
                 <div
@@ -301,21 +335,32 @@ const SettingsUsers = () => {
                   </div>
                 </div>
                 <div className="actions">
-                  <div className="flex justify-end">
-                    <span className="ml-3 inline-flex rounded-md shadow-sm">
-                      <Button
-                        buttonType="primary"
-                        type="submit"
-                        disabled={isSubmitting || !isValid}
-                      >
-                        <ArrowDownOnSquareIcon />
-                        <span>
-                          {isSubmitting
-                            ? intl.formatMessage(globalMessages.saving)
-                            : intl.formatMessage(globalMessages.save)}
-                        </span>
-                      </Button>
-                    </span>
+                  <div className="flex justify-end gap-3">
+                    <Button
+                      buttonType="default"
+                      type="button"
+                      disabled={isSyncing || isSubmitting}
+                      onClick={handleSyncPermissions}
+                    >
+                      <ArrowPathIcon />
+                      <span>
+                        {isSyncing
+                          ? intl.formatMessage(globalMessages.saving)
+                          : intl.formatMessage(messages.syncPermissionsButton)}
+                      </span>
+                    </Button>
+                    <Button
+                      buttonType="primary"
+                      type="submit"
+                      disabled={isSubmitting || !isValid}
+                    >
+                      <ArrowDownOnSquareIcon />
+                      <span>
+                        {isSubmitting
+                          ? intl.formatMessage(globalMessages.saving)
+                          : intl.formatMessage(globalMessages.save)}
+                      </span>
+                    </Button>
                   </div>
                 </div>
               </Form>
