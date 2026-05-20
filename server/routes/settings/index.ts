@@ -587,7 +587,7 @@ settingsRoutes.post(
         });
       }
       if (target === 'plex') {
-        const plexConfigured = settings.plex?.name ?? settings.plex?.ip;
+        const plexConfigured = settings.plex?.name || settings.plex?.ip;
         if (!plexConfigured) {
           return res.status(400).json({
             error:

@@ -2330,6 +2330,7 @@ paths:
       tags:
         - settings
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -2339,6 +2340,8 @@ paths:
                   type: string
                   enum: [jellyfin, emby, plex]
                   description: Target media server type. Required when switching from Plex (jellyfin or emby) or from Jellyfin/Emby (plex, jellyfin, or emby).
+              required:
+                - targetServerType
       responses:
         '200':
           description: Media server cleared

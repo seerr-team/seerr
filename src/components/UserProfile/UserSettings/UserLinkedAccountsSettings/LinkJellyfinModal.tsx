@@ -128,6 +128,10 @@ const LinkJellyfinModal = ({
     }
   };
 
+  if (!userId) {
+    return null;
+  }
+
   if (adminLink) {
     return (
       <Transition
