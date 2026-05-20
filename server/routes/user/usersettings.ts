@@ -17,13 +17,14 @@ import { isAuthenticated } from '@server/middleware/auth';
 import { quickConnectSecret } from '@server/routes/auth';
 import { ApiError } from '@server/types/error';
 import { getHostname } from '@server/utils/getHostname';
+import { normalizeJellyfinGuid } from '@server/utils/jellyfin';
 import {
   isOwnProfile,
   isOwnProfileOrAdmin,
 } from '@server/utils/profileMiddleware';
 import { Router } from 'express';
 import net from 'net';
-import { Not } from 'typeorm';
+import { IsNull, Not } from 'typeorm';
 import { canMakePermissionsChange } from '.';
 
 const userSettingsRoutes = Router({ mergeParams: true });
@@ -261,6 +262,147 @@ userSettingsRoutes.post<
     next({ status: 500, message: e.message });
   }
 });
+
+const getJellyfinUserAvatarUrl = (jellyfinUserId: string): string =>
+  `/avatarproxy/${jellyfinUserId}`;
+
+const jellyfinUserIdsMatch = (
+  first?: string | null,
+  second?: string | null
+): boolean => {
+  if (!first || !second) {
+    return false;
+  }
+
+  const firstGuid = normalizeJellyfinGuid(first);
+  const secondGuid = normalizeJellyfinGuid(second);
+
+  return firstGuid && secondGuid ? firstGuid === secondGuid : first === second;
+};
+
+userSettingsRoutes.post<{ id: string }, unknown, { jellyfinUserId?: string }>(
+  '/linked-accounts/jellyfin/map',
+  isAuthenticated(Permission.ADMIN),
+  async (req, res) => {
+    const settings = getSettings();
+    const userRepository = getRepository(User);
+
+    const isMainJellyfin =
+      settings.main.mediaServerType === MediaServerType.JELLYFIN ||
+      settings.main.mediaServerType === MediaServerType.EMBY;
+    const jellyfinForLinking = settings.jellyfin;
+
+    if (!isMainJellyfin && !jellyfinForLinking?.ip) {
+      return res.status(400).json({
+        message:
+          'Jellyfin is not the main server and Jellyfin connection is not configured. Ask an admin to set Jellyfin in Settings (connection only) for account linking.',
+      });
+    }
+
+    const jellyfinUserId = req.body.jellyfinUserId?.trim();
+    if (!jellyfinUserId) {
+      return res.status(400).json({ message: 'Invalid Jellyfin User ID.' });
+    }
+
+    try {
+      const user = await userRepository.findOne({
+        where: { id: Number(req.params.id) },
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: 'User not found.' });
+      }
+
+      if (
+        (user.id === 1 && req.user?.id !== 1) ||
+        (user.hasPermission(Permission.ADMIN) &&
+          user.id !== req.user?.id &&
+          req.user?.id !== 1)
+      ) {
+        return res.status(403).json({
+          message:
+            "You do not have permission to modify this user's linked accounts.",
+        });
+      }
+
+      if (!settings.jellyfin?.apiKey) {
+        return res.status(400).json({
+          message: 'Jellyfin API key is not configured.',
+        });
+      }
+
+      const admin = await userRepository.findOneOrFail({
+        where: { id: 1 },
+        select: ['id', 'jellyfinDeviceId', 'jellyfinUserId'],
+        order: { id: 'ASC' },
+      });
+      const hostname = isMainJellyfin
+        ? getHostname()
+        : getHostname(jellyfinForLinking);
+      const jellyfinClient = new JellyfinAPI(
+        hostname,
+        settings.jellyfin.apiKey,
+        admin.jellyfinDeviceId ?? ''
+      );
+      jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
+
+      const jellyfinUsers = await jellyfinClient.getUsers();
+      const jellyfinUser = jellyfinUsers.users.find((serverUser) =>
+        jellyfinUserIdsMatch(serverUser.Id, jellyfinUserId)
+      );
+
+      if (!jellyfinUser) {
+        return res.status(404).json({ message: 'Jellyfin user not found.' });
+      }
+
+      const linkedUsers = await userRepository.find({
+        select: ['id', 'jellyfinUserId', 'jellyfinUsername'],
+        where: [
+          { jellyfinUserId: Not(IsNull()) },
+          { jellyfinUsername: jellyfinUser.Name },
+        ],
+      });
+      const conflictingUser = linkedUsers.find(
+        (linkedUser) =>
+          linkedUser.id !== user.id &&
+          (jellyfinUserIdsMatch(linkedUser.jellyfinUserId, jellyfinUserId) ||
+            linkedUser.jellyfinUsername === jellyfinUser.Name)
+      );
+
+      if (conflictingUser) {
+        return res.status(422).json({
+          message: 'The specified account is already linked to a Seerr user',
+        });
+      }
+
+      if (isMainJellyfin) {
+        user.userType =
+          settings.main.mediaServerType === MediaServerType.EMBY
+            ? UserType.EMBY
+            : UserType.JELLYFIN;
+      }
+      user.jellyfinUserId = jellyfinUser.Id;
+      user.jellyfinUsername = jellyfinUser.Name;
+      user.jellyfinDeviceId = Buffer.from(
+        user.id === 1 ? 'BOT_seerr' : `BOT_seerr_${jellyfinUser.Name ?? ''}`
+      ).toString('base64');
+      user.jellyfinAuthToken = null;
+      user.avatar = getJellyfinUserAvatarUrl(jellyfinUser.Id);
+
+      await userRepository.save(user);
+
+      return res.status(204).send();
+    } catch (e) {
+      logger.error('Failed to map Jellyfin account to user.', {
+        label: 'API',
+        userId: req.params.id,
+        jellyfinUserId,
+        error: e,
+      });
+      return res.status(500).json({ message: e.message });
+    }
+  }
+);
 
 userSettingsRoutes.post<{ authToken: string }>(
   '/linked-accounts/plex',
