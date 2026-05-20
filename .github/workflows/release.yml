@@ -14,9 +14,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  DOCKER_HUB: seerr/seerr
-
 jobs:
   changelog:
     name: Generate changelog
@@ -126,12 +123,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
@@ -144,7 +135,6 @@ jobs:
         uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6
         with:
           images: |
-            ${{ env.DOCKER_HUB }}
             ghcr.io/${{ github.repository }}
           tags: |
             type=semver,pattern={{raw}}
@@ -175,17 +165,13 @@ jobs:
       - name: Resolve manifest digest
         id: digests
         run: |
-          DIGEST=$(docker buildx imagetools inspect "${{ env.DOCKER_HUB }}:${{ env.VERSION }}" --format '{{json .Manifest.Digest}}' | tr -d '"')
+          DIGEST=$(docker buildx imagetools inspect "ghcr.io/${{ github.repository }}:${{ env.VERSION }}" --format '{{json .Manifest.Digest}}' | tr -d '"')
           echo "IMAGE_DIGEST=$DIGEST" >> $GITHUB_OUTPUT
 
       - name: Also tag :latest (non-pre-release only)
         shell: bash
         if: ${{ !contains(env.VERSION, '-') }}
         run: |
-          docker buildx imagetools create \
-            -t ${{ env.DOCKER_HUB }}:latest \
-            ${{ env.DOCKER_HUB }}:${{ env.VERSION }}
-
           docker buildx imagetools create \
             -t ghcr.io/${{ github.repository }}:latest \
             ghcr.io/${{ github.repository }}:${{ env.VERSION }}
@@ -213,12 +199,6 @@ jobs:
       - name: Install Trivy
         uses: aquasecurity/setup-trivy@3fb12ec12f41e471780db15c232d5dd185dcb514 # v0.2.6
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
@@ -229,15 +209,11 @@ jobs:
       - name: Sign images
         run: |
           cosign sign --recursive "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}"
-          cosign sign --recursive "${{ env.DOCKER_HUB }}@${{ needs.publish.outputs.image_digest }}"
 
       - name: Generate SBOMs
         run: |
           trivy image --format cyclonedx --output seerr-ghcr-image-${{ env.VERSION }}.sbom \
             "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}"
-
-          trivy image --format cyclonedx --output seerr-dockerhub-image-${{ env.VERSION }}.sbom \
-            "${{ env.DOCKER_HUB }}@${{ needs.publish.outputs.image_digest }}"
 
       - name: Attest SBOMs
         run: |
@@ -245,11 +221,6 @@ jobs:
             --type cyclonedx \
             --predicate seerr-ghcr-image-${{ env.VERSION }}.sbom \
             "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}"
-
-          cosign attest \
-            --type cyclonedx \
-            --predicate seerr-dockerhub-image-${{ env.VERSION }}.sbom \
-            "${{ env.DOCKER_HUB }}@${{ needs.publish.outputs.image_digest }}"
 
       - name: Upload SBOMs
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -274,10 +245,6 @@ jobs:
       - name: Verify signatures
         run: |
           cosign verify "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}" \
-            --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
-            --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
-
-          cosign verify "${{ env.DOCKER_HUB }}@${{ needs.publish.outputs.image_digest }}" \
             --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
             --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
 
