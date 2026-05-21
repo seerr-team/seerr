@@ -346,5 +346,82 @@ describe('Jellyfin Scanner', () => {
         'Show should be AVAILABLE when all non-empty TMDB seasons are fully scanned, ignoring empty placeholder seasons'
       );
     });
+
+    it('should not mark show as AVAILABLE when all TMDB seasons have 0 episodes', async () => {
+      configureJellyfinWithLibrary();
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 5001;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.UNKNOWN;
+      media.jellyfinMediaId = 'jf-all-empty-show-id';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.UNKNOWN,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+        new Season({
+          seasonNumber: 2,
+          status: MediaStatus.UNKNOWN,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+      ];
+
+      await mediaRepository.save(media);
+
+      getTvShowImpl = async () =>
+        fakeTmdbShow(5001, [
+          {
+            id: 1,
+            air_date: '2024-01-01',
+            episode_count: 0,
+            name: 'Season 1',
+            overview: '',
+            season_number: 1,
+          },
+          {
+            id: 2,
+            air_date: '2024-01-01',
+            episode_count: 0,
+            name: 'Season 2',
+            overview: '',
+            season_number: 2,
+          },
+        ]);
+
+      getLibraryContentsImpl = async (id: string) => {
+        if (id === 'test-library-id') {
+          return [fakeJellyfinSeriesItem('jf-all-empty-show-id')];
+        }
+        return [];
+      };
+
+      getItemDataImpl = async (id: string) => {
+        if (id === 'jf-all-empty-show-id') {
+          return fakeJellyfinShowMetadata('jf-all-empty-show-id', '5001');
+        }
+        return undefined;
+      };
+
+      // No seasons or episodes in Jellyfin
+      getSeasonsImpl = async () => [];
+      getEpisodesImpl = async () => [];
+
+      await jellyfinFullScanner.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 5001 },
+        relations: ['seasons'],
+      });
+
+      assert.notStrictEqual(
+        updated.status,
+        MediaStatus.AVAILABLE,
+        'Show should not be AVAILABLE when all TMDB seasons have 0 episodes'
+      );
+    });
   });
 });

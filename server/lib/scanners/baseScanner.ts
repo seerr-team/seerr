@@ -467,27 +467,24 @@ class BaseScanner<T> {
           (s) => s.seasonNumber !== 0
         );
 
+        const nonSpecialSeasonsWithEpisodes = nonSpecialSeasons.filter(
+          (s) =>
+            (seasons.find(
+              (season) => season.seasonNumber === s.seasonNumber
+            )?.totalEpisodes ?? Infinity) > 0
+        );
+
         const isAllStandardSeasonsAvailable =
-          nonSpecialSeasons.length > 0 &&
-          nonSpecialSeasons
-            .filter(
-              (s) =>
-                (seasons.find(
-                  (season) => season.seasonNumber === s.seasonNumber
-                )?.totalEpisodes ?? Infinity) > 0
-            )
-            .every((s) => s.status === MediaStatus.AVAILABLE);
+          nonSpecialSeasonsWithEpisodes.length > 0 &&
+          nonSpecialSeasonsWithEpisodes.every(
+            (s) => s.status === MediaStatus.AVAILABLE
+          );
 
         const isAll4kSeasonsAvailable =
-          nonSpecialSeasons.length > 0 &&
-          nonSpecialSeasons
-            .filter(
-              (s) =>
-                (seasons.find(
-                  (season) => season.seasonNumber === s.seasonNumber
-                )?.totalEpisodes ?? Infinity) > 0
-            )
-            .every((s) => s.status4k === MediaStatus.AVAILABLE);
+          nonSpecialSeasonsWithEpisodes.length > 0 &&
+          nonSpecialSeasonsWithEpisodes.every(
+            (s) => s.status4k === MediaStatus.AVAILABLE
+          );
 
         media.status = isAllStandardSeasonsAvailable
           ? MediaStatus.AVAILABLE
@@ -532,27 +529,24 @@ class BaseScanner<T> {
           (s) => s.seasonNumber !== 0
         );
 
+        const nonSpecialNewSeasonsWithEpisodes = nonSpecialNewSeasons.filter(
+          (s) =>
+            (seasons.find(
+              (season) => season.seasonNumber === s.seasonNumber
+            )?.totalEpisodes ?? Infinity) > 0
+        );
+
         const isAllStandardSeasonsAvailable =
-          nonSpecialNewSeasons.length > 0 &&
-          nonSpecialNewSeasons
-            .filter(
-              (s) =>
-                (seasons.find(
-                  (season) => season.seasonNumber === s.seasonNumber
-                )?.totalEpisodes ?? Infinity) > 0
-            )
-            .every((s) => s.status === MediaStatus.AVAILABLE);
+          nonSpecialNewSeasonsWithEpisodes.length > 0 &&
+          nonSpecialNewSeasonsWithEpisodes.every(
+            (s) => s.status === MediaStatus.AVAILABLE
+          );
 
         const isAll4kSeasonsAvailable =
-          nonSpecialNewSeasons.length > 0 &&
-          nonSpecialNewSeasons
-            .filter(
-              (s) =>
-                (seasons.find(
-                  (season) => season.seasonNumber === s.seasonNumber
-                )?.totalEpisodes ?? Infinity) > 0
-            )
-            .every((s) => s.status4k === MediaStatus.AVAILABLE);
+          nonSpecialNewSeasonsWithEpisodes.length > 0 &&
+          nonSpecialNewSeasonsWithEpisodes.every(
+            (s) => s.status4k === MediaStatus.AVAILABLE
+          );
 
         const newMedia = new Media({
           mediaType: MediaType.TV,
