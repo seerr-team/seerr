@@ -253,6 +253,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     mediaServerType: MediaServerType.NOT_CONFIGURED,
     partialRequestsEnabled: true,
     enableSpecialEpisodes: false,
+    separate4kRequestButton: false,
     cacheImages: false,
     vapidPublic: '',
     enablePushRegistration: false,

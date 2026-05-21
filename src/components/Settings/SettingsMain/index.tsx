@@ -70,6 +70,9 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   validationApplicationUrlTrailingSlash: 'URL must not end in a trailing slash',
   partialRequestsEnabled: 'Allow Partial Series Requests',
   enableSpecialEpisodes: 'Allow Special Episodes Requests',
+  separate4kRequestButton: 'Separate 4K Request Button',
+  separate4kRequestButtonTip:
+    'Show the 4K request as its own button next to the Request button on title pages instead of inside the request dropdown',
   locale: 'Display Language',
   youtubeUrl: 'YouTube URL',
   youtubeUrlTip:
@@ -181,6 +184,7 @@ const SettingsMain = () => {
             blocklistedTagsLimit: data?.blocklistedTagsLimit || 50,
             partialRequestsEnabled: data?.partialRequestsEnabled,
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
+            separate4kRequestButton: data?.separate4kRequestButton,
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
           }}
@@ -203,6 +207,7 @@ const SettingsMain = () => {
                 blocklistedTagsLimit: values.blocklistedTagsLimit,
                 partialRequestsEnabled: values.partialRequestsEnabled,
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
+                separate4kRequestButton: values.separate4kRequestButton,
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
               });
@@ -579,6 +584,32 @@ const SettingsMain = () => {
                         setFieldValue(
                           'enableSpecialEpisodes',
                           !values.enableSpecialEpisodes
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="separate4kRequestButton"
+                    className="checkbox-label"
+                  >
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.separate4kRequestButton)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.separate4kRequestButtonTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="separate4kRequestButton"
+                      name="separate4kRequestButton"
+                      onChange={() => {
+                        setFieldValue(
+                          'separate4kRequestButton',
+                          !values.separate4kRequestButton
                         );
                       }}
                     />

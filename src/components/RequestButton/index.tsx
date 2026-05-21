@@ -360,11 +360,53 @@ const RequestButton = ({
     });
   }
 
-  const [buttonOne, ...others] = buttons;
+  // When enabled, split all 4K-related request actions into their own dedicated
+  // button (with its own dropdown), leaving the non-4K actions untouched.
+  // Otherwise everything stays in a single button + dropdown.
+  const splitButtons = settings.currentSettings.separate4kRequestButton;
+  const mainButtons = splitButtons
+    ? buttons.filter((button) => !button.id.includes('4k'))
+    : buttons;
+  const fourKButtons = splitButtons
+    ? buttons.filter((button) => button.id.includes('4k'))
+    : [];
 
-  if (!buttonOne) {
+  if (mainButtons.length === 0 && fourKButtons.length === 0) {
     return null;
   }
+
+  const renderButtonGroup = (group: ButtonOption[]) => {
+    const [buttonOne, ...others] = group;
+
+    if (!buttonOne) {
+      return null;
+    }
+
+    return (
+      <ButtonWithDropdown
+        text={
+          <>
+            {buttonOne.svg}
+            <span>{buttonOne.text}</span>
+          </>
+        }
+        onClick={buttonOne.action}
+        className="ml-2"
+      >
+        {others.length > 0
+          ? others.map((button) => (
+              <ButtonWithDropdown.Item
+                onClick={button.action}
+                key={`request-option-${button.id}`}
+              >
+                {button.svg}
+                <span>{button.text}</span>
+              </ButtonWithDropdown.Item>
+            ))
+          : null}
+      </ButtonWithDropdown>
+    );
+  };
 
   return (
     <>
@@ -391,28 +433,8 @@ const RequestButton = ({
         }}
         onCancel={() => setShowRequest4kModal(false)}
       />
-      <ButtonWithDropdown
-        text={
-          <>
-            {buttonOne.svg}
-            <span>{buttonOne.text}</span>
-          </>
-        }
-        onClick={buttonOne.action}
-        className="ml-2"
-      >
-        {others && others.length > 0
-          ? others.map((button) => (
-              <ButtonWithDropdown.Item
-                onClick={button.action}
-                key={`request-option-${button.id}`}
-              >
-                {button.svg}
-                <span>{button.text}</span>
-              </ButtonWithDropdown.Item>
-            ))
-          : null}
-      </ButtonWithDropdown>
+      {renderButtonGroup(mainButtons)}
+      {renderButtonGroup(fourKButtons)}
     </>
   );
 };
