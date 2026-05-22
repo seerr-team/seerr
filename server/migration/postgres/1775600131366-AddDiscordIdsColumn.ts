@@ -11,9 +11,18 @@ export class AddDiscordIdsColumn1775600131366 implements MigrationInterface {
     await queryRunner.query(
       `UPDATE "user_settings" SET "discordIds" = '["' || "discordId" || '"]' WHERE "discordId" IS NOT NULL AND "discordId" != ''`
     );
+    await queryRunner.query(
+      `ALTER TABLE "user_settings" DROP COLUMN "discordId"`
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "user_settings" ADD "discordId" character varying`
+    );
+    await queryRunner.query(
+      `UPDATE "user_settings" SET "discordId" = ("discordIds"::jsonb ->> 0) WHERE "discordIds" IS NOT NULL AND "discordIds" != ''`
+    );
     await queryRunner.query(
       `ALTER TABLE "user_settings" DROP COLUMN "discordIds"`
     );

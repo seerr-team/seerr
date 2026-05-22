@@ -55,9 +55,6 @@ export class UserSettings {
   @Column({ nullable: true })
   public pgpKey?: string;
 
-  @Column({ nullable: true })
-  public discordId?: string;
-
   @Column({ type: 'text', nullable: true, transformer: jsonArrayTransformer })
   public discordIds: string[];
 
