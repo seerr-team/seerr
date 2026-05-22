@@ -80,7 +80,11 @@ const UserMetadataAccountSettings = () => {
               intl.formatMessage(messages.validationKeyRequired),
               function (value) {
                 const { value: metaValue } = this.parent;
-                if (metaValue && !value) return false;
+                if (
+                  (metaValue?.trim() ?? '') !== '' &&
+                  (value?.trim() ?? '') === ''
+                )
+                  return false;
                 return true;
               }
             )
@@ -101,7 +105,11 @@ const UserMetadataAccountSettings = () => {
             intl.formatMessage(messages.validationValueRequired),
             function (value) {
               const { key: metaKey } = this.parent;
-              if (metaKey && !value) return false;
+              if (
+                (metaKey?.trim() ?? '') !== '' &&
+                (value?.trim() ?? '') === ''
+              )
+                return false;
               return true;
             }
           ),
