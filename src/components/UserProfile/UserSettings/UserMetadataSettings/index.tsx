@@ -32,6 +32,7 @@ const messages = defineMessages(
     addField: 'Add Field',
     validationKeyRequired: 'Key is required if a value is provided',
     validationValueRequired: 'Value is required if a key is provided',
+    validationUniqueKeys: 'Metadata keys must be unique',
   }
 );
 
@@ -58,29 +59,41 @@ const UserMetadataAccountSettings = () => {
   );
 
   const MetadataSchema = Yup.object().shape({
-    metadata: Yup.array().of(
-      Yup.object().shape({
-        key: Yup.string().test(
-          'key-required',
-          intl.formatMessage(messages.validationKeyRequired),
-          function (value) {
-            const { value: metaValue } = this.parent;
-            if (metaValue && !value) return false;
-            return true;
-          }
-        ),
-        value: Yup.string().test(
-          'value-required',
-          intl.formatMessage(messages.validationValueRequired),
-          function (value) {
-            const { key: metaKey } = this.parent;
-            if (metaKey && !value) return false;
-            return true;
-          }
-        ),
-        isSensitive: Yup.boolean(),
-      })
-    ),
+    metadata: Yup.array()
+      .test(
+        'unique-keys',
+        intl.formatMessage(messages.validationUniqueKeys),
+        (fields) => {
+          if (!fields) return true;
+          const keys = fields
+            .map((f) => f.key?.trim())
+            .filter((k): k is string => Boolean(k));
+          return new Set(keys).size === keys.length;
+        }
+      )
+      .of(
+        Yup.object().shape({
+          key: Yup.string().test(
+            'key-required',
+            intl.formatMessage(messages.validationKeyRequired),
+            function (value) {
+              const { value: metaValue } = this.parent;
+              if (metaValue && !value) return false;
+              return true;
+            }
+          ),
+          value: Yup.string().test(
+            'value-required',
+            intl.formatMessage(messages.validationValueRequired),
+            function (value) {
+              const { key: metaKey } = this.parent;
+              if (metaKey && !value) return false;
+              return true;
+            }
+          ),
+          isSensitive: Yup.boolean(),
+        })
+      ),
   });
 
   if (!data && !dataError && !error) {
@@ -111,10 +124,13 @@ const UserMetadataAccountSettings = () => {
         enableReinitialize
         onSubmit={async (values, { resetForm }) => {
           try {
-            const cleanedMetadata = values.metadata.filter(
-              (field) => field.key.trim() !== '' || field.value.trim() !== ''
-            );
-
+            const cleanedMetadata = values.metadata
+              .map((field) => ({
+                ...field,
+                key: field.key.trim(),
+                value: field.value.trim(),
+              }))
+              .filter((field) => field.key !== '' || field.value !== '');
             await axios.post(`/api/v1/user/${user?.id}/settings/metadata`, {
               metadata: cleanedMetadata,
             });
@@ -225,6 +241,10 @@ const UserMetadataAccountSettings = () => {
                       </div>
                     );
                   })}
+
+                  {touched.metadata && typeof errors.metadata === 'string' && (
+                    <div className="error mb-4">{errors.metadata}</div>
+                  )}
 
                   <div className="mt-6">
                     <Button

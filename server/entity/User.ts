@@ -50,6 +50,7 @@ export class User {
     'jellyfinAuthToken',
     'plexToken',
     'settings',
+    'metadata',
   ];
 
   public displayName: string;

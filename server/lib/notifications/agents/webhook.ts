@@ -178,9 +178,15 @@ class WebhookAgent
         });
 
         if (userWithMeta?.metadata && userWithMeta.metadata.length > 0) {
-          userMetadata = {};
+          userMetadata = Object.create(null) as Record<string, string>;
           userWithMeta.metadata.forEach((metadata) => {
-            userMetadata![metadata.key] = metadata.value;
+            if (
+              metadata.key !== '__proto__' &&
+              metadata.key !== 'prototype' &&
+              metadata.key !== 'constructor'
+            ) {
+              userMetadata![metadata.key] = metadata.value;
+            }
           });
         }
       } catch (e) {

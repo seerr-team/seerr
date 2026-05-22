@@ -3,7 +3,7 @@ import PlexTvAPI from '@server/api/plextv';
 import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
-import { getRepository } from '@server/datasource';
+import dataSource, { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import { UserMetadata } from '@server/entity/UserMetadata';
 import { UserSettings } from '@server/entity/UserSettings';
@@ -28,60 +28,75 @@ import { canMakePermissionsChange } from '.';
 
 const userSettingsRoutes = Router({ mergeParams: true });
 
-userSettingsRoutes.get('/metadata', async (req, res, next) => {
-  try {
-    const userRepository = getRepository(User);
-    const user = await userRepository.findOne({
-      where: { id: Number((req.params as { id: string }).id) },
-      relations: { metadata: true },
-    });
+userSettingsRoutes.get(
+  '/metadata',
+  isOwnProfileOrAdmin(),
+  async (req, res, next) => {
+    try {
+      const userRepository = getRepository(User);
+      const user = await userRepository.findOne({
+        where: { id: Number((req.params as { id: string }).id) },
+        relations: { metadata: true },
+      });
 
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.status(200).json({
+        metadata: user.metadata || [],
+      });
+    } catch (e) {
+      next(e);
     }
-
-    return res.status(200).json({
-      metadata: user.metadata || [],
-    });
-  } catch (e) {
-    next(e);
   }
-});
+);
 
-userSettingsRoutes.post('/metadata', async (req, res, next) => {
-  try {
-    const userRepository = getRepository(User);
-    const metadataRepository = getRepository(UserMetadata);
+userSettingsRoutes.post(
+  '/metadata',
+  isOwnProfileOrAdmin(),
+  async (req, res, next) => {
+    try {
+      const userRepository = getRepository(User);
 
-    const user = await userRepository.findOne({
-      where: { id: Number((req.params as { id: string }).id) },
-    });
+      const user = await userRepository.findOne({
+        where: { id: Number((req.params as { id: string }).id) },
+      });
 
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      const result = await dataSource.transaction(
+        async (transactionalEntityManager) => {
+          await transactionalEntityManager.delete(UserMetadata, {
+            user: { id: user.id },
+          });
+
+          const incomingMetadata = req.body.metadata ?? [];
+          const newMetadata = incomingMetadata.map((meta: any) => {
+            const userMeta = new UserMetadata();
+            userMeta.key = meta.key;
+            userMeta.value = meta.value;
+            userMeta.isSensitive = Boolean(meta.isSensitive);
+            userMeta.user = user;
+            return userMeta;
+          });
+
+          if (newMetadata.length > 0) {
+            await transactionalEntityManager.save(newMetadata);
+          }
+
+          return newMetadata;
+        }
+      );
+
+      return res.status(200).json({ metadata: result });
+    } catch (e) {
+      next(e);
     }
-
-    await metadataRepository.delete({ user: { id: user.id } });
-
-    const incomingMetadata = req.body.metadata ?? [];
-    const newMetadata = incomingMetadata.map((meta: any) => {
-      const userMeta = new UserMetadata();
-      userMeta.key = meta.key;
-      userMeta.value = meta.value;
-      userMeta.isSensitive = Boolean(meta.isSensitive);
-      userMeta.user = user;
-      return userMeta;
-    });
-
-    if (newMetadata.length > 0) {
-      await metadataRepository.save(newMetadata);
-    }
-
-    return res.status(200).json({ metadata: newMetadata });
-  } catch (e) {
-    next(e);
   }
-});
+);
 
 userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
   '/main',

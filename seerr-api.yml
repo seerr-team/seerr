@@ -5061,7 +5061,7 @@ paths:
     get:
       summary: Get user metadata
       tags:
-        - Users
+        - users
       parameters:
         - name: id
           in: path
@@ -5091,7 +5091,7 @@ paths:
     post:
       summary: Update user metadata
       tags:
-        - Users
+        - users
       parameters:
         - name: id
           in: path
