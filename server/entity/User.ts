@@ -28,6 +28,7 @@ import {
 import Issue from './Issue';
 import { MediaRequest } from './MediaRequest';
 import SeasonRequest from './SeasonRequest';
+import { UserMetadata } from './UserMetadata';
 import { UserPushSubscription } from './UserPushSubscription';
 import { UserSettings } from './UserSettings';
 
@@ -118,6 +119,9 @@ export class User {
 
   @OneToMany(() => MediaRequest, (request) => request.requestedBy)
   public requests: MediaRequest[];
+
+  @OneToMany(() => UserMetadata, (metadata) => metadata.user)
+  metadata: UserMetadata[];
 
   @OneToMany(() => Watchlist, (watchlist) => watchlist.requestedBy)
   public watchlists: Watchlist[];
