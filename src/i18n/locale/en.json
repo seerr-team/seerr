@@ -1505,6 +1505,7 @@
   "components.UserProfile.UserSettings.UserMetadata.toastSettingsFailure": "Something went wrong while saving metadata.",
   "components.UserProfile.UserSettings.UserMetadata.toastSettingsSuccess": "Metadata saved successfully!",
   "components.UserProfile.UserSettings.UserMetadata.validationKeyRequired": "Key is required if a value is provided",
+  "components.UserProfile.UserSettings.UserMetadata.validationReservedKey": "This metadata key is reserved and cannot be used",
   "components.UserProfile.UserSettings.UserMetadata.validationUniqueKeys": "Metadata keys must be unique",
   "components.UserProfile.UserSettings.UserMetadata.validationValueRequired": "Value is required if a key is provided",
   "components.UserProfile.UserSettings.UserMetadata.valuePlaceholder": "Value",

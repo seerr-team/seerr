@@ -33,6 +33,7 @@ const messages = defineMessages(
     validationKeyRequired: 'Key is required if a value is provided',
     validationValueRequired: 'Value is required if a key is provided',
     validationUniqueKeys: 'Metadata keys must be unique',
+    validationReservedKey: 'This metadata key is reserved and cannot be used',
   }
 );
 
@@ -73,15 +74,28 @@ const UserMetadataAccountSettings = () => {
       )
       .of(
         Yup.object().shape({
-          key: Yup.string().test(
-            'key-required',
-            intl.formatMessage(messages.validationKeyRequired),
-            function (value) {
-              const { value: metaValue } = this.parent;
-              if (metaValue && !value) return false;
-              return true;
-            }
-          ),
+          key: Yup.string()
+            .test(
+              'key-required',
+              intl.formatMessage(messages.validationKeyRequired),
+              function (value) {
+                const { value: metaValue } = this.parent;
+                if (metaValue && !value) return false;
+                return true;
+              }
+            )
+            .test(
+              'reserved-keys',
+              intl.formatMessage(messages.validationReservedKey),
+              (value) => {
+                const reservedKeys = new Set([
+                  '__proto__',
+                  'prototype',
+                  'constructor',
+                ]);
+                return !reservedKeys.has(value?.trim() ?? '');
+              }
+            ),
           value: Yup.string().test(
             'value-required',
             intl.formatMessage(messages.validationValueRequired),

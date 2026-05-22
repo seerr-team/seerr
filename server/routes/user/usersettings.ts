@@ -69,6 +69,13 @@ userSettingsRoutes.post(
 
       const incomingMetadata = req.body.metadata ?? [];
       const keys = incomingMetadata.map((meta: { key: string }) => meta.key);
+      const reservedKeys = new Set(['__proto__', 'prototype', 'constructor']);
+
+      if (keys.some((key: string) => reservedKeys.has(key))) {
+        return res.status(400).json({
+          error: 'Reserved metadata keys are not allowed',
+        });
+      }
 
       if (new Set(keys).size !== keys.length) {
         return res
