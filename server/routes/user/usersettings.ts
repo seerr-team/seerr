@@ -67,21 +67,21 @@ userSettingsRoutes.post(
         return res.status(404).json({ error: 'User not found' });
       }
 
+      const incomingMetadata = req.body.metadata ?? [];
+      const keys = incomingMetadata.map((meta: { key: string }) => meta.key);
+
+      if (new Set(keys).size !== keys.length) {
+        return res
+          .status(400)
+          .json({ error: 'Duplicate metadata keys are not allowed' });
+      }
+
       const result = await dataSource.transaction(
         async (transactionalEntityManager) => {
           await transactionalEntityManager.delete(UserMetadata, {
             user: { id: user.id },
           });
 
-          const incomingMetadata = req.body.metadata ?? [];
-          const keys = incomingMetadata.map(
-            (meta: { key: string }) => meta.key
-          );
-          if (new Set(keys).size !== keys.length) {
-            return res
-              .status(400)
-              .json({ error: 'Duplicate metadata keys are not allowed' });
-          }
           const newMetadata = incomingMetadata.map((meta: any) => {
             const userMeta = new UserMetadata();
             userMeta.key = meta.key;
