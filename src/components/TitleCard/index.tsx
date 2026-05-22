@@ -361,12 +361,17 @@ const TitleCard = ({
     mediaStatus === MediaStatus.PENDING ||
     mediaStatus === MediaStatus.PROCESSING;
 
+  const isBlocklisted = currentStatus === MediaStatus.BLOCKLISTED;
+
   const showRequest = showRequestButton && isRequestableStatus(currentStatus);
   const showAvailable = isAvailableStatus(currentStatus);
   const showRequested = isRequestedStatus(currentStatus);
-  const showRequest4k = show4k && isRequestableStatus(currentStatus4k);
-  const showAvailable4k = show4k && isAvailableStatus(currentStatus4k);
-  const showRequested4k = show4k && isRequestedStatus(currentStatus4k);
+  const showRequest4k =
+    !isBlocklisted && show4k && isRequestableStatus(currentStatus4k);
+  const showAvailable4k =
+    !isBlocklisted && show4k && isAvailableStatus(currentStatus4k);
+  const showRequested4k =
+    !isBlocklisted && show4k && isRequestedStatus(currentStatus4k);
 
   const bottomButtonCount =
     (showRequest || showAvailable || showRequested ? 1 : 0) +
