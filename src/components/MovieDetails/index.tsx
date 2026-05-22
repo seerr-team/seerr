@@ -513,6 +513,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
               mediaType="movie"
               plexUrl={plexUrl}
               serviceUrl={data.mediaInfo?.serviceUrl}
+              size="lg"
             />
             {settings.currentSettings.movie4kEnabled &&
               hasPermission(
@@ -537,6 +538,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                   mediaType="movie"
                   plexUrl={plexUrl4k}
                   serviceUrl={data.mediaInfo?.serviceUrl4k}
+                  size="lg"
                 />
               )}
           </div>

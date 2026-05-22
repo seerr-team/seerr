@@ -6,6 +6,13 @@ import useSettings from '@app/hooks/useSettings';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import { CheckCircleIcon } from '@heroicons/react/20/solid';
+import {
+  BellIcon,
+  ClockIcon,
+  EyeSlashIcon,
+  TrashIcon,
+} from '@heroicons/react/24/solid';
 import { MediaStatus } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import type { DownloadingItem } from '@server/lib/downloadtracker';
@@ -32,6 +39,7 @@ interface StatusBadgeProps {
   mediaType?: 'movie' | 'tv';
   title?: string | string[];
   statusLabelOverride?: string;
+  size?: 'default' | 'lg';
 }
 
 const StatusBadge = ({
@@ -45,6 +53,7 @@ const StatusBadge = ({
   mediaType,
   title,
   statusLabelOverride,
+  size = 'default',
 }: StatusBadgeProps) => {
   const intl = useIntl();
   const { hasPermission } = useUser();
@@ -154,294 +163,115 @@ const StatusBadge = ({
     />
   );
 
+  let badgeType: 'success' | 'primary' | 'warning' | 'danger';
+  let statusMessage: typeof globalMessages.available;
+  let StatusIcon: typeof CheckCircleIcon;
+
   switch (status) {
     case MediaStatus.AVAILABLE:
-      return (
-        <Tooltip
-          content={inProgress ? tooltipContent : mediaLinkDescription}
-          className={`${
-            inProgress && 'hidden max-h-96 w-96 overflow-y-auto sm:block'
-          }`}
-          tooltipConfig={{
-            ...(inProgress && { interactive: true, delayHide: 100 }),
-          }}
-        >
-          <Badge
-            badgeType="success"
-            href={mediaLink}
-            className={`${
-              inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
-            } overflow-hidden`}
-          >
-            {inProgress && badgeDownloadProgress}
-            <div
-              className={`relative z-20 flex items-center ${
-                inProgress && 'px-2'
-              }`}
-            >
-              <span>
-                {intl.formatMessage(
-                  is4k ? messages.status4k : messages.status,
-                  {
-                    status: inProgress
-                      ? intl.formatMessage(globalMessages.processing)
-                      : intl.formatMessage(globalMessages.available),
-                  }
-                )}
-              </span>
-              {inProgress && (
-                <>
-                  {mediaType === 'tv' &&
-                    downloadItem[0].episode &&
-                    (downloadItem.length > 1 &&
-                    downloadItem.every(
-                      (item) =>
-                        item.downloadId &&
-                        item.downloadId === downloadItem[0].downloadId
-                    ) ? (
-                      <span className="ml-1">
-                        {intl.formatMessage(messages.seasonnumber, {
-                          seasonNumber: downloadItem[0].episode.seasonNumber,
-                        })}
-                      </span>
-                    ) : (
-                      <span className="ml-1">
-                        {intl.formatMessage(messages.seasonepisodenumber, {
-                          seasonNumber: downloadItem[0].episode.seasonNumber,
-                          episodeNumber: downloadItem[0].episode.episodeNumber,
-                        })}
-                      </span>
-                    ))}
-                  <Spinner className="ml-1 h-3 w-3" />
-                </>
-              )}
-            </div>
-          </Badge>
-        </Tooltip>
-      );
-
+      badgeType = 'success';
+      statusMessage = globalMessages.available;
+      StatusIcon = CheckCircleIcon;
+      break;
     case MediaStatus.PARTIALLY_AVAILABLE:
-      return (
-        <Tooltip
-          content={inProgress ? tooltipContent : mediaLinkDescription}
-          className={`${
-            inProgress && 'hidden max-h-96 w-96 overflow-y-auto sm:block'
-          }`}
-          tooltipConfig={{
-            ...(inProgress && { interactive: true, delayHide: 100 }),
-          }}
-        >
-          <Badge
-            badgeType="success"
-            href={mediaLink}
-            className={`${
-              inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
-            } overflow-hidden`}
-          >
-            {inProgress && badgeDownloadProgress}
-            <div
-              className={`relative z-20 flex items-center ${
-                inProgress && 'px-2'
-              }`}
-            >
-              <span>
-                {intl.formatMessage(
-                  is4k ? messages.status4k : messages.status,
-                  {
-                    status: inProgress
-                      ? intl.formatMessage(globalMessages.processing)
-                      : intl.formatMessage(globalMessages.partiallyavailable),
-                  }
-                )}
-              </span>
-              {inProgress && (
-                <>
-                  {mediaType === 'tv' &&
-                    downloadItem[0].episode &&
-                    (downloadItem.length > 1 &&
-                    downloadItem.every(
-                      (item) =>
-                        item.downloadId &&
-                        item.downloadId === downloadItem[0].downloadId
-                    ) ? (
-                      <span className="ml-1">
-                        {intl.formatMessage(messages.seasonnumber, {
-                          seasonNumber: downloadItem[0].episode.seasonNumber,
-                        })}
-                      </span>
-                    ) : (
-                      <span className="ml-1">
-                        {intl.formatMessage(messages.seasonepisodenumber, {
-                          seasonNumber: downloadItem[0].episode.seasonNumber,
-                          episodeNumber: downloadItem[0].episode.episodeNumber,
-                        })}
-                      </span>
-                    ))}
-                  <Spinner className="ml-1 h-3 w-3" />
-                </>
-              )}
-            </div>
-          </Badge>
-        </Tooltip>
-      );
-
+      badgeType = 'success';
+      statusMessage = globalMessages.partiallyavailable;
+      StatusIcon = CheckCircleIcon;
+      break;
     case MediaStatus.PROCESSING:
-      return (
-        <Tooltip
-          content={inProgress ? tooltipContent : mediaLinkDescription}
-          className={`${
-            inProgress && 'hidden max-h-96 w-96 overflow-y-auto sm:block'
-          }`}
-          tooltipConfig={{
-            ...(inProgress && { interactive: true, delayHide: 100 }),
-          }}
-        >
-          <Badge
-            badgeType="primary"
-            href={mediaLink}
-            className={`${
-              inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
-            } overflow-hidden`}
-          >
-            {inProgress && badgeDownloadProgress}
-            <div
-              className={`relative z-20 flex items-center ${
-                inProgress && 'px-2'
-              }`}
-            >
-              <span>
-                {intl.formatMessage(
-                  is4k ? messages.status4k : messages.status,
-                  {
-                    status: inProgress
-                      ? intl.formatMessage(globalMessages.processing)
-                      : intl.formatMessage(globalMessages.requested),
-                  }
-                )}
-              </span>
-              {inProgress && (
-                <>
-                  {mediaType === 'tv' &&
-                    downloadItem[0].episode &&
-                    (downloadItem.length > 1 &&
-                    downloadItem.every(
-                      (item) =>
-                        item.downloadId &&
-                        item.downloadId === downloadItem[0].downloadId
-                    ) ? (
-                      <span className="ml-1">
-                        {intl.formatMessage(messages.seasonnumber, {
-                          seasonNumber: downloadItem[0].episode.seasonNumber,
-                        })}
-                      </span>
-                    ) : (
-                      <span className="ml-1">
-                        {intl.formatMessage(messages.seasonepisodenumber, {
-                          seasonNumber: downloadItem[0].episode.seasonNumber,
-                          episodeNumber: downloadItem[0].episode.episodeNumber,
-                        })}
-                      </span>
-                    ))}
-                  <Spinner className="ml-1 h-3 w-3" />
-                </>
-              )}
-            </div>
-          </Badge>
-        </Tooltip>
-      );
-
+      badgeType = 'primary';
+      statusMessage = globalMessages.requested;
+      StatusIcon = ClockIcon;
+      break;
     case MediaStatus.PENDING:
-      return (
-        <Tooltip content={mediaLinkDescription}>
-          <Badge badgeType="warning" href={mediaLink}>
-            {intl.formatMessage(is4k ? messages.status4k : messages.status, {
-              status: intl.formatMessage(globalMessages.pending),
-            })}
-          </Badge>
-        </Tooltip>
-      );
-
+      badgeType = 'warning';
+      statusMessage = globalMessages.pending;
+      StatusIcon = BellIcon;
+      break;
     case MediaStatus.BLOCKLISTED:
-      return (
-        <Tooltip content={mediaLinkDescription}>
-          <Badge badgeType="danger" href={mediaLink}>
-            {intl.formatMessage(is4k ? messages.status4k : messages.status, {
-              status:
-                statusLabelOverride ??
-                intl.formatMessage(globalMessages.blocklisted),
-            })}
-          </Badge>
-        </Tooltip>
-      );
-
+      badgeType = 'danger';
+      statusMessage = globalMessages.blocklisted;
+      StatusIcon = EyeSlashIcon;
+      break;
     case MediaStatus.DELETED:
-      return (
-        <Tooltip
-          content={inProgress ? tooltipContent : mediaLinkDescription}
-          className={`${
-            inProgress && 'hidden max-h-96 w-96 overflow-y-auto sm:block'
-          }`}
-          tooltipConfig={{
-            ...(inProgress && { interactive: true, delayHide: 100 }),
-          }}
-        >
-          <Badge
-            badgeType="danger"
-            href={mediaLink}
-            className={`${
-              inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
-            } overflow-hidden`}
-          >
-            {inProgress && badgeDownloadProgress}
-            <div
-              className={`relative z-20 flex items-center ${
-                inProgress && 'px-2'
-              }`}
-            >
-              <span>
-                {intl.formatMessage(
-                  is4k ? messages.status4k : messages.status,
-                  {
-                    status: inProgress
-                      ? intl.formatMessage(globalMessages.processing)
-                      : intl.formatMessage(globalMessages.deleted),
-                  }
-                )}
-              </span>
-              {inProgress && (
-                <>
-                  {mediaType === 'tv' &&
-                    downloadItem[0].episode &&
-                    (downloadItem.length > 1 &&
-                    downloadItem.every(
-                      (item) =>
-                        item.downloadId &&
-                        item.downloadId === downloadItem[0].downloadId
-                    ) ? (
-                      <span className="ml-1">
-                        {intl.formatMessage(messages.seasonnumber, {
-                          seasonNumber: downloadItem[0].episode.seasonNumber,
-                        })}
-                      </span>
-                    ) : (
-                      <span className="ml-1">
-                        {intl.formatMessage(messages.seasonepisodenumber, {
-                          seasonNumber: downloadItem[0].episode.seasonNumber,
-                          episodeNumber: downloadItem[0].episode.episodeNumber,
-                        })}
-                      </span>
-                    ))}
-                  <Spinner className="ml-1 h-3 w-3" />
-                </>
-              )}
-            </div>
-          </Badge>
-        </Tooltip>
-      );
-
+      badgeType = 'danger';
+      statusMessage = globalMessages.deleted;
+      StatusIcon = TrashIcon;
+      break;
     default:
       return null;
   }
+
+  const isLarge = size === 'lg';
+
+  const statusText = intl.formatMessage(
+    is4k ? messages.status4k : messages.status,
+    {
+      status: inProgress
+        ? intl.formatMessage(globalMessages.processing)
+        : status === MediaStatus.BLOCKLISTED && statusLabelOverride
+          ? statusLabelOverride
+          : intl.formatMessage(statusMessage),
+    }
+  );
+
+  const inProgressDetail = inProgress && (
+    <>
+      {mediaType === 'tv' &&
+        downloadItem[0].episode &&
+        (downloadItem.length > 1 &&
+        downloadItem.every(
+          (item) =>
+            item.downloadId && item.downloadId === downloadItem[0].downloadId
+        ) ? (
+          <span className="ml-1">
+            {intl.formatMessage(messages.seasonnumber, {
+              seasonNumber: downloadItem[0].episode.seasonNumber,
+            })}
+          </span>
+        ) : (
+          <span className="ml-1">
+            {intl.formatMessage(messages.seasonepisodenumber, {
+              seasonNumber: downloadItem[0].episode.seasonNumber,
+              episodeNumber: downloadItem[0].episode.episodeNumber,
+            })}
+          </span>
+        ))}
+      <Spinner className="ml-1 h-3 w-3" />
+    </>
+  );
+
+  return (
+    <Tooltip
+      content={inProgress ? tooltipContent : mediaLinkDescription}
+      className={
+        inProgress ? 'hidden max-h-96 w-96 overflow-y-auto sm:block' : undefined
+      }
+      tooltipConfig={
+        inProgress ? { interactive: true, delayHide: 100 } : undefined
+      }
+    >
+      <Badge
+        badgeType={badgeType}
+        href={mediaLink}
+        size={size}
+        className={`${
+          inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
+        } overflow-hidden`}
+      >
+        {inProgress && badgeDownloadProgress}
+        <div
+          className={`relative z-20 flex items-center ${
+            inProgress && (isLarge ? 'px-3' : 'px-2')
+          }`}
+        >
+          {isLarge && !inProgress && <StatusIcon className="mr-1.5 h-4 w-4" />}
+          <span>{statusText}</span>
+          {inProgressDetail}
+        </div>
+      </Badge>
+    </Tooltip>
+  );
 };
 
 export default StatusBadge;

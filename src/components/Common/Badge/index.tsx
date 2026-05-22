@@ -10,17 +10,25 @@ interface BadgeProps {
     | 'success'
     | 'dark'
     | 'light';
+  size?: 'default' | 'lg';
   className?: string;
   href?: string;
   children: React.ReactNode;
 }
 
 const Badge = (
-  { badgeType = 'default', className, href, children }: BadgeProps,
+  {
+    badgeType = 'default',
+    size = 'default',
+    className,
+    href,
+    children,
+  }: BadgeProps,
   ref?: React.Ref<HTMLElement>
 ) => {
   const badgeStyle = [
-    'px-2 inline-flex text-xs leading-5 font-semibold rounded-full whitespace-nowrap',
+    'inline-flex items-center font-semibold rounded-full whitespace-nowrap',
+    size === 'lg' ? 'px-3 py-1 text-sm leading-5' : 'px-2 text-xs leading-5',
   ];
 
   if (href) {
