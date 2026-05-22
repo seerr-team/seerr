@@ -5057,6 +5057,69 @@ paths:
       responses:
         '204':
           description: User password updated
+  /user/{id}/settings/metadata:
+    get:
+      summary: Get user metadata
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Returned user metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metadata:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                        isSensitive:
+                          type: boolean
+    post:
+      summary: Update user metadata
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                metadata:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                      value:
+                        type: string
+                      isSensitive:
+                        type: boolean
+      responses:
+        200:
+          description: User metadata updated successfully
   /user/{userId}/settings/linked-accounts/plex:
     post:
       summary: Link the provided Plex account to the current user
