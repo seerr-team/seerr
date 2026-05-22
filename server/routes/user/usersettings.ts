@@ -74,6 +74,14 @@ userSettingsRoutes.post(
           });
 
           const incomingMetadata = req.body.metadata ?? [];
+          const keys = incomingMetadata.map(
+            (meta: { key: string }) => meta.key
+          );
+          if (new Set(keys).size !== keys.length) {
+            return res
+              .status(400)
+              .json({ error: 'Duplicate metadata keys are not allowed' });
+          }
           const newMetadata = incomingMetadata.map((meta: any) => {
             const userMeta = new UserMetadata();
             userMeta.key = meta.key;
