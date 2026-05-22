@@ -1,5 +1,7 @@
 import { IssueStatus, IssueType } from '@server/constants/issue';
 import { MediaStatus } from '@server/constants/media';
+import { getRepository } from '@server/datasource';
+import { User } from '@server/entity/User';
 import type { NotificationAgentWebhook } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -80,7 +82,8 @@ class WebhookAgent
   private parseKeys(
     finalPayload: Record<string, unknown>,
     payload: NotificationPayload,
-    type: Notification
+    type: Notification,
+    userMetadata: Record<string, string> | null = null
   ): Record<string, unknown> {
     Object.keys(finalPayload).forEach((key) => {
       if (key === '{{extra}}') {
@@ -119,6 +122,12 @@ class WebhookAgent
         }
         delete finalPayload[key];
         key = 'comment';
+      } else if (key === '{{metadata}}') {
+        if (userMetadata && Object.keys(userMetadata).length > 0) {
+          finalPayload.metadata = userMetadata;
+        }
+        delete finalPayload[key];
+        key = 'metadata';
       }
 
       if (typeof finalPayload[key] === 'string') {
@@ -135,7 +144,8 @@ class WebhookAgent
         finalPayload[key] = this.parseKeys(
           finalPayload[key] as Record<string, unknown>,
           payload,
-          type
+          type,
+          userMetadata
         );
       }
     });
@@ -143,7 +153,7 @@ class WebhookAgent
     return finalPayload;
   }
 
-  private buildPayload(type: Notification, payload: NotificationPayload) {
+  private async buildPayload(type: Notification, payload: NotificationPayload) {
     const payloadString = Buffer.from(
       this.getSettings().options.jsonPayload,
       'base64'
@@ -151,7 +161,37 @@ class WebhookAgent
 
     const parsedJSON = JSON.parse(JSON.parse(payloadString));
 
-    return this.parseKeys(parsedJSON, payload, type);
+    const targetUser =
+      payload.request?.requestedBy ??
+      payload.issue?.createdBy ??
+      payload.comment?.user ??
+      payload.notifyUser;
+
+    let userMetadata: Record<string, string> | null = null;
+
+    if (targetUser?.id) {
+      try {
+        const userRepository = getRepository(User);
+        const userWithMeta = await userRepository.findOne({
+          where: { id: targetUser.id },
+          relations: { metadata: true },
+        });
+
+        if (userWithMeta?.metadata && userWithMeta.metadata.length > 0) {
+          userMetadata = {};
+          userWithMeta.metadata.forEach((metadata) => {
+            userMetadata![metadata.key] = metadata.value;
+          });
+        }
+      } catch (e) {
+        logger.error('Failed to fetch user metadata for webhook', {
+          label: 'Notifications',
+          errorMessage: e instanceof Error ? e.message : 'Unknown error',
+        });
+      }
+    }
+
+    return this.parseKeys(parsedJSON, payload, type, userMetadata);
   }
 
   public shouldSend(): boolean {
@@ -230,7 +270,7 @@ class WebhookAgent
 
       await axios.post(
         webhookUrl,
-        this.buildPayload(type, payload),
+        await this.buildPayload(type, payload),
         Object.keys(headers).length > 0 ? { headers } : undefined
       );
 
