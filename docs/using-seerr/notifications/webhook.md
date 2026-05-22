@@ -87,6 +87,7 @@ The following variables must be used as a key in the JSON payload (e.g., `"{{ext
 | `{{request}}` | The relevant request object                                                                                                    |
 | `{{issue}}`   | The relevant issue object                                                                                                      |
 | `{{comment}}` | The relevant issue comment object                                                                                              |
+| `{{metadata}}`| The custom metadata object for the relevant user                                                                               |
 | `{{extra}}`   | The "extra" array of additional data for certain notifications (e.g., season/episode numbers for series-related notifications) |
 
 #### Media
@@ -152,3 +153,11 @@ The following special variables are only included in issue comment-related notif
 | `{{commentedBy_avatar}}`                  | The commenting user's avatar URL                |
 | `{{commentedBy_settings_discordId}}`      | The commenting user's Discord ID (if set)       |
 | `{{commentedBy_settings_telegramChatId}}` | The commenting user's Telegram Chat ID (if set) |
+
+#### Metadata
+
+The `{{metadata}}` object will contain a key-value map of any custom metadata fields configured for the relevant user. 
+
+If the notification is related to a request, issue, or comment, the metadata will correspond to the user who performed that action (the requester, reporter, or commenter). If the notification is a direct alert to a user, the metadata will correspond to the target recipient.
+
+If the relevant user does not have any custom metadata configured, the `"{{metadata}}"` block will be omitted.

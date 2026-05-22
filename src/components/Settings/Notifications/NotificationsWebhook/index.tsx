@@ -74,6 +74,9 @@ const defaultPayload = {
     commentedBy_settings_telegramChatId:
       '{{commentedBy_settings_telegramChatId}}',
   },
+  '{{metadata}}': {
+    '{{metadata_key}}': '{{metadata_value}}',
+  },
   '{{extra}}': [],
 };
 
