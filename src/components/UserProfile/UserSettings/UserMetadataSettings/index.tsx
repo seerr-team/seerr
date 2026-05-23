@@ -123,7 +123,6 @@ const UserMetadataAccountSettings = () => {
   }
 
   if (!data && (dataError || error)) {
-    console.log(dataError);
     return <ErrorPage statusCode={500} />;
   }
 
