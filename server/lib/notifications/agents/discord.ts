@@ -315,11 +315,15 @@ class DiscordAgent
         ? (payload.notifyUser?.settings?.locale as AvailableLocale)
         : (settings.options.locale as AvailableLocale);
 
-      const webhookUrl = settings.options.webhookThreadId
-        ? `${settings.options.webhookUrl}?thread_id=${settings.options.webhookThreadId}`
-        : settings.options.webhookUrl;
+      const webhookUrl = new URL(settings.options.webhookUrl);
+      if (settings.options.webhookThreadId) {
+        webhookUrl.searchParams.set(
+          'thread_id',
+          settings.options.webhookThreadId
+        );
+      }
 
-      await axios.post(webhookUrl, {
+      await axios.post(webhookUrl.toString(), {
         username: settings.options.botUsername
           ? settings.options.botUsername
           : getSettings().main.applicationTitle,

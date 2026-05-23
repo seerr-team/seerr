@@ -74,6 +74,7 @@ const NotificationsDiscord = () => {
       ),
     webhookThreadId: Yup.string()
       .nullable()
+      .transform((value) => (value === '' ? null : value))
       .matches(
         /^\d{17,19}$/,
         intl.formatMessage(messages.validationWebhookThreadId)
