@@ -44,6 +44,7 @@ const messages = defineMessages('components.Discover.CreateSlider', {
   searchStudios: 'Search studios…',
   starttyping: 'Starting typing to search.',
   nooptions: 'No results.',
+  selectExternalProvider: 'Select external provider',
 });
 
 type CreateSliderProps = {
@@ -329,7 +330,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
       dataUrl: '/api/v1/discover/external/$value',
       params: '',
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
-      dataPlaceholderText: 'Select external provider',
+      dataPlaceholderText: intl.formatMessage(messages.selectExternalProvider),
     },
   ];
 
@@ -536,7 +537,9 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                   }
                 }}
               >
-                <option value="">Select external provider</option>
+                <option value="">
+                  {intl.formatMessage(messages.selectExternalProvider)}
+                </option>
                 {externalProviders.map((provider) => (
                   <option key={provider.id} value={provider.id}>
                     {provider.name}

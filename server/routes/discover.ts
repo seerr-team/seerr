@@ -989,17 +989,27 @@ discoverRoutes.get<{ providerId: string }>(
     try {
       const providerId = Number(req.params.providerId);
 
-      if (!providerId || Number.isNaN(providerId)) {
+      if (!Number.isInteger(providerId) || providerId <= 0) {
         return next({
           status: 400,
           message: 'Invalid external provider ID.',
         });
       }
 
+      const page = Number(req.query.page ?? 1);
+
+      if (!Number.isInteger(page) || page <= 0) {
+        return next({
+          status: 400,
+          message: 'Invalid page.',
+        });
+      }
+
       const data = await getExternalDiscoverItems(
         providerId,
         req.user,
-        (req.query.language as string) ?? req.locale
+        (req.query.language as string) ?? req.locale,
+        page
       );
 
       return res.status(200).json(data);

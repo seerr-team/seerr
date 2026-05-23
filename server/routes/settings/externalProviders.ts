@@ -24,6 +24,20 @@ const toNumber = (value: unknown, fallback: number): number => {
   return Number.isFinite(numberValue) ? numberValue : fallback;
 };
 
+const toPositiveInteger = (value: unknown): number | null => {
+  const numberValue = Number(value);
+
+  return Number.isInteger(numberValue) && numberValue > 0 ? numberValue : null;
+};
+
+const toNullableString = (value: unknown): string | null | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return typeof value === 'string' && value.trim() !== '' ? value : null;
+};
+
 /**
  * Providers
  */
@@ -67,38 +81,66 @@ externalProviderRoutes.post('/providers/test', async (req, res, next) => {
   }
 });
 
-externalProviderRoutes.get('/providers', async (_req, res) => {
-  const providerRepository = getRepository(ExternalProvider);
-
-  const providers = await providerRepository.find({
-    order: {
-      id: 'ASC',
-    },
-  });
-
-  return res.status(200).json(providers);
-});
-
-externalProviderRoutes.get('/providers/:providerId', async (req, res, next) => {
+externalProviderRoutes.get('/providers', async (_req, res, next) => {
   const providerRepository = getRepository(ExternalProvider);
 
   try {
-    const provider = await providerRepository.findOneOrFail({
-      where: {
-        id: Number(req.params.providerId),
+    const providers = await providerRepository.find({
+      order: {
+        id: 'ASC',
       },
     });
 
-    return res.status(200).json(provider);
+    return res.status(200).json(providers);
   } catch (e) {
-    logger.error('External provider not found.', {
+    logger.error('Something went wrong retrieving external providers.', {
       label: 'API',
       errorMessage: e instanceof Error ? e.message : String(e),
     });
 
     return next({
-      status: 404,
-      message: 'External provider not found.',
+      status: 500,
+      message: 'Unable to retrieve external providers.',
+    });
+  }
+});
+
+externalProviderRoutes.get('/providers/:providerId', async (req, res, next) => {
+  const providerRepository = getRepository(ExternalProvider);
+  const providerId = toPositiveInteger(req.params.providerId);
+
+  if (!providerId) {
+    return next({
+      status: 400,
+      message: 'Invalid external provider ID.',
+    });
+  }
+
+  try {
+    const provider = await providerRepository.findOne({
+      where: {
+        id: providerId,
+      },
+    });
+
+    if (!provider) {
+      return next({
+        status: 404,
+        message: 'External provider not found.',
+      });
+    }
+
+    return res.status(200).json(provider);
+  } catch (e) {
+    logger.error('Something went wrong retrieving an external provider.', {
+      label: 'API',
+      providerId,
+      errorMessage: e instanceof Error ? e.message : String(e),
+    });
+
+    return next({
+      status: 500,
+      message: 'Unable to retrieve external provider.',
     });
   }
 });
@@ -155,21 +197,51 @@ externalProviderRoutes.post('/providers', async (req, res, next) => {
 
 externalProviderRoutes.put('/providers/:providerId', async (req, res, next) => {
   const providerRepository = getRepository(ExternalProvider);
+  const providerId = toPositiveInteger(req.params.providerId);
+
+  if (!providerId) {
+    return next({
+      status: 400,
+      message: 'Invalid external provider ID.',
+    });
+  }
 
   try {
-    const provider = await providerRepository.findOneOrFail({
+    const provider = await providerRepository.findOne({
       where: {
-        id: Number(req.params.providerId),
+        id: providerId,
       },
     });
+
+    if (!provider) {
+      return next({
+        status: 404,
+        message: 'External provider not found.',
+      });
+    }
 
     provider.name = req.body.name ?? provider.name;
     provider.url = req.body.url ?? provider.url;
 
     provider.authType = req.body.authType ?? provider.authType;
-    provider.apiKey = req.body.apiKey ?? provider.apiKey;
-    provider.apiKeyHeader = req.body.apiKeyHeader ?? provider.apiKeyHeader;
-    provider.bearerToken = req.body.bearerToken ?? provider.bearerToken;
+
+    if (req.body.apiKey !== undefined) {
+      provider.apiKey = req.body.apiKey || undefined;
+    }
+
+    if (req.body.apiKeyHeader !== undefined) {
+      provider.apiKeyHeader = req.body.apiKeyHeader || undefined;
+    }
+
+    if (req.body.bearerToken !== undefined) {
+      provider.bearerToken = req.body.bearerToken || undefined;
+    }
+
+    if (provider.authType === ExternalProviderAuthType.NONE) {
+      provider.apiKey = undefined;
+      provider.apiKeyHeader = undefined;
+      provider.bearerToken = undefined;
+    }
 
     provider.cacheMinutes =
       req.body.cacheMinutes !== undefined
@@ -179,12 +251,16 @@ externalProviderRoutes.put('/providers/:providerId', async (req, res, next) => {
     provider.idType = req.body.idType ?? provider.idType;
     provider.mediaType = req.body.mediaType ?? provider.mediaType;
 
-    provider.itemsPath = req.body.itemsPath ?? provider.itemsPath;
-    provider.tmdbIdPath = req.body.tmdbIdPath ?? provider.tmdbIdPath;
-    provider.tvdbIdPath = req.body.tvdbIdPath ?? provider.tvdbIdPath;
-    provider.mediaTypePath = req.body.mediaTypePath ?? provider.mediaTypePath;
+    provider.itemsPath =
+      toNullableString(req.body.itemsPath) ?? provider.itemsPath;
+    provider.tmdbIdPath =
+      toNullableString(req.body.tmdbIdPath) ?? provider.tmdbIdPath;
+    provider.tvdbIdPath =
+      toNullableString(req.body.tvdbIdPath) ?? provider.tvdbIdPath;
+    provider.mediaTypePath =
+      toNullableString(req.body.mediaTypePath) ?? provider.mediaTypePath;
     provider.defaultMediaType =
-      req.body.defaultMediaType ?? provider.defaultMediaType;
+      toNullableString(req.body.defaultMediaType) ?? provider.defaultMediaType;
 
     provider.enabled = toBoolean(req.body.enabled, provider.enabled);
 
@@ -194,12 +270,13 @@ externalProviderRoutes.put('/providers/:providerId', async (req, res, next) => {
   } catch (e) {
     logger.error('Something went wrong updating an external provider.', {
       label: 'API',
+      providerId,
       errorMessage: e instanceof Error ? e.message : String(e),
     });
 
     return next({
-      status: 404,
-      message: 'External provider not found or cannot be updated.',
+      status: 500,
+      message: 'Unable to update external provider.',
     });
   }
 });
@@ -208,13 +285,28 @@ externalProviderRoutes.delete(
   '/providers/:providerId',
   async (req, res, next) => {
     const providerRepository = getRepository(ExternalProvider);
+    const providerId = toPositiveInteger(req.params.providerId);
+
+    if (!providerId) {
+      return next({
+        status: 400,
+        message: 'Invalid external provider ID.',
+      });
+    }
 
     try {
-      const provider = await providerRepository.findOneOrFail({
+      const provider = await providerRepository.findOne({
         where: {
-          id: Number(req.params.providerId),
+          id: providerId,
         },
       });
+
+      if (!provider) {
+        return next({
+          status: 404,
+          message: 'External provider not found.',
+        });
+      }
 
       await providerRepository.remove(provider);
 
@@ -222,12 +314,13 @@ externalProviderRoutes.delete(
     } catch (e) {
       logger.error('Something went wrong deleting an external provider.', {
         label: 'API',
+        providerId,
         errorMessage: e instanceof Error ? e.message : String(e),
       });
 
       return next({
-        status: 404,
-        message: 'External provider not found or cannot be deleted.',
+        status: 500,
+        message: 'Unable to delete external provider.',
       });
     }
   }

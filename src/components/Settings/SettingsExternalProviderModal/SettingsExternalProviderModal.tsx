@@ -58,7 +58,7 @@ type ExternalProviderTestResponse = {
   sample?: {
     tmdbId?: number;
     tvdbId?: number;
-    mediaType: string;
+    mediaType?: string;
   }[];
 };
 
@@ -71,6 +71,7 @@ type SettingsExternalProviderModalProps = {
 const messages = defineMessages('components.Settings.ExternalProviderModal', {
   createProvider: 'Add New External Provider',
   editProvider: 'Edit External Provider',
+  addProvider: 'Add Provider',
   providerName: 'Provider Name',
   providerUrl: 'Full URL',
   authentication: 'Authentication',
@@ -89,6 +90,25 @@ const messages = defineMessages('components.Settings.ExternalProviderModal', {
   tvdbIdPath: 'TVDB ID Path',
   mediaTypePath: 'Media Type Path',
   defaultMediaType: 'Default Media Type',
+  none: 'None',
+  mixed: 'Mixed',
+  movie: 'Movie',
+  tv: 'TV',
+  apiKeyHeaderAuth: 'API Key Header',
+  bearerTokenAuth: 'Bearer Token',
+  providerNamePlaceholder: 'Name of the Provider',
+  providerUrlPlaceholder: 'http://localhost:3999/recommendations',
+  cacheMinutesTip: 'Use 0 to request fresh data every time.',
+  idTypeTip:
+    'Choose TMDB or TVDB if the external API only returns generic id fields.',
+  mediaTypeTip:
+    'Choose Movie or TV when the external API does not return a media type.',
+  advancedMappingTip:
+    'Optional. Leave empty to enable automatic JSON detection.',
+  itemsPathTip: 'Examples: results, data.items, shows.',
+  tmdbIdPathTip: 'Examples: tmdbId, tmdb_id, ids.tmdb.',
+  tvdbIdPathTip: 'Examples: tvdbId, tvdb_id, ids.tvdb.',
+  mediaTypePathTip: 'Examples: mediaType, media_type, type.',
   validationNameRequired: 'You must provide a provider name',
   validationUrlRequired: 'You must provide a valid URL',
   validationCacheMinutesRequired: 'You must provide a cache time',
@@ -97,6 +117,7 @@ const messages = defineMessages('components.Settings.ExternalProviderModal', {
     'External provider connection established successfully. Parsed {count} item(s).',
   toastProviderTestFailure:
     'Failed to connect to external provider or detect valid TMDB/TVDB items.',
+  toastProviderSaveFailure: 'Failed to save external provider.',
 });
 
 const isValidFullUrl = (value?: string): boolean => {
@@ -251,22 +272,31 @@ const SettingsExternalProviderModal = ({
       <Formik
         initialValues={getInitialValues(provider)}
         validationSchema={ExternalProviderSchema}
-        onSubmit={async (values) => {
-          const payload = buildPayload(values, provider);
+        onSubmit={async (values, { setSubmitting }) => {
+          try {
+            const payload = buildPayload(values, provider);
 
-          if (provider) {
-            await axios.put(
-              `/api/v1/settings/external-providers/providers/${provider.id}`,
-              payload
-            );
-          } else {
-            await axios.post(
-              '/api/v1/settings/external-providers/providers',
-              payload
-            );
+            if (provider) {
+              await axios.put(
+                `/api/v1/settings/external-providers/providers/${provider.id}`,
+                payload
+              );
+            } else {
+              await axios.post(
+                '/api/v1/settings/external-providers/providers',
+                payload
+              );
+            }
+
+            onSave();
+          } catch {
+            addToast(intl.formatMessage(messages.toastProviderSaveFailure), {
+              appearance: 'error',
+              autoDismiss: true,
+            });
+          } finally {
+            setSubmitting(false);
           }
-
-          onSave();
         }}
       >
         {({
@@ -286,7 +316,7 @@ const SettingsExternalProviderModal = ({
                 ? intl.formatMessage(globalMessages.saving)
                 : provider
                   ? intl.formatMessage(globalMessages.save)
-                  : 'Add Provider'
+                  : intl.formatMessage(messages.addProvider)
             }
             secondaryButtonType="warning"
             secondaryText={
@@ -323,7 +353,9 @@ const SettingsExternalProviderModal = ({
                       data-1pignore="true"
                       data-lpignore="true"
                       data-bwignore="true"
-                      placeholder="Name of the Provider"
+                      placeholder={intl.formatMessage(
+                        messages.providerNamePlaceholder
+                      )}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                         setIsValidated(false);
                         setFieldValue('name', e.target.value);
@@ -355,7 +387,9 @@ const SettingsExternalProviderModal = ({
                       data-1pignore="true"
                       data-lpignore="true"
                       data-bwignore="true"
-                      placeholder="http://localhost:3999/recommendations"
+                      placeholder={intl.formatMessage(
+                        messages.providerUrlPlaceholder
+                      )}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                         setIsValidated(false);
                         setFieldValue('url', e.target.value);
@@ -385,9 +419,15 @@ const SettingsExternalProviderModal = ({
                         setFieldValue('authType', e.target.value);
                       }}
                     >
-                      <option value="none">None</option>
-                      <option value="apiKey">API Key Header</option>
-                      <option value="bearer">Bearer Token</option>
+                      <option value="none">
+                        {intl.formatMessage(messages.none)}
+                      </option>
+                      <option value="apiKey">
+                        {intl.formatMessage(messages.apiKeyHeaderAuth)}
+                      </option>
+                      <option value="bearer">
+                        {intl.formatMessage(messages.bearerTokenAuth)}
+                      </option>
                     </Field>
                   </div>
                 </div>
@@ -491,7 +531,7 @@ const SettingsExternalProviderModal = ({
                     }}
                   />
                   <span className="label-tip">
-                    Use 0 to request fresh data every time.
+                    {intl.formatMessage(messages.cacheMinutesTip)}
                   </span>
                   {errors.cacheMinutes &&
                     touched.cacheMinutes &&
@@ -516,14 +556,15 @@ const SettingsExternalProviderModal = ({
                         setFieldValue('idType', e.target.value);
                       }}
                     >
-                      <option value="mixed">Mixed</option>
+                      <option value="mixed">
+                        {intl.formatMessage(messages.mixed)}
+                      </option>
                       <option value="tmdb">TMDB</option>
                       <option value="tvdb">TVDB</option>
                     </Field>
                   </div>
                   <span className="label-tip">
-                    Choose TMDB or TVDB if the external API only returns generic
-                    id fields.
+                    {intl.formatMessage(messages.idTypeTip)}
                   </span>
                 </div>
               </div>
@@ -543,14 +584,19 @@ const SettingsExternalProviderModal = ({
                         setFieldValue('mediaType', e.target.value);
                       }}
                     >
-                      <option value="mixed">Mixed</option>
-                      <option value="movie">Movie</option>
-                      <option value="tv">TV</option>
+                      <option value="mixed">
+                        {intl.formatMessage(messages.mixed)}
+                      </option>
+                      <option value="movie">
+                        {intl.formatMessage(messages.movie)}
+                      </option>
+                      <option value="tv">
+                        {intl.formatMessage(messages.tv)}
+                      </option>
                     </Field>
                   </div>
                   <span className="label-tip">
-                    Choose Movie or TV when the external API does not return a
-                    media type.
+                    {intl.formatMessage(messages.mediaTypeTip)}
                   </span>
                 </div>
               </div>
@@ -559,7 +605,7 @@ const SettingsExternalProviderModal = ({
                 <label className="checkbox-label">
                   {intl.formatMessage(messages.advancedMapping)}
                   <span className="label-tip">
-                    Optional. Leave empty to enable automatic JSON detection.
+                    {intl.formatMessage(messages.advancedMappingTip)}
                   </span>
                 </label>
                 <div className="form-input-area">
@@ -583,7 +629,7 @@ const SettingsExternalProviderModal = ({
                     <label htmlFor="itemsPath" className="text-label">
                       {intl.formatMessage(messages.itemsPath)}
                       <span className="label-tip">
-                        Examples: results, data.items, shows.
+                        {intl.formatMessage(messages.itemsPathTip)}
                       </span>
                     </label>
                     <div className="form-input-area">
@@ -608,7 +654,7 @@ const SettingsExternalProviderModal = ({
                     <label htmlFor="tmdbIdPath" className="text-label">
                       {intl.formatMessage(messages.tmdbIdPath)}
                       <span className="label-tip">
-                        Examples: tmdbId, tmdb_id, ids.tmdb.
+                        {intl.formatMessage(messages.tmdbIdPathTip)}
                       </span>
                     </label>
                     <div className="form-input-area">
@@ -633,7 +679,7 @@ const SettingsExternalProviderModal = ({
                     <label htmlFor="tvdbIdPath" className="text-label">
                       {intl.formatMessage(messages.tvdbIdPath)}
                       <span className="label-tip">
-                        Examples: tvdbId, tvdb_id, ids.tvdb.
+                        {intl.formatMessage(messages.tvdbIdPathTip)}
                       </span>
                     </label>
                     <div className="form-input-area">
@@ -658,7 +704,7 @@ const SettingsExternalProviderModal = ({
                     <label htmlFor="mediaTypePath" className="text-label">
                       {intl.formatMessage(messages.mediaTypePath)}
                       <span className="label-tip">
-                        Examples: mediaType, media_type, type.
+                        {intl.formatMessage(messages.mediaTypePathTip)}
                       </span>
                     </label>
                     <div className="form-input-area">
@@ -696,9 +742,15 @@ const SettingsExternalProviderModal = ({
                             setFieldValue('defaultMediaType', e.target.value);
                           }}
                         >
-                          <option value="">None</option>
-                          <option value="movie">Movie</option>
-                          <option value="tv">TV</option>
+                          <option value="">
+                            {intl.formatMessage(messages.none)}
+                          </option>
+                          <option value="movie">
+                            {intl.formatMessage(messages.movie)}
+                          </option>
+                          <option value="tv">
+                            {intl.formatMessage(messages.tv)}
+                          </option>
                         </Field>
                       </div>
                     </div>

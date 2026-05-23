@@ -2082,6 +2082,190 @@ components:
         - enabled
         - title
         - data
+    ExternalProvider:
+      type: object
+      properties:
+        id:
+          type: number
+          example: 1
+          readOnly: true
+        name:
+          type: string
+          example: SuggestArr Popular Movies
+        url:
+          type: string
+          example: http://localhost:5000/api/tmdb/popular?page=1
+        authType:
+          type: string
+          enum: [none, apiKey, bearer]
+          example: none
+        apiKey:
+          type: string
+          nullable: true
+        apiKeyHeader:
+          type: string
+          nullable: true
+          example: X-Api-Key
+        bearerToken:
+          type: string
+          nullable: true
+        cacheMinutes:
+          type: number
+          minimum: 0
+          example: 60
+        idType:
+          type: string
+          enum: [tmdb, tvdb, mixed]
+          example: tmdb
+        mediaType:
+          type: string
+          enum: [movie, tv, mixed]
+          example: mixed
+        itemsPath:
+          type: string
+          nullable: true
+          example: results
+        tmdbIdPath:
+          type: string
+          nullable: true
+          example: id
+        tvdbIdPath:
+          type: string
+          nullable: true
+          example: tvdbId
+        mediaTypePath:
+          type: string
+          nullable: true
+          example: mediaType
+        defaultMediaType:
+          type: string
+          nullable: true
+          enum: [movie, tv]
+          example: movie
+        enabled:
+          type: boolean
+          example: true
+      required:
+        - id
+        - name
+        - url
+        - authType
+        - cacheMinutes
+        - idType
+        - mediaType
+        - enabled
+
+    ExternalProviderRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        providerId:
+          type: number
+          nullable: true
+          example: 1
+          description: Existing provider ID. Used when testing an existing provider configuration.
+        name:
+          type: string
+          example: SuggestArr Popular Movies
+        url:
+          type: string
+          example: http://localhost:5000/api/tmdb/popular?page=1
+        authType:
+          type: string
+          enum: [none, apiKey, bearer]
+          example: none
+        apiKey:
+          type: string
+          nullable: true
+        apiKeyHeader:
+          type: string
+          nullable: true
+          example: X-Api-Key
+        bearerToken:
+          type: string
+          nullable: true
+        cacheMinutes:
+          type: number
+          minimum: 0
+          example: 60
+        idType:
+          type: string
+          enum: [tmdb, tvdb, mixed]
+          example: tmdb
+        mediaType:
+          type: string
+          enum: [movie, tv, mixed]
+          example: mixed
+        itemsPath:
+          type: string
+          nullable: true
+          example: results
+        tmdbIdPath:
+          type: string
+          nullable: true
+          example: id
+        tvdbIdPath:
+          type: string
+          nullable: true
+          example: tvdbId
+        mediaTypePath:
+          type: string
+          nullable: true
+          example: mediaType
+        defaultMediaType:
+          type: string
+          nullable: true
+          enum: [movie, tv]
+          example: movie
+        enabled:
+          type: boolean
+          example: true
+      required:
+        - name
+        - url
+        - authType
+        - cacheMinutes
+        - idType
+        - mediaType
+        - enabled
+
+    ExternalProviderParsedItem:
+      type: object
+      properties:
+        tmdbId:
+          type: number
+          nullable: true
+          example: 550
+        tvdbId:
+          type: number
+          nullable: true
+          example: 121361
+        mediaType:
+          type: string
+          nullable: true
+          enum: [movie, tv]
+          example: movie
+
+    ExternalProviderTestResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+        status:
+          type: number
+          example: 200
+        totalParsed:
+          type: number
+          example: 18
+        sample:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExternalProviderParsedItem'
+      required:
+        - ok
+        - status
+        - totalParsed
     WatchProviderRegion:
       type: object
       properties:
@@ -3903,7 +4087,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
+                  $ref: '#/components/schemas/ExternalProvider'
     post:
       summary: Create external provider
       description: Creates a new external provider.
@@ -3914,14 +4098,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
+              $ref: '#/components/schemas/ExternalProviderRequest'
       responses:
         '201':
           description: External provider created
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/ExternalProvider'
 
   /settings/external-providers/providers/test:
     post:
@@ -3934,25 +4118,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
+              $ref: '#/components/schemas/ExternalProviderRequest'
       responses:
         '200':
           description: External provider test successful
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                  status:
-                    type: number
-                  totalParsed:
-                    type: number
-                  sample:
-                    type: array
-                    items:
-                      type: object
+                $ref: '#/components/schemas/ExternalProviderTestResponse'
         '400':
           description: Connection worked but no valid media items were detected
         '500':
@@ -3976,7 +4149,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/ExternalProvider'
     put:
       summary: Update external provider
       description: Updates an existing external provider.
@@ -3993,14 +4166,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
+              $ref: '#/components/schemas/ExternalProviderRequest'
       responses:
         '200':
           description: External provider updated
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/ExternalProvider'
     delete:
       summary: Delete external provider
       description: Deletes an existing external provider.
@@ -6408,7 +6581,7 @@ paths:
       summary: Get external discover items
       description: Returns discover items from an external provider.
       tags:
-        - discover
+        - search
       parameters:
         - in: path
           name: providerId
@@ -6432,6 +6605,22 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 1
+                  totalResults:
+                    type: number
+                    example: 2
+                  results:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/MovieResult'
+                        - $ref: '#/components/schemas/TvResult'
   /request:
     get:
       summary: Get all requests

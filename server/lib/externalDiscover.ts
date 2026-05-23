@@ -52,6 +52,13 @@ type ExternalDiscoverPayload = {
   results: (MovieResult | TvResult)[];
 };
 
+type ExternalDiscoverCacheEntry = {
+  page: number;
+  totalPages: number;
+  totalResults: number;
+  items: HydratedExternalItem[];
+};
+
 type ArrayCandidate = {
   items: unknown[];
   score: number;
@@ -60,8 +67,10 @@ type ArrayCandidate = {
 
 const cache = new NodeCache();
 
-const emptyPayload = (): ExternalDiscoverPayload => ({
-  page: 1,
+const HYDRATION_CONCURRENCY = 5;
+
+const emptyPayload = (page = 1): ExternalDiscoverPayload => ({
+  page,
   totalPages: 1,
   totalResults: 0,
   results: [],
@@ -72,6 +81,14 @@ const getErrorMessage = (error: unknown): string =>
 
 const isObject = (value: unknown): value is JsonObject =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const toPositiveInteger = (value: unknown, fallback: number): number => {
+  const numberValue = Number(value);
+
+  return Number.isInteger(numberValue) && numberValue > 0
+    ? numberValue
+    : fallback;
+};
 
 const normalizeNumber = (value: unknown): number | undefined => {
   if (value === undefined || value === null || value === '') {
@@ -128,6 +145,51 @@ const getValueByPossiblePaths = (
   }
 
   return undefined;
+};
+
+const getPayloadNumber = (
+  payload: unknown,
+  paths: string[],
+  fallback: number
+): number => {
+  const value = getValueByPossiblePaths(payload, paths);
+
+  return toPositiveInteger(value, fallback);
+};
+
+const buildProviderRequestUrl = (url: string, page: number): string => {
+  if (!url.includes('$page')) {
+    return url;
+  }
+
+  return url.replace('$page', String(page));
+};
+
+const mapWithConcurrency = async <T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>
+): Promise<R[]> => {
+  const results: R[] = new Array(items.length);
+  let currentIndex = 0;
+
+  const worker = async (): Promise<void> => {
+    while (currentIndex < items.length) {
+      const index = currentIndex;
+      currentIndex += 1;
+
+      results[index] = await mapper(items[index], index);
+    }
+  };
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    () => worker()
+  );
+
+  await Promise.all(workers);
+
+  return results;
 };
 
 const getAutoTmdbId = (item: unknown): number | undefined => {
@@ -290,7 +352,12 @@ const scoreArrayItem = (
   fallbackMediaType?: MediaType
 ): number => {
   if (!isObject(item)) {
-    return normalizeNumber(item) && fallbackMediaType ? 3 : 0;
+    return normalizeNumber(item) &&
+      (fallbackMediaType ||
+        idType === ExternalProviderIdType.TMDB ||
+        idType === ExternalProviderIdType.TVDB)
+      ? 3
+      : 0;
   }
 
   let score = 0;
@@ -627,8 +694,10 @@ const getRequestHeaders = (provider: {
 export const getExternalDiscoverItems = async (
   providerId: number,
   user?: User,
-  language?: string
+  language?: string,
+  page = 1
 ): Promise<ExternalDiscoverPayload> => {
+  const requestedPage = toPositiveInteger(page, 1);
   const providerRepository = getRepository(ExternalProvider);
 
   const provider = await providerRepository.findOne({
@@ -644,80 +713,120 @@ export const getExternalDiscoverItems = async (
       providerId,
     });
 
-    return emptyPayload();
+    return emptyPayload(requestedPage);
   }
 
-  const cacheKey = `external-discover:${provider.id}:${language ?? 'default'}`;
+  const cacheKey = `external-discover:${provider.id}:${
+    language ?? 'default'
+  }:${requestedPage}`;
+
+  let cachedEntry: ExternalDiscoverCacheEntry | undefined;
 
   if (provider.cacheMinutes > 0) {
-    const cached = cache.get<ExternalDiscoverPayload>(cacheKey);
-
-    if (cached) {
-      return cached;
-    }
+    cachedEntry = cache.get<ExternalDiscoverCacheEntry>(cacheKey);
   }
 
   try {
-    const response = await axios.get(provider.url, {
-      headers: getRequestHeaders(provider),
-      timeout: 15000,
-    });
-
-    const parsedItems = deduplicateParsedItems(
-      parseExternalItems(response.data, {
-        idType: provider.idType,
-        mediaType: provider.mediaType,
-        itemsPath: provider.itemsPath,
-        tmdbIdPath: provider.tmdbIdPath,
-        tvdbIdPath: provider.tvdbIdPath,
-        mediaTypePath: provider.mediaTypePath,
-        defaultMediaType: provider.defaultMediaType,
-      })
-    );
-
-    logger.debug('External discover parsed items.', {
-      label: 'External Discover',
-      providerId: provider.id,
-      parsedCount: parsedItems.length,
-      sample: parsedItems.slice(0, 5),
-    });
-
-    const tmdb = new TheMovieDb();
-
-    const hydratedItems = (
-      await Promise.all(
-        parsedItems.map(async (item) => {
-          try {
-            return await hydrateExternalItem(item, tmdb, language);
-          } catch (e) {
-            logger.warn('Failed to hydrate external discover item.', {
-              label: 'External Discover',
-              providerId: provider.id,
-              item,
-              errorMessage: getErrorMessage(e),
-            });
-
-            return null;
+    const cacheEntry =
+      cachedEntry ??
+      (await (async (): Promise<ExternalDiscoverCacheEntry> => {
+        const response = await axios.get(
+          buildProviderRequestUrl(provider.url, requestedPage),
+          {
+            headers: getRequestHeaders(provider),
+            timeout: 15000,
           }
-        })
-      )
-    ).filter((item): item is HydratedExternalItem => item !== null);
+        );
 
-    logger.debug('External discover hydrated items.', {
-      label: 'External Discover',
-      providerId: provider.id,
-      hydratedCount: hydratedItems.length,
-    });
+        const parsedItems = deduplicateParsedItems(
+          parseExternalItems(response.data, {
+            idType: provider.idType,
+            mediaType: provider.mediaType,
+            itemsPath: provider.itemsPath,
+            tmdbIdPath: provider.tmdbIdPath,
+            tvdbIdPath: provider.tvdbIdPath,
+            mediaTypePath: provider.mediaTypePath,
+            defaultMediaType: provider.defaultMediaType,
+          })
+        );
+
+        logger.debug('External discover parsed items.', {
+          label: 'External Discover',
+          providerId: provider.id,
+          page: requestedPage,
+          parsedCount: parsedItems.length,
+          sample: parsedItems.slice(0, 5),
+        });
+
+        const tmdb = new TheMovieDb();
+
+        const hydratedItems = (
+          await mapWithConcurrency(
+            parsedItems,
+            HYDRATION_CONCURRENCY,
+            async (item) => {
+              try {
+                return await hydrateExternalItem(item, tmdb, language);
+              } catch (e) {
+                logger.warn('Failed to hydrate external discover item.', {
+                  label: 'External Discover',
+                  providerId: provider.id,
+                  item,
+                  errorMessage: getErrorMessage(e),
+                });
+
+                return null;
+              }
+            }
+          )
+        ).filter((item): item is HydratedExternalItem => item !== null);
+
+        logger.debug('External discover hydrated items.', {
+          label: 'External Discover',
+          providerId: provider.id,
+          page: requestedPage,
+          hydratedCount: hydratedItems.length,
+        });
+
+        const responsePage = getPayloadNumber(
+          response.data,
+          ['page'],
+          requestedPage
+        );
+        const totalPages = getPayloadNumber(
+          response.data,
+          ['totalPages', 'total_pages', 'pagination.totalPages'],
+          1
+        );
+        const totalResults = getPayloadNumber(
+          response.data,
+          ['totalResults', 'total_results', 'pagination.totalResults'],
+          hydratedItems.length
+        );
+
+        const entry: ExternalDiscoverCacheEntry = {
+          page: responsePage,
+          totalPages,
+          totalResults,
+          items: hydratedItems,
+        };
+
+        if (provider.cacheMinutes > 0) {
+          cache.set(cacheKey, entry, provider.cacheMinutes * 60);
+        }
+
+        return entry;
+      })());
 
     const relatedMedia = await Media.getRelatedMedia(
       user,
-      hydratedItems.map((item) => ({
+      cacheEntry.items.map((item) => ({
         tmdbId: item.tmdbId,
         mediaType: item.mediaType,
       }))
     );
 
-    const results = hydratedItems.map((item) => {
+    const results = cacheEntry.items.map((item) => {
       const media = relatedMedia.find(
         (related) =>
           related.tmdbId === item.tmdbId && related.mediaType === item.mediaType
@@ -730,26 +839,21 @@ export const getExternalDiscoverItems = async (
       return mapTvResult(mapTvDetailsToResult(item.raw), media);
     });
 
-    const payload: ExternalDiscoverPayload = {
-      page: 1,
-      totalPages: 1,
-      totalResults: results.length,
+    return {
+      page: cacheEntry.page,
+      totalPages: cacheEntry.totalPages,
+      totalResults: cacheEntry.totalResults,
       results,
     };
-
-    if (provider.cacheMinutes > 0) {
-      cache.set(cacheKey, payload, provider.cacheMinutes * 60);
-    }
-
-    return payload;
   } catch (e) {
     logger.error('Something went wrong retrieving external discover items.', {
       label: 'External Discover',
       providerId: provider.id,
+      page: requestedPage,
       errorMessage: getErrorMessage(e),
     });
 
-    return emptyPayload();
+    return emptyPayload(requestedPage);
   }
 };
 

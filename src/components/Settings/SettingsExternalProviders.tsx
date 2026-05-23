@@ -18,6 +18,16 @@ const messages = defineMessages('components.Settings.ExternalProviders', {
   noProviders: 'No external providers configured.',
   edit: 'Edit',
   delete: 'Delete',
+  loadError: 'External providers could not be loaded.',
+  deleteError: 'External provider could not be deleted.',
+  deleteConfirm: 'Delete this provider?',
+  idLabel: 'ID',
+  mediaLabel: 'Media',
+  cacheLabel: 'Cache',
+  cacheMinutes: '{minutes} min',
+  enabled: 'Enabled',
+  disabled: 'Disabled',
+  advancedMappingConfigured: 'Advanced mapping configured',
 });
 
 const SettingsExternalProviders = () => {
@@ -42,9 +52,7 @@ const SettingsExternalProviders = () => {
 
       setProviders(providersResponse.data);
     } catch {
-      setError(
-        'External providers could not be loaded. Check whether /api/v1/settings/external-providers/providers is registered and working.'
-      );
+      setError(intl.formatMessage(messages.loadError));
     } finally {
       setLoading(false);
     }
@@ -75,7 +83,7 @@ const SettingsExternalProviders = () => {
   };
 
   const deleteProvider = async (providerId: number) => {
-    if (!window.confirm('Delete this provider?')) {
+    if (!window.confirm(intl.formatMessage(messages.deleteConfirm))) {
       return;
     }
 
@@ -87,7 +95,7 @@ const SettingsExternalProviders = () => {
       );
       await loadData();
     } catch {
-      setError('External provider could not be deleted.');
+      setError(intl.formatMessage(messages.deleteError));
     }
   };
 
@@ -156,9 +164,18 @@ const SettingsExternalProviders = () => {
                         {provider.url}
                       </div>
                       <div className="mt-2 text-xs text-gray-400">
-                        ID: {provider.idType} | Media: {provider.mediaType} |
-                        Cache: {provider.cacheMinutes} min |{' '}
-                        {provider.enabled ? 'Enabled' : 'Disabled'}
+                        {intl.formatMessage(messages.idLabel)}:{' '}
+                        {provider.idType} |{' '}
+                        {intl.formatMessage(messages.mediaLabel)}:{' '}
+                        {provider.mediaType} |{' '}
+                        {intl.formatMessage(messages.cacheLabel)}:{' '}
+                        {intl.formatMessage(messages.cacheMinutes, {
+                          minutes: provider.cacheMinutes,
+                        })}{' '}
+                        |{' '}
+                        {provider.enabled
+                          ? intl.formatMessage(messages.enabled)
+                          : intl.formatMessage(messages.disabled)}
                       </div>
 
                       {(provider.itemsPath ||
@@ -167,7 +184,9 @@ const SettingsExternalProviders = () => {
                         provider.mediaTypePath ||
                         provider.defaultMediaType) && (
                         <div className="mt-1 text-xs text-gray-500">
-                          Advanced mapping configured
+                          {intl.formatMessage(
+                            messages.advancedMappingConfigured
+                          )}
                         </div>
                       )}
                     </div>
