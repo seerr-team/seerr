@@ -393,6 +393,9 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
           (option) => option.type === Number(values.sliderType)
         );
 
+        const shouldRequirePreviewResults =
+          activeOption?.type !== DiscoverSliderType.EXTERNAL_PROVIDER;
+
         let dataInput: React.ReactNode;
 
         switch (activeOption?.type) {
@@ -417,6 +420,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                   const keywords = value.map((item) => item.value).join(',');
 
                   setFieldValue('data', keywords);
+                  setResultCount(0);
                 }}
               />
             );
@@ -434,6 +438,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                 placeholder={intl.formatMessage(messages.searchGenres)}
                 onChange={(value) => {
                   setFieldValue('data', value?.value.toString());
+                  setResultCount(0);
                 }}
               />
             );
@@ -451,6 +456,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                 placeholder={intl.formatMessage(messages.searchGenres)}
                 onChange={(value) => {
                   setFieldValue('data', value?.value.toString());
+                  setResultCount(0);
                 }}
               />
             );
@@ -468,6 +474,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                 placeholder={intl.formatMessage(messages.searchStudios)}
                 onChange={(value) => {
                   setFieldValue('data', value?.value.toString());
+                  setResultCount(0);
                 }}
               />
             );
@@ -485,6 +492,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                 }
                 onChange={(region, providers) => {
                   setFieldValue('data', `${region},${providers.join('|')}`);
+                  setResultCount(0);
                 }}
               />
             );
@@ -502,6 +510,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                 }
                 onChange={(region, providers) => {
                   setFieldValue('data', `${region},${providers.join('|')}`);
+                  setResultCount(0);
                 }}
               />
             );
@@ -520,6 +529,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                   );
 
                   setFieldValue('data', providerId);
+                  setResultCount(0);
 
                   if (provider && !values.title) {
                     setFieldValue('title', provider.name);
@@ -542,6 +552,10 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                 name="data"
                 id="data"
                 placeholder={activeOption?.dataPlaceholderText}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setFieldValue('data', e.target.value);
+                  setResultCount(0);
+                }}
               />
             );
         }
@@ -549,7 +563,18 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
         return (
           <Form data-testid="create-discover-option-form">
             <div className="flex flex-col space-y-2 text-gray-100">
-              <Field as="select" id="sliderType" name="sliderType">
+              <Field
+                as="select"
+                id="sliderType"
+                name="sliderType"
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                  setFieldValue('sliderType', Number(e.target.value));
+                  setFieldValue('title', '');
+                  setFieldValue('data', '');
+                  setDefaultDataValue(null);
+                  setResultCount(0);
+                }}
+              >
                 {options.map((option) => (
                   <option value={option.type} key={`type-${option.type}`}>
                     {option.title}
@@ -574,7 +599,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                   <div className="error">{errors.data}</div>
                 )}
               <div className="flex-1" />
-              {resultCount === 0 ? (
+              {shouldRequirePreviewResults && resultCount === 0 ? (
                 <Tooltip content={intl.formatMessage(messages.needresults)}>
                   <div>
                     <Button buttonType="primary" buttonSize="sm" disabled>
