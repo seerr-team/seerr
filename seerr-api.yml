@@ -3889,6 +3889,133 @@ paths:
       responses:
         '204':
           description: All sliders reset to defaults
+  /settings/external-providers/providers:
+    get:
+      summary: Get external providers
+      description: Returns all configured external providers.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: External providers returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+    post:
+      summary: Create external provider
+      description: Creates a new external provider.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: External provider created
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /settings/external-providers/providers/test:
+    post:
+      summary: Test external provider
+      description: Tests connection and JSON mapping for an external provider.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: External provider test successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  status:
+                    type: number
+                  totalParsed:
+                    type: number
+                  sample:
+                    type: array
+                    items:
+                      type: object
+        '400':
+          description: Connection worked but no valid media items were detected
+        '500':
+          description: Unable to connect to external provider
+
+  /settings/external-providers/providers/{providerId}:
+    get:
+      summary: Get external provider
+      description: Returns a single external provider.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: providerId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: External provider returned
+          content:
+            application/json:
+              schema:
+                type: object
+    put:
+      summary: Update external provider
+      description: Updates an existing external provider.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: providerId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: External provider updated
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      summary: Delete external provider
+      description: Deletes an existing external provider.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: providerId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: External provider deleted
+
   /settings/about:
     get:
       summary: Get server stats
@@ -6276,6 +6403,35 @@ paths:
                           type: string
                         title:
                           type: string
+  /discover/external/{providerId}:
+    get:
+      summary: Get external discover items
+      description: Returns discover items from an external provider.
+      tags:
+        - discover
+      parameters:
+        - in: path
+          name: providerId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: language
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: External discover items returned
+          content:
+            application/json:
+              schema:
+                type: object
   /request:
     get:
       summary: Get all requests
