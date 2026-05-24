@@ -41,14 +41,14 @@ class ExternalProvider {
   })
   public authType: ExternalProviderAuthType;
 
-  @Column({ nullable: true })
-  public apiKey?: string;
+  @Column({ type: 'varchar', nullable: true })
+  public apiKey?: string | null;
 
-  @Column({ nullable: true })
-  public apiKeyHeader?: string;
+  @Column({ type: 'varchar', nullable: true })
+  public apiKeyHeader?: string | null;
 
-  @Column({ nullable: true })
-  public bearerToken?: string;
+  @Column({ type: 'varchar', nullable: true })
+  public bearerToken?: string | null;
 
   @Column({ type: 'int', default: 60 })
   public cacheMinutes: number;
@@ -65,20 +65,20 @@ class ExternalProvider {
   })
   public mediaType: ExternalProviderMediaType;
 
-  @Column({ nullable: true })
-  public itemsPath?: string;
+  @Column({ type: 'varchar', nullable: true })
+  public itemsPath?: string | null;
 
-  @Column({ nullable: true })
-  public tmdbIdPath?: string;
+  @Column({ type: 'varchar', nullable: true })
+  public tmdbIdPath?: string | null;
 
-  @Column({ nullable: true })
-  public tvdbIdPath?: string;
+  @Column({ type: 'varchar', nullable: true })
+  public tvdbIdPath?: string | null;
 
-  @Column({ nullable: true })
-  public mediaTypePath?: string;
+  @Column({ type: 'varchar', nullable: true })
+  public mediaTypePath?: string | null;
 
-  @Column({ nullable: true })
-  public defaultMediaType?: string;
+  @Column({ type: 'varchar', nullable: true })
+  public defaultMediaType?: string | null;
 
   @Column({ default: true })
   public enabled: boolean;

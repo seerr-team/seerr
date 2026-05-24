@@ -6618,7 +6618,7 @@ paths:
                   results:
                     type: array
                     items:
-                      oneOf:
+                      anyOf:
                         - $ref: '#/components/schemas/MovieResult'
                         - $ref: '#/components/schemas/TvResult'
   /request:

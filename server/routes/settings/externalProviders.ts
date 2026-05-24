@@ -30,13 +30,11 @@ const toPositiveInteger = (value: unknown): number | null => {
   return Number.isInteger(numberValue) && numberValue > 0 ? numberValue : null;
 };
 
-const toNullableString = (value: unknown): string | null | undefined => {
-  if (value === undefined) {
-    return undefined;
-  }
+const hasBodyProperty = (body: Record<string, unknown>, key: string): boolean =>
+  Object.prototype.hasOwnProperty.call(body, key);
 
-  return typeof value === 'string' && value.trim() !== '' ? value : null;
-};
+const toNullableString = (value: unknown): string | null =>
+  typeof value === 'string' && value.trim() !== '' ? value : null;
 
 /**
  * Providers
@@ -198,6 +196,7 @@ externalProviderRoutes.post('/providers', async (req, res, next) => {
 externalProviderRoutes.put('/providers/:providerId', async (req, res, next) => {
   const providerRepository = getRepository(ExternalProvider);
   const providerId = toPositiveInteger(req.params.providerId);
+  const body = req.body as Record<string, unknown>;
 
   if (!providerId) {
     return next({
@@ -225,22 +224,31 @@ externalProviderRoutes.put('/providers/:providerId', async (req, res, next) => {
 
     provider.authType = req.body.authType ?? provider.authType;
 
-    if (req.body.apiKey !== undefined) {
-      provider.apiKey = req.body.apiKey || undefined;
+    if (hasBodyProperty(body, 'apiKey')) {
+      provider.apiKey = toNullableString(req.body.apiKey);
     }
 
-    if (req.body.apiKeyHeader !== undefined) {
-      provider.apiKeyHeader = req.body.apiKeyHeader || undefined;
+    if (hasBodyProperty(body, 'apiKeyHeader')) {
+      provider.apiKeyHeader = toNullableString(req.body.apiKeyHeader);
     }
 
-    if (req.body.bearerToken !== undefined) {
-      provider.bearerToken = req.body.bearerToken || undefined;
+    if (hasBodyProperty(body, 'bearerToken')) {
+      provider.bearerToken = toNullableString(req.body.bearerToken);
     }
 
     if (provider.authType === ExternalProviderAuthType.NONE) {
-      provider.apiKey = undefined;
-      provider.apiKeyHeader = undefined;
-      provider.bearerToken = undefined;
+      provider.apiKey = null;
+      provider.apiKeyHeader = null;
+      provider.bearerToken = null;
+    }
+
+    if (provider.authType === ExternalProviderAuthType.API_KEY) {
+      provider.bearerToken = null;
+    }
+
+    if (provider.authType === ExternalProviderAuthType.BEARER) {
+      provider.apiKey = null;
+      provider.apiKeyHeader = null;
     }
 
     provider.cacheMinutes =
@@ -251,16 +259,25 @@ externalProviderRoutes.put('/providers/:providerId', async (req, res, next) => {
     provider.idType = req.body.idType ?? provider.idType;
     provider.mediaType = req.body.mediaType ?? provider.mediaType;
 
-    provider.itemsPath =
-      toNullableString(req.body.itemsPath) ?? provider.itemsPath;
-    provider.tmdbIdPath =
-      toNullableString(req.body.tmdbIdPath) ?? provider.tmdbIdPath;
-    provider.tvdbIdPath =
-      toNullableString(req.body.tvdbIdPath) ?? provider.tvdbIdPath;
-    provider.mediaTypePath =
-      toNullableString(req.body.mediaTypePath) ?? provider.mediaTypePath;
-    provider.defaultMediaType =
-      toNullableString(req.body.defaultMediaType) ?? provider.defaultMediaType;
+    if (hasBodyProperty(body, 'itemsPath')) {
+      provider.itemsPath = toNullableString(req.body.itemsPath);
+    }
+
+    if (hasBodyProperty(body, 'tmdbIdPath')) {
+      provider.tmdbIdPath = toNullableString(req.body.tmdbIdPath);
+    }
+
+    if (hasBodyProperty(body, 'tvdbIdPath')) {
+      provider.tvdbIdPath = toNullableString(req.body.tvdbIdPath);
+    }
+
+    if (hasBodyProperty(body, 'mediaTypePath')) {
+      provider.mediaTypePath = toNullableString(req.body.mediaTypePath);
+    }
+
+    if (hasBodyProperty(body, 'defaultMediaType')) {
+      provider.defaultMediaType = toNullableString(req.body.defaultMediaType);
+    }
 
     provider.enabled = toBoolean(req.body.enabled, provider.enabled);
 
