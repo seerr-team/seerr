@@ -13,8 +13,8 @@ import PageTitle from '@app/components/Common/PageTitle';
 import type { PlayButtonLink } from '@app/components/Common/PlayButton';
 import PlayButton from '@app/components/Common/PlayButton';
 import StatusBadgeMini from '@app/components/Common/StatusBadgeMini';
-import Tag from '@app/components/Common/Tag';
 import Tooltip from '@app/components/Common/Tooltip';
+import DetailsKeywordTags from '@app/components/DetailsKeywordTags';
 import ExternalLinkBlock from '@app/components/ExternalLinkBlock';
 import IssueModal from '@app/components/IssueModal';
 import ManageSlideOver from '@app/components/ManageSlideOver';
@@ -770,17 +770,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
             </>
           )}
           {data.keywords.length > 0 && (
-            <div className="mt-6">
-              {data.keywords.map((keyword) => (
-                <Link
-                  href={`/discover/tv?keywords=${keyword.id}`}
-                  key={`keyword-id-${keyword.id}`}
-                  className="mb-2 mr-2 inline-flex last:mr-0"
-                >
-                  <Tag>{keyword.name}</Tag>
-                </Link>
-              ))}
-            </div>
+            <DetailsKeywordTags keywords={data.keywords} mediaType="tv" />
           )}
           <h2 className="py-4">{intl.formatMessage(messages.seasonstitle)}</h2>
           <div className="flex w-full flex-col space-y-2">
