@@ -21,6 +21,8 @@
   "components.CollectionDetails.removefromblocklistpartialcount": "{removeLabel} ({count, plural, one {# movie} other {# movies}})",
   "components.CollectionDetails.requestcollection": "Request Collection",
   "components.CollectionDetails.requestcollection4k": "Request Collection in 4K",
+  "components.DetailsKeywordTags.hidekeywords": "Hide Keywords",
+  "components.DetailsKeywordTags.showkeywords": "Show Keywords",
   "components.Discover.CreateSlider.addSlider": "Add Slider",
   "components.Discover.CreateSlider.addcustomslider": "Create Custom Slider",
   "components.Discover.CreateSlider.addfail": "Failed to create new slider.",
