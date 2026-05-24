@@ -33,8 +33,15 @@ const toPositiveInteger = (value: unknown): number | null => {
 const hasBodyProperty = (body: Record<string, unknown>, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(body, key);
 
-const toNullableString = (value: unknown): string | null =>
-  typeof value === 'string' && value.trim() !== '' ? value : null;
+const toNullableString = (value: unknown): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmedValue = value.trim();
+
+  return trimmedValue !== '' ? trimmedValue : null;
+};
 
 /**
  * Providers

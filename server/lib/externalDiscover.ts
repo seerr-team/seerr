@@ -871,7 +871,7 @@ export const testExternalDiscoverProvider = async (provider: {
   mediaTypePath?: string | null;
   defaultMediaType?: string | null;
 }) => {
-  const response = await axios.get(provider.url, {
+  const response = await axios.get(buildProviderRequestUrl(provider.url, 1), {
     headers: getRequestHeaders(provider),
     timeout: 15000,
   });
