@@ -5283,6 +5283,168 @@ paths:
                       $ref: '#/components/schemas/MediaInfo'
                   playCount:
                     type: number
+  /user/{userId}/recommendations/watch-history:
+    get:
+      summary: Get personalized watch history recommendations for a user
+      description: Returns personalized media recommendations based on the user's recently watched media.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: language
+          required: false
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: Watch history recommendations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 1
+                  totalResults:
+                    type: number
+                    example: 20
+                  results:
+                    type: array
+                    items:
+                      anyOf:
+                        - $ref: '#/components/schemas/MovieResult'
+                        - $ref: '#/components/schemas/TvResult'
+
+  /user/{userId}/recommendations/watch-history/sources:
+    get:
+      summary: Get watch history recommendation sources for a user
+      description: Returns recently watched media items that can be used as sources for because-you-watched recommendations.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: language
+          required: false
+          schema:
+            type: string
+            example: en
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+            example: 10
+            default: 10
+      responses:
+        '200':
+          description: Watch history recommendation sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    tmdbId:
+                      type: number
+                      example: 577922
+                    mediaType:
+                      type: string
+                      enum:
+                        - movie
+                        - tv
+                      example: movie
+                    title:
+                      type: string
+                      example: Tenet
+
+  /user/{userId}/recommendations/watch-history/because:
+    get:
+      summary: Get recommendations based on a watched title
+      description: Returns TMDB recommendations based on a specific watched movie or series.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: tmdbId
+          required: true
+          schema:
+            type: number
+            example: 577922
+        - in: query
+          name: mediaType
+          required: true
+          schema:
+            type: string
+            enum:
+              - movie
+              - tv
+            example: movie
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: language
+          required: false
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: Because-you-watched recommendations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  results:
+                    type: array
+                    items:
+                      anyOf:
+                        - $ref: '#/components/schemas/MovieResult'
+                        - $ref: '#/components/schemas/TvResult'
+        '400':
+          description: Missing or invalid tmdbId or mediaType
   /search:
     get:
       summary: Search for movies, TV shows, or people

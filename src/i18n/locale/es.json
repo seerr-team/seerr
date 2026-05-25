@@ -100,6 +100,8 @@
   "components.Discover.recentlyAdded": "Agregado Recientemente",
   "components.Discover.populartv": "Series Populares",
   "components.Discover.popularmovies": "Películas Populares",
+  "components.Discover.becauseyouwatched": "Porque viste",
+  "components.Discover.watchhistoryrecommendations": "Recomendado para ti",
   "components.Settings.addsonarr": "Agregar servidor Sonarr",
   "components.Settings.address": "Dirección",
   "components.Settings.addradarr": "Agregar servidor Radarr",

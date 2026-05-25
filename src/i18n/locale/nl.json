@@ -6,6 +6,8 @@
   "components.Discover.trending": "Trending",
   "components.Discover.upcoming": "Verwachte films",
   "components.Discover.upcomingmovies": "Verwachte films",
+  "components.Discover.becauseyouwatched": "Omdat je hebt gekeken naar",
+  "components.Discover.watchhistoryrecommendations": "Aanbevolen voor jou",
   "components.Layout.SearchInput.searchPlaceholder": "Films en series zoeken",
   "components.Layout.Sidebar.dashboard": "Ontdekken",
   "components.Layout.Sidebar.requests": "Aanvragen",

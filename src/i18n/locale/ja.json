@@ -6,6 +6,8 @@
   "components.Discover.trending": "トレンド",
   "components.Discover.upcoming": "今後リリースされる映画",
   "components.Discover.upcomingmovies": "今後リリースされる映画",
+  "components.Discover.becauseyouwatched": "視聴した作品に基づくおすすめ",
+  "components.Discover.watchhistoryrecommendations": "あなたへのおすすめ",
   "components.Layout.SearchInput.searchPlaceholder": "作品名で検索",
   "components.Layout.Sidebar.dashboard": "ホーム",
   "components.Layout.Sidebar.requests": "リクエスト",

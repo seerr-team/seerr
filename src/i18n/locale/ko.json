@@ -21,6 +21,8 @@
   "components.Discover.CreateSlider.slidernameplaceholder": "슬라이더 이름",
   "components.Discover.DiscoverMovieGenre.genreMovies": "{genre} 영화",
   "components.Discover.upcomingmovies": "개봉 예정작",
+  "components.Discover.becauseyouwatched": "시청한 콘텐츠 기반 추천",
+  "components.Discover.watchhistoryrecommendations": "추천 콘텐츠",
   "components.Layout.SearchInput.searchPlaceholder": "영화 및 시리즈 검색",
   "components.PermissionEdit.request4kMovies": "4K 영화 요청",
   "components.PermissionEdit.request4kMoviesDescription": "4K 영화를 요청할 수 있는 권한을 부여합니다.",

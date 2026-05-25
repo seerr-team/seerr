@@ -6,6 +6,8 @@
   "components.Discover.trending": "В трендах",
   "components.Discover.upcoming": "Предстоящие фильмы",
   "components.Discover.upcomingmovies": "Предстоящие фильмы",
+  "components.Discover.becauseyouwatched": "Потому что вы смотрели",
+  "components.Discover.watchhistoryrecommendations": "Рекомендовано для вас",
   "components.Layout.SearchInput.searchPlaceholder": "Поиск фильмов и сериалов",
   "components.Layout.Sidebar.dashboard": "Найти что-то новое",
   "components.Layout.Sidebar.requests": "Запросы",

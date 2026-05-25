@@ -31,6 +31,8 @@
   "components.Discover.upcoming": "Майбутні фільми",
   "components.Discover.upcomingmovies": "Майбутні фільми",
   "components.Discover.upcomingtv": "Майбутні серіали",
+  "components.Discover.becauseyouwatched": "Оскільки ви дивилися",
+  "components.Discover.watchhistoryrecommendations": "Рекомендовано для вас",
   "components.DownloadBlock.estimatedtime": "Приблизно {time}",
   "components.DownloadBlock.formattedTitle": "{title}: Сезон {seasonNumber} Епізод {episodeNumber}",
   "components.IssueDetails.IssueComment.areyousuredelete": "Ви впевнені, що хочете видалити цей коментар?",

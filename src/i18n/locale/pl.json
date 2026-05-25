@@ -3,6 +3,8 @@
   "components.AppDataWarning.dockerVolumeMissingDescription": "Montowanie woluminu <code>{appDataPath}</code> nie zostało poprawnie skonfigurowane. Wszystkie dane zostaną wyczyszczone po zatrzymaniu lub ponownym uruchomieniu kontenera.",
   "components.Discover.DiscoverMovieGenre.genreMovies": "Filmy {genre}",
   "components.Discover.popularmovies": "Popularne filmy",
+  "components.Discover.becauseyouwatched": "Ponieważ oglądano",
+  "components.Discover.watchhistoryrecommendations": "Polecane dla Ciebie",
   "components.LanguageSelector.languageServerDefault": "Domyślny ({language})",
   "components.Layout.VersionStatus.streamdevelop": "Seerr wersja deweloperska",
   "components.Layout.VersionStatus.streamstable": "Seerr wersja stabilna",

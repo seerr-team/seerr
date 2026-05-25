@@ -28,6 +28,8 @@
   "components.Discover.upcoming": "Filme Viitoare",
   "components.Discover.upcomingmovies": "Filme Viitoare",
   "components.Discover.upcomingtv": "Seriale Viitoare",
+  "components.Discover.becauseyouwatched": "Pentru că ai urmărit",
+  "components.Discover.watchhistoryrecommendations": "Recomandat pentru tine",
   "components.DownloadBlock.estimatedtime": "Estimat {time}",
   "components.IssueDetails.IssueComment.areyousuredelete": "Sunteți sigur că doriți să ștergeți acest comentariu?",
   "components.IssueDetails.IssueComment.delete": "Șterge comentariul",

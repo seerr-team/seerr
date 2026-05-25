@@ -113,6 +113,24 @@ export interface JellyfinLibraryItemExtended extends JellyfinLibraryItem {
   DateCreated?: string;
 }
 
+export interface JellyfinUserData {
+  Played?: boolean;
+  PlayCount?: number;
+  LastPlayedDate?: string;
+  PlaybackPositionTicks?: number;
+}
+
+export interface JellyfinPlayedItem extends JellyfinLibraryItemExtended {
+  Type: 'Movie' | 'Series';
+  UserData?: JellyfinUserData;
+}
+
+export interface JellyfinPlayedItemsResponse {
+  Items: JellyfinPlayedItem[];
+  TotalRecordCount: number;
+  StartIndex: number;
+}
+
 type EpisodeReturn<T> = T extends { includeMediaInfo: true }
   ? JellyfinLibraryItemExtended[]
   : JellyfinLibraryItem[];
@@ -404,6 +422,44 @@ class JellyfinAPI extends ExternalAPI {
         `Something went wrong while getting library content from the Jellyfin server: ${e.message}`,
         { label: 'Jellyfin API', error: e.response?.status }
       );
+      throw new ApiError(e.response?.status, ApiErrorCode.InvalidAuthToken);
+    }
+  }
+
+  public async getPlayedItems({
+    userId,
+    limit = 100,
+    startIndex = 0,
+  }: {
+    userId: string;
+    limit?: number;
+    startIndex?: number;
+  }): Promise<JellyfinPlayedItemsResponse> {
+    try {
+      const itemResponse = await this.get(`/Users/${userId}/Items`, {
+        params: {
+          Recursive: true,
+          IncludeItemTypes: 'Movie,Series',
+          IsPlayed: true,
+          Fields: 'ProviderIds',
+          EnableUserData: true,
+          SortBy: 'DatePlayed',
+          SortOrder: 'Descending',
+          Limit: limit,
+          StartIndex: startIndex,
+        },
+      });
+
+      return itemResponse as JellyfinPlayedItemsResponse;
+    } catch (e) {
+      logger.error(
+        `Something went wrong while getting played items from the Jellyfin server: ${e.message}`,
+        {
+          label: 'Jellyfin API',
+          error: e.response?.status,
+        }
+      );
+
       throw new ApiError(e.response?.status, ApiErrorCode.InvalidAuthToken);
     }
   }
