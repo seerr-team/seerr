@@ -868,6 +868,7 @@ router.get<{ id: string }>(
       const results = await getPersonalizedWatchHistoryRecommendations({
         user: req.user,
         userId: Number(req.params.id),
+        page: req.query.page ? Number(req.query.page) : 1,
         language: (req.query.language as string) ?? req.locale,
       });
 

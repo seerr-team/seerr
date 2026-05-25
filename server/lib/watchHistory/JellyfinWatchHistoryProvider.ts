@@ -122,11 +122,22 @@ export class JellyfinWatchHistoryProvider implements WatchHistoryProvider {
       };
     }
 
-    const order = new Map(
-      playedItems.map((item, index) => {
-        return [`${getMediaType(item)}:${getTmdbId(item)}`, index];
-      })
-    );
+    const order = new Map<string, number>();
+
+    playedItems.forEach((item, index) => {
+      const mediaType = getMediaType(item);
+      const tmdbId = getTmdbId(item);
+
+      if (!mediaType || !tmdbId) {
+        return;
+      }
+
+      const key = `${mediaType}:${tmdbId}`;
+
+      if (!order.has(key)) {
+        order.set(key, index);
+      }
+    });
 
     const matchedMedia = await getRepository(Media).find({ where });
 

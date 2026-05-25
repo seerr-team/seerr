@@ -9,6 +9,11 @@ import type { User } from '@server/entity/User';
 import { getWatchHistoryProvider } from '@server/lib/watchHistory';
 import { mapMovieResult, mapTvResult } from '@server/models/Search';
 
+type WatchHistoryMediaItem = Media & {
+  tmdbId: number;
+  mediaType: MediaType.MOVIE | MediaType.TV;
+};
+
 type MovieRecommendationCandidate = {
   tmdbId: number;
   mediaType: MediaType.MOVIE;
@@ -29,7 +34,7 @@ type RecommendationCandidate =
 
 type WatchHistoryRecommendationSource = {
   tmdbId: number;
-  mediaType: MediaType;
+  mediaType: MediaType.MOVIE | MediaType.TV;
   title: string;
 };
 
@@ -39,8 +44,44 @@ type RecommendationScoreResult = {
   vote_count?: number;
 };
 
-const getCandidateKey = (mediaType: MediaType, tmdbId: number): string => {
+const isWatchHistoryMediaItem = (
+  item: Media
+): item is WatchHistoryMediaItem => {
+  return (
+    !!item.tmdbId &&
+    (item.mediaType === MediaType.MOVIE || item.mediaType === MediaType.TV)
+  );
+};
+
+const getCandidateKey = (
+  mediaType: MediaType.MOVIE | MediaType.TV,
+  tmdbId: number
+): string => {
   return `${mediaType}:${tmdbId}`;
+};
+
+const getUniqueWatchedItems = ({
+  items,
+  limit,
+}: {
+  items: Media[];
+  limit: number;
+}): WatchHistoryMediaItem[] => {
+  const seenKeys = new Set<string>();
+
+  return items
+    .filter(isWatchHistoryMediaItem)
+    .filter((item) => {
+      const key = getCandidateKey(item.mediaType, item.tmdbId);
+
+      if (seenKeys.has(key)) {
+        return false;
+      }
+
+      seenKeys.add(key);
+      return true;
+    })
+    .slice(0, limit);
 };
 
 const getCandidateScore = ({
@@ -78,49 +119,43 @@ export const getWatchHistoryRecommendationSources = async ({
   const tmdb = new TheMovieDb();
   const watchData = await getWatchHistoryProvider().getUserWatchData(userId);
 
-  const watchedItems = watchData.recentlyWatched
-    .filter((item) => item.tmdbId && item.mediaType)
-    .slice(0, limit);
-
-  const uniqueWatchedItems = [
-    ...new Map(
-      watchedItems.map((item) => [
-        getCandidateKey(item.mediaType, item.tmdbId),
-        item,
-      ])
-    ).values(),
-  ];
+  const uniqueWatchedItems = getUniqueWatchedItems({
+    items: watchData.recentlyWatched,
+    limit,
+  });
 
   const sources = await Promise.all(
-    uniqueWatchedItems.map(async (item) => {
-      if (item.mediaType === MediaType.MOVIE) {
-        const movie = await tmdb.getMovie({
-          movieId: item.tmdbId,
-          language,
-        });
+    uniqueWatchedItems.map(
+      async (item): Promise<WatchHistoryRecommendationSource | null> => {
+        try {
+          if (item.mediaType === MediaType.MOVIE) {
+            const movie = await tmdb.getMovie({
+              movieId: item.tmdbId,
+              language,
+            });
 
-        return {
-          tmdbId: item.tmdbId,
-          mediaType: MediaType.MOVIE,
-          title: movie.title,
-        };
+            return {
+              tmdbId: item.tmdbId,
+              mediaType: MediaType.MOVIE,
+              title: movie.title,
+            };
+          }
+
+          const tv = await tmdb.getTvShow({
+            tvId: item.tmdbId,
+            language,
+          });
+
+          return {
+            tmdbId: item.tmdbId,
+            mediaType: MediaType.TV,
+            title: tv.name,
+          };
+        } catch {
+          return null;
+        }
       }
-
-      if (item.mediaType === MediaType.TV) {
-        const tv = await tmdb.getTvShow({
-          tvId: item.tmdbId,
-          language,
-        });
-
-        return {
-          tmdbId: item.tmdbId,
-          mediaType: MediaType.TV,
-          title: tv.name,
-        };
-      }
-
-      return null;
-    })
+    )
   );
 
   return sources.filter(
@@ -208,18 +243,26 @@ export const getBecauseYouWatchedRecommendations = async ({
 export const getPersonalizedWatchHistoryRecommendations = async ({
   user,
   userId,
+  page = 1,
   language,
 }: {
   user?: User;
   userId: number;
+  page?: number;
   language?: string;
 }) => {
   const tmdb = new TheMovieDb();
   const watchData = await getWatchHistoryProvider().getUserWatchData(userId);
 
-  const watchedItems = watchData.recentlyWatched
-    .filter((item) => item.tmdbId && item.mediaType)
-    .slice(0, 10);
+  const resultsPerPage = 20;
+  const maxCandidates = 40;
+  const currentPage = Math.max(1, page);
+  const offset = (currentPage - 1) * resultsPerPage;
+
+  const watchedItems = getUniqueWatchedItems({
+    items: watchData.recentlyWatched,
+    limit: 10,
+  });
 
   const watchedKeys = new Set(
     watchedItems.map((item) => getCandidateKey(item.mediaType, item.tmdbId))
@@ -229,39 +272,43 @@ export const getPersonalizedWatchHistoryRecommendations = async ({
 
   for (const [sourceIndex, source] of watchedItems.entries()) {
     if (source.mediaType === MediaType.MOVIE) {
-      const response = await tmdb.getMovieRecommendations({
-        movieId: source.tmdbId,
-        page: 1,
-        language,
-      });
-
-      for (const result of response.results) {
-        const key = getCandidateKey(MediaType.MOVIE, result.id);
-
-        if (watchedKeys.has(key)) {
-          continue;
-        }
-
-        const existingCandidate = candidates.get(key);
-
-        candidates.set(key, {
-          tmdbId: result.id,
-          mediaType: MediaType.MOVIE,
-          result,
-          score:
-            (existingCandidate?.score ?? 0) +
-            getCandidateScore({
-              result,
-              sourceIndex,
-              duplicateBoost: existingCandidate ? 4 : 0,
-            }),
+      try {
+        const response = await tmdb.getMovieRecommendations({
+          movieId: source.tmdbId,
+          page: 1,
+          language,
         });
+
+        for (const result of response.results) {
+          const key = getCandidateKey(MediaType.MOVIE, result.id);
+
+          if (watchedKeys.has(key)) {
+            continue;
+          }
+
+          const existingCandidate = candidates.get(key);
+
+          candidates.set(key, {
+            tmdbId: result.id,
+            mediaType: MediaType.MOVIE,
+            result,
+            score:
+              (existingCandidate?.score ?? 0) +
+              getCandidateScore({
+                result,
+                sourceIndex,
+                duplicateBoost: existingCandidate ? 4 : 0,
+              }),
+          });
+        }
+      } catch {
+        continue;
       }
 
       continue;
     }
 
-    if (source.mediaType === MediaType.TV) {
+    try {
       const response = await tmdb.getTvRecommendations({
         tvId: source.tmdbId,
         page: 1,
@@ -290,41 +337,49 @@ export const getPersonalizedWatchHistoryRecommendations = async ({
             }),
         });
       }
+    } catch {
+      continue;
     }
   }
 
   const sortedCandidates = [...candidates.values()]
     .sort((a, b) => b.score - a.score)
-    .slice(0, 40);
+    .slice(0, maxCandidates);
+
+  const paginatedCandidates = sortedCandidates.slice(
+    offset,
+    offset + resultsPerPage
+  );
 
   const relatedMedia = await Media.getRelatedMedia(
     user,
-    sortedCandidates.map((candidate) => ({
+    paginatedCandidates.map((candidate) => ({
       tmdbId: candidate.tmdbId,
       mediaType: candidate.mediaType,
     }))
   );
 
-  const results = sortedCandidates
-    .map((candidate) => {
-      const media = relatedMedia.find(
-        (item) =>
-          item.tmdbId === candidate.tmdbId &&
-          item.mediaType === candidate.mediaType
-      );
+  const results = paginatedCandidates.map((candidate) => {
+    const media = relatedMedia.find(
+      (item) =>
+        item.tmdbId === candidate.tmdbId &&
+        item.mediaType === candidate.mediaType
+    );
 
-      if (candidate.mediaType === MediaType.MOVIE) {
-        return mapMovieResult(candidate.result, media);
-      }
+    if (candidate.mediaType === MediaType.MOVIE) {
+      return mapMovieResult(candidate.result, media);
+    }
 
-      return mapTvResult(candidate.result, media);
-    })
-    .slice(0, 20);
+    return mapTvResult(candidate.result, media);
+  });
 
   return {
-    page: 1,
-    totalPages: 1,
-    totalResults: results.length,
+    page: currentPage,
+    totalPages: Math.max(
+      1,
+      Math.ceil(sortedCandidates.length / resultsPerPage)
+    ),
+    totalResults: sortedCandidates.length,
     results,
   };
 };
