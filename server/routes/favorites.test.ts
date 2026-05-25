@@ -199,22 +199,22 @@ describe('POST /favorites', () => {
     assert.strictEqual(res2.status, 201);
   });
 
-  it('returns 500 when tmdbId is missing', async () => {
+  it('returns 400 when tmdbId is missing', async () => {
     const agent = await authenticatedAgent('admin@seerr.dev', 'test1234');
     const res = await agent.post('/favorites').send({ mediaType: 'movie' });
-    assert.strictEqual(res.status, 500);
+    assert.strictEqual(res.status, 400);
   });
 
-  it('returns 500 when mediaType is missing', async () => {
+  it('returns 400 when mediaType is missing', async () => {
     const agent = await authenticatedAgent('admin@seerr.dev', 'test1234');
     const res = await agent.post('/favorites').send({ tmdbId: 550 });
-    assert.strictEqual(res.status, 500);
+    assert.strictEqual(res.status, 400);
   });
 
-  it('returns 500 when mediaType is invalid', async () => {
+  it('returns 400 when mediaType is invalid', async () => {
     const agent = await authenticatedAgent('admin@seerr.dev', 'test1234');
     const res = await agent.post('/favorites').send({ tmdbId: 550, mediaType: 'book' });
-    assert.strictEqual(res.status, 500);
+    assert.strictEqual(res.status, 400);
   });
 });
 

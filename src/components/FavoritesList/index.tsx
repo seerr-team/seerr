@@ -34,7 +34,7 @@ const FavoritesList = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (error && !titles.length) {
+  if (error && !titles?.length) {
     return null;
   }
 

@@ -37,6 +37,7 @@ export class Favorites {
 
   @ManyToOne(() => User, (user) => user.favorites, {
     eager: true,
+    nullable: false,
     onDelete: 'CASCADE',
   })
   @Index()

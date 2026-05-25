@@ -141,6 +141,10 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   );
   const [isFavoritesUpdating, setIsFavoritesUpdating] =
     useState<boolean>(false);
+
+  useEffect(() => {
+    setIsFavorite(data?.onUserFavorites ?? false);
+  }, [data?.onUserFavorites]);
   const [isBlocklistUpdating, setIsBlocklistUpdating] =
     useState<boolean>(false);
   const [showBlocklistModal, setShowBlocklistModal] = useState(false);

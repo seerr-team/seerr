@@ -6,6 +6,7 @@ import { favoritesCreate } from '@server/interfaces/api/favoritesCreate';
 import logger from '@server/logger';
 import { Router } from 'express';
 import { QueryFailedError } from 'typeorm';
+import { ZodError } from 'zod';
 
 const favoritesRoutes = Router();
 
@@ -57,7 +58,10 @@ favoritesRoutes.post<never, Favorites, Favorites>(
       return res.status(201).json(favorite);
     } catch (error) {
       if (!(error instanceof Error)) {
-        return;
+        return next({ status: 500, message: 'An unknown error occurred.' });
+      }
+      if (error instanceof ZodError) {
+        return next({ status: 400, message: error.message });
       }
       switch (error.constructor) {
         case QueryFailedError:

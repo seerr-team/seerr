@@ -5,7 +5,7 @@ export class AddFavorites1778630400000 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `CREATE TABLE "favorites" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "mediaType" varchar NOT NULL, "title" varchar NOT NULL, "tmdbId" integer NOT NULL, "createdAt" datetime NOT NULL DEFAULT (datetime('now')), "updatedAt" datetime NOT NULL DEFAULT (datetime('now')), "requestedById" integer, "mediaId" integer, CONSTRAINT "UNIQUE_USER_FAVORITES" UNIQUE ("tmdbId", "mediaType", "requestedById"))`
+      `CREATE TABLE "favorites" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "mediaType" varchar NOT NULL, "title" varchar NOT NULL, "tmdbId" integer NOT NULL, "createdAt" datetime NOT NULL DEFAULT (datetime('now')), "updatedAt" datetime NOT NULL DEFAULT (datetime('now')), "requestedById" integer NOT NULL REFERENCES "user"("id") ON DELETE CASCADE, "mediaId" integer REFERENCES "media"("id") ON DELETE CASCADE, CONSTRAINT "UNIQUE_USER_FAVORITES" UNIQUE ("tmdbId", "mediaType", "requestedById"))`
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_e1a651dff5f1fb8897932a0fdd" ON "favorites" ("tmdbId") `
