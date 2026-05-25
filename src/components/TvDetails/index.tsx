@@ -136,10 +136,6 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   );
   const [isFavoritesUpdating, setIsFavoritesUpdating] =
     useState<boolean>(false);
-
-  useEffect(() => {
-    setIsFavorite(data?.onUserFavorites ?? false);
-  }, [data?.onUserFavorites]);
   const [isBlocklistUpdating, setIsBlocklistUpdating] =
     useState<boolean>(false);
   const [showBlocklistModal, setShowBlocklistModal] = useState(false);
@@ -168,6 +164,10 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     () => sortCrewPriority(data?.credits.crew ?? []),
     [data]
   );
+
+  useEffect(() => {
+    setIsFavorite(data?.onUserFavorites ?? false);
+  }, [data?.onUserFavorites]);
 
   useEffect(() => {
     setShowManager(router.query.manage == '1');
