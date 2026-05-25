@@ -10,6 +10,11 @@ import type { PlexMetadata } from '@server/api/plexapi';
 import PlexAPI from '@server/api/plexapi';
 import type { SonarrSeason, SonarrSeries } from '@server/api/servarr/sonarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
+import TheMovieDb from '@server/api/themoviedb';
+import type {
+  TmdbTvDetails,
+  TmdbTvSeasonResult,
+} from '@server/api/themoviedb/interfaces';
 import { MediaStatus, MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
@@ -116,6 +121,85 @@ Object.defineProperty(SonarrAPI.prototype, 'getSeriesById', {
   set() {},
   configurable: true,
 });
+
+// --- Mock TheMovieDb ---
+let getTvShowImpl: (args: {
+  tvId: number;
+  language?: string;
+}) => Promise<TmdbTvDetails> = async () => fakeTmdbShow(1);
+let getShowByTvdbIdImpl: (args: {
+  tvdbId: number;
+  language?: string;
+}) => Promise<TmdbTvDetails> = async () => fakeTmdbShow(1);
+
+Object.defineProperty(TheMovieDb.prototype, 'getTvShow', {
+  get() {
+    return async (args: { tvId: number; language?: string }) =>
+      getTvShowImpl(args);
+  },
+  set() {},
+  configurable: true,
+});
+
+Object.defineProperty(TheMovieDb.prototype, 'getShowByTvdbId', {
+  get() {
+    return async (args: { tvdbId: number; language?: string }) =>
+      getShowByTvdbIdImpl(args);
+  },
+  set() {},
+  configurable: true,
+});
+
+// --- Helpers ---
+
+function fakeTmdbShow(
+  tmdbId: number,
+  seasons: TmdbTvSeasonResult[] = [
+    {
+      id: 1,
+      air_date: '2024-01-01',
+      episode_count: 10,
+      name: 'Season 1',
+      overview: '',
+      season_number: 1,
+    },
+  ]
+): TmdbTvDetails {
+  return {
+    id: tmdbId,
+    content_ratings: { results: [] },
+    created_by: [],
+    episode_run_time: [],
+    first_air_date: '2024-01-01',
+    genres: [],
+    homepage: '',
+    in_production: false,
+    languages: ['en'],
+    last_air_date: '2024-01-01',
+    name: 'Test Show',
+    networks: [],
+    number_of_episodes: 10,
+    number_of_seasons: seasons.length,
+    origin_country: ['US'],
+    original_language: 'en',
+    original_name: 'Test Show',
+    overview: '',
+    popularity: 0,
+    production_companies: [],
+    production_countries: [],
+    spoken_languages: [],
+    seasons,
+    status: 'Ended',
+    type: 'Scripted',
+    vote_average: 0,
+    vote_count: 0,
+    aggregate_credits: { cast: [] },
+    credits: { crew: [] },
+    external_ids: {},
+    keywords: { results: [] },
+    videos: { results: [] },
+  };
+}
 
 import availabilitySync from '@server/lib/availabilitySync';
 
@@ -282,8 +366,8 @@ function fakeSonarrSeasons(
     monitored: true,
     statistics: {
       episodeFileCount: seasonsWithFiles[i + 1] ?? 0,
-      totalEpisodeCount: 22,
-      episodeCount: 22,
+      totalEpisodeCount: 10,
+      episodeCount: 10,
       percentOfEpisodes: seasonsWithFiles[i + 1] ? 100 : 0,
       sizeOnDisk: seasonsWithFiles[i + 1] ? 7516192768 : 0,
       previousAiring: undefined,
@@ -304,6 +388,30 @@ describe('AvailabilitySync', () => {
     getSeriesByIdImpl = async () => {
       throw new Error('404');
     };
+    getTvShowImpl = async ({ tvId }) =>
+      fakeTmdbShow(
+        tvId,
+        Array.from({ length: 4 }, (_, i) => ({
+          id: i + 1,
+          air_date: '2024-01-01',
+          episode_count: 10,
+          name: `Season ${i + 1}`,
+          overview: '',
+          season_number: i + 1,
+        }))
+      );
+    getShowByTvdbIdImpl = async ({ tvdbId }) =>
+      fakeTmdbShow(
+        tvdbId,
+        Array.from({ length: 4 }, (_, i) => ({
+          id: i + 1,
+          air_date: '2024-01-01',
+          episode_count: 10,
+          name: `Season ${i + 1}`,
+          overview: '',
+          season_number: i + 1,
+        }))
+      );
 
     const userRepository = getRepository(User);
     const existingAdmin = await userRepository.findOne({ where: { id: 1 } });
@@ -363,7 +471,7 @@ describe('AvailabilitySync', () => {
 
       getEpisodesImpl = async (_seriesID: string, seasonID: string) => {
         if (seasonID === 'jellyfin-season-6-id') {
-          return fakeJellyfinEpisodes(21);
+          return fakeJellyfinEpisodes(10);
         }
         return [];
       };
@@ -378,13 +486,13 @@ describe('AvailabilitySync', () => {
             monitored: true,
             statistics: {
               episodeFileCount: 21,
-              totalEpisodeCount: 177,
-              episodeCount: 177,
-              percentOfEpisodes: 11.86,
+              totalEpisodeCount: 10,
+              episodeCount: 10,
+              percentOfEpisodes: 100,
               sizeOnDisk: 0,
               seasonCount: 8,
             },
-            seasons: fakeSonarrSeasons(8, { 6: 21 }),
+            seasons: fakeSonarrSeasons(8, { 6: 10 }),
           } as unknown as SonarrSeries;
         }
         throw new Error('404');
@@ -686,6 +794,106 @@ describe('AvailabilitySync', () => {
         updated.status,
         MediaStatus.AVAILABLE,
         'Show should remain AVAILABLE when getEpisodes fails'
+      );
+    });
+
+    it('should mark show as PARTIALLY_AVAILABLE when some seasons are available and some are unknown', async () => {
+      configureJellyfin();
+      configureSonarr([{ syncEnabled: true }]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 1412;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.jellyfinMediaId = 'jellyfin-partial-id';
+      media.externalServiceId = 103;
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+        new Season({
+          seasonNumber: 2,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+        new Season({
+          seasonNumber: 3,
+          status: MediaStatus.UNKNOWN,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+        new Season({
+          seasonNumber: 4,
+          status: MediaStatus.UNKNOWN,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+      ];
+
+      await mediaRepository.save(media);
+
+      getItemDataImpl = async (id: string) => {
+        if (id === 'jellyfin-partial-id') {
+          return fakeJellyfinShow('jellyfin-partial-id', '1412');
+        }
+        return undefined;
+      };
+
+      getSeasonsImpl = async (seriesID: string) => {
+        if (seriesID === 'jellyfin-partial-id') {
+          return [
+            fakeJellyfinSeason(1, 'jellyfin-partial-s1-id'),
+            fakeJellyfinSeason(2, 'jellyfin-partial-s2-id'),
+          ];
+        }
+        return [];
+      };
+
+      getEpisodesImpl = async (_seriesID: string, seasonID: string) => {
+        if (seasonID === 'jellyfin-partial-s1-id') {
+          return fakeJellyfinEpisodes(10);
+        }
+        if (seasonID === 'jellyfin-partial-s2-id') {
+          return fakeJellyfinEpisodes(10);
+        }
+        return [];
+      };
+
+      getSeriesByIdImpl = async (id: number) => {
+        if (id === 103) {
+          return {
+            tvdbId: 99997,
+            id: 103,
+            title: 'Partial Show',
+            titleSlug: 'partial-show',
+            monitored: true,
+            statistics: {
+              episodeFileCount: 20,
+              totalEpisodeCount: 40,
+              episodeCount: 40,
+              percentOfEpisodes: 50,
+              sizeOnDisk: 0,
+              seasonCount: 4,
+            },
+            seasons: fakeSonarrSeasons(4, { 1: 10, 2: 10 }),
+          } as unknown as SonarrSeries;
+        }
+        throw new Error('404');
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 1412 },
+        relations: ['seasons'],
+      });
+
+      assert.strictEqual(
+        updated.status,
+        MediaStatus.PARTIALLY_AVAILABLE,
+        'Show should be PARTIALLY_AVAILABLE when some seasons are available and some are unknown'
       );
     });
   });
