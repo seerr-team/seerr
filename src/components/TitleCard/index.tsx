@@ -12,6 +12,7 @@ import useToasts from '@app/hooks/useToasts';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import useFavoriteIds from '@app/hooks/useFavoriteIds';
 import { withProperties } from '@app/utils/typeHelpers';
 import { Transition } from '@headlessui/react';
 import {
@@ -21,6 +22,7 @@ import {
   MinusCircleIcon,
   StarIcon,
 } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { MediaStatus } from '@server/constants/media';
 import type { Watchlist } from '@server/entity/Watchlist';
 import type { MediaType } from '@server/models/Search';
@@ -80,6 +82,9 @@ const TitleCard = ({
     useState<boolean>(!isAddedToWatchlist);
   const [showBlocklistModal, setShowBlocklistModal] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const { isFavorite: checkFavorite } = useFavoriteIds();
+  const isFavorite =
+    (mediaType === 'movie' || mediaType === 'tv') && checkFavorite(id, mediaType);
 
   // Just to get the year from the date
   if (year) {
@@ -456,8 +461,8 @@ const TitleCard = ({
                   </Button>
                 </Tooltip>
               )}
-            {currentStatus && currentStatus !== MediaStatus.UNKNOWN && (
-              <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-end gap-1 self-start">
+              {currentStatus && currentStatus !== MediaStatus.UNKNOWN && (
                 <div className="pointer-events-none z-40 flex">
                   <StatusBadgeMini
                     status={currentStatus}
@@ -465,8 +470,13 @@ const TitleCard = ({
                     shrink
                   />
                 </div>
-              </div>
-            )}
+              )}
+              {isFavorite && (
+                <div className="pointer-events-none z-40 flex mr-0.5 mt-0.5">
+                  <HeartIconSolid className="h-4 w-4 text-rose-500 drop-shadow" />
+                </div>
+              )}
+            </div>
           </div>
           <Transition
             as={Fragment}

@@ -17,7 +17,9 @@ favoritesRoutes.get('/', async (req, res, next) => {
     });
   }
 
-  const itemsPerPage = 20;
+  const itemsPerPage = req.query.take
+    ? Math.min(Number(req.query.take), 1000)
+    : 20;
   const page = req.query.page ? Number(req.query.page) : 1;
   const offset = (page - 1) * itemsPerPage;
 

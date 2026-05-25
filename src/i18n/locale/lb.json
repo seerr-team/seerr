@@ -1,1 +1,15 @@
-{}
+{
+  "components.FavoritesList.emptyfavorites": "Nach keng Favoriten. Füüg Medien mat dem Häerz-Knäppche op all Filme- oder Sériës-Säit derbäi.",
+  "components.FavoritesList.favorites": "Favoriten",
+  "components.Layout.Sidebar.favorites": "Favoriten",
+  "components.MovieDetails.addtofavorites": "Zu Favoriten derbäisetzen",
+  "components.MovieDetails.favoritesDeleted": "<strong>{title}</strong> vun de Favoriten ewechgeholl.",
+  "components.MovieDetails.favoritesError": "Eppes ass schif gaangen. Probéiert w.e.g. nach eng Kéier.",
+  "components.MovieDetails.favoritesSuccess": "<strong>{title}</strong> zu Favoriten derbäigesat!",
+  "components.MovieDetails.removefromfavorites": "Vun de Favoriten ewechhuelen",
+  "components.TvDetails.addtofavorites": "Zu Favoriten derbäisetzen",
+  "components.TvDetails.favoritesDeleted": "<strong>{title}</strong> vun de Favoriten ewechgeholl.",
+  "components.TvDetails.favoritesError": "Eppes ass schif gaangen. Probéiert w.e.g. nach eng Kéier.",
+  "components.TvDetails.favoritesSuccess": "<strong>{title}</strong> zu Favoriten derbäigesat!",
+  "components.TvDetails.removefromfavorites": "Vun de Favoriten ewechhuelen"
+}

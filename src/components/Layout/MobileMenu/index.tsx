@@ -10,6 +10,7 @@ import {
   ExclamationTriangleIcon,
   EyeSlashIcon,
   FilmIcon,
+  HeartIcon,
   SparklesIcon,
   TvIcon,
   UsersIcon,
@@ -20,6 +21,7 @@ import {
   ExclamationTriangleIcon as FilledExclamationTriangleIcon,
   EyeSlashIcon as FilledEyeSlashIcon,
   FilmIcon as FilledFilmIcon,
+  HeartIcon as FilledHeartIcon,
   SparklesIcon as FilledSparklesIcon,
   TvIcon as FilledTvIcon,
   UsersIcon as FilledUsersIcon,
@@ -100,6 +102,13 @@ const MobileMenu = ({
       activeRegExp: /^\/requests/,
     },
     {
+      href: '/favorites',
+      content: intl.formatMessage(menuMessages.favorites),
+      svgIcon: <HeartIcon className="h-6 w-6" />,
+      svgIconSelected: <FilledHeartIcon className="h-6 w-6" />,
+      activeRegExp: /^\/favorites/,
+    },
+    {
       href: '/blocklist',
       content: intl.formatMessage(menuMessages.blocklist),
       svgIcon: <EyeSlashIcon className="h-6 w-6" />,
@@ -168,11 +177,10 @@ const MobileMenu = ({
   ]);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50">
+    <div ref={ref} className="fixed bottom-0 left-0 right-0 z-50">
       <Transition
         show={isOpen}
         as="div"
-        ref={ref}
         enter="transition duration-500"
         enterFrom="opacity-0 translate-y-0"
         enterTo="opacity-100 -translate-y-full"

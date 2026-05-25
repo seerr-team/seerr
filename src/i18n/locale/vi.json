@@ -33,5 +33,18 @@
   "components.Discover.DiscoverMovies.activefilters": "{count, plural, one {Dùng # bộ lọc} other {Dùng # bộ lọc}}",
   "components.Discover.DiscoverMovies.discovermovies": "Phim",
   "components.Discover.DiscoverMovies.sortPopularityAsc": "Phổ biến sắp xếp tăng dần",
-  "components.Discover.DiscoverMovies.sortPopularityDesc": "Phổ biến sắp xếp giảm dần"
+  "components.Discover.DiscoverMovies.sortPopularityDesc": "Phổ biến sắp xếp giảm dần",
+  "components.FavoritesList.emptyfavorites": "Chưa có mục yêu thích nào. Thêm nội dung bằng nút trái tim trên trang phim hoặc series bất kỳ.",
+  "components.FavoritesList.favorites": "Yêu thích",
+  "components.Layout.Sidebar.favorites": "Yêu thích",
+  "components.MovieDetails.addtofavorites": "Thêm vào yêu thích",
+  "components.MovieDetails.favoritesDeleted": "<strong>{title}</strong> đã được xóa khỏi yêu thích.",
+  "components.MovieDetails.favoritesError": "Đã xảy ra lỗi. Vui lòng thử lại.",
+  "components.MovieDetails.favoritesSuccess": "<strong>{title}</strong> đã được thêm vào yêu thích!",
+  "components.MovieDetails.removefromfavorites": "Xóa khỏi yêu thích",
+  "components.TvDetails.addtofavorites": "Thêm vào yêu thích",
+  "components.TvDetails.favoritesDeleted": "<strong>{title}</strong> đã được xóa khỏi yêu thích.",
+  "components.TvDetails.favoritesError": "Đã xảy ra lỗi. Vui lòng thử lại.",
+  "components.TvDetails.favoritesSuccess": "<strong>{title}</strong> đã được thêm vào yêu thích!",
+  "components.TvDetails.removefromfavorites": "Xóa khỏi yêu thích"
 }

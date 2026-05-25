@@ -38,6 +38,8 @@ tags:
     description: Endpoints related to getting service (Radarr/Sonarr) details.
   - name: watchlist
     description: Collection of media to watch later
+  - name: favorites
+    description: Personal favorites/watch-later list
   - name: blocklist
     description: Blocklisted media from discovery page.
 servers:
@@ -75,6 +77,35 @@ components:
           type: string
         type:
           type: string
+        title:
+          type: string
+        media:
+          $ref: '#/components/schemas/MediaInfo'
+        createdAt:
+          type: string
+          example: '2020-09-12T10:00:27.000Z'
+          readOnly: true
+        updatedAt:
+          type: string
+          example: '2020-09-12T10:00:27.000Z'
+          readOnly: true
+        requestedBy:
+          $ref: '#/components/schemas/User'
+    Favorites:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          readOnly: true
+        tmdbId:
+          type: number
+          example: 1
+        mediaType:
+          type: string
+          enum:
+            - movie
+            - tv
         title:
           type: string
         media:
@@ -4915,6 +4946,97 @@ paths:
       responses:
         '204':
           description: Succesfully removed watchlist item
+  /favorites:
+    get:
+      summary: Get user favorites list
+      tags:
+        - favorites
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: take
+          schema:
+            type: integer
+            maximum: 1000
+      responses:
+        '200':
+          description: Favorites list returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: integer
+                  totalPages:
+                    type: integer
+                  totalResults:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Favorites'
+    post:
+      summary: Add media to favorites
+      tags:
+        - favorites
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tmdbId
+                - mediaType
+              properties:
+                tmdbId:
+                  type: number
+                  example: 1
+                mediaType:
+                  type: string
+                  enum:
+                    - movie
+                    - tv
+                title:
+                  type: string
+      responses:
+        '201':
+          description: Favorite added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Favorites'
+        '409':
+          description: Already in favorites
+  /favorites/{tmdbId}:
+    delete:
+      summary: Delete favorites item
+      description: Removes a favorites item.
+      tags:
+        - favorites
+      parameters:
+        - in: path
+          name: tmdbId
+          required: true
+          example: '1'
+          schema:
+            type: string
+        - in: query
+          name: mediaType
+          required: true
+          schema:
+            type: string
+            enum:
+              - movie
+              - tv
+      responses:
+        '204':
+          description: Successfully removed favorites item
   /user/{userId}/watchlist:
     get:
       summary: Get the Plex watchlist for a specific user

@@ -1,10 +1,9 @@
-import Header from '@app/components/Common/Header';
 import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
 import defineMessages from '@app/utils/defineMessages';
-import { HeartIcon } from '@heroicons/react/24/outline';
 import type { FavoriteItem } from '@server/interfaces/api/discoverInterfaces';
+import { useEffect } from 'react';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.FavoritesList', {
@@ -30,6 +29,11 @@ const FavoritesList = () => {
     hideBlocklisted: false,
   });
 
+  useEffect(() => {
+    mutate?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (error && !titles.length) {
     return null;
   }
@@ -39,9 +43,10 @@ const FavoritesList = () => {
   return (
     <>
       <PageTitle title={title} />
-      <div className="mb-5 mt-1 flex items-center gap-3">
-        <HeartIcon className="h-8 w-8 text-rose-500" />
-        <Header>{title}</Header>
+      <div className="mb-5 mt-8 flex items-center gap-3">
+        <h2 className="truncate text-2xl font-bold leading-7 text-gray-100 sm:overflow-visible sm:text-4xl sm:leading-9">
+          <span className="text-overseerr">{title}</span>
+        </h2>
       </div>
       {isEmpty && (
         <div className="mt-64 w-full text-center text-2xl text-gray-400">

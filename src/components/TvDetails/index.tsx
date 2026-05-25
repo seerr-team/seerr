@@ -66,7 +66,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import useSWR from 'swr';
+import { FAVORITE_IDS_KEY } from '@app/hooks/useFavoriteIds';
+import useSWR, { mutate as globalMutate } from 'swr';
 
 const messages = defineMessages('components.TvDetails', {
   firstAirDate: 'First Air Date',
@@ -441,6 +442,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
         { appearance: 'success', autoDismiss: true }
       );
       setIsFavorite(true);
+      globalMutate(FAVORITE_IDS_KEY);
     } catch {
       addToast(intl.formatMessage(messages.favoritesError), {
         appearance: 'error',
@@ -467,6 +469,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
         { appearance: 'info', autoDismiss: true }
       );
       setIsFavorite(false);
+      globalMutate(FAVORITE_IDS_KEY);
     } catch {
       addToast(intl.formatMessage(messages.favoritesError), {
         appearance: 'error',
@@ -730,6 +733,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                   ? messages.removefromfavorites
                   : messages.addtofavorites
               )}
+              tooltipConfig={{ placement: 'top-end' }}
             >
               <Button
                 buttonType={'ghost'}

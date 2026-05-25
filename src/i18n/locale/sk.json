@@ -1,1 +1,15 @@
-{}
+{
+  "components.FavoritesList.emptyfavorites": "Zatiaľ žiadne obľúbené. Pridajte médiá pomocou tlačidla srdca na stránke ľubovoľného filmu alebo seriálu.",
+  "components.FavoritesList.favorites": "Obľúbené",
+  "components.Layout.Sidebar.favorites": "Obľúbené",
+  "components.MovieDetails.addtofavorites": "Pridať do obľúbených",
+  "components.MovieDetails.favoritesDeleted": "<strong>{title}</strong> odstránený z obľúbených.",
+  "components.MovieDetails.favoritesError": "Niečo sa pokazilo. Skúste to prosím znova.",
+  "components.MovieDetails.favoritesSuccess": "<strong>{title}</strong> pridaný do obľúbených!",
+  "components.MovieDetails.removefromfavorites": "Odstrániť z obľúbených",
+  "components.TvDetails.addtofavorites": "Pridať do obľúbených",
+  "components.TvDetails.favoritesDeleted": "<strong>{title}</strong> odstránený z obľúbených.",
+  "components.TvDetails.favoritesError": "Niečo sa pokazilo. Skúste to prosím znova.",
+  "components.TvDetails.favoritesSuccess": "<strong>{title}</strong> pridaný do obľúbených!",
+  "components.TvDetails.removefromfavorites": "Odstrániť z obľúbených"
+}
