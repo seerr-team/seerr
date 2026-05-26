@@ -91,7 +91,9 @@ class WatchlistSync {
 
     const autoRequestedTmdbIds = new Set(
       existingAutoRequests
-        .filter((r) => r.media != null)
+        .filter(
+          (r) => r.media != null && r.media.status !== MediaStatus.DELETED
+        )
         .map((r) => `${r.media.mediaType}:${r.media.tmdbId}`)
     );
 
@@ -106,7 +108,8 @@ class WatchlistSync {
             m.mediaType === itemMediaType &&
             (m.status === MediaStatus.BLOCKLISTED ||
               (itemMediaType === MediaType.MOVIE &&
-                m.status !== MediaStatus.UNKNOWN) ||
+                m.status !== MediaStatus.UNKNOWN &&
+                m.status !== MediaStatus.DELETED) ||
               (itemMediaType === MediaType.TV &&
                 m.status === MediaStatus.AVAILABLE))
         )

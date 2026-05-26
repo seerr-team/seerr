@@ -1,6 +1,7 @@
 import Button from '@app/components/Common/Button';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/solid';
@@ -9,7 +10,6 @@ import { MediaServerType, ServerType } from '@server/constants/server';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import * as Yup from 'yup';
 
 const messages = defineMessages('components.Login', {

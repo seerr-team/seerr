@@ -10,6 +10,7 @@ import Slider from '@app/components/Slider';
 import StatusBadge from '@app/components/StatusBadge';
 import TitleCard from '@app/components/TitleCard';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
@@ -26,9 +27,8 @@ import axios from 'axios';
 import { uniq } from 'lodash';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
 const messages = defineMessages('components.CollectionDetails', {
@@ -264,12 +264,12 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
           </Link>
         ))
         .reduce((prev, curr) => (
-          <>
+          <Fragment key={`${prev.key}-${curr.key}`}>
             {intl.formatMessage(globalMessages.delimitedlist, {
               a: prev,
               b: curr,
             })}
-          </>
+          </Fragment>
         ))
     );
   }
@@ -378,11 +378,11 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
               collectionAttributes
                 .map((t, k) => <span key={k}>{t}</span>)
                 .reduce((prev, curr) => (
-                  <>
+                  <Fragment key={`${prev.key}-${curr.key}`}>
                     {prev}
                     <span>|</span>
                     {curr}
-                  </>
+                  </Fragment>
                 ))}
           </span>
         </div>
