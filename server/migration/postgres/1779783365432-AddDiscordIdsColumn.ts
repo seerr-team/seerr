@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddDiscordIdsColumn1775600131366 implements MigrationInterface {
-  name = 'AddDiscordIdsColumn1775600131366';
+export class AddDiscordIdsColumn1779783365432 implements MigrationInterface {
+  name = 'AddDiscordIdsColumn1779783365432';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
