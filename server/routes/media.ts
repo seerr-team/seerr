@@ -17,7 +17,7 @@ import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { Router } from 'express';
 import type { FindOneOptions } from 'typeorm';
-import { In, IsNull, Not } from 'typeorm';
+import { EntityNotFoundError, In, IsNull, Not } from 'typeorm';
 
 const mediaRoutes = Router();
 
@@ -187,11 +187,15 @@ mediaRoutes.delete(
 
       return res.status(204).send();
     } catch (e) {
-      logger.error('Something went wrong fetching media in delete request', {
+      if (e instanceof EntityNotFoundError) {
+        return res.status(204).send();
+      }
+      logger.error('Something went wrong deleting media', {
         label: 'Media',
+        mediaId: req.params.id,
         message: e.message,
       });
-      next({ status: 404, message: 'Media not found' });
+      next({ status: 500, message: 'Failed to delete media' });
     }
   }
 );
