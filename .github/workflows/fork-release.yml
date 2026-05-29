@@ -42,6 +42,10 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # Seerr bakes this into committag.json; empty value loops the UI on a
+          # "Seerr Updated — reload" prompt.
+          build-args: |
+            COMMIT_TAG=${{ github.ref_name }}
           sbom: true
           provenance: mode=max
           cache-from: type=gha

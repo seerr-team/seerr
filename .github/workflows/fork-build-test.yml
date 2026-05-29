@@ -18,3 +18,8 @@ jobs:
       smoke_path: /api/v1/status
       compose_test: true
       publish_edge: true
+      # Seerr bakes the build commit into committag.json; without it the UI
+      # polls /api/v1/status, sees an empty commitTag, and loops on a
+      # "Seerr Updated — reload" prompt that never clears.
+      build_args: |
+        COMMIT_TAG=${{ github.sha }}
