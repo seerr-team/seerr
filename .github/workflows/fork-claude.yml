@@ -1,0 +1,54 @@
+# Async "@claude" assistant for this fork. Deployed into forks as
+# `fork-claude.yml` (the `fork-` prefix avoids clobbering any upstream workflow).
+#
+# Comment `@claude <ask>` on an issue or PR and Claude implements it on a branch
+# and opens / updates a PR — which you still review and merge (the human gate).
+#
+# REQUIRES a repo (or org) secret `CLAUDE_CODE_OAUTH_TOKEN`, generated locally
+# with `claude setup-token`. This bills @claude runs against your Claude Pro/Max
+# subscription usage — NOT the pay-as-you-go Anthropic API. Until the secret
+# exists the job never runs. (To use metered API billing instead, swap the
+# `claude_code_oauth_token` input below for `anthropic_api_key` + an
+# `ANTHROPIC_API_KEY` secret.)
+#
+# The `if:` gate restricts triggering to the repo OWNER/collaborators so an
+# outside contributor cannot spend your API budget. Loosen at your own cost.
+name: fork-claude
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+
+jobs:
+  claude:
+    # Only run on an explicit @claude mention AND only for trusted authors.
+    if: >
+      (
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'issues' && contains(github.event.issue.body, '@claude'))
+      ) && (
+        github.event.sender.login == 'NotCavnfox' ||
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) ||
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Keep runs bounded so a runaway thread can't burn plan usage.
+          claude_args: "--max-turns 12"
