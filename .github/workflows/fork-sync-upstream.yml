@@ -1,0 +1,69 @@
+# Nightly: rebase the patch-overlay onto the latest upstream release, open a PR.
+name: fork-sync-upstream
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      upstream_ref:
+        description: "Upstream ref to rebase onto (default: latest release tag)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  UPSTREAM_URL: https://github.com/seerr-team/seerr.git
+  BASE_BRANCH: develop
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure git
+        run: |
+          git config user.name "fork-sync-bot"
+          git config user.email "fork-sync-bot@users.noreply.github.com"
+      - name: Fetch upstream
+        run: |
+          git remote add upstream "$UPSTREAM_URL" 2>/dev/null || git remote set-url upstream "$UPSTREAM_URL"
+          git fetch upstream --tags --prune
+      - name: Resolve target ref
+        id: target
+        run: |
+          REF="${{ github.event.inputs.upstream_ref }}"
+          if [ -z "$REF" ]; then
+            REF=$(git tag -l --sort=-v:refname | grep -E '^v?[0-9]' | head -n1)
+            [ -z "$REF" ] && REF="upstream/HEAD"
+          fi
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "branch=sync/upstream-$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
+      - name: Rebase patch-overlay
+        id: rebase
+        run: |
+          git checkout -B "${{ steps.target.outputs.branch }}"
+          if git rebase "${{ steps.target.outputs.ref }}"; then
+            echo "status=clean" >> "$GITHUB_OUTPUT"
+          else
+            git rebase --abort || true
+            echo "status=conflict" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Open PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push -f origin "${{ steps.target.outputs.branch }}"
+          BODY="Automated upstream sync onto \`${{ steps.target.outputs.ref }}\`."
+          if [ "${{ steps.rebase.outputs.status }}" = "conflict" ]; then
+            BODY="$BODY\n\n:warning: Rebase hit conflicts — resolve manually before merge."
+          fi
+          gh pr create --base "$BASE_BRANCH" --head "${{ steps.target.outputs.branch }}" \
+            --title "sync: upstream ${{ steps.target.outputs.ref }}" \
+            --body "$(printf '%b' "$BODY")" \
+            --label "upstream-sync" || echo "PR may already exist"

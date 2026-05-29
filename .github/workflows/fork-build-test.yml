@@ -1,0 +1,20 @@
+# Fork CI gate. Calls the shared reusable workflow in NotCavnfox/.github.
+name: fork-build-test
+
+on:
+  pull_request:
+  push:
+    branches: [develop]
+
+jobs:
+  ci:
+    uses: NotCavnfox/.github/.github/workflows/build-test.yml@main
+    permissions:
+      contents: read
+      packages: write
+    with:
+      image_name: ghcr.io/notcavnfox/seerr
+      smoke_port: 5055
+      smoke_path: /api/v1/status
+      compose_test: true
+      publish_edge: true

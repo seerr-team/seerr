@@ -1,0 +1,10 @@
+# Ephemeral integration stand-up (single service, sqlite/no external deps).
+services:
+  app:
+    image: ${IMAGE:-localbuild:ci}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5055/api/v1/status || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 20s
