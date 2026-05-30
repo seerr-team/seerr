@@ -6348,15 +6348,7 @@ paths:
           name: filter
           schema:
             type: string
-            enum:
-              [
-                all,
-                pending,
-                approved,
-                declined,
-                failed,
-                partially-removed,
-              ]
+            enum: [all, pending, approved, declined, failed, partially-removed]
             nullable: true
         - in: query
           name: requestedBy
