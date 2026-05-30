@@ -108,9 +108,7 @@ interface RemovalRequestSectionProps {
   data: MovieDetails | TvDetails;
   mediaType: 'movie' | 'tv';
   requestRemoval: (is4k: boolean, seasons?: number[]) => void;
-  showSeasonRemovalModal: boolean;
   setShowSeasonRemovalModal: (show: boolean) => void;
-  showSeasonRemovalModal4k: boolean;
   setShowSeasonRemovalModal4k: (show: boolean) => void;
 }
 
@@ -118,9 +116,7 @@ const RemovalRequestSection = ({
   data,
   mediaType,
   requestRemoval,
-  showSeasonRemovalModal,
   setShowSeasonRemovalModal,
-  showSeasonRemovalModal4k,
   setShowSeasonRemovalModal4k,
 }: RemovalRequestSectionProps) => {
   const { user: currentUser, hasPermission } = useUser();
@@ -144,6 +140,16 @@ const RemovalRequestSection = ({
 
   const pendingRemoval = userHasActiveRemoval(false);
   const pendingRemoval4k = userHasActiveRemoval(true);
+
+  // Removal of a given quality version is only offered to users who can act on
+  // that variant: REMOVAL_ALL/ADMIN, or someone who originally requested that
+  // exact is4k version (the backend authorizes against the matching request).
+  const userCanRequestRemoval = (is4k: boolean): boolean =>
+    hasPermission(Permission.REMOVAL_ALL) ||
+    hasPermission(Permission.ADMIN) ||
+    (data.mediaInfo?.requests ?? []).some(
+      (r) => r.requestedBy?.id === currentUser?.id && r.is4k === is4k
+    );
 
   const availableSeasons =
     mediaType === 'tv'
@@ -172,7 +178,8 @@ const RemovalRequestSection = ({
       </h3>
       <div className="space-y-2">
         {mediaType === 'movie' &&
-          data.mediaInfo?.status === MediaStatus.AVAILABLE && (
+          data.mediaInfo?.status === MediaStatus.AVAILABLE &&
+          userCanRequestRemoval(false) && (
             <div>
               {pendingRemoval ? (
                 <Button buttonType="warning" className="w-full" disabled>
@@ -191,7 +198,7 @@ const RemovalRequestSection = ({
               )}
             </div>
           )}
-        {mediaType === 'tv' && (
+        {mediaType === 'tv' && userCanRequestRemoval(false) && (
           <>
             {(data.mediaInfo?.status === MediaStatus.AVAILABLE ||
               data.mediaInfo?.status === MediaStatus.PARTIALLY_AVAILABLE) && (
@@ -222,23 +229,12 @@ const RemovalRequestSection = ({
                 <span>{intl.formatMessage(messages.requestSeasonRemoval)}</span>
               </Button>
             )}
-            {showSeasonRemovalModal && !isMovie(data) && (
-              <SeasonRemovalModal
-                data={data}
-                is4k={false}
-                currentUserId={currentUser?.id}
-                onCancel={() => setShowSeasonRemovalModal(false)}
-                onComplete={(seasons) => {
-                  setShowSeasonRemovalModal(false);
-                  requestRemoval(false, seasons);
-                }}
-              />
-            )}
           </>
         )}
         {(data.mediaInfo?.status4k === MediaStatus.AVAILABLE ||
           data.mediaInfo?.status4k === MediaStatus.PARTIALLY_AVAILABLE) &&
-          settings.currentSettings.series4kEnabled && (
+          settings.currentSettings.series4kEnabled &&
+          userCanRequestRemoval(true) && (
             <>
               <div>
                 {pendingRemoval4k ? (
@@ -270,18 +266,6 @@ const RemovalRequestSection = ({
                     </span>
                   </Button>
                 )}
-              {showSeasonRemovalModal4k && !isMovie(data) && (
-                <SeasonRemovalModal
-                  data={data}
-                  is4k={true}
-                  currentUserId={currentUser?.id}
-                  onCancel={() => setShowSeasonRemovalModal4k(false)}
-                  onComplete={(seasons) => {
-                    setShowSeasonRemovalModal4k(false);
-                    requestRemoval(true, seasons);
-                  }}
-                />
-              )}
             </>
           )}
         <div className="mt-1 text-xs text-gray-400">
@@ -479,43 +463,75 @@ const ManageSlideOver = ({
   };
 
   return (
-    <SlideOver
-      show={show}
-      title={intl.formatMessage(messages.manageModalTitle, {
-        mediaType: intl.formatMessage(
-          mediaType === 'movie' ? globalMessages.movie : globalMessages.tvshow
-        ),
-      })}
-      onClose={() => {
-        if (!showSeasonRemovalModal && !showSeasonRemovalModal4k) {
-          onClose();
-        }
-      }}
-      subText={isMovie(data) ? data.title : data.name}
-    >
-      <div className="space-y-6">
-        {((data?.mediaInfo?.downloadStatus ?? []).length > 0 ||
-          (data?.mediaInfo?.downloadStatus4k ?? []).length > 0) && (
-          <div>
-            <h3 className="mb-2 text-xl font-bold">
-              {intl.formatMessage(messages.downloadstatus)}
-            </h3>
-            <div className="overflow-hidden rounded-md border border-gray-700 shadow">
-              <ul>
-                {filterDuplicateDownloads(data.mediaInfo?.downloadStatus).map(
-                  (status, index) => (
-                    <Tooltip
-                      key={`dl-status-${status.externalId}-${index}`}
-                      content={status.title}
-                    >
-                      <li className="border-b border-gray-700 last:border-b-0">
-                        <DownloadBlock downloadItem={status} />
-                      </li>
-                    </Tooltip>
-                  )
-                )}
-                {filterDuplicateDownloads(data.mediaInfo?.downloadStatus4k).map(
-                  (status, index) => (
+    <>
+      {/* Render the season-removal modals OUTSIDE the SlideOver's Transition
+          subtree. Nesting their Headless UI Transition inside the SlideOver's
+          tangled their lifecycles, causing the pane to vanish and the body
+          scroll-lock to strand when the modal closed. */}
+      {mediaType === 'tv' && !isMovie(data) && showSeasonRemovalModal && (
+        <SeasonRemovalModal
+          data={data}
+          is4k={false}
+          currentUserId={currentUser?.id}
+          onCancel={() => setShowSeasonRemovalModal(false)}
+          onComplete={(seasons) => {
+            setShowSeasonRemovalModal(false);
+            requestRemoval(false, seasons);
+          }}
+        />
+      )}
+      {mediaType === 'tv' && !isMovie(data) && showSeasonRemovalModal4k && (
+        <SeasonRemovalModal
+          data={data}
+          is4k={true}
+          currentUserId={currentUser?.id}
+          onCancel={() => setShowSeasonRemovalModal4k(false)}
+          onComplete={(seasons) => {
+            setShowSeasonRemovalModal4k(false);
+            requestRemoval(true, seasons);
+          }}
+        />
+      )}
+      <SlideOver
+        show={show}
+        title={intl.formatMessage(messages.manageModalTitle, {
+          mediaType: intl.formatMessage(
+            mediaType === 'movie' ? globalMessages.movie : globalMessages.tvshow
+          ),
+        })}
+        onClose={() => {
+          // Don't dismiss the slide-over while a season-removal modal is open;
+          // the modal owns the interaction in that case.
+          if (!showSeasonRemovalModal && !showSeasonRemovalModal4k) {
+            onClose();
+          }
+        }}
+        subText={isMovie(data) ? data.title : data.name}
+      >
+        <div className="space-y-6">
+          {((data?.mediaInfo?.downloadStatus ?? []).length > 0 ||
+            (data?.mediaInfo?.downloadStatus4k ?? []).length > 0) && (
+            <div>
+              <h3 className="mb-2 text-xl font-bold">
+                {intl.formatMessage(messages.downloadstatus)}
+              </h3>
+              <div className="overflow-hidden rounded-md border border-gray-700 shadow">
+                <ul>
+                  {filterDuplicateDownloads(data.mediaInfo?.downloadStatus).map(
+                    (status, index) => (
+                      <Tooltip
+                        key={`dl-status-${status.externalId}-${index}`}
+                        content={status.title}
+                      >
+                        <li className="border-b border-gray-700 last:border-b-0">
+                          <DownloadBlock downloadItem={status} />
+                        </li>
+                      </Tooltip>
+                    )
+                  )}
+                  {filterDuplicateDownloads(
+                    data.mediaInfo?.downloadStatus4k
+                  ).map((status, index) => (
                     <Tooltip
                       key={`dl-status-4k-${status.externalId}-${index}`}
                       content={status.title}
@@ -524,365 +540,203 @@ const ManageSlideOver = ({
                         <DownloadBlock downloadItem={status} is4k />
                       </li>
                     </Tooltip>
-                  )
-                )}
-              </ul>
+                  ))}
+                </ul>
+              </div>
             </div>
-          </div>
-        )}
-        {hasPermission([Permission.MANAGE_ISSUES, Permission.VIEW_ISSUES], {
-          type: 'or',
-        }) &&
-          openIssues.length > 0 && (
+          )}
+          {hasPermission([Permission.MANAGE_ISSUES, Permission.VIEW_ISSUES], {
+            type: 'or',
+          }) &&
+            openIssues.length > 0 && (
+              <div>
+                <h3 className="mb-2 text-xl font-bold">
+                  {intl.formatMessage(messages.manageModalIssues)}
+                </h3>
+                <div className="overflow-hidden rounded-md border border-gray-700 shadow">
+                  <ul>
+                    {openIssues.map((issue) => (
+                      <li
+                        key={`manage-issue-${issue.id}`}
+                        className="border-b border-gray-700 last:border-b-0"
+                      >
+                        <IssueBlock issue={issue} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+          {requests.length > 0 && (
             <div>
               <h3 className="mb-2 text-xl font-bold">
-                {intl.formatMessage(messages.manageModalIssues)}
+                {intl.formatMessage(messages.manageModalRequests)}
               </h3>
               <div className="overflow-hidden rounded-md border border-gray-700 shadow">
                 <ul>
-                  {openIssues.map((issue) => (
+                  {requests.map((request) => (
                     <li
-                      key={`manage-issue-${issue.id}`}
+                      key={`manage-request-${request.id}`}
                       className="border-b border-gray-700 last:border-b-0"
                     >
-                      <IssueBlock issue={issue} />
+                      <RequestBlock
+                        request={request}
+                        onUpdate={() => revalidate()}
+                      />
                     </li>
                   ))}
                 </ul>
               </div>
             </div>
           )}
-        {requests.length > 0 && (
-          <div>
-            <h3 className="mb-2 text-xl font-bold">
-              {intl.formatMessage(messages.manageModalRequests)}
-            </h3>
-            <div className="overflow-hidden rounded-md border border-gray-700 shadow">
-              <ul>
-                {requests.map((request) => (
-                  <li
-                    key={`manage-request-${request.id}`}
-                    className="border-b border-gray-700 last:border-b-0"
-                  >
-                    <RequestBlock
-                      request={request}
-                      onUpdate={() => revalidate()}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        )}
-        {(data.mediaInfo?.removalRequests ?? []).length > 0 && (
-          <div>
-            <h3 className="mb-2 text-xl font-bold">
-              {intl.formatMessage(messages.manageModalRemovalRequests)}
-            </h3>
-            <div className="overflow-hidden rounded-md border border-gray-700 shadow">
-              <ul>
-                {data.mediaInfo?.removalRequests?.map((removalRequest) => (
-                  <li
-                    key={`manage-removal-request-${removalRequest.id}`}
-                    className="border-b border-gray-700 last:border-b-0"
-                  >
-                    <RemovalRequestBlock
-                      request={removalRequest}
-                      onUpdate={() => revalidate()}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        )}
-        {data.mediaInfo?.status === MediaStatus.BLOCKLISTED && (
-          <div>
-            <h3 className="mb-2 text-xl font-bold">
-              {intl.formatMessage(globalMessages.blocklist)}
-            </h3>
-            <div className="overflow-hidden rounded-md border border-gray-700 shadow">
-              <BlocklistBlock
-                tmdbId={data.mediaInfo.tmdbId}
-                mediaType={data.mediaInfo.mediaType}
-                onUpdate={() => revalidate()}
-                onDelete={() => onClose()}
-              />
-            </div>
-          </div>
-        )}
-        {hasPermission(Permission.ADMIN) &&
-          (data.mediaInfo?.serviceUrl ||
-            data.mediaInfo?.tautulliUrl ||
-            watchData?.data) && (
+          {(data.mediaInfo?.removalRequests ?? []).length > 0 && (
             <div>
               <h3 className="mb-2 text-xl font-bold">
-                {intl.formatMessage(messages.manageModalMedia)}
+                {intl.formatMessage(messages.manageModalRemovalRequests)}
               </h3>
-              <div className="space-y-2">
-                {(watchData?.data || data.mediaInfo?.tautulliUrl) && (
-                  <div>
-                    {!!watchData?.data && (
-                      <div
-                        className={`grid grid-cols-1 divide-y divide-gray-700 overflow-hidden border-gray-700 text-sm text-gray-300 shadow ${
-                          data.mediaInfo?.tautulliUrl
-                            ? 'rounded-t-md border-x border-t'
-                            : 'rounded-md border'
-                        }`}
-                      >
-                        <div className="grid grid-cols-3 divide-x divide-gray-700">
-                          <div className="px-4 py-3">
-                            <div className="font-bold">
-                              {intl.formatMessage(messages.pastdays, {
-                                days: 7,
-                              })}
-                            </div>
-                            <div className="text-white">
-                              {styledPlayCount(watchData.data.playCount7Days)}
-                            </div>
-                          </div>
-                          <div className="px-4 py-3">
-                            <div className="font-bold">
-                              {intl.formatMessage(messages.pastdays, {
-                                days: 30,
-                              })}
-                            </div>
-                            <div className="text-white">
-                              {styledPlayCount(watchData.data.playCount30Days)}
-                            </div>
-                          </div>
-                          <div className="px-4 py-3">
-                            <div className="font-bold">
-                              {intl.formatMessage(messages.alltime)}
-                            </div>
-                            <div className="text-white">
-                              {styledPlayCount(watchData.data.playCount)}
-                            </div>
-                          </div>
-                        </div>
-                        {!!watchData.data.users.length && (
-                          <div className="flex flex-row space-x-2 px-4 pb-2 pt-3">
-                            <span className="shrink-0 font-bold leading-8">
-                              {intl.formatMessage(messages.playedby)}
-                            </span>
-                            <span className="flex flex-row flex-wrap">
-                              {watchData.data.users.map((user) => (
-                                <Link
-                                  href={
-                                    currentUser?.id === user.id
-                                      ? '/profile'
-                                      : `/users/${user.id}`
-                                  }
-                                  key={`watch-user-${user.id}`}
-                                  className="z-0 -mr-2 mb-1 shrink-0 hover:z-50"
-                                >
-                                  <Tooltip
-                                    key={`watch-user-${user.id}`}
-                                    content={user.displayName}
-                                  >
-                                    <CachedImage
-                                      type="avatar"
-                                      src={user.avatar}
-                                      alt={user.displayName}
-                                      className="h-8 w-8 scale-100 transform-gpu rounded-full object-cover ring-1 ring-gray-500 transition duration-300 hover:scale-105"
-                                      width={32}
-                                      height={32}
-                                    />
-                                  </Tooltip>
-                                </Link>
-                              ))}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {data.mediaInfo?.tautulliUrl && (
-                      <a
-                        href={data.mediaInfo.tautulliUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <Button
-                          buttonType="ghost"
-                          className={`w-full ${
-                            watchData?.data ? 'rounded-t-none' : ''
-                          }`}
-                        >
-                          <Bars4Icon />
-                          <span>
-                            {intl.formatMessage(messages.opentautulli)}
-                          </span>
-                        </Button>
-                      </a>
-                    )}
-                  </div>
-                )}
-                {data.mediaInfo?.serviceUrl && (
-                  <a
-                    href={data?.mediaInfo?.serviceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block"
-                  >
-                    <Button buttonType="ghost" className="w-full">
-                      <ServerIcon />
-                      <span>
-                        {intl.formatMessage(messages.openarr, {
-                          arr: mediaType === 'movie' ? 'Radarr' : 'Sonarr',
-                        })}
-                      </span>
-                    </Button>
-                  </a>
-                )}
-
-                {hasPermission(Permission.ADMIN) &&
-                  data?.mediaInfo?.serviceUrl &&
-                  isDefaultService() && (
-                    <div>
-                      <ConfirmButton
-                        onClick={() => deleteMediaFile(false)}
-                        confirmText={intl.formatMessage(
-                          globalMessages.areyousure
-                        )}
-                        className="w-full"
-                      >
-                        <TrashIcon />
-                        <span>
-                          {intl.formatMessage(messages.removearr, {
-                            arr: mediaType === 'movie' ? 'Radarr' : 'Sonarr',
-                          })}
-                        </span>
-                      </ConfirmButton>
-                      <div className="mt-1 text-xs text-gray-400">
-                        {intl.formatMessage(
-                          messages.manageModalRemoveMediaWarning,
-                          {
-                            mediaType: intl.formatMessage(
-                              mediaType === 'movie'
-                                ? messages.movie
-                                : messages.tvshow
-                            ),
-                            arr: mediaType === 'movie' ? 'Radarr' : 'Sonarr',
-                          }
-                        )}
-                      </div>
-                    </div>
-                  )}
+              <div className="overflow-hidden rounded-md border border-gray-700 shadow">
+                <ul>
+                  {data.mediaInfo?.removalRequests?.map((removalRequest) => (
+                    <li
+                      key={`manage-removal-request-${removalRequest.id}`}
+                      className="border-b border-gray-700 last:border-b-0"
+                    >
+                      <RemovalRequestBlock
+                        request={removalRequest}
+                        onUpdate={() => revalidate()}
+                      />
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           )}
-        {hasPermission(Permission.ADMIN) &&
-          (data.mediaInfo?.serviceUrl4k ||
-            data.mediaInfo?.tautulliUrl4k ||
-            watchData?.data4k) && (
+          {data.mediaInfo?.status === MediaStatus.BLOCKLISTED && (
             <div>
               <h3 className="mb-2 text-xl font-bold">
-                {intl.formatMessage(messages.manageModalMedia4k)}
+                {intl.formatMessage(globalMessages.blocklist)}
               </h3>
-              <div className="space-y-2">
-                {(watchData?.data4k || data.mediaInfo?.tautulliUrl4k) && (
-                  <div>
-                    {watchData?.data4k && (
-                      <div
-                        className={`grid grid-cols-1 divide-y divide-gray-700 overflow-hidden border-gray-700 text-sm text-gray-300 shadow ${
-                          data.mediaInfo?.tautulliUrl4k
-                            ? 'rounded-t-md border-x border-t'
-                            : 'rounded-md border'
-                        }`}
-                      >
-                        <div className="grid grid-cols-3 divide-x divide-gray-700">
-                          <div className="px-4 py-3">
-                            <div className="font-bold">
-                              {intl.formatMessage(messages.pastdays, {
-                                days: 7,
-                              })}
-                            </div>
-                            <div className="text-white">
-                              {styledPlayCount(watchData.data4k.playCount7Days)}
-                            </div>
-                          </div>
-                          <div className="px-4 py-3">
-                            <div className="font-bold">
-                              {intl.formatMessage(messages.pastdays, {
-                                days: 30,
-                              })}
-                            </div>
-                            <div className="text-white">
-                              {styledPlayCount(
-                                watchData.data4k.playCount30Days
-                              )}
-                            </div>
-                          </div>
-                          <div className="px-4 py-3">
-                            <div className="font-bold">
-                              {intl.formatMessage(messages.alltime)}
-                            </div>
-                            <div className="text-white">
-                              {styledPlayCount(watchData.data4k.playCount)}
-                            </div>
-                          </div>
-                        </div>
-                        {!!watchData.data4k.users.length && (
-                          <div className="flex flex-row space-x-2 px-4 pb-2 pt-3">
-                            <span className="shrink-0 font-bold leading-8">
-                              {intl.formatMessage(messages.playedby)}
-                            </span>
-                            <span className="flex flex-row flex-wrap">
-                              {watchData.data4k.users.map((user) => (
-                                <Link
-                                  href={
-                                    currentUser?.id === user.id
-                                      ? '/profile'
-                                      : `/users/${user.id}`
-                                  }
-                                  key={`watch-user-${user.id}`}
-                                  className="z-0 -mr-2 mb-1 shrink-0 hover:z-50"
-                                >
-                                  <Tooltip
-                                    key={`watch-user-${user.id}`}
-                                    content={user.displayName}
-                                  >
-                                    <CachedImage
-                                      type="avatar"
-                                      src={user.avatar}
-                                      alt={user.displayName}
-                                      className="h-8 w-8 scale-100 transform-gpu rounded-full object-cover ring-1 ring-gray-500 transition duration-300 hover:scale-105"
-                                      width={32}
-                                      height={32}
-                                    />
-                                  </Tooltip>
-                                </Link>
-                              ))}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {data.mediaInfo?.tautulliUrl4k && (
-                      <a
-                        href={data.mediaInfo.tautulliUrl4k}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <Button
-                          buttonType="ghost"
-                          className={`w-full ${
-                            watchData?.data4k ? 'rounded-t-none' : ''
+              <div className="overflow-hidden rounded-md border border-gray-700 shadow">
+                <BlocklistBlock
+                  tmdbId={data.mediaInfo.tmdbId}
+                  mediaType={data.mediaInfo.mediaType}
+                  onUpdate={() => revalidate()}
+                  onDelete={() => onClose()}
+                />
+              </div>
+            </div>
+          )}
+          {hasPermission(Permission.ADMIN) &&
+            (data.mediaInfo?.serviceUrl ||
+              data.mediaInfo?.tautulliUrl ||
+              watchData?.data) && (
+              <div>
+                <h3 className="mb-2 text-xl font-bold">
+                  {intl.formatMessage(messages.manageModalMedia)}
+                </h3>
+                <div className="space-y-2">
+                  {(watchData?.data || data.mediaInfo?.tautulliUrl) && (
+                    <div>
+                      {!!watchData?.data && (
+                        <div
+                          className={`grid grid-cols-1 divide-y divide-gray-700 overflow-hidden border-gray-700 text-sm text-gray-300 shadow ${
+                            data.mediaInfo?.tautulliUrl
+                              ? 'rounded-t-md border-x border-t'
+                              : 'rounded-md border'
                           }`}
                         >
-                          <Bars4Icon />
-                          <span>
-                            {intl.formatMessage(messages.opentautulli)}
-                          </span>
-                        </Button>
-                      </a>
-                    )}
-                  </div>
-                )}
-                {data?.mediaInfo?.serviceUrl4k && (
-                  <>
+                          <div className="grid grid-cols-3 divide-x divide-gray-700">
+                            <div className="px-4 py-3">
+                              <div className="font-bold">
+                                {intl.formatMessage(messages.pastdays, {
+                                  days: 7,
+                                })}
+                              </div>
+                              <div className="text-white">
+                                {styledPlayCount(watchData.data.playCount7Days)}
+                              </div>
+                            </div>
+                            <div className="px-4 py-3">
+                              <div className="font-bold">
+                                {intl.formatMessage(messages.pastdays, {
+                                  days: 30,
+                                })}
+                              </div>
+                              <div className="text-white">
+                                {styledPlayCount(
+                                  watchData.data.playCount30Days
+                                )}
+                              </div>
+                            </div>
+                            <div className="px-4 py-3">
+                              <div className="font-bold">
+                                {intl.formatMessage(messages.alltime)}
+                              </div>
+                              <div className="text-white">
+                                {styledPlayCount(watchData.data.playCount)}
+                              </div>
+                            </div>
+                          </div>
+                          {!!watchData.data.users.length && (
+                            <div className="flex flex-row space-x-2 px-4 pb-2 pt-3">
+                              <span className="shrink-0 font-bold leading-8">
+                                {intl.formatMessage(messages.playedby)}
+                              </span>
+                              <span className="flex flex-row flex-wrap">
+                                {watchData.data.users.map((user) => (
+                                  <Link
+                                    href={
+                                      currentUser?.id === user.id
+                                        ? '/profile'
+                                        : `/users/${user.id}`
+                                    }
+                                    key={`watch-user-${user.id}`}
+                                    className="z-0 -mr-2 mb-1 shrink-0 hover:z-50"
+                                  >
+                                    <Tooltip
+                                      key={`watch-user-${user.id}`}
+                                      content={user.displayName}
+                                    >
+                                      <CachedImage
+                                        type="avatar"
+                                        src={user.avatar}
+                                        alt={user.displayName}
+                                        className="h-8 w-8 scale-100 transform-gpu rounded-full object-cover ring-1 ring-gray-500 transition duration-300 hover:scale-105"
+                                        width={32}
+                                        height={32}
+                                      />
+                                    </Tooltip>
+                                  </Link>
+                                ))}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {data.mediaInfo?.tautulliUrl && (
+                        <a
+                          href={data.mediaInfo.tautulliUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <Button
+                            buttonType="ghost"
+                            className={`w-full ${
+                              watchData?.data ? 'rounded-t-none' : ''
+                            }`}
+                          >
+                            <Bars4Icon />
+                            <span>
+                              {intl.formatMessage(messages.opentautulli)}
+                            </span>
+                          </Button>
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  {data.mediaInfo?.serviceUrl && (
                     <a
-                      href={data?.mediaInfo?.serviceUrl4k}
+                      href={data?.mediaInfo?.serviceUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="block"
@@ -890,16 +744,20 @@ const ManageSlideOver = ({
                       <Button buttonType="ghost" className="w-full">
                         <ServerIcon />
                         <span>
-                          {intl.formatMessage(messages.openarr4k, {
+                          {intl.formatMessage(messages.openarr, {
                             arr: mediaType === 'movie' ? 'Radarr' : 'Sonarr',
                           })}
                         </span>
                       </Button>
                     </a>
-                    {isDefault4kService() && (
+                  )}
+
+                  {hasPermission(Permission.ADMIN) &&
+                    data?.mediaInfo?.serviceUrl &&
+                    isDefaultService() && (
                       <div>
                         <ConfirmButton
-                          onClick={() => deleteMediaFile(true)}
+                          onClick={() => deleteMediaFile(false)}
                           confirmText={intl.formatMessage(
                             globalMessages.areyousure
                           )}
@@ -907,7 +765,7 @@ const ManageSlideOver = ({
                         >
                           <TrashIcon />
                           <span>
-                            {intl.formatMessage(messages.removearr4k, {
+                            {intl.formatMessage(messages.removearr, {
                               arr: mediaType === 'movie' ? 'Radarr' : 'Sonarr',
                             })}
                           </span>
@@ -927,61 +785,205 @@ const ManageSlideOver = ({
                         </div>
                       </div>
                     )}
-                  </>
-                )}
+                </div>
               </div>
-            </div>
-          )}
-        {hasPermission(Permission.REQUEST_REMOVAL) &&
-          data?.mediaInfo &&
-          data.mediaInfo.status !== MediaStatus.BLOCKLISTED &&
-          (data.mediaInfo.status === MediaStatus.AVAILABLE ||
-            data.mediaInfo.status === MediaStatus.PARTIALLY_AVAILABLE ||
-            data.mediaInfo.status4k === MediaStatus.AVAILABLE ||
-            data.mediaInfo.status4k === MediaStatus.PARTIALLY_AVAILABLE) &&
-          (hasPermission(Permission.REMOVAL_ALL) ||
-            hasPermission(Permission.ADMIN) ||
-            data.mediaInfo.requests?.some(
-              (r) => r.requestedBy.id === currentUser?.id
-            )) && (
-            <RemovalRequestSection
-              data={data}
-              mediaType={mediaType}
-              requestRemoval={requestRemoval}
-              showSeasonRemovalModal={showSeasonRemovalModal}
-              setShowSeasonRemovalModal={setShowSeasonRemovalModal}
-              showSeasonRemovalModal4k={showSeasonRemovalModal4k}
-              setShowSeasonRemovalModal4k={setShowSeasonRemovalModal4k}
-            />
-          )}
-        {hasPermission(Permission.ADMIN) &&
-          data?.mediaInfo &&
-          data.mediaInfo.status !== MediaStatus.BLOCKLISTED && (
-            <div>
-              <h3 className="mb-2 text-xl font-bold">
-                {intl.formatMessage(messages.manageModalAdvanced)}
-              </h3>
-              <div className="space-y-2">
-                {data?.mediaInfo.status !== MediaStatus.AVAILABLE && (
-                  <Button
-                    onClick={() => markAvailable()}
-                    className="w-full"
-                    buttonType="success"
-                  >
-                    <CheckCircleIcon />
-                    <span>
-                      {intl.formatMessage(
-                        mediaType === 'movie'
-                          ? messages.markavailable
-                          : messages.markallseasonsavailable
+            )}
+          {hasPermission(Permission.ADMIN) &&
+            (data.mediaInfo?.serviceUrl4k ||
+              data.mediaInfo?.tautulliUrl4k ||
+              watchData?.data4k) && (
+              <div>
+                <h3 className="mb-2 text-xl font-bold">
+                  {intl.formatMessage(messages.manageModalMedia4k)}
+                </h3>
+                <div className="space-y-2">
+                  {(watchData?.data4k || data.mediaInfo?.tautulliUrl4k) && (
+                    <div>
+                      {watchData?.data4k && (
+                        <div
+                          className={`grid grid-cols-1 divide-y divide-gray-700 overflow-hidden border-gray-700 text-sm text-gray-300 shadow ${
+                            data.mediaInfo?.tautulliUrl4k
+                              ? 'rounded-t-md border-x border-t'
+                              : 'rounded-md border'
+                          }`}
+                        >
+                          <div className="grid grid-cols-3 divide-x divide-gray-700">
+                            <div className="px-4 py-3">
+                              <div className="font-bold">
+                                {intl.formatMessage(messages.pastdays, {
+                                  days: 7,
+                                })}
+                              </div>
+                              <div className="text-white">
+                                {styledPlayCount(
+                                  watchData.data4k.playCount7Days
+                                )}
+                              </div>
+                            </div>
+                            <div className="px-4 py-3">
+                              <div className="font-bold">
+                                {intl.formatMessage(messages.pastdays, {
+                                  days: 30,
+                                })}
+                              </div>
+                              <div className="text-white">
+                                {styledPlayCount(
+                                  watchData.data4k.playCount30Days
+                                )}
+                              </div>
+                            </div>
+                            <div className="px-4 py-3">
+                              <div className="font-bold">
+                                {intl.formatMessage(messages.alltime)}
+                              </div>
+                              <div className="text-white">
+                                {styledPlayCount(watchData.data4k.playCount)}
+                              </div>
+                            </div>
+                          </div>
+                          {!!watchData.data4k.users.length && (
+                            <div className="flex flex-row space-x-2 px-4 pb-2 pt-3">
+                              <span className="shrink-0 font-bold leading-8">
+                                {intl.formatMessage(messages.playedby)}
+                              </span>
+                              <span className="flex flex-row flex-wrap">
+                                {watchData.data4k.users.map((user) => (
+                                  <Link
+                                    href={
+                                      currentUser?.id === user.id
+                                        ? '/profile'
+                                        : `/users/${user.id}`
+                                    }
+                                    key={`watch-user-${user.id}`}
+                                    className="z-0 -mr-2 mb-1 shrink-0 hover:z-50"
+                                  >
+                                    <Tooltip
+                                      key={`watch-user-${user.id}`}
+                                      content={user.displayName}
+                                    >
+                                      <CachedImage
+                                        type="avatar"
+                                        src={user.avatar}
+                                        alt={user.displayName}
+                                        className="h-8 w-8 scale-100 transform-gpu rounded-full object-cover ring-1 ring-gray-500 transition duration-300 hover:scale-105"
+                                        width={32}
+                                        height={32}
+                                      />
+                                    </Tooltip>
+                                  </Link>
+                                ))}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       )}
-                    </span>
-                  </Button>
-                )}
-                {data?.mediaInfo.status4k !== MediaStatus.AVAILABLE &&
-                  settings.currentSettings.series4kEnabled && (
+                      {data.mediaInfo?.tautulliUrl4k && (
+                        <a
+                          href={data.mediaInfo.tautulliUrl4k}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <Button
+                            buttonType="ghost"
+                            className={`w-full ${
+                              watchData?.data4k ? 'rounded-t-none' : ''
+                            }`}
+                          >
+                            <Bars4Icon />
+                            <span>
+                              {intl.formatMessage(messages.opentautulli)}
+                            </span>
+                          </Button>
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  {data?.mediaInfo?.serviceUrl4k && (
+                    <>
+                      <a
+                        href={data?.mediaInfo?.serviceUrl4k}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block"
+                      >
+                        <Button buttonType="ghost" className="w-full">
+                          <ServerIcon />
+                          <span>
+                            {intl.formatMessage(messages.openarr4k, {
+                              arr: mediaType === 'movie' ? 'Radarr' : 'Sonarr',
+                            })}
+                          </span>
+                        </Button>
+                      </a>
+                      {isDefault4kService() && (
+                        <div>
+                          <ConfirmButton
+                            onClick={() => deleteMediaFile(true)}
+                            confirmText={intl.formatMessage(
+                              globalMessages.areyousure
+                            )}
+                            className="w-full"
+                          >
+                            <TrashIcon />
+                            <span>
+                              {intl.formatMessage(messages.removearr4k, {
+                                arr:
+                                  mediaType === 'movie' ? 'Radarr' : 'Sonarr',
+                              })}
+                            </span>
+                          </ConfirmButton>
+                          <div className="mt-1 text-xs text-gray-400">
+                            {intl.formatMessage(
+                              messages.manageModalRemoveMediaWarning,
+                              {
+                                mediaType: intl.formatMessage(
+                                  mediaType === 'movie'
+                                    ? messages.movie
+                                    : messages.tvshow
+                                ),
+                                arr:
+                                  mediaType === 'movie' ? 'Radarr' : 'Sonarr',
+                              }
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          {hasPermission(Permission.REQUEST_REMOVAL) &&
+            data?.mediaInfo &&
+            data.mediaInfo.status !== MediaStatus.BLOCKLISTED &&
+            (data.mediaInfo.status === MediaStatus.AVAILABLE ||
+              data.mediaInfo.status === MediaStatus.PARTIALLY_AVAILABLE ||
+              data.mediaInfo.status4k === MediaStatus.AVAILABLE ||
+              data.mediaInfo.status4k === MediaStatus.PARTIALLY_AVAILABLE) &&
+            (hasPermission(Permission.REMOVAL_ALL) ||
+              hasPermission(Permission.ADMIN) ||
+              data.mediaInfo.requests?.some(
+                (r) => r.requestedBy.id === currentUser?.id
+              )) && (
+              <RemovalRequestSection
+                data={data}
+                mediaType={mediaType}
+                requestRemoval={requestRemoval}
+                setShowSeasonRemovalModal={setShowSeasonRemovalModal}
+                setShowSeasonRemovalModal4k={setShowSeasonRemovalModal4k}
+              />
+            )}
+          {hasPermission(Permission.ADMIN) &&
+            data?.mediaInfo &&
+            data.mediaInfo.status !== MediaStatus.BLOCKLISTED && (
+              <div>
+                <h3 className="mb-2 text-xl font-bold">
+                  {intl.formatMessage(messages.manageModalAdvanced)}
+                </h3>
+                <div className="space-y-2">
+                  {data?.mediaInfo.status !== MediaStatus.AVAILABLE && (
                     <Button
-                      onClick={() => markAvailable(true)}
+                      onClick={() => markAvailable()}
                       className="w-full"
                       buttonType="success"
                     >
@@ -989,44 +991,69 @@ const ManageSlideOver = ({
                       <span>
                         {intl.formatMessage(
                           mediaType === 'movie'
-                            ? messages.mark4kavailable
-                            : messages.markallseasons4kavailable
+                            ? messages.markavailable
+                            : messages.markallseasonsavailable
                         )}
                       </span>
                     </Button>
                   )}
-                <div>
-                  <ConfirmButton
-                    onClick={() => deleteMedia()}
-                    confirmText={intl.formatMessage(globalMessages.areyousure)}
-                    className="w-full"
-                  >
-                    <DocumentMinusIcon />
-                    <span>
-                      {intl.formatMessage(messages.manageModalClearMedia)}
-                    </span>
-                  </ConfirmButton>
-                  <div className="mt-2 text-xs text-gray-400">
-                    {intl.formatMessage(messages.manageModalClearMediaWarning, {
-                      mediaType: intl.formatMessage(
-                        mediaType === 'movie' ? messages.movie : messages.tvshow
-                      ),
-                      mediaServerName:
-                        settings.currentSettings.mediaServerType ===
-                        MediaServerType.EMBY
-                          ? 'Emby'
-                          : settings.currentSettings.mediaServerType ===
-                              MediaServerType.PLEX
-                            ? 'Plex'
-                            : 'Jellyfin',
-                    })}
+                  {data?.mediaInfo.status4k !== MediaStatus.AVAILABLE &&
+                    settings.currentSettings.series4kEnabled && (
+                      <Button
+                        onClick={() => markAvailable(true)}
+                        className="w-full"
+                        buttonType="success"
+                      >
+                        <CheckCircleIcon />
+                        <span>
+                          {intl.formatMessage(
+                            mediaType === 'movie'
+                              ? messages.mark4kavailable
+                              : messages.markallseasons4kavailable
+                          )}
+                        </span>
+                      </Button>
+                    )}
+                  <div>
+                    <ConfirmButton
+                      onClick={() => deleteMedia()}
+                      confirmText={intl.formatMessage(
+                        globalMessages.areyousure
+                      )}
+                      className="w-full"
+                    >
+                      <DocumentMinusIcon />
+                      <span>
+                        {intl.formatMessage(messages.manageModalClearMedia)}
+                      </span>
+                    </ConfirmButton>
+                    <div className="mt-2 text-xs text-gray-400">
+                      {intl.formatMessage(
+                        messages.manageModalClearMediaWarning,
+                        {
+                          mediaType: intl.formatMessage(
+                            mediaType === 'movie'
+                              ? messages.movie
+                              : messages.tvshow
+                          ),
+                          mediaServerName:
+                            settings.currentSettings.mediaServerType ===
+                            MediaServerType.EMBY
+                              ? 'Emby'
+                              : settings.currentSettings.mediaServerType ===
+                                  MediaServerType.PLEX
+                                ? 'Plex'
+                                : 'Jellyfin',
+                        }
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-      </div>
-    </SlideOver>
+            )}
+        </div>
+      </SlideOver>
+    </>
   );
 };
 
