@@ -1274,6 +1274,53 @@ components:
       required:
         - id
         - status
+    MediaRemovalRequest:
+      type: object
+      properties:
+        id:
+          type: number
+          example: 1
+          readOnly: true
+        status:
+          type: number
+          description: >-
+            Status of the removal request. 1 = PENDING, 2 = APPROVED,
+            3 = DECLINED, 4 = FAILED, 5 = PARTIALLY_REMOVED
+          example: 1
+          readOnly: true
+        is4k:
+          type: boolean
+          example: false
+        seasons:
+          type: array
+          nullable: true
+          description: Season numbers targeted by the removal request (TV only).
+          items:
+            type: number
+        reason:
+          type: string
+          nullable: true
+        media:
+          $ref: '#/components/schemas/MediaInfo'
+        requestedBy:
+          $ref: '#/components/schemas/User'
+        modifiedBy:
+          anyOf:
+            - $ref: '#/components/schemas/User'
+            - type: string
+              nullable: true
+        createdAt:
+          type: string
+          example: '2020-09-12T10:00:27.000Z'
+          readOnly: true
+        updatedAt:
+          type: string
+          example: '2020-09-12T10:00:27.000Z'
+          readOnly: true
+      required:
+        - id
+        - status
+        - is4k
     MediaInfo:
       type: object
       properties:
@@ -6301,7 +6348,15 @@ paths:
           name: filter
           schema:
             type: string
-            enum: [pending, approved, declined, failed, all]
+            enum:
+              [
+                all,
+                pending,
+                approved,
+                declined,
+                failed,
+                partially-removed,
+              ]
             nullable: true
         - in: query
           name: requestedBy
@@ -6322,7 +6377,7 @@ paths:
                   results:
                     type: array
                     items:
-                      type: object
+                      $ref: '#/components/schemas/MediaRemovalRequest'
     post:
       summary: Create a removal request
       description: |
@@ -6360,11 +6415,17 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/MediaRemovalRequest'
         '400':
           description: Invalid input (e.g. seasons provided for a movie, invalid season numbers, or reason too long)
+        '401':
+          description: Not authenticated
+        '403':
+          description: User may only request removal of media they originally requested
+        '404':
+          description: Media not found
         '409':
-          description: A pending removal request already exists for this media
+          description: The user already has an active removal request for this media
   /removal-request/{requestId}/approve:
     post:
       summary: Approve a removal request
@@ -6384,7 +6445,11 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/MediaRemovalRequest'
+        '400':
+          description: The request is not pending
+        '404':
+          description: Removal request not found
   /removal-request/{requestId}/decline:
     post:
       summary: Decline a removal request
@@ -6404,7 +6469,11 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/MediaRemovalRequest'
+        '400':
+          description: The request is not pending
+        '404':
+          description: Removal request not found
   /removal-request/{requestId}/retry:
     post:
       summary: Retry a failed removal request
@@ -6424,7 +6493,11 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/MediaRemovalRequest'
+        '400':
+          description: Only failed requests can be retried
+        '404':
+          description: Removal request not found
   /removal-request/{requestId}:
     delete:
       summary: Delete a removal request
@@ -6441,6 +6514,10 @@ paths:
       responses:
         '204':
           description: Removal request deleted
+        '403':
+          description: User does not have permission to delete this removal request
+        '404':
+          description: Removal request not found
   /request:
     get:
       summary: Get all requests
