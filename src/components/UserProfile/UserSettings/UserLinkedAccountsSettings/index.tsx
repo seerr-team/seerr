@@ -91,7 +91,9 @@ const UserLinkedAccountsSettings = () => {
   const linkPlexAccount = async () => {
     setError(null);
     try {
-      const authToken = await plexOAuth.login();
+      const authToken = await plexOAuth.login(
+        settings.currentSettings.plexClientIdentifier
+      );
       await axios.post(
         `/api/v1/user/${user?.id}/settings/linked-accounts/plex`,
         {

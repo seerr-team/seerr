@@ -6,6 +6,7 @@ import NotificationTypeSelector, {
 } from '@app/components/NotificationTypeSelector';
 import { OpenPgpLink } from '@app/components/Settings/Notifications/NotificationsEmail';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
+import useToasts from '@app/hooks/useToasts';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -15,7 +16,6 @@ import axios from 'axios';
 import { Form, Formik } from 'formik';
 import { useRouter } from 'next/router';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
 

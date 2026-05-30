@@ -1,13 +1,13 @@
 import Alert from '@app/components/Common/Alert';
 import Modal from '@app/components/Common/Modal';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import axios from 'axios';
 import Image from 'next/image';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
 interface PlexImportProps {
@@ -20,6 +20,8 @@ const messages = defineMessages('components.UserList', {
   importfromplexerror: 'Something went wrong while importing Plex users.',
   importedfromplex:
     '<strong>{userCount}</strong> Plex {userCount, plural, one {user} other {users}} imported successfully!',
+  importedPlexUsersNoPassword:
+    'Imported users do not have a {applicationTitle} password set. If you disable Plex sign-in, they will need to set a password from their profile or via a password reset link.',
   user: 'User',
   nouserstoimport: 'There are no Plex users to import.',
   newplexsigninenabled:
@@ -65,6 +67,16 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
         {
           autoDismiss: true,
           appearance: 'success',
+        }
+      );
+
+      addToast(
+        intl.formatMessage(messages.importedPlexUsersNoPassword, {
+          applicationTitle: settings.currentSettings.applicationTitle,
+        }),
+        {
+          autoDismiss: false,
+          appearance: 'warning',
         }
       );
 

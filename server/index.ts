@@ -4,6 +4,7 @@ import dataSource, { getRepository, isPgsql } from '@server/datasource';
 import DiscoverSlider from '@server/entity/DiscoverSlider';
 import { Session } from '@server/entity/Session';
 import { User } from '@server/entity/User';
+import { initI18n } from '@server/i18n';
 import { startJobs } from '@server/job/schedule';
 import notificationManager from '@server/lib/notifications';
 import DiscordAgent from '@server/lib/notifications/agents/discord';
@@ -37,12 +38,13 @@ import express from 'express';
 import * as OpenApiValidator from 'express-openapi-validator';
 import type { Store } from 'express-session';
 import session from 'express-session';
+import fs from 'fs/promises';
 import http from 'http';
 import https from 'https';
+import yaml from 'js-yaml';
 import next from 'next';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
-import YAML from 'yamljs';
 
 const API_SPEC_PATH = path.join(__dirname, '../seerr-api.yml');
 
@@ -81,6 +83,8 @@ app
     // Load Settings
     const settings = await getSettings().load();
     restartFlag.initializeSettings(settings);
+
+    initI18n();
 
     if (settings.network.forceIpv4First) {
       axios.defaults.httpAgent = new http.Agent({ family: 4 });
@@ -186,6 +190,8 @@ app
             httpOnly: true,
             sameSite: true,
             secure: !dev,
+            key: '_csrf',
+            path: '/',
           },
         })
       );
@@ -203,7 +209,7 @@ app
     server.use(
       '/api',
       session({
-        secret: settings.clientId,
+        secret: settings.sessionSecret,
         resave: false,
         saveUninitialized: false,
         cookie: {
@@ -218,7 +224,8 @@ app
         }).connect(sessionRespository) as Store,
       })
     );
-    const apiDocs = YAML.load(API_SPEC_PATH);
+    const apiSpecContent = await fs.readFile(API_SPEC_PATH, 'utf-8');
+    const apiDocs = yaml.load(apiSpecContent) as Record<string, unknown>;
     server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(apiDocs));
     server.use(
       OpenApiValidator.middleware({
@@ -244,7 +251,7 @@ app
     server.use('/imageproxy', clearCookies, imageproxy);
     server.use('/avatarproxy', clearCookies, avatarproxy);
 
-    server.get('*', (req, res) => handle(req, res));
+    server.get('*path', (req, res) => handle(req, res));
     server.use(
       (
         err: { status: number; message: string; errors: string[] },

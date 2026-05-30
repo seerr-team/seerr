@@ -4,6 +4,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import LibraryItem from '@app/components/Settings/LibraryItem';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -15,7 +16,6 @@ import axios from 'axios';
 import { Field, Formik } from 'formik';
 import { useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
 
@@ -93,8 +93,6 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
   isSetupSettings,
 }) => {
   const [isSyncing, setIsSyncing] = useState(false);
-  const toasts = useToasts();
-
   const {
     data,
     error,
@@ -116,13 +114,15 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       .required(intl.formatMessage(messages.validationHostnameRequired)),
     port: Yup.number().when(['hostname'], {
       is: (value: unknown) => !!value,
-      then: Yup.number()
-        .typeError(intl.formatMessage(messages.validationPortRequired))
-        .nullable()
-        .required(intl.formatMessage(messages.validationPortRequired)),
-      otherwise: Yup.number()
-        .typeError(intl.formatMessage(messages.validationPortRequired))
-        .nullable(),
+      then: (schema) =>
+        schema
+          .typeError(intl.formatMessage(messages.validationPortRequired))
+          .nullable()
+          .required(intl.formatMessage(messages.validationPortRequired)),
+      otherwise: (schema) =>
+        schema
+          .typeError(intl.formatMessage(messages.validationPortRequired))
+          .nullable(),
     }),
     urlBase: Yup.string()
       .test(
@@ -177,7 +177,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       revalidate();
     } catch (e) {
       if (e?.response?.data?.message === 'SYNC_ERROR_GROUPED_FOLDERS') {
-        toasts.addToast(
+        addToast(
           intl.formatMessage(
             messages.jellyfinSyncFailedAutomaticGroupedFolders
           ),
@@ -187,7 +187,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
           }
         );
       } else if (e?.response?.data?.message === 'SYNC_ERROR_NO_LIBRARIES') {
-        toasts.addToast(
+        addToast(
           intl.formatMessage(messages.jellyfinSyncFailedNoLibrariesFound),
           {
             autoDismiss: true,
@@ -195,13 +195,10 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
           }
         );
       } else {
-        toasts.addToast(
-          intl.formatMessage(messages.jellyfinSyncFailedGenericError),
-          {
-            autoDismiss: true,
-            appearance: 'error',
-          }
-        );
+        addToast(intl.formatMessage(messages.jellyfinSyncFailedGenericError), {
+          autoDismiss: true,
+          appearance: 'error',
+        });
       }
       setIsSyncing(false);
       revalidate();

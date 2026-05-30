@@ -20,6 +20,7 @@ concurrency:
 jobs:
   label:
     name: Labeling
+    if: github.actor != 'renovate[bot]'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:

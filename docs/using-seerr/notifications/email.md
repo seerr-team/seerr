@@ -12,6 +12,10 @@ sidebar_position: 1
 If the [Application URL](/using-seerr/settings/general#application-title) setting is configured in **Settings → General**, Seerr will explicitly set the origin server hostname when connecting to the SMTP host.
 :::
 
+### Require User Email
+
+When enabled, users will be required to provide a valid email address in their user settings. This is useful if you want to ensure all users can receive email notifications.
+
 ### Sender Name (optional)
 
 Configure a friendly name for the email sender (e.g., "Seerr").

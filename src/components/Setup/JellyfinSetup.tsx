@@ -1,5 +1,6 @@
 import Button from '@app/components/Common/Button';
 import Tooltip from '@app/components/Common/Tooltip';
+import useToasts from '@app/hooks/useToasts';
 import defineMessages from '@app/utils/defineMessages';
 import { InformationCircleIcon } from '@heroicons/react/24/solid';
 import { ApiErrorCode } from '@server/constants/error';
@@ -7,7 +8,6 @@ import { MediaServerType, ServerType } from '@server/constants/server';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { FormattedMessage, useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import validator from 'validator';
 import * as Yup from 'yup';
 
@@ -44,6 +44,8 @@ const messages = defineMessages('components.Login', {
   forgotpassword: 'Forgot Password?',
   servertype: 'Server Type',
   back: 'Go back',
+  urlBaseHelp:
+    'If you set a Base URL in Jellyfin (Dashboard > Networking), enter it here (e.g. /jellyfin). Leave blank otherwise.',
 });
 
 interface JellyfinSetupProps {
@@ -228,8 +230,18 @@ function JellyfinSetup({
                 />
               </div>
             </div>
-            <label htmlFor="urlBase" className="text-label mt-1">
+            <label
+              htmlFor="urlBase"
+              className="text-label mt-1 inline-flex gap-1 align-middle"
+            >
               {intl.formatMessage(messages.urlBase)}
+              <span className="label-tip">
+                <Tooltip content={intl.formatMessage(messages.urlBaseHelp)}>
+                  <span className="tooltip-trigger">
+                    <InformationCircleIcon className="h-4 w-4" />
+                  </span>
+                </Tooltip>
+              </span>
             </label>
             <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
               <div className="flex rounded-md shadow-sm">

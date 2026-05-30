@@ -952,13 +952,28 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       relations: { requests: true },
     });
 
+    const hasActive = fullMedia.requests.some(
+      (request) =>
+        !request.is4k &&
+        request.status !== MediaRequestStatus.COMPLETED &&
+        request.status !== MediaRequestStatus.DECLINED
+    );
+    const hasActive4k = fullMedia.requests.some(
+      (request) =>
+        request.is4k &&
+        request.status !== MediaRequestStatus.COMPLETED &&
+        request.status !== MediaRequestStatus.DECLINED
+    );
+
     const needsStatusUpdate =
-      !fullMedia.requests.some((request) => !request.is4k) &&
-      fullMedia.status !== MediaStatus.AVAILABLE;
+      !hasActive &&
+      fullMedia.status !== MediaStatus.AVAILABLE &&
+      fullMedia.status !== MediaStatus.PARTIALLY_AVAILABLE;
 
     const needs4kStatusUpdate =
-      !fullMedia.requests.some((request) => request.is4k) &&
-      fullMedia.status4k !== MediaStatus.AVAILABLE;
+      !hasActive4k &&
+      fullMedia.status4k !== MediaStatus.AVAILABLE &&
+      fullMedia.status4k !== MediaStatus.PARTIALLY_AVAILABLE;
 
     if (needsStatusUpdate || needs4kStatusUpdate) {
       // Re-fetch WITHOUT requests to avoid cascade issues on save
@@ -967,10 +982,21 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       });
 
       if (needsStatusUpdate) {
-        cleanMedia.status = MediaStatus.UNKNOWN;
+        const hadCompleted = fullMedia.requests.some(
+          (r) => !r.is4k && r.status === MediaRequestStatus.COMPLETED
+        );
+        cleanMedia.status = hadCompleted
+          ? MediaStatus.DELETED
+          : MediaStatus.UNKNOWN;
       }
+
       if (needs4kStatusUpdate) {
-        cleanMedia.status4k = MediaStatus.UNKNOWN;
+        const hadCompleted4k = fullMedia.requests.some(
+          (r) => r.is4k && r.status === MediaRequestStatus.COMPLETED
+        );
+        cleanMedia.status4k = hadCompleted4k
+          ? MediaStatus.DELETED
+          : MediaStatus.UNKNOWN;
       }
 
       await manager.save(cleanMedia);

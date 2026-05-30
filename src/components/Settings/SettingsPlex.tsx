@@ -6,6 +6,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import LibraryItem from '@app/components/Settings/LibraryItem';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -22,7 +23,6 @@ import { Field, Formik } from 'formik';
 import { orderBy } from 'lodash';
 import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
 
@@ -150,10 +150,13 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
       tautulliHostname: Yup.string()
         .when(['tautulliPort', 'tautulliApiKey'], {
           is: (value: unknown) => !!value,
-          then: Yup.string()
-            .nullable()
-            .required(intl.formatMessage(messages.validationHostnameRequired)),
-          otherwise: Yup.string().nullable(),
+          then: (schema) =>
+            schema
+              .nullable()
+              .required(
+                intl.formatMessage(messages.validationHostnameRequired)
+              ),
+          otherwise: (schema) => schema.nullable(),
         })
         .matches(
           /^(([a-z]|\d|_|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*)?([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])$/i,
@@ -161,13 +164,15 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
         ),
       tautulliPort: Yup.number().when(['tautulliHostname', 'tautulliApiKey'], {
         is: (value: unknown) => !!value,
-        then: Yup.number()
-          .typeError(intl.formatMessage(messages.validationPortRequired))
-          .nullable()
-          .required(intl.formatMessage(messages.validationPortRequired)),
-        otherwise: Yup.number()
-          .typeError(intl.formatMessage(messages.validationPortRequired))
-          .nullable(),
+        then: (schema) =>
+          schema
+            .typeError(intl.formatMessage(messages.validationPortRequired))
+            .nullable()
+            .required(intl.formatMessage(messages.validationPortRequired)),
+        otherwise: (schema) =>
+          schema
+            .typeError(intl.formatMessage(messages.validationPortRequired))
+            .nullable(),
       }),
       tautulliUrlBase: Yup.string()
         .test(
@@ -182,10 +187,11 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
         ),
       tautulliApiKey: Yup.string().when(['tautulliHostname', 'tautulliPort'], {
         is: (value: unknown) => !!value,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationApiKey)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationApiKey)),
+        otherwise: (schema) => schema.nullable(),
       }),
       tautulliExternalUrl: Yup.string()
         .test(

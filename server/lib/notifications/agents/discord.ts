@@ -1,9 +1,12 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
+import { getIntl } from '@server/i18n';
+import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentDiscord } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import type { AvailableLocale } from '@server/types/languages';
 import axios from 'axios';
 import {
   Notification,
@@ -53,7 +56,7 @@ interface Field {
 }
 interface DiscordRichEmbed {
   title?: string;
-  type?: 'rich'; // Always rich for webhooks
+  type?: 'rich';
   description?: string;
   url?: string;
   timestamp?: string;
@@ -107,8 +110,10 @@ class DiscordAgent
 
   public buildEmbed(
     type: Notification,
-    payload: NotificationPayload
+    payload: NotificationPayload,
+    locale?: AvailableLocale
   ): DiscordRichEmbed {
+    const intl = getIntl(locale);
     const settings = getSettings();
     const { applicationUrl } = settings.main;
     const { embedPoster } = settings.notifications.agents.discord;
@@ -120,7 +125,7 @@ class DiscordAgent
 
     if (payload.request) {
       fields.push({
-        name: 'Requested By',
+        name: intl.formatMessage(globalMessages.requestedBy),
         value: payload.request.requestedBy.displayName,
         inline: true,
       });
@@ -129,56 +134,60 @@ class DiscordAgent
       switch (type) {
         case Notification.MEDIA_PENDING:
           color = EmbedColors.ORANGE;
-          status = `[Pending Approval](${appUrl}/requests)`;
+          status = `[${intl.formatMessage(globalMessages.pendingApproval)}](${appUrl}/requests)`;
           break;
         case Notification.MEDIA_APPROVED:
         case Notification.MEDIA_AUTO_APPROVED:
           color = EmbedColors.PURPLE;
-          status = 'Processing';
+          status = intl.formatMessage(globalMessages.processing);
           break;
         case Notification.MEDIA_AVAILABLE:
           color = EmbedColors.GREEN;
-          status = 'Available';
+          status = intl.formatMessage(globalMessages.available);
           break;
         case Notification.MEDIA_DECLINED:
           color = EmbedColors.RED;
-          status = 'Declined';
+          status = intl.formatMessage(globalMessages.declined);
           break;
         case Notification.MEDIA_FAILED:
           color = EmbedColors.RED;
-          status = 'Failed';
+          status = intl.formatMessage(globalMessages.failed);
           break;
       }
 
       if (status) {
         fields.push({
-          name: 'Request Status',
+          name: intl.formatMessage(globalMessages.requestStatus),
           value: status,
           inline: true,
         });
       }
     } else if (payload.comment) {
       fields.push({
-        name: `Comment from ${payload.comment.user.displayName}`,
+        name: intl.formatMessage(globalMessages.commentFrom, {
+          userName: payload.comment.user.displayName,
+        }),
         value: payload.comment.message,
         inline: false,
       });
     } else if (payload.issue) {
       fields.push(
         {
-          name: 'Reported By',
+          name: intl.formatMessage(globalMessages.reportedBy),
           value: payload.issue.createdBy.displayName,
           inline: true,
         },
         {
-          name: 'Issue Type',
+          name: intl.formatMessage(globalMessages.issueType),
           value: IssueTypeName[payload.issue.issueType],
           inline: true,
         },
         {
-          name: 'Issue Status',
+          name: intl.formatMessage(globalMessages.issueStatus),
           value:
-            payload.issue.status === IssueStatus.OPEN ? 'Open' : 'Resolved',
+            payload.issue.status === IssueStatus.OPEN
+              ? intl.formatMessage(globalMessages.open)
+              : intl.formatMessage(globalMessages.resolved),
           inline: true,
         }
       );
@@ -299,12 +308,19 @@ class DiscordAgent
         userMentions.push(`<@&${settings.options.webhookRoleId}>`);
       }
 
+      // Discord webhooks go to a channel, not per-user,
+      // so if use user locale is set, we'll use the locale of the user being notified
+      // if not, we'll use the default locale set in the notification settings
+      const locale = settings.options.useUserLocale
+        ? (payload.notifyUser?.settings?.locale as AvailableLocale)
+        : (settings.options.locale as AvailableLocale);
+
       await axios.post(settings.options.webhookUrl, {
         username: settings.options.botUsername
           ? settings.options.botUsername
           : getSettings().main.applicationTitle,
         avatar_url: settings.options.botAvatarUrl,
-        embeds: [this.buildEmbed(type, payload)],
+        embeds: [this.buildEmbed(type, payload, locale)],
         content: userMentions.join(' '),
       } as DiscordWebhookPayload);
 

@@ -89,6 +89,27 @@ const checkOverseerrMerge = async (): Promise<boolean> => {
     await dbConnection.query('PRAGMA foreign_keys=ON');
   }
 
+  // Fix corrupted quota values carried over from Overseerr
+  try {
+    await dbConnection.query(
+      `UPDATE user SET movieQuotaLimit = NULL WHERE typeof(movieQuotaLimit) = 'text'`
+    );
+    await dbConnection.query(
+      `UPDATE user SET movieQuotaDays = NULL WHERE typeof(movieQuotaDays) = 'text'`
+    );
+    await dbConnection.query(
+      `UPDATE user SET tvQuotaLimit = NULL WHERE typeof(tvQuotaLimit) = 'text'`
+    );
+    await dbConnection.query(
+      `UPDATE user SET tvQuotaDays = NULL WHERE typeof(tvQuotaDays) = 'text'`
+    );
+  } catch (error) {
+    logger.error('Failed to clean up corrupted quota values', {
+      label: 'Seerr Migration',
+      error: error.message,
+    });
+  }
+
   // MediaStatus.Blacklisted was added before MediaStatus.Deleted in Jellyseerr
   try {
     const mediaRepository = getRepository(Media);

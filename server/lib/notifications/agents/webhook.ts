@@ -25,6 +25,7 @@ const KeyMap: Record<string, string | KeyMapFunction> = {
   notifyuser_avatar: 'notifyUser.avatar',
   notifyuser_settings_discordId: 'notifyUser.settings.discordId',
   notifyuser_settings_telegramChatId: 'notifyUser.settings.telegramChatId',
+  media_imdbid: 'media.imdbId',
   media_tmdbid: 'media.tmdbId',
   media_tvdbid: 'media.tvdbId',
   media_type: 'media.mediaType',
@@ -34,6 +35,8 @@ const KeyMap: Record<string, string | KeyMapFunction> = {
     payload.media ? MediaStatus[payload.media.status] : '',
   media_status4k: (payload) =>
     payload.media ? MediaStatus[payload.media.status4k] : '',
+  media_plexRatingKey: (payload) => payload.media?.ratingKey ?? '',
+  media_plexRatingKey4k: (payload) => payload.media?.ratingKey4k ?? '',
   request_id: 'request.id',
   requestedBy_jellyfinUserId: 'request.requestedBy.jellyfinUserId',
   requestedBy_username: 'request.requestedBy.displayName',

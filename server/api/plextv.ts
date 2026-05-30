@@ -107,16 +107,18 @@ interface WatchlistResponse {
   };
 }
 
+type PlexMetadataItem = {
+  ratingKey: string;
+  type: 'movie' | 'show';
+  title: string;
+  Guid?: {
+    id: `imdb://tt${number}` | `tmdb://${number}` | `tvdb://${number}`;
+  }[];
+};
 interface MetadataResponse {
   MediaContainer: {
-    Metadata: {
-      ratingKey: string;
-      type: 'movie' | 'show';
-      title: string;
-      Guid?: {
-        id: `imdb://tt${number}` | `tmdb://${number}` | `tvdb://${number}`;
-      }[];
-    }[];
+    Metadata?: PlexMetadataItem[];
+    Video?: PlexMetadataItem[];
   };
 }
 
@@ -332,7 +334,17 @@ class PlexTvAPI extends ExternalAPI {
               }
             }
 
-            const metadata = detailedResponse.MediaContainer.Metadata[0];
+            const metadata =
+              detailedResponse.MediaContainer.Metadata?.[0] ??
+              detailedResponse.MediaContainer.Video?.[0];
+
+            if (!metadata) {
+              logger.warn(
+                `Item with ratingKey ${watchlistItem.ratingKey} returned no metadata, skipping.`,
+                { label: 'Plex.TV Metadata API' }
+              );
+              return null;
+            }
 
             const tmdbString = metadata.Guid?.find((guid) =>
               guid.id.startsWith('tmdb')

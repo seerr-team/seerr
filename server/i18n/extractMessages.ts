@@ -1,7 +1,6 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
-// get all file content recursively
 async function getFiles(dir: string): Promise<string[]> {
   const dirents = await fs.readdir(dir, { withFileTypes: true });
   const files = await Promise.all(
@@ -13,7 +12,6 @@ async function getFiles(dir: string): Promise<string[]> {
   return Array.prototype.concat(...files);
 }
 
-// extract the i18n messages from the file
 async function extractMessages(
   filePath: string
 ): Promise<{ namespace: string; messages: Record<string, string> } | null> {
@@ -44,11 +42,12 @@ async function extractMessages(
 }
 
 async function processMessages(dir: string): Promise<string> {
-  // get messages from all files and sort them by namespace
   const files = await getFiles(dir);
-  const extractedMessagesGroups = await Promise.all(files.map(extractMessages));
+  const tsFiles = files.filter((f) => /\.tsx?$/.test(f));
+  const extractedMessagesGroups = await Promise.all(
+    tsFiles.map(extractMessages)
+  );
 
-  // group messages by namespace
   const messagesByNamespace: {
     namespace: string;
     messages: Record<string, string>;
@@ -56,6 +55,7 @@ async function processMessages(dir: string): Promise<string> {
   const namespaces = [
     ...new Set(extractedMessagesGroups.map((msg) => msg?.namespace)),
   ];
+
   for (const namespace of namespaces) {
     if (!namespace) continue;
     const filteredMessagesGroups = extractedMessagesGroups
@@ -87,7 +87,6 @@ async function processMessages(dir: string): Promise<string> {
     return a.namespace.localeCompare(b.namespace);
   });
 
-  // add every messages from every namespace to an object
   const result: Record<string, string> = {};
   for (const extractedMessages of messagesByNamespace) {
     const { namespace, messages } = extractedMessages;
@@ -96,15 +95,19 @@ async function processMessages(dir: string): Promise<string> {
     }
   }
 
-  return JSON.stringify(result, null, '  ') + '\n';
+  return JSON.stringify(result, Object.keys(result).sort(), '  ') + '\n';
 }
 
 async function saveMessages() {
-  const directoryPath = './src/';
-  const resultPath = './src/i18n/locale/en.json';
+  const targets = [
+    { dir: './src/', output: './src/i18n/locale/en.json' },
+    { dir: './server/', output: './server/i18n/locale/en.json' },
+  ];
 
-  const result = await processMessages(directoryPath);
-  await fs.writeFile(resultPath, result);
+  for (const { dir, output } of targets) {
+    const result = await processMessages(dir);
+    await fs.writeFile(output, result);
+  }
 }
 
 saveMessages();

@@ -1,3 +1,4 @@
+import Alert from '@app/components/Common/Alert';
 import Button from '@app/components/Common/Button';
 import LabeledCheckbox from '@app/components/Common/LabeledCheckbox';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
@@ -5,6 +6,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import PermissionEdit from '@app/components/PermissionEdit';
 import QuotaSelector from '@app/components/QuotaSelector';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
@@ -13,7 +15,6 @@ import type { MainSettings } from '@server/lib/settings';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
 import * as yup from 'yup';
 
@@ -39,6 +40,8 @@ const messages = defineMessages('components.Settings.SettingsUsers', {
   tvRequestLimitLabel: 'Global Series Request Limit',
   defaultPermissions: 'Default Permissions',
   defaultPermissionsTip: 'Initial permissions assigned to new users',
+  disabledMediaServerLoginWarning:
+    'Some users may not have a {applicationTitle} password set. Disabling {mediaServerName} sign-in could lock them out. Affected users will need to set a password from their profile or via a password reset link.',
 });
 
 const SettingsUsers = () => {
@@ -60,9 +63,9 @@ const SettingsUsers = () => {
     .test({
       name: 'atLeastOneAuth',
       test: function (values) {
-        const isValid = ['localLogin', 'mediaServerLogin'].some(
-          (field) => !!values[field]
-        );
+        const isValid = (
+          ['localLogin', 'mediaServerLogin'] as (keyof typeof values)[]
+        ).some((field) => !!values[field]);
 
         if (isValid) return true;
         return this.createError({
@@ -200,6 +203,21 @@ const SettingsUsers = () => {
                           )
                         }
                       />
+                      {!values.mediaServerLogin && values.localLogin && (
+                        <div className="mt-4">
+                          <Alert
+                            title={intl.formatMessage(
+                              messages.disabledMediaServerLoginWarning,
+                              {
+                                applicationTitle:
+                                  settings.currentSettings.applicationTitle,
+                                ...mediaServerFormatValues,
+                              }
+                            )}
+                            type="warning"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

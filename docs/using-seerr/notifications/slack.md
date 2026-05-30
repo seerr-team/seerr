@@ -15,3 +15,7 @@ Simply [create a webhook](https://my.slack.com/services/new/incoming-webhook/) a
 :::info
 Please refer to the [Slack API documentation](https://api.slack.com/messaging/webhooks) for more details on configuring these notifications.
 :::
+
+### Notification Language
+
+Sets the language for notifications sent to this Slack channel.
