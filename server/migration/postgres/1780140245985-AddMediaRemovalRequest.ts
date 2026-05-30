@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddMediaRemovalRequest1775397575694 implements MigrationInterface {
-  name = 'AddMediaRemovalRequest1775397575694';
+export class AddMediaRemovalRequest1780140245985 implements MigrationInterface {
+  name = 'AddMediaRemovalRequest1780140245985';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -19,6 +19,8 @@ export class AddMediaRemovalRequest1775397575694 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX "IDX_34c6963994828cb30c9b2798df" ON "media_removal_request" ("modifiedById") `
     );
+    // Widen permissions to bigint IN PLACE to preserve existing permission
+    // values (TypeORM's generated DROP COLUMN/ADD COLUMN would reset them).
     await queryRunner.query(
       `ALTER TABLE "user" ALTER COLUMN "permissions" TYPE bigint`
     );
@@ -43,6 +45,9 @@ export class AddMediaRemovalRequest1775397575694 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "media_removal_request" DROP CONSTRAINT "FK_78decd4e1901d80cfdce43b079f"`
     );
+    // Clear permission bits that exceed the 32-bit signed integer range before
+    // narrowing the column back to integer, otherwise the cast would fail with
+    // "integer out of range" for users granted the new high-bit permissions.
     await queryRunner.query(
       `UPDATE "user" SET "permissions" = "permissions" & 2147483647 WHERE "permissions" > 2147483647`
     );
