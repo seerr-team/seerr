@@ -15,7 +15,7 @@ import { Permission } from '@server/lib/permissions';
 import type { DVRSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import { DbAwareColumn } from '@server/utils/DbColumnHelper';
+import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
 import {
   Column,
   Entity,
@@ -75,7 +75,10 @@ export class MediaRemovalRequest {
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({
+    type: resolveDbType('datetime'),
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   public updatedAt: Date;
 
   constructor(init?: Partial<MediaRemovalRequest>) {
@@ -95,23 +98,36 @@ export class MediaRemovalRequest {
 
     const media = this.media;
     const isMovie = media.mediaType === MediaType.MOVIE;
-    const isSeasonRemoval = !isMovie && this.seasons && this.seasons.length > 0;
+    const isSeasonRemoval =
+      !isMovie && !!this.seasons && this.seasons.length > 0;
+    const targetSeasons = this.seasons ?? [];
 
     const specificServiceId = this.is4k ? media.serviceId4k : media.serviceId;
 
-    // Determine how many distinct users originally requested this media
+    // Determine which users must consent before this media (or these seasons)
+    // can be fully removed. The consent set is scoped to the same quality
+    // version (is4k) and, for season-level removals, to requesters of the
+    // specific seasons being removed — so a requester of a different quality
+    // version or of unrelated seasons neither blocks nor triggers this removal.
     const mediaRequestRepository = getRepository(MediaRequest);
     const mediaRequests = await mediaRequestRepository.find({
-      where: { media: { id: media.id } },
-      relations: ['requestedBy'],
+      where: { media: { id: media.id }, is4k: this.is4k },
+      relations: ['requestedBy', 'seasons'],
     });
+    const relevantRequests = isSeasonRemoval
+      ? mediaRequests.filter((r) =>
+          (r.seasons ?? []).some((s) => targetSeasons.includes(s.seasonNumber))
+        )
+      : mediaRequests;
     const uniqueRequesterIds = new Set(
-      mediaRequests.map((r) => r.requestedBy.id)
+      relevantRequests.map((r) => r.requestedBy.id)
     );
 
-    // Check whether every other requester already has an approved/partially-removed removal request
+    // Check whether every other relevant requester already has an
+    // approved/partially-removed removal request. For season-level removals,
+    // only other removals that overlap the same seasons count as consent.
     const removalRequestRepository = getRepository(MediaRemovalRequest);
-    const otherRemovals = await removalRequestRepository.find({
+    const otherRemovalsForMedia = await removalRequestRepository.find({
       where: {
         media: { id: media.id },
         is4k: this.is4k,
@@ -123,6 +139,11 @@ export class MediaRemovalRequest {
       },
       relations: ['requestedBy'],
     });
+    const otherRemovals = isSeasonRemoval
+      ? otherRemovalsForMedia.filter((r) =>
+          (r.seasons ?? []).some((s) => targetSeasons.includes(s))
+        )
+      : otherRemovalsForMedia;
     const removedRequesterIds = new Set(
       otherRemovals.map((r) => r.requestedBy.id)
     );
@@ -204,8 +225,11 @@ export class MediaRemovalRequest {
         }
       });
     } else {
-      // ── Partial removal: only remove this user's tag ─────────────
-      if (specificServiceId != null && serviceSettings) {
+      // ── Partial removal: keep the media for the remaining requesters ──
+      // For full movie/series removals we drop just this user's *arr tag.
+      // Season-level requests must NOT touch the (series-level) tag — removing
+      // it would wrongly signal the user no longer wants ANY of the series.
+      if (!isSeasonRemoval && specificServiceId != null && serviceSettings) {
         if (serviceSettings.tagRequests) {
           await this.removeUserTag(media, serviceSettings, isMovie);
         } else {
@@ -217,16 +241,14 @@ export class MediaRemovalRequest {
       }
 
       this.status = MediaRemovalRequestStatus.PARTIALLY_REMOVED;
-      logger.info(
-        'Partial removal: user tag removed, media kept for remaining requesters.',
-        {
-          label: 'MediaRemovalRequest',
-          mediaId: media.id,
-          tmdbId: media.tmdbId,
-          requestId: this.id,
-          userId: this.requestedBy.id,
-        }
-      );
+      logger.info('Partial removal: media kept for remaining requesters.', {
+        label: 'MediaRemovalRequest',
+        mediaId: media.id,
+        tmdbId: media.tmdbId,
+        requestId: this.id,
+        userId: this.requestedBy.id,
+        isSeasonRemoval,
+      });
     }
   }
 
@@ -235,9 +257,13 @@ export class MediaRemovalRequest {
    * to the stored value.
    */
   private async resolveTvdbId(media: Media): Promise<number> {
+    // Prefer the stored TVDB ID to avoid an unnecessary TMDB lookup.
+    if (media.tvdbId) {
+      return media.tvdbId;
+    }
     const tmdb = new TheMovieDb();
     const series = await tmdb.getTvShow({ tvId: media.tmdbId });
-    const tvdbId = series.external_ids.tvdb_id ?? media.tvdbId;
+    const tvdbId = series.external_ids.tvdb_id;
     if (!tvdbId) {
       throw new Error('TVDB ID not found');
     }
