@@ -347,6 +347,7 @@ const RequestList = () => {
                 >
                   <RemovalRequestBlock
                     request={removalRequest}
+                    showMedia
                     onUpdate={() => {
                       revalidateRemovals();
                       revalidate();

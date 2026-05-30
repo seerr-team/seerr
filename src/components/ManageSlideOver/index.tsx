@@ -10,6 +10,7 @@ import RemovalRequestBlock from '@app/components/RemovalRequestBlock';
 import RequestBlock from '@app/components/RequestBlock';
 import SeasonRemovalModal from '@app/components/RequestModal/SeasonRemovalModal';
 import useSettings from '@app/hooks/useSettings';
+import { useToasts } from '@app/hooks/useToasts';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -86,6 +87,10 @@ const messages = defineMessages('components.ManageSlideOver', {
   requestRemovalDescription:
     'This will request the removal of this {mediaType} from {arr}. {autoApproved, select, true {Your request will be automatically approved.} other {An administrator will need to approve your request.}}',
   requestRemovalSuccess: 'Removal request submitted successfully.',
+  requestRemovalFailed:
+    'Something went wrong while submitting the removal request.',
+  requestRemovalExists:
+    'You already have an active removal request for this media.',
   requestRemoval4k: 'Request 4K Removal',
   removalPending: 'Removal Pending',
   removalPendingDescription:
@@ -118,22 +123,27 @@ const RemovalRequestSection = ({
   showSeasonRemovalModal4k,
   setShowSeasonRemovalModal4k,
 }: RemovalRequestSectionProps) => {
-  const { hasPermission } = useUser();
+  const { user: currentUser, hasPermission } = useUser();
   const intl = useIntl();
   const settings = useSettings();
 
-  const pendingRemoval = data.mediaInfo?.removalRequests?.find(
-    (rr) =>
-      rr.status === MediaRemovalRequestStatus.PENDING &&
-      !rr.is4k &&
-      !rr.seasons?.length
-  );
-  const pendingRemoval4k = data.mediaInfo?.removalRequests?.find(
-    (rr) =>
-      rr.status === MediaRemovalRequestStatus.PENDING &&
-      rr.is4k &&
-      !rr.seasons?.length
-  );
+  // A user may only have one active (pending/approved/partially-removed)
+  // removal request per media + quality version. We scope the "pending"
+  // detection to the CURRENT user so that other users' in-progress requests
+  // never hide the action — co-requesters must still be able to add their own
+  // removal request to reach full multi-user consent.
+  const userHasActiveRemoval = (is4k: boolean): boolean =>
+    (data.mediaInfo?.removalRequests ?? []).some(
+      (rr) =>
+        rr.requestedBy?.id === currentUser?.id &&
+        rr.is4k === is4k &&
+        (rr.status === MediaRemovalRequestStatus.PENDING ||
+          rr.status === MediaRemovalRequestStatus.APPROVED ||
+          rr.status === MediaRemovalRequestStatus.PARTIALLY_REMOVED)
+    );
+
+  const pendingRemoval = userHasActiveRemoval(false);
+  const pendingRemoval4k = userHasActiveRemoval(true);
 
   const availableSeasons =
     mediaType === 'tv'
@@ -203,7 +213,7 @@ const RemovalRequestSection = ({
                 )}
               </div>
             )}
-            {availableSeasons.length > 0 && (
+            {availableSeasons.length > 0 && !pendingRemoval && (
               <Button
                 onClick={() => setShowSeasonRemovalModal(true)}
                 className="w-full"
@@ -216,6 +226,7 @@ const RemovalRequestSection = ({
               <SeasonRemovalModal
                 data={data}
                 is4k={false}
+                currentUserId={currentUser?.id}
                 onCancel={() => setShowSeasonRemovalModal(false)}
                 onComplete={(seasons) => {
                   setShowSeasonRemovalModal(false);
@@ -246,21 +257,24 @@ const RemovalRequestSection = ({
                   </ConfirmButton>
                 )}
               </div>
-              {mediaType === 'tv' && availableSeasons4k.length > 0 && (
-                <Button
-                  onClick={() => setShowSeasonRemovalModal4k(true)}
-                  className="w-full"
-                >
-                  <TrashIcon />
-                  <span>
-                    {intl.formatMessage(messages.requestSeasonRemoval4k)}
-                  </span>
-                </Button>
-              )}
+              {mediaType === 'tv' &&
+                availableSeasons4k.length > 0 &&
+                !pendingRemoval4k && (
+                  <Button
+                    onClick={() => setShowSeasonRemovalModal4k(true)}
+                    className="w-full"
+                  >
+                    <TrashIcon />
+                    <span>
+                      {intl.formatMessage(messages.requestSeasonRemoval4k)}
+                    </span>
+                  </Button>
+                )}
               {showSeasonRemovalModal4k && !isMovie(data) && (
                 <SeasonRemovalModal
                   data={data}
                   is4k={true}
+                  currentUserId={currentUser?.id}
                   onCancel={() => setShowSeasonRemovalModal4k(false)}
                   onComplete={(seasons) => {
                     setShowSeasonRemovalModal4k(false);
@@ -313,6 +327,7 @@ const ManageSlideOver = ({
   const { user: currentUser, hasPermission } = useUser();
   const intl = useIntl();
   const settings = useSettings();
+  const { addToast } = useToasts();
   const [showSeasonRemovalModal, setShowSeasonRemovalModal] = useState(false);
   const [showSeasonRemovalModal4k, setShowSeasonRemovalModal4k] =
     useState(false);
@@ -350,19 +365,33 @@ const ManageSlideOver = ({
   };
 
   const requestRemoval = async (is4k = false, seasons?: number[]) => {
-    if (data.mediaInfo) {
-      try {
-        await axios.post('/api/v1/removal-request', {
-          mediaId: data.mediaInfo.id,
-          is4k,
-          ...(seasons?.length && { seasons }),
+    if (!data.mediaInfo) {
+      return;
+    }
+    try {
+      await axios.post('/api/v1/removal-request', {
+        mediaId: data.mediaInfo.id,
+        is4k,
+        ...(seasons?.length && { seasons }),
+      });
+      addToast(intl.formatMessage(messages.requestRemovalSuccess), {
+        appearance: 'success',
+        autoDismiss: true,
+      });
+    } catch (e) {
+      // 409 = the user already has an active removal request for this media.
+      if (axios.isAxiosError(e) && e.response?.status === 409) {
+        addToast(intl.formatMessage(messages.requestRemovalExists), {
+          appearance: 'info',
+          autoDismiss: true,
         });
-      } catch (e) {
-        if (!axios.isAxiosError(e) || e.response?.status !== 409) {
-          throw e;
-        }
-        // 409 = duplicate pending request; revalidate to show pending state
+      } else {
+        addToast(intl.formatMessage(messages.requestRemovalFailed), {
+          appearance: 'error',
+          autoDismiss: true,
+        });
       }
+    } finally {
       revalidate();
       onClose();
     }
