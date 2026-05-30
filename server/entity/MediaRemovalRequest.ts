@@ -115,8 +115,11 @@ export class MediaRemovalRequest {
       relations: ['requestedBy', 'seasons'],
     });
     const relevantRequests = isSeasonRemoval
-      ? mediaRequests.filter((r) =>
-          (r.seasons ?? []).some((s) => targetSeasons.includes(s.seasonNumber))
+      ? mediaRequests.filter(
+          (r) =>
+            // A full-series request (no specific seasons) covers every season.
+            !r.seasons?.length ||
+            r.seasons.some((s) => targetSeasons.includes(s.seasonNumber))
         )
       : mediaRequests;
     const uniqueRequesterIds = new Set(
@@ -140,8 +143,11 @@ export class MediaRemovalRequest {
       relations: ['requestedBy'],
     });
     const otherRemovals = isSeasonRemoval
-      ? otherRemovalsForMedia.filter((r) =>
-          (r.seasons ?? []).some((s) => targetSeasons.includes(s))
+      ? otherRemovalsForMedia.filter(
+          (r) =>
+            // A full-series removal (no specific seasons) covers every season.
+            !r.seasons?.length ||
+            r.seasons.some((s) => targetSeasons.includes(s))
         )
       : otherRemovalsForMedia;
     const removedRequesterIds = new Set(
