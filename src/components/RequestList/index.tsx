@@ -35,7 +35,8 @@ const messages = defineMessages('components.RequestList', {
   sortDirection: 'Toggle Sort Direction',
   unableToConnect:
     'Unable to connect to {services}. Some information may be unavailable.',
-  pendingRemovalRequests: 'Pending Removal Requests',
+  removalRequests: 'Removal Requests',
+  addRequests: 'Requests',
 });
 
 enum Filter {
@@ -105,9 +106,10 @@ const RequestList = () => {
     };
     results: MediaRemovalRequest[];
   }>(
-    hasPermission(Permission.MANAGE_REQUESTS)
-      ? `/api/v1/removal-request?filter=pending&take=20${removalRequestScope}`
-      : null
+    // Everyone sees removal requests here: managers/REQUEST_VIEW get the global
+    // pending queue (to action), while regular users get their own requests
+    // (the API scopes non-privileged users to their own).
+    `/api/v1/removal-request?filter=pending&take=20${removalRequestScope}`
   );
 
   // Restore last set filter values on component mount
@@ -334,31 +336,35 @@ const RequestList = () => {
         )}
 
       {removalData && removalData.results.length > 0 && (
-        <div className="mb-4">
-          <h3 className="mb-2 text-lg font-bold text-white">
-            {intl.formatMessage(messages.pendingRemovalRequests)}
+        <div className="mb-6">
+          <h3 className="mb-3 text-lg font-bold text-white">
+            {intl.formatMessage(messages.removalRequests)}
           </h3>
-          <div className="overflow-hidden rounded-md border border-gray-700 shadow">
-            <ul>
-              {removalData.results.map((removalRequest) => (
-                <li
-                  key={`removal-request-${removalRequest.id}`}
-                  className="border-b border-gray-700 last:border-b-0"
-                >
-                  <RemovalRequestBlock
-                    request={removalRequest}
-                    showMedia
-                    onUpdate={() => {
-                      revalidateRemovals();
-                      revalidate();
-                    }}
-                  />
-                </li>
-              ))}
-            </ul>
+          <div className="space-y-2">
+            {removalData.results.map((removalRequest) => (
+              <RemovalRequestBlock
+                key={`removal-request-${removalRequest.id}`}
+                request={removalRequest}
+                showMedia
+                onUpdate={() => {
+                  revalidateRemovals();
+                  revalidate();
+                }}
+              />
+            ))}
           </div>
         </div>
       )}
+
+      {/* Label the standard requests group only when removal requests are also
+          shown, so the two groups read as parallel sections. */}
+      {removalData &&
+        removalData.results.length > 0 &&
+        data.results.length > 0 && (
+          <h3 className="mb-3 text-lg font-bold text-white">
+            {intl.formatMessage(messages.addRequests)}
+          </h3>
+        )}
 
       {data.results.map((request) => {
         return (
