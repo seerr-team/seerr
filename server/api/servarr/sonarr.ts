@@ -413,6 +413,15 @@ class SonarrAPI extends ServarrBase<{
   public removeSeries = async (serieId: number): Promise<void> => {
     try {
       const { id, title } = await this.getSeriesByTvdbId(serieId);
+      if (!id) {
+        // Series is not in the Sonarr library (e.g. already removed). Treat the
+        // desired end-state as reached so retries remain idempotent.
+        logger.info(
+          '[Sonarr] Series not present in library; nothing to remove',
+          { tvdbId: serieId }
+        );
+        return;
+      }
       await this.axios.delete(`/series/${id}`, {
         params: {
           deleteFiles: true,
@@ -457,7 +466,13 @@ class SonarrAPI extends ServarrBase<{
     try {
       const series = await this.getSeriesByTvdbId(tvdbId);
       if (!series.id) {
-        throw new Error('Series not found in Sonarr');
+        // Series is not in the Sonarr library (e.g. already removed). Treat the
+        // desired end-state as reached so retries remain idempotent.
+        logger.info(
+          '[Sonarr] Series not present in library; nothing to remove',
+          { tvdbId }
+        );
+        return;
       }
 
       const episodes = await this.getEpisodes(series.id);

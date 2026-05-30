@@ -200,11 +200,16 @@ removalRequestRoutes.post(
         }
       }
 
-      // Check for existing pending/approved/partially-removed removal requests for this media/is4k combo
-      const existingRequests = await removalRequestRepository.find({
+      // A user may only have one active (pending/approved/partially-removed)
+      // removal request per media + quality version at a time. They should
+      // submit all seasons they want removed in a single request. Other users'
+      // active removal requests do NOT block this user — that is how multi-user
+      // co-removal consent is gathered.
+      const userActiveRequest = await removalRequestRepository.findOne({
         where: {
           media: { id: media.id },
           is4k: is4k ?? false,
+          requestedBy: { id: req.user!.id },
           status: In([
             MediaRemovalRequestStatus.PENDING,
             MediaRemovalRequestStatus.APPROVED,
@@ -212,33 +217,11 @@ removalRequestRoutes.post(
           ]),
         },
       });
-
-      // Block same user from submitting a duplicate removal request
-      const userAlreadyRequested = existingRequests.some(
-        (r) => r.requestedBy.id === req.user!.id
-      );
-      if (userAlreadyRequested) {
+      if (userActiveRequest) {
         return next({
           status: 409,
-          message: 'You already have a pending removal request for this media.',
+          message: 'You already have an active removal request for this media.',
         });
-      }
-
-      // If this is a season request, check for overlap with THIS user's existing season requests
-      if (seasons?.length) {
-        const userExisting = existingRequests.filter(
-          (r) => r.requestedBy.id === req.user!.id
-        );
-        const alreadyPendingSeasons = new Set(
-          userExisting.flatMap((r) => r.seasons ?? [])
-        );
-        const overlapping = seasons.filter((s) => alreadyPendingSeasons.has(s));
-        if (overlapping.length > 0) {
-          return next({
-            status: 409,
-            message: `Seasons ${overlapping.join(', ')} already have pending removal requests.`,
-          });
-        }
       }
 
       const autoApprove = MediaRemovalRequest.shouldAutoApprove(req.user);

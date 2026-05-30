@@ -270,6 +270,17 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
   public removeMovie = async (movieId: number): Promise<void> => {
     try {
       const { id, title } = await this.getMovieByTmdbId(movieId);
+      if (!id) {
+        // Movie is not in the Radarr library (e.g. already removed). Treat the
+        // desired end-state as reached so retries remain idempotent.
+        logger.info(
+          '[Radarr] Movie not present in library; nothing to remove',
+          {
+            tmdbId: movieId,
+          }
+        );
+        return;
+      }
       await this.axios.delete(`/movie/${id}`, {
         params: {
           deleteFiles: true,
