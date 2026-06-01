@@ -2,6 +2,7 @@ import { IssueStatus, IssueType } from '@server/constants/issue';
 import { getRepository } from '@server/datasource';
 import Issue from '@server/entity/Issue';
 import IssueComment from '@server/entity/IssueComment';
+import { User } from '@server/entity/User';
 import Media from '@server/entity/Media';
 import type { IssueResultsResponse } from '@server/interfaces/api/issueInterfaces';
 import { Permission } from '@server/lib/permissions';
@@ -104,6 +105,7 @@ issueRoutes.post<
     issueType: number;
     problemSeason: number;
     problemEpisode: number;
+    userId?: number;
   }
 >(
   '/',
@@ -118,6 +120,7 @@ issueRoutes.post<
 
     const issueRepository = getRepository(Issue);
     const mediaRepository = getRepository(Media);
+    const userRepository = getRepository(User);
 
     const media = await mediaRepository.findOne({
       where: { id: req.body.mediaId },
@@ -127,15 +130,31 @@ issueRoutes.post<
       return next({ status: 404, message: 'Media does not exist.' });
     }
 
+    let createdByUser = req.user;
+    if (req.body.userId) {
+      if (!req.user.hasPermission(Permission.MANAGE_ISSUES)) {
+        return next({
+          status: 403,
+          message: 'You do not have permission to create an issue on behalf of another user.',
+        });
+      }
+
+      const targetUser = await userRepository.findOne({ where: { id: req.body.userId } });
+      if (!targetUser) {
+        return next({ status: 404, message: 'Target user not found.' });
+      }
+      createdByUser = targetUser;
+    }
+
     const issue = new Issue({
-      createdBy: req.user,
+      createdBy: createdByUser,
       issueType: req.body.issueType,
       problemSeason: req.body.problemSeason,
       problemEpisode: req.body.problemEpisode,
       media,
       comments: [
         new IssueComment({
-          user: req.user,
+          user: createdByUser,
           message: req.body.message,
         }),
       ],
