@@ -7576,7 +7576,11 @@ paths:
     post:
       summary: Create new issue
       description: |
-        Creates a new issue
+        Creates a new issue.
+        **Note:**:
+        - To create an issue **for yourself**, you need `CREATE_ISSUES` or `MANAGE_ISSUES`.
+        - To create an issue **on behalf of another user** (using `userId`), you need `MANAGE_ISSUES`.
+        If `userId` is omitted, the issue is attributed to the authenticated user.
       tags:
         - issue
       requestBody:
@@ -7585,6 +7589,10 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - mediaId
+                - issueType
+                - message
               properties:
                 issueType:
                   type: number
@@ -7592,6 +7600,10 @@ paths:
                   type: string
                 mediaId:
                   type: number
+                userId:
+                  type: number
+                  description:
+                  nullable: true
       responses:
         '201':
           description: Succesfully created the issue
