@@ -1487,5 +1487,6 @@
   "components.Settings.SettingsNetwork.apiRequestTimeout": "Tempo limite da solicitação da API",
   "components.Settings.SettingsNetwork.apiRequestTimeoutTip": "Tempo máximo (em segundos) para aguardar respostas de serviços externos como Radarr/Sonarr. Defina como 0 para nenhum tempo limite.",
   "components.Settings.SettingsNetwork.proxyEnabledTip": "Envia TODAS as solicitações HTTP/HTTPS de saída por meio de um servidor proxy (host/porta). NÃO habilita HTTPS, SSL ou configuração de certificado.",
-  "components.Settings.SettingsNetwork.validationApiRequestTimeout": "Você deve fornecer um valor de tempo limite válido"
+  "components.Settings.SettingsNetwork.validationApiRequestTimeout": "Você deve fornecer um valor de tempo limite válido",
+  "components.CollectionDetails.removefromblocklistpartialcount": "{removeLabel} {count, plural, one {# filme} other {# filmes}}"
 }

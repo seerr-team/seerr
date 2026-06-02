@@ -1,6 +1,6 @@
 # seerr-chart
 
-![Version: 3.5.1](https://img.shields.io/badge/Version-3.5.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v3.2.0](https://img.shields.io/badge/AppVersion-v3.2.0-informational?style=flat-square)
+![Version: 3.6.0](https://img.shields.io/badge/Version-3.6.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v3.2.0](https://img.shields.io/badge/AppVersion-v3.2.0-informational?style=flat-square)
 
 Seerr helm chart for Kubernetes
 
@@ -101,6 +101,7 @@ If `replicaCount` value was used - remove it. Helm update should work fine after
 | securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | service.port | int | `80` |  |
 | service.type | string | `"ClusterIP"` |  |
+| service.annotations | object | {} |  |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the service account |
 | serviceAccount.automount | bool | `true` | Automatically mount a ServiceAccount's API credentials? |
 | serviceAccount.create | bool | `true` | Specifies whether a service account should be created |

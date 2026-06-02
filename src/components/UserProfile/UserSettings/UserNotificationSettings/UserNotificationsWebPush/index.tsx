@@ -6,6 +6,7 @@ import NotificationTypeSelector, {
 } from '@app/components/NotificationTypeSelector';
 import DeviceItem from '@app/components/UserProfile/UserSettings/UserNotificationSettings/UserNotificationsWebPush/DeviceItem';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -26,7 +27,6 @@ import { Form, Formik } from 'formik';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
 
 const messages = defineMessages(
@@ -256,7 +256,7 @@ const UserWebPushSettings = () => {
               `/api/v1/user/${user?.id}/settings/notifications`,
               {
                 pgpKey: data?.pgpKey,
-                discordId: data?.discordId,
+                discordIds: data?.discordIds,
                 pushbulletAccessToken: data?.pushbulletAccessToken,
                 pushoverApplicationToken: data?.pushoverApplicationToken,
                 pushoverUserKey: data?.pushoverUserKey,

@@ -3,10 +3,11 @@ import SlideCheckbox from '@app/components/Common/SlideCheckbox';
 import Tag from '@app/components/Common/Tag';
 import Tooltip from '@app/components/Common/Tooltip';
 import CompanyTag from '@app/components/CompanyTag';
-import { sliderTitles } from '@app/components/Discover/constants';
 import CreateSlider from '@app/components/Discover/CreateSlider';
+import { sliderTitles } from '@app/components/Discover/constants';
 import GenreTag from '@app/components/GenreTag';
 import KeywordTag from '@app/components/KeywordTag';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
@@ -24,7 +25,6 @@ import axios from 'axios';
 import { useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-aria';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 
 const messages = defineMessages('components.Discover.DiscoverSliderEdit', {
   deletesuccess: 'Sucessfully deleted slider.',

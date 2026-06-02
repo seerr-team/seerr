@@ -3,8 +3,6 @@ import LoadingBar from '@app/components/LoadingBar';
 import PWAHeader from '@app/components/PWAHeader';
 import ServiceWorkerSetup from '@app/components/ServiceWorkerSetup';
 import StatusChecker from '@app/components/StatusChecker';
-import Toast from '@app/components/Toast';
-import ToastContainer from '@app/components/ToastContainer';
 import { InteractionProvider } from '@app/context/InteractionContext';
 import { LanguageContext } from '@app/context/LanguageContext';
 import { SettingsProvider } from '@app/context/SettingsContext';
@@ -22,8 +20,8 @@ import type { AppInitialProps, AppProps } from 'next/app';
 import App from 'next/app';
 import Head from 'next/head';
 import { useEffect, useState } from 'react';
+import { Toaster } from 'react-hot-toast';
 import { IntlProvider } from 'react-intl';
-import { ToastProvider } from 'react-toast-notifications';
 import { SWRConfig } from 'swr';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -207,21 +205,27 @@ const CoreApp: Omit<NextAppComponentType, 'origGetInitialProps'> = ({
           <LoadingBar />
           <SettingsProvider currentSettings={currentSettings}>
             <InteractionProvider>
-              <ToastProvider components={{ Toast, ToastContainer }}>
-                <Head>
-                  <title>{currentSettings.applicationTitle}</title>
-                  <meta
-                    name="viewport"
-                    content="initial-scale=1, viewport-fit=cover, width=device-width"
-                  />
-                  <PWAHeader
-                    applicationTitle={currentSettings.applicationTitle}
-                  />
-                </Head>
-                <StatusChecker />
-                <ServiceWorkerSetup />
-                <UserContext initialUser={user}>{component}</UserContext>
-              </ToastProvider>
+              <Head>
+                <title>{currentSettings.applicationTitle}</title>
+                <meta
+                  name="viewport"
+                  content="initial-scale=1, viewport-fit=cover, width=device-width"
+                />
+                <PWAHeader
+                  applicationTitle={currentSettings.applicationTitle}
+                />
+              </Head>
+              <StatusChecker />
+              <ServiceWorkerSetup />
+              <UserContext initialUser={user}>{component}</UserContext>
+              <Toaster
+                position="top-right"
+                toastOptions={{ duration: 4000 }}
+                containerStyle={{
+                  zIndex: 10000,
+                  paddingTop: 'env(safe-area-inset-top)',
+                }}
+              />
             </InteractionProvider>
           </SettingsProvider>
         </IntlProvider>
@@ -323,7 +327,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     : currentSettings.locale;
 
   const messages = await loadLocaleData(locale as AvailableLocale);
-  await polyfillIntl(locale);
+  await polyfillIntl();
 
   return { ...appInitialProps, user, messages, locale, currentSettings };
 };

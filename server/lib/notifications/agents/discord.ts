@@ -1,3 +1,7 @@
+import {
+  DISCORD_SNOWFLAKE_REGEX,
+  EmbedColors,
+} from '@server/constants/discord';
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
@@ -16,31 +20,8 @@ import {
 import type { NotificationAgent, NotificationPayload } from './agent';
 import { BaseAgent } from './agent';
 
-enum EmbedColors {
-  DEFAULT = 0,
-  AQUA = 1752220,
-  GREEN = 3066993,
-  BLUE = 3447003,
-  PURPLE = 10181046,
-  GOLD = 15844367,
-  ORANGE = 15105570,
-  RED = 15158332,
-  GREY = 9807270,
-  DARKER_GREY = 8359053,
-  NAVY = 3426654,
-  DARK_AQUA = 1146986,
-  DARK_GREEN = 2067276,
-  DARK_BLUE = 2123412,
-  DARK_PURPLE = 7419530,
-  DARK_GOLD = 12745742,
-  DARK_ORANGE = 11027200,
-  DARK_RED = 10038562,
-  DARK_GREY = 9936031,
-  LIGHT_GREY = 12370112,
-  DARK_NAVY = 2899536,
-  LUMINOUS_VIVID_PINK = 16580705,
-  DARK_VIVID_PINK = 12320855,
-}
+const isValidSnowflake = (id: string): boolean =>
+  DISCORD_SNOWFLAKE_REGEX.test(id);
 
 interface DiscordImageEmbed {
   url?: string;
@@ -278,9 +259,12 @@ class DiscordAgent
               NotificationAgentKey.DISCORD,
               type
             ) &&
-            payload.notifyUser.settings.discordId
+            payload.notifyUser.settings.discordIds?.length
           ) {
-            userMentions.push(`<@${payload.notifyUser.settings.discordId}>`);
+            const validIds = payload.notifyUser.settings.discordIds.filter(
+              (id) => isValidSnowflake(id)
+            );
+            userMentions.push(...validIds.map((id) => `<@${id}>`));
           }
         }
 
@@ -296,16 +280,30 @@ class DiscordAgent
                     NotificationAgentKey.DISCORD,
                     type
                   ) &&
-                  user.settings.discordId &&
+                  user.settings.discordIds?.length &&
                   shouldSendAdminNotification(type, user, payload)
               )
-              .map((user) => `<@${user.settings?.discordId}>`)
+              .flatMap((user) =>
+                user
+                  .settings!.discordIds.filter((id) => isValidSnowflake(id))
+                  .map((id) => `<@${id}>`)
+              )
           );
         }
       }
 
-      if (settings.options.webhookRoleId) {
+      const allowedUserIds = userMentions.map((mention) =>
+        mention.replace(/[<@>]/g, '')
+      );
+
+      const allowedRoleIds: string[] = [];
+
+      if (
+        settings.options.webhookRoleId &&
+        isValidSnowflake(settings.options.webhookRoleId)
+      ) {
         userMentions.push(`<@&${settings.options.webhookRoleId}>`);
+        allowedRoleIds.push(settings.options.webhookRoleId);
       }
 
       // Discord webhooks go to a channel, not per-user,
@@ -322,6 +320,10 @@ class DiscordAgent
         avatar_url: settings.options.botAvatarUrl,
         embeds: [this.buildEmbed(type, payload, locale)],
         content: userMentions.join(' '),
+        allowed_mentions: {
+          users: allowedUserIds,
+          roles: allowedRoleIds,
+        },
       } as DiscordWebhookPayload);
 
       return true;
