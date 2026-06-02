@@ -5,7 +5,12 @@ import useToasts from '@app/hooks/useToasts';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowDownOnSquareIcon,
+  PlusIcon,
+  TrashIcon,
+} from '@heroicons/react/24/outline';
+import { DISCORD_SNOWFLAKE_REGEX } from '@server/constants/discord';
 import type { UserSettingsNotificationsResponse } from '@server/interfaces/api/userSettingsInterfaces';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
@@ -19,10 +24,13 @@ const messages = defineMessages(
   {
     discordsettingssaved: 'Discord notification settings saved successfully!',
     discordsettingsfailed: 'Discord notification settings failed to save.',
-    discordId: 'User ID',
+    discordId: 'User IDs',
     discordIdTip:
-      'The <FindDiscordIdLink>multi-digit ID number</FindDiscordIdLink> associated with your user account',
-    validationDiscordId: 'You must provide a valid user ID',
+      'The <FindDiscordIdLink>multi-digit ID number</FindDiscordIdLink> associated with your user account. For multiple household accounts you can add more than one Discord user ID.',
+    discordIdPlaceholder: 'Discord User ID',
+    discordIdAdd: 'Add User ID',
+    discordIdRemove: 'Remove',
+    validationDiscordId: 'Each ID must be a valid Discord user ID',
   }
 );
 
@@ -41,16 +49,20 @@ const UserNotificationsDiscord = () => {
   );
 
   const UserNotificationsDiscordSchema = Yup.object().shape({
-    discordId: Yup.string()
+    discordIds: Yup.array()
+      .of(
+        Yup.string().matches(DISCORD_SNOWFLAKE_REGEX, {
+          message: intl.formatMessage(messages.validationDiscordId),
+          excludeEmptyString: true,
+        })
+      )
       .when('types', {
         is: (types: number) => !!types,
         then: (schema) =>
           schema
-            .nullable()
-            .required(intl.formatMessage(messages.validationDiscordId)),
-        otherwise: (schema) => schema.nullable(),
-      })
-      .matches(/^\d{17,19}$/, intl.formatMessage(messages.validationDiscordId)),
+            .compact((value) => value === '')
+            .min(1, intl.formatMessage(messages.validationDiscordId)),
+      }),
   });
 
   if (!data && !error) {
@@ -60,7 +72,7 @@ const UserNotificationsDiscord = () => {
   return (
     <Formik
       initialValues={{
-        discordId: data?.discordId,
+        discordIds: data?.discordIds ?? [''],
         types:
           (data?.discordEnabledTypes ?? 0) &
           (data?.notificationTypes.discord ?? 0),
@@ -71,7 +83,7 @@ const UserNotificationsDiscord = () => {
         try {
           await axios.post(`/api/v1/user/${user?.id}/settings/notifications`, {
             pgpKey: data?.pgpKey,
-            discordId: values.discordId,
+            discordIds: values.discordIds,
             pushbulletAccessToken: data?.pushbulletAccessToken,
             pushoverApplicationToken: data?.pushoverApplicationToken,
             pushoverUserKey: data?.pushoverUserKey,
@@ -107,7 +119,7 @@ const UserNotificationsDiscord = () => {
         return (
           <Form className="section">
             <div className="form-row">
-              <label htmlFor="discordId" className="text-label">
+              <label className="text-label">
                 {intl.formatMessage(messages.discordId)}
                 {!!data?.discordEnabledTypes && (
                   <span className="label-required">*</span>
@@ -129,13 +141,64 @@ const UserNotificationsDiscord = () => {
                 )}
               </label>
               <div className="form-input-area">
-                <div className="form-input-field">
-                  <Field id="discordId" name="discordId" type="text" />
+                <div className="space-y-2">
+                  {values.discordIds.map((_id: string, index: number) => (
+                    <div key={index} className="flex gap-2">
+                      <div className="flex-1">
+                        <div className="form-input-field">
+                          <Field
+                            name={`discordIds.${index}`}
+                            type="text"
+                            placeholder={intl.formatMessage(
+                              messages.discordIdPlaceholder
+                            )}
+                          />
+                        </div>
+                        {Array.isArray(errors.discordIds) &&
+                          errors.discordIds[index] &&
+                          Array.isArray(touched.discordIds) &&
+                          touched.discordIds[index] && (
+                            <div className="error">
+                              {errors.discordIds[index]}
+                            </div>
+                          )}
+                      </div>
+                      {values.discordIds.length > 1 && (
+                        <div className="flex items-center">
+                          <Button
+                            buttonType="danger"
+                            buttonSize="sm"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              const newIds = values.discordIds.filter(
+                                (_: string, idx: number) => idx !== index
+                              );
+                              setFieldValue('discordIds', newIds);
+                            }}
+                            title={intl.formatMessage(messages.discordIdRemove)}
+                          >
+                            <TrashIcon />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    buttonType="default"
+                    buttonSize="sm"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      setFieldValue('discordIds', [...values.discordIds, '']);
+                    }}
+                  >
+                    <PlusIcon />
+                    <span>{intl.formatMessage(messages.discordIdAdd)}</span>
+                  </Button>
                 </div>
-                {errors.discordId &&
-                  touched.discordId &&
-                  typeof errors.discordId === 'string' && (
-                    <div className="error">{errors.discordId}</div>
+                {errors.discordIds &&
+                  touched.discordIds &&
+                  typeof errors.discordIds === 'string' && (
+                    <div className="error">{errors.discordIds}</div>
                   )}
               </div>
             </div>
