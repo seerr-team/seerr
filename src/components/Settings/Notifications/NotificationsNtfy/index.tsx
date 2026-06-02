@@ -123,7 +123,7 @@ const NotificationsNtfy = () => {
               password: values.password,
               authMethodToken: values.authMethodToken,
               token: values.token,
-              priority: values.priority,
+              priority: Number(values.priority),
               locale: values.locale,
             },
           });
@@ -176,7 +176,7 @@ const NotificationsNtfy = () => {
                 password: values.password,
                 authMethodToken: values.authMethodToken,
                 token: values.token,
-                priority: values.priority,
+                priority: Number(values.priority),
                 locale: values.locale,
               },
             });

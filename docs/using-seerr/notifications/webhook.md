@@ -53,13 +53,13 @@ Customize the JSON payload to suit your needs. Seerr provides several [template 
 
 These variables are for the target recipient of the notification.
 
-| Variable                                 | Value                                                         |
-| ---------------------------------------- | ------------------------------------------------------------- |
-| `{{notifyuser_username}}`                | The target notification recipient's username                  |
-| `{{notifyuser_email}}`                   | The target notification recipient's email address             |
-| `{{notifyuser_avatar}}`                  | The target notification recipient's avatar URL                |
-| `{{notifyuser_settings_discordId}}`      | The target notification recipient's Discord ID (if set)       |
-| `{{notifyuser_settings_telegramChatId}}` | The target notification recipient's Telegram Chat ID (if set) |
+| Variable                                 | Value                                                                                        |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `{{notifyuser_username}}`                | The target notification recipient's username                                                 |
+| `{{notifyuser_email}}`                   | The target notification recipient's email address                                            |
+| `{{notifyuser_avatar}}`                  | The target notification recipient's avatar URL                                               |
+| `{{notifyuser_settings_discordIds}}`     | The target notification recipient's Discord ID(s) as a JSON array (if set)                   |
+| `{{notifyuser_settings_telegramChatId}}` | The target notification recipient's Telegram Chat ID (if set)                                |
 
 :::info
 The `notifyuser` variables are not defined for the following request notification types, as they are intended for application administrators rather than end users:
@@ -113,15 +113,15 @@ The `{{request}}` will be `null` if there is no relevant media object for the no
 
 The following special variables are only included in request-related notifications.
 
-| Variable                                  | Value                                           |
-| ----------------------------------------- | ----------------------------------------------- |
-| `{{request_id}}`                          | The request ID                                  |
-| `{{requestedBy_username}}`                | The requesting user's username                  |
-| `{{requestedBy_email}}`                   | The requesting user's email address             |
-| `{{requestedBy_avatar}}`                  | The requesting user's avatar URL                |
-| `{{requestedBy_jellyfinUserId}}`          | The requesting user's Jellyfin User ID          |
-| `{{requestedBy_settings_discordId}}`      | The requesting user's Discord ID (if set)       |
-| `{{requestedBy_settings_telegramChatId}}` | The requesting user's Telegram Chat ID (if set) |
+| Variable                                  | Value                                                                          |
+| ----------------------------------------- | ------------------------------------------------------------------------------ |
+| `{{request_id}}`                          | The request ID                                                                 |
+| `{{requestedBy_username}}`                | The requesting user's username                                                 |
+| `{{requestedBy_email}}`                   | The requesting user's email address                                            |
+| `{{requestedBy_avatar}}`                  | The requesting user's avatar URL                                               |
+| `{{requestedBy_jellyfinUserId}}`          | The requesting user's Jellyfin User ID                                         |
+| `{{requestedBy_settings_discordIds}}`     | The requesting user's Discord ID(s) as a JSON array (if set)                   |
+| `{{requestedBy_settings_telegramChatId}}` | The requesting user's Telegram Chat ID (if set)                                |
 
 #### Issue
 
@@ -129,14 +129,14 @@ The `{{issue}}` will be `null` if there is no relevant media object for the noti
 
 The following special variables are only included in issue-related notifications.
 
-| Variable                                 | Value                                           |
-| ---------------------------------------- | ----------------------------------------------- |
-| `{{issue_id}}`                           | The issue ID                                    |
-| `{{reportedBy_username}}`                | The requesting user's username                  |
-| `{{reportedBy_email}}`                   | The requesting user's email address             |
-| `{{reportedBy_avatar}}`                  | The requesting user's avatar URL                |
-| `{{reportedBy_settings_discordId}}`      | The requesting user's Discord ID (if set)       |
-| `{{reportedBy_settings_telegramChatId}}` | The requesting user's Telegram Chat ID (if set) |
+| Variable                                 | Value                                                                          |
+| ---------------------------------------- | ------------------------------------------------------------------------------ |
+| `{{issue_id}}`                           | The issue ID                                                                   |
+| `{{reportedBy_username}}`                | The requesting user's username                                                 |
+| `{{reportedBy_email}}`                   | The requesting user's email address                                            |
+| `{{reportedBy_avatar}}`                  | The requesting user's avatar URL                                               |
+| `{{reportedBy_settings_discordIds}}`     | The reporting user's Discord ID(s) as a JSON array (if set)                    |
+| `{{reportedBy_settings_telegramChatId}}` | The requesting user's Telegram Chat ID (if set)                                |
 
 #### Comment
 
@@ -144,11 +144,11 @@ The `{{comment}}` will be `null` if there is no relevant media object for the no
 
 The following special variables are only included in issue comment-related notifications.
 
-| Variable                                  | Value                                           |
-| ----------------------------------------- | ----------------------------------------------- |
-| `{{comment_message}}`                     | The comment message                             |
-| `{{commentedBy_username}}`                | The commenting user's username                  |
-| `{{commentedBy_email}}`                   | The commenting user's email address             |
-| `{{commentedBy_avatar}}`                  | The commenting user's avatar URL                |
-| `{{commentedBy_settings_discordId}}`      | The commenting user's Discord ID (if set)       |
-| `{{commentedBy_settings_telegramChatId}}` | The commenting user's Telegram Chat ID (if set) |
+| Variable                                  | Value                                                                          |
+| ----------------------------------------- | ------------------------------------------------------------------------------ |
+| `{{comment_message}}`                     | The comment message                                                            |
+| `{{commentedBy_username}}`                | The commenting user's username                                                 |
+| `{{commentedBy_email}}`                   | The commenting user's email address                                            |
+| `{{commentedBy_avatar}}`                  | The commenting user's avatar URL                                               |
+| `{{commentedBy_settings_discordIds}}`     | The commenting user's Discord ID(s) as a JSON array (if set)                   |
+| `{{commentedBy_settings_telegramChatId}}` | The commenting user's Telegram Chat ID (if set)                                |
