@@ -15,3 +15,12 @@ This method is not recommended for most users. It is intended for advanced users
 ## Installation
 
 Go to the 'Apps' menu, click the 'Discover Apps' button in the top right, search for 'Seerr' in the search bar, and install the app.
+
+## Migrating from Jellyseerr or Overseerr
+
+Seerr automatically migrates existing Jellyseerr or Overseerr data on first startup. Stop the existing app before installing Seerr, then choose the migration path that matches how your existing app stores data:
+
+- **Host Path:** install Seerr using the same Host Path storage that was used by Jellyseerr or Overseerr, then start Seerr and confirm the migration completed before deleting the old app.
+- **ixVolume:** create a dataset for Seerr, copy the existing ixVolume app data into that dataset, then install Seerr using the new Host Path storage and confirm the migration completed before deleting the old app.
+
+For detailed community-maintained walkthroughs, see the TrueNAS SCALE guides for [Host Path setup](https://github.com/truenas/apps/issues/3374#issuecomment-3916418872) and [ixVolume setup](https://github.com/truenas/apps/issues/3374#issuecomment-3916700870).
