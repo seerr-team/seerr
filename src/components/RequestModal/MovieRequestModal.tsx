@@ -40,6 +40,7 @@ const messages = defineMessages('components.RequestModal', {
 interface RequestModalProps extends React.HTMLAttributes<HTMLDivElement> {
   tmdbId: number;
   is4k?: boolean;
+  requestProfileId?: number | null;
   editRequest?: NonFunctionProperties<MediaRequest>;
   onCancel?: () => void;
   onComplete?: (newStatus: MediaStatus) => void;
@@ -53,6 +54,7 @@ const MovieRequestModal = ({
   onUpdating,
   editRequest,
   is4k = false,
+  requestProfileId,
 }: RequestModalProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [requestOverrides, setRequestOverrides] =
@@ -94,6 +96,7 @@ const MovieRequestModal = ({
         mediaId: data?.id,
         mediaType: 'movie',
         is4k,
+        ...(requestProfileId != null ? { requestProfileId } : {}),
         ...overrideParams,
       });
       mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
@@ -137,6 +140,7 @@ const MovieRequestModal = ({
     data?.id,
     data?.title,
     is4k,
+    requestProfileId,
     onComplete,
     addToast,
     intl,

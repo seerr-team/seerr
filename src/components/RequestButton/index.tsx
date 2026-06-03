@@ -13,10 +13,12 @@ import {
 import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type Media from '@server/entity/Media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
+import type { RequestProfile } from '@server/lib/settings';
 import axios from 'axios';
 import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { mutate } from 'swr';
+import useSWR from 'swr';
 
 const messages = defineMessages('components.RequestButton', {
   viewrequest: 'View Request',
@@ -67,6 +69,14 @@ const RequestButton = ({
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showRequest4kModal, setShowRequest4kModal] = useState(false);
   const [editRequest, setEditRequest] = useState(false);
+  const [activeProfileModal, setActiveProfileModal] = useState<{
+    profileId: number | null;
+    show: boolean;
+  }>({ profileId: null, show: false });
+
+  const { data: requestProfiles } = useSWR<RequestProfile[]>(
+    '/api/v1/settings/request-profiles'
+  );
 
   // All pending requests
   const activeRequests = media?.requests.filter(
@@ -360,6 +370,47 @@ const RequestButton = ({
     });
   }
 
+  // Custom profile request buttons
+  const profilesForMediaType = (requestProfiles ?? []).filter(
+    (p) => p.mediaType === mediaType || p.mediaType === 'both'
+  );
+
+  for (const profile of profilesForMediaType) {
+    const activeProfileRequests = media?.requests.filter(
+      (r) =>
+        (r as MediaRequest & { requestProfileId: number | null })
+          .requestProfileId === profile.id &&
+        r.status === MediaRequestStatus.PENDING
+    );
+    const userProfileRequest = activeProfileRequests?.find(
+      (r) => r.requestedBy.id === user?.id
+    );
+
+    if (userProfileRequest || (activeProfileRequests && activeProfileRequests.length > 0 && hasPermission(Permission.MANAGE_REQUESTS))) {
+      buttons.push({
+        id: `view-profile-${profile.id}`,
+        text: `${profile.icon ? profile.icon + ' ' : ''}${profile.name}`,
+        action: () => {
+          setEditRequest(true);
+          setActiveProfileModal({ profileId: profile.id, show: true });
+        },
+        svg: <InformationCircleIcon />,
+      });
+    } else if (
+      hasPermission([Permission.REQUEST, mediaType === 'movie' ? Permission.REQUEST_MOVIE : Permission.REQUEST_TV], { type: 'or' })
+    ) {
+      buttons.push({
+        id: `request-profile-${profile.id}`,
+        text: `${profile.icon ? profile.icon + ' ' : ''}${profile.name}`,
+        action: () => {
+          setEditRequest(false);
+          setActiveProfileModal({ profileId: profile.id, show: true });
+        },
+        svg: <ArrowDownTrayIcon />,
+      });
+    }
+  }
+
   const [buttonOne, ...others] = buttons;
 
   if (!buttonOne) {
@@ -391,6 +442,21 @@ const RequestButton = ({
         }}
         onCancel={() => setShowRequest4kModal(false)}
       />
+      {activeProfileModal.show && activeProfileModal.profileId !== null && (
+        <RequestModal
+          tmdbId={tmdbId}
+          show={activeProfileModal.show}
+          type={mediaType}
+          requestProfileId={activeProfileModal.profileId}
+          onComplete={() => {
+            onUpdate();
+            setActiveProfileModal({ profileId: null, show: false });
+          }}
+          onCancel={() =>
+            setActiveProfileModal({ profileId: null, show: false })
+          }
+        />
+      )}
       <ButtonWithDropdown
         text={
           <>

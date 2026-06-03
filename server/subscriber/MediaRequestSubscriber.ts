@@ -386,14 +386,17 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
               throw new Error('Media data not found');
             }
 
-            media[entity.is4k ? 'externalServiceId4k' : 'externalServiceId'] =
-              radarrMovie.id;
-            media[
-              entity.is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'
-            ] = radarrMovie.titleSlug;
-            media[entity.is4k ? 'serviceId4k' : 'serviceId'] =
-              radarrSettings?.id;
-            await mediaRepository.save(media);
+            // Profile-based requests don't overwrite the Standard/4K media tracking fields
+            if (!entity.requestProfileId) {
+              media[entity.is4k ? 'externalServiceId4k' : 'externalServiceId'] =
+                radarrMovie.id;
+              media[
+                entity.is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'
+              ] = radarrMovie.titleSlug;
+              media[entity.is4k ? 'serviceId4k' : 'serviceId'] =
+                radarrSettings?.id;
+              await mediaRepository.save(media);
+            }
           })
           .catch(async () => {
             try {
@@ -728,14 +731,17 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
               throw new Error('Media data not found');
             }
 
-            media[entity.is4k ? 'externalServiceId4k' : 'externalServiceId'] =
-              sonarrSeries.id;
-            media[
-              entity.is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'
-            ] = sonarrSeries.titleSlug;
-            media[entity.is4k ? 'serviceId4k' : 'serviceId'] =
-              sonarrSettings?.id;
-            await mediaRepository.save(media);
+            // Profile-based requests don't overwrite the Standard/4K media tracking fields
+            if (!entity.requestProfileId) {
+              media[entity.is4k ? 'externalServiceId4k' : 'externalServiceId'] =
+                sonarrSeries.id;
+              media[
+                entity.is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'
+              ] = sonarrSeries.titleSlug;
+              media[entity.is4k ? 'serviceId4k' : 'serviceId'] =
+                sonarrSettings?.id;
+              await mediaRepository.save(media);
+            }
           })
           .catch(async () => {
             try {
@@ -818,6 +824,11 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
   }
 
   public async updateParentStatus(entity: MediaRequest): Promise<void> {
+    // Profile-based requests don't update the Standard/4K media status fields
+    if (entity.requestProfileId) {
+      return;
+    }
+
     const mediaRepository = getRepository(Media);
     const media = await mediaRepository.findOne({
       where: { id: entity.media.id },
@@ -947,6 +958,11 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     manager: EntityManager,
     entity: MediaRequest
   ): Promise<void> {
+    // Profile requests don't affect the Standard/4K media status
+    if (entity.requestProfileId) {
+      return;
+    }
+
     const fullMedia = await manager.findOneOrFail(Media, {
       where: { id: entity.media.id },
       relations: { requests: true },
@@ -954,13 +970,13 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
     const hasActive = fullMedia.requests.some(
       (request) =>
-        !request.is4k &&
+        !request.is4k && !request.requestProfileId &&
         request.status !== MediaRequestStatus.COMPLETED &&
         request.status !== MediaRequestStatus.DECLINED
     );
     const hasActive4k = fullMedia.requests.some(
       (request) =>
-        request.is4k &&
+        request.is4k && !request.requestProfileId &&
         request.status !== MediaRequestStatus.COMPLETED &&
         request.status !== MediaRequestStatus.DECLINED
     );

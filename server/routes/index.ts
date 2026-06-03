@@ -115,6 +115,10 @@ router.get('/settings/public', async (req, res) => {
     return res.status(200).json(settings.fullPublicSettings);
   }
 });
+router.get('/settings/request-profiles', isAuthenticated(), (_req, res) => {
+  const settings = getSettings();
+  return res.json(settings.requestProfiles);
+});
 router.get('/settings/discover', isAuthenticated(), async (_req, res) => {
   const sliderRepository = getRepository(DiscoverSlider);
 

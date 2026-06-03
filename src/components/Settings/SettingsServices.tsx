@@ -9,6 +9,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import OverrideRuleModal from '@app/components/Settings/OverrideRule/OverrideRuleModal';
 import OverrideRuleTiles from '@app/components/Settings/OverrideRule/OverrideRuleTiles';
 import RadarrModal from '@app/components/Settings/RadarrModal';
+import RequestProfileModal from '@app/components/Settings/RequestProfileModal';
 import SonarrModal from '@app/components/Settings/SonarrModal';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -16,7 +17,7 @@ import { Transition } from '@headlessui/react';
 import { PencilIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/solid';
 import type OverrideRule from '@server/entity/OverrideRule';
 import type { OverrideRuleResultsResponse } from '@server/interfaces/api/overrideRuleInterfaces';
-import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
+import type { RadarrSettings, RequestProfile, SonarrSettings } from '@server/lib/settings';
 import axios from 'axios';
 import { Fragment, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -46,6 +47,12 @@ const messages = defineMessages('components.Settings', {
   mediaTypeMovie: 'movie',
   mediaTypeSeries: 'series',
   deleteServer: 'Delete {serverType} Server',
+  requestProfiles: 'Request Profiles',
+  requestProfilesDescription:
+    'Define custom request profiles to route requests to specific {serverType} instances with preset quality profiles, root folders, and tags.',
+  addprofile: 'New Request Profile',
+  deleteprofileconfirm: 'Are you sure you want to delete this profile?',
+  deleteProfile: 'Delete Profile',
   overrideRules: 'Override Rules',
   overrideRulesDescription:
     'Override rules allow you to specify properties that will be replaced if a request matches the rule.',
@@ -217,6 +224,9 @@ const SettingsServices = () => {
   } = useSWR<SonarrSettings[]>('/api/v1/settings/sonarr');
   const { data: rules, mutate: revalidate } =
     useSWR<OverrideRuleResultsResponse>('/api/v1/overrideRule');
+  const { data: profilesData, mutate: revalidateProfiles } = useSWR<
+    RequestProfile[]
+  >('/api/v1/settings/request-profiles');
   const [editRadarrModal, setEditRadarrModal] = useState<{
     open: boolean;
     radarr: RadarrSettings | null;
@@ -247,6 +257,14 @@ const SettingsServices = () => {
     open: false,
     rule: null,
   });
+  const [profileModal, setProfileModal] = useState<{
+    open: boolean;
+    profile: RequestProfile | null;
+  }>({ open: false, profile: null });
+  const [deleteProfileModal, setDeleteProfileModal] = useState<{
+    open: boolean;
+    profileId: number | null;
+  }>({ open: false, profileId: null });
 
   const deleteServer = async () => {
     await axios.delete(
@@ -256,6 +274,15 @@ const SettingsServices = () => {
     revalidateRadarr();
     revalidateSonarr();
     mutate('/api/v1/settings/public');
+  };
+
+  const deleteProfile = async () => {
+    if (deleteProfileModal.profileId === null) return;
+    await axios.delete(
+      `/api/v1/settings/request-profiles/${deleteProfileModal.profileId}`
+    );
+    setDeleteProfileModal({ open: false, profileId: null });
+    revalidateProfiles();
   };
 
   return (
@@ -553,6 +580,122 @@ const SettingsServices = () => {
           sonarrServices={sonarrData}
         />
       )}
+
+      {/* Request Profiles */}
+      <div className="mb-6 mt-10">
+        <h3 className="heading">
+          {intl.formatMessage(messages.requestProfiles)}
+        </h3>
+        <p className="description">
+          {intl.formatMessage(messages.requestProfilesDescription, {
+            serverType: 'Radarr/Sonarr',
+          })}
+        </p>
+      </div>
+      <div className="section">
+        <ul className="grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+          {profilesData?.map((profile) => (
+            <li
+              key={profile.id}
+              className="col-span-1 rounded-lg bg-gray-800 shadow ring-1 ring-gray-500"
+            >
+              <div className="flex w-full items-center justify-between space-x-6 p-6">
+                <div className="flex-1 truncate">
+                  <div className="mb-2 flex items-center space-x-2">
+                    {profile.icon && (
+                      <span className="text-xl">{profile.icon}</span>
+                    )}
+                    <h3 className="truncate font-medium leading-5 text-white">
+                      {profile.name}
+                    </h3>
+                    <Badge badgeType="default">
+                      {profile.mediaType === 'tv' ? 'Series' : 'Movie'}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 truncate text-sm leading-5 text-gray-300">
+                    <span className="mr-2 font-bold">Root Folder</span>
+                    {profile.rootFolder}
+                  </p>
+                </div>
+              </div>
+              <div className="border-t border-gray-500">
+                <div className="-mt-px flex">
+                  <div className="flex w-0 flex-1 border-r border-gray-500">
+                    <button
+                      onClick={() =>
+                        setProfileModal({ open: true, profile })
+                      }
+                      className="focus:ring-blue relative -mr-px inline-flex w-0 flex-1 items-center justify-center rounded-bl-lg border border-transparent py-4 text-sm font-medium leading-5 text-gray-200 transition duration-150 ease-in-out hover:text-white focus:z-10 focus:border-gray-500 focus:outline-none"
+                    >
+                      <PencilIcon className="mr-2 h-5 w-5" />
+                      <span>{intl.formatMessage(globalMessages.edit)}</span>
+                    </button>
+                  </div>
+                  <div className="-ml-px flex w-0 flex-1">
+                    <button
+                      onClick={() =>
+                        setDeleteProfileModal({
+                          open: true,
+                          profileId: profile.id,
+                        })
+                      }
+                      className="focus:ring-blue relative inline-flex w-0 flex-1 items-center justify-center rounded-br-lg border border-transparent py-4 text-sm font-medium leading-5 text-gray-200 transition duration-150 ease-in-out hover:text-white focus:z-10 focus:border-gray-500 focus:outline-none"
+                    >
+                      <TrashIcon className="mr-2 h-5 w-5" />
+                      <span>{intl.formatMessage(globalMessages.delete)}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </li>
+          ))}
+          <li className="min-h-[8rem] rounded-lg border-2 border-dashed border-gray-400 shadow sm:min-h-[11rem]">
+            <div className="flex h-full w-full items-center justify-center">
+              <Button
+                buttonType="ghost"
+                onClick={() => setProfileModal({ open: true, profile: null })}
+              >
+                <PlusIcon />
+                <span>{intl.formatMessage(messages.addprofile)}</span>
+              </Button>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      {profileModal.open && (
+        <RequestProfileModal
+          profile={profileModal.profile ?? undefined}
+          onClose={() => setProfileModal({ open: false, profile: null })}
+          onSave={() => {
+            setProfileModal({ open: false, profile: null });
+            revalidateProfiles();
+          }}
+        />
+      )}
+
+      <Transition
+        as={Fragment}
+        show={deleteProfileModal.open}
+        enter="transition-opacity duration-300"
+        enterFrom="opacity-0"
+        enterTo="opacity-100"
+        leave="transition-opacity duration-300"
+        leaveFrom="opacity-100"
+        leaveTo="opacity-0"
+      >
+        <Modal
+          title={intl.formatMessage(messages.deleteProfile)}
+          onCancel={() =>
+            setDeleteProfileModal({ open: false, profileId: null })
+          }
+          onOk={() => deleteProfile()}
+          okText={intl.formatMessage(globalMessages.delete)}
+          okButtonType="danger"
+        >
+          {intl.formatMessage(messages.deleteprofileconfirm)}
+        </Modal>
+      </Transition>
     </>
   );
 };
