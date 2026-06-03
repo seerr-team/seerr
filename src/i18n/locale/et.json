@@ -1407,8 +1407,6 @@
   "components.UserProfile.UserSettings.UserGeneralSettings.accounttype": "Konto tüüp",
   "components.UserProfile.UserSettings.UserGeneralSettings.admin": "Administraator",
   "components.UserProfile.UserSettings.UserGeneralSettings.applanguage": "Kuvakeel",
-  "components.UserProfile.UserSettings.UserGeneralSettings.discordId": "Discordi kasutaja ID",
-  "components.UserProfile.UserSettings.UserGeneralSettings.discordIdTip": "Sinu Discordi kasutajakontoga seotud <FindDiscordIdLink>mitmekohaline ID-number</FindDiscordIdLink>",
   "components.UserProfile.UserSettings.UserGeneralSettings.discoverRegion": "Avastamise piirkond",
   "components.UserProfile.UserSettings.UserGeneralSettings.discoverRegionTip": "Filtreeri sisu piirkondliku kättesaadavuse järgi",
   "components.UserProfile.UserSettings.UserGeneralSettings.displayName": "Kuvatav nimi",
@@ -1441,7 +1439,6 @@
   "components.UserProfile.UserSettings.UserGeneralSettings.toastSettingsFailureEmailEmpty": "See kasutajanimi on juba teise kasutaja poolt võetud. Pead lisama e-posti aadressi",
   "components.UserProfile.UserSettings.UserGeneralSettings.toastSettingsSuccess": "Seaded on edukalt salvestatud!",
   "components.UserProfile.UserSettings.UserGeneralSettings.user": "Kasutaja",
-  "components.UserProfile.UserSettings.UserGeneralSettings.validationDiscordId": "Pead sisestama kehtiva Discordi kasutaja ID",
   "components.UserProfile.UserSettings.UserGeneralSettings.validationemailformat": "Vajalik on kehtiv e-posti aadress",
   "components.UserProfile.UserSettings.UserGeneralSettings.validationemailrequired": "E-posti aadress on nõutav",
   "components.UserProfile.UserSettings.UserLinkedAccountsSettings.deleteFailed": "Lingitud konto kustutamine ebaõnnestus.",
@@ -1666,5 +1663,7 @@
   "components.UserList.importedPlexUsersNoPassword": "Imporditud kasutajatel puudub {applicationTitle} parool. Kui Plexi sisselogimine keelata, peavad nad parooli määrama profiilis või kasutama parooli lähtestamise linki.",
   "components.UserList.importedUsersNoPassword": "Imporditud kasutajatel puudub {applicationTitle} parool. Kui {mediaServerName} sisselogimine keelata, peavad nad parooli määrama profiilis või kasutama parooli lähtestamise linki.",
   "components.UserProfile.UserSettings.UserPasswordChange.localPasswordDescription": "See parool on mõeldud sisselogimiseks {applicationTitle} lokaalse sisselogimise kaudu. See ei ole sama mis sinu meediaserveri parool.",
-  "i18n.notificationLocale": "Teavituste keel"
+  "i18n.notificationLocale": "Teavituste keel",
+  "components.Settings.Notifications.usePublicLogo": "Kasuta avalikku Seerri logo instantsi logo asemel",
+  "components.Settings.Notifications.usePublicLogoTip": "Kui sinu Seerri instants ei ole avalikult ligipääsetav, luba see valik, et sinu võrgust väljas olevad e-posti kliendid saaksid pilti kuvada. Pilt laaditakse avalikust GitHubi repositooriumist."
 }

@@ -1040,8 +1040,6 @@
   "components.Settings.SettingsJobsCache.editJobScheduleSelectorSeconds": "Каждую {jobScheduleSeconds, plural, one {секунду} few {секунды} other {{jobScheduleSeconds} секунд}}",
   "components.StatusChecker.restartRequiredDescription": "Пожалуйста, перезапустите сервер, чтобы применить обновленные настройки.",
   "components.TvDetails.episodeCount": "{episodeCount, plural, one {# эпизод} few {# эпизода} other {# эпизодов}}",
-  "components.UserProfile.UserSettings.UserGeneralSettings.discordId": "ID пользователя Discord",
-  "components.UserProfile.UserSettings.UserGeneralSettings.validationDiscordId": "Вы должны предоставить действительный идентификатор пользователя Discord",
   "components.PermissionEdit.viewwatchlistsDescription": "Предоставьте разрешение на просмотр списков просмотра Plex других пользователей.",
   "components.UserList.newplexsigninenabled": "Параметр <strong>Включить новый вход в Plex</strong> в настоящее время включен. Пользователей Plex с доступом к библиотеке не нужно импортировать для входа.",
   "components.UserProfile.UserSettings.UserGeneralSettings.plexwatchlistsyncmovies": "Автоматический запрос фильмов",
@@ -1152,7 +1150,6 @@
   "components.TvDetails.Season.somethingwentwrong": "Что-то пошло не так при получении данных о сериале.",
   "components.TvDetails.rtaudiencescore": "Рейтинг пользователей Rotten Tomatoes",
   "components.TvDetails.rtcriticsscore": "Rotten Tomatoes томатометр",
-  "components.UserProfile.UserSettings.UserGeneralSettings.discordIdTip": "<FindDiscordIdLink>Многозначный идентификационный номер</FindDiscordIdLink>, связанный с вашей учетной записью пользователя Discord",
   "components.UserProfile.UserSettings.UserGeneralSettings.plexwatchlistsyncmoviestip": "Автоматически запрашивать фильмы из вашего <PlexWatchlistSupportLink>списка просмотра Plex</PlexWatchlistSupportLink>",
   "components.UserProfile.UserSettings.UserGeneralSettings.plexwatchlistsyncseries": "Автоматический запрос сериалов",
   "components.UserProfile.plexwatchlist": "Список просмотра Plex",
@@ -1666,5 +1663,7 @@
   "components.UserList.importedPlexUsersNoPassword": "Импортированные пользователи не имеют пароля. Если вы выключите вход через Plex, им придётся установить пароль в профиле или через ссылку для сброса пароля.",
   "components.UserList.importedUsersNoPassword": "Импортированные пользователи не имеют пароля для {applicationTitle}. Если вы выключите вход через {mediaServerName}, им нужно будет установить пароль в профиле или через ссылку для сброса пароля.",
   "components.UserProfile.UserSettings.UserPasswordChange.localPasswordDescription": "Этот пароль будет использоваться для локального входа в {applicationTitle}. Он не связан с паролем от вашего медиа сервера.",
-  "i18n.notificationLocale": "Язык уведомлений"
+  "i18n.notificationLocale": "Язык уведомлений",
+  "components.Settings.Notifications.usePublicLogo": "Использовать логотип Seerr вместо пользовательского логотипа",
+  "components.Settings.Notifications.usePublicLogoTip": "Если ваш экземпляр Seerr не доступен публично, включите эту опцию, чтобы клиенты электронной почты вне домашней сети могли отобразить изображение. Изображение будет взято из публичного GitHub репозитория."
 }
