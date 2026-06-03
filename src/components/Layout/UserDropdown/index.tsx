@@ -11,7 +11,7 @@ import { CogIcon, UserIcon } from '@heroicons/react/24/solid';
 import axios from 'axios';
 import type { LinkProps } from 'next/link';
 import Link from 'next/link';
-import { forwardRef, Fragment } from 'react';
+import { Fragment, forwardRef } from 'react';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.Layout.UserDropdown', {
@@ -74,7 +74,7 @@ const UserDropdown = () => {
         appear
       >
         <Menu.Items className="absolute right-0 mt-2 w-72 origin-top-right rounded-md shadow-lg">
-          <div className="divide-y divide-gray-700 rounded-md bg-gray-800 bg-opacity-80 ring-1 ring-gray-700 backdrop-blur">
+          <div className="divide-y divide-gray-700 rounded-md bg-gray-800/80 ring-1 ring-gray-700 backdrop-blur">
             <div className="flex flex-col space-y-4 px-4 py-4">
               <div className="flex items-center space-x-2">
                 <CachedImage

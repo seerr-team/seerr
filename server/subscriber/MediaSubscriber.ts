@@ -9,7 +9,7 @@ import { MediaRequest } from '@server/entity/MediaRequest';
 import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import type { EntitySubscriberInterface, UpdateEvent } from 'typeorm';
-import { EventSubscriber } from 'typeorm';
+import { EventSubscriber, In } from 'typeorm';
 
 @EventSubscriber()
 export class MediaSubscriber implements EntitySubscriberInterface<Media> {
@@ -45,7 +45,7 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
       },
       where: {
         media: { id: event.id },
-        status: MediaRequestStatus.APPROVED,
+        status: In([MediaRequestStatus.APPROVED, MediaRequestStatus.FAILED]),
         is4k,
       },
     });

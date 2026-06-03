@@ -3,14 +3,14 @@ import SonarrAPI from '@server/api/servarr/sonarr';
 import { MediaStatus, MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
-import { Blacklist } from '@server/entity/Blacklist';
+import { Blocklist } from '@server/entity/Blocklist';
 import type { User } from '@server/entity/User';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { DownloadingItem } from '@server/lib/downloadtracker';
 import downloadTracker from '@server/lib/downloadtracker';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import { DbAwareColumn } from '@server/utils/DbColumnHelper';
+import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
 import { getHostname } from '@server/utils/getHostname';
 import {
   AfterLoad,
@@ -20,30 +20,27 @@ import {
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import Issue from './Issue';
 import { MediaRequest } from './MediaRequest';
 import Season from './Season';
 
 @Entity()
+@Index(['tmdbId', 'mediaType'])
 class Media {
   public static async getRelatedMedia(
     user: User | undefined,
-    tmdbIds: number | number[]
+    items: { tmdbId: number; mediaType: string }[]
   ): Promise<Media[]> {
     const mediaRepository = getRepository(Media);
 
     try {
-      let finalIds: number[];
-      if (!Array.isArray(tmdbIds)) {
-        finalIds = [tmdbIds];
-      } else {
-        finalIds = tmdbIds;
-      }
-
-      if (finalIds.length === 0) {
+      if (items.length === 0) {
         return [];
       }
+
+      const finalIds = [...new Set(items.map((i) => i.tmdbId))];
 
       const media = await mediaRepository
         .createQueryBuilder('media')
@@ -56,7 +53,9 @@ class Media {
         .where(' media.tmdbId in (:...finalIds)', { finalIds })
         .getMany();
 
-      return media;
+      return media.filter((m) =>
+        items.some((i) => i.tmdbId === m.tmdbId && i.mediaType === m.mediaType)
+      );
     } catch (e) {
       logger.error(e.message);
       return [];
@@ -101,9 +100,11 @@ class Media {
   public imdbId?: string;
 
   @Column({ type: 'int', default: MediaStatus.UNKNOWN })
+  @Index()
   public status: MediaStatus;
 
   @Column({ type: 'int', default: MediaStatus.UNKNOWN })
+  @Index()
   public status4k: MediaStatus;
 
   @OneToMany(() => MediaRequest, (request) => request.media, {
@@ -123,16 +124,15 @@ class Media {
   @OneToMany(() => Issue, (issue) => issue.media, { cascade: true })
   public issues: Issue[];
 
-  @OneToOne(() => Blacklist, (blacklist) => blacklist.media)
-  public blacklist: Promise<Blacklist>;
+  @OneToOne(() => Blocklist, (blocklist) => blocklist.media)
+  public blocklist: Promise<Blocklist>;
 
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
-  @DbAwareColumn({
-    type: 'datetime',
+  @UpdateDateColumn({
+    type: resolveDbType('datetime'),
     default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
   })
   public updatedAt: Date;
 
@@ -203,6 +203,19 @@ class Media {
     Object.assign(this, init);
   }
 
+  public resetServiceData(): void {
+    this.serviceId = null;
+    this.serviceId4k = null;
+    this.externalServiceId = null;
+    this.externalServiceId4k = null;
+    this.externalServiceSlug = null;
+    this.externalServiceSlug4k = null;
+    this.ratingKey = null;
+    this.ratingKey4k = null;
+    this.jellyfinMediaId = null;
+    this.jellyfinMediaId4k = null;
+  }
+
   @AfterLoad()
   public setPlexUrls(): void {
     const { machineId, webAppUrl } = getSettings().plex;
@@ -221,19 +234,19 @@ class Media {
         if (tautulliUrl) {
           this.tautulliUrl = `${tautulliUrl}/info?rating_key=${this.ratingKey}`;
         }
+      }
 
-        if (this.ratingKey4k) {
-          this.mediaUrl4k = `${
-            webAppUrl ? webAppUrl : 'https://app.plex.tv/desktop'
-          }#!/server/${machineId}/details?key=%2Flibrary%2Fmetadata%2F${
-            this.ratingKey4k
-          }`;
+      if (this.ratingKey4k) {
+        this.mediaUrl4k = `${
+          webAppUrl ? webAppUrl : 'https://app.plex.tv/desktop'
+        }#!/server/${machineId}/details?key=%2Flibrary%2Fmetadata%2F${
+          this.ratingKey4k
+        }`;
 
-          this.iOSPlexUrl4k = `plex://preplay/?metadataKey=%2Flibrary%2Fmetadata%2F${this.ratingKey4k}&server=${machineId}`;
+        this.iOSPlexUrl4k = `plex://preplay/?metadataKey=%2Flibrary%2Fmetadata%2F${this.ratingKey4k}&server=${machineId}`;
 
-          if (tautulliUrl) {
-            this.tautulliUrl4k = `${tautulliUrl}/info?rating_key=${this.ratingKey4k}`;
-          }
+        if (tautulliUrl) {
+          this.tautulliUrl4k = `${tautulliUrl}/info?rating_key=${this.ratingKey4k}`;
         }
       }
     } else {

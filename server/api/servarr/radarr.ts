@@ -74,7 +74,9 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
 
       return response.data;
     } catch (e) {
-      throw new Error(`[Radarr] Failed to retrieve movies: ${e.message}`);
+      throw new Error(`[Radarr] Failed to retrieve movies: ${e.message}`, {
+        cause: e,
+      });
     }
   };
 
@@ -84,7 +86,9 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
 
       return response.data;
     } catch (e) {
-      throw new Error(`[Radarr] Failed to retrieve movie: ${e.message}`);
+      throw new Error(`[Radarr] Failed to retrieve movie: ${e.message}`, {
+        cause: e,
+      });
     }
   };
 
@@ -107,7 +111,7 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
         errorMessage: e.message,
         tmdbId: id,
       });
-      throw new Error('Movie not found');
+      throw new Error('Movie not found', { cause: e });
     }
   }
 
@@ -176,10 +180,27 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
       }
 
       if (movie.id) {
-        logger.info(
-          'Movie is already monitored in Radarr. Skipping add and returning success',
-          { label: 'Radarr' }
-        );
+        // Movie exists and is already monitored
+        logger.info('Movie is already monitored in Radarr.', {
+          label: 'Radarr',
+          movieId: movie.id,
+          movieTitle: movie.title,
+          hasFile: movie.hasFile,
+        });
+
+        // If searchNow is requested and movie doesn't have a file, trigger search
+        if (options.searchNow && !movie.hasFile) {
+          logger.info(
+            'Triggering search for existing monitored movie without file',
+            {
+              label: 'Radarr',
+              movieId: movie.id,
+              movieTitle: movie.title,
+            }
+          );
+          this.searchMovie(movie.id);
+        }
+
         return movie;
       }
 
@@ -223,7 +244,7 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
           response: e?.response?.data,
         }
       );
-      throw new Error('Failed to add movie to Radarr');
+      throw new Error('Failed to add movie to Radarr', { cause: e });
     }
   };
 
@@ -257,7 +278,9 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
       });
       logger.info(`[Radarr] Removed movie ${title}`);
     } catch (e) {
-      throw new Error(`[Radarr] Failed to remove movie: ${e.message}`);
+      throw new Error(`[Radarr] Failed to remove movie: ${e.message}`, {
+        cause: e,
+      });
     }
   };
 

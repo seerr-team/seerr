@@ -1,5 +1,12 @@
-import { DbAwareColumn } from '@server/utils/DbColumnHelper';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
+import {
+  Column,
+  Entity,
+  Index,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import Issue from './Issue';
 import { User } from './User';
 
@@ -12,11 +19,13 @@ class IssueComment {
     eager: true,
     onDelete: 'CASCADE',
   })
+  @Index()
   public user: User;
 
   @ManyToOne(() => Issue, (issue) => issue.comments, {
     onDelete: 'CASCADE',
   })
+  @Index()
   public issue: Issue;
 
   @Column({ type: 'text' })
@@ -25,10 +34,9 @@ class IssueComment {
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
-  @DbAwareColumn({
-    type: 'datetime',
+  @UpdateDateColumn({
+    type: resolveDbType('datetime'),
     default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
   })
   public updatedAt: Date;
 

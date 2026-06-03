@@ -1,0 +1,65 @@
+name: 🧰 Maintenance / Chore
+description: CI, GitHub Actions, build, dependencies, refactors (non-feature work)
+title: "[Chore]: "
+labels: ["maintenance", "awaiting triage"]
+type: task
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Maintainers / contributors: use this for internal tasks (CI, workflows, tooling, refactors).
+        If you're reporting a user-facing bug or requesting a feature, use the other templates.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CI / GitHub Actions
+        - build / packaging
+        - dependencies
+        - release process
+        - refactor / tech debt
+        - tooling / scripts
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What needs doing and why?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What does "done" look like?
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: false
+  - type: input
+    id: related
+    attributes:
+      label: Related links
+      description: PRs, failing workflow runs, logs, or relevant issues.
+    validations:
+      required: false
+  - type: checkboxes
+    id: search-existing
+    attributes:
+      label: Search Existing Issues
+      description: Have you searched existing issues to see if this has already been reported?
+      options:
+        - label: Yes, I have searched existing issues.
+          required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our Code of Conduct.
+      options:
+        - label: I agree to follow Seerr's [Code of Conduct](https://github.com/seerr-team/seerr/blob/develop/CODE_OF_CONDUCT.md).
+          required: true

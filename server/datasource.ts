@@ -12,6 +12,15 @@ function boolFromEnv(envVar: string, defaultVal = false) {
   return defaultVal;
 }
 
+function intFromEnv(envVar: string, defaultVal?: number): number | undefined {
+  const val = process.env[envVar];
+  if (val) {
+    const parsed = parseInt(val, 10);
+    return isNaN(parsed) ? defaultVal : parsed;
+  }
+  return defaultVal;
+}
+
 function stringOrReadFileFromEnv(envVar: string): Buffer | string | undefined {
   if (process.env[envVar]) {
     return process.env[envVar];
@@ -37,6 +46,17 @@ function buildSslConfig(): TlsOptions | undefined {
     cert: stringOrReadFileFromEnv(`${DB_SSL_PREFIX}CERT`),
   };
 }
+
+const testConfig: DataSourceOptions = {
+  type: 'sqlite',
+  database: ':memory:',
+  synchronize: true,
+  dropSchema: true,
+  logging: boolFromEnv('DB_LOG_QUERIES'),
+  entities: ['server/entity/**/*.ts'],
+  migrations: ['server/migration/sqlite/**/*.ts'],
+  subscribers: ['server/subscriber/**/*.ts'],
+};
 
 const devConfig: DataSourceOptions = {
   type: 'sqlite',
@@ -76,6 +96,7 @@ const postgresDevConfig: DataSourceOptions = {
   password: process.env.DB_PASS,
   database: process.env.DB_NAME ?? 'seerr',
   ssl: buildSslConfig(),
+  poolSize: intFromEnv('DB_POOL_SIZE'),
   synchronize: false,
   migrationsRun: true,
   logging: boolFromEnv('DB_LOG_QUERIES'),
@@ -94,6 +115,7 @@ const postgresProdConfig: DataSourceOptions = {
   password: process.env.DB_PASS,
   database: process.env.DB_NAME ?? 'seerr',
   ssl: buildSslConfig(),
+  poolSize: intFromEnv('DB_POOL_SIZE'),
   synchronize: false,
   migrationsRun: false,
   logging: boolFromEnv('DB_LOG_QUERIES'),
@@ -105,7 +127,9 @@ const postgresProdConfig: DataSourceOptions = {
 export const isPgsql = process.env.DB_TYPE === 'postgres';
 
 function getDataSource(): DataSourceOptions {
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'test') {
+    return testConfig;
+  } else if (process.env.NODE_ENV === 'production') {
     return isPgsql ? postgresProdConfig : prodConfig;
   } else {
     return isPgsql ? postgresDevConfig : devConfig;

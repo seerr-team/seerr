@@ -57,7 +57,7 @@ interface GithubCommit {
       sha: string;
       url: string;
       html_url: string;
-    }
+    },
   ];
 }
 

@@ -8,7 +8,7 @@ import {
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import {
-  BlacklistedMediaError,
+  BlocklistedMediaError,
   DuplicateMediaRequestError,
   MediaRequest,
   NoSeasonsAvailableError,
@@ -275,6 +275,24 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
           page: Math.ceil(skip / pageSize) + 1,
         },
         results: mappedRequests,
+        serviceErrors: {
+          radarr: radarrServers
+            .filter((s) => !s.profiles)
+            .map((s) => ({
+              id: s.id,
+              name:
+                settings.radarr.find((r) => r.id === s.id)?.name ||
+                `Radarr ${s.id}`,
+            })),
+          sonarr: sonarrServers
+            .filter((s) => !s.profiles)
+            .map((s) => ({
+              id: s.id,
+              name:
+                settings.sonarr.find((r) => r.id === s.id)?.name ||
+                `Sonarr ${s.id}`,
+            })),
+        },
       });
     } catch (e) {
       next({ status: 500, message: e.message });
@@ -308,7 +326,7 @@ requestRoutes.post<never, MediaRequest, MediaRequestBody>(
           return next({ status: 409, message: error.message });
         case NoSeasonsAvailableError:
           return next({ status: 202, message: error.message });
-        case BlacklistedMediaError:
+        case BlocklistedMediaError:
           return next({ status: 403, message: error.message });
         default:
           return next({ status: 500, message: error.message });
@@ -494,7 +512,7 @@ requestRoutes.put<{ requestId: string }>(
         request.tags = req.body.tags;
         request.requestedBy = requestUser as User;
 
-        requestRepository.save(request);
+        await requestRepository.save(request);
       } else if (req.body.mediaType === MediaType.TV) {
         const mediaRepository = getRepository(Media);
         request.serverId = req.body.serverId;
@@ -591,8 +609,8 @@ requestRoutes.delete('/:requestId', async (req, res, next) => {
 
     if (
       !req.user?.hasPermission(Permission.MANAGE_REQUESTS) &&
-      request.requestedBy.id !== req.user?.id &&
-      request.status !== 1
+      (request.requestedBy.id !== req.user?.id ||
+        request.status !== MediaRequestStatus.PENDING)
     ) {
       return next({
         status: 401,
@@ -628,6 +646,7 @@ requestRoutes.post<{
 
       // this also triggers updating the parent media's status & sending to *arr
       request.status = MediaRequestStatus.APPROVED;
+      request.modifiedBy = req.user;
       await requestRepository.save(request);
 
       return res.status(200).json(request);

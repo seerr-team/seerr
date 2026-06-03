@@ -285,7 +285,7 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
         )}
         {(server || profile || rootFolder || languageProfile) && (
           <>
-            <div className="mt-4 mb-1 text-sm">
+            <div className="mb-1 mt-4 text-sm">
               {intl.formatMessage(messages.requestoverrides)}
             </div>
             <ul className="divide-y divide-gray-700 rounded-md bg-gray-800 px-2 text-xs">

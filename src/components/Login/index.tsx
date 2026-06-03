@@ -17,7 +17,7 @@ import { MediaServerType } from '@server/constants/server';
 import axios from 'axios';
 import { useRouter } from 'next/dist/client/router';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type JSX } from 'react';
 import { useIntl } from 'react-intl';
 import { CSSTransition, SwitchTransition } from 'react-transition-group';
 import useSWR from 'swr';
@@ -85,19 +85,19 @@ const Login = () => {
     settings.currentSettings.mediaServerType === MediaServerType.PLEX
       ? 'Plex'
       : settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
-      ? 'Jellyfin'
-      : settings.currentSettings.mediaServerType === MediaServerType.EMBY
-      ? 'Emby'
-      : undefined;
+        ? 'Jellyfin'
+        : settings.currentSettings.mediaServerType === MediaServerType.EMBY
+          ? 'Emby'
+          : undefined;
 
   const MediaServerLogo =
     settings.currentSettings.mediaServerType === MediaServerType.PLEX
       ? PlexLogo
       : settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
-      ? JellyfinLogo
-      : settings.currentSettings.mediaServerType === MediaServerType.EMBY
-      ? EmbyLogo
-      : undefined;
+        ? JellyfinLogo
+        : settings.currentSettings.mediaServerType === MediaServerType.EMBY
+          ? EmbyLogo
+          : undefined;
 
   const isJellyfin =
     settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN ||
@@ -159,7 +159,7 @@ const Login = () => {
           ) ?? []
         }
       />
-      <div className="absolute top-4 right-4 z-50">
+      <div className="absolute right-4 top-4 z-50">
         <LanguagePicker />
       </div>
       <div className="relative z-40 mt-10 flex flex-col items-center px-4 sm:mx-auto sm:w-full sm:max-w-md">
@@ -169,7 +169,7 @@ const Login = () => {
       </div>
       <div className="relative z-50 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div
-          className="bg-gray-800 bg-opacity-50 shadow sm:rounded-lg"
+          className="bg-gray-800/50 shadow sm:rounded-lg"
           style={{ backdropFilter: 'blur(5px)' }}
         >
           <>
@@ -201,24 +201,17 @@ const Login = () => {
                 <CSSTransition
                   key={mediaServerLogin ? 'ms' : 'local'}
                   nodeRef={loginRef}
-                  addEndListener={(done) => {
-                    loginRef.current?.addEventListener(
-                      'transitionend',
-                      done,
-                      false
-                    );
-                  }}
+                  timeout={{ enter: 300, exit: 150 }}
                   onEntered={() => {
                     document
                       .querySelector<HTMLInputElement>('#email, #username')
                       ?.focus();
                   }}
                   classNames={{
-                    appear: 'opacity-0',
-                    appearActive: 'transition-opacity duration-500 opacity-100',
                     enter: 'opacity-0',
-                    enterActive: 'transition-opacity duration-500 opacity-100',
-                    exitActive: 'transition-opacity duration-0 opacity-0',
+                    enterActive: 'transition-opacity duration-300 opacity-100',
+                    exit: 'opacity-100',
+                    exitActive: 'transition-opacity duration-150 opacity-0',
                   }}
                 >
                   <div ref={loginRef} className="button-container">
@@ -241,11 +234,11 @@ const Login = () => {
               {additionalLoginOptions.length > 0 &&
                 (loginFormVisible ? (
                   <div className="flex items-center py-5">
-                    <div className="flex-grow border-t border-gray-600"></div>
+                    <div className="flex-grow border-t border-gray-600" />
                     <span className="mx-2 flex-shrink text-sm text-gray-400">
                       {intl.formatMessage(messages.orsigninwith)}
                     </span>
-                    <div className="flex-grow border-t border-gray-600"></div>
+                    <div className="flex-grow border-t border-gray-600" />
                   </div>
                 ) : (
                   <h2 className="mb-6 text-center text-lg font-bold text-neutral-200">

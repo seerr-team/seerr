@@ -1,6 +1,7 @@
 import Modal from '@app/components/Common/Modal';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import type { RadarrTestResponse } from '@app/components/Settings/SettingsServices';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -11,7 +12,6 @@ import { Field, Formik } from 'formik';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import Select from 'react-select';
-import { useToasts } from 'react-toast-notifications';
 import * as Yup from 'yup';
 
 type OptionType = {
@@ -49,6 +49,8 @@ const messages = defineMessages('components.Settings.RadarrModal', {
   rootfolder: 'Root Folder',
   minimumAvailability: 'Minimum Availability',
   server4k: '4K Server',
+  server4kHelp:
+    'Only if you have a separate 4K instance. Leave unchecked for a single server.',
   selectQualityProfile: 'Select quality profile',
   selectRootFolder: 'Select root folder',
   selectMinimumAvailability: 'Select minimum availability',
@@ -72,6 +74,15 @@ const messages = defineMessages('components.Settings.RadarrModal', {
   announced: 'Announced',
   inCinemas: 'In Cinemas',
   released: 'Released',
+  apiKeyHelp: 'Find it in Radarr: Settings > General > Security > API Key',
+  baseUrlHelp:
+    'If you set a URL Base in Radarr (Settings > General > Host), enter it here (e.g. /radarr). Leave blank otherwise.',
+  externalUrlHelp:
+    'For clickable links on media pages when the hostname is not reachable from outside your network.',
+  syncEnabledHelp:
+    'Scan Radarr for existing media and request status so users cannot request content already available.',
+  enableSearchHelp:
+    'Automatically trigger a search in Radarr when a request is approved.',
 });
 
 interface RadarrModalProps {
@@ -173,7 +184,7 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
             autoDismiss: true,
           });
         }
-      } catch (e) {
+      } catch {
         setIsValidated(false);
         if (initialLoad.current) {
           addToast(intl.formatMessage(messages.toastRadarrTestFailure), {
@@ -268,7 +279,7 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
             }
 
             onSave();
-          } catch (e) {
+          } catch {
             // set error here
           }
         }}
@@ -290,8 +301,8 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                 isSubmitting
                   ? intl.formatMessage(globalMessages.saving)
                   : radarr
-                  ? intl.formatMessage(globalMessages.save)
-                  : intl.formatMessage(messages.add)
+                    ? intl.formatMessage(globalMessages.save)
+                    : intl.formatMessage(messages.add)
               }
               secondaryButtonType="warning"
               secondaryText={
@@ -350,6 +361,9 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                 <div className="form-row">
                   <label htmlFor="is4k" className="checkbox-label">
                     {intl.formatMessage(messages.server4k)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.server4kHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <Field type="checkbox" id="is4k" name="is4k" />
@@ -457,6 +471,9 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                   <label htmlFor="apiKey" className="text-label">
                     {intl.formatMessage(messages.apiKey)}
                     <span className="label-required">*</span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.apiKeyHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <div className="form-input-field">
@@ -480,6 +497,9 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                 <div className="form-row">
                   <label htmlFor="baseUrl" className="text-label">
                     {intl.formatMessage(messages.baseUrl)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.baseUrlHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <div className="form-input-field">
@@ -518,20 +538,29 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                           {isTesting
                             ? intl.formatMessage(messages.loadingprofiles)
                             : !isValidated
-                            ? intl.formatMessage(
-                                messages.testFirstQualityProfiles
-                              )
-                            : intl.formatMessage(messages.selectQualityProfile)}
+                              ? intl.formatMessage(
+                                  messages.testFirstQualityProfiles
+                                )
+                              : intl.formatMessage(
+                                  messages.selectQualityProfile
+                                )}
                         </option>
                         {testResponse.profiles.length > 0 &&
-                          testResponse.profiles.map((profile) => (
-                            <option
-                              key={`loaded-profile-${profile.id}`}
-                              value={profile.id}
-                            >
-                              {profile.name}
-                            </option>
-                          ))}
+                          testResponse.profiles
+                            .toSorted((a, b) =>
+                              a.name.localeCompare(b.name, intl.locale, {
+                                numeric: true,
+                                sensitivity: 'base',
+                              })
+                            )
+                            .map((profile) => (
+                              <option
+                                key={`loaded-profile-${profile.id}`}
+                                value={profile.id}
+                              >
+                                {profile.name}
+                              </option>
+                            ))}
                       </Field>
                     </div>
                     {errors.activeProfileId &&
@@ -558,8 +587,10 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                           {isTesting
                             ? intl.formatMessage(messages.loadingrootfolders)
                             : !isValidated
-                            ? intl.formatMessage(messages.testFirstRootFolders)
-                            : intl.formatMessage(messages.selectRootFolder)}
+                              ? intl.formatMessage(
+                                  messages.testFirstRootFolders
+                                )
+                              : intl.formatMessage(messages.selectRootFolder)}
                         </option>
                         {testResponse.rootFolders.length > 0 &&
                           testResponse.rootFolders.map((folder) => (
@@ -630,8 +661,8 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                         !isValidated
                           ? intl.formatMessage(messages.testFirstTags)
                           : isTesting
-                          ? intl.formatMessage(messages.loadingTags)
-                          : intl.formatMessage(messages.selecttags)
+                            ? intl.formatMessage(messages.loadingTags)
+                            : intl.formatMessage(messages.selecttags)
                       }
                       className="react-select-container"
                       classNamePrefix="react-select"
@@ -670,6 +701,9 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                 <div className="form-row">
                   <label htmlFor="externalUrl" className="text-label">
                     {intl.formatMessage(messages.externalUrl)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.externalUrlHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <div className="form-input-field">
@@ -690,6 +724,9 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                 <div className="form-row">
                   <label htmlFor="syncEnabled" className="checkbox-label">
                     {intl.formatMessage(messages.syncEnabled)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.syncEnabledHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <Field
@@ -702,6 +739,9 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                 <div className="form-row">
                   <label htmlFor="enableSearch" className="checkbox-label">
                     {intl.formatMessage(messages.enableSearch)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.enableSearchHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <Field

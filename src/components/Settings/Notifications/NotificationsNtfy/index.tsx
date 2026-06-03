@@ -2,6 +2,8 @@ import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
+import { availableLanguages } from '@app/context/LanguageContext';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -11,7 +13,6 @@ import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
 
@@ -27,6 +28,7 @@ const messages = defineMessages(
     password: 'Password',
     tokenAuth: 'Token authentication',
     token: 'Token',
+    priority: 'Priority',
     ntfysettingssaved: 'Ntfy notification settings saved successfully!',
     ntfysettingsfailed: 'Ntfy notification settings failed to save.',
     toastNtfyTestSending: 'Sending ntfy test notification…',
@@ -34,6 +36,7 @@ const messages = defineMessages(
     toastNtfyTestFailed: 'Ntfy test notification failed to send.',
     validationNtfyUrl: 'You must provide a valid URL',
     validationNtfyTopic: 'You must provide a topic',
+    validationPriorityRequired: 'You must provide a priority between 1 and 5',
     validationTypes: 'You must select at least one notification type',
   }
 );
@@ -52,10 +55,11 @@ const NotificationsNtfy = () => {
     url: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationNtfyUrl)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationNtfyUrl)),
+        otherwise: (schema) => schema.nullable(),
       })
       .test(
         'valid-url',
@@ -65,12 +69,23 @@ const NotificationsNtfy = () => {
     topic: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationNtfyUrl)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationNtfyTopic)),
+        otherwise: (schema) => schema.nullable(),
       })
       .defined(intl.formatMessage(messages.validationNtfyTopic)),
+    priority: Yup.number().when('enabled', {
+      is: true,
+      then: (schema) =>
+        schema
+          .nullable()
+          .min(1)
+          .max(5)
+          .required(intl.formatMessage(messages.validationPriorityRequired)),
+      otherwise: (schema) => schema.nullable(),
+    }),
   });
 
   if (!data && !error) {
@@ -90,6 +105,8 @@ const NotificationsNtfy = () => {
         password: data?.options.password,
         authMethodToken: data?.options.authMethodToken,
         token: data?.options.token,
+        priority: data?.options.priority,
+        locale: data?.options.locale ?? 'en',
       }}
       validationSchema={NotificationsNtfySchema}
       onSubmit={async (values) => {
@@ -106,6 +123,8 @@ const NotificationsNtfy = () => {
               password: values.password,
               authMethodToken: values.authMethodToken,
               token: values.token,
+              priority: Number(values.priority),
+              locale: values.locale,
             },
           });
 
@@ -113,7 +132,7 @@ const NotificationsNtfy = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.ntfysettingsfailed), {
             appearance: 'error',
             autoDismiss: true,
@@ -157,6 +176,8 @@ const NotificationsNtfy = () => {
                 password: values.password,
                 authMethodToken: values.authMethodToken,
                 token: values.token,
+                priority: Number(values.priority),
+                locale: values.locale,
               },
             });
 
@@ -167,7 +188,7 @@ const NotificationsNtfy = () => {
               autoDismiss: true,
               appearance: 'success',
             });
-          } catch (e) {
+          } catch {
             if (toastId) {
               removeToast(toastId);
             }
@@ -256,7 +277,7 @@ const NotificationsNtfy = () => {
               </div>
             </div>
             {values.authMethodUsernamePassword && (
-              <div className="mr-2 ml-4">
+              <div className="ml-4 mr-2">
                 <div className="form-row">
                   <label htmlFor="username" className="text-label">
                     {intl.formatMessage(messages.username)}
@@ -302,7 +323,7 @@ const NotificationsNtfy = () => {
               </div>
             </div>
             {values.authMethodToken && (
-              <div className="form-row mr-2 ml-4">
+              <div className="form-row ml-4 mr-2">
                 <label htmlFor="token" className="text-label">
                   {intl.formatMessage(messages.token)}
                 </label>
@@ -313,6 +334,46 @@ const NotificationsNtfy = () => {
                 </div>
               </div>
             )}
+            <div className="form-row">
+              <label htmlFor="priority" className="text-label">
+                {intl.formatMessage(messages.priority)}
+              </label>
+              <div className="form-input-area">
+                <div className="form-input-field">
+                  <Field as="select" id="priority" name="priority">
+                    <option value={1}>Minimum</option>
+                    <option value={2}>Low</option>
+                    <option value={3}>Default</option>
+                    <option value={4}>High</option>
+                    <option value={5}>Urgent</option>
+                  </Field>
+                </div>
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="locale" className="text-label">
+                {intl.formatMessage(globalMessages.notificationLocale)}
+              </label>
+              <div className="form-input-area">
+                <div className="form-input-field">
+                  <Field as="select" id="locale" name="locale">
+                    {(
+                      Object.keys(
+                        availableLanguages
+                      ) as (keyof typeof availableLanguages)[]
+                    ).map((key) => (
+                      <option
+                        key={key}
+                        value={availableLanguages[key].code}
+                        lang={availableLanguages[key].code}
+                      >
+                        {availableLanguages[key].display}
+                      </option>
+                    ))}
+                  </Field>
+                </div>
+              </div>
+            </div>
             <NotificationTypeSelector
               currentTypes={values.enabled ? values.types || 0 : 0}
               onUpdate={(newTypes) => {

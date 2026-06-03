@@ -5,6 +5,7 @@ import Modal from '@app/components/Common/Modal';
 import type { RequestOverrides } from '@app/components/RequestModal/AdvancedRequester';
 import AdvancedRequester from '@app/components/RequestModal/AdvancedRequester';
 import QuotaDisplay from '@app/components/RequestModal/QuotaDisplay';
+import useToasts from '@app/hooks/useToasts';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -16,7 +17,6 @@ import type { Collection } from '@server/models/Collection';
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
 
 const messages = defineMessages('components.RequestModal', {
@@ -68,7 +68,7 @@ const CollectionRequestModal = ({
 
   const getAllParts = (): number[] => {
     return (data?.parts ?? [])
-      .filter((part) => part.mediaInfo?.status !== MediaStatus.BLACKLISTED)
+      .filter((part) => part.mediaInfo?.status !== MediaStatus.BLOCKLISTED)
       .map((part) => part.id);
   };
 
@@ -229,7 +229,7 @@ const CollectionRequestModal = ({
         </span>,
         { appearance: 'success', autoDismiss: true }
       );
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.requesterror), {
         appearance: 'error',
         autoDismiss: true,
@@ -257,8 +257,8 @@ const CollectionRequestModal = ({
     { type: 'or' }
   );
 
-  const blacklistVisibility = hasPermission(
-    [Permission.MANAGE_BLACKLIST, Permission.VIEW_BLACKLIST],
+  const blocklistVisibility = hasPermission(
+    [Permission.MANAGE_BLOCKLIST, Permission.VIEW_BLOCKLIST],
     { type: 'or' }
   );
 
@@ -278,13 +278,13 @@ const CollectionRequestModal = ({
         isUpdating
           ? intl.formatMessage(globalMessages.requesting)
           : selectedParts.length === 0
-          ? intl.formatMessage(messages.selectmovies)
-          : intl.formatMessage(
-              is4k ? messages.requestmovies4k : messages.requestmovies,
-              {
-                count: selectedParts.length,
-              }
-            )
+            ? intl.formatMessage(messages.selectmovies)
+            : intl.formatMessage(
+                is4k ? messages.requestmovies4k : messages.requestmovies,
+                {
+                  count: selectedParts.length,
+                }
+              )
       }
       okDisabled={selectedParts.length === 0}
       okButtonType={'primary'}
@@ -317,7 +317,7 @@ const CollectionRequestModal = ({
               <table className="min-w-full">
                 <thead>
                   <tr>
-                    <th className="w-16 bg-gray-700 bg-opacity-80 px-4 py-3">
+                    <th className="w-16 bg-gray-700/80 px-4 py-3">
                       <span
                         role="checkbox"
                         tabIndex={0}
@@ -340,19 +340,19 @@ const CollectionRequestModal = ({
                           className={`${
                             isAllParts() ? 'bg-indigo-500' : 'bg-gray-800'
                           } absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out`}
-                        ></span>
+                        />
                         <span
                           aria-hidden="true"
                           className={`${
                             isAllParts() ? 'translate-x-5' : 'translate-x-0'
                           } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
-                        ></span>
+                        />
                       </span>
                     </th>
-                    <th className="bg-gray-700 bg-opacity-80 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-1 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(globalMessages.movie)}
                     </th>
-                    <th className="bg-gray-700 bg-opacity-80 px-2 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
+                    <th className="bg-gray-700/80 px-2 py-3 text-left text-xs font-medium uppercase leading-4 tracking-wider text-gray-200 md:px-6">
                       {intl.formatMessage(globalMessages.status)}
                     </th>
                   </tr>
@@ -360,9 +360,9 @@ const CollectionRequestModal = ({
                 <tbody className="divide-y divide-gray-700">
                   {data?.parts
                     .filter((part) => {
-                      if (!blacklistVisibility)
+                      if (!blocklistVisibility)
                         return (
-                          part.mediaInfo?.status !== MediaStatus.BLACKLISTED
+                          part.mediaInfo?.status !== MediaStatus.BLOCKLISTED
                         );
                       return part;
                     })
@@ -381,7 +381,7 @@ const CollectionRequestModal = ({
                         <tr key={`part-${part.id}`}>
                           <td
                             className={`whitespace-nowrap px-4 py-4 text-sm font-medium leading-5 text-gray-100 ${
-                              partMedia?.status === MediaStatus.BLACKLISTED &&
+                              partMedia?.status === MediaStatus.BLOCKLISTED &&
                               'pointer-events-none opacity-50'
                             }`}
                           >
@@ -391,7 +391,7 @@ const CollectionRequestModal = ({
                               aria-checked={
                                 (!!partMedia &&
                                   partMedia.status !==
-                                    MediaStatus.BLACKLISTED) ||
+                                    MediaStatus.BLOCKLISTED) ||
                                 isSelectedPart(part.id)
                               }
                               onClick={() => togglePart(part.id)}
@@ -403,7 +403,7 @@ const CollectionRequestModal = ({
                               className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none ${
                                 (!!partMedia &&
                                   partMedia.status !==
-                                    MediaStatus.BLACKLISTED) ||
+                                    MediaStatus.BLOCKLISTED) ||
                                 partRequest ||
                                 (quota?.movie.limit &&
                                   currentlyRemaining <= 0 &&
@@ -417,30 +417,30 @@ const CollectionRequestModal = ({
                                 className={`${
                                   (!!partMedia &&
                                     partMedia.status !==
-                                      MediaStatus.BLACKLISTED) ||
+                                      MediaStatus.BLOCKLISTED) ||
                                   partRequest ||
                                   isSelectedPart(part.id)
                                     ? 'bg-indigo-500'
                                     : 'bg-gray-700'
                                 } absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out`}
-                              ></span>
+                              />
                               <span
                                 aria-hidden="true"
                                 className={`${
                                   (!!partMedia &&
                                     partMedia.status !==
-                                      MediaStatus.BLACKLISTED) ||
+                                      MediaStatus.BLOCKLISTED) ||
                                   partRequest ||
                                   isSelectedPart(part.id)
                                     ? 'translate-x-5'
                                     : 'translate-x-0'
                                 } absolute left-0 inline-block h-5 w-5 rounded-full border border-gray-200 bg-white shadow transition-transform duration-200 ease-in-out group-focus:border-blue-300 group-focus:ring`}
-                              ></span>
+                              />
                             </span>
                           </td>
                           <td
                             className={`flex items-center px-1 py-4 text-sm font-medium leading-5 text-gray-100 md:px-6 ${
-                              partMedia?.status === MediaStatus.BLACKLISTED &&
+                              partMedia?.status === MediaStatus.BLOCKLISTED &&
                               'pointer-events-none opacity-50'
                             }`}
                           >
@@ -502,9 +502,9 @@ const CollectionRequestModal = ({
                                 {intl.formatMessage(globalMessages.available)}
                               </Badge>
                             )}
-                            {partMedia?.status === MediaStatus.BLACKLISTED && (
+                            {partMedia?.status === MediaStatus.BLOCKLISTED && (
                               <Badge badgeType="danger">
-                                {intl.formatMessage(globalMessages.blacklisted)}
+                                {intl.formatMessage(globalMessages.blocklisted)}
                               </Badge>
                             )}
                           </td>

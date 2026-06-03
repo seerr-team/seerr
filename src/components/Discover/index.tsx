@@ -3,18 +3,19 @@ import ConfirmButton from '@app/components/Common/ConfirmButton';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import Tooltip from '@app/components/Common/Tooltip';
-import { sliderTitles } from '@app/components/Discover/constants';
 import CreateSlider from '@app/components/Discover/CreateSlider';
 import DiscoverSliderEdit from '@app/components/Discover/DiscoverSliderEdit';
 import MovieGenreSlider from '@app/components/Discover/MovieGenreSlider';
 import NetworkSlider from '@app/components/Discover/NetworkSlider';
 import PlexWatchlistSlider from '@app/components/Discover/PlexWatchlistSlider';
-import RecentlyAddedSlider from '@app/components/Discover/RecentlyAddedSlider';
 import RecentRequestsSlider from '@app/components/Discover/RecentRequestsSlider';
+import RecentlyAddedSlider from '@app/components/Discover/RecentlyAddedSlider';
 import StudioSlider from '@app/components/Discover/StudioSlider';
 import TvGenreSlider from '@app/components/Discover/TvGenreSlider';
+import { sliderTitles } from '@app/components/Discover/constants';
 import MediaSlider from '@app/components/MediaSlider';
 import { encodeURIExtraParams } from '@app/hooks/useDiscover';
+import useToasts from '@app/hooks/useToasts';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -31,7 +32,6 @@ import type DiscoverSlider from '@server/entity/DiscoverSlider';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
 const messages = defineMessages('components.Discover', {
@@ -84,7 +84,7 @@ const Discover = () => {
       });
       setIsEditing(false);
       mutate();
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.updatefailed), {
         appearance: 'error',
         autoDismiss: true,
@@ -102,7 +102,7 @@ const Discover = () => {
       });
       setIsEditing(false);
       mutate();
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.resetfailed), {
         appearance: 'error',
         autoDismiss: true,
@@ -127,7 +127,7 @@ const Discover = () => {
         <>
           {isEditing && (
             <div className="my-6 rounded-lg bg-gray-800">
-              <div className="flex items-center space-x-2 rounded-t-lg border-t border-l border-r border-gray-800 bg-gray-900 p-4 text-lg font-semibold text-gray-400">
+              <div className="flex items-center space-x-2 rounded-t-lg border-l border-r border-t border-gray-800 bg-gray-900 p-4 text-lg font-semibold text-gray-400">
                 <PlusIcon className="w-6" />
                 <span data-testid="create-slider-header">
                   {intl.formatMessage(messages.createnewslider)}
@@ -159,7 +159,7 @@ const Discover = () => {
             <button
               onClick={() => setIsEditing(true)}
               data-testid="discover-start-editing"
-              className="h-12 w-12 rounded-full border-2 border-gray-600 bg-gray-700 bg-opacity-90 p-3 text-gray-400 shadow transition-all hover:bg-opacity-100"
+              className="h-12 w-12 rounded-full border-2 border-gray-600 bg-gray-700/90 p-3 text-gray-400 shadow transition-all hover:bg-gray-700"
             >
               <PencilIcon className="h-full w-full" />
             </button>
@@ -172,7 +172,7 @@ const Discover = () => {
             leave="transition duration-300"
             leaveFrom="opacity-100 translate-y-0"
             leaveTo="opacity-0 translate-y-6"
-            className="safe-shift-edit-menu fixed right-0 left-0 z-50 flex flex-col items-center justify-end space-x-0 space-y-2 border-t border-gray-700 bg-gray-800 bg-opacity-80 p-4 backdrop-blur sm:bottom-0 sm:flex-row sm:space-y-0 sm:space-x-3"
+            className="safe-shift-edit-menu fixed left-0 right-0 z-50 flex flex-col items-center justify-end space-x-0 space-y-2 border-t border-gray-700 bg-gray-800/80 p-4 backdrop-blur sm:bottom-0 sm:flex-row sm:space-x-3 sm:space-y-0"
           >
             <Button
               buttonType="default"
@@ -424,19 +424,21 @@ const Discover = () => {
                 const tempSliders = sliders.slice();
 
                 tempSliders.splice(originalPosition, 1);
-                hasClickedArrows
-                  ? tempSliders.splice(
-                      position === 'Above' ? index - 1 : index + 1,
-                      0,
-                      originalItem
-                    )
-                  : tempSliders.splice(
-                      position === 'Above' && index > originalPosition
-                        ? Math.max(index - 1, 0)
-                        : index,
-                      0,
-                      originalItem
-                    );
+                if (hasClickedArrows) {
+                  tempSliders.splice(
+                    position === 'Above' ? index - 1 : index + 1,
+                    0,
+                    originalItem
+                  );
+                } else {
+                  tempSliders.splice(
+                    position === 'Above' && index > originalPosition
+                      ? Math.max(index - 1, 0)
+                      : index,
+                    0,
+                    originalItem
+                  );
+                }
 
                 setSliders(tempSliders);
               }}

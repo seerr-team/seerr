@@ -1,4 +1,4 @@
-import BlacklistBlock from '@app/components/BlacklistBlock';
+import BlocklistBlock from '@app/components/BlocklistBlock';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import ConfirmButton from '@app/components/Common/ConfirmButton';
@@ -33,6 +33,8 @@ import axios from 'axios';
 import Link from 'next/link';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
+
+import type { JSX } from 'react';
 
 const filterDuplicateDownloads = (
   items: DownloadingItem[] = []
@@ -314,14 +316,15 @@ const ManageSlideOver = ({
             </div>
           </div>
         )}
-        {data.mediaInfo?.status === MediaStatus.BLACKLISTED && (
+        {data.mediaInfo?.status === MediaStatus.BLOCKLISTED && (
           <div>
             <h3 className="mb-2 text-xl font-bold">
-              {intl.formatMessage(globalMessages.blacklist)}
+              {intl.formatMessage(globalMessages.blocklist)}
             </h3>
             <div className="overflow-hidden rounded-md border border-gray-700 shadow">
-              <BlacklistBlock
+              <BlocklistBlock
                 tmdbId={data.mediaInfo.tmdbId}
+                mediaType={data.mediaInfo.mediaType}
                 onUpdate={() => revalidate()}
                 onDelete={() => onClose()}
               />
@@ -378,7 +381,7 @@ const ManageSlideOver = ({
                           </div>
                         </div>
                         {!!watchData.data.users.length && (
-                          <div className="flex flex-row space-x-2 px-4 pt-3 pb-2">
+                          <div className="flex flex-row space-x-2 px-4 pb-2 pt-3">
                             <span className="shrink-0 font-bold leading-8">
                               {intl.formatMessage(messages.playedby)}
                             </span>
@@ -391,7 +394,7 @@ const ManageSlideOver = ({
                                       : `/users/${user.id}`
                                   }
                                   key={`watch-user-${user.id}`}
-                                  className="z-0 mb-1 -mr-2 shrink-0 hover:z-50"
+                                  className="z-0 -mr-2 mb-1 shrink-0 hover:z-50"
                                 >
                                   <Tooltip
                                     key={`watch-user-${user.id}`}
@@ -540,7 +543,7 @@ const ManageSlideOver = ({
                           </div>
                         </div>
                         {!!watchData.data4k.users.length && (
-                          <div className="flex flex-row space-x-2 px-4 pt-3 pb-2">
+                          <div className="flex flex-row space-x-2 px-4 pb-2 pt-3">
                             <span className="shrink-0 font-bold leading-8">
                               {intl.formatMessage(messages.playedby)}
                             </span>
@@ -553,7 +556,7 @@ const ManageSlideOver = ({
                                       : `/users/${user.id}`
                                   }
                                   key={`watch-user-${user.id}`}
-                                  className="z-0 mb-1 -mr-2 shrink-0 hover:z-50"
+                                  className="z-0 -mr-2 mb-1 shrink-0 hover:z-50"
                                 >
                                   <Tooltip
                                     key={`watch-user-${user.id}`}
@@ -651,7 +654,7 @@ const ManageSlideOver = ({
           )}
         {hasPermission(Permission.ADMIN) &&
           data?.mediaInfo &&
-          data.mediaInfo.status !== MediaStatus.BLACKLISTED && (
+          data.mediaInfo.status !== MediaStatus.BLOCKLISTED && (
             <div>
               <h3 className="mb-2 text-xl font-bold">
                 {intl.formatMessage(messages.manageModalAdvanced)}
@@ -711,9 +714,9 @@ const ManageSlideOver = ({
                         MediaServerType.EMBY
                           ? 'Emby'
                           : settings.currentSettings.mediaServerType ===
-                            MediaServerType.PLEX
-                          ? 'Plex'
-                          : 'Jellyfin',
+                              MediaServerType.PLEX
+                            ? 'Plex'
+                            : 'Jellyfin',
                     })}
                   </div>
                 </div>

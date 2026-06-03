@@ -138,7 +138,7 @@ const LinkJellyfinModal: React.FC<LinkJellyfinModalProps> = ({
                 <label htmlFor="username" className="text-label">
                   {intl.formatMessage(messages.username)}
                 </label>
-                <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0">
+                <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
                   <div className="flex rounded-md shadow-sm">
                     <Field
                       id="username"
@@ -154,7 +154,7 @@ const LinkJellyfinModal: React.FC<LinkJellyfinModalProps> = ({
                 <label htmlFor="password" className="text-label">
                   {intl.formatMessage(messages.password)}
                 </label>
-                <div className="mt-1 mb-2 sm:col-span-2 sm:mt-0">
+                <div className="mb-2 mt-1 sm:col-span-2 sm:mt-0">
                   <div className="flex rounded-md shadow-sm">
                     <Field
                       id="password"

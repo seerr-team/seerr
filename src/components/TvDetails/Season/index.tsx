@@ -41,11 +41,11 @@ const Season = ({ seasonNumber, tvId }: SeasonProps) => {
           .map((episode) => {
             return (
               <div
-                className="flex flex-col space-y-4 py-4 xl:flex-row xl:space-y-4 xl:space-x-4"
+                className="flex flex-col space-y-4 py-4 xl:flex-row xl:space-x-4 xl:space-y-4"
                 key={`season-${seasonNumber}-episode-${episode.episodeNumber}`}
               >
                 <div className="flex-1">
-                  <div className="flex flex-col space-y-2 xl:flex-row xl:items-center xl:space-y-0 xl:space-x-2">
+                  <div className="flex flex-col space-y-2 xl:flex-row xl:items-center xl:space-x-2 xl:space-y-0">
                     <h3 className="text-lg">
                       {episode.episodeNumber} - {episode.name}
                     </h3>

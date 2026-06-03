@@ -3,7 +3,7 @@ import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover, { encodeURIExtraParams } from '@app/hooks/useDiscover';
 import globalMessages from '@app/i18n/globalMessages';
-import Error from '@app/pages/_error';
+import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
 import type { TvResult } from '@server/models/Search';
@@ -35,7 +35,7 @@ const DiscoverTvKeyword = () => {
   );
 
   if (error) {
-    return <Error statusCode={500} />;
+    return <ErrorPage statusCode={500} />;
   }
 
   const title = isLoadingInitialData
@@ -49,7 +49,7 @@ const DiscoverTvKeyword = () => {
   return (
     <>
       <PageTitle title={title} />
-      <div className="mt-1 mb-5">
+      <div className="mb-5 mt-1">
         <Header>{title}</Header>
       </div>
       <ListView

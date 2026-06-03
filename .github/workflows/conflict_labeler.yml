@@ -14,12 +14,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: merge-conflict-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   label:
     name: Labeling
+    if: github.actor != 'renovate[bot]'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:

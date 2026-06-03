@@ -1,6 +1,7 @@
 import Modal from '@app/components/Common/Modal';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import type { SonarrTestResponse } from '@app/components/Settings/SettingsServices';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -12,7 +13,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import type { OnChangeValue } from 'react-select';
 import Select from 'react-select';
-import { useToasts } from 'react-toast-notifications';
 import * as Yup from 'yup';
 
 type OptionType = {
@@ -53,6 +53,8 @@ const messages = defineMessages('components.Settings.SonarrModal', {
   animerootfolder: 'Anime Root Folder',
   seasonfolders: 'Season Folders',
   server4k: '4K Server',
+  server4kHelp:
+    'Only if you have a separate 4K instance. Leave unchecked for a single server.',
   selectQualityProfile: 'Select quality profile',
   selectRootFolder: 'Select root folder',
   selectLanguageProfile: 'Select language profile',
@@ -78,6 +80,18 @@ const messages = defineMessages('components.Settings.SonarrModal', {
   animeTags: 'Anime Tags',
   notagoptions: 'No tags.',
   selecttags: 'Select tags',
+  monitorNewItems: 'Monitor New Seasons',
+  monitorNewItemsHelp:
+    'Whether Sonarr should monitor (All) or not (None) new seasons when a series is added.',
+  apiKeyHelp: 'Find it in Sonarr: Settings > General > Security > API Key',
+  baseUrlHelp:
+    'If you set a URL Base in Sonarr (Settings > General > Host), enter it here (e.g. /sonarr). Leave blank otherwise.',
+  externalUrlHelp:
+    'For clickable links on media pages when the hostname is not reachable from outside your network.',
+  syncEnabledHelp:
+    'Scan Sonarr for existing media and request status so users cannot request content already available.',
+  enableSearchHelp:
+    'Automatically trigger a search in Sonarr when a request is approved.',
 });
 
 interface SonarrModalProps {
@@ -182,7 +196,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
             autoDismiss: true,
           });
         }
-      } catch (e) {
+      } catch {
         setIsValidated(false);
         if (initialLoad.current) {
           addToast(intl.formatMessage(messages.toastSonarrTestFailure), {
@@ -247,6 +261,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
           syncEnabled: sonarr?.syncEnabled ?? false,
           enableSearch: !sonarr?.preventSearch,
           tagRequests: sonarr?.tagRequests ?? false,
+          monitorNewItems: sonarr?.monitorNewItems ?? 'all',
         }}
         validationSchema={SonarrSettingsSchema}
         onSubmit={async (values) => {
@@ -290,6 +305,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
               syncEnabled: values.syncEnabled,
               preventSearch: !values.enableSearch,
               tagRequests: values.tagRequests,
+              monitorNewItems: values.monitorNewItems,
             };
             if (!sonarr) {
               await axios.post('/api/v1/settings/sonarr', submission);
@@ -301,7 +317,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
             }
 
             onSave();
-          } catch (e) {
+          } catch {
             // set error here
           }
         }}
@@ -323,8 +339,8 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                 isSubmitting
                   ? intl.formatMessage(globalMessages.saving)
                   : sonarr
-                  ? intl.formatMessage(globalMessages.save)
-                  : intl.formatMessage(messages.add)
+                    ? intl.formatMessage(globalMessages.save)
+                    : intl.formatMessage(messages.add)
               }
               secondaryButtonType="warning"
               secondaryText={
@@ -383,6 +399,9 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                 <div className="form-row">
                   <label htmlFor="is4k" className="checkbox-label">
                     {intl.formatMessage(messages.server4k)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.server4kHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <Field type="checkbox" id="is4k" name="is4k" />
@@ -490,6 +509,9 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                   <label htmlFor="apiKey" className="text-label">
                     {intl.formatMessage(messages.apiKey)}
                     <span className="label-required">*</span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.apiKeyHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <div className="form-input-field">
@@ -513,6 +535,9 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                 <div className="form-row">
                   <label htmlFor="baseUrl" className="text-label">
                     {intl.formatMessage(messages.baseUrl)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.baseUrlHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <div className="form-input-field">
@@ -572,20 +597,29 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                           {isTesting
                             ? intl.formatMessage(messages.loadingprofiles)
                             : !isValidated
-                            ? intl.formatMessage(
-                                messages.testFirstQualityProfiles
-                              )
-                            : intl.formatMessage(messages.selectQualityProfile)}
+                              ? intl.formatMessage(
+                                  messages.testFirstQualityProfiles
+                                )
+                              : intl.formatMessage(
+                                  messages.selectQualityProfile
+                                )}
                         </option>
                         {testResponse.profiles.length > 0 &&
-                          testResponse.profiles.map((profile) => (
-                            <option
-                              key={`loaded-profile-${profile.id}`}
-                              value={profile.id}
-                            >
-                              {profile.name}
-                            </option>
-                          ))}
+                          testResponse.profiles
+                            .toSorted((a, b) =>
+                              a.name.localeCompare(b.name, intl.locale, {
+                                numeric: true,
+                                sensitivity: 'base',
+                              })
+                            )
+                            .map((profile) => (
+                              <option
+                                key={`loaded-profile-${profile.id}`}
+                                value={profile.id}
+                              >
+                                {profile.name}
+                              </option>
+                            ))}
                       </Field>
                     </div>
                     {errors.activeProfileId &&
@@ -612,8 +646,10 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                           {isTesting
                             ? intl.formatMessage(messages.loadingrootfolders)
                             : !isValidated
-                            ? intl.formatMessage(messages.testFirstRootFolders)
-                            : intl.formatMessage(messages.selectRootFolder)}
+                              ? intl.formatMessage(
+                                  messages.testFirstRootFolders
+                                )
+                              : intl.formatMessage(messages.selectRootFolder)}
                         </option>
                         {testResponse.rootFolders.length > 0 &&
                           testResponse.rootFolders.map((folder) => (
@@ -656,12 +692,12 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                                   messages.loadinglanguageprofiles
                                 )
                               : !isValidated
-                              ? intl.formatMessage(
-                                  messages.testFirstLanguageProfiles
-                                )
-                              : intl.formatMessage(
-                                  messages.selectLanguageProfile
-                                )}
+                                ? intl.formatMessage(
+                                    messages.testFirstLanguageProfiles
+                                  )
+                                : intl.formatMessage(
+                                    messages.selectLanguageProfile
+                                  )}
                           </option>
                           {testResponse.languageProfiles.length > 0 &&
                             testResponse.languageProfiles.map((language) => (
@@ -703,8 +739,8 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                         !isValidated
                           ? intl.formatMessage(messages.testFirstTags)
                           : isTesting
-                          ? intl.formatMessage(messages.loadingTags)
-                          : intl.formatMessage(messages.selecttags)
+                            ? intl.formatMessage(messages.loadingTags)
+                            : intl.formatMessage(messages.selecttags)
                       }
                       isLoading={isTesting}
                       className="react-select-container"
@@ -780,20 +816,29 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                           {isTesting
                             ? intl.formatMessage(messages.loadingprofiles)
                             : !isValidated
-                            ? intl.formatMessage(
-                                messages.testFirstQualityProfiles
-                              )
-                            : intl.formatMessage(messages.selectQualityProfile)}
+                              ? intl.formatMessage(
+                                  messages.testFirstQualityProfiles
+                                )
+                              : intl.formatMessage(
+                                  messages.selectQualityProfile
+                                )}
                         </option>
                         {testResponse.profiles.length > 0 &&
-                          testResponse.profiles.map((profile) => (
-                            <option
-                              key={`loaded-profile-${profile.id}`}
-                              value={profile.id}
-                            >
-                              {profile.name}
-                            </option>
-                          ))}
+                          testResponse.profiles
+                            .toSorted((a, b) =>
+                              a.name.localeCompare(b.name, intl.locale, {
+                                numeric: true,
+                                sensitivity: 'base',
+                              })
+                            )
+                            .map((profile) => (
+                              <option
+                                key={`loaded-profile-anime-${profile.id}`}
+                                value={profile.id}
+                              >
+                                {profile.name}
+                              </option>
+                            ))}
                       </Field>
                     </div>
                     {errors.activeAnimeProfileId &&
@@ -820,8 +865,10 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                           {isTesting
                             ? intl.formatMessage(messages.loadingrootfolders)
                             : !isValidated
-                            ? intl.formatMessage(messages.testFirstRootFolders)
-                            : intl.formatMessage(messages.selectRootFolder)}
+                              ? intl.formatMessage(
+                                  messages.testFirstRootFolders
+                                )
+                              : intl.formatMessage(messages.selectRootFolder)}
                         </option>
                         {testResponse.rootFolders.length > 0 &&
                           testResponse.rootFolders.map((folder) => (
@@ -862,12 +909,12 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                                   messages.loadinglanguageprofiles
                                 )
                               : !isValidated
-                              ? intl.formatMessage(
-                                  messages.testFirstLanguageProfiles
-                                )
-                              : intl.formatMessage(
-                                  messages.selectLanguageProfile
-                                )}
+                                ? intl.formatMessage(
+                                    messages.testFirstLanguageProfiles
+                                  )
+                                : intl.formatMessage(
+                                    messages.selectLanguageProfile
+                                  )}
                           </option>
                           {testResponse.languageProfiles.length > 0 &&
                             testResponse.languageProfiles.map((language) => (
@@ -909,8 +956,8 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                         !isValidated
                           ? intl.formatMessage(messages.testFirstTags)
                           : isTesting
-                          ? intl.formatMessage(messages.loadingTags)
-                          : intl.formatMessage(messages.selecttags)
+                            ? intl.formatMessage(messages.loadingTags)
+                            : intl.formatMessage(messages.selecttags)
                       }
                       isLoading={isTesting}
                       className="react-select-container"
@@ -965,8 +1012,35 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                   </div>
                 </div>
                 <div className="form-row">
+                  <label htmlFor="monitorNewItems" className="text-label">
+                    {intl.formatMessage(messages.monitorNewItems)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.monitorNewItemsHelp)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <Field
+                        as="select"
+                        id="monitorNewItems"
+                        name="monitorNewItems"
+                        disabled={!isValidated || isTesting}
+                      >
+                        <option value="all">All</option>
+                        <option value="none">None</option>
+                      </Field>
+                    </div>
+                  </div>
+                  {errors.monitorNewItems && touched.monitorNewItems && (
+                    <div className="error">{errors.monitorNewItems}</div>
+                  )}
+                </div>
+                <div className="form-row">
                   <label htmlFor="externalUrl" className="text-label">
                     {intl.formatMessage(messages.externalUrl)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.externalUrlHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <div className="form-input-field">
@@ -987,6 +1061,9 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                 <div className="form-row">
                   <label htmlFor="syncEnabled" className="checkbox-label">
                     {intl.formatMessage(messages.syncEnabled)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.syncEnabledHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <Field
@@ -999,6 +1076,9 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                 <div className="form-row">
                   <label htmlFor="enableSearch" className="checkbox-label">
                     {intl.formatMessage(messages.enableSearch)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.enableSearchHelp)}
+                    </span>
                   </label>
                   <div className="form-input-area">
                     <Field

@@ -6,9 +6,10 @@ import PageTitle from '@app/components/Common/PageTitle';
 import Table from '@app/components/Common/Table';
 import Tooltip from '@app/components/Common/Tooltip';
 import useDebouncedState from '@app/hooks/useDebouncedState';
+import useToasts from '@app/hooks/useToasts';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import globalMessages from '@app/i18n/globalMessages';
-import Error from '@app/pages/_error';
+import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import {
@@ -29,7 +30,6 @@ import copy from 'copy-to-clipboard';
 import { useRouter } from 'next/router';
 import { Fragment, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
 const messages = defineMessages('components.Settings.SettingsLogs', {
@@ -128,7 +128,7 @@ const SettingsLogs = () => {
   // check if there's no data and no errors in the table
   // so as to show a spinner inside the table and not refresh the whole component
   if (!data && error) {
-    return <Error statusCode={500} />;
+    return <ErrorPage statusCode={500} />;
   }
 
   const hasNextPage = data?.pageInfo.pages ?? 0 > pageIndex + 1;
@@ -193,10 +193,10 @@ const SettingsLogs = () => {
                         activeLog.log?.level === 'error'
                           ? 'danger'
                           : activeLog.log?.level === 'warn'
-                          ? 'warning'
-                          : activeLog.log?.level === 'info'
-                          ? 'success'
-                          : 'default'
+                            ? 'warning'
+                            : activeLog.log?.level === 'info'
+                              ? 'success'
+                              : 'default'
                       }
                     >
                       {activeLog.log?.level.toUpperCase()}
@@ -245,7 +245,7 @@ const SettingsLogs = () => {
         <p className="description">
           {intl.formatMessage(messages.logsDescription, {
             code: (msg: React.ReactNode) => (
-              <code className="whitespace-normal break-words bg-opacity-50">
+              <code className="whitespace-normal break-words bg-gray-800/50">
                 {msg}
               </code>
             ),
@@ -314,7 +314,7 @@ const SettingsLogs = () => {
               <Table.TH>{intl.formatMessage(messages.level)}</Table.TH>
               <Table.TH>{intl.formatMessage(messages.label)}</Table.TH>
               <Table.TH>{intl.formatMessage(messages.message)}</Table.TH>
-              <Table.TH></Table.TH>
+              <Table.TH />
             </tr>
           </thead>
           <Table.TBody>
@@ -344,10 +344,10 @@ const SettingsLogs = () => {
                           row.level === 'error'
                             ? 'danger'
                             : row.level === 'warn'
-                            ? 'warning'
-                            : row.level === 'info'
-                            ? 'success'
-                            : 'default'
+                              ? 'warning'
+                              : row.level === 'info'
+                                ? 'success'
+                                : 'default'
                         }
                       >
                         {row.level.toUpperCase()}
@@ -426,7 +426,7 @@ const SettingsLogs = () => {
                         intl.formatMessage(globalMessages.showingresults, {
                           from: pageIndex * currentPageSize + 1,
                           to:
-                            data?.results.length ?? 0 < currentPageSize
+                            (data?.results.length ?? 0 < currentPageSize)
                               ? pageIndex * currentPageSize +
                                 (data?.results.length ?? 0)
                               : (pageIndex + 1) * currentPageSize,

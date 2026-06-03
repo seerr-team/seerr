@@ -24,28 +24,6 @@ Set this to the externally-accessible URL of your Seerr instance.
 
 You must configure this setting in order to enable password reset and generation emails.
 
-## Enable Proxy Support
-
-If you have Seerr behind a reverse proxy, enable this setting to allow Seerr to correctly register client IP addresses. For details, please see the [Express Documentation](https://expressjs.com/en/guide/behind-proxies.html).
-
-This setting is **disabled** by default.
-
-## Enable CSRF Protection
-
-:::warning
-**This is an advanced setting.** Please only enable this setting if you are familiar with CSRF protection and how it works.
-:::
-
-CSRF stands for [cross-site request forgery](https://en.wikipedia.org/wiki/Cross-site_request_forgery). When this setting is enabled, all external API access that alters Seerr application data is blocked.
-
-If you do not use Seerr integrations with third-party applications to add/modify/delete requests or users, you can consider enabling this setting to protect against malicious attacks.
-
-One caveat, however, is that HTTPS is required, meaning that once this setting is enabled, you will no longer be able to access your Seerr instance over _HTTP_ (including using an IP address and port number).
-
-If you enable this setting and find yourself unable to access Seerr, you can disable the setting by modifying `settings.json` in `/app/config`.
-
-This setting is **disabled** by default.
-
 ## Enable Image Caching
 
 When enabled, Jellseerr will proxy and cache images from pre-configured sources (such as TMDB). This can use a significant amount of disk space.
@@ -62,13 +40,22 @@ Set the default display language for Seerr. Users can override this setting in t
 
 These settings filter content shown on the "Discover" home page based on regional availability and original language, respectively. The Streaming Region filters the available streaming providers on the media page. Users can override these global settings by configuring these same options in their user settings.
 
-## Blacklist Content with Tags and Limit Content Blacklisted per Tag
+## Blocklist Region and Blocklist Language
 
-These settings blacklist any TV shows or movies that have one of the entered tags. The "Process Blacklisted Tags" job adds entries to the blacklist based on the configured blacklisted tags. If a blacklisted tag is removed, any media blacklisted under that tag will be removed from the blacklist when the "Process Blacklisted Tags" job runs.
+These settings control the region and language used specifically for blocklist content scanning. The "Process Blocklisted Tags" job uses these settings to determine which content to scan for blocklisting, independent of the general Discover settings.
 
-The limit setting determines how many pages per tag the job will process, with each page containing 20 entries. The job cycles through all 16 available discovery sort options, querying the defined number of pages to blacklist media that is most likely to appear at the top of each sort. Higher limits will create a more accurate blacklist, but will require more storage.
+- **Blocklist Region**: The region used for blocklist content scanning. Leave empty to scan all regions.
+- **Blocklist Language**: The language used for blocklist content scanning. Leave empty to scan all languages.
 
-Blacklisted tags are disabled until at least one tag is entered. These settings cannot be overridden in user settings.
+These settings are separate from the general "Discover Region" and "Discover Language" settings, allowing you to blocklist content from specific regions/languages regardless of what users see in their Discover pages.
+
+## Blocklist Content with Tags and Limit Content Blocklisted per Tag
+
+These settings blocklist any TV shows or movies that have one of the entered tags. The "Process Blocklisted Tags" job adds entries to the blocklist based on the configured blocklisted tags. If a blocklisted tag is removed, any media blocklisted under that tag will be removed from the blocklist when the "Process Blocklisted Tags" job runs.
+
+The limit setting determines how many pages per tag the job will process, with each page containing 20 entries. The job cycles through all 16 available discovery sort options, querying the defined number of pages to blocklist media that is most likely to appear at the top of each sort. Higher limits will create a more accurate blocklist, but will require more storage.
+
+Blocklisted tags are disabled until at least one tag is entered. These settings cannot be overridden in user settings.
 
 ## Hide Available Media
 
@@ -78,9 +65,9 @@ Available media will still appear in search results, however, so it is possible 
 
 This setting is **disabled** by default.
 
-## Hide Blacklisted Items
+## Hide Blocklisted Items
 
-When enabled, media that has been blacklisted will not appear on the "Discover" home page, for all administrators. This can be useful to hide content that you don't want to see, such as content with specific tags or content that has been manually blacklisted when you have the "Manage Blacklist" permission.
+When enabled, media that has been blocklisted will not appear on the "Discover" home page, for all administrators. This can be useful to hide content that you don't want to see, such as content with specific tags or content that has been manually blocklisted when you have the "Manage Blocklist" permission.
 
 This setting is **disabled** by default.
 

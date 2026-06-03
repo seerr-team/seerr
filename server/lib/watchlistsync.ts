@@ -3,6 +3,7 @@ import { MediaStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import {
+  BlocklistedMediaError,
   DuplicateMediaRequestError,
   MediaRequest,
   NoSeasonsAvailableError,
@@ -44,7 +45,7 @@ class WatchlistSync {
         [
           Permission.AUTO_REQUEST,
           Permission.AUTO_REQUEST_MOVIE,
-          Permission.AUTO_APPROVE_TV,
+          Permission.AUTO_REQUEST_TV,
         ],
         { type: 'or' }
       )
@@ -66,28 +67,57 @@ class WatchlistSync {
 
     const mediaItems = await Media.getRelatedMedia(
       user,
-      response.items.map((i) => i.tmdbId)
+      response.items.map((i) => ({
+        tmdbId: i.tmdbId,
+        mediaType: i.type === 'show' ? MediaType.TV : MediaType.MOVIE,
+      }))
     );
 
-    const unavailableItems = response.items.filter(
-      // If we can find watchlist items in our database that are also available, we should exclude them
-      (i) =>
+    const watchlistTmdbIds = response.items.map((i) => i.tmdbId);
+
+    const requestRepository = getRepository(MediaRequest);
+    const existingAutoRequests: MediaRequest[] =
+      watchlistTmdbIds.length > 0
+        ? await requestRepository
+            .createQueryBuilder('request')
+            .leftJoinAndSelect('request.media', 'media')
+            .where('request.requestedBy = :userId', { userId: user.id })
+            .andWhere('request.isAutoRequest = true')
+            .andWhere('media.tmdbId IN (:...tmdbIds)', {
+              tmdbIds: watchlistTmdbIds,
+            })
+            .getMany()
+        : [];
+
+    const autoRequestedTmdbIds = new Set(
+      existingAutoRequests
+        .filter(
+          (r) => r.media != null && r.media.status !== MediaStatus.DELETED
+        )
+        .map((r) => `${r.media.mediaType}:${r.media.tmdbId}`)
+    );
+
+    const unavailableItems = response.items.filter((i) => {
+      const itemMediaType = i.type === 'show' ? MediaType.TV : MediaType.MOVIE;
+
+      return (
+        !autoRequestedTmdbIds.has(`${itemMediaType}:${i.tmdbId}`) &&
         !mediaItems.find(
           (m) =>
             m.tmdbId === i.tmdbId &&
-            ((m.status !== MediaStatus.UNKNOWN && m.mediaType === 'movie') ||
-              (m.mediaType === 'tv' && m.status === MediaStatus.AVAILABLE))
+            m.mediaType === itemMediaType &&
+            (m.status === MediaStatus.BLOCKLISTED ||
+              (itemMediaType === MediaType.MOVIE &&
+                m.status !== MediaStatus.UNKNOWN &&
+                m.status !== MediaStatus.DELETED) ||
+              (itemMediaType === MediaType.TV &&
+                m.status === MediaStatus.AVAILABLE))
         )
-    );
+      );
+    });
 
     for (const mediaItem of unavailableItems) {
       try {
-        logger.info("Creating media request from user's Plex Watchlist", {
-          label: 'Watchlist Sync',
-          userId: user.id,
-          mediaTitle: mediaItem.title,
-        });
-
         if (mediaItem.type === 'show' && !mediaItem.tvdbId) {
           throw new Error('Missing TVDB ID from Plex Metadata');
         }
@@ -123,6 +153,12 @@ class WatchlistSync {
           user,
           { isAutoRequest: true }
         );
+
+        logger.info("Created media request from user's Plex Watchlist", {
+          label: 'Watchlist Sync',
+          userId: user.id,
+          mediaTitle: mediaItem.title,
+        });
       } catch (e) {
         if (!(e instanceof Error)) {
           continue;
@@ -143,6 +179,9 @@ class WatchlistSync {
               mediaTitle: mediaItem.title,
               errorMessage: e.message,
             });
+            break;
+          // Blocklisted media should be silently ignored during watchlist sync to avoid spam
+          case BlocklistedMediaError:
             break;
           default:
             logger.error('Failed to create media request from watchlist', {

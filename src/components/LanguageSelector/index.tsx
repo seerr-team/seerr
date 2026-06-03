@@ -34,6 +34,7 @@ interface LanguageSelectorProps {
   serverValue?: string;
   isUserSettings?: boolean;
   isDisabled?: boolean;
+  fieldName?: string;
 }
 
 const LanguageSelector = ({
@@ -42,6 +43,7 @@ const LanguageSelector = ({
   serverValue,
   isUserSettings = false,
   isDisabled,
+  fieldName = 'originalLanguage',
 }: LanguageSelectorProps) => {
   const intl = useIntl();
   const { data: languages } = useSWR<Language[]>('/api/v1/languages');
@@ -109,40 +111,40 @@ const LanguageSelector = ({
               isFixed: true,
             }
           : (value === '' || !value || value === 'server') && isUserSettings
-          ? {
-              value: 'server',
-              label: intl.formatMessage(messages.languageServerDefault, {
-                language: serverValue
-                  ? serverValue
-                      .split('|')
-                      .map((value) => languageName(value))
-                      .reduce((prev, curr) =>
-                        intl.formatMessage(globalMessages.delimitedlist, {
-                          a: prev,
-                          b: curr,
-                        })
-                      )
-                  : intl.formatMessage(messages.originalLanguageDefault),
-              }),
-              isFixed: true,
-            }
-          : (value
-              ?.split('|')
-              .map((code) => {
-                const matchedLanguage = sortedLanguages?.find(
-                  (lang) => lang.iso_639_1 === code
-                );
+            ? {
+                value: 'server',
+                label: intl.formatMessage(messages.languageServerDefault, {
+                  language: serverValue
+                    ? serverValue
+                        .split('|')
+                        .map((value) => languageName(value))
+                        .reduce((prev, curr) =>
+                          intl.formatMessage(globalMessages.delimitedlist, {
+                            a: prev,
+                            b: curr,
+                          })
+                        )
+                    : intl.formatMessage(messages.originalLanguageDefault),
+                }),
+                isFixed: true,
+              }
+            : (value
+                ?.split('|')
+                .map((code) => {
+                  const matchedLanguage = sortedLanguages?.find(
+                    (lang) => lang.iso_639_1 === code
+                  );
 
-                if (!matchedLanguage) {
-                  return undefined;
-                }
+                  if (!matchedLanguage) {
+                    return undefined;
+                  }
 
-                return {
-                  label: matchedLanguage.name,
-                  value: matchedLanguage.iso_639_1,
-                };
-              })
-              .filter((option) => option !== undefined) as OptionType[])
+                  return {
+                    label: matchedLanguage.name,
+                    value: matchedLanguage.iso_639_1,
+                  };
+                })
+                .filter((option) => option !== undefined) as OptionType[])
       }
       onChange={(value, options) => {
         if (
@@ -151,7 +153,7 @@ const LanguageSelector = ({
             options.option?.value === 'server') ||
           value.every((v) => v.value === 'server')
         ) {
-          return setFieldValue('originalLanguage', '');
+          return setFieldValue(fieldName, '');
         }
 
         if (
@@ -160,11 +162,11 @@ const LanguageSelector = ({
             options.option?.value === 'all') ||
           value.every((v) => v.value === 'all')
         ) {
-          return setFieldValue('originalLanguage', isUserSettings ? 'all' : '');
+          return setFieldValue(fieldName, isUserSettings ? 'all' : '');
         }
 
         setFieldValue(
-          'originalLanguage',
+          fieldName,
           value
             .map((lang) => lang.value)
             .filter((v) => v !== 'all')

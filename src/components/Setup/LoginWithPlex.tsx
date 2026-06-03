@@ -25,11 +25,14 @@ const LoginWithPlex = ({ onComplete }: LoginWithPlexProps) => {
 
   useEffect(() => {
     const login = async () => {
-      const response = await axios.post('/api/v1/auth/plex', { authToken });
-
-      if (response.data?.id) {
-        const { data: user } = await axios.get('/api/v1/auth/me');
-        revalidate(user, false);
+      try {
+        const response = await axios.post('/api/v1/auth/plex', { authToken });
+        if (response.data?.id) {
+          const { data: user } = await axios.get('/api/v1/auth/me');
+          revalidate(user, false);
+        }
+      } catch {
+        // auth failed silently, user can retry again
       }
     };
     if (authToken) {

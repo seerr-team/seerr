@@ -392,8 +392,10 @@ export interface TmdbPersonCombinedCredits {
   crew: TmdbPersonCreditCrew[];
 }
 
-export interface TmdbSeasonWithEpisodes
-  extends Omit<TmdbTvSeasonResult, 'episode_count'> {
+export interface TmdbSeasonWithEpisodes extends Omit<
+  TmdbTvSeasonResult,
+  'episode_count'
+> {
   episodes: TmdbTvEpisodeResult[];
   external_ids: TmdbExternalIds;
 }

@@ -1,4 +1,4 @@
-import BlacklistedTagsSelector from '@app/components/BlacklistedTagsSelector';
+import BlocklistedTagsSelector from '@app/components/BlocklistedTagsSelector';
 import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
@@ -9,6 +9,7 @@ import CopyButton from '@app/components/Settings/CopyButton';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import { availableLanguages } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
+import useToasts from '@app/hooks/useToasts';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -21,7 +22,6 @@ import type { AvailableLocale } from '@server/types/languages';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
 import * as Yup from 'yup';
 
@@ -38,17 +38,23 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   discoverRegionTip: 'Filter content by regional availability',
   originallanguage: 'Discover Language',
   originallanguageTip: 'Filter content by original language',
-  blacklistedTags: 'Blacklist Content with Tags',
-  blacklistedTagsTip:
-    'Automatically add content with tags to the blacklist using the "Process Blacklisted Tags" job',
-  blacklistedTagsLimit: 'Limit Content Blacklisted per Tag',
-  blacklistedTagsLimitTip:
-    'The "Process Blacklisted Tags" job will blacklist this many pages into each sort. Larger numbers will create a more accurate blacklist, but use more space.',
+  blocklistRegion: 'Blocklist Region',
+  blocklistRegionTip:
+    'Region used for blocklist content scanning (independent of discover settings)',
+  blocklistLanguage: 'Blocklist Language',
+  blocklistLanguageTip:
+    'Language used for blocklist content scanning (independent of discover settings)',
+  blocklistedTags: 'Blocklist Content with Tags',
+  blocklistedTagsTip:
+    'Automatically add content with tags to the blocklist using the "Process Blocklisted Tags" job',
+  blocklistedTagsLimit: 'Limit Content Blocklisted per Tag',
+  blocklistedTagsLimitTip:
+    'The "Process Blocklisted Tags" job will blocklist this many pages into each sort. Larger numbers will create a more accurate blocklist, but use more space.',
   streamingRegion: 'Streaming Region',
   streamingRegionTip: 'Show streaming sites by regional availability',
-  hideBlacklisted: 'Hide Blacklisted Items',
-  hideBlacklistedTip:
-    'Hide blacklisted items from discover pages for all users with the "Manage Blacklist" permission',
+  hideBlocklisted: 'Hide Blocklisted Items',
+  hideBlocklistedTip:
+    'Hide blocklisted items from discover pages for all users with the "Manage Blocklist" permission',
   toastApiKeySuccess: 'New API key generated successfully!',
   toastApiKeyFailure: 'Something went wrong while generating a new API key.',
   toastSettingsSuccess: 'Settings saved successfully!',
@@ -101,7 +107,7 @@ const SettingsMain = () => {
         intl.formatMessage(messages.validationApplicationUrlTrailingSlash),
         (value) => !value || !value.endsWith('/')
       ),
-    blacklistedTagsLimit: Yup.number()
+    blocklistedTagsLimit: Yup.number()
       .test(
         'positive',
         'Number must be greater than 0.',
@@ -130,7 +136,7 @@ const SettingsMain = () => {
         autoDismiss: true,
         appearance: 'success',
       });
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.toastApiKeyFailure), {
         autoDismiss: true,
         appearance: 'error',
@@ -164,13 +170,15 @@ const SettingsMain = () => {
             applicationTitle: data?.applicationTitle,
             applicationUrl: data?.applicationUrl,
             hideAvailable: data?.hideAvailable,
-            hideBlacklisted: data?.hideBlacklisted,
+            hideBlocklisted: data?.hideBlocklisted,
             locale: data?.locale ?? 'en',
             discoverRegion: data?.discoverRegion,
             originalLanguage: data?.originalLanguage,
             streamingRegion: data?.streamingRegion || 'US',
-            blacklistedTags: data?.blacklistedTags,
-            blacklistedTagsLimit: data?.blacklistedTagsLimit || 50,
+            blocklistRegion: data?.blocklistRegion || '',
+            blocklistLanguage: data?.blocklistLanguage || '',
+            blocklistedTags: data?.blocklistedTags,
+            blocklistedTagsLimit: data?.blocklistedTagsLimit || 50,
             partialRequestsEnabled: data?.partialRequestsEnabled,
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
             cacheImages: data?.cacheImages,
@@ -184,13 +192,15 @@ const SettingsMain = () => {
                 applicationTitle: values.applicationTitle,
                 applicationUrl: values.applicationUrl,
                 hideAvailable: values.hideAvailable,
-                hideBlacklisted: values.hideBlacklisted,
+                hideBlocklisted: values.hideBlocklisted,
                 locale: values.locale,
                 discoverRegion: values.discoverRegion,
                 streamingRegion: values.streamingRegion,
                 originalLanguage: values.originalLanguage,
-                blacklistedTags: values.blacklistedTags,
-                blacklistedTagsLimit: values.blacklistedTagsLimit,
+                blocklistRegion: values.blocklistRegion,
+                blocklistLanguage: values.blocklistLanguage,
+                blocklistedTags: values.blocklistedTags,
+                blocklistedTagsLimit: values.blocklistedTagsLimit,
                 partialRequestsEnabled: values.partialRequestsEnabled,
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
                 cacheImages: values.cacheImages,
@@ -211,7 +221,7 @@ const SettingsMain = () => {
                 autoDismiss: true,
                 appearance: 'success',
               });
-            } catch (e) {
+            } catch {
               addToast(intl.formatMessage(messages.toastSettingsFailure), {
                 autoDismiss: true,
                 appearance: 'error',
@@ -379,6 +389,7 @@ const SettingsMain = () => {
                       <LanguageSelector
                         setFieldValue={setFieldValue}
                         value={values.originalLanguage}
+                        fieldName="originalLanguage"
                       />
                     </div>
                   </div>
@@ -391,7 +402,7 @@ const SettingsMain = () => {
                     </span>
                   </label>
                   <div className="form-input-area">
-                    <div className="form-input-field relative z-20">
+                    <div className="form-input-field relative">
                       <RegionSelector
                         value={values.streamingRegion}
                         name="streamingRegion"
@@ -403,44 +414,82 @@ const SettingsMain = () => {
                   </div>
                 </div>
                 <div className="form-row">
-                  <label htmlFor="blacklistedTags" className="text-label">
-                    <span>{intl.formatMessage(messages.blacklistedTags)}</span>
+                  <label htmlFor="blocklistRegion" className="text-label">
+                    <span>{intl.formatMessage(messages.blocklistRegion)}</span>
                     <span className="label-tip">
-                      {intl.formatMessage(messages.blacklistedTagsTip)}
+                      {intl.formatMessage(messages.blocklistRegionTip)}
                     </span>
                   </label>
                   <div className="form-input-area">
-                    <div className="form-input-field relative z-10">
-                      <BlacklistedTagsSelector
-                        defaultValue={values.blacklistedTags}
+                    <div className="form-input-field">
+                      <RegionSelector
+                        value={values.blocklistRegion}
+                        name="blocklistRegion"
+                        onChange={setFieldValue}
+                        regionType="discover"
                       />
                     </div>
                   </div>
                 </div>
                 <div className="form-row">
-                  <label htmlFor="blacklistedTagsLimit" className="text-label">
+                  <label htmlFor="blocklistLanguage" className="text-label">
+                    <span>
+                      {intl.formatMessage(messages.blocklistLanguage)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.blocklistLanguageTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field relative z-20">
+                      <LanguageSelector
+                        setFieldValue={setFieldValue}
+                        serverValue={data?.blocklistLanguage}
+                        value={values.blocklistLanguage}
+                        fieldName="blocklistLanguage"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="blocklistedTags" className="text-label">
+                    <span>{intl.formatMessage(messages.blocklistedTags)}</span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.blocklistedTagsTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field relative z-10">
+                      <BlocklistedTagsSelector
+                        defaultValue={values.blocklistedTags}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="blocklistedTagsLimit" className="text-label">
                     <span className="mr-2">
-                      {intl.formatMessage(messages.blacklistedTagsLimit)}
+                      {intl.formatMessage(messages.blocklistedTagsLimit)}
                     </span>
                     <SettingsBadge badgeType="advanced" />
                     <span className="label-tip">
-                      {intl.formatMessage(messages.blacklistedTagsLimitTip)}
+                      {intl.formatMessage(messages.blocklistedTagsLimitTip)}
                     </span>
                   </label>
                   <div className="form-input-area">
                     <Field
-                      id="blacklistedTagsLimit"
-                      name="blacklistedTagsLimit"
+                      id="blocklistedTagsLimit"
+                      name="blocklistedTagsLimit"
                       type="text"
                       inputMode="numeric"
                       className="short"
                       placeholder={50}
                     />
-                    {errors.blacklistedTagsLimit &&
-                      touched.blacklistedTagsLimit &&
-                      typeof errors.blacklistedTagsLimit === 'string' && (
+                    {errors.blocklistedTagsLimit &&
+                      touched.blocklistedTagsLimit &&
+                      typeof errors.blocklistedTagsLimit === 'string' && (
                         <div className="error">
-                          {errors.blacklistedTagsLimit}
+                          {errors.blocklistedTagsLimit}
                         </div>
                       )}
                   </div>
@@ -467,23 +516,23 @@ const SettingsMain = () => {
                   </div>
                 </div>
                 <div className="form-row">
-                  <label htmlFor="hideBlacklisted" className="checkbox-label">
+                  <label htmlFor="hideBlocklisted" className="checkbox-label">
                     <span className="mr-2">
-                      {intl.formatMessage(messages.hideBlacklisted)}
+                      {intl.formatMessage(messages.hideBlocklisted)}
                     </span>
                     <span className="label-tip">
-                      {intl.formatMessage(messages.hideBlacklistedTip)}
+                      {intl.formatMessage(messages.hideBlocklistedTip)}
                     </span>
                   </label>
                   <div className="form-input-area">
                     <Field
                       type="checkbox"
-                      id="hideBlacklisted"
-                      name="hideBlacklisted"
+                      id="hideBlocklisted"
+                      name="hideBlocklisted"
                       onChange={() => {
                         setFieldValue(
-                          'hideBlacklisted',
-                          !values.hideBlacklisted
+                          'hideBlocklisted',
+                          !values.hideBlocklisted
                         );
                       }}
                     />

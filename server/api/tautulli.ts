@@ -140,7 +140,8 @@ class TautulliAPI {
         errorMessage: e.message,
       });
       throw new Error(
-        `[Tautulli] Failed to fetch Tautulli server info: ${e.message}`
+        `[Tautulli] Failed to fetch Tautulli server info: ${e.message}`,
+        { cause: e }
       );
     }
   }
@@ -168,7 +169,8 @@ class TautulliAPI {
         }
       );
       throw new Error(
-        `[Tautulli] Failed to fetch media watch stats: ${e.message}`
+        `[Tautulli] Failed to fetch media watch stats: ${e.message}`,
+        { cause: e }
       );
     }
   }
@@ -196,7 +198,8 @@ class TautulliAPI {
         }
       );
       throw new Error(
-        `[Tautulli] Failed to fetch media watch users: ${e.message}`
+        `[Tautulli] Failed to fetch media watch users: ${e.message}`,
+        { cause: e }
       );
     }
   }
@@ -227,7 +230,8 @@ class TautulliAPI {
         }
       );
       throw new Error(
-        `[Tautulli] Failed to fetch user watch stats: ${e.message}`
+        `[Tautulli] Failed to fetch user watch stats: ${e.message}`,
+        { cause: e }
       );
     }
   }
@@ -269,8 +273,8 @@ class TautulliAPI {
           recordA.grandparent_rating_key && recordB.grandparent_rating_key
             ? recordA.grandparent_rating_key === recordB.grandparent_rating_key
             : recordA.parent_rating_key && recordB.parent_rating_key
-            ? recordA.parent_rating_key === recordB.parent_rating_key
-            : recordA.rating_key === recordB.rating_key
+              ? recordA.parent_rating_key === recordB.parent_rating_key
+              : recordA.rating_key === recordB.rating_key
         );
 
         start += take;
@@ -287,7 +291,8 @@ class TautulliAPI {
         }
       );
       throw new Error(
-        `[Tautulli] Failed to fetch user watch history: ${e.message}`
+        `[Tautulli] Failed to fetch user watch history: ${e.message}`,
+        { cause: e }
       );
     }
   }

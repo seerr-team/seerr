@@ -3,7 +3,7 @@ import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
 import { useUser } from '@app/hooks/useUser';
-import Error from '@app/pages/_error';
+import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import type { WatchlistItem } from '@server/interfaces/api/discoverInterfaces';
 import Link from 'next/link';
@@ -37,13 +37,13 @@ const DiscoverWatchlist = () => {
       router.pathname.startsWith('/profile')
         ? `user/${currentUser?.id}`
         : router.query.userId
-        ? `user/${router.query.userId}`
-        : 'discover'
+          ? `user/${router.query.userId}`
+          : 'discover'
     }/watchlist`
   );
 
   if (error) {
-    return <Error statusCode={500} />;
+    return <ErrorPage statusCode={500} />;
   }
 
   const title = intl.formatMessage(
@@ -55,7 +55,7 @@ const DiscoverWatchlist = () => {
       <PageTitle
         title={[title, router.query.userId ? user?.displayName : '']}
       />
-      <div className="mt-1 mb-5">
+      <div className="mb-5 mt-1">
         <Header
           subtext={
             router.query.userId ? (

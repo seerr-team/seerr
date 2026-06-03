@@ -5,6 +5,7 @@
 
 # testing
 /coverage
+lcov.info
 
 # next.js
 /.next/
@@ -12,6 +13,10 @@
 
 # production
 /build
+
+# ignore REST API documentation
+docs/api/*
+!docs/api/_category_.json
 
 # misc
 .DS_Store

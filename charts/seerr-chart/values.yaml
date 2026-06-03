@@ -13,19 +13,19 @@ fullnameOverride: ''
 # Liveness / Readiness / Startup Probes
 probes:
   # -- Configure liveness probe
-  livenessProbe: {}
-  # initialDelaySeconds: 60
-  # periodSeconds: 30
-  # timeoutSeconds: 5
-  # successThreshold: 1
-  # failureThreshold: 5
+  livenessProbe:
+    initialDelaySeconds: 20
+    periodSeconds: 15
+    timeoutSeconds: 3
+    # successThreshold: 1
+    # failureThreshold: 3
   # -- Configure readiness probe
-  readinessProbe: {}
-  # initialDelaySeconds: 60
-  # periodSeconds: 30
-  # timeoutSeconds: 5
-  # successThreshold: 1
-  # failureThreshold: 5
+  readinessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 15
+    timeoutSeconds: 3
+    # successThreshold: 1
+    # failureThreshold: 3
   # -- Configure startup probe
   startupProbe: null
   #  tcpSocket:
@@ -70,6 +70,7 @@ securityContext:
 service:
   type: ClusterIP
   port: 80
+  annotations: {}
 
 # -- Creating PVC to store configuration
 config:
@@ -86,6 +87,12 @@ config:
     # -- Name of the permanent volume to reference in the claim.
     # Can be used to bind to existing volumes.
     volumeName: ''
+    # -- Specify an existing `PersistentVolumeClaim` to use. If this value is provided, the default PVC will not be created
+    existingClaim: ''
+    # -- Subpath of the pvc which should be mounted
+    subPath: ''
+    # -- Storage class for the PVC. Set to "-" to disable dynamic provisioning. Uses default storage class if no value is provided
+    storageClass: ''
 
 ingress:
   enabled: false
@@ -102,6 +109,44 @@ ingress:
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local
+
+route:
+  main:
+    # -- Enables or disables the Gateway API route
+    enabled: false
+
+    # -- Set the route apiVersion, e.g. gateway.networking.k8s.io/v1 or gateway.networking.k8s.io/v1alpha2
+    apiVersion: gateway.networking.k8s.io/v1
+
+    # -- Set the route kind.
+    # Note that experimental kinds require changing `apiVersion`
+    kind: HTTPRoute
+
+    annotations: {}
+
+    labels: {}
+
+    parentRefs: []
+    # - name: my-gateway
+    #   namespace: gateway
+    #   sectionName: https
+
+    hostnames: []
+    # - seerr.example.com
+
+    additionalRules: []
+
+    filters: []
+
+    matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+    # -- To redirect to HTTPS, create a new route object under the main route and enable this option.
+    # This should only be used with HTTP-like routes, such as HTTPRoute or GRPCRoute.
+    # [Reference]( https://gateway-api.sigs.k8s.io/guides/http-redirect-rewrite/ )
+    httpsRedirect: false
 
 resources: {}
 # We usually recommend not to specify default resources and to leave this as a conscious

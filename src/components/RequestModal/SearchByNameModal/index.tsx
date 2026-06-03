@@ -84,7 +84,7 @@ const SearchByNameModal = ({
             onClick={() => handleClick(item.tvdbId)}
           >
             <div
-              className={`flex h-40 w-full items-center overflow-hidden rounded-xl border border-gray-700 bg-gray-700 bg-opacity-20 p-2 shadow backdrop-blur transition ${
+              className={`flex h-40 w-full items-center overflow-hidden rounded-xl border border-gray-700 bg-gray-700/20 p-2 shadow backdrop-blur transition ${
                 tvdbId === item.tvdbId ? 'ring ring-indigo-500' : ''
               } `}
             >
