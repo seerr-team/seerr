@@ -267,6 +267,8 @@
   "components.Discover.DiscoverNetwork.networkSeries": "{network} 电视节目",
   "components.Discover.DiscoverMovieLanguage.languageMovies": "{language}电影",
   "components.Discover.DiscoverMovieGenre.genreMovies": "{genre}电影",
+  "components.Discover.becauseyouwatched": "因为你看过",
+  "components.Discover.watchhistoryrecommendations": "为你推荐",
   "components.CollectionDetails.requestcollection4k": "提交 4K 系列请求",
   "components.CollectionDetails.requestcollection": "提交系列请求",
   "components.CollectionDetails.overview": "简介",

@@ -17,6 +17,8 @@
   "components.Discover.NetworkSlider.networks": "شبكات البث",
   "components.Discover.upcomingmovies": "أفلام قادمة",
   "components.Discover.upcomingtv": "مسلسلات قادمة",
+  "components.Discover.becauseyouwatched": "لأنك شاهدت",
+  "components.Discover.watchhistoryrecommendations": "موصى به لك",
   "components.IssueDetails.season": "موسم {seasonNumber}",
   "components.IssueModal.issueVideo": "الفديو",
   "components.ManageSlideOver.manageModalMedia": "المحتوى",

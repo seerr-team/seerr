@@ -41,6 +41,8 @@
   "components.Discover.DiscoverNetwork.networkSeries": "{network}-serier",
   "components.Discover.DiscoverMovieLanguage.languageMovies": "{language}e film",
   "components.Discover.DiscoverMovieGenre.genreMovies": "{genre}-film",
+  "components.Discover.becauseyouwatched": "Fordi du så",
+  "components.Discover.watchhistoryrecommendations": "Anbefalet til dig",
   "components.CollectionDetails.requestcollection4k": "Anmod om samling i 4K",
   "components.CollectionDetails.requestcollection": "Anmod om samling",
   "components.CollectionDetails.overview": "Overblik",

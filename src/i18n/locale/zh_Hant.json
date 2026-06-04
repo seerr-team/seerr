@@ -135,6 +135,8 @@
   "components.Discover.recentrequests": "最新請求",
   "components.Discover.populartv": "熱門影集",
   "components.Discover.popularmovies": "熱門電影",
+  "components.Discover.becauseyouwatched": "因為你看過",
+  "components.Discover.watchhistoryrecommendations": "為你推薦",
   "components.CollectionDetails.requestcollection": "提出電影系列請求",
   "components.CollectionDetails.overview": "概要",
   "components.UserList.userdeleteerror": "刪除使用者時出了點問題。",

@@ -32,6 +32,8 @@
   "components.Discover.createnewslider": "नया स्लाइडर बनाएं",
   "components.Discover.CreateSlider.slidernameplaceholder": "स्लाइडर का नाम",
   "components.Discover.CreateSlider.starttyping": "खोजने के लिए लिखना प्रारंभ कर रहा है.",
+  "components.Discover.becauseyouwatched": "क्योंकि आपने देखा",
+  "components.Discover.watchhistoryrecommendations": "आपके लिए अनुशंसित",
   "components.UserList.importfromplex": "Plex उपयोगकर्ता आयात करें",
   "components.UserList.userdeleted": "उपयोगकर्ता सफलतापूर्वक हटा दिया गया!",
   "components.UserList.userdeleteerror": "उपयोगकर्ता को हटाते समय कुछ गलत हुआ.",

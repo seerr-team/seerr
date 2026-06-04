@@ -154,6 +154,8 @@
   "components.Discover.recentlyAdded": "Nyligen tillagda",
   "components.Discover.populartv": "Populära serier",
   "components.Discover.popularmovies": "Populära filmer",
+  "components.Discover.becauseyouwatched": "Eftersom du tittade på",
+  "components.Discover.watchhistoryrecommendations": "Rekommenderat för dig",
   "components.TvDetails.anime": "Anime",
   "components.TvDetails.TvCast.fullseriescast": "Hela seriens rollista",
   "components.Setup.welcome": "Välkommen till Seerr",

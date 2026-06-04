@@ -1,11 +1,9 @@
 import JellyfinAPI from '@server/api/jellyfin';
 import PlexTvAPI from '@server/api/plextv';
-import TautulliAPI from '@server/api/tautulli';
 import { MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
 import dataSource, { getRepository } from '@server/datasource';
-import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import { User } from '@server/entity/User';
 import { UserPushSubscription } from '@server/entity/UserPushSubscription';
@@ -18,7 +16,13 @@ import type {
   UserWatchDataResponse,
 } from '@server/interfaces/api/userInterfaces';
 import { Permission, hasPermission } from '@server/lib/permissions';
+import {
+  getBecauseYouWatchedRecommendations,
+  getPersonalizedWatchHistoryRecommendations,
+  getWatchHistoryRecommendationSources,
+} from '@server/lib/recommendations/watchHistoryRecommendations';
 import { getSettings } from '@server/lib/settings';
+import { getWatchHistoryProvider } from '@server/lib/watchHistory';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { getHostname } from '@server/utils/getHostname';
@@ -26,7 +30,6 @@ import { normalizeJellyfinGuid } from '@server/utils/jellyfin';
 import { isOwnProfileOrAdmin } from '@server/utils/profileMiddleware';
 import { Router } from 'express';
 import gravatarUrl from 'gravatar-url';
-import { findIndex, sortBy } from 'lodash';
 import type { EntityManager } from 'typeorm';
 import { In, Not } from 'typeorm';
 import userSettingsRoutes from './usersettings';
@@ -835,95 +838,137 @@ router.get<{ id: string }, UserWatchDataResponse>(
   '/:id/watch_data',
   isOwnProfileOrAdmin(),
   async (req, res, next) => {
-    const settings = getSettings().tautulli;
-
-    if (!settings.hostname || !settings.port || !settings.apiKey) {
-      return next({
-        status: 404,
-        message: 'Tautulli API not configured.',
-      });
-    }
-
     try {
-      const user = await getRepository(User).findOneOrFail({
-        where: { id: Number(req.params.id) },
-        select: { id: true, plexId: true },
-      });
+      const watchHistoryProvider = getWatchHistoryProvider();
 
-      const tautulli = new TautulliAPI(settings);
-
-      const watchStats = await tautulli.getUserWatchStats(user);
-      const watchHistory = await tautulli.getUserWatchHistory(user);
-
-      const recentlyWatched = sortBy(
-        await getRepository(Media).find({
-          where: [
-            {
-              mediaType: MediaType.MOVIE,
-              ratingKey: In(
-                watchHistory
-                  .filter((record) => record.media_type === 'movie')
-                  .map((record) => record.rating_key)
-              ),
-            },
-            {
-              mediaType: MediaType.MOVIE,
-              ratingKey4k: In(
-                watchHistory
-                  .filter((record) => record.media_type === 'movie')
-                  .map((record) => record.rating_key)
-              ),
-            },
-            {
-              mediaType: MediaType.TV,
-              ratingKey: In(
-                watchHistory
-                  .filter((record) => record.media_type === 'episode')
-                  .map((record) => record.grandparent_rating_key)
-              ),
-            },
-            {
-              mediaType: MediaType.TV,
-              ratingKey4k: In(
-                watchHistory
-                  .filter((record) => record.media_type === 'episode')
-                  .map((record) => record.grandparent_rating_key)
-              ),
-            },
-          ],
-        }),
-        [
-          (media) =>
-            findIndex(
-              watchHistory,
-              (record) =>
-                (!!media.ratingKey &&
-                  parseInt(media.ratingKey) ===
-                    (record.media_type === 'movie'
-                      ? record.rating_key
-                      : record.grandparent_rating_key)) ||
-                (!!media.ratingKey4k &&
-                  parseInt(media.ratingKey4k) ===
-                    (record.media_type === 'movie'
-                      ? record.rating_key
-                      : record.grandparent_rating_key))
-            ),
-        ]
+      const watchData = await watchHistoryProvider.getUserWatchData(
+        Number(req.params.id)
       );
 
-      return res.status(200).json({
-        recentlyWatched,
-        playCount: watchStats.total_plays,
-      });
+      return res.status(200).json(watchData);
     } catch (e) {
       logger.error('Something went wrong fetching user watch data', {
         label: 'API',
         errorMessage: e.message,
         userId: req.params.id,
       });
-      next({
-        status: 500,
-        message: 'Failed to fetch user watch data.',
+
+      return next({
+        status: e.statusCode ?? 500,
+        message: e.message ?? 'Failed to fetch user watch data.',
+      });
+    }
+  }
+);
+router.get<{ id: string }>(
+  '/:id/recommendations/watch-history',
+  isOwnProfileOrAdmin(),
+  async (req, res, next) => {
+    try {
+      const results = await getPersonalizedWatchHistoryRecommendations({
+        user: req.user,
+        userId: Number(req.params.id),
+        page: req.query.page ? Number(req.query.page) : 1,
+        language: (req.query.language as string) ?? req.locale,
+      });
+
+      return res.status(200).json(results);
+    } catch (e) {
+      logger.error(
+        'Something went wrong fetching watch history recommendations',
+        {
+          label: 'API',
+          errorMessage: e.message,
+          userId: req.params.id,
+        }
+      );
+
+      return next({
+        status: e.statusCode ?? 500,
+        message: e.message ?? 'Failed to fetch watch history recommendations.',
+      });
+    }
+  }
+);
+
+router.get<{ id: string }>(
+  '/:id/recommendations/watch-history/sources',
+  isOwnProfileOrAdmin(),
+  async (req, res, next) => {
+    try {
+      const sources = await getWatchHistoryRecommendationSources({
+        userId: Number(req.params.id),
+        language: (req.query.language as string) ?? req.locale,
+        limit: req.query.limit ? Number(req.query.limit) : 10,
+      });
+
+      return res.status(200).json(sources);
+    } catch (e) {
+      logger.error(
+        'Something went wrong fetching watch history recommendation sources',
+        {
+          label: 'API',
+          errorMessage: e.message,
+          userId: req.params.id,
+        }
+      );
+
+      return next({
+        status: e.statusCode ?? 500,
+        message:
+          e.message ?? 'Failed to fetch watch history recommendation sources.',
+      });
+    }
+  }
+);
+
+router.get<{ id: string }>(
+  '/:id/recommendations/watch-history/because',
+  isOwnProfileOrAdmin(),
+  async (req, res, next) => {
+    try {
+      const tmdbId = Number(req.query.tmdbId);
+
+      if (!tmdbId || Number.isNaN(tmdbId)) {
+        return next({
+          status: 400,
+          message: 'tmdbId is required.',
+        });
+      }
+
+      if (
+        req.query.mediaType !== MediaType.MOVIE &&
+        req.query.mediaType !== MediaType.TV
+      ) {
+        return next({
+          status: 400,
+          message: 'mediaType must be either movie or tv.',
+        });
+      }
+
+      const results = await getBecauseYouWatchedRecommendations({
+        user: req.user,
+        tmdbId,
+        mediaType: req.query.mediaType,
+        page: req.query.page ? Number(req.query.page) : 1,
+        language: (req.query.language as string) ?? req.locale,
+      });
+
+      return res.status(200).json(results);
+    } catch (e) {
+      logger.error(
+        'Something went wrong fetching because-you-watched recommendations',
+        {
+          label: 'API',
+          errorMessage: e.message,
+          userId: req.params.id,
+        }
+      );
+
+      return next({
+        status: e.statusCode ?? 500,
+        message:
+          e.message ?? 'Failed to fetch because-you-watched recommendations.',
       });
     }
   }

@@ -59,6 +59,8 @@
   "components.Discover.CreateSlider.providetmdbgenreid": "Въведете TMDB ID на жанр",
   "components.Discover.DiscoverTv.sortTitleDesc": "Заглавие (Я-А) низходящо",
   "components.Discover.DiscoverSliderEdit.remove": "Премахване",
+  "components.Discover.becauseyouwatched": "Защото гледахте",
+  "components.Discover.watchhistoryrecommendations": "Препоръчано за вас",
   "components.Layout.Sidebar.browsemovies": "Филми",
   "components.IssueList.IssueItem.issuetype": "Тип",
   "components.IssueList.IssueItem.unknownissuetype": "Неизвестен",

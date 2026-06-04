@@ -29,6 +29,8 @@
   "components.Discover.upcoming": "סרטים שיצאו בקרוב",
   "components.Discover.upcomingmovies": "סרטים שיצאו בקרוב",
   "components.Discover.upcomingtv": "סדרות שיצאו בקרוב",
+  "components.Discover.becauseyouwatched": "כי צפית ב",
+  "components.Discover.watchhistoryrecommendations": "מומלץ עבורך",
   "components.DownloadBlock.estimatedtime": "{time} משוער",
   "components.IssueDetails.IssueComment.delete": "מחיקת תגובה",
   "components.IssueDetails.IssueComment.areyousuredelete": "למחוק את התגובה?",

@@ -32,6 +32,8 @@
   "components.Discover.upcoming": "Demnächst erscheinende Filme",
   "components.Discover.upcomingmovies": "Demnächst erscheinende Filme",
   "components.Discover.upcomingtv": "Demnächst erscheinende Serien",
+  "components.Discover.becauseyouwatched": "Weil du gesehen hast",
+  "components.Discover.watchhistoryrecommendations": "Für dich empfohlen",
   "components.DownloadBlock.estimatedtime": "Geschätzt {time}",
   "components.DownloadBlock.formattedTitle": "{title}: Staffel {seasonNumber} Folge {episodeNumber}",
   "components.IssueDetails.IssueComment.areyousuredelete": "Soll dieser Kommentar wirklich gelöscht werden?",

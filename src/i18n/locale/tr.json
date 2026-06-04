@@ -118,6 +118,8 @@
   "components.Discover.upcoming": "Gösterime Girecek Filmler",
   "components.Discover.upcomingmovies": "Gösterime Girecek Filmler",
   "components.Discover.upcomingtv": "Yaklaşan Diziler",
+  "components.Discover.becauseyouwatched": "İzlediğiniz için",
+  "components.Discover.watchhistoryrecommendations": "Sizin için önerildi",
   "components.Discover.updatesuccess": "Keşfet ayarları güncellendi.",
   "components.DownloadBlock.estimatedtime": "Tahmini Bitiş: {time}",
   "components.DownloadBlock.formattedTitle": "{title}: Sezon {seasonNumber} Bölüm {episodeNumber}",

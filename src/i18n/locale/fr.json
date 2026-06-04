@@ -118,6 +118,8 @@
   "components.Discover.tvgenres": "Séries par genres",
   "components.Discover.upcoming": "Films à venir",
   "components.Discover.upcomingmovies": "Films à venir",
+  "components.Discover.becauseyouwatched": "Parce que vous avez regardé",
+  "components.Discover.watchhistoryrecommendations": "Recommandé pour vous",
   "components.Layout.SearchInput.searchPlaceholder": "Rechercher un film ou une série",
   "components.Layout.Sidebar.dashboard": "Découvrir",
   "components.Layout.Sidebar.requests": "Demandes",

@@ -3,6 +3,8 @@
   "components.Discover.recentlyAdded": "Aggiunti di recente",
   "components.Discover.populartv": "Serie popolari",
   "components.Discover.popularmovies": "Film popolari",
+  "components.Discover.becauseyouwatched": "Perché hai guardato",
+  "components.Discover.watchhistoryrecommendations": "Consigliato per te",
   "components.Settings.Notifications.emailsettingssaved": "Impostazioni delle notifiche via posta elettronica salvate con successo!",
   "components.Settings.Notifications.emailsettingsfailed": "Impossibile salvare le impostazioni delle notifiche via posta elettronica.",
   "components.Settings.Notifications.emailsender": "Indirizzo del mittente",
