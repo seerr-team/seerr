@@ -8,9 +8,14 @@ import { URL } from 'url';
 import { openpgpEncrypt } from './openpgpEncrypt';
 
 const getSocket: SMTPTransport.Options['getSocket'] = (options, callback) => {
+  if (!options.host || typeof options.port !== 'number') {
+    callback(new Error('SMTP host and port are required'), undefined);
+    return;
+  }
+
   const socket = net.connect({
-    host: options.host ?? 'localhost',
-    port: options.port ?? 587,
+    host: options.host,
+    port: options.port,
   });
   const cleanup = () => {
     socket.setTimeout(0);
