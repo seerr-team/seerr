@@ -11,7 +11,6 @@ const getSocket: SMTPTransport.Options['getSocket'] = (options, callback) => {
   const socket = net.connect({
     host: options.host ?? 'localhost',
     port: options.port ?? 587,
-    localAddress: options.localAddress,
   });
   const cleanup = () => {
     socket.setTimeout(0);
