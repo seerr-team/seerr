@@ -95,15 +95,21 @@ class NtfyAgent
       click = `${applicationUrl}/${payload.media.mediaType}/${payload.media.tmdbId}`;
     }
 
-    return {
+    const ntfyPayload: Record<string, unknown> = {
       topic,
       priority,
       title,
       message,
       markdown: true,
-      attach,
-      click,
     };
+    if (attach) {
+      ntfyPayload.attach = attach;
+    }
+    if (click) {
+      ntfyPayload.click = click;
+    }
+
+    return ntfyPayload;
   }
 
   public shouldSend(): boolean {

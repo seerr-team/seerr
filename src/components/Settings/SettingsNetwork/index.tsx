@@ -3,6 +3,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import Tooltip from '@app/components/Common/Tooltip';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
@@ -10,7 +11,6 @@ import type { NetworkSettings } from '@server/lib/settings';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
 import * as Yup from 'yup';
 
@@ -74,26 +74,32 @@ const SettingsNetwork = () => {
   const NetworkSettingsSchema = Yup.object().shape({
     dnsCacheForceMinTtl: Yup.number().when('dnsCacheEnabled', {
       is: true,
-      then: Yup.number()
-        .typeError(intl.formatMessage(messages.validationDnsCacheMinTtl))
-        .required(intl.formatMessage(messages.validationDnsCacheMinTtl))
-        .min(0),
+      then: (schema) =>
+        schema
+          .typeError(intl.formatMessage(messages.validationDnsCacheMinTtl))
+          .required(intl.formatMessage(messages.validationDnsCacheMinTtl))
+          .min(0),
+      otherwise: (schema) => schema.nullable(),
     }),
     dnsCacheForceMaxTtl: Yup.number().when('dnsCacheEnabled', {
       is: true,
-      then: Yup.number()
-        .typeError(intl.formatMessage(messages.validationDnsCacheMaxTtl))
-        .required(intl.formatMessage(messages.validationDnsCacheMaxTtl))
-        .min(-1),
+      then: (schema) =>
+        schema
+          .typeError(intl.formatMessage(messages.validationDnsCacheMaxTtl))
+          .required(intl.formatMessage(messages.validationDnsCacheMaxTtl))
+          .min(-1),
+      otherwise: (schema) => schema.nullable(),
     }),
     proxyPort: Yup.number().when('proxyEnabled', {
       is: (proxyEnabled: boolean) => proxyEnabled,
-      then: Yup.number()
-        .typeError(intl.formatMessage(messages.validationProxyPort))
-        .integer(intl.formatMessage(messages.validationProxyPort))
-        .min(1, intl.formatMessage(messages.validationProxyPort))
-        .max(65535, intl.formatMessage(messages.validationProxyPort))
-        .required(intl.formatMessage(messages.validationProxyPort)),
+      then: (schema) =>
+        schema
+          .typeError(intl.formatMessage(messages.validationProxyPort))
+          .integer(intl.formatMessage(messages.validationProxyPort))
+          .min(1, intl.formatMessage(messages.validationProxyPort))
+          .max(65535, intl.formatMessage(messages.validationProxyPort))
+          .required(intl.formatMessage(messages.validationProxyPort)),
+      otherwise: (schema) => schema.nullable(),
     }),
     apiRequestTimeout: Yup.number()
       .typeError(intl.formatMessage(messages.validationApiRequestTimeout))

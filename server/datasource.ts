@@ -12,6 +12,15 @@ function boolFromEnv(envVar: string, defaultVal = false) {
   return defaultVal;
 }
 
+function intFromEnv(envVar: string, defaultVal?: number): number | undefined {
+  const val = process.env[envVar];
+  if (val) {
+    const parsed = parseInt(val, 10);
+    return isNaN(parsed) ? defaultVal : parsed;
+  }
+  return defaultVal;
+}
+
 function stringOrReadFileFromEnv(envVar: string): Buffer | string | undefined {
   if (process.env[envVar]) {
     return process.env[envVar];
@@ -87,6 +96,7 @@ const postgresDevConfig: DataSourceOptions = {
   password: process.env.DB_PASS,
   database: process.env.DB_NAME ?? 'seerr',
   ssl: buildSslConfig(),
+  poolSize: intFromEnv('DB_POOL_SIZE'),
   synchronize: false,
   migrationsRun: true,
   logging: boolFromEnv('DB_LOG_QUERIES'),
@@ -105,6 +115,7 @@ const postgresProdConfig: DataSourceOptions = {
   password: process.env.DB_PASS,
   database: process.env.DB_NAME ?? 'seerr',
   ssl: buildSslConfig(),
+  poolSize: intFromEnv('DB_POOL_SIZE'),
   synchronize: false,
   migrationsRun: false,
   logging: boolFromEnv('DB_LOG_QUERIES'),

@@ -3,6 +3,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import { availableLanguages } from '@app/context/LanguageContext';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -12,7 +13,6 @@ import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
 
@@ -55,10 +55,11 @@ const NotificationsNtfy = () => {
     url: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationNtfyUrl)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationNtfyUrl)),
+        otherwise: (schema) => schema.nullable(),
       })
       .test(
         'valid-url',
@@ -68,19 +69,22 @@ const NotificationsNtfy = () => {
     topic: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationNtfyUrl)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationNtfyTopic)),
+        otherwise: (schema) => schema.nullable(),
       })
       .defined(intl.formatMessage(messages.validationNtfyTopic)),
     priority: Yup.number().when('enabled', {
       is: true,
-      then: Yup.number()
-        .min(1)
-        .max(5)
-        .required(intl.formatMessage(messages.validationPriorityRequired)),
-      otherwise: Yup.number().nullable(),
+      then: (schema) =>
+        schema
+          .nullable()
+          .min(1)
+          .max(5)
+          .required(intl.formatMessage(messages.validationPriorityRequired)),
+      otherwise: (schema) => schema.nullable(),
     }),
   });
 
@@ -119,7 +123,7 @@ const NotificationsNtfy = () => {
               password: values.password,
               authMethodToken: values.authMethodToken,
               token: values.token,
-              priority: values.priority,
+              priority: Number(values.priority),
               locale: values.locale,
             },
           });
@@ -172,7 +176,7 @@ const NotificationsNtfy = () => {
                 password: values.password,
                 authMethodToken: values.authMethodToken,
                 token: values.token,
-                priority: values.priority,
+                priority: Number(values.priority),
                 locale: values.locale,
               },
             });

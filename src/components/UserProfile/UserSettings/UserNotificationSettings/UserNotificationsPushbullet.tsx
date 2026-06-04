@@ -2,6 +2,7 @@ import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
+import useToasts from '@app/hooks/useToasts';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -10,7 +11,6 @@ import axios from 'axios';
 import { Form, Formik } from 'formik';
 import { useRouter } from 'next/router';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
 
@@ -44,10 +44,13 @@ const UserPushbulletSettings = () => {
   const UserNotificationsPushbulletSchema = Yup.object().shape({
     pushbulletAccessToken: Yup.string().when('types', {
       is: (types: number) => !!types,
-      then: Yup.string()
-        .nullable()
-        .required(intl.formatMessage(messages.validationPushbulletAccessToken)),
-      otherwise: Yup.string().nullable(),
+      then: (schema) =>
+        schema
+          .nullable()
+          .required(
+            intl.formatMessage(messages.validationPushbulletAccessToken)
+          ),
+      otherwise: (schema) => schema.nullable(),
     }),
   });
 
@@ -67,7 +70,7 @@ const UserPushbulletSettings = () => {
         try {
           await axios.post(`/api/v1/user/${user?.id}/settings/notifications`, {
             pgpKey: data?.pgpKey,
-            discordId: data?.discordId,
+            discordIds: data?.discordIds,
             pushbulletAccessToken: values.pushbulletAccessToken,
             pushoverApplicationToken: data?.pushoverApplicationToken,
             pushoverUserKey: data?.pushoverUserKey,

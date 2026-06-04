@@ -8,6 +8,7 @@ import Table from '@app/components/Common/Table';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
 
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { formatBytes } from '@app/utils/numberHelpers';
@@ -22,11 +23,10 @@ import type {
 import type { JobId } from '@server/lib/settings';
 import axios from 'axios';
 import cronstrue from 'cronstrue/i18n';
-import { formatDuration, intervalToDuration } from 'date-fns';
+import humanizeDuration from 'humanize-duration';
 import { Fragment, useReducer, useState } from 'react';
 import type { MessageDescriptor } from 'react-intl';
 import { FormattedRelativeTime, useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
 const messages: { [messageName: string]: MessageDescriptor } = defineMessages(
@@ -319,14 +319,10 @@ const SettingsJobs = () => {
   };
 
   const formatAge = (milliseconds: number): string => {
-    const duration = intervalToDuration({
-      start: 0,
-      end: milliseconds,
-    });
-
-    return formatDuration(duration, {
-      format: ['minutes', 'seconds'],
-      zero: false,
+    return humanizeDuration(milliseconds, {
+      units: ['m', 's'],
+      round: true,
+      language: locale,
     });
   };
 
@@ -744,7 +740,9 @@ const SettingsJobs = () => {
         <p className="description">
           {intl.formatMessage(messages.imagecacheDescription, {
             code: (msg: React.ReactNode) => (
-              <code className="bg-gray-800/50">{msg}</code>
+              <code key="code-block" className="bg-gray-800/50">
+                {msg}
+              </code>
             ),
             appDataPath: appData ? appData.appDataPath : '/app/config',
           })}

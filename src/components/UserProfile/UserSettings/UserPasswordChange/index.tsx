@@ -4,6 +4,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
@@ -13,7 +14,6 @@ import axios from 'axios';
 import { Form, Formik } from 'formik';
 import { useRouter } from 'next/router';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
 
@@ -74,7 +74,7 @@ const UserPasswordChange = () => {
     confirmPassword: Yup.string()
       .required(intl.formatMessage(messages.validationConfirmPassword))
       .oneOf(
-        [Yup.ref('newPassword'), null],
+        [Yup.ref('newPassword'), ''],
         intl.formatMessage(messages.validationConfirmPasswordSame)
       ),
   });

@@ -38,12 +38,13 @@ import express from 'express';
 import * as OpenApiValidator from 'express-openapi-validator';
 import type { Store } from 'express-session';
 import session from 'express-session';
+import fs from 'fs/promises';
 import http from 'http';
 import https from 'https';
+import yaml from 'js-yaml';
 import next from 'next';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
-import YAML from 'yamljs';
 
 const API_SPEC_PATH = path.join(__dirname, '../seerr-api.yml');
 
@@ -189,6 +190,8 @@ app
             httpOnly: true,
             sameSite: true,
             secure: !dev,
+            key: '_csrf',
+            path: '/',
           },
         })
       );
@@ -221,7 +224,8 @@ app
         }).connect(sessionRespository) as Store,
       })
     );
-    const apiDocs = YAML.load(API_SPEC_PATH);
+    const apiSpecContent = await fs.readFile(API_SPEC_PATH, 'utf-8');
+    const apiDocs = yaml.load(apiSpecContent) as Record<string, unknown>;
     server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(apiDocs));
     server.use(
       OpenApiValidator.middleware({
@@ -247,7 +251,7 @@ app
     server.use('/imageproxy', clearCookies, imageproxy);
     server.use('/avatarproxy', clearCookies, avatarproxy);
 
-    server.get('*', (req, res) => handle(req, res));
+    server.get('*path', (req, res) => handle(req, res));
     server.use(
       (
         err: { status: number; message: string; errors: string[] },
