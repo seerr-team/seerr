@@ -90,6 +90,11 @@ export interface RadarrSettings extends DVRSettings {
   minimumAvailability: string;
 }
 
+export interface LidarrSettings extends DVRSettings {
+  activeMetadataProfileId: number;
+  activeMetadataProfileName: string;
+}
+
 export interface SonarrSettings extends DVRSettings {
   seriesType: 'standard' | 'daily' | 'anime';
   animeSeriesType: 'standard' | 'daily' | 'anime';
@@ -379,6 +384,7 @@ export interface AllSettings {
   tautulli: TautulliSettings;
   radarr: RadarrSettings[];
   sonarr: SonarrSettings[];
+  lidarr: LidarrSettings[];
   public: PublicSettings;
   notifications: NotificationSettings;
   jobs: Record<JobId, JobSettings>;
@@ -455,6 +461,7 @@ class Settings {
       },
       radarr: [],
       sonarr: [],
+      lidarr: [],
       public: {
         initialized: false,
       },
@@ -691,6 +698,14 @@ class Settings {
 
   set sonarr(data: SonarrSettings[]) {
     this.data.sonarr = data;
+  }
+
+  get lidarr(): LidarrSettings[] {
+    return this.data.lidarr;
+  }
+
+  set lidarr(data: LidarrSettings[]) {
+    this.data.lidarr = data;
   }
 
   get public(): PublicSettings {

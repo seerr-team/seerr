@@ -7,14 +7,14 @@ sidebar_position: 1
 
 Welcome to the Seerr Documentation.
 
-**Seerr** is a free and open source software application for managing requests for your media library. It integrates with the media server of your choice: [Jellyfin](https://jellyfin.org), [Plex](https://plex.tv), and [Emby](https://emby.media/). In addition, it integrates with your existing services, such as **[Sonarr](https://sonarr.tv/)**, **[Radarr](https://radarr.video/)**.
+**Seerr** is a free and open source software application for managing requests for your media library. It integrates with the media server of your choice: [Jellyfin](https://jellyfin.org), [Plex](https://plex.tv), and [Emby](https://emby.media/). In addition, it integrates with your existing services, such as **[Sonarr](https://sonarr.tv/)**, **[Radarr](https://radarr.video/)**, and **[Lidarr](https://lidarr.audio/)**.
 
 ## Features
 
 - **Full Jellyfin/Emby/Plex integration**. Login and manage user access with Jellyfin/Emby/Plex.
 - **Syncs to your Jellyfin/Emby/Plex library** to show what titles you already have.
 - Supports Movies, Shows and Mixed Libraries.
-- **Integrates with Sonarr and Radarr**. With more services to come in the future.
+- **Integrates with Sonarr, Radarr, and Lidarr**.
 - Optionally set **Override rules** for requests to match with your defined conditions.
 - **Easy to use request system** allowing users to request individual seasons or movies in a friendly, clean UI.
 - **Simple request management UI**. Don't dig through the app to approve recent requests.

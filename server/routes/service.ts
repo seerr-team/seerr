@@ -1,3 +1,4 @@
+import LidarrAPI from '@server/api/servarr/lidarr';
 import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import TheMovieDb from '@server/api/themoviedb';
@@ -209,6 +210,78 @@ serviceRoutes.get<{ tmdbId: string }>(
         status: 500,
         message: 'Something went wrong trying to fetch series information',
       });
+    }
+  }
+);
+
+serviceRoutes.get('/lidarr', async (req, res) => {
+  const settings = getSettings();
+
+  const filteredLidarrServers: ServiceCommonServer[] = settings.lidarr.map(
+    (lidarr) => ({
+      id: lidarr.id,
+      name: lidarr.name,
+      is4k: false,
+      isDefault: lidarr.isDefault,
+      activeDirectory: lidarr.activeDirectory,
+      activeProfileId: lidarr.activeProfileId,
+      activeTags: lidarr.tags ?? [],
+    })
+  );
+
+  return res.status(200).json(filteredLidarrServers);
+});
+
+serviceRoutes.get<{ lidarrId: string }>(
+  '/lidarr/:lidarrId',
+  async (req, res, next) => {
+    const settings = getSettings();
+
+    const lidarrSettings = settings.lidarr.find(
+      (lidarr) => lidarr.id === Number(req.params.lidarrId)
+    );
+
+    if (!lidarrSettings) {
+      return next({
+        status: 404,
+        message: 'Lidarr server with provided ID does not exist.',
+      });
+    }
+
+    const lidarr = new LidarrAPI({
+      apiKey: lidarrSettings.apiKey,
+      url: LidarrAPI.buildUrl(lidarrSettings, '/api/v1'),
+    });
+
+    try {
+      const profiles = await lidarr.getProfiles();
+      const rootFolders = await lidarr.getRootFolders();
+      const tags = await lidarr.getTags();
+
+      return res.status(200).json({
+        server: {
+          id: lidarrSettings.id,
+          name: lidarrSettings.name,
+          is4k: false,
+          isDefault: lidarrSettings.isDefault,
+          activeDirectory: lidarrSettings.activeDirectory,
+          activeProfileId: lidarrSettings.activeProfileId,
+          activeTags: lidarrSettings.tags,
+        },
+        profiles: profiles.map((profile) => ({
+          id: profile.id,
+          name: profile.name,
+        })),
+        rootFolders: rootFolders.map((folder) => ({
+          id: folder.id,
+          freeSpace: folder.freeSpace,
+          path: folder.path,
+          totalSpace: folder.totalSpace,
+        })),
+        tags,
+      } as ServiceCommonServerWithDetails);
+    } catch (e) {
+      next({ status: 500, message: e.message });
     }
   }
 );

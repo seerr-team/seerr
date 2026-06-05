@@ -8,7 +8,7 @@ sidebar_position: 4
 
 ## Settings  
 
-All configurations from the **Settings** panel in the Seerr web UI are saved, including integrations with Radarr, Sonarr, Jellyfin, Plex, and notification settings.  
+All configurations from the **Settings** panel in the Seerr web UI are saved, including integrations with Radarr, Sonarr, Lidarr, Jellyfin, Plex, and notification settings.  
 These settings are stored in the `settings.json` file located in the Seerr data folder.
 
 ## User Data  
