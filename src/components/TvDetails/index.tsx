@@ -15,6 +15,7 @@ import PlayButton from '@app/components/Common/PlayButton';
 import StatusBadgeMini from '@app/components/Common/StatusBadgeMini';
 import Tag from '@app/components/Common/Tag';
 import Tooltip from '@app/components/Common/Tooltip';
+import DiscoverNavigationButtons from '@app/components/Discover/DiscoverNavigationButtons';
 import ExternalLinkBlock from '@app/components/ExternalLinkBlock';
 import IssueModal from '@app/components/IssueModal';
 import ManageSlideOver from '@app/components/ManageSlideOver';
@@ -604,6 +605,9 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
           </span>
         </div>
         <div className="media-actions">
+          <DiscoverNavigationButtons
+            currentItem={{ id: data.id, mediaType: 'tv' }}
+          />
           {showHideButton &&
             data?.mediaInfo?.status !== MediaStatus.PROCESSING &&
             data?.mediaInfo?.status !== MediaStatus.AVAILABLE &&
