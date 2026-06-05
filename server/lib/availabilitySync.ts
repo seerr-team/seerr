@@ -624,39 +624,26 @@ class AvailabilitySync {
         }
       }
 
-      if (media.status === MediaStatus.AVAILABLE && !is4k) {
-        media.status = MediaStatus.PARTIALLY_AVAILABLE;
-        logger.info(
-          `Marking the non-4K show [TMDB ID ${media.tmdbId}] as PARTIALLY_AVAILABLE because season removal has occurred.`,
-          { label: 'Availability Sync' }
-        );
-      }
-
-      if (media.status4k === MediaStatus.AVAILABLE && is4k) {
-        media.status4k = MediaStatus.PARTIALLY_AVAILABLE;
-        logger.info(
-          `Marking the 4K show [TMDB ID ${media.tmdbId}] as PARTIALLY_AVAILABLE because season removal has occurred.`,
-          { label: 'Availability Sync' }
+      if (media[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE) {
+        media[is4k ? 'status4k' : 'status'] = MediaStatus.PARTIALLY_AVAILABLE;
+        logger.debug(
+          `Marking the ${
+            is4k ? '4K' : 'non-4K'
+          } show [TMDB ID ${media.tmdbId}] as PARTIALLY_AVAILABLE because season(s) [${seasonKeys}] was not found in any ${
+            media.mediaType === 'tv' ? 'Sonarr' : 'Radarr'
+          } and ${
+            mediaServerType === MediaServerType.PLEX
+              ? 'plex'
+              : mediaServerType === MediaServerType.JELLYFIN
+                ? 'jellyfin'
+                : 'emby'
+          } instance.`,
+          { label: 'AvailabilitySync' }
         );
       }
 
       media.lastSeasonChange = new Date();
       await mediaRepository.save(media);
-
-      logger.info(
-        `The ${is4k ? '4K' : 'non-4K'} season(s) [${seasonKeys}] [TMDB ID ${
-          media.tmdbId
-        }] was not found in any ${
-          media.mediaType === 'tv' ? 'Sonarr' : 'Radarr'
-        } and ${
-          mediaServerType === MediaServerType.PLEX
-            ? 'plex'
-            : mediaServerType === MediaServerType.JELLYFIN
-              ? 'jellyfin'
-              : 'emby'
-        } instance. Status will be changed to deleted.`,
-        { label: 'AvailabilitySync' }
-      );
     } catch (ex) {
       logger.debug(
         `Failure updating the ${
