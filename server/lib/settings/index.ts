@@ -123,6 +123,16 @@ export interface MetadataSettings {
   anime: MetadataProviderType;
 }
 
+export interface TheAudioDbSettings {
+  apiKey: string;
+  maxRPS: number;
+  maxRequests: number;
+}
+
+export interface ArtworkProvidersSettings {
+  theAudioDb: TheAudioDbSettings;
+}
+
 export interface ProxySettings {
   enabled: boolean;
   hostname: string;
@@ -390,6 +400,7 @@ export interface AllSettings {
   jobs: Record<JobId, JobSettings>;
   network: NetworkSettings;
   metadataSettings: MetadataSettings;
+  artworkProviders: ArtworkProvidersSettings;
   migrations: string[];
 }
 
@@ -458,6 +469,13 @@ class Settings {
       metadataSettings: {
         tv: MetadataProviderType.TMDB,
         anime: MetadataProviderType.TMDB,
+      },
+      artworkProviders: {
+        theAudioDb: {
+          apiKey: '195003',
+          maxRPS: 25,
+          maxRequests: 20,
+        },
       },
       radarr: [],
       sonarr: [],
@@ -680,6 +698,17 @@ class Settings {
   set metadataSettings(data: MetadataSettings) {
     this.data.metadataSettings = mergeSettings(
       this.data.metadataSettings,
+      data
+    );
+  }
+
+  get artworkProviders(): ArtworkProvidersSettings {
+    return this.data.artworkProviders;
+  }
+
+  set artworkProviders(data: ArtworkProvidersSettings) {
+    this.data.artworkProviders = mergeSettings(
+      this.data.artworkProviders,
       data
     );
   }
