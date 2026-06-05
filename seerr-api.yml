@@ -2695,8 +2695,8 @@ paths:
                 $ref: '#/components/schemas/MetadataSettings'
   /settings/metadatas/test:
     post:
-      summary: Test Provider configuration
-      description: Tests if the TVDB configuration is valid. Returns a list of available languages on success.
+      summary: Test Metadata Provider configuration
+      description: Tests if the metadata provider configuration is valid. Returns a list of available languages on success.
       tags:
         - settings
       requestBody:
@@ -2714,7 +2714,7 @@ paths:
                   example: true
       responses:
         '200':
-          description: Succesfully connected to TVDB
+          description: Succesfully connected to metadata provider
           content:
             application/json:
               schema:
@@ -2722,7 +2722,7 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: 'Successfully connected to TVDB'
+                    example: 'Successfully connected to metadata provider'
   /settings/tautulli:
     get:
       summary: Get Tautulli settings

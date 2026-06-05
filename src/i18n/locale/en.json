@@ -1274,6 +1274,7 @@
   "components.Settings.metadataSettings": "Settings for metadata provider",
   "components.Settings.metadataSettingsSaved": "Metadata provider settings saved",
   "components.Settings.musicServiceSettingsDescription": "Configure your {serverType} server(s) below. You can connect multiple {serverType} servers, but only one of them can be marked as default. Administrators are able to override the server used to process new requests prior to approval.",
+  "components.Settings.musicbrainzProviderDoesnotWork": "MusicBrainz provider does not work",
   "components.Settings.no": "No",
   "components.Settings.noDefault4kServer": "A 4K {serverType} server must be marked as default in order to enable users to submit 4K {mediaType} requests.",
   "components.Settings.noDefaultNon4kServer": "If you only have a single {serverType} server for both non-4K and 4K content (or if you only download 4K content), your {serverType} server should <strong>NOT</strong> be designated as a 4K server.",

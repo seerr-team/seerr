@@ -34,6 +34,7 @@ const messages = defineMessages('components.Settings', {
     'TMDB provider does not work, please select another metadata provider',
   tvdbProviderDoesnotWork:
     'TVDB provider does not work, please select another metadata provider',
+  musicbrainzProviderDoesnotWork: 'MusicBrainz provider does not work',
   allChosenProvidersAreOperational:
     'All chosen metadata providers are operational',
   connectionTestFailed: 'Connection test failed',
@@ -46,6 +47,7 @@ type ProviderStatus = 'ok' | 'not tested' | 'failed';
 interface ProviderResponse {
   tvdb: ProviderStatus;
   tmdb: ProviderStatus;
+  mb: ProviderStatus;
 }
 
 interface MetadataValues {
@@ -61,9 +63,11 @@ const SettingsMetadata = () => {
   const intl = useIntl();
   const { addToast } = useToasts();
   const [isTesting, setIsTesting] = useState(false);
+
   const defaultStatus: ProviderResponse = {
     tmdb: 'not tested',
     tvdb: 'not tested',
+    mb: 'not tested',
   };
 
   const [providerStatus, setProviderStatus] =
@@ -92,6 +96,7 @@ const SettingsMetadata = () => {
     const useTmdb =
       values.tv === MetadataProviderType.TMDB ||
       values.anime === MetadataProviderType.TMDB;
+
     const useTvdb =
       values.tv === MetadataProviderType.TVDB ||
       values.anime === MetadataProviderType.TVDB;
@@ -99,6 +104,7 @@ const SettingsMetadata = () => {
     const testData = {
       tmdb: useTmdb,
       tvdb: useTvdb,
+      mb: true,
     };
 
     try {
@@ -110,30 +116,28 @@ const SettingsMetadata = () => {
       const newStatus: ProviderResponse = {
         tmdb: useTmdb ? response.data.tests.tmdb : 'not tested',
         tvdb: useTvdb ? response.data.tests.tvdb : 'not tested',
+        mb: response.data.tests.mb,
       };
 
       setProviderStatus(newStatus);
       return newStatus;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        // If we receive an error response with a valid format
         const errorData = error.response.data as {
           success: boolean;
           tests: ProviderResponse;
         };
 
-        if (errorData.tests) {
-          const newStatus: ProviderResponse = {
-            tmdb: useTmdb ? errorData.tests.tmdb : 'not tested',
-            tvdb: useTvdb ? errorData.tests.tvdb : 'not tested',
-          };
+        const newStatus: ProviderResponse = {
+          tmdb: useTmdb ? errorData.tests.tmdb : 'not tested',
+          tvdb: useTvdb ? errorData.tests.tvdb : 'not tested',
+          mb: errorData.tests.mb,
+        };
 
-          setProviderStatus(newStatus);
-          return newStatus;
-        }
+        setProviderStatus(newStatus);
+        return newStatus;
       }
 
-      // In case of error without usable data
       throw new Error('Failed to test connection', { cause: error });
     }
   };
@@ -166,6 +170,7 @@ const SettingsMetadata = () => {
         setProviderStatus({
           tmdb: mapStatusValue(response.data.tests.tmdb),
           tvdb: mapStatusValue(response.data.tests.tvdb),
+          mb: 'not tested',
         });
       }
 
@@ -199,6 +204,7 @@ const SettingsMetadata = () => {
           setProviderStatus({
             tmdb: mapStatusValue(errorData.tests.tmdb),
             tvdb: mapStatusValue(errorData.tests.tvdb),
+            mb: 'not tested',
           });
         }
       }
@@ -258,7 +264,6 @@ const SettingsMetadata = () => {
     tv: MetadataProviderType.TMDB,
     anime: MetadataProviderType.TMDB,
   };
-
   return (
     <>
       <PageTitle
@@ -281,26 +286,31 @@ const SettingsMetadata = () => {
         <h4 className="mb-3 text-lg font-medium">
           {intl.formatMessage(messages.providerStatus)}
         </h4>
+
         <div className="flex flex-col space-y-3">
           <div className="flex items-center">
             <span className="mr-2 w-24">TheMovieDB:</span>
-            <span
-              className={`text-sm ${getStatusClass(providerStatus.tmdb)}`}
-              data-testid="tmdb-status-container"
-            >
+            <span className={`text-sm ${getStatusClass(providerStatus.tmdb)}`}>
               <Badge badgeType={getBadgeType(providerStatus.tmdb)}>
                 {getStatusMessage(providerStatus.tmdb)}
               </Badge>
             </span>
           </div>
+
           <div className="flex items-center">
             <span className="mr-2 w-24">TheTVDB:</span>
-            <span
-              className={`text-sm ${getStatusClass(providerStatus.tvdb)}`}
-              data-testid="tvdb-status"
-            >
+            <span className={`text-sm ${getStatusClass(providerStatus.tvdb)}`}>
               <Badge badgeType={getBadgeType(providerStatus.tvdb)}>
                 {getStatusMessage(providerStatus.tvdb)}
+              </Badge>
+            </span>
+          </div>
+
+          <div className="flex items-center">
+            <span className="mr-2 w-24">MusicBrainz:</span>
+            <span className={`text-sm ${getStatusClass(providerStatus.mb)}`}>
+              <Badge badgeType={getBadgeType(providerStatus.mb)}>
+                {getStatusMessage(providerStatus.mb)}
               </Badge>
             </span>
           </div>
