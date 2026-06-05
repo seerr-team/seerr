@@ -26,6 +26,33 @@ const PENDING_TTL_MS = 5 * 60 * 1000;
 
 const isBrowser = (): boolean => typeof window !== 'undefined';
 
+const getSessionStorage = (): Storage | null => {
+  if (!isBrowser()) {
+    return null;
+  }
+
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+};
+
+const removeDiscoverNavigationStorage = (): void => {
+  const storage = getSessionStorage();
+
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.removeItem(CONTEXT_KEY);
+    storage.removeItem(PENDING_KEY);
+  } catch {
+    // Ignore storage cleanup failures. Navigation state is optional.
+  }
+};
+
 export const getDiscoverNavigationPath = (
   item: DiscoverNavigationItem
 ): string => `/${item.mediaType}/${item.id}`;
@@ -34,7 +61,9 @@ export const storeDiscoverNavigationContext = (
   items: DiscoverNavigationItem[],
   currentItem: DiscoverNavigationItem
 ): void => {
-  if (!isBrowser()) {
+  const storage = getSessionStorage();
+
+  if (!storage) {
     return;
   }
 
@@ -51,14 +80,22 @@ export const storeDiscoverNavigationContext = (
     items: uniqueItems,
   };
 
-  window.sessionStorage.setItem(CONTEXT_KEY, JSON.stringify(context));
+  try {
+    storage.setItem(CONTEXT_KEY, JSON.stringify(context));
+  } catch {
+    removeDiscoverNavigationStorage();
+    return;
+  }
+
   markDiscoverNavigationPending(currentItem);
 };
 
 export const markDiscoverNavigationPending = (
   item: DiscoverNavigationItem
 ): void => {
-  if (!isBrowser()) {
+  const storage = getSessionStorage();
+
+  if (!storage) {
     return;
   }
 
@@ -67,19 +104,25 @@ export const markDiscoverNavigationPending = (
     expiresAt: Date.now() + PENDING_TTL_MS,
   };
 
-  window.sessionStorage.setItem(PENDING_KEY, JSON.stringify(pending));
+  try {
+    storage.setItem(PENDING_KEY, JSON.stringify(pending));
+  } catch {
+    removeDiscoverNavigationStorage();
+  }
 };
 
 export const getDiscoverNavigationState = (
   currentItem: DiscoverNavigationItem
 ): DiscoverNavigationState | null => {
-  if (!isBrowser()) {
+  const storage = getSessionStorage();
+
+  if (!storage) {
     return null;
   }
 
   try {
     const pending = JSON.parse(
-      window.sessionStorage.getItem(PENDING_KEY) ?? 'null'
+      storage.getItem(PENDING_KEY) ?? 'null'
     ) as DiscoverNavigationPending | null;
 
     if (
@@ -91,7 +134,7 @@ export const getDiscoverNavigationState = (
     }
 
     const context = JSON.parse(
-      window.sessionStorage.getItem(CONTEXT_KEY) ?? 'null'
+      storage.getItem(CONTEXT_KEY) ?? 'null'
     ) as DiscoverNavigationContext | null;
 
     if (!context?.items.length) {
@@ -112,8 +155,7 @@ export const getDiscoverNavigationState = (
       next: context.items[currentIndex + 1],
     };
   } catch {
-    window.sessionStorage.removeItem(CONTEXT_KEY);
-    window.sessionStorage.removeItem(PENDING_KEY);
+    removeDiscoverNavigationStorage();
     return null;
   }
 };
