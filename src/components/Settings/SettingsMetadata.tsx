@@ -10,7 +10,7 @@ import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
-import { Form, Formik } from 'formik';
+import { Field, Form, Formik } from 'formik';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
@@ -34,11 +34,21 @@ const messages = defineMessages('components.Settings', {
     'TMDB provider does not work, please select another metadata provider',
   tvdbProviderDoesnotWork:
     'TVDB provider does not work, please select another metadata provider',
+  coverArtArchiveProviderDoesnotWork:
+    'Cover Art Archive did not respond — check the Artwork Providers Configuration',
   allChosenProvidersAreOperational:
     'All chosen metadata providers are operational',
   connectionTestFailed: 'Connection test failed',
   failedToSaveMetadataSettings: 'Failed to save metadata provider settings',
   metadataSettingsSaved: 'Metadata provider settings saved',
+  artworkProvidersConfiguration: 'Artwork Providers Configuration',
+  artworkProvidersConfigurationDescription:
+    'Configure rate limits for the cover-art provider used by music. The upstream is a hosted service with no self-hosted equivalent, so only the request rate is configurable.',
+  coverArtArchive: 'Cover Art Archive',
+  maxRPS: 'Max requests per second',
+  maxRequests: 'Max in-flight requests',
+  artworkProvidersSaved: 'Artwork provider settings saved',
+  artworkProvidersSaveFailed: 'Failed to save artwork provider settings',
 });
 
 type ProviderStatus = 'ok' | 'not tested' | 'failed';
@@ -46,6 +56,7 @@ type ProviderStatus = 'ok' | 'not tested' | 'failed';
 interface ProviderResponse {
   tvdb: ProviderStatus;
   tmdb: ProviderStatus;
+  coverArtArchive: ProviderStatus;
 }
 
 interface MetadataValues {
@@ -57,6 +68,21 @@ interface MetadataSettings {
   metadata: MetadataValues;
 }
 
+interface CoverArtArchiveSettings {
+  maxRPS: number;
+  maxRequests: number;
+}
+
+interface ArtworkProvidersSettings {
+  coverArtArchive: CoverArtArchiveSettings;
+}
+
+const mapStatusValue = (status: string): ProviderStatus => {
+  if (status === 'ok') return 'ok';
+  if (status === 'failed') return 'failed';
+  return 'not tested';
+};
+
 const SettingsMetadata = () => {
   const intl = useIntl();
   const { addToast } = useToasts();
@@ -64,6 +90,7 @@ const SettingsMetadata = () => {
   const defaultStatus: ProviderResponse = {
     tmdb: 'not tested',
     tvdb: 'not tested',
+    coverArtArchive: 'not tested',
   };
 
   const [providerStatus, setProviderStatus] =
@@ -86,6 +113,9 @@ const SettingsMetadata = () => {
     }
   );
 
+  const { data: artworkData, mutate: mutateArtwork } =
+    useSWR<ArtworkProvidersSettings>('/api/v1/settings/artwork-providers');
+
   const testConnection = async (
     values: MetadataValues
   ): Promise<ProviderResponse> => {
@@ -96,46 +126,54 @@ const SettingsMetadata = () => {
       values.tv === MetadataProviderType.TVDB ||
       values.anime === MetadataProviderType.TVDB;
 
-    const testData = {
-      tmdb: useTmdb,
-      tvdb: useTvdb,
+    const tvdbTmdbPromise = axios
+      .post<{
+        success: boolean;
+        tests: { tvdb: ProviderStatus; tmdb: ProviderStatus };
+      }>('/api/v1/settings/metadatas/test', { tmdb: useTmdb, tvdb: useTvdb })
+      .then((r) => r.data.tests)
+      .catch((e) => {
+        if (axios.isAxiosError(e) && e.response?.data?.tests) {
+          return e.response.data.tests as {
+            tvdb: ProviderStatus;
+            tmdb: ProviderStatus;
+          };
+        }
+        return { tvdb: 'failed' as const, tmdb: 'failed' as const };
+      });
+
+    const artworkPromise = axios
+      .post<{
+        success: boolean;
+        tests: {
+          coverArtArchive: ProviderStatus;
+        };
+      }>('/api/v1/settings/artwork-providers/test')
+      .then((r) => r.data.tests)
+      .catch((e) => {
+        if (axios.isAxiosError(e) && e.response?.data?.tests) {
+          return e.response.data.tests as {
+            coverArtArchive: ProviderStatus;
+          };
+        }
+        return {
+          coverArtArchive: 'failed' as const,
+        };
+      });
+
+    const [tvdbTmdb, artwork] = await Promise.all([
+      tvdbTmdbPromise,
+      artworkPromise,
+    ]);
+
+    const newStatus: ProviderResponse = {
+      tmdb: useTmdb ? mapStatusValue(tvdbTmdb.tmdb) : 'not tested',
+      tvdb: useTvdb ? mapStatusValue(tvdbTmdb.tvdb) : 'not tested',
+      coverArtArchive: mapStatusValue(artwork.coverArtArchive),
     };
 
-    try {
-      const response = await axios.post<{
-        success: boolean;
-        tests: ProviderResponse;
-      }>('/api/v1/settings/metadatas/test', testData);
-
-      const newStatus: ProviderResponse = {
-        tmdb: useTmdb ? response.data.tests.tmdb : 'not tested',
-        tvdb: useTvdb ? response.data.tests.tvdb : 'not tested',
-      };
-
-      setProviderStatus(newStatus);
-      return newStatus;
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        // If we receive an error response with a valid format
-        const errorData = error.response.data as {
-          success: boolean;
-          tests: ProviderResponse;
-        };
-
-        if (errorData.tests) {
-          const newStatus: ProviderResponse = {
-            tmdb: useTmdb ? errorData.tests.tmdb : 'not tested',
-            tvdb: useTvdb ? errorData.tests.tvdb : 'not tested',
-          };
-
-          setProviderStatus(newStatus);
-          return newStatus;
-        }
-      }
-
-      // In case of error without usable data
-      throw new Error('Failed to test connection', { cause: error });
-    }
+    setProviderStatus(newStatus);
+    return newStatus;
   };
 
   const saveSettings = async (
@@ -157,16 +195,11 @@ const SettingsMetadata = () => {
 
       // Update metadata provider status if available
       if (response.data.tests) {
-        const mapStatusValue = (status: string): ProviderStatus => {
-          if (status === 'ok') return 'ok';
-          if (status === 'failed') return 'failed';
-          return 'not tested';
-        };
-
-        setProviderStatus({
-          tmdb: mapStatusValue(response.data.tests.tmdb),
-          tvdb: mapStatusValue(response.data.tests.tvdb),
-        });
+        setProviderStatus((prev) => ({
+          ...prev,
+          tmdb: mapStatusValue(response.data.tests!.tmdb),
+          tvdb: mapStatusValue(response.data.tests!.tvdb),
+        }));
       }
 
       // Adapt the response to the format expected by the component
@@ -189,17 +222,11 @@ const SettingsMetadata = () => {
 
         // If test data is available in the error response
         if (errorData.tests) {
-          const mapStatusValue = (status: string): ProviderStatus => {
-            if (status === 'ok') return 'ok';
-            if (status === 'failed') return 'failed';
-            return 'not tested';
-          };
-
-          // Update metadata provider status with error data
-          setProviderStatus({
-            tmdb: mapStatusValue(errorData.tests.tmdb),
-            tvdb: mapStatusValue(errorData.tests.tvdb),
-          });
+          setProviderStatus((prev) => ({
+            ...prev,
+            tmdb: mapStatusValue(errorData.tests!.tmdb),
+            tvdb: mapStatusValue(errorData.tests!.tvdb),
+          }));
         }
       }
 
@@ -250,6 +277,104 @@ const SettingsMetadata = () => {
     }
   };
 
+  const runProviderTests = async (
+    metadataValues: MetadataValues
+  ): Promise<void> => {
+    setIsTesting(true);
+    try {
+      const resp = await testConnection(metadataValues);
+
+      const failures: string[] = [];
+      if (resp.tvdb === 'failed') {
+        failures.push(intl.formatMessage(messages.tvdbProviderDoesnotWork));
+      }
+      if (resp.tmdb === 'failed') {
+        failures.push(intl.formatMessage(messages.tmdbProviderDoesnotWork));
+      }
+      if (resp.coverArtArchive === 'failed') {
+        failures.push(
+          intl.formatMessage(messages.coverArtArchiveProviderDoesnotWork)
+        );
+      }
+
+      if (failures.length > 0) {
+        for (const msg of failures) {
+          addToast(msg, { appearance: 'error', autoDismiss: true });
+        }
+      } else {
+        addToast(
+          intl.formatMessage(messages.allChosenProvidersAreOperational),
+          { appearance: 'success', autoDismiss: true }
+        );
+      }
+    } catch {
+      addToast(intl.formatMessage(messages.connectionTestFailed), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  const runArtworkProviderTests = async (): Promise<void> => {
+    setIsTesting(true);
+    try {
+      const resp = await axios
+        .post<{
+          success: boolean;
+          tests: {
+            coverArtArchive: ProviderStatus;
+          };
+        }>('/api/v1/settings/artwork-providers/test')
+        .then((r) => r.data.tests)
+        .catch((e) => {
+          if (axios.isAxiosError(e) && e.response?.data?.tests) {
+            return e.response.data.tests as {
+              coverArtArchive: ProviderStatus;
+            };
+          }
+          return {
+            coverArtArchive: 'failed' as const,
+          };
+        });
+
+      const mapped = {
+        coverArtArchive: mapStatusValue(resp.coverArtArchive),
+      };
+
+      setProviderStatus((prev) => ({
+        ...prev,
+        coverArtArchive: mapped.coverArtArchive,
+      }));
+
+      const failures: string[] = [];
+      if (mapped.coverArtArchive === 'failed') {
+        failures.push(
+          intl.formatMessage(messages.coverArtArchiveProviderDoesnotWork)
+        );
+      }
+
+      if (failures.length > 0) {
+        for (const msg of failures) {
+          addToast(msg, { appearance: 'error', autoDismiss: true });
+        }
+      } else {
+        addToast(
+          intl.formatMessage(messages.allChosenProvidersAreOperational),
+          { appearance: 'success', autoDismiss: true }
+        );
+      }
+    } catch {
+      addToast(intl.formatMessage(messages.connectionTestFailed), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
   if (!data && !error) {
     return <LoadingSpinner />;
   }
@@ -283,7 +408,7 @@ const SettingsMetadata = () => {
         </h4>
         <div className="flex flex-col space-y-3">
           <div className="flex items-center">
-            <span className="mr-2 w-24">TheMovieDB:</span>
+            <span className="mr-2 w-44 whitespace-nowrap">TheMovieDB:</span>
             <span
               className={`text-sm ${getStatusClass(providerStatus.tmdb)}`}
               data-testid="tmdb-status-container"
@@ -294,13 +419,28 @@ const SettingsMetadata = () => {
             </span>
           </div>
           <div className="flex items-center">
-            <span className="mr-2 w-24">TheTVDB:</span>
+            <span className="mr-2 w-44 whitespace-nowrap">TheTVDB:</span>
             <span
               className={`text-sm ${getStatusClass(providerStatus.tvdb)}`}
               data-testid="tvdb-status"
             >
               <Badge badgeType={getBadgeType(providerStatus.tvdb)}>
                 {getStatusMessage(providerStatus.tvdb)}
+              </Badge>
+            </span>
+          </div>
+          <div className="flex items-center">
+            <span className="mr-2 w-44 whitespace-nowrap">
+              Cover Art Archive:
+            </span>
+            <span
+              className={`text-sm ${getStatusClass(
+                providerStatus.coverArtArchive
+              )}`}
+              data-testid="coverartarchive-status"
+            >
+              <Badge badgeType={getBadgeType(providerStatus.coverArtArchive)}>
+                {getStatusMessage(providerStatus.coverArtArchive)}
               </Badge>
             </span>
           </div>
@@ -391,55 +531,8 @@ const SettingsMetadata = () => {
                       <Button
                         buttonType="warning"
                         type="button"
-                        disabled={isSubmitting || !isValid}
-                        onClick={async () => {
-                          setIsTesting(true);
-                          try {
-                            const resp = await testConnection(values.metadata);
-
-                            if (resp.tvdb === 'failed') {
-                              addToast(
-                                intl.formatMessage(
-                                  messages.tvdbProviderDoesnotWork
-                                ),
-                                {
-                                  appearance: 'error',
-                                  autoDismiss: true,
-                                }
-                              );
-                            } else if (resp.tmdb === 'failed') {
-                              addToast(
-                                intl.formatMessage(
-                                  messages.tmdbProviderDoesnotWork
-                                ),
-                                {
-                                  appearance: 'error',
-                                  autoDismiss: true,
-                                }
-                              );
-                            } else {
-                              addToast(
-                                intl.formatMessage(
-                                  messages.allChosenProvidersAreOperational
-                                ),
-                                {
-                                  appearance: 'success',
-                                  autoDismiss: true,
-                                }
-                              );
-                            }
-                          } catch {
-                            addToast(
-                              intl.formatMessage(messages.connectionTestFailed),
-                              {
-                                appearance: 'error',
-                                autoDismiss: true,
-                              }
-                            );
-                          } finally {
-                            setIsTesting(false);
-                          }
-                        }}
+                        disabled={isSubmitting || !isValid || isTesting}
+                        onClick={() => runProviderTests(values.metadata)}
                       >
                         <BeakerIcon />
                         <span>
@@ -470,6 +563,126 @@ const SettingsMetadata = () => {
               </Form>
             );
           }}
+        </Formik>
+      </div>
+
+      <div className="mb-6 mt-10">
+        <h3 className="heading">
+          {intl.formatMessage(messages.artworkProvidersConfiguration)}
+        </h3>
+        <p className="description">
+          {intl.formatMessage(
+            messages.artworkProvidersConfigurationDescription
+          )}
+        </p>
+      </div>
+
+      <div className="section">
+        <Formik
+          initialValues={
+            artworkData ?? {
+              coverArtArchive: { maxRPS: 50, maxRequests: 20 },
+            }
+          }
+          enableReinitialize
+          onSubmit={async (values) => {
+            try {
+              const resp = await axios.put<{
+                success: boolean;
+                coverArtArchive: CoverArtArchiveSettings;
+              }>('/api/v1/settings/artwork-providers', values);
+              mutateArtwork({
+                coverArtArchive: resp.data.coverArtArchive,
+              });
+              addToast(intl.formatMessage(messages.artworkProvidersSaved), {
+                appearance: 'success',
+                autoDismiss: true,
+              });
+            } catch {
+              addToast(
+                intl.formatMessage(messages.artworkProvidersSaveFailed),
+                {
+                  appearance: 'error',
+                  autoDismiss: true,
+                }
+              );
+            }
+          }}
+        >
+          {({ isSubmitting, isValid }) => (
+            <Form className="section" data-testid="artwork-providers-form">
+              <div className="mb-6">
+                <h2 className="heading">
+                  {intl.formatMessage(messages.coverArtArchive)}
+                </h2>
+              </div>
+              <div className="form-row">
+                <label htmlFor="coverArtArchive.maxRPS" className="text-label">
+                  {intl.formatMessage(messages.maxRPS)}
+                </label>
+                <div className="form-input-area">
+                  <Field
+                    id="coverArtArchive.maxRPS"
+                    name="coverArtArchive.maxRPS"
+                    type="text"
+                    inputMode="numeric"
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <label
+                  htmlFor="coverArtArchive.maxRequests"
+                  className="text-label"
+                >
+                  {intl.formatMessage(messages.maxRequests)}
+                </label>
+                <div className="form-input-area">
+                  <Field
+                    id="coverArtArchive.maxRequests"
+                    name="coverArtArchive.maxRequests"
+                    type="text"
+                    inputMode="numeric"
+                  />
+                </div>
+              </div>
+
+              <div className="actions">
+                <div className="flex justify-end">
+                  <span className="ml-3 inline-flex rounded-md shadow-sm">
+                    <Button
+                      buttonType="warning"
+                      type="button"
+                      disabled={isSubmitting || !isValid || isTesting}
+                      onClick={() => runArtworkProviderTests()}
+                      data-testid="artwork-providers-test-button"
+                    >
+                      <BeakerIcon />
+                      <span>
+                        {isTesting
+                          ? intl.formatMessage(globalMessages.testing)
+                          : intl.formatMessage(globalMessages.test)}
+                      </span>
+                    </Button>
+                  </span>
+                  <span className="ml-3 inline-flex rounded-md shadow-sm">
+                    <Button
+                      buttonType="primary"
+                      type="submit"
+                      disabled={isSubmitting || !isValid || isTesting}
+                      data-testid="artwork-providers-save-button"
+                    >
+                      <ArrowDownOnSquareIcon />
+                      <span>
+                        {isSubmitting
+                          ? intl.formatMessage(globalMessages.saving)
+                          : intl.formatMessage(globalMessages.save)}
+                      </span>
+                    </Button>
+                  </span>
+                </div>
+              </div>
+            </Form>
+          )}
         </Formik>
       </div>
     </>
