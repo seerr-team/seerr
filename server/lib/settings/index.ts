@@ -147,6 +147,11 @@ export interface MainSettings {
   discoverRegion: string;
   streamingRegion: string;
   originalLanguage: string;
+  excludedMovieCertifications: string;
+  excludedTvCertifications: string;
+  excludedCertificationRegion: string;
+  excludedMovieTags: string;
+  excludedTvTags: string;
   blocklistRegion: string;
   blocklistLanguage: string;
   blocklistedTags: string;
@@ -419,6 +424,11 @@ class Settings {
         discoverRegion: '',
         streamingRegion: '',
         originalLanguage: '',
+        excludedMovieCertifications: 'NR',
+        excludedTvCertifications: 'NR',
+        excludedCertificationRegion: 'US',
+        excludedMovieTags: '',
+        excludedTvTags: '',
         blocklistRegion: '',
         blocklistLanguage: '',
         blocklistedTags: '',

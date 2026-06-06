@@ -218,5 +218,8 @@
   },
   "scarfSettings": {
     "enabled": false
+  },
+  "volta": {
+    "node": "22.19.0"
   }
 }

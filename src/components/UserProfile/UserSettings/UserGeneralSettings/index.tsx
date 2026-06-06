@@ -5,6 +5,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import LanguageSelector from '@app/components/LanguageSelector';
 import QuotaSelector from '@app/components/QuotaSelector';
 import RegionSelector from '@app/components/RegionSelector';
+import CertificationSelector from '@app/components/Selector/CertificationSelector';
 import { availableLanguages } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
@@ -69,6 +70,11 @@ const messages = defineMessages(
     plexwatchlistsyncseries: 'Auto-Request Series',
     plexwatchlistsyncseriestip:
       'Automatically request series on your <PlexWatchlistSupportLink>Plex Watchlist</PlexWatchlistSupportLink>',
+    parentalControlsEnabled: 'Enable Parental Controls',
+    parentalControlsTip: 'Restrict requests by content rating.',
+    maxMovieCertification: 'Maximum Movie Rating',
+    maxTvCertification: 'Maximum Series Rating',
+    blockUnrated: 'Block Unrated Titles',
   }
 );
 
@@ -161,6 +167,11 @@ const UserGeneralSettings = () => {
           tvQuotaDays: data?.tvQuotaDays,
           watchlistSyncMovies: data?.watchlistSyncMovies,
           watchlistSyncTv: data?.watchlistSyncTv,
+          parentalControlsEnabled: data?.parentalControlsEnabled,
+          parentalControlsRegion: data?.parentalControlsRegion ?? 'US',
+          maxMovieCertification: data?.maxMovieCertification,
+          maxTvCertification: data?.maxTvCertification,
+          blockUnrated: data?.blockUnrated,
         }}
         validationSchema={UserGeneralSettingsSchema}
         enableReinitialize
@@ -182,6 +193,11 @@ const UserGeneralSettings = () => {
               tvQuotaDays: tvQuotaEnabled ? values.tvQuotaDays : null,
               watchlistSyncMovies: values.watchlistSyncMovies,
               watchlistSyncTv: values.watchlistSyncTv,
+              parentalControlsEnabled: values.parentalControlsEnabled,
+              parentalControlsRegion: values.parentalControlsRegion,
+              maxMovieCertification: values.maxMovieCertification,
+              maxTvCertification: values.maxTvCertification,
+              blockUnrated: values.blockUnrated,
             });
 
             if (currentUser?.id === user?.id && setLocale) {
@@ -418,6 +434,107 @@ const UserGeneralSettings = () => {
                   </div>
                 </div>
               </div>
+              {currentHasPermission(Permission.MANAGE_USERS) && (
+                <>
+                  <div className="form-row">
+                    <label
+                      htmlFor="parentalControlsEnabled"
+                      className="checkbox-label"
+                    >
+                      <span>
+                        {intl.formatMessage(messages.parentalControlsEnabled)}
+                      </span>
+                      <span className="label-tip">
+                        {intl.formatMessage(messages.parentalControlsTip)}
+                      </span>
+                    </label>
+                    <div className="form-input-area">
+                      <Field
+                        type="checkbox"
+                        id="parentalControlsEnabled"
+                        name="parentalControlsEnabled"
+                        onChange={() => {
+                          setFieldValue(
+                            'parentalControlsEnabled',
+                            !values.parentalControlsEnabled
+                          );
+                        }}
+                      />
+                    </div>
+                  </div>
+                  {values.parentalControlsEnabled && (
+                    <>
+                      <div className="form-row">
+                        <label className="text-label">
+                          {intl.formatMessage(messages.maxMovieCertification)}
+                        </label>
+                        <div className="form-input-area">
+                          <CertificationSelector
+                            type="movie"
+                            certificationCountry={values.parentalControlsRegion}
+                            certification={values.maxMovieCertification}
+                            onChange={(params) => {
+                              setFieldValue(
+                                'parentalControlsRegion',
+                                params.certificationCountry ?? 'US'
+                              );
+                              setFieldValue(
+                                'maxMovieCertification',
+                                params.certification
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="form-row">
+                        <label className="text-label">
+                          {intl.formatMessage(messages.maxTvCertification)}
+                        </label>
+                        <div className="form-input-area">
+                          <CertificationSelector
+                            type="tv"
+                            certificationCountry={values.parentalControlsRegion}
+                            certification={values.maxTvCertification}
+                            onChange={(params) => {
+                              setFieldValue(
+                                'parentalControlsRegion',
+                                params.certificationCountry ?? 'US'
+                              );
+                              setFieldValue(
+                                'maxTvCertification',
+                                params.certification
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="form-row">
+                        <label
+                          htmlFor="blockUnrated"
+                          className="checkbox-label"
+                        >
+                          <span>
+                            {intl.formatMessage(messages.blockUnrated)}
+                          </span>
+                        </label>
+                        <div className="form-input-area">
+                          <Field
+                            type="checkbox"
+                            id="blockUnrated"
+                            name="blockUnrated"
+                            onChange={() => {
+                              setFieldValue(
+                                'blockUnrated',
+                                !values.blockUnrated
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
               {currentHasPermission(Permission.MANAGE_USERS) &&
                 !hasPermission(Permission.MANAGE_USERS) && (
                   <>

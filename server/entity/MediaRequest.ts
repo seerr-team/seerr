@@ -10,6 +10,10 @@ import { getRepository } from '@server/datasource';
 import OverrideRule from '@server/entity/OverrideRule';
 import type { MediaRequestBody } from '@server/interfaces/api/requestInterfaces';
 import notificationManager, { Notification } from '@server/lib/notifications';
+import {
+  ParentalControlRestrictedError,
+  isMediaAllowedByParentalControls,
+} from '@server/lib/parentalControls';
 import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -123,6 +127,19 @@ export class MediaRequest {
       requestBody.mediaType === MediaType.MOVIE
         ? await tmdb.getMovie({ movieId: requestBody.mediaId })
         : await tmdb.getTvShow({ tvId: requestBody.mediaId });
+
+    if (
+      !(await isMediaAllowedByParentalControls({
+        user: requestUser,
+        mediaType: requestBody.mediaType,
+        media: tmdbMedia,
+        tmdb,
+      }))
+    ) {
+      throw new ParentalControlRestrictedError(
+        'This media is restricted by parental controls.'
+      );
+    }
 
     let media = await mediaRepository.findOne({
       where: {

@@ -52,10 +52,12 @@ type SingleVal = {
 
 type BlocklistedTagsSelectorProps = {
   defaultValue?: string;
+  fieldName?: string;
 };
 
 const BlocklistedTagsSelector = ({
   defaultValue,
+  fieldName = 'blocklistedTags',
 }: BlocklistedTagsSelectorProps) => {
   const { setFieldValue } = useFormikContext();
   const [value, setValue] = useState<string | undefined>(defaultValue);
@@ -68,9 +70,9 @@ const BlocklistedTagsSelector = ({
       const strVal = value?.map((v) => v.value).join(',');
       setSelectorValue(value);
       setValue(strVal);
-      setFieldValue('blocklistedTags', strVal);
+      setFieldValue(fieldName, strVal);
     },
-    [setSelectorValue, setValue, setFieldValue]
+    [setSelectorValue, setValue, setFieldValue, fieldName]
   );
 
   const copyDisabled = value === null || value?.length === 0;

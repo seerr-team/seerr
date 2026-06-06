@@ -1,6 +1,7 @@
 import TheMovieDb from '@server/api/themoviedb';
 import type { TmdbSearchMultiResponse } from '@server/api/themoviedb/interfaces';
 import Media from '@server/entity/Media';
+import { filterResultsByParentalControls } from '@server/lib/parentalControls';
 import { findSearchProvider } from '@server/lib/search';
 import logger from '@server/logger';
 import { mapSearchResults } from '@server/models/Search';
@@ -33,9 +34,15 @@ searchRoutes.get('/', async (req, res, next) => {
       });
     }
 
+    const filteredResults = await filterResultsByParentalControls({
+      user: req.user,
+      results: results.results,
+      language: (req.query.language as string) ?? req.locale,
+    });
+
     const media = await Media.getRelatedMedia(
       req.user,
-      results.results.map((result) => ({
+      filteredResults.map((result) => ({
         tmdbId: result.id,
         mediaType: result.media_type,
       }))
@@ -45,7 +52,7 @@ searchRoutes.get('/', async (req, res, next) => {
       page: results.page,
       totalPages: results.total_pages,
       totalResults: results.total_results,
-      results: mapSearchResults(results.results, media),
+      results: mapSearchResults(filteredResults, media),
     });
   } catch (e) {
     logger.debug('Something went wrong retrieving search results', {

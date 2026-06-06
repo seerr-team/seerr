@@ -7,6 +7,14 @@ import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { Watchlist } from '@server/entity/Watchlist';
+import {
+  filterTvResponseByGlobalRatingExclusions,
+  filterTvResponseByGlobalTagExclusions,
+  filterTvResponseByParentalControls,
+  isMediaAllowedByGlobalRatingExclusions,
+  isMediaAllowedByGlobalTagExclusions,
+  isMediaAllowedByParentalControls,
+} from '@server/lib/parentalControls';
 import logger from '@server/logger';
 import { mapTvResult } from '@server/models/Search';
 import { mapSeasonWithEpisodes, mapTvDetails } from '@server/models/Tv';
@@ -30,6 +38,45 @@ tvRoutes.get('/:id', async (req, res, next) => {
       tvId: Number(req.params.id),
       language: (req.query.language as string) ?? req.locale,
     });
+
+    if (
+      !(await isMediaAllowedByParentalControls({
+        user: req.user,
+        mediaType: MediaType.TV,
+        media: tv,
+        tmdb,
+      }))
+    ) {
+      return next({
+        status: 403,
+        message: 'This series is restricted by parental controls.',
+      });
+    }
+
+    if (
+      !isMediaAllowedByGlobalRatingExclusions({
+        mediaType: MediaType.TV,
+        media: tv,
+      })
+    ) {
+      return next({
+        status: 403,
+        message: 'This series is hidden by rating settings.',
+      });
+    }
+
+    if (
+      !isMediaAllowedByGlobalTagExclusions({
+        mediaType: MediaType.TV,
+        media: tv,
+      })
+    ) {
+      return next({
+        status: 403,
+        message: 'This series is hidden by tag settings.',
+      });
+    }
+
     const media = await Media.getMedia(tv.id, MediaType.TV);
 
     const onUserWatchlist = await getRepository(Watchlist).exist({
@@ -78,6 +125,44 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
       ? await getMetadataProvider('anime')
       : await getMetadataProvider('tv');
 
+    if (
+      !(await isMediaAllowedByParentalControls({
+        user: req.user,
+        mediaType: MediaType.TV,
+        media: tmdbTv,
+        tmdb,
+      }))
+    ) {
+      return next({
+        status: 403,
+        message: 'This series is restricted by parental controls.',
+      });
+    }
+
+    if (
+      !isMediaAllowedByGlobalRatingExclusions({
+        mediaType: MediaType.TV,
+        media: tmdbTv,
+      })
+    ) {
+      return next({
+        status: 403,
+        message: 'This series is hidden by rating settings.',
+      });
+    }
+
+    if (
+      !isMediaAllowedByGlobalTagExclusions({
+        mediaType: MediaType.TV,
+        media: tmdbTv,
+      })
+    ) {
+      return next({
+        status: 403,
+        message: 'This series is hidden by tag settings.',
+      });
+    }
+
     const season = await metadataProvider.getTvSeason({
       tvId: Number(req.params.id),
       seasonNumber: Number(req.params.seasonNumber),
@@ -103,11 +188,27 @@ tvRoutes.get('/:id/recommendations', async (req, res, next) => {
   const tmdb = new TheMovieDb();
 
   try {
-    const results = await tmdb.getTvRecommendations({
-      tvId: Number(req.params.id),
-      page: Number(req.query.page),
-      language: (req.query.language as string) ?? req.locale,
-    });
+    const language = (req.query.language as string) ?? req.locale;
+    let results = await filterTvResponseByParentalControls(
+      await tmdb.getTvRecommendations({
+        tvId: Number(req.params.id),
+        page: Number(req.query.page),
+        language,
+      }),
+      req.user,
+      tmdb,
+      language
+    );
+    results = await filterTvResponseByGlobalRatingExclusions(
+      results,
+      tmdb,
+      language
+    );
+    results = await filterTvResponseByGlobalTagExclusions(
+      results,
+      tmdb,
+      language
+    );
 
     const media = await Media.getRelatedMedia(
       req.user,
@@ -147,11 +248,27 @@ tvRoutes.get('/:id/similar', async (req, res, next) => {
   const tmdb = new TheMovieDb();
 
   try {
-    const results = await tmdb.getTvSimilar({
-      tvId: Number(req.params.id),
-      page: Number(req.query.page),
-      language: (req.query.language as string) ?? req.locale,
-    });
+    const language = (req.query.language as string) ?? req.locale;
+    let results = await filterTvResponseByParentalControls(
+      await tmdb.getTvSimilar({
+        tvId: Number(req.params.id),
+        page: Number(req.query.page),
+        language,
+      }),
+      req.user,
+      tmdb,
+      language
+    );
+    results = await filterTvResponseByGlobalRatingExclusions(
+      results,
+      tmdb,
+      language
+    );
+    results = await filterTvResponseByGlobalTagExclusions(
+      results,
+      tmdb,
+      language
+    );
 
     const media = await Media.getRelatedMedia(
       req.user,

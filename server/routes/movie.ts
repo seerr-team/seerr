@@ -6,6 +6,14 @@ import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { Watchlist } from '@server/entity/Watchlist';
+import {
+  filterMovieResponseByGlobalRatingExclusions,
+  filterMovieResponseByGlobalTagExclusions,
+  filterMovieResponseByParentalControls,
+  isMediaAllowedByGlobalRatingExclusions,
+  isMediaAllowedByGlobalTagExclusions,
+  isMediaAllowedByParentalControls,
+} from '@server/lib/parentalControls';
 import logger from '@server/logger';
 import { mapMovieDetails } from '@server/models/Movie';
 import { mapMovieResult } from '@server/models/Search';
@@ -21,6 +29,44 @@ movieRoutes.get('/:id', async (req, res, next) => {
       movieId: Number(req.params.id),
       language: (req.query.language as string) ?? req.locale,
     });
+
+    if (
+      !(await isMediaAllowedByParentalControls({
+        user: req.user,
+        mediaType: MediaType.MOVIE,
+        media: tmdbMovie,
+        tmdb,
+      }))
+    ) {
+      return next({
+        status: 403,
+        message: 'This movie is restricted by parental controls.',
+      });
+    }
+
+    if (
+      !isMediaAllowedByGlobalRatingExclusions({
+        mediaType: MediaType.MOVIE,
+        media: tmdbMovie,
+      })
+    ) {
+      return next({
+        status: 403,
+        message: 'This movie is hidden by rating settings.',
+      });
+    }
+
+    if (
+      !isMediaAllowedByGlobalTagExclusions({
+        mediaType: MediaType.MOVIE,
+        media: tmdbMovie,
+      })
+    ) {
+      return next({
+        status: 403,
+        message: 'This movie is hidden by tag settings.',
+      });
+    }
 
     const media = await Media.getMedia(tmdbMovie.id, MediaType.MOVIE);
 
@@ -60,11 +106,27 @@ movieRoutes.get('/:id/recommendations', async (req, res, next) => {
   const tmdb = new TheMovieDb();
 
   try {
-    const results = await tmdb.getMovieRecommendations({
-      movieId: Number(req.params.id),
-      page: Number(req.query.page),
-      language: (req.query.language as string) ?? req.locale,
-    });
+    const language = (req.query.language as string) ?? req.locale;
+    let results = await filterMovieResponseByParentalControls(
+      await tmdb.getMovieRecommendations({
+        movieId: Number(req.params.id),
+        page: Number(req.query.page),
+        language,
+      }),
+      req.user,
+      tmdb,
+      language
+    );
+    results = await filterMovieResponseByGlobalRatingExclusions(
+      results,
+      tmdb,
+      language
+    );
+    results = await filterMovieResponseByGlobalTagExclusions(
+      results,
+      tmdb,
+      language
+    );
 
     const media = await Media.getRelatedMedia(
       req.user,
@@ -105,11 +167,27 @@ movieRoutes.get('/:id/similar', async (req, res, next) => {
   const tmdb = new TheMovieDb();
 
   try {
-    const results = await tmdb.getMovieSimilar({
-      movieId: Number(req.params.id),
-      page: Number(req.query.page),
-      language: (req.query.language as string) ?? req.locale,
-    });
+    const language = (req.query.language as string) ?? req.locale;
+    let results = await filterMovieResponseByParentalControls(
+      await tmdb.getMovieSimilar({
+        movieId: Number(req.params.id),
+        page: Number(req.query.page),
+        language,
+      }),
+      req.user,
+      tmdb,
+      language
+    );
+    results = await filterMovieResponseByGlobalRatingExclusions(
+      results,
+      tmdb,
+      language
+    );
+    results = await filterMovieResponseByGlobalTagExclusions(
+      results,
+      tmdb,
+      language
+    );
 
     const media = await Media.getRelatedMedia(
       req.user,

@@ -5,6 +5,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import LanguageSelector from '@app/components/LanguageSelector';
 import RegionSelector from '@app/components/RegionSelector';
+import USCertificationSelector from '@app/components/Selector/USCertificationSelector';
 import CopyButton from '@app/components/Settings/CopyButton';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import { availableLanguages } from '@app/context/LanguageContext';
@@ -38,6 +39,18 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   discoverRegionTip: 'Filter content by regional availability',
   originallanguage: 'Discover Language',
   originallanguageTip: 'Filter content by original language',
+  excludedMovieCertifications: 'Excluded Movie Ratings',
+  excludedMovieCertificationsTip:
+    'Hide movies with these ratings from discover and movie pages. Search results are not affected.',
+  excludedTvCertifications: 'Excluded Series Ratings',
+  excludedTvCertificationsTip:
+    'Hide series with these ratings from discover and series pages. Search results are not affected.',
+  excludedMovieTags: 'Excluded Movie Tags',
+  excludedMovieTagsTip:
+    'Hide movies with these TMDB keywords from discover and movie pages. Search results are not affected.',
+  excludedTvTags: 'Excluded Series Tags',
+  excludedTvTagsTip:
+    'Hide series with these TMDB keywords from discover and series pages. Search results are not affected.',
   blocklistRegion: 'Blocklist Region',
   blocklistRegionTip:
     'Region used for blocklist content scanning (independent of discover settings)',
@@ -174,6 +187,13 @@ const SettingsMain = () => {
             locale: data?.locale ?? 'en',
             discoverRegion: data?.discoverRegion,
             originalLanguage: data?.originalLanguage,
+            excludedMovieCertifications:
+              data?.excludedMovieCertifications ?? 'NR',
+            excludedTvCertifications: data?.excludedTvCertifications ?? 'NR',
+            excludedCertificationRegion:
+              data?.excludedCertificationRegion ?? 'US',
+            excludedMovieTags: data?.excludedMovieTags,
+            excludedTvTags: data?.excludedTvTags,
             streamingRegion: data?.streamingRegion || 'US',
             blocklistRegion: data?.blocklistRegion || '',
             blocklistLanguage: data?.blocklistLanguage || '',
@@ -197,6 +217,11 @@ const SettingsMain = () => {
                 discoverRegion: values.discoverRegion,
                 streamingRegion: values.streamingRegion,
                 originalLanguage: values.originalLanguage,
+                excludedMovieCertifications: values.excludedMovieCertifications,
+                excludedTvCertifications: values.excludedTvCertifications,
+                excludedCertificationRegion: values.excludedCertificationRegion,
+                excludedMovieTags: values.excludedMovieTags,
+                excludedTvTags: values.excludedTvTags,
                 blocklistRegion: values.blocklistRegion,
                 blocklistLanguage: values.blocklistLanguage,
                 blocklistedTags: values.blocklistedTags,
@@ -409,6 +434,94 @@ const SettingsMain = () => {
                         onChange={setFieldValue}
                         regionType="streaming"
                         disableAll
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="excludedMovieCertifications"
+                    className="text-label"
+                  >
+                    <span>
+                      {intl.formatMessage(messages.excludedMovieCertifications)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(
+                        messages.excludedMovieCertificationsTip
+                      )}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <USCertificationSelector
+                      type="movie"
+                      certification={values.excludedMovieCertifications}
+                      onChange={(params) => {
+                        setFieldValue(
+                          'excludedMovieCertifications',
+                          params.certification
+                        );
+                        setFieldValue('excludedCertificationRegion', 'US');
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="excludedTvCertifications"
+                    className="text-label"
+                  >
+                    <span>
+                      {intl.formatMessage(messages.excludedTvCertifications)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.excludedTvCertificationsTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <USCertificationSelector
+                      type="tv"
+                      certification={values.excludedTvCertifications}
+                      onChange={(params) => {
+                        setFieldValue(
+                          'excludedTvCertifications',
+                          params.certification
+                        );
+                        setFieldValue('excludedCertificationRegion', 'US');
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="excludedMovieTags" className="text-label">
+                    <span>
+                      {intl.formatMessage(messages.excludedMovieTags)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.excludedMovieTagsTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field relative z-10">
+                      <BlocklistedTagsSelector
+                        fieldName="excludedMovieTags"
+                        defaultValue={values.excludedMovieTags}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="excludedTvTags" className="text-label">
+                    <span>{intl.formatMessage(messages.excludedTvTags)}</span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.excludedTvTagsTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field relative z-10">
+                      <BlocklistedTagsSelector
+                        fieldName="excludedTvTags"
+                        defaultValue={values.excludedTvTags}
                       />
                     </div>
                   </div>

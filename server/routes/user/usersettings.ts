@@ -62,6 +62,11 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
         globalTvQuotaLimit: defaultQuotas.tv.quotaLimit,
         watchlistSyncMovies: user.settings?.watchlistSyncMovies,
         watchlistSyncTv: user.settings?.watchlistSyncTv,
+        parentalControlsEnabled: user.settings?.parentalControlsEnabled,
+        parentalControlsRegion: user.settings?.parentalControlsRegion,
+        maxMovieCertification: user.settings?.maxMovieCertification,
+        maxTvCertification: user.settings?.maxTvCertification,
+        blockUnrated: user.settings?.blockUnrated,
       });
     } catch (e) {
       next({ status: 500, message: e.message });
@@ -127,6 +132,11 @@ userSettingsRoutes.post<
         originalLanguage: req.body.originalLanguage,
         watchlistSyncMovies: req.body.watchlistSyncMovies,
         watchlistSyncTv: req.body.watchlistSyncTv,
+        parentalControlsEnabled: req.body.parentalControlsEnabled,
+        parentalControlsRegion: req.body.parentalControlsRegion,
+        maxMovieCertification: req.body.maxMovieCertification,
+        maxTvCertification: req.body.maxTvCertification,
+        blockUnrated: req.body.blockUnrated,
       });
     } else {
       user.settings.locale = req.body.locale;
@@ -135,6 +145,11 @@ userSettingsRoutes.post<
       user.settings.originalLanguage = req.body.originalLanguage;
       user.settings.watchlistSyncMovies = req.body.watchlistSyncMovies;
       user.settings.watchlistSyncTv = req.body.watchlistSyncTv;
+      user.settings.parentalControlsEnabled = req.body.parentalControlsEnabled;
+      user.settings.parentalControlsRegion = req.body.parentalControlsRegion;
+      user.settings.maxMovieCertification = req.body.maxMovieCertification;
+      user.settings.maxTvCertification = req.body.maxTvCertification;
+      user.settings.blockUnrated = req.body.blockUnrated;
     }
 
     const savedUser = await userRepository.save(user);
@@ -147,6 +162,11 @@ userSettingsRoutes.post<
       originalLanguage: savedUser.settings?.originalLanguage,
       watchlistSyncMovies: savedUser.settings?.watchlistSyncMovies,
       watchlistSyncTv: savedUser.settings?.watchlistSyncTv,
+      parentalControlsEnabled: savedUser.settings?.parentalControlsEnabled,
+      parentalControlsRegion: savedUser.settings?.parentalControlsRegion,
+      maxMovieCertification: savedUser.settings?.maxMovieCertification,
+      maxTvCertification: savedUser.settings?.maxTvCertification,
+      blockUnrated: savedUser.settings?.blockUnrated,
       email: savedUser.email,
     });
   } catch (e) {

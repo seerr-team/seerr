@@ -85,6 +85,21 @@ export class UserSettings {
   @Column({ nullable: true })
   public watchlistSyncTv?: boolean;
 
+  @Column({ default: false })
+  public parentalControlsEnabled?: boolean;
+
+  @Column({ nullable: true })
+  public maxMovieCertification?: string;
+
+  @Column({ nullable: true })
+  public maxTvCertification?: string;
+
+  @Column({ default: 'US' })
+  public parentalControlsRegion?: string;
+
+  @Column({ default: false })
+  public blockUnrated?: boolean;
+
   @Column({
     type: 'text',
     nullable: true,
