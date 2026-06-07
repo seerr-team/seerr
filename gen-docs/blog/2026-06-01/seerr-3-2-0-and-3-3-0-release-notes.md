@@ -3,6 +3,7 @@ title: "Seerr v3.2.0 and v3.3.0 Release Notes"
 description: "Seerr v3.2.0 and v3.3.0"
 slug: seerr-3-2-0-and-3-3-0-release-notes
 authors: [gauthier-th]
+image: https://raw.githubusercontent.com/seerr-team/seerr/refs/heads/develop/gen-docs/static/img/logo_full.svg
 hide_table_of_contents: false
 ---
 
@@ -48,7 +49,7 @@ Discord users can now also include multiple user or role IDs in the `User IDs` f
 
 ### Other Enhancements & Quality of Life Improvements
 
-- You can now choose to enable or disable the `monitorNewItems` option for Sonarr in the service settings or when requesting a series.
+- You can now choose to enable or disable the `monitorNewItems` option for Sonarr in the service settings.
 - We added the ability to set an unlimited time for quota resets, allowing you to add a global request per user.
 - In the user list, you can now sort your users by name, email, role, requests, and more to find the users you are looking for more easily.
 - Filters on the trending page have been added to see only trending movies or TV shows, with the option to filter by the daily or weekly trending lists.
