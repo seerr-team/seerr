@@ -253,6 +253,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     mediaServerType: MediaServerType.NOT_CONFIGURED,
     partialRequestsEnabled: true,
     enableSpecialEpisodes: false,
+    enableEpisodeAvailability: false,
     cacheImages: false,
     vapidPublic: '',
     enablePushRegistration: false,
@@ -260,6 +261,10 @@ CoreApp.getInitialProps = async (initialProps) => {
     emailEnabled: false,
     newPlexLogin: true,
     youtubeUrl: '',
+    metadataSettings: {
+      tv: 'tmdb',
+      anime: 'tmdb',
+    },
     plexClientIdentifier: '',
     maxSeasonsPerRequest: 0,
   };

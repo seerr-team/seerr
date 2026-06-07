@@ -5,20 +5,18 @@ import {
   Entity,
   Index,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import Episode from './Episode';
-import Media from './Media';
+import Season from './Season';
 
 @Entity()
-class Season {
+class Episode {
   @PrimaryGeneratedColumn()
   public id: number;
 
   @Column()
-  public seasonNumber: number;
+  public episodeNumber: number;
 
   @Column({ type: 'int', default: MediaStatus.UNKNOWN })
   public status: MediaStatus;
@@ -26,16 +24,12 @@ class Season {
   @Column({ type: 'int', default: MediaStatus.UNKNOWN })
   public status4k: MediaStatus;
 
-  @ManyToOne(() => Media, (media) => media.seasons, {
-    onDelete: 'CASCADE',
-  })
   @Index()
-  public media: Promise<Media>;
-
-  @OneToMany(() => Episode, (episode) => episode.season, {
-    cascade: true,
+  @ManyToOne(() => Season, (season: Season) => season.episodes, {
+    onDelete: 'CASCADE',
+    nullable: true,
   })
-  public episodes?: Episode[];
+  public season?: Promise<Season>;
 
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
@@ -46,9 +40,11 @@ class Season {
   })
   public updatedAt: Date;
 
-  constructor(init?: Partial<Season>) {
-    Object.assign(this, init);
+  constructor(init?: Partial<Episode>) {
+    if (init) {
+      Object.assign(this, init);
+    }
   }
 }
 
-export default Season;
+export default Episode;
