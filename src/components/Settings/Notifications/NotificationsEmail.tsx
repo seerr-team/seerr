@@ -48,6 +48,27 @@ const messages = defineMessages('components.Settings.Notifications', {
   pgpPasswordTip:
     'Sign encrypted email messages using <OpenPgpLink>OpenPGP</OpenPgpLink>',
   validationPgpPassword: 'You must provide a PGP password',
+
+  // TODO:  when we figure out google oauth2, we need to populate these fields from the API
+  // TODO:  need to add these to 18n files
+  // oAuth2
+  authType: 'Authentication Type', // dropdown label
+  authTypeBasic: 'Basic', //dropdown option
+  authTypeOAuth2: 'OAuth2', //dropdown option
+  oAuth2ClientId: 'OAuth2 Client ID', //text box
+  oAuth2ClientSecret: 'OAuth2 Client Secret', //text box
+  oAuth2RefreshToken: 'OAuth2 Refresh Token', //textarea?
+  oAuth2TokenUrl: 'OAuth2 Token Url', //textarea?
+  oAuth2Scope: 'OAuth2 Scope', //text box
+  oAuth2ScopeTip:
+    'The scope to request when exchanging the refresh token for an access token (e.g. https://outlook.office365.com/SMTP.Send offline_access)',
+  // need these if it's not basic
+  validationOAuth2ClientIdRequired: 'You must provide an OAuth2 Client ID',
+  validationOAuth2ClientSecretRequired:
+    'You must provide an OAuth2 Client Secret',
+  validationOAuth2RefreshTokenRequired:
+    'You must provide an OAuth2 Refresh Token',
+  validationOAuth2TokenUrlRequired: 'You must provide an OAuth2 Token Url',
 });
 
 export function OpenPgpLink(msg: React.ReactNode) {
@@ -116,6 +137,32 @@ const NotificationsEmail = () => {
           .required(intl.formatMessage(messages.validationPgpPassword)),
         otherwise: Yup.string().nullable(),
       }),
+      // TODO:  when we figure out google oauth2, we need to add validation
+      // for the new fields that are required when authType is oauth2
+      // oAuth2ClientId: Yup.string()
+      //   .when('authType', {
+      //     is: (value: unknown) => value === 'OAuth2',
+      //     then: Yup.string()
+      //       .nullable()
+      //       .required(intl.formatMessage(messages.validationOAuth2ClientIdRequired)),
+      //     otherwise: Yup.string().nullable(),
+      //   }),
+      // oAuth2ClientSecret: Yup.string()
+      //   .when('authType', {
+      //     is: (value: unknown) => value === 'OAuth2',
+      //     then: Yup.string()
+      //       .nullable()
+      //       .required(intl.formatMessage(messages.validationOAuth2ClientSecretRequired)),
+      //     otherwise: Yup.string().nullable(),
+      //   }),
+      // oAuth2RefreshToken: Yup.string()
+      //   .when('authType', {
+      //     is: (value: unknown) => value === 'OAuth2',
+      //     then: Yup.string()
+      //       .nullable()
+      //       .required(intl.formatMessage(messages.validationOAuth2RefreshTokenRequired)),
+      //     otherwise: Yup.string().nullable(),
+      //   }),
     },
     [['pgpPrivateKey', 'pgpPassword']]
   );
@@ -146,6 +193,13 @@ const NotificationsEmail = () => {
         senderName: data.options.senderName,
         pgpPrivateKey: data.options.pgpPrivateKey,
         pgpPassword: data.options.pgpPassword,
+        // TODO:  when we figure out google oauth2, we need to populate these fields from the API
+        authType: data.options.authType ?? 'basic',
+        oAuth2ClientId: data.options.oAuth2ClientId,
+        oAuth2ClientSecret: data.options.oAuth2ClientSecret,
+        oAuth2RefreshToken: data.options.oAuth2RefreshToken,
+        oAuth2TokenUrl: data.options.oAuth2TokenUrl,
+        oAuth2Scope: data.options.oAuth2Scope,
       }}
       validationSchema={NotificationsEmailSchema}
       onSubmit={async (values) => {
@@ -167,6 +221,13 @@ const NotificationsEmail = () => {
               senderName: values.senderName,
               pgpPrivateKey: values.pgpPrivateKey,
               pgpPassword: values.pgpPassword,
+              // TODO:  when we figure out google oauth2, we need to populate these fields from the API
+              authType: values.authType,
+              oAuth2ClientId: values.oAuth2ClientId,
+              oAuth2ClientSecret: values.oAuth2ClientSecret,
+              oAuth2RefreshToken: values.oAuth2RefreshToken,
+              oAuth2TokenUrl: values.oAuth2TokenUrl,
+              oAuth2Scope: values.oAuth2Scope,
             },
           });
           mutate('/api/v1/settings/public');
@@ -216,6 +277,13 @@ const NotificationsEmail = () => {
                 senderName: values.senderName,
                 pgpPrivateKey: values.pgpPrivateKey,
                 pgpPassword: values.pgpPassword,
+                // TODO:  when we figure out google oauth2, we need to populate these fields from the API
+                authType: values.authType,
+                oAuth2ClientId: values.oAuth2ClientId,
+                oAuth2ClientSecret: values.oAuth2ClientSecret,
+                oAuth2RefreshToken: values.oAuth2RefreshToken,
+                oAuth2TokenUrl: values.oAuth2TokenUrl,
+                oAuth2Scope: values.oAuth2Scope,
               },
             });
 
@@ -398,6 +466,28 @@ const NotificationsEmail = () => {
             </div>
             <div className="form-row">
               <label htmlFor="authUser" className="text-label">
+                {intl.formatMessage(messages.authType)}
+              </label>
+              <div className="form-input-area">
+                <div className="form-input-field">
+                  <Field
+                    id="authType"
+                    name="authType"
+                    as="select"
+                    autoComplete="off"
+                  >
+                    <option value="basic">
+                      {intl.formatMessage(messages.authTypeBasic)}
+                    </option>
+                    <option value="oauth2">
+                      {intl.formatMessage(messages.authTypeOAuth2)}
+                    </option>
+                  </Field>
+                </div>
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="authUser" className="text-label">
                 {intl.formatMessage(messages.authUser)}
               </label>
               <div className="form-input-area">
@@ -415,16 +505,111 @@ const NotificationsEmail = () => {
                 </div>
               </div>
             </div>
-            <div className="form-row">
-              <label htmlFor="authPass" className="text-label">
-                {intl.formatMessage(messages.authPass)}
-              </label>
-              <div className="form-input-area">
-                <div className="form-input-field">
-                  <SensitiveInput as="field" id="authPass" name="authPass" />
+            {values.authType !== 'oauth2' && (
+              <div className="form-row">
+                <label htmlFor="authPass" className="text-label">
+                  {intl.formatMessage(messages.authPass)}
+                </label>
+                <div className="form-input-area">
+                  <div className="form-input-field">
+                    <SensitiveInput as="field" id="authPass" name="authPass" />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {values.authType === 'oauth2' && (
+              <>
+                <div className="form-row">
+                  <label htmlFor="oAuth2ClientId" className="text-label">
+                    {intl.formatMessage(messages.oAuth2ClientId)}
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <Field
+                        id="oAuth2ClientId"
+                        name="oAuth2ClientId"
+                        type="text"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="oAuth2ClientSecret" className="text-label">
+                    {intl.formatMessage(messages.oAuth2ClientSecret)}
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <Field
+                        id="oAuth2ClientSecret"
+                        name="oAuth2ClientSecret"
+                        type="text"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="oAuth2RefreshToken" className="text-label">
+                    {intl.formatMessage(messages.oAuth2RefreshToken)}
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <Field
+                        id="oAuth2RefreshToken"
+                        name="oAuth2RefreshToken"
+                        as="textarea"
+                        rows="5"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="oAuth2TokenUrl" className="text-label">
+                    {intl.formatMessage(messages.oAuth2TokenUrl)}
+                    <span className="label-required">*</span>
+                    <span className="label-tip">????????</span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <Field
+                        id="oAuth2TokenUrl"
+                        name="oAuth2TokenUrl"
+                        type="text"
+                        inputMode="url"
+                        autoComplete="off"
+                        data-form-type="other"
+                        data-1pignore="true"
+                        data-lpignore="true"
+                        data-bwignore="true"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="oAuth2Scope" className="text-label">
+                    {intl.formatMessage(messages.oAuth2Scope)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.oAuth2ScopeTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <Field
+                        id="oAuth2Scope"
+                        name="oAuth2Scope"
+                        type="text"
+                        placeholder="https://outlook.office365.com/SMTP.Send offline_access"
+                        autoComplete="off"
+                        data-form-type="other"
+                        data-1pignore="true"
+                        data-lpignore="true"
+                        data-bwignore="true"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
             <div className="form-row">
               <label htmlFor="pgpPrivateKey" className="text-label">
                 <span className="mr-2">
