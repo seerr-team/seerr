@@ -152,6 +152,7 @@ class JellyfinAPI extends ExternalAPI {
       jellyfinHost,
       {},
       {
+        timeout: settings.network.apiRequestTimeout,
         headers: {
           Authorization: authHeaderVal,
           'Content-Type': 'application/json',

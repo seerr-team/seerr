@@ -21,7 +21,12 @@ import {
   useState,
 } from 'react';
 import { useIntl } from 'react-intl';
-import type { ClearIndicatorProps, GroupBase, MultiValue } from 'react-select';
+import type {
+  ClearIndicatorProps,
+  GroupBase,
+  MultiValue,
+  StylesConfig,
+} from 'react-select';
 import { components } from 'react-select';
 import AsyncSelect from 'react-select/async';
 
@@ -48,6 +53,25 @@ const messages = defineMessages('components.Settings', {
 type SingleVal = {
   label: string;
   value: number;
+};
+
+const selectMenuStyles: StylesConfig<SingleVal, true> = {
+  menu: (base) => ({
+    ...base,
+    backgroundColor: '#374151',
+    color: '#d1d5db',
+    zIndex: 9999,
+  }),
+  menuPortal: (base) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isFocused ? '#4b5563' : '#374151',
+    color: state.isFocused ? '#ffffff' : '#d1d5db',
+    cursor: 'pointer',
+  }),
 };
 
 type BlocklistedTagsSelectorProps = {
@@ -120,6 +144,13 @@ const ControlledKeywordSelector = ({
   value,
 }: BaseSelectorMultiProps) => {
   const intl = useIntl();
+  const [menuPortalTarget, setMenuPortalTarget] = useState<HTMLElement | null>(
+    null
+  );
+
+  useEffect(() => {
+    setMenuPortalTarget(document.body);
+  }, []);
 
   useEffect(() => {
     const loadDefaultKeywords = async (): Promise<void> => {
@@ -179,6 +210,9 @@ const ControlledKeywordSelector = ({
       placeholder={intl.formatMessage(messages.searchKeywords)}
       onChange={onChange}
       components={components}
+      menuPosition="fixed"
+      menuPortalTarget={menuPortalTarget ?? undefined}
+      styles={selectMenuStyles}
     />
   );
 };
