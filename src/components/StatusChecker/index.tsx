@@ -23,9 +23,12 @@ const StatusChecker = () => {
   const intl = useIntl();
   const settings = useSettings();
   const { hasPermission } = useUser();
-  const { data, error } = useSWR<StatusResponse>('/api/v1/status', {
-    refreshInterval: 60 * 1000,
-  });
+  const { data, error } = useSWR<StatusResponse>(
+    settings.currentSettings.versionCheck ? '/api/v1/status' : null,
+    {
+      refreshInterval: 60 * 1000,
+    }
+  );
   const [alertDismissed, setAlertDismissed] = useState(false);
 
   useEffect(() => {

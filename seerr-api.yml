@@ -250,6 +250,9 @@ components:
         enableSpecialEpisodes:
           type: boolean
           example: false
+        versionCheck:
+          type: boolean
+          example: false
     NetworkSettings:
       type: object
       properties:
