@@ -529,6 +529,36 @@ components:
               type: string
               enum: [tvdb, tmdb]
               example: 'tvdb'
+    ListenBrainzSettings:
+      type: object
+      properties:
+        apiBaseUrl:
+          type: string
+          example: 'https://api.listenbrainz.org'
+        webBaseUrl:
+          type: string
+          example: 'https://listenbrainz.org'
+        userToken:
+          type: string
+          example: ''
+    MusicMetadataSettings:
+      type: object
+      properties:
+        listenbrainz:
+          $ref: '#/components/schemas/ListenBrainzSettings'
+    MusicMetadataTestResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        tests:
+          type: object
+          properties:
+            listenbrainz:
+              type: string
+              enum: [ok, failed, 'not tested']
+              example: 'ok'
     TautulliSettings:
       type: object
       properties:
@@ -2723,6 +2753,77 @@ paths:
                   message:
                     type: string
                     example: 'Successfully connected to TVDB'
+  /settings/music-metadata:
+    get:
+      summary: Get music metadata provider settings
+      description: Retrieves current ListenBrainz settings.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MusicMetadataSettings'
+    put:
+      summary: Update music metadata provider settings
+      description: Updates ListenBrainz settings. Partial updates are merged with the current values.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MusicMetadataSettings'
+      responses:
+        '200':
+          description: 'Values were successfully updated'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                  - $ref: '#/components/schemas/MusicMetadataSettings'
+  /settings/music-metadata/test:
+    post:
+      summary: Test music metadata provider connectivity
+      description: >
+        Performs a lightweight connectivity check against ListenBrainz.
+        The request body is optional: when supplied, the
+        candidate settings are merged with the currently persisted values
+        (and any missing fields filled in with defaults) and the resulting
+        configuration is what gets tested without being persisted. When the
+        body is omitted or empty, the currently saved settings are tested.
+      tags:
+        - settings
+      requestBody:
+        required: false
+        description: >
+          Optional candidate music metadata settings to test. Fields not
+          provided fall back to the persisted values, then to defaults.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MusicMetadataSettings'
+      responses:
+        '200':
+          description: All providers responded successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MusicMetadataTestResult'
+        '500':
+          description: One or more providers failed the connectivity check.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MusicMetadataTestResult'
   /settings/tautulli:
     get:
       summary: Get Tautulli settings
