@@ -385,6 +385,7 @@ export class MediaRequest {
         rootFolder: rootFolder,
         tags: tags,
         isAutoRequest: options.isAutoRequest ?? false,
+        searchAutomatically: requestBody.searchAutomatically ?? null,
       });
 
       await requestRepository.save(request);
@@ -516,6 +517,7 @@ export class MediaRequest {
             })
         ),
         isAutoRequest: options.isAutoRequest ?? false,
+        searchAutomatically: requestBody.searchAutomatically ?? null,
       });
 
       await requestRepository.save(request);
@@ -621,6 +623,9 @@ export class MediaRequest {
 
   @Column({ default: false })
   public isAutoRequest: boolean;
+
+  @Column({ nullable: true, type: 'boolean' })
+  public searchAutomatically: boolean | null;
 
   constructor(init?: Partial<MediaRequest>) {
     Object.assign(this, init);

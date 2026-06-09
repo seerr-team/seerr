@@ -35,6 +35,7 @@ const messages = defineMessages('components.RequestModal', {
   requestApproved: 'Request for <strong>{title}</strong> approved!',
   requesterror: 'Something went wrong while submitting the request.',
   pendingapproval: 'Your request is pending approval.',
+  searchautomatically: 'Search Automatically',
 });
 
 interface RequestModalProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -57,6 +58,9 @@ const MovieRequestModal = ({
   const [isUpdating, setIsUpdating] = useState(false);
   const [requestOverrides, setRequestOverrides] =
     useState<RequestOverrides | null>(null);
+  const [searchAutomatically, setSearchAutomatically] = useState<boolean>(
+    editRequest?.searchAutomatically ?? true
+  );
   const { addToast } = useToasts();
   const { data, error } = useSWR<MovieDetails>(`/api/v1/movie/${tmdbId}`, {
     revalidateOnMount: true,
@@ -88,6 +92,7 @@ const MovieRequestModal = ({
           rootFolder: requestOverrides.folder,
           userId: requestOverrides.user?.id,
           tags: requestOverrides.tags,
+          searchAutomatically: requestOverrides.searchAutomatically,
         };
       }
       const response = await axios.post<MediaRequest>('/api/v1/request', {
@@ -183,6 +188,7 @@ const MovieRequestModal = ({
         rootFolder: requestOverrides?.folder,
         userId: requestOverrides?.user?.id,
         tags: requestOverrides?.tags,
+        searchAutomatically: requestOverrides?.searchAutomatically,
       });
 
       if (alsoApproveRequest) {
@@ -221,6 +227,26 @@ const MovieRequestModal = ({
       setIsUpdating(false);
     }
   };
+
+  const searchToggle = hasPermission(Permission.REQUEST_ADVANCED) &&
+    (requestOverrides?.server !== undefined ||
+      editRequest?.serverId != null) ? (
+    <div className="flex items-center gap-x-2">
+      <input
+        type="checkbox"
+        id="searchAutomatically"
+        checked={searchAutomatically}
+        onChange={(e) => setSearchAutomatically(e.target.checked)}
+        className="h-4 w-4 cursor-pointer rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
+      />
+      <label
+        htmlFor="searchAutomatically"
+        className="cursor-pointer text-sm leading-none text-white"
+      >
+        {intl.formatMessage(messages.searchautomatically)}
+      </label>
+    </div>
+  ) : undefined;
 
   if (editRequest) {
     const isOwner = editRequest.requestedBy.id === user?.id;
@@ -277,6 +303,7 @@ const MovieRequestModal = ({
         }
         secondaryButtonType="danger"
         cancelText={intl.formatMessage(globalMessages.close)}
+        footerContent={searchToggle}
         backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
       >
         {isOwner
@@ -295,10 +322,13 @@ const MovieRequestModal = ({
               profile: editRequest.profileId,
               server: editRequest.serverId,
               tags: editRequest.tags,
+              searchAutomatically: editRequest.searchAutomatically ?? undefined,
             }}
             onChange={(overrides) => {
               setRequestOverrides(overrides);
             }}
+            searchAutomatically={searchAutomatically}
+            onSearchAutomaticallyChange={setSearchAutomatically}
           />
         )}
       </Modal>
@@ -333,6 +363,7 @@ const MovieRequestModal = ({
             )
       }
       okButtonType={'primary'}
+      footerContent={searchToggle}
       backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
     >
       {hasAutoApprove && !quota?.movie.restricted && (
@@ -362,6 +393,8 @@ const MovieRequestModal = ({
           onChange={(overrides) => {
             setRequestOverrides(overrides);
           }}
+          searchAutomatically={searchAutomatically}
+          onSearchAutomaticallyChange={setSearchAutomatically}
         />
       )}
     </Modal>

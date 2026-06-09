@@ -211,6 +211,27 @@ describe('PUT /request/:requestId (movie)', () => {
     assert.strictEqual(saved.profileId, 7);
     assert.strictEqual(saved.rootFolder, '/updated/movies');
   });
+
+  it('persists searchAutomatically to the database', async () => {
+    const requestRepo = getRepository(MediaRequest);
+    const mediaRequest = await seedRequest();
+
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.MOVIE,
+      serverId: mediaRequest.serverId,
+      profileId: mediaRequest.profileId,
+      rootFolder: mediaRequest.rootFolder,
+      searchAutomatically: false,
+    });
+
+    assert.strictEqual(res.status, 200);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(saved.searchAutomatically, false);
+  });
 });
 
 describe('POST /request/:requestId/:status', () => {

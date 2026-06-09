@@ -50,6 +50,7 @@ const messages = defineMessages('components.RequestModal', {
   autoapproval: 'Automatic Approval',
   requesterror: 'Something went wrong while submitting the request.',
   pendingapproval: 'Your request is pending approval.',
+  searchautomatically: 'Search Automatically',
 });
 
 interface RequestModalProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -77,6 +78,9 @@ const TvRequestModal = ({
   const { data, error } = useSWR<TvDetails>(`/api/v1/tv/${tmdbId}`);
   const [requestOverrides, setRequestOverrides] =
     useState<RequestOverrides | null>(null);
+  const [searchAutomatically, setSearchAutomatically] = useState<boolean>(
+    editRequest?.searchAutomatically ?? true
+  );
   const [selectedSeasons, setSelectedSeasons] = useState<number[]>(
     editRequest ? editingSeasons : []
   );
@@ -120,6 +124,7 @@ const TvRequestModal = ({
           languageProfileId: requestOverrides?.language,
           userId: requestOverrides?.user?.id,
           tags: requestOverrides?.tags,
+          searchAutomatically: requestOverrides?.searchAutomatically,
           seasons: selectedSeasons.sort((a, b) => a - b),
         });
 
@@ -192,6 +197,7 @@ const TvRequestModal = ({
           languageProfileId: requestOverrides.language,
           userId: requestOverrides?.user?.id,
           tags: requestOverrides.tags,
+          searchAutomatically: requestOverrides.searchAutomatically,
         };
       }
       const response = await axios.post<MediaRequest>('/api/v1/request', {
@@ -375,6 +381,26 @@ const TvRequestModal = ({
 
   const isOwner = editRequest && editRequest.requestedBy.id === user?.id;
 
+  const searchToggle = hasPermission(Permission.REQUEST_ADVANCED) &&
+    (requestOverrides?.server !== undefined ||
+      editRequest?.serverId != null) ? (
+    <div className="flex items-center gap-x-2">
+      <input
+        type="checkbox"
+        id="searchAutomatically"
+        checked={searchAutomatically}
+        onChange={(e) => setSearchAutomatically(e.target.checked)}
+        className="h-4 w-4 cursor-pointer rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
+      />
+      <label
+        htmlFor="searchAutomatically"
+        className="cursor-pointer text-sm leading-none text-white"
+      >
+        {intl.formatMessage(messages.searchautomatically)}
+      </label>
+    </div>
+  ) : undefined;
+
   return data && !error && !data.externalIds.tvdbId && searchModal.show ? (
     <SearchByNameModal
       tvdbId={tvdbId}
@@ -460,6 +486,7 @@ const TvRequestModal = ({
             ? intl.formatMessage(globalMessages.back)
             : intl.formatMessage(globalMessages.cancel)
       }
+      footerContent={searchToggle}
       backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
     >
       {editRequest
@@ -730,9 +757,13 @@ const TvRequestModal = ({
                   server: editRequest.serverId,
                   language: editRequest.languageProfileId,
                   tags: editRequest.tags,
+                  searchAutomatically:
+                    editRequest.searchAutomatically ?? undefined,
                 }
               : undefined
           }
+          searchAutomatically={searchAutomatically}
+          onSearchAutomaticallyChange={setSearchAutomatically}
         />
       )}
     </Modal>

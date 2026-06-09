@@ -38,6 +38,7 @@ const messages = defineMessages('components.RequestModal.AdvancedRequester', {
   tags: 'Tags',
   selecttags: 'Select tags',
   notagoptions: 'No tags.',
+  searchautomatically: 'Search Automatically',
 });
 
 export type RequestOverrides = {
@@ -47,6 +48,7 @@ export type RequestOverrides = {
   tags?: number[];
   language?: number;
   user?: User;
+  searchAutomatically?: boolean;
 };
 
 interface AdvancedRequesterProps {
@@ -56,6 +58,8 @@ interface AdvancedRequesterProps {
   defaultOverrides?: RequestOverrides;
   requestUser?: User;
   onChange: (overrides: RequestOverrides) => void;
+  searchAutomatically?: boolean;
+  onSearchAutomaticallyChange?: (val: boolean) => void;
 }
 
 const AdvancedRequester = ({
@@ -65,6 +69,8 @@ const AdvancedRequester = ({
   defaultOverrides,
   requestUser,
   onChange,
+  searchAutomatically: searchAutomaticallyProp,
+  onSearchAutomaticallyChange,
 }: AdvancedRequesterProps) => {
   const intl = useIntl();
   const { user: currentUser, hasPermission: currentHasPermission } = useUser();
@@ -96,6 +102,20 @@ const AdvancedRequester = ({
   const [selectedTags, setSelectedTags] = useState<number[]>(
     defaultOverrides?.tags ?? []
   );
+
+  const [searchAutomaticallyInternal, setSearchAutomaticallyInternal] =
+    useState<boolean>(defaultOverrides?.searchAutomatically ?? true);
+  const searchAutomatically =
+    searchAutomaticallyProp !== undefined
+      ? searchAutomaticallyProp
+      : searchAutomaticallyInternal;
+  const setSearchAutomatically = (val: boolean) => {
+    if (onSearchAutomaticallyChange) {
+      onSearchAutomaticallyChange(val);
+    } else {
+      setSearchAutomaticallyInternal(val);
+    }
+  };
 
   const { data: serverData, isValidating } =
     useSWR<ServiceCommonServerWithDetails>(
@@ -233,6 +253,10 @@ const AdvancedRequester = ({
       ) {
         setSelectedTags(defaultTags);
       }
+
+      if (defaultOverrides?.searchAutomatically == null) {
+        setSearchAutomatically(!serverData.server.preventSearch);
+      }
     }
   }, [serverData]);
 
@@ -273,6 +297,7 @@ const AdvancedRequester = ({
         user: selectedUser ?? undefined,
         language: selectedLanguage !== -1 ? selectedLanguage : undefined,
         tags: selectedTags,
+        searchAutomatically,
       });
     }
   }, [
@@ -282,6 +307,7 @@ const AdvancedRequester = ({
     selectedUser,
     selectedLanguage,
     selectedTags,
+    searchAutomatically,
   ]);
 
   if (!data && !error) {
@@ -301,7 +327,8 @@ const AdvancedRequester = ({
             serverData.rootFolders.length < 2 &&
             (serverData.languageProfiles ?? []).length < 2 &&
             !serverData.tags?.length)))) &&
-    (!selectedUser || (filteredUserData ?? []).length < 2)
+    (!selectedUser || (filteredUserData ?? []).length < 2) &&
+    !currentHasPermission(Permission.REQUEST_ADVANCED)
   ) {
     return null;
   }
@@ -545,6 +572,25 @@ const AdvancedRequester = ({
                   intl.formatMessage(messages.notagoptions)
                 }
               />
+            </div>
+          )}
+        {!onSearchAutomaticallyChange &&
+          currentHasPermission(Permission.REQUEST_ADVANCED) &&
+          selectedServer !== null && (
+            <div className="mb-2 flex items-center gap-x-2">
+              <input
+                type="checkbox"
+                id="searchAutomatically"
+                checked={searchAutomatically}
+                onChange={(e) => setSearchAutomatically(e.target.checked)}
+                className="h-4 w-4 cursor-pointer rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
+              />
+              <label
+                htmlFor="searchAutomatically"
+                className="cursor-pointer text-sm text-white"
+              >
+                {intl.formatMessage(messages.searchautomatically)}
+              </label>
             </div>
           )}
         {currentHasPermission([

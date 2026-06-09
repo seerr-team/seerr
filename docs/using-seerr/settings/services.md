@@ -73,3 +73,5 @@ Enable this setting if you would like to scan your Radarr/Sonarr server for exis
 #### Enable Automatic Search (optional)
 
 Enable this setting to have Radarr/Sonarr to automatically search for media upon approval of a request.
+
+This serves as the default for all requests sent to this server. When submitting a request, users with access to advanced options can override this default on a per-request basis using the **Search Automatically** toggle in the request modal.

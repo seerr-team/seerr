@@ -38,6 +38,7 @@ interface ModalProps {
   loading?: boolean;
   backdrop?: string;
   children?: React.ReactNode;
+  footerContent?: React.ReactNode;
   dialogClass?: string;
 }
 
@@ -66,6 +67,7 @@ const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
       loading = false,
       onTertiary,
       backdrop,
+      footerContent,
       dialogClass,
       okButtonProps,
       cancelButtonProps,
@@ -190,8 +192,16 @@ const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
               {children}
             </div>
           )}
-          {(onCancel || onOk || onSecondary || onTertiary) && (
-            <div className="relative mt-5 flex flex-row-reverse justify-center sm:mt-4 sm:justify-start">
+          {(onCancel || onOk || onSecondary || onTertiary || footerContent) && (
+            <div
+              className={`relative mt-5 flex items-center sm:mt-4 ${
+                footerContent
+                  ? 'justify-between'
+                  : 'flex-row-reverse justify-center sm:justify-start'
+              }`}
+            >
+              {footerContent && <div>{footerContent}</div>}
+              <div className={footerContent ? 'flex flex-row-reverse' : 'contents'}>
               {typeof onOk === 'function' && (
                 <Button
                   buttonType={okButtonType}
@@ -240,6 +250,7 @@ const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
                     : intl.formatMessage(globalMessages.cancel)}
                 </Button>
               )}
+              </div>
             </div>
           )}
         </Transition>

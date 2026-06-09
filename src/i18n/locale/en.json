@@ -539,6 +539,7 @@
   "components.RequestModal.AdvancedRequester.qualityprofile": "Quality Profile",
   "components.RequestModal.AdvancedRequester.requestas": "Request As",
   "components.RequestModal.AdvancedRequester.rootfolder": "Root Folder",
+  "components.RequestModal.AdvancedRequester.searchautomatically": "Search Automatically",
   "components.RequestModal.AdvancedRequester.selecttags": "Select tags",
   "components.RequestModal.AdvancedRequester.tags": "Tags",
   "components.RequestModal.QuotaDisplay.allowedRequests": "You are allowed to request <strong>{limit}</strong> {type}{days, plural, =0 {} one { every day} other { every <strong>{days}</strong> days}}.",
