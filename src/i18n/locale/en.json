@@ -1524,7 +1524,7 @@
   "components.UserProfile.UserSettings.UserNotificationSettings.discordIdPlaceholder": "Discord User ID",
   "components.UserProfile.UserSettings.UserNotificationSettings.discordIdRemove": "Remove",
   "components.UserProfile.UserSettings.UserNotificationSettings.discordIdTip": "The <FindDiscordIdLink>multi-digit ID number</FindDiscordIdLink> associated with your user account. For multiple household accounts you can add more than one Discord user ID.",
-  "components.UserProfile.UserSettings.UserNotificationSettings.discordNotificationsNotEnabled": "The server owner has not enabled Discord notifications. These information will only be used if the server owner configure an external service.",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordNotificationsNotEnabled": "The server owner has not enabled Discord notifications. This information will only be used if the server owner configures an external service.",
   "components.UserProfile.UserSettings.UserNotificationSettings.discordsettingsfailed": "Discord notification settings failed to save.",
   "components.UserProfile.UserSettings.UserNotificationSettings.discordsettingssaved": "Discord notification settings saved successfully!",
   "components.UserProfile.UserSettings.UserNotificationSettings.email": "Email",
