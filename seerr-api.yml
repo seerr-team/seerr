@@ -529,6 +529,31 @@ components:
               type: string
               enum: [tvdb, tmdb]
               example: 'tvdb'
+    ArtworkProvidersSettings:
+      type: object
+      properties:
+        coverArtArchive:
+          type: object
+          properties:
+            maxRPS:
+              type: integer
+              minimum: 1
+              example: 50
+            maxRequests:
+              type: integer
+              minimum: 1
+              example: 20
+    ArtworkProvidersTestResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        tests:
+          type: object
+          properties:
+            coverArtArchive:
+              type: string
+              enum: ['ok', 'failed', 'not tested']
     TautulliSettings:
       type: object
       properties:
@@ -2723,6 +2748,61 @@ paths:
                   message:
                     type: string
                     example: 'Successfully connected to TVDB'
+  /settings/artwork-providers:
+    get:
+      summary: Get Artwork Provider settings
+      description: Retrieves current settings for the Cover Art Archive client used by music.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkProvidersSettings'
+    put:
+      summary: Update Artwork Provider settings
+      description: Updates Artwork Provider settings with the provided values.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtworkProvidersSettings'
+      responses:
+        '200':
+          description: 'Values were successfully updated'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      success:
+                        type: boolean
+                  - $ref: '#/components/schemas/ArtworkProvidersSettings'
+  /settings/artwork-providers/test:
+    post:
+      summary: Test Artwork Provider connectivity
+      description: Probes Cover Art Archive using the currently saved settings. Returns per-provider status.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: All providers responded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkProvidersTestResponse'
+        '500':
+          description: One or more providers failed to respond
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkProvidersTestResponse'
   /settings/tautulli:
     get:
       summary: Get Tautulli settings
