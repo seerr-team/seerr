@@ -269,9 +269,13 @@ For detailed community-maintained TrueNAS SCALE walkthroughs, see the [Host Path
           ```bash
           rsync -av /mnt/.ix-apps/app_mounts/jellyseerr/ /mnt/storage/seerr/
           ```
-    4. Install Seerr and use the same Host Path storage that was created before (`/mnt/storage/seerr/config` in our example)
-    5. Start Seerr app
-    6. Delete Jellyseerr/Overseerr app
+    4. Change ownership of the folder from `root` to the `apps` user and group:
+      ```bash
+      chown -R 568:568 /mnt/storage/seerr/
+      ```
+    5. Install Seerr and use the same Host Path storage that was created before (`/mnt/storage/seerr/config` in our example)
+    6. Start Seerr app
+    7. Delete Jellyseerr/Overseerr app
   </TabItem>
 </Tabs>
 
