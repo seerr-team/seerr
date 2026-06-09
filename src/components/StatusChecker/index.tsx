@@ -24,7 +24,7 @@ const StatusChecker = () => {
   const settings = useSettings();
   const { hasPermission } = useUser();
   const { data, error } = useSWR<StatusResponse>(
-    settings.currentSettings.versionCheck ? '/api/v1/status' : null,
+    '/api/v1/status?checkUpdateAvailable=false',
     {
       refreshInterval: 60 * 1000,
     }
