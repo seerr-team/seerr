@@ -40,6 +40,7 @@ import path from 'path';
 import semver from 'semver';
 import { URL } from 'url';
 import lidarrRoutes from './lidarr';
+import artworkProvidersRoutes from './artworkProviders';
 import metadataRoutes from './metadata';
 import notificationRoutes from './notifications';
 import radarrRoutes from './radarr';
@@ -53,6 +54,7 @@ settingsRoutes.use('/sonarr', sonarrRoutes);
 settingsRoutes.use('/lidarr', lidarrRoutes);
 settingsRoutes.use('/discover', discoverSettingRoutes);
 settingsRoutes.use('/metadatas', metadataRoutes);
+settingsRoutes.use('/artwork-providers', artworkProvidersRoutes);
 
 const filteredMainSettings = (
   user: User,
