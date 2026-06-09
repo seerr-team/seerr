@@ -299,7 +299,10 @@ const SettingsMetadata = () => {
 
           <div className="flex items-center">
             <span className="mr-2 w-24">TheTVDB:</span>
-            <span className={`text-sm ${getStatusClass(providerStatus.tvdb)}`}>
+            <span
+              className={`text-sm ${getStatusClass(providerStatus.tvdb)}`}
+              data-testid="tvdb-status"
+            >
               <Badge badgeType={getBadgeType(providerStatus.tvdb)}>
                 {getStatusMessage(providerStatus.tvdb)}
               </Badge>
