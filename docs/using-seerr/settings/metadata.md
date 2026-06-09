@@ -33,7 +33,7 @@ keeps IDs and artwork consistent across the UI.
 
 Choose between **TheMovieDB** and **TheTVDB** for anime entries.
 
-## Saving and Testing
+## Metadata Provider Testing
 
 The **Test** buttons make one request per provider.
 
