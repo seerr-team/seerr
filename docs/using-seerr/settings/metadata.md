@@ -12,7 +12,7 @@ external IDs, etc.) from a number of third-party providers. The
 is used for each media type.
 
 A **Test** button at the top and bottom of the page exercises every configured
-provider and updates the three status badges (`TheMovieDB`, `TheTVDB`). Each badge shows one of:
+provider and updates the two status badges (`TheMovieDB`, `TheTVDB`). Each badge shows one of:
 
 - **Operational** — the test request succeeded.
 - **Not tested** — no test has been run yet in this session.
