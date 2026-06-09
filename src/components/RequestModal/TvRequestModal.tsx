@@ -439,7 +439,7 @@ const TvRequestModal = ({
           : !settings.currentSettings.partialRequestsEnabled &&
               quota?.tv.limit &&
               unrequestedSeasons.length > quota.tv.limit &&
-            !requestOverrides?.ignoreQuota
+              !requestOverrides?.ignoreQuota
             ? true
             : getAllRequestedSeasons().length >= getAllSeasons().length ||
               (settings.currentSettings.partialRequestsEnabled &&

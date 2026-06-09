@@ -113,10 +113,20 @@ export class MediaRequest {
 
     const quotas = await requestUser.getQuota();
 
-    const canBypassQuota = user.hasPermission([Permission.MANAGE_REQUESTS]);
+    const canBypassQuota = user.hasPermission(Permission.MANAGE_REQUESTS);
+    const ignoreQuota =
+      requestBody.ignoreQuota === true &&
+      canBypassQuota &&
+      ((requestBody.mediaType === MediaType.MOVIE
+        ? quotas.movie.limit
+        : quotas.tv.limit) ?? 0) > 0;
 
-    if (!canBypassQuota) {
-      if (
+    if (!ignoreQuota) {
+      if (requestBody.ignoreQuota && !canBypassQuota) {
+        throw new RequestPermissionError(
+          'You do not have permission to bypass user quota limits.'
+        );
+      } else if (
         requestBody.mediaType === MediaType.MOVIE &&
         quotas.movie.restricted
       ) {
@@ -395,7 +405,7 @@ export class MediaRequest {
         rootFolder: rootFolder,
         tags: tags,
         isAutoRequest: options.isAutoRequest ?? false,
-        ignoreQuota: requestBody.ignoreQuota ?? false,
+        ignoreQuota,
       });
 
       await requestRepository.save(request);
@@ -459,7 +469,7 @@ export class MediaRequest {
       if (finalSeasons.length === 0) {
         throw new NoSeasonsAvailableError('No seasons available to request');
       } else if (
-        !canBypassQuota &&
+        !ignoreQuota &&
         quotas.tv.limit &&
         finalSeasons.length > (quotas.tv.remaining ?? 0)
       ) {
@@ -528,7 +538,7 @@ export class MediaRequest {
             })
         ),
         isAutoRequest: options.isAutoRequest ?? false,
-        ignoreQuota: requestBody.ignoreQuota ?? false,
+        ignoreQuota,
       });
 
       await requestRepository.save(request);
