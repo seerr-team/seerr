@@ -24,7 +24,7 @@ const messages = defineMessages(
   'components.UserProfile.UserSettings.UserNotificationSettings',
   {
     discordNotificationsNotEnabled:
-      'The server owner has not enabled Discord notifications. These information will only be used if the server owner configure an external service.',
+      'The server owner has not enabled Discord notifications. This information will only be used if the server owner configures an external service.',
     discordsettingssaved: 'Discord notification settings saved successfully!',
     discordsettingsfailed: 'Discord notification settings failed to save.',
     discordId: 'User IDs',
