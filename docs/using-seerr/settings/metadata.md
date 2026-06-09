@@ -28,17 +28,12 @@ This section controls which provider is used for which media type.
 
 Choose between **TheMovieDB** and **TheTVDB** as the source of metadata for TV
 series. TheMovieDB is the default and matches the source used for movies, which
-keeps IDs and artwork consistent across the UI. TheTVDB tends to have richer
-episode-level data for long-running shows.
+keeps IDs and artwork consistent across the UI.
+
 
 ### Anime Metadata Provider
 
-Choose between **TheMovieDB** and **TheTVDB** for anime entries. Many users
-prefer **TheTVDB** here because its anime catalogue is typically more complete
-and uses release-aligned numbering.
-
-Selection changes are persisted with the **Save** button at the bottom of the
-page.
+Choose between **TheMovieDB** and **TheTVDB** for anime entries.
 
 
 ## Saving and Testing
@@ -46,8 +41,8 @@ page.
 The **Save** buttons persist changes to `config/settings.json`. The **Test**
 buttons make one request per provider:
 
-- TMDB / TVDB are tested only when selected as the active provider for one of
-  the media types.
+*TMDB / TVDB are tested only when selected as the active provider for one of
+the media types.*
 
-If any test fails, a toast is shown for that provider and its status badge is
-updated; the other providers' results are independent.
+If any test fails, an error is shown for that provider and its status badge is
+updated.
