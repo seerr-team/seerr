@@ -1,3 +1,4 @@
+import Alert from '@app/components/Common/Alert';
 import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
@@ -22,6 +23,8 @@ import * as Yup from 'yup';
 const messages = defineMessages(
   'components.UserProfile.UserSettings.UserNotificationSettings',
   {
+    discordNotificationsNotEnabled:
+      'The server owner has not enabled Discord notifications. This information will only be used if the server owner configures an external service.',
     discordsettingssaved: 'Discord notification settings saved successfully!',
     discordsettingsfailed: 'Discord notification settings failed to save.',
     discordId: 'User IDs',
@@ -118,6 +121,14 @@ const UserNotificationsDiscord = () => {
       }) => {
         return (
           <Form className="section">
+            {!(data?.discordEnabledTypes ?? 0) && (
+              <Alert
+                type="warning"
+                title={intl.formatMessage(
+                  messages.discordNotificationsNotEnabled
+                )}
+              />
+            )}
             <div className="form-row">
               <label className="text-label">
                 {intl.formatMessage(messages.discordId)}
