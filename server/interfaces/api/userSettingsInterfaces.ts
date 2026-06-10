@@ -4,7 +4,7 @@ export interface UserSettingsGeneralResponse {
   username?: string;
   email?: string;
   locale?: string;
-  mediaLocale?: string;
+  mediaLocale?: string | null;
   discoverRegion?: string;
   streamingRegion?: string;
   originalLanguage?: string;

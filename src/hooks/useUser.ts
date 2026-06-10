@@ -33,7 +33,7 @@ export interface UserSettings {
   streamingRegion?: string;
   originalLanguage?: string;
   locale?: string;
-  mediaLocale?: string;
+  mediaLocale?: string | null;
   notificationTypes: Partial<NotificationAgentTypes>;
   watchlistSyncMovies?: boolean;
   watchlistSyncTv?: boolean;
