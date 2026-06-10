@@ -619,6 +619,9 @@ export class MediaRequest {
   })
   public tags?: number[];
 
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  public imdbId?: string;
+
   @Column({ default: false })
   public isAutoRequest: boolean;
 

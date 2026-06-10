@@ -472,4 +472,51 @@ class JellyfinAPI extends ExternalAPI {
   }
 }
 
+  /**
+   * Trigger Gelato to add a virtual item to Jellyfin's library.
+   *
+   * Gelato's SearchActionFilter intercepts /Items?searchTerm= to cache
+   * StremioMeta in memory. Then Gelato's InsertActionFilter intercepts
+   * /Items/<guid> to call InsertMeta() and create the database item.
+   */
+  public async triggerGelatoInsert(
+    imdbId: string,
+    type: 'movie' | 'series'
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const searchResponse = await this.get<{
+        Items: Array<{ Id: string; Name: string }>;
+        TotalRecordCount: number;
+      }>('/Items', {
+        params: {
+          searchTerm: imdbId,
+          IncludeItemTypes: type === 'movie' ? 'Movie' : 'Series',
+          Recursive: true,
+          Limit: 1,
+        },
+      });
+
+      const firstItem = searchResponse.Items?.[0];
+      if (!firstItem?.Id) {
+        return { success: false, error: 'No results from Gelato/Stremio search' };
+      }
+
+      await this.get(`/Items/${firstItem.Id}`);
+
+      logger.info(`[Gelato] Insert triggered for ${imdbId} (${firstItem.Name})`, {
+        label: 'Gelato',
+        stremioGuid: firstItem.Id,
+      });
+
+      return { success: true };
+    } catch (e) {
+      logger.error(`[Gelato] Insert failed for ${imdbId}: ${e.message}`, {
+        label: 'Gelato',
+        error: e.message,
+      });
+      return { success: false, error: e.message };
+    }
+  }
+}
+
 export default JellyfinAPI;

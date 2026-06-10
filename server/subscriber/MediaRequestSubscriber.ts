@@ -1,3 +1,4 @@
+import JellyfinAPI from '@server/api/jellyfin';
 import type { RadarrMovieOptions } from '@server/api/servarr/radarr';
 import RadarrAPI from '@server/api/servarr/radarr';
 import type {
@@ -20,6 +21,7 @@ import SeasonRequest from '@server/entity/SeasonRequest';
 import notificationManager, { Notification } from '@server/lib/notifications';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import { getHostname } from '@server/utils/getHostname';
 import { isEqual, truncate } from 'lodash';
 import type {
   EntityManager,
@@ -817,6 +819,85 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     }
   }
 
+  public async sendToGelato(entity: MediaRequest): Promise<void> {
+    if (entity.status !== MediaRequestStatus.APPROVED) {
+      return;
+    }
+
+    const settings = getSettings();
+
+    if (!settings.jellyfin?.apiKey) {
+      logger.warn('Jellyfin not configured, skipping Gelato trigger', {
+        label: 'Gelato',
+        requestId: entity.id,
+      });
+      return;
+    }
+
+    try {
+      let imdbId = entity.imdbId;
+
+      if (!imdbId) {
+        const tmdb = new TheMovieDb();
+        if (entity.type === MediaType.MOVIE) {
+          const movie = await tmdb.getMovie({ movieId: entity.media.tmdbId });
+          imdbId = movie.imdb_id;
+        } else {
+          const tv = await tmdb.getTvShow({ tvId: entity.media.tmdbId });
+          imdbId = tv.external_ids?.imdb_id;
+        }
+      }
+
+      if (!imdbId) {
+        logger.warn('No IMDB ID available for Gelato trigger', {
+          label: 'Gelato',
+          requestId: entity.id,
+          tmdbId: entity.media.tmdbId,
+        });
+        return;
+      }
+
+      const jellyfinClient = new JellyfinAPI(
+        getHostname(),
+        settings.jellyfin.apiKey
+      );
+
+      const jellyfinType =
+        entity.type === MediaType.MOVIE ? 'movie' : 'series';
+
+      logger.info(
+        `Triggering Gelato insert for ${jellyfinType} "${entity.media.tmdbId}" (IMDB: ${imdbId})`,
+        { label: 'Gelato', requestId: entity.id }
+      );
+
+      const result = await jellyfinClient.triggerGelatoInsert(
+        imdbId,
+        jellyfinType
+      );
+
+      if (result.success) {
+        const requestRepository = getRepository(MediaRequest);
+        entity.status = MediaRequestStatus.COMPLETED;
+        await requestRepository.save(entity);
+
+        logger.info(`Gelato insert successful for request ${entity.id}`, {
+          label: 'Gelato',
+          requestId: entity.id,
+        });
+      } else {
+        logger.warn(
+          `Gelato insert unsuccessful for request ${entity.id}: ${result.error}`,
+          { label: 'Gelato', requestId: entity.id }
+        );
+      }
+    } catch (e) {
+      logger.error(
+        `Gelato trigger failed for request ${entity.id}: ${e.message}`,
+        { label: 'Gelato', requestId: entity.id, error: e.message }
+      );
+    }
+  }
+
   public async updateParentStatus(entity: MediaRequest): Promise<void> {
     const mediaRepository = getRepository(Media);
     const media = await mediaRepository.findOne({
@@ -1009,10 +1090,9 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     }
 
     try {
-      await this.sendToRadarr(event.entity as MediaRequest);
-      await this.sendToSonarr(event.entity as MediaRequest);
+      await this.sendToGelato(event.entity as MediaRequest);
     } catch (e) {
-      logger.error('Error while sending to *arr in afterUpdate subscriber', {
+      logger.error('Error while sending to Gelato in afterUpdate subscriber', {
         label: 'Media Request',
         requestId: (event.entity as MediaRequest).id,
         errorMessage: e instanceof Error ? e.message : String(e),
@@ -1048,10 +1128,9 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     }
 
     try {
-      await this.sendToRadarr(event.entity as MediaRequest);
-      await this.sendToSonarr(event.entity as MediaRequest);
+      await this.sendToGelato(event.entity as MediaRequest);
     } catch (e) {
-      logger.error('Error while sending to *arr in afterInsert subscriber', {
+      logger.error('Error while sending to Gelato in afterInsert subscriber', {
         label: 'Media Request',
         requestId: (event.entity as MediaRequest).id,
         errorMessage: e instanceof Error ? e.message : String(e),
