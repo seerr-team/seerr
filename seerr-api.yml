@@ -15,8 +15,7 @@ tags:
   - name: settings
     description: Endpoints related to Seerr's settings and configuration.
   - name: auth
-    description: Endpoints related to logging in or out, and the currently
-      authenticated user.
+    description: Endpoints related to logging in or out, and the currently authenticated user.
   - name: users
     description: Endpoints related to user management.
   - name: search
@@ -1252,9 +1251,7 @@ components:
         status:
           type: number
           example: 0
-          description:
-            Status of the request. 1 = PENDING APPROVAL, 2 = APPROVED, 3 =
-            DECLINED
+          description: Status of the request. 1 = PENDING APPROVAL, 2 = APPROVED, 3 = DECLINED
           readOnly: true
         media:
           $ref: '#/components/schemas/MediaInfo'
@@ -1305,10 +1302,7 @@ components:
         status:
           type: number
           example: 0
-          description:
-            Availability of the media. 1 = `UNKNOWN`, 2 = `PENDING`, 3 =
-            `PROCESSING`, 4 = `PARTIALLY_AVAILABLE`, 5 = `AVAILABLE`, 6 =
-            `DELETED`
+          description: Availability of the media. 1 = `UNKNOWN`, 2 = `PENDING`, 3 = `PROCESSING`, 4 = `PARTIALLY_AVAILABLE`, 5 = `AVAILABLE`, 6 = `DELETED`
         requests:
           type: array
           readOnly: true
@@ -2205,9 +2199,7 @@ paths:
   /status/appdata:
     get:
       summary: Get application data volume status
-      description:
-        For Docker installs, returns whether or not the volume mount was
-        configured properly. Always returns true for non-Docker installs.
+      description: For Docker installs, returns whether or not the volume mount was configured properly. Always returns true for non-Docker installs.
       security: []
       tags:
         - public
@@ -2340,6 +2332,7 @@ paths:
       description: Returns a list of Jellyfin libraries in a JSON array.
       tags:
         - settings
+>>>>>>> 95f688fe (revert: undo formatting on seerr-api.yml)
       responses:
         '200':
           description: 'Jellyfin libraries returned'
@@ -2459,9 +2452,7 @@ paths:
                       $ref: '#/components/schemas/JellyfinLibrary'
     post:
       summary: Start full Jellyfin library sync
-      description:
-        Runs a full Jellyfin library sync and returns the progress in a
-        JSON array.
+      description: Runs a full Jellyfin library sync and returns the progress in a JSON array.
       tags:
         - settings
       requestBody:
@@ -2585,7 +2576,7 @@ paths:
       summary: Sync Plex libraries
       description: Syncs the current libraries with the current Plex server. Enabled flags are preserved.
       tags:
-        - settings
+        - settings>>>>>>> 95f688fe (revert: undo formatting on seerr-api.yml)
       responses:
         '200':
           description: 'Plex libraries returned'
@@ -2743,8 +2734,7 @@ paths:
   /settings/metadatas/test:
     post:
       summary: Test Provider configuration
-      description: Tests if the TVDB configuration is valid. Returns a list of
-        available languages on success.
+      description: Tests if the TVDB configuration is valid. Returns a list of available languages on success.
       tags:
         - settings
       requestBody:
@@ -2838,9 +2828,7 @@ paths:
   /settings/radarr/test:
     post:
       summary: Test Radarr configuration
-      description:
-        Tests if the Radarr configuration is valid. Returns profiles and
-        root folders on success.
+      description: Tests if the Radarr configuration is valid. Returns profiles and root folders on success.
       tags:
         - settings
       requestBody:
@@ -2929,9 +2917,7 @@ paths:
   /settings/radarr/{radarrId}/profiles:
     get:
       summary: Get available Radarr profiles
-      description:
-        Returns a list of profiles available on the Radarr server instance
-        in a JSON array.
+      description: Returns a list of profiles available on the Radarr server instance in a JSON array.
       tags:
         - settings
       parameters:
@@ -2986,9 +2972,7 @@ paths:
   /settings/sonarr/test:
     post:
       summary: Test Sonarr configuration
-      description:
-        Tests if the Sonarr configuration is valid. Returns profiles and
-        root folders on success.
+      description: Tests if the Sonarr configuration is valid. Returns profiles and root folders on success.
       tags:
         - settings
       requestBody:
@@ -3078,9 +3062,7 @@ paths:
     get:
       summary: Get public settings
       security: []
-      description:
-        Returns settings that are not protected or sensitive. Mainly used
-        to determine if the application has been configured for the first time.
+      description: Returns settings that are not protected or sensitive. Mainly used to determine if the application has been configured for the first time.
       tags:
         - settings
       responses:
@@ -3093,9 +3075,7 @@ paths:
   /settings/initialize:
     post:
       summary: Initialize application
-      description:
-        Sets the app as initialized, allowing the user to navigate to pages
-        other than the setup page.
+      description: Sets the app as initialized, allowing the user to navigate to pages other than the setup page.
       tags:
         - settings
       responses:
@@ -3108,9 +3088,7 @@ paths:
   /settings/jobs:
     get:
       summary: Get scheduled jobs
-      description:
-        Returns list of all scheduled jobs and details about their next
-        execution time in a JSON array.
+      description: Returns list of all scheduled jobs and details about their next execution time in a JSON array.
       tags:
         - settings
       responses:
@@ -3125,9 +3103,7 @@ paths:
   /settings/jobs/{jobId}/run:
     post:
       summary: Invoke a specific job
-      description:
-        Invokes a specific job to run. Will return the new job status in
-        JSON format.
+      description: Invokes a specific job to run. Will return the new job status in JSON format.
       tags:
         - settings
       parameters:
@@ -3165,9 +3141,7 @@ paths:
   /settings/jobs/{jobId}/schedule:
     post:
       summary: Modify job schedule
-      description:
-        Re-registers the job with the schedule specified. Will return the
-        job in JSON format.
+      description: Re-registers the job with the schedule specified. Will return the job in JSON format.
       tags:
         - settings
       parameters:
@@ -3963,9 +3937,7 @@ paths:
                 $ref: '#/components/schemas/DiscoverSlider'
     delete:
       summary: Delete slider by ID
-      description:
-        Deletes the slider with the provided sliderId. Requires the `ADMIN`
-        permission.
+      description: Deletes the slider with the provided sliderId. Requires the `ADMIN` permission.
       tags:
         - settings
       parameters:
@@ -4014,9 +3986,7 @@ paths:
   /settings/discover/reset:
     get:
       summary: Reset all discover sliders
-      description:
-        Resets all discovery sliders to the default values. Requires the
-        `ADMIN` permission.
+      description: Resets all discovery sliders to the default values. Requires the `ADMIN` permission.
       tags:
         - settings
       responses:
@@ -4069,12 +4039,7 @@ paths:
   /auth/plex:
     post:
       summary: Sign in using a Plex token
-      description:
-        Takes an `authToken` (Plex token) to log the user in. Generates a
-        session cookie for use in further requests. If the user does not exist,
-        and there are no other users, then a user will be created with full
-        admin privileges. If a user logs in with access to the main Plex server,
-        they will also have an account created, but without any permissions.
+      description: Takes an `authToken` (Plex token) to log the user in. Generates a session cookie for use in further requests. If the user does not exist, and there are no other users, then a user will be created with full admin privileges. If a user logs in with access to the main Plex server, they will also have an account created, but without any permissions.
       security: []
       tags:
         - auth
@@ -4099,12 +4064,7 @@ paths:
   /auth/jellyfin:
     post:
       summary: Sign in using a Jellyfin username and password
-      description: Takes the user's username and password to log the user in.
-        Generates a session cookie for use in further requests. If the user does
-        not exist, and there are no other users, then a user will be created
-        with full admin privileges. If a user logs in with access to the
-        Jellyfin server, they will also have an account created, but without any
-        permissions.
+      description: Takes the user's username and password to log the user in. Generates a session cookie for use in further requests. If the user does not exist, and there are no other users, then a user will be created with full admin privileges. If a user logs in with access to the Jellyfin server, they will also have an account created, but without any permissions.
       security: []
       tags:
         - auth
@@ -4217,9 +4177,7 @@ paths:
   /auth/local:
     post:
       summary: Sign in using a local account
-      description:
-        Takes an `email` and a `password` to log the user in. Generates a
-        session cookie for use in further requests.
+      description: Takes an `email` and a `password` to log the user in. Generates a session cookie for use in further requests.
       security: []
       tags:
         - auth
@@ -4247,8 +4205,7 @@ paths:
   /auth/logout:
     post:
       summary: Sign out and clear session cookie
-      description: Completely clear the session cookie and associated values,
-        effectively signing the user out.
+      description: Completely clear the session cookie and associated values, effectively signing the user out.
       tags:
         - auth
       responses:
@@ -4658,8 +4615,7 @@ paths:
                 $ref: '#/components/schemas/User'
     delete:
       summary: Delete user by ID
-      description: Deletes the user with the provided userId. Requires the
-        `MANAGE_USERS` permission.
+      description: Deletes the user with the provided userId. Requires the `MANAGE_USERS` permission.
       tags:
         - users
       parameters:
@@ -5192,8 +5148,7 @@ paths:
   /user/{userId}/settings/main:
     get:
       summary: Get general settings for a user
-      description: Returns general settings for a specific user. Requires
-        `MANAGE_USERS` permission if viewing other users.
+      description: Returns general settings for a specific user. Requires `MANAGE_USERS` permission if viewing other users.
       tags:
         - users
       parameters:
@@ -5211,9 +5166,7 @@ paths:
                 $ref: '#/components/schemas/UserSettings'
     post:
       summary: Update general settings for a user
-      description:
-        Updates and returns general settings for a specific user. Requires
-        `MANAGE_USERS` permission if editing other users.
+      description: Updates and returns general settings for a specific user. Requires `MANAGE_USERS` permission if editing other users.
       tags:
         - users
       parameters:
@@ -5238,9 +5191,7 @@ paths:
   /user/{userId}/settings/password:
     get:
       summary: Get password page informatiom
-      description:
-        Returns important data for the password page to function correctly.
-        Requires `MANAGE_USERS` permission if viewing other users.
+      description: Returns important data for the password page to function correctly. Requires `MANAGE_USERS` permission if viewing other users.
       tags:
         - users
       parameters:
@@ -5262,9 +5213,7 @@ paths:
                     example: true
     post:
       summary: Update password for a user
-      description:
-        Updates a user's password. Requires `MANAGE_USERS` permission if
-        editing other users.
+      description: Updates a user's password. Requires `MANAGE_USERS` permission if editing other users.
       tags:
         - users
       parameters:
@@ -5293,9 +5242,7 @@ paths:
   /user/{userId}/settings/linked-accounts/plex:
     post:
       summary: Link the provided Plex account to the current user
-      description: Logs in to Plex with the provided auth token, then links the
-        associated Plex account with the user's account. Users can only link
-        external accounts to their own account.
+      description: Logs in to Plex with the provided auth token, then links the associated Plex account with the user's account. Users can only link external accounts to their own account.
       tags:
         - users
       parameters:
@@ -5324,8 +5271,7 @@ paths:
           description: Account already linked to a user
     delete:
       summary: Remove the linked Plex account for a user
-      description: Removes the linked Plex account for a specific user. Requires
-        `MANAGE_USERS` permission if editing other users.
+      description: Removes the linked Plex account for a specific user. Requires `MANAGE_USERS` permission if editing other users.
       tags:
         - users
       parameters:
@@ -5344,10 +5290,7 @@ paths:
   /user/{userId}/settings/linked-accounts/jellyfin:
     post:
       summary: Link the provided Jellyfin account to the current user
-      description:
-        Logs in to Jellyfin with the provided credentials, then links the
-        associated Jellyfin account with the user's account. Users can only link
-        external accounts to their own account.
+      description: Logs in to Jellyfin with the provided credentials, then links the associated Jellyfin account with the user's account. Users can only link external accounts to their own account.
       tags:
         - users
       parameters:
@@ -5378,9 +5321,7 @@ paths:
           description: Account already linked to a user
     delete:
       summary: Remove the linked Jellyfin account for a user
-      description:
-        Removes the linked Jellyfin account for a specific user. Requires
-        `MANAGE_USERS` permission if editing other users.
+      description: Removes the linked Jellyfin account for a specific user. Requires `MANAGE_USERS` permission if editing other users.
       tags:
         - users
       parameters:
@@ -5433,8 +5374,7 @@ paths:
   /user/{userId}/settings/notifications:
     get:
       summary: Get notification settings for a user
-      description: Returns notification settings for a specific user. Requires
-        `MANAGE_USERS` permission if viewing other users.
+      description: Returns notification settings for a specific user. Requires `MANAGE_USERS` permission if viewing other users.
       tags:
         - users
       parameters:
@@ -5452,9 +5392,7 @@ paths:
                 $ref: '#/components/schemas/UserSettingsNotifications'
     post:
       summary: Update notification settings for a user
-      description:
-        Updates and returns notification settings for a specific user.
-        Requires `MANAGE_USERS` permission if editing other users.
+      description: Updates and returns notification settings for a specific user. Requires `MANAGE_USERS` permission if editing other users.
       tags:
         - users
       parameters:
@@ -5479,8 +5417,7 @@ paths:
   /user/{userId}/settings/permissions:
     get:
       summary: Get permission settings for a user
-      description: Returns permission settings for a specific user. Requires
-        `MANAGE_USERS` permission if viewing other users.
+      description: Returns permission settings for a specific user. Requires `MANAGE_USERS` permission if viewing other users.
       tags:
         - users
       parameters:
@@ -5502,8 +5439,7 @@ paths:
                     example: 2
     post:
       summary: Update permission settings for a user
-      description: Updates and returns permission settings for a specific user.
-        Requires `MANAGE_USERS` permission if editing other users.
+      description: Updates and returns permission settings for a specific user. Requires `MANAGE_USERS` permission if editing other users.
       tags:
         - users
       parameters:
@@ -5654,9 +5590,7 @@ paths:
   /search/company:
     get:
       summary: Search for companies
-      description:
-        Returns a list of TMDB companies matching the search query. (Will
-        not return origin country)
+      description: Returns a list of TMDB companies matching the search query. (Will not return origin country)
       tags:
         - search
       parameters:
@@ -5792,25 +5726,19 @@ paths:
           schema:
             type: string
             example: PG-13
-          description:
-            Exact certification to filter by (used when certificationMode is
-            'exact')
+          description: Exact certification to filter by (used when certificationMode is 'exact')
         - in: query
           name: certificationGte
           schema:
             type: string
             example: G
-          description:
-            Minimum certification to filter by (used when certificationMode is
-            'range')
+          description: Minimum certification to filter by (used when certificationMode is 'range')
         - in: query
           name: certificationLte
           schema:
             type: string
             example: PG-13
-          description:
-            Maximum certification to filter by (used when certificationMode is
-            'range')
+          description: Maximum certification to filter by (used when certificationMode is 'range')
         - in: query
           name: certificationCountry
           schema:
@@ -5823,9 +5751,7 @@ paths:
             type: string
             enum: [exact, range]
             example: exact
-          description:
-            Determines whether to use exact certification matching or a
-            certification range (internal use only, not sent to TMDB API)
+          description: Determines whether to use exact certification matching or a certification range (internal use only, not sent to TMDB API)
       responses:
         '200':
           description: Results
@@ -5897,9 +5823,7 @@ paths:
   /discover/movies/language/{language}:
     get:
       summary: Discover movies by original language
-      description:
-        Returns a list of movies based on the provided ISO 639-1 language
-        code in a JSON object.
+      description: Returns a list of movies based on the provided ISO 639-1 language code in a JSON object.
       tags:
         - search
       parameters:
@@ -5946,9 +5870,7 @@ paths:
   /discover/movies/studio/{studioId}:
     get:
       summary: Discover movies by studio
-      description:
-        Returns a list of movies based on the provided studio ID in a JSON
-        object.
+      description: Returns a list of movies based on the provided studio ID in a JSON object.
       tags:
         - search
       parameters:
@@ -6135,25 +6057,19 @@ paths:
           schema:
             type: string
             example: TV-14
-          description:
-            Exact certification to filter by (used when certificationMode is
-            'exact')
+          description: Exact certification to filter by (used when certificationMode is 'exact')
         - in: query
           name: certificationGte
           schema:
             type: string
             example: TV-PG
-          description:
-            Minimum certification to filter by (used when certificationMode is
-            'range')
+          description: Minimum certification to filter by (used when certificationMode is 'range')
         - in: query
           name: certificationLte
           schema:
             type: string
             example: TV-MA
-          description:
-            Maximum certification to filter by (used when certificationMode is
-            'range')
+          description: Maximum certification to filter by (used when certificationMode is 'range')
         - in: query
           name: certificationCountry
           schema:
@@ -6166,9 +6082,7 @@ paths:
             type: string
             enum: [exact, range]
             example: exact
-          description:
-            Determines whether to use exact certification matching or a
-            certification range (internal use only, not sent to TMDB API)
+          description: Determines whether to use exact certification matching or a certification range (internal use only, not sent to TMDB API)
       responses:
         '200':
           description: Results
@@ -6193,9 +6107,7 @@ paths:
   /discover/tv/language/{language}:
     get:
       summary: Discover TV shows by original language
-      description:
-        Returns a list of TV shows based on the provided ISO 639-1 language
-        code in a JSON object.
+      description: Returns a list of TV shows based on the provided ISO 639-1 language code in a JSON object.
       tags:
         - search
       parameters:
@@ -6242,9 +6154,7 @@ paths:
   /discover/tv/genre/{genreId}:
     get:
       summary: Discover TV shows by genre
-      description:
-        Returns a list of TV shows based on the provided genre ID in a JSON
-        object.
+      description: Returns a list of TV shows based on the provided genre ID in a JSON object.
       tags:
         - search
       parameters:
@@ -6291,9 +6201,7 @@ paths:
   /discover/tv/network/{networkId}:
     get:
       summary: Discover TV shows by network
-      description:
-        Returns a list of TV shows based on the provided network ID in a
-        JSON object.
+      description: Returns a list of TV shows based on the provided network ID in a JSON object.
       tags:
         - search
       parameters:
@@ -6780,9 +6688,7 @@ paths:
                 $ref: '#/components/schemas/MediaRequest'
     put:
       summary: Update MediaRequest
-      description:
-        Updates a specific media request and returns the request in a JSON
-        object. Requires the `MANAGE_REQUESTS` permission.
+      description: Updates a specific media request and returns the request in a JSON object. Requires the `MANAGE_REQUESTS` permission.
       tags:
         - request
       parameters:
@@ -6835,9 +6741,7 @@ paths:
           description: Only pending requests can be modified
     delete:
       summary: Delete request
-      description: Removes a request. If the user has the `MANAGE_REQUESTS`
-        permission, any request can be removed. Otherwise, only pending requests
-        can be removed.
+      description: Removes a request. If the user has the `MANAGE_REQUESTS` permission, any request can be removed. Otherwise, only pending requests can be removed.
       tags:
         - request
       parameters:
@@ -6940,9 +6844,7 @@ paths:
   /movie/{movieId}/recommendations:
     get:
       summary: Get recommended movies
-      description:
-        Returns list of recommended movies based on provided movie ID in a
-        JSON object.
+      description: Returns list of recommended movies based on provided movie ID in a JSON object.
       tags:
         - movies
       parameters:
@@ -6987,9 +6889,7 @@ paths:
   /movie/{movieId}/similar:
     get:
       summary: Get similar movies
-      description:
-        Returns list of similar movies based on the provided movieId in a
-        JSON object.
+      description: Returns list of similar movies based on the provided movieId in a JSON object.
       tags:
         - movies
       parameters:
@@ -7076,9 +6976,7 @@ paths:
   /movie/{movieId}/ratingscombined:
     get:
       summary: Get RT and IMDB movie ratings combined
-      description:
-        Returns ratings from RottenTomatoes and IMDB based on the provided
-        movieId in a JSON object.
+      description: Returns ratings from RottenTomatoes and IMDB based on the provided movieId in a JSON object.
       tags:
         - movies
       parameters:
@@ -7191,9 +7089,7 @@ paths:
   /tv/{tvId}/recommendations:
     get:
       summary: Get recommended TV series
-      description:
-        Returns list of recommended TV series based on the provided tvId in
-        a JSON object.
+      description: Returns list of recommended TV series based on the provided tvId in a JSON object.
       tags:
         - tv
       parameters:
@@ -7238,9 +7134,7 @@ paths:
   /tv/{tvId}/similar:
     get:
       summary: Get similar TV series
-      description:
-        Returns list of similar TV series based on the provided tvId in a
-        JSON object.
+      description: Returns list of similar TV series based on the provided tvId in a JSON object.
       tags:
         - tv
       parameters:
@@ -7346,8 +7240,7 @@ paths:
   /person/{personId}/combined_credits:
     get:
       summary: Get combined credits
-      description: Returns the person's combined credits based on the provided
-        personId in a JSON object.
+      description: Returns the person's combined credits based on the provided personId in a JSON object.
       tags:
         - person
       parameters:
@@ -7437,9 +7330,7 @@ paths:
   /media/{mediaId}:
     delete:
       summary: Delete media item
-      description:
-        Removes a media item. The `MANAGE_REQUESTS` permission is required
-        to perform this action.
+      description: Removes a media item. The `MANAGE_REQUESTS` permission is required to perform this action.
       tags:
         - media
       parameters:
@@ -7456,9 +7347,7 @@ paths:
   /media/{mediaId}/file:
     delete:
       summary: Delete media file
-      description:
-        Removes a media file from radarr/sonarr. The `ADMIN` permission is
-        required to perform this action.
+      description: Removes a media file from radarr/sonarr. The `ADMIN` permission is required to perform this action.
       tags:
         - media
       parameters:
@@ -7471,9 +7360,7 @@ paths:
             type: string
         - in: query
           name: is4k
-          description:
-            Whether to remove from 4K service instance (true) or regular
-            service instance (false)
+          description: Whether to remove from 4K service instance (true) or regular service instance (false)
           required: false
           example: false
           schema:
@@ -7617,9 +7504,7 @@ paths:
   /service/radarr/{radarrId}:
     get:
       summary: Get Radarr server quality profiles and root folders
-      description:
-        Returns a Radarr server's quality profile and root folder details
-        in a JSON object.
+      description: Returns a Radarr server's quality profile and root folder details in a JSON object.
       tags:
         - service
       parameters:
@@ -7659,9 +7544,7 @@ paths:
   /service/sonarr/{sonarrId}:
     get:
       summary: Get Sonarr server quality profiles and root folders
-      description:
-        Returns a Sonarr server's quality profile and root folder details
-        in a JSON object.
+      description: Returns a Sonarr server's quality profile and root folder details in a JSON object.
       tags:
         - service
       parameters:
@@ -7998,10 +7881,7 @@ paths:
                 $ref: '#/components/schemas/Issue'
     delete:
       summary: Delete issue
-      description:
-        Removes an issue. If the user has the `MANAGE_ISSUES` permission,
-        any issue can be removed. Otherwise, only a users own issues can be
-        removed.
+      description: Removes an issue. If the user has the `MANAGE_ISSUES` permission, any issue can be removed. Otherwise, only a users own issues can be removed.
       tags:
         - issue
       parameters:
