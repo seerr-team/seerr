@@ -14,7 +14,7 @@ import useSWR from 'swr';
 
 interface TitleCardRatingsProps {
   id: number;
-  mediaType: Extract<MediaType, 'movie' | 'tv'>;
+  mediaType: MediaType;
   userScore?: number;
   visible: boolean;
 }
@@ -67,7 +67,12 @@ const TitleCardRatings = ({
     }
   );
 
-  const rtRating = mediaType === 'movie' ? movieRatings?.rt : tvRatings;
+  const rtRating =
+    mediaType === 'movie'
+      ? movieRatings?.rt
+      : mediaType === 'tv'
+        ? tvRatings
+        : undefined;
   const imdbRating = movieRatings?.imdb;
   const hasRtAudienceScore =
     typeof rtRating?.audienceScore === 'number' &&

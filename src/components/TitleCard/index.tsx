@@ -554,7 +554,7 @@ const TitleCard = ({
                     >
                       {summary}
                     </div>
-                    {(mediaType === 'movie' || mediaType === 'tv') && (
+                    {typeof userScore === 'number' && userScore > 0 && (
                       <TitleCardRatings
                         id={id}
                         mediaType={mediaType}
