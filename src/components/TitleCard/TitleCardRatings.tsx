@@ -23,10 +23,10 @@ const RATINGS_REQUEST_DELAY_MS = 300;
 
 const messages = defineMessages('components.TitleCard.TitleCardRatings', {
   ratings: 'Ratings',
-  rottenTomatoesAudienceScore: 'Rotten Tomatoes Audience Score: {score}%',
-  rottenTomatoesCriticsScore: 'Rotten Tomatoes Critics Score: {score}%',
-  imdbUserScore: 'IMDb User Score: {score}',
-  tmdbUserScore: 'TMDB User Score: {score}%',
+  rottenTomatoesAudienceScore: 'Rotten Tomatoes Audience Score',
+  rottenTomatoesCriticsScore: 'Rotten Tomatoes Critics Score',
+  imdbUserScore: 'IMDb User Score',
+  tmdbUserScore: 'TMDB User Score',
 });
 
 const TitleCardRatings = ({
@@ -99,12 +99,10 @@ const TitleCardRatings = ({
       aria-label={intl.formatMessage(messages.ratings)}
     >
       {hasRtAudienceScore && (
-        <span
-          className="flex min-w-0 items-center gap-0.5 md:gap-1"
-          aria-label={intl.formatMessage(messages.rottenTomatoesAudienceScore, {
-            score: rtRating.audienceScore,
-          })}
-        >
+        <span className="flex min-w-0 items-center gap-0.5 md:gap-1">
+          <span className="sr-only">
+            {intl.formatMessage(messages.rottenTomatoesAudienceScore)}:{' '}
+          </span>
           {rtRating.audienceRating === 'Spilled' ? (
             <RTAudRotten
               className="h-3.5 w-3.5 shrink-0 md:h-4 md:w-4"
@@ -120,12 +118,10 @@ const TitleCardRatings = ({
         </span>
       )}
       {hasRtCriticsScore && (
-        <span
-          className="flex min-w-0 items-center gap-0.5 md:gap-1"
-          aria-label={intl.formatMessage(messages.rottenTomatoesCriticsScore, {
-            score: rtRating.criticsScore,
-          })}
-        >
+        <span className="flex min-w-0 items-center gap-0.5 md:gap-1">
+          <span className="sr-only">
+            {intl.formatMessage(messages.rottenTomatoesCriticsScore)}:{' '}
+          </span>
           {rtRating.criticsRating === 'Rotten' ? (
             <RTRotten
               className="h-3.5 w-3.5 shrink-0 md:h-4 md:w-4"
@@ -141,12 +137,10 @@ const TitleCardRatings = ({
         </span>
       )}
       {hasImdbScore && (
-        <span
-          className="flex min-w-0 items-center gap-0.5 md:gap-1"
-          aria-label={intl.formatMessage(messages.imdbUserScore, {
-            score: imdbRating.criticsScore,
-          })}
-        >
+        <span className="flex min-w-0 items-center gap-0.5 md:gap-1">
+          <span className="sr-only">
+            {intl.formatMessage(messages.imdbUserScore)}:{' '}
+          </span>
           <ImdbLogo
             className="h-2.5 w-4 shrink-0 md:h-3 md:w-5"
             aria-hidden="true"
@@ -155,12 +149,10 @@ const TitleCardRatings = ({
         </span>
       )}
       {hasTmdbScore && (
-        <span
-          className="flex min-w-0 items-center gap-0.5 md:gap-1"
-          aria-label={intl.formatMessage(messages.tmdbUserScore, {
-            score: Math.round(userScore * 10),
-          })}
-        >
+        <span className="flex min-w-0 items-center gap-0.5 md:gap-1">
+          <span className="sr-only">
+            {intl.formatMessage(messages.tmdbUserScore)}:{' '}
+          </span>
           <TmdbLogo
             className="h-3.5 w-4 shrink-0 md:h-4 md:w-5"
             aria-hidden="true"
