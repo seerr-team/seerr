@@ -1,6 +1,6 @@
 ---
 title: Metadata Providers
-description: Configure the metadata providers Seerr uses for TV and anime.
+description: Configure the metadata providers Seerr uses.
 sidebar_position: 8
 ---
 
@@ -23,7 +23,7 @@ provider and updates the two status badges (`TheMovieDB`, `TheTVDB`). Each badge
 
 This section controls which provider is used for which media type.
 
-### Series Metadata Provider
+### TV series Metadata Provider
 
 Choose between **TheMovieDB** and **TheTVDB** as the source of metadata for TV
 series. TheMovieDB is the default and matches the source used for movies, which
