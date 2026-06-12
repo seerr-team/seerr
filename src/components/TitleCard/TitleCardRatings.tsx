@@ -19,6 +19,8 @@ interface TitleCardRatingsProps {
   visible: boolean;
 }
 
+const RATINGS_REQUEST_DELAY_MS = 300;
+
 const messages = defineMessages('components.TitleCard.TitleCardRatings', {
   ratings: 'Ratings',
   rottenTomatoesAudienceScore: 'Rotten Tomatoes Audience Score: {score}%',
@@ -34,25 +36,33 @@ const TitleCardRatings = ({
   visible,
 }: TitleCardRatingsProps) => {
   const intl = useIntl();
-  const [ratingsRequested, setRatingsRequested] = useState(visible);
+  const [ratingsRequested, setRatingsRequested] = useState(false);
 
   useEffect(() => {
-    if (visible) {
-      setRatingsRequested(true);
+    if (!visible || ratingsRequested) {
+      return;
     }
-  }, [visible]);
+
+    const timeout = setTimeout(() => {
+      setRatingsRequested(true);
+    }, RATINGS_REQUEST_DELAY_MS);
+
+    return () => clearTimeout(timeout);
+  }, [ratingsRequested, visible]);
 
   const { data: movieRatings } = useSWR<RatingResponse>(
     ratingsRequested && mediaType === 'movie'
       ? `/api/v1/movie/${id}/ratingscombined`
       : null,
     {
+      revalidateOnFocus: false,
       shouldRetryOnError: false,
     }
   );
   const { data: tvRatings } = useSWR<RTRating>(
     ratingsRequested && mediaType === 'tv' ? `/api/v1/tv/${id}/ratings` : null,
     {
+      revalidateOnFocus: false,
       shouldRetryOnError: false,
     }
   );
