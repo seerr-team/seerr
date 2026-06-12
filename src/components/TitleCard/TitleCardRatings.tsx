@@ -14,7 +14,7 @@ import useSWR from 'swr';
 
 interface TitleCardRatingsProps {
   id: number;
-  mediaType: MediaType;
+  mediaType: Extract<MediaType, 'movie' | 'tv'>;
   userScore?: number;
   visible: boolean;
 }

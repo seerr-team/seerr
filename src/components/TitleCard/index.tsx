@@ -554,12 +554,14 @@ const TitleCard = ({
                     >
                       {summary}
                     </div>
-                    <TitleCardRatings
-                      id={id}
-                      mediaType={mediaType}
-                      userScore={userScore}
-                      visible={showDetail}
-                    />
+                    {(mediaType === 'movie' || mediaType === 'tv') && (
+                      <TitleCardRatings
+                        id={id}
+                        mediaType={mediaType}
+                        userScore={userScore}
+                        visible={showDetail}
+                      />
+                    )}
                   </div>
                 </div>
               </Link>
