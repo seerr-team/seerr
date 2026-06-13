@@ -20,6 +20,7 @@ import SeasonRequest from '@server/entity/SeasonRequest';
 import notificationManager, { Notification } from '@server/lib/notifications';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import { resolveMonitorNewItems } from '@server/utils/sonarr';
 import { isEqual, truncate } from 'lodash';
 import type {
   EntityManager,
@@ -711,7 +712,15 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           seriesType,
           tags,
           monitored: true,
-          monitorNewItems: sonarrSettings.monitorNewItems,
+          monitorNewItems: resolveMonitorNewItems({
+            setting: sonarrSettings.monitorNewItems ?? 'all',
+            requestedSeasons: entity.seasons.map(
+              (season) => season.seasonNumber
+            ),
+            availableSeasons: series.seasons.map(
+              (season) => season.season_number
+            ),
+          }),
           searchNow: !sonarrSettings.preventSearch,
         };
 
