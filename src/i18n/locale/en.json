@@ -1037,7 +1037,7 @@
   "components.Settings.SettingsNetwork.apiRequestTimeout": "API Request Timeout",
   "components.Settings.SettingsNetwork.apiRequestTimeoutTip": "Maximum time (in seconds) to wait for responses from external services like Radarr/Sonarr. Set to 0 for no timeout.",
   "components.Settings.SettingsNetwork.autoProvisionName": "Enable autoprovisioning of new users",
-  "components.Settings.SettingsNetwork.autoProvisionNameTip": "When enabled, an authenticated request whose forward-auth user/email doesn\\'t match an existing user will create a new user record.",
+  "components.Settings.SettingsNetwork.autoProvisionNameTip": "When enabled, an authenticated request whose forward-auth user/email doesn't match an existing user will create a new user record.",
   "components.Settings.SettingsNetwork.csrfProtection": "Enable CSRF Protection",
   "components.Settings.SettingsNetwork.csrfProtectionHoverTip": "Do NOT enable this setting unless you understand what you are doing!",
   "components.Settings.SettingsNetwork.csrfProtectionTip": "Set external API access to read-only (requires HTTPS)",
