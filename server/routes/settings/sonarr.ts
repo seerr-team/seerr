@@ -6,6 +6,42 @@ import { Router } from 'express';
 
 const sonarrRoutes = Router();
 
+// Returns a validation error message if activeAnimeProfileId is set but not
+// found on the server. Returns null if valid or if Sonarr is unreachable
+// (allowing saves to proceed when the server is temporarily offline).
+async function validateAnimeProfileAgainstSonarr(
+  body: Pick<
+    SonarrSettings,
+    | 'apiKey'
+    | 'hostname'
+    | 'port'
+    | 'useSsl'
+    | 'baseUrl'
+    | 'activeAnimeProfileId'
+  >
+): Promise<string | null> {
+  if (!body.activeAnimeProfileId) return null;
+  try {
+    const sonarr = new SonarrAPI({
+      apiKey: body.apiKey,
+      url: SonarrAPI.buildUrl(body, '/api/v3'),
+    });
+    const profiles = await sonarr.getProfiles();
+    if (!profiles.some((p) => p.id === body.activeAnimeProfileId)) {
+      return `Anime quality profile with ID ${body.activeAnimeProfileId} does not exist on this Sonarr server. Please select a valid profile.`;
+    }
+  } catch (e) {
+    logger.warn(
+      'Could not validate anime quality profile against Sonarr server',
+      {
+        label: 'Sonarr',
+        message: e.message,
+      }
+    );
+  }
+  return null;
+}
+
 sonarrRoutes.get('/', (_req, res) => {
   const settings = getSettings();
 
@@ -30,28 +66,9 @@ sonarrRoutes.post('/', async (req, res) => {
       });
   }
 
-  if (req.body.activeAnimeProfileId) {
-    try {
-      const sonarr = new SonarrAPI({
-        apiKey: req.body.apiKey,
-        url: SonarrAPI.buildUrl(req.body, '/api/v3'),
-      });
-      const profiles = await sonarr.getProfiles();
-      if (!profiles.some((p) => p.id === req.body.activeAnimeProfileId)) {
-        return res.status(422).json({
-          status: '422',
-          message: `Anime quality profile with ID ${req.body.activeAnimeProfileId} does not exist on this Sonarr server. Please select a valid profile.`,
-        });
-      }
-    } catch (e) {
-      logger.warn(
-        'Could not validate anime quality profile against Sonarr server',
-        {
-          label: 'Sonarr',
-          message: e.message,
-        }
-      );
-    }
+  const animeProfileError = await validateAnimeProfileAgainstSonarr(req.body);
+  if (animeProfileError) {
+    return res.status(422).json({ status: '422', message: animeProfileError });
   }
 
   settings.sonarr = [...settings.sonarr, newSonarr];
@@ -121,28 +138,9 @@ sonarrRoutes.put<{ id: string }>('/:id', async (req, res) => {
       });
   }
 
-  if (req.body.activeAnimeProfileId) {
-    try {
-      const sonarr = new SonarrAPI({
-        apiKey: req.body.apiKey,
-        url: SonarrAPI.buildUrl(req.body, '/api/v3'),
-      });
-      const profiles = await sonarr.getProfiles();
-      if (!profiles.some((p) => p.id === req.body.activeAnimeProfileId)) {
-        return res.status(422).json({
-          status: '422',
-          message: `Anime quality profile with ID ${req.body.activeAnimeProfileId} does not exist on this Sonarr server. Please select a valid profile.`,
-        });
-      }
-    } catch (e) {
-      logger.warn(
-        'Could not validate anime quality profile against Sonarr server',
-        {
-          label: 'Sonarr',
-          message: e.message,
-        }
-      );
-    }
+  const animeProfileError = await validateAnimeProfileAgainstSonarr(req.body);
+  if (animeProfileError) {
+    return res.status(422).json({ status: '422', message: animeProfileError });
   }
 
   settings.sonarr[sonarrIndex] = {
