@@ -74,7 +74,7 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   enableSpecialEpisodes: 'Allow Special Episodes Requests',
   enableEpisodeAvailability: 'Enable Episode Availability Tracking',
   enableEpisodeAvailabilityTip:
-    'Track individual episode availability status (requires TVDB as metadata provider for TV shows or anime)',
+    'Track individual episode availability status (requires TVDB as metadata provider for either TV shows or anime)',
   enableEpisodeAvailabilityNoTvdbWarning:
     'This setting has no effect because neither TV shows nor anime use TVDB as the metadata provider.',
   locale: 'Display Language',
