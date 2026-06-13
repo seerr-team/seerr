@@ -2,12 +2,12 @@ import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
-import logger from '@server/logger';
 import type {
   Permission,
   PermissionCheckOptions,
 } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
+import logger from '@server/logger';
 import * as net from 'net';
 
 export const checkUser: Middleware = async (req, _res, next) => {
@@ -128,7 +128,7 @@ export const checkUser: Middleware = async (req, _res, next) => {
           jellyfinUsername:
             (newUserType === UserType.JELLYFIN ||
               newUserType === UserType.EMBY) &&
-              userValue
+            userValue
               ? userValue
               : undefined,
           // When the User Header is blank (email-only auth, e.g. Cloudflare

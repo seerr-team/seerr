@@ -37,9 +37,9 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
   userHeaderNameTip: 'Matched against Jellyfin or Plex Username',
   emailHeaderName: 'Email Header Name',
   emailHeaderNameTip: 'Matched against Email',
-  autoProvisionName: `Enable autoprovisioning of new users`,
+  autoProvisionName: 'Enable autoprovisioning of new users',
   autoProvisionNameTip:
-    `When enabled, an authenticated request whose forward-auth user/email doesn't match an existing user will create a new user record.`,
+    "When enabled, an authenticated request whose forward-auth user/email doesn't match an existing user will create a new user record.",
   proxyEnabled: 'HTTP(S) Proxy',
   proxyEnabledTip:
     'Send ALL outgoing HTTP/HTTPS requests through a proxy server (host/port). Does NOT enable HTTPS, SSL, or certificate configuration.',
@@ -85,83 +85,87 @@ const SettingsNetwork = () => {
     mutate: revalidate,
   } = useSWR<NetworkSettings>('/api/v1/settings/network');
 
-  const NetworkSettingsSchema = Yup.object().shape({
-    dnsCacheForceMinTtl: Yup.number().when('dnsCacheEnabled', {
-      is: true,
-      then: (schema) =>
-        schema
-          .typeError(intl.formatMessage(messages.validationDnsCacheMinTtl))
-          .required(intl.formatMessage(messages.validationDnsCacheMinTtl))
-          .min(0),
-      otherwise: (schema) => schema.nullable(),
-    }),
-    dnsCacheForceMaxTtl: Yup.number().when('dnsCacheEnabled', {
-      is: true,
-      then: (schema) =>
-        schema
-          .typeError(intl.formatMessage(messages.validationDnsCacheMaxTtl))
-          .required(intl.formatMessage(messages.validationDnsCacheMaxTtl))
-          .min(-1),
-      otherwise: (schema) => schema.nullable(),
-    }),
-    proxyPort: Yup.number().when('proxyEnabled', {
-      is: (proxyEnabled: boolean) => proxyEnabled,
-      then: (schema) =>
-        schema
-          .typeError(intl.formatMessage(messages.validationProxyPort))
-          .integer(intl.formatMessage(messages.validationProxyPort))
-          .min(1, intl.formatMessage(messages.validationProxyPort))
-          .max(65535, intl.formatMessage(messages.validationProxyPort))
-          .required(intl.formatMessage(messages.validationProxyPort)),
-      otherwise: (schema) => schema.nullable(),
-    }),
-    apiRequestTimeout: Yup.number()
-      .typeError(intl.formatMessage(messages.validationApiRequestTimeout))
-      .required(intl.formatMessage(messages.validationApiRequestTimeout))
-      .min(0, intl.formatMessage(messages.validationApiRequestTimeout)),
-    trustedProxies: Yup.string().when('trustProxy', {
-      is: true,
-      then: (schema) => schema.test(
-        'validate-address',
-        'invalid address found',
-        (value, ctx) => {
-          if (!value) {
-            return true;
-          }
-          const addresses = value.split(',').map((value) => value.trim());
-          for (const address of addresses) {
-            if (address.indexOf('.') != -1) {
-              if (!Address4.isValid(address)) {
-                return ctx.createError({
-                  message: intl.formatMessage(messages.invalidIpv4, {
-                    address,
-                  }),
-                });
+  const NetworkSettingsSchema = Yup.object()
+    .shape({
+      dnsCacheForceMinTtl: Yup.number().when('dnsCacheEnabled', {
+        is: true,
+        then: (schema) =>
+          schema
+            .typeError(intl.formatMessage(messages.validationDnsCacheMinTtl))
+            .required(intl.formatMessage(messages.validationDnsCacheMinTtl))
+            .min(0),
+        otherwise: (schema) => schema.nullable(),
+      }),
+      dnsCacheForceMaxTtl: Yup.number().when('dnsCacheEnabled', {
+        is: true,
+        then: (schema) =>
+          schema
+            .typeError(intl.formatMessage(messages.validationDnsCacheMaxTtl))
+            .required(intl.formatMessage(messages.validationDnsCacheMaxTtl))
+            .min(-1),
+        otherwise: (schema) => schema.nullable(),
+      }),
+      proxyPort: Yup.number().when('proxyEnabled', {
+        is: (proxyEnabled: boolean) => proxyEnabled,
+        then: (schema) =>
+          schema
+            .typeError(intl.formatMessage(messages.validationProxyPort))
+            .integer(intl.formatMessage(messages.validationProxyPort))
+            .min(1, intl.formatMessage(messages.validationProxyPort))
+            .max(65535, intl.formatMessage(messages.validationProxyPort))
+            .required(intl.formatMessage(messages.validationProxyPort)),
+        otherwise: (schema) => schema.nullable(),
+      }),
+      apiRequestTimeout: Yup.number()
+        .typeError(intl.formatMessage(messages.validationApiRequestTimeout))
+        .required(intl.formatMessage(messages.validationApiRequestTimeout))
+        .min(0, intl.formatMessage(messages.validationApiRequestTimeout)),
+      trustedProxies: Yup.string().when('trustProxy', {
+        is: true,
+        then: (schema) =>
+          schema.test(
+            'validate-address',
+            'invalid address found',
+            (value, ctx) => {
+              if (!value) {
+                return true;
               }
-            } else if (address.indexOf(':') != -1) {
-              if (!Address6.isValid(address)) {
-                return ctx.createError({
-                  message: intl.formatMessage(messages.invalidIpv6, {
-                    address,
-                  }),
-                });
+              const addresses = value.split(',').map((value) => value.trim());
+              for (const address of addresses) {
+                if (address.indexOf('.') != -1) {
+                  if (!Address4.isValid(address)) {
+                    return ctx.createError({
+                      message: intl.formatMessage(messages.invalidIpv4, {
+                        address,
+                      }),
+                    });
+                  }
+                } else if (address.indexOf(':') != -1) {
+                  if (!Address6.isValid(address)) {
+                    return ctx.createError({
+                      message: intl.formatMessage(messages.invalidIpv6, {
+                        address,
+                      }),
+                    });
+                  }
+                } else {
+                  return ctx.createError({
+                    message: intl.formatMessage(messages.invalidAddress, {
+                      address,
+                    }),
+                  });
+                }
               }
-            } else {
-              return ctx.createError({
-                message: intl.formatMessage(messages.invalidAddress, {
-                  address,
-                }),
-              });
+              return true;
             }
-          }
-          return true;
-        }
-      ),
-      otherwise: Yup.string(),
-    }),
-    forwardAuthUserHeader: Yup.string(),
-    forwardAuthEmailHeader: Yup.string(),
-  })
+          ),
+        otherwise: (schema) => schema.nullable(),
+      }),
+      forwardAuthUserHeader: Yup.string(),
+      forwardAuthEmailHeader: Yup.string(),
+      trustProxy: Yup.boolean(),
+      forwardAuthEnabled: Yup.boolean(),
+    })
     .test('email-or-user', 'Either email OR user required', (values, ctx) => {
       const {
         trustProxy,
