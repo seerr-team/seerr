@@ -43,7 +43,7 @@ export class UserSettings {
   @Column({ default: '' })
   public locale?: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   public mediaLocale?: string | null;
 
   @Column({ nullable: true })
