@@ -1075,6 +1075,8 @@ components:
           type: number
         voteCount:
           type: number
+        available:
+          type: boolean
     Season:
       type: object
       properties:
