@@ -35,6 +35,7 @@ const messages = defineMessages('components.Settings', {
   is4k: '4K',
   address: 'Address',
   activeProfile: 'Active Profile',
+  activeAnimeProfile: 'Active Anime Profile',
   addradarr: 'Add Radarr Server',
   addsonarr: 'Add Sonarr Server',
   noDefaultServer:
@@ -61,6 +62,7 @@ interface ServerInstanceProps {
   isSSL?: boolean;
   externalUrl?: string;
   profileName: string;
+  animeProfileName?: string;
   isSonarr?: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -98,6 +100,7 @@ const ServerInstance = ({
   hostname,
   port,
   profileName,
+  animeProfileName,
   is4k = false,
   isDefault = false,
   isSSL = false,
@@ -163,6 +166,14 @@ const ServerInstance = ({
             </span>
             {profileName}
           </p>
+          {animeProfileName && (
+            <p className="mt-1 truncate text-sm leading-5 text-gray-300">
+              <span className="mr-2 font-bold">
+                {intl.formatMessage(messages.activeAnimeProfile)}
+              </span>
+              {animeProfileName}
+            </p>
+          )}
         </div>
         <a
           href={serviceUrl}
@@ -467,6 +478,7 @@ const SettingsServices = () => {
                   hostname={sonarr.hostname}
                   port={sonarr.port}
                   profileName={sonarr.activeProfileName}
+                  animeProfileName={sonarr.activeAnimeProfileName}
                   isSSL={sonarr.useSsl}
                   isSonarr
                   isDefault={sonarr.isDefault}

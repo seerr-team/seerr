@@ -588,10 +588,35 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           seriesType === 'anime' && sonarrSettings.activeAnimeDirectory
             ? sonarrSettings.activeAnimeDirectory
             : sonarrSettings.activeDirectory;
-        let qualityProfile =
-          seriesType === 'anime' && sonarrSettings.activeAnimeProfileId
-            ? sonarrSettings.activeAnimeProfileId
-            : sonarrSettings.activeProfileId;
+        let qualityProfile = sonarrSettings.activeProfileId;
+        if (seriesType === 'anime' && sonarrSettings.activeAnimeProfileId) {
+          try {
+            const profiles = await sonarr.getProfiles();
+            if (
+              profiles.some((p) => p.id === sonarrSettings.activeAnimeProfileId)
+            ) {
+              qualityProfile = sonarrSettings.activeAnimeProfileId;
+            } else {
+              logger.warn(
+                `Anime quality profile ${sonarrSettings.activeAnimeProfileId} not found on Sonarr server "${sonarrSettings.name}"; falling back to default profile ${sonarrSettings.activeProfileId}.`,
+                {
+                  label: 'Media Request',
+                  requestId: entity.id,
+                  mediaId: entity.media.id,
+                }
+              );
+            }
+          } catch (e) {
+            logger.warn(
+              `Could not verify anime quality profile against Sonarr server "${sonarrSettings.name}"; falling back to default profile ${sonarrSettings.activeProfileId}. Error: ${e.message}`,
+              {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+              }
+            );
+          }
+        }
         let languageProfile =
           seriesType === 'anime' && sonarrSettings.activeAnimeLanguageProfileId
             ? sonarrSettings.activeAnimeLanguageProfileId
