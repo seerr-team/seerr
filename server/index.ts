@@ -233,6 +233,13 @@ app
       OpenApiValidator.middleware({
         apiSpec: API_SPEC_PATH,
         validateRequests: true,
+        // The OpenAPI spec declares `cookieAuth` (connect.sid) on every endpoint.
+        // Letting the validator enforce it rejects every non-cookie auth flow
+        // (forward-auth here, OIDC in #2715, future API-key paths) with a
+        // 401 before our auth middleware ever runs. The actual auth check is
+        // already performed by `isAuthenticated()`, so cookie validation at
+        // this layer is redundant.
+        validateSecurity: false,
       })
     );
     /**

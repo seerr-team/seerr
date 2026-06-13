@@ -288,6 +288,9 @@ components:
             emailHeader:
               type: string
               example: ''
+            autoProvision:
+              type: boolean
+              example: false
         proxy:
           type: object
           properties:

@@ -195,6 +195,7 @@ export interface ForwardAuthSettings {
   enabled: boolean;
   userHeader: string;
   emailHeader: string;
+  autoProvision: boolean;
 }
 
 interface PublicSettings {
@@ -632,6 +633,7 @@ class Settings {
           enabled: false,
           userHeader: '',
           emailHeader: '',
+          autoProvision: false,
         },
         proxy: {
           enabled: false,

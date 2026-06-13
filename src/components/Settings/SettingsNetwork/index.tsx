@@ -37,6 +37,9 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
   userHeaderNameTip: 'Matched against Jellyfin or Plex Username',
   emailHeaderName: 'Email Header Name',
   emailHeaderNameTip: 'Matched against Email',
+  autoProvisionName: `Enable autoprovisioning of new users`,
+  autoProvisionNameTip:
+    `When enabled, an authenticated request whose forward-auth user/email doesn't match an existing user will create a new user record.`,
   proxyEnabled: 'HTTP(S) Proxy',
   proxyEnabledTip:
     'Send ALL outgoing HTTP/HTTPS requests through a proxy server (host/port). Does NOT enable HTTPS, SSL, or certificate configuration.',
@@ -227,6 +230,7 @@ const SettingsNetwork = () => {
             forwardAuthEnabled: data?.forwardAuth.enabled,
             forwardAuthUserHeader: data?.forwardAuth.userHeader,
             forwardAuthEmailHeader: data?.forwardAuth.emailHeader,
+            forwardAuthAutoProvision: data?.forwardAuth.autoProvision,
             proxyEnabled: data?.proxy?.enabled,
             proxyHostname: data?.proxy?.hostname,
             proxyPort: data?.proxy?.port,
@@ -270,6 +274,7 @@ const SettingsNetwork = () => {
                   enabled: values.forwardAuthEnabled,
                   userHeader: values.forwardAuthUserHeader,
                   emailHeader: values.forwardAuthEmailHeader,
+                  autoProvision: values.forwardAuthAutoProvision,
                 },
                 trustedProxies: trustedProxies,
                 proxy: {
@@ -451,6 +456,35 @@ const SettingsNetwork = () => {
                                   value={values.forwardAuthEmailHeader ?? ''}
                                 />
                               </div>
+                            </div>
+                          </div>
+                          <div className="form-row">
+                            <label
+                              htmlFor="forwardAuthAutoProvision"
+                              className="checkbox-label"
+                            >
+                              <span className="mr-2">
+                                {intl.formatMessage(messages.autoProvisionName)}
+                              </span>
+                              <SettingsBadge badgeType="advanced" />
+                              <span className="label-tip">
+                                {intl.formatMessage(
+                                  messages.autoProvisionNameTip
+                                )}
+                              </span>
+                            </label>
+                            <div className="form-input-area">
+                              <Field
+                                type="checkbox"
+                                id="forwardAuthAutoProvision"
+                                name="forwardAuthAutoProvision"
+                                onChange={() => {
+                                  setFieldValue(
+                                    'forwardAuthAutoProvision',
+                                    !values.forwardAuthAutoProvision
+                                  );
+                                }}
+                              />
                             </div>
                           </div>
                           <datalist id="forwardauth-autocomplete-options">

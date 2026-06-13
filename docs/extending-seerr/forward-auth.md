@@ -6,7 +6,7 @@ This feature enables single sign-on(SSO) by passing the authenticated user(and o
 defined by `forwardAuth.userHeader` and `forwardAuth.emailHeader` in the configuration file or the settings in Settings->Network in Web UI.
 
 :::warning
-The user has to exist, it will not be created automatically.
+By default the user has to exist, it will not be created automatically unless `forwardAuth.autoProvision` has been set to true in the configuration file or the settings in Settings->Network in Web UI.
 :::
 
 :::info
