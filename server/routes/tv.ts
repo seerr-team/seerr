@@ -85,7 +85,7 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
       language: (req.query.language as string) ?? req.locale,
     });
 
-    const availableMap: Record<number, boolean> = {};
+    let availableMap: Record<number, boolean> | undefined;
 
     const settings = getSettings();
     const shouldTrackEpisodes =
@@ -94,6 +94,8 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
         settings.metadataSettings.anime === MetadataProviderType.TVDB);
 
     if (shouldTrackEpisodes) {
+      availableMap = {};
+
       const media = await Media.getMedia(Number(req.params.id), MediaType.TV);
 
       if (media?.seasons) {
