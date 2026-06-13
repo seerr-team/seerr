@@ -109,9 +109,33 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
             }
           } else if (dbSeason.status === MediaStatus.PARTIALLY_AVAILABLE) {
             if (dbSeason.episodes) {
-              for (const episode of dbSeason.episodes) {
-                availableMap[episode.episodeNumber] =
-                  episode.status === MediaStatus.AVAILABLE;
+              const metadataEpisodeNumbers = new Set(
+                season.episodes.map((episode) => episode.episode_number)
+              );
+              const hasEpisodeNumberMismatch =
+                metadataEpisodeNumbers.size !== dbSeason.episodes.length ||
+                dbSeason.episodes.some(
+                  (episode) =>
+                    !metadataEpisodeNumbers.has(episode.episodeNumber)
+                );
+
+              if (hasEpisodeNumberMismatch) {
+                logger.warn(
+                  'Skipping episode availability due to episode number mismatch',
+                  {
+                    label: 'API',
+                    tvId: req.params.id,
+                    seasonNumber: req.params.seasonNumber,
+                    metadataEpisodeCount: metadataEpisodeNumbers.size,
+                    trackedEpisodeCount: dbSeason.episodes.length,
+                  }
+                );
+                availableMap = undefined;
+              } else {
+                for (const episode of dbSeason.episodes) {
+                  availableMap[episode.episodeNumber] =
+                    episode.status === MediaStatus.AVAILABLE;
+                }
               }
             }
           }
