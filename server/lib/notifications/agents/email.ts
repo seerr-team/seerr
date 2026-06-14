@@ -308,7 +308,7 @@ class EmailAgent
     return true;
   }
   /**
-   * Checks if the given recipient should recieve the given notification via email,
+   * Checks if the given recipient should receive the given notification via email,
    * and if so, attempts to send it.
    *
    * @param type - the type of {@link Notification}
