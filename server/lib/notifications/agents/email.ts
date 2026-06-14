@@ -297,7 +297,6 @@ class EmailAgent
       const recipientAdmins = userRepo.filter((user) =>
         shouldSendAdminNotification(type, user, payload)
       );
-      await Promise.all(
       const results = await Promise.all(
         recipientAdmins.map(async (admin) => {
           return await this.sendEmail(type, payload, admin);
