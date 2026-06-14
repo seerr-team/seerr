@@ -58,6 +58,16 @@ const messages = defineMessages(
     streamingRegionTip: 'Show streaming sites by regional availability',
     movierequestlimit: 'Movie Request Limit',
     seriesrequestlimit: 'Series Request Limit',
+    maxmovierating: 'Maximum Movie Rating',
+    maxmovieratingtip:
+      'Hide and block requests for movies rated above this certification',
+    maxtvrating: 'Maximum Series Rating',
+    maxtvratingtip:
+      'Hide and block requests for series rated above this certification',
+    ratingnolimit: 'No Limit',
+    blockunrated: 'Block Unrated Content',
+    blockunratedtip:
+      'Also hide titles that have no certification when a rating cap is set',
     enableOverride: 'Override Global Limit',
     applanguage: 'Display Language',
     languageDefault: 'Default ({language})',
@@ -71,6 +81,11 @@ const messages = defineMessages(
       'Automatically request series on your <PlexWatchlistSupportLink>Plex Watchlist</PlexWatchlistSupportLink>',
   }
 );
+
+// US certification scales (low -> high) used for per-user maturity rating caps.
+// Kept in sync with MOVIE_RATING_SCALE / TV_RATING_SCALE in server/lib/ratings.
+const MOVIE_RATING_OPTIONS = ['G', 'PG', 'PG-13', 'R', 'NC-17'];
+const TV_RATING_OPTIONS = ['TV-Y', 'TV-Y7', 'TV-G', 'TV-PG', 'TV-14', 'TV-MA'];
 
 const UserGeneralSettings = () => {
   const intl = useIntl();
@@ -161,6 +176,9 @@ const UserGeneralSettings = () => {
           tvQuotaDays: data?.tvQuotaDays,
           watchlistSyncMovies: data?.watchlistSyncMovies,
           watchlistSyncTv: data?.watchlistSyncTv,
+          maxMovieRating: data?.maxMovieRating ?? '',
+          maxTvRating: data?.maxTvRating ?? '',
+          ratingBlockUnrated: data?.ratingBlockUnrated ?? false,
         }}
         validationSchema={UserGeneralSettingsSchema}
         enableReinitialize
@@ -182,6 +200,9 @@ const UserGeneralSettings = () => {
               tvQuotaDays: tvQuotaEnabled ? values.tvQuotaDays : null,
               watchlistSyncMovies: values.watchlistSyncMovies,
               watchlistSyncTv: values.watchlistSyncTv,
+              maxMovieRating: values.maxMovieRating || null,
+              maxTvRating: values.maxTvRating || null,
+              ratingBlockUnrated: values.ratingBlockUnrated,
             });
 
             if (currentUser?.id === user?.id && setLocale) {
@@ -499,6 +520,76 @@ const UserGeneralSettings = () => {
                             }
                           />
                         </div>
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <label htmlFor="maxMovieRating" className="text-label">
+                        <span>
+                          {intl.formatMessage(messages.maxmovierating)}
+                        </span>
+                        <span className="label-tip">
+                          {intl.formatMessage(messages.maxmovieratingtip)}
+                        </span>
+                      </label>
+                      <div className="form-input-area">
+                        <Field
+                          as="select"
+                          id="maxMovieRating"
+                          name="maxMovieRating"
+                        >
+                          <option value="">
+                            {intl.formatMessage(messages.ratingnolimit)}
+                          </option>
+                          {MOVIE_RATING_OPTIONS.map((rating) => (
+                            <option key={rating} value={rating}>
+                              {rating}
+                            </option>
+                          ))}
+                        </Field>
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <label htmlFor="maxTvRating" className="text-label">
+                        <span>{intl.formatMessage(messages.maxtvrating)}</span>
+                        <span className="label-tip">
+                          {intl.formatMessage(messages.maxtvratingtip)}
+                        </span>
+                      </label>
+                      <div className="form-input-area">
+                        <Field as="select" id="maxTvRating" name="maxTvRating">
+                          <option value="">
+                            {intl.formatMessage(messages.ratingnolimit)}
+                          </option>
+                          {TV_RATING_OPTIONS.map((rating) => (
+                            <option key={rating} value={rating}>
+                              {rating}
+                            </option>
+                          ))}
+                        </Field>
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <label
+                        htmlFor="ratingBlockUnrated"
+                        className="checkbox-label"
+                      >
+                        <span>{intl.formatMessage(messages.blockunrated)}</span>
+                        <span className="label-tip">
+                          {intl.formatMessage(messages.blockunratedtip)}
+                        </span>
+                      </label>
+                      <div className="form-input-area">
+                        <Field
+                          type="checkbox"
+                          id="ratingBlockUnrated"
+                          name="ratingBlockUnrated"
+                          onChange={() => {
+                            setFieldValue(
+                              'ratingBlockUnrated',
+                              !values.ratingBlockUnrated
+                            );
+                          }}
+                        />
                       </div>
                     </div>
                   </>

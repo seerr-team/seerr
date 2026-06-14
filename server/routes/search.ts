@@ -3,10 +3,14 @@ import type { TmdbSearchMultiResponse } from '@server/api/themoviedb/interfaces'
 import Media from '@server/entity/Media';
 import { findSearchProvider } from '@server/lib/search';
 import logger from '@server/logger';
+import { ratingCapResultFilter } from '@server/middleware/ratingFilter';
 import { mapSearchResults } from '@server/models/Search';
 import { Router } from 'express';
 
 const searchRoutes = Router();
+
+// Enforce per-user maturity rating caps on all search result lists.
+searchRoutes.use(ratingCapResultFilter);
 
 searchRoutes.get('/', async (req, res, next) => {
   const queryString = req.query.query as string;

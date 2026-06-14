@@ -7,6 +7,7 @@ import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import { startJobs } from '@server/job/schedule';
 import { Permission } from '@server/lib/permissions';
+import { applyJellyfinRatingCaps } from '@server/lib/ratings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
@@ -436,6 +437,9 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
         user.username = '';
       }
 
+      // Keep the maturity rating cap in lockstep with Jellyfin (issue #354).
+      applyJellyfinRatingCaps(user, account.User.Policy);
+
       await userRepository.save(user);
     } else if (!settings.main.newPlexLogin) {
       logger.warn(
@@ -473,6 +477,9 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
             : UserType.EMBY,
       });
       user.avatar = getUserAvatarUrl(user);
+
+      // Import the maturity rating cap from the Jellyfin user policy (#354).
+      applyJellyfinRatingCaps(user, account.User.Policy);
 
       //initialize Jellyfin/Emby users with local login
       const passedExplicitPassword = body.password && body.password.length > 0;

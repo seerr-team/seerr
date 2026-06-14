@@ -18,6 +18,10 @@ export interface JellyfinUserResponse {
   };
   Policy: {
     IsAdministrator: boolean;
+    // Jellyfin's per-user maximum allowed parental rating (an integer score
+    // from Jellyfin's localization rating tables). Used to import a Seerr cap.
+    MaxParentalRating?: number | null;
+    BlockUnratedItems?: string[];
   };
   PrimaryImageTag?: string;
 }

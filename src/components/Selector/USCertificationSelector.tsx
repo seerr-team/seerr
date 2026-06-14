@@ -1,3 +1,4 @@
+import { useUser } from '@app/hooks/useUser';
 import React, { useEffect, useState } from 'react';
 
 interface USCertificationSelectorProps {
@@ -25,12 +26,29 @@ const USCertificationSelector: React.FC<USCertificationSelectorProps> = ({
   certification,
   onChange,
 }) => {
+  const { user } = useUser();
   const [selectedRatings, setSelectedRatings] = useState<string[]>(() =>
     certification ? certification.split('|') : []
   );
 
-  const certifications =
+  const allCertifications =
     type === 'movie' ? US_MOVIE_CERTIFICATIONS : US_TV_CERTIFICATIONS;
+  // For capped (e.g. child) accounts, only offer ratings at or below the user's
+  // cap — and drop "NR", which a numeric cap can't express. The server enforces
+  // the cap regardless; this just keeps the picker honest.
+  const ratingOrder =
+    type === 'movie'
+      ? ['G', 'PG', 'PG-13', 'R', 'NC-17']
+      : ['TV-Y', 'TV-Y7', 'TV-G', 'TV-PG', 'TV-14', 'TV-MA'];
+  const cap = type === 'movie' ? user?.maxMovieRating : user?.maxTvRating;
+  const capRank = cap ? ratingOrder.indexOf(cap) : -1;
+  const certifications =
+    capRank >= 0
+      ? allCertifications.filter((c) => {
+          const r = ratingOrder.indexOf(c);
+          return r >= 0 && r <= capRank;
+        })
+      : allCertifications;
 
   useEffect(() => {
     if (certification) {

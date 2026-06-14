@@ -7,6 +7,11 @@ import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { Watchlist } from '@server/entity/Watchlist';
+import {
+  extractTvCertification,
+  filterResultsByRatingCaps,
+  isTvCertificationAllowed,
+} from '@server/lib/ratings';
 import logger from '@server/logger';
 import { mapTvResult } from '@server/models/Search';
 import { mapSeasonWithEpisodes, mapTvDetails } from '@server/models/Tv';
@@ -21,6 +26,20 @@ tvRoutes.get('/:id', async (req, res, next) => {
     const tmdbTv = await tmdb.getTvShow({
       tvId: Number(req.params.id),
     });
+
+    // Enforce per-user maturity rating cap on detail retrieval.
+    if (
+      !isTvCertificationAllowed(
+        extractTvCertification(tmdbTv.content_ratings),
+        req.user
+      )
+    ) {
+      return next({
+        status: 403,
+        message: 'This title exceeds your maximum allowed series rating.',
+      });
+    }
+
     const metadataProvider = tmdbTv.keywords.results.some(
       (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
     )
@@ -121,13 +140,17 @@ tvRoutes.get('/:id/recommendations', async (req, res, next) => {
       page: results.page,
       totalPages: results.total_pages,
       totalResults: results.total_results,
-      results: results.results.map((result) =>
-        mapTvResult(
-          result,
-          media.find(
-            (req) => req.tmdbId === result.id && req.mediaType === MediaType.TV
+      results: await filterResultsByRatingCaps(
+        results.results.map((result) =>
+          mapTvResult(
+            result,
+            media.find(
+              (req) =>
+                req.tmdbId === result.id && req.mediaType === MediaType.TV
+            )
           )
-        )
+        ),
+        req.user
       ),
     });
   } catch (e) {
@@ -165,13 +188,17 @@ tvRoutes.get('/:id/similar', async (req, res, next) => {
       page: results.page,
       totalPages: results.total_pages,
       totalResults: results.total_results,
-      results: results.results.map((result) =>
-        mapTvResult(
-          result,
-          media.find(
-            (req) => req.tmdbId === result.id && req.mediaType === MediaType.TV
+      results: await filterResultsByRatingCaps(
+        results.results.map((result) =>
+          mapTvResult(
+            result,
+            media.find(
+              (req) =>
+                req.tmdbId === result.id && req.mediaType === MediaType.TV
+            )
           )
-        )
+        ),
+        req.user
       ),
     });
   } catch (e) {

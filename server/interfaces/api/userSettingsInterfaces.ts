@@ -17,6 +17,9 @@ export interface UserSettingsGeneralResponse {
   globalTvQuotaDays?: number;
   watchlistSyncMovies?: boolean;
   watchlistSyncTv?: boolean;
+  maxMovieRating?: string | null;
+  maxTvRating?: string | null;
+  ratingBlockUnrated?: boolean | null;
 }
 
 export type NotificationAgentTypes = Record<NotificationAgentKey, number>;

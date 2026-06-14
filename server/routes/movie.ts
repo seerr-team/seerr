@@ -6,6 +6,11 @@ import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { Watchlist } from '@server/entity/Watchlist';
+import {
+  extractMovieCertification,
+  filterResultsByRatingCaps,
+  isMovieCertificationAllowed,
+} from '@server/lib/ratings';
 import logger from '@server/logger';
 import { mapMovieDetails } from '@server/models/Movie';
 import { mapMovieResult } from '@server/models/Search';
@@ -21,6 +26,19 @@ movieRoutes.get('/:id', async (req, res, next) => {
       movieId: Number(req.params.id),
       language: (req.query.language as string) ?? req.locale,
     });
+
+    // Enforce per-user maturity rating cap on detail retrieval.
+    if (
+      !isMovieCertificationAllowed(
+        extractMovieCertification(tmdbMovie.release_dates),
+        req.user
+      )
+    ) {
+      return next({
+        status: 403,
+        message: 'This title exceeds your maximum allowed movie rating.',
+      });
+    }
 
     const media = await Media.getMedia(tmdbMovie.id, MediaType.MOVIE);
 
@@ -78,14 +96,17 @@ movieRoutes.get('/:id/recommendations', async (req, res, next) => {
       page: results.page,
       totalPages: results.total_pages,
       totalResults: results.total_results,
-      results: results.results.map((result) =>
-        mapMovieResult(
-          result,
-          media.find(
-            (req) =>
-              req.tmdbId === result.id && req.mediaType === MediaType.MOVIE
+      results: await filterResultsByRatingCaps(
+        results.results.map((result) =>
+          mapMovieResult(
+            result,
+            media.find(
+              (req) =>
+                req.tmdbId === result.id && req.mediaType === MediaType.MOVIE
+            )
           )
-        )
+        ),
+        req.user
       ),
     });
   } catch (e) {
@@ -123,14 +144,17 @@ movieRoutes.get('/:id/similar', async (req, res, next) => {
       page: results.page,
       totalPages: results.total_pages,
       totalResults: results.total_results,
-      results: results.results.map((result) =>
-        mapMovieResult(
-          result,
-          media.find(
-            (req) =>
-              req.tmdbId === result.id && req.mediaType === MediaType.MOVIE
+      results: await filterResultsByRatingCaps(
+        results.results.map((result) =>
+          mapMovieResult(
+            result,
+            media.find(
+              (req) =>
+                req.tmdbId === result.id && req.mediaType === MediaType.MOVIE
+            )
           )
-        )
+        ),
+        req.user
       ),
     });
   } catch (e) {

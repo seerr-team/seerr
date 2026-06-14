@@ -11,8 +11,10 @@ import type {
   GenreSliderItem,
   WatchlistResponse,
 } from '@server/interfaces/api/discoverInterfaces';
+import { getEffectiveRatingCaps } from '@server/lib/ratings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import { ratingCapResultFilter } from '@server/middleware/ratingFilter';
 import { mapProductionCompany } from '@server/models/Movie';
 import {
   mapCollectionResult,
@@ -43,10 +45,20 @@ export const createTmdbWithRegionLanguage = (user?: User): TheMovieDb => {
         ? user?.settings?.originalLanguage
         : settings.main.originalLanguage;
 
-  return new TheMovieDb({
+  const tmdb = new TheMovieDb({
     discoverRegion,
     originalLanguage,
   });
+
+  // Apply the requesting user's maturity rating cap so discover queries are
+  // certification-filtered at the TMDB level (full pages of allowed titles),
+  // rather than relying solely on the post-filter (which yields sparse pages).
+  const ratingCaps = getEffectiveRatingCaps(user);
+  if (ratingCaps) {
+    tmdb.setMaturityRatingCap({ movie: ratingCaps.movie, tv: ratingCaps.tv });
+  }
+
+  return tmdb;
 };
 
 export const createTmdbWithBlocklistSettings = (): TheMovieDb => {
@@ -59,6 +71,9 @@ export const createTmdbWithBlocklistSettings = (): TheMovieDb => {
 };
 
 const discoverRoutes = Router();
+
+// Enforce per-user maturity rating caps on all discover result lists.
+discoverRoutes.use(ratingCapResultFilter);
 
 const QueryFilterOptions = z.object({
   page: z.coerce.string().optional(),

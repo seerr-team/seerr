@@ -24,6 +24,10 @@ export interface User {
   updatedAt: Date;
   requestCount: number;
   settings?: UserSettings;
+  // Per-user maturity rating caps (TMDB US certification strings; null = none).
+  maxMovieRating?: string | null;
+  maxTvRating?: string | null;
+  ratingBlockUnrated?: boolean | null;
 }
 
 type NotificationAgentTypes = Record<NotificationAgentKey, number>;

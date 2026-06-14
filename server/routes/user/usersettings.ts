@@ -62,6 +62,9 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
         globalTvQuotaLimit: defaultQuotas.tv.quotaLimit,
         watchlistSyncMovies: user.settings?.watchlistSyncMovies,
         watchlistSyncTv: user.settings?.watchlistSyncTv,
+        maxMovieRating: user.maxMovieRating,
+        maxTvRating: user.maxTvRating,
+        ratingBlockUnrated: user.ratingBlockUnrated,
       });
     } catch (e) {
       next({ status: 500, message: e.message });
@@ -107,7 +110,9 @@ userSettingsRoutes.post<
       throw new ApiError(400, ApiErrorCode.InvalidEmail);
     }
 
-    // Update quota values only if the user has the correct permissions
+    // Update quota values and maturity rating caps only if the requester is an
+    // admin editing another (non-admin) user. This makes caps admin-controlled
+    // and user-locked: a capped user cannot raise their own cap.
     if (
       !user.hasPermission(Permission.MANAGE_USERS) &&
       req.user?.id !== user.id
@@ -116,6 +121,9 @@ userSettingsRoutes.post<
       user.movieQuotaLimit = req.body.movieQuotaLimit;
       user.tvQuotaDays = req.body.tvQuotaDays;
       user.tvQuotaLimit = req.body.tvQuotaLimit;
+      user.maxMovieRating = req.body.maxMovieRating ?? null;
+      user.maxTvRating = req.body.maxTvRating ?? null;
+      user.ratingBlockUnrated = req.body.ratingBlockUnrated ?? null;
     }
 
     if (!user.settings) {
@@ -147,6 +155,9 @@ userSettingsRoutes.post<
       originalLanguage: savedUser.settings?.originalLanguage,
       watchlistSyncMovies: savedUser.settings?.watchlistSyncMovies,
       watchlistSyncTv: savedUser.settings?.watchlistSyncTv,
+      maxMovieRating: savedUser.maxMovieRating,
+      maxTvRating: savedUser.maxTvRating,
+      ratingBlockUnrated: savedUser.ratingBlockUnrated,
       email: savedUser.email,
     });
   } catch (e) {

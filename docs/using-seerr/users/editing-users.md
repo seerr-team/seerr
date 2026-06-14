@@ -47,6 +47,22 @@ Note that users with the **Manage Users** permission are exempt from request lim
 
 Users are also unable to modify their own request limits.
 
+### Maximum Movie Rating & Maximum Series Rating
+
+You can limit the content a user is allowed to see and request by assigning a **Maximum Movie Rating** and/or a **Maximum Series Rating**. These use US certifications — movies from **G** through **NC-17**, and series from **TV-Y** through **TV-MA**.
+
+When a limit is set, any title rated above it is hidden from that user's Discover and search results, excluded from recommendations and "similar" suggestions, and cannot be requested. The restriction is enforced on the server, so it applies to direct API access as well as the web interface. Leaving a rating unset (the default) applies no limit.
+
+Enable **Block Unrated Content** to additionally hide titles that have no certification whenever a rating limit is set.
+
+:::note
+Ratings are matched against US certifications from TMDB. Users with the **Admin** permission are never restricted, and users cannot modify their own rating limits.
+:::
+
+:::tip
+For users imported from Jellyfin, the **Maximum allowed parental rating** configured on the Jellyfin account is imported automatically and used as the starting limit — keeping what a user can watch and what they can request in sync. You can still adjust the limits here afterward.
+:::
+
 ## Password
 
 All "local users" are assigned passwords upon creation, but users imported from Plex can also optionally configure passwords to enable sign-in using their email address.

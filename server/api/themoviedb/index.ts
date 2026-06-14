@@ -13,6 +13,7 @@ import type {
   TmdbKeywordSearchResponse,
   TmdbLanguage,
   TmdbMovieDetails,
+  TmdbMovieReleaseResult,
   TmdbNetwork,
   TmdbPersonCombinedCredits,
   TmdbPersonDetails,
@@ -23,6 +24,7 @@ import type {
   TmdbSearchTvResponse,
   TmdbSeasonWithEpisodes,
   TmdbTvDetails,
+  TmdbTvRatingResult,
   TmdbUpcomingMoviesResponse,
   TmdbWatchProviderDetails,
   TmdbWatchProviderRegion,
@@ -124,10 +126,52 @@ interface DiscoverTvOptions {
   certificationCountry?: string;
 }
 
+// Mirror of the US rating scales in server/lib/ratings.ts, kept local to avoid a
+// circular import. Used to clamp a caller's certification selection to a user's
+// maturity cap on discover queries.
+const US_MOVIE_RATING_ORDER = ['G', 'PG', 'PG-13', 'R', 'NC-17'];
+const US_TV_RATING_ORDER = ['TV-Y', 'TV-Y7', 'TV-G', 'TV-PG', 'TV-14', 'TV-MA'];
+
+// Given a caller's certification selection (TMDB's pipe-separated exact list) and
+// a cap, returns the certification list to apply. A caller may *narrow* within
+// the cap (e.g. a PG-capped user picking only G); anything above the cap is
+// dropped. With no usable selection, returns every rating up to the cap.
+//
+// We always use TMDB's exact `certification` (OR-list) form, never the
+// certification.gte/.lte *range* form: in practice the range form intermittently
+// returns empty/short pages and surfaces fewer low-rated titles, whereas the
+// explicit list is reliable.
+const clampCertificationsToCap = (
+  requested: string | undefined,
+  cap: string,
+  order: string[]
+): string | undefined => {
+  const capRank = order.indexOf(cap.toUpperCase());
+  if (capRank < 0) {
+    return requested;
+  }
+  if (requested) {
+    const picked = requested
+      .split('|')
+      .map((c) => c.trim())
+      .filter((c) => {
+        const r = order.indexOf(c.toUpperCase());
+        return r >= 0 && r <= capRank;
+      });
+    if (picked.length) {
+      return picked.join('|');
+    }
+  }
+  return order.slice(0, capRank + 1).join('|');
+};
+
 class TheMovieDb extends ExternalAPI implements TvShowProvider {
   private locale: string;
   private discoverRegion?: string;
   private originalLanguage?: string;
+  // Per-user maturity rating cap (US certification strings) enforced on discover
+  // queries. Set by the discover route factory for capped (e.g. child) users.
+  private maturityRatingCap?: { movie: string | null; tv: string | null };
   constructor({
     discoverRegion,
     originalLanguage,
@@ -149,6 +193,15 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     this.discoverRegion = discoverRegion;
     this.originalLanguage = originalLanguage;
   }
+
+  // Sets a per-user maturity rating cap (US certification strings) enforced on
+  // discover queries. A null member means "no cap" for that media type. Set by
+  // the discover route factory for capped (e.g. child) users.
+  public setMaturityRatingCap = (
+    cap: { movie: string | null; tv: string | null } | undefined
+  ): void => {
+    this.maturityRatingCap = cap;
+  };
 
   public searchMulti = async ({
     query,
@@ -408,6 +461,55 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     }
   };
 
+  // Lightweight, heavily-cached certification lookups used for per-user maturity
+  // rating enforcement. Far cheaper than fetching full movie/tv details when we
+  // only need the certification to filter discover/search results.
+  public getMovieReleaseDates = async ({
+    movieId,
+  }: {
+    movieId: number;
+  }): Promise<TmdbMovieReleaseResult> => {
+    try {
+      const data = await this.get<TmdbMovieReleaseResult>(
+        `/movie/${movieId}/release_dates`,
+        {},
+        604800
+      );
+
+      return data;
+    } catch (e) {
+      throw new Error(
+        `[TMDB] Failed to fetch movie release dates: ${e.message}`,
+        {
+          cause: e,
+        }
+      );
+    }
+  };
+
+  public getTvContentRatings = async ({
+    tvId,
+  }: {
+    tvId: number;
+  }): Promise<TmdbTvRatingResult> => {
+    try {
+      const data = await this.get<TmdbTvRatingResult>(
+        `/tv/${tvId}/content_ratings`,
+        {},
+        604800
+      );
+
+      return data;
+    } catch (e) {
+      throw new Error(
+        `[TMDB] Failed to fetch TV content ratings: ${e.message}`,
+        {
+          cause: e,
+        }
+      );
+    }
+  };
+
   public getTvSeason = async ({
     tvId,
     seasonNumber,
@@ -619,6 +721,21 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
         .toISOString()
         .split('T')[0];
 
+      // Enforce a per-user maturity rating cap at the query level so capped
+      // users get full pages of only-allowed titles (instead of a sparse,
+      // post-filtered list). Forces US certification and ignores any
+      // caller-supplied certification so the cap cannot be widened.
+      if (this.maturityRatingCap?.movie) {
+        certificationCountry = 'US';
+        certification = clampCertificationsToCap(
+          certification,
+          this.maturityRatingCap.movie,
+          US_MOVIE_RATING_ORDER
+        );
+        certificationGte = undefined;
+        certificationLte = undefined;
+      }
+
       const data = await this.get<TmdbSearchMovieResponse>('/discover/movie', {
         params: {
           sort_by: sortBy,
@@ -706,6 +823,20 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
       const defaultPastDate = new Date('1900-01-01')
         .toISOString()
         .split('T')[0];
+
+      // Enforce a per-user maturity rating cap at the query level (see the movie
+      // discover method). TMDB honors certification filtering on /discover/tv
+      // less consistently than movies; the result post-filter remains a backstop.
+      if (this.maturityRatingCap?.tv) {
+        certificationCountry = 'US';
+        certification = clampCertificationsToCap(
+          certification,
+          this.maturityRatingCap.tv,
+          US_TV_RATING_ORDER
+        );
+        certificationGte = undefined;
+        certificationLte = undefined;
+      }
 
       const data = await this.get<TmdbSearchTvResponse>('/discover/tv', {
         params: {

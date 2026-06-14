@@ -134,6 +134,18 @@ export class User {
   @Column({ nullable: true })
   public tvQuotaDays?: number;
 
+  // Per-user maturity rating caps (admin-controlled, user-locked). Stored as
+  // TMDB US certification strings (e.g. "PG-13", "TV-14"); null = no limit.
+  @Column({ type: 'varchar', nullable: true })
+  public maxMovieRating?: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  public maxTvRating?: string | null;
+
+  // When true, titles with no/unknown certification are hidden from this user.
+  @Column({ type: 'boolean', nullable: true })
+  public ratingBlockUnrated?: boolean | null;
+
   @OneToOne(() => UserSettings, (settings) => settings.user, {
     cascade: true,
     eager: true,

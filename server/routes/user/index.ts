@@ -18,6 +18,7 @@ import type {
   UserWatchDataResponse,
 } from '@server/interfaces/api/userInterfaces';
 import { Permission, hasPermission } from '@server/lib/permissions';
+import { applyJellyfinRatingCaps } from '@server/lib/ratings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
@@ -786,6 +787,9 @@ router.post(
                 ? UserType.JELLYFIN
                 : UserType.EMBY,
           });
+
+          // Import the maturity rating cap from the Jellyfin user policy (#354).
+          applyJellyfinRatingCaps(newUser, jellyfinUser?.Policy);
 
           await userRepository.save(newUser);
           createdUsers.push(newUser);
