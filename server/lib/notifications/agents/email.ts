@@ -283,139 +283,100 @@ class EmailAgent
 
     return undefined;
   }
-
   public async send(
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    function getAvailableLocale(
-      userLocale: string | undefined
-    ): AvailableLocale {
-      // 'User.settings.locale' is an empty string when set to match the global value
-      if (userLocale === '' || userLocale === undefined) {
-        return getSettings().main.locale as AvailableLocale;
-      }
-      return userLocale as AvailableLocale;
-    }
     if (payload.notifyUser) {
-      if (
-        !payload.notifyUser.settings ||
-        (payload.notifyUser.settings.hasNotificationType(
-          NotificationAgentKey.EMAIL,
-          type
-        ) ??
-          true)
-      ) {
-        logger.debug('Sending email notification', {
-          label: 'Notifications',
-          recipient: payload.notifyUser.displayName,
-          type: Notification[type],
-          subject: payload.subject,
-        });
-
-        try {
-          const email = new PreparedEmail(
-            this.getSettings(),
-            payload.notifyUser.settings?.pgpKey
-          );
-          if (
-            validator.isEmail(payload.notifyUser.email, { require_tld: false })
-          ) {
-            await email.send(
-              this.buildMessage(
-                type,
-                payload,
-                payload.notifyUser.email,
-                payload.notifyUser.displayName,
-                getAvailableLocale(payload.notifyUser.settings?.locale)
-              )
-            );
-          } else {
-            logger.warn('Invalid email address provided for user', {
-              label: 'Notifications',
-              recipient: payload.notifyUser.displayName,
-              type: Notification[type],
-              subject: payload.subject,
-            });
-          }
-        } catch (e) {
-          logger.error('Error sending email notification', {
-            label: 'Notifications',
-            recipient: payload.notifyUser.displayName,
-            type: Notification[type],
-            subject: payload.subject,
-            errorMessage: e.message,
-          });
-
-          return false;
-        }
+      if ((await this.sendEmail(type, payload, payload.notifyUser)) === false) {
+        return false;
       }
     }
-
     if (payload.notifyAdmin) {
-      const userRepository = getRepository(User);
-      const users = await userRepository.find();
-
+      const userRepo = await getRepository(User).find();
+      const recipientAdmins = userRepo.filter((user) =>
+        shouldSendAdminNotification(type, user, payload)
+      );
       await Promise.all(
-        users
-          .filter(
-            (user) =>
-              (!user.settings ||
-                (user.settings.hasNotificationType(
-                  NotificationAgentKey.EMAIL,
-                  type
-                ) ??
-                  true)) &&
-              shouldSendAdminNotification(type, user, payload)
-          )
-          .map(async (user) => {
-            logger.debug('Sending email notification', {
-              label: 'Notifications',
-              recipient: user.displayName,
-              type: Notification[type],
-              subject: payload.subject,
-            });
-
-            try {
-              const email = new PreparedEmail(
-                this.getSettings(),
-                user.settings?.pgpKey
-              );
-              if (validator.isEmail(user.email, { require_tld: false })) {
-                await email.send(
-                  this.buildMessage(
-                    type,
-                    payload,
-                    user.email,
-                    user.displayName,
-                    getAvailableLocale(user.settings?.locale)
-                  )
-                );
-              } else {
-                logger.warn('Invalid email address provided for user', {
-                  label: 'Notifications',
-                  recipient: user.displayName,
-                  type: Notification[type],
-                  subject: payload.subject,
-                });
-              }
-            } catch (e) {
-              logger.error('Error sending email notification', {
-                label: 'Notifications',
-                recipient: user.displayName,
-                type: Notification[type],
-                subject: payload.subject,
-                errorMessage: e.message,
-              });
-
-              return false;
-            }
-          })
+        recipientAdmins.map(async (admin) => {
+          if ((await this.sendEmail(type, payload, admin)) === false) {
+            return false;
+          }
+        })
       );
     }
+    return true;
+  }
+  /**
+   * Checks if the given recipient should recieve the given notification via email,
+   * and if so, attempts to send it.
+   *
+   * @param type - the type of {@link Notification}
+   * @param payload - the {@link NotificationPayload}
+   * @param recipient - the recipient {@link User} of the Notification email
+   */
+  private async sendEmail(
+    type: Notification,
+    payload: NotificationPayload,
+    recipient: User
+  ): Promise<boolean> {
+    if (
+      !recipient.settings ||
+      (recipient.settings.hasNotificationType(
+        NotificationAgentKey.EMAIL,
+        type
+      ) ??
+        true)
+    ) {
+      logger.debug('Sending email notification', {
+        label: 'Notifications',
+        recipient: recipient.displayName,
+        type: Notification[type],
+        subject: payload.subject,
+      });
 
+      try {
+        const email = new PreparedEmail(
+          this.getSettings(),
+          recipient.settings?.pgpKey
+        );
+        if (validator.isEmail(recipient.email, { require_tld: false })) {
+          // User locale set to default value results in either empty string or undefined
+          const locale = (
+            recipient.settings?.locale === '' ||
+            recipient.settings?.locale === undefined
+              ? getSettings().main.locale
+              : recipient.settings?.locale
+          ) as AvailableLocale;
+          await email.send(
+            this.buildMessage(
+              type,
+              payload,
+              recipient.email,
+              recipient.displayName,
+              locale
+            )
+          );
+        } else {
+          logger.warn('Invalid email address provided for user', {
+            label: 'Notifications',
+            recipient: recipient.displayName,
+            type: Notification[type],
+            subject: payload.subject,
+          });
+        }
+      } catch (e) {
+        logger.error('Error sending email notification', {
+          label: 'Notifications',
+          recipient: recipient.displayName,
+          type: Notification[type],
+          subject: payload.subject,
+          errorMessage: e.message,
+        });
+        return false;
+      }
+    }
     return true;
   }
 }
-
 export default EmailAgent;
