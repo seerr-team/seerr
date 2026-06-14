@@ -288,6 +288,15 @@ class EmailAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
+    function getAvailableLocale(
+      userLocale: string | undefined
+    ): AvailableLocale {
+      // 'User.settings.locale' is an empty string when set to match the global value
+      if (userLocale === '' || userLocale === undefined) {
+        return getSettings().main.locale as AvailableLocale;
+      }
+      return userLocale as AvailableLocale;
+    }
     if (payload.notifyUser) {
       if (
         !payload.notifyUser.settings ||
@@ -318,7 +327,7 @@ class EmailAgent
                 payload,
                 payload.notifyUser.email,
                 payload.notifyUser.displayName,
-                payload.notifyUser.settings?.locale as AvailableLocale
+                getAvailableLocale(payload.notifyUser.settings?.locale)
               )
             );
           } else {
@@ -379,7 +388,7 @@ class EmailAgent
                     payload,
                     user.email,
                     user.displayName,
-                    user.settings?.locale as AvailableLocale
+                    getAvailableLocale(user.settings?.locale)
                   )
                 );
               } else {
