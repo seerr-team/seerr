@@ -298,12 +298,14 @@ class EmailAgent
         shouldSendAdminNotification(type, user, payload)
       );
       await Promise.all(
+      const results = await Promise.all(
         recipientAdmins.map(async (admin) => {
-          if ((await this.sendEmail(type, payload, admin)) === false) {
-            return false;
-          }
+          return await this.sendEmail(type, payload, admin);
         })
       );
+      if (results.some((result) => result === false)) {
+        return false;
+      }
     }
     return true;
   }
