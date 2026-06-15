@@ -40,6 +40,13 @@ Set the default display language for Seerr. Users can override this setting in t
 
 These settings filter content shown on the "Discover" home page based on regional availability and original language, respectively. The Streaming Region filters the available streaming providers on the media page. Users can override these global settings by configuring these same options in their user settings.
 
+The Discover page also exposes a filter panel where each dimension can be toggled between **Included** and **Excluded**:
+
+- **Included** narrows results to items matching the selected values (for example, only movies in Spanish, or only productions from Mexico).
+- **Excluded** removes items matching the selected values (for example, hiding Hindi-language movies or productions from India).
+
+Streaming services currently support inclusion only, as TMDB does not expose a user-facing exclusion parameter for watch providers.
+
 ## Blocklist Region and Blocklist Language
 
 These settings control the region and language used specifically for blocklist content scanning. The "Process Blocklisted Tags" job uses these settings to determine which content to scan for blocklisting, independent of the general Discover settings.
