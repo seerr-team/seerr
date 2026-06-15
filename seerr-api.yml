@@ -5538,6 +5538,42 @@ paths:
             enum: [exact, range]
             example: exact
           description: Determines whether to use exact certification matching or a certification range (internal use only, not sent to TMDB API)
+        - in: query
+          name: excludeGenres
+          schema:
+            type: string
+            example: '27,53'
+          description: Comma-separated genre IDs to exclude
+        - in: query
+          name: excludeStudio
+          schema:
+            type: string
+            example: '1,2'
+          description: Comma-separated studio IDs to exclude
+        - in: query
+          name: excludeWatchProviders
+          schema:
+            type: string
+            example: '8|9'
+          description: Pipe-separated watch provider IDs to exclude
+        - in: query
+          name: country
+          schema:
+            type: string
+            example: 'US,GB'
+          description: Comma-separated ISO 3166-1 country codes
+        - in: query
+          name: excludeCountries
+          schema:
+            type: string
+            example: 'IN,CN'
+          description: Comma-separated ISO 3166-1 country codes to exclude
+        - in: query
+          name: excludeLanguages
+          schema:
+            type: string
+            example: 'en,fr'
+          description: Comma-separated ISO 639-1 language codes to exclude
       responses:
         '200':
           description: Results
@@ -5869,6 +5905,42 @@ paths:
             enum: [exact, range]
             example: exact
           description: Determines whether to use exact certification matching or a certification range (internal use only, not sent to TMDB API)
+        - in: query
+          name: excludeGenres
+          schema:
+            type: string
+            example: '27,53'
+          description: Comma-separated genre IDs to exclude
+        - in: query
+          name: excludeWatchProviders
+          schema:
+            type: string
+            example: '8|9'
+          description: Pipe-separated watch provider IDs to exclude
+        - in: query
+          name: country
+          schema:
+            type: string
+            example: 'US,GB'
+          description: Comma-separated ISO 3166-1 country codes
+        - in: query
+          name: excludeCountries
+          schema:
+            type: string
+            example: 'IN,CN'
+          description: Comma-separated ISO 3166-1 country codes to exclude
+        - in: query
+          name: excludeLanguages
+          schema:
+            type: string
+            example: 'en,fr'
+          description: Comma-separated ISO 639-1 language codes to exclude
+        - in: query
+          name: excludeStatus
+          schema:
+            type: string
+            example: '2,3'
+          description: Comma-separated status IDs to exclude
       responses:
         '200':
           description: Results

@@ -95,6 +95,11 @@ interface DiscoverMovieOptions {
   certificationGte?: string;
   certificationLte?: string;
   certificationCountry?: string;
+  excludeGenres?: string;
+  excludeStudio?: string;
+  excludeWatchProviders?: string;
+  country?: string;
+  originCountryParam?: string;
 }
 
 interface DiscoverTvOptions {
@@ -122,6 +127,9 @@ interface DiscoverTvOptions {
   certificationGte?: string;
   certificationLte?: string;
   certificationCountry?: string;
+  excludeGenres?: string;
+  excludeWatchProviders?: string;
+  country?: string;
 }
 
 class TheMovieDb extends ExternalAPI implements TvShowProvider {
@@ -607,6 +615,11 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     certificationGte,
     certificationLte,
     certificationCountry,
+    excludeGenres,
+    excludeStudio,
+    excludeWatchProviders,
+    country,
+    originCountryParam,
   }: DiscoverMovieOptions = {}): Promise<TmdbSearchMovieResponse> => {
     try {
       const defaultFutureDate = new Date(
@@ -659,6 +672,10 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
           'certification.gte': certificationGte,
           'certification.lte': certificationLte,
           certification_country: certificationCountry,
+          without_genres: excludeGenres,
+          without_companies: excludeStudio,
+          without_watch_providers: excludeWatchProviders,
+          with_origin_country: originCountryParam ?? country,
         },
       });
 
@@ -695,6 +712,9 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     certificationGte,
     certificationLte,
     certificationCountry,
+    excludeGenres,
+    excludeWatchProviders,
+    country,
   }: DiscoverTvOptions = {}): Promise<TmdbSearchTvResponse> => {
     try {
       const defaultFutureDate = new Date(
@@ -747,6 +767,9 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
           'certification.gte': certificationGte,
           'certification.lte': certificationLte,
           certification_country: certificationCountry,
+          without_genres: excludeGenres,
+          without_watch_providers: excludeWatchProviders,
+          with_origin_country: country,
         },
       });
 

@@ -12,6 +12,7 @@ export interface BaseSearchResult<T> {
   totalResults: number;
   totalPages: number;
   results: T[];
+  paginationIsEstimate?: boolean;
 }
 
 interface BaseMedia {

@@ -22,9 +22,10 @@
     "downlevelIteration": true,
     "paths": {
       "@server/*": ["../server/*"],
+      "@shared/*": ["../shared/*"],
       "@app/*": ["*"]
     }
   },
-  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx"],
+  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx", "shared/**/*.ts"],
   "exclude": ["node_modules"]
 }

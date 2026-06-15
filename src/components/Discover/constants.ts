@@ -115,6 +115,13 @@ export const QueryFilterOptions = z.object({
   certificationLte: z.string().optional(),
   certificationCountry: z.string().optional(),
   certificationMode: z.enum(['exact', 'range']).optional(),
+  excludeGenres: z.string().optional(),
+  excludeStudio: z.string().optional(),
+  excludeWatchProviders: z.string().optional(),
+  excludeLanguages: z.string().optional(),
+  excludeStatus: z.string().optional(),
+  country: z.string().optional(),
+  excludeCountries: z.string().optional(),
 });
 
 export type FilterOptions = z.infer<typeof QueryFilterOptions>;
@@ -164,6 +171,34 @@ export const prepareFilterValues = (
 
   if (values.excludeKeywords) {
     filterValues.excludeKeywords = values.excludeKeywords;
+  }
+
+  if (values.excludeGenres) {
+    filterValues.excludeGenres = values.excludeGenres;
+  }
+
+  if (values.excludeStudio) {
+    filterValues.excludeStudio = values.excludeStudio;
+  }
+
+  if (values.excludeWatchProviders) {
+    filterValues.excludeWatchProviders = values.excludeWatchProviders;
+  }
+
+  if (values.excludeLanguages) {
+    filterValues.excludeLanguages = values.excludeLanguages;
+  }
+
+  if (values.excludeStatus) {
+    filterValues.excludeStatus = values.excludeStatus;
+  }
+
+  if (values.country) {
+    filterValues.country = values.country;
+  }
+
+  if (values.excludeCountries) {
+    filterValues.excludeCountries = values.excludeCountries;
   }
 
   if (values.language) {
