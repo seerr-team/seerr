@@ -4,14 +4,18 @@
  *
  * The UI reads this table to decide two things:
  *   1. Whether a section renders at all          → include || exclude
- *   2. Whether the Include/Excluded toggle renders → exclude
+ *   2. Whether the Included/Excluded toggle renders → exclude
  *
  * Every entry here must correspond to a real section in `FilterSlideover`.
  * The `false` values exist because the underlying data source (TMDB's
  * discover endpoint) makes the operation impossible — not because the feature
  * is unfinished.
+ *
+ * Keys are `Record<DimensionKey, ...>`-enforced against the dimension
+ * registry, so adding a dimension there is a compile error here until the row
+ * is added.
  */
-import type { DimensionKey } from './types';
+import type { DimensionKey } from '@server/discover/types';
 
 export type Capability = { include: boolean; exclude: boolean };
 
@@ -41,8 +45,7 @@ export const FILTER_CAPABILITIES: {
   tv: {
     genres: { include: true, exclude: true },
     keywords: { include: true, exclude: true },
-    // TV has no studio dimension (it uses networks, which discover does not
-    // surface) — the section is hidden entirely.
+    // TV has no studio dimension — the section is hidden entirely.
     studio: { include: false, exclude: false },
     watchProviders: {
       include: true,

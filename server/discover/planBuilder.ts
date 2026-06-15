@@ -1,9 +1,5 @@
 import { buildComplement } from '@server/discover/countryCodes';
-import type {
-  DiscoverFilter,
-  DiscoverPlan,
-  PostFilterSpec,
-} from '@shared/discover/types';
+import type { DiscoverFilter, DiscoverPlan, PostFilterSpec } from './types';
 
 const PAGE_SIZE = 20;
 

@@ -1,10 +1,6 @@
 import { PAGE_SIZE } from '@server/discover/planBuilder';
 import { applyPostFilter } from '@server/discover/postFilter';
-import type {
-  HonestPage,
-  ListResult,
-  PostFilterSpec,
-} from '@shared/discover/types';
+import type { HonestPage, ListResult, PostFilterSpec } from './types';
 
 interface TmdbPage<T> {
   results: T[];

@@ -6,6 +6,7 @@ import { getRepository } from '@server/datasource';
 import { getAllCountryCodes } from '@server/discover/countryCodes';
 import { fillPage } from '@server/discover/fill';
 import { buildDiscoverPlan } from '@server/discover/planBuilder';
+import { DiscoverFilterSchema } from '@server/discover/schema';
 import Media from '@server/entity/Media';
 import { User } from '@server/entity/User';
 import { Watchlist } from '@server/entity/Watchlist';
@@ -24,7 +25,6 @@ import {
 } from '@server/models/Search';
 import { mapNetwork } from '@server/models/Tv';
 import { isCollection, isMovie, isPerson } from '@server/utils/typeHelpers';
-import { DiscoverFilterSchema } from '@shared/discover/schema';
 import { Router } from 'express';
 import { sortBy } from 'lodash';
 
@@ -51,6 +51,42 @@ export const createTmdbWithRegionLanguage = (user?: User): TheMovieDb => {
   });
 };
 
+/**
+ * Resolve the `server` and `all` language shorthands to concrete ISO codes.
+ * Mirrors the logic in createTmdbWithRegionLanguage but returns the list of
+ * codes instead of joining them, so callers can use the same resolution for
+ * include and exclude filters.
+ */
+export const resolveOriginalLanguageCodes = (user?: User): string[] => {
+  const settings = getSettings();
+  const raw =
+    user?.settings?.originalLanguage === 'all'
+      ? ''
+      : user?.settings?.originalLanguage
+        ? user?.settings?.originalLanguage
+        : settings.main.originalLanguage;
+
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split('|')
+    .map((code) => code.trim())
+    .filter(Boolean);
+};
+
+export const resolveServerLanguage = (
+  codes: string[],
+  user?: User
+): string[] => {
+  const resolved = codes.map((code) =>
+    code === 'server' ? resolveOriginalLanguageCodes(user) : [code]
+  );
+
+  return resolved.flat();
+};
+
 export const createTmdbWithBlocklistSettings = (): TheMovieDb => {
   const settings = getSettings();
 
@@ -67,6 +103,23 @@ discoverRoutes.get('/movies', async (req, res, next) => {
 
   try {
     const filter = DiscoverFilterSchema.parse(req.query);
+
+    // Resolve language shorthand `server` to the configured ISO codes so
+    // include/exclude behave symmetrically. `all` or empty settings resolve
+    // to no codes, which means no filter is applied.
+    if (filter.language.include) {
+      filter.language.include = resolveServerLanguage(
+        filter.language.include,
+        req.user
+      );
+    }
+    if (filter.language.exclude) {
+      filter.language.exclude = resolveServerLanguage(
+        filter.language.exclude,
+        req.user
+      );
+    }
+
     const countryCodes = await getAllCountryCodes(tmdb);
     const plan = buildDiscoverPlan(filter, 'movie', countryCodes);
 
@@ -79,7 +132,7 @@ discoverRoutes.get('/movies', async (req, res, next) => {
           watchRegion: req.query.watchRegion as string | undefined,
         }),
       plan.postFilter,
-      filter.page ?? 1
+      Number(req.query.page) || 1
     );
 
     const media = await Media.getRelatedMedia(
@@ -358,6 +411,23 @@ discoverRoutes.get('/tv', async (req, res, next) => {
 
   try {
     const filter = DiscoverFilterSchema.parse(req.query);
+
+    // Resolve language shorthand `server` to the configured ISO codes so
+    // include/exclude behave symmetrically. `all` or empty settings resolve
+    // to no codes, which means no filter is applied.
+    if (filter.language.include) {
+      filter.language.include = resolveServerLanguage(
+        filter.language.include,
+        req.user
+      );
+    }
+    if (filter.language.exclude) {
+      filter.language.exclude = resolveServerLanguage(
+        filter.language.exclude,
+        req.user
+      );
+    }
+
     const countryCodes = await getAllCountryCodes(tmdb);
     const plan = buildDiscoverPlan(filter, 'tv', countryCodes);
 
@@ -370,7 +440,7 @@ discoverRoutes.get('/tv', async (req, res, next) => {
           watchRegion: req.query.watchRegion as string | undefined,
         }),
       plan.postFilter,
-      filter.page ?? 1
+      Number(req.query.page) || 1
     );
 
     const media = await Media.getRelatedMedia(

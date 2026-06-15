@@ -2,6 +2,7 @@ import Button from '@app/components/Common/Button';
 import MultiRangeSlider from '@app/components/Common/MultiRangeSlider';
 import SlideCheckbox from '@app/components/Common/SlideCheckbox';
 import SlideOver from '@app/components/Common/SlideOver';
+import { FILTER_CAPABILITIES } from '@app/components/Discover/capabilities';
 import type { FilterOptions } from '@app/components/Discover/constants';
 import { countActiveFilters } from '@app/components/Discover/constants';
 import LanguageSelector from '@app/components/LanguageSelector';
@@ -22,8 +23,7 @@ import {
 import defineMessages from '@app/utils/defineMessages';
 import { XCircleIcon } from '@heroicons/react/24/outline';
 import Datepicker from '@seerr-team/react-tailwindcss-datepicker';
-import { FILTER_CAPABILITIES } from '@shared/discover/capabilities';
-import type { DimensionKey } from '@shared/discover/types';
+import type { DimensionKey } from '@server/discover/types';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
 

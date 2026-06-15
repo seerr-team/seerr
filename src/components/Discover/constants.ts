@@ -1,6 +1,7 @@
 import defineMessages from '@app/utils/defineMessages';
+import { DiscoverFilterQuerySchema as QueryFilterOptions } from '@server/discover/schema';
 import type { ParsedUrlQuery } from 'querystring';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 type AvailableColors =
   | 'black'
@@ -88,40 +89,6 @@ export const sliderTitles = defineMessages('components.Discover', {
   tmdbsearch: 'TMDB Search',
   tmdbmoviestreamingservices: 'TMDB Movie Streaming Services',
   tmdbtvstreamingservices: 'TMDB TV Streaming Services',
-});
-
-export const QueryFilterOptions = z.object({
-  sortBy: z.string().optional(),
-  primaryReleaseDateGte: z.string().optional(),
-  primaryReleaseDateLte: z.string().optional(),
-  firstAirDateGte: z.string().optional(),
-  firstAirDateLte: z.string().optional(),
-  studio: z.string().optional(),
-  genre: z.string().optional(),
-  keywords: z.string().optional(),
-  excludeKeywords: z.string().optional(),
-  language: z.string().optional(),
-  withRuntimeGte: z.string().optional(),
-  withRuntimeLte: z.string().optional(),
-  voteAverageGte: z.string().optional(),
-  voteAverageLte: z.string().optional(),
-  voteCountLte: z.string().optional(),
-  voteCountGte: z.string().optional(),
-  watchRegion: z.string().optional(),
-  watchProviders: z.string().optional(),
-  status: z.string().optional(),
-  certification: z.string().optional(),
-  certificationGte: z.string().optional(),
-  certificationLte: z.string().optional(),
-  certificationCountry: z.string().optional(),
-  certificationMode: z.enum(['exact', 'range']).optional(),
-  excludeGenres: z.string().optional(),
-  excludeStudio: z.string().optional(),
-  excludeWatchProviders: z.string().optional(),
-  excludeLanguages: z.string().optional(),
-  excludeStatus: z.string().optional(),
-  country: z.string().optional(),
-  excludeCountries: z.string().optional(),
 });
 
 export type FilterOptions = z.infer<typeof QueryFilterOptions>;

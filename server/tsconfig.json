@@ -9,9 +9,8 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@server/*": ["*"],
-      "@shared/*": ["../shared/*"]
+      "@server/*": ["*"]
     }
   },
-  "include": ["**/*.ts", "../shared/**/*.ts"]
+  "include": ["**/*.ts"]
 }

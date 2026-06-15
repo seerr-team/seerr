@@ -1,4 +1,4 @@
-import type { ListResult, PostFilterSpec } from '@shared/discover/types';
+import type { ListResult, PostFilterSpec } from './types';
 
 /**
  * Apply post-filter rules to discover results that have already been returned
