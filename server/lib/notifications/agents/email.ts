@@ -342,13 +342,9 @@ class EmailAgent
           recipient.settings?.pgpKey
         );
         if (validator.isEmail(recipient.email, { require_tld: false })) {
-          // User locale set to default value results in either empty string or undefined
-          const locale = (
-            recipient.settings?.locale === '' ||
-            recipient.settings?.locale === undefined
-              ? getSettings().main.locale
-              : recipient.settings?.locale
-          ) as AvailableLocale;
+          // User locale set to default value results in either empty string or undefined, which evaluate to false
+          const locale = (recipient.settings?.locale ||
+            getSettings().main.locale) as AvailableLocale;
           await email.send(
             this.buildMessage(
               type,
