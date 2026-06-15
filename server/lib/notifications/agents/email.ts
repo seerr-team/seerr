@@ -287,15 +287,17 @@ class EmailAgent
     type: Notification,
     payload: NotificationPayload
   ): Promise<boolean> {
-    if (payload.notifyUser) {
+    if (payload.notifyUser && this.shouldSendEmail(type, payload.notifyUser)) {
       if ((await this.sendEmail(type, payload, payload.notifyUser)) === false) {
         return false;
       }
     }
     if (payload.notifyAdmin) {
       const userRepo = await getRepository(User).find();
-      const recipientAdmins = userRepo.filter((user) =>
-        shouldSendAdminNotification(type, user, payload)
+      const recipientAdmins = userRepo.filter(
+        (user) =>
+          shouldSendAdminNotification(type, user, payload) &&
+          this.shouldSendEmail(type, user)
       );
       const results = await Promise.all(
         recipientAdmins.map(async (admin) => {
@@ -309,69 +311,71 @@ class EmailAgent
     return true;
   }
   /**
-   * Checks if the given recipient should receive the given notification via email,
-   * and if so, attempts to send it.
+   * Determines whether the given recipient should receive the given Notification type via email.
+   * @param type - the type of {@link Notification}
+   * @param recipient - the recipient {@link User} of the Notification
+   * @returns
+   */
+  private shouldSendEmail(type: Notification, recipient: User): boolean {
+    return (
+      !recipient.settings ||
+      recipient.settings?.hasNotificationType(NotificationAgentKey.EMAIL, type)
+    );
+  }
+  /**
+   * Attempts to send the Notification to the given User via email.
    *
    * @param type - the type of {@link Notification}
    * @param payload - the {@link NotificationPayload}
-   * @param recipient - the recipient {@link User} of the Notification email
+   * @param recipient - the recipient {@link User} of the email
    */
   private async sendEmail(
     type: Notification,
     payload: NotificationPayload,
     recipient: User
   ): Promise<boolean> {
-    if (
-      !recipient.settings ||
-      (recipient.settings.hasNotificationType(
-        NotificationAgentKey.EMAIL,
-        type
-      ) ??
-        true)
-    ) {
-      logger.debug('Sending email notification', {
-        label: 'Notifications',
-        recipient: recipient.displayName,
-        type: Notification[type],
-        subject: payload.subject,
-      });
+    logger.debug('Sending email notification', {
+      label: 'Notifications',
+      recipient: recipient.displayName,
+      type: Notification[type],
+      subject: payload.subject,
+    });
 
-      try {
-        const email = new PreparedEmail(
-          this.getSettings(),
-          recipient.settings?.pgpKey
+    try {
+      const email = new PreparedEmail(
+        this.getSettings(),
+        recipient.settings?.pgpKey
+      );
+      if (validator.isEmail(recipient.email, { require_tld: false })) {
+        // User locale set to default value results in either empty string or undefined
+        const locale = (recipient.settings?.locale ||
+          getSettings().main.locale) as AvailableLocale;
+        await email.send(
+          this.buildMessage(
+            type,
+            payload,
+            recipient.email,
+            recipient.displayName,
+            locale
+          )
         );
-        if (validator.isEmail(recipient.email, { require_tld: false })) {
-          // User locale set to default value results in either empty string or undefined, which evaluate to false
-          const locale = (recipient.settings?.locale ||
-            getSettings().main.locale) as AvailableLocale;
-          await email.send(
-            this.buildMessage(
-              type,
-              payload,
-              recipient.email,
-              recipient.displayName,
-              locale
-            )
-          );
-        } else {
-          logger.warn('Invalid email address provided for user', {
-            label: 'Notifications',
-            recipient: recipient.displayName,
-            type: Notification[type],
-            subject: payload.subject,
-          });
-        }
-      } catch (e) {
-        logger.error('Error sending email notification', {
+      } else {
+        logger.warn('Invalid email address provided for user', {
           label: 'Notifications',
           recipient: recipient.displayName,
           type: Notification[type],
           subject: payload.subject,
-          errorMessage: e.message,
         });
-        return false;
       }
+    } catch (e) {
+      logger.error('Error sending email notification', {
+        label: 'Notifications',
+        recipient: recipient.displayName,
+        type: Notification[type],
+        subject: payload.subject,
+        errorMessage: e.message,
+      });
+      return false;
     }
     return true;
   }
