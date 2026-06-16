@@ -12,6 +12,8 @@
  * discover slideover), via the existing `@server/*` alias.
  */
 
+import type { SortOptions } from '@server/api/themoviedb';
+
 /** Paired include/exclude URL-param keys for one dimension. */
 interface DimensionKeys {
   includeKey: string;
@@ -76,11 +78,58 @@ export type DiscoverFilter = {
   sortBy?: string;
 };
 
-/** Params to forward to the TMDB `/discover/*` endpoint. */
-export type TmdbDiscoverParams = Record<
-  string,
-  string | number | boolean | undefined
->;
+/** Params to forward to the TMDB `/discover/movie` endpoint. */
+export interface TmdbDiscoverMovieParams {
+  sortBy?: SortOptions;
+  primaryReleaseDateGte?: string;
+  primaryReleaseDateLte?: string;
+  withRuntimeGte?: string;
+  withRuntimeLte?: string;
+  voteAverageGte?: string;
+  voteAverageLte?: string;
+  voteCountGte?: string;
+  voteCountLte?: string;
+  originalLanguage?: string;
+  genre?: string;
+  excludeGenres?: string;
+  keywords?: string;
+  excludeKeywords?: string;
+  studio?: string;
+  excludeStudio?: string;
+  watchProviders?: string;
+  excludeWatchProviders?: string;
+  certification?: string;
+  certificationGte?: string;
+  certificationLte?: string;
+  certificationCountry?: string;
+  originCountryParam?: string;
+}
+
+/** Params to forward to the TMDB `/discover/tv` endpoint. */
+export interface TmdbDiscoverTvParams {
+  sortBy?: SortOptions;
+  firstAirDateGte?: string;
+  firstAirDateLte?: string;
+  withRuntimeGte?: string;
+  withRuntimeLte?: string;
+  voteAverageGte?: string;
+  voteAverageLte?: string;
+  voteCountGte?: string;
+  voteCountLte?: string;
+  originalLanguage?: string;
+  genre?: string;
+  excludeGenres?: string;
+  keywords?: string;
+  excludeKeywords?: string;
+  watchProviders?: string;
+  excludeWatchProviders?: string;
+  withStatus?: string;
+  certification?: string;
+  certificationGte?: string;
+  certificationLte?: string;
+  certificationCountry?: string;
+  country?: string;
+}
 
 /** Post-filter rules applied locally after TMDB returns. */
 export interface PostFilterSpec {
@@ -95,7 +144,7 @@ export interface PostFilterSpec {
  */
 export interface DiscoverPlan {
   /** Options spread into the TMDB wrapper's getDiscoverMovies/getDiscoverTv. */
-  discoverOptions: Record<string, unknown>;
+  discoverOptions: TmdbDiscoverMovieParams | TmdbDiscoverTvParams;
   /** Rules applied locally after TMDB returns (fields TMDB can't filter natively). */
   postFilter: PostFilterSpec;
 }

@@ -120,13 +120,19 @@ discoverRoutes.get('/movies', async (req, res, next) => {
       );
     }
 
-    const countryCodes = await getAllCountryCodes(tmdb);
+    // Country codes are only needed when the request actually filters by
+    // country, so avoid the extra TMDB call in the common case.
+    const needsCountryCodes =
+      filter.country.include?.length || filter.country.exclude?.length;
+    const countryCodes = needsCountryCodes
+      ? await getAllCountryCodes(tmdb)
+      : [];
     const plan = buildDiscoverPlan(filter, 'movie', countryCodes);
 
     const page = await fillPage(
       (p) =>
         tmdb.getDiscoverMovies({
-          ...(plan.discoverOptions as object),
+          ...plan.discoverOptions,
           page: p,
           language: req.locale,
           watchRegion: req.query.watchRegion as string | undefined,
@@ -150,12 +156,18 @@ discoverRoutes.get('/movies', async (req, res, next) => {
     let keywordData: TmdbKeyword[] = [];
     if (keywordIds.length) {
       keywordData = (
-        await Promise.all(
+        await Promise.allSettled(
           keywordIds.map((keywordId) =>
             tmdb.getKeywordDetails({ keywordId: Number(keywordId) })
           )
         )
-      ).filter((keyword): keyword is TmdbKeyword => keyword !== null);
+      )
+        .filter(
+          (result): result is PromiseFulfilledResult<TmdbKeyword | null> =>
+            result.status === 'fulfilled'
+        )
+        .map((result) => result.value)
+        .filter((keyword): keyword is TmdbKeyword => keyword !== null);
     }
 
     return res.status(200).json({
@@ -428,13 +440,19 @@ discoverRoutes.get('/tv', async (req, res, next) => {
       );
     }
 
-    const countryCodes = await getAllCountryCodes(tmdb);
+    // Country codes are only needed when the request actually filters by
+    // country, so avoid the extra TMDB call in the common case.
+    const needsCountryCodes =
+      filter.country.include?.length || filter.country.exclude?.length;
+    const countryCodes = needsCountryCodes
+      ? await getAllCountryCodes(tmdb)
+      : [];
     const plan = buildDiscoverPlan(filter, 'tv', countryCodes);
 
     const page = await fillPage(
       (p) =>
         tmdb.getDiscoverTv({
-          ...(plan.discoverOptions as object),
+          ...plan.discoverOptions,
           page: p,
           language: req.locale,
           watchRegion: req.query.watchRegion as string | undefined,
@@ -458,12 +476,18 @@ discoverRoutes.get('/tv', async (req, res, next) => {
     let keywordData: TmdbKeyword[] = [];
     if (keywordIds.length) {
       keywordData = (
-        await Promise.all(
+        await Promise.allSettled(
           keywordIds.map((keywordId) =>
             tmdb.getKeywordDetails({ keywordId: Number(keywordId) })
           )
         )
-      ).filter((keyword): keyword is TmdbKeyword => keyword !== null);
+      )
+        .filter(
+          (result): result is PromiseFulfilledResult<TmdbKeyword | null> =>
+            result.status === 'fulfilled'
+        )
+        .map((result) => result.value)
+        .filter((keyword): keyword is TmdbKeyword => keyword !== null);
     }
 
     return res.status(200).json({

@@ -24,7 +24,7 @@ import defineMessages from '@app/utils/defineMessages';
 import { XCircleIcon } from '@heroicons/react/24/outline';
 import Datepicker from '@seerr-team/react-tailwindcss-datepicker';
 import type { DimensionKey } from '@server/discover/types';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.Discover.FilterSlideover', {
@@ -141,6 +141,18 @@ const FilterSlideover = ({
   const [countryExclude, setCountryExclude] = useState(
     !!currentFilters.excludeCountries
   );
+
+  // If the URL filters change underneath us (browser back/forward, parent
+  // re-render with different filters), keep the local exclude-mode switches
+  // in sync so the panel reflects the actual active param set.
+  useEffect(() => {
+    setStudioExclude(!!currentFilters.excludeStudio);
+    setGenreExclude(!!currentFilters.excludeGenres);
+    setStatusExclude(!!currentFilters.excludeStatus);
+    setKeywordExclude(!!currentFilters.excludeKeywords);
+    setLanguageExclude(!!currentFilters.excludeLanguages);
+    setCountryExclude(!!currentFilters.excludeCountries);
+  }, [currentFilters]);
 
   const dateGte =
     type === 'movie' ? 'primaryReleaseDateGte' : 'firstAirDateGte';

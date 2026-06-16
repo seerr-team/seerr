@@ -661,10 +661,12 @@ export const CountrySelector = ({
   useEffect(() => {
     const loadDefaultCountries = async (): Promise<void> => {
       if (!defaultValue) {
+        setDefaultDataValue(null);
         return;
       }
       const codes = defaultValue.split(',').filter(Boolean);
       if (!codes.length) {
+        setDefaultDataValue(null);
         return;
       }
       const response = await axios.get<Region[]>('/api/v1/regions');

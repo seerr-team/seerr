@@ -45,7 +45,7 @@ The Discover page also exposes a filter panel where each dimension can be toggle
 - **Included** narrows results to items matching the selected values (for example, only movies in Spanish, or only productions from Mexico).
 - **Excluded** removes items matching the selected values (for example, hiding Hindi-language movies or productions from India).
 
-Streaming services currently support inclusion only, as TMDB does not expose a user-facing exclusion parameter for watch providers.
+Streaming services currently support inclusion only in the Discover filter UI. (The underlying TMDB API exposes a provider-exclusion parameter, but it is not surfaced in the user interface because its practical value is low.)
 
 ## Blocklist Region and Blocklist Language
 

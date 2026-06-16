@@ -5326,6 +5326,10 @@ paths:
                   totalResults:
                     type: number
                     example: 200
+                  paginationIsEstimate:
+                    type: boolean
+                    example: false
+                    description: True when totalResults/totalPages are estimates because exclude post-filtering required over-fetching
                   results:
                     type: array
                     items:
@@ -5591,6 +5595,10 @@ paths:
                   totalResults:
                     type: number
                     example: 200
+                  paginationIsEstimate:
+                    type: boolean
+                    example: false
+                    description: True when totalResults/totalPages are estimates because exclude post-filtering required over-fetching
                   results:
                     type: array
                     items:
@@ -5958,6 +5966,10 @@ paths:
                   totalResults:
                     type: number
                     example: 200
+                  paginationIsEstimate:
+                    type: boolean
+                    example: false
+                    description: True when totalResults/totalPages are estimates because exclude post-filtering required over-fetching
                   results:
                     type: array
                     items:
