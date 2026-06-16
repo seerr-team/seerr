@@ -1167,4 +1167,286 @@ describe('AvailabilitySync', () => {
       );
     });
   });
+
+  describe('specials season handling', () => {
+    const tmdbSeasonsWithSpecials = [
+      {
+        id: 100,
+        air_date: '2024-01-01',
+        episode_count: 3,
+        name: 'Specials',
+        overview: '',
+        season_number: 0,
+      },
+      {
+        id: 101,
+        air_date: '2024-01-01',
+        episode_count: 10,
+        name: 'Season 1',
+        overview: '',
+        season_number: 1,
+      },
+    ];
+
+    it('should not demote an available show when only the specials season is missing (Jellyfin)', async () => {
+      configureJellyfin();
+      configureSonarr([{ syncEnabled: true }]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 13862;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.jellyfinMediaId = 'jellyfin-shogun-id';
+      media.externalServiceId = 300;
+      media.seasons = [
+        new Season({
+          seasonNumber: 0,
+          status: MediaStatus.UNKNOWN,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+      ];
+
+      await mediaRepository.save(media);
+
+      getTvShowImpl = async () => fakeTmdbShow(13862, tmdbSeasonsWithSpecials);
+
+      getItemDataImpl = async (id: string) => {
+        if (id === 'jellyfin-shogun-id') {
+          return fakeJellyfinShow('jellyfin-shogun-id', '13862');
+        }
+        return undefined;
+      };
+
+      getSeasonsImpl = async (seriesID: string) => {
+        if (seriesID === 'jellyfin-shogun-id') {
+          return [fakeJellyfinSeason(1, 'jellyfin-shogun-s1-id')];
+        }
+        return [];
+      };
+
+      getEpisodesImpl = async (_seriesID: string, seasonID: string) => {
+        if (seasonID === 'jellyfin-shogun-s1-id') {
+          return fakeJellyfinEpisodes(10);
+        }
+        return [];
+      };
+
+      getSeriesByIdImpl = async (id: number) => {
+        if (id === 300) {
+          return {
+            tvdbId: 70814,
+            id: 300,
+            title: 'Shogun',
+            titleSlug: 'shogun',
+            monitored: true,
+            statistics: {
+              episodeFileCount: 10,
+              totalEpisodeCount: 10,
+              episodeCount: 10,
+              percentOfEpisodes: 100,
+              sizeOnDisk: 0,
+              seasonCount: 1,
+            },
+            seasons: fakeSonarrSeasons(1, { 1: 10 }),
+          } as unknown as SonarrSeries;
+        }
+        throw new Error('404');
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 13862 },
+        relations: ['seasons'],
+      });
+
+      assert.strictEqual(
+        updated.status,
+        MediaStatus.AVAILABLE,
+        'Show should stay AVAILABLE when only the specials season is missing'
+      );
+    });
+
+    it('should not demote an available show when only the specials season is missing (Plex)', async () => {
+      configurePlex();
+      configureSonarr([{ syncEnabled: true }]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 13863;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.ratingKey = 'plex-shogun-rk';
+      media.externalServiceId = 301;
+      media.seasons = [
+        new Season({
+          seasonNumber: 0,
+          status: MediaStatus.UNKNOWN,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+      ];
+
+      await mediaRepository.save(media);
+
+      getTvShowImpl = async () => fakeTmdbShow(13863, tmdbSeasonsWithSpecials);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'plex-shogun-rk') {
+          return fakePlexShow('plex-shogun-rk');
+        }
+        throw new Error('404');
+      };
+
+      getChildrenMetadataImpl = async (key: string) => {
+        if (key === 'plex-shogun-rk') {
+          return [fakePlexSeason(1, 'plex-shogun-s1-rk')];
+        }
+        if (key === 'plex-shogun-s1-rk') {
+          return fakePlexEpisodes(10);
+        }
+        return [];
+      };
+
+      getSeriesByIdImpl = async (id: number) => {
+        if (id === 301) {
+          return {
+            tvdbId: 70814,
+            id: 301,
+            title: 'Shogun',
+            titleSlug: 'shogun',
+            monitored: true,
+            statistics: {
+              episodeFileCount: 10,
+              totalEpisodeCount: 10,
+              episodeCount: 10,
+              percentOfEpisodes: 100,
+              sizeOnDisk: 0,
+              seasonCount: 1,
+            },
+            seasons: fakeSonarrSeasons(1, { 1: 10 }),
+          } as unknown as SonarrSeries;
+        }
+        throw new Error('404');
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 13863 },
+        relations: ['seasons'],
+      });
+
+      assert.strictEqual(
+        updated.status,
+        MediaStatus.AVAILABLE,
+        'Show should stay AVAILABLE when only the specials season is missing'
+      );
+    });
+
+    it('should mark a removed specials season as DELETED without demoting the show (Jellyfin)', async () => {
+      configureJellyfin();
+      configureSonarr([{ syncEnabled: true }]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 13864;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.jellyfinMediaId = 'jellyfin-specials-id';
+      media.externalServiceId = 302;
+      media.seasons = [
+        new Season({
+          seasonNumber: 0,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+      ];
+
+      await mediaRepository.save(media);
+
+      getTvShowImpl = async () => fakeTmdbShow(13864, tmdbSeasonsWithSpecials);
+
+      getItemDataImpl = async (id: string) => {
+        if (id === 'jellyfin-specials-id') {
+          return fakeJellyfinShow('jellyfin-specials-id', '13864');
+        }
+        return undefined;
+      };
+
+      getSeasonsImpl = async (seriesID: string) => {
+        if (seriesID === 'jellyfin-specials-id') {
+          return [fakeJellyfinSeason(1, 'jellyfin-specials-s1-id')];
+        }
+        return [];
+      };
+
+      getEpisodesImpl = async (_seriesID: string, seasonID: string) => {
+        if (seasonID === 'jellyfin-specials-s1-id') {
+          return fakeJellyfinEpisodes(10);
+        }
+        return [];
+      };
+
+      getSeriesByIdImpl = async (id: number) => {
+        if (id === 302) {
+          return {
+            tvdbId: 70814,
+            id: 302,
+            title: 'Shogun',
+            titleSlug: 'shogun',
+            monitored: true,
+            statistics: {
+              episodeFileCount: 10,
+              totalEpisodeCount: 10,
+              episodeCount: 10,
+              percentOfEpisodes: 100,
+              sizeOnDisk: 0,
+              seasonCount: 1,
+            },
+            seasons: fakeSonarrSeasons(1, { 1: 10 }),
+          } as unknown as SonarrSeries;
+        }
+        throw new Error('404');
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 13864 },
+        relations: ['seasons'],
+      });
+
+      const specials = updated.seasons.find((s) => s.seasonNumber === 0);
+      assert.strictEqual(
+        specials?.status,
+        MediaStatus.DELETED,
+        'Removed specials season should be marked DELETED'
+      );
+
+      assert.strictEqual(
+        updated.status,
+        MediaStatus.AVAILABLE,
+        'Show should stay AVAILABLE when only specials were removed'
+      );
+    });
+  });
 });
