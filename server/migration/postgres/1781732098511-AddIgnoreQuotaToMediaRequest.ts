@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddIgnoreQuotaToMediaRequest1760028688313 implements MigrationInterface {
-  name = 'AddIgnoreQuotaToMediaRequest1760028688313';
+export class AddIgnoreQuotaToMediaRequest1781732098511 implements MigrationInterface {
+  name = 'AddIgnoreQuotaToMediaRequest1781732098511';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
