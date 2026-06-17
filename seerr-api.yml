@@ -2455,6 +2455,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PlexSettings'
+  /plex/recently-added:
+    post:
+      summary: Process recently added Plex media
+      description: Processes a recently added Plex media item by rating key. This endpoint can be called by external tools such as Tautulli.
+      tags:
+        - plex
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ratingKey:
+                  type: string
+              required:
+                - ratingKey
+      responses:
+        '200':
+          description: Plex media was processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ratingKey:
+                    type: string
+                  type:
+                    type: string
+                  title:
+                    type: string
+        '400':
+          description: Plex rating key is missing
+        '500':
+          description: Plex media could not be processed
   /settings/plex/library:
     get:
       summary: Get Plex libraries
