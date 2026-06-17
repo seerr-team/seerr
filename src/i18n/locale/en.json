@@ -531,6 +531,7 @@
   "components.RequestList.unableToConnect": "Unable to connect to {services}. Some information may be unavailable.",
   "components.RequestModal.AdvancedRequester.advancedoptions": "Advanced",
   "components.RequestModal.AdvancedRequester.animenote": "* This series is an anime.",
+  "components.RequestModal.AdvancedRequester.autosearch": "Start searching automatically",
   "components.RequestModal.AdvancedRequester.default": "{name} (Default)",
   "components.RequestModal.AdvancedRequester.destinationserver": "Destination Server",
   "components.RequestModal.AdvancedRequester.folder": "{path} ({space})",

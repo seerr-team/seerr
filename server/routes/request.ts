@@ -504,6 +504,15 @@ requestRoutes.put<{ requestId: string }>(
           where: { id: req.body.userId },
         });
       }
+      if (
+        req.body?.autoSearch !== undefined &&
+        req.user?.hasPermission(
+          [Permission.REQUEST_ADVANCED, Permission.MANAGE_REQUESTS],
+          { type: 'or' }
+        )
+      ) {
+        request.autoSearch = req.body.autoSearch;
+      }
 
       if (req.body.mediaType === MediaType.MOVIE) {
         request.serverId = req.body.serverId;

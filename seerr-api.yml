@@ -1267,6 +1267,10 @@ components:
           type: number
         rootFolder:
           type: string
+        autoSearch:
+          type: boolean
+          nullable: true
+          example: false
       required:
         - id
         - status
@@ -6404,6 +6408,10 @@ paths:
                 userId:
                   type: number
                   nullable: true
+                autoSearch:
+                  type: boolean
+                  nullable: true
+                  example: false
               required:
                 - mediaType
                 - mediaId
@@ -6510,6 +6518,10 @@ paths:
                 userId:
                   type: number
                   nullable: true
+                autoSearch:
+                  type: boolean
+                  nullable: true
+                  example: false
               required:
                 - mediaType
       responses:

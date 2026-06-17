@@ -385,6 +385,7 @@ export class MediaRequest {
         rootFolder: rootFolder,
         tags: tags,
         isAutoRequest: options.isAutoRequest ?? false,
+        autoSearch: requestBody.autoSearch,
       });
 
       await requestRepository.save(request);
@@ -516,6 +517,7 @@ export class MediaRequest {
             })
         ),
         isAutoRequest: options.isAutoRequest ?? false,
+        autoSearch: requestBody.autoSearch,
       });
 
       await requestRepository.save(request);
@@ -587,6 +589,9 @@ export class MediaRequest {
 
   @Column({ nullable: true })
   public languageProfileId: number;
+
+  @Column({ type: 'boolean', nullable: true })
+  public autoSearch: boolean | null;
 
   @Column({
     type: 'text',
