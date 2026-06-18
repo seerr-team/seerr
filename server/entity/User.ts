@@ -315,6 +315,7 @@ export class User {
             ...(movieQuotaDays ? { createdAt: AfterDate(movieDate) } : {}),
             type: MediaType.MOVIE,
             status: Not(MediaRequestStatus.DECLINED),
+            ignoreQuota: false,
           },
         })
       : 0;
@@ -352,6 +353,9 @@ export class User {
     const tvQuotaUsed = tvQuotaLimit
       ? (
           await tvQuotaUsedQuery
+            .andWhere('request.ignoreQuota = :ignoreQuota', {
+              ignoreQuota: false,
+            })
             .addSelect((subQuery) => {
               return subQuery
                 .select('COUNT(season.id)', 'seasonCount')

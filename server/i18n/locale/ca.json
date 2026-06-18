@@ -1,1 +1,8 @@
-{}
+{
+  "notifications.agents.email.approvedRequest": "La teva sol·licitud de {mediaType} ha estat aprovada:",
+  "notifications.agents.email.approvedRequest4k": "La teva sol·licitud de {mediaType} en 4k ha estat aprovada:",
+  "notifications.agents.email.autoApproved": "S'ha aprovat automàticament les noves sol·licituds per al següent {mediaType}:",
+  "notifications.agents.email.autoApproved4k": "S'ha aprovat automàticament una nova sol·licitud per al següent {mediaType} en 4K:",
+  "notifications.agents.email.autoRequested": "S'ha enviat automàticament una nova sol·licitud per al següent {mediaType}:",
+  "notifications.agents.email.autoRequested4k": "S'ha enviat automàticament una nova sol·licitud per al següent {mediaType} en 4K:"
+}
