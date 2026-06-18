@@ -270,6 +270,17 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
   public removeMovie = async (movieId: number): Promise<void> => {
     try {
       const { id, title } = await this.getMovieByTmdbId(movieId);
+      if (!id) {
+        // Movie is not in the Radarr library (e.g. already removed). Treat the
+        // desired end-state as reached so retries remain idempotent.
+        logger.info(
+          '[Radarr] Movie not present in library; nothing to remove',
+          {
+            tmdbId: movieId,
+          }
+        );
+        return;
+      }
       await this.axios.delete(`/movie/${id}`, {
         params: {
           deleteFiles: true,
@@ -281,6 +292,26 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
       throw new Error(`[Radarr] Failed to remove movie: ${e.message}`, {
         cause: e,
       });
+    }
+  };
+
+  public removeTagFromMovie = async (
+    tmdbId: number,
+    tagId: number
+  ): Promise<void> => {
+    try {
+      const movie = await this.getMovieByTmdbId(tmdbId);
+      const updatedTags = movie.tags.filter((t) => t !== tagId);
+      await this.axios.put(`/movie`, {
+        ...movie,
+        tags: updatedTags,
+      });
+      logger.info(`[Radarr] Removed tag ${tagId} from movie ${movie.title}`);
+    } catch (e) {
+      throw new Error(
+        `[Radarr] Failed to remove tag from movie: ${e.message}`,
+        { cause: e }
+      );
     }
   };
 

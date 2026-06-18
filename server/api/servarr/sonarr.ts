@@ -413,6 +413,15 @@ class SonarrAPI extends ServarrBase<{
   public removeSeries = async (serieId: number): Promise<void> => {
     try {
       const { id, title } = await this.getSeriesByTvdbId(serieId);
+      if (!id) {
+        // Series is not in the Sonarr library (e.g. already removed). Treat the
+        // desired end-state as reached so retries remain idempotent.
+        logger.info(
+          '[Sonarr] Series not present in library; nothing to remove',
+          { tvdbId: serieId }
+        );
+        return;
+      }
       await this.axios.delete(`/series/${id}`, {
         params: {
           deleteFiles: true,
@@ -422,6 +431,84 @@ class SonarrAPI extends ServarrBase<{
       logger.info(`[Sonarr] Removed series ${title}`);
     } catch (e) {
       throw new Error(`[Sonarr] Failed to remove series: ${e.message}`, {
+        cause: e,
+      });
+    }
+  };
+
+  public removeTagFromSeries = async (
+    tvdbId: number,
+    tagId: number
+  ): Promise<void> => {
+    try {
+      const series = await this.getSeriesByTvdbId(tvdbId);
+      if (!series.id) {
+        throw new Error('Series not found in Sonarr');
+      }
+      const updatedTags = series.tags.filter((t) => t !== tagId);
+      await this.axios.put(`/series/${series.id}`, {
+        ...series,
+        tags: updatedTags,
+      });
+      logger.info(`[Sonarr] Removed tag ${tagId} from series ${series.title}`);
+    } catch (e) {
+      throw new Error(
+        `[Sonarr] Failed to remove tag from series: ${e.message}`,
+        { cause: e }
+      );
+    }
+  };
+
+  public removeSeasonFiles = async (
+    tvdbId: number,
+    seasonNumbers: number[]
+  ): Promise<void> => {
+    try {
+      const series = await this.getSeriesByTvdbId(tvdbId);
+      if (!series.id) {
+        // Series is not in the Sonarr library (e.g. already removed). Treat the
+        // desired end-state as reached so retries remain idempotent.
+        logger.info(
+          '[Sonarr] Series not present in library; nothing to remove',
+          { tvdbId }
+        );
+        return;
+      }
+
+      const episodes = await this.getEpisodes(series.id);
+      const targetEpisodes = episodes.filter((ep) =>
+        seasonNumbers.includes(ep.seasonNumber)
+      );
+      const episodeFileIds = targetEpisodes
+        .filter((ep) => ep.hasFile && ep.episodeFileId > 0)
+        .map((ep) => ep.episodeFileId);
+
+      // Unmonitor the affected episodes before deleting files
+      const episodeIds = targetEpisodes.map((ep) => ep.id);
+      if (episodeIds.length > 0) {
+        await this.axios.put('/episode/monitor', {
+          episodeIds,
+          monitored: false,
+        });
+      }
+
+      // Delete episode files
+      for (const fileId of [...new Set(episodeFileIds)]) {
+        await this.axios.delete(`/episodefile/${fileId}`);
+      }
+
+      // Unmonitor the seasons
+      series.seasons = series.seasons.map((s) => ({
+        ...s,
+        monitored: seasonNumbers.includes(s.seasonNumber) ? false : s.monitored,
+      }));
+      await this.axios.put(`/series/${series.id}`, series);
+
+      logger.info(
+        `[Sonarr] Removed files for seasons ${seasonNumbers.join(', ')} of ${series.title}`
+      );
+    } catch (e) {
+      throw new Error(`[Sonarr] Failed to remove season files: ${e.message}`, {
         cause: e,
       });
     }
