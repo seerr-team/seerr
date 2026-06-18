@@ -50,7 +50,7 @@ router.use(checkUser);
 router.get<unknown, StatusResponse>('/status', async (req, res) => {
   const currentVersion = getAppVersion();
   const commitTag = getCommitTag();
-  const checkUpdate = String(req.query.checkUpdateAvailable) !== 'false';
+  const checkUpdate = req.query.checkUpdateAvailable !== 'false';
   let updateAvailable = false;
   let commitsBehind = 0;
 
