@@ -284,11 +284,17 @@ notificationRoutes.get('/webhook', (_req, res) => {
     types: webhookSettings.types,
     options: {
       ...webhookSettings.options,
-      jsonPayload: JSON.parse(
-        Buffer.from(webhookSettings.options.jsonPayload, 'base64').toString(
-          'utf8'
-        )
-      ),
+      jsonPayload: (() => {
+        try {
+          return JSON.parse(
+            Buffer.from(webhookSettings.options.jsonPayload, 'base64').toString(
+              'utf8'
+            )
+          );
+        } catch {
+          return '';
+        }
+      })(),
       customHeaders: webhookSettings.options.customHeaders ?? [],
       supportVariables: webhookSettings.options.supportVariables ?? false,
     },

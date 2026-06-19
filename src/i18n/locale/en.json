@@ -695,6 +695,7 @@
   "components.Settings.Notifications.NotificationsSlack.toastSlackTestSuccess": "Slack test notification sent!",
   "components.Settings.Notifications.NotificationsSlack.validationTypes": "You must select at least one notification type",
   "components.Settings.Notifications.NotificationsSlack.validationWebhookUrl": "You must provide a valid URL",
+  "components.Settings.Notifications.NotificationsWebhook.webhookSettingsLoadError": "Failed to load webhook settings. Please check your configuration and try refreshing",
   "components.Settings.Notifications.NotificationsSlack.webhookUrl": "Webhook URL",
   "components.Settings.Notifications.NotificationsSlack.webhookUrlTip": "Create an <WebhookLink>Incoming Webhook</WebhookLink> integration",
   "components.Settings.Notifications.NotificationsWebPush.agentenabled": "Enable Agent",
