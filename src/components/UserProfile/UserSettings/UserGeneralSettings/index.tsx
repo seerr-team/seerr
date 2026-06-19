@@ -153,7 +153,7 @@ const UserGeneralSettings = () => {
           displayName: data?.username !== user?.email ? data?.username : '',
           email: data?.email?.includes('@') ? data.email : '',
           locale: data?.locale,
-          mediaLocale: data?.mediaLocale,
+          mediaLocale: data?.mediaLocale ?? data?.locale ?? '',
           discoverRegion: data?.discoverRegion,
           streamingRegion: data?.streamingRegion,
           originalLanguage: data?.originalLanguage,
