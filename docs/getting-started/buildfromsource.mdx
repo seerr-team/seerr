@@ -121,6 +121,9 @@ WantedBy=multi-user.target
 :::note
 If you are using a different path to node, replace `/usr/bin/node` with the path to node.
 This unit file expects a dedicated user `seerr` to exist that owns the application directory (and config file).
+On Linux, the user can be created using the following command:
+`sudo useradd -s /sbin/nologin seerr`
+This creates the user `seerr` with no login shell (a non-interactive user used solely for the purpose of running Seerr).
 :::
 
 4. Enable and start the service:
