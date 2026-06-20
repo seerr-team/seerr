@@ -559,7 +559,7 @@ export class MediaRequest {
   public status: MediaRequestStatus;
 
   @Column({ type: 'text', nullable: true })
-  public declineReason: string;
+  public declineReason?: string;
 
   @ManyToOne(() => Media, (media) => media.requests, {
     eager: true,

@@ -76,7 +76,7 @@ class NtfyAgent
           payload.request &&
           payload.request.declineReason
         ) {
-          message += `\n**${intl.formatMessage(globalMessages.declineReason)}**\n${payload.request.declineReason}`;
+          message += `\n**${intl.formatMessage(globalMessages.declineReason)}**\n${this.escapeMarkdown(payload.request.declineReason)}`;
         }
       }
     } else if (payload.comment) {

@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddRequestDeclinedMessage1781897118247 implements MigrationInterface {
-  name = 'AddRequestDeclinedMessage1781897118247';
+export class AddRequestDeclinedMessage1781992375456 implements MigrationInterface {
+  name = 'AddRequestDeclinedMessage1781992375456';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP INDEX "IDX_03f7958328e311761b0de675fb"`);
