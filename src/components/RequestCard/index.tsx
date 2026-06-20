@@ -348,6 +348,12 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
         requests={[request]}
         type={request.type}
         onCancel={() => setShowDeclineRequestModal(false)}
+        onError={() => {
+          addToast(intl.formatMessage(messages.failedmodify), {
+            autoDismiss: true,
+            appearance: 'error',
+          });
+        }}
         onComplete={() => {
           revalidate();
           setShowDeclineRequestModal(false);

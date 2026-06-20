@@ -698,9 +698,6 @@ requestRoutes.post<{
           break;
         case 'decline':
           newStatus = MediaRequestStatus.DECLINED;
-          if (declineReason) {
-            request.declineReason = declineReason.trim().substring(0, 500);
-          }
           break;
         default:
           return next({
@@ -716,6 +713,11 @@ requestRoutes.post<{
         });
       }
 
+      if (req.params.status === 'decline' && declineReason) {
+        request.declineReason = declineReason.trim().substring(0, 500);
+      } else {
+        request.declineReason = '';
+      }
       request.status = newStatus;
       request.modifiedBy = req.user;
       await requestRepository.save(request);

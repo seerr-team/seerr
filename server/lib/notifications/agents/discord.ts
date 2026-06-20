@@ -148,7 +148,7 @@ class DiscordAgent
           payload.request.declineReason
         ) {
           fields.push({
-            name: 'Decline Reason',
+            name: intl.formatMessage(globalMessages.declineReason),
             value: payload.request.declineReason,
             inline: false,
           });

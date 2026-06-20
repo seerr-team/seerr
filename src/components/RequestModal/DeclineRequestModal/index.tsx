@@ -5,6 +5,7 @@ import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { NonFunctionProperties } from '@server/interfaces/api/common';
+import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useIntl } from 'react-intl';
 import * as Yup from 'yup';
@@ -23,6 +24,7 @@ interface DeclineRequestModalProps {
   requests?: NonFunctionProperties<MediaRequest>[];
   onComplete?: () => void;
   onCancel?: () => void;
+  onError?: () => void;
 }
 
 const DeclineRequestModal = ({
@@ -31,6 +33,7 @@ const DeclineRequestModal = ({
   requests,
   onComplete,
   onCancel,
+  onError,
 }: DeclineRequestModalProps) => {
   const intl = useIntl();
 
@@ -44,15 +47,15 @@ const DeclineRequestModal = ({
     requestId: number,
     values: { reason: string }
   ) => {
-    return await fetch(`/api/v1/request/${requestId}/decline`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    try {
+      await axios.post(`/api/v1/request/${requestId}/decline`, {
         declineReason: values.reason,
-      }),
-    });
+      });
+    } catch {
+      if (onError) {
+        onError();
+      }
+    }
   };
 
   return (
@@ -83,9 +86,7 @@ const DeclineRequestModal = ({
             onSubmit={async (values, { resetForm }) => {
               if (requests) {
                 const results = await Promise.allSettled(
-                  requests.map((req) =>
-                    handleSubmit(req.id, values).then((res) => res.json())
-                  )
+                  requests.map((req) => handleSubmit(req.id, values))
                 );
                 results.forEach((result, index) => {
                   if (result.status === 'rejected') {
@@ -94,7 +95,9 @@ const DeclineRequestModal = ({
                 });
               }
               resetForm();
-              onComplete && onComplete();
+              if (onComplete) {
+                onComplete();
+              }
             }}
           >
             {({ isValid, isSubmitting, values, handleSubmit }) => {
@@ -116,7 +119,9 @@ const DeclineRequestModal = ({
                           type="button"
                           buttonType="default"
                           onClick={async () => {
-                            onCancel && onCancel();
+                            if (onCancel) {
+                              onCancel();
+                            }
                           }}
                         >
                           <span>
@@ -128,7 +133,6 @@ const DeclineRequestModal = ({
                         type="submit"
                         buttonType="danger"
                         disabled={!isValid || isSubmitting}
-                        onClick={() => handleSubmit()}
                       >
                         <span>
                           {intl.formatMessage(messages.declineButtonLabel)}

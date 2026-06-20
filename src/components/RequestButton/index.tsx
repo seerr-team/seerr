@@ -396,7 +396,7 @@ const RequestButton = ({
       {(activeRequest || (activeRequests && activeRequests.length > 0)) && (
         <DeclineRequestModal
           show={showDeclineCommentModal}
-          requests={activeRequest ? [activeRequest] : active4kRequests}
+          requests={activeRequest ? [activeRequest] : activeRequests}
           type={mediaType}
           onCancel={() => setShowDeclineCommentModal(false)}
           onComplete={() => {
