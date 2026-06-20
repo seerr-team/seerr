@@ -22,6 +22,8 @@ const messages = defineMessages('notifications.agents.webpush', {
     'Automatically approved a new {quality}{mediaType} request from {userName}.',
   available: 'Your {quality}{mediaType} request is now available!',
   declined: 'Your {quality}{mediaType} request was declined.',
+  declinedWithReason:
+    'Your {quality}{mediaType} request was declined because: {reason}.',
   failed: 'Failed to process {quality}{mediaType} request.',
   pending:
     'Approval required for a new {quality}{mediaType} request from {userName}.',
@@ -123,10 +125,18 @@ class WebPushAgent
         });
         break;
       case Notification.MEDIA_DECLINED:
-        message = intl.formatMessage(messages.declined, {
-          quality,
-          mediaType,
-        });
+        if (payload.request && payload.request?.declineReason) {
+          message = intl.formatMessage(messages.declinedWithReason, {
+            quality,
+            mediaType,
+            reason: payload.request.declineReason,
+          });
+        } else {
+          message = intl.formatMessage(messages.declined, {
+            quality,
+            mediaType,
+          });
+        }
         break;
       case Notification.MEDIA_FAILED:
         message = intl.formatMessage(messages.failed, {

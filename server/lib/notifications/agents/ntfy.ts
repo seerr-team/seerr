@@ -71,6 +71,13 @@ class NtfyAgent
 
       if (status) {
         message += `\n**${intl.formatMessage(globalMessages.requestStatus)}:** ${status}`;
+        if (
+          type === Notification.MEDIA_DECLINED &&
+          payload.request &&
+          payload.request.declineReason
+        ) {
+          message += `\n**${intl.formatMessage(globalMessages.declineReason)}**\n${payload.request.declineReason}`;
+        }
       }
     } else if (payload.comment) {
       message += `\n**${this.escapeMarkdown(
