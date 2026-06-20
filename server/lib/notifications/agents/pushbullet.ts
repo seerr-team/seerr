@@ -26,7 +26,8 @@ interface PushbulletPayload {
 
 class PushbulletAgent
   extends BaseAgent<NotificationAgentPushbullet>
-  implements NotificationAgent {
+  implements NotificationAgent
+{
   protected getSettings(): NotificationAgentPushbullet {
     if (this.settings) {
       return this.settings;
@@ -96,10 +97,11 @@ class PushbulletAgent
     } else if (payload.issue) {
       body += `\n\n${intl.formatMessage(globalMessages.reportedBy)}: ${payload.issue.createdBy.displayName}`;
       body += `\n${intl.formatMessage(globalMessages.issueType)}: ${IssueTypeName[payload.issue.issueType]}`;
-      body += `\n${intl.formatMessage(globalMessages.issueStatus)}: ${payload.issue.status === IssueStatus.OPEN
+      body += `\n${intl.formatMessage(globalMessages.issueStatus)}: ${
+        payload.issue.status === IssueStatus.OPEN
           ? intl.formatMessage(globalMessages.open)
           : intl.formatMessage(globalMessages.resolved)
-        }`;
+      }`;
     }
 
     for (const extra of payload.extra ?? []) {
@@ -166,7 +168,7 @@ class PushbulletAgent
         ) &&
         payload.notifyUser.settings?.pushbulletAccessToken &&
         payload.notifyUser.settings.pushbulletAccessToken !==
-        settings.options.accessToken
+          settings.options.accessToken
       ) {
         logger.debug('Sending Pushbullet notification', {
           label: 'Notifications',
@@ -220,7 +222,7 @@ class PushbulletAgent
               user.settings?.pushbulletAccessToken &&
               (settings.options.channelTag ||
                 user.settings.pushbulletAccessToken !==
-                settings.options.accessToken)
+                  settings.options.accessToken)
             ) {
               logger.debug('Sending Pushbullet notification', {
                 label: 'Notifications',

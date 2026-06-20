@@ -45,7 +45,8 @@ const messages = defineMessages('notifications.agents.email', {
   declinedRequest: 'Your request for the following {mediaType} was declined:',
   declinedRequest4k:
     'Your request for the following {mediaType} in 4K was declined:',
-  declinedRequestReason: 'Your request for the following {mediaType} was declined because: {reason}',
+  declinedRequestReason:
+    'Your request for the following {mediaType} was declined because: {reason}',
   declinedRequest4kReason:
     'Your request for the following {mediaType} in 4K was declined because: {reason}',
   failedRequest:
@@ -64,7 +65,8 @@ const messages = defineMessages('notifications.agents.email', {
 
 class EmailAgent
   extends BaseAgent<NotificationAgentEmail>
-  implements NotificationAgent {
+  implements NotificationAgent
+{
   protected getSettings(): NotificationAgentEmail {
     if (this.settings) {
       return this.settings;
@@ -225,8 +227,8 @@ class EmailAgent
       const issueType =
         payload.issue && payload.issue.issueType !== IssueType.OTHER
           ? intl.formatMessage(messages.issueType, {
-            type: IssueTypeName[payload.issue.issueType].toLowerCase(),
-          })
+              type: IssueTypeName[payload.issue.issueType].toLowerCase(),
+            })
           : intl.formatMessage(messages.issue);
 
       let body = '';
