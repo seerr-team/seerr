@@ -8,12 +8,20 @@ import TitleCard from '@app/components/TitleCard';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
-import { CircleStackIcon } from '@heroicons/react/24/solid';
+import {
+  DEFAULT_PERSON_CREDIT_SORT,
+  sortPersonCredits,
+  type PersonCreditSort,
+} from '@app/utils/personCreditHelpers';
+import { BarsArrowDownIcon, CircleStackIcon } from '@heroicons/react/24/solid';
 import type { PersonCombinedCreditsResponse } from '@server/interfaces/api/personInterfaces';
-import type { PersonDetails as PersonDetailsType } from '@server/models/Person';
-import { groupBy } from 'lodash';
+import type {
+  PersonCreditCast,
+  PersonCreditCrew,
+  PersonDetails as PersonDetailsType,
+} from '@server/models/Person';
 import { useRouter } from 'next/router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import TruncateMarkup from 'react-truncate-markup';
 import useSWR from 'swr';
@@ -25,14 +33,42 @@ const messages = defineMessages('components.PersonDetails', {
   appearsin: 'Appearances',
   crewmember: 'Crew',
   ascharacter: 'as {character}',
+  sortPopularityAsc: 'Popularity Ascending',
+  sortPopularityDesc: 'Popularity Descending',
+  sortReleaseDateAsc: 'Release Date Ascending',
+  sortReleaseDateDesc: 'Release Date Descending',
+  sortTmdbRatingAsc: 'TMDB Rating Ascending',
+  sortTmdbRatingDesc: 'TMDB Rating Descending',
+  sortTitleAsc: 'Title (A-Z) Ascending',
+  sortTitleDesc: 'Title (Z-A) Descending',
+  sortVoteCountAsc: 'Vote Count Ascending',
+  sortVoteCountDesc: 'Vote Count Descending',
 });
 
+const SortOptions: Record<string, PersonCreditSort> = {
+  ReleaseDateDesc: 'releaseDate.desc',
+  ReleaseDateAsc: 'releaseDate.asc',
+  PopularityDesc: 'popularity.desc',
+  PopularityAsc: 'popularity.asc',
+  TmdbRatingDesc: 'voteAverage.desc',
+  TmdbRatingAsc: 'voteAverage.asc',
+  TitleAsc: 'title.asc',
+  TitleDesc: 'title.desc',
+  VoteCountDesc: 'voteCount.desc',
+  VoteCountAsc: 'voteCount.asc',
+} as const;
+
 type MediaType = 'all' | 'movie' | 'tv';
+
+const FILTER_SETTINGS_KEY = 'pd-filter-settings';
 
 const PersonDetails = () => {
   const intl = useIntl();
   const router = useRouter();
-  const [currentMediaType, setCurrentMediaType] = useState<string>('all');
+  const [currentMediaType, setCurrentMediaType] = useState<MediaType>('all');
+  const [currentSort, setCurrentSort] = useState<PersonCreditSort>(
+    DEFAULT_PERSON_CREDIT_SORT
+  );
   const { data, error } = useSWR<PersonDetailsType>(
     `/api/v1/person/${router.query.personId}`
   );
@@ -43,49 +79,67 @@ const PersonDetails = () => {
       `/api/v1/person/${router.query.personId}/combined_credits`
     );
 
+  useEffect(() => {
+    const filterString = window.localStorage.getItem(FILTER_SETTINGS_KEY);
+
+    if (!filterString) {
+      return;
+    }
+
+    const filterSettings = JSON.parse(filterString);
+
+    if (['all', 'movie', 'tv'].includes(filterSettings.currentMediaType)) {
+      setCurrentMediaType(filterSettings.currentMediaType);
+    }
+
+    if (Object.values(SortOptions).includes(filterSettings.currentSort)) {
+      setCurrentSort(filterSettings.currentSort);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      FILTER_SETTINGS_KEY,
+      JSON.stringify({
+        currentMediaType,
+        currentSort,
+      })
+    );
+  }, [currentMediaType, currentSort]);
+
   const sortedCast = useMemo(() => {
     const filtered = (combinedCredits?.cast ?? []).filter(
       (media) =>
         currentMediaType === 'all' || media.mediaType === currentMediaType
     );
-    const grouped = groupBy(filtered, 'id');
 
-    const reduced = Object.values(grouped).map((objs) => ({
-      ...objs[0],
-      character: objs.map((pos) => pos.character).join(', '),
-    }));
-
-    return reduced.sort((a, b) => {
-      const aVotes = a.voteCount ?? 0;
-      const bVotes = b.voteCount ?? 0;
-      if (aVotes > bVotes) {
-        return -1;
-      }
-      return 1;
-    });
-  }, [combinedCredits, currentMediaType]);
+    return sortPersonCredits<PersonCreditCast>(
+      filtered,
+      currentSort,
+      (credit) => credit.id,
+      (objs) => ({
+        ...objs[0],
+        character: objs.map((pos) => pos.character).join(', '),
+      })
+    );
+  }, [combinedCredits, currentMediaType, currentSort]);
 
   const sortedCrew = useMemo(() => {
     const filtered = (combinedCredits?.crew ?? []).filter(
       (media) =>
         currentMediaType === 'all' || media.mediaType === currentMediaType
     );
-    const grouped = groupBy(filtered, 'id');
 
-    const reduced = Object.values(grouped).map((objs) => ({
-      ...objs[0],
-      job: objs.map((pos) => pos.job).join(', '),
-    }));
-
-    return reduced.sort((a, b) => {
-      const aVotes = a.voteCount ?? 0;
-      const bVotes = b.voteCount ?? 0;
-      if (aVotes > bVotes) {
-        return -1;
-      }
-      return 1;
-    });
-  }, [combinedCredits, currentMediaType]);
+    return sortPersonCredits<PersonCreditCrew>(
+      filtered,
+      currentSort,
+      (credit) => credit.id,
+      (objs) => ({
+        ...objs[0],
+        job: objs.map((pos) => pos.job).join(', '),
+      })
+    );
+  }, [combinedCredits, currentMediaType, currentSort]);
 
   if (!data && !error) {
     return <LoadingSpinner />;
@@ -155,6 +209,61 @@ const PersonDetails = () => {
         </option>
         <option value="tv">{intl.formatMessage(globalMessages.tvshows)}</option>
       </select>
+    </div>
+  );
+
+  const sortPicker = (
+    <div className="mb-2 flex flex-grow sm:mb-0 lg:flex-grow-0">
+      <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
+        <BarsArrowDownIcon className="h-6 w-6" />
+      </span>
+      <select
+        id="sortBy"
+        name="sortBy"
+        onChange={(e) => {
+          setCurrentSort(e.target.value as PersonCreditSort);
+        }}
+        value={currentSort}
+        className="rounded-r-only"
+      >
+        <option value={SortOptions.ReleaseDateDesc}>
+          {intl.formatMessage(messages.sortReleaseDateDesc)}
+        </option>
+        <option value={SortOptions.ReleaseDateAsc}>
+          {intl.formatMessage(messages.sortReleaseDateAsc)}
+        </option>
+        <option value={SortOptions.PopularityDesc}>
+          {intl.formatMessage(messages.sortPopularityDesc)}
+        </option>
+        <option value={SortOptions.PopularityAsc}>
+          {intl.formatMessage(messages.sortPopularityAsc)}
+        </option>
+        <option value={SortOptions.TmdbRatingDesc}>
+          {intl.formatMessage(messages.sortTmdbRatingDesc)}
+        </option>
+        <option value={SortOptions.TmdbRatingAsc}>
+          {intl.formatMessage(messages.sortTmdbRatingAsc)}
+        </option>
+        <option value={SortOptions.TitleAsc}>
+          {intl.formatMessage(messages.sortTitleAsc)}
+        </option>
+        <option value={SortOptions.TitleDesc}>
+          {intl.formatMessage(messages.sortTitleDesc)}
+        </option>
+        <option value={SortOptions.VoteCountDesc}>
+          {intl.formatMessage(messages.sortVoteCountDesc)}
+        </option>
+        <option value={SortOptions.VoteCountAsc}>
+          {intl.formatMessage(messages.sortVoteCountAsc)}
+        </option>
+      </select>
+    </div>
+  );
+
+  const filtersToolbar = (
+    <div className="flex flex-col sm:flex-row lg:flex-shrink-0">
+      {mediaTypePicker}
+      {sortPicker}
     </div>
   );
 
@@ -274,9 +383,7 @@ const PersonDetails = () => {
         <div className="w-full text-center text-gray-300 lg:text-left">
           <div className="flex w-full items-center justify-center lg:justify-between">
             <h1 className="text-3xl text-white lg:text-4xl">{data.name}</h1>
-            <div className="hidden flex-shrink-0 lg:block">
-              {mediaTypePicker}
-            </div>
+            <div className="hidden lg:block">{filtersToolbar}</div>
           </div>
           <div className="flex w-full items-center justify-center lg:justify-between">
             <div className="mb-3 mt-3">
@@ -302,7 +409,7 @@ const PersonDetails = () => {
               </div>
             )}
           </div>
-          <div className="lg:hidden">{mediaTypePicker}</div>
+          <div className="lg:hidden">{filtersToolbar}</div>
           {data.biography && (
             <div className="relative text-left">
               {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
