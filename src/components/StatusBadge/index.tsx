@@ -33,6 +33,7 @@ interface StatusBadgeProps {
   title?: string | string[];
   statusLabelOverride?: string;
   statusMessage?: string;
+  statusMessage4k?: string;
 }
 
 const StatusBadge = ({
@@ -47,10 +48,14 @@ const StatusBadge = ({
   title,
   statusLabelOverride,
   statusMessage,
+  statusMessage4k,
 }: StatusBadgeProps) => {
   const intl = useIntl();
   const { hasPermission } = useUser();
   const settings = useSettings();
+
+  // Use the 4K-specific message when in 4K mode.
+  const msg = is4k ? statusMessage4k : statusMessage;
 
   let mediaLink: string | undefined;
   let mediaLinkDescription: string | undefined;
@@ -353,9 +358,9 @@ const StatusBadge = ({
               </div>
             </Badge>
           </Tooltip>
-          {statusMessage && (
+          {msg && (
             <span className="mt-0.5 block text-xs text-gray-400">
-              {statusMessage}
+              {msg}
             </span>
           )}
         </>
@@ -371,9 +376,9 @@ const StatusBadge = ({
               })}
             </Badge>
           </Tooltip>
-          {statusMessage && (
+          {msg && (
             <span className="mt-0.5 block text-xs text-gray-400">
-              {statusMessage}
+              {msg}
             </span>
           )}
         </>

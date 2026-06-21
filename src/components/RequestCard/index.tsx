@@ -175,6 +175,7 @@ const RequestCardError = ({ requestData }: RequestCardErrorProps) => {
                           : requestData.media.serviceUrl
                       }
                       statusMessage={requestData.media?.statusMessage}
+                      statusMessage4k={requestData.media?.statusMessage4k}
                     />
                   )}
                 </div>
