@@ -161,6 +161,7 @@ const RequestItemError = ({
                         ? requestData.media.serviceUrl4k
                         : requestData.media.serviceUrl
                     }
+                    statusMessage={requestData.media?.statusMessage}
                   />
                 )}
               </div>
@@ -550,6 +551,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                       ? requestData.media.serviceUrl4k
                       : requestData.media.serviceUrl
                   }
+                  statusMessage={requestData.media?.statusMessage}
                 />
               )}
             </div>

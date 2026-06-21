@@ -124,6 +124,24 @@ class RadarrScanner
     }
 
     try {
+      // Compute contextual status message for pending requests.
+      let statusMessage: string | undefined;
+      if (!radarrMovie.hasFile && radarrMovie.monitored) {
+        if (radarrMovie.status === 'inCinemas') {
+          const d = radarrMovie.digitalRelease || radarrMovie.physicalRelease;
+          statusMessage = d
+            ? `In theaters — expected ${new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+            : 'Still in theaters (no release date)';
+        } else if (radarrMovie.status === 'announced') {
+          statusMessage = 'Not yet released';
+        } else if (
+          radarrMovie.minimumAvailability === 'released' &&
+          radarrMovie.lastSearchTime
+        ) {
+          statusMessage = 'No releases met quality requirements';
+        }
+      }
+
       await this.processMovie(radarrMovie.tmdbId, {
         is4k: server4k,
         serviceId: this.currentServer.id,
@@ -132,6 +150,7 @@ class RadarrScanner
         title: radarrMovie.title,
         processing: !radarrMovie.hasFile && radarrMovie.monitored,
         hasFile: radarrMovie.hasFile,
+        statusMessage,
       });
     } catch (e) {
       this.log('Failed to process Radarr media', 'error', {

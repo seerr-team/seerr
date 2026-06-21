@@ -42,6 +42,7 @@ interface ProcessOptions {
   title?: string;
   processing?: boolean;
   hasFile?: boolean;
+  statusMessage?: string;
 }
 
 export interface ProcessableSeason {
@@ -106,6 +107,7 @@ class BaseScanner<T> {
       processing = false,
       title = 'Unknown Title',
       hasFile = true,
+      statusMessage,
     }: ProcessOptions = {}
   ): Promise<void> {
     const mediaRepository = getRepository(Media);
@@ -198,6 +200,9 @@ class BaseScanner<T> {
         }
 
         if (changedExisting) {
+          if (statusMessage !== undefined) {
+            existing.statusMessage = statusMessage;
+          }
           await mediaRepository.save(existing);
           this.log(
             `Media for ${title} exists. Changes were detected and the title will be updated.`,
@@ -249,6 +254,10 @@ class BaseScanner<T> {
           newMedia.jellyfinMediaId = !is4k ? jellyfinMediaId : undefined;
           newMedia.jellyfinMediaId4k =
             is4k && this.enable4kMovie ? jellyfinMediaId : undefined;
+        }
+
+        if (statusMessage !== undefined) {
+          newMedia.statusMessage = statusMessage;
         }
 
         await mediaRepository.save(newMedia);

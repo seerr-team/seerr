@@ -174,6 +174,7 @@ const RequestCardError = ({ requestData }: RequestCardErrorProps) => {
                           ? requestData.media.serviceUrl4k
                           : requestData.media.serviceUrl
                       }
+                      statusMessage={requestData.media?.statusMessage}
                     />
                   )}
                 </div>
@@ -479,6 +480,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                     ? requestData.media.serviceUrl4k
                     : requestData.media.serviceUrl
                 }
+                statusMessage={requestData.media?.statusMessage}
               />
             )}
           </div>
