@@ -65,6 +65,7 @@ const QueryFilterOptions = z.object({
   sortBy: z.coerce.string().optional(),
   primaryReleaseDateGte: z.coerce.string().optional(),
   primaryReleaseDateLte: z.coerce.string().optional(),
+  releaseType: z.enum(['2', '3', '4', '5', '6']).optional(),
   firstAirDateGte: z.coerce.string().optional(),
   firstAirDateLte: z.coerce.string().optional(),
   studio: z.coerce.string().optional(),
@@ -115,6 +116,7 @@ discoverRoutes.get('/movies', async (req, res, next) => {
       primaryReleaseDateGte: query.primaryReleaseDateGte
         ? new Date(query.primaryReleaseDateGte).toISOString().split('T')[0]
         : undefined,
+      releaseType: query.releaseType,
       keywords,
       excludeKeywords,
       withRuntimeGte: query.withRuntimeGte,

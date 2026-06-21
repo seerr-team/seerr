@@ -5596,6 +5596,19 @@ paths:
             type: string
             example: 2023-01-01
         - in: query
+          name: releaseType
+          schema:
+            type: string
+            enum: ['2', '3', '4', '5', '6']
+            example: '4'
+          description: >-
+            Minimum release availability for movie discovery. The selected type
+            and everything above it are matched (e.g. 4 = digital also matches 5
+            = physical and 6 = TV, sent to TMDB as with_release_type=4|5|6).
+            When set, results are filtered on release_date instead of
+            primary_release_date. 2 = limited theatrical, 3 = theatrical,
+            4 = digital, 5 = physical, 6 = TV
+        - in: query
           name: withRuntimeGte
           schema:
             type: number

@@ -89,6 +89,7 @@ interface DiscoverMovieOptions {
   keywords?: string;
   excludeKeywords?: string;
   sortBy?: SortOptions;
+  releaseType?: string;
   watchRegion?: string;
   watchProviders?: string;
   certification?: string;
@@ -601,6 +602,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     voteAverageLte,
     voteCountGte,
     voteCountLte,
+    releaseType,
     watchProviders,
     watchRegion,
     certification,
@@ -619,6 +621,21 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
         .toISOString()
         .split('T')[0];
 
+      // "Minimum availability" is cumulative: picking Digital (4) should also
+      // match Physical (5) and TV (6), so expand the selected type up to 6.
+      // with_release_type is a no-op on TMDB unless it's paired with a
+      // release_date range, so when it's set we filter on release_date instead
+      // of primary_release_date (the field the plain Release Date filter uses).
+      const releaseTypeFilter = releaseType
+        ? Array.from(
+            { length: 6 - Number(releaseType) + 1 },
+            (_, i) => Number(releaseType) + i
+          ).join('|')
+        : undefined;
+      const releaseDateField = releaseType
+        ? 'release_date'
+        : 'primary_release_date';
+
       const data = await this.get<TmdbSearchMovieResponse>('/discover/movie', {
         params: {
           sort_by: sortBy,
@@ -635,14 +652,15 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
                 : this.originalLanguage,
           // Set our release date values, but check if one is set and not the other,
           // so we can force a past date or a future date. TMDB Requires both values if one is set!
-          'primary_release_date.gte':
+          [`${releaseDateField}.gte`]:
             !primaryReleaseDateGte && primaryReleaseDateLte
               ? defaultPastDate
               : primaryReleaseDateGte,
-          'primary_release_date.lte':
+          [`${releaseDateField}.lte`]:
             !primaryReleaseDateLte && primaryReleaseDateGte
               ? defaultFutureDate
               : primaryReleaseDateLte,
+          with_release_type: releaseTypeFilter,
           with_genres: genre,
           with_companies: studio,
           with_keywords: keywords,
