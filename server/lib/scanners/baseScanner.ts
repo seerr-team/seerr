@@ -42,7 +42,7 @@ interface ProcessOptions {
   title?: string;
   processing?: boolean;
   hasFile?: boolean;
-  statusMessage?: string;
+  statusMessage?: string | null;
 }
 
 export interface ProcessableSeason {
@@ -199,10 +199,18 @@ class BaseScanner<T> {
           changedExisting = true;
         }
 
+        // Track status-message changes independently so the message
+        // is persisted even when no other fields changed.
+        const msgField = is4k ? 'statusMessage4k' as const : 'statusMessage' as const;
+        if (
+          statusMessage !== undefined &&
+          existing[msgField] !== statusMessage
+        ) {
+          existing[msgField] = statusMessage ?? null;
+          changedExisting = true;
+        }
+
         if (changedExisting) {
-          if (statusMessage !== undefined) {
-            existing.statusMessage = statusMessage;
-          }
           await mediaRepository.save(existing);
           this.log(
             `Media for ${title} exists. Changes were detected and the title will be updated.`,
@@ -257,7 +265,11 @@ class BaseScanner<T> {
         }
 
         if (statusMessage !== undefined) {
-          newMedia.statusMessage = statusMessage;
+          if (is4k) {
+            newMedia.statusMessage4k = statusMessage ?? null;
+          } else {
+            newMedia.statusMessage = statusMessage ?? null;
+          }
         }
 
         await mediaRepository.save(newMedia);

@@ -110,6 +110,9 @@ class Media {
   @Column({ type: 'varchar', nullable: true })
   public statusMessage?: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  public statusMessage4k?: string;
+
   @OneToMany(() => MediaRequest, (request) => request.media, {
     cascade: ['insert', 'remove'],
   })
