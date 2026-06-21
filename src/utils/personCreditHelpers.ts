@@ -4,16 +4,12 @@ import { groupBy } from 'lodash';
 export type PersonCreditSort =
   | 'releaseDate.desc'
   | 'releaseDate.asc'
-  | 'popularity.desc'
-  | 'popularity.asc'
-  | 'voteAverage.desc'
-  | 'voteAverage.asc'
   | 'title.asc'
   | 'title.desc'
   | 'voteCount.desc'
   | 'voteCount.asc';
 
-export const DEFAULT_PERSON_CREDIT_SORT: PersonCreditSort = 'releaseDate.desc';
+export const DEFAULT_PERSON_CREDIT_SORT: PersonCreditSort = 'voteCount.desc';
 
 const getReleaseDate = (credit: PersonCredit): string =>
   credit.mediaType === 'movie' ? credit.releaseDate : credit.firstAirDate;
@@ -77,14 +73,6 @@ export const sortPersonCredits = <T extends PersonCredit>(
       }
       case 'title':
         return compareStrings(getTitle(a), getTitle(b), direction);
-      case 'popularity':
-        return compareNumbers(a.popularity ?? 0, b.popularity ?? 0, direction);
-      case 'voteAverage':
-        return compareNumbers(
-          a.voteAverage ?? 0,
-          b.voteAverage ?? 0,
-          direction
-        );
       case 'voteCount':
         return compareNumbers(a.voteCount ?? 0, b.voteCount ?? 0, direction);
       default:

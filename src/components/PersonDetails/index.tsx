@@ -33,12 +33,8 @@ const messages = defineMessages('components.PersonDetails', {
   appearsin: 'Appearances',
   crewmember: 'Crew',
   ascharacter: 'as {character}',
-  sortPopularityAsc: 'Popularity Ascending',
-  sortPopularityDesc: 'Popularity Descending',
   sortReleaseDateAsc: 'Release Date Ascending',
   sortReleaseDateDesc: 'Release Date Descending',
-  sortTmdbRatingAsc: 'TMDB Rating Ascending',
-  sortTmdbRatingDesc: 'TMDB Rating Descending',
   sortTitleAsc: 'Title (A-Z) Ascending',
   sortTitleDesc: 'Title (Z-A) Descending',
   sortVoteCountAsc: 'Vote Count Ascending',
@@ -46,16 +42,12 @@ const messages = defineMessages('components.PersonDetails', {
 });
 
 const SortOptions: Record<string, PersonCreditSort> = {
-  ReleaseDateDesc: 'releaseDate.desc',
-  ReleaseDateAsc: 'releaseDate.asc',
-  PopularityDesc: 'popularity.desc',
-  PopularityAsc: 'popularity.asc',
-  TmdbRatingDesc: 'voteAverage.desc',
-  TmdbRatingAsc: 'voteAverage.asc',
-  TitleAsc: 'title.asc',
-  TitleDesc: 'title.desc',
   VoteCountDesc: 'voteCount.desc',
   VoteCountAsc: 'voteCount.asc',
+  ReleaseDateDesc: 'releaseDate.desc',
+  ReleaseDateAsc: 'releaseDate.asc',
+  TitleAsc: 'title.asc',
+  TitleDesc: 'title.desc',
 } as const;
 
 type MediaType = 'all' | 'movie' | 'tv';
@@ -226,35 +218,23 @@ const PersonDetails = () => {
         value={currentSort}
         className="rounded-r-only"
       >
+        <option value={SortOptions.VoteCountDesc}>
+          {intl.formatMessage(messages.sortVoteCountDesc)}
+        </option>
+        <option value={SortOptions.VoteCountAsc}>
+          {intl.formatMessage(messages.sortVoteCountAsc)}
+        </option>
         <option value={SortOptions.ReleaseDateDesc}>
           {intl.formatMessage(messages.sortReleaseDateDesc)}
         </option>
         <option value={SortOptions.ReleaseDateAsc}>
           {intl.formatMessage(messages.sortReleaseDateAsc)}
         </option>
-        <option value={SortOptions.PopularityDesc}>
-          {intl.formatMessage(messages.sortPopularityDesc)}
-        </option>
-        <option value={SortOptions.PopularityAsc}>
-          {intl.formatMessage(messages.sortPopularityAsc)}
-        </option>
-        <option value={SortOptions.TmdbRatingDesc}>
-          {intl.formatMessage(messages.sortTmdbRatingDesc)}
-        </option>
-        <option value={SortOptions.TmdbRatingAsc}>
-          {intl.formatMessage(messages.sortTmdbRatingAsc)}
-        </option>
         <option value={SortOptions.TitleAsc}>
           {intl.formatMessage(messages.sortTitleAsc)}
         </option>
         <option value={SortOptions.TitleDesc}>
           {intl.formatMessage(messages.sortTitleDesc)}
-        </option>
-        <option value={SortOptions.VoteCountDesc}>
-          {intl.formatMessage(messages.sortVoteCountDesc)}
-        </option>
-        <option value={SortOptions.VoteCountAsc}>
-          {intl.formatMessage(messages.sortVoteCountAsc)}
         </option>
       </select>
     </div>
