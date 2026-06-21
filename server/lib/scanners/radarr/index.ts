@@ -125,7 +125,7 @@ class RadarrScanner
 
     try {
       // Compute contextual status message for pending requests.
-      let statusMessage: string | null | undefined;
+      let statusMessage: string | undefined;
       if (!radarrMovie.hasFile && radarrMovie.monitored) {
         if (radarrMovie.status === 'inCinemas') {
           const d = radarrMovie.digitalRelease || radarrMovie.physicalRelease;
@@ -141,7 +141,7 @@ class RadarrScanner
           statusMessage = 'No releases met quality requirements';
         } else {
           // No applicable context — explicitly clear any stale message.
-          statusMessage = null;
+          statusMessage = undefined;
         }
       }
 

@@ -42,7 +42,7 @@ interface ProcessOptions {
   title?: string;
   processing?: boolean;
   hasFile?: boolean;
-  statusMessage?: string | null;
+  statusMessage?: string;
 }
 
 export interface ProcessableSeason {
@@ -206,7 +206,7 @@ class BaseScanner<T> {
           statusMessage !== undefined &&
           existing[msgField] !== statusMessage
         ) {
-          existing[msgField] = statusMessage ?? null;
+          existing[msgField] = statusMessage;
           changedExisting = true;
         }
 
@@ -266,9 +266,9 @@ class BaseScanner<T> {
 
         if (statusMessage !== undefined) {
           if (is4k) {
-            newMedia.statusMessage4k = statusMessage ?? null;
+            newMedia.statusMessage4k = statusMessage;
           } else {
-            newMedia.statusMessage = statusMessage ?? null;
+            newMedia.statusMessage = statusMessage;
           }
         }
 
