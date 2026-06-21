@@ -294,7 +294,7 @@ const StatusBadge = ({
 
     case MediaStatus.PROCESSING:
       return (
-        <>
+        <div>
           <Tooltip
             content={inProgress ? tooltipContent : mediaLinkDescription}
             className={`${
@@ -359,16 +359,14 @@ const StatusBadge = ({
             </Badge>
           </Tooltip>
           {msg && (
-            <span className="pt-1.5 block text-xs text-gray-400">
-              {msg}
-            </span>
+            <div className="mt-1 text-xs text-gray-400">{msg}</div>
           )}
-        </>
+        </div>
       );
 
     case MediaStatus.PENDING:
       return (
-        <>
+        <div>
           <Tooltip content={mediaLinkDescription}>
             <Badge badgeType="warning" href={mediaLink}>
               {intl.formatMessage(is4k ? messages.status4k : messages.status, {
@@ -377,11 +375,9 @@ const StatusBadge = ({
             </Badge>
           </Tooltip>
           {msg && (
-            <span className="pt-1.5 block text-xs text-gray-400">
-              {msg}
-            </span>
+            <div className="mt-1 text-xs text-gray-400">{msg}</div>
           )}
-        </>
+        </div>
       );
 
     case MediaStatus.BLOCKLISTED:
