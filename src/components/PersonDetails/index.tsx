@@ -8,11 +8,6 @@ import TitleCard from '@app/components/TitleCard';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
-import {
-  DEFAULT_PERSON_CREDIT_SORT,
-  sortPersonCredits,
-  type PersonCreditSort,
-} from '@app/utils/personCreditHelpers';
 import { BarsArrowDownIcon, CircleStackIcon } from '@heroicons/react/24/solid';
 import type { PersonCombinedCreditsResponse } from '@server/interfaces/api/personInterfaces';
 import type {
@@ -20,6 +15,11 @@ import type {
   PersonCreditCrew,
   PersonDetails as PersonDetailsType,
 } from '@server/models/Person';
+import {
+  DEFAULT_PERSON_CREDIT_SORT,
+  sortPersonCredits,
+  type PersonCreditSort,
+} from '@server/utils/personCreditHelpers';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
