@@ -359,7 +359,7 @@ const StatusBadge = ({
             </Badge>
           </Tooltip>
           {msg && (
-            <span className="mt-0.5 block text-xs text-gray-400">
+            <span className="mt-2 block text-xs text-gray-400">
               {msg}
             </span>
           )}
@@ -377,7 +377,7 @@ const StatusBadge = ({
             </Badge>
           </Tooltip>
           {msg && (
-            <span className="mt-0.5 block text-xs text-gray-400">
+            <span className="mt-2 block text-xs text-gray-400">
               {msg}
             </span>
           )}
