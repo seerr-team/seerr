@@ -13,9 +13,18 @@ export class AddStatusMessage1710000000000 implements MigrationInterface {
         isNullable: true,
       })
     );
+    await queryRunner.addColumn(
+      'media',
+      new TableColumn({
+        name: 'statusMessage4k',
+        type: 'varchar',
+        isNullable: true,
+      })
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.dropColumn('media', 'statusMessage4k');
     await queryRunner.dropColumn('media', 'statusMessage');
   }
 }
