@@ -52,20 +52,18 @@ const messages = defineMessages('components.Settings.Notifications', {
     'Sign encrypted email messages using <OpenPgpLink>OpenPGP</OpenPgpLink>',
   validationPgpPassword: 'You must provide a PGP password',
 
-  // TODO:  when we figure out google oauth2, we need to populate these fields from the API
   // TODO:  need to add these to 18n files
   // oAuth2
   authType: 'Authentication Type', // dropdown label
-  authTypeBasic: 'Basic', //dropdown option
-  authTypeOAuth2: 'OAuth2', //dropdown option
-  oAuth2ClientId: 'OAuth2 Client ID', //text box
-  oAuth2ClientSecret: 'OAuth2 Client Secret', //text box
-  oAuth2RefreshToken: 'OAuth2 Refresh Token', //textarea?
-  oAuth2TokenUrl: 'OAuth2 Token Url', //textarea?
-  oAuth2Scope: 'OAuth2 Scope', //text box
+  authTypeBasic: 'Basic',
+  authTypeOAuth2: 'OAuth2',
+  oAuth2ClientId: 'OAuth2 Client ID',
+  oAuth2ClientSecret: 'OAuth2 Client Secret',
+  oAuth2RefreshToken: 'OAuth2 Refresh Token',
+  oAuth2TokenUrl: 'OAuth2 Token Url',
+  oAuth2Scope: 'OAuth2 Scope',
   oAuth2ScopeTip:
     'The scope to request when exchanging the refresh token for an access token (e.g. https://outlook.office365.com/SMTP.Send offline_access)',
-  // need these if it's not basic
   validationOAuth2ClientIdRequired: 'You must provide an OAuth2 Client ID',
   validationOAuth2ClientSecretRequired:
     'You must provide an OAuth2 Client Secret',
@@ -145,32 +143,42 @@ const NotificationsEmail = () => {
             .required(intl.formatMessage(messages.validationPgpPassword)),
         otherwise: (schema) => schema.nullable(),
       }),
-      // TODO:  when we figure out google oauth2, we need to add validation
-      // for the new fields that are required when authType is oauth2
-      // oAuth2ClientId: Yup.string()
-      //   .when('authType', {
-      //     is: (value: unknown) => value === 'OAuth2',
-      //     then: Yup.string()
-      //       .nullable()
-      //       .required(intl.formatMessage(messages.validationOAuth2ClientIdRequired)),
-      //     otherwise: Yup.string().nullable(),
-      //   }),
-      // oAuth2ClientSecret: Yup.string()
-      //   .when('authType', {
-      //     is: (value: unknown) => value === 'OAuth2',
-      //     then: Yup.string()
-      //       .nullable()
-      //       .required(intl.formatMessage(messages.validationOAuth2ClientSecretRequired)),
-      //     otherwise: Yup.string().nullable(),
-      //   }),
-      // oAuth2RefreshToken: Yup.string()
-      //   .when('authType', {
-      //     is: (value: unknown) => value === 'OAuth2',
-      //     then: Yup.string()
-      //       .nullable()
-      //       .required(intl.formatMessage(messages.validationOAuth2RefreshTokenRequired)),
-      //     otherwise: Yup.string().nullable(),
-      //   }),
+      oAuth2ClientId: Yup.string().when('authType', {
+        is: (value: unknown) => value === 'oauth2',
+        then: Yup.string()
+          .nullable()
+          .required(
+            intl.formatMessage(messages.validationOAuth2ClientIdRequired)
+          ),
+        otherwise: Yup.string().nullable(),
+      }),
+      oAuth2ClientSecret: Yup.string().when('authType', {
+        is: (value: unknown) => value === 'oauth2',
+        then: Yup.string()
+          .nullable()
+          .required(
+            intl.formatMessage(messages.validationOAuth2ClientSecretRequired)
+          ),
+        otherwise: Yup.string().nullable(),
+      }),
+      oAuth2RefreshToken: Yup.string().when('authType', {
+        is: (value: unknown) => value === 'oauth2',
+        then: Yup.string()
+          .nullable()
+          .required(
+            intl.formatMessage(messages.validationOAuth2RefreshTokenRequired)
+          ),
+        otherwise: Yup.string().nullable(),
+      }),
+      oAuth2TokenUrl: Yup.string().when('authType', {
+        is: (value: unknown) => value === 'oauth2',
+        then: Yup.string()
+          .nullable()
+          .required(
+            intl.formatMessage(messages.validationOAuth2TokenUrlRequired)
+          ),
+        otherwise: Yup.string().nullable(),
+      }),
     },
     [['pgpPrivateKey', 'pgpPassword']]
   );
@@ -549,6 +557,7 @@ const NotificationsEmail = () => {
                 <div className="form-row">
                   <label htmlFor="oAuth2ClientId" className="text-label">
                     {intl.formatMessage(messages.oAuth2ClientId)}
+                    <span className="label-required">*</span>
                   </label>
                   <div className="form-input-area">
                     <div className="form-input-field">
@@ -558,11 +567,17 @@ const NotificationsEmail = () => {
                         type="text"
                       />
                     </div>
+                    {errors.oAuth2ClientId &&
+                      touched.oAuth2ClientId &&
+                      typeof errors.oAuth2ClientId === 'string' && (
+                        <div className="error">{errors.oAuth2ClientId}</div>
+                      )}
                   </div>
                 </div>
                 <div className="form-row">
                   <label htmlFor="oAuth2ClientSecret" className="text-label">
                     {intl.formatMessage(messages.oAuth2ClientSecret)}
+                    <span className="label-required">*</span>
                   </label>
                   <div className="form-input-area">
                     <div className="form-input-field">
@@ -572,11 +587,18 @@ const NotificationsEmail = () => {
                         type="text"
                       />
                     </div>
+                    11
+                    {errors.oAuth2ClientSecret &&
+                      touched.oAuth2ClientId &&
+                      typeof errors.oAuth2ClientSecret === 'string' && (
+                        <div className="error">{errors.oAuth2ClientSecret}</div>
+                      )}
                   </div>
                 </div>
                 <div className="form-row">
                   <label htmlFor="oAuth2RefreshToken" className="text-label">
                     {intl.formatMessage(messages.oAuth2RefreshToken)}
+                    <span className="label-required">*</span>
                   </label>
                   <div className="form-input-area">
                     <div className="form-input-field">
@@ -587,13 +609,17 @@ const NotificationsEmail = () => {
                         rows="5"
                       />
                     </div>
+                    {errors.oAuth2RefreshToken &&
+                      touched.oAuth2RefreshToken &&
+                      typeof errors.oAuth2RefreshToken === 'string' && (
+                        <div className="error">{errors.oAuth2RefreshToken}</div>
+                      )}
                   </div>
                 </div>
                 <div className="form-row">
                   <label htmlFor="oAuth2TokenUrl" className="text-label">
                     {intl.formatMessage(messages.oAuth2TokenUrl)}
                     <span className="label-required">*</span>
-                    <span className="label-tip">????????</span>
                   </label>
                   <div className="form-input-area">
                     <div className="form-input-field">
@@ -609,6 +635,11 @@ const NotificationsEmail = () => {
                         data-bwignore="true"
                       />
                     </div>
+                    {errors.oAuth2TokenUrl &&
+                      touched.oAuth2TokenUrl &&
+                      typeof errors.oAuth2TokenUrl === 'string' && (
+                        <div className="error">{errors.oAuth2TokenUrl}</div>
+                      )}
                   </div>
                 </div>
                 <div className="form-row">
