@@ -300,12 +300,13 @@ class EmailAgent
         logger.debug('Sending email notification', {
           label: 'Notifications',
           recipient: payload.notifyUser.displayName,
+          emailAddress: payload.notifyUser.email,
           type: Notification[type],
           subject: payload.subject,
         });
 
         try {
-          const email = new PreparedEmail(
+          const email = await PreparedEmail.create(
             this.getSettings(),
             payload.notifyUser.settings?.pgpKey
           );
@@ -325,6 +326,7 @@ class EmailAgent
             logger.warn('Invalid email address provided for user', {
               label: 'Notifications',
               recipient: payload.notifyUser.displayName,
+              emailAddress: payload.notifyUser.email,
               type: Notification[type],
               subject: payload.subject,
             });
@@ -363,12 +365,13 @@ class EmailAgent
             logger.debug('Sending email notification', {
               label: 'Notifications',
               recipient: user.displayName,
+              emailAddress: user.email,
               type: Notification[type],
               subject: payload.subject,
             });
 
             try {
-              const email = new PreparedEmail(
+              const email = await PreparedEmail.create(
                 this.getSettings(),
                 user.settings?.pgpKey
               );
@@ -386,6 +389,7 @@ class EmailAgent
                 logger.warn('Invalid email address provided for user', {
                   label: 'Notifications',
                   recipient: user.displayName,
+                  emailAddress: user.email,
                   type: Notification[type],
                   subject: payload.subject,
                 });
@@ -394,6 +398,7 @@ class EmailAgent
               logger.error('Error sending email notification', {
                 label: 'Notifications',
                 recipient: user.displayName,
+                emailAddress: user.email,
                 type: Notification[type],
                 subject: payload.subject,
                 errorMessage: e.message,

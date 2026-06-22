@@ -259,6 +259,13 @@ export interface NotificationAgentEmail extends NotificationAgentConfig {
     usePublicLogo: boolean;
     pgpPrivateKey?: string;
     pgpPassword?: string;
+    // default to basic to not break existing setups
+    authType: 'basic' | 'oauth2';
+    oAuth2ClientId?: string;
+    oAuth2ClientSecret?: string;
+    oAuth2RefreshToken?: string;
+    oAuth2TokenUrl?: string;
+    oAuth2Scope?: string;
   };
 }
 
@@ -475,6 +482,7 @@ class Settings {
               allowSelfSigned: false,
               senderName: 'Seerr',
               usePublicLogo: false,
+              authType: 'basic',
             },
           },
           discord: {

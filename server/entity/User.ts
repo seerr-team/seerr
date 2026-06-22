@@ -205,7 +205,9 @@ export class User {
         label: 'User Management',
       });
 
-      const email = new PreparedEmail(getSettings().notifications.agents.email);
+      const email = await PreparedEmail.create(
+        getSettings().notifications.agents.email
+      );
       await email.send({
         template: path.join(__dirname, '../templates/email/generatedpassword'),
         message: {
@@ -242,7 +244,9 @@ export class User {
       logger.info(`Sending reset password email for ${this.email}`, {
         label: 'User Management',
       });
-      const email = new PreparedEmail(getSettings().notifications.agents.email);
+      const email = await PreparedEmail.create(
+        getSettings().notifications.agents.email
+      );
       await email.send({
         template: path.join(__dirname, '../templates/email/resetpassword'),
         message: {
