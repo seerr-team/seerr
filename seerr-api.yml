@@ -1603,6 +1603,28 @@ components:
             allowSelfSigned:
               type: boolean
               example: false
+            authType:
+              type: string
+              enum: [basic, oauth2]
+              nullable: true
+            oAuth2UserName:
+              type: string
+              nullable: true
+            oAuth2ClientId:
+              type: string
+              nullable: true
+            oAuth2ClientSecret:
+              type: string
+              nullable: true
+            oAuth2RefreshToken:
+              type: string
+              nullable: true
+            oAuth2TokenUrl:
+              type: string
+              nullable: true
+            oAuth2Scope:
+              type: string
+              nullable: true
     Job:
       type: object
       properties:
