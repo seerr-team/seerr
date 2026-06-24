@@ -467,24 +467,38 @@ class BaseScanner<T> {
           (s) => s.seasonNumber !== 0
         );
 
-        // Check the actual season objects instead scanner input
-        // to determine overall availability status
-        // UNKNOWN seasons are treated as neutral (no signal) rather than
-        // blockers, so a stale/orphan placeholder season can't hold the
-        // show at PARTIALLY_AVAILABLE indefinitely.
-        const isAllStandardSeasonsAvailable =
-          nonSpecialSeasons.length > 0 &&
-          nonSpecialSeasons
-            .filter((s) => s.status !== MediaStatus.UNKNOWN)
-            .every((s) => s.status === MediaStatus.AVAILABLE) &&
-          nonSpecialSeasons.some((s) => s.status === MediaStatus.AVAILABLE);
+        // DB-only seasons block the rollup unless UNKNOWN (orphan placeholders
+        // can never be revisited by a scan and would pin the show forever).
+        const countsTowardsRollup = (
+          s: Season,
+          statusKey: 'status' | 'status4k'
+        ): boolean => {
+          const scannedSeason = seasons.find(
+            (season) => season.seasonNumber === s.seasonNumber
+          );
 
+          if (scannedSeason) {
+            return scannedSeason.totalEpisodes > 0;
+          }
+
+          return s[statusKey] !== MediaStatus.UNKNOWN;
+        };
+
+        const standardSeasonsForRollup = nonSpecialSeasons.filter((s) =>
+          countsTowardsRollup(s, 'status')
+        );
+        const isAllStandardSeasonsAvailable =
+          standardSeasonsForRollup.length > 0 &&
+          standardSeasonsForRollup.every(
+            (s) => s.status === MediaStatus.AVAILABLE
+          );
+
+        const seasons4kForRollup = nonSpecialSeasons.filter((s) =>
+          countsTowardsRollup(s, 'status4k')
+        );
         const isAll4kSeasonsAvailable =
-          nonSpecialSeasons.length > 0 &&
-          nonSpecialSeasons
-            .filter((s) => s.status4k !== MediaStatus.UNKNOWN)
-            .every((s) => s.status4k === MediaStatus.AVAILABLE) &&
-          nonSpecialSeasons.some((s) => s.status4k === MediaStatus.AVAILABLE);
+          seasons4kForRollup.length > 0 &&
+          seasons4kForRollup.every((s) => s.status4k === MediaStatus.AVAILABLE);
 
         media.status = isAllStandardSeasonsAvailable
           ? MediaStatus.AVAILABLE
@@ -529,19 +543,18 @@ class BaseScanner<T> {
           (s) => s.seasonNumber !== 0
         );
 
+        const newSeasonsForRollup = nonSpecialNewSeasons.filter(
+          (s) =>
+            (seasons.find((season) => season.seasonNumber === s.seasonNumber)
+              ?.totalEpisodes ?? 0) > 0
+        );
         const isAllStandardSeasonsAvailable =
-          nonSpecialNewSeasons.length > 0 &&
-          nonSpecialNewSeasons
-            .filter((s) => s.status !== MediaStatus.UNKNOWN)
-            .every((s) => s.status === MediaStatus.AVAILABLE) &&
-          nonSpecialNewSeasons.some((s) => s.status === MediaStatus.AVAILABLE);
+          newSeasonsForRollup.length > 0 &&
+          newSeasonsForRollup.every((s) => s.status === MediaStatus.AVAILABLE);
 
         const isAll4kSeasonsAvailable =
-          nonSpecialNewSeasons.length > 0 &&
-          nonSpecialNewSeasons
-            .filter((s) => s.status4k !== MediaStatus.UNKNOWN)
-            .every((s) => s.status4k === MediaStatus.AVAILABLE) &&
-          nonSpecialNewSeasons.some(
+          newSeasonsForRollup.length > 0 &&
+          newSeasonsForRollup.every(
             (s) => s.status4k === MediaStatus.AVAILABLE
           );
 

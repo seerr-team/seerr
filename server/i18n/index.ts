@@ -1,4 +1,5 @@
 import { createIntl, createIntlCache } from '@formatjs/intl';
+import { getSettings } from '@server/lib/settings';
 import type { AvailableLocale } from '@server/types/languages';
 import { availableLocales } from '@server/types/languages';
 import fs from 'fs';
@@ -38,7 +39,10 @@ export function initI18n(): void {
 }
 
 export function getIntl(locale?: AvailableLocale): IntlInstance {
-  return intls.get(locale ?? 'en') || intls.get('en')!;
+  // "Default" stores a falsy locale, so fall back to the server language, then English
+  const serverLocale = getSettings().main.locale as AvailableLocale;
+  const resolved = locale || serverLocale || 'en';
+  return intls.get(resolved) || intls.get('en')!;
 }
 
 type MessageDescriptorMap<T extends Record<string, string>> = {

@@ -158,13 +158,31 @@ class SonarrScanner
       if (!(metadataProvider instanceof TheMovieDb)) {
         tvShow = await metadataProvider.getTvShow({ tvId: tmdbId });
       }
+
       const settings = getSettings();
 
-      const filteredSeasons = sonarrSeries.seasons.filter(
-        (sn) =>
-          tvShow.seasons.find((s) => s.season_number === sn.seasonNumber) &&
-          (!settings.main.enableSpecialEpisodes ? sn.seasonNumber !== 0 : true)
-      );
+      const filteredSeasons = tvShow.seasons
+        .filter(
+          (sn) => settings.main.enableSpecialEpisodes || sn.season_number !== 0
+        )
+        .map((season) => {
+          const sonarrSeason = sonarrSeries.seasons.find(
+            (s) => s.seasonNumber === season.season_number
+          );
+          if (!sonarrSeason) {
+            return {
+              seasonNumber: season.season_number,
+              episodeCount: season.episode_count,
+              monitored: false,
+              statistics: {
+                episodeFileCount: 0,
+                totalEpisodeCount: season.episode_count,
+              },
+            };
+          } else {
+            return sonarrSeason;
+          }
+        });
 
       for (const season of filteredSeasons) {
         const totalAvailableEpisodes = season.statistics?.episodeFileCount ?? 0;

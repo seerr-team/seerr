@@ -101,7 +101,7 @@ const UserPushoverSettings = () => {
         try {
           await axios.post(`/api/v1/user/${user?.id}/settings/notifications`, {
             pgpKey: data?.pgpKey,
-            discordId: data?.discordId,
+            discordIds: data?.discordIds,
             pushbulletAccessToken: data?.pushbulletAccessToken,
             pushoverApplicationToken: values.pushoverApplicationToken,
             pushoverUserKey: values.pushoverUserKey,

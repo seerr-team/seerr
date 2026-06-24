@@ -3,7 +3,11 @@ import { getRepository } from '@server/datasource';
 import Issue from '@server/entity/Issue';
 import IssueComment from '@server/entity/IssueComment';
 import Media from '@server/entity/Media';
-import type { IssueResultsResponse } from '@server/interfaces/api/issueInterfaces';
+import { User } from '@server/entity/User';
+import type {
+  IssueRequestBody,
+  IssueResultsResponse,
+} from '@server/interfaces/api/issueInterfaces';
 import { Permission } from '@server/lib/permissions';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
@@ -95,17 +99,7 @@ issueRoutes.get<Record<string, string>, IssueResultsResponse>(
   }
 );
 
-issueRoutes.post<
-  Record<string, string>,
-  Issue,
-  {
-    message: string;
-    mediaId: number;
-    issueType: number;
-    problemSeason: number;
-    problemEpisode: number;
-  }
->(
+issueRoutes.post<Record<string, string>, Issue, IssueRequestBody>(
   '/',
   isAuthenticated([Permission.MANAGE_ISSUES, Permission.CREATE_ISSUES], {
     type: 'or',
@@ -118,6 +112,7 @@ issueRoutes.post<
 
     const issueRepository = getRepository(Issue);
     const mediaRepository = getRepository(Media);
+    const userRepository = getRepository(User);
 
     const media = await mediaRepository.findOne({
       where: { id: req.body.mediaId },
@@ -127,15 +122,37 @@ issueRoutes.post<
       return next({ status: 404, message: 'Media does not exist.' });
     }
 
+    let createdBy = req.user;
+
+    if (req.body.userId != null && req.body.userId !== req.user.id) {
+      if (!req.user.hasPermission(Permission.MANAGE_ISSUES)) {
+        return next({
+          status: 403,
+          message:
+            'You do not have permission to create an issue on behalf of another user.',
+        });
+      }
+
+      const user = await userRepository.findOne({
+        where: { id: req.body.userId },
+      });
+
+      if (!user) {
+        return next({ status: 404, message: 'Issue user not found' });
+      }
+
+      createdBy = user;
+    }
+
     const issue = new Issue({
-      createdBy: req.user,
+      createdBy,
       issueType: req.body.issueType,
       problemSeason: req.body.problemSeason,
       problemEpisode: req.body.problemEpisode,
       media,
       comments: [
         new IssueComment({
-          user: req.user,
+          user: createdBy,
           message: req.body.message,
         }),
       ],
@@ -143,7 +160,7 @@ issueRoutes.post<
 
     const newIssue = await issueRepository.save(issue);
 
-    return res.status(200).json(newIssue);
+    return res.status(201).json(newIssue);
   }
 );
 

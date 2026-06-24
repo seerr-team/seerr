@@ -369,9 +369,9 @@
   "components.MovieDetails.releasedate": "{releaseCount, plural, one {Data wydania} other {Daty wydania}}",
   "components.MovieDetails.viewfullcrew": "Zobacz pełną obsadę",
   "components.PermissionEdit.autoapproveDescription": "Przyznaj automatyczne zatwierdzanie wszystkich próśb o multimedia inne niż 4K.",
-  "components.RequestButton.approve4krequests": "Zatwierdź {requestCount, plural, one {Prośba} other {{requestCount} Prośby}} 4K",
+  "components.RequestButton.approve4krequests": "Zatwierdź {requestCount, plural, one {prośbę} few {{requestCount} prośby} other {{requestCount} próśb}} 4K",
   "components.Settings.RadarrModal.minimumAvailability": "Minimalna dostępność",
-  "components.RequestButton.decline4krequests": "Odrzuć {requestCount, plural, one {prośby 4K} other {{requestCount} próśb 4K}}",
+  "components.RequestButton.decline4krequests": "Odrzuć {requestCount, plural, one {prośby 4K} few {{requestCount} prośby 4K} other {{requestCount} próśb 4K}}",
   "components.NotificationTypeSelector.usermediafailedDescription": "Otrzymuj powiadomienia, gdy prośby o multimedia nie zostaną dodane do Radarr lub Sonarr.",
   "components.PermissionEdit.advancedrequest": "Zaawansowane prośby",
   "components.PermissionEdit.advancedrequestDescription": "Przyznaj uprawnienia do modyfikowania zaawansowanych opcji próśb multimedia.",
@@ -962,9 +962,6 @@
   "components.UserProfile.recentlywatched": "Ostatnio oglądane",
   "i18n.import": "Importuj",
   "i18n.importing": "Importowanie…",
-  "components.UserProfile.UserSettings.UserGeneralSettings.discordId": "ID użytkownika Discorda",
-  "components.UserProfile.UserSettings.UserGeneralSettings.discordIdTip": "<FindDiscordIdLink>Wielocyfrowy numer ID</FindDiscordIdLink> powiązany z Twoim kontem użytkownika Discord",
-  "components.UserProfile.UserSettings.UserGeneralSettings.validationDiscordId": "Musisz podać poprawne ID użytkownika Discord",
   "components.Settings.SettingsAbout.appDataPath": "Katalog danych",
   "components.StatusChecker.restartRequiredDescription": "Uruchom ponownie serwer, aby zastosować zaktualizowane ustawienia.",
   "components.StatusChecker.appUpdated": "Zaktualizowano {applicationTitle}",
@@ -1666,5 +1663,7 @@
   "components.Settings.starttyping": "Zacznij pisać, aby wyszukać.",
   "components.UserProfile.UserSettings.UserNotificationSettings.telegramMessageThreadIdTip": "Jeśli w czacie grupowym włączono tematy, możesz tutaj podać ID wątku/tematu",
   "components.UserProfile.UserSettings.UserNotificationSettings.validationTelegramMessageThreadId": "ID wątku/tematu musi być dodatnią liczbą całkowitą",
-  "components.Settings.SettingsMain.blocklistRegionTip": "Region używany do skanowania zawartości czarnej listy (niezależnie od ustawień wykrywania)"
+  "components.Settings.SettingsMain.blocklistRegionTip": "Region używany do skanowania zawartości czarnej listy (niezależnie od ustawień wykrywania)",
+  "components.Settings.Notifications.usePublicLogo": "Użyj publicznego logo Seerr zamiast logo instancji",
+  "components.Settings.Notifications.usePublicLogoTip": "Jeśli twoja instancja Seerr nie jest publicznie dostępna, włącz tę opcję, aby klienci poczty e-mail spoza Twojej sieci mogli wyświetlić obraz. Obraz zostanie pobrany z publicznego repozytorium GitHub."
 }

@@ -6,7 +6,7 @@
   "components.Discover.trending": "トレンド",
   "components.Discover.upcoming": "今後リリースされる映画",
   "components.Discover.upcomingmovies": "今後リリースされる映画",
-  "components.Layout.SearchInput.searchPlaceholder": "作品名で検索",
+  "components.Layout.SearchInput.searchPlaceholder": "映画とシリーズで検索",
   "components.Layout.Sidebar.dashboard": "ホーム",
   "components.Layout.Sidebar.requests": "リクエスト",
   "components.Layout.Sidebar.settings": "設定",
@@ -1388,8 +1388,6 @@
   "components.UserProfile.UserSettings.LinkJellyfinModal.usernameRequired": "ユーザー名を指定してください",
   "components.UserProfile.UserSettings.UserGeneralSettings.accounttype": "アカウントの種類",
   "components.UserProfile.UserSettings.UserGeneralSettings.admin": "管理",
-  "components.UserProfile.UserSettings.UserGeneralSettings.discordId": "DiscordのユーザーID",
-  "components.UserProfile.UserSettings.UserGeneralSettings.discordIdTip": "自身のDiscordユーザーアカウントに関連付けられた<FindDiscordIdLink>複数桁のID番号</FindDiscordIdLink>",
   "components.UserProfile.UserSettings.UserGeneralSettings.discoverRegion": "地域を見つける",
   "components.UserProfile.UserSettings.UserGeneralSettings.discoverRegionTip": "利用可能な地域に応じてコンテンツをフィルタリングする",
   "components.UserProfile.UserSettings.UserGeneralSettings.displayName": "表示名",
@@ -1418,7 +1416,6 @@
   "components.UserProfile.UserSettings.UserGeneralSettings.toastSettingsFailureEmailEmpty": "別のユーザーがすでにこのユーザー名を持っています。メールアドレスを設定してください",
   "components.UserProfile.UserSettings.UserGeneralSettings.toastSettingsSuccess": "設定が保存されました！",
   "components.UserProfile.UserSettings.UserGeneralSettings.user": "ユーザー",
-  "components.UserProfile.UserSettings.UserGeneralSettings.validationDiscordId": "有効なDiscordユーザーIDを指定してください",
   "components.UserProfile.UserSettings.UserGeneralSettings.validationemailformat": "有効なメールが必要です",
   "components.UserProfile.UserSettings.UserGeneralSettings.validationemailrequired": "メールアドレスが必要です",
   "components.UserProfile.UserSettings.UserLinkedAccountsSettings.deleteFailed": "リンクされたアカウントを削除できません。",
@@ -1666,5 +1663,7 @@
   "components.UserList.importedPlexUsersNoPassword": "インポートされたユーザーには{applicationTitle}パスワードが設定されていません。Plexサインインを無効にすると、ユーザーはプロフィールから、またはパスワードリセットリンクを使用してパスワードを設定する必要があります。",
   "components.UserList.importedUsersNoPassword": "インポートされたユーザーには、{applicationTitle} のパスワードが設定されていません。{mediaServerName} のサインインを無効にすると、ユーザーはプロフィールから、またはパスワードリセットリンクを使用してパスワードを設定する必要があります。",
   "components.UserProfile.UserSettings.UserPasswordChange.localPasswordDescription": "このパスワードは{applicationTitle}のローカルログインフォームでサインインする際に使用します。メディアサーバーのパスワードとは別のものです。",
-  "i18n.notificationLocale": "通知言語"
+  "i18n.notificationLocale": "通知言語",
+  "components.Settings.Notifications.usePublicLogo": "インスタンスロゴの代わりに公開されているSeerrロゴを使用する",
+  "components.Settings.Notifications.usePublicLogoTip": "Seerrインスタンスが一般公開されていない場合は、このオプションを有効にすることでネットワーク外のメールクライアントから画像を表示できるようになります。画像は公開されているGitHubリポジトリから取得されます。"
 }

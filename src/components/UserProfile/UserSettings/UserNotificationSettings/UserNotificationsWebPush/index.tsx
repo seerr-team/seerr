@@ -74,7 +74,9 @@ const UserWebPushSettings = () => {
       userAgent: string;
       createdAt: Date;
     }[]
-  >(`/api/v1/user/${user?.id}/pushSubscriptions`, { revalidateOnMount: true });
+  >(user ? `/api/v1/user/${user.id}/pushSubscriptions` : null, {
+    revalidateOnMount: true,
+  });
 
   // Subscribes to the push manager
   // Will only add to the database if subscribing for the first time
@@ -256,7 +258,7 @@ const UserWebPushSettings = () => {
               `/api/v1/user/${user?.id}/settings/notifications`,
               {
                 pgpKey: data?.pgpKey,
-                discordId: data?.discordId,
+                discordIds: data?.discordIds,
                 pushbulletAccessToken: data?.pushbulletAccessToken,
                 pushoverApplicationToken: data?.pushoverApplicationToken,
                 pushoverUserKey: data?.pushoverUserKey,

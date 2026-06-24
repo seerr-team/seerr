@@ -740,7 +740,9 @@ const SettingsJobs = () => {
         <p className="description">
           {intl.formatMessage(messages.imagecacheDescription, {
             code: (msg: React.ReactNode) => (
-              <code className="bg-gray-800/50">{msg}</code>
+              <code key="code-block" className="bg-gray-800/50">
+                {msg}
+              </code>
             ),
             appDataPath: appData ? appData.appDataPath : '/app/config',
           })}
