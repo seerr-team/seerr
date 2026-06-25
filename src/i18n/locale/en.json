@@ -404,6 +404,8 @@
   "components.PermissionEdit.adminDescription": "Full administrator access. Bypasses all other permission checks.",
   "components.PermissionEdit.advancedrequest": "Advanced Requests",
   "components.PermissionEdit.advancedrequestDescription": "Grant permission to modify advanced media request options.",
+  "components.PermissionEdit.advancedrequestLanguage": "Advanced Requests: Language Profile",
+  "components.PermissionEdit.advancedrequestLanguageDescription": "Grant permission to override only the language profile on series requests.",
   "components.PermissionEdit.autoapprove": "Auto-Approve",
   "components.PermissionEdit.autoapprove4k": "Auto-Approve 4K",
   "components.PermissionEdit.autoapprove4kDescription": "Grant automatic approval for all 4K media requests.",
