@@ -694,6 +694,10 @@ class AvailabilitySync {
           });
         }
 
+        if (radarr && radarr.tmdbId !== media.tmdbId) {
+          continue;
+        }
+
         if (radarr && radarr.hasFile) {
           const resolution =
             radarr?.movieFile?.mediaInfo?.resolution?.split('x');
@@ -751,18 +755,26 @@ class AvailabilitySync {
 
         if (media.externalServiceId && !is4k) {
           sonarr = await sonarrAPI.getSeriesById(media.externalServiceId);
-          this.sonarrSeasonsCache[`${server.id}-${media.externalServiceId}`] =
-            sonarr.seasons;
         }
 
         if (media.externalServiceId4k && is4k) {
           sonarr = await sonarrAPI.getSeriesById(media.externalServiceId4k);
-          this.sonarrSeasonsCache[`${server.id}-${media.externalServiceId4k}`] =
-            sonarr.seasons;
         }
 
-        if (sonarr && sonarr.statistics.episodeFileCount > 0) {
-          existsInSonarr = true;
+        if (sonarr && media.tvdbId != null && sonarr.tvdbId !== media.tvdbId) {
+          continue;
+        }
+
+        if (sonarr) {
+          const externalServiceId = is4k
+            ? media.externalServiceId4k
+            : media.externalServiceId;
+          this.sonarrSeasonsCache[`${server.id}-${externalServiceId}`] =
+            sonarr.seasons;
+
+          if (sonarr.statistics.episodeFileCount > 0) {
+            existsInSonarr = true;
+          }
         }
       } catch (ex) {
         if (!ex.message.includes('404')) {
