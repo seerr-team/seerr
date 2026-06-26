@@ -5,6 +5,7 @@ import { MediaServerType, ServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
+import { UserSettings } from '@server/entity/UserSettings';
 import { startJobs } from '@server/job/schedule';
 import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
@@ -180,6 +181,13 @@ authRoutes.post('/plex', async (req, res, next) => {
             userType: UserType.PLEX,
           });
 
+          // Apply default watchlist-sync flags so new users don't hit
+          // the silent-skip in WatchlistSync.syncUserWatchlist. Settings
+          // are cascade-persisted by the User -> UserSettings relation.
+          user.settings = new UserSettings({
+            watchlistSyncMovies: settings.main.defaultWatchlistSyncMovies,
+            watchlistSyncTv: settings.main.defaultWatchlistSyncTv,
+          });
           await userRepository.save(user);
         }
       } else {
@@ -479,6 +487,14 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       if (passedExplicitPassword) {
         await user.setPassword(body.password ?? '');
       }
+
+      // Apply default watchlist-sync flags so new users don't hit
+      // the silent-skip in WatchlistSync.syncUserWatchlist. Settings
+      // are cascade-persisted by the User -> UserSettings relation.
+      user.settings = new UserSettings({
+        watchlistSyncMovies: settings.main.defaultWatchlistSyncMovies,
+        watchlistSyncTv: settings.main.defaultWatchlistSyncTv,
+      });
       await userRepository.save(user);
     }
 

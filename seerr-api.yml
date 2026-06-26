@@ -247,6 +247,12 @@ components:
         defaultPermissions:
           type: number
           example: 32
+        defaultWatchlistSyncMovies:
+          type: boolean
+          example: false
+        defaultWatchlistSyncTv:
+          type: boolean
+          example: false
         enableSpecialEpisodes:
           type: boolean
           example: false

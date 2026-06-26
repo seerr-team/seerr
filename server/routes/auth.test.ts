@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
-import { before, beforeEach, describe, it, mock } from 'node:test';
+import { afterEach, before, beforeEach, describe, it, mock } from 'node:test';
 
+import PlexTvAPI from '@server/api/plextv';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
+import { UserSettings } from '@server/entity/UserSettings';
 import PreparedEmail from '@server/lib/email';
 import { getSettings } from '@server/lib/settings';
 import { checkUser } from '@server/middleware/auth';
@@ -393,5 +395,152 @@ describe('POST /auth/reset-password/:guid', () => {
       .post(`/auth/reset-password/${guid}`)
       .send({ password: 'anotherpassword' });
     assert.strictEqual(second.status, 500);
+  });
+});
+
+describe('POST /auth/plex (new user creation)', () => {
+  // The PlexTvAPI is constructed inside the route handler, so we mock its
+  // prototype methods. checkUserAccess returning true makes the route create
+  // a new Seerr user; getUser returns the Plex.tv account that the auth
+  // token belongs to.
+  const PLEX_ACCOUNT_ID = 99999;
+  const PLEX_USERNAME = 'newplexuser';
+  const PLEX_EMAIL = 'newplexuser@seerr.dev';
+
+  beforeEach(() => {
+    const settings = getSettings();
+    settings.main.newPlexLogin = true;
+    settings.main.mediaServerType = 1; // PLEX
+    settings.main.mediaServerLogin = true;
+
+    mock.method(PlexTvAPI.prototype, 'getUser', async () => ({
+      id: PLEX_ACCOUNT_ID,
+      uuid: 'test-uuid',
+      email: PLEX_EMAIL,
+      joined_at: '2024-01-01',
+      username: PLEX_USERNAME,
+      title: PLEX_USERNAME,
+      thumb: 'https://plex.tv/users/avatar.png',
+      hasPassword: true,
+      authToken: 'plex-auth-token',
+      subscription: { active: false, status: '', plan: '', features: [] },
+      roles: { roles: [] },
+      entitlements: [],
+    }));
+    mock.method(PlexTvAPI.prototype, 'checkUserAccess', async () => true);
+  });
+
+  afterEach(() => {
+    mock.restoreAll();
+  });
+
+  it('propagates defaultWatchlistSync flags = false to a newly created user', async () => {
+    const settings = getSettings();
+    settings.main.defaultWatchlistSyncMovies = false;
+    settings.main.defaultWatchlistSyncTv = false;
+
+    const res = await request(app)
+      .post('/auth/plex')
+      .send({ authToken: 'plex-auth-token' });
+
+    assert.strictEqual(
+      res.status,
+      200,
+      `unexpected status ${res.status}: ${JSON.stringify(res.body)}`
+    );
+
+    const userRepo = getRepository(User);
+    const created = await userRepo.findOneOrFail({
+      where: { email: PLEX_EMAIL },
+      relations: { settings: true },
+    });
+
+    assert.ok(created.settings, 'expected user.settings to be persisted');
+    assert.strictEqual(created.settings.watchlistSyncMovies, false);
+    assert.strictEqual(created.settings.watchlistSyncTv, false);
+  });
+
+  it('propagates defaultWatchlistSync flags = true to a newly created user', async () => {
+    const settings = getSettings();
+    settings.main.defaultWatchlistSyncMovies = true;
+    settings.main.defaultWatchlistSyncTv = true;
+
+    const res = await request(app)
+      .post('/auth/plex')
+      .send({ authToken: 'plex-auth-token' });
+
+    assert.strictEqual(res.status, 200);
+
+    const userRepo = getRepository(User);
+    const created = await userRepo.findOneOrFail({
+      where: { email: PLEX_EMAIL },
+      relations: { settings: true },
+    });
+
+    assert.ok(created.settings, 'expected user.settings to be persisted');
+    assert.strictEqual(created.settings.watchlistSyncMovies, true);
+    assert.strictEqual(created.settings.watchlistSyncTv, true);
+  });
+
+  it('propagates mixed defaultWatchlistSync flags (movies=true, tv=false)', async () => {
+    const settings = getSettings();
+    settings.main.defaultWatchlistSyncMovies = true;
+    settings.main.defaultWatchlistSyncTv = false;
+
+    const res = await request(app)
+      .post('/auth/plex')
+      .send({ authToken: 'plex-auth-token' });
+
+    assert.strictEqual(res.status, 200);
+
+    const userRepo = getRepository(User);
+    const created = await userRepo.findOneOrFail({
+      where: { email: PLEX_EMAIL },
+      relations: { settings: true },
+    });
+
+    assert.ok(created.settings);
+    assert.strictEqual(created.settings.watchlistSyncMovies, true);
+    assert.strictEqual(created.settings.watchlistSyncTv, false);
+  });
+
+  it('does not overwrite settings when an existing user signs in via Plex', async () => {
+    // Pre-create a user with explicit non-default sync settings, then sign
+    // them in via Plex - their existing settings should be preserved (the
+    // defaults are only applied on user CREATION).
+    const userRepo = getRepository(User);
+    const existing = new User({
+      email: PLEX_EMAIL,
+      plexUsername: PLEX_USERNAME,
+      plexId: PLEX_ACCOUNT_ID,
+      plexToken: 'old-token',
+      permissions: 32,
+      avatar: '',
+      userType: 1,
+    });
+    await userRepo.save(existing);
+    existing.settings = new UserSettings({
+      watchlistSyncMovies: true,
+      watchlistSyncTv: true,
+    });
+    await userRepo.save(existing);
+
+    // Set MainSettings defaults to false; existing user's true should win
+    const settings = getSettings();
+    settings.main.defaultWatchlistSyncMovies = false;
+    settings.main.defaultWatchlistSyncTv = false;
+
+    const res = await request(app)
+      .post('/auth/plex')
+      .send({ authToken: 'plex-auth-token' });
+
+    assert.strictEqual(res.status, 200);
+
+    const refreshed = await userRepo.findOneOrFail({
+      where: { email: PLEX_EMAIL },
+      relations: { settings: true },
+    });
+    assert.strictEqual(refreshed.settings?.watchlistSyncMovies, true);
+    assert.strictEqual(refreshed.settings?.watchlistSyncTv, true);
   });
 });

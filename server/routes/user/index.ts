@@ -9,6 +9,7 @@ import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import { User } from '@server/entity/User';
 import { UserPushSubscription } from '@server/entity/UserPushSubscription';
+import { UserSettings } from '@server/entity/UserSettings';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { WatchlistResponse } from '@server/interfaces/api/discoverInterfaces';
 import type {
@@ -707,6 +708,10 @@ router.post(
                 avatar: account.thumb,
                 userType: UserType.PLEX,
               });
+              newUser.settings = new UserSettings({
+                watchlistSyncMovies: settings.main.defaultWatchlistSyncMovies,
+                watchlistSyncTv: settings.main.defaultWatchlistSyncTv,
+              });
               await userRepository.save(newUser);
               createdUsers.push(newUser);
             }
@@ -787,6 +792,10 @@ router.post(
                 : UserType.EMBY,
           });
 
+          newUser.settings = new UserSettings({
+            watchlistSyncMovies: settings.main.defaultWatchlistSyncMovies,
+            watchlistSyncTv: settings.main.defaultWatchlistSyncTv,
+          });
           await userRepository.save(newUser);
           createdUsers.push(newUser);
         }
