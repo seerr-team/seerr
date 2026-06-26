@@ -77,6 +77,7 @@ const RequestButton = ({
   const active4kRequests = media?.requests.filter(
     (request) => request.status === MediaRequestStatus.PENDING && request.is4k
   );
+  const [declineTargets, setDeclineTargets] = useState<MediaRequest[]>([]);
 
   // Current user's pending request, or the first pending request
   const activeRequest = useMemo(() => {
@@ -163,6 +164,7 @@ const RequestButton = ({
           id: 'decline-request',
           text: intl.formatMessage(messages.declinerequest),
           action: () => {
+            setDeclineTargets([activeRequest]);
             setShowDeclineCommentModal(true);
           },
           svg: <XMarkIcon />,
@@ -192,6 +194,7 @@ const RequestButton = ({
           }),
           action: () => {
             setShowDeclineCommentModal(true);
+            setDeclineTargets(activeRequests);
           },
           svg: <XMarkIcon />,
         }
@@ -234,6 +237,7 @@ const RequestButton = ({
           text: intl.formatMessage(messages.declinerequest4k),
           action: () => {
             setShowDeclineCommentModal(true);
+            setDeclineTargets([active4kRequest]);
           },
           svg: <XMarkIcon />,
         }
@@ -262,6 +266,7 @@ const RequestButton = ({
           }),
           action: () => {
             setShowDeclineCommentModal(true);
+            setDeclineTargets(active4kRequests);
           },
           svg: <XMarkIcon />,
         }
@@ -393,16 +398,20 @@ const RequestButton = ({
         }}
         onCancel={() => setShowRequest4kModal(false)}
       />
-      {(activeRequest || (activeRequests && activeRequests.length > 0)) && (
+      {declineTargets.length > 0 && (
         <DeclineRequestModal
           show={showDeclineCommentModal}
-          requests={activeRequest ? [activeRequest] : activeRequests}
+          requests={declineTargets}
           type={mediaType}
-          onCancel={() => setShowDeclineCommentModal(false)}
+          onCancel={() => {
+            setShowDeclineCommentModal(false);
+            setDeclineTargets([]);
+          }}
           onComplete={() => {
             onUpdate();
             mutate('/api/v1/request/count');
             setShowDeclineCommentModal(false);
+            setDeclineTargets([]);
           }}
         />
       )}
