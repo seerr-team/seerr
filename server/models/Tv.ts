@@ -215,11 +215,11 @@ export const mapTvDetails = (
     : undefined,
   posterPath: show.poster_path,
   credits: {
-    cast: show.aggregate_credits.cast.map(mapAggregateCast),
-    crew: show.credits.crew.map(mapCrew),
+    cast: (show.aggregate_credits?.cast ?? []).map(mapAggregateCast),
+    crew: (show.credits?.crew ?? []).map(mapCrew),
   },
   externalIds: mapExternalIds(show.external_ids),
-  keywords: show.keywords.results.map((keyword) => ({
+  keywords: (show.keywords?.results ?? []).map((keyword) => ({
     id: keyword.id,
     name: keyword.name,
   })),

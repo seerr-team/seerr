@@ -132,8 +132,8 @@ export const mapMovieDetails = (
   runtime: movie.runtime,
   tagline: movie.tagline,
   credits: {
-    cast: movie.credits.cast.map(mapCast),
-    crew: movie.credits.crew.map(mapCrew),
+    cast: (movie.credits?.cast ?? []).map(mapCast),
+    crew: (movie.credits?.crew ?? []).map(mapCrew),
   },
   collection: movie.belongs_to_collection
     ? {
@@ -146,7 +146,7 @@ export const mapMovieDetails = (
   externalIds: mapExternalIds(movie.external_ids),
   mediaInfo: media,
   watchProviders: mapWatchProviders(movie['watch/providers']?.results ?? {}),
-  keywords: movie.keywords.keywords.map((keyword) => ({
+  keywords: (movie.keywords?.keywords ?? []).map((keyword) => ({
     id: keyword.id,
     name: keyword.name,
   })),
