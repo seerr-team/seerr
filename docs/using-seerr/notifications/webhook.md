@@ -116,6 +116,7 @@ The following special variables are only included in request-related notificatio
 | Variable                                  | Value                                                                          |
 | ----------------------------------------- | ------------------------------------------------------------------------------ |
 | `{{request_id}}`                          | The request ID                                                                 |
+| `{{requestedBy_id}}`                      | The requesting user's ID                                                       |
 | `{{requestedBy_username}}`                | The requesting user's username                                                 |
 | `{{requestedBy_email}}`                   | The requesting user's email address                                            |
 | `{{requestedBy_avatar}}`                  | The requesting user's avatar URL                                               |
@@ -132,11 +133,12 @@ The following special variables are only included in issue-related notifications
 | Variable                                 | Value                                                                          |
 | ---------------------------------------- | ------------------------------------------------------------------------------ |
 | `{{issue_id}}`                           | The issue ID                                                                   |
-| `{{reportedBy_username}}`                | The requesting user's username                                                 |
-| `{{reportedBy_email}}`                   | The requesting user's email address                                            |
-| `{{reportedBy_avatar}}`                  | The requesting user's avatar URL                                               |
+| `{{reportedBy_id}}`                      | The reporting user's ID.                                                       |
+| `{{reportedBy_username}}`                | The reporting user's username                                                  |
+| `{{reportedBy_email}}`                   | The reporting user's email address                                             |
+| `{{reportedBy_avatar}}`                  | The reporting user's avatar URL                                                |
 | `{{reportedBy_settings_discordIds}}`     | The reporting user's Discord ID(s) as a JSON array (if set)                    |
-| `{{reportedBy_settings_telegramChatId}}` | The requesting user's Telegram Chat ID (if set)                                |
+| `{{reportedBy_settings_telegramChatId}}` | The reporting user's Telegram Chat ID (if set)                                 |
 
 #### Comment
 
@@ -147,6 +149,7 @@ The following special variables are only included in issue comment-related notif
 | Variable                                  | Value                                                                          |
 | ----------------------------------------- | ------------------------------------------------------------------------------ |
 | `{{comment_message}}`                     | The comment message                                                            |
+| `{{commentedBy_id}}`                      | The commenting user's ID                                                       |
 | `{{commentedBy_username}}`                | The commenting user's username                                                 |
 | `{{commentedBy_email}}`                   | The commenting user's email address                                            |
 | `{{commentedBy_avatar}}`                  | The commenting user's avatar URL                                               |
