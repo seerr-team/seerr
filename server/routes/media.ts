@@ -254,7 +254,7 @@ mediaRoutes.delete(
             mediaId: media.id,
           }
         );
-        return;
+        return res.status(204).send();
       }
 
       let service;
@@ -284,11 +284,15 @@ mediaRoutes.delete(
 
       return res.status(204).send();
     } catch (e) {
-      logger.error('Something went wrong fetching media in delete request', {
+      if (e instanceof EntityNotFoundError) {
+        return next({ status: 404, message: 'Media not found' });
+      }
+      logger.error('Something went wrong deleting media file', {
         label: 'Media',
+        mediaId: req.params.id,
         message: e.message,
       });
-      next({ status: 404, message: 'Media not found' });
+      next({ status: 500, message: 'Failed to delete media file' });
     }
   }
 );
