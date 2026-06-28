@@ -47,6 +47,7 @@ const defaultPayload = {
   '{{request}}': {
     request_id: '{{request_id}}',
     requestedBy_email: '{{requestedBy_email}}',
+    requestedBy_id: '{{requestedBy_id}}',
     requestedBy_username: '{{requestedBy_username}}',
     requestedBy_avatar: '{{requestedBy_avatar}}',
     requestedBy_jellyfinUserId: '{{requestedBy_jellyfinUserId}}',
@@ -59,6 +60,7 @@ const defaultPayload = {
     issue_type: '{{issue_type}}',
     issue_status: '{{issue_status}}',
     reportedBy_email: '{{reportedBy_email}}',
+    reportedBy_id: '{{reportedBy_id}}',
     reportedBy_username: '{{reportedBy_username}}',
     reportedBy_avatar: '{{reportedBy_avatar}}',
     reportedBy_settings_discordIds: '{{reportedBy_settings_discordIds}}',
@@ -68,6 +70,7 @@ const defaultPayload = {
   '{{comment}}': {
     comment_message: '{{comment_message}}',
     commentedBy_email: '{{commentedBy_email}}',
+    commentedBy_id: '{{commentedBy_id}}',
     commentedBy_username: '{{commentedBy_username}}',
     commentedBy_avatar: '{{commentedBy_avatar}}',
     commentedBy_settings_discordIds: '{{commentedBy_settings_discordIds}}',
