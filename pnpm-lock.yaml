@@ -9,6 +9,7 @@ overrides:
   '@types/express-session': 1.18.2
   '@types/react': 19.2.14
   '@types/react-dom': 19.2.3
+  handlebars: 4.7.9
 
 importers:
 
@@ -82,7 +83,7 @@ importers:
         version: 0.2.9
       email-templates:
         specifier: 13.0.1
-        version: 13.0.1(@babel/core@7.29.0)(handlebars@4.7.8)(mustache@4.2.0)(pug@3.0.4)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(underscore@1.13.7)
+        version: 13.0.1(@babel/core@7.29.0)(mustache@4.2.0)(pug@3.0.4)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(underscore@1.13.7)
       express:
         specifier: 5.2.1
         version: 5.2.1
@@ -1665,7 +1666,7 @@ packages:
       haml-coffee: ^1.14.1
       hamlet: ^0.3.3
       hamljs: ^0.6.2
-      handlebars: ^4.7.6
+      handlebars: 4.7.9
       hogan.js: ^3.0.2
       htmling: ^0.0.8
       jazz: ^0.0.18
@@ -4636,8 +4637,8 @@ packages:
     resolution: {integrity: sha512-AiU83cghGg2D8vAUwrMXCByejkkm4RtLwMNGmPU7VhqBYhsxcBCV0SAzRpYNbUCpTci5v46J/KFKPmDYaG2oyA==}
     engines: {node: '>=12'}
 
-  handlebars@4.7.8:
-    resolution: {integrity: sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==}
+  handlebars@4.7.9:
+    resolution: {integrity: sha512-4E71E0rpOaQuJR2A3xDZ+GM1HyWYv1clR58tC8emQNeQe3RH7MAzSbat+V0wG78LQBo6m6bzSG/L4pBuCsgnUQ==}
     engines: {node: '>=0.4.7'}
     hasBin: true
 
@@ -9611,10 +9612,9 @@ snapshots:
 
   '@jsdevtools/ono@7.1.3': {}
 
-  '@ladjs/consolidate@1.0.4(@babel/core@7.29.0)(handlebars@4.7.8)(lodash@4.18.1)(mustache@4.2.0)(pug@3.0.4)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(underscore@1.13.7)':
+  '@ladjs/consolidate@1.0.4(@babel/core@7.29.0)(lodash@4.18.1)(mustache@4.2.0)(pug@3.0.4)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(underscore@1.13.7)':
     optionalDependencies:
       '@babel/core': 7.29.0
-      handlebars: 4.7.8
       lodash: 4.18.1
       mustache: 4.2.0
       pug: 3.0.4
@@ -11983,9 +11983,9 @@ snapshots:
 
   electron-to-chromium@1.5.344: {}
 
-  email-templates@13.0.1(@babel/core@7.29.0)(handlebars@4.7.8)(mustache@4.2.0)(pug@3.0.4)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(underscore@1.13.7):
+  email-templates@13.0.1(@babel/core@7.29.0)(mustache@4.2.0)(pug@3.0.4)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(underscore@1.13.7):
     dependencies:
-      '@ladjs/consolidate': 1.0.4(@babel/core@7.29.0)(handlebars@4.7.8)(lodash@4.18.1)(mustache@4.2.0)(pug@3.0.4)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(underscore@1.13.7)
+      '@ladjs/consolidate': 1.0.4(@babel/core@7.29.0)(lodash@4.18.1)(mustache@4.2.0)(pug@3.0.4)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(underscore@1.13.7)
       '@ladjs/i18n': 10.0.0
       get-paths: 0.0.7
       html-to-text: 9.0.5
@@ -12988,7 +12988,7 @@ snapshots:
       md5-hex: 4.0.0
       type-fest: 1.4.0
 
-  handlebars@4.7.8:
+  handlebars@4.7.9:
     dependencies:
       minimist: 1.2.8
       neo-async: 2.6.2
@@ -16465,7 +16465,7 @@ snapshots:
     dependencies:
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
-      handlebars: 4.7.8
+      handlebars: 4.7.9
       jest: 30.2.0(@types/node@22.19.0)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.6.5(@swc/helpers@0.5.15))(@types/node@22.19.0)(typescript@5.4.5))
       json5: 2.2.3
       lodash.memoize: 4.1.2
