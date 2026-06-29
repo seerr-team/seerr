@@ -113,10 +113,30 @@ export class MediaRequest {
 
     const quotas = await requestUser.getQuota();
 
-    if (requestBody.mediaType === MediaType.MOVIE && quotas.movie.restricted) {
-      throw new QuotaRestrictedError('Movie Quota exceeded.');
-    } else if (requestBody.mediaType === MediaType.TV && quotas.tv.restricted) {
-      throw new QuotaRestrictedError('Series Quota exceeded.');
+    const canBypassQuota = user.hasPermission(Permission.MANAGE_REQUESTS);
+    const ignoreQuota =
+      requestBody.ignoreQuota === true &&
+      canBypassQuota &&
+      ((requestBody.mediaType === MediaType.MOVIE
+        ? quotas.movie.limit
+        : quotas.tv.limit) ?? 0) > 0;
+
+    if (!ignoreQuota) {
+      if (requestBody.ignoreQuota && !canBypassQuota) {
+        throw new RequestPermissionError(
+          'You do not have permission to bypass user quota limits.'
+        );
+      } else if (
+        requestBody.mediaType === MediaType.MOVIE &&
+        quotas.movie.restricted
+      ) {
+        throw new QuotaRestrictedError('Movie Quota exceeded.');
+      } else if (
+        requestBody.mediaType === MediaType.TV &&
+        quotas.tv.restricted
+      ) {
+        throw new QuotaRestrictedError('Series Quota exceeded.');
+      }
     }
 
     const tmdbMedia =
@@ -385,6 +405,7 @@ export class MediaRequest {
         rootFolder: rootFolder,
         tags: tags,
         isAutoRequest: options.isAutoRequest ?? false,
+        ignoreQuota,
       });
 
       await requestRepository.save(request);
@@ -448,6 +469,7 @@ export class MediaRequest {
       if (finalSeasons.length === 0) {
         throw new NoSeasonsAvailableError('No seasons available to request');
       } else if (
+        !ignoreQuota &&
         quotas.tv.limit &&
         finalSeasons.length > (quotas.tv.remaining ?? 0)
       ) {
@@ -516,6 +538,7 @@ export class MediaRequest {
             })
         ),
         isAutoRequest: options.isAutoRequest ?? false,
+        ignoreQuota,
       });
 
       await requestRepository.save(request);
@@ -621,6 +644,9 @@ export class MediaRequest {
 
   @Column({ default: false })
   public isAutoRequest: boolean;
+
+  @Column({ default: false })
+  public ignoreQuota: boolean;
 
   constructor(init?: Partial<MediaRequest>) {
     Object.assign(this, init);

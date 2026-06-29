@@ -346,5 +346,160 @@ describe('Jellyfin Scanner', () => {
         'Show should be AVAILABLE when all non-empty TMDB seasons are fully scanned, ignoring empty placeholder seasons'
       );
     });
+
+    it('should mark show as available when an orphan UNKNOWN season exists in the DB but not in TMDB', async () => {
+      configureJellyfinWithLibrary();
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 5001;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.PARTIALLY_AVAILABLE;
+      media.jellyfinMediaId = 'jf-orphan-show-id';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+        // Not present in the TMDB season list below
+        new Season({
+          seasonNumber: 2,
+          status: MediaStatus.UNKNOWN,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+      ];
+
+      await mediaRepository.save(media);
+
+      getTvShowImpl = async () =>
+        fakeTmdbShow(5001, [
+          {
+            id: 1,
+            air_date: '2024-01-01',
+            episode_count: 10,
+            name: 'Season 1',
+            overview: '',
+            season_number: 1,
+          },
+        ]);
+
+      getLibraryContentsImpl = async (id: string) => {
+        if (id === 'test-library-id') {
+          return [fakeJellyfinSeriesItem('jf-orphan-show-id')];
+        }
+        return [];
+      };
+
+      getItemDataImpl = async (id: string) => {
+        if (id === 'jf-orphan-show-id') {
+          return fakeJellyfinShowMetadata('jf-orphan-show-id', '5001');
+        }
+        return undefined;
+      };
+
+      getSeasonsImpl = async (seriesID: string) => {
+        if (seriesID === 'jf-orphan-show-id') {
+          return [fakeJellyfinSeason(1, 'jf-orphan-s1-id')];
+        }
+        return [];
+      };
+
+      getEpisodesImpl = async (_seriesID: string, seasonID: string) => {
+        if (seasonID === 'jf-orphan-s1-id') return fakeJellyfinEpisodes(10);
+        return [];
+      };
+
+      await jellyfinFullScanner.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 5001 },
+        relations: ['seasons'],
+      });
+
+      assert.strictEqual(
+        updated.status,
+        MediaStatus.AVAILABLE,
+        'Show should be AVAILABLE when the only DB season missing from TMDB is an UNKNOWN orphan placeholder'
+      );
+    });
+
+    it('should keep show partially available when a season missing from TMDB was previously available', async () => {
+      configureJellyfinWithLibrary();
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 5002;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.PARTIALLY_AVAILABLE;
+      media.jellyfinMediaId = 'jf-deleted-show-id';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+        new Season({
+          seasonNumber: 2,
+          status: MediaStatus.DELETED,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+      ];
+
+      await mediaRepository.save(media);
+
+      getTvShowImpl = async () =>
+        fakeTmdbShow(5002, [
+          {
+            id: 1,
+            air_date: '2024-01-01',
+            episode_count: 10,
+            name: 'Season 1',
+            overview: '',
+            season_number: 1,
+          },
+        ]);
+
+      getLibraryContentsImpl = async (id: string) => {
+        if (id === 'test-library-id') {
+          return [fakeJellyfinSeriesItem('jf-deleted-show-id')];
+        }
+        return [];
+      };
+
+      getItemDataImpl = async (id: string) => {
+        if (id === 'jf-deleted-show-id') {
+          return fakeJellyfinShowMetadata('jf-deleted-show-id', '5002');
+        }
+        return undefined;
+      };
+
+      getSeasonsImpl = async (seriesID: string) => {
+        if (seriesID === 'jf-deleted-show-id') {
+          return [fakeJellyfinSeason(1, 'jf-deleted-s1-id')];
+        }
+        return [];
+      };
+
+      getEpisodesImpl = async (_seriesID: string, seasonID: string) => {
+        if (seasonID === 'jf-deleted-s1-id') return fakeJellyfinEpisodes(10);
+        return [];
+      };
+
+      await jellyfinFullScanner.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 5002 },
+        relations: ['seasons'],
+      });
+
+      assert.strictEqual(
+        updated.status,
+        MediaStatus.PARTIALLY_AVAILABLE,
+        'Show should stay PARTIALLY_AVAILABLE when a DELETED season is missing from the metadata provider'
+      );
+    });
   });
 });

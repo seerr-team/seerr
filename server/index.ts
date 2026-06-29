@@ -26,11 +26,12 @@ import avatarproxy from '@server/routes/avatarproxy';
 import imageproxy from '@server/routes/imageproxy';
 import { appDataPermissions } from '@server/utils/appDataVolume';
 import { getAppVersion } from '@server/utils/appVersion';
-import createCustomProxyAgent from '@server/utils/customProxyAgent';
+import createCustomProxyAgent, {
+  setForceIpv4First,
+} from '@server/utils/customProxyAgent';
 import { initializeDnsCache } from '@server/utils/dnsCache';
 import restartFlag from '@server/utils/restartFlag';
 import { getClientIp } from '@supercharge/request-ip';
-import axios from 'axios';
 import { TypeormStore } from 'connect-typeorm/out';
 import cookieParser from 'cookie-parser';
 import type { NextFunction, Request, Response } from 'express';
@@ -39,8 +40,6 @@ import * as OpenApiValidator from 'express-openapi-validator';
 import type { Store } from 'express-session';
 import session from 'express-session';
 import fs from 'fs/promises';
-import http from 'http';
-import https from 'https';
 import yaml from 'js-yaml';
 import next from 'next';
 import path from 'path';
@@ -86,10 +85,7 @@ app
 
     initI18n();
 
-    if (settings.network.forceIpv4First) {
-      axios.defaults.httpAgent = new http.Agent({ family: 4 });
-      axios.defaults.httpsAgent = new https.Agent({ family: 4 });
-    }
+    setForceIpv4First(settings.network.forceIpv4First);
 
     // Add DNS caching
     if (settings.network.dnsCache?.enabled) {

@@ -238,6 +238,8 @@ See https://aur.archlinux.org/packages/seerr
 
 Refer to [Seerr TrueNAS Documentation](/getting-started/third-parties/truenas), all of our examples have been updated to reflect the below change.
 
+For detailed community-maintained TrueNAS SCALE walkthroughs, see the [Host Path setup](https://github.com/truenas/apps/issues/3374#issuecomment-3916418872) and [ixVolume setup](https://github.com/truenas/apps/issues/3374#issuecomment-3916700870) guides.
+
 <Tabs groupId="truenas-migration" queryString>
   <TabItem value="hostpath" label="Host Path">
     **This guide describes how to migrate from Host Path storage (not ixVolume).**
@@ -265,7 +267,7 @@ Refer to [Seerr TrueNAS Documentation](/getting-started/third-parties/truenas), 
     3. Copy ixVolume Data
           Open System Settings → Shell, or SSH into your TrueNAS server as root and run :
           ```bash
-          rsync -av /mnt/.ix-apps/app_mounts/jellyseerr/ /mnt/storage/seerr/
+          rsync -av --chown=568:568 /mnt/.ix-apps/app_mounts/jellyseerr/ /mnt/storage/seerr/
           ```
     4. Install Seerr and use the same Host Path storage that was created before (`/mnt/storage/seerr/config` in our example)
     5. Start Seerr app
