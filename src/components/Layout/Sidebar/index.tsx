@@ -1,4 +1,5 @@
 import Badge from '@app/components/Common/Badge';
+import SeerrLogo from '@app/components/Common/SeerrLogo';
 import VersionStatus from '@app/components/Layout/VersionStatus';
 import useClickOutside from '@app/hooks/useClickOutside';
 import { Permission, useUser } from '@app/hooks/useUser';
@@ -15,7 +16,6 @@ import {
   UsersIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Fragment, useEffect, useRef } from 'react';
@@ -192,7 +192,7 @@ const Sidebar = ({
                     <div className="flex flex-shrink-0 items-center px-2">
                       <span className="w-full px-4 text-xl text-gray-50">
                         <Link href="/" className="relative block h-24 w-64">
-                          <Image src="/logo_full.svg" alt="Logo" fill />
+                          <SeerrLogo variant="full" alt="Logo" fill />
                         </Link>
                       </span>
                     </div>
@@ -255,12 +255,7 @@ const Sidebar = ({
               <div className="flex flex-shrink-0 items-center">
                 <span className="w-full px-4 py-2 text-2xl text-gray-50">
                   <Link href="/" className="relative block h-24">
-                    <Image
-                      src="/logo_full.svg"
-                      alt="Logo"
-                      fill
-                      loading="eager"
-                    />
+                    <SeerrLogo variant="full" alt="Logo" fill loading="eager" />
                   </Link>
                 </span>
               </div>

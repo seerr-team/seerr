@@ -236,6 +236,8 @@
   "components.Layout.UserDropdown.requests": "Requests",
   "components.Layout.UserDropdown.settings": "Settings",
   "components.Layout.UserDropdown.signout": "Sign Out",
+  "components.Layout.UserDropdown.switchtodark": "Switch to Dark Theme",
+  "components.Layout.UserDropdown.switchtolight": "Switch to Light Theme",
   "components.Layout.UserWarnings.emailInvalid": "Email address is invalid.",
   "components.Layout.UserWarnings.emailRequired": "An email address is required.",
   "components.Layout.UserWarnings.passwordRequired": "A password is required.",

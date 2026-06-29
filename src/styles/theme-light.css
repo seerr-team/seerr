@@ -1,0 +1,783 @@
+/*
+ * Fixed light-theme inversion layer for the existing dark Tailwind utility palette.
+ * Keep these overrides isolated from globals.css so theme review stays contained.
+ */
+
+html.theme-light {
+  background: #e1e8f7;
+  color-scheme: light;
+  scrollbar-color: #878e9c #ced8e6;
+}
+
+html.theme-light:hover {
+  scrollbar-color: #a2acba #ced8e6;
+}
+
+html.theme-light::-webkit-scrollbar-track {
+  background: #ced8e6;
+}
+
+html.theme-light::-webkit-scrollbar-thumb {
+  background-color: #878e9c;
+}
+
+html.theme-light:hover::-webkit-scrollbar-thumb {
+  background-color: #a2acba;
+}
+
+html.theme-light body {
+  background: #e1e8f7;
+}
+
+html.theme-light #__next {
+  min-height: 100%;
+  color: #000000;
+}
+
+/* Filter-equivalent light theme utilities without filtering app containers. */
+
+.seerr-logo-light {
+  display: none;
+}
+
+html.theme-light .seerr-logo-dark {
+  display: none;
+}
+
+html.theme-light .seerr-logo-light {
+  display: block;
+}
+
+html.theme-light
+  :where(
+    input[type='text'],
+    input[type='password'],
+    input[type='email'],
+    input[type='number'],
+    input[type='search'],
+    input[type='url'],
+    select,
+    textarea
+  ) {
+  border-color: #878e9c;
+  background-color: #b6c0d0;
+  color: #000000;
+}
+
+html.theme-light :where(code) {
+  background-color: #ced8e6;
+  color: #000000;
+}
+
+html.theme-light :where(label, .group-label) {
+  color: #565d69;
+}
+
+html.theme-light :where(.label-tip) {
+  color: #878e9c;
+}
+
+html.theme-light :where([class~='bg-black/30']) {
+  background-color: rgb(255 255 255 / 0.3);
+}
+
+html.theme-light :where([class~='bg-blue-50']) {
+  background-color: #040b14;
+}
+
+html.theme-light :where([class~='bg-blue-600/80']) {
+  background-color: rgb(101 163 255 / 0.8);
+}
+
+html.theme-light :where([class~='active:bg-gray-100']:active) {
+  background-color: #0a0b0d;
+}
+
+html.theme-light :where([class~='bg-gray-200']) {
+  background-color: #16181c;
+}
+
+html.theme-light :where([class~='hover:bg-gray-300']:hover) {
+  background-color: #272b31;
+}
+
+html.theme-light :where([class~='bg-gray-400']) {
+  background-color: #565d69;
+}
+
+html.theme-light :where([class~='bg-gray-50']),
+html.theme-light :where([class~='hover:bg-gray-50']:hover) {
+  background-color: #040506;
+}
+
+html.theme-light :where([class~='bg-gray-600']),
+html.theme-light :where([class~='focus:bg-gray-600']:focus),
+html.theme-light :where([class~='hover:bg-gray-600']:hover) {
+  background-color: #a2acba;
+}
+
+@media (prefers-color-scheme: dark) {
+  html.theme-light :where([class~='dark:hover:bg-gray-600']:hover) {
+    background-color: #a2acba;
+  }
+}
+
+html.theme-light :where([class~='bg-gray-700']),
+html.theme-light :where([class~='active:bg-gray-700']:active),
+html.theme-light :where([class~='focus:bg-gray-700']:focus),
+html.theme-light :where(.group:hover [class~='group-hover:bg-gray-700']),
+html.theme-light :where([class~='hover:bg-gray-700']:hover) {
+  background-color: #b6c0d0;
+}
+
+@media (prefers-color-scheme: dark) {
+  html.theme-light :where([class~='dark:bg-gray-700']) {
+    background-color: #b6c0d0;
+  }
+}
+
+html.theme-light :where([class~='bg-gray-700/100']) {
+  background-color: #b6c0d0;
+}
+
+html.theme-light :where([class~='bg-gray-700/20']) {
+  background-color: rgb(182 192 208 / 0.2);
+}
+
+html.theme-light :where([class~='bg-gray-700/80']) {
+  background-color: rgb(182 192 208 / 0.8);
+}
+
+html.theme-light :where([class~='bg-gray-700/90']) {
+  background-color: rgb(182 192 208 / 0.9);
+}
+
+html.theme-light :where([class~='bg-gray-800']),
+html.theme-light :where([class~='hover:bg-gray-800']:hover) {
+  background-color: #ced8e6;
+}
+
+html.theme-light :where([class~='bg-gray-800/10']) {
+  background-color: rgb(206 216 230 / 0.1);
+}
+
+html.theme-light :where([class~='bg-gray-800/30']) {
+  background-color: rgb(206 216 230 / 0.3);
+}
+
+html.theme-light :where([class~='bg-gray-800/50']) {
+  background-color: rgb(206 216 230 / 0.5);
+}
+
+html.theme-light :where([class~='bg-gray-800/70']) {
+  background-color: rgb(206 216 230 / 0.7);
+}
+
+html.theme-light :where([class~='bg-gray-800/75']) {
+  background-color: rgb(206 216 230 / 0.75);
+}
+
+html.theme-light :where([class~='bg-gray-800/80']) {
+  background-color: rgb(206 216 230 / 0.8);
+}
+
+html.theme-light :where([class~='bg-gray-800/90']) {
+  background-color: rgb(206 216 230 / 0.9);
+}
+
+html.theme-light :where([class~='bg-gray-900']),
+html.theme-light :where([class~='focus:bg-gray-900']:focus) {
+  background-color: #e1e8f7;
+}
+
+html.theme-light :where([class~='bg-gray-900/80']) {
+  background-color: rgb(225 232 247 / 0.8);
+}
+
+html.theme-light :where([class~='bg-gray-900/90']) {
+  background-color: rgb(225 232 247 / 0.9);
+}
+
+html.theme-light :where([class~='bg-green-400']),
+html.theme-light :where([class~='hover:bg-green-400']:hover) {
+  background-color: #006e10;
+}
+
+html.theme-light :where([class~='bg-green-50']),
+html.theme-light :where([class~='active:bg-green-50']:active),
+html.theme-light :where([class~='hover:bg-green-50']:hover) {
+  background-color: #000900;
+}
+
+html.theme-light :where([class~='bg-indigo-400']) {
+  background-color: #5d68d4;
+}
+
+html.theme-light :where([class~='bg-indigo-400/20']) {
+  background-color: rgb(93 104 212 / 0.2);
+}
+
+html.theme-light :where([class~='bg-indigo-50']),
+html.theme-light :where([class~='hover:bg-indigo-50']:hover) {
+  background-color: #090d1a;
+}
+
+html.theme-light :where([class~='bg-indigo-600']),
+html.theme-light :where([class~='active:bg-indigo-600']:active),
+html.theme-light :where([class~='hover:bg-indigo-600']:hover) {
+  background-color: #a79eff;
+}
+
+html.theme-light :where([class~='bg-indigo-600/80']) {
+  background-color: rgb(167 158 255 / 0.8);
+}
+
+html.theme-light :where([class~='bg-indigo-700']),
+html.theme-light :where([class~='active:bg-indigo-700']:active),
+html.theme-light :where([class~='hover:bg-indigo-700']:hover) {
+  background-color: #b8adff;
+}
+
+html.theme-light :where([class~='bg-neutral-800']) {
+  background-color: #d9d9d9;
+}
+
+html.theme-light :where([class~='bg-purple-600']) {
+  background-color: #e989ff;
+}
+
+html.theme-light :where([class~='bg-purple-600/80']) {
+  background-color: rgb(233 137 255 / 0.8);
+}
+
+html.theme-light :where([class~='bg-red-50']),
+html.theme-light :where([class~='hover:bg-red-50']:hover) {
+  background-color: #140808;
+}
+
+html.theme-light :where([class~='bg-red-600']),
+html.theme-light :where([class~='hover:bg-red-600']:hover) {
+  background-color: #ff8b8b;
+}
+
+html.theme-light :where([class~='bg-red-600/80']) {
+  background-color: rgb(255 139 139 / 0.8);
+}
+
+html.theme-light :where([class~='active:bg-red-700']:active),
+html.theme-light :where([class~='hover:bg-red-700']:hover) {
+  background-color: #ffa0a0;
+}
+
+html.theme-light :where([class~='bg-white']) {
+  background-color: #000000;
+}
+
+html.theme-light :where([class~='hover:bg-yellow-400']:hover) {
+  background-color: #683a00;
+}
+
+html.theme-light :where([class~='bg-yellow-400/20']) {
+  background-color: rgb(104 58 0 / 0.2);
+}
+
+html.theme-light :where([class~='bg-yellow-50']),
+html.theme-light :where([class~='active:bg-yellow-50']:active),
+html.theme-light :where([class~='hover:bg-yellow-50']:hover) {
+  background-color: #070500;
+}
+
+html.theme-light :where([class~='focus:border-blue-300']:focus),
+html.theme-light :where(.group:focus [class~='group-focus:border-blue-300']) {
+  border-color: #15477f;
+}
+
+html.theme-light :where([class~='border-blue-50']) {
+  border-color: #040b14;
+}
+
+html.theme-light :where([class~='focus:border-blue-600']:focus) {
+  border-color: #65a3ff;
+}
+
+html.theme-light :where([class~='active:border-gray-100']:active),
+html.theme-light :where([class~='focus:border-gray-100']:focus) {
+  border-color: #0a0b0d;
+}
+
+html.theme-light :where([class~='border-gray-200']),
+html.theme-light :where([class~='hover:border-gray-200']:hover) {
+  border-color: #16181c;
+}
+
+html.theme-light :where([class~='border-gray-300']) {
+  border-color: #272b31;
+}
+
+html.theme-light :where([class~='border-gray-400']),
+html.theme-light :where([class~='focus:border-gray-400']:focus),
+html.theme-light :where([class~='hover:border-gray-400']:hover) {
+  border-color: #565d69;
+}
+
+html.theme-light :where([class~='border-gray-50']),
+html.theme-light :where([class~='focus:border-gray-50']:focus),
+html.theme-light :where([class~='hover:border-gray-50']:hover) {
+  border-color: #040506;
+}
+
+html.theme-light :where([class~='border-gray-600']),
+html.theme-light :where([class~='active:border-gray-600']:active),
+html.theme-light :where(.group:hover [class~='group-hover:border-gray-600']),
+html.theme-light :where([class~='hover:border-gray-600']:hover) {
+  border-color: #a2acba;
+}
+
+html.theme-light :where([class~='border-gray-700']) {
+  border-color: #b6c0d0;
+}
+
+html.theme-light :where([class~='border-gray-800']) {
+  border-color: #ced8e6;
+}
+
+@media (min-width: 640px) {
+  html.theme-light :where([class~='sm:border-gray-800']) {
+    border-color: #ced8e6;
+  }
+}
+
+html.theme-light :where([class~='border-green-400']),
+html.theme-light :where([class~='hover:border-green-400']:hover) {
+  border-color: #006e10;
+}
+
+html.theme-light :where([class~='border-green-50']) {
+  border-color: #000900;
+}
+
+html.theme-light :where([class~='active:border-green-700']:active),
+html.theme-light :where([class~='focus:border-green-700']:focus) {
+  border-color: #4bb673;
+}
+
+html.theme-light :where([class~='border-indigo-400']) {
+  border-color: #5d68d4;
+}
+
+html.theme-light :where([class~='border-indigo-50']),
+html.theme-light :where([class~='hover:border-indigo-50']:hover) {
+  border-color: #090d1a;
+}
+
+html.theme-light :where([class~='border-indigo-600']) {
+  border-color: #a79eff;
+}
+
+html.theme-light :where([class~='active:border-indigo-700']:active),
+html.theme-light :where([class~='focus:border-indigo-700']:focus) {
+  border-color: #b8adff;
+}
+
+html.theme-light :where([class~='border-purple-600']) {
+  border-color: #e989ff;
+}
+
+html.theme-light :where([class~='border-red-400']) {
+  border-color: #db5454;
+}
+
+html.theme-light :where([class~='border-red-50']),
+html.theme-light :where([class~='hover:border-red-50']:hover) {
+  border-color: #140808;
+}
+
+html.theme-light :where([class~='active:border-red-700']:active),
+html.theme-light :where([class~='focus:border-red-700']:focus) {
+  border-color: #ffa0a0;
+}
+
+html.theme-light :where([class~='border-white']) {
+  border-color: #000000;
+}
+
+html.theme-light :where([class~='border-yellow-400']),
+html.theme-light :where([class~='hover:border-yellow-400']:hover) {
+  border-color: #683a00;
+}
+
+html.theme-light :where([class~='border-yellow-50']) {
+  border-color: #070500;
+}
+
+html.theme-light :where([class~='active:border-yellow-700']:active),
+html.theme-light :where([class~='focus:border-yellow-700']:focus) {
+  border-color: #ce8f34;
+}
+
+html.theme-light
+  :where([class~='divide-gray-600'] > :not([hidden]) ~ :not([hidden])) {
+  border-color: #a2acba;
+}
+
+html.theme-light
+  :where([class~='divide-gray-700'] > :not([hidden]) ~ :not([hidden])) {
+  border-color: #b6c0d0;
+}
+
+html.theme-light
+  :where([class~='divide-gray-800'] > :not([hidden]) ~ :not([hidden])) {
+  border-color: #ced8e6;
+}
+
+html.theme-light :where([class~='from-gray-800']) {
+  --tw-gradient-from: #ced8e6 var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(206 216 230 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+html.theme-light :where([class~='from-gray-900']) {
+  --tw-gradient-from: #e1e8f7 var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(225 232 247 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+html.theme-light :where([class~='from-indigo-400']) {
+  --tw-gradient-from: #5d68d4 var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(93 104 212 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+html.theme-light :where([class~='hover:from-indigo-50']:hover) {
+  --tw-gradient-from: #090d1a var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(9 13 26 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+html.theme-light :where([class~='from-indigo-600']) {
+  --tw-gradient-from: #a79eff var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(167 158 255 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+html.theme-light :where([class~='from-indigo-700']) {
+  --tw-gradient-from: #b8adff var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(184 173 255 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+html.theme-light :where([class~='from-red-900']) {
+  --tw-gradient-from: #ffb8b8 var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(255 184 184 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+html.theme-light :where([class~='placeholder-gray-300'])::placeholder {
+  color: #272b31;
+}
+
+html.theme-light :where([class~='focus:placeholder-gray-400'])::placeholder {
+  color: #565d69;
+}
+
+html.theme-light :where([class~='ring-black']) {
+  --tw-ring-color: #ffffff;
+}
+
+html.theme-light :where([class~='ring-gray-50']),
+html.theme-light :where([class~='focus:ring-gray-50']:focus),
+html.theme-light :where([class~='hover:ring-gray-50']:hover) {
+  --tw-ring-color: #040506;
+}
+
+html.theme-light :where([class~='ring-gray-600']) {
+  --tw-ring-color: #a2acba;
+}
+
+html.theme-light :where([class~='ring-gray-700']) {
+  --tw-ring-color: #b6c0d0;
+}
+
+html.theme-light :where([class~='ring-green-400']) {
+  --tw-ring-color: #006e10;
+}
+
+html.theme-light :where([class~='ring-indigo-300']) {
+  --tw-ring-color: #38478f;
+}
+
+html.theme-light :where([class~='ring-indigo-400']) {
+  --tw-ring-color: #5d68d4;
+}
+
+html.theme-light :where([class~='ring-indigo-50']),
+html.theme-light :where([class~='focus:ring-indigo-50']:focus) {
+  --tw-ring-color: #090d1a;
+}
+
+html.theme-light :where([class~='focus:ring-offset-gray-100']:focus) {
+  --tw-ring-offset-color: #0a0b0d;
+}
+
+html.theme-light :where([class~='ring-red-400']) {
+  --tw-ring-color: #db5454;
+}
+
+html.theme-light :where([class~='ring-red-50']) {
+  --tw-ring-color: #140808;
+}
+
+html.theme-light :where([class~='ring-white']) {
+  --tw-ring-color: #000000;
+}
+
+html.theme-light :where([class~='ring-yellow-400']) {
+  --tw-ring-color: #683a00;
+}
+
+html.theme-light :where([class~='text-amber-300']) {
+  color: #572e00;
+}
+
+html.theme-light :where([class~='text-gray-100']),
+html.theme-light :where([class~='hover:text-gray-100']:hover) {
+  color: #0a0b0d;
+}
+
+html.theme-light :where([class~='text-gray-200']),
+html.theme-light :where([class~='active:text-gray-200']:active),
+html.theme-light :where([class~='focus-within:text-gray-200']:focus-within),
+html.theme-light :where([class~='hover:text-gray-200']:hover) {
+  color: #16181c;
+}
+
+@media (prefers-color-scheme: dark) {
+  html.theme-light :where([class~='dark:text-gray-200']) {
+    color: #16181c;
+  }
+}
+
+html.theme-light :where([class~='text-gray-300']),
+html.theme-light :where([class~='focus:text-gray-300']:focus),
+html.theme-light :where([class~='hover:text-gray-300']:hover) {
+  color: #272b31;
+}
+
+html.theme-light :where([class~='text-gray-400']),
+html.theme-light :where([class~='placeholder:text-gray-400'])::placeholder {
+  color: #565d69;
+}
+
+html.theme-light :where([class~='text-gray-50']),
+html.theme-light :where([class~='focus:text-gray-50']:focus) {
+  color: #040506;
+}
+
+html.theme-light :where([class~='text-gray-600']) {
+  color: #a2acba;
+}
+
+html.theme-light :where([class~='text-gray-700']),
+html.theme-light :where([class~='active:text-gray-700']:active) {
+  color: #b6c0d0;
+}
+
+html.theme-light :where([class~='text-gray-800']),
+html.theme-light :where([class~='disabled:text-gray-800']:disabled) {
+  color: #ced8e6;
+}
+
+html.theme-light :where([class~='text-green-100']) {
+  color: #001400;
+}
+
+html.theme-light :where([class~='text-green-400']) {
+  color: #006e10;
+}
+
+html.theme-light :where([class~='text-green-50']) {
+  color: #000900;
+}
+
+html.theme-light :where([class~='text-indigo-100']) {
+  color: #111830;
+}
+
+html.theme-light :where([class~='text-indigo-200']) {
+  color: #202b57;
+}
+
+html.theme-light :where([class~='hover:text-indigo-400']:hover) {
+  color: #5d68d4;
+}
+
+html.theme-light :where([class~='text-indigo-50']) {
+  color: #090d1a;
+}
+
+html.theme-light :where([class~='text-indigo-600']) {
+  color: #a79eff;
+}
+
+html.theme-light :where([class~='text-neutral-200']) {
+  color: #1a1a1a;
+}
+
+html.theme-light :where([class~='text-orange-400']) {
+  color: #b64d00;
+}
+
+html.theme-light :where([class~='text-red-100']),
+html.theme-light :where([class~='hover:text-red-100']:hover) {
+  color: #2d1111;
+}
+
+html.theme-light :where([class~='text-red-300']) {
+  color: #8c3535;
+}
+
+html.theme-light :where([class~='text-red-400']) {
+  color: #db5454;
+}
+
+html.theme-light :where([class~='text-red-50']) {
+  color: #140808;
+}
+
+html.theme-light :where([class~='text-red-600']) {
+  color: #ff8b8b;
+}
+
+html.theme-light :where([class~='text-white']),
+html.theme-light :where([class~='focus:text-white']:focus),
+html.theme-light :where(.group:hover [class~='group-hover:text-white']),
+html.theme-light :where([class~='hover:text-white']:hover) {
+  color: #000000;
+}
+
+html.theme-light :where([class~='text-yellow-100']) {
+  color: #110c00;
+}
+
+html.theme-light :where([class~='text-yellow-200']) {
+  color: #261800;
+}
+
+html.theme-light :where([class~='text-yellow-300']) {
+  color: #462900;
+}
+
+html.theme-light :where([class~='text-yellow-50']) {
+  color: #070500;
+}
+
+html.theme-light :where([class~='to-gray-900']) {
+  --tw-gradient-to: #e1e8f7 var(--tw-gradient-to-position);
+}
+
+html.theme-light :where([class~='hover:to-purple-200']:hover) {
+  --tw-gradient-to: #2f1b45 var(--tw-gradient-to-position);
+}
+
+html.theme-light :where([class~='to-purple-400']) {
+  --tw-gradient-to: #8c50c8 var(--tw-gradient-to-position);
+}
+
+html.theme-light :where([class~='hover:to-purple-50']:hover) {
+  --tw-gradient-to: #0b0610 var(--tw-gradient-to-position);
+}
+
+html.theme-light :where([class~='to-purple-600']) {
+  --tw-gradient-to: #e989ff var(--tw-gradient-to-position);
+}
+
+html.theme-light :where([class~='to-purple-700']) {
+  --tw-gradient-to: #f99dff var(--tw-gradient-to-position);
+}
+
+html.theme-light .sidebar {
+  border-color: #b6c0d0;
+  background: linear-gradient(180deg, #ced8e6 0%, #e0e6f5 100%);
+  color: #000000;
+}
+
+html.theme-light .sidebar :where(a) {
+  color: #000000;
+}
+
+html.theme-light .sidebar :where(a:hover, a:focus) {
+  background-color: #b6c0d0;
+  color: #000000;
+}
+
+html.theme-light .slider-title {
+  color: #272b31;
+}
+
+html.theme-light a.slider-title:hover {
+  color: #000000;
+}
+
+html.theme-light .title-card-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(206, 216, 230, 0.35) 0%,
+    rgba(225, 232, 247, 0.88) 100%
+  ) !important;
+}
+
+html.theme-light :where([class~='!bg-gray-700/80']) {
+  background-color: rgb(182 192 208 / 0.8) !important;
+}
+
+html.theme-light :where([class~='!bg-gray-800']) {
+  background-color: #ced8e6 !important;
+}
+
+html.theme-light :where([class~='hover:!bg-gray-400']:hover) {
+  background-color: #565d69 !important;
+}
+
+html.theme-light :where([class~='hover:!bg-gray-700']:hover) {
+  background-color: #b6c0d0 !important;
+}
+
+html.theme-light :where([class~='!border-gray-500']) {
+  border-color: #878e9c !important;
+}
+
+html.theme-light :where([class~='!text-gray-300']) {
+  color: #272b31 !important;
+}
+
+html.theme-light :where([class~='!text-gray-400']) {
+  color: #565d69 !important;
+}
+
+html.theme-light :where([class~='!text-gray-500']) {
+  color: #878e9c !important;
+}
+
+html.theme-light :where([class~='!text-green-100']) {
+  color: #001400 !important;
+}
+
+html.theme-light :where([class~='!text-indigo-100']) {
+  color: #111830 !important;
+}
+
+html.theme-light :where([class~='!text-red-100']) {
+  color: #2d1111 !important;
+}
+
+html.theme-light :where([class~='!text-red-400']) {
+  color: #db5454 !important;
+}
+
+html.theme-light :where([class~='!text-yellow-100']) {
+  color: #110c00 !important;
+}
+
+html.theme-light :where([class~='hover:!text-white']:hover) {
+  color: #000000 !important;
+}

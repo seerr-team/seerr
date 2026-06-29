@@ -7,9 +7,11 @@ import { InteractionProvider } from '@app/context/InteractionContext';
 import { LanguageContext } from '@app/context/LanguageContext';
 import { SettingsProvider } from '@app/context/SettingsContext';
 import { UserContext } from '@app/context/UserContext';
+import { ThemeProvider } from '@app/hooks/useTheme';
 import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
 import '@app/styles/globals.css';
+import '@app/styles/theme-light.css';
 import { polyfillIntl } from '@app/utils/polyfillIntl';
 import '@fontsource-variable/inter';
 import { MediaServerType } from '@server/constants/server';
@@ -202,32 +204,34 @@ const CoreApp: Omit<NextAppComponentType, 'origGetInitialProps'> = ({
           defaultLocale="en"
           messages={loadedMessages}
         >
-          <LoadingBar />
-          <SettingsProvider currentSettings={currentSettings}>
-            <InteractionProvider>
-              <Head>
-                <title>{currentSettings.applicationTitle}</title>
-                <meta
-                  name="viewport"
-                  content="initial-scale=1, viewport-fit=cover, width=device-width"
+          <ThemeProvider>
+            <LoadingBar />
+            <SettingsProvider currentSettings={currentSettings}>
+              <InteractionProvider>
+                <Head>
+                  <title>{currentSettings.applicationTitle}</title>
+                  <meta
+                    name="viewport"
+                    content="initial-scale=1, viewport-fit=cover, width=device-width"
+                  />
+                  <PWAHeader
+                    applicationTitle={currentSettings.applicationTitle}
+                  />
+                </Head>
+                <StatusChecker />
+                <ServiceWorkerSetup />
+                <UserContext initialUser={user}>{component}</UserContext>
+                <Toaster
+                  position="top-right"
+                  toastOptions={{ duration: 4000 }}
+                  containerStyle={{
+                    zIndex: 10000,
+                    paddingTop: 'env(safe-area-inset-top)',
+                  }}
                 />
-                <PWAHeader
-                  applicationTitle={currentSettings.applicationTitle}
-                />
-              </Head>
-              <StatusChecker />
-              <ServiceWorkerSetup />
-              <UserContext initialUser={user}>{component}</UserContext>
-              <Toaster
-                position="top-right"
-                toastOptions={{ duration: 4000 }}
-                containerStyle={{
-                  zIndex: 10000,
-                  paddingTop: 'env(safe-area-inset-top)',
-                }}
-              />
-            </InteractionProvider>
-          </SettingsProvider>
+              </InteractionProvider>
+            </SettingsProvider>
+          </ThemeProvider>
         </IntlProvider>
       </LanguageContext.Provider>
     </SWRConfig>

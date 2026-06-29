@@ -5,6 +5,7 @@ import AppDataWarning from '@app/components/AppDataWarning';
 import Button from '@app/components/Common/Button';
 import ImageFader from '@app/components/Common/ImageFader';
 import PageTitle from '@app/components/Common/PageTitle';
+import SeerrLogo from '@app/components/Common/SeerrLogo';
 import LanguagePicker from '@app/components/Layout/LanguagePicker';
 import SettingsJellyfin from '@app/components/Settings/SettingsJellyfin';
 import SettingsPlex from '@app/components/Settings/SettingsPlex';
@@ -17,7 +18,6 @@ import defineMessages from '@app/utils/defineMessages';
 import { MediaServerType } from '@server/constants/server';
 import type { Library } from '@server/lib/settings';
 import axios from 'axios';
-import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -159,7 +159,7 @@ const Setup = () => {
       </div>
       <div className="relative z-40 px-4 sm:mx-auto sm:w-full sm:max-w-4xl">
         <div className="relative mb-10 h-48 max-w-full sm:mx-auto sm:h-64 sm:max-w-md">
-          <Image src="/logo_stacked.svg" alt="Logo" fill />
+          <SeerrLogo variant="stacked" alt="Logo" fill />
         </div>
         <AppDataWarning />
         <nav className="relative z-50">

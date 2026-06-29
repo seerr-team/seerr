@@ -1,11 +1,14 @@
 import CachedImage from '@app/components/Common/CachedImage';
 import MiniQuotaDisplay from '@app/components/Layout/UserDropdown/MiniQuotaDisplay';
+import useTheme from '@app/hooks/useTheme';
 import { Permission, useUser } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
 import { Menu, Transition } from '@headlessui/react';
 import {
   ArrowRightOnRectangleIcon,
   ClockIcon,
+  MoonIcon,
+  SunIcon,
 } from '@heroicons/react/24/outline';
 import { CogIcon, UserIcon } from '@heroicons/react/24/solid';
 import axios from 'axios';
@@ -18,6 +21,8 @@ const messages = defineMessages('components.Layout.UserDropdown', {
   myprofile: 'Profile',
   settings: 'Settings',
   requests: 'Requests',
+  switchtodark: 'Switch to Dark Theme',
+  switchtolight: 'Switch to Light Theme',
   signout: 'Sign Out',
 });
 
@@ -37,6 +42,7 @@ ForwardedLink.displayName = 'ForwardedLink';
 const UserDropdown = () => {
   const intl = useIntl();
   const { user, revalidate, hasPermission } = useUser();
+  const { theme, toggleTheme } = useTheme();
 
   const logout = async () => {
     const response = await axios.post('/api/v1/auth/logout');
@@ -152,6 +158,32 @@ const UserDropdown = () => {
                     <CogIcon className="mr-2 inline h-5 w-5" />
                     <span>{intl.formatMessage(messages.settings)}</span>
                   </ForwardedLink>
+                )}
+              </Menu.Item>
+              <Menu.Item>
+                {({ active }) => (
+                  <button
+                    type="button"
+                    className={`flex w-full items-center rounded px-4 py-2 text-sm font-medium text-gray-200 transition duration-150 ease-in-out ${
+                      active
+                        ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white'
+                        : ''
+                    }`}
+                    onClick={toggleTheme}
+                  >
+                    {theme === 'light' ? (
+                      <MoonIcon className="mr-2 inline h-5 w-5" />
+                    ) : (
+                      <SunIcon className="mr-2 inline h-5 w-5" />
+                    )}
+                    <span>
+                      {intl.formatMessage(
+                        theme === 'light'
+                          ? messages.switchtodark
+                          : messages.switchtolight
+                      )}
+                    </span>
+                  </button>
                 )}
               </Menu.Item>
               <Menu.Item>
