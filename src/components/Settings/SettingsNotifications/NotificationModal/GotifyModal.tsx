@@ -99,7 +99,7 @@ const GotifyModal = ({
         url: data.options.url,
         token: data.options.token,
         priority: data.options.priority,
-        locale: data?.options.locale ?? 'en',
+        locale: data.options.locale ?? 'en',
       }}
       validationSchema={NotificationsGotifySchema}
       onSubmit={async (values) => {

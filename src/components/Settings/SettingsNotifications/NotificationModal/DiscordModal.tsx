@@ -26,9 +26,14 @@ const messages = defineMessages(
     discordWebhookRoleId: 'Notification Role ID',
     discordWebhookRoleIdTip:
       'The role ID to mention in the webhook message. Leave empty to disable mentions',
-    useUserLocale: 'Use Notification Recipient Locale',
+    discordWebhookThreadId: 'Thread ID',
+    discordWebhookThreadIdTip:
+      'The ID of the thread channel to post notifications in. Leave empty to post in the webhook channel',
+    discordUseUserLocale: 'Use Notification Recipient Locale',
     discordValidationUrl: 'You must provide a valid URL',
     discordValidationWebhookRoleId: 'You must provide a valid Discord Role ID',
+    discordValidationWebhookThreadId:
+      'You must provide a valid Discord Thread ID',
     discordValidationTypes: 'You must select at least one notification type',
     discordEnableMentions: 'Enable Mentions',
   }
@@ -72,6 +77,13 @@ const DiscordModal = ({
         /^\d{17,19}$/,
         intl.formatMessage(messages.discordValidationWebhookRoleId)
       ),
+    webhookThreadId: Yup.string()
+      .nullable()
+      .transform((value) => (value === '' ? null : value))
+      .matches(/^\d{17,19}$/, {
+        message: intl.formatMessage(messages.discordValidationWebhookThreadId),
+        excludeEmptyString: true,
+      }),
   });
 
   return (
@@ -88,9 +100,10 @@ const DiscordModal = ({
         botAvatarUrl: data.options.botAvatarUrl,
         webhookUrl: data.options.webhookUrl,
         webhookRoleId: data.options.webhookRoleId,
+        webhookThreadId: data.options.webhookThreadId,
         enableMentions: data.options.enableMentions,
-        locale: data?.options.locale || 'en',
-        useUserLocale: data?.options.useUserLocale ?? false,
+        locale: data.options.locale || 'en',
+        useUserLocale: data.options.useUserLocale ?? false,
       }}
       validationSchema={NotificationsDiscordSchema}
       onSubmit={async (values) => {
@@ -107,6 +120,7 @@ const DiscordModal = ({
             botAvatarUrl: values.botAvatarUrl,
             webhookUrl: values.webhookUrl,
             webhookRoleId: values.webhookRoleId,
+            webhookThreadId: values.webhookThreadId,
             enableMentions: values.enableMentions,
             locale: values.locale,
             useUserLocale: values.useUserLocale,
@@ -150,6 +164,7 @@ const DiscordModal = ({
                   botAvatarUrl: values.botAvatarUrl,
                   webhookUrl: values.webhookUrl,
                   webhookRoleId: values.webhookRoleId,
+                  webhookThreadId: values.webhookThreadId,
                   enableMentions: values.enableMentions,
                   locale: values.locale,
                   useUserLocale: values.useUserLocale,
@@ -288,6 +303,28 @@ const DiscordModal = ({
                 </div>
               </div>
               <div className="form-row">
+                <label htmlFor="webhookThreadId" className="text-label">
+                  {intl.formatMessage(messages.discordWebhookThreadId)}
+                  <span className="label-tip">
+                    {intl.formatMessage(messages.discordWebhookThreadIdTip)}
+                  </span>
+                </label>
+                <div className="form-input-area">
+                  <div className="form-input-field">
+                    <Field
+                      id="webhookThreadId"
+                      name="webhookThreadId"
+                      type="text"
+                    />
+                  </div>
+                  {errors.webhookThreadId &&
+                    touched.webhookThreadId &&
+                    typeof errors.webhookThreadId === 'string' && (
+                      <div className="error">{errors.webhookThreadId}</div>
+                    )}
+                </div>
+              </div>
+              <div className="form-row">
                 <label htmlFor="enableMentions" className="checkbox-label">
                   {intl.formatMessage(messages.discordEnableMentions)}
                 </label>
@@ -301,7 +338,7 @@ const DiscordModal = ({
               </div>
               <div className="form-row">
                 <label htmlFor="useUserLocale" className="checkbox-label">
-                  {intl.formatMessage(messages.useUserLocale)}
+                  {intl.formatMessage(messages.discordUseUserLocale)}
                 </label>
                 <div className="form-input-area">
                   <Field

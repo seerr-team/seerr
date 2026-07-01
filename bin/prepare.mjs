@@ -5,5 +5,6 @@
  */
 const isCi = process.env.CI !== undefined;
 if (!isCi) {
-  require('husky').install();
+  const husky = (await import('husky')).default;
+  console.log(husky());
 }

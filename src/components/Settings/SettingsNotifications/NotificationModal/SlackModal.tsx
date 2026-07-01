@@ -66,7 +66,7 @@ const SlackModal = ({
         default: data.default,
         embedPoster: data.embedPoster,
         webhookUrl: data.options.webhookUrl,
-        locale: data?.options.locale ?? 'en',
+        locale: data.options.locale ?? 'en',
       }}
       validationSchema={NotificationsSlackSchema}
       onSubmit={async (values) => {

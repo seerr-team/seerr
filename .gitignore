@@ -14,6 +14,10 @@ lcov.info
 # production
 /build
 
+# ignore REST API documentation
+docs/api/*
+!docs/api/_category_.json
+
 # misc
 .DS_Store
 *.pem
@@ -75,3 +79,14 @@ config/cache
 
 # Docker compose
 compose.override.yaml
+
+# Devenv
+.devenv*
+devenv.local.nix
+devenv.local.yaml
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml

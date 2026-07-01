@@ -148,10 +148,6 @@ components:
         email:
           type: string
           example: 'user@example.com'
-        discordId:
-          type: string
-          nullable: true
-          example: '123456789'
         locale:
           type: string
           nullable: true
@@ -1271,6 +1267,10 @@ components:
           type: number
         rootFolder:
           type: string
+        ignoreQuota:
+          type: boolean
+          example: false
+          description: If true, this request will not count against the user's quota. Requires MANAGE_REQUESTS permission.
       required:
         - id
         - status
@@ -1568,9 +1568,6 @@ components:
             enabled:
               type: boolean
               example: false
-            embedPoster:
-              type: boolean
-              example: true
             types:
               type: number
               example: 2
@@ -1588,9 +1585,6 @@ components:
             enabled:
               type: boolean
               example: false
-            embedPoster:
-              type: boolean
-              example: true
             types:
               type: number
               example: 2
@@ -1609,9 +1603,6 @@ components:
             enabled:
               type: boolean
               example: false
-            embedPoster:
-              type: boolean
-              example: true
             types:
               type: number
               example: 2
@@ -1622,23 +1613,12 @@ components:
                   type: string
                 token:
                   type: string
-                priority:
-                  type: integer
-                  minimum: 0
-                  maximum: 9
-                  example: 5
-                locale:
-                  type: string
-                  example: en
         ntfy:
           type: object
           properties:
             enabled:
               type: boolean
               example: false
-            embedPoster:
-              type: boolean
-              example: true
             types:
               type: number
               example: 2
@@ -1651,28 +1631,18 @@ components:
                   type: string
                 authMethodUsernamePassword:
                   type: boolean
-                  nullable: true
                 username:
                   type: string
-                  nullable: true
                 password:
                   type: string
-                  nullable: true
                 authMethodToken:
                   type: boolean
-                  nullable: true
                 token:
                   type: string
-                  nullable: true
                 priority:
-                  type: integer
-                  minimum: 1
-                  maximum: 5
-                  nullable: true
-                  example: 3
+                  type: number
                 locale:
                   type: string
-                  example: en
         lunasea:
           type: object
           properties:
@@ -1698,21 +1668,18 @@ components:
             enabled:
               type: boolean
               example: false
-            embedPoster:
-              type: boolean
-              example: true
             types:
               type: number
               example: 2
             options:
               type: object
               properties:
-                userEmailRequired:
-                  type: boolean
-                  example: false
                 emailFrom:
                   type: string
                   example: no-reply@example.com
+                senderName:
+                  type: string
+                  example: Seerr
                 smtpHost:
                   type: string
                   example: 127.0.0.1
@@ -2095,8 +2062,10 @@ components:
         discordEnabledTypes:
           type: number
           nullable: true
-        discordId:
-          type: string
+        discordIds:
+          type: array
+          items:
+            type: string
           nullable: true
         pushbulletAccessToken:
           type: string
@@ -4239,6 +4208,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+  /user/jellyfin/{jellyfinUserId}:
+    get:
+      summary: Get user by Jellyfin user ID
+      description: |
+        Retrieves user details by Jellyfin user ID in a JSON object. Returns filtered data based on the caller's permissions.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: jellyfinUserId
+          required: true
+          schema:
+            type: string
+          description: The Jellyfin user ID (32-character hexadecimal string)
+      responses:
+        '200':
+          description: User details in JSON
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
   /user/{userId}/requests:
     get:
       summary: Get requests for a specific user
@@ -6169,6 +6161,10 @@ paths:
                 userId:
                   type: number
                   nullable: true
+                ignoreQuota:
+                  type: boolean
+                  example: false
+                  description: If true, this request will not count against the user's quota. Requires MANAGE_REQUESTS permission.
               required:
                 - mediaType
                 - mediaId
@@ -7357,6 +7353,9 @@ paths:
                   type: string
                 mediaId:
                   type: number
+                userId:
+                  type: number
+                  nullable: true
       responses:
         '201':
           description: Succesfully created the issue

@@ -7,6 +7,7 @@ import {
 } from '@app/components/Selector';
 import type { DVRTestResponse } from '@app/components/Settings/SettingsServices';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
@@ -20,7 +21,6 @@ import { Field, Formik } from 'formik';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import Select from 'react-select';
-import { useToasts } from 'react-toast-notifications';
 
 const messages = defineMessages('components.Settings.OverrideRuleModal', {
   createrule: 'New Override Rule',

@@ -6,8 +6,9 @@ import PushbulletModal from '@app/components/Settings/SettingsNotifications/Noti
 import PushoverModal from '@app/components/Settings/SettingsNotifications/NotificationModal/PushoverModal';
 import SlackModal from '@app/components/Settings/SettingsNotifications/NotificationModal/SlackModal';
 import TelegramModal from '@app/components/Settings/SettingsNotifications/NotificationModal/TelegramModal';
-import WebhookModal from '@app/components/Settings/SettingsNotifications/NotificationModal/WebhookModal';
 import WebPushModal from '@app/components/Settings/SettingsNotifications/NotificationModal/WebPushModal';
+import WebhookModal from '@app/components/Settings/SettingsNotifications/NotificationModal/WebhookModal';
+import useToasts from '@app/hooks/useToasts';
 import defineMessages from '@app/utils/defineMessages';
 import type {
   NotificationAgentConfig,
@@ -24,7 +25,6 @@ import type {
 import { NotificationAgentKey } from '@server/interfaces/settings';
 import axios from 'axios';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 
 const messages = defineMessages(
   'components.Settings.SettingsNotifications.NotificationModal',

@@ -122,6 +122,7 @@ class Settings {
               requireTls: false,
               allowSelfSigned: false,
               senderName: 'Seerr',
+              usePublicLogo: false,
             },
           },
           discord: {

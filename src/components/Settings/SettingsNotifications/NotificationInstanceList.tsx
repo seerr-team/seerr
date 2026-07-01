@@ -1,6 +1,7 @@
 import Button from '@app/components/Common/Button';
 import Table from '@app/components/Common/Table';
 import ToggleSwitch from '@app/components/Common/ToggleSwitch';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import {
@@ -14,7 +15,6 @@ import type { NotificationAgentConfig } from '@server/interfaces/settings';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 
 const messages = defineMessages(
   'components.Settings.SettingsNotifications.NotificationInstanceList',

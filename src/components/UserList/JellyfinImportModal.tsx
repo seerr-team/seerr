@@ -3,6 +3,7 @@ import CachedImage from '@app/components/Common/CachedImage';
 import Modal from '@app/components/Common/Modal';
 import ToggleSwitch from '@app/components/Common/ToggleSwitch';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { MediaServerType } from '@server/constants/server';
@@ -10,7 +11,6 @@ import type { UserResultsResponse } from '@server/interfaces/api/userInterfaces'
 import axios from 'axios';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
 interface JellyfinImportProps {

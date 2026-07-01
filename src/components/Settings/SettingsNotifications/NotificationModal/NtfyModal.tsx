@@ -102,8 +102,8 @@ const NtfyModal = ({ type, data, onClose, onTest, onSave }: NtfyModalProps) => {
         password: data.options.password,
         authMethodToken: data.options.authMethodToken,
         token: data.options.token,
-        priority: data?.options.priority,
-        locale: data?.options.locale ?? 'en',
+        priority: data.options.priority,
+        locale: data.options.locale ?? 'en',
       }}
       validationSchema={NotificationsNtfySchema}
       onSubmit={async (values) => {
@@ -123,7 +123,7 @@ const NtfyModal = ({ type, data, onClose, onTest, onSave }: NtfyModalProps) => {
             password: values.password,
             authMethodToken: values.authMethodToken,
             token: values.token,
-            priority: values.priority,
+            priority: Number(values.priority),
             locale: values.locale,
           },
         });
@@ -168,7 +168,7 @@ const NtfyModal = ({ type, data, onClose, onTest, onSave }: NtfyModalProps) => {
                   password: values.password,
                   authMethodToken: values.authMethodToken,
                   token: values.token,
-                  priority: values.priority,
+                  priority: Number(values.priority),
                   locale: values.locale,
                 },
               })

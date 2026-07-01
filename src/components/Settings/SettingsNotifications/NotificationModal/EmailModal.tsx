@@ -18,6 +18,9 @@ const messages = defineMessages(
     createInstance: 'Create Instance',
     instanceName: 'Name',
     embedPoster: 'Embed Poster',
+    emailUsePublicLogo: 'Use public Seerr logo instead of instance logo',
+    emailUsePublicLogoTip:
+      'If your Seerr instance is not publicly accessible, enable this option so email clients outside your network can display the image. The image will be pulled from the public GitHub repository.',
     emailValidationSmtpHostRequired:
       'You must provide a valid hostname or IP address',
     emailValidationSmtpPortRequired: 'You must provide a valid port number',
@@ -145,6 +148,7 @@ const EmailModal = ({
         agent: data.agent,
         default: data.default,
         embedPoster: data.embedPoster,
+        usePublicLogo: data.options.usePublicLogo,
         userEmailRequired: data.options.userEmailRequired,
         emailFrom: data.options.emailFrom,
         smtpHost: data.options.smtpHost,
@@ -174,6 +178,7 @@ const EmailModal = ({
           embedPoster: values.embedPoster,
           options: {
             userEmailRequired: values.userEmailRequired,
+            usePublicLogo: data.options.usePublicLogo,
             emailFrom: values.emailFrom,
             smtpHost: values.smtpHost,
             smtpPort: Number(values.smtpPort),
@@ -213,6 +218,7 @@ const EmailModal = ({
                 embedPoster: values.embedPoster,
                 options: {
                   userEmailRequired: values.userEmailRequired,
+                  usePublicLogo: data.options.usePublicLogo,
                   emailFrom: values.emailFrom,
                   smtpHost: values.smtpHost,
                   smtpPort: Number(values.smtpPort),
@@ -258,6 +264,21 @@ const EmailModal = ({
                 </label>
                 <div className="form-input-area">
                   <Field type="checkbox" id="embedPoster" name="embedPoster" />
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="usePublicLogo" className="checkbox-label">
+                  {intl.formatMessage(messages.emailUsePublicLogo)}
+                  <span className="label-tip">
+                    {intl.formatMessage(messages.emailUsePublicLogoTip)}
+                  </span>
+                </label>
+                <div className="form-input-area">
+                  <Field
+                    type="checkbox"
+                    id="usePublicLogo"
+                    name="usePublicLogo"
+                  />
                 </div>
               </div>
               <div className="form-row">

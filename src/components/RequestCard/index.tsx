@@ -6,6 +6,7 @@ import Tooltip from '@app/components/Common/Tooltip';
 import RequestModal from '@app/components/RequestModal';
 import StatusBadge from '@app/components/StatusBadge';
 import useDeepLinks from '@app/hooks/useDeepLinks';
+import useToasts from '@app/hooks/useToasts';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -28,7 +29,6 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
 
 const messages = defineMessages('components.RequestCard', {

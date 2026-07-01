@@ -19,9 +19,12 @@ div(style='display: block; background-color: #111827; padding: 2.5rem 0;')
   table(style='margin: 0 auto; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif; color: #fff; font-size: 16px; width: 26rem;')
     tr
       td(style="text-align: center;")
-        if applicationUrl
-          a(href=applicationUrl style='margin: 0 1rem;')
-            img(src=applicationUrl +'/logo_full.png' style='width: 26rem; image-rendering: crisp-edges; image-rendering: -webkit-optimize-contrast;')
+        if logoUrl
+          if applicationUrl
+            a(href=applicationUrl style='margin: 0 1rem;')
+              img(src=logoUrl style='width: 26rem; image-rendering: crisp-edges; image-rendering: -webkit-optimize-contrast;')
+          else
+            img(src=logoUrl style='margin: 0 1rem; width: 26rem; image-rendering: crisp-edges; image-rendering: -webkit-optimize-contrast;')
         else
           div(style='margin: 0 1rem 2.5rem; font-size: 3em; font-weight: 700;')
             | #{applicationTitle}

@@ -221,6 +221,7 @@ export interface NotificationAgentDiscord extends NotificationAgentConfig {
     botAvatarUrl?: string;
     webhookUrl: string;
     webhookRoleId?: string;
+    webhookThreadId?: string;
     enableMentions: boolean;
     locale: AvailableLocale;
     useUserLocale: boolean;
@@ -247,6 +248,7 @@ export interface NotificationAgentEmail extends NotificationAgentConfig {
     authPass?: string;
     allowSelfSigned: boolean;
     senderName: string;
+    usePublicLogo: boolean;
     pgpPrivateKey?: string;
     pgpPassword?: string;
   };

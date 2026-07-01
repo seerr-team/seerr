@@ -3,6 +3,7 @@ import Modal from '@app/components/Common/Modal';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import { NotificationModalType } from '@app/components/Settings/SettingsNotifications/NotificationModal';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -18,7 +19,6 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import * as Yup from 'yup';
 
 const JSONEditor = dynamic(() => import('@app/components/JSONEditor'), {
@@ -46,7 +46,7 @@ const defaultPayload = {
     requestedBy_username: '{{requestedBy_username}}',
     requestedBy_avatar: '{{requestedBy_avatar}}',
     requestedBy_jellyfinUserId: '{{requestedBy_jellyfinUserId}}',
-    requestedBy_settings_discordId: '{{requestedBy_settings_discordId}}',
+    requestedBy_settings_discordIds: '{{requestedBy_settings_discordIds}}',
     requestedBy_settings_telegramChatId:
       '{{requestedBy_settings_telegramChatId}}',
   },
@@ -57,7 +57,7 @@ const defaultPayload = {
     reportedBy_email: '{{reportedBy_email}}',
     reportedBy_username: '{{reportedBy_username}}',
     reportedBy_avatar: '{{reportedBy_avatar}}',
-    reportedBy_settings_discordId: '{{reportedBy_settings_discordId}}',
+    reportedBy_settings_discordIds: '{{reportedBy_settings_discordIds}}',
     reportedBy_settings_telegramChatId:
       '{{reportedBy_settings_telegramChatId}}',
   },
@@ -66,7 +66,7 @@ const defaultPayload = {
     commentedBy_email: '{{commentedBy_email}}',
     commentedBy_username: '{{commentedBy_username}}',
     commentedBy_avatar: '{{commentedBy_avatar}}',
-    commentedBy_settings_discordId: '{{commentedBy_settings_discordId}}',
+    commentedBy_settings_discordIds: '{{commentedBy_settings_discordIds}}',
     commentedBy_settings_telegramChatId:
       '{{commentedBy_settings_telegramChatId}}',
   },

@@ -2,6 +2,7 @@ import Button from '@app/components/Common/Button';
 import Modal from '@app/components/Common/Modal';
 import { issueOptions } from '@app/components/IssueModal/constants';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -15,7 +16,6 @@ import axios from 'axios';
 import { Field, Formik } from 'formik';
 import Link from 'next/link';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
 import * as Yup from 'yup';
 

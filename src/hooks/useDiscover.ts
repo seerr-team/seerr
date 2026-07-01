@@ -1,8 +1,8 @@
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import { MediaStatus } from '@server/constants/media';
 import { useEffect } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWRInfinite from 'swr/infinite';
 import useSettings from './useSettings';
 import { Permission, useUser } from './useUser';

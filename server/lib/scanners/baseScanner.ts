@@ -41,6 +41,7 @@ interface ProcessOptions {
   externalServiceSlug?: string;
   title?: string;
   processing?: boolean;
+  hasFile?: boolean;
 }
 
 export interface ProcessableSeason {
@@ -104,6 +105,7 @@ class BaseScanner<T> {
       externalServiceSlug,
       processing = false,
       title = 'Unknown Title',
+      hasFile = true,
     }: ProcessOptions = {}
   ): Promise<void> {
     const mediaRepository = getRepository(Media);
@@ -115,15 +117,28 @@ class BaseScanner<T> {
         let changedExisting = false;
 
         if (existing[is4k ? 'status4k' : 'status'] !== MediaStatus.AVAILABLE) {
-          existing[is4k ? 'status4k' : 'status'] = !processing
-            ? MediaStatus.AVAILABLE
-            : existing[is4k ? 'status4k' : 'status'] === MediaStatus.DELETED
-              ? MediaStatus.DELETED
-              : MediaStatus.PROCESSING;
-          if (mediaAddedAt) {
-            existing.mediaAddedAt = mediaAddedAt;
+          const statusField = is4k ? 'status4k' : 'status';
+          const previousStatus = existing[statusField];
+
+          existing[statusField] =
+            !processing && hasFile
+              ? MediaStatus.AVAILABLE
+              : !processing &&
+                  !hasFile &&
+                  previousStatus === MediaStatus.PROCESSING
+                ? MediaStatus.UNKNOWN
+                : processing
+                  ? previousStatus === MediaStatus.DELETED
+                    ? MediaStatus.DELETED
+                    : MediaStatus.PROCESSING
+                  : previousStatus;
+
+          if (existing[statusField] !== previousStatus) {
+            if (mediaAddedAt) {
+              existing.mediaAddedAt = mediaAddedAt;
+            }
+            changedExisting = true;
           }
-          changedExisting = true;
         }
 
         if (!changedExisting && !existing.mediaAddedAt && mediaAddedAt) {
@@ -192,6 +207,10 @@ class BaseScanner<T> {
           this.log(`Title already exists and no changes detected for ${title}`);
         }
       } else {
+        if (!processing && !hasFile) {
+          return;
+        }
+
         const newMedia = new Media();
         newMedia.tmdbId = tmdbId;
         newMedia.imdbId = imdbId;
@@ -448,15 +467,38 @@ class BaseScanner<T> {
           (s) => s.seasonNumber !== 0
         );
 
-        // Check the actual season objects instead scanner input
-        // to determine overall availability status
-        const isAllStandardSeasonsAvailable =
-          nonSpecialSeasons.length > 0 &&
-          nonSpecialSeasons.every((s) => s.status === MediaStatus.AVAILABLE);
+        // DB-only seasons block the rollup unless UNKNOWN (orphan placeholders
+        // can never be revisited by a scan and would pin the show forever).
+        const countsTowardsRollup = (
+          s: Season,
+          statusKey: 'status' | 'status4k'
+        ): boolean => {
+          const scannedSeason = seasons.find(
+            (season) => season.seasonNumber === s.seasonNumber
+          );
 
+          if (scannedSeason) {
+            return scannedSeason.totalEpisodes > 0;
+          }
+
+          return s[statusKey] !== MediaStatus.UNKNOWN;
+        };
+
+        const standardSeasonsForRollup = nonSpecialSeasons.filter((s) =>
+          countsTowardsRollup(s, 'status')
+        );
+        const isAllStandardSeasonsAvailable =
+          standardSeasonsForRollup.length > 0 &&
+          standardSeasonsForRollup.every(
+            (s) => s.status === MediaStatus.AVAILABLE
+          );
+
+        const seasons4kForRollup = nonSpecialSeasons.filter((s) =>
+          countsTowardsRollup(s, 'status4k')
+        );
         const isAll4kSeasonsAvailable =
-          nonSpecialSeasons.length > 0 &&
-          nonSpecialSeasons.every((s) => s.status4k === MediaStatus.AVAILABLE);
+          seasons4kForRollup.length > 0 &&
+          seasons4kForRollup.every((s) => s.status4k === MediaStatus.AVAILABLE);
 
         media.status = isAllStandardSeasonsAvailable
           ? MediaStatus.AVAILABLE
@@ -501,13 +543,18 @@ class BaseScanner<T> {
           (s) => s.seasonNumber !== 0
         );
 
+        const newSeasonsForRollup = nonSpecialNewSeasons.filter(
+          (s) =>
+            (seasons.find((season) => season.seasonNumber === s.seasonNumber)
+              ?.totalEpisodes ?? 0) > 0
+        );
         const isAllStandardSeasonsAvailable =
-          nonSpecialNewSeasons.length > 0 &&
-          nonSpecialNewSeasons.every((s) => s.status === MediaStatus.AVAILABLE);
+          newSeasonsForRollup.length > 0 &&
+          newSeasonsForRollup.every((s) => s.status === MediaStatus.AVAILABLE);
 
         const isAll4kSeasonsAvailable =
-          nonSpecialNewSeasons.length > 0 &&
-          nonSpecialNewSeasons.every(
+          newSeasonsForRollup.length > 0 &&
+          newSeasonsForRollup.every(
             (s) => s.status4k === MediaStatus.AVAILABLE
           );
 
