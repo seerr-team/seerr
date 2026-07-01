@@ -10,7 +10,7 @@ import Media from '@server/entity/Media';
 import MediaRequest from '@server/entity/MediaRequest';
 import { User } from '@server/entity/User';
 import { radarrScanner } from '@server/lib/scanners/radarr';
-import type { RadarrSettings } from '@server/lib/settings';
+import type { RadarrSettings } from '@server/interfaces/settings';
 import { getSettings } from '@server/lib/settings';
 import { setupTestDb } from '@server/test/db';
 import assert from 'node:assert/strict';

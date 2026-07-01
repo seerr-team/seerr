@@ -4,9 +4,12 @@ import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import { defineMessages, getIntl } from '@server/i18n';
 import globalMessages from '@server/i18n/globalMessages';
+import {
+  NotificationAgentKey,
+  type NotificationAgentEmail,
+} from '@server/interfaces/settings';
 import PreparedEmail from '@server/lib/email';
-import type { NotificationAgentEmail } from '@server/lib/settings';
-import { NotificationAgentKey, getSettings } from '@server/lib/settings';
+import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import type { AvailableLocale } from '@server/types/languages';
 import type { EmailOptions } from 'email-templates';

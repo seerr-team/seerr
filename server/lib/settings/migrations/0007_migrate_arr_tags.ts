@@ -2,7 +2,7 @@ import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
-import type { AllSettings } from '@server/lib/settings';
+import type { AllSettings } from '@server/interfaces/settings';
 
 const migrationArrTags = async (settings: any): Promise<AllSettings> => {
   if (
