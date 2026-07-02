@@ -54,7 +54,7 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   streamingRegionTip: 'Show streaming sites by regional availability',
   hideBlocklisted: 'Hide Blocklisted Items',
   hideBlocklistedTip:
-    'Hide blocklisted items from discover pages for all users with the "Manage Blocklist" permission',
+    'Hide blocklisted items from discover pages for all users without the "View Blocklisted Media" permission',
   toastApiKeySuccess: 'New API key generated successfully!',
   toastApiKeyFailure: 'Something went wrong while generating a new API key.',
   toastSettingsSuccess: 'Settings saved successfully!',
