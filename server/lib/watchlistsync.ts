@@ -1,5 +1,6 @@
 import PlexTvAPI from '@server/api/plextv';
 import { MediaStatus, MediaType } from '@server/constants/media';
+import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import {
@@ -18,22 +19,62 @@ class WatchlistSync {
   public async syncWatchlist() {
     const userRepository = getRepository(User);
 
+    // Taken from auth.ts
+    const mainUser = await userRepository.findOneOrFail({
+      select: { id: true, plexToken: true },
+      where: { id: 1 },
+    });
+
+    // Old imported plex users may not have plex uuids stored in the db
+    const nullUsers = await userRepository
+      .createQueryBuilder('user')
+      .where('user.userType = :userType', { userType: UserType.PLEX })
+      .andWhere('user.plexUuid IS NULL')
+      .getMany();
+
+    if (nullUsers.length > 0) {
+      logger.warn(
+        'Found plex users without assigned uuids. Obtaining corresponding uuids.',
+        {
+          label: 'Plex Watchlist Sync',
+        }
+      );
+
+      const mainPlexTv = new PlexTvAPI(mainUser.plexToken ?? '');
+
+      const plexHomeUsersResponse = await mainPlexTv.getHomeUsers();
+      for (const rawUser of plexHomeUsersResponse.MediaContainer.User) {
+        const account = rawUser.$;
+
+        const user = await userRepository
+          .createQueryBuilder('user')
+          .where('user.plexId = :id', { id: account.id })
+          .getOne();
+
+        if (user) {
+          user.plexUuid = account.uuid;
+          await userRepository.save(user);
+        }
+      }
+    }
+
     // Get users who actually have plex tokens
     const users = await userRepository
       .createQueryBuilder('user')
       .addSelect('user.plexToken')
+      .addSelect('user.plexUuid')
       .leftJoinAndSelect('user.settings', 'settings')
-      .where("user.plexToken != ''")
+      .where('user.userType = :userType', { userType: UserType.PLEX })
       .getMany();
 
     for (const user of users) {
-      await this.syncUserWatchlist(user);
+      await this.syncUserWatchlist(user, mainUser.plexToken ?? '');
     }
   }
 
-  private async syncUserWatchlist(user: User) {
-    if (!user.plexToken) {
-      logger.warn('Skipping user watchlist sync for user without plex token', {
+  private async syncUserWatchlist(user: User, mainPlexToken: string) {
+    if (!user.plexUuid) {
+      logger.warn('Skipping user watchlist sync for user without plex uuid', {
         label: 'Plex Watchlist Sync',
         user: user.displayName,
       });
@@ -61,9 +102,30 @@ class WatchlistSync {
       return;
     }
 
-    const plexTvApi = new PlexTvAPI(user.plexToken);
+    // Token sync if the user has a token, else fallback to sync using the main user's token
+    const plexTvApi = user.plexToken
+      ? new PlexTvAPI(user.plexToken)
+      : new PlexTvAPI(mainPlexToken);
 
-    const response = await plexTvApi.getWatchlist({ size: 20 });
+    const response = await plexTvApi.getWatchlist(user.plexUuid);
+
+    // endCursor will be undefined if the GQL query fails to return Watchlist data
+    if (response.endCursor === undefined && user.settings) {
+      user.settings.watchlistSyncMovies = false;
+      user.settings.watchlistSyncTv = false;
+
+      const userRepository = getRepository(User);
+      await userRepository.save(user);
+
+      logger.warn(
+        'Disabling watchlist sync for user because access is denied',
+        {
+          label: 'Plex Watchlist Sync',
+          user: user.displayName,
+        }
+      );
+      return;
+    }
 
     const mediaItems = await Media.getRelatedMedia(
       user,

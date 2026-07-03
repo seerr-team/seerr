@@ -1504,6 +1504,7 @@
   "components.UserProfile.UserSettings.UserGeneralSettings.toastSettingsFailureEmail": "This email is already taken!",
   "components.UserProfile.UserSettings.UserGeneralSettings.toastSettingsFailureEmailEmpty": "Another user already has this username. You must set an email",
   "components.UserProfile.UserSettings.UserGeneralSettings.toastSettingsSuccess": "Settings saved successfully!",
+  "components.UserProfile.UserSettings.UserGeneralSettings.toastSettingsWatchlistAccessDenied": "User's watchlist is not accessible.",
   "components.UserProfile.UserSettings.UserGeneralSettings.user": "User",
   "components.UserProfile.UserSettings.UserGeneralSettings.validationemailformat": "Valid email required",
   "components.UserProfile.UserSettings.UserGeneralSettings.validationemailrequired": "Email required",

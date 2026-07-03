@@ -929,7 +929,7 @@ discoverRoutes.get<Record<string, unknown>, WatchlistResponse>(
 
     const activeUser = await userRepository.findOne({
       where: { id: req.user?.id },
-      select: ['id', 'plexToken'],
+      select: ['id', 'plexToken', 'plexUuid'],
     });
 
     if (activeUser && !activeUser?.plexToken) {
@@ -961,11 +961,21 @@ discoverRoutes.get<Record<string, unknown>, WatchlistResponse>(
         results: [],
       });
     }
+    if (!activeUser?.plexUuid) {
+      // We will just return an empty array if the user has no Plex UUID
+      return res.json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
 
     // List watchlist from Plex
     const plexTV = new PlexTvAPI(activeUser.plexToken);
 
-    const watchlist = await plexTV.getWatchlist({ offset });
+    // TODO: Reimplement offset-like pagination with endCursor
+    const watchlist = await plexTV.getWatchlist(activeUser.plexUuid);
 
     return res.json({
       page,

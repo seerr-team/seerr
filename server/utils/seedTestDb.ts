@@ -34,6 +34,7 @@ async function seedTestUsers(): Promise<void> {
     })) ?? new User();
   user.plexId = admin?.plexId ?? 1;
   user.plexToken = '1234';
+  user.plexUuid = 'a63j9ad8';
   user.plexUsername = 'admin';
   user.username = 'admin';
   user.email = 'admin@seerr.dev';
@@ -50,6 +51,7 @@ async function seedTestUsers(): Promise<void> {
     })) ?? new User();
   otherUser.plexId = admin?.plexId ?? 1;
   otherUser.plexToken = '1234';
+  otherUser.plexUuid = '09kdca49';
   otherUser.plexUsername = 'friend';
   otherUser.username = 'friend';
   otherUser.email = 'friend@seerr.dev';

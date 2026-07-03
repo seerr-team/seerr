@@ -670,9 +670,9 @@ router.post(
       });
       const mainPlexTv = new PlexTvAPI(mainUser.plexToken ?? '');
 
-      const plexUsersResponse = await mainPlexTv.getUsers();
+      const plexHomeUsersResponse = await mainPlexTv.getHomeUsers();
       const createdUsers: User[] = [];
-      for (const rawUser of plexUsersResponse.MediaContainer.User) {
+      for (const rawUser of plexHomeUsersResponse.MediaContainer.User) {
         const account = rawUser.$;
 
         if (account.email) {
@@ -689,6 +689,7 @@ router.post(
             user.avatar = account.thumb;
             user.email = account.email;
             user.plexUsername = account.username;
+            user.plexUuid = account.uuid;
 
             // In case the user was previously a local account
             if (user.userType === UserType.LOCAL) {
@@ -703,6 +704,7 @@ router.post(
                 email: account.email,
                 permissions: settings.main.defaultPermissions,
                 plexId: parseInt(account.id),
+                plexUuid: account.uuid,
                 plexToken: '',
                 avatar: account.thumb,
                 userType: UserType.PLEX,
@@ -953,7 +955,7 @@ router.get<{ id: string }, WatchlistResponse>(
 
     const user = await getRepository(User).findOneOrFail({
       where: { id: Number(req.params.id) },
-      select: ['id', 'plexToken'],
+      select: ['id', 'plexToken', 'plexUuid'],
     });
 
     if (user) {
@@ -986,9 +988,20 @@ router.get<{ id: string }, WatchlistResponse>(
       });
     }
 
+    // We will just return an empty array if the user has no Plex UUID
+    if (!user.plexUuid) {
+      return res.json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
+
     const plexTV = new PlexTvAPI(user.plexToken);
 
-    const watchlist = await plexTV.getWatchlist({ offset });
+    // TODO: Reimplement offset-like pagination with endCursor
+    const watchlist = await plexTV.getWatchlist(user.plexUuid);
 
     return res.json({
       page,

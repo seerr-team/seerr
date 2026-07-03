@@ -9,4 +9,5 @@ export enum ApiErrorCode {
   SyncErrorNoLibraries = 'SYNC_ERROR_NO_LIBRARIES',
   Unauthorized = 'UNAUTHORIZED',
   Unknown = 'UNKNOWN',
+  WatchlistAccessDenied = 'WATCHLIST_ACCESS_DENIED',
 }
