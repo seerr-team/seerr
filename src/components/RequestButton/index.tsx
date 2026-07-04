@@ -122,6 +122,16 @@ const RequestButton = ({
     mutate('/api/v1/request/count');
   };
 
+  const isOtherQualityUnclaimed = (otherQualityStatus?: MediaStatus) =>
+    !otherQualityStatus ||
+    otherQualityStatus === MediaStatus.UNKNOWN ||
+    otherQualityStatus === MediaStatus.DELETED;
+
+  const canRequestQuality = (otherQualityStatus?: MediaStatus) =>
+    settings.currentSettings.multiQualityRequestsEnabled ||
+    hasPermission(Permission.MANAGE_REQUESTS) ||
+    isOtherQualityUnclaimed(otherQualityStatus);
+
   const buttons: ButtonOption[] = [];
 
   // If there are pending requests, show request management options first
@@ -272,6 +282,7 @@ const RequestButton = ({
     (!media ||
       media.status === MediaStatus.UNKNOWN ||
       (media.status === MediaStatus.DELETED && !activeRequest)) &&
+    canRequestQuality(media?.status4k) &&
     hasPermission(
       [
         Permission.REQUEST,
@@ -299,6 +310,7 @@ const RequestButton = ({
     }) &&
     media &&
     media.status !== MediaStatus.BLOCKLISTED &&
+    canRequestQuality(media.status4k) &&
     !isShowComplete
   ) {
     buttons.push({
@@ -317,6 +329,7 @@ const RequestButton = ({
     (!media ||
       media.status4k === MediaStatus.UNKNOWN ||
       (media.status4k === MediaStatus.DELETED && !active4kRequest)) &&
+    canRequestQuality(media?.status) &&
     hasPermission(
       [
         Permission.REQUEST_4K,
@@ -346,6 +359,7 @@ const RequestButton = ({
     }) &&
     media &&
     media.status4k !== MediaStatus.BLOCKLISTED &&
+    canRequestQuality(media.status) &&
     !is4kShowComplete &&
     settings.currentSettings.series4kEnabled
   ) {

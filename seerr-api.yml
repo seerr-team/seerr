@@ -254,6 +254,9 @@ components:
         enableSpecialEpisodes:
           type: boolean
           example: false
+        multiQualityRequestsEnabled:
+          type: boolean
+          example: true
     NetworkSettings:
       type: object
       properties:

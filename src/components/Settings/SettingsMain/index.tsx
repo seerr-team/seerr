@@ -70,6 +70,9 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   validationApplicationUrlTrailingSlash: 'URL must not end in a trailing slash',
   partialRequestsEnabled: 'Allow Partial Series Requests',
   enableSpecialEpisodes: 'Allow Special Episodes Requests',
+  multiQualityRequestsEnabled: 'Allow Multi-Quality Requests',
+  multiQualityRequestsEnabledTip:
+    'Allow users to request the same title in both standard and 4K quality. When disabled, a title that has already been requested or is available in one quality can no longer be requested in the other, except by users with the Manage Requests permission',
   separate4kRequestButton: 'Separate 4K Request Button',
   separate4kRequestButtonTip:
     'Show the 4K request as its own button next to the Request button on title pages instead of inside the request dropdown',
@@ -184,6 +187,7 @@ const SettingsMain = () => {
             blocklistedTagsLimit: data?.blocklistedTagsLimit || 50,
             partialRequestsEnabled: data?.partialRequestsEnabled,
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
+            multiQualityRequestsEnabled: data?.multiQualityRequestsEnabled,
             separate4kRequestButton: data?.separate4kRequestButton,
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
@@ -207,6 +211,7 @@ const SettingsMain = () => {
                 blocklistedTagsLimit: values.blocklistedTagsLimit,
                 partialRequestsEnabled: values.partialRequestsEnabled,
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
+                multiQualityRequestsEnabled: values.multiQualityRequestsEnabled,
                 separate4kRequestButton: values.separate4kRequestButton,
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
@@ -584,6 +589,34 @@ const SettingsMain = () => {
                         setFieldValue(
                           'enableSpecialEpisodes',
                           !values.enableSpecialEpisodes
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="multiQualityRequestsEnabled"
+                    className="checkbox-label"
+                  >
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.multiQualityRequestsEnabled)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(
+                        messages.multiQualityRequestsEnabledTip
+                      )}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="multiQualityRequestsEnabled"
+                      name="multiQualityRequestsEnabled"
+                      onChange={() => {
+                        setFieldValue(
+                          'multiQualityRequestsEnabled',
+                          !values.multiQualityRequestsEnabled
                         );
                       }}
                     />

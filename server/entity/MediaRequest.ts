@@ -34,6 +34,7 @@ import { User } from './User';
 
 export class RequestPermissionError extends Error {}
 export class QuotaRestrictedError extends Error {}
+export class QualityRestrictedError extends Error {}
 export class DuplicateMediaRequestError extends Error {}
 export class NoSeasonsAvailableError extends Error {}
 export class BlocklistedMediaError extends Error {}
@@ -157,6 +158,36 @@ export class MediaRequest {
 
       if (media.status4k === MediaStatus.UNKNOWN && requestBody.is4k) {
         media.status4k = MediaStatus.PENDING;
+      }
+
+      if (
+        !settings.main.multiQualityRequestsEnabled &&
+        !user.hasPermission(Permission.MANAGE_REQUESTS)
+      ) {
+        const otherQualityStatus = requestBody.is4k
+          ? media.status
+          : media.status4k;
+
+        if (
+          otherQualityStatus !== MediaStatus.UNKNOWN &&
+          otherQualityStatus !== MediaStatus.DELETED
+        ) {
+          logger.warn(
+            'Request blocked because media is already requested or available in another quality',
+            {
+              tmdbId: tmdbMedia.id,
+              mediaType: requestBody.mediaType,
+              is4k: requestBody.is4k,
+              label: 'Media Request',
+            }
+          );
+
+          throw new QualityRestrictedError(
+            `This media has already been requested or is available in ${
+              requestBody.is4k ? 'standard' : '4K'
+            } quality.`
+          );
+        }
       }
     }
 

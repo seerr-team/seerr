@@ -154,6 +154,7 @@ export interface MainSettings {
   mediaServerType: number;
   partialRequestsEnabled: boolean;
   enableSpecialEpisodes: boolean;
+  multiQualityRequestsEnabled: boolean;
   separate4kRequestButton: boolean;
   locale: string;
   youtubeUrl: string;
@@ -207,6 +208,7 @@ interface FullPublicSettings extends PublicSettings {
   jellyfinServerName?: string;
   partialRequestsEnabled: boolean;
   enableSpecialEpisodes: boolean;
+  multiQualityRequestsEnabled: boolean;
   separate4kRequestButton: boolean;
   cacheImages: boolean;
   vapidPublic: string;
@@ -428,6 +430,7 @@ class Settings {
         mediaServerType: MediaServerType.NOT_CONFIGURED,
         partialRequestsEnabled: true,
         enableSpecialEpisodes: false,
+        multiQualityRequestsEnabled: true,
         separate4kRequestButton: false,
         locale: 'en',
         youtubeUrl: '',
@@ -727,6 +730,7 @@ class Settings {
       mediaServerType: this.main.mediaServerType,
       partialRequestsEnabled: this.data.main.partialRequestsEnabled,
       enableSpecialEpisodes: this.data.main.enableSpecialEpisodes,
+      multiQualityRequestsEnabled: this.data.main.multiQualityRequestsEnabled,
       separate4kRequestButton: this.data.main.separate4kRequestButton,
       cacheImages: this.data.main.cacheImages,
       vapidPublic: this.vapidPublic,

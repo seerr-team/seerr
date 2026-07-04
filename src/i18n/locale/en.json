@@ -1015,6 +1015,8 @@
   "components.Settings.SettingsMain.hideBlocklisted": "Hide Blocklisted Items",
   "components.Settings.SettingsMain.hideBlocklistedTip": "Hide blocklisted items from discover pages for all users with the \"Manage Blocklist\" permission",
   "components.Settings.SettingsMain.locale": "Display Language",
+  "components.Settings.SettingsMain.multiQualityRequestsEnabled": "Allow Multi-Quality Requests",
+  "components.Settings.SettingsMain.multiQualityRequestsEnabledTip": "Allow users to request the same title in both standard and 4K quality. When disabled, a title that has already been requested or is available in one quality can no longer be requested in the other, except by users with the Manage Requests permission",
   "components.Settings.SettingsMain.originallanguage": "Discover Language",
   "components.Settings.SettingsMain.originallanguageTip": "Filter content by original language",
   "components.Settings.SettingsMain.partialRequestsEnabled": "Allow Partial Series Requests",

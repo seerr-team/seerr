@@ -24,6 +24,7 @@ const defaultSettings = {
   mediaServerType: MediaServerType.NOT_CONFIGURED,
   partialRequestsEnabled: true,
   enableSpecialEpisodes: false,
+  multiQualityRequestsEnabled: true,
   separate4kRequestButton: false,
   cacheImages: false,
   vapidPublic: '',

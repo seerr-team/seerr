@@ -12,6 +12,7 @@ import {
   DuplicateMediaRequestError,
   MediaRequest,
   NoSeasonsAvailableError,
+  QualityRestrictedError,
   QuotaRestrictedError,
   RequestPermissionError,
 } from '@server/entity/MediaRequest';
@@ -321,6 +322,7 @@ requestRoutes.post<never, MediaRequest, MediaRequestBody>(
       switch (error.constructor) {
         case RequestPermissionError:
         case QuotaRestrictedError:
+        case QualityRestrictedError:
           return next({ status: 403, message: error.message });
         case DuplicateMediaRequestError:
           return next({ status: 409, message: error.message });

@@ -363,11 +363,22 @@ const TitleCard = ({
 
   const isBlocklisted = currentStatus === MediaStatus.BLOCKLISTED;
 
-  const showRequest = showRequestButton && isRequestableStatus(currentStatus);
+  const canRequestQuality = (otherQualityStatus?: MediaStatus) =>
+    settings.currentSettings.multiQualityRequestsEnabled ||
+    hasPermission(Permission.MANAGE_REQUESTS) ||
+    isRequestableStatus(otherQualityStatus);
+
+  const showRequest =
+    showRequestButton &&
+    isRequestableStatus(currentStatus) &&
+    canRequestQuality(currentStatus4k);
   const showAvailable = isAvailableStatus(currentStatus);
   const showRequested = isRequestedStatus(currentStatus);
   const showRequest4k =
-    !isBlocklisted && show4k && isRequestableStatus(currentStatus4k);
+    !isBlocklisted &&
+    show4k &&
+    isRequestableStatus(currentStatus4k) &&
+    canRequestQuality(currentStatus);
   const showAvailable4k =
     !isBlocklisted && show4k && isAvailableStatus(currentStatus4k);
   const showRequested4k =
