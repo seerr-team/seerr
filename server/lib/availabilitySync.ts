@@ -32,6 +32,7 @@ class AvailabilitySync {
   private sonarrSeasonsCache: Record<string, SonarrSeason[]>;
   private radarrServers: RadarrSettings[];
   private sonarrServers: SonarrSettings[];
+  private enable4kMovie: boolean;
 
   readonly tmdb = new TheMovieDb();
 
@@ -44,8 +45,9 @@ class AvailabilitySync {
     this.jellyfinSeasonsCache = {};
     this.jellyfinEpisodeExistsCache = {};
     this.sonarrSeasonsCache = {};
-    this.radarrServers = settings.radarr.filter((server) => server.syncEnabled);
-    this.sonarrServers = settings.sonarr.filter((server) => server.syncEnabled);
+    this.radarrServers = settings.radarr;
+    this.sonarrServers = settings.sonarr;
+    this.enable4kMovie = this.radarrServers.some((server) => server.is4k);
 
     try {
       logger.info(`Starting availability sync...`, {
@@ -503,31 +505,29 @@ class AvailabilitySync {
     const mediaRepository = getRepository(Media);
 
     try {
-      // If media type is tv, check if a season is processing
+      // Check if an approved request for this version is still in flight
       // to see if we need to keep the external metadata
       let isMediaProcessing = false;
 
-      if (media.mediaType === 'tv') {
-        const requestRepository = getRepository(MediaRequest);
+      const requestRepository = getRepository(MediaRequest);
 
-        const request = await requestRepository
-          .createQueryBuilder('request')
-          .leftJoinAndSelect('request.media', 'media')
-          .where('(media.id = :id)', {
-            id: media.id,
-          })
-          .andWhere(
-            '(request.is4k = :is4k AND request.status = :requestStatus)',
-            {
-              requestStatus: MediaRequestStatus.APPROVED,
-              is4k: is4k,
-            }
-          )
-          .getOne();
+      const request = await requestRepository
+        .createQueryBuilder('request')
+        .leftJoinAndSelect('request.media', 'media')
+        .where('(media.id = :id)', {
+          id: media.id,
+        })
+        .andWhere(
+          '(request.is4k = :is4k AND request.status = :requestStatus)',
+          {
+            requestStatus: MediaRequestStatus.APPROVED,
+            is4k: is4k,
+          }
+        )
+        .getOne();
 
-        if (request) {
-          isMediaProcessing = true;
-        }
+      if (request) {
+        isMediaProcessing = true;
       }
 
       // Set the non-4K or 4K media to deleted
@@ -885,6 +885,16 @@ class AvailabilitySync {
           this.plexSeasonsCache[ratingKey] =
             await this.plexClient?.getChildrenMetadata(ratingKey);
         }
+
+        if (
+          plexMedia &&
+          media.mediaType === 'movie' &&
+          this.enable4kMovie &&
+          plexMedia.Media?.length &&
+          !plexMedia.Media.some((mediaItem) => (mediaItem.width ?? 0) < 2000)
+        ) {
+          plexMedia = undefined;
+        }
       }
 
       if (ratingKey4k && is4k) {
@@ -896,16 +906,11 @@ class AvailabilitySync {
         }
 
         if (plexMedia) {
-          if (ratingKey === ratingKey4k) {
-            plexMedia = undefined;
-          }
-
           if (
             plexMedia &&
             media.mediaType === 'movie' &&
-            !plexMedia.Media?.some(
-              (mediaItem) => (mediaItem.width ?? 0) >= 2000
-            )
+            plexMedia.Media?.length &&
+            !plexMedia.Media.some((mediaItem) => (mediaItem.width ?? 0) >= 2000)
           ) {
             plexMedia = undefined;
           }
