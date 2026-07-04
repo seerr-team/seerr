@@ -194,12 +194,12 @@ jobs:
             with:
               persist-credentials: false
 
-          - name: Commit timestamp
-            id: ts
-            run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
-
           - name: Set up Docker Buildx
             uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4
+
+      - name: Commit timestamp
+        id: ts
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
 
       - name: Warm cache (no push) — ${{ matrix.platform }}
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
@@ -231,10 +231,6 @@ jobs:
             with:
               persist-credentials: false
 
-          - name: Commit timestamp
-            id: ts
-            run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
-
           - name: Set up Docker Buildx
             uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4
 
@@ -250,6 +246,10 @@ jobs:
               registry: ghcr.io
               username: ${{ github.repository_owner }}
               password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit timestamp
+        id: ts
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
 
       - name: Extract metadata
         id: meta
