@@ -284,11 +284,10 @@ notificationRoutes.get('/webhook', (_req, res) => {
     types: webhookSettings.types,
     options: {
       ...webhookSettings.options,
-      jsonPayload: JSON.parse(
-        Buffer.from(webhookSettings.options.jsonPayload, 'base64').toString(
-          'utf8'
-        )
-      ),
+      jsonPayload: Buffer.from(
+        webhookSettings.options.jsonPayload,
+        'base64'
+      ).toString('utf8'),
       customHeaders: webhookSettings.options.customHeaders ?? [],
       supportVariables: webhookSettings.options.supportVariables ?? false,
     },
@@ -305,9 +304,9 @@ notificationRoutes.post('/webhook', async (req, res, next) => {
       embedPoster: req.body.embedPoster,
       types: req.body.types,
       options: {
-        jsonPayload: Buffer.from(
-          JSON.stringify(req.body.options.jsonPayload)
-        ).toString('base64'),
+        jsonPayload: Buffer.from(req.body.options.jsonPayload).toString(
+          'base64'
+        ),
         webhookUrl: req.body.options.webhookUrl,
         authHeader: req.body.options.authHeader,
         customHeaders: req.body.options.customHeaders ?? [],
@@ -336,9 +335,9 @@ notificationRoutes.post('/webhook/test', async (req, res, next) => {
       embedPoster: req.body.embedPoster,
       types: req.body.types,
       options: {
-        jsonPayload: Buffer.from(
-          JSON.stringify(req.body.options.jsonPayload)
-        ).toString('base64'),
+        jsonPayload: Buffer.from(req.body.options.jsonPayload).toString(
+          'base64'
+        ),
         webhookUrl: req.body.options.webhookUrl,
         authHeader: req.body.options.authHeader,
         customHeaders: req.body.options.customHeaders ?? [],

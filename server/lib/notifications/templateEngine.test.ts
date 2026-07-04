@@ -58,6 +58,18 @@ describe('TemplateEngine', () => {
       assert.deepEqual(present.media, { tmdbId: '42' });
     });
 
+    it('renders undefined variables as empty strings without throwing', () => {
+      const rendered = TemplateEngine.render(
+        '{ "known": {{ subject | json }}, "unknown": "{{ nonexistent_variable }}" }',
+        makePayload({ subject: 'Known Value' }),
+        Notification.TEST_NOTIFICATION
+      );
+
+      const parsed = JSON.parse(rendered);
+      assert.equal(parsed.known, 'Known Value');
+      assert.equal(parsed.unknown, '');
+    });
+
     it('does not crash on circular references in the json filter', () => {
       const circular: Record<string, unknown> = {};
       circular.self = circular;

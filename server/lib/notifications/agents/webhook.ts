@@ -22,14 +22,10 @@ class WebhookAgent
   }
 
   private buildPayload(type: Notification, payload: NotificationPayload) {
-    const payloadString = Buffer.from(
+    const template = Buffer.from(
       this.getSettings().options.jsonPayload,
       'base64'
     ).toString('utf8');
-
-    // The payload is stored as a JSON-encoded string; decode it to the raw
-    // template, render it, then parse the result as the final JSON body.
-    const template = JSON.parse(payloadString);
     const rendered = TemplateEngine.render(template, payload, type);
 
     return JSON.parse(rendered);
@@ -70,15 +66,30 @@ class WebhookAgent
       try {
         webhookUrl = TemplateEngine.render(webhookUrl, payload, type);
       } catch (error) {
-        logger.warn(
-          'Error rendering webhook URL template, using original URL',
-          {
-            label: 'Notifications',
-            errorMessage:
-              error instanceof Error ? error.message : 'Unknown error',
-          }
-        );
+        logger.error('Failed to render webhook URL template', {
+          label: 'Notifications',
+          type: Notification[type],
+          subject: payload.subject,
+          errorMessage:
+            error instanceof Error ? error.message : 'Unknown error',
+        });
+
+        return false;
       }
+    }
+
+    let body: unknown;
+    try {
+      body = this.buildPayload(type, payload);
+    } catch (error) {
+      logger.error('Failed to render webhook payload template', {
+        label: 'Notifications',
+        type: Notification[type],
+        subject: payload.subject,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      });
+
+      return false;
     }
 
     try {
@@ -110,7 +121,7 @@ class WebhookAgent
 
       await axios.post(
         webhookUrl,
-        this.buildPayload(type, payload),
+        body,
         Object.keys(headers).length > 0 ? { headers } : undefined
       );
 
