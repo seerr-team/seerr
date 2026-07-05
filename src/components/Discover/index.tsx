@@ -10,6 +10,7 @@ import NetworkSlider from '@app/components/Discover/NetworkSlider';
 import PlexWatchlistSlider from '@app/components/Discover/PlexWatchlistSlider';
 import RecentRequestsSlider from '@app/components/Discover/RecentRequestsSlider';
 import RecentlyAddedSlider from '@app/components/Discover/RecentlyAddedSlider';
+import SeasonalAnimeSlider from '@app/components/Discover/SeasonalAnimeSlider';
 import StudioSlider from '@app/components/Discover/StudioSlider';
 import TvGenreSlider from '@app/components/Discover/TvGenreSlider';
 import { sliderTitles } from '@app/components/Discover/constants';
@@ -282,6 +283,9 @@ const Discover = () => {
             break;
           case DiscoverSliderType.NETWORKS:
             sliderComponent = <NetworkSlider />;
+            break;
+          case DiscoverSliderType.SEASONAL_ANIME:
+            sliderComponent = <SeasonalAnimeSlider />;
             break;
           case DiscoverSliderType.TMDB_MOVIE_KEYWORD:
             sliderComponent = (
