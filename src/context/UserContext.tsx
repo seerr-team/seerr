@@ -23,9 +23,18 @@ export const UserContext = ({ initialUser, children }: UserContextProps) => {
   }, [router.pathname, revalidate]);
 
   useEffect(() => {
+    // Only treat the session as invalid when the server actually rejected
+    // it. A check that never completed (e.g. the fetch was aborted because
+    // the user navigated away, or the server was briefly unreachable)
+    // rejects without a response; redirecting on those kicks logged-in
+    // users to /login and can even cancel an in-flight navigation to
+    // another site, dragging the browser back to the app.
+    const sessionInvalid =
+      error?.response?.status === 401 || error?.response?.status === 403;
+
     if (
       !router.pathname.match(/(setup|login|resetpassword)/) &&
-      (!user || error) &&
+      (!user || sessionInvalid) &&
       !routing.current
     ) {
       routing.current = true;
