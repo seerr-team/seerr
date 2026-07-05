@@ -6007,6 +6007,60 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/TvResult'
+  /discover/anime:
+    get:
+      summary: Discover anime series
+      description: Returns a list of TV shows restricted to the TMDB anime keyword in a JSON object. Accepts the same filters as /discover/tv.
+      tags:
+        - search
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: ja
+        - in: query
+          name: genre
+          schema:
+            type: string
+            example: 18
+        - in: query
+          name: keywords
+          schema:
+            type: string
+            example: 1,2
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            example: popularity.desc
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TvResult'
   /discover/tv/language/{language}:
     get:
       summary: Discover TV shows by original language
@@ -6393,6 +6447,51 @@ paths:
                           type: string
                         type:
                           type: string
+                        title:
+                          type: string
+  /discover/seasonal-anime:
+    get:
+      summary: Get currently airing seasonal anime.
+      description: Returns the current AniList anime season resolved to TMDB series, in AniList popularity order.
+      tags:
+        - search
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+      responses:
+        '200':
+          description: Seasonal anime data returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                  totalPages:
+                    type: number
+                  totalResults:
+                    type: number
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                          example: 1429
+                        tmdbId:
+                          type: number
+                          example: 1429
+                        ratingKey:
+                          type: string
+                        mediaType:
+                          type: string
+                          example: tv
                         title:
                           type: string
   /request:
