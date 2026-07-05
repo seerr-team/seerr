@@ -1,7 +1,12 @@
 import TheMovieDb from '@server/api/themoviedb';
-import { MediaStatus, MediaType } from '@server/constants/media';
+import {
+  MediaRequestStatus,
+  MediaStatus,
+  MediaType,
+} from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
+import MediaRequest from '@server/entity/MediaRequest';
 import Season from '@server/entity/Season';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -41,6 +46,7 @@ interface ProcessOptions {
   externalServiceSlug?: string;
   title?: string;
   processing?: boolean;
+  hasFile?: boolean;
 }
 
 export interface ProcessableSeason {
@@ -104,6 +110,7 @@ class BaseScanner<T> {
       externalServiceSlug,
       processing = false,
       title = 'Unknown Title',
+      hasFile = true,
     }: ProcessOptions = {}
   ): Promise<void> {
     const mediaRepository = getRepository(Media);
@@ -115,15 +122,28 @@ class BaseScanner<T> {
         let changedExisting = false;
 
         if (existing[is4k ? 'status4k' : 'status'] !== MediaStatus.AVAILABLE) {
-          existing[is4k ? 'status4k' : 'status'] = !processing
-            ? MediaStatus.AVAILABLE
-            : existing[is4k ? 'status4k' : 'status'] === MediaStatus.DELETED
-              ? MediaStatus.DELETED
-              : MediaStatus.PROCESSING;
-          if (mediaAddedAt) {
-            existing.mediaAddedAt = mediaAddedAt;
+          const statusField = is4k ? 'status4k' : 'status';
+          const previousStatus = existing[statusField];
+
+          existing[statusField] =
+            !processing && hasFile
+              ? MediaStatus.AVAILABLE
+              : !processing &&
+                  !hasFile &&
+                  previousStatus === MediaStatus.PROCESSING
+                ? MediaStatus.UNKNOWN
+                : processing
+                  ? previousStatus === MediaStatus.DELETED
+                    ? MediaStatus.DELETED
+                    : MediaStatus.PROCESSING
+                  : previousStatus;
+
+          if (existing[statusField] !== previousStatus) {
+            if (mediaAddedAt) {
+              existing.mediaAddedAt = mediaAddedAt;
+            }
+            changedExisting = true;
           }
-          changedExisting = true;
         }
 
         if (!changedExisting && !existing.mediaAddedAt && mediaAddedAt) {
@@ -192,6 +212,10 @@ class BaseScanner<T> {
           this.log(`Title already exists and no changes detected for ${title}`);
         }
       } else {
+        if (!processing && !hasFile) {
+          return;
+        }
+
         const newMedia = new Media();
         newMedia.tmdbId = tmdbId;
         newMedia.imdbId = imdbId;
@@ -448,15 +472,38 @@ class BaseScanner<T> {
           (s) => s.seasonNumber !== 0
         );
 
-        // Check the actual season objects instead scanner input
-        // to determine overall availability status
-        const isAllStandardSeasonsAvailable =
-          nonSpecialSeasons.length > 0 &&
-          nonSpecialSeasons.every((s) => s.status === MediaStatus.AVAILABLE);
+        // DB-only seasons block the rollup unless UNKNOWN (orphan placeholders
+        // can never be revisited by a scan and would pin the show forever).
+        const countsTowardsRollup = (
+          s: Season,
+          statusKey: 'status' | 'status4k'
+        ): boolean => {
+          const scannedSeason = seasons.find(
+            (season) => season.seasonNumber === s.seasonNumber
+          );
 
+          if (scannedSeason) {
+            return scannedSeason.totalEpisodes > 0;
+          }
+
+          return s[statusKey] !== MediaStatus.UNKNOWN;
+        };
+
+        const standardSeasonsForRollup = nonSpecialSeasons.filter((s) =>
+          countsTowardsRollup(s, 'status')
+        );
+        const isAllStandardSeasonsAvailable =
+          standardSeasonsForRollup.length > 0 &&
+          standardSeasonsForRollup.every(
+            (s) => s.status === MediaStatus.AVAILABLE
+          );
+
+        const seasons4kForRollup = nonSpecialSeasons.filter((s) =>
+          countsTowardsRollup(s, 'status4k')
+        );
         const isAll4kSeasonsAvailable =
-          nonSpecialSeasons.length > 0 &&
-          nonSpecialSeasons.every((s) => s.status4k === MediaStatus.AVAILABLE);
+          seasons4kForRollup.length > 0 &&
+          seasons4kForRollup.every((s) => s.status4k === MediaStatus.AVAILABLE);
 
         media.status = isAllStandardSeasonsAvailable
           ? MediaStatus.AVAILABLE
@@ -501,13 +548,18 @@ class BaseScanner<T> {
           (s) => s.seasonNumber !== 0
         );
 
+        const newSeasonsForRollup = nonSpecialNewSeasons.filter(
+          (s) =>
+            (seasons.find((season) => season.seasonNumber === s.seasonNumber)
+              ?.totalEpisodes ?? 0) > 0
+        );
         const isAllStandardSeasonsAvailable =
-          nonSpecialNewSeasons.length > 0 &&
-          nonSpecialNewSeasons.every((s) => s.status === MediaStatus.AVAILABLE);
+          newSeasonsForRollup.length > 0 &&
+          newSeasonsForRollup.every((s) => s.status === MediaStatus.AVAILABLE);
 
         const isAll4kSeasonsAvailable =
-          nonSpecialNewSeasons.length > 0 &&
-          nonSpecialNewSeasons.every(
+          newSeasonsForRollup.length > 0 &&
+          newSeasonsForRollup.every(
             (s) => s.status4k === MediaStatus.AVAILABLE
           );
 
@@ -588,6 +640,43 @@ class BaseScanner<T> {
         this.log(`Saved ${title}`);
       }
     });
+  }
+
+  /**
+   * Declines APPROVED requests bound to media that has been orphaned before completion.
+   * DECLINED clears the duplicate-request guard so the user can re-request it.
+   * Callers must load the requests relation on the media.
+   */
+  protected async declineOrphanedRequests(
+    media: Media,
+    is4k: boolean
+  ): Promise<void> {
+    if (media.requests === undefined) {
+      throw new Error(
+        `declineOrphanedRequests called for media ${media.id} without the 'requests' relation loaded`
+      );
+    }
+
+    const requestRepository = getRepository(MediaRequest);
+
+    const orphanedRequests = (media.requests ?? []).filter(
+      (request) =>
+        request.is4k === is4k && request.status === MediaRequestStatus.APPROVED
+    );
+
+    for (const request of orphanedRequests) {
+      request.status = MediaRequestStatus.DECLINED;
+      // Ensure that the media relation is set so the AfterUpdate
+      // notification hook can resolve it
+      request.media = media;
+      await requestRepository.save(request);
+      this.log(
+        `Declined orphaned ${
+          media.mediaType === MediaType.MOVIE ? 'movie' : 'series'
+        } request ${request.id} for ${media.tmdbId} not found in any Sonarr/Radarr server.`,
+        'info'
+      );
+    }
   }
 
   /**

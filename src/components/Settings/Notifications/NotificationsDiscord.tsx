@@ -1,7 +1,9 @@
 import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
+import { availableLanguages } from '@app/context/LanguageContext';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
@@ -9,7 +11,6 @@ import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
 
@@ -24,6 +25,10 @@ const messages = defineMessages('components.Settings.Notifications', {
   webhookRoleId: 'Notification Role ID',
   webhookRoleIdTip:
     'The role ID to mention in the webhook message. Leave empty to disable mentions',
+  webhookThreadId: 'Thread ID',
+  webhookThreadIdTip:
+    'The ID of the thread channel to post notifications in. Leave empty to post in the webhook channel',
+  useUserLocale: 'Use Notification Recipient Locale',
   discordsettingssaved: 'Discord notification settings saved successfully!',
   discordsettingsfailed: 'Discord notification settings failed to save.',
   toastDiscordTestSending: 'Sending Discord test notification…',
@@ -31,6 +36,7 @@ const messages = defineMessages('components.Settings.Notifications', {
   toastDiscordTestFailed: 'Discord test notification failed to send.',
   validationUrl: 'You must provide a valid URL',
   validationWebhookRoleId: 'You must provide a valid Discord Role ID',
+  validationWebhookThreadId: 'You must provide a valid Discord Thread ID',
   validationTypes: 'You must select at least one notification type',
   enableMentions: 'Enable Mentions',
 });
@@ -53,10 +59,11 @@ const NotificationsDiscord = () => {
     webhookUrl: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationUrl)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationUrl)),
+        otherwise: (schema) => schema.nullable(),
       })
       .url(intl.formatMessage(messages.validationUrl)),
     webhookRoleId: Yup.string()
@@ -65,6 +72,13 @@ const NotificationsDiscord = () => {
         /^\d{17,19}$/,
         intl.formatMessage(messages.validationWebhookRoleId)
       ),
+    webhookThreadId: Yup.string()
+      .nullable()
+      .transform((value) => (value === '' ? null : value))
+      .matches(/^\d{17,19}$/, {
+        message: intl.formatMessage(messages.validationWebhookThreadId),
+        excludeEmptyString: true,
+      }),
   });
 
   if (!data && !error) {
@@ -81,7 +95,10 @@ const NotificationsDiscord = () => {
         botAvatarUrl: data?.options.botAvatarUrl,
         webhookUrl: data.options.webhookUrl,
         webhookRoleId: data?.options.webhookRoleId,
+        webhookThreadId: data?.options.webhookThreadId,
         enableMentions: data?.options.enableMentions,
+        locale: data?.options.locale || 'en',
+        useUserLocale: data?.options.useUserLocale ?? false,
       }}
       validationSchema={NotificationsDiscordSchema}
       onSubmit={async (values) => {
@@ -95,7 +112,10 @@ const NotificationsDiscord = () => {
               botAvatarUrl: values.botAvatarUrl,
               webhookUrl: values.webhookUrl,
               webhookRoleId: values.webhookRoleId,
+              webhookThreadId: values.webhookThreadId,
               enableMentions: values.enableMentions,
+              locale: values.locale,
+              useUserLocale: values.useUserLocale,
             },
           });
 
@@ -103,7 +123,7 @@ const NotificationsDiscord = () => {
             appearance: 'success',
             autoDismiss: true,
           });
-        } catch (e) {
+        } catch {
           addToast(intl.formatMessage(messages.discordsettingsfailed), {
             appearance: 'error',
             autoDismiss: true,
@@ -145,7 +165,10 @@ const NotificationsDiscord = () => {
                 botAvatarUrl: values.botAvatarUrl,
                 webhookUrl: values.webhookUrl,
                 webhookRoleId: values.webhookRoleId,
+                webhookThreadId: values.webhookThreadId,
                 enableMentions: values.enableMentions,
+                locale: values.locale,
+                useUserLocale: values.useUserLocale,
               },
             });
 
@@ -156,7 +179,7 @@ const NotificationsDiscord = () => {
               autoDismiss: true,
               appearance: 'success',
             });
-          } catch (e) {
+          } catch {
             if (toastId) {
               removeToast(toastId);
             }
@@ -284,6 +307,28 @@ const NotificationsDiscord = () => {
               </div>
             </div>
             <div className="form-row">
+              <label htmlFor="webhookThreadId" className="text-label">
+                {intl.formatMessage(messages.webhookThreadId)}
+                <span className="label-tip">
+                  {intl.formatMessage(messages.webhookThreadIdTip)}
+                </span>
+              </label>
+              <div className="form-input-area">
+                <div className="form-input-field">
+                  <Field
+                    id="webhookThreadId"
+                    name="webhookThreadId"
+                    type="text"
+                  />
+                </div>
+                {errors.webhookThreadId &&
+                  touched.webhookThreadId &&
+                  typeof errors.webhookThreadId === 'string' && (
+                    <div className="error">{errors.webhookThreadId}</div>
+                  )}
+              </div>
+            </div>
+            <div className="form-row">
               <label htmlFor="enableMentions" className="checkbox-label">
                 {intl.formatMessage(messages.enableMentions)}
               </label>
@@ -295,6 +340,44 @@ const NotificationsDiscord = () => {
                 />
               </div>
             </div>
+            <div className="form-row">
+              <label htmlFor="useUserLocale" className="checkbox-label">
+                {intl.formatMessage(messages.useUserLocale)}
+              </label>
+              <div className="form-input-area">
+                <Field
+                  type="checkbox"
+                  id="useUserLocale"
+                  name="useUserLocale"
+                />
+              </div>
+            </div>
+            {!values.useUserLocale && (
+              <div className="form-row">
+                <label htmlFor="locale" className="text-label">
+                  {intl.formatMessage(globalMessages.notificationLocale)}
+                </label>
+                <div className="form-input-area">
+                  <div className="form-input-field">
+                    <Field as="select" id="locale" name="locale">
+                      {(
+                        Object.keys(
+                          availableLanguages
+                        ) as (keyof typeof availableLanguages)[]
+                      ).map((key) => (
+                        <option
+                          key={key}
+                          value={availableLanguages[key].code}
+                          lang={availableLanguages[key].code}
+                        >
+                          {availableLanguages[key].display}
+                        </option>
+                      ))}
+                    </Field>
+                  </div>
+                </div>
+              </div>
+            )}
             <NotificationTypeSelector
               currentTypes={values.enabled ? values.types : 0}
               onUpdate={(newTypes) => {

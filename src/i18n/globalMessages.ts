@@ -36,6 +36,8 @@ const globalMessages = defineMessages('i18n', {
   saving: 'Saving…',
   import: 'Import',
   importing: 'Importing…',
+  sync: 'Sync',
+  syncing: 'Syncing…',
   close: 'Close',
   edit: 'Edit',
   areyousure: 'Are you sure?',
@@ -51,6 +53,7 @@ const globalMessages = defineMessages('i18n', {
   settings: 'Settings',
   usersettings: 'User Settings',
   delimitedlist: '{a}, {b}',
+  error: 'Something went wrong. Please try again.',
   showingresults:
     'Showing <strong>{from}</strong> to <strong>{to}</strong> of <strong>{total}</strong> results',
   resultsperpage: 'Display {pageSize} results per page',
@@ -59,6 +62,7 @@ const globalMessages = defineMessages('i18n', {
   resolved: 'Resolved',
   blocklist: 'Blocklist',
   blocklisted: 'Blocklisted',
+  partiallyblocklisted: 'Partially Blocklisted',
   blocklistSuccess: '<strong>{title}</strong> was successfully blocklisted.',
   blocklistError: 'Something went wrong. Please try again.',
   blocklistDuplicateError:
@@ -68,6 +72,7 @@ const globalMessages = defineMessages('i18n', {
   addToBlocklist: 'Add to Blocklist',
   removefromBlocklist: 'Remove from Blocklist',
   specials: 'Specials',
+  notificationLocale: 'Notification Language',
 });
 
 export default globalMessages;

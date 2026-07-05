@@ -348,17 +348,15 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         if (
           media[entity.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
         ) {
-          logger.warn('Media already exists, marking request as APPROVED', {
+          logger.warn('Media already exists, marking request as COMPLETED', {
             label: 'Media Request',
             requestId: entity.id,
             mediaId: entity.media.id,
           });
 
-          if (entity.status !== MediaRequestStatus.APPROVED) {
-            const requestRepository = getRepository(MediaRequest);
-            entity.status = MediaRequestStatus.APPROVED;
-            await requestRepository.save(entity);
-          }
+          const requestRepository = getRepository(MediaRequest);
+          entity.status = MediaRequestStatus.COMPLETED;
+          await requestRepository.save(entity);
           return;
         }
 
@@ -545,17 +543,18 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         if (
           media[entity.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
         ) {
-          logger.warn('Media already exists, marking request as APPROVED', {
+          logger.warn('Media already exists, marking request as COMPLETED', {
             label: 'Media Request',
             requestId: entity.id,
             mediaId: entity.media.id,
           });
 
-          if (entity.status !== MediaRequestStatus.APPROVED) {
-            const requestRepository = getRepository(MediaRequest);
-            entity.status = MediaRequestStatus.APPROVED;
-            await requestRepository.save(entity);
-          }
+          const requestRepository = getRepository(MediaRequest);
+          entity.status = MediaRequestStatus.COMPLETED;
+          entity.seasons.forEach((season) => {
+            season.status = MediaRequestStatus.COMPLETED;
+          });
+          await requestRepository.save(entity);
           return;
         }
 
@@ -937,10 +936,10 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       media.mediaType === MediaType.TV &&
       entity.status === MediaRequestStatus.APPROVED
     ) {
-      entity.seasons.forEach((season) => {
+      for (const season of entity.seasons) {
         season.status = MediaRequestStatus.APPROVED;
-        seasonRequestRepository.save(season);
-      });
+        await seasonRequestRepository.save(season);
+      }
     }
   }
 
@@ -953,13 +952,28 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       relations: { requests: true },
     });
 
+    const hasActive = fullMedia.requests.some(
+      (request) =>
+        !request.is4k &&
+        request.status !== MediaRequestStatus.COMPLETED &&
+        request.status !== MediaRequestStatus.DECLINED
+    );
+    const hasActive4k = fullMedia.requests.some(
+      (request) =>
+        request.is4k &&
+        request.status !== MediaRequestStatus.COMPLETED &&
+        request.status !== MediaRequestStatus.DECLINED
+    );
+
     const needsStatusUpdate =
-      !fullMedia.requests.some((request) => !request.is4k) &&
-      fullMedia.status !== MediaStatus.AVAILABLE;
+      !hasActive &&
+      fullMedia.status !== MediaStatus.AVAILABLE &&
+      fullMedia.status !== MediaStatus.PARTIALLY_AVAILABLE;
 
     const needs4kStatusUpdate =
-      !fullMedia.requests.some((request) => request.is4k) &&
-      fullMedia.status4k !== MediaStatus.AVAILABLE;
+      !hasActive4k &&
+      fullMedia.status4k !== MediaStatus.AVAILABLE &&
+      fullMedia.status4k !== MediaStatus.PARTIALLY_AVAILABLE;
 
     if (needsStatusUpdate || needs4kStatusUpdate) {
       // Re-fetch WITHOUT requests to avoid cascade issues on save
@@ -968,10 +982,21 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       });
 
       if (needsStatusUpdate) {
-        cleanMedia.status = MediaStatus.UNKNOWN;
+        const hadCompleted = fullMedia.requests.some(
+          (r) => !r.is4k && r.status === MediaRequestStatus.COMPLETED
+        );
+        cleanMedia.status = hadCompleted
+          ? MediaStatus.DELETED
+          : MediaStatus.UNKNOWN;
       }
+
       if (needs4kStatusUpdate) {
-        cleanMedia.status4k = MediaStatus.UNKNOWN;
+        const hadCompleted4k = fullMedia.requests.some(
+          (r) => r.is4k && r.status === MediaRequestStatus.COMPLETED
+        );
+        cleanMedia.status4k = hadCompleted4k
+          ? MediaStatus.DELETED
+          : MediaStatus.UNKNOWN;
       }
 
       await manager.save(cleanMedia);
@@ -986,6 +1011,15 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     try {
       await this.sendToRadarr(event.entity as MediaRequest);
       await this.sendToSonarr(event.entity as MediaRequest);
+    } catch (e) {
+      logger.error('Error while sending to *arr in afterUpdate subscriber', {
+        label: 'Media Request',
+        requestId: (event.entity as MediaRequest).id,
+        errorMessage: e instanceof Error ? e.message : String(e),
+      });
+    }
+
+    try {
       await this.updateParentStatus(event.entity as MediaRequest);
 
       if (event.entity.status === MediaRequestStatus.COMPLETED) {
@@ -997,11 +1031,14 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         }
       }
     } catch (e) {
-      logger.error('Error in afterUpdate subscriber', {
-        label: 'Media Request',
-        requestId: (event.entity as MediaRequest).id,
-        errorMessage: e instanceof Error ? e.message : String(e),
-      });
+      logger.error(
+        'Error while updating parent status in afterUpdate subscriber',
+        {
+          label: 'Media Request',
+          requestId: (event.entity as MediaRequest).id,
+          errorMessage: e instanceof Error ? e.message : String(e),
+        }
+      );
     }
   }
 
@@ -1013,13 +1050,25 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     try {
       await this.sendToRadarr(event.entity as MediaRequest);
       await this.sendToSonarr(event.entity as MediaRequest);
-      await this.updateParentStatus(event.entity as MediaRequest);
     } catch (e) {
-      logger.error('Error in afterInsert subscriber', {
+      logger.error('Error while sending to *arr in afterInsert subscriber', {
         label: 'Media Request',
         requestId: (event.entity as MediaRequest).id,
         errorMessage: e instanceof Error ? e.message : String(e),
       });
+    }
+
+    try {
+      await this.updateParentStatus(event.entity as MediaRequest);
+    } catch (e) {
+      logger.error(
+        'Error while updating parent status in afterInsert subscriber',
+        {
+          label: 'Media Request',
+          requestId: (event.entity as MediaRequest).id,
+          errorMessage: e instanceof Error ? e.message : String(e),
+        }
+      );
     }
   }
 

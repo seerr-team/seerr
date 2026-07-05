@@ -12,6 +12,7 @@ import BulkEditModal from '@app/components/UserList/BulkEditModal';
 import PlexImportModal from '@app/components/UserList/PlexImportModal';
 import useDebouncedState from '@app/hooks/useDebouncedState';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import type { User } from '@app/hooks/useUser';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
@@ -20,8 +21,11 @@ import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import {
   BarsArrowDownIcon,
+  BarsArrowUpIcon,
+  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ChevronUpIcon,
   InboxArrowDownIcon,
   MagnifyingGlassIcon,
   PencilIcon,
@@ -36,7 +40,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import validator from 'validator';
 import * as Yup from 'yup';
@@ -80,15 +83,29 @@ const messages = defineMessages('components.UserList', {
   autogeneratepasswordTip: 'Email a server-generated password to the user',
   validationUsername: 'You must provide an username',
   validationEmail: 'Email required',
-  sortCreated: 'Join Date',
-  sortDisplayName: 'Display Name',
-  sortRequests: 'Request Count',
-  searchUsers: 'Search by username or email…',
+  sortBy: 'Sort by {field}',
+  sortByUser: 'Sort by username',
+  sortByRequests: 'Sort by number of requests',
+  sortByType: 'Sort by account type',
+  sortByRole: 'Sort by user role',
+  sortByJoined: 'Sort by join date',
+  toggleSortDirection: 'Click again to sort {direction}',
+  toggleSortDirectionAria: 'Toggle sort direction',
+  ascending: 'ascending',
+  descending: 'descending',
+  searchUsers: 'Search…',
   localLoginDisabled:
     'The <strong>Enable Local Sign-In</strong> setting is currently disabled.',
 });
 
-type Sort = 'created' | 'updated' | 'requests' | 'displayname';
+type Sort =
+  | 'created'
+  | 'updated'
+  | 'requests'
+  | 'displayname'
+  | 'usertype'
+  | 'role';
+type SortDirection = 'asc' | 'desc';
 
 const UserList = () => {
   const intl = useIntl();
@@ -96,7 +113,7 @@ const UserList = () => {
   const settings = useSettings();
   const { addToast } = useToasts();
   const { user: currentUser, hasPermission: currentHasPermission } = useUser();
-  const [currentSort, setCurrentSort] = useState<Sort>('displayname');
+  const [currentSort, setCurrentSort] = useState<Sort>('created');
   const [currentPageSize, setCurrentPageSize] = useState<number>(10);
   const [searchInput, searchQuery, setSearchInput] = useDebouncedState<string>(
     '',
@@ -107,16 +124,38 @@ const UserList = () => {
   const pageIndex = page - 1;
   const updateQueryParams = useUpdateQueryParams({ page: page.toString() });
   const previousSearchQueryRef = useRef<string | undefined>(undefined);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const isSearchFocusedRef = useRef(false);
 
-  const apiUrl = `/api/v1/user?take=${currentPageSize}&skip=${
-    pageIndex * currentPageSize
-  }&sort=${currentSort}${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ''}`;
+  const defaultSortDirection = (sortKey: Sort): SortDirection =>
+    sortKey === 'requests' || sortKey === 'updated' ? 'desc' : 'asc';
+
+  const [sortDirection, setSortDirection] = useState<SortDirection>(() =>
+    defaultSortDirection('created')
+  );
 
   const {
     data,
     error,
     mutate: revalidate,
-  } = useSWR<UserResultsResponse>(apiUrl);
+  } = useSWR<UserResultsResponse>(
+    `/api/v1/user?take=${currentPageSize}&skip=${
+      pageIndex * currentPageSize
+    }&sort=${currentSort}&sortDirection=${sortDirection}${
+      searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ''
+    }`,
+    { keepPreviousData: true }
+  );
+
+  const handleSortChange = (sortKey: Sort) => {
+    if (currentSort === sortKey) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setCurrentSort(sortKey);
+      setSortDirection(defaultSortDirection(sortKey));
+    }
+    updateQueryParams('page', '1');
+  };
 
   const [isDeleting, setDeleting] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -142,6 +181,9 @@ const UserList = () => {
 
       setCurrentSort(filterSettings.currentSort);
       setCurrentPageSize(filterSettings.currentPageSize);
+      if (filterSettings.sortDirection) {
+        setSortDirection(filterSettings.sortDirection);
+      }
     }
   }, []);
 
@@ -151,9 +193,74 @@ const UserList = () => {
       JSON.stringify({
         currentSort,
         currentPageSize,
+        sortDirection,
       })
     );
-  }, [currentSort, currentPageSize]);
+  }, [currentSort, currentPageSize, sortDirection]);
+
+  const SortableColumnHeader = ({
+    sortKey,
+    currentSort,
+    sortDirection,
+    onSortChange,
+    children,
+  }: {
+    sortKey: Sort;
+    currentSort: Sort;
+    sortDirection: SortDirection;
+    onSortChange: (sortKey: Sort) => void;
+    children: React.ReactNode;
+  }) => {
+    const intl = useIntl();
+
+    const getTooltip = () => {
+      if (currentSort === sortKey) {
+        return intl.formatMessage(messages.toggleSortDirection, {
+          direction:
+            sortDirection === 'asc'
+              ? intl.formatMessage(messages.descending)
+              : intl.formatMessage(messages.ascending),
+        });
+      }
+
+      switch (sortKey) {
+        case 'displayname':
+          return intl.formatMessage(messages.sortByUser);
+        case 'requests':
+          return intl.formatMessage(messages.sortByRequests);
+        case 'usertype':
+          return intl.formatMessage(messages.sortByType);
+        case 'role':
+          return intl.formatMessage(messages.sortByRole);
+        case 'created':
+          return intl.formatMessage(messages.sortByJoined);
+        default:
+          return intl.formatMessage(messages.sortBy, { field: sortKey });
+      }
+    };
+
+    return (
+      <Table.TH
+        className="cursor-pointer"
+        onClick={() => onSortChange(sortKey)}
+        data-testid={`column-header-${sortKey}`}
+        title={getTooltip()}
+      >
+        <div className="flex items-center">
+          <span>{children}</span>
+          {currentSort === sortKey && (
+            <span className="ml-1">
+              {sortDirection === 'asc' ? (
+                <ChevronUpIcon className="h-4 w-4" />
+              ) : (
+                <ChevronDownIcon className="h-4 w-4" />
+              )}
+            </span>
+          )}
+        </div>
+      </Table.TH>
+    );
+  };
 
   useEffect(() => {
     if (
@@ -165,6 +272,12 @@ const UserList = () => {
     }
     previousSearchQueryRef.current = searchQuery;
   }, [searchQuery, page, updateQueryParams]);
+
+  useEffect(() => {
+    if (isSearchFocusedRef.current) {
+      searchInputRef.current?.focus();
+    }
+  }, [data]);
 
   const isUserPermsEditable = (userId: number) =>
     userId !== 1 && userId !== currentUser?.id;
@@ -209,7 +322,7 @@ const UserList = () => {
         appearance: 'success',
       });
       setDeleteModal({ isOpen: false, user: deleteModal.user });
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.userdeleteerror), {
         autoDismiss: true,
         appearance: 'error',
@@ -571,36 +684,65 @@ const UserList = () => {
                 <MagnifyingGlassIcon className="h-6 w-6" />
               </span>
               <input
+                ref={searchInputRef}
                 type="text"
-                className="rounded-r-only min-w-[200px]"
+                className="rounded-r-only min-w-48"
                 placeholder={intl.formatMessage(messages.searchUsers)}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
+                onFocus={() => {
+                  isSearchFocusedRef.current = true;
+                }}
+                onBlur={() => {
+                  isSearchFocusedRef.current = false;
+                }}
                 aria-label={intl.formatMessage(messages.searchUsers)}
               />
             </div>
-            <div className="flex">
-              <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
-                <BarsArrowDownIcon className="h-6 w-6" />
-              </span>
+            <div className="flex flex-grow lg:flex-grow-0">
+              <button
+                type="button"
+                className="inline-flex cursor-pointer items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100"
+                onClick={() => {
+                  setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                  updateQueryParams('page', '1');
+                }}
+                aria-label={intl.formatMessage(
+                  messages.toggleSortDirectionAria
+                )}
+                title={
+                  sortDirection === 'asc'
+                    ? intl.formatMessage(messages.descending)
+                    : intl.formatMessage(messages.ascending)
+                }
+              >
+                {sortDirection === 'asc' ? (
+                  <BarsArrowUpIcon className="h-6 w-6" />
+                ) : (
+                  <BarsArrowDownIcon className="h-6 w-6" />
+                )}
+              </button>
               <select
                 id="sort"
                 name="sort"
-                onChange={(e) => {
-                  setCurrentSort(e.target.value as Sort);
-                  router.push(router.pathname);
-                }}
+                onChange={(e) => handleSortChange(e.target.value as Sort)}
                 value={currentSort}
                 className="rounded-r-only"
               >
-                <option value="created">
-                  {intl.formatMessage(messages.sortCreated)}
+                <option value="displayname">
+                  {intl.formatMessage(messages.username)}
                 </option>
                 <option value="requests">
-                  {intl.formatMessage(messages.sortRequests)}
+                  {intl.formatMessage(messages.totalrequests)}
                 </option>
-                <option value="displayname">
-                  {intl.formatMessage(messages.sortDisplayName)}
+                <option value="usertype">
+                  {intl.formatMessage(messages.accounttype)}
+                </option>
+                <option value="role">
+                  {intl.formatMessage(messages.role)}
+                </option>
+                <option value="created">
+                  {intl.formatMessage(messages.created)}
                 </option>
               </select>
             </div>
@@ -623,21 +765,59 @@ const UserList = () => {
                 />
               )}
             </Table.TH>
-            <Table.TH>{intl.formatMessage(messages.user)}</Table.TH>
-            <Table.TH>{intl.formatMessage(messages.totalrequests)}</Table.TH>
-            <Table.TH>{intl.formatMessage(messages.accounttype)}</Table.TH>
-            <Table.TH>{intl.formatMessage(messages.role)}</Table.TH>
-            <Table.TH>{intl.formatMessage(messages.created)}</Table.TH>
-            <Table.TH className="text-right">
+            <SortableColumnHeader
+              sortKey="displayname"
+              currentSort={currentSort}
+              sortDirection={sortDirection}
+              onSortChange={handleSortChange}
+            >
+              {intl.formatMessage(messages.user)}
+            </SortableColumnHeader>
+            <SortableColumnHeader
+              sortKey="requests"
+              currentSort={currentSort}
+              sortDirection={sortDirection}
+              onSortChange={handleSortChange}
+            >
+              {intl.formatMessage(messages.totalrequests)}
+            </SortableColumnHeader>
+            <SortableColumnHeader
+              sortKey="usertype"
+              currentSort={currentSort}
+              sortDirection={sortDirection}
+              onSortChange={handleSortChange}
+            >
+              {intl.formatMessage(messages.accounttype)}
+            </SortableColumnHeader>
+            <SortableColumnHeader
+              sortKey="role"
+              currentSort={currentSort}
+              sortDirection={sortDirection}
+              onSortChange={handleSortChange}
+            >
+              {intl.formatMessage(messages.role)}
+            </SortableColumnHeader>
+            <SortableColumnHeader
+              sortKey="created"
+              currentSort={currentSort}
+              sortDirection={sortDirection}
+              onSortChange={handleSortChange}
+            >
+              {intl.formatMessage(messages.created)}
+            </SortableColumnHeader>
+            <Table.TH className="w-1/12 whitespace-nowrap text-right">
               {(data.results ?? []).length > 1 && (
-                <Button
-                  buttonType="warning"
-                  onClick={() => setShowBulkEditModal(true)}
-                  disabled={selectedUsers.length === 0}
-                >
-                  <PencilIcon />
-                  <span>{intl.formatMessage(messages.bulkedit)}</span>
-                </Button>
+                <div className="flex justify-end">
+                  <Button
+                    buttonType="warning"
+                    className="w-full sm:min-w-[12rem]"
+                    onClick={() => setShowBulkEditModal(true)}
+                    disabled={selectedUsers.length === 0}
+                  >
+                    <PencilIcon />
+                    <span>{intl.formatMessage(messages.bulkedit)}</span>
+                  </Button>
+                </div>
               )}
             </Table.TH>
           </tr>
@@ -749,11 +929,13 @@ const UserList = () => {
                   day: 'numeric',
                 })}
               </Table.TD>
-              <Table.TD alignText="right">
+              <Table.TD
+                alignText="right"
+                className="grid grid-cols-1 gap-1 sm:grid-cols-2 sm:gap-2"
+              >
                 <Button
                   buttonType="warning"
                   disabled={user.id === 1 && currentUser?.id !== 1}
-                  className="mr-2"
                   onClick={() =>
                     router.push(
                       '/users/[userId]/settings',

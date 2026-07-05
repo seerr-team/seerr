@@ -19,7 +19,7 @@ const messages = defineMessages('pages', {
   returnHome: 'Return Home',
 });
 
-const Error: NextPage<ErrorProps> = ({ statusCode }) => {
+const ErrorPage: NextPage<ErrorProps> = ({ statusCode }) => {
   const intl = useIntl();
 
   const getErrorMessage = (statusCode?: number) => {
@@ -53,7 +53,7 @@ const Error: NextPage<ErrorProps> = ({ statusCode }) => {
   );
 };
 
-Error.getInitialProps = async ({ res, err }): Promise<ErrorProps> => {
+ErrorPage.getInitialProps = async ({ res, err }): Promise<ErrorProps> => {
   // Apologies for how gross ternary is but this is just temporary. Honestly,
   // blame the nextjs docs
   let statusCode: Undefinable<number>;
@@ -66,4 +66,4 @@ Error.getInitialProps = async ({ res, err }): Promise<ErrorProps> => {
   return { statusCode };
 };
 
-export default Error;
+export default ErrorPage;

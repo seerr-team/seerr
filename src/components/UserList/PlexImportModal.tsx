@@ -1,13 +1,13 @@
 import Alert from '@app/components/Common/Alert';
 import Modal from '@app/components/Common/Modal';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import axios from 'axios';
 import Image from 'next/image';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
 interface PlexImportProps {
@@ -15,11 +15,24 @@ interface PlexImportProps {
   onComplete?: () => void;
 }
 
+interface PlexImportResponse {
+  createdUsers: unknown[];
+  refreshedUsers: number;
+}
+
 const messages = defineMessages('components.UserList', {
   importfromplex: 'Import Plex Users',
   importfromplexerror: 'Something went wrong while importing Plex users.',
+  importfromplexnochanges:
+    'Plex import completed. No users were created or refreshed.',
+  importfromplexsynced:
+    'Plex users synced successfully. Existing users were refreshed.',
+  syncnotice:
+    'You can still click Sync to refresh existing Plex users, such as updated email or username details.',
   importedfromplex:
     '<strong>{userCount}</strong> Plex {userCount, plural, one {user} other {users}} imported successfully!',
+  importedPlexUsersNoPassword:
+    'Imported users do not have a {applicationTitle} password set. If you disable Plex sign-in, they will need to set a password from their profile or via a password reset link.',
   user: 'User',
   nouserstoimport: 'There are no Plex users to import.',
   newplexsigninenabled:
@@ -48,30 +61,62 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
     setImporting(true);
 
     try {
-      const { data: createdUsers } = await axios.post(
+      const { data: importResponse } = await axios.post<PlexImportResponse>(
         '/api/v1/user/import-from-plex',
         { plexIds: selectedUsers }
       );
 
-      if (!Array.isArray(createdUsers) || createdUsers.length === 0) {
-        throw new Error('No users were imported from Plex.');
-      }
+      const { createdUsers, refreshedUsers } = importResponse;
 
-      addToast(
-        intl.formatMessage(messages.importedfromplex, {
-          userCount: createdUsers.length,
-          strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
-        }),
-        {
+      if (isSyncOnly) {
+        if (refreshedUsers > 0) {
+          addToast(intl.formatMessage(messages.importfromplexsynced), {
+            autoDismiss: true,
+            appearance: 'success',
+          });
+        } else {
+          addToast(intl.formatMessage(messages.importfromplexnochanges), {
+            autoDismiss: true,
+            appearance: 'info',
+          });
+        }
+      } else if (createdUsers.length > 0) {
+        addToast(
+          intl.formatMessage(messages.importedfromplex, {
+            userCount: createdUsers.length,
+            strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+          }),
+          {
+            autoDismiss: true,
+            appearance: 'success',
+          }
+        );
+
+        addToast(
+          intl.formatMessage(messages.importedPlexUsersNoPassword, {
+            applicationTitle: settings.currentSettings.applicationTitle,
+          }),
+          {
+            autoDismiss: false,
+            appearance: 'warning',
+          }
+        );
+      } else if (refreshedUsers > 0) {
+        addToast(intl.formatMessage(messages.importfromplexsynced), {
           autoDismiss: true,
           appearance: 'success',
-        }
-      );
+        });
+      } else {
+        addToast(intl.formatMessage(messages.importfromplexnochanges), {
+          autoDismiss: true,
+          appearance: 'info',
+        });
+      }
 
       if (onComplete) {
         onComplete();
       }
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.importfromplexerror), {
         autoDismiss: true,
         appearance: 'error',
@@ -102,6 +147,8 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
     }
   };
 
+  const isSyncOnly = !!data && data.length === 0;
+
   return (
     <Modal
       loading={!data && !error}
@@ -109,9 +156,17 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
       onOk={() => {
         importUsers();
       }}
-      okDisabled={isImporting || !selectedUsers.length}
+      okDisabled={
+        isImporting || !data || (data.length > 0 && !selectedUsers.length)
+      }
       okText={intl.formatMessage(
-        isImporting ? globalMessages.importing : globalMessages.import
+        isImporting
+          ? isSyncOnly
+            ? globalMessages.syncing
+            : globalMessages.importing
+          : isSyncOnly
+            ? globalMessages.sync
+            : globalMessages.import
       )}
       onCancel={onCancel}
     >
@@ -233,10 +288,9 @@ const PlexImportModal = ({ onCancel, onComplete }: PlexImportProps) => {
           </div>
         </>
       ) : (
-        <Alert
-          title={intl.formatMessage(messages.nouserstoimport)}
-          type="info"
-        />
+        <Alert title={intl.formatMessage(messages.nouserstoimport)} type="info">
+          {intl.formatMessage(messages.syncnotice)}
+        </Alert>
       )}
     </Modal>
   );

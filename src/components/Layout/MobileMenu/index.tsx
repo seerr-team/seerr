@@ -27,7 +27,7 @@ import {
 } from '@heroicons/react/24/solid';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { cloneElement, useEffect, useRef, useState } from 'react';
+import { cloneElement, useEffect, useRef, useState, type JSX } from 'react';
 import { useIntl } from 'react-intl';
 
 interface MobileMenuProps {

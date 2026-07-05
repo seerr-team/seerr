@@ -156,13 +156,17 @@ export interface IMDBRating {
  */
 class IMDBRadarrProxy extends ExternalAPI {
   constructor() {
-    super('https://api.radarr.video/v1', {
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      nodeCache: cacheManager.getCache('imdb').data,
-    });
+    super(
+      'https://api.radarr.video/v1',
+      {},
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        nodeCache: cacheManager.getCache('imdb').data,
+      }
+    );
   }
 
   /**
@@ -192,7 +196,8 @@ class IMDBRadarrProxy extends ExternalAPI {
       };
     } catch (e) {
       throw new Error(
-        `[IMDB RADARR PROXY API] Failed to retrieve movie ratings: ${e.message}`
+        `[IMDB RADARR PROXY API] Failed to retrieve movie ratings: ${e.message}`,
+        { cause: e }
       );
     }
   }

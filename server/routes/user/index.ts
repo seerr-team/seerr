@@ -45,6 +45,35 @@ router.get('/', async (req, res, next) => {
       : Math.max(10, includeIds.length);
     const skip = req.query.skip ? Number(req.query.skip) : 0;
     const q = req.query.q ? req.query.q.toString().toLowerCase() : '';
+    const sortParam = req.query.sort ? req.query.sort.toString() : undefined;
+    const sortDirectionQuery = req.query.sortDirection
+      ? req.query.sortDirection.toString().toLowerCase()
+      : undefined;
+
+    let sortDirection: 'ASC' | 'DESC';
+    if (sortDirectionQuery === 'asc') {
+      sortDirection = 'ASC';
+    } else if (sortDirectionQuery === 'desc') {
+      sortDirection = 'DESC';
+    } else {
+      switch (sortParam) {
+        case 'displayname':
+          sortDirection = 'ASC';
+          break;
+        case 'requests':
+        case 'updated':
+          sortDirection = 'DESC';
+          break;
+        case 'created':
+        case 'usertype':
+        case 'role':
+        case undefined:
+        default:
+          sortDirection = 'ASC';
+          break;
+      }
+    }
+
     let query = getRepository(User).createQueryBuilder('user');
 
     if (q) {
@@ -58,29 +87,32 @@ router.get('/', async (req, res, next) => {
       query.andWhereInIds(includeIds);
     }
 
-    switch (req.query.sort) {
+    switch (sortParam) {
+      case 'created':
+        query = query.orderBy('user.createdAt', sortDirection);
+        break;
       case 'updated':
-        query = query.orderBy('user.updatedAt', 'DESC');
+        query = query.orderBy('user.updatedAt', sortDirection);
         break;
       case 'displayname':
         query = query
           .addSelect(
             `CASE WHEN (user.username IS NULL OR user.username = '') THEN (
-              CASE WHEN (user.plexUsername IS NULL OR user.plexUsername = '') THEN (
-                CASE WHEN (user.jellyfinUsername IS NULL OR user.jellyfinUsername = '') THEN
-                  "user"."email"
+                CASE WHEN (user.plexUsername IS NULL OR user.plexUsername = '') THEN (
+                  CASE WHEN (user.jellyfinUsername IS NULL OR user.jellyfinUsername = '') THEN
+                    "user"."email"
+                  ELSE
+                    LOWER(user.jellyfinUsername)
+                  END)
                 ELSE
-                  LOWER(user.jellyfinUsername)
+                  LOWER(user.plexUsername)
                 END)
               ELSE
-                LOWER(user.jellyfinUsername)
-              END)
-            ELSE
-              LOWER(user.username)
-            END`,
+                LOWER(user.username)
+              END`,
             'displayname_sort_key'
           )
-          .orderBy('displayname_sort_key', 'ASC');
+          .orderBy('displayname_sort_key', sortDirection);
         break;
       case 'requests':
         query = query
@@ -90,10 +122,25 @@ router.get('/', async (req, res, next) => {
               .from(MediaRequest, 'request')
               .where('request.requestedBy.id = user.id');
           }, 'request_count')
-          .orderBy('request_count', 'DESC');
+          .orderBy('request_count', sortDirection);
+        break;
+      case 'usertype':
+        query = query.orderBy('user.userType', sortDirection);
+        break;
+      case 'role':
+        query = query
+          .addSelect(
+            `CASE
+              WHEN user.id = 1 THEN 0
+              WHEN (user.permissions & ${Permission.ADMIN}) != 0 THEN 1
+              ELSE 2
+            END`,
+            'role_sort_key'
+          )
+          .orderBy('role_sort_key', sortDirection);
         break;
       default:
-        query = query.orderBy('user.id', 'ASC');
+        query = query.orderBy('user.id', sortDirection);
         break;
     }
 
@@ -269,7 +316,7 @@ router.post<
     );
 
     return res.status(204).send();
-  } catch (e) {
+  } catch {
     logger.error('Failed to register user push subscription', {
       label: 'API',
     });
@@ -277,8 +324,8 @@ router.post<
   }
 });
 
-router.get<{ userId: string }>(
-  '/:userId/pushSubscriptions',
+router.get<{ id: string }>(
+  '/:id/pushSubscriptions',
   isOwnProfileOrAdmin(),
   async (req, res, next) => {
     try {
@@ -286,18 +333,18 @@ router.get<{ userId: string }>(
 
       const userPushSubs = await userPushSubRepository.find({
         relations: { user: true },
-        where: { user: { id: Number(req.params.userId) } },
+        where: { user: { id: Number(req.params.id) } },
       });
 
       return res.status(200).json(userPushSubs);
-    } catch (e) {
+    } catch {
       next({ status: 404, message: 'User subscriptions not found.' });
     }
   }
 );
 
-router.get<{ userId: string; endpoint: string }>(
-  '/:userId/pushSubscription/:endpoint',
+router.get<{ id: string; endpoint: string }>(
+  '/:id/pushSubscription/:endpoint',
   isOwnProfileOrAdmin(),
   async (req, res, next) => {
     try {
@@ -308,20 +355,20 @@ router.get<{ userId: string; endpoint: string }>(
           user: true,
         },
         where: {
-          user: { id: Number(req.params.userId) },
+          user: { id: Number(req.params.id) },
           endpoint: req.params.endpoint,
         },
       });
 
       return res.status(200).json(userPushSub);
-    } catch (e) {
+    } catch {
       next({ status: 404, message: 'User subscription not found.' });
     }
   }
 );
 
-router.delete<{ userId: string; endpoint: string }>(
-  '/:userId/pushSubscription/:endpoint',
+router.delete<{ id: string; endpoint: string }>(
+  '/:id/pushSubscription/:endpoint',
   isOwnProfileOrAdmin(),
   async (req, res, next) => {
     try {
@@ -330,7 +377,7 @@ router.delete<{ userId: string; endpoint: string }>(
       const userPushSub = await userPushSubRepository.findOne({
         relations: { user: true },
         where: {
-          user: { id: Number(req.params.userId) },
+          user: { id: Number(req.params.id) },
           endpoint: req.params.endpoint,
         },
       });
@@ -368,10 +415,34 @@ router.get<{ id: string }>('/:id', async (req, res, next) => {
     const isAdmin = req.user?.hasPermission(Permission.MANAGE_USERS);
 
     return res.status(200).json(user.filter(isOwnProfile || isAdmin));
-  } catch (e) {
+  } catch {
     next({ status: 404, message: 'User not found.' });
   }
 });
+
+router.get<{ jellyfinUserId: string }>(
+  '/jellyfin/:jellyfinUserId',
+  async (req, res, next) => {
+    try {
+      const userRepository = getRepository(User);
+
+      const jellyfinUserId = normalizeJellyfinGuid(req.params.jellyfinUserId);
+      if (!jellyfinUserId) {
+        return next({ status: 400, message: 'Invalid Jellyfin User ID.' });
+      }
+
+      const user = await userRepository.findOneOrFail({
+        where: { jellyfinUserId },
+      });
+
+      return res
+        .status(200)
+        .json(user.filter(req.user?.hasPermission(Permission.MANAGE_USERS)));
+    } catch {
+      next({ status: 404, message: 'User not found.' });
+    }
+  }
+);
 
 router.use('/:id/settings', userSettingsRoutes);
 
@@ -513,7 +584,7 @@ router.put<{ id: string }>(
       await userRepository.save(user);
 
       return res.status(200).json(user.filter());
-    } catch (e) {
+    } catch {
       next({ status: 404, message: 'User not found.' });
     }
   }
@@ -601,6 +672,7 @@ router.post(
 
       const plexUsersResponse = await mainPlexTv.getUsers();
       const createdUsers: User[] = [];
+      let refreshedUsers = 0;
       for (const rawUser of plexUsersResponse.MediaContainer.User) {
         const account = rawUser.$;
 
@@ -625,6 +697,7 @@ router.post(
               user.plexId = parseInt(account.id);
             }
             await userRepository.save(user);
+            refreshedUsers += 1;
           } else if (!body || body.plexIds.includes(account.id)) {
             if (await mainPlexTv.checkUserAccess(parseInt(account.id))) {
               const newUser = new User({
@@ -643,7 +716,10 @@ router.post(
         }
       }
 
-      return res.status(201).json(User.filterMany(createdUsers));
+      return res.status(201).json({
+        createdUsers: User.filterMany(createdUsers),
+        refreshedUsers,
+      });
     } catch (e) {
       next({ status: 500, message: e.message });
     }
@@ -877,7 +953,7 @@ router.get<{ id: string }, WatchlistResponse>(
     }
 
     const itemsPerPage = 20;
-    const page = Number(req.query.page) ?? 1;
+    const page = req.query.page ? Number(req.query.page) : 1;
     const offset = (page - 1) * itemsPerPage;
 
     const user = await getRepository(User).findOneOrFail({

@@ -512,7 +512,7 @@ requestRoutes.put<{ requestId: string }>(
         request.tags = req.body.tags;
         request.requestedBy = requestUser as User;
 
-        requestRepository.save(request);
+        await requestRepository.save(request);
       } else if (req.body.mediaType === MediaType.TV) {
         const mediaRepository = getRepository(Media);
         request.serverId = req.body.serverId;
@@ -609,8 +609,8 @@ requestRoutes.delete('/:requestId', async (req, res, next) => {
 
     if (
       !req.user?.hasPermission(Permission.MANAGE_REQUESTS) &&
-      request.requestedBy.id !== req.user?.id &&
-      request.status !== 1
+      (request.requestedBy.id !== req.user?.id ||
+        request.status !== MediaRequestStatus.PENDING)
     ) {
       return next({
         status: 401,
@@ -646,6 +646,7 @@ requestRoutes.post<{
 
       // this also triggers updating the parent media's status & sending to *arr
       request.status = MediaRequestStatus.APPROVED;
+      request.modifiedBy = req.user;
       await requestRepository.save(request);
 
       return res.status(200).json(request);

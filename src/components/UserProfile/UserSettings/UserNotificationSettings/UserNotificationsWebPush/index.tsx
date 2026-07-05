@@ -6,6 +6,7 @@ import NotificationTypeSelector, {
 } from '@app/components/NotificationTypeSelector';
 import DeviceItem from '@app/components/UserProfile/UserSettings/UserNotificationSettings/UserNotificationsWebPush/DeviceItem';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -26,7 +27,6 @@ import { Form, Formik } from 'formik';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
 
 const messages = defineMessages(
@@ -74,7 +74,9 @@ const UserWebPushSettings = () => {
       userAgent: string;
       createdAt: Date;
     }[]
-  >(`/api/v1/user/${user?.id}/pushSubscriptions`, { revalidateOnMount: true });
+  >(user ? `/api/v1/user/${user.id}/pushSubscriptions` : null, {
+    revalidateOnMount: true,
+  });
 
   // Subscribes to the push manager
   // Will only add to the database if subscribing for the first time
@@ -95,7 +97,7 @@ const UserWebPushSettings = () => {
       } else {
         throw new Error('Subscription failed');
       }
-    } catch (error) {
+    } catch {
       addToast(intl.formatMessage(messages.enablingwebpusherror), {
         appearance: 'error',
         autoDismiss: true,
@@ -135,7 +137,7 @@ const UserWebPushSettings = () => {
         autoDismiss: true,
         appearance: 'success',
       });
-    } catch (error) {
+    } catch {
       addToast(intl.formatMessage(messages.disablingwebpusherror), {
         autoDismiss: true,
         appearance: 'error',
@@ -157,7 +159,7 @@ const UserWebPushSettings = () => {
         autoDismiss: true,
         appearance: 'success',
       });
-    } catch (error) {
+    } catch {
       addToast(intl.formatMessage(messages.subscriptiondeleteerror), {
         autoDismiss: true,
         appearance: 'error',
@@ -256,7 +258,7 @@ const UserWebPushSettings = () => {
               `/api/v1/user/${user?.id}/settings/notifications`,
               {
                 pgpKey: data?.pgpKey,
-                discordId: data?.discordId,
+                discordIds: data?.discordIds,
                 pushbulletAccessToken: data?.pushbulletAccessToken,
                 pushoverApplicationToken: data?.pushoverApplicationToken,
                 pushoverUserKey: data?.pushoverUserKey,
@@ -272,7 +274,7 @@ const UserWebPushSettings = () => {
               appearance: 'success',
               autoDismiss: true,
             });
-          } catch (e) {
+          } catch {
             addToast(intl.formatMessage(messages.webpushsettingsfailed), {
               appearance: 'error',
               autoDismiss: true,

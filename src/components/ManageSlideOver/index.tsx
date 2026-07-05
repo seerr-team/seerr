@@ -34,6 +34,8 @@ import Link from 'next/link';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
 
+import type { JSX } from 'react';
+
 const filterDuplicateDownloads = (
   items: DownloadingItem[] = []
 ): DownloadingItem[] => {
@@ -322,6 +324,7 @@ const ManageSlideOver = ({
             <div className="overflow-hidden rounded-md border border-gray-700 shadow">
               <BlocklistBlock
                 tmdbId={data.mediaInfo.tmdbId}
+                mediaType={data.mediaInfo.mediaType}
                 onUpdate={() => revalidate()}
                 onDelete={() => onClose()}
               />

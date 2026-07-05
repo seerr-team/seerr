@@ -147,7 +147,7 @@ const IssueDescription = ({
       ) : (
         <div className="prose mt-4">
           <ReactMarkdown
-            allowedElements={['p', 'img', 'strong', 'em']}
+            allowedElements={['p', 'em', 'strong', 'ul', 'ol', 'li']}
             skipHtml
           >
             {description}

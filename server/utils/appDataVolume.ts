@@ -19,7 +19,7 @@ export const appDataPermissions = (): boolean => {
   try {
     accessSync(CONFIG_PATH);
     return true;
-  } catch (err) {
+  } catch {
     return false;
   }
 };

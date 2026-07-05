@@ -9,6 +9,7 @@ import CopyButton from '@app/components/Settings/CopyButton';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import { availableLanguages } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
+import useToasts from '@app/hooks/useToasts';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -21,7 +22,6 @@ import type { AvailableLocale } from '@server/types/languages';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
 import * as Yup from 'yup';
 
@@ -38,6 +38,12 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   discoverRegionTip: 'Filter content by regional availability',
   originallanguage: 'Discover Language',
   originallanguageTip: 'Filter content by original language',
+  blocklistRegion: 'Blocklist Region',
+  blocklistRegionTip:
+    'Region used for blocklist content scanning (independent of discover settings)',
+  blocklistLanguage: 'Blocklist Language',
+  blocklistLanguageTip:
+    'Language used for blocklist content scanning (independent of discover settings)',
   blocklistedTags: 'Blocklist Content with Tags',
   blocklistedTagsTip:
     'Automatically add content with tags to the blocklist using the "Process Blocklisted Tags" job',
@@ -130,7 +136,7 @@ const SettingsMain = () => {
         autoDismiss: true,
         appearance: 'success',
       });
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.toastApiKeyFailure), {
         autoDismiss: true,
         appearance: 'error',
@@ -169,6 +175,8 @@ const SettingsMain = () => {
             discoverRegion: data?.discoverRegion,
             originalLanguage: data?.originalLanguage,
             streamingRegion: data?.streamingRegion || 'US',
+            blocklistRegion: data?.blocklistRegion || '',
+            blocklistLanguage: data?.blocklistLanguage || '',
             blocklistedTags: data?.blocklistedTags,
             blocklistedTagsLimit: data?.blocklistedTagsLimit || 50,
             partialRequestsEnabled: data?.partialRequestsEnabled,
@@ -189,6 +197,8 @@ const SettingsMain = () => {
                 discoverRegion: values.discoverRegion,
                 streamingRegion: values.streamingRegion,
                 originalLanguage: values.originalLanguage,
+                blocklistRegion: values.blocklistRegion,
+                blocklistLanguage: values.blocklistLanguage,
                 blocklistedTags: values.blocklistedTags,
                 blocklistedTagsLimit: values.blocklistedTagsLimit,
                 partialRequestsEnabled: values.partialRequestsEnabled,
@@ -211,7 +221,7 @@ const SettingsMain = () => {
                 autoDismiss: true,
                 appearance: 'success',
               });
-            } catch (e) {
+            } catch {
               addToast(intl.formatMessage(messages.toastSettingsFailure), {
                 autoDismiss: true,
                 appearance: 'error',
@@ -379,6 +389,7 @@ const SettingsMain = () => {
                       <LanguageSelector
                         setFieldValue={setFieldValue}
                         value={values.originalLanguage}
+                        fieldName="originalLanguage"
                       />
                     </div>
                   </div>
@@ -391,13 +402,51 @@ const SettingsMain = () => {
                     </span>
                   </label>
                   <div className="form-input-area">
-                    <div className="form-input-field relative z-20">
+                    <div className="form-input-field relative">
                       <RegionSelector
                         value={values.streamingRegion}
                         name="streamingRegion"
                         onChange={setFieldValue}
                         regionType="streaming"
                         disableAll
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="blocklistRegion" className="text-label">
+                    <span>{intl.formatMessage(messages.blocklistRegion)}</span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.blocklistRegionTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <RegionSelector
+                        value={values.blocklistRegion}
+                        name="blocklistRegion"
+                        onChange={setFieldValue}
+                        regionType="discover"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="blocklistLanguage" className="text-label">
+                    <span>
+                      {intl.formatMessage(messages.blocklistLanguage)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.blocklistLanguageTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field relative z-20">
+                      <LanguageSelector
+                        setFieldValue={setFieldValue}
+                        serverValue={data?.blocklistLanguage}
+                        value={values.blocklistLanguage}
+                        fieldName="blocklistLanguage"
                       />
                     </div>
                   </div>

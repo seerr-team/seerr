@@ -4,6 +4,7 @@ import JellyfinLogo from '@app/assets/services/jellyfin.svg';
 import LetterboxdLogo from '@app/assets/services/letterboxd.svg';
 import PlexLogo from '@app/assets/services/plex.svg';
 import RTLogo from '@app/assets/services/rt.svg';
+import SimklLogo from '@app/assets/services/simkl.svg';
 import TmdbLogo from '@app/assets/services/tmdb.svg';
 import TraktLogo from '@app/assets/services/trakt.svg';
 import TvdbLogo from '@app/assets/services/tvdb.svg';
@@ -12,8 +13,10 @@ import useSettings from '@app/hooks/useSettings';
 import { MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 
+type ExternalLinkType = 'movie' | 'tv' | 'person';
+
 interface ExternalLinkBlockProps {
-  mediaType: 'movie' | 'tv';
+  mediaType: ExternalLinkType;
   tmdbId?: number;
   tvdbId?: number;
   imdbId?: string;
@@ -33,7 +36,7 @@ const ExternalLinkBlock = ({
   const { locale } = useLocale();
 
   return (
-    <div className="flex w-full items-center justify-center space-x-5">
+    <div className="flex w-full items-center justify-center space-x-2 sm:space-x-5">
       {mediaUrl && (
         <a
           href={mediaUrl}
@@ -71,9 +74,19 @@ const ExternalLinkBlock = ({
           <TvdbLogo />
         </a>
       )}
-      {imdbId && (
+      {imdbId && mediaType !== 'person' && (
         <a
           href={`https://www.imdb.com/title/${imdbId}`}
+          className="w-8 opacity-50 transition duration-300 hover:opacity-100"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <ImdbLogo />
+        </a>
+      )}
+      {imdbId && mediaType === 'person' && (
+        <a
+          href={`https://www.imdb.com/name/${imdbId}`}
           className="w-8 opacity-50 transition duration-300 hover:opacity-100"
           target="_blank"
           rel="noreferrer"
@@ -91,16 +104,29 @@ const ExternalLinkBlock = ({
           <RTLogo />
         </a>
       )}
-      {tmdbId && (
+      {imdbId && mediaType !== 'person' && (
         <a
-          href={`https://trakt.tv/search/tmdb/${tmdbId}?id_type=${
-            mediaType === 'movie' ? 'movie' : 'show'
-          }`}
+          href={`https://trakt.tv/${
+            mediaType === 'movie' ? 'movies' : 'shows'
+          }/${imdbId}`}
           className="w-8 opacity-50 transition duration-300 hover:opacity-100"
           target="_blank"
           rel="noreferrer"
         >
           <TraktLogo />
+        </a>
+      )}
+      {imdbId && mediaType !== 'person' && (
+        <a
+          href={`https://api.simkl.com/redirect?to=Simkl&imdb=${encodeURIComponent(
+            imdbId
+          )}`}
+          aria-label="Simkl"
+          className="w-8 opacity-50 transition duration-300 hover:opacity-100"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <SimklLogo />
         </a>
       )}
       {tmdbId && mediaType === MediaType.MOVIE && (

@@ -39,6 +39,10 @@ export const availableLanguages: AvailableLanguageObject = {
     code: 'es-MX',
     display: 'Español (Latinoamérica)',
   },
+  et: {
+    code: 'et',
+    display: 'Eesti',
+  },
   fi: {
     code: 'fi',
     display: 'Finnish',
@@ -62,6 +66,10 @@ export const availableLanguages: AvailableLanguageObject = {
   it: {
     code: 'it',
     display: 'Italiano',
+  },
+  lb: {
+    code: 'lb',
+    display: 'Lëtzebuergesch',
   },
   lt: {
     code: 'lt',
@@ -134,6 +142,10 @@ export const availableLanguages: AvailableLanguageObject = {
   uk: {
     code: 'uk',
     display: 'українська мова',
+  },
+  vi: {
+    code: 'vi',
+    display: 'Tiếng Việt',
   },
   'zh-TW': {
     code: 'zh-TW',

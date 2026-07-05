@@ -3,6 +3,8 @@ import SensitiveInput from '@app/components/Common/SensitiveInput';
 import useSettings from '@app/hooks/useSettings';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/solid';
+import { MediaServerType } from '@server/constants/server';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import Link from 'next/link';
@@ -17,7 +19,11 @@ const messages = defineMessages('components.Login', {
   password: 'Password',
   validationemailrequired: 'You must provide a valid email address',
   validationpasswordrequired: 'You must provide a password',
+  jellyfinLocalLoginHint:
+    "If you haven't set an email address in your profile, use your {mediaServerName} username instead.",
   loginerror: 'Something went wrong while trying to sign in.',
+  credentialerror: 'The email address or password is incorrect.',
+  tipEmailHasTrailingWhitespace: 'The email ends with whitespace',
   signingin: 'Signing In…',
   signin: 'Sign In',
   forgotpassword: 'Forgot Password?',
@@ -60,13 +66,19 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
             password: values.password,
           });
         } catch (e) {
-          setLoginError(intl.formatMessage(messages.loginerror));
+          setLoginError(
+            intl.formatMessage(
+              axios.isAxiosError(e) && e.response?.status === 403
+                ? messages.credentialerror
+                : messages.loginerror
+            )
+          );
         } finally {
           revalidate();
         }
       }}
     >
-      {({ errors, touched, isSubmitting, isValid }) => {
+      {({ errors, touched, values, isSubmitting, isValid }) => {
         return (
           <>
             <Form data-form-type="login">
@@ -82,9 +94,7 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                     <Field
                       id="email"
                       name="email"
-                      placeholder={`${intl.formatMessage(
-                        messages.email
-                      )} / ${intl.formatMessage(messages.username)}`}
+                      placeholder={intl.formatMessage(messages.email)}
                       type="text"
                       inputMode="email"
                       data-testid="email"
@@ -92,11 +102,33 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                       className="!bg-gray-700/80 placeholder:text-gray-400"
                     />
                   </div>
+                  {touched.email && values.email.match(/\s$/) && (
+                    <div className="warning label-tip flex items-center">
+                      <ExclamationTriangleIcon className="mr-1 h-4 w-4" />
+                      {intl.formatMessage(
+                        messages.tipEmailHasTrailingWhitespace
+                      )}
+                    </div>
+                  )}
                   {errors.email &&
                     touched.email &&
                     typeof errors.email === 'string' && (
                       <div className="error">{errors.email}</div>
                     )}
+                  {(settings.currentSettings.mediaServerType ===
+                    MediaServerType.JELLYFIN ||
+                    settings.currentSettings.mediaServerType ===
+                      MediaServerType.EMBY) && (
+                    <div className="mt-1 text-xs text-gray-400">
+                      {intl.formatMessage(messages.jellyfinLocalLoginHint, {
+                        mediaServerName:
+                          settings.currentSettings.mediaServerType ===
+                          MediaServerType.JELLYFIN
+                            ? 'Jellyfin'
+                            : 'Emby',
+                      })}
+                    </div>
+                  )}
                 </div>
                 <div className="mb-2 mt-1">
                   <div className="form-input-field">

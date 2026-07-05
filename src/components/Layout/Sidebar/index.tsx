@@ -1,5 +1,4 @@
 import Badge from '@app/components/Common/Badge';
-import UserWarnings from '@app/components/Layout/UserWarnings';
 import VersionStatus from '@app/components/Layout/VersionStatus';
 import useClickOutside from '@app/hooks/useClickOutside';
 import { Permission, useUser } from '@app/hooks/useUser';
@@ -233,10 +232,6 @@ const Sidebar = ({
                         );
                       })}
                     </nav>
-                    <div className="px-2">
-                      <UserWarnings onClick={() => setClosed()} />
-                    </div>
-
                     {hasPermission(Permission.ADMIN) && (
                       <div className="px-2">
                         <VersionStatus onClick={() => setClosed()} />
@@ -260,7 +255,12 @@ const Sidebar = ({
               <div className="flex flex-shrink-0 items-center">
                 <span className="w-full px-4 py-2 text-2xl text-gray-50">
                   <Link href="/" className="relative block h-24">
-                    <Image src="/logo_full.svg" alt="Logo" fill />
+                    <Image
+                      src="/logo_full.svg"
+                      alt="Logo"
+                      fill
+                      loading="eager"
+                    />
                   </Link>
                 </span>
               </div>
@@ -322,9 +322,6 @@ const Sidebar = ({
                   );
                 })}
               </nav>
-              <div className="px-2">
-                <UserWarnings />
-              </div>
               {hasPermission(Permission.ADMIN) && (
                 <div className="px-2">
                   <VersionStatus />

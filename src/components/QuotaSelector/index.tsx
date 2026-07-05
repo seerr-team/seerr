@@ -79,6 +79,9 @@ const QuotaSelector = ({
               onChange={(e) => setQuotaDays(Number(e.target.value))}
               disabled={isDisabled}
             >
+              <option value="0">
+                {intl.formatMessage(messages.unlimited)}
+              </option>
               {[...Array(100)].map((_item, i) => (
                 <option value={i + 1} key={`${mediaType}-days-${i + 1}`}>
                   {i + 1}

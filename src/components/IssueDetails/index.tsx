@@ -9,6 +9,7 @@ import IssueDescription from '@app/components/IssueDetails/IssueDescription';
 import { issueOptions } from '@app/components/IssueModal/constants';
 import useDeepLinks from '@app/hooks/useDeepLinks';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
@@ -33,7 +34,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import { FormattedRelativeTime, useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
 import * as Yup from 'yup';
 
@@ -131,7 +131,7 @@ const IssueDetails = () => {
         autoDismiss: true,
       });
       revalidateIssue();
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.toasteditdescriptionfailed), {
         appearance: 'error',
         autoDismiss: true,
@@ -149,7 +149,7 @@ const IssueDetails = () => {
       });
       revalidateIssue();
       mutate('/api/v1/issue/count');
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.toaststatusupdatefailed), {
         appearance: 'error',
         autoDismiss: true,
@@ -167,7 +167,7 @@ const IssueDetails = () => {
         autoDismiss: true,
       });
       router.push('/issues');
-    } catch (e) {
+    } catch {
       addToast(intl.formatMessage(messages.toastissuedeletefailed), {
         appearance: 'error',
         autoDismiss: true,
