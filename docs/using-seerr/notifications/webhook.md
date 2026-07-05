@@ -47,13 +47,13 @@ Payloads and webhook URLs are rendered with [LiquidJS](https://liquidjs.com/), s
 
 Render a section only when the relevant object is present, falling back to `null` otherwise:
 
-```
+```liquid
 "media": {% if media %}{ "tmdbId": "{{ media_tmdbid }}" }{% else %}null{% endif %}
 ```
 
 You can also branch on a value:
 
-```
+```liquid
 {% if media_status == "AVAILABLE" %}...{% else %}...{% endif %}
 ```
 
