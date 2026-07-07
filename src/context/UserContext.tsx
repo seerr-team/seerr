@@ -28,13 +28,15 @@ export const UserContext = ({ initialUser, children }: UserContextProps) => {
     // the user navigated away, or the server was briefly unreachable)
     // rejects without a response; redirecting on those kicks logged-in
     // users to /login and can even cancel an in-flight navigation to
-    // another site, dragging the browser back to the app.
+    // another site, dragging the browser back to the app. A transiently
+    // empty user (first fetch still in flight) must not navigate either —
+    // unauthenticated page loads are already redirected server-side.
     const sessionInvalid =
       error?.response?.status === 401 || error?.response?.status === 403;
 
     if (
       !router.pathname.match(/(setup|login|resetpassword)/) &&
-      (!user || sessionInvalid) &&
+      sessionInvalid &&
       !routing.current
     ) {
       routing.current = true;
