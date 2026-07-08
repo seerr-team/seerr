@@ -689,7 +689,7 @@
   "components.UserProfile.UserSettings.UserPasswordChange.noPasswordSet": "Det här användarkontot har för närvarande inget lösenord. Konfigurera ett lösenord nedan så att det här kontot kan logga in som en \"lokal användare.\"",
   "components.Settings.serviceSettingsDescription": "Konfigurera dina {serverType}-instanser nedan. Du kan ansluta flera {serverType}-instanser, men endast två av dem kan markeras som standard (en icke-4K och en 4K). Administratörer kan åsidosätta instansen som används för att bearbeta nya förfrågningar före godkännande.",
   "components.Settings.noDefaultServer": "Minst en {serverType}-instans måste markeras som standard för att {mediaType}-förfrågningar ska kunna bearbetas.",
-  "components.Settings.noDefaultNon4kServer": "Om du bara har en enda {serverType}-instans för både icke-4K- och 4K-innehåll (eller om du bara har 4K-innehåll) bör din {serverType}-instans<strong> INTE </strong> betecknas som en 4K-instans.",
+  "components.Settings.noDefaultNon4kServer": "Om du bara har en {serverType}-server för både innehåll som inte är i 4K och innehåll i 4K (eller om du bara laddar ner innehåll i 4K), ska din {serverType}-server <strong>inte</strong> anges som en 4K-server.",
   "components.Settings.mediaTypeSeries": "serie",
   "components.Settings.mediaTypeMovie": "film",
   "components.Settings.SettingsAbout.uptodate": "Uppdaterad",
@@ -1668,5 +1668,11 @@
   "components.Settings.Notifications.usePublicLogoTip": "Om din Seerr-instans inte är offentligt åtkomlig aktiverar du det här alternativet så att e-postklienter utanför ditt nätverk kan visa bilden. Bilden hämtas från det offentliga GitHub-repot.",
   "components.UserProfile.UserSettings.UserNotificationSettings.discordIdAdd": "Lägg till användar-ID",
   "components.UserProfile.UserSettings.UserNotificationSettings.discordIdPlaceholder": "Discord-användar-ID",
-  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdRemove": "Ta bort"
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdRemove": "Ta bort",
+  "components.Settings.Notifications.validationWebhookThreadId": "Du måste ange ett giltigt Discord-tråd-ID",
+  "components.Settings.Notifications.webhookThreadId": "Tråd-ID",
+  "components.Settings.Notifications.webhookThreadIdTip": "ID:t för kanalen där meddelanden ska publiceras. Lämna tomt för att publicera i webhook-kanalen",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordNotificationsNotEnabled": "Discord-meddelanden har inte aktiverats av serverägaren. Informationen används bara om serverägaren konfigurerar en extern tjänst.",
+  "components.RequestModal.AdvancedRequester.ignoreQuotaDescription": "Den här begäran räknas inte mot användarens kvotgränser. Använd med försiktighet.",
+  "components.RequestModal.AdvancedRequester.ignoreQuotaTitle": "Åsidosätt användarens kvot"
 }
