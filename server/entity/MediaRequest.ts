@@ -1,6 +1,9 @@
 import TheMovieDb from '@server/api/themoviedb';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
-import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
+import type {
+  TmdbKeyword,
+  TmdbTvSeasonResult,
+} from '@server/api/themoviedb/interfaces';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -41,6 +44,24 @@ export class BlocklistedMediaError extends Error {}
 type MediaRequestOptions = {
   isAutoRequest?: boolean;
 };
+
+/**
+ * Resolve the season numbers that should be requested for a "request all
+ * seasons" request from a show's TMDB season list.
+ *
+ * Specials (season 0) are always excluded, and so are seasons that do not yet
+ * have any episodes. TMDB frequently lists placeholder entries for
+ * announced-but-unproduced seasons with `episode_count: 0`. Requesting those
+ * creates phantom season requests that can never be fulfilled - most visibly
+ * via watchlist sync, which re-creates the request on every run after it is
+ * deleted. See seerr-team/seerr#2646.
+ */
+export const getRequestableSeasonNumbers = (
+  seasons: TmdbTvSeasonResult[]
+): number[] =>
+  seasons
+    .filter((season) => season.season_number !== 0 && season.episode_count > 0)
+    .map((season) => season.season_number);
 
 @Entity()
 export class MediaRequest {
@@ -416,9 +437,7 @@ export class MediaRequest {
       >;
       let requestedSeasons =
         requestBody.seasons === 'all'
-          ? tmdbMediaShow.seasons
-              .filter((season) => season.season_number !== 0)
-              .map((season) => season.season_number)
+          ? getRequestableSeasonNumbers(tmdbMediaShow.seasons)
           : (requestBody.seasons as number[]);
       if (!settings.main.enableSpecialEpisodes) {
         requestedSeasons = requestedSeasons.filter((sn) => sn > 0);
