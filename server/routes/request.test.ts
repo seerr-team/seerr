@@ -349,6 +349,28 @@ describe('PUT /request/:requestId (tv, season quota enforcement)', () => {
     );
     assert.strictEqual(saved.ignoreQuota, true);
   });
+
+  it('allows swapping seasons at full quota when the count stays the same', async () => {
+    const requestRepo = getRepository(MediaRequest);
+    const mediaRequest = await seedTvRequestAtQuota(90005);
+
+    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.TV,
+      seasons: [3, 4],
+    });
+
+    assert.strictEqual(res.status, 200);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+      relations: { seasons: true },
+    });
+    assert.deepStrictEqual(
+      saved.seasons.map((s) => s.seasonNumber).sort(),
+      [3, 4]
+    );
+  });
 });
 
 describe('POST /request/:requestId/:status', () => {

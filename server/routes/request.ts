@@ -568,6 +568,13 @@ requestRoutes.put<{ requestId: string }>(
           (sn) => !request.seasons.map((s) => s.seasonNumber).includes(sn)
         );
 
+        // Seasons dropped by this same edit are still counted in quota.tv.used
+        // (getQuota() reads the persisted rows before we save below), so they
+        // must be credited back before comparing against newSeasons.
+        const removedSeasonsCount = request.seasons.filter(
+          (rs) => !requestedSeasons.includes(rs.seasonNumber)
+        ).length;
+
         if (newSeasons.length > 0) {
           const quota = await requestUser.getQuota();
           const canBypassQuota = !!req.user?.hasPermission(
@@ -585,7 +592,8 @@ requestRoutes.put<{ requestId: string }>(
               );
             } else if (
               quota.tv.limit &&
-              newSeasons.length > (quota.tv.remaining ?? 0)
+              newSeasons.length >
+                (quota.tv.remaining ?? 0) + removedSeasonsCount
             ) {
               throw new QuotaRestrictedError('Series Quota exceeded.');
             }
