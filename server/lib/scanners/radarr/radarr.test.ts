@@ -75,6 +75,7 @@ function fakeRadarrMovie(overrides: Partial<RadarrMovie> = {}): RadarrMovie {
 
 describe('Radarr Scanner', () => {
   beforeEach(() => {
+    radarrScanner.setTestOverrides({ updateRate: 0 });
     getMoviesImpl = async () => [];
   });
 

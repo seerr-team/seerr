@@ -163,6 +163,7 @@ function configureSonarr(overrides: Partial<SonarrSettings>[] = [{}]): void {
 
 describe('Sonarr Scanner', () => {
   beforeEach(() => {
+    sonarrScanner.setTestOverrides({ updateRate: 0 });
     getSeriesImpl = async () => [];
     getShowByTvdbIdImpl = async () => fakeTmdbShow(1);
     getTvShowImpl = async () => fakeTmdbShow(1);

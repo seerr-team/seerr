@@ -223,6 +223,8 @@ function configureJellyfinWithLibrary(
 
 describe('Jellyfin Scanner', () => {
   beforeEach(async () => {
+    jellyfinFullScanner.setTestOverrides({ updateRate: 0 });
+
     getLibraryContentsImpl = async () => [];
     getItemDataImpl = async () => undefined;
     getSeasonsImpl = async () => [];
