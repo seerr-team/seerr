@@ -9,6 +9,7 @@ import {
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
+import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
 import { getSettings } from '@server/lib/settings';
 import { checkUser } from '@server/middleware/auth';
@@ -210,6 +211,143 @@ describe('PUT /request/:requestId (movie)', () => {
     assert.strictEqual(saved.serverId, 3);
     assert.strictEqual(saved.profileId, 7);
     assert.strictEqual(saved.rootFolder, '/updated/movies');
+  });
+});
+
+describe('PUT /request/:requestId (tv, season quota enforcement)', () => {
+  async function seedTvRequestAtQuota(tmdbId: number) {
+    const userRepo = getRepository(User);
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+
+    const friend = await userRepo.findOneOrFail({
+      where: { email: 'friend@seerr.dev' },
+    });
+    friend.tvQuotaLimit = 2;
+    friend.tvQuotaDays = undefined;
+    await userRepo.save(friend);
+
+    const media = await mediaRepo.save(
+      new Media({
+        mediaType: MediaType.TV,
+        tmdbId,
+        status: MediaStatus.UNKNOWN,
+        status4k: MediaStatus.UNKNOWN,
+      })
+    );
+
+    const created = await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.TV,
+        status: MediaRequestStatus.PENDING,
+        media,
+        requestedBy: friend,
+        is4k: false,
+        seasons: [1, 2].map(
+          (seasonNumber) =>
+            new SeasonRequest({
+              seasonNumber,
+              status: MediaRequestStatus.PENDING,
+            })
+        ),
+      })
+    );
+
+    return requestRepo.findOneOrFail({
+      where: { id: created.id },
+      relations: { requestedBy: true, seasons: true },
+    });
+  }
+
+  it('rejects adding a season beyond the requester quota', async () => {
+    const requestRepo = getRepository(MediaRequest);
+    const mediaRequest = await seedTvRequestAtQuota(90001);
+
+    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.TV,
+      seasons: [1, 2, 3],
+    });
+
+    assert.strictEqual(res.status, 403);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+      relations: { seasons: true },
+    });
+    assert.deepStrictEqual(
+      saved.seasons.map((s) => s.seasonNumber).sort(),
+      [1, 2]
+    );
+  });
+
+  it('rejects an admin edit beyond quota without the explicit ignoreQuota flag', async () => {
+    const requestRepo = getRepository(MediaRequest);
+    const mediaRequest = await seedTvRequestAtQuota(90002);
+
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.TV,
+      seasons: [1, 2, 3],
+    });
+
+    assert.strictEqual(res.status, 403);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+      relations: { seasons: true },
+    });
+    assert.deepStrictEqual(
+      saved.seasons.map((s) => s.seasonNumber).sort(),
+      [1, 2]
+    );
+  });
+
+  it('rejects a non-admin attempting to set ignoreQuota themselves', async () => {
+    const requestRepo = getRepository(MediaRequest);
+    const mediaRequest = await seedTvRequestAtQuota(90003);
+
+    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.TV,
+      seasons: [1, 2, 3],
+      ignoreQuota: true,
+    });
+
+    assert.strictEqual(res.status, 403);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+      relations: { seasons: true },
+    });
+    assert.deepStrictEqual(
+      saved.seasons.map((s) => s.seasonNumber).sort(),
+      [1, 2]
+    );
+  });
+
+  it('allows an admin to bypass quota via the explicit ignoreQuota flag', async () => {
+    const requestRepo = getRepository(MediaRequest);
+    const mediaRequest = await seedTvRequestAtQuota(90004);
+
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.TV,
+      seasons: [1, 2, 3],
+      ignoreQuota: true,
+    });
+
+    assert.strictEqual(res.status, 200);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+      relations: { seasons: true },
+    });
+    assert.deepStrictEqual(
+      saved.seasons.map((s) => s.seasonNumber).sort(),
+      [1, 2, 3]
+    );
+    assert.strictEqual(saved.ignoreQuota, true);
   });
 });
 

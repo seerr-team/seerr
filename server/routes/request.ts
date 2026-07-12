@@ -568,6 +568,32 @@ requestRoutes.put<{ requestId: string }>(
           (sn) => !request.seasons.map((s) => s.seasonNumber).includes(sn)
         );
 
+        if (newSeasons.length > 0) {
+          const quota = await requestUser.getQuota();
+          const canBypassQuota = !!req.user?.hasPermission(
+            Permission.MANAGE_REQUESTS
+          );
+          const ignoreQuota =
+            req.body.ignoreQuota === true &&
+            canBypassQuota &&
+            (quota.tv.limit ?? 0) > 0;
+
+          if (!ignoreQuota) {
+            if (req.body.ignoreQuota && !canBypassQuota) {
+              throw new RequestPermissionError(
+                'You do not have permission to bypass user quota limits.'
+              );
+            } else if (
+              quota.tv.limit &&
+              newSeasons.length > (quota.tv.remaining ?? 0)
+            ) {
+              throw new QuotaRestrictedError('Series Quota exceeded.');
+            }
+          } else {
+            request.ignoreQuota = true;
+          }
+        }
+
         request.seasons = request.seasons.filter((rs) =>
           filteredSeasons.includes(rs.seasonNumber)
         );
@@ -593,6 +619,13 @@ requestRoutes.put<{ requestId: string }>(
 
       return res.status(200).json(request);
     } catch (e) {
+      if (
+        e instanceof QuotaRestrictedError ||
+        e instanceof RequestPermissionError
+      ) {
+        return next({ status: 403, message: e.message });
+      }
+
       next({ status: 500, message: e.message });
     }
   }

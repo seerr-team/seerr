@@ -89,10 +89,7 @@ const TvRequestModal = ({
   });
   const [tvdbId, setTvdbId] = useState<number | undefined>(undefined);
   const { data: quota } = useSWR<QuotaResponse>(
-    user &&
-      (!requestOverrides?.user?.id || hasPermission(Permission.MANAGE_USERS))
-      ? `/api/v1/user/${requestOverrides?.user?.id ?? user.id}/quota`
-      : null
+    user ? `/api/v1/user/${requestOverrides?.user?.id ?? user.id}/quota` : null
   );
 
   const currentlyRemaining =
