@@ -244,7 +244,8 @@ const PersonDetails = () => {
         {sortedCrew
           ?.filter((media) => {
             return (
-              currentJobType === 'all' || media.job.includes(currentJobType)
+              currentJobType === 'all' ||
+              media.job.split(', ').includes(currentJobType)
             );
           })
           .map((media, index) => {
