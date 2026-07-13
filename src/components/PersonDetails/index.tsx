@@ -177,9 +177,15 @@ const PersonDetails = () => {
         value={currentJobType}
         className="rounded-r-only"
       >
-        <option value="all">All</option>
+        <option key="all" value="all">
+          {intl.formatMessage(globalMessages.all)}
+        </option>
         {uniqueJobs?.map((job) => {
-          return <option value={job}>{job}</option>;
+          return (
+            <option key={job} value={job}>
+              {job}
+            </option>
+          );
         })}
       </select>
     </div>
