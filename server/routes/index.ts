@@ -48,9 +48,13 @@ const router = Router();
 router.use(checkUser);
 
 router.get<unknown, StatusResponse>('/status', async (req, res) => {
+  const settings = getSettings();
   const currentVersion = getAppVersion();
   const commitTag = getCommitTag();
-  const checkUpdate = req.query.checkUpdateAvailable !== 'false';
+  const checkUpdate =
+    req.query.checkUpdateAvailable !== undefined
+      ? req.query.checkUpdateAvailable
+      : settings.fullPublicSettings.versionCheck;
   let updateAvailable = false;
   let commitsBehind = 0;
 

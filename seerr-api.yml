@@ -2161,7 +2161,7 @@ paths:
       parameters:
         - in: query
           name: checkUpdateAvailable
-          description: If false, updateAvailable and commitsBehind will be omitted from the response. Defaults to true.
+          description: If false, updateAvailable and commitsBehind will be omitted from the response. Defaults to the versionCheck setting.
           required: false
           example: false
           schema:
