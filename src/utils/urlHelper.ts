@@ -1,7 +1,9 @@
+import { Address6 } from 'ip-address';
+
 export function getHostAndPort(): string {
   let host = process.env.HOST || 'localhost';
-  if (host.includes(':')) {
-    // If host includes a colon, it's an IPv6 literal and needs to be placed in square brackets
+  if (Address6.isValid(host)) {
+    // If host is an IPv6 literal it needs to be placed in square brackets
     host = `[${host}]`;
   }
 

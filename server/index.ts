@@ -283,10 +283,11 @@ app
     }
     httpServer.on('error', (err) => {
       logger.error('Failed to start server', {
-      label: 'Server',
-      message: err.message,
-   });
-   process.exit(1);
+        label: 'Server',
+        message: err.message,
+      });
+      process.exit(1);
+    });
   })
   .catch((err) => {
     logger.error(err.stack);
