@@ -1308,7 +1308,7 @@
   "components.Settings.validationUrlTrailingSlash": "URL must not end in a trailing slash",
   "components.Settings.valueRequired": "You must provide a value.",
   "components.Settings.webAppUrl": "<WebAppLink>Web App</WebAppLink> URL",
-  "components.Settings.webAppUrlTip": "Optionally direct users to the web app on your server instead of the https://app.plex.tv/desktop",
+  "components.Settings.webAppUrlTip": "Optionally direct users to the web app on your server instead of https://app.plex.tv/desktop",
   "components.Settings.webhook": "Webhook",
   "components.Settings.webpush": "Web Push",
   "components.Settings.yes": "Yes",
