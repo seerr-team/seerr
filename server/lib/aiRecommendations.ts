@@ -74,7 +74,7 @@ export async function generateTasteProfile(
 
     const topItems = scoredItems.slice(0, options?.maxHistoryItems || 40);
 
-    // 3. Fetch TMDb metadata for each item
+    // 3. Fetch TMDB metadata for each item
     const tmdb = new TheMovieDb();
 
     const enrichedItems: WatchHistoryItem[] = [];
@@ -102,7 +102,7 @@ export async function generateTasteProfile(
         });
       } catch (error) {
         logger.warn(
-          `Failed to fetch TMDb metadata for tmdbId ${item.tmdbId}:`,
+          `Failed to fetch TMDB metadata for tmdbId ${item.tmdbId}:`,
           error
         );
       }
@@ -190,10 +190,10 @@ export async function generateRecommendations(
       logTag
     );
 
-    // 5. Resolve AI recs to real TMDb entries (LLM titles -> tmdbId via search).
+    // 5. Resolve AI recs to real TMDB entries (LLM titles -> tmdbId via search).
     // Small models hallucinate tmdbId values, so we look them up by title/year.
     logger.info(
-      `[user ${userId}] Step 4/8: resolving ${aiRecs.length} titles via TMDb...`,
+      `[user ${userId}] Step 4/8: resolving ${aiRecs.length} titles via TMDB...`,
       logTag
     );
     const resolvedAiRecs = await resolveRecommendationsViaTmdb(aiRecs);
@@ -202,16 +202,16 @@ export async function generateRecommendations(
       logTag
     );
 
-    // 6. If enabled, augment with TMDb recommendations using AI keywords
+    // 6. If enabled, augment with TMDB recommendations using AI keywords
     let tmdbRecs: any[] = [];
     if (options?.includeTmdb && keywords && keywords.length > 0) {
       logger.info(
-        `[user ${userId}] Step 5/8: TMDb keyword discovery...`,
+        `[user ${userId}] Step 5/8: TMDB keyword discovery...`,
         logTag
       );
       tmdbRecs = await discoverByKeywords(keywords, filters);
       logger.info(
-        `[user ${userId}] Step 5/8 done. ${tmdbRecs.length} TMDb recs`,
+        `[user ${userId}] Step 5/8 done. ${tmdbRecs.length} TMDB recs`,
         logTag
       );
     }
@@ -404,7 +404,7 @@ async function getUserFeedback(userId: number) {
 /**
  * Resolve the titles the user has "liked" so the recommendation prompt can
  * lean toward similar content. Likes are stored as (tmdbId, mediaType) only,
- * so we look the names up via TMDb (capped to keep latency bounded).
+ * so we look the names up via TMDB (capped to keep latency bounded).
  */
 async function getLikedTitles(
   feedback: UserFeedback[]
@@ -461,7 +461,7 @@ async function discoverByKeywords(
   return results;
 }
 
-// TMDb genre IDs differ between the movie and TV discover endpoints (e.g.
+// TMDB genre IDs differ between the movie and TV discover endpoints (e.g.
 // "Science Fiction" is 878 for movies but maps to "Sci-Fi & Fantasy" 10765
 // for TV). Map the human-readable genre names the LLM emits to the IDs each
 // endpoint expects. Genres with no equivalent on one side are omitted there.
@@ -493,7 +493,7 @@ const GENRE_IDS: Record<string, { movie?: number; tv?: number }> = {
   western: { movie: 37, tv: 37 },
 };
 
-/** Resolve genre names to TMDb IDs for a given discover endpoint type. */
+/** Resolve genre names to TMDB IDs for a given discover endpoint type. */
 function genreIdsFor(
   names: string[] | undefined,
   type: 'movie' | 'tv'
@@ -550,7 +550,7 @@ async function discoverFromTmdb(params: any) {
       );
     }
   } catch (error) {
-    logger.warn('Failed to discover from TMDb:', error);
+    logger.warn('Failed to discover from TMDB:', error);
   }
 
   return results;
@@ -587,12 +587,12 @@ async function searchTmdbTitles(
 }
 
 /**
- * Resolve AI-generated recommendations to real TMDb entries by searching the
+ * Resolve AI-generated recommendations to real TMDB entries by searching the
  * title (and matching the year when available). Small LLMs cannot reliably
  * produce correct tmdbId values, so we trust the title/year instead and look
  * the ID up — the same approach SuggestArr and Recomendarr use.
  *
- * Returns only recommendations that resolved to a real TMDb entry.
+ * Returns only recommendations that resolved to a real TMDB entry.
  */
 async function resolveRecommendationsViaTmdb(
   recs: {
@@ -650,13 +650,13 @@ async function resolveRecommendationsViaTmdb(
       });
     } catch (error) {
       logger.warn(
-        `TMDb resolution failed for "${rec.title}": ${error.message}`
+        `TMDB resolution failed for "${rec.title}": ${error.message}`
       );
     }
   }
 
   logger.info(
-    `TMDb resolution: ${resolved.length}/${recs.length} recommendations resolved to real entries`
+    `TMDB resolution: ${resolved.length}/${recs.length} recommendations resolved to real entries`
   );
   return resolved;
 }
@@ -688,7 +688,7 @@ function mergeAndScoreRecommendations(
     });
   }
 
-  // Add TMDb recommendations with lower base score
+  // Add TMDB recommendations with lower base score
   for (const rec of tmdbRecs) {
     const id = rec.id || rec.tmdbId;
     if (!merged.has(id)) {

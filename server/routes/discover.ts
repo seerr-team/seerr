@@ -1019,7 +1019,7 @@ discoverRoutes.get('/ai-recommendations', async (req, res, next) => {
       take: 50,
     });
 
-    // Fetch full TMDb details for each stored recommendation
+    // Fetch full TMDB details for each stored recommendation
     const tmdb = createTmdbWithRegionLanguage(req.user);
     const detailedResults = await Promise.all(
       stored.map(async (rec) => {

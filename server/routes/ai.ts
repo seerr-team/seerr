@@ -203,7 +203,7 @@ aiRoutes.post('/search', async (req, res, next) => {
       options
     );
 
-    // Map raw TMDb results to the same shape as the regular search endpoint
+    // Map raw TMDB results to the same shape as the regular search endpoint
     // (camelCase + media status) so the frontend can reuse TitleCard/ListView.
     const media = await Media.getRelatedMedia(
       req.user,

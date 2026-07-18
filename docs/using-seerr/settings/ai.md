@@ -42,12 +42,12 @@ Recommendations are produced by a background job (the AI Recommendations Sync jo
 - **Enable Recommendations** — Turns the recommendations slider and page on or off independently of the master toggle above.
 - **Slider Title** — The heading shown above the slider on the Discover page. Defaults to "Recommended for You".
 - **Max Results** — The maximum number of titles to generate per user, between 1 and 50.
-- **Minimum Rating** — The minimum TMDb rating (0.0–10.0) a recommendation must meet; higher values surface better-rated titles at the cost of fewer results. Defaults to 7.
+- **Minimum Rating** — The minimum TMDB rating (0.0–10.0) a recommendation must meet; higher values surface better-rated titles at the cost of fewer results. Defaults to 7.
 - **Recommendation TTL (days)** — How long a recommendation lives before it expires. Titles that are re-recommended on a later run are kept alive, while stale ones age out after this many days, so the list refreshes gradually rather than being replaced wholesale.
 
 ## AI Search
 
-When enabled, an "AI Search" toggle is added to the search page. Regular keyword search remains the default and does not use the AI provider at all; switching to AI Search interprets a natural-language query ("90s psychological thrillers", "feel-good anime about friendship") using the configured model, resolves it to TMDb results, and shows an "AI interpretation" badge describing how the query was parsed.
+When enabled, an "AI Search" toggle is added to the search page. Regular keyword search remains the default and does not use the AI provider at all; switching to AI Search interprets a natural-language query ("90s psychological thrillers", "feel-good anime about friendship") using the configured model, resolves it to TMDB results, and shows an "AI interpretation" badge describing how the query was parsed.
 
 This setting is **disabled** by default.
 

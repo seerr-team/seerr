@@ -329,7 +329,7 @@ export class OpenAICompatibleClient implements LLMClient {
         {
           role: 'system',
           content:
-            'You are a media search interpreter. You translate natural language queries into structured TMDb search parameters and suggest specific titles. Output must be valid JSON.',
+            'You are a media search interpreter. You translate natural language queries into structured TMDB search parameters and suggest specific titles. Output must be valid JSON.',
         },
         {
           role: 'user',
@@ -445,7 +445,7 @@ Response MUST be valid JSON in this exact format:
         ? `USER'S VIEWING HISTORY (for personalization):\n${history.map((h) => `- ${h.title}`).join('\n')}\n`
         : '';
 
-    return `Translate this natural language query into structured TMDb search parameters and suggest specific titles.
+    return `Translate this natural language query into structured TMDB search parameters and suggest specific titles.
 
 ${historyText}USER QUERY: "${query}"
 
