@@ -427,14 +427,18 @@ const TitleCard = ({
                   currentStatus !== MediaStatus.AVAILABLE &&
                   currentStatus !== MediaStatus.PARTIALLY_AVAILABLE &&
                   currentStatus !== MediaStatus.PENDING && (
-                    <Button
-                      buttonType={'ghost'}
-                      className="z-40"
-                      buttonSize={'sm'}
-                      onClick={() => setShowBlocklistModal(true)}
+                    <Tooltip
+                      content={intl.formatMessage(globalMessages.addToBlocklist)}
                     >
-                      <EyeSlashIcon className={'h-3'} />
-                    </Button>
+                      <Button
+                        buttonType={'ghost'}
+                        className="z-40"
+                        buttonSize={'sm'}
+                        onClick={() => setShowBlocklistModal(true)}
+                      >
+                        <EyeSlashIcon className={'h-3'} />
+                      </Button>
+                    </Tooltip>
                   )}
               </div>
             )}

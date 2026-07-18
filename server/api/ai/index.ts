@@ -74,7 +74,8 @@ export interface LLMClient {
     profile: TasteProfile,
     history: WatchHistoryItem[],
     filters: RecommendationFilters,
-    maxResults: number
+    maxResults: number,
+    likedTitles?: { title: string; mediaType: 'movie' | 'tv' }[]
   ): Promise<AIRecommendationItem[]>;
   interpretSearchQuery(
     query: string,
@@ -277,9 +278,16 @@ export class OpenAICompatibleClient implements LLMClient {
     profile: TasteProfile,
     history: WatchHistoryItem[],
     filters: RecommendationFilters,
-    maxResults: number
+    maxResults: number,
+    likedTitles?: { title: string; mediaType: 'movie' | 'tv' }[]
   ): Promise<AIRecommendationItem[]> {
-    const prompt = this.buildRecommendationsPrompt(profile, history, filters, maxResults);
+    const prompt = this.buildRecommendationsPrompt(
+      profile,
+      history,
+      filters,
+      maxResults,
+      likedTitles
+    );
 
     try {
       const parsed = await this.callForJSON([
@@ -378,17 +386,24 @@ Keywords should be highly specific niche terms (e.g., "cyberpunk", "time-loop", 
     profile: TasteProfile,
     history: WatchHistoryItem[],
     filters: RecommendationFilters,
-    maxResults: number
+    maxResults: number,
+    likedTitles?: { title: string; mediaType: 'movie' | 'tv' }[]
   ): string {
     const historyTitles = history.map((h) => `- ${h.title} (${h.year || 'N/A'})`).join('\n');
     const filtersText = this.formatFilters(filters);
+    const likedText =
+      likedTitles && likedTitles.length > 0
+        ? `TITLES THE USER EXPLICITLY LIKED (lean toward content similar to these):\n${likedTitles
+            .map((l) => `- ${l.title} (${l.mediaType})`)
+            .join('\n')}\n\n`
+        : '';
 
     return `Generate personalized recommendations based on this taste profile and viewing history.
 
 TASTE PROFILE:
 ${JSON.stringify(profile, null, 2)}
 
-VIEWING HISTORY (DO NOT recommend these exact titles):
+${likedText}VIEWING HISTORY (DO NOT recommend these exact titles):
 ${historyTitles}
 
 ${filtersText ? `FILTER CONSTRAINTS:\n${filtersText}\n` : ''}

@@ -150,6 +150,16 @@ export async function generateRecommendations(
       logTag
     );
 
+    // 2b. Resolve titles the user has "liked" so they can positively bias the
+    // recommendation prompt (the LLM leans toward similar content).
+    const likedTitles = await getLikedTitles(feedback);
+    if (likedTitles.length > 0) {
+      logger.info(
+        `[user ${userId}] biasing with ${likedTitles.length} liked titles`,
+        logTag
+      );
+    }
+
     // 3. Build filters from settings and options
     const filters: RecommendationFilters = {
       ...options?.filters,
@@ -164,7 +174,8 @@ export async function generateRecommendations(
       { profile: profile, keywords } as any,
       history,
       filters,
-      options?.limit || settings.ai.recommendations.maxResults
+      options?.limit || settings.ai.recommendations.maxResults,
+      likedTitles
     );
     logger.info(`[user ${userId}] Step 3/8 done. ${aiRecs.length} AI recs`, logTag);
 
@@ -355,6 +366,44 @@ async function getUserFeedback(userId: number) {
     .createQueryBuilder('feedback')
     .where('feedback.userId = :userId', { userId })
     .getMany();
+}
+
+/**
+ * Resolve the titles the user has "liked" so the recommendation prompt can
+ * lean toward similar content. Likes are stored as (tmdbId, mediaType) only,
+ * so we look the names up via TMDb (capped to keep latency bounded).
+ */
+async function getLikedTitles(
+  feedback: UserFeedback[]
+): Promise<{ title: string; mediaType: 'movie' | 'tv' }[]> {
+  const likes = feedback
+    .filter((f) => f.feedbackType === 'like')
+    .slice(0, 10);
+
+  if (likes.length === 0) return [];
+
+  const tmdb = new TheMovieDb();
+  const result: { title: string; mediaType: 'movie' | 'tv' }[] = [];
+
+  for (const like of likes) {
+    try {
+      const m: any =
+        like.mediaType === MediaType.TV
+          ? await tmdb.getTvShow({ tvId: like.tmdbId })
+          : await tmdb.getMovie({ movieId: like.tmdbId });
+      const title = m.title || m.name;
+      if (title) {
+        result.push({
+          title,
+          mediaType: like.mediaType === MediaType.TV ? 'tv' : 'movie',
+        });
+      }
+    } catch {
+      // Skip unresolved titles rather than failing the whole generation.
+    }
+  }
+
+  return result;
 }
 
 async function discoverByKeywords(keywords: string[], filters: RecommendationFilters) {
