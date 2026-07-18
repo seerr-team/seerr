@@ -111,7 +111,7 @@ importers:
         specifier: ^3.33.2
         version: 3.33.2
       ip-address:
-        specifier: ^10.1.0
+        specifier: ^10.2.0
         version: 10.2.0
       js-yaml:
         specifier: ^4.1.1
