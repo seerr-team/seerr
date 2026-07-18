@@ -19,6 +19,7 @@ import { mapWatchProviderDetails } from '@server/models/common';
 import overrideRuleRoutes from '@server/routes/overrideRule';
 import settingsRoutes from '@server/routes/settings';
 import watchlistRoutes from '@server/routes/watchlist';
+import aiRoutes from './ai';
 import {
   appDataPath,
   appDataPermissions,
@@ -148,6 +149,7 @@ router.get(
   }
 );
 router.use('/settings', isAuthenticated(Permission.ADMIN), settingsRoutes);
+router.use('/ai', isAuthenticated(), aiRoutes);
 router.use('/search', isAuthenticated(), searchRoutes);
 router.use('/discover', isAuthenticated(), discoverRoutes);
 router.use('/request', isAuthenticated(), requestRoutes);

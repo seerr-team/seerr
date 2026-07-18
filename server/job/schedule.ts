@@ -1,5 +1,13 @@
 import { MediaServerType } from '@server/constants/server';
+import { UserType } from '@server/constants/user';
+import { getRepository } from '@server/datasource';
+import { User } from '@server/entity/User';
+import { In } from 'typeorm';
 import blocklistedTagsProcessor from '@server/job/blocklistedTagsProcessor';
+import {
+  cleanupExpiredRecommendations,
+  generateRecommendations,
+} from '@server/lib/aiRecommendations';
 import availabilitySync from '@server/lib/availabilitySync';
 import downloadTracker from '@server/lib/downloadtracker';
 import ImageProxy from '@server/lib/imageproxy';
@@ -258,6 +266,73 @@ export const startJobs = (): void => {
     running: () => blocklistedTagsProcessor.status().running,
     cancelFn: () => blocklistedTagsProcessor.cancel(),
   });
+
+  // AI Recommendations Sync
+  if (jobs['ai-recommendations-sync']) {
+    scheduledJobs.push({
+      id: 'ai-recommendations-sync',
+      name: 'AI Recommendations Sync',
+      type: 'process',
+      interval: 'hours',
+      cronSchedule: jobs['ai-recommendations-sync'].schedule,
+      job: schedule.scheduleJob(jobs['ai-recommendations-sync'].schedule, async () => {
+        const settings = getSettings();
+        if (!settings.ai.enabled || !settings.ai.recommendations.enabled) {
+          logger.info('AI recommendations disabled, skipping job', {
+            label: 'Jobs',
+          });
+          return;
+        }
+
+        logger.info('Starting scheduled job: AI Recommendations Sync', {
+          label: 'Jobs',
+        });
+
+        try {
+          // Purge recommendations older than the configured TTL before
+          // generating fresh ones for this run.
+          const expired = await cleanupExpiredRecommendations();
+          if (expired > 0) {
+            logger.info(`Expired ${expired} stale AI recommendations`, {
+              label: 'Jobs',
+            });
+          }
+
+          const userRepository = getRepository(User);
+          const users = await userRepository.find({
+            where: { userType: In([UserType.PLEX, UserType.LOCAL, UserType.JELLYFIN]) },
+          });
+
+          logger.info(`Generating AI recommendations for ${users.length} users`, {
+            label: 'Jobs',
+          });
+
+          for (const user of users) {
+            try {
+              await generateRecommendations(user.id, {
+                limit: settings.ai.recommendations.maxResults,
+                includeTmdb: true,
+              });
+              logger.info(`Generated AI recommendations for user ${user.id}`, {
+                label: 'Jobs',
+              });
+            } catch (error) {
+              logger.error(
+                `Failed to generate AI recommendations for user ${user.id}:`,
+                error
+              );
+            }
+          }
+
+          logger.info('AI Recommendations Sync job completed', {
+            label: 'Jobs',
+          });
+        } catch (error) {
+          logger.error('AI Recommendations Sync job failed:', error);
+        }
+      }),
+    });
+  }
 
   logger.info('Scheduled jobs loaded', { label: 'Jobs' });
 };

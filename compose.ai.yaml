@@ -1,0 +1,35 @@
+services:
+  seerr:
+    environment:
+      # AI Configuration - Optional
+      # Uncomment and configure your preferred AI provider below
+
+      # Option 1: OpenAI (requires API key)
+      # - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # - OPENAI_BASE_URL=https://api.openai.com/v1
+      # - OPENAI_MODEL=gpt-4o-mini
+
+      # Option 2: Ollama (local, free) - Pre-configured for convenience
+      - OLLAMA_BASE_URL=http://ollama:11434/v1
+      - OLLAMA_MODEL=mistral
+
+      # Option 3: OpenRouter (multi-provider)
+      # - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      # - OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+      # - OPENROUTER_MODEL=meta-llama/llama-3-8b-instruct:free
+    depends_on:
+      - ollama
+    links:
+      - ollama
+
+  # Ollama for local LLM support (optional, free)
+  # Remove this service if you prefer to use a cloud AI provider
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  ollama_data:

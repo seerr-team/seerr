@@ -48,6 +48,7 @@
     "ace-builds": "1.43.6",
     "axios": "1.15.0",
     "axios-rate-limit": "1.9.0",
+    "openai": "^6.25.0",
     "bcrypt": "6.0.0",
     "bowser": "2.14.1",
     "connect-typeorm": "2.0.0",

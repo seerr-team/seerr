@@ -396,6 +396,26 @@ const Discover = () => {
               />
             );
             break;
+          case DiscoverSliderType.AI_RECOMMENDATIONS:
+            sliderComponent = (
+              <MediaSlider
+                sliderKey="ai-recommendations"
+                title={slider.title ?? intl.formatMessage(sliderTitles.airecommendations)}
+                url="/api/v1/discover/ai-recommendations"
+                linkUrl="/discover/ai-recommendations"
+              />
+            );
+            break;
+          case DiscoverSliderType.AI_SEARCH:
+            sliderComponent = (
+              <MediaSlider
+                sliderKey="ai-search"
+                title={slider.title ?? intl.formatMessage(sliderTitles.aisearch)}
+                url="/api/v1/search"
+                linkUrl="/search"
+              />
+            );
+            break;
         }
 
         if (isEditing) {

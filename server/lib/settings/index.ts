@@ -354,6 +354,32 @@ interface JobSettings {
   schedule: string;
 }
 
+export interface AiProviderSettings {
+  type: 'openai' | 'ollama' | 'openrouter' | 'custom';
+  apiKey?: string;
+  baseUrl?: string;
+  model: string;
+}
+
+export interface AiRecommendationSettings {
+  enabled: boolean;
+  sliderTitle: string;
+  maxResults: number;
+  minScore: number;
+  ttlDays: number;
+}
+
+export interface AiSearchSettings {
+  enabled: boolean;
+}
+
+export interface AiSettings {
+  enabled: boolean;
+  provider: AiProviderSettings;
+  recommendations: AiRecommendationSettings;
+  search: AiSearchSettings;
+}
+
 export type JobId =
   | 'plex-recently-added-scan'
   | 'plex-full-scan'
@@ -367,7 +393,8 @@ export type JobId =
   | 'jellyfin-full-scan'
   | 'image-cache-cleanup'
   | 'availability-sync'
-  | 'process-blocklisted-tags';
+  | 'process-blocklisted-tags'
+  | 'ai-recommendations-sync';
 
 export interface AllSettings {
   clientId: string;
@@ -385,6 +412,7 @@ export interface AllSettings {
   jobs: Record<JobId, JobSettings>;
   network: NetworkSettings;
   metadataSettings: MetadataSettings;
+  ai: AiSettings;
   migrations: string[];
 }
 
@@ -453,6 +481,24 @@ class Settings {
       metadataSettings: {
         tv: MetadataProviderType.TMDB,
         anime: MetadataProviderType.TMDB,
+      },
+      ai: {
+        enabled: false,
+        provider: {
+          type: 'openai',
+          baseUrl: 'https://api.openai.com/v1',
+          model: 'gpt-4o-mini',
+        },
+        recommendations: {
+          enabled: false,
+          sliderTitle: 'Recommended for You',
+          maxResults: 20,
+          minScore: 0.5,
+          ttlDays: 14,
+        },
+        search: {
+          enabled: false,
+        },
       },
       radarr: [],
       sonarr: [],
@@ -606,6 +652,9 @@ class Settings {
         'process-blocklisted-tags': {
           schedule: '0 30 1 */7 * *',
         },
+        'ai-recommendations-sync': {
+          schedule: '0 */6 * * *',
+        },
       },
       network: {
         csrfProtection: false,
@@ -676,6 +725,14 @@ class Settings {
       this.data.metadataSettings,
       data
     );
+  }
+
+  get ai(): AiSettings {
+    return this.data.ai;
+  }
+
+  set ai(data: AiSettings) {
+    this.data.ai = mergeSettings(this.data.ai, data);
   }
 
   get radarr(): RadarrSettings[] {
