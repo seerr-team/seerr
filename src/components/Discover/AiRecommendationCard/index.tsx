@@ -105,9 +105,9 @@ const AiRecommendationCard = ({
         image={item.posterPath}
         status={item.mediaInfo?.status}
         summary={item.overview}
-        title={item.title}
+        title={item.mediaType === 'movie' ? item.title : item.name}
         userScore={item.voteAverage}
-        year={item.releaseDate}
+        year={item.mediaType === 'movie' ? item.releaseDate : item.firstAirDate}
         mediaType={item.mediaType}
         inProgress={(item.mediaInfo?.downloadStatus ?? []).length > 0}
         canExpand

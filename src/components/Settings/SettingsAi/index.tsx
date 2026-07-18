@@ -150,10 +150,7 @@ const SettingsAi = () => {
 
   return (
     <div className="mb-8">
-      <PageTitle
-        title={intl.formatMessage(messages.aiSettings)}
-        message={intl.formatMessage(messages.aiSettingsDescription)}
-      />
+      <PageTitle title={intl.formatMessage(messages.aiSettings)} />
 
       <Formik
         initialValues={data}
@@ -402,7 +399,6 @@ const SettingsAi = () => {
                         type="number"
                         id="recommendations.maxResults"
                         name="recommendations.maxResults"
-                        type="number"
                         min="1"
                         max="50"
                         value={values.recommendations.maxResults}
