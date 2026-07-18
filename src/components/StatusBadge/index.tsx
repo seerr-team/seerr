@@ -232,7 +232,7 @@ const StatusBadge = ({
           }}
         >
           <Badge
-            badgeType="success"
+            badgeType="warning"
             href={mediaLink}
             className={`${
               inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
