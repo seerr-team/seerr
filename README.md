@@ -1,3 +1,45 @@
+# Seerr — Custom Fork: Yellow Partial Availability Badges
+
+> ⚠️ This is a personal fork of [seerr-team/seerr](https://github.com/seerr-team/seerr).
+> For the official project, install instructions, and support, use the upstream repo.
+
+## What this fork changes
+
+This fork changes the color of the **Partially Available** status so it's visually
+distinct from fully Available media:
+
+- ✅ **Available** — green (unchanged)
+- 🟡 **Partially Available** — now **yellow** instead of green, on both:
+  - The status badge on movie/show detail pages (`StatusBadge`)
+  - The mini status dot on poster thumbnails (`StatusBadgeMini`)
+
+### Why?
+
+In upstream Seerr, both "Available" and "Partially Available" render green, making it
+hard to tell at a glance whether a show is complete or still missing seasons/episodes
+(e.g., currently-airing shows). This fork makes partial availability instantly
+recognizable.
+
+## Files changed
+
+- `src/components/StatusBadge/index.tsx`
+- `src/components/Common/StatusBadgeMini/index.tsx`
+
+## Building
+
+```bash
+docker build --build-arg COMMIT_TAG=custom-v2 -t seerr-custom .
+```
+
+Then point your docker-compose at `seerr-custom:latest` instead of the official image.
+
+---
+
+*Original README below:*
+
+
+
+
 <p align="center">
 <img src="./public/logo_full.svg" alt="Seerr" style="margin: 20px 0;">
 </p>
