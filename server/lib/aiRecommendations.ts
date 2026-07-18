@@ -221,7 +221,7 @@ export async function aiSearch(
   userId: number,
   query: string,
   options?: { limit?: number; includeHistory?: boolean }
-): Promise<any[]> {
+): Promise<{ results: any[]; interpretation: any }> {
   try {
     const settings = getSettings();
 
@@ -247,7 +247,10 @@ export async function aiSearch(
     // 4. Filter out watched/disliked
     const filtered = await filterExistingContent(results, userId);
 
-    return filtered.slice(0, options?.limit || 20);
+    return {
+      results: filtered.slice(0, options?.limit || 20),
+      interpretation,
+    };
   } catch (error) {
     logger.error(`AI search failed for user ${userId}:`, error);
     throw error;

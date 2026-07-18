@@ -6555,6 +6555,32 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  page:
+                    type: number
+                  totalPages:
+                    type: number
+                  totalResults:
+                    type: number
+                  results:
+                    type: array
+                    items:
+                      type: object
+                  query:
+                    type: string
+                  interpretation:
+                    type: object
+                    nullable: true
+                    description: |
+                      How the AI parsed the query (genres, year range, language,
+                      min rating, keywords) — surfaced to the UI as a badge.
+                    properties:
+                      discover_params:
+                        type: object
+                      suggested_titles:
+                        type: array
+                        items:
+                          type: object
   /ai/feedback:
     post:
       summary: Submit user feedback on a recommendation

@@ -3,10 +3,12 @@ import { OpenAI } from 'openai';
 import { User } from '../entity/User';
 import { UserFeedback } from '../entity/UserFeedback';
 import { AiRecommendation } from '../entity/AiRecommendation';
+import Media from '../entity/Media';
 import { MediaType } from '../constants/media';
 import { getSettings } from '../lib/settings';
 import { createLLMClient } from '../api/ai';
 import { aiSearch, generateRecommendations } from '../lib/aiRecommendations';
+import { mapSearchResults } from '../models/Search';
 import logger from '../logger';
 import { Router } from 'express';
 import { z } from 'zod';
@@ -167,11 +169,31 @@ aiRoutes.post('/search', async (req, res, next) => {
       return res.status(400).json({ message: 'Query is required' });
     }
 
-    const results = await aiSearch(user, query, options);
+    const { results: rawResults, interpretation } = await aiSearch(
+      user,
+      query,
+      options
+    );
+
+    // Map raw TMDb results to the same shape as the regular search endpoint
+    // (camelCase + media status) so the frontend can reuse TitleCard/ListView.
+    const media = await Media.getRelatedMedia(
+      req.user,
+      rawResults.map((r: any) => ({
+        tmdbId: r.id,
+        mediaType: r.media_type,
+      }))
+    );
+
+    const results = mapSearchResults(rawResults as any, media);
 
     res.json({
+      page: 1,
+      totalPages: 1,
+      totalResults: results.length,
       results,
       query,
+      interpretation,
     });
   } catch (error) {
     logger.error('AI search error:', error);
