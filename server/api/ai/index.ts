@@ -111,7 +111,11 @@ export class OpenAICompatibleClient implements LLMClient {
         max_tokens: 4000,
       });
 
-      const content = response.choices[0]?.message?.content;
+      // Reasoning models (e.g. GLM, o-series) may return their answer in
+      // `reasoning_content` with an empty `content`. Prefer `content`, fall
+      // back to `reasoning_content`.
+      const message = response.choices[0]?.message as any;
+      const content = message?.content ?? message?.reasoning_content;
       if (!content) {
         throw new Error('Empty response from LLM');
       }

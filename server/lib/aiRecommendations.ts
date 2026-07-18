@@ -378,23 +378,83 @@ async function discoverByKeywords(keywords: string[], filters: RecommendationFil
   return results;
 }
 
+// TMDb genre IDs differ between the movie and TV discover endpoints (e.g.
+// "Science Fiction" is 878 for movies but maps to "Sci-Fi & Fantasy" 10765
+// for TV). Map the human-readable genre names the LLM emits to the IDs each
+// endpoint expects. Genres with no equivalent on one side are omitted there.
+const GENRE_IDS: Record<string, { movie?: number; tv?: number }> = {
+  action: { movie: 28, tv: 10759 },
+  adventure: { movie: 12, tv: 10759 },
+  animation: { movie: 16, tv: 16 },
+  anime: { movie: 16, tv: 16 },
+  comedy: { movie: 35, tv: 35 },
+  crime: { movie: 80, tv: 80 },
+  documentary: { movie: 99, tv: 99 },
+  drama: { movie: 18, tv: 18 },
+  family: { movie: 10751, tv: 10751 },
+  fantasy: { movie: 14, tv: 10765 },
+  history: { movie: 36 },
+  horror: { movie: 27 },
+  music: { movie: 10402 },
+  musical: { movie: 10402 },
+  mystery: { movie: 9648, tv: 9648 },
+  reality: { tv: 10764 },
+  romance: { movie: 10749 },
+  'science fiction': { movie: 878, tv: 10765 },
+  'sci-fi': { movie: 878, tv: 10765 },
+  'sci-fi & fantasy': { movie: 878, tv: 10765 },
+  thriller: { movie: 53 },
+  'tv movie': { movie: 10770 },
+  war: { movie: 10752, tv: 10768 },
+  'war & politics': { tv: 10768 },
+  western: { movie: 37, tv: 37 },
+};
+
+/** Resolve genre names to TMDb IDs for a given discover endpoint type. */
+function genreIdsFor(
+  names: string[] | undefined,
+  type: 'movie' | 'tv'
+): number[] {
+  if (!names) return [];
+  const ids = new Set<number>();
+  for (const name of names) {
+    const id = GENRE_IDS[name.toLowerCase().trim()]?.[type];
+    if (id) ids.add(id);
+  }
+  return [...ids];
+}
+
 async function discoverFromTmdb(params: any) {
   const tmdb = new TheMovieDb();
   const results: any[] = [];
 
   try {
     if (params.genres || params.year_from || params.min_rating) {
-      const baseParams: any = {};
-      if (params.genres) baseParams.genre = params.genres.join('|');
-      if (params.year_from) baseParams.primaryReleaseDateGte = `${params.year_from}-01-01`;
-      if (params.year_to) baseParams.primaryReleaseDateLte = `${params.year_to}-12-31`;
-      if (params.min_rating) baseParams.voteAverageGte = params.min_rating;
-      if (params.original_language) baseParams.originalLanguage = params.original_language;
-      if (params.sort_by) baseParams.sortBy = params.sort_by;
+      // Movie and TV discover take different genre IDs (see GENRE_IDS) and
+      // different date parameter names, so build params per type.
+      const buildParams = (type: 'movie' | 'tv') => {
+        const p: any = {};
+        const genreIds = genreIdsFor(params.genres, type);
+        if (genreIds.length) p.genre = genreIds.join('|');
+        if (params.year_from) {
+          const d = `${params.year_from}-01-01`;
+          if (type === 'movie') p.primaryReleaseDateGte = d;
+          else p.firstAirDateGte = d;
+        }
+        if (params.year_to) {
+          const d = `${params.year_to}-12-31`;
+          if (type === 'movie') p.primaryReleaseDateLte = d;
+          else p.firstAirDateLte = d;
+        }
+        if (params.min_rating) p.voteAverageGte = params.min_rating;
+        if (params.original_language) p.originalLanguage = params.original_language;
+        if (params.sort_by) p.sortBy = params.sort_by;
+        return p;
+      };
 
       const [movieResults, tvResults] = await Promise.all([
-        tmdb.getDiscoverMovies(baseParams),
-        tmdb.getDiscoverTv(baseParams),
+        tmdb.getDiscoverMovies(buildParams('movie')),
+        tmdb.getDiscoverTv(buildParams('tv')),
       ]);
 
       results.push(
@@ -586,7 +646,10 @@ function mergeSearchResults(tmdbResults: any[], suggestedTitles: any[]) {
     }
   }
 
-  return Array.from(merged.values());
+  // Sort by relevance: LLM-suggested titles (0.9) above discover results (0.7).
+  return Array.from(merged.values()).sort(
+    (a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0)
+  );
 }
 
 async function filterExistingContent(recommendations: any[], userId: number) {

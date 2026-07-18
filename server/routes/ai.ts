@@ -20,13 +20,16 @@ aiRoutes.get('/settings', (req, res, next) => {
   try {
     const settings = getSettings();
 
-    // Only expose non-sensitive settings
+    // Only expose non-sensitive settings. The API key is never returned; a
+    // hasApiKey flag tells the UI a key is stored so "Test Connection" can use
+    // it without the user re-entering it.
     const publicAiSettings = {
       enabled: settings.ai.enabled,
       provider: {
         type: settings.ai.provider.type,
         baseUrl: settings.ai.provider.baseUrl,
         model: settings.ai.provider.model,
+        hasApiKey: !!settings.ai.provider.apiKey,
       },
       recommendations: {
         enabled: settings.ai.recommendations.enabled,
@@ -114,34 +117,45 @@ aiRoutes.post('/test', async (req, res, next) => {
       return res.status(400).json({ message: 'Provider configuration required' });
     }
 
-    // Build the client directly from the submitted form values so "Test Connection"
-    // validates what the user entered, regardless of what's saved globally.
-    // For local providers (Ollama/LM Studio) an API key is not required, so we
-    // fall back to a harmless placeholder to satisfy the OpenAI SDK.
+    // Build the client from the submitted form values. The API key is not
+    // returned by GET /settings (security), so when the form omits it we fall
+    // back to the stored key — this lets the user click "Test Connection"
+    // again without re-entering the key. A newly typed key takes precedence.
+    const storedSettings = getSettings();
+    const apiKey =
+      provider.apiKey || storedSettings.ai.provider.apiKey || 'sk-not-required';
     const client = new OpenAI({
-      apiKey: provider.apiKey || 'sk-not-required',
-      baseURL: provider.baseUrl || 'https://api.openai.com/v1',
+      apiKey,
+      baseURL: provider.baseUrl || storedSettings.ai.provider.baseUrl || 'https://api.openai.com/v1',
     });
-    const model = provider.model || 'gpt-4o-mini';
+    const model = provider.model || storedSettings.ai.provider.model || 'gpt-4o-mini';
 
     const startTime = Date.now();
 
     try {
+      // A connection test only needs to verify: provider reachable, auth valid,
+      // model exists. Any well-formed completion back = success. We deliberately
+      // do NOT require a specific word in the reply, and keep max_tokens modest
+      // but not tiny (reasoning models emit thinking tokens that count toward
+      // the limit). Reasoning models may put output in `reasoning_content`
+      // instead of `content`, so accept either.
       const response = await client.chat.completions.create({
         model,
-        messages: [{ role: 'user', content: 'Say "ok"' }],
-        max_tokens: 5,
+        messages: [{ role: 'user', content: 'Reply with the single word: ok' }],
+        max_tokens: 50,
       });
 
-      const success =
-        response.choices[0]?.message?.content?.toLowerCase().includes('ok') ||
-        false;
+      const message = response.choices[0]?.message as any;
+      const content = message?.content ?? message?.reasoning_content ?? '';
+      const success = typeof content === 'string' && content.length > 0;
       const latency = Date.now() - startTime;
 
       res.json({
         success,
-        latency: success ? latency : undefined,
-        error: success ? undefined : 'Connection test failed (no valid response)',
+        latency,
+        error: success ? undefined : 'Connection test failed (empty response)',
+        modelEcho: response.model,
+        responsePreview: content ? String(content).slice(0, 80) : undefined,
       });
     } catch (error) {
       res.json({

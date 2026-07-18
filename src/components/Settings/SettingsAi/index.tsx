@@ -19,6 +19,7 @@ interface AiSettings {
   provider: {
     type: 'openai' | 'ollama' | 'openrouter' | 'custom';
     apiKey?: string;
+    hasApiKey?: boolean;
     baseUrl?: string;
     model: string;
   };
@@ -43,6 +44,7 @@ const messages = defineMessages('components.Settings.SettingsAi', {
   providerTypeTip: 'Choose your AI provider (OpenAI, Ollama, OpenRouter, or custom)',
   apiKey: 'API Key',
   apiKeyTip: 'API key for your chosen provider (not required for Ollama)',
+  apiKeySet: 'An API key is saved — leave blank to keep the current one.',
   baseUrl: 'Base URL',
   baseUrlTip: 'Base URL for your AI provider API',
   model: 'Model',
@@ -301,6 +303,11 @@ const SettingsAi = () => {
                       <p className="mt-1 text-sm text-gray-500">
                         {intl.formatMessage(messages.apiKeyTip)}
                       </p>
+                      {data?.provider?.hasApiKey && !values.provider.apiKey && (
+                        <p className="mt-1 text-sm text-green-600 dark:text-green-400">
+                          {intl.formatMessage(messages.apiKeySet)}
+                        </p>
+                      )}
                     </div>
                   )}
 
