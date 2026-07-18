@@ -1,15 +1,15 @@
-import { getRepository } from '../datasource';
-import { MediaRequest } from '../entity/MediaRequest';
-import { Watchlist } from '../entity/Watchlist';
-import Media from '../entity/Media';
-import { AiRecommendation } from '../entity/AiRecommendation';
-import { UserFeedback } from '../entity/UserFeedback';
-import { User } from '../entity/User';
-import { MediaType } from '../constants/media';
-import { createLLMClient, WatchHistoryItem, RecommendationFilters } from '../api/ai';
-import TheMovieDb from '../api/themoviedb';
+import type { RecommendationFilters, WatchHistoryItem } from '@server/api/ai';
+import { createLLMClient } from '@server/api/ai';
+import TheMovieDb from '@server/api/themoviedb';
+import { MediaType } from '@server/constants/media';
+import { getRepository } from '@server/datasource';
+import { AiRecommendation } from '@server/entity/AiRecommendation';
+import Media from '@server/entity/Media';
+import { MediaRequest } from '@server/entity/MediaRequest';
+import { UserFeedback } from '@server/entity/UserFeedback';
+import { Watchlist } from '@server/entity/Watchlist';
+import logger from '@server/logger';
 import { getSettings } from './settings';
-import logger from '../logger';
 
 interface GenerateOptions {
   limit?: number;
@@ -75,7 +75,6 @@ export async function generateTasteProfile(
     const topItems = scoredItems.slice(0, options?.maxHistoryItems || 40);
 
     // 3. Fetch TMDb metadata for each item
-    const settings = getSettings();
     const tmdb = new TheMovieDb();
 
     const enrichedItems: WatchHistoryItem[] = [];
@@ -92,8 +91,8 @@ export async function generateTasteProfile(
           year: metadata.release_date
             ? new Date(metadata.release_date).getFullYear()
             : metadata.first_air_date
-            ? new Date(metadata.first_air_date).getFullYear()
-            : undefined,
+              ? new Date(metadata.first_air_date).getFullYear()
+              : undefined,
           genres: metadata.genres?.map((g: any) => g.name) || [],
           overview: metadata.overview || undefined,
           posterPath: metadata.poster_path || undefined,
@@ -102,12 +101,15 @@ export async function generateTasteProfile(
           playCount: item.score > 10 ? Math.floor(item.score / 10) : 1,
         });
       } catch (error) {
-        logger.warn(`Failed to fetch TMDb metadata for tmdbId ${item.tmdbId}:`, error);
+        logger.warn(
+          `Failed to fetch TMDb metadata for tmdbId ${item.tmdbId}:`,
+          error
+        );
       }
     }
 
     // 4. Call LLM with taste profile prompt
-    const llm = createLLMClient(userId);
+    const llm = createLLMClient();
     const tasteProfile = await llm.generateTasteProfile(enrichedItems);
 
     return {
@@ -133,7 +135,10 @@ export async function generateRecommendations(
     }
 
     // 1. Generate taste profile
-    logger.info(`[user ${userId}] Step 1/8: generating taste profile...`, logTag);
+    logger.info(
+      `[user ${userId}] Step 1/8: generating taste profile...`,
+      logTag
+    );
     const { profile, keywords } = await generateTasteProfile(userId);
     logger.info(
       `[user ${userId}] Step 1/8 done. keywords: ${JSON.stringify(keywords)}`,
@@ -164,12 +169,15 @@ export async function generateRecommendations(
     const filters: RecommendationFilters = {
       ...options?.filters,
       mediaType: 'both',
-      minRating: settings.ai.recommendations.minScore,
+      minRating: settings.ai.recommendations.minRating,
     };
 
     // 4. Call LLM for recommendations
-    logger.info(`[user ${userId}] Step 3/8: calling LLM for recommendations...`, logTag);
-    const llm = createLLMClient(userId);
+    logger.info(
+      `[user ${userId}] Step 3/8: calling LLM for recommendations...`,
+      logTag
+    );
+    const llm = createLLMClient();
     const aiRecs = await llm.generateRecommendations(
       { profile: profile, keywords } as any,
       history,
@@ -177,7 +185,10 @@ export async function generateRecommendations(
       options?.limit || settings.ai.recommendations.maxResults,
       likedTitles
     );
-    logger.info(`[user ${userId}] Step 3/8 done. ${aiRecs.length} AI recs`, logTag);
+    logger.info(
+      `[user ${userId}] Step 3/8 done. ${aiRecs.length} AI recs`,
+      logTag
+    );
 
     // 5. Resolve AI recs to real TMDb entries (LLM titles -> tmdbId via search).
     // Small models hallucinate tmdbId values, so we look them up by title/year.
@@ -194,13 +205,24 @@ export async function generateRecommendations(
     // 6. If enabled, augment with TMDb recommendations using AI keywords
     let tmdbRecs: any[] = [];
     if (options?.includeTmdb && keywords && keywords.length > 0) {
-      logger.info(`[user ${userId}] Step 5/8: TMDb keyword discovery...`, logTag);
+      logger.info(
+        `[user ${userId}] Step 5/8: TMDb keyword discovery...`,
+        logTag
+      );
       tmdbRecs = await discoverByKeywords(keywords, filters);
-      logger.info(`[user ${userId}] Step 5/8 done. ${tmdbRecs.length} TMDb recs`, logTag);
+      logger.info(
+        `[user ${userId}] Step 5/8 done. ${tmdbRecs.length} TMDb recs`,
+        logTag
+      );
     }
 
     // 7. Merge, deduplicate, and score
-    const merged = mergeAndScoreRecommendations(resolvedAiRecs, tmdbRecs, profile, keywords);
+    const merged = mergeAndScoreRecommendations(
+      resolvedAiRecs,
+      tmdbRecs,
+      profile,
+      keywords
+    );
 
     // 8. Filter out already watched/requested/disliked
     logger.info(
@@ -223,7 +245,10 @@ export async function generateRecommendations(
 
     return filtered;
   } catch (error) {
-    logger.error(`Failed to generate recommendations for user ${userId}:`, error);
+    logger.error(
+      `Failed to generate recommendations for user ${userId}:`,
+      error
+    );
     throw error;
   }
 }
@@ -240,8 +265,10 @@ export async function aiSearch(
       throw new Error('AI search is disabled');
     }
 
-    const llm = createLLMClient(userId);
-    const userHistory = options?.includeHistory ? await getUserSignals(userId) : undefined;
+    const llm = createLLMClient();
+    const userHistory = options?.includeHistory
+      ? await getUserSignals(userId)
+      : undefined;
 
     // 1. Interpret query
     const interpretation = await llm.interpretSearchQuery(query, userHistory);
@@ -274,12 +301,15 @@ function calculateRequestScore(request: MediaRequest): number {
   let score = 5; // Base score
 
   // Boost based on status
-  if (request.status === 5) score += 5; // COMPLETED
-  else if (request.status === 2) score += 3; // APPROVED
+  if (request.status === 5)
+    score += 5; // COMPLETED
+  else if (request.status === 2)
+    score += 3; // APPROVED
   else if (request.status === 1) score += 1; // PENDING
 
   // Time decay (older requests get slightly lower score)
-  const daysSinceRequest = (Date.now() - request.createdAt.getTime()) / (1000 * 60 * 60 * 24);
+  const daysSinceRequest =
+    (Date.now() - request.createdAt.getTime()) / (1000 * 60 * 60 * 24);
   score -= Math.min(daysSinceRequest / 365, 2); // Max penalty of 2
 
   return score;
@@ -290,14 +320,17 @@ function calculateMediaScore(media: Media): number {
 
   // Boost for recently added
   if (media.mediaAddedAt) {
-    const daysSinceAdded = (Date.now() - media.mediaAddedAt.getTime()) / (1000 * 60 * 60 * 24);
+    const daysSinceAdded =
+      (Date.now() - media.mediaAddedAt.getTime()) / (1000 * 60 * 60 * 24);
     score += Math.max(0, 3 - daysSinceAdded / 30); // Decay over 90 days
   }
 
   return score;
 }
 
-function scoreMediaItems(items: Array<{ tmdbId: number; mediaType: string; title: string; score: number }>) {
+function scoreMediaItems(
+  items: { tmdbId: number; mediaType: string; title: string; score: number }[]
+) {
   return items
     .map((item) => ({
       ...item,
@@ -376,9 +409,7 @@ async function getUserFeedback(userId: number) {
 async function getLikedTitles(
   feedback: UserFeedback[]
 ): Promise<{ title: string; mediaType: 'movie' | 'tv' }[]> {
-  const likes = feedback
-    .filter((f) => f.feedbackType === 'like')
-    .slice(0, 10);
+  const likes = feedback.filter((f) => f.feedbackType === 'like').slice(0, 10);
 
   if (likes.length === 0) return [];
 
@@ -406,7 +437,10 @@ async function getLikedTitles(
   return result;
 }
 
-async function discoverByKeywords(keywords: string[], filters: RecommendationFilters) {
+async function discoverByKeywords(
+  keywords: string[],
+  filters: RecommendationFilters
+) {
   const tmdb = new TheMovieDb();
   const results: any[] = [];
 
@@ -496,7 +530,8 @@ async function discoverFromTmdb(params: any) {
           else p.firstAirDateLte = d;
         }
         if (params.min_rating) p.voteAverageGte = params.min_rating;
-        if (params.original_language) p.originalLanguage = params.original_language;
+        if (params.original_language)
+          p.originalLanguage = params.original_language;
         if (params.sort_by) p.sortBy = params.sort_by;
         return p;
       };
@@ -507,7 +542,10 @@ async function discoverFromTmdb(params: any) {
       ]);
 
       results.push(
-        ...movieResults.results.map((r: any) => ({ ...r, media_type: 'movie' })),
+        ...movieResults.results.map((r: any) => ({
+          ...r,
+          media_type: 'movie',
+        })),
         ...tvResults.results.map((r: any) => ({ ...r, media_type: 'tv' }))
       );
     }
@@ -519,7 +557,7 @@ async function discoverFromTmdb(params: any) {
 }
 
 async function searchTmdbTitles(
-  titles: Array<{ title: string; year?: number; type: string; rationale?: string }>
+  titles: { title: string; year?: number; type: string; rationale?: string }[]
 ) {
   const tmdb = new TheMovieDb();
   const results: any[] = [];
@@ -557,13 +595,13 @@ async function searchTmdbTitles(
  * Returns only recommendations that resolved to a real TMDb entry.
  */
 async function resolveRecommendationsViaTmdb(
-  recs: Array<{
+  recs: {
     title: string;
     year?: number;
     type?: string;
     rationale?: string;
     tmdbId?: number;
-  }>
+  }[]
 ): Promise<any[]> {
   const tmdb = new TheMovieDb();
   const resolved: any[] = [];
@@ -597,8 +635,7 @@ async function resolveRecommendationsViaTmdb(
         }) ||
         candidates.find((r: any) =>
           rec.type
-            ? r.media_type ===
-              (rec.type === 'tv' ? 'tv' : 'movie')
+            ? r.media_type === (rec.type === 'tv' ? 'tv' : 'movie')
             : true
         ) ||
         candidates[0];
@@ -624,7 +661,12 @@ async function resolveRecommendationsViaTmdb(
   return resolved;
 }
 
-function mergeAndScoreRecommendations(aiRecs: any[], tmdbRecs: any[], profile: string, keywords: string[]) {
+function mergeAndScoreRecommendations(
+  aiRecs: any[],
+  tmdbRecs: any[],
+  profile: string,
+  keywords: string[]
+) {
   const merged = new Map<number, any>();
 
   // Add AI recommendations with higher base score
@@ -656,8 +698,8 @@ function mergeAndScoreRecommendations(aiRecs: any[], tmdbRecs: any[], profile: s
         year: rec.release_date
           ? new Date(rec.release_date).getFullYear()
           : rec.first_air_date
-          ? new Date(rec.first_air_date).getFullYear()
-          : undefined,
+            ? new Date(rec.first_air_date).getFullYear()
+            : undefined,
         mediaType: rec.media_type === 'tv' ? 'tv' : 'movie',
         rationale: `Popular in genres related to your interests`,
         score: 0.6,
@@ -718,7 +760,9 @@ async function filterExistingContent(recommendations: any[], userId: number) {
     getRepository(UserFeedback)
       .createQueryBuilder('feedback')
       .where('feedback.userId = :userId', { userId })
-      .andWhere('feedback.feedbackType IN (:...types)', { types: ['dislike', 'seen'] })
+      .andWhere('feedback.feedbackType IN (:...types)', {
+        types: ['dislike', 'seen'],
+      })
       .getMany(),
   ]);
 
@@ -766,8 +810,7 @@ async function storeRecommendations(recommendations: any[], userId: number) {
   const now = new Date();
 
   for (const rec of recommendations) {
-    const mediaType =
-      rec.mediaType === 'tv' ? MediaType.TV : MediaType.MOVIE;
+    const mediaType = rec.mediaType === 'tv' ? MediaType.TV : MediaType.MOVIE;
 
     const existing = await repository.findOne({
       where: { userId, tmdbId: rec.tmdbId, mediaType },

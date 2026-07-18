@@ -1,7 +1,7 @@
+import { getSettings } from '@server/lib/settings';
+import logger from '@server/logger';
 import { OpenAI } from 'openai';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
-import { getSettings } from '../../lib/settings';
-import logger from '../../logger';
 
 export interface WatchHistoryItem {
   tmdbId: number;
@@ -60,12 +60,12 @@ export interface SearchInterpretation {
     min_rating?: number;
     keywords?: string[];
   };
-  suggestedTitles: Array<{
+  suggestedTitles: {
     title: string;
     year?: number;
     type: 'movie' | 'tv';
     rationale: string;
-  }>;
+  }[];
 }
 
 export interface LLMClient {
@@ -88,21 +88,22 @@ export class OpenAICompatibleClient implements LLMClient {
   private client: OpenAI;
   private model: string;
 
-  constructor(userId?: number) {
+  constructor() {
     const settings = getSettings();
     const aiConfig = settings.ai;
 
-    // For per-user config, we would extend this to check user settings
-    // For now, using global config
     this.client = new OpenAI({
-      apiKey: aiConfig.provider.apiKey || process.env.OPENAI_API_KEY || 'sk-placeholder',
+      apiKey:
+        aiConfig.provider.apiKey ||
+        process.env.OPENAI_API_KEY ||
+        'sk-placeholder',
       baseURL: aiConfig.provider.baseUrl || 'https://api.openai.com/v1',
     });
     this.model = aiConfig.provider.model;
   }
 
   private async callLLM(
-    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>
+    messages: { role: 'system' | 'user' | 'assistant'; content: string }[]
   ): Promise<string> {
     try {
       const response = await this.client.chat.completions.create({
@@ -140,7 +141,10 @@ export class OpenAICompatibleClient implements LLMClient {
     // Trim trailing commas before } or ]
     s = s.replace(/,\s*([}\]])/g, '$1');
     // Remove stray control characters
-    s = s.replace(/[\x00-\x1f]/g, (ch) => (ch === '\n' || ch === '\t' ? ch : ''));
+    // eslint-disable-next-line no-control-regex -- stripping stray control chars from LLM output is intentional
+    s = s.replace(/[\x00-\x1f]/g, (ch) =>
+      ch === '\n' || ch === '\t' ? ch : ''
+    );
     return s;
   }
 
@@ -159,7 +163,7 @@ export class OpenAICompatibleClient implements LLMClient {
 
     try {
       return JSON.parse(jsonStr);
-    } catch (err) {
+    } catch {
       // Last resort: the output was likely truncated. Try to close any
       // unbalanced brackets/braces so we can salvage partial data.
       const salvaged = this.closeUnbalanced(jsonStr);
@@ -199,7 +203,7 @@ export class OpenAICompatibleClient implements LLMClient {
     }
 
     // Remove a dangling trailing comma so the closers are valid
-    let result = s.replace(/,\s*$/, '');
+    const result = s.replace(/,\s*$/, '');
     // Close any open array then object, from innermost out
     let suffix = '';
     for (let i = 0; i < openArrays; i++) suffix += ']';
@@ -212,7 +216,7 @@ export class OpenAICompatibleClient implements LLMClient {
    * system message if the first attempt yields invalid JSON.
    */
   private async callForJSON(
-    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>
+    messages: { role: 'system' | 'user' | 'assistant'; content: string }[]
   ): Promise<any> {
     const maxAttempts = 2;
     let lastError: Error | null = null;
@@ -241,10 +245,14 @@ export class OpenAICompatibleClient implements LLMClient {
         ];
       }
     }
-    throw new Error(`LLM did not return valid JSON after ${maxAttempts} attempts: ${lastError?.message}`);
+    throw new Error(
+      `LLM did not return valid JSON after ${maxAttempts} attempts: ${lastError?.message}`
+    );
   }
 
-  async generateTasteProfile(history: WatchHistoryItem[]): Promise<TasteProfile> {
+  async generateTasteProfile(
+    history: WatchHistoryItem[]
+  ): Promise<TasteProfile> {
     const prompt = this.buildTasteProfilePrompt(history);
 
     try {
@@ -349,7 +357,10 @@ export class OpenAICompatibleClient implements LLMClient {
         max_tokens: 5,
       });
 
-      return response.choices[0]?.message?.content?.toLowerCase().includes('ok') || false;
+      return (
+        response.choices[0]?.message?.content?.toLowerCase().includes('ok') ||
+        false
+      );
     } catch (error) {
       logger.error('LLM connection test failed:', error);
       return false;
@@ -389,7 +400,9 @@ Keywords should be highly specific niche terms (e.g., "cyberpunk", "time-loop", 
     maxResults: number,
     likedTitles?: { title: string; mediaType: 'movie' | 'tv' }[]
   ): string {
-    const historyTitles = history.map((h) => `- ${h.title} (${h.year || 'N/A'})`).join('\n');
+    const historyTitles = history
+      .map((h) => `- ${h.title} (${h.year || 'N/A'})`)
+      .join('\n');
     const filtersText = this.formatFilters(filters);
     const likedText =
       likedTitles && likedTitles.length > 0
@@ -423,7 +436,10 @@ Response MUST be valid JSON in this exact format:
 }`;
   }
 
-  private buildSearchPrompt(query: string, history?: WatchHistoryItem[]): string {
+  private buildSearchPrompt(
+    query: string,
+    history?: WatchHistoryItem[]
+  ): string {
     const historyText =
       history && history.length > 0
         ? `USER'S VIEWING HISTORY (for personalization):\n${history.map((h) => `- ${h.title}`).join('\n')}\n`
@@ -473,7 +489,9 @@ If the query doesn't specify a parameter, set it to null or omit it. "sort_by" s
     }
 
     if (filters.yearRange) {
-      parts.push(`- MUST be released between ${filters.yearRange[0]} and ${filters.yearRange[1]}`);
+      parts.push(
+        `- MUST be released between ${filters.yearRange[0]} and ${filters.yearRange[1]}`
+      );
     }
 
     if (filters.minRating) {
@@ -492,6 +510,6 @@ If the query doesn't specify a parameter, set it to null or omit it. "sort_by" s
   }
 }
 
-export function createLLMClient(userId?: number): LLMClient {
-  return new OpenAICompatibleClient(userId);
+export function createLLMClient(): LLMClient {
+  return new OpenAICompatibleClient();
 }

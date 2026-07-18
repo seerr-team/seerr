@@ -428,7 +428,9 @@ const TitleCard = ({
                   currentStatus !== MediaStatus.PARTIALLY_AVAILABLE &&
                   currentStatus !== MediaStatus.PENDING && (
                     <Tooltip
-                      content={intl.formatMessage(globalMessages.addToBlocklist)}
+                      content={intl.formatMessage(
+                        globalMessages.addToBlocklist
+                      )}
                     >
                       <Button
                         buttonType={'ghost'}

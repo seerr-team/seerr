@@ -1,14 +1,14 @@
+import type { MediaType } from '@server/constants/media';
+import { DbAwareColumn } from '@server/utils/DbColumnHelper';
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
+  Entity,
   Index,
-  ManyToOne,
   JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from './User';
-import { MediaType } from '../constants/media';
-import { DbAwareColumn } from '../utils/DbColumnHelper';
 
 @Entity('ai_recommendation')
 @Index(['userId', 'mediaType'])

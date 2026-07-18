@@ -30,7 +30,9 @@ export class AddAiRecommendations1784393737543 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "user_settings" DROP COLUMN "aiProviderConfig"`);
+    await queryRunner.query(
+      `ALTER TABLE "user_settings" DROP COLUMN "aiProviderConfig"`
+    );
     await queryRunner.query(`DROP INDEX "IDX_USER_FEEDBACK_USER_MEDIA"`);
     await queryRunner.query(`DROP TABLE "user_feedback"`);
     await queryRunner.query(`DROP INDEX "IDX_AI_RECOMMENDATION_CREATED"`);

@@ -1,16 +1,16 @@
-import { getRepository } from '../datasource';
-import { OpenAI } from 'openai';
-import { User } from '../entity/User';
-import { UserFeedback } from '../entity/UserFeedback';
-import { AiRecommendation } from '../entity/AiRecommendation';
-import Media from '../entity/Media';
-import { MediaType } from '../constants/media';
-import { getSettings } from '../lib/settings';
-import { createLLMClient } from '../api/ai';
-import { aiSearch, generateRecommendations } from '../lib/aiRecommendations';
-import { mapSearchResults } from '../models/Search';
-import logger from '../logger';
+import type { MediaType } from '@server/constants/media';
+import { getRepository } from '@server/datasource';
+import Media from '@server/entity/Media';
+import { UserFeedback } from '@server/entity/UserFeedback';
+import {
+  aiSearch,
+  generateRecommendations,
+} from '@server/lib/aiRecommendations';
+import { getSettings } from '@server/lib/settings';
+import logger from '@server/logger';
+import { mapSearchResults } from '@server/models/Search';
 import { Router } from 'express';
+import { OpenAI } from 'openai';
 import { z } from 'zod';
 
 const aiRoutes = Router();
@@ -35,7 +35,7 @@ aiRoutes.get('/settings', (req, res, next) => {
         enabled: settings.ai.recommendations.enabled,
         sliderTitle: settings.ai.recommendations.sliderTitle,
         maxResults: settings.ai.recommendations.maxResults,
-        minScore: settings.ai.recommendations.minScore,
+        minRating: settings.ai.recommendations.minRating,
         ttlDays: settings.ai.recommendations.ttlDays,
       },
       search: {
@@ -58,25 +58,33 @@ aiRoutes.put('/settings', async (req, res, next) => {
     // Update settings with request body
     if (req.body.enabled !== undefined) settings.ai.enabled = req.body.enabled;
     if (req.body.provider) {
-      if (req.body.provider.type) settings.ai.provider.type = req.body.provider.type;
-      if (req.body.provider.baseUrl) settings.ai.provider.baseUrl = req.body.provider.baseUrl;
-      if (req.body.provider.model) settings.ai.provider.model = req.body.provider.model;
-      if (req.body.provider.apiKey) settings.ai.provider.apiKey = req.body.provider.apiKey;
+      if (req.body.provider.type)
+        settings.ai.provider.type = req.body.provider.type;
+      if (req.body.provider.baseUrl)
+        settings.ai.provider.baseUrl = req.body.provider.baseUrl;
+      if (req.body.provider.model)
+        settings.ai.provider.model = req.body.provider.model;
+      if (req.body.provider.apiKey)
+        settings.ai.provider.apiKey = req.body.provider.apiKey;
     }
     if (req.body.recommendations) {
       if (req.body.recommendations.enabled !== undefined)
         settings.ai.recommendations.enabled = req.body.recommendations.enabled;
       if (req.body.recommendations.sliderTitle)
-        settings.ai.recommendations.sliderTitle = req.body.recommendations.sliderTitle;
+        settings.ai.recommendations.sliderTitle =
+          req.body.recommendations.sliderTitle;
       if (req.body.recommendations.maxResults)
-        settings.ai.recommendations.maxResults = req.body.recommendations.maxResults;
-      if (req.body.recommendations.minScore)
-        settings.ai.recommendations.minScore = req.body.recommendations.minScore;
+        settings.ai.recommendations.maxResults =
+          req.body.recommendations.maxResults;
+      if (req.body.recommendations.minRating !== undefined)
+        settings.ai.recommendations.minRating =
+          req.body.recommendations.minRating;
       if (req.body.recommendations.ttlDays !== undefined)
         settings.ai.recommendations.ttlDays = req.body.recommendations.ttlDays;
     }
     if (req.body.search) {
-      if (req.body.search.enabled !== undefined) settings.ai.search.enabled = req.body.search.enabled;
+      if (req.body.search.enabled !== undefined)
+        settings.ai.search.enabled = req.body.search.enabled;
     }
 
     await settings.save();
@@ -94,7 +102,7 @@ aiRoutes.put('/settings', async (req, res, next) => {
           enabled: settings.ai.recommendations.enabled,
           sliderTitle: settings.ai.recommendations.sliderTitle,
           maxResults: settings.ai.recommendations.maxResults,
-          minScore: settings.ai.recommendations.minScore,
+          minRating: settings.ai.recommendations.minRating,
           ttlDays: settings.ai.recommendations.ttlDays,
         },
         search: {
@@ -114,7 +122,9 @@ aiRoutes.post('/test', async (req, res, next) => {
     const { provider } = req.body;
 
     if (!provider) {
-      return res.status(400).json({ message: 'Provider configuration required' });
+      return res
+        .status(400)
+        .json({ message: 'Provider configuration required' });
     }
 
     // Build the client from the submitted form values. The API key is not
@@ -126,9 +136,13 @@ aiRoutes.post('/test', async (req, res, next) => {
       provider.apiKey || storedSettings.ai.provider.apiKey || 'sk-not-required';
     const client = new OpenAI({
       apiKey,
-      baseURL: provider.baseUrl || storedSettings.ai.provider.baseUrl || 'https://api.openai.com/v1',
+      baseURL:
+        provider.baseUrl ||
+        storedSettings.ai.provider.baseUrl ||
+        'https://api.openai.com/v1',
     });
-    const model = provider.model || storedSettings.ai.provider.model || 'gpt-4o-mini';
+    const model =
+      provider.model || storedSettings.ai.provider.model || 'gpt-4o-mini';
 
     const startTime = Date.now();
 
@@ -280,16 +294,23 @@ aiRoutes.get('/feedback/stats', async (req, res, next) => {
 
     const feedbackRepository = getRepository(UserFeedback);
 
-    const [likeCount, dislikeCount, seenCount, recentFeedback] = await Promise.all([
-      feedbackRepository.count({ where: { userId: user, feedbackType: 'like' } }),
-      feedbackRepository.count({ where: { userId: user, feedbackType: 'dislike' } }),
-      feedbackRepository.count({ where: { userId: user, feedbackType: 'seen' } }),
-      feedbackRepository.find({
-        where: { userId: user },
-        order: { createdAt: 'DESC' },
-        take: 10,
-      }),
-    ]);
+    const [likeCount, dislikeCount, seenCount, recentFeedback] =
+      await Promise.all([
+        feedbackRepository.count({
+          where: { userId: user, feedbackType: 'like' },
+        }),
+        feedbackRepository.count({
+          where: { userId: user, feedbackType: 'dislike' },
+        }),
+        feedbackRepository.count({
+          where: { userId: user, feedbackType: 'seen' },
+        }),
+        feedbackRepository.find({
+          where: { userId: user },
+          order: { createdAt: 'DESC' },
+          take: 10,
+        }),
+      ]);
 
     res.json({
       likeCount,
@@ -356,7 +377,9 @@ aiRoutes.post('/regenerate', async (req, res, next) => {
     const settings = getSettings();
 
     if (!settings.ai.enabled || !settings.ai.recommendations.enabled) {
-      return res.status(400).json({ message: 'AI recommendations are disabled' });
+      return res
+        .status(400)
+        .json({ message: 'AI recommendations are disabled' });
     }
 
     // Trigger recommendation generation

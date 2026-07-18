@@ -1,9 +1,7 @@
 import Button from '@app/components/Common/Button';
 import PageTitle from '@app/components/Common/PageTitle';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
-import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import useToasts from '@app/hooks/useToasts';
-import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
@@ -11,7 +9,7 @@ import { ArrowPathIcon } from '@heroicons/react/24/solid';
 import axios from 'axios';
 import { Form, Formik } from 'formik';
 import { useIntl } from 'react-intl';
-import useSWR, { mutate } from 'swr';
+import useSWR from 'swr';
 import * as Yup from 'yup';
 
 interface AiSettings {
@@ -27,7 +25,7 @@ interface AiSettings {
     enabled: boolean;
     sliderTitle: string;
     maxResults: number;
-    minScore: number;
+    minRating: number;
     ttlDays: number;
   };
   search: {
@@ -37,11 +35,13 @@ interface AiSettings {
 
 const messages = defineMessages('components.Settings.SettingsAi', {
   aiSettings: 'AI Settings',
-  aiSettingsDescription: 'Configure AI-powered recommendations and search features.',
+  aiSettingsDescription:
+    'Configure AI-powered recommendations and search features.',
   enabled: 'Enable AI Features',
   enabledTip: 'Enable AI-powered recommendations and search',
   providerType: 'AI Provider',
-  providerTypeTip: 'Choose your AI provider (OpenAI, Ollama, OpenRouter, or custom)',
+  providerTypeTip:
+    'Choose your AI provider (OpenAI, Ollama, OpenRouter, or custom)',
   apiKey: 'API Key',
   apiKeyTip: 'API key for your chosen provider (not required for Ollama)',
   apiKeySet: 'An API key is saved — leave blank to keep the current one.',
@@ -60,8 +60,9 @@ const messages = defineMessages('components.Settings.SettingsAi', {
   sliderTitleTip: 'Title for the recommendations slider on the discover page',
   maxResults: 'Max Results',
   maxResultsTip: 'Maximum number of recommendations to generate per user',
-  minScore: 'Minimum Score',
-  minScoreTip: 'Minimum confidence score for recommendations (0.0 - 1.0)',
+  minRating: 'Minimum Rating',
+  minRatingTip:
+    'Minimum TMDb rating (0.0–10.0) a recommendation must meet; higher values surface better-rated titles.',
   ttlDays: 'Recommendation TTL (days)',
   ttlDaysTip:
     'How long a recommendation lives. Re-recommended titles stay alive; stale ones expire after this many days.',
@@ -73,7 +74,7 @@ const messages = defineMessages('components.Settings.SettingsAi', {
   toastSettingsFailure: 'Something went wrong while saving AI settings.',
   validationModelRequired: 'You must provide a model name',
   validationMaxResults: 'Max results must be between 1 and 50',
-  validationMinScore: 'Minimum score must be between 0 and 1',
+  validationMinRating: 'Minimum rating must be between 0 and 10',
   testingConnection: 'Testing AI connection...',
   connectionTestSuccess: 'Connection successful! Latency: {latency}ms',
   connectionTestFailure: 'Connection failed: {error}',
@@ -81,23 +82,24 @@ const messages = defineMessages('components.Settings.SettingsAi', {
 
 const SettingsAi = () => {
   const { addToast } = useToasts();
-  const { hasPermission } = useUser();
   const intl = useIntl();
 
-  const { data, error, mutate } = useSWR<AiSettings>('/api/v1/ai/settings');
+  const { data, mutate } = useSWR<AiSettings>('/api/v1/ai/settings');
 
   const AiSettingsSchema = Yup.object().shape({
     provider: Yup.object().shape({
-      model: Yup.string().required(intl.formatMessage(messages.validationModelRequired)),
+      model: Yup.string().required(
+        intl.formatMessage(messages.validationModelRequired)
+      ),
     }),
     recommendations: Yup.object().shape({
       maxResults: Yup.number()
         .min(1, intl.formatMessage(messages.validationMaxResults))
         .max(50, intl.formatMessage(messages.validationMaxResults))
         .required(),
-      minScore: Yup.number()
-        .min(0, intl.formatMessage(messages.validationMinScore))
-        .max(1, intl.formatMessage(messages.validationMinScore))
+      minRating: Yup.number()
+        .min(0, intl.formatMessage(messages.validationMinRating))
+        .max(10, intl.formatMessage(messages.validationMinRating))
         .required(),
       ttlDays: Yup.number()
         .min(1, intl.formatMessage(messages.validationTtlDays))
@@ -130,7 +132,7 @@ const SettingsAi = () => {
           { appearance: 'error', autoDismiss: true }
         );
       }
-    } catch (error) {
+    } catch {
       addToast(intl.formatMessage(messages.connectionFailure), {
         appearance: 'error',
         autoDismiss: true,
@@ -139,7 +141,11 @@ const SettingsAi = () => {
   };
 
   if (!data) {
-    return <div className="flex h-64 w-full items-center justify-center">Loading...</div>;
+    return (
+      <div className="flex h-64 w-full items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   return (
@@ -170,20 +176,14 @@ const SettingsAi = () => {
           }
         }}
       >
-        {({
-          values,
-          errors,
-          touched,
-          isSubmitting,
-          handleSubmit,
-          handleChange,
-          setFieldValue,
-        }) => (
+        {({ values, errors, touched, isSubmitting, handleChange }) => (
           <Form>
             <div className="section">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h3 className="mb-1">{intl.formatMessage(messages.aiSettings)}</h3>
+                  <h3 className="mb-1">
+                    {intl.formatMessage(messages.aiSettings)}
+                  </h3>
                   <p className="text-gray-500 dark:text-gray-400">
                     {intl.formatMessage(messages.aiSettingsDescription)}
                   </p>
@@ -194,9 +194,10 @@ const SettingsAi = () => {
             <div className="mt-6 space-y-6">
               {/* Enable AI Features */}
               <div>
-                <label className="flex cursor-pointer items-start">
+                <div className="flex cursor-pointer items-start">
                   <div className="relative flex items-center">
                     <input
+                      id="ai-enabled"
                       type="checkbox"
                       name="enabled"
                       className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
@@ -204,15 +205,15 @@ const SettingsAi = () => {
                       onChange={handleChange}
                     />
                   </div>
-                  <div className="ml-3">
+                  <label htmlFor="ai-enabled" className="ml-3 cursor-pointer">
                     <span className="block text-sm font-medium text-gray-900 dark:text-gray-100">
                       {intl.formatMessage(messages.enabled)}
                     </span>
                     <span className="text-sm text-gray-500 dark:text-gray-400">
                       {intl.formatMessage(messages.enabledTip)}
                     </span>
-                  </div>
-                </label>
+                  </label>
+                </div>
               </div>
 
               {/* Provider Configuration */}
@@ -223,7 +224,10 @@ const SettingsAi = () => {
 
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="provider.type" className="block text-sm font-medium">
+                    <label
+                      htmlFor="provider.type"
+                      className="block text-sm font-medium"
+                    >
                       {intl.formatMessage(messages.providerType)}
                     </label>
                     <select
@@ -244,7 +248,10 @@ const SettingsAi = () => {
                   </div>
 
                   <div>
-                    <label htmlFor="provider.baseUrl" className="block text-sm font-medium">
+                    <label
+                      htmlFor="provider.baseUrl"
+                      className="block text-sm font-medium"
+                    >
                       {intl.formatMessage(messages.baseUrl)}
                     </label>
                     <input
@@ -266,7 +273,10 @@ const SettingsAi = () => {
                   </div>
 
                   <div>
-                    <label htmlFor="provider.model" className="block text-sm font-medium">
+                    <label
+                      htmlFor="provider.model"
+                      className="block text-sm font-medium"
+                    >
                       {intl.formatMessage(messages.model)}
                     </label>
                     <input
@@ -290,7 +300,10 @@ const SettingsAi = () => {
 
                   {values.provider.type !== 'ollama' && (
                     <div>
-                      <label htmlFor="provider.apiKey" className="block text-sm font-medium">
+                      <label
+                        htmlFor="provider.apiKey"
+                        className="block text-sm font-medium"
+                      >
                         {intl.formatMessage(messages.apiKey)}
                       </label>
                       <SensitiveInput
@@ -330,9 +343,10 @@ const SettingsAi = () => {
 
                 <div className="space-y-4">
                   <div>
-                    <label className="flex cursor-pointer items-start">
+                    <div className="flex cursor-pointer items-start">
                       <div className="relative flex items-center">
                         <input
+                          id="ai-recs-enabled"
                           type="checkbox"
                           name="recommendations.enabled"
                           className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
@@ -340,19 +354,27 @@ const SettingsAi = () => {
                           onChange={handleChange}
                         />
                       </div>
-                      <div className="ml-3">
+                      <label
+                        htmlFor="ai-recs-enabled"
+                        className="ml-3 cursor-pointer"
+                      >
                         <span className="block text-sm font-medium text-gray-900 dark:text-gray-100">
                           {intl.formatMessage(messages.recommendationsEnabled)}
                         </span>
                         <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {intl.formatMessage(messages.recommendationsEnabledTip)}
+                          {intl.formatMessage(
+                            messages.recommendationsEnabledTip
+                          )}
                         </span>
-                      </div>
-                    </label>
+                      </label>
+                    </div>
                   </div>
 
                   <div>
-                    <label htmlFor="recommendations.sliderTitle" className="block text-sm font-medium">
+                    <label
+                      htmlFor="recommendations.sliderTitle"
+                      className="block text-sm font-medium"
+                    >
                       {intl.formatMessage(messages.sliderTitle)}
                     </label>
                     <input
@@ -370,7 +392,10 @@ const SettingsAi = () => {
 
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <label htmlFor="recommendations.maxResults" className="block text-sm font-medium">
+                      <label
+                        htmlFor="recommendations.maxResults"
+                        className="block text-sm font-medium"
+                      >
                         {intl.formatMessage(messages.maxResults)}
                       </label>
                       <input
@@ -396,33 +421,39 @@ const SettingsAi = () => {
                     </div>
 
                     <div>
-                      <label htmlFor="recommendations.minScore" className="block text-sm font-medium">
-                        {intl.formatMessage(messages.minScore)}
+                      <label
+                        htmlFor="recommendations.minRating"
+                        className="block text-sm font-medium"
+                      >
+                        {intl.formatMessage(messages.minRating)}
                       </label>
                       <input
                         type="number"
-                        id="recommendations.minScore"
-                        name="recommendations.minScore"
+                        id="recommendations.minRating"
+                        name="recommendations.minRating"
                         min="0"
-                        max="1"
-                        step="0.1"
-                        value={values.recommendations.minScore}
+                        max="10"
+                        step="0.5"
+                        value={values.recommendations.minRating}
                         onChange={handleChange}
                         className="mt-1 block w-full rounded-md border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
                       />
                       <p className="mt-1 text-sm text-gray-500">
-                        {intl.formatMessage(messages.minScoreTip)}
+                        {intl.formatMessage(messages.minRatingTip)}
                       </p>
-                      {errors.recommendations?.minScore &&
-                        touched.recommendations?.minScore && (
+                      {errors.recommendations?.minRating &&
+                        touched.recommendations?.minRating && (
                           <div className="mt-1 text-sm text-red-600">
-                            {errors.recommendations.minScore}
+                            {errors.recommendations.minRating}
                           </div>
                         )}
                     </div>
 
                     <div>
-                      <label htmlFor="recommendations.ttlDays" className="block text-sm font-medium">
+                      <label
+                        htmlFor="recommendations.ttlDays"
+                        className="block text-sm font-medium"
+                      >
                         {intl.formatMessage(messages.ttlDays)}
                       </label>
                       <input
@@ -456,9 +487,10 @@ const SettingsAi = () => {
                 </h4>
 
                 <div>
-                  <label className="flex cursor-pointer items-start">
+                  <div className="flex cursor-pointer items-start">
                     <div className="relative flex items-center">
                       <input
+                        id="ai-search-enabled"
                         type="checkbox"
                         name="search.enabled"
                         className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
@@ -466,15 +498,18 @@ const SettingsAi = () => {
                         onChange={handleChange}
                       />
                     </div>
-                    <div className="ml-3">
+                    <label
+                      htmlFor="ai-search-enabled"
+                      className="ml-3 cursor-pointer"
+                    >
                       <span className="block text-sm font-medium text-gray-900 dark:text-gray-100">
                         {intl.formatMessage(messages.searchEnabled)}
                       </span>
                       <span className="text-sm text-gray-500 dark:text-gray-400">
                         {intl.formatMessage(messages.searchEnabledTip)}
                       </span>
-                    </div>
-                  </label>
+                    </label>
+                  </div>
                 </div>
               </div>
 

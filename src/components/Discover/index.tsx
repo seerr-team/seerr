@@ -400,7 +400,10 @@ const Discover = () => {
             sliderComponent = (
               <MediaSlider
                 sliderKey="ai-recommendations"
-                title={slider.title ?? intl.formatMessage(sliderTitles.airecommendations)}
+                title={
+                  slider.title ??
+                  intl.formatMessage(sliderTitles.airecommendations)
+                }
                 url="/api/v1/discover/ai-recommendations"
                 linkUrl="/discover/ai-recommendations"
               />
@@ -410,7 +413,9 @@ const Discover = () => {
             sliderComponent = (
               <MediaSlider
                 sliderKey="ai-search"
-                title={slider.title ?? intl.formatMessage(sliderTitles.aisearch)}
+                title={
+                  slider.title ?? intl.formatMessage(sliderTitles.aisearch)
+                }
                 url="/api/v1/search"
                 linkUrl="/search"
               />

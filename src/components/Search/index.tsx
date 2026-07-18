@@ -3,7 +3,9 @@ import Header from '@app/components/Common/Header';
 import ListView from '@app/components/Common/ListView';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
-import useAiSearch, { type AiSearchInterpretation } from '@app/hooks/useAiSearch';
+import useAiSearch, {
+  type AiSearchInterpretation,
+} from '@app/hooks/useAiSearch';
 import useDiscover from '@app/hooks/useDiscover';
 import defineMessages from '@app/utils/defineMessages';
 import { SparklesIcon } from '@heroicons/react/24/solid';
@@ -14,7 +16,7 @@ import type {
 } from '@server/models/Search';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
-import { useIntl, type IntlShape } from 'react-intl';
+import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.Search', {
   search: 'Search',
@@ -24,25 +26,22 @@ const messages = defineMessages('components.Search', {
     'Describe what you want to watch in natural language (e.g. "90s psychological thrillers")',
   aiInterpretation: 'AI interpretation',
   aiThinking: 'Asking the AI…',
-  aiDisabled:
-    'AI search is disabled. Enable it in Settings → AI Settings.',
-  aiError: 'AI search failed. It may be disabled, or the AI provider is unreachable.',
+  aiDisabled: 'AI search is disabled. Enable it in Settings → AI Settings.',
+  aiError:
+    'AI search failed. It may be disabled, or the AI provider is unreachable.',
   aiNoResults: 'No AI results for this query. Try rephrasing.',
 });
 
 // Build a human-readable summary of how the AI parsed the query.
 const formatInterpretation = (
-  interp: AiSearchInterpretation | undefined,
-  _intl: IntlShape
+  interp: AiSearchInterpretation | undefined
 ): string | null => {
   if (!interp?.discoverParams) return null;
   const p = interp.discoverParams;
   const parts: string[] = [];
   if (p.genres?.length) parts.push(`Genres: ${p.genres.join(', ')}`);
   if (p.year_from || p.year_to) {
-    parts.push(
-      `Years: ${p.year_from ?? '…'}–${p.year_to ?? '…'}`
-    );
+    parts.push(`Years: ${p.year_from ?? '…'}–${p.year_to ?? '…'}`);
   }
   if (p.original_language) parts.push(`Language: ${p.original_language}`);
   if (p.min_rating) parts.push(`Min rating: ${p.min_rating}`);
@@ -66,7 +65,7 @@ const Search = () => {
   // AI natural-language search (only fetches when AI mode is on).
   const ai = useAiSearch(aiMode && query.length > 0 ? query : null);
 
-  const interpretation = formatInterpretation(ai.data?.interpretation, intl);
+  const interpretation = formatInterpretation(ai.data?.interpretation);
 
   return (
     <>

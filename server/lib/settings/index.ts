@@ -365,7 +365,7 @@ export interface AiRecommendationSettings {
   enabled: boolean;
   sliderTitle: string;
   maxResults: number;
-  minScore: number;
+  minRating: number;
   ttlDays: number;
 }
 
@@ -493,7 +493,7 @@ class Settings {
           enabled: false,
           sliderTitle: 'Recommended for You',
           maxResults: 20,
-          minScore: 0.5,
+          minRating: 7,
           ttlDays: 14,
         },
         search: {

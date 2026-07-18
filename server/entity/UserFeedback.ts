@@ -1,14 +1,14 @@
+import type { MediaType } from '@server/constants/media';
+import { DbAwareColumn } from '@server/utils/DbColumnHelper';
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
+  Entity,
   JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
 import { User } from './User';
-import { MediaType } from '../constants/media';
-import { DbAwareColumn } from '../utils/DbColumnHelper';
 
 @Entity('user_feedback')
 @Unique(['userId', 'tmdbId', 'mediaType'])

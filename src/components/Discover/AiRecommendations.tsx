@@ -50,9 +50,7 @@ const AiRecommendations = () => {
           {intl.formatMessage(messages.airecommendationsDescription)}
         </p>
       </div>
-      {isLoadingInitialData && (
-        <LoadingSpinner />
-      )}
+      {isLoadingInitialData && <LoadingSpinner />}
       {showEmpty && !isLoadingInitialData && (
         <div className="mt-16 w-full text-center text-lg text-gray-400">
           {intl.formatMessage(messages.empty)}

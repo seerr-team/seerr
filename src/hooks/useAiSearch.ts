@@ -1,7 +1,7 @@
 import type {
   MovieResult,
-  TvResult,
   PersonResult,
+  TvResult,
 } from '@server/models/Search';
 import axios from 'axios';
 import useSWR from 'swr';
@@ -16,12 +16,12 @@ export interface AiSearchInterpretation {
     min_rating?: number;
     keywords?: string[];
   };
-  suggestedTitles: Array<{
+  suggestedTitles: {
     title: string;
     year?: number;
     type: string;
     rationale: string;
-  }>;
+  }[];
 }
 
 interface AiSearchResponse {

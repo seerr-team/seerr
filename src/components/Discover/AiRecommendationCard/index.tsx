@@ -1,6 +1,6 @@
 import Button from '@app/components/Common/Button';
-import TitleCard from '@app/components/TitleCard';
 import Tooltip from '@app/components/Common/Tooltip';
+import TitleCard from '@app/components/TitleCard';
 import useAiFeedback, { type FeedbackType } from '@app/hooks/useAiFeedback';
 import useToasts from '@app/hooks/useToasts';
 import defineMessages from '@app/utils/defineMessages';
@@ -49,8 +49,7 @@ const AiRecommendationCard = ({
   // Rationale button placement — flip to true to show the ✨ button.
   const SHOW_RATIONALE_BUTTON = false;
 
-  const mediaType =
-    item.mediaType === 'tv' ? MediaType.TV : MediaType.MOVIE;
+  const mediaType = item.mediaType === 'tv' ? MediaType.TV : MediaType.MOVIE;
 
   const handleClick = async (type: FeedbackType) => {
     const previous = active;
