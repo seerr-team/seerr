@@ -56,7 +56,7 @@ const StatusBadgeMini = ({
       break;
     case MediaStatus.PARTIALLY_AVAILABLE:
       badgeStyle.push(
-        'bg-green-500/80 border-green-400 ring-green-400 text-green-100'
+        'bg-yellow-500/80 border-yellow-400 ring-yellow-400 text-yellow-100'
       );
       indicatorIcon = <MinusSmallIcon />;
       break;
