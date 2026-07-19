@@ -241,7 +241,7 @@ const RequestRetentionActions = ({
           <Button
             className={layout === 'stacked' ? 'w-full' : undefined}
             buttonType="default"
-            buttonSize={layout === 'inline' ? 'sm' : 'md'}
+            buttonSize="sm"
             disabled={isKeeping}
             onClick={() => keepMedia()}
           >
@@ -260,7 +260,7 @@ const RequestRetentionActions = ({
         >
           <ConfirmButton
             className={layout === 'stacked' ? 'w-full' : undefined}
-            buttonSize={layout === 'inline' ? 'sm' : 'md'}
+            buttonSize="sm"
             onClick={() => deleteMedia()}
             confirmText={intl.formatMessage(messages.deletemediaconfirm)}
           >

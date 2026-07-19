@@ -1,5 +1,4 @@
 import Spinner from '@app/assets/spinner.svg';
-import AdminRetentionControl from '@app/components/AdminRetentionControl';
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
@@ -785,15 +784,9 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
           <RequestRetentionActions
             request={requestData}
             onUpdate={revalidate}
-            layout="stacked"
+            layout="inline"
+            compact
           />
-          {hasPermission(Permission.MANAGE_REQUESTS) && (
-            <AdminRetentionControl
-              request={requestData}
-              onUpdate={revalidate}
-              className="w-full"
-            />
-          )}
         </div>
       </div>
     </>
