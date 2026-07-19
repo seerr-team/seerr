@@ -113,11 +113,7 @@ export class OpenAICompatibleClient implements LLMClient {
         max_tokens: 4000,
       });
 
-      // Reasoning models (e.g. GLM, o-series) may return their answer in
-      // `reasoning_content` with an empty `content`. Prefer `content`, fall
-      // back to `reasoning_content`.
-      const message = response.choices[0]?.message as any;
-      const content = message?.content ?? message?.reasoning_content;
+      const content = this.extractContent(response.choices[0]?.message as any);
       if (!content) {
         throw new Error('Empty response from LLM');
       }
@@ -127,6 +123,20 @@ export class OpenAICompatibleClient implements LLMClient {
       logger.error('LLM API call failed:', error);
       throw error;
     }
+  }
+
+  /**
+   * Pull text out of a completion message. Reasoning models (e.g. GLM,
+   * o-series) sometimes put the answer in `reasoning_content` and leave
+   * `content` empty, so prefer `content` and fall back to `reasoning_content`.
+   * Returns '' if neither is a usable string.
+   */
+  private extractContent(message?: {
+    content?: string | null;
+    reasoning_content?: string | null;
+  }): string {
+    const content = message?.content ?? message?.reasoning_content;
+    return typeof content === 'string' ? content : '';
   }
 
   /**
@@ -359,10 +369,8 @@ export class OpenAICompatibleClient implements LLMClient {
         max_tokens: 5,
       });
 
-      return (
-        response.choices[0]?.message?.content?.toLowerCase().includes('ok') ||
-        false
-      );
+      const content = this.extractContent(response.choices[0]?.message as any);
+      return content.toLowerCase().includes('ok');
     } catch (error) {
       logger.error('LLM connection test failed:', error);
       return false;
