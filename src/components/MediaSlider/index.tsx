@@ -4,6 +4,7 @@ import Slider from '@app/components/Slider';
 import TitleCard from '@app/components/TitleCard';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
+import { filterVisibleTitles } from '@app/utils/mediaFilters';
 import { ArrowRightCircleIcon } from '@heroicons/react/24/outline';
 import { MediaStatus } from '@server/constants/media';
 import { Permission } from '@server/lib/permissions';
@@ -65,22 +66,11 @@ const MediaSlider = ({
     [] as (MovieResult | TvResult | PersonResult)[]
   );
 
-  if (settings.currentSettings.hideAvailable) {
-    titles = titles.filter(
-      (i) =>
-        (i.mediaType === 'movie' || i.mediaType === 'tv') &&
-        i.mediaInfo?.status !== MediaStatus.AVAILABLE &&
-        i.mediaInfo?.status !== MediaStatus.PARTIALLY_AVAILABLE
-    );
-  }
-
-  if (settings.currentSettings.hideBlocklisted) {
-    titles = titles.filter(
-      (i) =>
-        (i.mediaType === 'movie' || i.mediaType === 'tv') &&
-        i.mediaInfo?.status !== MediaStatus.BLOCKLISTED
-    );
-  }
+  titles = filterVisibleTitles(titles, {
+    hideAvailable: settings.currentSettings.hideAvailable,
+    hideBlocklisted: settings.currentSettings.hideBlocklisted,
+    hideRequested: settings.currentSettings.hideRequested,
+  });
 
   useEffect(() => {
     if (

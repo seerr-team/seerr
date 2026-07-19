@@ -1,6 +1,7 @@
 import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
-import { MediaStatus } from '@server/constants/media';
+import { filterVisibleTitles } from '@app/utils/mediaFilters';
+import type { MediaStatus } from '@server/constants/media';
 import { useEffect } from 'react';
 import { useIntl } from 'react-intl';
 import useSWRInfinite from 'swr/infinite';
@@ -19,6 +20,7 @@ interface BaseMedia {
   mediaType: string;
   mediaInfo?: {
     status: MediaStatus;
+    hasActiveRequest?: boolean;
   };
 }
 
@@ -58,7 +60,7 @@ const useDiscover = <
 >(
   endpoint: string,
   options?: O,
-  { hideAvailable = true, hideBlocklisted = true } = {}
+  { hideAvailable = true, hideBlocklisted = true, hideRequested = true } = {}
 ): DiscoverResult<T, S> => {
   const settings = useSettings();
   const { hasPermission } = useUser();
@@ -121,33 +123,37 @@ const useDiscover = <
     return [...a, ...results];
   }, [] as T[]);
 
-  if (settings.currentSettings.hideAvailable && hideAvailable) {
-    titles = titles.filter(
-      (i) =>
-        (i.mediaType === 'movie' || i.mediaType === 'tv') &&
-        i.mediaInfo?.status !== MediaStatus.AVAILABLE &&
-        i.mediaInfo?.status !== MediaStatus.PARTIALLY_AVAILABLE
-    );
-  }
+  titles = filterVisibleTitles(titles, {
+    hideAvailable: settings.currentSettings.hideAvailable && hideAvailable,
+    hideBlocklisted:
+      settings.currentSettings.hideBlocklisted &&
+      hideBlocklisted &&
+      hasPermission(Permission.MANAGE_BLOCKLIST),
+    hideRequested: settings.currentSettings.hideRequested && hideRequested,
+  });
 
-  if (
-    settings.currentSettings.hideBlocklisted &&
-    hideBlocklisted &&
-    hasPermission(Permission.MANAGE_BLOCKLIST)
-  ) {
-    titles = titles.filter(
-      (i) =>
-        (i.mediaType === 'movie' || i.mediaType === 'tv') &&
-        i.mediaInfo?.status !== MediaStatus.BLOCKLISTED
-    );
-  }
-
-  const isEmpty = !isLoadingInitialData && titles?.length === 0;
+  const isEmpty =
+    !isLoadingInitialData && !isLoadingMore && titles?.length === 0;
   const isReachingEnd =
-    isEmpty ||
-    (!!data && (data[data?.length - 1]?.results.length ?? 0) < 20) ||
-    (!!data && (data[data?.length - 1]?.totalResults ?? 0) <= size * 20) ||
-    (!!data && (data[data?.length - 1]?.totalResults ?? 0) < 41);
+    (!!data && (data[data.length - 1]?.results.length ?? 0) < 20) ||
+    (!!data && (data[data.length - 1]?.totalResults ?? 0) <= size * 20) ||
+    (!!data && (data[data.length - 1]?.totalResults ?? 0) < 41);
+
+  // When client-side filters (hide available/blocklisted/requested) empty out
+  // entire pages, keep fetching a bounded number of extra pages so the view
+  // does not appear exhausted while the server still has results.
+  useEffect(() => {
+    if (
+      !!data &&
+      titles.length < 20 &&
+      size < 5 &&
+      !isReachingEnd &&
+      !isLoadingMore &&
+      !isValidating
+    ) {
+      setSize(size + 1);
+    }
+  }, [data, titles, size, isReachingEnd, isLoadingMore, isValidating, setSize]);
 
   useEffect(() => {
     if (error && titles.length) {

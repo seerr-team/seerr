@@ -65,6 +65,14 @@ Available media will still appear in search results, however, so it is possible 
 
 This setting is **disabled** by default.
 
+## Hide Requested Media
+
+When enabled, movies and series with at least one pending or approved request will not appear on the "Discover" home page, or in the "Recommended" or "Similar" categories or other links on media detail pages. This includes partially requested series (e.g. when only some seasons have been requested) and 4K requests. Media with only declined, failed, or completed requests is not hidden.
+
+Requested media will still appear in search results, however, so it is possible to locate and view hidden items by searching for them by title.
+
+This setting is **disabled** by default.
+
 ## Hide Blocklisted Items
 
 When enabled, media that has been blocklisted will not appear on the "Discover" home page, for all administrators. This can be useful to hide content that you don't want to see, such as content with specific tags or content that has been manually blocklisted when you have the "Manage Blocklist" permission.

@@ -1,6 +1,10 @@
 import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
-import { MediaStatus, MediaType } from '@server/constants/media';
+import {
+  MediaRequestStatus,
+  MediaStatus,
+  MediaType,
+} from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import { Blocklist } from '@server/entity/Blocklist';
@@ -53,9 +57,35 @@ class Media {
         .where(' media.tmdbId in (:...finalIds)', { finalIds })
         .getMany();
 
-      return media.filter((m) =>
+      const relatedMedia = media.filter((m) =>
         items.some((i) => i.tmdbId === m.tmdbId && i.mediaType === m.mediaType)
       );
+
+      // Only fetch active request state when it is actually used for
+      // filtering, so the default configuration adds no extra query. Only
+      // media IDs are selected; no request or user data leaves the server.
+      if (getSettings().main.hideRequested && relatedMedia.length > 0) {
+        const activeRequestMediaIds = await mediaRepository
+          .createQueryBuilder('media')
+          .select('media.id', 'id')
+          .distinct(true)
+          .innerJoin('media.requests', 'request')
+          .where('media.id IN (:...mediaIds)', {
+            mediaIds: relatedMedia.map((m) => m.id),
+          })
+          .andWhere('request.status IN (:...statuses)', {
+            statuses: [MediaRequestStatus.PENDING, MediaRequestStatus.APPROVED],
+          })
+          .getRawMany<{ id: number }>();
+
+        const activeIds = new Set(activeRequestMediaIds.map((row) => row.id));
+
+        relatedMedia.forEach((m) => {
+          m.hasActiveRequest = activeIds.has(m.id);
+        });
+      }
+
+      return relatedMedia;
     } catch (e) {
       logger.error(e.message);
       return [];
@@ -187,6 +217,12 @@ class Media {
 
   public serviceUrl?: string;
   public serviceUrl4k?: string;
+  /**
+   * Transient flag set by `getRelatedMedia` when the "Hide Requested Media"
+   * setting is enabled: true if at least one request (any season, standard or
+   * 4K) is pending or approved.
+   */
+  public hasActiveRequest?: boolean;
   public downloadStatus?: DownloadingItem[] = [];
   public downloadStatus4k?: DownloadingItem[] = [];
 

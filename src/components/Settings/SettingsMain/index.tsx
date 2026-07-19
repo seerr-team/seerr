@@ -62,6 +62,9 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   hideAvailable: 'Hide Available Media',
   hideAvailableTip:
     'Hide available media from the discover pages but not search results',
+  hideRequested: 'Hide Requested Media',
+  hideRequestedTip:
+    'Hide media with pending or approved requests, including partially requested series, from the discover pages but not search results',
   cacheImages: 'Enable Image Caching',
   cacheImagesTip:
     'Cache externally sourced images (requires a significant amount of disk space)',
@@ -171,6 +174,7 @@ const SettingsMain = () => {
             applicationUrl: data?.applicationUrl,
             hideAvailable: data?.hideAvailable,
             hideBlocklisted: data?.hideBlocklisted,
+            hideRequested: data?.hideRequested,
             locale: data?.locale ?? 'en',
             discoverRegion: data?.discoverRegion,
             originalLanguage: data?.originalLanguage,
@@ -193,6 +197,7 @@ const SettingsMain = () => {
                 applicationUrl: values.applicationUrl,
                 hideAvailable: values.hideAvailable,
                 hideBlocklisted: values.hideBlocklisted,
+                hideRequested: values.hideRequested,
                 locale: values.locale,
                 discoverRegion: values.discoverRegion,
                 streamingRegion: values.streamingRegion,
@@ -511,6 +516,27 @@ const SettingsMain = () => {
                       name="hideAvailable"
                       onChange={() => {
                         setFieldValue('hideAvailable', !values.hideAvailable);
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="hideRequested" className="checkbox-label">
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.hideRequested)}
+                    </span>
+                    <SettingsBadge badgeType="experimental" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.hideRequestedTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="hideRequested"
+                      name="hideRequested"
+                      onChange={() => {
+                        setFieldValue('hideRequested', !values.hideRequested);
                       }}
                     />
                   </div>

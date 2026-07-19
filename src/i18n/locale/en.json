@@ -1030,6 +1030,8 @@
   "components.Settings.SettingsMain.hideAvailableTip": "Hide available media from the discover pages but not search results",
   "components.Settings.SettingsMain.hideBlocklisted": "Hide Blocklisted Items",
   "components.Settings.SettingsMain.hideBlocklistedTip": "Hide blocklisted items from discover pages for all users with the \"Manage Blocklist\" permission",
+  "components.Settings.SettingsMain.hideRequested": "Hide Requested Media",
+  "components.Settings.SettingsMain.hideRequestedTip": "Hide media with pending or approved requests, including partially requested series, from the discover pages but not search results",
   "components.Settings.SettingsMain.locale": "Display Language",
   "components.Settings.SettingsMain.originallanguage": "Discover Language",
   "components.Settings.SettingsMain.originallanguageTip": "Filter content by original language",

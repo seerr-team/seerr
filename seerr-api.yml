@@ -232,6 +232,9 @@ components:
         hideAvailable:
           type: boolean
           example: false
+        hideRequested:
+          type: boolean
+          example: false
         partialRequestsEnabled:
           type: boolean
           example: false
@@ -1296,6 +1299,11 @@ components:
           readOnly: true
           items:
             $ref: '#/components/schemas/MediaRequest'
+        hasActiveRequest:
+          type: boolean
+          readOnly: true
+          nullable: true
+          description: Only populated when the "Hide Requested Media" setting is enabled. True if at least one request is pending or approved.
         createdAt:
           type: string
           example: '2020-09-12T10:00:27.000Z'
