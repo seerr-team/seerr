@@ -88,10 +88,6 @@ const Search = () => {
     keywords: intl.formatMessage(messages.interpKeywords),
   });
 
-  if (regular.error) {
-    return <ErrorPage statusCode={500} />;
-  }
-
   return (
     <>
       <PageTitle title={intl.formatMessage(messages.search)} />
@@ -147,6 +143,8 @@ const Search = () => {
             </>
           )}
         </>
+      ) : regular.error ? (
+        <ErrorPage statusCode={500} />
       ) : (
         <ListView
           items={regular.titles}
