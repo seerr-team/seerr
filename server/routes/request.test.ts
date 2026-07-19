@@ -10,6 +10,7 @@ import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import { User } from '@server/entity/User';
+import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import { checkUser } from '@server/middleware/auth';
 import { setupTestDb } from '@server/test/db';
@@ -209,6 +210,50 @@ describe('DELETE /request/:requestId', () => {
     );
 
     const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const res = await agent.delete(`/request/${mediaRequest.id}`);
+
+    assert.strictEqual(res.status, 204);
+
+    const updatedMedia = await mediaRepo.findOneOrFail({
+      where: { id: media.id },
+    });
+    assert.strictEqual(updatedMedia.status, MediaStatus.DELETED);
+
+    const remaining = await requestRepo.findOne({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(remaining, null);
+  });
+
+  it('allows an admin to delete an approved request owned by another user and clean up its files', async () => {
+    const userRepo = getRepository(User);
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+
+    const requestedBy = await userRepo.findOneOrFail({
+      where: { email: 'friend@seerr.dev' },
+    });
+
+    const media = await mediaRepo.save(
+      new Media({
+        mediaType: MediaType.MOVIE,
+        tmdbId: 424244,
+        status: MediaStatus.AVAILABLE,
+        status4k: MediaStatus.UNKNOWN,
+      })
+    );
+
+    const mediaRequest = await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.APPROVED,
+        media,
+        requestedBy,
+        is4k: false,
+      })
+    );
+
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
     const res = await agent.delete(`/request/${mediaRequest.id}`);
 
     assert.strictEqual(res.status, 204);
@@ -425,6 +470,139 @@ describe('POST /request/:requestId/retention', () => {
         .send({ retentionDays: 7 });
 
       assert.strictEqual(res.status, 400);
+    } finally {
+      settings.main.mediaRetention = priorRetention;
+    }
+  });
+
+  it('rejects indefinite retention from a user without KEEP_MEDIA, even with no day cap configured', async () => {
+    const settings = getSettings();
+    const priorRetention = settings.main.mediaRetention;
+    // No defaultDays configured (0/unlimited) - this is the "no cap"
+    // scenario that must NOT silently grant indefinite retention.
+    settings.main.mediaRetention = {
+      movie: { enabled: true },
+      tv: { enabled: false },
+    };
+
+    try {
+      const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
+
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent
+        .post(`/request/${mediaRequest.id}/retention`)
+        .send({ retentionDays: null });
+
+      assert.strictEqual(res.status, 403);
+    } finally {
+      settings.main.mediaRetention = priorRetention;
+    }
+  });
+
+  it('lets a user with KEEP_MEDIA set indefinite retention with no day cap configured', async () => {
+    const userRepo = getRepository(User);
+    const requestRepo = getRepository(MediaRequest);
+    const settings = getSettings();
+    const priorRetention = settings.main.mediaRetention;
+    settings.main.mediaRetention = {
+      movie: { enabled: true },
+      tv: { enabled: false },
+    };
+
+    const friend = await userRepo.findOneOrFail({
+      where: { email: 'friend@seerr.dev' },
+    });
+    const priorPermissions = friend.permissions;
+    friend.permissions = priorPermissions | Permission.KEEP_MEDIA;
+    await userRepo.save(friend);
+
+    try {
+      const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
+
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent
+        .post(`/request/${mediaRequest.id}/retention`)
+        .send({ retentionDays: null });
+
+      assert.strictEqual(res.status, 200);
+
+      const saved = await requestRepo.findOneOrFail({
+        where: { id: mediaRequest.id },
+      });
+      assert.strictEqual(saved.retentionDays, null);
+    } finally {
+      settings.main.mediaRetention = priorRetention;
+      friend.permissions = priorPermissions;
+      await userRepo.save(friend);
+    }
+  });
+
+  it('lets a user with KEEP_MEDIA go indefinite even when a finite day cap is configured', async () => {
+    const userRepo = getRepository(User);
+    const requestRepo = getRepository(MediaRequest);
+    const settings = getSettings();
+    const priorRetention = settings.main.mediaRetention;
+    // A finite default cap must not block an otherwise-permitted indefinite
+    // choice - the cap only constrains explicit finite selections.
+    settings.main.mediaRetention = {
+      movie: { enabled: true, defaultDays: 30 },
+      tv: { enabled: false },
+    };
+
+    const friend = await userRepo.findOneOrFail({
+      where: { email: 'friend@seerr.dev' },
+    });
+    const priorPermissions = friend.permissions;
+    friend.permissions = priorPermissions | Permission.KEEP_MEDIA;
+    await userRepo.save(friend);
+
+    try {
+      const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
+
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent
+        .post(`/request/${mediaRequest.id}/retention`)
+        .send({ retentionDays: null });
+
+      assert.strictEqual(res.status, 200);
+
+      const saved = await requestRepo.findOneOrFail({
+        where: { id: mediaRequest.id },
+      });
+      assert.strictEqual(saved.retentionDays, null);
+    } finally {
+      settings.main.mediaRetention = priorRetention;
+      friend.permissions = priorPermissions;
+      await userRepo.save(friend);
+    }
+  });
+
+  it('lets an admin keep another users media indefinitely even when that user has a finite day cap', async () => {
+    const requestRepo = getRepository(MediaRequest);
+    const settings = getSettings();
+    const priorRetention = settings.main.mediaRetention;
+    settings.main.mediaRetention = {
+      movie: { enabled: true, defaultDays: 30 },
+      tv: { enabled: false },
+    };
+
+    try {
+      // seedRequest's requester (friend@seerr.dev) has no KEEP_MEDIA and
+      // is capped at the 30-day default - the admin should be able to
+      // override that regardless.
+      const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
+
+      const agent = await loginAs('admin@seerr.dev', 'test1234');
+      const res = await agent
+        .post(`/request/${mediaRequest.id}/retention`)
+        .send({ retentionDays: null });
+
+      assert.strictEqual(res.status, 200);
+
+      const saved = await requestRepo.findOneOrFail({
+        where: { id: mediaRequest.id },
+      });
+      assert.strictEqual(saved.retentionDays, null);
     } finally {
       settings.main.mediaRetention = priorRetention;
     }
@@ -716,7 +894,7 @@ describe('DELETE /request/:requestId, deleted media status restoration', () => {
     assert.strictEqual(updated.status, MediaStatus.PENDING);
   });
 
-  it('does not reset media status when status is PARTIALLY_AVAILABLE and only completed requests remain', async () => {
+  it('deletes files and marks media DELETED when an admin removes the last completed request for partially available media', async () => {
     const userRepo = getRepository(User);
     const mediaRepo = getRepository(Media);
     const requestRepo = getRepository(MediaRequest);
@@ -749,7 +927,12 @@ describe('DELETE /request/:requestId, deleted media status restoration', () => {
 
     assert.strictEqual(res.status, 204);
 
+    // Admin deletes of an approved/completed request now go through the
+    // same file-cleanup path as owner self-deletes (Permission.MANAGE_REQUESTS
+    // holders can delete anyone's media, not just bookkeep the request row),
+    // so this is no longer left untouched the way a subscriber-only
+    // bookkeeping delete would leave it.
     const updated = await mediaRepo.findOneOrFail({ where: { id: media.id } });
-    assert.strictEqual(updated.status, MediaStatus.PARTIALLY_AVAILABLE);
+    assert.strictEqual(updated.status, MediaStatus.DELETED);
   });
 });

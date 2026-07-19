@@ -9,6 +9,7 @@ import {
 import { getRepository } from '@server/datasource';
 import OverrideRule from '@server/entity/OverrideRule';
 import type { MediaRequestBody } from '@server/interfaces/api/requestInterfaces';
+import { DEFAULT_RETENTION_FALLBACK_DAYS } from '@server/interfaces/api/userInterfaces';
 import notificationManager, { Notification } from '@server/lib/notifications';
 import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
@@ -121,10 +122,29 @@ export class MediaRequest {
 
     let retentionDays: number | null = null;
     if (retentionLimitForType.enabled) {
-      retentionDays =
-        requestBody.retentionDays !== undefined
-          ? requestBody.retentionDays
-          : (retentionLimitForType.maxDays ?? null);
+      // The acting user (e.g. an admin submitting on another user's behalf)
+      // can grant indefinite retention even if the requester themselves
+      // can't; otherwise it's gated on the requester's own privilege.
+      const canKeepIndefinitely =
+        retentionLimitForType.canKeepIndefinitely ||
+        user.hasPermission(Permission.MANAGE_REQUESTS);
+
+      if (requestBody.retentionDays !== undefined) {
+        if (requestBody.retentionDays === null && !canKeepIndefinitely) {
+          throw new RequestPermissionError(
+            'You do not have permission to keep media indefinitely.'
+          );
+        }
+        retentionDays = requestBody.retentionDays;
+      } else {
+        // No explicit choice was made. Fall back to the configured cap, or -
+        // only if this requester is actually allowed to keep media
+        // indefinitely - to unlimited. Otherwise a "no cap configured"
+        // admin setting should not silently grant indefinite retention.
+        retentionDays =
+          retentionLimitForType.maxDays ??
+          (canKeepIndefinitely ? null : DEFAULT_RETENTION_FALLBACK_DAYS);
+      }
 
       if (
         retentionLimitForType.maxDays !== undefined &&

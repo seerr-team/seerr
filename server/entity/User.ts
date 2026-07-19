@@ -392,6 +392,12 @@ export class User {
       [Permission.MANAGE_USERS, Permission.MANAGE_REQUESTS],
       { type: 'or' }
     );
+    // Indefinite retention (fully exempt from auto-purge) is a distinct
+    // privilege from "no day cap configured" - most users should not be
+    // able to grant themselves indefinite retention just because the admin
+    // left the default/override at 0 (unlimited).
+    const canKeepIndefinitely =
+      canBypass || this.hasPermission(Permission.KEEP_MEDIA);
 
     // A resolved value of 0 (or unset) means unlimited, matching the
     // 0-means-unlimited convention used by request quotas.
@@ -413,6 +419,11 @@ export class User {
                 this.movieRetentionDays,
                 mediaRetention.movie.defaultDays
               ),
+        canKeepIndefinitely,
+        defaultDays: resolveMaxDays(
+          this.movieRetentionDays,
+          mediaRetention.movie.defaultDays
+        ),
       },
       tv: {
         enabled: mediaRetention.tv.enabled,
@@ -423,6 +434,11 @@ export class User {
                 this.tvRetentionDays,
                 mediaRetention.tv.defaultDays
               ),
+        canKeepIndefinitely,
+        defaultDays: resolveMaxDays(
+          this.tvRetentionDays,
+          mediaRetention.tv.defaultDays
+        ),
       },
     };
   }

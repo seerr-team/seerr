@@ -25,6 +25,9 @@ export const messages = defineMessages('components.PermissionEdit', {
   requestTv: 'Request Series',
   requestTvDescription:
     'Grant permission to submit requests for non-4K series.',
+  keepmedia: 'Keep Media',
+  keepmediaDescription:
+    'Grant permission to exempt your own requested media from automatic retention deletion, both when requesting and afterward.',
   autoapprove: 'Auto-Approve',
   autoapproveDescription:
     'Grant automatic approval for all non-4K media requests.',
@@ -181,6 +184,12 @@ export const PermissionEdit = ({
           name: intl.formatMessage(messages.requestTv),
           description: intl.formatMessage(messages.requestTvDescription),
           permission: Permission.REQUEST_TV,
+        },
+        {
+          id: 'keepmedia',
+          name: intl.formatMessage(messages.keepmedia),
+          description: intl.formatMessage(messages.keepmediaDescription),
+          permission: Permission.KEEP_MEDIA,
         },
       ],
     },

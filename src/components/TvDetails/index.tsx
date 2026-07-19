@@ -22,6 +22,7 @@ import MediaSlider from '@app/components/MediaSlider';
 import PersonCard from '@app/components/PersonCard';
 import RequestButton from '@app/components/RequestButton';
 import RequestModal from '@app/components/RequestModal';
+import RequestRetentionActions from '@app/components/RequestRetentionActions';
 import Slider from '@app/components/Slider';
 import StatusBadge from '@app/components/StatusBadge';
 import Season from '@app/components/TvDetails/Season';
@@ -729,6 +730,28 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
           )}
         </div>
       </div>
+      {(data.mediaInfo?.requests ?? []).some(
+        (r) =>
+          r.requestedBy.id === user?.id ||
+          hasPermission(Permission.MANAGE_REQUESTS)
+      ) && (
+        <div className="relative z-10 mb-4 flex flex-wrap justify-end gap-2">
+          {(data.mediaInfo?.requests ?? [])
+            .filter(
+              (r) =>
+                r.requestedBy.id === user?.id ||
+                hasPermission(Permission.MANAGE_REQUESTS)
+            )
+            .map((r) => (
+              <RequestRetentionActions
+                key={r.id}
+                request={r}
+                onUpdate={() => revalidate()}
+                layout="inline"
+              />
+            ))}
+        </div>
+      )}
       <div className="media-overview">
         <div className="media-overview-left">
           {data.tagline && <div className="tagline">{data.tagline}</div>}

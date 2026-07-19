@@ -1,8 +1,10 @@
+import AdminRetentionControl from '@app/components/AdminRetentionControl';
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import Tooltip from '@app/components/Common/Tooltip';
 import RequestModal from '@app/components/RequestModal';
+import RequestRetentionActions from '@app/components/RequestRetentionActions';
 import useRequestOverride from '@app/hooks/useRequestOverride';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
@@ -324,6 +326,16 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
             </ul>
           </>
         )}
+        <RequestRetentionActions
+          request={request}
+          onUpdate={onUpdate}
+          layout="inline"
+        />
+        <AdminRetentionControl
+          request={request}
+          onUpdate={onUpdate}
+          className="mt-4"
+        />
       </div>
     </div>
   );

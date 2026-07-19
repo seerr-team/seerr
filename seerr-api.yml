@@ -4653,6 +4653,63 @@ paths:
                       restricted:
                         type: boolean
                         example: false
+  /user/{userId}/retention:
+    get:
+      summary: Get retention limits for a specific user
+      description: |
+        Returns media retention details for a user in a JSON object.
+        Requires `MANAGE_USERS` or `MANAGE_REQUESTS` permission if viewing
+        other users.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: User retention details in JSON
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  movie:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                        example: true
+                      maxDays:
+                        type: number
+                        nullable: true
+                        example: 30
+                      canKeepIndefinitely:
+                        type: boolean
+                        example: false
+                      defaultDays:
+                        type: number
+                        nullable: true
+                        example: 30
+                  tv:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                        example: true
+                      maxDays:
+                        type: number
+                        nullable: true
+                        example: 30
+                      canKeepIndefinitely:
+                        type: boolean
+                        example: false
+                      defaultDays:
+                        type: number
+                        nullable: true
+                        example: 30
   /blocklist:
     get:
       summary: Returns blocklisted items
@@ -6676,6 +6733,48 @@ paths:
       responses:
         '200':
           description: Retry triggered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaRequest'
+  /request/{requestId}/retention:
+    post:
+      summary: Update a request's retention
+      description: |
+        Updates how long a request's media is kept before the Media
+        Retention job automatically removes it. Passing `null` keeps the
+        media indefinitely, which requires the `KEEP_MEDIA` permission
+        (or `MANAGE_REQUESTS`/`ADMIN`, which bypass all retention limits).
+
+        The requester can update their own request; `MANAGE_REQUESTS` or
+        `ADMIN` permission is required to update another user's request.
+      tags:
+        - request
+      parameters:
+        - in: path
+          name: requestId
+          description: Request ID
+          required: true
+          schema:
+            type: string
+            example: '1'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                retentionDays:
+                  type: number
+                  nullable: true
+                  description: Number of days to retain the media, or `null` to keep it indefinitely.
+                  example: 30
+              required:
+                - retentionDays
+      responses:
+        '200':
+          description: Retention updated
           content:
             application/json:
               schema:

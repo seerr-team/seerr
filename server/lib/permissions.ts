@@ -1,5 +1,10 @@
 export enum Permission {
   NONE = 0,
+  // Bit 0 (value 1) was never used by earlier permissions (which start at
+  // bit 1 / value 2), so it's free. Bit 31 (value 2^31) is NOT safe to use
+  // for a future permission: JS bitwise operators coerce to signed int32,
+  // so that bit flips the sign of the whole permissions value.
+  KEEP_MEDIA = 1,
   ADMIN = 2,
   MANAGE_SETTINGS = 4,
   MANAGE_USERS = 8,

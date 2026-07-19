@@ -4,7 +4,7 @@ import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.RetentionSelector', {
   retentionDays:
-    'Delete after <retentionUnits>{retentionDays} {days}</retentionUnits>',
+    'Delete after {retentionDays}<retentionUnits> {days}</retentionUnits>',
   days: '{count, plural, one {day} other {days}}',
   unlimited: 'Never (Unlimited)',
 });
@@ -46,7 +46,7 @@ const RetentionSelector = ({
             <option value="0">{intl.formatMessage(messages.unlimited)}</option>
             {[7, 14, 30, 60, 90, 180, 365].map((days) => (
               <option value={days} key={`${mediaType}-retention-${days}`}>
-                {days}
+                {days} {intl.formatMessage(messages.days, { count: days })}
               </option>
             ))}
           </select>

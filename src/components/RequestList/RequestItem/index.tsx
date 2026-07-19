@@ -1,9 +1,11 @@
 import Spinner from '@app/assets/spinner.svg';
+import AdminRetentionControl from '@app/components/AdminRetentionControl';
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import ConfirmButton from '@app/components/Common/ConfirmButton';
 import RequestModal from '@app/components/RequestModal';
+import RequestRetentionActions from '@app/components/RequestRetentionActions';
 import StatusBadge from '@app/components/StatusBadge';
 import useDeepLinks from '@app/hooks/useDeepLinks';
 import useToasts from '@app/hooks/useToasts';
@@ -14,7 +16,6 @@ import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
 import {
   ArrowPathIcon,
   CheckIcon,
-  ClockIcon,
   PencilIcon,
   TrashIcon,
   XMarkIcon,
@@ -49,11 +50,6 @@ const messages = defineMessages('components.RequestList.RequestItem', {
   unknowntitle: 'Unknown Title',
   removearr: 'Remove from {arr}',
   profileName: 'Profile',
-  deletemedia: 'Delete',
-  keepmedia: 'Keep',
-  expiresindays: 'Expires in {days, plural, one {# day} other {# days}}',
-  expirestoday: 'Expires today',
-  failedkeep: 'Something went wrong while updating retention.',
 });
 
 const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
@@ -367,25 +363,6 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
     }
   };
 
-  const [isKeeping, setKeeping] = useState(false);
-
-  const keepMedia = async () => {
-    setKeeping(true);
-    try {
-      await axios.post(`/api/v1/request/${request.id}/retention`, {
-        retentionDays: null,
-      });
-      revalidate();
-    } catch {
-      addToast(intl.formatMessage(messages.failedkeep), {
-        autoDismiss: true,
-        appearance: 'error',
-      });
-    } finally {
-      setKeeping(false);
-    }
-  };
-
   const retryRequest = async () => {
     setRetrying(true);
 
@@ -426,22 +403,6 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
       />
     );
   }
-
-  const canManageOwnMedia =
-    !hasPermission(Permission.MANAGE_REQUESTS) &&
-    requestData.requestedBy.id === user?.id &&
-    (requestData.status === MediaRequestStatus.APPROVED ||
-      requestData.status === MediaRequestStatus.COMPLETED);
-
-  const expiresInDays =
-    requestData.retentionDays != null && requestData.availableSince
-      ? Math.ceil(
-          (new Date(requestData.availableSince).getTime() +
-            requestData.retentionDays * 86400000 -
-            Date.now()) /
-            86400000
-        )
-      : null;
 
   return (
     <>
@@ -815,37 +776,17 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                 <span>{intl.formatMessage(messages.cancelRequest)}</span>
               </ConfirmButton>
             )}
-          {canManageOwnMedia && (
-            <>
-              {expiresInDays !== null && (
-                <Badge badgeType={expiresInDays <= 1 ? 'warning' : 'default'}>
-                  {expiresInDays <= 1
-                    ? intl.formatMessage(messages.expirestoday)
-                    : intl.formatMessage(messages.expiresindays, {
-                        days: expiresInDays,
-                      })}
-                </Badge>
-              )}
-              {requestData.retentionDays != null && (
-                <Button
-                  className="w-full"
-                  buttonType="default"
-                  disabled={isKeeping}
-                  onClick={() => keepMedia()}
-                >
-                  <ClockIcon />
-                  <span>{intl.formatMessage(messages.keepmedia)}</span>
-                </Button>
-              )}
-              <ConfirmButton
-                onClick={() => deleteRequest()}
-                confirmText={intl.formatMessage(globalMessages.areyousure)}
-                className="w-full"
-              >
-                <TrashIcon />
-                <span>{intl.formatMessage(messages.deletemedia)}</span>
-              </ConfirmButton>
-            </>
+          <RequestRetentionActions
+            request={requestData}
+            onUpdate={revalidate}
+            layout="stacked"
+          />
+          {hasPermission(Permission.MANAGE_REQUESTS) && (
+            <AdminRetentionControl
+              request={requestData}
+              onUpdate={revalidate}
+              className="w-full"
+            />
           )}
         </div>
       </div>

@@ -1,5 +1,8 @@
 import defineMessages from '@app/utils/defineMessages';
-import type { RetentionLimitStatus } from '@server/interfaces/api/userInterfaces';
+import {
+  DEFAULT_RETENTION_FALLBACK_DAYS,
+  type RetentionLimitStatus,
+} from '@server/interfaces/api/userInterfaces';
 import { useEffect } from 'react';
 import { useIntl } from 'react-intl';
 
@@ -32,11 +35,18 @@ const RetentionRequestSelector = ({
     : PRESETS;
 
   useEffect(() => {
-    if (value === null && retentionLimit.maxDays) {
+    if (value !== null) {
+      return;
+    }
+    if (retentionLimit.maxDays) {
       onChange(retentionLimit.maxDays);
+    } else if (!retentionLimit.canKeepIndefinitely) {
+      // No cap is configured, but this user isn't allowed to keep media
+      // indefinitely - don't let the selector silently submit "indefinite".
+      onChange(DEFAULT_RETENTION_FALLBACK_DAYS);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [retentionLimit.maxDays]);
+  }, [retentionLimit.maxDays, retentionLimit.canKeepIndefinitely]);
 
   if (!retentionLimit.enabled) {
     return null;
@@ -60,7 +70,7 @@ const RetentionRequestSelector = ({
               )
             }
           >
-            {retentionLimit.maxDays === undefined && (
+            {retentionLimit.canKeepIndefinitely && (
               <option value="indefinite">
                 {intl.formatMessage(messages.indefinitely)}
               </option>

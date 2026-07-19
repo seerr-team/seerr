@@ -618,15 +618,13 @@ requestRoutes.delete('/:requestId', async (req, res, next) => {
       });
     }
 
-    // A non-admin owner deleting their own approved/completed request is the
-    // new self-service "I'm done with this" action, so route it through the
-    // shared deletion helper to actually clean up files (unless another
-    // requester still wants to keep this media). Admin bookkeeping deletes
-    // (and deletes of requests with no media yet) keep the prior behavior of
-    // only removing the request record.
+    // Deleting an approved/completed request - whether the owner giving it
+    // up themselves or an admin deleting it on anyone's behalf - should
+    // actually clean up files (unless another requester still wants to keep
+    // this media), not just remove the tracking record. Deletes of requests
+    // with no media yet skip straight to removing the request record.
     if (
-      isOwner &&
-      !isAdmin &&
+      (isOwner || isAdmin) &&
       (request.status === MediaRequestStatus.APPROVED ||
         request.status === MediaRequestStatus.COMPLETED)
     ) {
@@ -682,12 +680,27 @@ requestRoutes.post<
     }
 
     const { retentionDays } = req.body;
+    const isAdmin = !!req.user?.hasPermission(Permission.MANAGE_REQUESTS);
 
     if (
+      (retentionDays === null || retentionDays === undefined) &&
+      !isAdmin &&
+      !limitForType.canKeepIndefinitely
+    ) {
+      return next({
+        status: 403,
+        message: 'You do not have permission to keep media indefinitely.',
+      });
+    }
+
+    // The day cap only constrains an explicit finite choice - indefinite
+    // retention is governed entirely by the permission check above, and
+    // admins bypass the cap outright, same as when a request is created.
+    if (
+      !isAdmin &&
+      retentionDays != null &&
       limitForType.maxDays !== undefined &&
-      (retentionDays === null ||
-        retentionDays === undefined ||
-        retentionDays > limitForType.maxDays)
+      retentionDays > limitForType.maxDays
     ) {
       return next({
         status: 403,
