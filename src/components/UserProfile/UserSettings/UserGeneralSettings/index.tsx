@@ -5,6 +5,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import LanguageSelector from '@app/components/LanguageSelector';
 import QuotaSelector from '@app/components/QuotaSelector';
 import RegionSelector from '@app/components/RegionSelector';
+import RetentionSelector from '@app/components/RetentionSelector';
 import { availableLanguages } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
@@ -58,6 +59,8 @@ const messages = defineMessages(
     streamingRegionTip: 'Show streaming sites by regional availability',
     movierequestlimit: 'Movie Request Limit',
     seriesrequestlimit: 'Series Request Limit',
+    movieretentionlimit: 'Movie Retention',
+    seriesretentionlimit: 'Series Retention',
     enableOverride: 'Override Global Limit',
     applanguage: 'Display Language',
     languageDefault: 'Default ({language})',
@@ -78,6 +81,8 @@ const UserGeneralSettings = () => {
   const { locale, setLocale } = useLocale();
   const [movieQuotaEnabled, setMovieQuotaEnabled] = useState(false);
   const [tvQuotaEnabled, setTvQuotaEnabled] = useState(false);
+  const [movieRetentionEnabled, setMovieRetentionEnabled] = useState(false);
+  const [tvRetentionEnabled, setTvRetentionEnabled] = useState(false);
   const router = useRouter();
   const {
     user,
@@ -124,6 +129,8 @@ const UserGeneralSettings = () => {
     setTvQuotaEnabled(
       data?.tvQuotaLimit != undefined && data?.tvQuotaDays != undefined
     );
+    setMovieRetentionEnabled(data?.movieRetentionDays != undefined);
+    setTvRetentionEnabled(data?.tvRetentionDays != undefined);
   }, [data]);
 
   if (!data && !error) {
@@ -159,6 +166,8 @@ const UserGeneralSettings = () => {
           movieQuotaDays: data?.movieQuotaDays,
           tvQuotaLimit: data?.tvQuotaLimit,
           tvQuotaDays: data?.tvQuotaDays,
+          movieRetentionDays: data?.movieRetentionDays,
+          tvRetentionDays: data?.tvRetentionDays,
           watchlistSyncMovies: data?.watchlistSyncMovies,
           watchlistSyncTv: data?.watchlistSyncTv,
         }}
@@ -180,6 +189,12 @@ const UserGeneralSettings = () => {
               movieQuotaDays: movieQuotaEnabled ? values.movieQuotaDays : null,
               tvQuotaLimit: tvQuotaEnabled ? values.tvQuotaLimit : null,
               tvQuotaDays: tvQuotaEnabled ? values.tvQuotaDays : null,
+              movieRetentionDays: movieRetentionEnabled
+                ? values.movieRetentionDays
+                : null,
+              tvRetentionDays: tvRetentionEnabled
+                ? values.tvRetentionDays
+                : null,
               watchlistSyncMovies: values.watchlistSyncMovies,
               watchlistSyncTv: values.watchlistSyncTv,
             });
@@ -501,6 +516,83 @@ const UserGeneralSettings = () => {
                         </div>
                       </div>
                     </div>
+                    {data?.movieRetentionEnabled && (
+                      <div className="form-row">
+                        <label
+                          htmlFor="movieRetentionDays"
+                          className="text-label"
+                        >
+                          <span>
+                            {intl.formatMessage(messages.movieretentionlimit)}
+                          </span>
+                        </label>
+                        <div className="form-input-area">
+                          <div className="flex flex-col">
+                            <div className="mb-4 flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={movieRetentionEnabled}
+                                onChange={() =>
+                                  setMovieRetentionEnabled((s) => !s)
+                                }
+                              />
+                              <span className="ml-2 text-gray-300">
+                                {intl.formatMessage(messages.enableOverride)}
+                              </span>
+                            </div>
+                            <RetentionSelector
+                              isDisabled={!movieRetentionEnabled}
+                              fieldName="movieRetentionDays"
+                              mediaType="movie"
+                              onChange={setFieldValue}
+                              defaultDays={values.movieRetentionDays}
+                              override={
+                                !movieRetentionEnabled
+                                  ? data?.globalMovieRetentionDays
+                                  : undefined
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {data?.tvRetentionEnabled && (
+                      <div className="form-row">
+                        <label htmlFor="tvRetentionDays" className="text-label">
+                          <span>
+                            {intl.formatMessage(messages.seriesretentionlimit)}
+                          </span>
+                        </label>
+                        <div className="form-input-area">
+                          <div className="flex flex-col">
+                            <div className="mb-4 flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={tvRetentionEnabled}
+                                onChange={() =>
+                                  setTvRetentionEnabled((s) => !s)
+                                }
+                              />
+                              <span className="ml-2 text-gray-300">
+                                {intl.formatMessage(messages.enableOverride)}
+                              </span>
+                            </div>
+                            <RetentionSelector
+                              isDisabled={!tvRetentionEnabled}
+                              fieldName="tvRetentionDays"
+                              mediaType="tv"
+                              onChange={setFieldValue}
+                              defaultDays={values.tvRetentionDays}
+                              override={
+                                !tvRetentionEnabled
+                                  ? data?.globalTvRetentionDays
+                                  : undefined
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               {hasPermission(

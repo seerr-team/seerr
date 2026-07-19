@@ -15,6 +15,7 @@ import { withProperties } from '@app/utils/typeHelpers';
 import {
   ArrowPathIcon,
   CheckIcon,
+  ClockIcon,
   PencilIcon,
   TrashIcon,
   XMarkIcon,
@@ -43,6 +44,12 @@ const messages = defineMessages('components.RequestCard', {
   editrequest: 'Edit Request',
   cancelrequest: 'Cancel Request',
   deleterequest: 'Delete Request',
+  deletemedia: 'Delete',
+  keepmedia: 'Keep',
+  keepmediatooltip: 'Keep this media indefinitely',
+  expiresindays: 'Expires in {days, plural, one {# day} other {# days}}',
+  expirestoday: 'Expires today',
+  failedkeep: 'Something went wrong while updating retention.',
   unknowntitle: 'Unknown Title',
 });
 
@@ -286,6 +293,25 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
     mutate('/api/v1/request/count');
   };
 
+  const [isKeeping, setKeeping] = useState(false);
+
+  const keepMedia = async () => {
+    setKeeping(true);
+    try {
+      await axios.post(`/api/v1/request/${request.id}/retention`, {
+        retentionDays: null,
+      });
+      revalidate();
+    } catch {
+      addToast(intl.formatMessage(messages.failedkeep), {
+        autoDismiss: true,
+        appearance: 'error',
+      });
+    } finally {
+      setKeeping(false);
+    }
+  };
+
   const retryRequest = async () => {
     setRetrying(true);
 
@@ -326,6 +352,22 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
   if (!title || !requestData) {
     return <RequestCardError requestData={requestData} />;
   }
+
+  const canManageOwnMedia =
+    !hasPermission(Permission.MANAGE_REQUESTS) &&
+    requestData.requestedBy.id === user?.id &&
+    (requestData.status === MediaRequestStatus.APPROVED ||
+      requestData.status === MediaRequestStatus.COMPLETED);
+
+  const expiresInDays =
+    requestData.retentionDays != null && requestData.availableSince
+      ? Math.ceil(
+          (new Date(requestData.availableSince).getTime() +
+            requestData.retentionDays * 86400000 -
+            Date.now()) /
+            86400000
+        )
+      : null;
 
   return (
     <>
@@ -619,6 +661,48 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                   </Tooltip>
                 </div>
               )}
+            {canManageOwnMedia && (
+              <div className="flex items-center space-x-2">
+                {expiresInDays !== null && (
+                  <Badge badgeType={expiresInDays <= 1 ? 'warning' : 'default'}>
+                    {expiresInDays <= 1
+                      ? intl.formatMessage(messages.expirestoday)
+                      : intl.formatMessage(messages.expiresindays, {
+                          days: expiresInDays,
+                        })}
+                  </Badge>
+                )}
+                {requestData.retentionDays != null && (
+                  <Tooltip
+                    content={intl.formatMessage(messages.keepmediatooltip)}
+                  >
+                    <Button
+                      buttonType="default"
+                      buttonSize="sm"
+                      disabled={isKeeping}
+                      onClick={() => keepMedia()}
+                    >
+                      <ClockIcon />
+                      <span className="hidden sm:block">
+                        {intl.formatMessage(messages.keepmedia)}
+                      </span>
+                    </Button>
+                  </Tooltip>
+                )}
+                <Tooltip content={intl.formatMessage(messages.deletemedia)}>
+                  <Button
+                    buttonType="danger"
+                    buttonSize="sm"
+                    onClick={() => deleteRequest()}
+                  >
+                    <TrashIcon />
+                    <span className="hidden sm:block">
+                      {intl.formatMessage(messages.deletemedia)}
+                    </span>
+                  </Button>
+                </Tooltip>
+              </div>
+            )}
           </div>
         </div>
         <Link

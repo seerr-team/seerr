@@ -3,6 +3,7 @@ import Modal from '@app/components/Common/Modal';
 import type { RequestOverrides } from '@app/components/RequestModal/AdvancedRequester';
 import AdvancedRequester from '@app/components/RequestModal/AdvancedRequester';
 import QuotaDisplay from '@app/components/RequestModal/QuotaDisplay';
+import RetentionRequestSelector from '@app/components/RequestModal/RetentionRequestSelector';
 import useToasts from '@app/hooks/useToasts';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
@@ -10,7 +11,10 @@ import defineMessages from '@app/utils/defineMessages';
 import { MediaStatus } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { NonFunctionProperties } from '@server/interfaces/api/common';
-import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
+import type {
+  QuotaResponse,
+  RetentionLimitResponse,
+} from '@server/interfaces/api/userInterfaces';
 import { Permission } from '@server/lib/permissions';
 import type { MovieDetails } from '@server/models/Movie';
 import axios from 'axios';
@@ -69,6 +73,13 @@ const MovieRequestModal = ({
       ? `/api/v1/user/${requestOverrides?.user?.id ?? user.id}/quota`
       : null
   );
+  const { data: retentionLimit } = useSWR<RetentionLimitResponse>(
+    user &&
+      (!requestOverrides?.user?.id || hasPermission(Permission.MANAGE_USERS))
+      ? `/api/v1/user/${requestOverrides?.user?.id ?? user.id}/retention`
+      : null
+  );
+  const [retentionDays, setRetentionDays] = useState<number | null>(null);
 
   useEffect(() => {
     if (onUpdating) {
@@ -95,6 +106,9 @@ const MovieRequestModal = ({
         mediaType: 'movie',
         is4k,
         ignoreQuota: requestOverrides?.ignoreQuota,
+        retentionDays: retentionLimit?.movie.enabled
+          ? retentionDays
+          : undefined,
         ...overrideParams,
       });
       mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
@@ -142,6 +156,8 @@ const MovieRequestModal = ({
     addToast,
     intl,
     hasPermission,
+    retentionDays,
+    retentionLimit,
   ]);
 
   const cancelRequest = async () => {
@@ -356,6 +372,13 @@ const MovieRequestModal = ({
               ? requestOverrides?.user?.id
               : undefined
           }
+        />
+      )}
+      {retentionLimit?.movie.enabled && (
+        <RetentionRequestSelector
+          retentionLimit={retentionLimit.movie}
+          value={retentionDays}
+          onChange={setRetentionDays}
         />
       )}
       {(hasPermission(Permission.REQUEST_ADVANCED) ||

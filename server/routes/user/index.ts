@@ -13,6 +13,7 @@ import { Watchlist } from '@server/entity/Watchlist';
 import type { WatchlistResponse } from '@server/interfaces/api/discoverInterfaces';
 import type {
   QuotaResponse,
+  RetentionLimitResponse,
   UserRequestsResponse,
   UserResultsResponse,
   UserWatchDataResponse,
@@ -830,6 +831,37 @@ router.get<{ id: string }, QuotaResponse>(
       const quotas = await user.getQuota();
 
       return res.status(200).json(quotas);
+    } catch (e) {
+      next({ status: 404, message: e.message });
+    }
+  }
+);
+
+router.get<{ id: string }, RetentionLimitResponse>(
+  '/:id/retention',
+  async (req, res, next) => {
+    try {
+      const userRepository = getRepository(User);
+
+      if (
+        Number(req.params.id) !== req.user?.id &&
+        !req.user?.hasPermission(
+          [Permission.MANAGE_USERS, Permission.MANAGE_REQUESTS],
+          { type: 'and' }
+        )
+      ) {
+        return next({
+          status: 403,
+          message:
+            "You do not have permission to view this user's retention limits.",
+        });
+      }
+
+      const user = await userRepository.findOneOrFail({
+        where: { id: Number(req.params.id) },
+      });
+
+      return res.status(200).json(user.getRetentionLimit());
     } catch (e) {
       next({ status: 404, message: e.message });
     }

@@ -5,6 +5,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import PermissionEdit from '@app/components/PermissionEdit';
 import QuotaSelector from '@app/components/QuotaSelector';
+import RetentionSelector from '@app/components/RetentionSelector';
 import useSettings from '@app/hooks/useSettings';
 import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
@@ -38,6 +39,15 @@ const messages = defineMessages('components.Settings.SettingsUsers', {
     'Allow {mediaServerName} users to sign in without first being imported',
   movieRequestLimitLabel: 'Global Movie Request Limit',
   tvRequestLimitLabel: 'Global Series Request Limit',
+  mediaRetention: 'Media Retention',
+  mediaRetentionTip:
+    'Automatically delete requested media (and its files) after a set number of days unless a user chooses to keep it',
+  movieRetentionEnabled: 'Auto-Delete Movies',
+  movieRetentionEnabledTip:
+    'Automatically delete requested movies once their retention period expires',
+  tvRetentionEnabled: 'Auto-Delete Series',
+  tvRetentionEnabledTip:
+    'Automatically delete requested series once their retention period expires',
   defaultPermissions: 'Default Permissions',
   defaultPermissionsTip: 'Initial permissions assigned to new users',
   disabledMediaServerLoginWarning:
@@ -114,6 +124,10 @@ const SettingsUsers = () => {
             movieQuotaDays: data?.defaultQuotas.movie.quotaDays ?? 7,
             tvQuotaLimit: data?.defaultQuotas.tv.quotaLimit ?? 0,
             tvQuotaDays: data?.defaultQuotas.tv.quotaDays ?? 7,
+            movieRetentionEnabled: data?.mediaRetention.movie.enabled ?? false,
+            movieRetentionDays: data?.mediaRetention.movie.defaultDays ?? 0,
+            tvRetentionEnabled: data?.mediaRetention.tv.enabled ?? false,
+            tvRetentionDays: data?.mediaRetention.tv.defaultDays ?? 0,
             defaultPermissions: data?.defaultPermissions ?? 0,
           }}
           validationSchema={schema}
@@ -132,6 +146,16 @@ const SettingsUsers = () => {
                   tv: {
                     quotaLimit: values.tvQuotaLimit,
                     quotaDays: values.tvQuotaDays,
+                  },
+                },
+                mediaRetention: {
+                  movie: {
+                    enabled: values.movieRetentionEnabled,
+                    defaultDays: values.movieRetentionDays,
+                  },
+                  tv: {
+                    enabled: values.tvRetentionEnabled,
+                    defaultDays: values.tvRetentionDays,
                   },
                 },
                 defaultPermissions: values.defaultPermissions,
@@ -274,6 +298,71 @@ const SettingsUsers = () => {
                       defaultDays={values.tvQuotaDays}
                       defaultLimit={values.tvQuotaLimit}
                     />
+                  </div>
+                </div>
+                <div
+                  role="group"
+                  aria-labelledby="retention-group-label"
+                  className="form-group"
+                >
+                  <div className="form-row">
+                    <span id="retention-group-label" className="group-label">
+                      {intl.formatMessage(messages.mediaRetention)}
+                      <span className="label-tip">
+                        {intl.formatMessage(messages.mediaRetentionTip)}
+                      </span>
+                    </span>
+                    <div className="form-input-area max-w-lg">
+                      <LabeledCheckbox
+                        id="movieRetentionEnabled"
+                        label={intl.formatMessage(
+                          messages.movieRetentionEnabled
+                        )}
+                        description={intl.formatMessage(
+                          messages.movieRetentionEnabledTip
+                        )}
+                        onChange={() =>
+                          setFieldValue(
+                            'movieRetentionEnabled',
+                            !values.movieRetentionEnabled
+                          )
+                        }
+                      />
+                      {values.movieRetentionEnabled && (
+                        <div className="mt-2">
+                          <RetentionSelector
+                            onChange={setFieldValue}
+                            fieldName="movieRetentionDays"
+                            mediaType="movie"
+                            defaultDays={values.movieRetentionDays}
+                          />
+                        </div>
+                      )}
+                      <LabeledCheckbox
+                        id="tvRetentionEnabled"
+                        className="mt-4"
+                        label={intl.formatMessage(messages.tvRetentionEnabled)}
+                        description={intl.formatMessage(
+                          messages.tvRetentionEnabledTip
+                        )}
+                        onChange={() =>
+                          setFieldValue(
+                            'tvRetentionEnabled',
+                            !values.tvRetentionEnabled
+                          )
+                        }
+                      />
+                      {values.tvRetentionEnabled && (
+                        <div className="mt-2">
+                          <RetentionSelector
+                            onChange={setFieldValue}
+                            fieldName="tvRetentionDays"
+                            mediaType="tv"
+                            defaultDays={values.tvRetentionDays}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div

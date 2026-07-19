@@ -3,6 +3,7 @@ import blocklistedTagsProcessor from '@server/job/blocklistedTagsProcessor';
 import availabilitySync from '@server/lib/availabilitySync';
 import downloadTracker from '@server/lib/downloadtracker';
 import ImageProxy from '@server/lib/imageproxy';
+import mediaRetention from '@server/lib/mediaRetention';
 import refreshToken from '@server/lib/refreshToken';
 import {
   jellyfinFullScanner,
@@ -192,6 +193,23 @@ export const startJobs = (): void => {
     }),
     running: () => availabilitySync.running,
     cancelFn: () => availabilitySync.cancel(),
+  });
+
+  // Removes media whose configured retention period has expired
+  scheduledJobs.push({
+    id: 'media-retention',
+    name: 'Media Retention',
+    type: 'process',
+    interval: 'hours',
+    cronSchedule: jobs['media-retention'].schedule,
+    job: schedule.scheduleJob(jobs['media-retention'].schedule, () => {
+      logger.info('Starting scheduled job: Media Retention', {
+        label: 'Jobs',
+      });
+      mediaRetention.run();
+    }),
+    running: () => mediaRetention.running,
+    cancelFn: () => mediaRetention.cancel(),
   });
 
   // Run download sync every minute

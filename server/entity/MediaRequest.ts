@@ -113,6 +113,30 @@ export class MediaRequest {
 
     const quotas = await requestUser.getQuota();
 
+    const retentionLimit = requestUser.getRetentionLimit();
+    const retentionLimitForType =
+      requestBody.mediaType === MediaType.MOVIE
+        ? retentionLimit.movie
+        : retentionLimit.tv;
+
+    let retentionDays: number | null = null;
+    if (retentionLimitForType.enabled) {
+      retentionDays =
+        requestBody.retentionDays !== undefined
+          ? requestBody.retentionDays
+          : (retentionLimitForType.maxDays ?? null);
+
+      if (
+        retentionLimitForType.maxDays !== undefined &&
+        (retentionDays === null ||
+          retentionDays > retentionLimitForType.maxDays)
+      ) {
+        throw new RequestPermissionError(
+          'The selected retention period exceeds your allowed limit.'
+        );
+      }
+    }
+
     const canBypassQuota = user.hasPermission(Permission.MANAGE_REQUESTS);
     const ignoreQuota =
       requestBody.ignoreQuota === true &&
@@ -406,6 +430,7 @@ export class MediaRequest {
         tags: tags,
         isAutoRequest: options.isAutoRequest ?? false,
         ignoreQuota,
+        retentionDays,
       });
 
       await requestRepository.save(request);
@@ -539,6 +564,7 @@ export class MediaRequest {
         ),
         isAutoRequest: options.isAutoRequest ?? false,
         ignoreQuota,
+        retentionDays,
       });
 
       await requestRepository.save(request);
@@ -647,6 +673,20 @@ export class MediaRequest {
 
   @Column({ default: false })
   public ignoreQuota: boolean;
+
+  /**
+   * Snapshot of the keep duration chosen for this request, in days. `null`
+   * means the requester chose (or was granted) unlimited retention.
+   */
+  @Column({ type: 'int', nullable: true })
+  public retentionDays?: number | null;
+
+  /**
+   * Anchor timestamp the retention clock counts from. Left null until the
+   * retention job first observes this request's media as available.
+   */
+  @DbAwareColumn({ type: 'datetime', nullable: true })
+  public availableSince?: Date | null;
 
   constructor(init?: Partial<MediaRequest>) {
     Object.assign(this, init);

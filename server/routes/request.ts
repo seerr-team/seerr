@@ -21,6 +21,7 @@ import type {
   MediaRequestBody,
   RequestResultsResponse,
 } from '@server/interfaces/api/requestInterfaces';
+import { removeMediaRequest } from '@server/lib/mediaDeletion';
 import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -607,22 +608,99 @@ requestRoutes.delete('/:requestId', async (req, res, next) => {
       relations: { requestedBy: true, modifiedBy: true },
     });
 
-    if (
-      !req.user?.hasPermission(Permission.MANAGE_REQUESTS) &&
-      (request.requestedBy.id !== req.user?.id ||
-        request.status !== MediaRequestStatus.PENDING)
-    ) {
+    const isAdmin = !!req.user?.hasPermission(Permission.MANAGE_REQUESTS);
+    const isOwner = request.requestedBy.id === req.user?.id;
+
+    if (!isAdmin && !isOwner) {
       return next({
         status: 401,
         message: 'You do not have permission to delete this request.',
       });
     }
 
-    await requestRepository.remove(request);
+    // A non-admin owner deleting their own approved/completed request is the
+    // new self-service "I'm done with this" action, so route it through the
+    // shared deletion helper to actually clean up files (unless another
+    // requester still wants to keep this media). Admin bookkeeping deletes
+    // (and deletes of requests with no media yet) keep the prior behavior of
+    // only removing the request record.
+    if (
+      isOwner &&
+      !isAdmin &&
+      (request.status === MediaRequestStatus.APPROVED ||
+        request.status === MediaRequestStatus.COMPLETED)
+    ) {
+      await removeMediaRequest(request);
+    } else {
+      await requestRepository.remove(request);
+    }
 
     return res.status(204).send();
   } catch (e) {
     logger.error('Something went wrong deleting a request.', {
+      label: 'API',
+      errorMessage: e.message,
+    });
+    next({ status: 404, message: 'Request not found.' });
+  }
+});
+
+requestRoutes.post<
+  { requestId: string },
+  MediaRequest,
+  { retentionDays: number | null }
+>('/:requestId/retention', async (req, res, next) => {
+  const requestRepository = getRepository(MediaRequest);
+
+  try {
+    const request = await requestRepository.findOneOrFail({
+      where: { id: Number(req.params.requestId) },
+      relations: { requestedBy: true },
+    });
+
+    if (
+      !req.user?.hasPermission(Permission.MANAGE_REQUESTS) &&
+      request.requestedBy.id !== req.user?.id
+    ) {
+      return next({
+        status: 403,
+        message: 'You do not have permission to modify this request.',
+      });
+    }
+
+    const retentionLimit = request.requestedBy.getRetentionLimit();
+    const limitForType =
+      request.type === MediaType.MOVIE
+        ? retentionLimit.movie
+        : retentionLimit.tv;
+
+    if (!limitForType.enabled) {
+      return next({
+        status: 400,
+        message: 'Media retention is not enabled for this media type.',
+      });
+    }
+
+    const { retentionDays } = req.body;
+
+    if (
+      limitForType.maxDays !== undefined &&
+      (retentionDays === null ||
+        retentionDays === undefined ||
+        retentionDays > limitForType.maxDays)
+    ) {
+      return next({
+        status: 403,
+        message: 'The selected retention period exceeds your allowed limit.',
+      });
+    }
+
+    request.retentionDays = retentionDays ?? null;
+    await requestRepository.save(request);
+
+    return res.status(200).json(request);
+  } catch (e) {
+    logger.error('Something went wrong updating request retention.', {
       label: 'API',
       errorMessage: e.message,
     });

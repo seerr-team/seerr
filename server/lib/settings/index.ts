@@ -108,6 +108,11 @@ interface Quota {
   quotaDays?: number;
 }
 
+interface RetentionPolicy {
+  enabled: boolean;
+  defaultDays?: number;
+}
+
 export enum MetadataProviderType {
   TMDB = 'tmdb',
   TVDB = 'tvdb',
@@ -138,6 +143,10 @@ export interface MainSettings {
   defaultQuotas: {
     movie: Quota;
     tv: Quota;
+  };
+  mediaRetention: {
+    movie: RetentionPolicy;
+    tv: RetentionPolicy;
   };
   hideAvailable: boolean;
   hideBlocklisted: boolean;
@@ -367,6 +376,7 @@ export type JobId =
   | 'jellyfin-full-scan'
   | 'image-cache-cleanup'
   | 'availability-sync'
+  | 'media-retention'
   | 'process-blocklisted-tags';
 
 export interface AllSettings {
@@ -411,6 +421,10 @@ class Settings {
         defaultQuotas: {
           movie: {},
           tv: {},
+        },
+        mediaRetention: {
+          movie: { enabled: false },
+          tv: { enabled: false },
         },
         hideAvailable: false,
         hideBlocklisted: false,
@@ -587,6 +601,9 @@ class Settings {
         },
         'availability-sync': {
           schedule: '0 0 5 * * *',
+        },
+        'media-retention': {
+          schedule: '0 0 6 * * *',
         },
         'download-sync': {
           schedule: '0 * * * * *',

@@ -2,7 +2,10 @@ import { MediaRequestStatus, MediaType } from '@server/constants/media';
 import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
 import { Watchlist } from '@server/entity/Watchlist';
-import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
+import type {
+  QuotaResponse,
+  RetentionLimitResponse,
+} from '@server/interfaces/api/userInterfaces';
 import PreparedEmail from '@server/lib/email';
 import type { PermissionCheckOptions } from '@server/lib/permissions';
 import { Permission, hasPermission } from '@server/lib/permissions';
@@ -133,6 +136,12 @@ export class User {
 
   @Column({ nullable: true })
   public tvQuotaDays?: number;
+
+  @Column({ nullable: true })
+  public movieRetentionDays?: number;
+
+  @Column({ nullable: true })
+  public tvRetentionDays?: number;
 
   @OneToOne(() => UserSettings, (settings) => settings.user, {
     cascade: true,
@@ -371,6 +380,49 @@ export class User {
           ? Math.max(0, tvQuotaLimit - tvQuotaUsed)
           : undefined,
         restricted: !!(tvQuotaLimit && tvQuotaLimit - tvQuotaUsed <= 0),
+      },
+    };
+  }
+
+  public getRetentionLimit(): RetentionLimitResponse {
+    const {
+      main: { mediaRetention },
+    } = getSettings();
+    const canBypass = this.hasPermission(
+      [Permission.MANAGE_USERS, Permission.MANAGE_REQUESTS],
+      { type: 'or' }
+    );
+
+    // A resolved value of 0 (or unset) means unlimited, matching the
+    // 0-means-unlimited convention used by request quotas.
+    const resolveMaxDays = (
+      userOverride?: number,
+      defaultDays?: number
+    ): number | undefined => {
+      const effective = userOverride ?? defaultDays;
+      return effective ? effective : undefined;
+    };
+
+    return {
+      movie: {
+        enabled: mediaRetention.movie.enabled,
+        maxDays:
+          canBypass || !mediaRetention.movie.enabled
+            ? undefined
+            : resolveMaxDays(
+                this.movieRetentionDays,
+                mediaRetention.movie.defaultDays
+              ),
+      },
+      tv: {
+        enabled: mediaRetention.tv.enabled,
+        maxDays:
+          canBypass || !mediaRetention.tv.enabled
+            ? undefined
+            : resolveMaxDays(
+                this.tvRetentionDays,
+                mediaRetention.tv.defaultDays
+              ),
       },
     };
   }

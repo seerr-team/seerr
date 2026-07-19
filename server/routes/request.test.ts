@@ -171,13 +171,110 @@ describe('DELETE /request/:requestId', () => {
     assert.strictEqual(res.status, 401);
   });
 
-  it('prevents the owner from deleting an approved request', async () => {
+  it('allows the owner to delete their own approved request', async () => {
     const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
 
     const agent = await loginAs('friend@seerr.dev', 'test1234');
     const res = await agent.delete(`/request/${mediaRequest.id}`);
 
-    assert.strictEqual(res.status, 401);
+    assert.strictEqual(res.status, 204);
+  });
+
+  it('actually removes files when the owner deletes their own available media', async () => {
+    const userRepo = getRepository(User);
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+
+    const requestedBy = await userRepo.findOneOrFail({
+      where: { email: 'friend@seerr.dev' },
+    });
+
+    const media = await mediaRepo.save(
+      new Media({
+        mediaType: MediaType.MOVIE,
+        tmdbId: 424242,
+        status: MediaStatus.AVAILABLE,
+        status4k: MediaStatus.UNKNOWN,
+      })
+    );
+
+    const mediaRequest = await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.APPROVED,
+        media,
+        requestedBy,
+        is4k: false,
+      })
+    );
+
+    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const res = await agent.delete(`/request/${mediaRequest.id}`);
+
+    assert.strictEqual(res.status, 204);
+
+    const updatedMedia = await mediaRepo.findOneOrFail({
+      where: { id: media.id },
+    });
+    assert.strictEqual(updatedMedia.status, MediaStatus.DELETED);
+
+    const remaining = await requestRepo.findOne({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(remaining, null);
+  });
+
+  it('keeps the media available when another requester still wants it', async () => {
+    const userRepo = getRepository(User);
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+
+    const friend = await userRepo.findOneOrFail({
+      where: { email: 'friend@seerr.dev' },
+    });
+    const admin = await userRepo.findOneOrFail({
+      where: { email: 'admin@seerr.dev' },
+    });
+
+    const media = await mediaRepo.save(
+      new Media({
+        mediaType: MediaType.MOVIE,
+        tmdbId: 424243,
+        status: MediaStatus.AVAILABLE,
+        status4k: MediaStatus.UNKNOWN,
+      })
+    );
+
+    const friendRequest = await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.APPROVED,
+        media,
+        requestedBy: friend,
+        is4k: false,
+      })
+    );
+
+    await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.APPROVED,
+        media,
+        requestedBy: admin,
+        is4k: false,
+        retentionDays: null,
+      })
+    );
+
+    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const res = await agent.delete(`/request/${friendRequest.id}`);
+
+    assert.strictEqual(res.status, 204);
+
+    const updatedMedia = await mediaRepo.findOneOrFail({
+      where: { id: media.id },
+    });
+    assert.strictEqual(updatedMedia.status, MediaStatus.AVAILABLE);
   });
 
   it('returns 404 for a non-existent request', async () => {
@@ -210,6 +307,127 @@ describe('PUT /request/:requestId (movie)', () => {
     assert.strictEqual(saved.serverId, 3);
     assert.strictEqual(saved.profileId, 7);
     assert.strictEqual(saved.rootFolder, '/updated/movies');
+  });
+});
+
+describe('POST /request/:requestId/retention', () => {
+  it('lets the owner set a retention period within their limit', async () => {
+    const requestRepo = getRepository(MediaRequest);
+    const settings = getSettings();
+    const priorRetention = settings.main.mediaRetention;
+    settings.main.mediaRetention = {
+      movie: { enabled: true, defaultDays: 30 },
+      tv: { enabled: false },
+    };
+
+    try {
+      const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
+
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent
+        .post(`/request/${mediaRequest.id}/retention`)
+        .send({ retentionDays: 14 });
+
+      assert.strictEqual(res.status, 200);
+
+      const saved = await requestRepo.findOneOrFail({
+        where: { id: mediaRequest.id },
+      });
+      assert.strictEqual(saved.retentionDays, 14);
+    } finally {
+      settings.main.mediaRetention = priorRetention;
+    }
+  });
+
+  it('rejects a retention period beyond the allowed limit', async () => {
+    const settings = getSettings();
+    const priorRetention = settings.main.mediaRetention;
+    settings.main.mediaRetention = {
+      movie: { enabled: true, defaultDays: 30 },
+      tv: { enabled: false },
+    };
+
+    try {
+      const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
+
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent
+        .post(`/request/${mediaRequest.id}/retention`)
+        .send({ retentionDays: 9999 });
+
+      assert.strictEqual(res.status, 403);
+    } finally {
+      settings.main.mediaRetention = priorRetention;
+    }
+  });
+
+  it('rejects updates from a non-owner non-admin', async () => {
+    const settings = getSettings();
+    const priorRetention = settings.main.mediaRetention;
+    settings.main.mediaRetention = {
+      movie: { enabled: true, defaultDays: 30 },
+      tv: { enabled: false },
+    };
+
+    try {
+      const userRepo = getRepository(User);
+      const mediaRepo = getRepository(Media);
+      const requestRepo = getRepository(MediaRequest);
+
+      const owner = await userRepo.findOneOrFail({
+        where: { email: 'admin@seerr.dev' },
+      });
+
+      const media = await mediaRepo.save(
+        new Media({
+          mediaType: MediaType.MOVIE,
+          tmdbId: 636363,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.UNKNOWN,
+        })
+      );
+
+      const mediaRequest = await requestRepo.save(
+        new MediaRequest({
+          type: MediaType.MOVIE,
+          status: MediaRequestStatus.APPROVED,
+          media,
+          requestedBy: owner,
+          is4k: false,
+        })
+      );
+
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent
+        .post(`/request/${mediaRequest.id}/retention`)
+        .send({ retentionDays: 7 });
+
+      assert.strictEqual(res.status, 403);
+    } finally {
+      settings.main.mediaRetention = priorRetention;
+    }
+  });
+
+  it('rejects updates when retention is not enabled for the media type', async () => {
+    const settings = getSettings();
+    const priorRetention = settings.main.mediaRetention;
+    settings.main.mediaRetention = {
+      movie: { enabled: false },
+      tv: { enabled: false },
+    };
+
+    try {
+      const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
+
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent
+        .post(`/request/${mediaRequest.id}/retention`)
+        .send({ retentionDays: 7 });
+
+      assert.strictEqual(res.status, 400);
+    } finally {
+      settings.main.mediaRetention = priorRetention;
+    }
   });
 });
 

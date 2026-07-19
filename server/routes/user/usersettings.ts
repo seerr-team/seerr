@@ -33,7 +33,7 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
   isOwnProfileOrAdmin(),
   async (req, res, next) => {
     const {
-      main: { defaultQuotas },
+      main: { defaultQuotas, mediaRetention },
     } = getSettings();
     const userRepository = getRepository(User);
 
@@ -61,6 +61,12 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
         globalMovieQuotaLimit: defaultQuotas.movie.quotaLimit,
         globalTvQuotaDays: defaultQuotas.tv.quotaDays,
         globalTvQuotaLimit: defaultQuotas.tv.quotaLimit,
+        movieRetentionDays: user.movieRetentionDays,
+        tvRetentionDays: user.tvRetentionDays,
+        movieRetentionEnabled: mediaRetention.movie.enabled,
+        tvRetentionEnabled: mediaRetention.tv.enabled,
+        globalMovieRetentionDays: mediaRetention.movie.defaultDays,
+        globalTvRetentionDays: mediaRetention.tv.defaultDays,
         watchlistSyncMovies: user.settings?.watchlistSyncMovies,
         watchlistSyncTv: user.settings?.watchlistSyncTv,
       });
@@ -117,6 +123,8 @@ userSettingsRoutes.post<
       user.movieQuotaLimit = req.body.movieQuotaLimit;
       user.tvQuotaDays = req.body.tvQuotaDays;
       user.tvQuotaLimit = req.body.tvQuotaLimit;
+      user.movieRetentionDays = req.body.movieRetentionDays;
+      user.tvRetentionDays = req.body.tvRetentionDays;
     }
 
     if (!user.settings) {

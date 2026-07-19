@@ -4,6 +4,7 @@ import Modal from '@app/components/Common/Modal';
 import type { RequestOverrides } from '@app/components/RequestModal/AdvancedRequester';
 import AdvancedRequester from '@app/components/RequestModal/AdvancedRequester';
 import QuotaDisplay from '@app/components/RequestModal/QuotaDisplay';
+import RetentionRequestSelector from '@app/components/RequestModal/RetentionRequestSelector';
 import SearchByNameModal from '@app/components/RequestModal/SearchByNameModal';
 import useSettings from '@app/hooks/useSettings';
 import useToasts from '@app/hooks/useToasts';
@@ -15,7 +16,10 @@ import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type SeasonRequest from '@server/entity/SeasonRequest';
 import type { NonFunctionProperties } from '@server/interfaces/api/common';
-import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
+import type {
+  QuotaResponse,
+  RetentionLimitResponse,
+} from '@server/interfaces/api/userInterfaces';
 import { Permission } from '@server/lib/permissions';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
@@ -94,6 +98,13 @@ const TvRequestModal = ({
       ? `/api/v1/user/${requestOverrides?.user?.id ?? user.id}/quota`
       : null
   );
+  const { data: retentionLimit } = useSWR<RetentionLimitResponse>(
+    user &&
+      (!requestOverrides?.user?.id || hasPermission(Permission.MANAGE_USERS))
+      ? `/api/v1/user/${requestOverrides?.user?.id ?? user.id}/retention`
+      : null
+  );
+  const [retentionDays, setRetentionDays] = useState<number | null>(null);
 
   const currentlyRemaining =
     (quota?.tv.remaining ?? 0) -
@@ -200,6 +211,7 @@ const TvRequestModal = ({
         mediaType: 'tv',
         is4k,
         ignoreQuota: requestOverrides?.ignoreQuota,
+        retentionDays: retentionLimit?.tv.enabled ? retentionDays : undefined,
         seasons: settings.currentSettings.partialRequestsEnabled
           ? selectedSeasons.sort((a, b) => a - b)
           : getAllSeasons().filter(
@@ -514,6 +526,13 @@ const TvRequestModal = ({
               ? unrequestedSeasons.length
               : undefined
           }
+        />
+      )}
+      {!editRequest && retentionLimit?.tv.enabled && (
+        <RetentionRequestSelector
+          retentionLimit={retentionLimit.tv}
+          value={retentionDays}
+          onChange={setRetentionDays}
         />
       )}
       <div className="flex flex-col">

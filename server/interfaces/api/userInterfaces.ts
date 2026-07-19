@@ -24,6 +24,17 @@ export interface QuotaResponse {
   tv: QuotaStatus;
 }
 
+export interface RetentionLimitStatus {
+  enabled: boolean;
+  /** Maximum number of days this user may choose to keep media. Undefined means unlimited. */
+  maxDays?: number;
+}
+
+export interface RetentionLimitResponse {
+  movie: RetentionLimitStatus;
+  tv: RetentionLimitStatus;
+}
+
 export interface UserWatchDataResponse {
   recentlyWatched: Media[];
   playCount: number;

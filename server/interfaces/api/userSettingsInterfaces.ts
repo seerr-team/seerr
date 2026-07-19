@@ -15,6 +15,12 @@ export interface UserSettingsGeneralResponse {
   globalMovieQuotaLimit?: number;
   globalTvQuotaLimit?: number;
   globalTvQuotaDays?: number;
+  movieRetentionDays?: number;
+  tvRetentionDays?: number;
+  movieRetentionEnabled?: boolean;
+  tvRetentionEnabled?: boolean;
+  globalMovieRetentionDays?: number;
+  globalTvRetentionDays?: number;
   watchlistSyncMovies?: boolean;
   watchlistSyncTv?: boolean;
 }
