@@ -570,10 +570,15 @@ requestRoutes.put<{ requestId: string }>(
 
         // Seasons dropped by this same edit are still counted in quota.tv.used
         // (getQuota() reads the persisted rows before we save below), so they
-        // must be credited back before comparing against newSeasons.
-        const removedSeasonsCount = request.seasons.filter(
-          (rs) => !requestedSeasons.includes(rs.seasonNumber)
-        ).length;
+        // must be credited back before comparing against newSeasons. But if
+        // the request already has ignoreQuota persisted, those seasons were
+        // never counted in quota.tv.used in the first place, so crediting
+        // them back would inflate the allowed threshold.
+        const removedSeasonsCount = request.ignoreQuota
+          ? 0
+          : request.seasons.filter(
+              (rs) => !requestedSeasons.includes(rs.seasonNumber)
+            ).length;
 
         if (newSeasons.length > 0) {
           const quota = await requestUser.getQuota();
@@ -592,8 +597,8 @@ requestRoutes.put<{ requestId: string }>(
               );
             } else if (
               quota.tv.limit &&
-              newSeasons.length >
-                (quota.tv.remaining ?? 0) + removedSeasonsCount
+              quota.tv.used - removedSeasonsCount + newSeasons.length >
+                quota.tv.limit
             ) {
               throw new QuotaRestrictedError('Series Quota exceeded.');
             }

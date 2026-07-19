@@ -371,6 +371,90 @@ describe('PUT /request/:requestId (tv, season quota enforcement)', () => {
       [3, 4]
     );
   });
+
+  it('rejects a non-bypass edit that swaps seasons on an ignoreQuota-exempt request past quota used elsewhere', async () => {
+    const userRepo = getRepository(User);
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+
+    const friend = await userRepo.findOneOrFail({
+      where: { email: 'friend@seerr.dev' },
+    });
+    friend.tvQuotaLimit = 2;
+    friend.tvQuotaDays = undefined;
+    await userRepo.save(friend);
+
+    // A request already exempted from quota counting (ignoreQuota persisted
+    // from a prior authorized edit or from creation).
+    const exemptMedia = await mediaRepo.save(
+      new Media({
+        mediaType: MediaType.TV,
+        tmdbId: 90006,
+        status: MediaStatus.UNKNOWN,
+        status4k: MediaStatus.UNKNOWN,
+      })
+    );
+    const exemptRequest = await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.TV,
+        status: MediaRequestStatus.PENDING,
+        media: exemptMedia,
+        requestedBy: friend,
+        is4k: false,
+        ignoreQuota: true,
+        seasons: [1, 2].map(
+          (seasonNumber) =>
+            new SeasonRequest({
+              seasonNumber,
+              status: MediaRequestStatus.PENDING,
+            })
+        ),
+      })
+    );
+
+    // A separate, normally-counted request that already consumes the full quota.
+    const countedMedia = await mediaRepo.save(
+      new Media({
+        mediaType: MediaType.TV,
+        tmdbId: 90007,
+        status: MediaStatus.UNKNOWN,
+        status4k: MediaStatus.UNKNOWN,
+      })
+    );
+    await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.TV,
+        status: MediaRequestStatus.PENDING,
+        media: countedMedia,
+        requestedBy: friend,
+        is4k: false,
+        seasons: [3, 4].map(
+          (seasonNumber) =>
+            new SeasonRequest({
+              seasonNumber,
+              status: MediaRequestStatus.PENDING,
+            })
+        ),
+      })
+    );
+
+    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const res = await agent.put(`/request/${exemptRequest.id}`).send({
+      mediaType: MediaType.TV,
+      seasons: [1, 5],
+    });
+
+    assert.strictEqual(res.status, 403);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: exemptRequest.id },
+      relations: { seasons: true },
+    });
+    assert.deepStrictEqual(
+      saved.seasons.map((s) => s.seasonNumber).sort(),
+      [1, 2]
+    );
+  });
 });
 
 describe('POST /request/:requestId/:status', () => {
