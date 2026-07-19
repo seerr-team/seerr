@@ -6,13 +6,16 @@ export class AddAiRecommendations1784393737543 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Create ai_recommendation table
     await queryRunner.query(
-      `CREATE TABLE "ai_recommendation" ("id" SERIAL NOT NULL, "userId" integer, "tmdbId" integer NOT NULL, "mediaType" varchar NOT NULL, "tvdbId" integer, "score" double precision, "rationale" text, "metadata" jsonb, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_ai_recommendation" PRIMARY KEY ("id"), CONSTRAINT "FK_ai_recommendation_user" FOREIGN KEY ("userId") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION)`
+      `CREATE TABLE "ai_recommendation" ("id" SERIAL NOT NULL, "userId" integer NOT NULL, "tmdbId" integer NOT NULL, "mediaType" varchar NOT NULL, "tvdbId" integer, "score" double precision, "rationale" text, "metadata" jsonb, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_ai_recommendation" PRIMARY KEY ("id"), CONSTRAINT "FK_ai_recommendation_user" FOREIGN KEY ("userId") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION)`
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_AI_RECOMMENDATION_USER_TYPE" ON "ai_recommendation" ("userId", "mediaType")`
     );
     await queryRunner.query(
-      `CREATE INDEX "IDX_AI_RECOMMENDATION_CREATED" ON "ai_recommendation" ("createdAt")`
+      `CREATE INDEX "IDX_AI_RECOMMENDATION_UPDATED" ON "ai_recommendation" ("updatedAt")`
+    );
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX "IDX_AI_RECOMMENDATION_USER_TMDB_MEDIA" ON "ai_recommendation" ("userId", "tmdbId", "mediaType")`
     );
 
     // Create user_feedback table
@@ -35,7 +38,10 @@ export class AddAiRecommendations1784393737543 implements MigrationInterface {
     );
     await queryRunner.query(`DROP INDEX "IDX_USER_FEEDBACK_USER_MEDIA"`);
     await queryRunner.query(`DROP TABLE "user_feedback"`);
-    await queryRunner.query(`DROP INDEX "IDX_AI_RECOMMENDATION_CREATED"`);
+    await queryRunner.query(
+      `DROP INDEX "IDX_AI_RECOMMENDATION_USER_TMDB_MEDIA"`
+    );
+    await queryRunner.query(`DROP INDEX "IDX_AI_RECOMMENDATION_UPDATED"`);
     await queryRunner.query(`DROP INDEX "IDX_AI_RECOMMENDATION_USER_TYPE"`);
     await queryRunner.query(`DROP TABLE "ai_recommendation"`);
   }

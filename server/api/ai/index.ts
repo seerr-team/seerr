@@ -309,7 +309,9 @@ export class OpenAICompatibleClient implements LLMClient {
           content: prompt,
         },
       ]);
-      const recommendations = parsed.recommendations || [];
+      const recommendations = Array.isArray(parsed.recommendations)
+        ? parsed.recommendations
+        : [];
 
       return recommendations.slice(0, maxResults);
     } catch (error) {

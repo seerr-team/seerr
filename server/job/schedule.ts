@@ -268,6 +268,7 @@ export const startJobs = (): void => {
   });
 
   // AI Recommendations Sync
+  let aiSyncRunning = false;
   if (jobs['ai-recommendations-sync']) {
     scheduledJobs.push({
       id: 'ai-recommendations-sync',
@@ -285,6 +286,14 @@ export const startJobs = (): void => {
             });
             return;
           }
+
+          if (aiSyncRunning) {
+            logger.info('AI Recommendations Sync already running, skipping', {
+              label: 'Jobs',
+            });
+            return;
+          }
+          aiSyncRunning = true;
 
           logger.info('Starting scheduled job: AI Recommendations Sync', {
             label: 'Jobs',
@@ -343,6 +352,8 @@ export const startJobs = (): void => {
             });
           } catch (error) {
             logger.error('AI Recommendations Sync job failed:', error);
+          } finally {
+            aiSyncRunning = false;
           }
         }
       ),

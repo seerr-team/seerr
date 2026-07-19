@@ -6,14 +6,21 @@ import {
   aiSearch,
   generateRecommendations,
 } from '@server/lib/aiRecommendations';
+import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import { isAuthenticated } from '@server/middleware/auth';
 import { mapSearchResults } from '@server/models/Search';
 import { Router } from 'express';
 import { OpenAI } from 'openai';
 import { z } from 'zod';
 
 const aiRoutes = Router();
+
+// Administrative endpoints require an admin. Search, feedback, and
+// regeneration stay at the mount's regular authenticated access.
+aiRoutes.use('/settings', isAuthenticated(Permission.ADMIN));
+aiRoutes.use('/test', isAuthenticated(Permission.ADMIN));
 
 // GET /api/v1/ai/settings - Get AI settings (admin only)
 aiRoutes.get('/settings', (req, res, next) => {
@@ -58,14 +65,27 @@ aiRoutes.put('/settings', async (req, res, next) => {
     // Update settings with request body
     if (req.body.enabled !== undefined) settings.ai.enabled = req.body.enabled;
     if (req.body.provider) {
+      // If the destination (provider type or base URL) changes, the previously
+      // saved key was issued for a different provider and must not be reused.
+      const destinationChanged =
+        (req.body.provider.type &&
+          req.body.provider.type !== settings.ai.provider.type) ||
+        Boolean(
+          req.body.provider.baseUrl &&
+          req.body.provider.baseUrl !== settings.ai.provider.baseUrl
+        );
+
       if (req.body.provider.type)
         settings.ai.provider.type = req.body.provider.type;
       if (req.body.provider.baseUrl)
         settings.ai.provider.baseUrl = req.body.provider.baseUrl;
       if (req.body.provider.model)
         settings.ai.provider.model = req.body.provider.model;
-      if (req.body.provider.apiKey)
+      if (req.body.provider.apiKey) {
         settings.ai.provider.apiKey = req.body.provider.apiKey;
+      } else if (destinationChanged) {
+        settings.ai.provider.apiKey = '';
+      }
     }
     if (req.body.recommendations) {
       if (req.body.recommendations.enabled !== undefined)
@@ -129,13 +149,21 @@ aiRoutes.post('/test', async (req, res, next) => {
 
     // Build the client from the submitted form values. The API key is not
     // returned by GET /settings (security), so when the form omits it we fall
-    // back to the stored key — this lets the user click "Test Connection"
-    // again without re-entering the key. A newly typed key takes precedence.
+    // back to the stored key — but only when testing the same destination it
+    // was saved for. A key saved for OpenAI must not be tried against Ollama,
+    // etc. A newly typed key always takes precedence.
     const storedSettings = getSettings();
+    const sameDestination =
+      (!provider.type || provider.type === storedSettings.ai.provider.type) &&
+      (!provider.baseUrl ||
+        provider.baseUrl === storedSettings.ai.provider.baseUrl);
     const apiKey =
-      provider.apiKey || storedSettings.ai.provider.apiKey || 'sk-not-required';
+      provider.apiKey ||
+      (sameDestination ? storedSettings.ai.provider.apiKey : '');
     const client = new OpenAI({
-      apiKey,
+      // The SDK requires a non-empty key; providers that don't need one
+      // (e.g. Ollama) ignore it.
+      apiKey: apiKey || 'sk-not-required',
       baseURL:
         provider.baseUrl ||
         storedSettings.ai.provider.baseUrl ||

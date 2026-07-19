@@ -1,3 +1,4 @@
+import { useUser } from '@app/hooks/useUser';
 import type {
   MovieResult,
   PersonResult,
@@ -44,8 +45,11 @@ interface AiSearchResponse {
  * via the POST body through a closure, avoiding SWR array-key serialization.
  */
 const useAiSearch = (query: string | null) => {
+  // Include the user id in the cache key so history-aware results aren't
+  // shared across accounts.
+  const { user } = useUser();
   const { data, error, isValidating } = useSWR<AiSearchResponse>(
-    query ? `ai-search-${query}` : null,
+    query ? `ai-search-${user?.id ?? 'anon'}-${query}` : null,
     async () => {
       const response = await axios.post('/api/v1/ai/search', {
         query,

@@ -1019,40 +1019,44 @@ discoverRoutes.get('/ai-recommendations', async (req, res, next) => {
       take: 50,
     });
 
-    // Fetch full TMDB details for each stored recommendation
+    // Fetch full TMDB details for each stored recommendation, in small batches
+    // to avoid hammering TMDB or exhausting connections on a large pool.
     const tmdb = createTmdbWithRegionLanguage(req.user);
-    const detailedResults = await Promise.all(
-      stored.map(async (rec) => {
-        try {
-          const mediaInfo =
-            rec.mediaType === MediaType.TV
-              ? await tmdb.getTvShow({ tvId: rec.tmdbId })
-              : await tmdb.getMovie({ movieId: rec.tmdbId });
-          return {
-            id: rec.tmdbId,
-            mediaType: rec.mediaType === MediaType.TV ? 'tv' : 'movie',
-            title: (mediaInfo as any).title || (mediaInfo as any).name,
-            posterPath: (mediaInfo as any).poster_path,
-            backdropPath: (mediaInfo as any).backdrop_path,
-            overview: (mediaInfo as any).overview,
-            releaseDate:
-              (mediaInfo as any).release_date ||
-              (mediaInfo as any).first_air_date,
-            voteAverage: (mediaInfo as any).vote_average,
-            // AI-specific fields
-            aiRationale: rec.rationale,
-            aiScore: rec.score,
-            aiMetadata: rec.metadata,
-          };
-        } catch (error) {
-          logger.warn(
-            `Failed to fetch details for tmdbId ${rec.tmdbId}:`,
-            error
-          );
-          return null;
-        }
-      })
-    );
+    const fetchDetail = async (
+      rec: AiRecommendation
+    ): Promise<Record<string, unknown> | null> => {
+      try {
+        const mediaInfo =
+          rec.mediaType === MediaType.TV
+            ? await tmdb.getTvShow({ tvId: rec.tmdbId })
+            : await tmdb.getMovie({ movieId: rec.tmdbId });
+        return {
+          id: rec.tmdbId,
+          mediaType: rec.mediaType === MediaType.TV ? 'tv' : 'movie',
+          title: (mediaInfo as any).title || (mediaInfo as any).name,
+          posterPath: (mediaInfo as any).poster_path,
+          backdropPath: (mediaInfo as any).backdrop_path,
+          overview: (mediaInfo as any).overview,
+          releaseDate:
+            (mediaInfo as any).release_date ||
+            (mediaInfo as any).first_air_date,
+          voteAverage: (mediaInfo as any).vote_average,
+          // AI-specific fields
+          aiRationale: rec.rationale,
+          aiScore: rec.score,
+          aiMetadata: rec.metadata,
+        };
+      } catch (error) {
+        logger.warn(`Failed to fetch details for tmdbId ${rec.tmdbId}:`, error);
+        return null;
+      }
+    };
+    const detailedResults: (Record<string, unknown> | null)[] = [];
+    const DETAIL_BATCH_SIZE = 5;
+    for (let i = 0; i < stored.length; i += DETAIL_BATCH_SIZE) {
+      const batch = stored.slice(i, i + DETAIL_BATCH_SIZE);
+      detailedResults.push(...(await Promise.all(batch.map(fetchDetail))));
+    }
 
     const validResults = detailedResults.filter((r) => r !== null);
 

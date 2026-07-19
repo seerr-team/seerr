@@ -37,6 +37,8 @@ const messages = defineMessages('components.Settings.SettingsAi', {
   aiSettings: 'AI Settings',
   aiSettingsDescription:
     'Configure AI-powered recommendations and search features.',
+  loading: 'Loading…',
+  providerConfiguration: 'Provider Configuration',
   enabled: 'Enable AI Features',
   enabledTip: 'Enable AI-powered recommendations and search',
   providerType: 'AI Provider',
@@ -143,7 +145,7 @@ const SettingsAi = () => {
   if (!data) {
     return (
       <div className="flex h-64 w-full items-center justify-center">
-        Loading...
+        {intl.formatMessage(messages.loading)}
       </div>
     );
   }
@@ -216,7 +218,7 @@ const SettingsAi = () => {
               {/* Provider Configuration */}
               <div className="border-t border-gray-200 pt-6 dark:border-gray-700">
                 <h4 className="mb-4 text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Provider Configuration
+                  {intl.formatMessage(messages.providerConfiguration)}
                 </h4>
 
                 <div className="space-y-4">
@@ -313,11 +315,15 @@ const SettingsAi = () => {
                       <p className="mt-1 text-sm text-gray-500">
                         {intl.formatMessage(messages.apiKeyTip)}
                       </p>
-                      {data?.provider?.hasApiKey && !values.provider.apiKey && (
-                        <p className="mt-1 text-sm text-green-600 dark:text-green-400">
-                          {intl.formatMessage(messages.apiKeySet)}
-                        </p>
-                      )}
+                      {data?.provider?.hasApiKey &&
+                        !values.provider.apiKey &&
+                        values.provider.type === data.provider.type &&
+                        (values.provider.baseUrl ?? '') ===
+                          (data.provider.baseUrl ?? '') && (
+                          <p className="mt-1 text-sm text-green-600 dark:text-green-400">
+                            {intl.formatMessage(messages.apiKeySet)}
+                          </p>
+                        )}
                     </div>
                   )}
 

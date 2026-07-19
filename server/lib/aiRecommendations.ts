@@ -512,7 +512,14 @@ async function discoverFromTmdb(params: any) {
   const results: any[] = [];
 
   try {
-    if (params.genres || params.year_from || params.min_rating) {
+    if (
+      params.genres ||
+      params.year_from ||
+      params.year_to ||
+      params.original_language ||
+      params.sort_by ||
+      params.min_rating
+    ) {
       // Movie and TV discover take different genre IDs (see GENRE_IDS) and
       // different date parameter names, so build params per type.
       const buildParams = (type: 'movie' | 'tv') => {
@@ -607,12 +614,8 @@ async function resolveRecommendationsViaTmdb(
   const resolved: any[] = [];
 
   for (const rec of recs) {
-    // If the LLM already gave a plausible tmdbId, keep it.
-    if (rec.tmdbId && rec.tmdbId > 0) {
-      resolved.push(rec);
-      continue;
-    }
-
+    // Never trust a model-supplied tmdbId — small LLMs hallucinate IDs.
+    // Always resolve against TMDb by title (+year).
     try {
       const searchResults = await tmdb.searchMulti({ query: rec.title });
       if (!searchResults.results || searchResults.results.length === 0) {
@@ -667,16 +670,21 @@ function mergeAndScoreRecommendations(
   profile: string,
   keywords: string[]
 ) {
-  const merged = new Map<number, any>();
+  // Key by `${mediaType}-${tmdbId}`: TMDB IDs are only unique within a type,
+  // so a movie and a TV show sharing an ID must not collide.
+  const identityKey = (mediaType: string, tmdbId: number) =>
+    `${mediaType}-${tmdbId}`;
+  const merged = new Map<string, any>();
 
   // Add AI recommendations with higher base score
   for (const rec of aiRecs) {
     if (!rec.tmdbId) continue; // skip unresolved entries
-    merged.set(rec.tmdbId, {
+    const mediaType = rec.mediaType || rec.type;
+    merged.set(identityKey(mediaType, rec.tmdbId), {
       tmdbId: rec.tmdbId,
       title: rec.title,
       year: rec.year,
-      mediaType: rec.mediaType || rec.type,
+      mediaType,
       rationale: rec.rationale,
       score: 0.8, // Higher score for AI recommendations
       source: 'ai',
@@ -691,8 +699,10 @@ function mergeAndScoreRecommendations(
   // Add TMDB recommendations with lower base score
   for (const rec of tmdbRecs) {
     const id = rec.id || rec.tmdbId;
-    if (!merged.has(id)) {
-      merged.set(id, {
+    const mediaType = rec.media_type === 'tv' ? 'tv' : 'movie';
+    const key = identityKey(mediaType, id);
+    if (!merged.has(key)) {
+      merged.set(key, {
         tmdbId: id,
         title: rec.title || rec.name,
         year: rec.release_date
@@ -700,7 +710,7 @@ function mergeAndScoreRecommendations(
           : rec.first_air_date
             ? new Date(rec.first_air_date).getFullYear()
             : undefined,
-        mediaType: rec.media_type === 'tv' ? 'tv' : 'movie',
+        mediaType,
         rationale: `Popular in genres related to your interests`,
         score: 0.6,
         source: 'tmdb',
@@ -717,20 +727,21 @@ function mergeAndScoreRecommendations(
 }
 
 function mergeSearchResults(tmdbResults: any[], suggestedTitles: any[]) {
-  const merged = new Map<number, any>();
+  const identityKey = (item: any) =>
+    `${item.media_type ?? item.mediaType ?? 'movie'}-${item.id ?? item.tmdbId}`;
+  const merged = new Map<string, any>();
 
   for (const result of tmdbResults) {
-    const id = result.id;
-    merged.set(id, {
+    merged.set(identityKey(result), {
       ...result,
       matchScore: 0.7,
     });
   }
 
   for (const title of suggestedTitles) {
-    const id = title.id || title.tmdbId;
-    if (!merged.has(id)) {
-      merged.set(id, {
+    const key = identityKey(title);
+    if (!merged.has(key)) {
+      merged.set(key, {
         ...title,
         matchScore: 0.9,
       });
@@ -766,32 +777,31 @@ async function filterExistingContent(recommendations: any[], userId: number) {
       .getMany(),
   ]);
 
-  const excludedTmdbIds = new Set<number>();
-  const excludedWithTypes = new Set<string>();
+  // Key exclusions by `${tmdbId}-${mediaType}` so disliking a movie doesn't
+  // also exclude a TV show that happens to share its TMDB ID.
+  const excluded = new Set<string>();
 
   // Add existing media
   for (const media of existingMedia) {
-    excludedWithTypes.add(`${media.tmdbId}-${media.mediaType}`);
+    excluded.add(`${media.tmdbId}-${media.mediaType}`);
   }
 
   // Add existing requests
   for (const request of existingRequests) {
     if (request.media) {
-      excludedWithTypes.add(`${request.media.tmdbId}-${request.type}`);
+      excluded.add(`${request.media.tmdbId}-${request.type}`);
     }
   }
 
   // Add disliked/seen content
   for (const fb of feedback) {
-    excludedTmdbIds.add(fb.tmdbId);
-    excludedWithTypes.add(`${fb.tmdbId}-${fb.mediaType}`);
+    excluded.add(`${fb.tmdbId}-${fb.mediaType}`);
   }
 
   // Filter recommendations
-  return recommendations.filter((rec) => {
-    const key = `${rec.tmdbId}-${rec.mediaType}`;
-    return !excludedWithTypes.has(key) && !excludedTmdbIds.has(rec.tmdbId);
-  });
+  return recommendations.filter(
+    (rec) => !excluded.has(`${rec.tmdbId}-${rec.mediaType}`)
+  );
 }
 
 /**

@@ -25,7 +25,7 @@ This setting is **disabled** by default.
 Configure the OpenAI-compatible endpoint Seerr will use to generate recommendations and interpret searches.
 
 - **AI Provider** — Choose your provider type. Selecting **Ollama (Local)** adjusts the expected base URL and hides the API key field, since Ollama does not require authentication.
-- **Base URL** — The root URL of the provider's API. For OpenAI this is `https://api.openai.com/v1`; for a local Ollama instance, `http://localhost:11434/v1`.
+- **Base URL** — The root URL of the provider's API. For OpenAI this is `https://api.openai.com/v1`. For a local Ollama instance, use `http://localhost:11434/v1` when Seerr runs on your host, or `http://ollama:11434/v1` when Seerr runs in Docker Compose alongside the Ollama service (as in the bundled `compose.ai.yaml`).
 - **Model** — The model name to use (for example, `gpt-4o-mini`, `mistral`, or whatever your local provider exposes).
 - **API Key** — The key for your provider. This is not required for Ollama. Once saved, the field is masked; leave it blank on subsequent edits to keep the existing key. If you would rather provide the key out of band, Seerr falls back to the `OPENAI_API_KEY` environment variable.
 

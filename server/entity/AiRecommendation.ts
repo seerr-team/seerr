@@ -7,18 +7,20 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 import { User } from './User';
 
 @Entity('ai_recommendation')
 @Index(['userId', 'mediaType'])
-@Index(['createdAt'])
+@Index(['updatedAt'])
+@Unique(['userId', 'tmdbId', 'mediaType'])
 export class AiRecommendation {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'int', nullable: true })
-  userId: number | null;
+  @Column({ type: 'int' })
+  userId: number;
 
   @Column()
   tmdbId: number;

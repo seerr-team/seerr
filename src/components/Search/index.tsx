@@ -14,6 +14,7 @@ import type {
   PersonResult,
   TvResult,
 } from '@server/models/Search';
+import ErrorPage from 'next/error';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -30,22 +31,36 @@ const messages = defineMessages('components.Search', {
   aiError:
     'AI search failed. It may be disabled, or the AI provider is unreachable.',
   aiNoResults: 'No AI results for this query. Try rephrasing.',
+  interpGenres: 'Genres',
+  interpYears: 'Years',
+  interpLanguage: 'Language',
+  interpMinRating: 'Min Rating',
+  interpKeywords: 'Keywords',
 });
 
 // Build a human-readable summary of how the AI parsed the query.
 const formatInterpretation = (
-  interp: AiSearchInterpretation | undefined
+  interp: AiSearchInterpretation | undefined,
+  labels: {
+    genres: string;
+    years: string;
+    language: string;
+    minRating: string;
+    keywords: string;
+  }
 ): string | null => {
   if (!interp?.discoverParams) return null;
   const p = interp.discoverParams;
   const parts: string[] = [];
-  if (p.genres?.length) parts.push(`Genres: ${p.genres.join(', ')}`);
+  if (p.genres?.length) parts.push(`${labels.genres}: ${p.genres.join(', ')}`);
   if (p.year_from || p.year_to) {
-    parts.push(`Years: ${p.year_from ?? '…'}–${p.year_to ?? '…'}`);
+    parts.push(`${labels.years}: ${p.year_from ?? '…'}–${p.year_to ?? '…'}`);
   }
-  if (p.original_language) parts.push(`Language: ${p.original_language}`);
-  if (p.min_rating) parts.push(`Min rating: ${p.min_rating}`);
-  if (p.keywords?.length) parts.push(`Keywords: ${p.keywords.join(', ')}`);
+  if (p.original_language)
+    parts.push(`${labels.language}: ${p.original_language}`);
+  if (p.min_rating) parts.push(`${labels.minRating}: ${p.min_rating}`);
+  if (p.keywords?.length)
+    parts.push(`${labels.keywords}: ${p.keywords.join(', ')}`);
   return parts.length ? parts.join(' · ') : null;
 };
 
@@ -65,7 +80,17 @@ const Search = () => {
   // AI natural-language search (only fetches when AI mode is on).
   const ai = useAiSearch(aiMode && query.length > 0 ? query : null);
 
-  const interpretation = formatInterpretation(ai.data?.interpretation);
+  const interpretation = formatInterpretation(ai.data?.interpretation, {
+    genres: intl.formatMessage(messages.interpGenres),
+    years: intl.formatMessage(messages.interpYears),
+    language: intl.formatMessage(messages.interpLanguage),
+    minRating: intl.formatMessage(messages.interpMinRating),
+    keywords: intl.formatMessage(messages.interpKeywords),
+  });
+
+  if (regular.error) {
+    return <ErrorPage statusCode={500} />;
+  }
 
   return (
     <>
@@ -109,7 +134,7 @@ const Search = () => {
               )}
               <ListView
                 items={ai.data.results}
-                isEmpty={ai.data.results.length === 0}
+                isEmpty={false}
                 isLoading={false}
                 isReachingEnd
                 onScrollBottom={() => {}}

@@ -409,18 +409,6 @@ const Discover = () => {
               />
             );
             break;
-          case DiscoverSliderType.AI_SEARCH:
-            sliderComponent = (
-              <MediaSlider
-                sliderKey="ai-search"
-                title={
-                  slider.title ?? intl.formatMessage(sliderTitles.aisearch)
-                }
-                url="/api/v1/search"
-                linkUrl="/search"
-              />
-            );
-            break;
         }
 
         if (isEditing) {
