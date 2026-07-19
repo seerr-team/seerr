@@ -132,8 +132,6 @@ const useDiscover = <
     hideRequested: settings.currentSettings.hideRequested && hideRequested,
   });
 
-  const isEmpty =
-    !isLoadingInitialData && !isLoadingMore && titles?.length === 0;
   const isReachingEnd =
     (!!data && (data[data.length - 1]?.results.length ?? 0) < 20) ||
     (!!data && (data[data.length - 1]?.totalResults ?? 0) <= size * 20) ||
@@ -142,18 +140,20 @@ const useDiscover = <
   // When client-side filters (hide available/blocklisted/requested) empty out
   // entire pages, keep fetching a bounded number of extra pages so the view
   // does not appear exhausted while the server still has results.
+  const willBackfill =
+    !!data && titles.length < 20 && size < 5 && !isReachingEnd;
+
+  const isEmpty =
+    !isLoadingInitialData &&
+    !isLoadingMore &&
+    !willBackfill &&
+    titles?.length === 0;
+
   useEffect(() => {
-    if (
-      !!data &&
-      titles.length < 20 &&
-      size < 5 &&
-      !isReachingEnd &&
-      !isLoadingMore &&
-      !isValidating
-    ) {
+    if (willBackfill && !isLoadingMore && !isValidating) {
       setSize(size + 1);
     }
-  }, [data, titles, size, isReachingEnd, isLoadingMore, isValidating, setSize]);
+  }, [willBackfill, size, isLoadingMore, isValidating, setSize]);
 
   useEffect(() => {
     if (error && titles.length) {
