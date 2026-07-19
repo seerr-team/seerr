@@ -225,6 +225,54 @@ describe('DELETE /request/:requestId', () => {
     assert.strictEqual(remaining, null);
   });
 
+  it('cleans up media still PROCESSING in Radarr/Sonarr (no file yet) when the owner deletes it', async () => {
+    // Media that's been sent to Radarr/Sonarr and is monitored/searching but
+    // hasn't downloaded a file yet is PROCESSING, not AVAILABLE. Deleting it
+    // should still attempt to remove the Radarr/Sonarr entry, not just the
+    // Seerr-side request.
+    const userRepo = getRepository(User);
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+
+    const requestedBy = await userRepo.findOneOrFail({
+      where: { email: 'friend@seerr.dev' },
+    });
+
+    const media = await mediaRepo.save(
+      new Media({
+        mediaType: MediaType.MOVIE,
+        tmdbId: 424245,
+        status: MediaStatus.PROCESSING,
+        status4k: MediaStatus.UNKNOWN,
+      })
+    );
+
+    const mediaRequest = await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.APPROVED,
+        media,
+        requestedBy,
+        is4k: false,
+      })
+    );
+
+    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const res = await agent.delete(`/request/${mediaRequest.id}`);
+
+    assert.strictEqual(res.status, 204);
+
+    const updatedMedia = await mediaRepo.findOneOrFail({
+      where: { id: media.id },
+    });
+    assert.strictEqual(updatedMedia.status, MediaStatus.DELETED);
+
+    const remaining = await requestRepo.findOne({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(remaining, null);
+  });
+
   it('allows an admin to delete an approved request owned by another user and clean up its files', async () => {
     const userRepo = getRepository(User);
     const mediaRepo = getRepository(Media);
