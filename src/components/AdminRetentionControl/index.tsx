@@ -1,6 +1,9 @@
 import Button from '@app/components/Common/Button';
 import useToasts from '@app/hooks/useToasts';
+import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import { getErrorMessage } from '@app/utils/getErrorMessage';
+import { RETENTION_PRESETS } from '@app/utils/retentionHelpers';
 import { MediaType } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { RetentionLimitResponse } from '@server/interfaces/api/userInterfaces';
@@ -9,15 +12,11 @@ import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
 
-const RETENTION_PRESETS = [7, 14, 30, 60, 90, 180, 365];
-
 const messages = defineMessages('components.AdminRetentionControl', {
   retention: 'Retention',
-  retentionDays: '{count, plural, one {day} other {days}}',
   keepindefinitely: 'Keep Indefinitely',
   resettodefaultindefinite: 'Reset to Default (Indefinite)',
-  resettodefaultdays:
-    'Reset to Default ({days} {days, plural, one {day} other {days}})',
+  resettodefaultdays: 'Reset to Default ({days})',
   customplaceholder: 'Days',
   set: 'Set',
   failedretention: 'Something went wrong while updating retention.',
@@ -70,13 +69,10 @@ const AdminRetentionControl = ({
       setRetentionDays(days);
       onUpdate?.();
     } catch (e) {
-      const message =
-        (axios.isAxiosError(e) && e.response?.data?.message) ||
-        intl.formatMessage(messages.failedretention);
-      addToast(message, {
-        autoDismiss: true,
-        appearance: 'error',
-      });
+      addToast(
+        getErrorMessage(e, intl.formatMessage(messages.failedretention)),
+        { autoDismiss: true, appearance: 'error' }
+      );
     } finally {
       setSaving(false);
     }
@@ -116,8 +112,7 @@ const AdminRetentionControl = ({
           </option>
           {RETENTION_PRESETS.map((days) => (
             <option value={days} key={`retention-admin-${days}`}>
-              {days}{' '}
-              {intl.formatMessage(messages.retentionDays, { count: days })}
+              {intl.formatMessage(globalMessages.days, { count: days })}
             </option>
           ))}
         </select>
@@ -131,7 +126,9 @@ const AdminRetentionControl = ({
         >
           {limitForType.defaultDays
             ? intl.formatMessage(messages.resettodefaultdays, {
-                days: limitForType.defaultDays,
+                days: intl.formatMessage(globalMessages.days, {
+                  count: limitForType.defaultDays,
+                }),
               })
             : intl.formatMessage(messages.resettodefaultindefinite)}
         </Button>

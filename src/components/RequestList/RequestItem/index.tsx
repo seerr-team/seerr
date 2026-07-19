@@ -694,31 +694,37 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
               </Button>
             )}
           {requestData.status !== MediaRequestStatus.PENDING &&
+            requestData.status !== MediaRequestStatus.APPROVED &&
+            requestData.status !== MediaRequestStatus.COMPLETED &&
             hasPermission(Permission.MANAGE_REQUESTS) && (
-              <>
-                <ConfirmButton
-                  onClick={() => deleteRequest()}
-                  confirmText={intl.formatMessage(globalMessages.areyousure)}
-                  className="w-full"
-                >
-                  <TrashIcon />
-                  <span>{intl.formatMessage(messages.deleterequest)}</span>
-                </ConfirmButton>
-                {request.canRemove && (
-                  <ConfirmButton
-                    onClick={() => deleteMediaFile()}
-                    confirmText={intl.formatMessage(globalMessages.areyousure)}
-                    className="w-full"
-                  >
-                    <TrashIcon />
-                    <span>
-                      {intl.formatMessage(messages.removearr, {
-                        arr: request.type === 'movie' ? 'Radarr' : 'Sonarr',
-                      })}
-                    </span>
-                  </ConfirmButton>
-                )}
-              </>
+              // Approved/completed requests are covered by
+              // RequestRetentionActions below, which routes through the same
+              // endpoint with clearer wording. Declined/failed requests have
+              // no retention state, so they still need this.
+              <ConfirmButton
+                onClick={() => deleteRequest()}
+                confirmText={intl.formatMessage(globalMessages.areyousure)}
+                className="w-full"
+              >
+                <TrashIcon />
+                <span>{intl.formatMessage(messages.deleterequest)}</span>
+              </ConfirmButton>
+            )}
+          {requestData.status !== MediaRequestStatus.PENDING &&
+            hasPermission(Permission.MANAGE_REQUESTS) &&
+            request.canRemove && (
+              <ConfirmButton
+                onClick={() => deleteMediaFile()}
+                confirmText={intl.formatMessage(globalMessages.areyousure)}
+                className="w-full"
+              >
+                <TrashIcon />
+                <span>
+                  {intl.formatMessage(messages.removearr, {
+                    arr: request.type === 'movie' ? 'Radarr' : 'Sonarr',
+                  })}
+                </span>
+              </ConfirmButton>
             )}
           {requestData.status === MediaRequestStatus.PENDING &&
             hasPermission(Permission.MANAGE_REQUESTS) && (

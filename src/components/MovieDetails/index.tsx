@@ -694,7 +694,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
           r.requestedBy.id === user?.id ||
           hasPermission(Permission.MANAGE_REQUESTS)
       ) && (
-        <div className="relative z-10 mb-4 flex flex-wrap justify-end gap-2">
+        <div className="relative z-10 mb-4 mt-4 flex flex-wrap justify-end gap-2">
           {(data.mediaInfo?.requests ?? [])
             .filter(
               (r) =>

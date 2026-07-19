@@ -547,6 +547,30 @@ describe('POST /request/:requestId/retention', () => {
     }
   });
 
+  it('rejects an explicit finite value beyond the fallback ceiling from a user without KEEP_MEDIA, even with no day cap configured', async () => {
+    // A raw API call shouldn't be able to work around canKeepIndefinitely by
+    // sending a very large finite number instead of null.
+    const settings = getSettings();
+    const priorRetention = settings.main.mediaRetention;
+    settings.main.mediaRetention = {
+      movie: { enabled: true },
+      tv: { enabled: false },
+    };
+
+    try {
+      const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
+
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent
+        .post(`/request/${mediaRequest.id}/retention`)
+        .send({ retentionDays: 999999 });
+
+      assert.strictEqual(res.status, 403);
+    } finally {
+      settings.main.mediaRetention = priorRetention;
+    }
+  });
+
   it('lets a user with KEEP_MEDIA set indefinite retention with no day cap configured', async () => {
     const userRepo = getRepository(User);
     const requestRepo = getRepository(MediaRequest);

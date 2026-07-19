@@ -1,4 +1,6 @@
+import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import { RETENTION_PRESETS } from '@app/utils/retentionHelpers';
 import {
   DEFAULT_RETENTION_FALLBACK_DAYS,
   type RetentionLimitStatus,
@@ -11,7 +13,6 @@ const messages = defineMessages(
   {
     keepfor: 'Keep for',
     indefinitely: 'Keep Indefinitely',
-    days: '{count, plural, one {day} other {days}}',
   }
 );
 
@@ -21,8 +22,6 @@ interface RetentionRequestSelectorProps {
   onChange: (value: number | null) => void;
 }
 
-const PRESETS = [7, 14, 30, 60, 90, 180, 365];
-
 const RetentionRequestSelector = ({
   retentionLimit,
   value,
@@ -31,8 +30,10 @@ const RetentionRequestSelector = ({
   const intl = useIntl();
 
   const availablePresets = retentionLimit.maxDays
-    ? PRESETS.filter((days) => days <= (retentionLimit.maxDays as number))
-    : PRESETS;
+    ? RETENTION_PRESETS.filter(
+        (days) => days <= (retentionLimit.maxDays as number)
+      )
+    : RETENTION_PRESETS;
 
   useEffect(() => {
     if (value !== null) {
@@ -77,7 +78,7 @@ const RetentionRequestSelector = ({
             )}
             {availablePresets.map((days) => (
               <option value={days} key={`retention-preset-${days}`}>
-                {days} {intl.formatMessage(messages.days, { count: days })}
+                {intl.formatMessage(globalMessages.days, { count: days })}
               </option>
             ))}
           </select>

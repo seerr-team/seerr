@@ -73,6 +73,8 @@ const globalMessages = defineMessages('i18n', {
   removefromBlocklist: 'Remove from Blocklist',
   specials: 'Specials',
   notificationLocale: 'Notification Language',
+  days: '{count, plural, one {# day} other {# days}}',
+  daysShort: '{count}d',
 });
 
 export default globalMessages;

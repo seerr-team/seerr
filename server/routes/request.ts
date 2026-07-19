@@ -21,6 +21,7 @@ import type {
   MediaRequestBody,
   RequestResultsResponse,
 } from '@server/interfaces/api/requestInterfaces';
+import { DEFAULT_RETENTION_FALLBACK_DAYS } from '@server/interfaces/api/userInterfaces';
 import { removeMediaRequest } from '@server/lib/mediaDeletion';
 import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
@@ -696,11 +697,19 @@ requestRoutes.post<
     // The day cap only constrains an explicit finite choice - indefinite
     // retention is governed entirely by the permission check above, and
     // admins bypass the cap outright, same as when a request is created.
+    // A non-privileged user is capped even with no explicit day limit
+    // configured, so they can't request effectively-unlimited retention by
+    // sending a very large finite value instead of null.
+    const effectiveMaxDays =
+      isAdmin || limitForType.canKeepIndefinitely
+        ? limitForType.maxDays
+        : (limitForType.maxDays ?? DEFAULT_RETENTION_FALLBACK_DAYS);
+
     if (
       !isAdmin &&
       retentionDays != null &&
-      limitForType.maxDays !== undefined &&
-      retentionDays > limitForType.maxDays
+      effectiveMaxDays !== undefined &&
+      retentionDays > effectiveMaxDays
     ) {
       return next({
         status: 403,

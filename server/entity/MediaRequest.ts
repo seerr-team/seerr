@@ -129,6 +129,13 @@ export class MediaRequest {
         retentionLimitForType.canKeepIndefinitely ||
         user.hasPermission(Permission.MANAGE_REQUESTS);
 
+      // A non-privileged requester is capped even when no explicit day
+      // limit is configured, so they can't work around canKeepIndefinitely
+      // by sending a very large finite value instead of null.
+      const effectiveMaxDays = canKeepIndefinitely
+        ? retentionLimitForType.maxDays
+        : (retentionLimitForType.maxDays ?? DEFAULT_RETENTION_FALLBACK_DAYS);
+
       if (requestBody.retentionDays !== undefined) {
         if (requestBody.retentionDays === null && !canKeepIndefinitely) {
           throw new RequestPermissionError(
@@ -137,19 +144,19 @@ export class MediaRequest {
         }
         retentionDays = requestBody.retentionDays;
       } else {
-        // No explicit choice was made. Fall back to the configured cap, or -
+        // No explicit choice was made. Fall back to the effective cap, or -
         // only if this requester is actually allowed to keep media
-        // indefinitely - to unlimited. Otherwise a "no cap configured"
-        // admin setting should not silently grant indefinite retention.
-        retentionDays =
-          retentionLimitForType.maxDays ??
-          (canKeepIndefinitely ? null : DEFAULT_RETENTION_FALLBACK_DAYS);
+        // indefinitely - to unlimited.
+        retentionDays = effectiveMaxDays ?? null;
       }
 
+      // retentionDays === null was already validated against
+      // canKeepIndefinitely above; the day cap only constrains an explicit
+      // finite choice.
       if (
-        retentionLimitForType.maxDays !== undefined &&
-        (retentionDays === null ||
-          retentionDays > retentionLimitForType.maxDays)
+        retentionDays !== null &&
+        effectiveMaxDays !== undefined &&
+        retentionDays > effectiveMaxDays
       ) {
         throw new RequestPermissionError(
           'The selected retention period exceeds your allowed limit.'

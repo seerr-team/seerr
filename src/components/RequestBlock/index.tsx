@@ -190,17 +190,21 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
                 </Tooltip>
               </>
             )}
-            {request.status !== MediaRequestStatus.PENDING && (
-              <Tooltip content={intl.formatMessage(messages.delete)}>
-                <Button
-                  buttonType="danger"
-                  onClick={() => deleteRequest()}
-                  disabled={isUpdating}
-                >
-                  <TrashIcon className="icon-sm" />
-                </Button>
-              </Tooltip>
-            )}
+            {request.status !== MediaRequestStatus.PENDING &&
+              request.status !== MediaRequestStatus.APPROVED &&
+              request.status !== MediaRequestStatus.COMPLETED && (
+                // Approved/completed requests are covered by
+                // RequestRetentionActions below, with clearer wording.
+                <Tooltip content={intl.formatMessage(messages.delete)}>
+                  <Button
+                    buttonType="danger"
+                    onClick={() => deleteRequest()}
+                    disabled={isUpdating}
+                  >
+                    <TrashIcon className="icon-sm" />
+                  </Button>
+                </Tooltip>
+              )}
           </div>
         </div>
         <div className="mt-2 sm:flex sm:justify-between">

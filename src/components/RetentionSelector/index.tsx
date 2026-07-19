@@ -1,11 +1,11 @@
+import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import { RETENTION_PRESETS } from '@app/utils/retentionHelpers';
 import React, { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.RetentionSelector', {
-  retentionDays:
-    'Delete after {retentionDays}<retentionUnits> {days}</retentionUnits>',
-  days: '{count, plural, one {day} other {days}}',
+  retentionDays: 'Delete after {retentionDays}',
   unlimited: 'Never (Unlimited)',
 });
 
@@ -44,23 +44,13 @@ const RetentionSelector = ({
             disabled={isDisabled}
           >
             <option value="0">{intl.formatMessage(messages.unlimited)}</option>
-            {[7, 14, 30, 60, 90, 180, 365].map((days) => (
+            {RETENTION_PRESETS.map((days) => (
               <option value={days} key={`${mediaType}-retention-${days}`}>
-                {days} {intl.formatMessage(messages.days, { count: days })}
+                {intl.formatMessage(globalMessages.days, { count: days })}
               </option>
             ))}
           </select>
         ),
-        days: intl.formatMessage(messages.days, {
-          count: override ?? retentionDays,
-        }),
-        retentionUnits: function retentionUnits(msg) {
-          return (
-            <span className={override || retentionDays ? '' : 'hidden'}>
-              {msg}
-            </span>
-          );
-        },
       })}
     </div>
   );
