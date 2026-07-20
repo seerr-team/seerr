@@ -41,8 +41,7 @@ class MediaRetention {
           throw new Error('Job aborted');
         }
 
-        // Cursor-paginate by id (rather than skip/offset) since processing
-        // a page may remove rows from the underlying table.
+        // Cursor by id, not skip/offset, since processing removes rows.
         page = await requestRepository
           .createQueryBuilder('request')
           .leftJoinAndSelect('request.media', 'media')
@@ -54,6 +53,7 @@ class MediaRetention {
             ],
           })
           .andWhere('request.type IN (:...types)', { types: enabledTypes })
+          // null retentionDays means kept indefinitely - never processed here.
           .andWhere('request.retentionDays IS NOT NULL')
           .andWhere(
             '((request.is4k = false AND media.status IN (:...availableStatuses)) OR (request.is4k = true AND media.status4k IN (:...availableStatuses)))',
@@ -100,8 +100,7 @@ class MediaRetention {
     const requestRepository = getRepository(MediaRequest);
 
     try {
-      // Start the retention clock the first time we observe this request's
-      // media as available.
+      // Start the retention clock on first observed availability.
       if (!request.availableSince) {
         request.availableSince = new Date();
         await requestRepository.save(request);

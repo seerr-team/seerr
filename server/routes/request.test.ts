@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { before, beforeEach, describe, it, mock } from 'node:test';
 
+import RadarrAPI from '@server/api/servarr/radarr';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -11,7 +12,9 @@ import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import { User } from '@server/entity/User';
 import { Permission } from '@server/lib/permissions';
+import type { RadarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
+import logger from '@server/logger';
 import { checkUser } from '@server/middleware/auth';
 import { setupTestDb } from '@server/test/db';
 import type { Express } from 'express';
@@ -26,6 +29,51 @@ const sendNotificationMock = mock.method(
   'sendNotification',
   async () => undefined
 ).mock;
+
+// Stand in for a real Radarr: succeed the lookup, then patch this
+// instance's axios adapter so the follow-up delete call succeeds too,
+// instead of hitting the network. Set radarrShouldFail to simulate Radarr
+// being unreachable/erroring instead.
+let radarrShouldFail = false;
+mock.method(
+  RadarrAPI.prototype,
+  'getMovieByTmdbId',
+  async function (this: RadarrAPI) {
+    if (radarrShouldFail) {
+      throw new Error('Radarr unreachable');
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (this as any).axios.defaults.adapter = async (config: unknown) => ({
+      data: {},
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config,
+      request: {},
+    });
+    return { id: 1, title: 'Fake Movie' };
+  }
+);
+
+const fakeRadarrSettings: RadarrSettings = {
+  id: 1,
+  name: 'Radarr',
+  hostname: 'radarr.example.com',
+  port: 7878,
+  apiKey: 'radarr-key',
+  useSsl: false,
+  activeProfileId: 1,
+  activeProfileName: 'HD',
+  activeDirectory: '/movies',
+  tags: [],
+  is4k: false,
+  isDefault: true,
+  syncEnabled: true,
+  preventSearch: false,
+  tagRequests: false,
+  overrideRule: [],
+  minimumAvailability: 'released',
+};
 
 let app: Express;
 
@@ -62,8 +110,20 @@ before(async () => {
   app = createApp();
 });
 
+async function withFakeRadarr<T>(fn: () => Promise<T>): Promise<T> {
+  const settings = getSettings();
+  const prior = settings.radarr;
+  settings.radarr = [fakeRadarrSettings];
+  try {
+    return await fn();
+  } finally {
+    settings.radarr = prior;
+  }
+}
+
 beforeEach(() => {
   sendNotificationMock.resetCalls();
+  radarrShouldFail = false;
 });
 
 setupTestDb();
@@ -210,7 +270,9 @@ describe('DELETE /request/:requestId', () => {
     );
 
     const agent = await loginAs('friend@seerr.dev', 'test1234');
-    const res = await agent.delete(`/request/${mediaRequest.id}`);
+    const res = await withFakeRadarr(() =>
+      agent.delete(`/request/${mediaRequest.id}`)
+    );
 
     assert.strictEqual(res.status, 204);
 
@@ -225,11 +287,98 @@ describe('DELETE /request/:requestId', () => {
     assert.strictEqual(remaining, null);
   });
 
+  it('does not mark media DELETED when no Radarr server is configured', async () => {
+    const userRepo = getRepository(User);
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+
+    const requestedBy = await userRepo.findOneOrFail({
+      where: { email: 'friend@seerr.dev' },
+    });
+
+    const media = await mediaRepo.save(
+      new Media({
+        mediaType: MediaType.MOVIE,
+        tmdbId: 424246,
+        status: MediaStatus.AVAILABLE,
+        status4k: MediaStatus.UNKNOWN,
+      })
+    );
+
+    const mediaRequest = await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.APPROVED,
+        media,
+        requestedBy,
+        is4k: false,
+      })
+    );
+
+    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const res = await agent.delete(`/request/${mediaRequest.id}`);
+
+    assert.strictEqual(res.status, 204);
+
+    const updatedMedia = await mediaRepo.findOneOrFail({
+      where: { id: media.id },
+    });
+    assert.notEqual(updatedMedia.status, MediaStatus.DELETED);
+
+    const remaining = await requestRepo.findOne({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(remaining, null);
+  });
+
+  it('does not mark media DELETED when Radarr fails to remove it', async () => {
+    const userRepo = getRepository(User);
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+
+    const requestedBy = await userRepo.findOneOrFail({
+      where: { email: 'friend@seerr.dev' },
+    });
+
+    const media = await mediaRepo.save(
+      new Media({
+        mediaType: MediaType.MOVIE,
+        tmdbId: 424247,
+        status: MediaStatus.AVAILABLE,
+        status4k: MediaStatus.UNKNOWN,
+      })
+    );
+
+    const mediaRequest = await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.APPROVED,
+        media,
+        requestedBy,
+        is4k: false,
+      })
+    );
+
+    radarrShouldFail = true;
+    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const res = await withFakeRadarr(() =>
+      agent.delete(`/request/${mediaRequest.id}`)
+    );
+
+    assert.strictEqual(res.status, 204);
+
+    const updatedMedia = await mediaRepo.findOneOrFail({
+      where: { id: media.id },
+    });
+    assert.notEqual(updatedMedia.status, MediaStatus.DELETED);
+
+    const remaining = await requestRepo.findOne({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(remaining, null);
+  });
+
   it('cleans up media still PROCESSING in Radarr/Sonarr (no file yet) when the owner deletes it', async () => {
-    // Media that's been sent to Radarr/Sonarr and is monitored/searching but
-    // hasn't downloaded a file yet is PROCESSING, not AVAILABLE. Deleting it
-    // should still attempt to remove the Radarr/Sonarr entry, not just the
-    // Seerr-side request.
     const userRepo = getRepository(User);
     const mediaRepo = getRepository(Media);
     const requestRepo = getRepository(MediaRequest);
@@ -258,7 +407,9 @@ describe('DELETE /request/:requestId', () => {
     );
 
     const agent = await loginAs('friend@seerr.dev', 'test1234');
-    const res = await agent.delete(`/request/${mediaRequest.id}`);
+    const res = await withFakeRadarr(() =>
+      agent.delete(`/request/${mediaRequest.id}`)
+    );
 
     assert.strictEqual(res.status, 204);
 
@@ -302,7 +453,9 @@ describe('DELETE /request/:requestId', () => {
     );
 
     const agent = await loginAs('admin@seerr.dev', 'test1234');
-    const res = await agent.delete(`/request/${mediaRequest.id}`);
+    const res = await withFakeRadarr(() =>
+      agent.delete(`/request/${mediaRequest.id}`)
+    );
 
     assert.strictEqual(res.status, 204);
 
@@ -526,8 +679,6 @@ describe('POST /request/:requestId/retention', () => {
   it('rejects indefinite retention from a user without KEEP_MEDIA, even with no day cap configured', async () => {
     const settings = getSettings();
     const priorRetention = settings.main.mediaRetention;
-    // No defaultDays configured (0/unlimited) - this is the "no cap"
-    // scenario that must NOT silently grant indefinite retention.
     settings.main.mediaRetention = {
       movie: { enabled: true },
       tv: { enabled: false },
@@ -548,8 +699,6 @@ describe('POST /request/:requestId/retention', () => {
   });
 
   it('rejects an explicit finite value beyond the fallback ceiling from a user without KEEP_MEDIA, even with no day cap configured', async () => {
-    // A raw API call shouldn't be able to work around canKeepIndefinitely by
-    // sending a very large finite number instead of null.
     const settings = getSettings();
     const priorRetention = settings.main.mediaRetention;
     settings.main.mediaRetention = {
@@ -614,8 +763,6 @@ describe('POST /request/:requestId/retention', () => {
     const requestRepo = getRepository(MediaRequest);
     const settings = getSettings();
     const priorRetention = settings.main.mediaRetention;
-    // A finite default cap must not block an otherwise-permitted indefinite
-    // choice - the cap only constrains explicit finite selections.
     settings.main.mediaRetention = {
       movie: { enabled: true, defaultDays: 30 },
       tv: { enabled: false },
@@ -659,9 +806,6 @@ describe('POST /request/:requestId/retention', () => {
     };
 
     try {
-      // seedRequest's requester (friend@seerr.dev) has no KEEP_MEDIA and
-      // is capped at the 30-day default - the admin should be able to
-      // override that regardless.
       const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
 
       const agent = await loginAs('admin@seerr.dev', 'test1234');
@@ -676,6 +820,64 @@ describe('POST /request/:requestId/retention', () => {
       });
       assert.strictEqual(saved.retentionDays, null);
     } finally {
+      settings.main.mediaRetention = priorRetention;
+    }
+  });
+
+  it("logs an audit entry when an admin overrides another user's retention", async () => {
+    const settings = getSettings();
+    const priorRetention = settings.main.mediaRetention;
+    settings.main.mediaRetention = {
+      movie: { enabled: true, defaultDays: 30 },
+      tv: { enabled: false },
+    };
+    const infoSpy = mock.method(logger, 'info');
+
+    try {
+      const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
+
+      const agent = await loginAs('admin@seerr.dev', 'test1234');
+      const res = await agent
+        .post(`/request/${mediaRequest.id}/retention`)
+        .send({ retentionDays: null });
+
+      assert.strictEqual(res.status, 200);
+      assert.ok(
+        infoSpy.mock.calls.some((call) =>
+          String(call.arguments[0]).includes('Admin overrode retention')
+        )
+      );
+    } finally {
+      infoSpy.mock.restore();
+      settings.main.mediaRetention = priorRetention;
+    }
+  });
+
+  it('does not log an audit entry when a user updates their own retention', async () => {
+    const settings = getSettings();
+    const priorRetention = settings.main.mediaRetention;
+    settings.main.mediaRetention = {
+      movie: { enabled: true, defaultDays: 30 },
+      tv: { enabled: false },
+    };
+    const infoSpy = mock.method(logger, 'info');
+
+    try {
+      const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
+
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent
+        .post(`/request/${mediaRequest.id}/retention`)
+        .send({ retentionDays: 10 });
+
+      assert.strictEqual(res.status, 200);
+      assert.ok(
+        !infoSpy.mock.calls.some((call) =>
+          String(call.arguments[0]).includes('Admin overrode retention')
+        )
+      );
+    } finally {
+      infoSpy.mock.restore();
       settings.main.mediaRetention = priorRetention;
     }
   });
@@ -995,15 +1197,12 @@ describe('DELETE /request/:requestId, deleted media status restoration', () => {
     );
 
     const agent = await loginAs('admin@seerr.dev', 'test1234');
-    const res = await agent.delete(`/request/${completedRequest.id}`);
+    const res = await withFakeRadarr(() =>
+      agent.delete(`/request/${completedRequest.id}`)
+    );
 
     assert.strictEqual(res.status, 204);
 
-    // Admin deletes of an approved/completed request now go through the
-    // same file-cleanup path as owner self-deletes (Permission.MANAGE_REQUESTS
-    // holders can delete anyone's media, not just bookkeep the request row),
-    // so this is no longer left untouched the way a subscriber-only
-    // bookkeeping delete would leave it.
     const updated = await mediaRepo.findOneOrFail({ where: { id: media.id } });
     assert.strictEqual(updated.status, MediaStatus.DELETED);
   });

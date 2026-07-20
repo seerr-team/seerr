@@ -696,10 +696,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
             requestData.status !== MediaRequestStatus.APPROVED &&
             requestData.status !== MediaRequestStatus.COMPLETED &&
             hasPermission(Permission.MANAGE_REQUESTS) && (
-              // Approved/completed requests are covered by
-              // RequestRetentionActions below, which routes through the same
-              // endpoint with clearer wording. Declined/failed requests have
-              // no retention state, so they still need this.
+              // Approved/completed handled by RequestRetentionActions below.
               <ConfirmButton
                 onClick={() => deleteRequest()}
                 confirmText={intl.formatMessage(globalMessages.areyousure)}

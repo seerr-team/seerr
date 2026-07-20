@@ -847,7 +847,7 @@ router.get<{ id: string }, RetentionLimitResponse>(
         Number(req.params.id) !== req.user?.id &&
         !req.user?.hasPermission(
           [Permission.MANAGE_USERS, Permission.MANAGE_REQUESTS],
-          { type: 'and' }
+          { type: 'or' }
         )
       ) {
         return next({

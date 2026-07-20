@@ -122,16 +122,11 @@ export class MediaRequest {
 
     let retentionDays: number | null = null;
     if (retentionLimitForType.enabled) {
-      // The acting user (e.g. an admin submitting on another user's behalf)
-      // can grant indefinite retention even if the requester themselves
-      // can't; otherwise it's gated on the requester's own privilege.
+      // The acting (not requesting) user's privilege also grants indefinite retention.
       const canKeepIndefinitely =
         retentionLimitForType.canKeepIndefinitely ||
         user.hasPermission(Permission.MANAGE_REQUESTS);
 
-      // A non-privileged requester is capped even when no explicit day
-      // limit is configured, so they can't work around canKeepIndefinitely
-      // by sending a very large finite value instead of null.
       const effectiveMaxDays = canKeepIndefinitely
         ? retentionLimitForType.maxDays
         : (retentionLimitForType.maxDays ?? DEFAULT_RETENTION_FALLBACK_DAYS);
@@ -144,15 +139,9 @@ export class MediaRequest {
         }
         retentionDays = requestBody.retentionDays;
       } else {
-        // No explicit choice was made. Fall back to the effective cap, or -
-        // only if this requester is actually allowed to keep media
-        // indefinitely - to unlimited.
         retentionDays = effectiveMaxDays ?? null;
       }
 
-      // retentionDays === null was already validated against
-      // canKeepIndefinitely above; the day cap only constrains an explicit
-      // finite choice.
       if (
         retentionDays !== null &&
         effectiveMaxDays !== undefined &&

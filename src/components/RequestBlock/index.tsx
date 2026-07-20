@@ -193,8 +193,7 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
             {request.status !== MediaRequestStatus.PENDING &&
               request.status !== MediaRequestStatus.APPROVED &&
               request.status !== MediaRequestStatus.COMPLETED && (
-                // Approved/completed requests are covered by
-                // RequestRetentionActions below, with clearer wording.
+                // Approved/completed handled by RequestRetentionActions below.
                 <Tooltip content={intl.formatMessage(messages.delete)}>
                   <Button
                     buttonType="danger"

@@ -14,16 +14,8 @@ import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import { setupTestDb } from '@server/test/db';
 
-// MediaRequest.request() fetches the movie from TMDB before creating
-// anything, so every test needs this mocked - otherwise it depends on real
-// network access. get() lives on ExternalAPI's prototype (getMovie itself
-// is an instance arrow-field, so it isn't directly mockable). It's
-// `protected`, hence the cast to reach it from outside the class.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 mock.method(ExternalAPI.prototype as any, 'get', async () => stubMovie());
-
-// AfterInsert/AfterUpdate hooks fire notifications on every request created
-// below; keep them inert the same way request.test.ts does.
 mock.method(MediaRequest, 'sendNotification', async () => undefined);
 
 function stubMovie(tmdbId = 954234): TmdbMovieDetails {
@@ -44,8 +36,6 @@ describe('MediaRequest.request() retention resolution', () => {
   let priorRetention: ReturnType<typeof getSettings>['main']['mediaRetention'];
 
   before(() => {
-    // Capture once; each test restores it in `beforeEach` below so tests
-    // never leak settings into one another regardless of run order.
     priorRetention = getSettings().main.mediaRetention;
   });
 
@@ -129,9 +119,6 @@ describe('MediaRequest.request() retention resolution', () => {
   });
 
   it('lets a KEEP_MEDIA user explicitly choose indefinite even when a finite day cap is configured', async () => {
-    // This is the exact bug found in review: the day-cap check must not
-    // reject a null (indefinite) value that canKeepIndefinitely already
-    // validated as permitted.
     getSettings().main.mediaRetention = {
       movie: { enabled: true, defaultDays: 30 },
       tv: { enabled: false },

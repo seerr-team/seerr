@@ -42,8 +42,7 @@ const RetentionRequestSelector = ({
     if (retentionLimit.maxDays) {
       onChange(retentionLimit.maxDays);
     } else if (!retentionLimit.canKeepIndefinitely) {
-      // No cap is configured, but this user isn't allowed to keep media
-      // indefinitely - don't let the selector silently submit "indefinite".
+      // No cap configured, but user can't keep indefinitely - don't submit null.
       onChange(DEFAULT_RETENTION_FALLBACK_DAYS);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

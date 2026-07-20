@@ -46,12 +46,7 @@ interface RetentionSummary {
   tooltip?: string;
 }
 
-/**
- * Derives what the retention badge should say: kept forever, actively
- * counting down to expiry, or a duration that hasn't started counting down
- * yet (media not observed as available). In compact mode the badge itself
- * is minimal ("90d") with the full phrase moved into a tooltip instead.
- */
+// Compact mode uses a minimal badge ("90d") with the full phrase in a tooltip.
 function getRetentionSummary(
   request: NonFunctionProperties<MediaRequest>,
   compact: boolean,
@@ -140,25 +135,15 @@ const RequestRetentionActions = ({
     request.status === MediaRequestStatus.APPROVED ||
     request.status === MediaRequestStatus.COMPLETED;
 
-  // Nothing has actually downloaded yet (still pending/searching in
-  // Radarr/Sonarr) - "Delete Movie & Files" would be misleading since
-  // there's no file to remove. Keep and the countdown/status badge stay
-  // available regardless, since those don't imply a file exists.
+  // No file to delete yet if still pending/searching in Radarr/Sonarr.
   const currentMediaStatus =
     request.media[request.is4k ? 'status4k' : 'status'];
   const hasFile =
     currentMediaStatus === MediaStatus.AVAILABLE ||
     currentMediaStatus === MediaStatus.PARTIALLY_AVAILABLE;
 
-  // Anyone who owns this request (or can manage requests) sees the
-  // countdown/status badge here at all. Delete and Keep are each further
-  // gated below - the badge itself doesn't imply either is available.
   const isVisible = isActionable && (isOwner || isAdmin);
 
-  // Admins (manage content) can delete or keep anyone's media outright.
-  // Non-admin owners need Permission.KEEP_MEDIA to keep their own media
-  // indefinitely, but can always delete/relinquish their own request - as
-  // long as there's actually a file to delete.
   const canDelete = isVisible && hasFile;
   const canKeep =
     isVisible && (isAdmin || hasPermission(Permission.KEEP_MEDIA));

@@ -114,15 +114,8 @@ export async function removeMediaRequest(request: MediaRequest): Promise<void> {
     relations: { requests: true },
   });
 
-  // There's only something in Radarr/Sonarr to clean up once this version
-  // has actually been sent there and is being tracked (monitored/searching,
-  // partially available, or fully available). PENDING is excluded since it
-  // can mean the request was never actually sent (e.g. no server was
-  // configured at request time); UNKNOWN/DELETED/BLOCKLISTED mean there's
-  // nothing tracked either way. Otherwise there's nothing to remove and the
-  // existing MediaRequestSubscriber's own post-removal bookkeeping
-  // (resetting status to DELETED/UNKNOWN based on request history) should be
-  // left to run unopposed.
+  // Only PROCESSING/AVAILABLE/PARTIALLY_AVAILABLE mean Radarr/Sonarr is
+  // actually tracking this; other statuses have nothing to remove there.
   const currentStatus = media[request.is4k ? 'status4k' : 'status'];
   const isTrackedInArr =
     currentStatus === MediaStatus.PROCESSING ||
@@ -144,8 +137,7 @@ export async function removeMediaRequest(request: MediaRequest): Promise<void> {
     try {
       removedFromArr = await removeMediaFiles(media, request.is4k);
     } catch (e) {
-      // Don't let a Radarr/Sonarr-side failure (e.g. it no longer has the
-      // entry Seerr thought it did) block cleaning up our own tracking.
+      // Don't let a Radarr/Sonarr failure block cleaning up our own tracking.
       logger.error(
         `Failed to remove the ${request.is4k ? '4K ' : ''}${
           media.mediaType === 'movie' ? 'movie' : 'show'
@@ -157,13 +149,13 @@ export async function removeMediaRequest(request: MediaRequest): Promise<void> {
     }
   }
 
-  // Remove the request first so the existing subscriber-driven status
-  // bookkeeping runs against a fully up-to-date request list; our own
-  // authoritative "files are actually gone" write (below) then takes
-  // precedence over whatever it computed.
+  // Remove the request first so subscriber bookkeeping runs against an
+  // up-to-date list; our own write below then takes precedence.
   await requestRepository.remove(request);
 
-  if (shouldRemoveFiles) {
+  // Only claim DELETED if Radarr/Sonarr actually confirmed removal -
+  // otherwise the file may still exist there and this would lie about it.
+  if (removedFromArr) {
     const freshMedia = await mediaRepository.findOneOrFail({
       where: { id: media.id },
     });
@@ -182,11 +174,16 @@ export async function removeMediaRequest(request: MediaRequest): Promise<void> {
     logger.info(
       `Removed the ${request.is4k ? '4K' : 'non-4K'} ${
         media.mediaType === 'movie' ? 'movie' : 'show'
-      } [TMDB ID ${media.tmdbId}]${
-        removedFromArr
-          ? ' and its files.'
-          : ' from local tracking (no matching Radarr/Sonarr entry was removed).'
-      }`,
+      } [TMDB ID ${media.tmdbId}] and its files.`,
+      { label: 'Media Deletion' }
+    );
+  } else if (shouldRemoveFiles) {
+    logger.warn(
+      `Could not confirm removal of the ${request.is4k ? '4K ' : ''}${
+        media.mediaType === 'movie' ? 'movie' : 'show'
+      } [TMDB ID ${
+        media.tmdbId
+      }] from Radarr/Sonarr. Leaving its tracked status unchanged.`,
       { label: 'Media Deletion' }
     );
   }

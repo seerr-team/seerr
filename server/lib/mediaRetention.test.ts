@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+import { describe, it, mock } from 'node:test';
 
+import RadarrAPI from '@server/api/servarr/radarr';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -11,10 +12,51 @@ import Media from '@server/entity/Media';
 import MediaRequest from '@server/entity/MediaRequest';
 import { User } from '@server/entity/User';
 import mediaRetention from '@server/lib/mediaRetention';
+import type { RadarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { setupTestDb } from '@server/test/db';
 
 setupTestDb();
+
+// Stand in for a real Radarr: succeed the lookup, then patch this
+// instance's axios adapter so the follow-up delete call succeeds too,
+// instead of hitting the network.
+mock.method(
+  RadarrAPI.prototype,
+  'getMovieByTmdbId',
+  async function (this: RadarrAPI) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (this as any).axios.defaults.adapter = async (config: unknown) => ({
+      data: {},
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config,
+      request: {},
+    });
+    return { id: 1, title: 'Fake Movie' };
+  }
+);
+
+const fakeRadarrSettings: RadarrSettings = {
+  id: 1,
+  name: 'Radarr',
+  hostname: 'radarr.example.com',
+  port: 7878,
+  apiKey: 'radarr-key',
+  useSsl: false,
+  activeProfileId: 1,
+  activeProfileName: 'HD',
+  activeDirectory: '/movies',
+  tags: [],
+  is4k: false,
+  isDefault: true,
+  syncEnabled: true,
+  preventSearch: false,
+  tagRequests: false,
+  overrideRule: [],
+  minimumAvailability: 'released',
+};
 
 function disableRetention(): void {
   const settings = getSettings();
@@ -105,7 +147,31 @@ describe('MediaRetention', () => {
     assert.strictEqual(mediaAfter.status, MediaStatus.AVAILABLE);
   });
 
-  it('removes the request and marks media DELETED once the retention period has expired', async () => {
+  it('removes the request and marks media DELETED once Radarr confirms removal', async () => {
+    disableRetention();
+    getSettings().main.mediaRetention.movie = { enabled: true };
+    getSettings().radarr = [fakeRadarrSettings];
+
+    const media = await createMedia();
+    const request = await createRequest(media, {
+      retentionDays: 1,
+      availableSince: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
+    });
+
+    await mediaRetention.run();
+
+    const removed = await getRepository(MediaRequest).findOne({
+      where: { id: request.id },
+    });
+    assert.strictEqual(removed, null, 'Expired request should be removed');
+
+    const mediaAfter = await getRepository(Media).findOneOrFail({
+      where: { id: media.id },
+    });
+    assert.strictEqual(mediaAfter.status, MediaStatus.DELETED);
+  });
+
+  it('removes the request but does not mark media DELETED when no Radarr server is configured', async () => {
     disableRetention();
     getSettings().main.mediaRetention.movie = { enabled: true };
 
@@ -125,7 +191,7 @@ describe('MediaRetention', () => {
     const mediaAfter = await getRepository(Media).findOneOrFail({
       where: { id: media.id },
     });
-    assert.strictEqual(mediaAfter.status, MediaStatus.DELETED);
+    assert.notEqual(mediaAfter.status, MediaStatus.DELETED);
   });
 
   it('does not remove the request before it has expired', async () => {

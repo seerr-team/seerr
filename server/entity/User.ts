@@ -392,15 +392,10 @@ export class User {
       [Permission.MANAGE_USERS, Permission.MANAGE_REQUESTS],
       { type: 'or' }
     );
-    // Indefinite retention (fully exempt from auto-purge) is a distinct
-    // privilege from "no day cap configured" - most users should not be
-    // able to grant themselves indefinite retention just because the admin
-    // left the default/override at 0 (unlimited).
     const canKeepIndefinitely =
       canBypass || this.hasPermission(Permission.KEEP_MEDIA);
 
-    // A resolved value of 0 (or unset) means unlimited, matching the
-    // 0-means-unlimited convention used by request quotas.
+    // 0/unset means unlimited, matching the request-quota convention.
     const resolveMaxDays = (
       userOverride?: number,
       defaultDays?: number

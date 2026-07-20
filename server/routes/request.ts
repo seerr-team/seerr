@@ -619,11 +619,7 @@ requestRoutes.delete('/:requestId', async (req, res, next) => {
       });
     }
 
-    // Deleting an approved/completed request - whether the owner giving it
-    // up themselves or an admin deleting it on anyone's behalf - should
-    // actually clean up files (unless another requester still wants to keep
-    // this media), not just remove the tracking record. Deletes of requests
-    // with no media yet skip straight to removing the request record.
+    // Approved/completed requests get their files cleaned up too, not just the record.
     if (
       (isOwner || isAdmin) &&
       (request.status === MediaRequestStatus.APPROVED ||
@@ -694,12 +690,8 @@ requestRoutes.post<
       });
     }
 
-    // The day cap only constrains an explicit finite choice - indefinite
-    // retention is governed entirely by the permission check above, and
-    // admins bypass the cap outright, same as when a request is created.
-    // A non-privileged user is capped even with no explicit day limit
-    // configured, so they can't request effectively-unlimited retention by
-    // sending a very large finite value instead of null.
+    // Admins bypass the cap; everyone else is capped even with no explicit
+    // day limit configured, so a large finite value can't stand in for null.
     const effectiveMaxDays =
       isAdmin || limitForType.canKeepIndefinitely
         ? limitForType.maxDays
@@ -719,6 +711,16 @@ requestRoutes.post<
 
     request.retentionDays = retentionDays ?? null;
     await requestRepository.save(request);
+
+    if (isAdmin && request.requestedBy.id !== req.user?.id) {
+      logger.info("Admin overrode retention for another user's request.", {
+        label: 'API',
+        requestId: request.id,
+        adminUserId: req.user?.id,
+        targetUserId: request.requestedBy.id,
+        retentionDays: request.retentionDays,
+      });
+    }
 
     return res.status(200).json(request);
   } catch (e) {
