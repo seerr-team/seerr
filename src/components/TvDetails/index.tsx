@@ -623,7 +623,11 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                   buttonType={'ghost'}
                   className="z-40 mr-2"
                   buttonSize={'md'}
-                  onClick={() => setShowBlocklistModal(true)}
+                  onClick={() =>
+                    settings.currentSettings.skipBlocklistModal
+                      ? onClickHideItemBtn()
+                      : setShowBlocklistModal(true)
+                  }
                 >
                   <EyeSlashIcon />
                 </Button>

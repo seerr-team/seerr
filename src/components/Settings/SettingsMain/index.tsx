@@ -55,6 +55,9 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   hideBlocklisted: 'Hide Blocklisted Items',
   hideBlocklistedTip:
     'Hide blocklisted items from discover pages for all users with the "Manage Blocklist" permission',
+  skipBlocklistModal: 'Skip Blocklist Confirmation',
+  skipBlocklistModalTip:
+    'Blocklist content immediately without showing the confirmation modal',
   toastApiKeySuccess: 'New API key generated successfully!',
   toastApiKeyFailure: 'Something went wrong while generating a new API key.',
   toastSettingsSuccess: 'Settings saved successfully!',
@@ -171,6 +174,7 @@ const SettingsMain = () => {
             applicationUrl: data?.applicationUrl,
             hideAvailable: data?.hideAvailable,
             hideBlocklisted: data?.hideBlocklisted,
+            skipBlocklistModal: data?.skipBlocklistModal,
             locale: data?.locale ?? 'en',
             discoverRegion: data?.discoverRegion,
             originalLanguage: data?.originalLanguage,
@@ -193,6 +197,7 @@ const SettingsMain = () => {
                 applicationUrl: values.applicationUrl,
                 hideAvailable: values.hideAvailable,
                 hideBlocklisted: values.hideBlocklisted,
+                skipBlocklistModal: values.skipBlocklistModal,
                 locale: values.locale,
                 discoverRegion: values.discoverRegion,
                 streamingRegion: values.streamingRegion,
@@ -533,6 +538,32 @@ const SettingsMain = () => {
                         setFieldValue(
                           'hideBlocklisted',
                           !values.hideBlocklisted
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="skipBlocklistModal"
+                    className="checkbox-label"
+                  >
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.skipBlocklistModal)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.skipBlocklistModalTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="skipBlocklistModal"
+                      name="skipBlocklistModal"
+                      onChange={() => {
+                        setFieldValue(
+                          'skipBlocklistModal',
+                          !values.skipBlocklistModal
                         );
                       }}
                     />
