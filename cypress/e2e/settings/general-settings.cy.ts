@@ -16,6 +16,7 @@ describe('General Settings', () => {
     cy.visit('/settings/network');
 
     cy.get('#trustProxy').click();
+    cy.get('#trustedProxies').type('127.0.0.1');
     cy.get('[data-testid=settings-network-form]').submit();
     cy.get('[data-testid=modal-title]').should(
       'contain',

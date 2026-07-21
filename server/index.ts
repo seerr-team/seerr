@@ -21,6 +21,7 @@ import checkOverseerrMerge from '@server/lib/overseerrMerge';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import clearCookies from '@server/middleware/clearcookies';
+import { addForwardAuthHeaders } from '@server/middleware/forwardauth';
 import routes from '@server/routes';
 import avatarproxy from '@server/routes/avatarproxy';
 import imageproxy from '@server/routes/imageproxy';
@@ -161,6 +162,7 @@ app
     server.use(cookieParser());
     server.use(express.json());
     server.use(express.urlencoded({ extended: true }));
+    server.use(addForwardAuthHeaders);
     server.use((req, _res, next) => {
       try {
         const descriptor = Object.getOwnPropertyDescriptor(req, 'ip');
@@ -227,6 +229,13 @@ app
       OpenApiValidator.middleware({
         apiSpec: API_SPEC_PATH,
         validateRequests: true,
+        // The OpenAPI spec declares `cookieAuth` (connect.sid) on every endpoint.
+        // Letting the validator enforce it rejects every non-cookie auth flow
+        // (forward-auth here, OIDC in #2715, future API-key paths) with a
+        // 401 before our auth middleware ever runs. The actual auth check is
+        // already performed by `isAuthenticated()`, so cookie validation at
+        // this layer is redundant.
+        validateSecurity: false,
       })
     );
     /**

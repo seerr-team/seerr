@@ -10,6 +10,7 @@ import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import type { NetworkSettings } from '@server/lib/settings';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
+import { Address4, Address6 } from 'ip-address';
 import { useIntl } from 'react-intl';
 import useSWR, { mutate } from 'swr';
 import * as Yup from 'yup';
@@ -28,6 +29,17 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
   trustProxy: 'Enable Proxy Support',
   trustProxyTip:
     'Allow Seerr to correctly register client IP addresses behind a proxy',
+  trustedProxies: 'Trusted Proxies',
+  forwardAuthEnabled: 'Enable Proxy Forward Authentication',
+  forwardAuthEnabledTip:
+    'Authenticate as the user specified by the headers. Only enable when secured behind a trusted proxy.',
+  userHeaderName: 'User Header Name',
+  userHeaderNameTip: 'Matched against Jellyfin or Plex Username',
+  emailHeaderName: 'Email Header Name',
+  emailHeaderNameTip: 'Matched against Email',
+  autoProvisionName: 'Enable autoprovisioning of new users',
+  autoProvisionNameTip:
+    "When enabled, an authenticated request whose forward-auth user/email doesn't match an existing user will create a new user record.",
   proxyEnabled: 'HTTP(S) Proxy',
   proxyEnabledTip:
     'Send ALL outgoing HTTP/HTTPS requests through a proxy server (host/port). Does NOT enable HTTPS, SSL, or certificate configuration.',
@@ -43,8 +55,7 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
   validationDnsCacheMinTtl: 'You must provide a valid minimum TTL',
   validationDnsCacheMaxTtl: 'You must provide a valid maximum TTL',
   validationProxyPort: 'You must provide a valid port',
-  networkDisclaimer:
-    'Network parameters from your container/system should be used instead of these settings. See the {docs} for more information.',
+  validationForwardAuthUserHeader: 'You must provide a user header name',
   docs: 'documentation',
   forceIpv4First: 'Force IPv4 Resolution First',
   forceIpv4FirstTip:
@@ -60,6 +71,9 @@ const messages = defineMessages('components.Settings.SettingsNetwork', {
   apiRequestTimeoutTip:
     'Maximum time (in seconds) to wait for responses from external services like Radarr/Sonarr. Set to 0 for no timeout.',
   validationApiRequestTimeout: 'You must provide a valid timeout value',
+  invalidIpv4: 'Invalid IPv4 address: {address}',
+  invalidIpv6: 'Invalid IPv6 address: {address}',
+  invalidAddress: 'Invalid address: {address}',
 });
 
 const SettingsNetwork = () => {
@@ -71,44 +85,123 @@ const SettingsNetwork = () => {
     mutate: revalidate,
   } = useSWR<NetworkSettings>('/api/v1/settings/network');
 
-  const NetworkSettingsSchema = Yup.object().shape({
-    dnsCacheForceMinTtl: Yup.number().when('dnsCacheEnabled', {
-      is: true,
-      then: (schema) =>
-        schema
-          .typeError(intl.formatMessage(messages.validationDnsCacheMinTtl))
-          .required(intl.formatMessage(messages.validationDnsCacheMinTtl))
-          .min(0),
-      otherwise: (schema) => schema.nullable(),
-    }),
-    dnsCacheForceMaxTtl: Yup.number().when('dnsCacheEnabled', {
-      is: true,
-      then: (schema) =>
-        schema
-          .typeError(intl.formatMessage(messages.validationDnsCacheMaxTtl))
-          .required(intl.formatMessage(messages.validationDnsCacheMaxTtl))
-          .min(-1),
-      otherwise: (schema) => schema.nullable(),
-    }),
-    proxyPort: Yup.number().when('proxyEnabled', {
-      is: (proxyEnabled: boolean) => proxyEnabled,
-      then: (schema) =>
-        schema
-          .typeError(intl.formatMessage(messages.validationProxyPort))
-          .integer(intl.formatMessage(messages.validationProxyPort))
-          .min(1, intl.formatMessage(messages.validationProxyPort))
-          .max(65535, intl.formatMessage(messages.validationProxyPort))
-          .required(intl.formatMessage(messages.validationProxyPort)),
-      otherwise: (schema) => schema.nullable(),
-    }),
-    apiRequestTimeout: Yup.number()
-      .typeError(intl.formatMessage(messages.validationApiRequestTimeout))
-      .required(intl.formatMessage(messages.validationApiRequestTimeout))
-      .min(0, intl.formatMessage(messages.validationApiRequestTimeout)),
-  });
+  const NetworkSettingsSchema = Yup.object()
+    .shape({
+      dnsCacheForceMinTtl: Yup.number().when('dnsCacheEnabled', {
+        is: true,
+        then: (schema) =>
+          schema
+            .typeError(intl.formatMessage(messages.validationDnsCacheMinTtl))
+            .required(intl.formatMessage(messages.validationDnsCacheMinTtl))
+            .min(0),
+        otherwise: (schema) => schema.nullable(),
+      }),
+      dnsCacheForceMaxTtl: Yup.number().when('dnsCacheEnabled', {
+        is: true,
+        then: (schema) =>
+          schema
+            .typeError(intl.formatMessage(messages.validationDnsCacheMaxTtl))
+            .required(intl.formatMessage(messages.validationDnsCacheMaxTtl))
+            .min(-1),
+        otherwise: (schema) => schema.nullable(),
+      }),
+      proxyPort: Yup.number().when('proxyEnabled', {
+        is: (proxyEnabled: boolean) => proxyEnabled,
+        then: (schema) =>
+          schema
+            .typeError(intl.formatMessage(messages.validationProxyPort))
+            .integer(intl.formatMessage(messages.validationProxyPort))
+            .min(1, intl.formatMessage(messages.validationProxyPort))
+            .max(65535, intl.formatMessage(messages.validationProxyPort))
+            .required(intl.formatMessage(messages.validationProxyPort)),
+        otherwise: (schema) => schema.nullable(),
+      }),
+      apiRequestTimeout: Yup.number()
+        .typeError(intl.formatMessage(messages.validationApiRequestTimeout))
+        .required(intl.formatMessage(messages.validationApiRequestTimeout))
+        .min(0, intl.formatMessage(messages.validationApiRequestTimeout)),
+      trustedProxies: Yup.string().when('trustProxy', {
+        is: true,
+        then: (schema) =>
+          schema.test(
+            'validate-address',
+            'invalid address found',
+            (value, ctx) => {
+              if (!value) {
+                return true;
+              }
+              const addresses = value.split(',').map((value) => value.trim());
+              for (const address of addresses) {
+                if (address.indexOf('.') != -1) {
+                  if (!Address4.isValid(address)) {
+                    return ctx.createError({
+                      message: intl.formatMessage(messages.invalidIpv4, {
+                        address,
+                      }),
+                    });
+                  }
+                } else if (address.indexOf(':') != -1) {
+                  if (!Address6.isValid(address)) {
+                    return ctx.createError({
+                      message: intl.formatMessage(messages.invalidIpv6, {
+                        address,
+                      }),
+                    });
+                  }
+                } else {
+                  return ctx.createError({
+                    message: intl.formatMessage(messages.invalidAddress, {
+                      address,
+                    }),
+                  });
+                }
+              }
+              return true;
+            }
+          ),
+        otherwise: (schema) => schema.nullable(),
+      }),
+      forwardAuthUserHeader: Yup.string(),
+      forwardAuthEmailHeader: Yup.string(),
+      trustProxy: Yup.boolean(),
+      forwardAuthEnabled: Yup.boolean(),
+    })
+    .test('email-or-user', 'Either email OR user required', (values, ctx) => {
+      const {
+        trustProxy,
+        forwardAuthEnabled,
+        forwardAuthUserHeader,
+        forwardAuthEmailHeader,
+      } = values;
+
+      const userSet = forwardAuthUserHeader && forwardAuthUserHeader !== '';
+      const emailSet = forwardAuthEmailHeader && forwardAuthEmailHeader !== '';
+      const invalid =
+        trustProxy && forwardAuthEnabled && !(userSet || emailSet);
+
+      if (invalid) {
+        return ctx.createError({
+          path: 'forwardAuthHeaders',
+          message: 'Either user or email header must be set',
+        });
+      }
+
+      return true;
+    });
 
   if (!data && !error) {
     return <LoadingSpinner />;
+  }
+
+  let trustedProxies = '';
+  const ipv4 = data?.trustedProxies.v4.join(', ') ?? '';
+  const ipv6 = data?.trustedProxies.v6.join(', ') ?? '';
+  if (ipv4.length > 0 && ipv6.length > 0) {
+    trustedProxies = `${ipv4}, ${ipv6}`;
+  } else if (ipv4.length > 0) {
+    trustedProxies = ipv4;
+  } else if (ipv6.length > 0) {
+    trustedProxies = ipv6;
   }
 
   return (
@@ -130,12 +223,18 @@ const SettingsNetwork = () => {
       <div className="section">
         <Formik
           initialValues={{
+            forwardAuthHeaders: '',
             csrfProtection: data?.csrfProtection,
             forceIpv4First: data?.forceIpv4First,
             dnsCacheEnabled: data?.dnsCache.enabled,
             dnsCacheForceMinTtl: data?.dnsCache.forceMinTtl,
             dnsCacheForceMaxTtl: data?.dnsCache.forceMaxTtl,
+            trustedProxies: trustedProxies,
             trustProxy: data?.trustProxy,
+            forwardAuthEnabled: data?.forwardAuth.enabled,
+            forwardAuthUserHeader: data?.forwardAuth.userHeader,
+            forwardAuthEmailHeader: data?.forwardAuth.emailHeader,
+            forwardAuthAutoProvision: data?.forwardAuth.autoProvision,
             proxyEnabled: data?.proxy?.enabled,
             proxyHostname: data?.proxy?.hostname,
             proxyPort: data?.proxy?.port,
@@ -153,6 +252,19 @@ const SettingsNetwork = () => {
           validationSchema={NetworkSettingsSchema}
           onSubmit={async (values) => {
             try {
+              const trustedProxies: { v4: string[]; v6: string[] } = {
+                v4: [],
+                v6: [],
+              };
+              for (let value of values.trustedProxies.split(',')) {
+                value = value.trim();
+                if (value.indexOf('.') != -1) {
+                  trustedProxies.v4.push(value);
+                } else if (value.indexOf(':') != -1) {
+                  trustedProxies.v6.push(value);
+                }
+              }
+
               await axios.post('/api/v1/settings/network', {
                 csrfProtection: values.csrfProtection,
                 forceIpv4First: values.forceIpv4First,
@@ -162,6 +274,13 @@ const SettingsNetwork = () => {
                   forceMinTtl: Number(values.dnsCacheForceMinTtl),
                   forceMaxTtl: Number(values.dnsCacheForceMaxTtl),
                 },
+                forwardAuth: {
+                  enabled: values.forwardAuthEnabled,
+                  userHeader: values.forwardAuthUserHeader,
+                  emailHeader: values.forwardAuthEmailHeader,
+                  autoProvision: values.forwardAuthAutoProvision,
+                },
+                trustedProxies: trustedProxies,
                 proxy: {
                   enabled: values.proxyEnabled,
                   hostname: values.proxyHostname,
@@ -222,6 +341,175 @@ const SettingsNetwork = () => {
                     />
                   </div>
                 </div>
+                {values.trustProxy && (
+                  <>
+                    <div className="ml-4 mr-2">
+                      <div className="form-row">
+                        <label
+                          htmlFor="trustedProxies"
+                          className="checkbox-label"
+                        >
+                          <span className="mr-2">
+                            {intl.formatMessage(messages.trustedProxies)}
+                          </span>
+                          <SettingsBadge
+                            badgeType="advanced"
+                            className="mr-2"
+                          />
+                        </label>
+                        <div className="form-input-area">
+                          <Field
+                            type="text"
+                            id="trustedProxies"
+                            name="trustedProxies"
+                          />
+                        </div>
+                        {errors.trustedProxies &&
+                          touched.trustedProxies &&
+                          typeof errors.trustedProxies === 'string' && (
+                            <div className="error">{errors.trustedProxies}</div>
+                          )}
+                      </div>
+                      <div className="form-row">
+                        <label
+                          htmlFor="forwardAuthEnabled"
+                          className="checkbox-label"
+                        >
+                          <span className="mr-2">
+                            {intl.formatMessage(messages.forwardAuthEnabled)}
+                          </span>
+                          <SettingsBadge
+                            badgeType="advanced"
+                            className="mr-2"
+                          />
+                          <span className="label-tip">
+                            {intl.formatMessage(messages.forwardAuthEnabledTip)}
+                          </span>
+                        </label>
+                        <div className="form-input-area">
+                          <Field
+                            type="checkbox"
+                            id="forwardAuthEnabled"
+                            name="forwardAuthEnabled"
+                            onChange={() => {
+                              setFieldValue(
+                                'forwardAuthEnabled',
+                                !values.forwardAuthEnabled
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    {values.forwardAuthEnabled && (
+                      <>
+                        <div className="ml-6 mr-2">
+                          <div className="form-row">
+                            <label
+                              htmlFor="forwardAuthUserHeader"
+                              className="text-label"
+                            >
+                              <span className="mr-2">
+                                {intl.formatMessage(messages.userHeaderName)}
+                              </span>
+                              <SettingsBadge badgeType="advanced" />
+                              <span className="label-tip">
+                                {intl.formatMessage(messages.userHeaderNameTip)}
+                              </span>
+                            </label>
+                            <div className="form-input-area">
+                              <div className="form-input-field">
+                                <Field
+                                  className="inline"
+                                  id="forwardAuthUserHeader"
+                                  name="forwardAuthUserHeader"
+                                  type="text"
+                                  list="forwardauth-autocomplete-options"
+                                  autoComplete="off"
+                                  placeholder="e.g. Remote-User (Case Insensitive)"
+                                  value={values.forwardAuthUserHeader ?? ''}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="form-row">
+                            <label
+                              htmlFor="forwardAuthEmailHeader"
+                              className="text-label"
+                            >
+                              <span className="mr-2">
+                                {intl.formatMessage(messages.emailHeaderName)}
+                              </span>
+                              <SettingsBadge badgeType="advanced" />
+                              <span className="label-tip">
+                                {intl.formatMessage(
+                                  messages.emailHeaderNameTip
+                                )}
+                              </span>
+                            </label>
+                            <div className="form-input-area">
+                              <div className="form-input-field">
+                                <Field
+                                  className="inline"
+                                  id="forwardAuthEmailHeader"
+                                  name="forwardAuthEmailHeader"
+                                  type="text"
+                                  list="forwardauth-autocomplete-options"
+                                  autoComplete="off"
+                                  placeholder="e.g. Remote-Email (Case Insensitive)"
+                                  value={values.forwardAuthEmailHeader ?? ''}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="form-row">
+                            <label
+                              htmlFor="forwardAuthAutoProvision"
+                              className="checkbox-label"
+                            >
+                              <span className="mr-2">
+                                {intl.formatMessage(messages.autoProvisionName)}
+                              </span>
+                              <SettingsBadge badgeType="advanced" />
+                              <span className="label-tip">
+                                {intl.formatMessage(
+                                  messages.autoProvisionNameTip
+                                )}
+                              </span>
+                            </label>
+                            <div className="form-input-area">
+                              <Field
+                                type="checkbox"
+                                id="forwardAuthAutoProvision"
+                                name="forwardAuthAutoProvision"
+                                onChange={() => {
+                                  setFieldValue(
+                                    'forwardAuthAutoProvision',
+                                    !values.forwardAuthAutoProvision
+                                  );
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <datalist id="forwardauth-autocomplete-options">
+                            <option value="Remote-User" />
+                            <option value="Remote-Email" />
+                            <option value="Remote-Name" />
+                            <option value="Cf-Access-Authenticated-User-Email" />
+                            <option value="X-authentik-username" />
+                            <option value="X-authentik-email" />
+                          </datalist>
+                          {errors['forwardAuthHeaders'] &&
+                            typeof errors.forwardAuthHeaders === 'string' && (
+                              <div className="error">
+                                {errors.forwardAuthHeaders}
+                              </div>
+                            )}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
                 <div className="form-row">
                   <label htmlFor="csrfProtection" className="checkbox-label">
                     <span className="mr-2">

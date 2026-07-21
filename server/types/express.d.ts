@@ -8,6 +8,10 @@ declare global {
     export interface Request {
       user?: User;
       locale?: string;
+      forwardAuth?: {
+        emailHeader: string;
+        userHeader: string;
+      };
     }
   }
 
