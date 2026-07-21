@@ -24,7 +24,11 @@ import BaseScanner from '@server/lib/scanners/baseScanner';
 import type { Library } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { getHostname } from '@server/utils/getHostname';
-import { getJellyfinFilePaths, isPathIgnored } from '@server/utils/mediaFilter';
+import {
+  getJellyfinFilePaths,
+  getUnignoredJellyfinMediaSources,
+  isPathIgnored,
+} from '@server/utils/mediaFilter';
 import { uniqWith } from 'lodash';
 
 interface JellyfinSyncStatus extends StatusBase {
@@ -128,8 +132,8 @@ class JellyfinScanner
 
       const { tmdbId, imdbId, metadata } = extracted;
 
-      const filteredSources = (metadata.MediaSources ?? []).filter(
-        (source) => !isPathIgnored(getJellyfinFilePaths([source]))
+      const filteredSources = getUnignoredJellyfinMediaSources(
+        metadata.MediaSources
       );
 
       if (filteredSources.length === 0) {
@@ -354,10 +358,8 @@ class JellyfinScanner
               } else {
                 const extEpisode = episode as JellyfinLibraryItemExtended;
 
-                const episodeFilteredSources = (
-                  extEpisode.MediaSources ?? []
-                ).filter(
-                  (source) => !isPathIgnored(getJellyfinFilePaths([source]))
+                const episodeFilteredSources = getUnignoredJellyfinMediaSources(
+                  extEpisode.MediaSources
                 );
 
                 const has4k = episodeFilteredSources.some((MediaSource) =>
