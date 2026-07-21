@@ -17,10 +17,15 @@ import type {
   TmdbTvDetails,
   TmdbTvSeasonResult,
 } from '@server/api/themoviedb/interfaces';
-import { MediaStatus, MediaType } from '@server/constants/media';
+import {
+  MediaRequestStatus,
+  MediaStatus,
+  MediaType,
+} from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
+import MediaRequest from '@server/entity/MediaRequest';
 import Season from '@server/entity/Season';
 import { User } from '@server/entity/User';
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
@@ -1340,6 +1345,685 @@ describe('AvailabilitySync', () => {
         MediaStatus.DELETED,
         'Movie deleted from its origin instance and Plex must not be kept alive by a colliding externalServiceId on another standard instance'
       );
+    });
+  });
+
+  describe('movie availability - Plex 4K detection', () => {
+    function fakePlexMovie(ratingKey: string, widths: number[]): PlexMetadata {
+      return {
+        ratingKey,
+        guid: `plex://movie/${ratingKey}`,
+        type: 'movie',
+        title: 'Test Movie',
+        Guid: [],
+        index: 1,
+        leafCount: 0,
+        viewedLeafCount: 0,
+        addedAt: 0,
+        updatedAt: 0,
+        Media: widths.map((width, i) => ({
+          id: i,
+          duration: 7200,
+          bitrate: 20000,
+          width,
+          height: width >= 2000 ? 2160 : 1080,
+          aspectRatio: 1.78,
+          audioChannels: 6,
+          audioCodec: 'eac3',
+          videoCodec: width >= 2000 ? 'hevc' : 'h264',
+          videoResolution: width >= 2000 ? '4k' : '1080',
+          container: 'mkv',
+          videoFrameRate: '24p',
+          videoProfile: 'main 10',
+        })),
+      };
+    }
+
+    it('should keep the 4K status when both statuses share a Plex item that has a 4K version (merged versions)', async () => {
+      configurePlex();
+      configureRadarr([
+        { syncEnabled: true },
+        { is4k: true, syncEnabled: true },
+      ]);
+
+      const mediaRepository = getRepository(Media);
+
+      // The Plex scanner writes the same rating key to both versions of a
+      // merged item, and a prior deletion left no externalServiceId4k to
+      // query, so retention rides on the Plex check alone.
+      const media = new Media();
+      media.tmdbId = 687163;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.AVAILABLE;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey = 'merged-versions-rk';
+      media.ratingKey4k = 'merged-versions-rk';
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'merged-versions-rk') {
+          return fakePlexMovie('merged-versions-rk', [1920, 3840]);
+        }
+        throw new Error('404');
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687163 },
+      });
+
+      assert.strictEqual(
+        updated.status4k,
+        MediaStatus.AVAILABLE,
+        'A 4K version present on the media server must prevent 4K removal even when both statuses share one rating key'
+      );
+      assert.strictEqual(
+        updated.status,
+        MediaStatus.AVAILABLE,
+        'The non-4K status must be unaffected'
+      );
+    });
+
+    it('should still remove a stale 4K status when the shared Plex item has no 4K version', async () => {
+      configurePlex();
+      configureRadarr([
+        { syncEnabled: true },
+        { is4k: true, syncEnabled: true },
+      ]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 687164;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.AVAILABLE;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey = 'stale-4k-rk';
+      media.ratingKey4k = 'stale-4k-rk';
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'stale-4k-rk') {
+          return fakePlexMovie('stale-4k-rk', [1920]);
+        }
+        throw new Error('404');
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687164 },
+      });
+
+      assert.strictEqual(
+        updated.status4k,
+        MediaStatus.DELETED,
+        'A phantom 4K status on a 1080p-only item must still be removed'
+      );
+      assert.strictEqual(
+        updated.status,
+        MediaStatus.AVAILABLE,
+        'The non-4K status must be kept'
+      );
+    });
+
+    it('should keep a 4K-only movie referenced only by ratingKey4k', async () => {
+      configurePlex();
+      configureRadarr([
+        { syncEnabled: true },
+        { is4k: true, syncEnabled: true },
+      ]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 687165;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.UNKNOWN;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey4k = 'pure-4k-rk';
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'pure-4k-rk') {
+          return fakePlexMovie('pure-4k-rk', [3840]);
+        }
+        throw new Error('404');
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687165 },
+      });
+
+      assert.strictEqual(
+        updated.status4k,
+        MediaStatus.AVAILABLE,
+        'A 4K-only item with a distinct rating key must be kept'
+      );
+    });
+
+    it('should not remove a 4K movie when Plex has not yet analyzed the file (empty Media array)', async () => {
+      configurePlex();
+      configureRadarr([{ is4k: true, syncEnabled: true }]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 687166;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.UNKNOWN;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey4k = 'analyzing-rk';
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'analyzing-rk') {
+          return fakePlexMovie('analyzing-rk', []);
+        }
+        throw new Error('404');
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687166 },
+      });
+
+      assert.strictEqual(
+        updated.status4k,
+        MediaStatus.AVAILABLE,
+        'Metadata without analyzed versions proves nothing about the file and must not trigger removal'
+      );
+    });
+
+    it('should remove the non-4K status when the shared Plex item only has a 4K version left', async () => {
+      configurePlex();
+      configureRadarr([
+        { syncEnabled: true },
+        { is4k: true, syncEnabled: true },
+      ]);
+
+      const mediaRepository = getRepository(Media);
+
+      // Merged item whose non-4K file was removed from disk: the item still
+      // exists in Plex, but only with the 4K version.
+      const media = new Media();
+      media.tmdbId = 687170;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.AVAILABLE;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey = 'shared-4k-only-rk';
+      media.ratingKey4k = 'shared-4k-only-rk';
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'shared-4k-only-rk') {
+          return fakePlexMovie('shared-4k-only-rk', [3840]);
+        }
+        throw new Error('404');
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687170 },
+      });
+
+      assert.strictEqual(
+        updated.status,
+        MediaStatus.DELETED,
+        'The non-4K status must be removed when the shared item no longer has a non-4K version'
+      );
+      assert.strictEqual(
+        updated.status4k,
+        MediaStatus.AVAILABLE,
+        'The 4K status must be kept'
+      );
+    });
+  });
+
+  describe('movie deletion metadata handling', () => {
+    it('should keep service metadata when deleting a 4K movie with an approved 4K request in flight', async () => {
+      configurePlex();
+      configureRadarr([{ is4k: true, syncEnabled: true }]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 687167;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.UNKNOWN;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey4k = 'req-in-flight-rk';
+      media.serviceId4k = 0;
+      media.externalServiceId4k = 512;
+      media.externalServiceSlug4k = 'test-movie';
+      await mediaRepository.save(media);
+
+      // Insert through a query builder with listeners disabled so
+      // MediaRequestSubscriber.afterInsert does not try to reach Radarr.
+      await getRepository(MediaRequest)
+        .createQueryBuilder()
+        .insert()
+        .into(MediaRequest)
+        .values({
+          status: MediaRequestStatus.APPROVED,
+          media: { id: media.id },
+          requestedBy: { id: 1 },
+          type: MediaType.MOVIE,
+          is4k: true,
+        })
+        .callListeners(false)
+        .execute();
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687167 },
+      });
+
+      assert.strictEqual(updated.status4k, MediaStatus.DELETED);
+      assert.strictEqual(
+        updated.externalServiceId4k,
+        512,
+        'externalServiceId4k must be kept while an approved 4K request is in flight'
+      );
+      assert.strictEqual(updated.serviceId4k, 0);
+      assert.strictEqual(updated.externalServiceSlug4k, 'test-movie');
+      assert.strictEqual(
+        updated.ratingKey4k,
+        'req-in-flight-rk',
+        'ratingKey4k must be kept while an approved 4K request is in flight'
+      );
+    });
+
+    it('should null service metadata when deleting a 4K movie with no open request', async () => {
+      configurePlex();
+      configureRadarr([{ is4k: true, syncEnabled: true }]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 687168;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.UNKNOWN;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey4k = 'no-request-rk';
+      media.serviceId4k = 0;
+      media.externalServiceId4k = 640;
+      media.externalServiceSlug4k = 'another-movie';
+      await mediaRepository.save(media);
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687168 },
+      });
+
+      assert.strictEqual(updated.status4k, MediaStatus.DELETED);
+      assert.strictEqual(updated.externalServiceId4k, null);
+      assert.strictEqual(updated.serviceId4k, null);
+      assert.strictEqual(updated.externalServiceSlug4k, null);
+      assert.strictEqual(updated.ratingKey4k, null);
+    });
+  });
+
+  describe('movie availability - scan-disabled servers', () => {
+    it('should count a configured but scan-disabled 4K Radarr server as existence evidence', async () => {
+      configurePlex();
+      configureRadarr([
+        { syncEnabled: true },
+        { is4k: true, syncEnabled: false, port: 7879 },
+      ]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 687169;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.UNKNOWN;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey4k = 'not-in-plex-rk';
+      media.serviceId4k = 1;
+      media.externalServiceId4k = 700;
+      await mediaRepository.save(media);
+
+      getMovieImpl = async (id: number) => {
+        if (id !== 700) {
+          throw new Error('404');
+        }
+        return {
+          id: 700,
+          tmdbId: 687169,
+          title: 'Test Movie',
+          hasFile: true,
+        } as unknown as RadarrMovie;
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687169 },
+      });
+
+      assert.strictEqual(
+        updated.status4k,
+        MediaStatus.AVAILABLE,
+        'A movie present on a configured 4K Radarr server must be kept even when that server has scanning disabled'
+      );
+    });
+  });
+
+  describe('show availability - merged Plex versions', () => {
+    function fakeVersionedEpisode(
+      ratingKey: string,
+      widths: number[]
+    ): PlexMetadata {
+      return {
+        ratingKey,
+        guid: `plex://episode/${ratingKey}`,
+        type: 'movie' as const,
+        title: ratingKey,
+        Guid: [],
+        index: 1,
+        leafCount: 0,
+        viewedLeafCount: 0,
+        addedAt: 0,
+        updatedAt: 0,
+        Media: widths.map((width, i) => ({
+          id: i,
+          duration: 2400,
+          bitrate: width >= 2000 ? 20000 : 4000,
+          width,
+          height: width >= 2000 ? 2160 : 1080,
+          aspectRatio: 1.78,
+          audioChannels: 6,
+          audioCodec: 'eac3',
+          videoCodec: width >= 2000 ? 'hevc' : 'h264',
+          videoResolution: width >= 2000 ? '4k' : '1080',
+          container: 'mkv',
+          videoFrameRate: '24p',
+          videoProfile: width >= 2000 ? 'main 10' : 'high',
+        })),
+      };
+    }
+
+    it('should remove a stale 4K season status when the shared item has no 4K episodes for that season', async () => {
+      configurePlex();
+      configureSonarr([
+        { syncEnabled: true },
+        { is4k: true, syncEnabled: true },
+      ]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 687171;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey = 'merged-show-rk';
+      media.ratingKey4k = 'merged-show-rk';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.AVAILABLE,
+        }),
+        new Season({
+          seasonNumber: 2,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.AVAILABLE,
+        }),
+      ];
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'merged-show-rk') {
+          return fakePlexShow('merged-show-rk');
+        }
+        throw new Error('404');
+      };
+
+      // Season 1 has a 4K version, season 2 only has a 1080p file left.
+      getChildrenMetadataImpl = async (key: string) => {
+        if (key === 'merged-show-rk') {
+          return [fakePlexSeason(1, 'ms-s1-rk'), fakePlexSeason(2, 'ms-s2-rk')];
+        }
+        if (key === 'ms-s1-rk') {
+          return [fakeVersionedEpisode('ms-s1-e1', [1920, 3840])];
+        }
+        if (key === 'ms-s2-rk') {
+          return [fakeVersionedEpisode('ms-s2-e1', [1920])];
+        }
+        return [];
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687171 },
+        relations: ['seasons'],
+      });
+      const s1 = updated.seasons.find((s) => s.seasonNumber === 1);
+      const s2 = updated.seasons.find((s) => s.seasonNumber === 2);
+
+      assert.strictEqual(
+        s2?.status4k,
+        MediaStatus.DELETED,
+        'A 4K season status without any 4K episode on the shared item must be removed'
+      );
+      assert.strictEqual(
+        s1?.status4k,
+        MediaStatus.AVAILABLE,
+        'A season with a 4K episode must be kept'
+      );
+      assert.strictEqual(
+        updated.status4k,
+        MediaStatus.PARTIALLY_AVAILABLE,
+        'The 4K show must roll up to partially available'
+      );
+      assert.strictEqual(s1?.status, MediaStatus.AVAILABLE);
+      assert.strictEqual(s2?.status, MediaStatus.AVAILABLE);
+      assert.strictEqual(updated.status, MediaStatus.AVAILABLE);
+    });
+
+    it('should remove a stale non-4K season status when the shared item only has 4K episodes for that season', async () => {
+      configurePlex();
+      configureSonarr([
+        { syncEnabled: true },
+        { is4k: true, syncEnabled: true },
+      ]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 687172;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey = 'merged-show2-rk';
+      media.ratingKey4k = 'merged-show2-rk';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.AVAILABLE,
+        }),
+        new Season({
+          seasonNumber: 2,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.AVAILABLE,
+        }),
+      ];
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'merged-show2-rk') {
+          return fakePlexShow('merged-show2-rk');
+        }
+        throw new Error('404');
+      };
+
+      // Season 2's non-4K file was removed; only the 4K version remains.
+      getChildrenMetadataImpl = async (key: string) => {
+        if (key === 'merged-show2-rk') {
+          return [
+            fakePlexSeason(1, 'ms2-s1-rk'),
+            fakePlexSeason(2, 'ms2-s2-rk'),
+          ];
+        }
+        if (key === 'ms2-s1-rk') {
+          return [fakeVersionedEpisode('ms2-s1-e1', [1920, 3840])];
+        }
+        if (key === 'ms2-s2-rk') {
+          return [fakeVersionedEpisode('ms2-s2-e1', [3840])];
+        }
+        return [];
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687172 },
+        relations: ['seasons'],
+      });
+      const s1 = updated.seasons.find((s) => s.seasonNumber === 1);
+      const s2 = updated.seasons.find((s) => s.seasonNumber === 2);
+
+      assert.strictEqual(
+        s2?.status,
+        MediaStatus.DELETED,
+        'A non-4K season status without any non-4K episode on the shared item must be removed'
+      );
+      assert.strictEqual(
+        s2?.status4k,
+        MediaStatus.AVAILABLE,
+        'The 4K season status must be kept'
+      );
+      assert.strictEqual(
+        updated.status,
+        MediaStatus.PARTIALLY_AVAILABLE,
+        'The non-4K show must roll up to partially available'
+      );
+      assert.strictEqual(s1?.status, MediaStatus.AVAILABLE);
+      assert.strictEqual(s1?.status4k, MediaStatus.AVAILABLE);
+      assert.strictEqual(updated.status4k, MediaStatus.AVAILABLE);
+    });
+
+    it('should keep a non-4K season with only 4K episodes when no 4K Sonarr server is configured', async () => {
+      // Single-server setups track 4K files under the plain status;
+      // without a 4K Sonarr the resolution check must stay disabled.
+      configurePlex();
+      configureSonarr([{ syncEnabled: true }]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 687173;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.ratingKey = 'single-4k-show-rk';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+      ];
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'single-4k-show-rk') {
+          return fakePlexShow('single-4k-show-rk');
+        }
+        throw new Error('404');
+      };
+
+      getChildrenMetadataImpl = async (key: string) => {
+        if (key === 'single-4k-show-rk') {
+          return [fakePlexSeason(1, 's4k-s1-rk')];
+        }
+        if (key === 's4k-s1-rk') {
+          return [fakeVersionedEpisode('s4k-s1-e1', [3840])];
+        }
+        return [];
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687173 },
+        relations: ['seasons'],
+      });
+      const s1 = updated.seasons.find((s) => s.seasonNumber === 1);
+
+      assert.strictEqual(
+        s1?.status,
+        MediaStatus.AVAILABLE,
+        'Without a 4K Sonarr server a 4K-only season must keep its non-4K status'
+      );
+      assert.strictEqual(updated.status, MediaStatus.AVAILABLE);
+    });
+
+    it('should not remove the 4K show status when episode metadata cannot be fetched for any season', async () => {
+      configurePlex();
+      configureSonarr([
+        { syncEnabled: true },
+        { is4k: true, syncEnabled: true },
+      ]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 687174;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey = 'merged-show3-rk';
+      media.ratingKey4k = 'merged-show3-rk';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.AVAILABLE,
+        }),
+      ];
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'merged-show3-rk') {
+          return fakePlexShow('merged-show3-rk');
+        }
+        throw new Error('404');
+      };
+
+      getChildrenMetadataImpl = async (key: string) => {
+        if (key === 'merged-show3-rk') {
+          return [fakePlexSeason(1, 'ms3-s1-rk')];
+        }
+        throw new Error('episode fetch failed');
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687174 },
+        relations: ['seasons'],
+      });
+      const s1 = updated.seasons.find((s) => s.seasonNumber === 1);
+
+      assert.strictEqual(
+        updated.status4k,
+        MediaStatus.AVAILABLE,
+        'Unverifiable episode metadata proves nothing about the files and must not trigger 4K removal'
+      );
+      assert.strictEqual(s1?.status4k, MediaStatus.AVAILABLE);
+      assert.strictEqual(updated.status, MediaStatus.AVAILABLE);
+      assert.strictEqual(s1?.status, MediaStatus.AVAILABLE);
     });
   });
 
