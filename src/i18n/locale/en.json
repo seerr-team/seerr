@@ -1034,6 +1034,8 @@
   "components.Settings.SettingsMain.originallanguage": "Discover Language",
   "components.Settings.SettingsMain.originallanguageTip": "Filter content by original language",
   "components.Settings.SettingsMain.partialRequestsEnabled": "Allow Partial Series Requests",
+  "components.Settings.SettingsMain.skipBlocklistModal": "Skip Blocklist Confirmation",
+  "components.Settings.SettingsMain.skipBlocklistModalTip": "Blocklist content immediately without showing the confirmation modal",
   "components.Settings.SettingsMain.streamingRegion": "Streaming Region",
   "components.Settings.SettingsMain.streamingRegionTip": "Show streaming sites by regional availability",
   "components.Settings.SettingsMain.toastApiKeyFailure": "Something went wrong while generating a new API key.",
