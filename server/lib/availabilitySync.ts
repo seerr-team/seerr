@@ -980,8 +980,8 @@ class AvailabilitySync {
         }
       }
 
-      if (plexMedia && media.mediaType === 'movie') {
-        const movieMedia = getUnignoredPlexMedia(plexMedia.Media ?? []);
+      if (plexMedia && media.mediaType === 'movie' && plexMedia.Media?.length) {
+        const movieMedia = getUnignoredPlexMedia(plexMedia.Media);
 
         if (movieMedia.length === 0) {
           plexMedia = undefined;
