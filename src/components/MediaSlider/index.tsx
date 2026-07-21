@@ -88,12 +88,7 @@ const MediaSlider = ({
         return true;
       }
 
-      return (
-        i.mediaInfo?.status === MediaStatus.AVAILABLE ||
-        i.mediaInfo?.status === MediaStatus.PARTIALLY_AVAILABLE ||
-        !i.mediaInfo?.requests ||
-        i.mediaInfo.requests.length === 0
-      );
+      return !i.mediaInfo?.hasActiveRequest;
     });
   }
 
