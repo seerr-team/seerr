@@ -30,10 +30,24 @@ const messages = defineMessages('components.RequestList', {
   showallrequests: 'Show All Requests',
   sortAdded: 'Most Recent',
   sortModified: 'Last Modified',
+  sortPopularity: 'Popularity',
+  sortReleaseDate: 'Release / First Air Date',
+  sortTmdbRating: 'TMDB Rating',
+  sortTitle: 'Title',
   sortDirection: 'Toggle Sort Direction',
   unableToConnect:
     'Unable to connect to {services}. Some information may be unavailable.',
 });
+
+type Sort =
+  | 'added'
+  | 'modified'
+  | 'popularity'
+  | 'releaseDate'
+  | 'voteAverage'
+  | 'title';
+
+type SortDirection = 'asc' | 'desc';
 
 enum Filter {
   ALL = 'all',
@@ -46,10 +60,6 @@ enum Filter {
   DELETED = 'deleted',
   COMPLETED = 'completed',
 }
-
-type Sort = 'added' | 'modified';
-
-type SortDirection = 'asc' | 'desc';
 
 type MediaType = 'all' | 'movie' | 'tv';
 
@@ -268,6 +278,18 @@ const RequestList = () => {
               </option>
               <option value="modified">
                 {intl.formatMessage(messages.sortModified)}
+              </option>
+              <option value="popularity">
+                {intl.formatMessage(messages.sortPopularity)}
+              </option>
+              <option value="releaseDate">
+                {intl.formatMessage(messages.sortReleaseDate)}
+              </option>
+              <option value="voteAverage">
+                {intl.formatMessage(messages.sortTmdbRating)}
+              </option>
+              <option value="title">
+                {intl.formatMessage(messages.sortTitle)}
               </option>
             </select>
             <Tooltip content={intl.formatMessage(messages.sortDirection)}>

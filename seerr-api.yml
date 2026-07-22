@@ -6438,10 +6438,11 @@ paths:
           name: sort
           schema:
             type: string
-            enum: [added, modified]
+            enum: [added, modified, popularity, releaseDate, voteAverage, title]
             default: added
         - in: query
           name: sortDirection
+          description: Sort direction for the selected sort field.
           schema:
             type: string
             enum: [asc, desc]

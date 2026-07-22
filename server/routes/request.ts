@@ -22,6 +22,12 @@ import type {
   RequestResultsResponse,
 } from '@server/interfaces/api/requestInterfaces';
 import { Permission } from '@server/lib/permissions';
+import {
+  getRequestSortColumn,
+  isTmdbRequestSort,
+  parseRequestSort,
+  sortRequestsByTmdbField,
+} from '@server/lib/requestSort';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
@@ -103,24 +109,11 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
           ];
       }
 
-      let sortFilter: string;
-      let sortDirection: 'ASC' | 'DESC';
-
-      switch (req.query.sort) {
-        case 'modified':
-          sortFilter = 'request.updatedAt';
-          break;
-        default:
-          sortFilter = 'request.id';
-      }
-
-      switch (req.query.sortDirection) {
-        case 'asc':
-          sortDirection = 'ASC';
-          break;
-        default:
-          sortDirection = 'DESC';
-      }
+      const { field: sortField, direction: sortDirection } = parseRequestSort(
+        req.query.sort as string | undefined,
+        req.query.sortDirection as string | undefined
+      );
+      const sortDirectionSql = sortDirection.toUpperCase() as 'ASC' | 'DESC';
 
       let query = getRepository(MediaRequest)
         .createQueryBuilder('request')
@@ -175,11 +168,27 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
           break;
       }
 
-      const [requests, requestCount] = await query
-        .orderBy(sortFilter, sortDirection)
-        .take(pageSize)
-        .skip(skip)
-        .getManyAndCount();
+      let requests: MediaRequest[];
+      let requestCount: number;
+
+      if (isTmdbRequestSort(sortField)) {
+        const allRequests = await query.getMany();
+        const sortedRequests = await sortRequestsByTmdbField(
+          allRequests,
+          sortField,
+          sortDirection
+        );
+
+        requestCount = sortedRequests.length;
+        requests = sortedRequests.slice(skip, skip + pageSize);
+      } else {
+        [requests, requestCount] = await query
+          .orderBy(getRequestSortColumn(sortField), sortDirectionSql)
+          .addOrderBy('request.id', sortDirectionSql)
+          .take(pageSize)
+          .skip(skip)
+          .getManyAndCount();
+      }
 
       const settings = getSettings();
 
