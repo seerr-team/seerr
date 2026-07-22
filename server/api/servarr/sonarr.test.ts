@@ -68,6 +68,21 @@ describe('SonarrAPI removeSeries', () => {
 
     await assert.rejects(() => sonarr.removeSeries(1234));
   });
+
+  it('rethrows a 404 from the lookup instead of treating it as removed', async () => {
+    const sonarr = buildSonarr();
+    mock.method(getAxios(sonarr), 'get', async () => {
+      throw { response: { status: 404 } };
+    });
+    const del = mock.method(getAxios(sonarr), 'delete', async () => ({}));
+
+    await assert.rejects(
+      () => sonarr.removeSeries(1234),
+      (e: unknown) =>
+        (e as { response?: { status?: number } }).response?.status === 404
+    );
+    assert.strictEqual(del.mock.callCount(), 0);
+  });
 });
 
 describe('SonarrAPI getSeriesByTvdbId', () => {

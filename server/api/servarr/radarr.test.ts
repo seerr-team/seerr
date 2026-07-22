@@ -68,6 +68,21 @@ describe('RadarrAPI removeMovie', () => {
 
     await assert.rejects(() => radarr.removeMovie(550));
   });
+
+  it('rethrows a 404 from the lookup instead of treating it as removed', async () => {
+    const radarr = buildRadarr();
+    mock.method(getAxios(radarr), 'get', async () => {
+      throw { response: { status: 404 } };
+    });
+    const del = mock.method(getAxios(radarr), 'delete', async () => ({}));
+
+    await assert.rejects(
+      () => radarr.removeMovie(550),
+      (e: unknown) =>
+        (e as { response?: { status?: number } }).response?.status === 404
+    );
+    assert.strictEqual(del.mock.callCount(), 0);
+  });
 });
 
 describe('RadarrAPI getMovieByTmdbId', () => {
