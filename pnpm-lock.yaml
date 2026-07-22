@@ -110,6 +110,9 @@ importers:
       humanize-duration:
         specifier: ^3.33.2
         version: 3.33.2
+      ip-address:
+        specifier: ^10.2.0
+        version: 10.2.0
       js-yaml:
         specifier: ^4.1.1
         version: 4.1.1
@@ -4866,6 +4869,10 @@ packages:
 
   ip-address@10.1.0:
     resolution: {integrity: sha512-XXADHxXmvT9+CRxhXg56LJovE+bmWnEWB78LB83VZTprKTmaC5QfruXocxzTZ2Kl0DNwKuBdlIhjL8LeY8Sf8Q==}
+    engines: {node: '>= 12'}
+
+  ip-address@10.2.0:
+    resolution: {integrity: sha512-/+S6j4E9AHvW9SWMSEY9Xfy66O5PWvVEJ08O0y5JGyEKQpojb0K0GKpz/v5HJ/G0vi3D2sjGK78119oXZeE0qA==}
     engines: {node: '>= 12'}
 
   ip-address@9.0.5:
@@ -13282,6 +13289,8 @@ snapshots:
       '@formatjs/icu-messageformat-parser': 3.5.5
 
   ip-address@10.1.0: {}
+
+  ip-address@10.2.0: {}
 
   ip-address@9.0.5:
     dependencies:
