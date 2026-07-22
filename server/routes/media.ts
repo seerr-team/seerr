@@ -243,12 +243,9 @@ mediaRoutes.delete(
       }
 
       if (!serviceSettings) {
-        logger.warn(
-          `There is no default ${
-            is4k ? '4K ' : '' + isMovie ? 'Radarr' : 'Sonarr'
-          }/ server configured. Did you set any of your ${
-            is4k ? '4K ' : '' + isMovie ? 'Radarr' : 'Sonarr'
-          } servers as default?`,
+        const arrName = `${is4k ? '4K ' : ''}${isMovie ? 'Radarr' : 'Sonarr'}`;
+        logger.info(
+          `There is no default ${arrName} server configured. Did you set any of your ${arrName} servers as default?`,
           {
             label: 'Media Request',
             mediaId: media.id,
