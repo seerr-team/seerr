@@ -1005,6 +1005,9 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     // Reset stale seasons or re-requests fail ("No seasons available to request")
     if (fullMedia.mediaType === MediaType.TV) {
       const statusKey = entity.is4k ? 'status4k' : 'status';
+      const removedSeasonNumbers = new Set(
+        entity.seasons.map((s) => s.seasonNumber)
+      );
       const activeSeasonNumbers = new Set(
         fullMedia.requests
           .filter(
@@ -1016,15 +1019,20 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           .flatMap((request) => request.seasons.map((s) => s.seasonNumber))
       );
 
+      const changedSeasons: Season[] = [];
       for (const season of fullMedia.seasons) {
         if (
           (season[statusKey] === MediaStatus.PENDING ||
             season[statusKey] === MediaStatus.PROCESSING) &&
+          removedSeasonNumbers.has(season.seasonNumber) &&
           !activeSeasonNumbers.has(season.seasonNumber)
         ) {
           season[statusKey] = MediaStatus.UNKNOWN;
-          await manager.save(season);
+          changedSeasons.push(season);
         }
+      }
+      if (changedSeasons.length) {
+        await manager.save(changedSeasons);
       }
     }
   }
