@@ -333,6 +333,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
     try {
       await axios.post(`/api/v1/request/${request.id}/${type}`);
       revalidate();
+      revalidateList();
       mutate('/api/v1/request/count');
     } catch {
       addToast(intl.formatMessage(messages.failedmodify), {
