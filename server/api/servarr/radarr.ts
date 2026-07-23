@@ -269,12 +269,12 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
       );
     }
   }
-  public removeMovie = async (movieId: number): Promise<void> => {
-    const { id, title } = await this.getMovieByTmdbId(movieId);
+  public removeMovie = async (tmdbId: number): Promise<void> => {
+    const { id, title } = await this.getMovieByTmdbId(tmdbId);
 
     if (!id) {
       logger.info(`[Radarr] Movie not in library, nothing to remove`, {
-        tmdbId: movieId,
+        tmdbId,
       });
       return;
     }
@@ -290,7 +290,7 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
     } catch (e) {
       if (e?.response?.status === 404) {
         logger.info(`[Radarr] Movie already removed from Radarr`, {
-          tmdbId: movieId,
+          tmdbId,
         });
         return;
       }

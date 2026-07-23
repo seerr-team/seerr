@@ -412,12 +412,12 @@ class SonarrAPI extends ServarrBase<{
 
     return newSeasons;
   }
-  public removeSeries = async (serieId: number): Promise<void> => {
-    const { id, title } = await this.getSeriesByTvdbId(serieId);
+  public removeSeries = async (tvdbId: number): Promise<void> => {
+    const { id, title } = await this.getSeriesByTvdbId(tvdbId);
 
     if (!id) {
       logger.info(`[Sonarr] Series not in library, nothing to remove`, {
-        tvdbId: serieId,
+        tvdbId,
       });
       return;
     }
@@ -433,7 +433,7 @@ class SonarrAPI extends ServarrBase<{
     } catch (e) {
       if (e?.response?.status === 404) {
         logger.info(`[Sonarr] Series already removed from Sonarr`, {
-          tvdbId: serieId,
+          tvdbId,
         });
         return;
       }
