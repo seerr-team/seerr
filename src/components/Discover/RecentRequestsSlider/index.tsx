@@ -22,7 +22,7 @@ const RecentRequestsSlider = () => {
   const { hasPermission } = useUser();
   const { data: requests, error: requestError } =
     useSWR<RequestResultsResponse>(
-      '/api/v1/request?filter=all&take=10&sort=modified&skip=0',
+      '/api/v1/request?filter=all&take=10&sort=added&skip=0',
       {
         revalidateOnMount: true,
       }
