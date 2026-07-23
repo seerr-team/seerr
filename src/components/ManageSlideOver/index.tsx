@@ -150,15 +150,18 @@ const ManageSlideOver = ({
           `/api/v1/media/${data.mediaInfo.id}/file?is4k=${is4k}`
         );
         await axios.delete(`/api/v1/media/${data.mediaInfo.id}`);
-        revalidate();
-        onClose();
-      } catch {
-        addToast(intl.formatMessage(messages.removemediaerror), {
-          appearance: 'error',
-          autoDismiss: true,
-        });
-        revalidate();
+      } catch (e) {
+        if (!axios.isAxiosError(e) || e.response?.status !== 404) {
+          addToast(intl.formatMessage(messages.removemediaerror), {
+            appearance: 'error',
+            autoDismiss: true,
+          });
+          revalidate();
+          return;
+        }
       }
+      revalidate();
+      onClose();
     }
   };
 
