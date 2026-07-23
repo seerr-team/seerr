@@ -635,7 +635,8 @@ describe('DELETE /request/:requestId, orphaned season status reset', () => {
 
   async function seedTvRequest(
     media: Media,
-    seasonNumbers: number[]
+    seasonNumbers: number[],
+    is4k = false
   ): Promise<MediaRequest> {
     const userRepo = getRepository(User);
     const requestRepo = getRepository(MediaRequest);
@@ -650,7 +651,7 @@ describe('DELETE /request/:requestId, orphaned season status reset', () => {
         status: MediaRequestStatus.APPROVED,
         media,
         requestedBy: admin,
-        is4k: false,
+        is4k,
         seasons: seasonNumbers.map(
           (seasonNumber) =>
             new SeasonRequest({
@@ -662,32 +663,37 @@ describe('DELETE /request/:requestId, orphaned season status reset', () => {
     );
   }
 
-  it('resets a request-covered PROCESSING season to UNKNOWN so it can be re-requested', async () => {
-    const mediaRepo = getRepository(Media);
-    const media = await seedTvShow(99101, [
-      { seasonNumber: 1, status: MediaStatus.PROCESSING },
-    ]);
-    const tvRequest = await seedTvRequest(media, [1]);
+  const staleStatuses = [
+    { label: 'PENDING', status: MediaStatus.PENDING },
+    { label: 'PROCESSING', status: MediaStatus.PROCESSING },
+  ] as const;
 
-    getTvShowImpl = async ({ tvId }) => fakeTmdbShow(tvId);
+  for (const { label, status } of staleStatuses) {
+    it(`resets a request-covered ${label} season to UNKNOWN so it can be re-requested`, async () => {
+      const mediaRepo = getRepository(Media);
+      const media = await seedTvShow(99101, [{ seasonNumber: 1, status }]);
+      const tvRequest = await seedTvRequest(media, [1]);
 
-    const admin = await loginAs('admin@seerr.dev', 'test1234');
-    const res = await admin.delete(`/request/${tvRequest.id}`);
-    assert.strictEqual(res.status, 204);
+      getTvShowImpl = async ({ tvId }) => fakeTmdbShow(tvId);
 
-    const updated = await mediaRepo.findOneOrFail({
-      where: { id: media.id },
+      const admin = await loginAs('admin@seerr.dev', 'test1234');
+      const res = await admin.delete(`/request/${tvRequest.id}`);
+      assert.strictEqual(res.status, 204);
+
+      const updated = await mediaRepo.findOneOrFail({
+        where: { id: media.id },
+      });
+      assert.strictEqual(updated.seasons[0].status, MediaStatus.UNKNOWN);
+
+      const friend = await loginAs('friend@seerr.dev', 'test1234');
+      const reRequest = await friend.post('/request').send({
+        mediaType: MediaType.TV,
+        mediaId: 99101,
+        seasons: [1],
+      });
+      assert.strictEqual(reRequest.status, 201);
     });
-    assert.strictEqual(updated.seasons[0].status, MediaStatus.UNKNOWN);
-
-    const friend = await loginAs('friend@seerr.dev', 'test1234');
-    const reRequest = await friend.post('/request').send({
-      mediaType: MediaType.TV,
-      mediaId: 99101,
-      seasons: [1],
-    });
-    assert.strictEqual(reRequest.status, 201);
-  });
+  }
 
   it('does not touch PROCESSING seasons the deleted request did not cover', async () => {
     const mediaRepo = getRepository(Media);
@@ -742,5 +748,25 @@ describe('DELETE /request/:requestId, orphaned season status reset', () => {
     const updated = await mediaRepo.findOneOrFail({ where: { id: media.id } });
     assert.strictEqual(updated.seasons[0].status, MediaStatus.UNKNOWN);
     assert.strictEqual(updated.seasons[0].status4k, MediaStatus.PROCESSING);
+  });
+
+  it('resets season status4k and leaves status untouched when deleting a 4K request', async () => {
+    const mediaRepo = getRepository(Media);
+    const media = await seedTvShow(99105, [
+      {
+        seasonNumber: 1,
+        status: MediaStatus.PROCESSING,
+        status4k: MediaStatus.PROCESSING,
+      },
+    ]);
+    const tvRequest = await seedTvRequest(media, [1], true);
+
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+    const res = await admin.delete(`/request/${tvRequest.id}`);
+    assert.strictEqual(res.status, 204);
+
+    const updated = await mediaRepo.findOneOrFail({ where: { id: media.id } });
+    assert.strictEqual(updated.seasons[0].status4k, MediaStatus.UNKNOWN);
+    assert.strictEqual(updated.seasons[0].status, MediaStatus.PROCESSING);
   });
 });
