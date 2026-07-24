@@ -32,14 +32,21 @@ describe('SonarrAPI removeSeries', () => {
 
   it('does nothing when the series is not in the library', async () => {
     const sonarr = buildSonarr();
-    mock.method(SonarrAPI.prototype, 'getSeriesByTvdbId', async () => ({
-      id: 0,
-      title: 'Test Series',
+    mock.method(getAxios(sonarr), 'get', async () => ({
+      data: [{ id: 0, title: 'Breaking Bad' }],
     }));
     const del = mock.method(getAxios(sonarr), 'delete', async () => ({}));
 
-    await sonarr.removeSeries(1234);
+    await assert.doesNotReject(() => sonarr.removeSeries(1234));
+    assert.strictEqual(del.mock.callCount(), 0);
+  });
 
+  it('rejects when the tvdbId is unknown to the lookup', async () => {
+    const sonarr = buildSonarr();
+    mock.method(getAxios(sonarr), 'get', async () => ({ data: [] }));
+    const del = mock.method(getAxios(sonarr), 'delete', async () => ({}));
+
+    await assert.rejects(() => sonarr.removeSeries(1234), /Series not found/);
     assert.strictEqual(del.mock.callCount(), 0);
   });
 

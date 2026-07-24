@@ -32,14 +32,21 @@ describe('RadarrAPI removeMovie', () => {
 
   it('does nothing when the movie is not in the library', async () => {
     const radarr = buildRadarr();
-    mock.method(RadarrAPI.prototype, 'getMovieByTmdbId', async () => ({
-      id: 0,
-      title: 'Test Movie',
+    mock.method(getAxios(radarr), 'get', async () => ({
+      data: [{ id: 0, title: 'Fight Club' }],
     }));
     const del = mock.method(getAxios(radarr), 'delete', async () => ({}));
 
-    await radarr.removeMovie(550);
+    await assert.doesNotReject(() => radarr.removeMovie(550));
+    assert.strictEqual(del.mock.callCount(), 0);
+  });
 
+  it('rejects when the tmdbId is unknown to the lookup', async () => {
+    const radarr = buildRadarr();
+    mock.method(getAxios(radarr), 'get', async () => ({ data: [] }));
+    const del = mock.method(getAxios(radarr), 'delete', async () => ({}));
+
+    await assert.rejects(() => radarr.removeMovie(550), /Movie not found/);
     assert.strictEqual(del.mock.callCount(), 0);
   });
 
