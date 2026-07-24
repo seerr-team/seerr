@@ -251,7 +251,10 @@ mediaRoutes.delete(
             mediaId: media.id,
           }
         );
-        return res.status(204).send();
+        return next({
+          status: 409,
+          message: `No ${arrName} server configured to delete media files`,
+        });
       }
 
       let service;
