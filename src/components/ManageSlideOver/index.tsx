@@ -149,7 +149,6 @@ const ManageSlideOver = ({
         await axios.delete(
           `/api/v1/media/${data.mediaInfo.id}/file?is4k=${is4k}`
         );
-        await axios.delete(`/api/v1/media/${data.mediaInfo.id}`);
       } catch (e) {
         if (!axios.isAxiosError(e) || e.response?.status !== 404) {
           addToast(intl.formatMessage(messages.removemediaerror), {

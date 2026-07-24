@@ -280,7 +280,15 @@ mediaRoutes.delete(
           throw new Error('TVDB ID not found');
         }
         await (service as SonarrAPI).removeSeries(tvdbId);
+
+        for (const season of media.seasons) {
+          season[is4k ? 'status4k' : 'status'] = MediaStatus.DELETED;
+        }
       }
+
+      media[is4k ? 'status4k' : 'status'] = MediaStatus.DELETED;
+      media.resetServiceData(is4k);
+      await mediaRepository.save(media);
 
       return res.status(204).send();
     } catch (e) {
