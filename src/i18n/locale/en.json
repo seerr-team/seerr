@@ -530,6 +530,7 @@
   "components.RequestList.RequestItem.modifieduserdate": "{date} by {user}",
   "components.RequestList.RequestItem.profileName": "Profile",
   "components.RequestList.RequestItem.removearr": "Remove from {arr}",
+  "components.RequestList.RequestItem.removemediaerror": "Something went wrong while removing the media.",
   "components.RequestList.RequestItem.requested": "Requested",
   "components.RequestList.RequestItem.requesteddate": "Requested",
   "components.RequestList.RequestItem.seasons": "{seasonCount, plural, one {Season} other {Seasons}}",
