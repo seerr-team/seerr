@@ -111,12 +111,25 @@ class Media {
       const hidden = isHidden(id);
       const hidden4k = isHidden(id4k);
 
-      if (isAvailable(item.status) && hidden) {
-        item.status = MediaStatus.UNKNOWN;
+      if (hidden) {
+        if (isAvailable(item.status)) {
+          item.status = MediaStatus.UNKNOWN;
+        }
+
+        // Deep links are built from the media server id regardless of status,
+        // so they have to be dropped as well: a restricted user must not be
+        // handed a working "play" link to media they cannot open.
+        item.mediaUrl = undefined;
+        item.iOSPlexUrl = undefined;
       }
 
-      if (isAvailable(item.status4k) && hidden4k) {
-        item.status4k = MediaStatus.UNKNOWN;
+      if (hidden4k) {
+        if (isAvailable(item.status4k)) {
+          item.status4k = MediaStatus.UNKNOWN;
+        }
+
+        item.mediaUrl4k = undefined;
+        item.iOSPlexUrl4k = undefined;
       }
 
       // Seasons carry their own status, which the UI displays independently of
