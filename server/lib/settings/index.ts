@@ -42,6 +42,14 @@ export interface PlexSettings {
   useSsl?: boolean;
   libraries: Library[];
   webAppUrl?: string;
+  /**
+   * When a user restricted by Plex labels requests media that already exists in
+   * the library, automatically add one of their allowed labels to it so they
+   * gain access, instead of leaving the request for the owner to handle.
+   *
+   * Disabled by default: granting library access is the owner's decision.
+   */
+  grantLabelOnApproval?: boolean;
 }
 
 export interface JellyfinSettings {

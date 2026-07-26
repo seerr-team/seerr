@@ -13,6 +13,12 @@ import logger from '@server/logger';
  */
 export type PlexVisibleRatingKeys = Set<string> | null;
 
+/** Identifies a single item in the Plex library. */
+export interface PlexItemRef {
+  ratingKey: string;
+  type: 'movie' | 'show';
+}
+
 interface CacheEntry {
   expiresAt: number;
   ratingKeys: PlexVisibleRatingKeys;
@@ -158,6 +164,67 @@ const getSectionRatingKeys = async (
   } while (offset < totalSize);
 
   return ratingKeys;
+};
+
+/**
+ * Grants a restricted user access to an item already present in the library, by
+ * adding one of the labels they are allowed to see.
+ *
+ * Returns the label that was applied, or `null` when nothing had to be done:
+ * the user is unrestricted, already has access, or has no allow list to draw a
+ * label from (a deny-only restriction cannot be satisfied this way).
+ */
+export const grantLabelAccess = async (
+  user: User,
+  { ratingKey, type }: PlexItemRef
+): Promise<string | null> => {
+  const settings = getSettings();
+
+  if (
+    settings.main.mediaServerType !== MediaServerType.PLEX ||
+    user.userType !== UserType.PLEX ||
+    !user.plexId ||
+    user.id === 1
+  ) {
+    return null;
+  }
+
+  const adminToken = await getAdminPlexToken();
+
+  if (!adminToken) {
+    return null;
+  }
+
+  const rules = await new PlexTvAPI(adminToken).getUserSharingRules(
+    user.plexId
+  );
+
+  if (!rules) {
+    return null;
+  }
+
+  const filter = type === 'show' ? rules.tv : rules.movies;
+  const label = filter.allow.find(
+    (candidate) => !filter.deny.includes(candidate)
+  );
+
+  if (!label) {
+    return null;
+  }
+
+  await new PlexAPI({ plexToken: adminToken }).addLabel(ratingKey, type, label);
+
+  // The user's visible set just changed, so drop the cached copy.
+  clearPlexSharingCache(user.id);
+
+  logger.info('Granted Plex library access by adding a label', {
+    label: 'Plex Sharing',
+    userId: user.id,
+    ratingKey,
+    plexLabel: label,
+  });
+
+  return label;
 };
 
 export const getVisibleRatingKeys = async (
