@@ -127,34 +127,36 @@ export interface PlexLabelFilter {
   allowNothing?: boolean;
 }
 
+interface PlexSharedServer {
+  $: {
+    id: string;
+    username: string;
+    email: string;
+    userID: string;
+    machineIdentifier?: string;
+    allLibraries?: string;
+    owned?: string;
+    filterAll?: string;
+    filterMovies?: string;
+    filterTelevision?: string;
+    filterMusic?: string;
+    filterPhotos?: string;
+  };
+  Section?: {
+    $: {
+      id: string;
+      /** Library section key on the server itself, e.g. `1`. */
+      key: string;
+      title: string;
+      type: string;
+      shared: string;
+    };
+  }[];
+}
+
 interface SharedServersResponse {
   MediaContainer: {
-    SharedServer?: {
-      $: {
-        id: string;
-        username: string;
-        email: string;
-        userID: string;
-        machineIdentifier?: string;
-        allLibraries?: string;
-        owned?: string;
-        filterAll?: string;
-        filterMovies?: string;
-        filterTelevision?: string;
-        filterMusic?: string;
-        filterPhotos?: string;
-      };
-      Section?: {
-        $: {
-          id: string;
-          /** Library section key on the server itself, e.g. `1`. */
-          key: string;
-          title: string;
-          type: string;
-          shared: string;
-        };
-      }[];
-    }[];
+    SharedServer?: PlexSharedServer[];
   };
 }
 
@@ -172,6 +174,43 @@ export interface PlexUserSharingRules {
 }
 
 const EMPTY_LABEL_FILTER: PlexLabelFilter = { allow: [], deny: [] };
+
+/**
+ * Turns a `shared_servers` entry into the restrictions that apply to that user,
+ * or `null` when none do.
+ */
+const parseSharingRules = (
+  sharedServer: PlexSharedServer
+): PlexUserSharingRules | null => {
+  const all = parsePlexLabelFilter(sharedServer.$.filterAll);
+  const movies = mergeLabelFilters(
+    all,
+    parsePlexLabelFilter(sharedServer.$.filterMovies)
+  );
+  const tv = mergeLabelFilters(
+    all,
+    parsePlexLabelFilter(sharedServer.$.filterTelevision)
+  );
+
+  const allLibraries = sharedServer.$.allLibraries === '1';
+  const sharedSectionKeys = allLibraries
+    ? []
+    : (sharedServer.Section ?? [])
+        .filter((section) => section.$.shared === '1')
+        .map((section) => section.$.key);
+
+  const hasLabelRestrictions =
+    movies.allow.length > 0 ||
+    movies.deny.length > 0 ||
+    tv.allow.length > 0 ||
+    tv.deny.length > 0;
+
+  if (allLibraries && !hasLabelRestrictions) {
+    return null;
+  }
+
+  return { allLibraries, sharedSectionKeys, movies, tv };
+};
 
 /**
  * Decodes a single restriction value. Plex url encodes them, but a malformed
@@ -461,65 +500,16 @@ class PlexTvAPI extends ExternalAPI {
   public async getUserSharingRules(
     plexUserId: number
   ): Promise<PlexUserSharingRules | null> {
-    const settings = getSettings();
-
-    if (!settings.plex.machineId) {
-      return null;
-    }
-
     try {
-      // `shared_servers` exposes the filters *and* the shared sections in a
-      // single call, unlike `/api/users` which only reports a library count.
-      const response = await this.axios.get(
-        `/api/servers/${settings.plex.machineId}/shared_servers`,
-        {
-          transformResponse: [],
-          responseType: 'text',
-        }
-      );
-
-      const parsedXml = (await xml2js.parseStringPromise(
-        response.data
-      )) as SharedServersResponse;
-
-      const sharedServer = parsedXml.MediaContainer.SharedServer?.find(
-        (s) => parseInt(s.$.userID) === plexUserId
-      );
+      const sharedServers = await this.getSharedServers();
 
       // No entry means the library is not shared with this user at all; that
       // case is handled by checkUserAccess() rather than by filtering here.
-      if (!sharedServer) {
-        return null;
-      }
-
-      const all = parsePlexLabelFilter(sharedServer.$.filterAll);
-      const movies = mergeLabelFilters(
-        all,
-        parsePlexLabelFilter(sharedServer.$.filterMovies)
-      );
-      const tv = mergeLabelFilters(
-        all,
-        parsePlexLabelFilter(sharedServer.$.filterTelevision)
+      const sharedServer = sharedServers?.find(
+        (s) => parseInt(s.$.userID) === plexUserId
       );
 
-      const allLibraries = sharedServer.$.allLibraries === '1';
-      const sharedSectionKeys = allLibraries
-        ? []
-        : (sharedServer.Section ?? [])
-            .filter((section) => section.$.shared === '1')
-            .map((section) => section.$.key);
-
-      const hasLabelRestrictions =
-        movies.allow.length > 0 ||
-        movies.deny.length > 0 ||
-        tv.allow.length > 0 ||
-        tv.deny.length > 0;
-
-      if (allLibraries && !hasLabelRestrictions) {
-        return null;
-      }
-
-      return { allLibraries, sharedSectionKeys, movies, tv };
+      return sharedServer ? parseSharingRules(sharedServer) : null;
     } catch (e) {
       logger.error('Failed to retrieve Plex sharing rules for user', {
         label: 'Plex.tv API',
@@ -528,6 +518,61 @@ class PlexTvAPI extends ExternalAPI {
       });
       return null;
     }
+  }
+
+  /**
+   * Returns the sharing rules of every restricted user, keyed by Plex user id.
+   *
+   * Needed to tell how exclusive a label is before granting it: a label several
+   * users are allowed to see cannot be used to give access to one of them
+   * alone. Unrestricted users are left out, since they already see everything
+   * and applying a label changes nothing for them.
+   */
+  public async getAllUserSharingRules(): Promise<
+    Map<number, PlexUserSharingRules>
+  > {
+    const rulesByUserId = new Map<number, PlexUserSharingRules>();
+
+    try {
+      for (const sharedServer of (await this.getSharedServers()) ?? []) {
+        const rules = parseSharingRules(sharedServer);
+
+        if (rules) {
+          rulesByUserId.set(parseInt(sharedServer.$.userID), rules);
+        }
+      }
+    } catch (e) {
+      logger.error('Failed to retrieve Plex sharing rules', {
+        label: 'Plex.tv API',
+        errorMessage: e.message,
+      });
+    }
+
+    return rulesByUserId;
+  }
+
+  private async getSharedServers(): Promise<PlexSharedServer[] | undefined> {
+    const settings = getSettings();
+
+    if (!settings.plex.machineId) {
+      return undefined;
+    }
+
+    // `shared_servers` exposes the filters *and* the shared sections in a
+    // single call, unlike `/api/users` which only reports a library count.
+    const response = await this.axios.get(
+      `/api/servers/${settings.plex.machineId}/shared_servers`,
+      {
+        transformResponse: [],
+        responseType: 'text',
+      }
+    );
+
+    const parsedXml = (await xml2js.parseStringPromise(
+      response.data
+    )) as SharedServersResponse;
+
+    return parsedXml.MediaContainer.SharedServer;
   }
 
   public async getWatchlist({

@@ -1,4 +1,5 @@
 import PlexAPI from '@server/api/plexapi';
+import type { PlexUserSharingRules } from '@server/api/plextv';
 import PlexTvAPI from '@server/api/plextv';
 import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
@@ -18,6 +19,48 @@ export interface PlexItemRef {
   ratingKey: string;
   type: 'movie' | 'show';
 }
+
+/**
+ * Picks which of the labels a user is allowed to see should be applied to grant
+ * them access to an item.
+ *
+ * A label is a shared bucket rather than a per-user permission: applying one
+ * that other restricted users are also allowed to see hands them the item too.
+ * So the label the fewest other users can see wins, and a label named after the
+ * user breaks ties, since naming a label after its user is the usual
+ * convention. Ordering is otherwise stable, to keep the choice predictable.
+ *
+ * `sharedWithCount` maps a lowercased label to the number of *other* restricted
+ * users allowed to see it. Unrestricted users are not counted: they already see
+ * the item whatever label it carries.
+ */
+export const pickGrantLabel = (
+  candidates: string[],
+  preferredNames: string[],
+  sharedWithCount: Map<string, number>
+): { label: string; alsoVisibleTo: number } | null => {
+  const names = new Set(
+    preferredNames.filter(Boolean).map((name) => name.toLowerCase())
+  );
+
+  const ranked = candidates
+    .map((label, index) => ({
+      label,
+      index,
+      alsoVisibleTo: sharedWithCount.get(label.toLowerCase()) ?? 0,
+      matchesName: names.has(label.toLowerCase()),
+    }))
+    .sort(
+      (a, b) =>
+        a.alsoVisibleTo - b.alsoVisibleTo ||
+        Number(b.matchesName) - Number(a.matchesName) ||
+        a.index - b.index
+    );
+
+  const best = ranked[0];
+
+  return best ? { label: best.label, alsoVisibleTo: best.alsoVisibleTo } : null;
+};
 
 const getAdminPlexToken = async (): Promise<string | null> => {
   const userRepository = getRepository(User);
@@ -180,15 +223,17 @@ export const grantLabelAccess = async (
     return null;
   }
 
-  const rules = await new PlexTvAPI(adminToken).getUserSharingRules(
-    user.plexId
-  );
+  const plexTvClient = new PlexTvAPI(adminToken);
+  const rulesByPlexUserId = await plexTvClient.getAllUserSharingRules();
+  const rules = rulesByPlexUserId.get(user.plexId);
 
   if (!rules) {
     return null;
   }
 
-  const filter = type === 'show' ? rules.tv : rules.movies;
+  const filterOf = (candidate: PlexUserSharingRules) =>
+    type === 'show' ? candidate.tv : candidate.movies;
+  const filter = filterOf(rules);
 
   if (filter.allowNothing) {
     return null;
@@ -197,22 +242,58 @@ export const grantLabelAccess = async (
   // Case-insensitive, to match how the filter is evaluated: granting a label
   // that the deny list then rejects would achieve nothing.
   const denied = new Set(filter.deny.map((entry) => entry.toLowerCase()));
-  const label = filter.allow.find(
+  const candidates = filter.allow.filter(
     (candidate) => !denied.has(candidate.toLowerCase())
   );
 
-  if (!label) {
+  // How many other restricted users each candidate label would also expose the
+  // item to, so the most exclusive one can be preferred.
+  const sharedWithCount = new Map<string, number>();
+
+  for (const [plexUserId, otherRules] of rulesByPlexUserId) {
+    if (plexUserId === user.plexId) {
+      continue;
+    }
+
+    const otherFilter = filterOf(otherRules);
+    const otherDenied = new Set(
+      otherFilter.deny.map((entry) => entry.toLowerCase())
+    );
+
+    for (const allowed of otherFilter.allow) {
+      const key = allowed.toLowerCase();
+
+      if (!otherDenied.has(key)) {
+        sharedWithCount.set(key, (sharedWithCount.get(key) ?? 0) + 1);
+      }
+    }
+  }
+
+  const picked = pickGrantLabel(
+    candidates,
+    [user.plexUsername, user.username].filter((name): name is string => !!name),
+    sharedWithCount
+  );
+
+  if (!picked) {
     return null;
   }
 
-  await new PlexAPI({ plexToken: adminToken }).addLabel(ratingKey, type, label);
+  await new PlexAPI({ plexToken: adminToken }).addLabel(
+    ratingKey,
+    type,
+    picked.label
+  );
 
   logger.info('Granted Plex library access by adding a label', {
     label: 'Plex Sharing',
     userId: user.id,
     ratingKey,
-    plexLabel: label,
+    plexLabel: picked.label,
+    // Worth surfacing: no label is exclusive to a single user in every setup,
+    // so the owner should know when granting access widens it to others.
+    alsoVisibleToOtherUsers: picked.alsoVisibleTo,
   });
 
-  return label;
+  return picked.label;
 };
