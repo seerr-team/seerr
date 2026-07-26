@@ -54,6 +54,21 @@ describe('parsePlexLabelFilter', () => {
     });
   });
 
+  it('keeps encoded separators inside a label value', () => {
+    // %26 is `&`, which must not be mistaken for a clause separator.
+    assert.deepEqual(parsePlexLabelFilter('label=Tom%20%26%20Jerry'), {
+      allow: ['Tom & Jerry'],
+      deny: [],
+    });
+  });
+
+  it('does not throw on a malformed encoding', () => {
+    assert.deepEqual(parsePlexLabelFilter('label=100%'), {
+      allow: ['100%'],
+      deny: [],
+    });
+  });
+
   it('drops empty values and surrounding whitespace', () => {
     assert.deepEqual(parsePlexLabelFilter('label= Family , ,Kids '), {
       allow: ['Family', 'Kids'],
@@ -63,6 +78,15 @@ describe('parsePlexLabelFilter', () => {
 });
 
 describe('isAllowedByLabelFilter', () => {
+  it('hides everything when the restrictions cannot be satisfied', () => {
+    assert.equal(
+      isAllowedByLabelFilter({ allow: [], deny: [], allowNothing: true }, [
+        'Family',
+      ]),
+      false
+    );
+  });
+
   it('allows anything when no restriction applies', () => {
     assert.equal(isAllowedByLabelFilter({ allow: [], deny: [] }, []), true);
     assert.equal(

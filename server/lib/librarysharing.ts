@@ -25,13 +25,21 @@ interface CacheEntry {
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const cache = new Map<number, CacheEntry>();
 
+/**
+ * Resolution takes several requests, so concurrent callers for the same user
+ * share the one in flight instead of each starting their own.
+ */
+const inFlight = new Map<number, Promise<VisibleMediaIds>>();
+
 export const clearLibrarySharingCache = (userId?: number): void => {
   if (userId === undefined) {
     cache.clear();
+    inFlight.clear();
     return;
   }
 
   cache.delete(userId);
+  inFlight.delete(userId);
 };
 
 const resolve = async (user: User): Promise<VisibleMediaIds> => {
@@ -55,19 +63,33 @@ export const getVisibleMediaIds = async (
     return cached.ids;
   }
 
-  try {
-    const ids = await resolve(user);
-    cache.set(user.id, { ids, expiresAt: Date.now() + CACHE_TTL_MS });
-    return ids;
-  } catch (e) {
-    logger.error('Failed to resolve media server sharing restrictions', {
-      label: 'Media Server Sharing',
-      userId: user.id,
-      errorMessage: e.message,
-    });
-    // Fail open: a transient media server error must not hide the whole library.
-    return null;
+  const pending = inFlight.get(user.id);
+
+  if (pending) {
+    return pending;
   }
+
+  const resolution = resolve(user)
+    .then((ids) => {
+      cache.set(user.id, { ids, expiresAt: Date.now() + CACHE_TTL_MS });
+      return ids;
+    })
+    .catch((e) => {
+      logger.error('Failed to resolve media server sharing restrictions', {
+        label: 'Media Server Sharing',
+        userId: user.id,
+        errorMessage: e.message,
+      });
+      // Fail open: a transient error must not hide the whole library.
+      return null;
+    })
+    .finally(() => {
+      inFlight.delete(user.id);
+    });
+
+  inFlight.set(user.id, resolution);
+
+  return resolution;
 };
 
 /**

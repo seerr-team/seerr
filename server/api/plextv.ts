@@ -119,6 +119,12 @@ interface UsersResponse {
 export interface PlexLabelFilter {
   allow: string[];
   deny: string[];
+  /**
+   * Set when the combined restrictions cannot be satisfied by any label, so
+   * nothing in the library is visible. Distinguishes that case from an empty
+   * `allow` list, which means "no allow restriction".
+   */
+  allowNothing?: boolean;
 }
 
 interface SharedServersResponse {
@@ -168,6 +174,18 @@ export interface PlexUserSharingRules {
 const EMPTY_LABEL_FILTER: PlexLabelFilter = { allow: [], deny: [] };
 
 /**
+ * Decodes a single restriction value. Plex url encodes them, but a malformed
+ * sequence must not turn parsing a filter into an exception.
+ */
+const decodeLabel = (value: string): string => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
+
+/**
  * Parses a Plex restriction string into its label allow/deny lists.
  *
  * Plex encodes restrictions as `key=value` clauses, where several values are
@@ -184,14 +202,17 @@ export const parsePlexLabelFilter = (
   const allow: string[] = [];
   const deny: string[] = [];
 
-  for (const clause of decodeURIComponent(filter).split(/[&|]/)) {
+  // Clauses are split on the raw string, so an encoded `&` or `|` inside a
+  // label value is not mistaken for a separator. Values are then decoded before
+  // being split on commas, because Plex encodes the comma that separates them.
+  for (const clause of filter.split(/[&|]/)) {
     const match = clause.trim().match(/^label(!?)=(.*)$/i);
 
     if (!match) {
       continue;
     }
 
-    const labels = match[2]
+    const labels = decodeLabel(match[2])
       .split(',')
       .map((label) => label.trim())
       .filter((label) => label.length > 0);
@@ -211,20 +232,26 @@ const mergeLabelFilters = (
   all: PlexLabelFilter,
   specific: PlexLabelFilter
 ): PlexLabelFilter => {
+  const deny = [...new Set([...all.deny, ...specific.deny])];
   let allow: string[];
+  let allowNothing = false;
 
   if (!all.allow.length) {
     allow = [...specific.allow];
   } else if (!specific.allow.length) {
     allow = [...all.allow];
   } else {
-    allow = all.allow.filter((label) => specific.allow.includes(label));
+    const specificLower = new Set(
+      specific.allow.map((label) => label.toLowerCase())
+    );
+    allow = all.allow.filter((label) => specificLower.has(label.toLowerCase()));
+
+    // Two allow lists sharing no label cannot both be satisfied. Treating the
+    // empty result as "no restriction" would grant access to everything.
+    allowNothing = allow.length === 0;
   }
 
-  return {
-    allow: [...new Set(allow)],
-    deny: [...new Set([...all.deny, ...specific.deny])],
-  };
+  return { allow: [...new Set(allow)], deny, allowNothing };
 };
 
 /**
@@ -235,6 +262,10 @@ export const isAllowedByLabelFilter = (
   filter: PlexLabelFilter,
   labels: string[]
 ): boolean => {
+  if (filter.allowNothing) {
+    return false;
+  }
+
   const normalized = labels.map((label) => label.toLowerCase());
 
   if (filter.deny.some((label) => normalized.includes(label.toLowerCase()))) {

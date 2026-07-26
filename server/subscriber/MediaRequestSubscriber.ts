@@ -184,57 +184,45 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
   }
 
   /**
-   * Media hidden from a user by Plex sharing restrictions is reported as
-   * unavailable to them, so they are able to request something the library
-   * already holds. Such a request must never be sent to Radarr or Sonarr, or
-   * the file would be downloaded a second time.
+   * Grants the requester access to media the library already holds, when the
+   * owner opted into it.
    *
-   * Returns `true` when the caller has to stop, and grants library access right
-   * away when the owner opted into it.
+   * A restricted user only sees such media as unavailable because the media
+   * server hides it from them, so the request is legitimate even though nothing
+   * has to be downloaded. Plex only, since it relies on labels.
    */
-  private async isAlreadyInLibrary(entity: MediaRequest): Promise<boolean> {
-    const status = entity.is4k ? entity.media.status4k : entity.media.status;
-    const ratingKey = entity.is4k
-      ? entity.media.ratingKey4k
-      : entity.media.ratingKey;
+  private async grantLibraryAccessIfEnabled(
+    entity: MediaRequest,
+    media: Media
+  ): Promise<void> {
+    const settings = getSettings();
+    const ratingKey = entity.is4k ? media.ratingKey4k : media.ratingKey;
 
-    if (status !== MediaStatus.AVAILABLE || !ratingKey) {
-      return false;
+    if (
+      !settings.plex.grantLabelOnApproval ||
+      !ratingKey ||
+      !entity.requestedBy
+    ) {
+      return;
     }
 
-    const settings = getSettings();
+    try {
+      const granted = await grantLabelAccess(entity.requestedBy, {
+        ratingKey,
+        type: entity.type === MediaType.MOVIE ? 'movie' : 'show',
+      });
 
-    logger.info(
-      'Request targets media already present in the library, skipping download',
-      {
+      if (granted) {
+        // The user's visible set just changed, so drop the cached copy.
+        clearLibrarySharingCache(entity.requestedBy.id);
+      }
+    } catch (e) {
+      logger.error('Failed to grant media server library access for request', {
         label: 'Media Request',
         requestId: entity.id,
-        mediaId: entity.media.id,
-        grantLabelOnApproval: !!settings.plex.grantLabelOnApproval,
-      }
-    );
-
-    if (settings.plex.grantLabelOnApproval && entity.requestedBy) {
-      try {
-        const granted = await grantLabelAccess(entity.requestedBy, {
-          ratingKey,
-          type: entity.type === MediaType.MOVIE ? 'movie' : 'show',
-        });
-
-        if (granted) {
-          // The user's visible set just changed, so drop the cached copy.
-          clearLibrarySharingCache(entity.requestedBy.id);
-        }
-      } catch (e) {
-        logger.error('Failed to grant Plex library access for request', {
-          label: 'Media Request',
-          requestId: entity.id,
-          errorMessage: e.message,
-        });
-      }
+        errorMessage: e.message,
+      });
     }
-
-    return true;
   }
 
   public async sendToRadarr(
@@ -245,10 +233,6 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       entity.status === MediaRequestStatus.APPROVED &&
       entity.type === MediaType.MOVIE
     ) {
-      if (await this.isAlreadyInLibrary(entity)) {
-        return;
-      }
-
       try {
         const mediaRepository = manager.getRepository(Media);
         const settings = getSettings();
@@ -365,6 +349,10 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
             requestId: entity.id,
             mediaId: entity.media.id,
           });
+
+          // The requester may only be seeing this as unavailable because the
+          // media server hides it from them, so optionally grant them access.
+          await this.grantLibraryAccessIfEnabled(entity, media);
 
           const requestRepository = manager.getRepository(MediaRequest);
           entity.status = MediaRequestStatus.COMPLETED;
@@ -548,10 +536,6 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       entity.status === MediaRequestStatus.APPROVED &&
       entity.type === MediaType.TV
     ) {
-      if (await this.isAlreadyInLibrary(entity)) {
-        return;
-      }
-
       try {
         const mediaRepository = manager.getRepository(Media);
         const settings = getSettings();
@@ -621,6 +605,10 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
             requestId: entity.id,
             mediaId: entity.media.id,
           });
+
+          // The requester may only be seeing this as unavailable because the
+          // media server hides it from them, so optionally grant them access.
+          await this.grantLibraryAccessIfEnabled(entity, media);
 
           const requestRepository = manager.getRepository(MediaRequest);
           entity.status = MediaRequestStatus.COMPLETED;

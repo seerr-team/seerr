@@ -82,6 +82,13 @@ export const resolveVisiblePlexRatingKeys = async (
     }
 
     const filter = library.type === 'show' ? rules.tv : rules.movies;
+
+    if (filter.allowNothing) {
+      // The restrictions cannot be satisfied, so skip the library entirely
+      // rather than listing items only to discard them.
+      continue;
+    }
+
     const allowed = new Set<string>();
 
     if (filter.allow.length) {
@@ -182,8 +189,16 @@ export const grantLabelAccess = async (
   }
 
   const filter = type === 'show' ? rules.tv : rules.movies;
+
+  if (filter.allowNothing) {
+    return null;
+  }
+
+  // Case-insensitive, to match how the filter is evaluated: granting a label
+  // that the deny list then rejects would achieve nothing.
+  const denied = new Set(filter.deny.map((entry) => entry.toLowerCase()));
   const label = filter.allow.find(
-    (candidate) => !filter.deny.includes(candidate)
+    (candidate) => !denied.has(candidate.toLowerCase())
   );
 
   if (!label) {

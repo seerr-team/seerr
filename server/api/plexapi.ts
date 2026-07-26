@@ -251,10 +251,11 @@ class PlexAPI extends ExternalAPI {
   }
 
   /**
-   * Adds a label to a library item, keeping the labels it already carries.
+   * Adds a label to a library item.
    *
-   * Plex replaces the whole label set on write, so existing labels have to be
-   * sent again alongside the new one.
+   * Plex merges the labels sent with the ones already set, so the existing set
+   * is never read back and replayed: two concurrent grants on the same item
+   * cannot drop each other's label.
    */
   public async addLabel(
     ratingKey: string,
@@ -273,21 +274,14 @@ class PlexAPI extends ExternalAPI {
       return;
     }
 
-    const labels = [...existing, label];
     const params = new URLSearchParams({
       type: type === 'show' ? '2' : '1',
       id: ratingKey,
+      'label[0].tag.tag': label,
       'label.locked': '1',
     });
 
-    labels.forEach((value, index) => {
-      params.append(`label[${index}].tag.tag`, value);
-    });
-
-    // ExternalAPI does not wrap PUT, so the axios instance is used directly.
-    await this.axios.put(
-      `/library/sections/${sectionId}/all?${params.toString()}`
-    );
+    await this.put(`/library/sections/${sectionId}/all?${params.toString()}`);
   }
 
   /**
