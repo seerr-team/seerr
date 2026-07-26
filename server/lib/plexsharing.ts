@@ -168,6 +168,12 @@ export const resolveVisiblePlexRatingKeys = async (
     }
   }
 
+  logger.debug('Resolved Plex library restrictions for user', {
+    label: 'Plex Sharing',
+    userId: user.id,
+    visibleItems: visible.size,
+  });
+
   return visible;
 };
 
