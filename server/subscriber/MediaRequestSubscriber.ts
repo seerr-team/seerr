@@ -17,6 +17,7 @@ import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
+import { clearLibrarySharingCache } from '@server/lib/librarysharing';
 import notificationManager, { Notification } from '@server/lib/notifications';
 import { grantLabelAccess } from '@server/lib/plexsharing';
 import { getSettings } from '@server/lib/settings';
@@ -215,10 +216,15 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
     if (settings.plex.grantLabelOnApproval && entity.requestedBy) {
       try {
-        await grantLabelAccess(entity.requestedBy, {
+        const granted = await grantLabelAccess(entity.requestedBy, {
           ratingKey,
           type: entity.type === MediaType.MOVIE ? 'movie' : 'show',
         });
+
+        if (granted) {
+          // The user's visible set just changed, so drop the cached copy.
+          clearLibrarySharingCache(entity.requestedBy.id);
+        }
       } catch (e) {
         logger.error('Failed to grant Plex library access for request', {
           label: 'Media Request',

@@ -8,7 +8,10 @@ import type { User } from '@server/entity/User';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { DownloadingItem } from '@server/lib/downloadtracker';
 import downloadTracker from '@server/lib/downloadtracker';
-import { getVisibleRatingKeys } from '@server/lib/plexsharing';
+import {
+  getMediaServerItemIds,
+  getVisibleMediaIds,
+} from '@server/lib/librarysharing';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
@@ -77,9 +80,10 @@ class Media {
   /**
    * Hides availability of media the user has no access to on the media server.
    *
-   * Plex lets the owner restrict a shared user to specific libraries or labels,
-   * but availability is otherwise computed for the whole library. Without this,
-   * a restricted user is told a title is available and then cannot play it.
+   * Media servers let the owner restrict a shared user to specific libraries,
+   * and Plex additionally to specific labels, but availability is otherwise
+   * computed for the whole library. Without this, a restricted user is told a
+   * title is available and then cannot play it.
    *
    * The status is downgraded rather than the item removed, so the user can
    * still request it and be granted access.
@@ -88,23 +92,24 @@ class Media {
     user: User,
     media: Media[]
   ): Promise<Media[]> {
-    const visibleRatingKeys = await getVisibleRatingKeys(user);
+    const visibleIds = await getVisibleMediaIds(user);
 
     // `null` means the user is unrestricted, the common case.
-    if (!visibleRatingKeys) {
+    if (!visibleIds) {
       return media;
     }
 
-    const isHidden = (ratingKey?: string | null): boolean =>
-      !ratingKey || !visibleRatingKeys.has(ratingKey);
+    const isHidden = (itemId?: string | null): boolean =>
+      !itemId || !visibleIds.has(itemId);
 
     const isAvailable = (status: MediaStatus): boolean =>
       status === MediaStatus.AVAILABLE ||
       status === MediaStatus.PARTIALLY_AVAILABLE;
 
     for (const item of media) {
-      const hidden = isHidden(item.ratingKey);
-      const hidden4k = isHidden(item.ratingKey4k);
+      const { id, id4k } = getMediaServerItemIds(item);
+      const hidden = isHidden(id);
+      const hidden4k = isHidden(id4k);
 
       if (isAvailable(item.status) && hidden) {
         item.status = MediaStatus.UNKNOWN;
@@ -115,8 +120,8 @@ class Media {
       }
 
       // Seasons carry their own status, which the UI displays independently of
-      // the show's, so they have to be downgraded as well. Plex restricts
-      // access at show level, hence the show's own visibility is used.
+      // the show's, so they have to be downgraded as well. Access is granted at
+      // show level, hence the show's own visibility is used.
       for (const season of item.seasons ?? []) {
         if (isAvailable(season.status) && hidden) {
           season.status = MediaStatus.UNKNOWN;

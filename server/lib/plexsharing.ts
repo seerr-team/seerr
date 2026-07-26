@@ -19,28 +19,6 @@ export interface PlexItemRef {
   type: 'movie' | 'show';
 }
 
-interface CacheEntry {
-  expiresAt: number;
-  ratingKeys: PlexVisibleRatingKeys;
-}
-
-/**
- * Resolving the visible rating keys costs a handful of Plex requests, so the
- * result is cached per user. Sharing rules and labels change rarely, and a
- * stale entry only delays a restriction by a few minutes.
- */
-const CACHE_TTL_MS = 5 * 60 * 1000;
-const cache = new Map<number, CacheEntry>();
-
-export const clearPlexSharingCache = (userId?: number): void => {
-  if (userId === undefined) {
-    cache.clear();
-    return;
-  }
-
-  cache.delete(userId);
-};
-
 const getAdminPlexToken = async (): Promise<string | null> => {
   const userRepository = getRepository(User);
   const admin = await userRepository.findOne({
@@ -59,7 +37,7 @@ const getAdminPlexToken = async (): Promise<string | null> => {
  * "show everything", so unrestricted setups keep their current behaviour and
  * pay no extra cost.
  */
-const resolveVisibleRatingKeys = async (
+export const resolveVisiblePlexRatingKeys = async (
   user: User
 ): Promise<PlexVisibleRatingKeys> => {
   const settings = getSettings();
@@ -214,9 +192,6 @@ export const grantLabelAccess = async (
 
   await new PlexAPI({ plexToken: adminToken }).addLabel(ratingKey, type, label);
 
-  // The user's visible set just changed, so drop the cached copy.
-  clearPlexSharingCache(user.id);
-
   logger.info('Granted Plex library access by adding a label', {
     label: 'Plex Sharing',
     userId: user.id,
@@ -225,31 +200,4 @@ export const grantLabelAccess = async (
   });
 
   return label;
-};
-
-export const getVisibleRatingKeys = async (
-  user: User
-): Promise<PlexVisibleRatingKeys> => {
-  const cached = cache.get(user.id);
-
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached.ratingKeys;
-  }
-
-  try {
-    const ratingKeys = await resolveVisibleRatingKeys(user);
-    cache.set(user.id, {
-      ratingKeys,
-      expiresAt: Date.now() + CACHE_TTL_MS,
-    });
-    return ratingKeys;
-  } catch (e) {
-    logger.error('Failed to resolve Plex sharing restrictions', {
-      label: 'Plex Sharing',
-      userId: user.id,
-      errorMessage: e.message,
-    });
-    // Fail open: a transient Plex error must not hide the whole library.
-    return null;
-  }
 };

@@ -18,6 +18,16 @@ export interface JellyfinUserResponse {
   };
   Policy: {
     IsAdministrator: boolean;
+    /**
+     * Library access, as configured per user under Access. When
+     * `EnableAllFolders` is set the user reaches every library and
+     * `EnabledFolders` is empty; otherwise it lists the library item ids the
+     * user is allowed to browse.
+     */
+    EnableAllFolders?: boolean;
+    EnabledFolders?: string[];
+    /** Legacy Emby counterpart of `EnabledFolders`. */
+    BlockedMediaFolders?: string[];
   };
   PrimaryImageTag?: string;
 }
