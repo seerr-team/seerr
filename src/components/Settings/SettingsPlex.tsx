@@ -72,7 +72,7 @@ const messages = defineMessages('components.Settings', {
     'Optionally direct users to the web app on your server instead of https://app.plex.tv/desktop',
   grantLabelOnApproval: 'Grant Library Access on Approval',
   grantLabelOnApprovalTip:
-    'When a user restricted by labels requests media already in your library, add one of their allowed labels to it instead of leaving the request for you to handle manually',
+    'When a user restricted by labels requests media already in your library, grant them access by adding the label the fewest other users can see, instead of leaving the request for you to handle manually',
   tautulliSettings: 'Tautulli Settings',
   tautulliSettingsDescription:
     'Optionally configure the settings for your Tautulli server. Seerr fetches watch history data for your Plex media from Tautulli.',
