@@ -93,6 +93,17 @@ interface PlexMetadataResponse {
   };
 }
 
+interface PlexLabelResponse {
+  MediaContainer: {
+    Metadata?: {
+      librarySectionID?: number | string;
+      Label?: {
+        tag: string;
+      }[];
+    }[];
+  };
+}
+
 class PlexAPI extends ExternalAPI {
   constructor({
     plexToken,
@@ -237,6 +248,67 @@ class PlexAPI extends ExternalAPI {
     } while (offset < totalSize);
 
     return ratingKeys;
+  }
+
+  /**
+   * Adds a label to a library item, keeping the labels it already carries.
+   *
+   * Plex replaces the whole label set on write, so existing labels have to be
+   * sent again alongside the new one.
+   */
+  public async addLabel(
+    ratingKey: string,
+    type: 'movie' | 'show',
+    label: string
+  ): Promise<void> {
+    const { sectionId, labels: existing } = await this.getItemLabels(ratingKey);
+
+    if (!sectionId) {
+      throw new Error(
+        `Unable to resolve the library section of Plex item ${ratingKey}`
+      );
+    }
+
+    if (existing.some((l) => l.toLowerCase() === label.toLowerCase())) {
+      return;
+    }
+
+    const labels = [...existing, label];
+    const params = new URLSearchParams({
+      type: type === 'show' ? '2' : '1',
+      id: ratingKey,
+      'label.locked': '1',
+    });
+
+    labels.forEach((value, index) => {
+      params.append(`label[${index}].tag.tag`, value);
+    });
+
+    // ExternalAPI does not wrap PUT, so the axios instance is used directly.
+    await this.axios.put(
+      `/library/sections/${sectionId}/all?${params.toString()}`
+    );
+  }
+
+  /**
+   * Returns the labels currently set on a library item, along with the section
+   * it belongs to, which is required to write labels back.
+   */
+  public async getItemLabels(
+    ratingKey: string
+  ): Promise<{ sectionId?: string; labels: string[] }> {
+    const response = await this.get<PlexLabelResponse>(
+      `/library/metadata/${ratingKey}`
+    );
+
+    const metadata = response.MediaContainer.Metadata?.[0];
+
+    return {
+      sectionId: metadata?.librarySectionID
+        ? `${metadata.librarySectionID}`
+        : undefined,
+      labels: (metadata?.Label ?? []).map((label) => label.tag),
+    };
   }
 
   public async getMetadata(

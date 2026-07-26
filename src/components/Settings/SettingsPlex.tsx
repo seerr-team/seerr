@@ -70,6 +70,9 @@ const messages = defineMessages('components.Settings', {
   webAppUrl: '<WebAppLink>Web App</WebAppLink> URL',
   webAppUrlTip:
     'Optionally direct users to the web app on your server instead of https://app.plex.tv/desktop',
+  grantLabelOnApproval: 'Grant Library Access on Approval',
+  grantLabelOnApprovalTip:
+    'When a user restricted by labels requests media already in your library, add one of their allowed labels to it instead of leaving the request for you to handle manually',
   tautulliSettings: 'Tautulli Settings',
   tautulliSettingsDescription:
     'Optionally configure the settings for your Tautulli server. Seerr fetches watch history data for your Plex media from Tautulli.',
@@ -386,6 +389,7 @@ const SettingsPlex = ({ isSetupSettings }: SettingsPlexProps) => {
           useSsl: data?.useSsl,
           selectedPreset: undefined,
           webAppUrl: data?.webAppUrl,
+          grantLabelOnApproval: data?.grantLabelOnApproval ?? false,
         }}
         validationSchema={PlexSettingsSchema}
         validateOnMount={true}
@@ -407,6 +411,7 @@ const SettingsPlex = ({ isSetupSettings }: SettingsPlexProps) => {
               port: Number(values.port),
               useSsl: values.useSsl,
               webAppUrl: values.webAppUrl,
+              grantLabelOnApproval: values.grantLabelOnApproval,
             } as PlexSettings);
 
             syncLibraries();
@@ -610,6 +615,31 @@ const SettingsPlex = ({ isSetupSettings }: SettingsPlexProps) => {
                     typeof errors.webAppUrl === 'string' && (
                       <div className="error">{errors.webAppUrl}</div>
                     )}
+                </div>
+              </div>
+              <div className="form-row">
+                <label
+                  htmlFor="grantLabelOnApproval"
+                  className="checkbox-label"
+                >
+                  {intl.formatMessage(messages.grantLabelOnApproval)}
+                  <SettingsBadge badgeType="advanced" className="ml-2" />
+                  <span className="label-tip">
+                    {intl.formatMessage(messages.grantLabelOnApprovalTip)}
+                  </span>
+                </label>
+                <div className="form-input-area">
+                  <Field
+                    type="checkbox"
+                    id="grantLabelOnApproval"
+                    name="grantLabelOnApproval"
+                    onChange={() => {
+                      setFieldValue(
+                        'grantLabelOnApproval',
+                        !values.grantLabelOnApproval
+                      );
+                    }}
+                  />
                 </div>
               </div>
               <div className="actions">

@@ -1204,6 +1204,8 @@
   "components.Settings.failed": "Does not work",
   "components.Settings.failedToSaveMetadataSettings": "Failed to save metadata provider settings",
   "components.Settings.general": "General",
+  "components.Settings.grantLabelOnApproval": "Grant Library Access on Approval",
+  "components.Settings.grantLabelOnApprovalTip": "When a user restricted by labels requests media already in your library, add one of their allowed labels to it instead of leaving the request for you to handle manually",
   "components.Settings.hostname": "Hostname or IP Address",
   "components.Settings.importBlocklistedTagsTip": "Import blocklisted tag configuration",
   "components.Settings.invalidKeyword": "{keywordId} is not a TMDB keyword.",

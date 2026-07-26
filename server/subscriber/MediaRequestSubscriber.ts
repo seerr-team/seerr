@@ -18,6 +18,7 @@ import { MediaRequest } from '@server/entity/MediaRequest';
 import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import notificationManager, { Notification } from '@server/lib/notifications';
+import { grantLabelAccess } from '@server/lib/plexsharing';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { withNestedTransaction } from '@server/utils/nestedTransaction';
@@ -181,6 +182,55 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     }
   }
 
+  /**
+   * Media hidden from a user by Plex sharing restrictions is reported as
+   * unavailable to them, so they are able to request something the library
+   * already holds. Such a request must never be sent to Radarr or Sonarr, or
+   * the file would be downloaded a second time.
+   *
+   * Returns `true` when the caller has to stop, and grants library access right
+   * away when the owner opted into it.
+   */
+  private async isAlreadyInLibrary(entity: MediaRequest): Promise<boolean> {
+    const status = entity.is4k ? entity.media.status4k : entity.media.status;
+    const ratingKey = entity.is4k
+      ? entity.media.ratingKey4k
+      : entity.media.ratingKey;
+
+    if (status !== MediaStatus.AVAILABLE || !ratingKey) {
+      return false;
+    }
+
+    const settings = getSettings();
+
+    logger.info(
+      'Request targets media already present in the library, skipping download',
+      {
+        label: 'Media Request',
+        requestId: entity.id,
+        mediaId: entity.media.id,
+        grantLabelOnApproval: !!settings.plex.grantLabelOnApproval,
+      }
+    );
+
+    if (settings.plex.grantLabelOnApproval && entity.requestedBy) {
+      try {
+        await grantLabelAccess(entity.requestedBy, {
+          ratingKey,
+          type: entity.type === MediaType.MOVIE ? 'movie' : 'show',
+        });
+      } catch (e) {
+        logger.error('Failed to grant Plex library access for request', {
+          label: 'Media Request',
+          requestId: entity.id,
+          errorMessage: e.message,
+        });
+      }
+    }
+
+    return true;
+  }
+
   public async sendToRadarr(
     entity: MediaRequest,
     manager: EntityManager
@@ -189,6 +239,10 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       entity.status === MediaRequestStatus.APPROVED &&
       entity.type === MediaType.MOVIE
     ) {
+      if (await this.isAlreadyInLibrary(entity)) {
+        return;
+      }
+
       try {
         const mediaRepository = manager.getRepository(Media);
         const settings = getSettings();
@@ -488,6 +542,10 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       entity.status === MediaRequestStatus.APPROVED &&
       entity.type === MediaType.TV
     ) {
+      if (await this.isAlreadyInLibrary(entity)) {
+        return;
+      }
+
       try {
         const mediaRepository = manager.getRepository(Media);
         const settings = getSettings();
