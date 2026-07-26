@@ -81,6 +81,13 @@ mediaRoutes.get('/', async (req, res, next) => {
       take: pageSize,
       skip,
     });
+
+    // This endpoint feeds the "Recently Added" slider, so availability has to
+    // be reported from the requesting user's point of view.
+    const results = req.user
+      ? await Media.applySharingRestrictions(req.user, media)
+      : media;
+
     return res.status(200).json({
       pageInfo: {
         pages: Math.ceil(mediaCount / pageSize),
@@ -88,7 +95,7 @@ mediaRoutes.get('/', async (req, res, next) => {
         results: mediaCount,
         page: Math.ceil(skip / pageSize) + 1,
       },
-      results: media,
+      results,
     } as MediaResultsResponse);
   } catch (e) {
     next({ status: 500, message: e.message });

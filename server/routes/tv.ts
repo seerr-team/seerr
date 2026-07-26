@@ -30,7 +30,7 @@ tvRoutes.get('/:id', async (req, res, next) => {
       tvId: Number(req.params.id),
       language: (req.query.language as string) ?? req.locale,
     });
-    const media = await Media.getMedia(tv.id, MediaType.TV);
+    const media = await Media.getMedia(tv.id, MediaType.TV, req.user);
 
     const onUserWatchlist = await getRepository(Watchlist).exist({
       where: {

@@ -13,6 +13,7 @@ import { Watchlist } from '@server/entity/Watchlist';
 import type { DownloadingItem } from '@server/lib/downloadtracker';
 import downloadTracker from '@server/lib/downloadtracker';
 import { Permission } from '@server/lib/permissions';
+import { getVisibleRatingKeys } from '@server/lib/plexsharing';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
@@ -37,7 +38,16 @@ class Media {
   public static async getRelatedMedia(
     user: User | undefined,
     items: { tmdbId: number; mediaType: string }[],
-    { includeActiveRequest = false }: { includeActiveRequest?: boolean } = {}
+    // Background jobs work from the library's point of view, not a user's, so
+    // they opt out of sharing restrictions to avoid acting on an artificially
+    // downgraded status.
+    {
+      includeActiveRequest = false,
+      applySharingRestrictions = true,
+    }: {
+      includeActiveRequest?: boolean;
+      applySharingRestrictions?: boolean;
+    } = {}
   ): Promise<Media[]> {
     const mediaRepository = getRepository(Media);
 
@@ -88,16 +98,80 @@ class Media {
         });
       }
 
-      return relatedMedia;
+      if (!user || !applySharingRestrictions) {
+        return relatedMedia;
+      }
+
+      return await Media.applySharingRestrictions(user, relatedMedia);
     } catch (e) {
       logger.error(e.message);
       return [];
     }
   }
 
+  /**
+   * Hides availability of media the user has no access to on the media server.
+   *
+   * Plex lets the owner restrict a shared user to specific libraries or labels,
+   * but availability is otherwise computed for the whole library. Without this,
+   * a restricted user is told a title is available and then cannot play it.
+   *
+   * The status is downgraded rather than the item removed, so the user can
+   * still request it and be granted access.
+   */
+  public static async applySharingRestrictions(
+    user: User,
+    media: Media[]
+  ): Promise<Media[]> {
+    const visibleRatingKeys = await getVisibleRatingKeys(user);
+
+    // `null` means the user is unrestricted, the common case.
+    if (!visibleRatingKeys) {
+      return media;
+    }
+
+    const isHidden = (ratingKey?: string | null): boolean =>
+      !ratingKey || !visibleRatingKeys.has(ratingKey);
+
+    const isAvailable = (status: MediaStatus): boolean =>
+      status === MediaStatus.AVAILABLE ||
+      status === MediaStatus.PARTIALLY_AVAILABLE;
+
+    for (const item of media) {
+      const hidden = isHidden(item.ratingKey);
+      const hidden4k = isHidden(item.ratingKey4k);
+
+      if (isAvailable(item.status) && hidden) {
+        item.status = MediaStatus.UNKNOWN;
+      }
+
+      if (isAvailable(item.status4k) && hidden4k) {
+        item.status4k = MediaStatus.UNKNOWN;
+      }
+
+      // Seasons carry their own status, which the UI displays independently of
+      // the show's, so they have to be downgraded as well. Plex restricts
+      // access at show level, hence the show's own visibility is used.
+      for (const season of item.seasons ?? []) {
+        if (isAvailable(season.status) && hidden) {
+          season.status = MediaStatus.UNKNOWN;
+        }
+
+        if (isAvailable(season.status4k) && hidden4k) {
+          season.status4k = MediaStatus.UNKNOWN;
+        }
+      }
+    }
+
+    return media;
+  }
+
   public static async getMedia(
     id: number,
-    mediaType: MediaType
+    mediaType: MediaType,
+    // Passing the requesting user hides availability of media they have no
+    // access to on the media server.
+    user?: User
   ): Promise<Media | undefined> {
     const mediaRepository = getRepository(Media);
 
@@ -107,7 +181,17 @@ class Media {
         relations: { requests: true, issues: true },
       });
 
-      return media ?? undefined;
+      if (!media) {
+        return undefined;
+      }
+
+      if (!user) {
+        return media;
+      }
+
+      const [restricted] = await Media.applySharingRestrictions(user, [media]);
+
+      return restricted;
     } catch (e) {
       logger.error(e.message);
       return undefined;
