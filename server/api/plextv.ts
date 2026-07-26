@@ -1,6 +1,7 @@
 import type { PlexDevice } from '@server/interfaces/api/plexInterfaces';
 import cacheManager from '@server/lib/cache';
 import { getSettings } from '@server/lib/settings';
+import { isAllowedByTagRestriction } from '@server/lib/tagrestrictions';
 import logger from '@server/logger';
 import { randomUUID } from 'node:crypto';
 import xml2js from 'xml2js';
@@ -300,23 +301,7 @@ const mergeLabelFilters = (
 export const isAllowedByLabelFilter = (
   filter: PlexLabelFilter,
   labels: string[]
-): boolean => {
-  if (filter.allowNothing) {
-    return false;
-  }
-
-  const normalized = labels.map((label) => label.toLowerCase());
-
-  if (filter.deny.some((label) => normalized.includes(label.toLowerCase()))) {
-    return false;
-  }
-
-  if (!filter.allow.length) {
-    return true;
-  }
-
-  return filter.allow.some((label) => normalized.includes(label.toLowerCase()));
-};
+): boolean => isAllowedByTagRestriction(filter, labels);
 
 interface WatchlistResponse {
   MediaContainer: {
