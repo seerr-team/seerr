@@ -80,6 +80,7 @@ interface ServerResponse {
     lastSeenAt: string;
     numLibraries: string;
     owned: string;
+    allLibraries?: string;
   };
 }
 
@@ -92,11 +93,160 @@ interface UsersResponse {
         username: string;
         email: string;
         thumb: string;
+        restricted?: string;
+        home?: string;
+        // Sharing restrictions, as configured in Plex under
+        // Library -> Restrictions. Values are URL encoded, e.g.
+        // `label=Family%2CKids` or `label!=Private`.
+        filterAll?: string;
+        filterMovies?: string;
+        filterTelevision?: string;
+        filterMusic?: string;
+        filterPhotos?: string;
       };
       Server: ServerResponse[];
     }[];
   };
 }
+
+/**
+ * Label based sharing restrictions for a single library type.
+ *
+ * A media item is visible to the user when it carries at least one of the
+ * `allow` labels (or `allow` is empty, meaning no restriction) and none of
+ * the `deny` labels.
+ */
+export interface PlexLabelFilter {
+  allow: string[];
+  deny: string[];
+}
+
+interface SharedServersResponse {
+  MediaContainer: {
+    SharedServer?: {
+      $: {
+        id: string;
+        username: string;
+        email: string;
+        userID: string;
+        machineIdentifier?: string;
+        allLibraries?: string;
+        owned?: string;
+        filterAll?: string;
+        filterMovies?: string;
+        filterTelevision?: string;
+        filterMusic?: string;
+        filterPhotos?: string;
+      };
+      Section?: {
+        $: {
+          id: string;
+          /** Library section key on the server itself, e.g. `1`. */
+          key: string;
+          title: string;
+          type: string;
+          shared: string;
+        };
+      }[];
+    }[];
+  };
+}
+
+export interface PlexUserSharingRules {
+  /** The user has access to every library on the server. */
+  allLibraries: boolean;
+  /**
+   * Section keys of the libraries actually shared with the user, matching the
+   * keys returned by the server's own `/library/sections`. Empty when
+   * `allLibraries` is set, since every library is then accessible.
+   */
+  sharedSectionKeys: string[];
+  movies: PlexLabelFilter;
+  tv: PlexLabelFilter;
+}
+
+const EMPTY_LABEL_FILTER: PlexLabelFilter = { allow: [], deny: [] };
+
+/**
+ * Parses a Plex restriction string into its label allow/deny lists.
+ *
+ * Plex encodes restrictions as `key=value` clauses, where several values are
+ * comma separated and several clauses are separated by `&` or `|`. Only the
+ * `label` key is relevant here; other keys (`contentRating`, ...) are ignored.
+ */
+export const parsePlexLabelFilter = (
+  filter?: string | null
+): PlexLabelFilter => {
+  if (!filter) {
+    return { ...EMPTY_LABEL_FILTER };
+  }
+
+  const allow: string[] = [];
+  const deny: string[] = [];
+
+  for (const clause of decodeURIComponent(filter).split(/[&|]/)) {
+    const match = clause.trim().match(/^label(!?)=(.*)$/i);
+
+    if (!match) {
+      continue;
+    }
+
+    const labels = match[2]
+      .split(',')
+      .map((label) => label.trim())
+      .filter((label) => label.length > 0);
+
+    (match[1] === '!' ? deny : allow).push(...labels);
+  }
+
+  return { allow, deny };
+};
+
+/**
+ * Combines the server wide restriction (`filterAll`) with a per library type
+ * one. Allow lists are intersected when both are set, since the user has to
+ * satisfy both, while deny lists simply add up.
+ */
+const mergeLabelFilters = (
+  all: PlexLabelFilter,
+  specific: PlexLabelFilter
+): PlexLabelFilter => {
+  let allow: string[];
+
+  if (!all.allow.length) {
+    allow = [...specific.allow];
+  } else if (!specific.allow.length) {
+    allow = [...all.allow];
+  } else {
+    allow = all.allow.filter((label) => specific.allow.includes(label));
+  }
+
+  return {
+    allow: [...new Set(allow)],
+    deny: [...new Set([...all.deny, ...specific.deny])],
+  };
+};
+
+/**
+ * Evaluates label based restrictions against the labels carried by a media
+ * item. Items without labels are only visible when no allow list applies.
+ */
+export const isAllowedByLabelFilter = (
+  filter: PlexLabelFilter,
+  labels: string[]
+): boolean => {
+  const normalized = labels.map((label) => label.toLowerCase());
+
+  if (filter.deny.some((label) => normalized.includes(label.toLowerCase()))) {
+    return false;
+  }
+
+  if (!filter.allow.length) {
+    return true;
+  }
+
+  return filter.allow.some((label) => normalized.includes(label.toLowerCase()));
+};
 
 interface WatchlistResponse {
   MediaContainer: {
@@ -266,6 +416,87 @@ class PlexTvAPI extends ExternalAPI {
       response.data
     )) as UsersResponse;
     return parsedXml;
+  }
+
+  /**
+   * Returns the label based sharing restrictions the server owner configured
+   * for a shared user, so availability can be evaluated from that user's point
+   * of view instead of the owner's.
+   *
+   * Returns `null` when no restriction applies, which is the case for the
+   * owner, for users sharing every library, and whenever the rules cannot be
+   * determined. Callers must treat `null` as "no filtering".
+   */
+  public async getUserSharingRules(
+    plexUserId: number
+  ): Promise<PlexUserSharingRules | null> {
+    const settings = getSettings();
+
+    if (!settings.plex.machineId) {
+      return null;
+    }
+
+    try {
+      // `shared_servers` exposes the filters *and* the shared sections in a
+      // single call, unlike `/api/users` which only reports a library count.
+      const response = await this.axios.get(
+        `/api/servers/${settings.plex.machineId}/shared_servers`,
+        {
+          transformResponse: [],
+          responseType: 'text',
+        }
+      );
+
+      const parsedXml = (await xml2js.parseStringPromise(
+        response.data
+      )) as SharedServersResponse;
+
+      const sharedServer = parsedXml.MediaContainer.SharedServer?.find(
+        (s) => parseInt(s.$.userID) === plexUserId
+      );
+
+      // No entry means the library is not shared with this user at all; that
+      // case is handled by checkUserAccess() rather than by filtering here.
+      if (!sharedServer) {
+        return null;
+      }
+
+      const all = parsePlexLabelFilter(sharedServer.$.filterAll);
+      const movies = mergeLabelFilters(
+        all,
+        parsePlexLabelFilter(sharedServer.$.filterMovies)
+      );
+      const tv = mergeLabelFilters(
+        all,
+        parsePlexLabelFilter(sharedServer.$.filterTelevision)
+      );
+
+      const allLibraries = sharedServer.$.allLibraries === '1';
+      const sharedSectionKeys = allLibraries
+        ? []
+        : (sharedServer.Section ?? [])
+            .filter((section) => section.$.shared === '1')
+            .map((section) => section.$.key);
+
+      const hasLabelRestrictions =
+        movies.allow.length > 0 ||
+        movies.deny.length > 0 ||
+        tv.allow.length > 0 ||
+        tv.deny.length > 0;
+
+      if (allLibraries && !hasLabelRestrictions) {
+        return null;
+      }
+
+      return { allLibraries, sharedSectionKeys, movies, tv };
+    } catch (e) {
+      logger.error('Failed to retrieve Plex sharing rules for user', {
+        label: 'Plex.tv API',
+        plexUserId,
+        errorMessage: e.message,
+      });
+      return null;
+    }
   }
 
   public async getWatchlist({

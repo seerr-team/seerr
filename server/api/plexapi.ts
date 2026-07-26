@@ -199,6 +199,46 @@ class PlexAPI extends ExternalAPI {
     };
   }
 
+  /**
+   * Returns the rating keys of every item in a library section carrying the
+   * given label.
+   *
+   * Plex never returns labels in bulk library listings, whatever the requested
+   * fields, but it does support filtering by label. Resolving one request per
+   * label is therefore far cheaper than fetching metadata item by item.
+   */
+  public async getRatingKeysByLabel(
+    sectionId: string,
+    label: string
+  ): Promise<string[]> {
+    const ratingKeys: string[] = [];
+    const size = 500;
+    let offset = 0;
+    let totalSize = 0;
+
+    do {
+      const response = await this.get<PlexLibraryResponse>(
+        `/library/sections/${sectionId}/all?label=${encodeURIComponent(label)}`,
+        {
+          headers: {
+            'X-Plex-Container-Start': `${offset}`,
+            'X-Plex-Container-Size': `${size}`,
+          },
+        }
+      );
+
+      totalSize = response.MediaContainer.totalSize ?? 0;
+      ratingKeys.push(
+        ...(response.MediaContainer.Metadata ?? []).map(
+          (item) => item.ratingKey
+        )
+      );
+      offset += size;
+    } while (offset < totalSize);
+
+    return ratingKeys;
+  }
+
   public async getMetadata(
     key: string,
     options: { includeChildren?: boolean } = {}
