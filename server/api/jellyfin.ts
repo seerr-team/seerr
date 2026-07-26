@@ -28,6 +28,20 @@ export interface JellyfinUserResponse {
     EnabledFolders?: string[];
     /** Legacy Emby counterpart of `EnabledFolders`. */
     BlockedMediaFolders?: string[];
+    /**
+     * Tag based restrictions, the counterpart of Plex labels. The two servers
+     * disagree on how they are expressed, which was established against real
+     * servers rather than taken from the documentation:
+     *
+     * - Jellyfin uses two independent lists, `AllowedTags` and `BlockedTags`,
+     *   and applies both, a denied tag winning over an allowed one.
+     * - Emby keeps a single list in `BlockedTags` whose polarity is flipped by
+     *   `IsTagBlockingModeInclusive`: false denies those tags, true allows only
+     *   those tags. Its `IncludeTags` field has no effect.
+     */
+    AllowedTags?: string[];
+    BlockedTags?: string[];
+    IsTagBlockingModeInclusive?: boolean;
   };
   PrimaryImageTag?: string;
 }
@@ -80,6 +94,12 @@ interface JellyfinMediaFolder {
   Id: string;
   Type: string;
   CollectionType: string;
+  /**
+   * Emby only. Its user policy references libraries by this value while `Id`
+   * stays numeric, so both have to be kept to match a policy entry. Jellyfin
+   * does not return it, its `Id` already being the guid.
+   */
+  Guid?: string;
 }
 
 export interface JellyfinLibrary {
@@ -87,6 +107,8 @@ export interface JellyfinLibrary {
   key: string;
   title: string;
   agent: string;
+  /** Emby's alternative identifier for the same library, see `JellyfinMediaFolder`. */
+  guid?: string;
 }
 
 export interface JellyfinLibraryItem {
@@ -103,6 +125,10 @@ export interface JellyfinLibraryItem {
   IndexNumberEnd?: number;
   ParentIndexNumber?: number;
   MediaType: string;
+  /** Only populated when requested through `fields`. Jellyfin answers with
+   * `Tags`, Emby with `TagItems`, so callers have to read both. */
+  Tags?: string[];
+  TagItems?: { Name: string }[];
 }
 
 export interface JellyfinMediaStream {
@@ -452,14 +478,20 @@ class JellyfinAPI extends ExternalAPI {
           title: Item.Name,
           type: Item.CollectionType === 'movies' ? 'movie' : 'show',
           agent: 'jellyfin',
+          guid: Item.Guid,
         };
       });
   }
 
-  public async getLibraryContents(id: string): Promise<JellyfinLibraryItem[]> {
+  public async getLibraryContents(
+    id: string,
+    { fields }: { fields?: string } = {}
+  ): Promise<JellyfinLibraryItem[]> {
     try {
       const libraryItemsResponse = await this.get<any>(
-        `/Items?SortBy=SortName&SortOrder=Ascending&IncludeItemTypes=Series,Movie,Others&Recursive=true&StartIndex=0&ParentId=${id}&collapseBoxSetItems=false`
+        `/Items?SortBy=SortName&SortOrder=Ascending&IncludeItemTypes=Series,Movie,Others&Recursive=true&StartIndex=0&ParentId=${id}&collapseBoxSetItems=false${
+          fields ? `&Fields=${fields}` : ''
+        }`
       );
 
       return libraryItemsResponse.Items.filter(
