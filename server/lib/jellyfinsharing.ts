@@ -10,11 +10,16 @@ import { getHostname } from '@server/utils/getHostname';
 /**
  * Builds the set of Jellyfin or Emby item ids visible to a user.
  *
- * Unlike Plex, access is granted per library only, there is no label based
- * restriction, and the allowed libraries are taken from the user's policy:
- * `EnableAllFolders` means unrestricted, otherwise `EnabledFolders` lists the
- * library ids the user may browse. Both servers report those fields on the user
- * list, so a single request covers every user.
+ * The allowed libraries are taken from the user's policy: `EnableAllFolders`
+ * means unrestricted, otherwise `EnabledFolders` lists the library ids the user
+ * may browse. Both servers report those fields on the user list, so a single
+ * request covers every user.
+ *
+ * Only that library dimension is handled here. Both servers carry a second,
+ * tag based mechanism which is the direct analogue of Plex labels, and which
+ * they do enforce: Jellyfin exposes `AllowedTags` and `BlockedTags` on the
+ * policy, Emby `IncludeTags`, `BlockedTags` and `IsTagBlockingModeInclusive`.
+ * A user restricted that way is still reported as having access here.
  *
  * Items are then listed with the owner's credentials, since neither server
  * honours a `userId` filter when queried with an administrator token: Jellyfin
