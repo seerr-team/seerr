@@ -37,6 +37,7 @@ export class QuotaRestrictedError extends Error {}
 export class DuplicateMediaRequestError extends Error {}
 export class NoSeasonsAvailableError extends Error {}
 export class BlocklistedMediaError extends Error {}
+export class SeasonLimitError extends Error {}
 
 type MediaRequestOptions = {
   isAutoRequest?: boolean;
@@ -465,6 +466,17 @@ export class MediaRequest {
       const finalSeasons = requestedSeasons.filter(
         (rs) => !existingSeasons.includes(rs)
       );
+
+      // Check if max seasons per request is set and enforce limit
+      if (
+        settings.main.maxSeasonsPerRequest > 0 &&
+        finalSeasons.length > settings.main.maxSeasonsPerRequest &&
+        !user.hasPermission(Permission.MANAGE_REQUESTS)
+      ) {
+        throw new SeasonLimitError(
+          `Season limit of ${settings.main.maxSeasonsPerRequest} exceeded.`
+        );
+      }
 
       if (finalSeasons.length === 0) {
         throw new NoSeasonsAvailableError('No seasons available to request');

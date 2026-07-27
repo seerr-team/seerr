@@ -262,6 +262,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     newPlexLogin: true,
     youtubeUrl: '',
     plexClientIdentifier: '',
+    maxSeasonsPerRequest: 0,
   };
 
   if (ctx.res) {

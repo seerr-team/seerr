@@ -50,6 +50,10 @@ const messages = defineMessages('components.RequestModal', {
   autoapproval: 'Automatic Approval',
   requesterror: 'Something went wrong while submitting the request.',
   pendingapproval: 'Your request is pending approval.',
+  seasonsLimitError:
+    'You cannot request more than {limit} {limit, plural, one {season} other {seasons}} at a time.',
+  tooManySeasons:
+    'Too many seasons selected. You can request up to {limit} {limit, plural, one {season} other {seasons}} at a time.',
 });
 
 interface RequestModalProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -157,11 +161,23 @@ const TvRequestModal = ({
       if (onComplete) {
         onComplete(MediaStatus.PENDING);
       }
-    } catch {
-      addToast(<span>{intl.formatMessage(messages.errorediting)}</span>, {
-        appearance: 'error',
-        autoDismiss: true,
-      });
+    } catch (e) {
+      if (e?.response?.data?.message === 'SEASON_LIMIT_EXCEEDED') {
+        addToast(
+          intl.formatMessage(messages.seasonsLimitError, {
+            limit: settings.currentSettings.maxSeasonsPerRequest,
+          }),
+          {
+            appearance: 'error',
+            autoDismiss: true,
+          }
+        );
+      } else {
+        addToast(<span>{intl.formatMessage(messages.errorediting)}</span>, {
+          appearance: 'error',
+          autoDismiss: true,
+        });
+      }
     } finally {
       if (onUpdating) {
         onUpdating(false);
@@ -223,11 +239,23 @@ const TvRequestModal = ({
           { appearance: 'success', autoDismiss: true }
         );
       }
-    } catch {
-      addToast(intl.formatMessage(messages.requesterror), {
-        appearance: 'error',
-        autoDismiss: true,
-      });
+    } catch (e) {
+      if (e?.response?.data?.message === 'SEASON_LIMIT_EXCEEDED') {
+        addToast(
+          intl.formatMessage(messages.seasonsLimitError, {
+            limit: settings.currentSettings.maxSeasonsPerRequest,
+          }),
+          {
+            appearance: 'error',
+            autoDismiss: true,
+          }
+        );
+      } else {
+        addToast(intl.formatMessage(messages.requesterror), {
+          appearance: 'error',
+          autoDismiss: true,
+        });
+      }
     } finally {
       if (onUpdating) {
         onUpdating(false);
@@ -285,6 +313,31 @@ const TvRequestModal = ({
       return;
     }
 
+    const newSeasons = selectedSeasons.includes(seasonNumber)
+      ? selectedSeasons.filter((sn) => sn !== seasonNumber)
+      : [...selectedSeasons, seasonNumber];
+    const notEditedSeasons = selectedSeasons.filter(
+      (sn) => !editingSeasons.includes(sn)
+    );
+
+    // If the user is trying to select more seasons than the maxSeasonsPerRequest setting allows, block toggle
+    // If the season is already part of the request, allow to keep it toggled.
+    if (
+      settings.currentSettings.maxSeasonsPerRequest > 0 &&
+      newSeasons.length > settings.currentSettings.maxSeasonsPerRequest &&
+      (!editingSeasons.includes(seasonNumber) || notEditedSeasons.length > 0) &&
+      settings.currentSettings.partialRequestsEnabled &&
+      !hasPermission(Permission.MANAGE_REQUESTS)
+    ) {
+      addToast(
+        intl.formatMessage(messages.tooManySeasons, {
+          limit: settings.currentSettings.maxSeasonsPerRequest,
+        }),
+        { appearance: 'error', autoDismiss: true }
+      );
+      return;
+    }
+
     // If there are no more remaining requests available, block toggle
     if (
       quota?.tv.limit &&
@@ -294,13 +347,7 @@ const TvRequestModal = ({
       return;
     }
 
-    if (selectedSeasons.includes(seasonNumber)) {
-      setSelectedSeasons((seasons) =>
-        seasons.filter((sn) => sn !== seasonNumber)
-      );
-    } else {
-      setSelectedSeasons((seasons) => [...seasons, seasonNumber]);
-    }
+    setSelectedSeasons(newSeasons);
   };
 
   const unrequestedSeasons = getAllSeasons().filter(
@@ -313,6 +360,24 @@ const TvRequestModal = ({
       quota?.tv.limit &&
       (quota?.tv.remaining ?? 0) < unrequestedSeasons.length
     ) {
+      return;
+    }
+
+    const newSeasons = getAllSeasons().filter(
+      (season) => !getAllRequestedSeasons().includes(season)
+    );
+    if (
+      settings.currentSettings.maxSeasonsPerRequest > 0 &&
+      newSeasons.length > settings.currentSettings.maxSeasonsPerRequest &&
+      settings.currentSettings.partialRequestsEnabled &&
+      !hasPermission(Permission.MANAGE_REQUESTS)
+    ) {
+      addToast(
+        intl.formatMessage(messages.tooManySeasons, {
+          limit: settings.currentSettings.maxSeasonsPerRequest,
+        }),
+        { appearance: 'error', autoDismiss: true }
+      );
       return;
     }
 
