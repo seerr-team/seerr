@@ -27,28 +27,30 @@ mediaRoutes.get('/', async (req, res, next) => {
   const pageSize = req.query.take ? Number(req.query.take) : 20;
   const skip = req.query.skip ? Number(req.query.skip) : 0;
 
-  let statusFilter = undefined;
+  let acceptedStatuses: MediaStatus[] | undefined;
 
   switch (req.query.filter) {
     case 'available':
-      statusFilter = MediaStatus.AVAILABLE;
+      acceptedStatuses = [MediaStatus.AVAILABLE];
       break;
     case 'partial':
-      statusFilter = MediaStatus.PARTIALLY_AVAILABLE;
+      acceptedStatuses = [MediaStatus.PARTIALLY_AVAILABLE];
       break;
     case 'allavailable':
-      statusFilter = In([
+      acceptedStatuses = [
         MediaStatus.AVAILABLE,
         MediaStatus.PARTIALLY_AVAILABLE,
-      ]);
+      ];
       break;
     case 'processing':
-      statusFilter = MediaStatus.PROCESSING;
+      acceptedStatuses = [MediaStatus.PROCESSING];
       break;
     case 'pending':
-      statusFilter = MediaStatus.PENDING;
+      acceptedStatuses = [MediaStatus.PENDING];
       break;
   }
+
+  const statusFilter = acceptedStatuses ? In(acceptedStatuses) : undefined;
 
   let sortFilter: FindOneOptions<Media>['order'] = {
     id: 'DESC',
@@ -84,9 +86,18 @@ mediaRoutes.get('/', async (req, res, next) => {
 
     // This endpoint feeds the "Recently Added" slider, so availability has to
     // be reported from the requesting user's point of view.
-    const results = req.user
+    const restricted = req.user
       ? await Media.applySharingRestrictions(req.user, media)
       : media;
+
+    // The caller asked for media in a given availability state, so an item the
+    // downgrade just took out of that state has no place in the answer. Without
+    // this, a restricted user is shown, as recently added, the titles the media
+    // server hides from them, merely flagged unavailable. Only the page shrinks,
+    // the total stays the library's, which no caller paginates on.
+    const results = acceptedStatuses
+      ? restricted.filter((item) => acceptedStatuses.includes(item.status))
+      : restricted;
 
     return res.status(200).json({
       pageInfo: {
