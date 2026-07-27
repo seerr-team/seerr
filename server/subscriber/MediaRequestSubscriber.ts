@@ -236,6 +236,43 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       try {
         const mediaRepository = manager.getRepository(Media);
         const settings = getSettings();
+
+        // Media already in the library never needs a download client, so this
+        // is settled before any server is looked up. Doing it later leaves the
+        // request approved forever on an instance without a default one, and
+        // makes the tag handling below call the server for nothing.
+        const media = await mediaRepository.findOne({
+          where: { id: entity.media.id },
+        });
+
+        if (!media) {
+          logger.error('Media data not found', {
+            label: 'Media Request',
+            requestId: entity.id,
+            mediaId: entity.media.id,
+          });
+          return;
+        }
+
+        if (
+          media[entity.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
+        ) {
+          logger.warn('Media already exists, marking request as COMPLETED', {
+            label: 'Media Request',
+            requestId: entity.id,
+            mediaId: entity.media.id,
+          });
+
+          // The requester may only be seeing this as unavailable because the
+          // media server hides it from them, so optionally grant them access.
+          await this.grantLibraryAccessIfEnabled(entity, media);
+
+          const requestRepository = manager.getRepository(MediaRequest);
+          entity.status = MediaRequestStatus.COMPLETED;
+          await requestRepository.save(entity);
+          return;
+        }
+
         if (settings.radarr.length === 0 && !settings.radarr[0]) {
           logger.info(
             'No Radarr server configured, skipping request processing',
@@ -326,38 +363,6 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
             mediaId: entity.media.id,
             tagIds: tags,
           });
-        }
-
-        const media = await mediaRepository.findOne({
-          where: { id: entity.media.id },
-        });
-
-        if (!media) {
-          logger.error('Media data not found', {
-            label: 'Media Request',
-            requestId: entity.id,
-            mediaId: entity.media.id,
-          });
-          return;
-        }
-
-        if (
-          media[entity.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
-        ) {
-          logger.warn('Media already exists, marking request as COMPLETED', {
-            label: 'Media Request',
-            requestId: entity.id,
-            mediaId: entity.media.id,
-          });
-
-          // The requester may only be seeing this as unavailable because the
-          // media server hides it from them, so optionally grant them access.
-          await this.grantLibraryAccessIfEnabled(entity, media);
-
-          const requestRepository = manager.getRepository(MediaRequest);
-          entity.status = MediaRequestStatus.COMPLETED;
-          await requestRepository.save(entity);
-          return;
         }
 
         const tmdb = new TheMovieDb();
@@ -451,7 +456,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           })
           .catch(async () => {
             try {
-              const requestRepository = getRepository(MediaRequest);
+              const requestRepository = manager.getRepository(MediaRequest);
 
               if (entity.status !== MediaRequestStatus.FAILED) {
                 entity.status = MediaRequestStatus.FAILED;
@@ -539,6 +544,38 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       try {
         const mediaRepository = manager.getRepository(Media);
         const settings = getSettings();
+
+        // Same as for movies: settled before any server is looked up.
+        const media = await mediaRepository.findOne({
+          where: { id: entity.media.id },
+        });
+
+        if (!media) {
+          throw new Error('Media data not found');
+        }
+
+        if (
+          media[entity.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
+        ) {
+          logger.warn('Media already exists, marking request as COMPLETED', {
+            label: 'Media Request',
+            requestId: entity.id,
+            mediaId: entity.media.id,
+          });
+
+          // The requester may only be seeing this as unavailable because the
+          // media server hides it from them, so optionally grant them access.
+          await this.grantLibraryAccessIfEnabled(entity, media);
+
+          const requestRepository = manager.getRepository(MediaRequest);
+          entity.status = MediaRequestStatus.COMPLETED;
+          entity.seasons.forEach((season) => {
+            season.status = MediaRequestStatus.COMPLETED;
+          });
+          await requestRepository.save(entity);
+          return;
+        }
+
         if (settings.sonarr.length === 0 && !settings.sonarr[0]) {
           logger.warn(
             'No Sonarr server configured, skipping request processing',
@@ -586,36 +623,6 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
               mediaId: entity.media.id,
             }
           );
-          return;
-        }
-
-        const media = await mediaRepository.findOne({
-          where: { id: entity.media.id },
-        });
-
-        if (!media) {
-          throw new Error('Media data not found');
-        }
-
-        if (
-          media[entity.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
-        ) {
-          logger.warn('Media already exists, marking request as COMPLETED', {
-            label: 'Media Request',
-            requestId: entity.id,
-            mediaId: entity.media.id,
-          });
-
-          // The requester may only be seeing this as unavailable because the
-          // media server hides it from them, so optionally grant them access.
-          await this.grantLibraryAccessIfEnabled(entity, media);
-
-          const requestRepository = manager.getRepository(MediaRequest);
-          entity.status = MediaRequestStatus.COMPLETED;
-          entity.seasons.forEach((season) => {
-            season.status = MediaRequestStatus.COMPLETED;
-          });
-          await requestRepository.save(entity);
           return;
         }
 
@@ -803,7 +810,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           })
           .catch(async () => {
             try {
-              const requestRepository = getRepository(MediaRequest);
+              const requestRepository = manager.getRepository(MediaRequest);
 
               if (entity.status !== MediaRequestStatus.FAILED) {
                 entity.status = MediaRequestStatus.FAILED;
