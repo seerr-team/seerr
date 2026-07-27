@@ -77,27 +77,49 @@ mediaRoutes.get('/', async (req, res, next) => {
   }
 
   try {
-    const [media, mediaCount] = await mediaRepository.findAndCount({
-      order: sortFilter,
-      where: whereClause,
-      take: pageSize,
-      skip,
-    });
+    const mediaCount = await mediaRepository.count({ where: whereClause });
 
     // This endpoint feeds the "Recently Added" slider, so availability has to
-    // be reported from the requesting user's point of view.
-    const restricted = req.user
-      ? await Media.applySharingRestrictions(req.user, media)
-      : media;
+    // be reported from the requesting user's point of view. The requested
+    // filter is then applied a second time: an item hidden from that user is no
+    // longer in the state the caller asked for, and without this pass the
+    // slider shows a restricted user exactly the titles the media server hides
+    // from them, merely flagged unavailable.
+    //
+    // Dropping them would leave a short page, so the library is walked further
+    // until the page is full. The walk is bounded, because a user who can see
+    // very little must not turn this endpoint into a full table scan; such a
+    // user gets a short page rather than an expensive one.
+    const results: Media[] = [];
+    const maxRowsScanned = pageSize * 10;
+    let offset = skip;
+    let rowsScanned = 0;
 
-    // The caller asked for media in a given availability state, so an item the
-    // downgrade just took out of that state has no place in the answer. Without
-    // this, a restricted user is shown, as recently added, the titles the media
-    // server hides from them, merely flagged unavailable. Only the page shrinks,
-    // the total stays the library's, which no caller paginates on.
-    const results = acceptedStatuses
-      ? restricted.filter((item) => acceptedStatuses.includes(item.status))
-      : restricted;
+    while (results.length < pageSize && rowsScanned < maxRowsScanned) {
+      const batch = await mediaRepository.find({
+        order: sortFilter,
+        where: whereClause,
+        take: pageSize,
+        skip: offset,
+      });
+
+      if (!batch.length) {
+        break;
+      }
+
+      offset += batch.length;
+      rowsScanned += batch.length;
+
+      const restricted = req.user
+        ? await Media.applySharingRestrictions(req.user, batch)
+        : batch;
+
+      results.push(
+        ...(acceptedStatuses
+          ? restricted.filter((item) => acceptedStatuses.includes(item.status))
+          : restricted)
+      );
+    }
 
     return res.status(200).json({
       pageInfo: {
@@ -106,7 +128,7 @@ mediaRoutes.get('/', async (req, res, next) => {
         results: mediaCount,
         page: Math.ceil(skip / pageSize) + 1,
       },
-      results,
+      results: results.slice(0, pageSize),
     } as MediaResultsResponse);
   } catch (e) {
     next({ status: 500, message: e.message });
