@@ -10,7 +10,7 @@ function getCompiledRegexes(patterns: string[]): Map<string, RegExp> {
   const patternsKey = JSON.stringify(patterns);
   if (patternsKey === lastPatternsKey) return regexCache;
 
-  regexCache = new Map();
+  regexCache = new Map<string, RegExp>();
   warnedPatterns.clear();
   lastPatternsKey = patternsKey;
 

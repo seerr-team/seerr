@@ -21,6 +21,11 @@ describe('ignoredPathPatterns', () => {
     assert.equal(compileIgnoredPathPattern(''), null);
   });
 
+  it('returns null for patterns longer than 256 characters', () => {
+    assert.ok(compileIgnoredPathPattern('a'.repeat(256)));
+    assert.equal(compileIgnoredPathPattern('a'.repeat(257)), null);
+  });
+
   it('rejects invalid and unsafe patterns while keeping safe unique ones', () => {
     const { cleaned, rejected } = sanitizeIgnoredPathPatterns([
       'placeholders/',

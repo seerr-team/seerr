@@ -1,7 +1,15 @@
 import safeRegex from 'safe-regex';
 
+// safe-regex is a heuristic, not a guarantee; the length cap bounds the
+// complexity of anything it lets through.
+const MAX_PATTERN_LENGTH = 256;
+
 export function compileIgnoredPathPattern(pattern: string): RegExp | null {
-  if (typeof pattern !== 'string' || pattern.length === 0) {
+  if (
+    typeof pattern !== 'string' ||
+    pattern.length === 0 ||
+    pattern.length > MAX_PATTERN_LENGTH
+  ) {
     return null;
   }
 
