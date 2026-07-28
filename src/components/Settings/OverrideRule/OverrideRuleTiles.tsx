@@ -25,6 +25,7 @@ const messages = defineMessages('components.Settings.OverrideRuleTile', {
   genre: 'Genre',
   language: 'Language',
   keywords: 'Keywords',
+  certification: 'Certification',
   conditions: 'Conditions',
   settings: 'Settings',
 });
@@ -218,6 +219,27 @@ const OverrideRuleTiles = ({
                             )?.name
                           }
                         </span>
+                      );
+                    })}
+                  </div>
+                </p>
+              )}
+              {rule.certification && (
+                <p className="truncate text-sm leading-5 text-gray-300">
+                  <span className="mr-2 font-bold">
+                    {intl.formatMessage(messages.certification)}
+                  </span>
+                  <div className="inline-flex gap-2">
+                    {rule.certification.split(',').map((entry) => {
+                      const [countryCode, certificationValue] =
+                        entry.split(':');
+                      const countryName =
+                        intl.formatDisplayName(countryCode, {
+                          type: 'region',
+                          fallback: 'none',
+                        }) ?? countryCode;
+                      return (
+                        <span>{`${countryName}: ${certificationValue}`}</span>
                       );
                     })}
                   </div>
