@@ -1,6 +1,7 @@
 import Modal from '@app/components/Common/Modal';
 import LanguageSelector from '@app/components/LanguageSelector';
 import {
+  CertificationSelector,
   GenreSelector,
   KeywordSelector,
   UserSelector,
@@ -36,6 +37,7 @@ const messages = defineMessages('components.Settings.OverrideRuleModal', {
   genres: 'Genres',
   languages: 'Languages',
   keywords: 'Keywords',
+  certification: 'Certification',
   rootfolder: 'Root Folder',
   selectRootFolder: 'Select root folder',
   qualityprofile: 'Quality Profile',
@@ -155,6 +157,7 @@ const OverrideRuleModal = ({
           genre: rule?.genre,
           language: rule?.language,
           keywords: rule?.keywords,
+          certification: rule?.certification,
           profileId: rule?.profileId,
           rootFolder: rule?.rootFolder,
           tags: rule?.tags,
@@ -166,6 +169,7 @@ const OverrideRuleModal = ({
               genre: values.genre || null,
               language: values.language || null,
               keywords: values.keywords || null,
+              certification: values.certification || null,
               profileId: Number(values.profileId) || null,
               rootFolder: values.rootFolder || null,
               tags: values.tags || null,
@@ -217,7 +221,8 @@ const OverrideRuleModal = ({
                 (!values.users &&
                   !values.genre &&
                   !values.language &&
-                  !values.keywords) ||
+                  !values.keywords &&
+                  !values.certification) ||
                 (!values.rootFolder && !values.profileId && !values.tags)
               }
               onOk={() => handleSubmit()}
@@ -410,6 +415,28 @@ const OverrideRuleModal = ({
                       touched.keywords &&
                       typeof errors.keywords === 'string' && (
                         <div className="error">{errors.keywords}</div>
+                      )}
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="certification" className="text-label">
+                    {intl.formatMessage(messages.certification)}
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <CertificationSelector
+                        type={values.radarrServiceId != null ? 'movie' : 'tv'}
+                        certification={values.certification}
+                        isDisabled={!isValidated || isTesting}
+                        onChange={(value) => {
+                          setFieldValue('certification', value);
+                        }}
+                      />
+                    </div>
+                    {errors.certification &&
+                      touched.certification &&
+                      typeof errors.certification === 'string' && (
+                        <div className="error">{errors.certification}</div>
                       )}
                   </div>
                 </div>

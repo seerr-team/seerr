@@ -633,4 +633,5 @@ export const UserSelector = ({
   );
 };
 
+export { default as CertificationSelector } from './CertificationSelector';
 export { default as USCertificationSelector } from './USCertificationSelector';
