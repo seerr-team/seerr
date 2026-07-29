@@ -77,10 +77,20 @@ const FilterSlideover = ({
   const savedFilters = getSavedFilters();
 
   useEffect(() => {
-    if (savedFilters && updateLocalStorage.current) {
+    if (
+      savedFilters &&
+      updateLocalStorage.current &&
+      Object.keys(currentFilters).length === 0
+    ) {
       batchUpdateQueryParams(savedFilters);
+      updateLocalStorage.current = false;
     }
-  }, [savedFilters, batchUpdateQueryParams, updateLocalStorage]);
+  }, [
+    savedFilters,
+    batchUpdateQueryParams,
+    updateLocalStorage,
+    currentFilters,
+  ]);
 
   const dateGte =
     type === 'movie' ? 'primaryReleaseDateGte' : 'firstAirDateGte';
