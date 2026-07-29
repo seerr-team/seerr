@@ -69,18 +69,36 @@ class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
 
     const settings = getSettings();
     const blocklistedTags = settings.main.blocklistedTags;
-    const blocklistedTagsArr = blocklistedTags.split(',');
+    const blocklistedTagsArr = blocklistedTags
+      ? blocklistedTags.split(',')
+      : [];
+    const blocklistedGenresByType = {
+      [MediaType.MOVIE]: settings.main.blocklistedGenresMovie
+        ? settings.main.blocklistedGenresMovie.split(',')
+        : [],
+      [MediaType.TV]: settings.main.blocklistedGenresTv
+        ? settings.main.blocklistedGenresTv.split(',')
+        : [],
+    };
 
     const pageLimit = settings.main.blocklistedTagsLimit;
     const invalidKeywords = new Set<string>();
 
-    if (blocklistedTags.length === 0) {
+    if (
+      blocklistedTagsArr.length === 0 &&
+      blocklistedGenresByType[MediaType.MOVIE].length === 0 &&
+      blocklistedGenresByType[MediaType.TV].length === 0
+    ) {
       return;
     }
 
     // The maximum number of queries we're expected to execute
     this.total =
-      2 * blocklistedTagsArr.length * pageLimit * SortOptionsIterable.length;
+      (2 * blocklistedTagsArr.length +
+        blocklistedGenresByType[MediaType.MOVIE].length +
+        blocklistedGenresByType[MediaType.TV].length) *
+      pageLimit *
+      SortOptionsIterable.length;
 
     for (const type of [MediaType.MOVIE, MediaType.TV]) {
       const getDiscover =
@@ -123,7 +141,7 @@ class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
               keywords: tag,
             });
 
-            await this.processResults(response, tag, type, em);
+            await this.processResults(response, tag, type, em, 'tags');
             await new Promise((res) => setTimeout(res, TMDB_API_DELAY_MS));
 
             this.progress++;
@@ -137,6 +155,45 @@ class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
             logger.error('Error processing keyword in blocklisted tags', {
               label: 'Blocklisted Tags Processor',
               keywordId: tag,
+              errorMessage: error.message,
+            });
+          }
+        }
+      }
+
+      // Iterate for each blocklisted genre of this media type
+      for (const genre of blocklistedGenresByType[type]) {
+        let queryMax = pageLimit * SortOptionsIterable.length;
+        let fixedSortMode = false;
+
+        for (let query = 0; query < queryMax; query++) {
+          const page: number = fixedSortMode
+            ? query + 1
+            : (query % pageLimit) + 1;
+          const sortBy: SortOptions | undefined = fixedSortMode
+            ? undefined
+            : SortOptionsIterable[query % SortOptionsIterable.length];
+
+          if (!this.running) {
+            throw new AbortTransaction();
+          }
+
+          try {
+            const response = await getDiscover({ page, sortBy, genre });
+
+            await this.processResults(response, genre, type, em, 'genres');
+            await new Promise((res) => setTimeout(res, TMDB_API_DELAY_MS));
+
+            this.progress++;
+            if (page === 1 && response.total_pages <= queryMax) {
+              this.progress += queryMax - response.total_pages;
+              fixedSortMode = true;
+              queryMax = response.total_pages;
+            }
+          } catch (error) {
+            logger.error('Error processing genre in blocklisted genres', {
+              label: 'Blocklisted Tags Processor',
+              genreId: genre,
               errorMessage: error.message,
             });
           }
@@ -165,9 +222,10 @@ class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
 
   private async processResults(
     response: TmdbSearchMovieResponse | TmdbSearchTvResponse,
-    keywordId: string,
+    matchId: string,
     mediaType: MediaType,
-    em: EntityManager
+    em: EntityManager,
+    kind: 'tags' | 'genres'
   ) {
     const blocklistRepository = em.getRepository(Blocklist);
 
@@ -177,25 +235,30 @@ class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
       });
 
       if (blocklistEntry) {
-        // Don't mark manual blocklists with tags
-        // If media wasn't previously blocklisted for this tag, add the tag to the media's blocklist
-        if (
-          blocklistEntry.blocklistedTags &&
-          !blocklistEntry.blocklistedTags.includes(`,${keywordId},`)
-        ) {
-          await blocklistRepository.update(blocklistEntry.id, {
-            blocklistedTags: `${blocklistEntry.blocklistedTags}${keywordId},`,
-          });
+        // Only extend rows already sourced by this kind; never touch manual entries.
+        const current =
+          kind === 'tags'
+            ? blocklistEntry.blocklistedTags
+            : blocklistEntry.blocklistedGenres;
+
+        if (current && !current.includes(`,${matchId},`)) {
+          await blocklistRepository.update(
+            blocklistEntry.id,
+            kind === 'tags'
+              ? { blocklistedTags: `${current}${matchId},` }
+              : { blocklistedGenres: `${current}${matchId},` }
+          );
         }
       } else {
-        // Media wasn't previously blocklisted, add it to the blocklist
         await Blocklist.addToBlocklist(
           {
             blocklistRequest: {
               mediaType,
               title: 'title' in entry ? entry.title : entry.name,
               tmdbId: entry.id,
-              blocklistedTags: `,${keywordId},`,
+              ...(kind === 'tags'
+                ? { blocklistedTags: `,${matchId},` }
+                : { blocklistedGenres: `,${matchId},` }),
             },
           },
           em
@@ -214,7 +277,9 @@ class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
         'blist',
         'blist.tmdbId = media.tmdbId AND blist.mediaType = media.mediaType'
       )
-      .where(`blist.blocklistedTags IS NOT NULL`)
+      .where(
+        `blist.blocklistedTags IS NOT NULL OR blist.blocklistedGenres IS NOT NULL`
+      )
       .getMany();
 
     // Batch removes so the query doesn't get too large
