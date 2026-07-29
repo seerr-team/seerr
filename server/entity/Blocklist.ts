@@ -48,6 +48,9 @@ export class Blocklist implements BlocklistItem {
   @Column({ nullable: true, type: 'varchar' })
   public blocklistedTags?: string;
 
+  @Column({ nullable: true, type: 'varchar' })
+  public blocklistedGenres?: string;
+
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
@@ -64,6 +67,7 @@ export class Blocklist implements BlocklistItem {
         title?: ZodOptional<ZodString>['_output'];
         tmdbId: ZodNumber['_output'];
         blocklistedTags?: string;
+        blocklistedGenres?: string;
       };
     },
     entityManager?: EntityManager
