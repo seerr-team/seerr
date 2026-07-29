@@ -45,6 +45,8 @@ import validator from 'validator';
 import * as Yup from 'yup';
 import JellyfinImportModal from './JellyfinImportModal';
 
+const PHONE_REGEX = /^\+?[0-9]{1,15}$/;
+
 const messages = defineMessages('components.UserList', {
   users: 'Users',
   userlist: 'User List',
@@ -77,6 +79,8 @@ const messages = defineMessages('components.UserList', {
   username: 'Username',
   email: 'Email Address',
   password: 'Password',
+  phoneNumber: 'Phone number',
+  validationPhoneNumber: 'Invalid phone number',
   passwordinfodescription:
     'Configure an application URL and enable email notifications to allow automatic password generation.',
   autogeneratepassword: 'Automatically Generate Password',
@@ -356,6 +360,10 @@ const UserList = () => {
             intl.formatMessage(messages.validationpasswordminchars)
           )
     ),
+    phoneNumber: Yup.string().matches(PHONE_REGEX, {
+      message: intl.formatMessage(messages.validationPhoneNumber),
+      excludeEmptyString: true,
+    }),
   });
 
   if (!data) {
@@ -416,6 +424,7 @@ const UserList = () => {
             username: '',
             email: '',
             password: '',
+            phoneNumber: '',
             genpassword: false,
           }}
           validationSchema={CreateUserSchema}
@@ -425,6 +434,7 @@ const UserList = () => {
                 username: values.username,
                 email: values.email,
                 password: values.genpassword ? null : values.password,
+                phoneNumber: values.phoneNumber,
               });
               addToast(intl.formatMessage(messages.usercreatedsuccess), {
                 appearance: 'success',
@@ -581,6 +591,21 @@ const UserList = () => {
                         touched.password &&
                         typeof errors.password === 'string' && (
                           <div className="error">{errors.password}</div>
+                        )}
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <label htmlFor="phoneNumber" className="text-label">
+                      {intl.formatMessage(messages.phoneNumber)}
+                    </label>
+                    <div className="form-input-area">
+                      <div className="form-input-field">
+                        <Field id="phoneNumber" name="phoneNumber" type="tel" />
+                      </div>
+                      {errors.phoneNumber &&
+                        touched.phoneNumber &&
+                        typeof errors.phoneNumber === 'string' && (
+                          <div className="error">{errors.phoneNumber}</div>
                         )}
                     </div>
                   </div>
