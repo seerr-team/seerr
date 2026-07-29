@@ -112,12 +112,15 @@ userSettingsRoutes.post<
       throw new ApiError(400, ApiErrorCode.InvalidEmail);
     }
 
-    const result = phoneNumberSchema.safeParse(req.body.phoneNumber);
-    if (user.phoneNumber && !result.success) {
-      throw new ApiError(400, ApiErrorCode.InvalidPhoneNumber);
+    if (req.body.phoneNumber) {
+      const result = phoneNumberSchema.safeParse(req.body.phoneNumber);
+      if (!result.success) {
+        throw new ApiError(400, ApiErrorCode.InvalidPhoneNumber);
+      }
+      user.phoneNumber = result.data;
+    } else {
+      user.phoneNumber = '';
     }
-
-    user.phoneNumber = result.data;
 
     // Update quota values only if the user has the correct permissions
     if (
