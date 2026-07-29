@@ -95,6 +95,7 @@
   "components.Discover.FilterSlideover.releaseDate": "Release Date",
   "components.Discover.FilterSlideover.runtime": "Runtime",
   "components.Discover.FilterSlideover.runtimeText": "{minValue}-{maxValue} minute runtime",
+  "components.Discover.FilterSlideover.saveActiveFilters": "Save Active Filters",
   "components.Discover.FilterSlideover.status": "Status",
   "components.Discover.FilterSlideover.streamingservices": "Streaming Services",
   "components.Discover.FilterSlideover.studio": "Studio",
