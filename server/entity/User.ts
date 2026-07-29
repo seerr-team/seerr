@@ -78,7 +78,7 @@ export class User {
   public password?: string;
 
   @Column({ type: 'varchar', nullable: true, length: 20 })
-  public phoneNumber?: string;
+  public phoneNumber?: string | null;
 
   @Column({ nullable: true, select: false })
   public resetPasswordGuid?: string;

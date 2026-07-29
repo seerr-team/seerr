@@ -52,7 +52,7 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
       return res.status(200).json({
         username: user.username,
         email: user.email,
-        phoneNumber: user.phoneNumber,
+        phoneNumber: user.phoneNumber ?? '',
         locale: user.settings?.locale,
         discoverRegion: user.settings?.discoverRegion,
         streamingRegion: user.settings?.streamingRegion,
@@ -112,8 +112,8 @@ userSettingsRoutes.post<
       throw new ApiError(400, ApiErrorCode.InvalidEmail);
     }
 
-    const result = phoneNumberSchema.safeParse('req.body.phoneNumber');
-    if (!result.success) {
+    const result = phoneNumberSchema.safeParse(req.body.phoneNumber);
+    if (user.phoneNumber && !result.success) {
       throw new ApiError(400, ApiErrorCode.InvalidPhoneNumber);
     }
 
@@ -160,7 +160,7 @@ userSettingsRoutes.post<
       watchlistSyncMovies: savedUser.settings?.watchlistSyncMovies,
       watchlistSyncTv: savedUser.settings?.watchlistSyncTv,
       email: savedUser.email,
-      phoneNumber: savedUser.phoneNumber,
+      phoneNumber: savedUser.phoneNumber ?? '',
     });
   } catch (e) {
     if (e.errorCode) {
