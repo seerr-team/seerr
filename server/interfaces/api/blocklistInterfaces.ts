@@ -8,6 +8,7 @@ export interface BlocklistItem {
   createdAt?: Date;
   user?: User;
   blocklistedTags?: string;
+  blocklistedGenres?: string;
 }
 
 export interface BlocklistResultsResponse extends PaginatedResponse {

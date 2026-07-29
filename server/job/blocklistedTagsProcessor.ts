@@ -236,6 +236,11 @@ class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
 
       if (blocklistEntry) {
         // Only extend rows already sourced by this kind; never touch manual entries.
+        // Note: per run only the first-touching kind's marker column is recorded for
+        // a given row (the other kind's column may stay null even if that source also
+        // matches), so the two marker columns are not independently authoritative. The
+        // row is still fully blocklisted regardless, and cleanBlocklist rebuilds every
+        // run, so this does not affect enforcement.
         const current =
           kind === 'tags'
             ? blocklistEntry.blocklistedTags

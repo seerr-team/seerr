@@ -25,7 +25,9 @@ const blocklistGet = z.object({
   take: z.coerce.number().int().positive().default(25),
   skip: z.coerce.number().int().nonnegative().default(0),
   search: z.string().optional(),
-  filter: z.enum(['all', 'manual', 'blocklistedTags']).optional(),
+  filter: z
+    .enum(['all', 'manual', 'blocklistedTags', 'blocklistedGenres'])
+    .optional(),
 });
 
 blocklistRoutes.get(
@@ -44,10 +46,15 @@ blocklistRoutes.get(
 
       switch (filter) {
         case 'manual':
-          query = query.andWhere('blocklist.blocklistedTags IS NULL');
+          query = query.andWhere(
+            'blocklist.blocklistedTags IS NULL AND blocklist.blocklistedGenres IS NULL'
+          );
           break;
         case 'blocklistedTags':
           query = query.andWhere('blocklist.blocklistedTags IS NOT NULL');
+          break;
+        case 'blocklistedGenres':
+          query = query.andWhere('blocklist.blocklistedGenres IS NOT NULL');
           break;
       }
 

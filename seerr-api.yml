@@ -4693,7 +4693,7 @@ paths:
           name: filter
           schema:
             type: string
-            enum: [all, manual, blocklistedTags]
+            enum: [all, manual, blocklistedTags, blocklistedGenres]
             default: manual
       responses:
         '200':
@@ -4820,7 +4820,7 @@ paths:
           name: filter
           schema:
             type: string
-            enum: [all, manual, blocklistedTags]
+            enum: [all, manual, blocklistedTags, blocklistedGenres]
             default: manual
       responses:
         '200':

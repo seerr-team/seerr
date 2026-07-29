@@ -1,3 +1,4 @@
+import BlocklistedGenresBadge from '@app/components/BlocklistedGenresBadge';
 import BlocklistedTagsBadge from '@app/components/BlocklistedTagsBadge';
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
@@ -46,6 +47,7 @@ const messages = defineMessages('components.Blocklist', {
   blocklistNotFoundError: '<strong>{title}</strong> is not blocklisted.',
   filterManual: 'Manual',
   filterBlocklistedTags: 'Blocklisted Tags',
+  filterBlocklistedGenres: 'Blocklisted Genres',
   showAllBlocklisted: 'Show All Blocklisted Media',
 });
 
@@ -53,6 +55,7 @@ enum Filter {
   ALL = 'all',
   MANUAL = 'manual',
   BLOCKLISTEDTAGS = 'blocklistedTags',
+  BLOCKLISTEDGENRES = 'blocklistedGenres',
 }
 
 const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
@@ -139,6 +142,9 @@ const Blocklist = () => {
               </option>
               <option value="blocklistedTags">
                 {intl.formatMessage(messages.filterBlocklistedTags)}
+              </option>
+              <option value="blocklistedGenres">
+                {intl.formatMessage(messages.filterBlocklistedGenres)}
               </option>
             </select>
           </div>
@@ -434,6 +440,10 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
                   ) : item.blocklistedTags ? (
                     <span className="ml-1">
                       <BlocklistedTagsBadge data={item} />
+                    </span>
+                  ) : item.blocklistedGenres ? (
+                    <span className="ml-1">
+                      <BlocklistedGenresBadge data={item} />
                     </span>
                   ) : (
                     <span className="ml-1 truncate text-sm font-semibold">
