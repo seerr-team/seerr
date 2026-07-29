@@ -5,6 +5,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import LanguageSelector from '@app/components/LanguageSelector';
 import RegionSelector from '@app/components/RegionSelector';
+import { GenreSelector } from '@app/components/Selector';
 import CopyButton from '@app/components/Settings/CopyButton';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import { availableLanguages } from '@app/context/LanguageContext';
@@ -47,6 +48,12 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   blocklistedTags: 'Blocklist Content with Tags',
   blocklistedTagsTip:
     'Automatically add content with tags to the blocklist using the "Process Blocklisted Tags" job',
+  blocklistedGenresMovie: 'Blocklist Movies with Genres',
+  blocklistedGenresMovieTip:
+    'Automatically add movies of these genres to the blocklist using the "Process Blocklisted Tags" job',
+  blocklistedGenresTv: 'Blocklist Series with Genres',
+  blocklistedGenresTvTip:
+    'Automatically add series of these genres to the blocklist using the "Process Blocklisted Tags" job',
   blocklistedTagsLimit: 'Limit Content Blocklisted per Tag',
   blocklistedTagsLimitTip:
     'The "Process Blocklisted Tags" job will blocklist this many pages into each sort. Larger numbers will create a more accurate blocklist, but use more space.',
@@ -180,6 +187,8 @@ const SettingsMain = () => {
             blocklistRegion: data?.blocklistRegion || '',
             blocklistLanguage: data?.blocklistLanguage || '',
             blocklistedTags: data?.blocklistedTags,
+            blocklistedGenresMovie: data?.blocklistedGenresMovie ?? '',
+            blocklistedGenresTv: data?.blocklistedGenresTv ?? '',
             blocklistedTagsLimit: data?.blocklistedTagsLimit || 50,
             partialRequestsEnabled: data?.partialRequestsEnabled,
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
@@ -203,6 +212,8 @@ const SettingsMain = () => {
                 blocklistRegion: values.blocklistRegion,
                 blocklistLanguage: values.blocklistLanguage,
                 blocklistedTags: values.blocklistedTags,
+                blocklistedGenresMovie: values.blocklistedGenresMovie,
+                blocklistedGenresTv: values.blocklistedGenresTv,
                 blocklistedTagsLimit: values.blocklistedTagsLimit,
                 partialRequestsEnabled: values.partialRequestsEnabled,
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
@@ -466,6 +477,59 @@ const SettingsMain = () => {
                     <div className="form-input-field relative z-10">
                       <BlocklistedTagsSelector
                         defaultValue={values.blocklistedTags}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="blocklistedGenresMovie"
+                    className="text-label"
+                  >
+                    <span>
+                      {intl.formatMessage(messages.blocklistedGenresMovie)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.blocklistedGenresMovieTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field relative z-10">
+                      <GenreSelector
+                        type="movie"
+                        isMulti
+                        defaultValue={values.blocklistedGenresMovie}
+                        onChange={(vals) =>
+                          setFieldValue(
+                            'blocklistedGenresMovie',
+                            (vals ?? []).map((v) => v.value).join(',')
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="blocklistedGenresTv" className="text-label">
+                    <span>
+                      {intl.formatMessage(messages.blocklistedGenresTv)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.blocklistedGenresTvTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field relative z-10">
+                      <GenreSelector
+                        type="tv"
+                        isMulti
+                        defaultValue={values.blocklistedGenresTv}
+                        onChange={(vals) =>
+                          setFieldValue(
+                            'blocklistedGenresTv',
+                            (vals ?? []).map((v) => v.value).join(',')
+                          )
+                        }
                       />
                     </div>
                   </div>
