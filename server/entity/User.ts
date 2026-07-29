@@ -77,6 +77,9 @@ export class User {
   @Column({ nullable: true, select: false })
   public password?: string;
 
+  @Column({ type: 'varchar', nullable: true, length: 20 })
+  public phoneNumber?: string;
+
   @Column({ nullable: true, select: false })
   public resetPasswordGuid?: string;
 
