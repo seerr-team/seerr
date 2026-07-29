@@ -158,7 +158,7 @@ const UserGeneralSettings = () => {
         initialValues={{
           displayName: data?.username !== user?.email ? data?.username : '',
           email: data?.email?.includes('@') ? data.email : '',
-          phoneNumber: data?.phoneNumber,
+          phoneNumber: data?.phoneNumber ?? '',
           locale: data?.locale,
           discoverRegion: data?.discoverRegion,
           streamingRegion: data?.streamingRegion,

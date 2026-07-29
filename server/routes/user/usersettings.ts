@@ -24,7 +24,10 @@ import {
 import { Router } from 'express';
 import net from 'net';
 import { Not } from 'typeorm';
+import { z } from 'zod';
 import { canMakePermissionsChange } from '.';
+
+const phoneNumberSchema = z.string().regex(/^\+?[0-9]{1,15}$/);
 
 const userSettingsRoutes = Router({ mergeParams: true });
 
@@ -109,7 +112,12 @@ userSettingsRoutes.post<
       throw new ApiError(400, ApiErrorCode.InvalidEmail);
     }
 
-    user.phoneNumber = req.body.phoneNumber;
+    const result = phoneNumberSchema.safeParse('req.body.phoneNumber');
+    if (!result.success) {
+      throw new ApiError(400, ApiErrorCode.InvalidPhoneNumber);
+    }
+
+    user.phoneNumber = result.data;
 
     // Update quota values only if the user has the correct permissions
     if (
