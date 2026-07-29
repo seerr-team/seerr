@@ -1660,8 +1660,6 @@
   "components.UserList.sortByUser": "Nach Benutzername sortieren",
   "components.UserList.toggleSortDirection": "Erneut klicken, um {direction} zu sortieren",
   "components.UserList.toggleSortDirectionAria": "Sortierreihenfolge umschalten",
-  "components.UserList.phoneNumber": "Telefonnummer",
-  "components.UserList.validationPhoneNumber": "Ungültige Telefonnummer",
   "components.UserProfile.UserSettings.UserPasswordChange.localPasswordDescription": "Dieses Passwort wird für die lokale Anmeldung bei {applicationTitle} verwendet. Es ist unabhängig von deinem Medienserver-Passwort.",
   "i18n.error": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
   "i18n.notificationLocale": "Benachrichtigungssprache",

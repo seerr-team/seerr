@@ -18,6 +18,7 @@ import type { User } from '@app/hooks/useUser';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import { PHONE_REGEX } from '@app/utils/numberHelpers';
 import { Transition } from '@headlessui/react';
 import {
   BarsArrowDownIcon,
@@ -44,8 +45,6 @@ import useSWR from 'swr';
 import validator from 'validator';
 import * as Yup from 'yup';
 import JellyfinImportModal from './JellyfinImportModal';
-
-const PHONE_REGEX = /^\+?[0-9]{1,15}$/;
 
 const messages = defineMessages('components.UserList', {
   users: 'Users',
