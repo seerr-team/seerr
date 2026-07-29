@@ -1,5 +1,6 @@
 import type { FilterOptions } from '@app/components/Discover/constants';
 import { QueryFilterOptions } from '@app/components/Discover/constants';
+import { useRef } from 'react';
 
 type FilterType = 'movie' | 'tv';
 
@@ -26,6 +27,7 @@ const readSavedFilters = (key: string): FilterOptions | null => {
 
 const useSavedDiscoverFilters = (type: FilterType) => {
   const key = storageKey(type);
+  const updateLocalStorage = useRef(true);
 
   const saveFilters = (filters: FilterOptions) =>
     window.localStorage.setItem(key, JSON.stringify(filters));
@@ -38,6 +40,7 @@ const useSavedDiscoverFilters = (type: FilterType) => {
     saveFilters,
     getSavedFilters,
     removeSavedFilters,
+    updateLocalStorage,
   };
 };
 

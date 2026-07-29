@@ -14,9 +14,12 @@ import {
 } from '@app/components/Selector';
 import useSavedDiscoverFilters from '@app/hooks/useSavedDiscoverFilters';
 import useSettings from '@app/hooks/useSettings';
-import { useBatchUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
+import {
+  useBatchUpdateQueryParams,
+  useUpdateQueryParams,
+} from '@app/hooks/useUpdateQueryParams';
 import defineMessages from '@app/utils/defineMessages';
-import { XCircleIcon } from '@heroicons/react/24/outline';
+import { BookmarkSquareIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import Datepicker from '@seerr-team/react-tailwindcss-datepicker';
 import { useEffect } from 'react';
 import { useIntl } from 'react-intl';
@@ -44,6 +47,8 @@ const messages = defineMessages('components.Discover.FilterSlideover', {
   voteCount: 'Number of votes between {minValue} and {maxValue}',
   status: 'Status',
   certification: 'Content Rating',
+  saveFilters: 'Save Active Filters',
+  removeFilters: 'Remove Saved Filters',
 });
 
 type FilterSlideoverProps = {
@@ -61,22 +66,22 @@ const FilterSlideover = ({
 }: FilterSlideoverProps) => {
   const intl = useIntl();
   const { currentSettings } = useSettings();
+  const updateQueryParams = useUpdateQueryParams({});
   const batchUpdateQueryParams = useBatchUpdateQueryParams({});
-  const { saveFilters, getSavedFilters, removeSavedFilters } =
-    useSavedDiscoverFilters(type);
+  const {
+    saveFilters,
+    getSavedFilters,
+    removeSavedFilters,
+    updateLocalStorage,
+  } = useSavedDiscoverFilters(type);
 
   const savedFilters = getSavedFilters();
 
   useEffect(() => {
-    if (savedFilters) {
+    if (savedFilters && updateLocalStorage.current) {
       batchUpdateQueryParams(savedFilters);
     }
-  }, [savedFilters, batchUpdateQueryParams]);
-
-  const handleFilterUpdate = (params: Record<string, string | undefined>) => {
-    saveFilters({ ...savedFilters, ...params });
-    batchUpdateQueryParams(params);
-  };
+  }, [savedFilters, batchUpdateQueryParams, updateLocalStorage]);
 
   const dateGte =
     type === 'movie' ? 'primaryReleaseDateGte' : 'firstAirDateGte';
@@ -109,11 +114,10 @@ const FilterSlideover = ({
                   endDate: currentFilters[dateGte] ?? null,
                 }}
                 onChange={(value) => {
-                  handleFilterUpdate({
-                    [dateGte]: value?.startDate
-                      ? (value.startDate as string)
-                      : undefined,
-                  });
+                  updateQueryParams(
+                    dateGte,
+                    value?.startDate ? (value.startDate as string) : undefined
+                  );
                 }}
                 inputName="fromdate"
                 useRange={false}
@@ -131,11 +135,10 @@ const FilterSlideover = ({
                   endDate: currentFilters[dateLte] ?? null,
                 }}
                 onChange={(value) => {
-                  handleFilterUpdate({
-                    [dateLte]: value?.startDate
-                      ? (value.startDate as string)
-                      : undefined,
-                  });
+                  updateQueryParams(
+                    dateLte,
+                    value?.startDate ? (value.startDate as string) : undefined
+                  );
                 }}
                 inputName="todate"
                 useRange={false}
@@ -154,7 +157,7 @@ const FilterSlideover = ({
             <CompanySelector
               defaultValue={currentFilters.studio}
               onChange={(value) => {
-                handleFilterUpdate({ studio: value?.value.toString() });
+                updateQueryParams('studio', value?.value.toString());
               }}
             />
           </>
@@ -167,7 +170,7 @@ const FilterSlideover = ({
           defaultValue={currentFilters.genre}
           isMulti
           onChange={(value) => {
-            handleFilterUpdate({ genre: value?.map((v) => v.value).join(',') });
+            updateQueryParams('genre', value?.map((v) => v.value).join(','));
           }}
         />
         {type === 'tv' && (
@@ -179,9 +182,10 @@ const FilterSlideover = ({
               defaultValue={currentFilters.status}
               isMulti
               onChange={(value) => {
-                handleFilterUpdate({
-                  status: value?.map((v) => v.value).join('|'),
-                });
+                updateQueryParams(
+                  'status',
+                  value?.map((v) => v.value).join('|')
+                );
               }}
             />
           </>
@@ -193,9 +197,7 @@ const FilterSlideover = ({
           defaultValue={currentFilters.keywords}
           isMulti
           onChange={(value) => {
-            handleFilterUpdate({
-              keywords: value?.map((v) => v.value).join(','),
-            });
+            updateQueryParams('keywords', value?.map((v) => v.value).join(','));
           }}
         />
         <span className="text-lg font-semibold">
@@ -205,9 +207,10 @@ const FilterSlideover = ({
           defaultValue={currentFilters.excludeKeywords}
           isMulti
           onChange={(value) => {
-            handleFilterUpdate({
-              excludeKeywords: value?.map((v) => v.value).join(','),
-            });
+            updateQueryParams(
+              'excludeKeywords',
+              value?.map((v) => v.value).join(',')
+            );
           }}
         />
         <span className="text-lg font-semibold">
@@ -218,7 +221,7 @@ const FilterSlideover = ({
           serverValue={currentSettings.originalLanguage}
           isUserSettings
           setFieldValue={(_key, value) => {
-            handleFilterUpdate({ language: value });
+            updateQueryParams('language', value);
           }}
         />
         <span className="text-lg font-semibold">
@@ -228,7 +231,7 @@ const FilterSlideover = ({
           type={type}
           certification={currentFilters.certification}
           onChange={(params) => {
-            handleFilterUpdate(params);
+            batchUpdateQueryParams(params);
           }}
         />
         <span className="text-lg font-semibold">
@@ -239,20 +242,20 @@ const FilterSlideover = ({
             min={0}
             max={400}
             onUpdateMin={(min) => {
-              handleFilterUpdate({
-                withRuntimeGte:
-                  min !== 0 && Number(currentFilters.withRuntimeLte) !== 400
-                    ? min.toString()
-                    : undefined,
-              });
+              updateQueryParams(
+                'withRuntimeGte',
+                min !== 0 && Number(currentFilters.withRuntimeLte) !== 400
+                  ? min.toString()
+                  : undefined
+              );
             }}
             onUpdateMax={(max) => {
-              handleFilterUpdate({
-                withRuntimeLte:
-                  max !== 400 && Number(currentFilters.withRuntimeGte) !== 0
-                    ? max.toString()
-                    : undefined,
-              });
+              updateQueryParams(
+                'withRuntimeLte',
+                max !== 400 && Number(currentFilters.withRuntimeGte) !== 0
+                  ? max.toString()
+                  : undefined
+              );
             }}
             defaultMaxValue={
               currentFilters.withRuntimeLte
@@ -288,20 +291,20 @@ const FilterSlideover = ({
                 : undefined
             }
             onUpdateMin={(min) => {
-              handleFilterUpdate({
-                voteAverageGte:
-                  min !== 1 && Number(currentFilters.voteAverageLte) !== 10
-                    ? min.toString()
-                    : undefined,
-              });
+              updateQueryParams(
+                'voteAverageGte',
+                min !== 1 && Number(currentFilters.voteAverageLte) !== 10
+                  ? min.toString()
+                  : undefined
+              );
             }}
             onUpdateMax={(max) => {
-              handleFilterUpdate({
-                voteAverageLte:
-                  max !== 10 && Number(currentFilters.voteAverageGte) !== 1
-                    ? max.toString()
-                    : undefined,
-              });
+              updateQueryParams(
+                'voteAverageLte',
+                max !== 10 && Number(currentFilters.voteAverageGte) !== 1
+                  ? max.toString()
+                  : undefined
+              );
             }}
             subText={intl.formatMessage(messages.ratingText, {
               minValue: currentFilters.voteAverageGte ?? 1,
@@ -327,20 +330,20 @@ const FilterSlideover = ({
                 : undefined
             }
             onUpdateMin={(min) => {
-              handleFilterUpdate({
-                voteCountGte:
-                  min !== 0 && Number(currentFilters.voteCountLte) !== 1000
-                    ? min.toString()
-                    : undefined,
-              });
+              updateQueryParams(
+                'voteCountGte',
+                min !== 0 && Number(currentFilters.voteCountLte) !== 1000
+                  ? min.toString()
+                  : undefined
+              );
             }}
             onUpdateMax={(max) => {
-              handleFilterUpdate({
-                voteCountLte:
-                  max !== 1000 && Number(currentFilters.voteCountGte) !== 0
-                    ? max.toString()
-                    : undefined,
-              });
+              updateQueryParams(
+                'voteCountLte',
+                max !== 1000 && Number(currentFilters.voteCountGte) !== 0
+                  ? max.toString()
+                  : undefined
+              );
             }}
             subText={intl.formatMessage(messages.voteCount, {
               minValue: currentFilters.voteCountGte ?? 0,
@@ -360,19 +363,31 @@ const FilterSlideover = ({
           }
           onChange={(region, providers) => {
             if (providers.length) {
-              handleFilterUpdate({
+              batchUpdateQueryParams({
                 watchRegion: region,
                 watchProviders: providers.join('|'),
               });
             } else {
-              handleFilterUpdate({
+              batchUpdateQueryParams({
                 watchRegion: undefined,
                 watchProviders: undefined,
               });
             }
           }}
         />
-        <div className="pt-4">
+        <div className="flex flex-col gap-2 pt-4">
+          <Button
+            className="w-full"
+            buttonType="primary"
+            disabled={Object.keys(currentFilters).length === 0}
+            onClick={() => {
+              saveFilters(currentFilters);
+              onClose();
+            }}
+          >
+            <BookmarkSquareIcon />
+            <span>{intl.formatMessage(messages.saveFilters)}</span>
+          </Button>
           <Button
             className="w-full"
             disabled={Object.keys(currentFilters).length === 0}
@@ -383,7 +398,7 @@ const FilterSlideover = ({
               ).forEach((k) => {
                 copyCurrent[k] = undefined;
               });
-              handleFilterUpdate(copyCurrent);
+              batchUpdateQueryParams(copyCurrent);
               removeSavedFilters();
               onClose();
             }}
