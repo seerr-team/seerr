@@ -49,6 +49,7 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
       return res.status(200).json({
         username: user.username,
         email: user.email,
+        phoneNumber: user.phoneNumber,
         locale: user.settings?.locale,
         discoverRegion: user.settings?.discoverRegion,
         streamingRegion: user.settings?.streamingRegion,
@@ -108,6 +109,8 @@ userSettingsRoutes.post<
       throw new ApiError(400, ApiErrorCode.InvalidEmail);
     }
 
+    user.phoneNumber = req.body.phoneNumber;
+
     // Update quota values only if the user has the correct permissions
     if (
       !user.hasPermission(Permission.MANAGE_USERS) &&
@@ -149,6 +152,7 @@ userSettingsRoutes.post<
       watchlistSyncMovies: savedUser.settings?.watchlistSyncMovies,
       watchlistSyncTv: savedUser.settings?.watchlistSyncTv,
       email: savedUser.email,
+      phoneNumber: savedUser.phoneNumber,
     });
   } catch (e) {
     if (e.errorCode) {
