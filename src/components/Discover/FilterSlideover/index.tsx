@@ -12,14 +12,13 @@ import {
   USCertificationSelector,
   WatchProviderSelector,
 } from '@app/components/Selector';
+import useSavedDiscoverFilters from '@app/hooks/useSavedDiscoverFilters';
 import useSettings from '@app/hooks/useSettings';
-import {
-  useBatchUpdateQueryParams,
-  useUpdateQueryParams,
-} from '@app/hooks/useUpdateQueryParams';
+import { useBatchUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import defineMessages from '@app/utils/defineMessages';
 import { XCircleIcon } from '@heroicons/react/24/outline';
 import Datepicker from '@seerr-team/react-tailwindcss-datepicker';
+import { useEffect } from 'react';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.Discover.FilterSlideover', {
@@ -62,8 +61,22 @@ const FilterSlideover = ({
 }: FilterSlideoverProps) => {
   const intl = useIntl();
   const { currentSettings } = useSettings();
-  const updateQueryParams = useUpdateQueryParams({});
   const batchUpdateQueryParams = useBatchUpdateQueryParams({});
+  const { saveFilters, getSavedFilters, removeSavedFilters } =
+    useSavedDiscoverFilters(type);
+
+  const savedFilters = getSavedFilters();
+
+  useEffect(() => {
+    if (savedFilters) {
+      batchUpdateQueryParams(savedFilters);
+    }
+  }, [savedFilters, batchUpdateQueryParams]);
+
+  const handleFilterUpdate = (params: Record<string, string | undefined>) => {
+    saveFilters({ ...savedFilters, ...params });
+    batchUpdateQueryParams(params);
+  };
 
   const dateGte =
     type === 'movie' ? 'primaryReleaseDateGte' : 'firstAirDateGte';
@@ -96,10 +109,11 @@ const FilterSlideover = ({
                   endDate: currentFilters[dateGte] ?? null,
                 }}
                 onChange={(value) => {
-                  updateQueryParams(
-                    dateGte,
-                    value?.startDate ? (value.startDate as string) : undefined
-                  );
+                  handleFilterUpdate({
+                    [dateGte]: value?.startDate
+                      ? (value.startDate as string)
+                      : undefined,
+                  });
                 }}
                 inputName="fromdate"
                 useRange={false}
@@ -117,10 +131,11 @@ const FilterSlideover = ({
                   endDate: currentFilters[dateLte] ?? null,
                 }}
                 onChange={(value) => {
-                  updateQueryParams(
-                    dateLte,
-                    value?.startDate ? (value.startDate as string) : undefined
-                  );
+                  handleFilterUpdate({
+                    [dateLte]: value?.startDate
+                      ? (value.startDate as string)
+                      : undefined,
+                  });
                 }}
                 inputName="todate"
                 useRange={false}
@@ -139,7 +154,7 @@ const FilterSlideover = ({
             <CompanySelector
               defaultValue={currentFilters.studio}
               onChange={(value) => {
-                updateQueryParams('studio', value?.value.toString());
+                handleFilterUpdate({ studio: value?.value.toString() });
               }}
             />
           </>
@@ -152,7 +167,7 @@ const FilterSlideover = ({
           defaultValue={currentFilters.genre}
           isMulti
           onChange={(value) => {
-            updateQueryParams('genre', value?.map((v) => v.value).join(','));
+            handleFilterUpdate({ genre: value?.map((v) => v.value).join(',') });
           }}
         />
         {type === 'tv' && (
@@ -164,10 +179,9 @@ const FilterSlideover = ({
               defaultValue={currentFilters.status}
               isMulti
               onChange={(value) => {
-                updateQueryParams(
-                  'status',
-                  value?.map((v) => v.value).join('|')
-                );
+                handleFilterUpdate({
+                  status: value?.map((v) => v.value).join('|'),
+                });
               }}
             />
           </>
@@ -179,7 +193,9 @@ const FilterSlideover = ({
           defaultValue={currentFilters.keywords}
           isMulti
           onChange={(value) => {
-            updateQueryParams('keywords', value?.map((v) => v.value).join(','));
+            handleFilterUpdate({
+              keywords: value?.map((v) => v.value).join(','),
+            });
           }}
         />
         <span className="text-lg font-semibold">
@@ -189,10 +205,9 @@ const FilterSlideover = ({
           defaultValue={currentFilters.excludeKeywords}
           isMulti
           onChange={(value) => {
-            updateQueryParams(
-              'excludeKeywords',
-              value?.map((v) => v.value).join(',')
-            );
+            handleFilterUpdate({
+              excludeKeywords: value?.map((v) => v.value).join(','),
+            });
           }}
         />
         <span className="text-lg font-semibold">
@@ -203,7 +218,7 @@ const FilterSlideover = ({
           serverValue={currentSettings.originalLanguage}
           isUserSettings
           setFieldValue={(_key, value) => {
-            updateQueryParams('language', value);
+            handleFilterUpdate({ language: value });
           }}
         />
         <span className="text-lg font-semibold">
@@ -213,7 +228,7 @@ const FilterSlideover = ({
           type={type}
           certification={currentFilters.certification}
           onChange={(params) => {
-            batchUpdateQueryParams(params);
+            handleFilterUpdate(params);
           }}
         />
         <span className="text-lg font-semibold">
@@ -224,20 +239,20 @@ const FilterSlideover = ({
             min={0}
             max={400}
             onUpdateMin={(min) => {
-              updateQueryParams(
-                'withRuntimeGte',
-                min !== 0 && Number(currentFilters.withRuntimeLte) !== 400
-                  ? min.toString()
-                  : undefined
-              );
+              handleFilterUpdate({
+                withRuntimeGte:
+                  min !== 0 && Number(currentFilters.withRuntimeLte) !== 400
+                    ? min.toString()
+                    : undefined,
+              });
             }}
             onUpdateMax={(max) => {
-              updateQueryParams(
-                'withRuntimeLte',
-                max !== 400 && Number(currentFilters.withRuntimeGte) !== 0
-                  ? max.toString()
-                  : undefined
-              );
+              handleFilterUpdate({
+                withRuntimeLte:
+                  max !== 400 && Number(currentFilters.withRuntimeGte) !== 0
+                    ? max.toString()
+                    : undefined,
+              });
             }}
             defaultMaxValue={
               currentFilters.withRuntimeLte
@@ -273,20 +288,20 @@ const FilterSlideover = ({
                 : undefined
             }
             onUpdateMin={(min) => {
-              updateQueryParams(
-                'voteAverageGte',
-                min !== 1 && Number(currentFilters.voteAverageLte) !== 10
-                  ? min.toString()
-                  : undefined
-              );
+              handleFilterUpdate({
+                voteAverageGte:
+                  min !== 1 && Number(currentFilters.voteAverageLte) !== 10
+                    ? min.toString()
+                    : undefined,
+              });
             }}
             onUpdateMax={(max) => {
-              updateQueryParams(
-                'voteAverageLte',
-                max !== 10 && Number(currentFilters.voteAverageGte) !== 1
-                  ? max.toString()
-                  : undefined
-              );
+              handleFilterUpdate({
+                voteAverageLte:
+                  max !== 10 && Number(currentFilters.voteAverageGte) !== 1
+                    ? max.toString()
+                    : undefined,
+              });
             }}
             subText={intl.formatMessage(messages.ratingText, {
               minValue: currentFilters.voteAverageGte ?? 1,
@@ -312,20 +327,20 @@ const FilterSlideover = ({
                 : undefined
             }
             onUpdateMin={(min) => {
-              updateQueryParams(
-                'voteCountGte',
-                min !== 0 && Number(currentFilters.voteCountLte) !== 1000
-                  ? min.toString()
-                  : undefined
-              );
+              handleFilterUpdate({
+                voteCountGte:
+                  min !== 0 && Number(currentFilters.voteCountLte) !== 1000
+                    ? min.toString()
+                    : undefined,
+              });
             }}
             onUpdateMax={(max) => {
-              updateQueryParams(
-                'voteCountLte',
-                max !== 1000 && Number(currentFilters.voteCountGte) !== 0
-                  ? max.toString()
-                  : undefined
-              );
+              handleFilterUpdate({
+                voteCountLte:
+                  max !== 1000 && Number(currentFilters.voteCountGte) !== 0
+                    ? max.toString()
+                    : undefined,
+              });
             }}
             subText={intl.formatMessage(messages.voteCount, {
               minValue: currentFilters.voteCountGte ?? 0,
@@ -345,12 +360,12 @@ const FilterSlideover = ({
           }
           onChange={(region, providers) => {
             if (providers.length) {
-              batchUpdateQueryParams({
+              handleFilterUpdate({
                 watchRegion: region,
                 watchProviders: providers.join('|'),
               });
             } else {
-              batchUpdateQueryParams({
+              handleFilterUpdate({
                 watchRegion: undefined,
                 watchProviders: undefined,
               });
@@ -368,7 +383,8 @@ const FilterSlideover = ({
               ).forEach((k) => {
                 copyCurrent[k] = undefined;
               });
-              batchUpdateQueryParams(copyCurrent);
+              handleFilterUpdate(copyCurrent);
+              removeSavedFilters();
               onClose();
             }}
           >
