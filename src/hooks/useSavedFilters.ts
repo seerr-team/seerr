@@ -25,7 +25,7 @@ const readSavedFilters = (key: string): FilterOptions | null => {
   }
 };
 
-const useSavedDiscoverFilters = (type: FilterType) => {
+const useSavedFilters = (type: FilterType) => {
   const key = storageKey(type);
   const updateLocalStorage = useRef(true);
 
@@ -44,4 +44,4 @@ const useSavedDiscoverFilters = (type: FilterType) => {
   };
 };
 
-export default useSavedDiscoverFilters;
+export default useSavedFilters;

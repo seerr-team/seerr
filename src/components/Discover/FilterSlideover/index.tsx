@@ -12,7 +12,7 @@ import {
   USCertificationSelector,
   WatchProviderSelector,
 } from '@app/components/Selector';
-import useSavedDiscoverFilters from '@app/hooks/useSavedDiscoverFilters';
+import useSavedFilters from '@app/hooks/useSavedFilters';
 import useSettings from '@app/hooks/useSettings';
 import {
   useBatchUpdateQueryParams,
@@ -47,8 +47,7 @@ const messages = defineMessages('components.Discover.FilterSlideover', {
   voteCount: 'Number of votes between {minValue} and {maxValue}',
   status: 'Status',
   certification: 'Content Rating',
-  saveFilters: 'Save Active Filters',
-  removeFilters: 'Remove Saved Filters',
+  saveActiveFilters: 'Save Active Filters',
 });
 
 type FilterSlideoverProps = {
@@ -73,7 +72,7 @@ const FilterSlideover = ({
     getSavedFilters,
     removeSavedFilters,
     updateLocalStorage,
-  } = useSavedDiscoverFilters(type);
+  } = useSavedFilters(type);
 
   const savedFilters = getSavedFilters();
 
@@ -386,7 +385,7 @@ const FilterSlideover = ({
             }}
           >
             <BookmarkSquareIcon />
-            <span>{intl.formatMessage(messages.saveFilters)}</span>
+            <span>{intl.formatMessage(messages.saveActiveFilters)}</span>
           </Button>
           <Button
             className="w-full"
