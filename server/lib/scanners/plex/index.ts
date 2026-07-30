@@ -27,7 +27,9 @@ const tmdbRegex = new RegExp(/tmdb:\/\/([0-9]+)/);
 const tvdbRegex = new RegExp(/tvdb:\/\/([0-9]+)/);
 const tmdbShowRegex = new RegExp(/themoviedb:\/\/([0-9]+)/);
 const plexRegex = new RegExp(/plex:\/\//);
-const plexCustomProviderRegex = new RegExp(/tv\.plex\.agents\.custom\..*:\/\//);
+const plexCustomProviderRegex = new RegExp(
+  /tv\.plex\.agents\.custom\.[a-zA-Z0-9]+:\/\//
+);
 // Hama agent uses ASS naming, see details here:
 // https://github.com/ZeroQI/Absolute-Series-Scanner/blob/master/README.md#forcing-the-movieseries-id
 const hamaTvdbRegex = new RegExp(/hama:\/\/tvdb[0-9]?-([0-9]+)/);
