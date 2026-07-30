@@ -1329,7 +1329,6 @@
   "components.Setup.continue": "Continue",
   "components.Setup.finish": "Finish Setup",
   "components.Setup.finishing": "Finishing…",
-  "components.Setup.librarieserror": "Validation failed. Please toggle the libraries again to continue.",
   "components.Setup.servertype": "Choose Server Type",
   "components.Setup.setup": "Setup",
   "components.Setup.signin": "Sign In",
