@@ -148,7 +148,7 @@ class PlexAPI extends ExternalAPI {
         .filter((library) => library.agent !== 'com.plexapp.agents.none')
         .map((library) => {
           const existing = settings.plex.libraries.find(
-            (l) => l.id === library.key && l.name === library.title
+            (l) => l.id === library.key
           );
 
           return {
