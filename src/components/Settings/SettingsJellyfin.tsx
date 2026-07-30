@@ -47,6 +47,7 @@ const messages = defineMessages('components.Settings', {
     'Custom authentication with Automatic Library Grouping not supported',
   jellyfinSyncFailedGenericError:
     'Something went wrong while syncing libraries',
+  toggleLibraryFailure: 'Failed to update library.',
   invalidurlerror: 'Unable to connect to {mediaServerName} server.',
   syncing: 'Syncing',
   syncJellyfin: 'Sync Libraries',
@@ -161,18 +162,8 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
   const syncLibraries = async () => {
     setIsSyncing(true);
 
-    const params: { sync: boolean; enable?: string } = {
-      sync: true,
-    };
-
-    if (activeLibraries.length > 0) {
-      params.enable = activeLibraries.join(',');
-    }
-
     try {
-      await axios.get('/api/v1/settings/jellyfin/library', {
-        params,
-      });
+      await axios.post('/api/v1/settings/jellyfin/library/sync');
       setIsSyncing(false);
       revalidate();
     } catch (e) {
@@ -221,30 +212,23 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
 
   const toggleLibrary = async (libraryId: string) => {
     setIsSyncing(true);
-    if (activeLibraries.includes(libraryId)) {
-      const params: { enable?: string } = {};
+    try {
+      await axios.put(`/api/v1/settings/jellyfin/library/${libraryId}`, {
+        enabled: !activeLibraries.includes(libraryId),
+      });
 
-      if (activeLibraries.length > 1) {
-        params.enable = activeLibraries
-          .filter((id) => id !== libraryId)
-          .join(',');
+      if (onComplete) {
+        onComplete();
       }
-
-      await axios.get('/api/v1/settings/jellyfin/library', {
-        params,
+    } catch {
+      addToast(intl.formatMessage(messages.toggleLibraryFailure), {
+        autoDismiss: true,
+        appearance: 'error',
       });
-    } else {
-      await axios.get('/api/v1/settings/jellyfin/library', {
-        params: {
-          enable: [...activeLibraries, libraryId].join(','),
-        },
-      });
+    } finally {
+      setIsSyncing(false);
+      revalidate();
     }
-    if (onComplete) {
-      onComplete();
-    }
-    setIsSyncing(false);
-    revalidate();
   };
 
   if (!data && !error) {

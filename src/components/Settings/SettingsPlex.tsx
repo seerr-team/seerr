@@ -41,6 +41,8 @@ const messages = defineMessages('components.Settings', {
   toastPlexRefresh: 'Retrieving server list from Plex…',
   toastPlexRefreshSuccess: 'Plex server list retrieved successfully!',
   toastPlexRefreshFailure: 'Failed to retrieve Plex server list.',
+  toastPlexSyncFailure: 'Failed to sync Plex libraries.',
+  toggleLibraryFailure: 'Failed to update library.',
   toastPlexConnecting: 'Attempting to connect to Plex…',
   toastPlexConnectingSuccess: 'Plex connection established successfully!',
   toastPlexConnectingFailure: 'Failed to connect to Plex.',
@@ -240,19 +242,17 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
   const syncLibraries = async () => {
     setIsSyncing(true);
 
-    const params: { sync: boolean; enable?: string } = {
-      sync: true,
-    };
-
-    if (activeLibraries.length > 0) {
-      params.enable = activeLibraries.join(',');
+    try {
+      await axios.post('/api/v1/settings/plex/library/sync');
+    } catch {
+      addToast(intl.formatMessage(messages.toastPlexSyncFailure), {
+        autoDismiss: true,
+        appearance: 'error',
+      });
+    } finally {
+      setIsSyncing(false);
+      revalidate();
     }
-
-    await axios.get('/api/v1/settings/plex/library', {
-      params,
-    });
-    setIsSyncing(false);
-    revalidate();
   };
 
   const refreshPresetServers = async () => {
@@ -311,31 +311,23 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
 
   const toggleLibrary = async (libraryId: string) => {
     setIsSyncing(true);
-    if (activeLibraries.includes(libraryId)) {
-      const params: { enable?: string } = {};
+    try {
+      await axios.put(`/api/v1/settings/plex/library/${libraryId}`, {
+        enabled: !activeLibraries.includes(libraryId),
+      });
 
-      if (activeLibraries.length > 1) {
-        params.enable = activeLibraries
-          .filter((id) => id !== libraryId)
-          .join(',');
+      if (onComplete) {
+        onComplete();
       }
-
-      await axios.get('/api/v1/settings/plex/library', {
-        params,
+    } catch {
+      addToast(intl.formatMessage(messages.toggleLibraryFailure), {
+        autoDismiss: true,
+        appearance: 'error',
       });
-    } else {
-      await axios.get('/api/v1/settings/plex/library', {
-        params: {
-          enable: [...activeLibraries, libraryId].join(','),
-        },
-      });
+    } finally {
+      setIsSyncing(false);
+      revalidate();
     }
-
-    if (onComplete) {
-      onComplete();
-    }
-    setIsSyncing(false);
-    revalidate();
   };
 
   if ((!data || !dataTautulli) && !error) {
