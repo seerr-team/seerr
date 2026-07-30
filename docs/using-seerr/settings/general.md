@@ -57,6 +57,14 @@ The limit setting determines how many pages per tag the job will process, with e
 
 Blocklisted tags are disabled until at least one tag is entered. These settings cannot be overridden in user settings.
 
+## Blocklist Movies with Genres and Blocklist Series with Genres
+
+These settings blocklist any movies or TV shows that have one of the selected genres. The "Process Blocklisted Tags" job adds entries to the blocklist based on the configured genres, using the same Blocklist Region, Blocklist Language, and per-tag page limit as the tag-based settings above. If a genre is removed, any media blocklisted under that genre will be removed from the blocklist when the "Process Blocklisted Tags" job next runs.
+
+Movies and TV shows are configured separately because TMDB uses a different genre list for each. Genre blocklisting is useful for content that has no specific tags but still belongs to a genre you want to exclude, such as Adult, Horror, or News content.
+
+Genre blocklisting is disabled until at least one genre is selected. These settings cannot be overridden in user settings.
+
 ## Hide Available Media
 
 When enabled, media which is already available will not appear on the "Discover" home page, or in the "Recommended" or "Similar" categories or other links on media detail pages.
