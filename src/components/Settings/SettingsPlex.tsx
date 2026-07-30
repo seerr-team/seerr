@@ -42,6 +42,7 @@ const messages = defineMessages('components.Settings', {
   toastPlexRefreshSuccess: 'Plex server list retrieved successfully!',
   toastPlexRefreshFailure: 'Failed to retrieve Plex server list.',
   toastPlexSyncFailure: 'Failed to sync Plex libraries.',
+  invalidurlerror: 'Unable to connect to {mediaServerName} server.',
   toggleLibraryFailure: 'Failed to update library.',
   toastPlexConnecting: 'Attempting to connect to Plex…',
   toastPlexConnectingSuccess: 'Plex connection established successfully!',
@@ -244,11 +245,18 @@ const SettingsPlex = ({ isSetupSettings }: SettingsPlexProps) => {
 
     try {
       await axios.post('/api/v1/settings/plex/library/sync');
-    } catch {
-      addToast(intl.formatMessage(messages.toastPlexSyncFailure), {
-        autoDismiss: true,
-        appearance: 'error',
-      });
+    } catch (e) {
+      addToast(
+        e?.response?.data?.message === 'CONNECTION_ERROR'
+          ? intl.formatMessage(messages.invalidurlerror, {
+              mediaServerName: 'Plex',
+            })
+          : intl.formatMessage(messages.toastPlexSyncFailure),
+        {
+          autoDismiss: true,
+          appearance: 'error',
+        }
+      );
     } finally {
       setIsSyncing(false);
       revalidate();
