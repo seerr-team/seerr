@@ -125,8 +125,13 @@ const SettingsPlex = ({ isSetupSettings }: SettingsPlexProps) => {
     error,
     mutate: revalidate,
   } = useSWR<PlexSettings>('/api/v1/settings/plex');
-  const { data: dataTautulli, mutate: revalidateTautulli } =
-    useSWR<TautulliSettings>('/api/v1/settings/tautulli');
+  const {
+    data: dataTautulli,
+    error: errorTautulli,
+    mutate: revalidateTautulli,
+  } = useSWR<TautulliSettings>(
+    isSetupSettings ? null : '/api/v1/settings/tautulli'
+  );
   const { data: dataSync, mutate: revalidateSync } = useSWR<SyncStatus>(
     '/api/v1/settings/plex/sync',
     {
@@ -334,7 +339,11 @@ const SettingsPlex = ({ isSetupSettings }: SettingsPlexProps) => {
     }
   };
 
-  if ((!data || !dataTautulli) && !error) {
+  if (
+    (!data || (!isSetupSettings && !dataTautulli)) &&
+    !error &&
+    !errorTautulli
+  ) {
     return <LoadingSpinner />;
   }
   return (
