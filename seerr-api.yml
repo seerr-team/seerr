@@ -5598,7 +5598,7 @@ paths:
         '400':
           description: Invalid request parameters or body.
         '204':
-          description: Succesfully removed watchlist item
+          description: Successfully removed watchlist item
   /user/{userId}/watchlist:
     get:
       operationId: getUserByuserIdWatchlist
