@@ -110,10 +110,10 @@ interface PresetServerDisplay {
   message?: string;
 }
 interface SettingsPlexProps {
-  onComplete?: () => void;
+  isSetupSettings?: boolean;
 }
 
-const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
+const SettingsPlex = ({ isSetupSettings }: SettingsPlexProps) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isRefreshingPresets, setIsRefreshingPresets] = useState(false);
   const [availableServers, setAvailableServers] = useState<PlexDevice[] | null>(
@@ -129,7 +129,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
   const { data: dataSync, mutate: revalidateSync } = useSWR<SyncStatus>(
     '/api/v1/settings/plex/sync',
     {
-      refreshInterval: 1000,
+      refreshInterval: (latestData) => (latestData?.running ? 1000 : 0),
     }
   );
   const intl = useIntl();
@@ -315,10 +315,6 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
       await axios.put(`/api/v1/settings/plex/library/${libraryId}`, {
         enabled: !activeLibraries.includes(libraryId),
       });
-
-      if (onComplete) {
-        onComplete();
-      }
     } catch {
       addToast(intl.formatMessage(messages.toggleLibraryFailure), {
         autoDismiss: true,
@@ -346,7 +342,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
         <p className="description">
           {intl.formatMessage(messages.plexsettingsDescription)}
         </p>
-        {!!onComplete && (
+        {isSetupSettings && (
           <div className="section">
             <Alert
               title={intl.formatMessage(messages.settingUpPlexDescription, {
@@ -730,7 +726,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           </div>
         </div>
       </div>
-      {!onComplete && (
+      {!isSetupSettings && (
         <>
           <div className="mb-6 mt-10">
             <h3 className="heading">

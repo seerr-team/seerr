@@ -86,11 +86,9 @@ interface SyncStatus {
 
 interface SettingsJellyfinProps {
   isSetupSettings?: boolean;
-  onComplete?: () => void;
 }
 
 const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
-  onComplete,
   isSetupSettings,
 }) => {
   const [isSyncing, setIsSyncing] = useState(false);
@@ -102,7 +100,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
   const { data: dataSync, mutate: revalidateSync } = useSWR<SyncStatus>(
     '/api/v1/settings/jellyfin/sync',
     {
-      refreshInterval: 1000,
+      refreshInterval: (latestData) => (latestData?.running ? 1000 : 0),
     }
   );
   const intl = useIntl();
@@ -216,10 +214,6 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       await axios.put(`/api/v1/settings/jellyfin/library/${libraryId}`, {
         enabled: !activeLibraries.includes(libraryId),
       });
-
-      if (onComplete) {
-        onComplete();
-      }
     } catch {
       addToast(intl.formatMessage(messages.toggleLibraryFailure), {
         autoDismiss: true,
