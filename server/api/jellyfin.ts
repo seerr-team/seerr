@@ -352,7 +352,11 @@ class JellyfinAPI extends ExternalAPI {
         { label: 'Jellyfin API', error: e.response?.status }
       );
 
-      throw new ApiError(e.response?.status, ApiErrorCode.InvalidAuthToken);
+      if (!e.response) {
+        throw new ApiError(502, ApiErrorCode.ConnectionError);
+      }
+
+      throw new ApiError(e.response.status, ApiErrorCode.InvalidAuthToken);
     }
   }
 
@@ -378,6 +382,10 @@ class JellyfinAPI extends ExternalAPI {
             error: e.response?.status,
           }
         );
+
+        if (!e.response) {
+          throw new ApiError(502, ApiErrorCode.ConnectionError);
+        }
 
         return [];
       }

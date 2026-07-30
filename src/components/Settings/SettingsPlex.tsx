@@ -129,7 +129,7 @@ const SettingsPlex = ({ isSetupSettings }: SettingsPlexProps) => {
   const { data: dataSync, mutate: revalidateSync } = useSWR<SyncStatus>(
     '/api/v1/settings/plex/sync',
     {
-      refreshInterval: (latestData) => (latestData?.running ? 1000 : 0),
+      refreshInterval: (latestData) => (latestData?.running ? 1000 : 10000),
     }
   );
   const intl = useIntl();

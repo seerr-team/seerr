@@ -47,6 +47,8 @@ const messages = defineMessages('components.Settings', {
     'Custom authentication with Automatic Library Grouping not supported',
   jellyfinSyncFailedGenericError:
     'Something went wrong while syncing libraries',
+  jellyfinSyncFailedConnectionError:
+    'Unable to reach the {mediaServerName} server. Check that it is running and reachable from Seerr.',
   toggleLibraryFailure: 'Failed to update library.',
   invalidurlerror: 'Unable to connect to {mediaServerName} server.',
   syncing: 'Syncing',
@@ -100,7 +102,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
   const { data: dataSync, mutate: revalidateSync } = useSWR<SyncStatus>(
     '/api/v1/settings/jellyfin/sync',
     {
-      refreshInterval: (latestData) => (latestData?.running ? 1000 : 0),
+      refreshInterval: (latestData) => (latestData?.running ? 1000 : 10000),
     }
   );
   const intl = useIntl();
@@ -173,6 +175,19 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
           {
             autoDismiss: true,
             appearance: 'warning',
+          }
+        );
+      } else if (e?.response?.data?.message === 'CONNECTION_ERROR') {
+        addToast(
+          intl.formatMessage(messages.jellyfinSyncFailedConnectionError, {
+            mediaServerName:
+              settings.currentSettings.mediaServerType === MediaServerType.EMBY
+                ? 'Emby'
+                : 'Jellyfin',
+          }),
+          {
+            autoDismiss: true,
+            appearance: 'error',
           }
         );
       } else if (e?.response?.data?.message === 'SYNC_ERROR_NO_LIBRARIES') {

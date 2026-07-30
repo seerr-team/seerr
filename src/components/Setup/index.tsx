@@ -2,6 +2,7 @@ import EmbyLogo from '@app/assets/services/emby.svg';
 import JellyfinLogo from '@app/assets/services/jellyfin.svg';
 import PlexLogo from '@app/assets/services/plex.svg';
 import AppDataWarning from '@app/components/AppDataWarning';
+import Alert from '@app/components/Common/Alert';
 import Button from '@app/components/Common/Button';
 import ImageFader from '@app/components/Common/ImageFader';
 import PageTitle from '@app/components/Common/PageTitle';
@@ -37,6 +38,8 @@ const messages = defineMessages('components.Setup', {
   signin: 'Sign In',
   configuremediaserver: 'Configure Media Server',
   configureservices: 'Configure Services',
+  librarieserror:
+    'Unable to load libraries from your media server. Check that it is reachable and still configured correctly.',
 });
 
 const Setup = () => {
@@ -72,9 +75,10 @@ const Setup = () => {
     [MediaServerType.NOT_CONFIGURED]: null,
   };
 
-  const { data: mediaServerSettings } = useSWR<{ libraries: Library[] }>(
-    currentStep === 3 ? mediaServerSettingsEndpoint[mediaServerType] : null
-  );
+  const { data: mediaServerSettings, error: mediaServerSettingsError } =
+    useSWR<{ libraries: Library[] }>(
+      currentStep === 3 ? mediaServerSettingsEndpoint[mediaServerType] : null
+    );
 
   const mediaServerSettingsComplete = !!mediaServerSettings?.libraries?.some(
     (library) => library.enabled
@@ -233,6 +237,12 @@ const Setup = () => {
           )}
           {currentStep === 3 && (
             <div className="p-2">
+              {!!mediaServerSettingsError && (
+                <Alert
+                  title={intl.formatMessage(messages.librarieserror)}
+                  type="error"
+                />
+              )}
               {mediaServerType === MediaServerType.PLEX ? (
                 <SettingsPlex isSetupSettings />
               ) : (
