@@ -383,7 +383,10 @@ class PlexScanner
   private async getMediaIds(plexitem: PlexLibraryItem): Promise<MediaIds> {
     let mediaIds: Partial<MediaIds> = {};
     // Check if item is using new plex movie/tv agent
-    if (plexitem.guid.match(plexRegex) || plexitem.guid.match(plexCustomProviderRegex)) {
+    if (
+      plexitem.guid.match(plexRegex) ||
+      plexitem.guid.match(plexCustomProviderRegex)
+    ) {
       const guidCache = cacheManager.getCache('plexguid');
 
       const cachedGuids = guidCache.data.get<MediaIds>(plexitem.ratingKey);
