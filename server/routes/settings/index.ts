@@ -264,7 +264,7 @@ settingsRoutes.put('/plex/library/:libraryId', async (req, res, next) => {
   return res.status(200).json(library);
 });
 
-settingsRoutes.post('/plex/library/sync', async (_req, res) => {
+settingsRoutes.post('/plex/library/sync', async (_req, res, next) => {
   const settings = getSettings();
 
   const userRepository = getRepository(User);
@@ -274,7 +274,14 @@ settingsRoutes.post('/plex/library/sync', async (_req, res) => {
   });
   const plexapi = new PlexAPI({ plexToken: admin.plexToken });
 
-  await plexapi.syncLibraries();
+  try {
+    await plexapi.syncLibraries();
+  } catch (e) {
+    return next({
+      status: e.statusCode ?? 500,
+      message: e.errorCode ?? ApiErrorCode.Unknown,
+    });
+  }
 
   return res.status(200).json(settings.plex.libraries);
 });

@@ -543,6 +543,30 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
           message: e.errorCode,
         });
 
+      case ApiErrorCode.ConnectionError:
+        logger.error(
+          `Unable to reach the ${
+            settings.main.mediaServerType === MediaServerType.JELLYFIN
+              ? ServerType.JELLYFIN
+              : ServerType.EMBY
+          } server.`,
+          {
+            label: 'Auth',
+            error: e.errorCode,
+            status: e.statusCode,
+            hostname: getHostname({
+              useSsl: body.useSsl,
+              ip: body.hostname,
+              port: body.port,
+              urlBase: body.urlBase,
+            }),
+          }
+        );
+        return next({
+          status: e.statusCode,
+          message: e.errorCode,
+        });
+
       case ApiErrorCode.InvalidCredentials:
         logger.warn(
           'Failed sign-in attempt from user with incorrect Jellyfin credentials',
