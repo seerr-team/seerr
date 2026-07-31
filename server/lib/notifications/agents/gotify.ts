@@ -52,6 +52,7 @@ class GotifyAgent
     const settings = this.getSettings();
     const intl = getIntl(settings.options.locale);
     const { applicationUrl, applicationTitle } = getSettings().main;
+    const embedPoster = settings.embedPoster;
     const priority = settings.options.priority ?? 1;
 
     const title = payload.event
@@ -100,6 +101,10 @@ class GotifyAgent
 
     for (const extra of payload.extra ?? []) {
       message += `\n\n**${extra.name}**\n${extra.value}  `;
+    }
+
+    if (embedPoster && payload.image) {
+      message += `\n\n![${payload.subject}](${payload.image})  `;
     }
 
     if (applicationUrl && payload.media) {
