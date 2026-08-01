@@ -65,34 +65,39 @@ const Season = ({ seasonNumber, tvId, traktEpisodes }: SeasonProps) => {
               >
                 <div className="flex-1">
                   <div className="flex flex-col space-y-2 xl:flex-row xl:items-center xl:space-x-2 xl:space-y-0">
-                    <h3 className="text-lg">
-                      {episode.episodeNumber} - {episode.name}
-                    </h3>
-                    {watchers.length > 0 && (
-                      <Tooltip
-                        content={
-                          <ul>
-                            {watchers.map((watcher) => (
-                              <li key={watcher.userId}>
-                                {watcher.displayName}
-                              </li>
-                            ))}
-                          </ul>
-                        }
-                      >
-                        <span className="flex items-center gap-1 text-green-500">
-                          <CheckCircleIcon
-                            className="h-5 w-5"
-                            aria-label={intl.formatMessage(messages.watchedBy, {
-                              count: watchers.length,
-                            })}
-                          />
-                          {watchers.length > 1 && (
-                            <span className="text-sm">{watchers.length}</span>
-                          )}
-                        </span>
-                      </Tooltip>
-                    )}
+                    <div className="flex items-center space-x-2">
+                      <h3 className="text-lg">
+                        {episode.episodeNumber} - {episode.name}
+                      </h3>
+                      {watchers.length > 0 && (
+                        <Tooltip
+                          content={
+                            <ul>
+                              {watchers.map((watcher) => (
+                                <li key={watcher.userId}>
+                                  {watcher.displayName}
+                                </li>
+                              ))}
+                            </ul>
+                          }
+                        >
+                          <span className="flex items-center gap-1 text-green-500">
+                            <CheckCircleIcon
+                              className="h-5 w-5"
+                              aria-label={intl.formatMessage(
+                                messages.watchedBy,
+                                {
+                                  count: watchers.length,
+                                }
+                              )}
+                            />
+                            {watchers.length > 1 && (
+                              <span className="text-sm">{watchers.length}</span>
+                            )}
+                          </span>
+                        </Tooltip>
+                      )}
+                    </div>
                     {episode.airDate && (
                       <AirDateBadge airDate={episode.airDate} />
                     )}

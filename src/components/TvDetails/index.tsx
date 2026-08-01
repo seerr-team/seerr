@@ -42,6 +42,7 @@ import {
   ArrowRightCircleIcon,
   CogIcon,
   ExclamationTriangleIcon,
+  EyeIcon,
   EyeSlashIcon,
   FilmIcon,
   MinusCircleIcon,
@@ -95,7 +96,8 @@ const messages = defineMessages('components.TvDetails', {
   reportissue: 'Report an Issue',
   manageseries: 'Manage Series',
   seasonstitle: 'Seasons',
-  traktWatched: 'Watched {watched}/{total}',
+  traktWatched: 'Watched',
+  traktWatchedCount: 'Watched {watched}/{total}',
   episodeCount: '{episodeCount, plural, one {# Episode} other {# Episodes}}',
   seasonnumber: 'Season {seasonNumber}',
   status4k: '4K {status}',
@@ -913,12 +915,29 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                               }
                             >
                               <div className="flex">
-                                <Badge badgeType="success">
-                                  {intl.formatMessage(messages.traktWatched, {
-                                    watched: traktWatchers.length,
-                                    total: traktHouseholdSize,
-                                  })}
-                                </Badge>
+                                <div className="hidden md:flex">
+                                  <Badge badgeType="success">
+                                    {traktHouseholdSize > 1
+                                      ? intl.formatMessage(
+                                          messages.traktWatchedCount,
+                                          {
+                                            watched: traktWatchers.length,
+                                            total: traktHouseholdSize,
+                                          }
+                                        )
+                                      : intl.formatMessage(
+                                          messages.traktWatched
+                                        )}
+                                  </Badge>
+                                </div>
+                                <div className="flex md:hidden">
+                                  <EyeIcon
+                                    className="w-5 rounded-full bg-green-500/80 p-0.5 text-green-100 shadow-md ring-1 ring-green-400"
+                                    aria-label={intl.formatMessage(
+                                      messages.traktWatched
+                                    )}
+                                  />
+                                </div>
                               </div>
                             </Tooltip>
                           )}
