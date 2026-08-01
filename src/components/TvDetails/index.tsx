@@ -98,7 +98,7 @@ const messages = defineMessages('components.TvDetails', {
   seasonstitle: 'Seasons',
   traktWatched: 'Watched',
   traktWatchedCount: 'Watched {watched}/{total}',
-  traktWatchedBy: 'Show who watched this season',
+  traktWatchedBy: 'Watched by {names}',
   episodeCount: '{episodeCount, plural, one {# Episode} other {# Episodes}}',
   seasonnumber: 'Season {seasonNumber}',
   status4k: '4K {status}',
@@ -919,25 +919,15 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                                 followCursor: false,
                               }}
                             >
-                              {/* The badge sits inside the season toggle, so a tap
-                                  that opens the tooltip must not also collapse it. */}
-                              <span
-                                className="flex"
-                                role="button"
-                                tabIndex={0}
-                                aria-label={intl.formatMessage(
-                                  messages.traktWatchedBy
-                                )}
-                                onClick={(event) => event.stopPropagation()}
-                                onKeyDown={(event) => {
-                                  if (
-                                    event.key === 'Enter' ||
-                                    event.key === ' '
-                                  ) {
-                                    event.stopPropagation();
-                                  }
-                                }}
-                              >
+                              {/* Must stay non-focusable: it sits inside the season toggle. */}
+                              <span className="flex">
+                                <span className="sr-only">
+                                  {intl.formatMessage(messages.traktWatchedBy, {
+                                    names: traktWatchers
+                                      .map((watcher) => watcher.displayName)
+                                      .join(', '),
+                                  })}
+                                </span>
                                 <div className="hidden md:flex">
                                   <Badge badgeType="success">
                                     {traktHouseholdSize > 1

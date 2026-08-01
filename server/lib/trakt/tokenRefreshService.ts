@@ -113,11 +113,19 @@ class TraktTokenRefreshService {
     return this.toAccessContext(winner);
   }
 
+  /** Only a rejected grant is dead; other 400s usually mean bad client credentials. */
   private isInvalidRefreshCredentials(error: unknown): error is TraktApiError {
-    return (
-      error instanceof TraktApiError &&
-      (error.status === 400 || error.status === 401)
-    );
+    if (!(error instanceof TraktApiError)) {
+      return false;
+    }
+
+    if (error.status === 401) {
+      return (
+        error.oauthError === undefined || error.oauthError === 'invalid_grant'
+      );
+    }
+
+    return error.status === 400 && error.oauthError === 'invalid_grant';
   }
 }
 

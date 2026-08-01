@@ -87,13 +87,14 @@ describe('Trakt linked account', () => {
       expect(openedPopups[1].location.href).to.contain('prompt=login');
     });
     cy.wait('@selfOAuthStatus');
-    cy.get('[data-testid=profile-trakt-section]')
-      .contains('Connected')
-      .should('be.visible');
+    cy.get('[data-testid=profile-trakt-section]').within(() => {
+      cy.contains('my-trakt-account').should('be.visible');
+      cy.contains('Reconnect required').should('not.exist');
+    });
 
+    cy.get('[data-testid=profile-trakt-section]').contains('Unlink').click();
     cy.get('[data-testid=profile-trakt-section]')
-      .contains('Unlink')
-      .click()
+      .contains('button', 'Confirm unlink')
       .click();
     cy.wait('@unlinkSelf');
     cy.get('[data-testid=profile-trakt-section]')
@@ -122,10 +123,8 @@ describe('Trakt linked account', () => {
     });
 
     cy.visit('/profile/settings/linked-accounts');
+    cy.contains('Ask an administrator to configure Trakt').should('be.visible');
     cy.get('[data-testid=profile-trakt-section]').within(() => {
-      cy.contains('Ask an administrator to configure Trakt').should(
-        'be.visible'
-      );
       cy.contains('Reconnect required').should('be.visible');
       cy.contains('button', 'Connect').should('not.exist');
       cy.contains('button', 'Reconnect').should('not.exist');

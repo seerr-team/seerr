@@ -233,7 +233,7 @@ describe('TraktConnectionService', () => {
     }
   });
 
-  it('keeps invalidated connections safe and restores in-memory credentials when settings persistence fails', async () => {
+  it('leaves connections untouched and restores in-memory credentials when settings persistence fails', async () => {
     const actor = await admin();
     const connection = await connectionWithTokens(actor.id);
     mock.method(getSettings(), 'save', async () => {
@@ -254,10 +254,14 @@ describe('TraktConnectionService', () => {
       clientSecret: 'client-secret',
     });
     const stored = await connectionWithHiddenTokens(connection.id);
-    assert.equal(stored.accessToken, null);
-    assert.equal(stored.refreshToken, null);
-    assert.equal(stored.tokenVersion, 4);
-    assert.equal(stored.status, TraktConnectionStatus.RECONNECT_REQUIRED);
+    assert.equal(
+      stored.accessToken,
+      'old-access-token',
+      'a failed settings write must not invalidate connections'
+    );
+    assert.equal(stored.refreshToken, 'old-refresh-token');
+    assert.equal(stored.tokenVersion, 3);
+    assert.equal(stored.status, TraktConnectionStatus.ACTIVE);
   });
 
   it('does not activate an old-client callback that finishes after a client-ID change', async () => {
@@ -1472,13 +1476,52 @@ describe('TraktConnectionService', () => {
     assert.equal(cache.has(otherKey), true);
   });
 
-  it('marks a current connection reconnect-required when Trakt rejects refresh with 400', async () => {
+  it('keeps tokens when Trakt rejects the application credentials', async () => {
     const actor = await admin();
     const connection = await connectionWithTokens(actor.id, {
       expiresAt: new Date(Date.now() - 1),
     });
     mock.method(TraktAPI.prototype, 'refresh', async () => {
-      throw new TraktApiError('Trakt request failed', 400, 'REQUEST_FAILED');
+      throw new TraktApiError(
+        'Trakt request failed',
+        400,
+        'REQUEST_FAILED',
+        undefined,
+        'invalid_client'
+      );
+    });
+
+    await assert.rejects(
+      new TraktConnectionService().withAuthenticatedApi(
+        actor.id,
+        async () => 'unreachable'
+      ),
+      (error: unknown) => error instanceof TraktApiError && error.status === 400
+    );
+
+    const stored = await connectionWithHiddenTokens(connection.id);
+    assert.equal(
+      stored.accessToken,
+      'old-access-token',
+      'a bad client secret must not invalidate the user refresh token'
+    );
+    assert.equal(stored.refreshToken, 'old-refresh-token');
+    assert.equal(stored.status, TraktConnectionStatus.ACTIVE);
+  });
+
+  it('marks a current connection reconnect-required when Trakt rejects the grant', async () => {
+    const actor = await admin();
+    const connection = await connectionWithTokens(actor.id, {
+      expiresAt: new Date(Date.now() - 1),
+    });
+    mock.method(TraktAPI.prototype, 'refresh', async () => {
+      throw new TraktApiError(
+        'Trakt request failed',
+        400,
+        'REQUEST_FAILED',
+        undefined,
+        'invalid_grant'
+      );
     });
     let operationCalls = 0;
 

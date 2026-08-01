@@ -659,7 +659,9 @@ describe('Trakt administration', () => {
 
     cy.contains('[data-testid=trakt-user-row]', 'friend@example.com')
       .contains('Unlink')
-      .click()
+      .click();
+    cy.contains('[data-testid=trakt-user-row]', 'friend@example.com')
+      .contains('button', 'Confirm unlink')
       .click();
     cy.contains('[data-testid=trakt-user-row]', 'friend@example.com')
       .contains('button', 'Confirm unlink')

@@ -6,7 +6,7 @@ import Alert from '@app/components/Common/Alert';
 import Badge from '@app/components/Common/Badge';
 import ConfirmButton from '@app/components/Common/ConfirmButton';
 import Dropdown from '@app/components/Common/Dropdown';
-import LoadingSpinner from '@app/components/Common/LoadingSpinner';
+import { SmallLoadingSpinner } from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import TraktConnectionActions, {
   traktAccountName,
@@ -203,7 +203,7 @@ const UserLinkedAccountsSettings = () => {
             {intl.formatMessage(messages.trakt)}
           </div>
           {!traktSettings && !traktError ? (
-            <LoadingSpinner />
+            <SmallLoadingSpinner />
           ) : (
             <>
               <div className="truncate text-xl font-semibold text-white">

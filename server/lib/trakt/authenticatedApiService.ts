@@ -21,16 +21,16 @@ class TraktAuthenticatedApiService {
     }
 
     traktRateLimitRegistry.throwIfCoolingDown(connection.id);
-    let context = traktTokenRefreshService.toAccessContext(connection);
-    if (
+
+    const needsRefresh =
       !connection.expiresAt ||
-      connection.expiresAt.getTime() <= Date.now() + REFRESH_WINDOW_MS
-    ) {
-      context = await traktTokenRefreshService.refreshAccess(
-        connection.id,
-        connection.tokenVersion
-      );
-    }
+      connection.expiresAt.getTime() <= Date.now() + REFRESH_WINDOW_MS;
+    const context = needsRefresh
+      ? await traktTokenRefreshService.refreshAccess(
+          connection.id,
+          connection.tokenVersion
+        )
+      : traktTokenRefreshService.toAccessContext(connection);
 
     try {
       return await this.runAuthenticatedOperation(context, operation);

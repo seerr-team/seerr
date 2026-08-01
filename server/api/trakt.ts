@@ -26,7 +26,9 @@ export class TraktApiError extends Error {
     message: string,
     public readonly status: number,
     public readonly code: string,
-    public readonly retryAfterSeconds?: number
+    public readonly retryAfterSeconds?: number,
+    /** OAuth `error` field, which distinguishes a dead grant from bad client credentials. */
+    public readonly oauthError?: string
   ) {
     super(message);
     this.name = 'TraktApiError';
@@ -345,15 +347,26 @@ export default class TraktAPI {
         ? (error.response as {
             status?: unknown;
             headers?: unknown;
+            data?: unknown;
           })
         : undefined;
     const status = typeof response?.status === 'number' ? response.status : 0;
+    const data = response?.data;
+    const oauthError =
+      typeof data === 'object' &&
+      data !== null &&
+      'error' in data &&
+      typeof (data as { error: unknown }).error === 'string'
+        ? (data as { error: string }).error
+        : undefined;
 
     if (status === 401) {
       return new TraktApiError(
         'Trakt authentication failed',
         status,
-        'UNAUTHORIZED'
+        'UNAUTHORIZED',
+        undefined,
+        oauthError
       );
     }
 
@@ -382,7 +395,13 @@ export default class TraktAPI {
       );
     }
 
-    return new TraktApiError('Trakt request failed', status, 'REQUEST_FAILED');
+    return new TraktApiError(
+      'Trakt request failed',
+      status,
+      'REQUEST_FAILED',
+      undefined,
+      oauthError
+    );
   }
 
   private retryAfterSeconds(headers: unknown): number | undefined {

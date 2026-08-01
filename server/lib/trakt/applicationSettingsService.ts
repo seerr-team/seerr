@@ -38,19 +38,8 @@ class TraktApplicationSettingsService {
       }
 
       let affectedConnectionCount = 0;
-      if (clientIdChanged) {
-        const now = new Date();
-        await traktConnectionRepository.runInTransaction(async (manager) => {
-          affectedConnectionCount =
-            await traktConnectionRepository.invalidateAll(manager);
-          await traktOAuthTransactionService.failActiveForClientIdChange(
-            manager,
-            now
-          );
-        });
-        cacheManager.getCache('trakt-watch-status').flush();
-      }
 
+      // Invalidation cannot be undone, so the settings write has to succeed first.
       try {
         settings.trakt = {
           clientId: normalizedClientId,
@@ -70,6 +59,19 @@ class TraktApplicationSettingsService {
           errorClass: error instanceof Error ? error.name : 'UnknownError',
         });
         throw error;
+      }
+
+      if (clientIdChanged) {
+        const now = new Date();
+        await traktConnectionRepository.runInTransaction(async (manager) => {
+          affectedConnectionCount =
+            await traktConnectionRepository.invalidateAll(manager);
+          await traktOAuthTransactionService.failActiveForClientIdChange(
+            manager,
+            now
+          );
+        });
+        cacheManager.getCache('trakt-watch-status').flush();
       }
 
       logger.info('Trakt application settings updated', {

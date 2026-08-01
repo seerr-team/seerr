@@ -32,7 +32,7 @@ Enter the Client ID and Client Secret in the **Trakt application** section and s
 The callback URL is derived from the **Application URL** in [General settings](./general.md). If that setting is empty, Seerr cannot build a callback URL and says so here. Set it before configuring Trakt.
 
 :::warning
-Changing the Client ID invalidates every existing connection. Seerr asks you to confirm, and all users have to reconnect afterwards. Changing only the secret leaves connections intact.
+Changing the Client ID invalidates every existing connection. Seerr asks you to confirm, and all users have to reconnect afterward. Changing only the secret leaves connections intact.
 :::
 
 ## Linking accounts

@@ -1,3 +1,11 @@
+const WATCHED_AT = '2026-07-30T20:00:00.000Z';
+
+const formattedWatchedAt = new Intl.DateTimeFormat('en', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+}).format(new Date(WATCHED_AT));
+
 describe('Movie Details', () => {
   it('loads a movie page', () => {
     cy.loginAsAdmin();
@@ -21,7 +29,7 @@ describe('Movie Details', () => {
           displayName: 'admin',
           traktUsername: 'household-admin',
           watched: true,
-          watchedAt: '2026-07-30T20:00:00.000Z',
+          watchedAt: WATCHED_AT,
           status: 'ok',
         },
         {
@@ -47,7 +55,7 @@ describe('Movie Details', () => {
     cy.get('[data-testid=trakt-watch-status]').within(() => {
       cy.contains('admin').should('be.visible');
       cy.get('[aria-label="Watched"]').should('be.visible');
-      cy.contains('Jul 30, 2026').should('be.visible');
+      cy.contains(formattedWatchedAt).should('be.visible');
       cy.contains('Movie Partner').should('be.visible');
       cy.get('[aria-label="Not watched"]').should('be.visible');
     });
@@ -109,7 +117,7 @@ describe('Movie Details', () => {
             displayName: 'Loading Admin',
             traktUsername: 'loading-admin',
             watched: true,
-            watchedAt: '2026-07-30T20:00:00.000Z',
+            watchedAt: WATCHED_AT,
             status: 'ok',
           },
         ],

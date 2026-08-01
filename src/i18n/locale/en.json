@@ -1456,7 +1456,7 @@
   "components.TvDetails.streamingproviders": "Currently Streaming On",
   "components.TvDetails.tmdbuserscore": "TMDB User Score",
   "components.TvDetails.traktWatched": "Watched",
-  "components.TvDetails.traktWatchedBy": "Show who watched this season",
+  "components.TvDetails.traktWatchedBy": "Watched by {names}",
   "components.TvDetails.traktWatchedCount": "Watched {watched}/{total}",
   "components.TvDetails.viewfullcrew": "View Full Crew",
   "components.TvDetails.watchlistDeleted": "<strong>{title}</strong> Removed from watchlist successfully!",
