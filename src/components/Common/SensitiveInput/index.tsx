@@ -10,9 +10,15 @@ interface CustomFieldProps extends React.ComponentProps<typeof Field> {
   as?: 'field';
 }
 
-type SensitiveInputProps = CustomInputProps | CustomFieldProps;
+type SensitiveInputProps = (CustomInputProps | CustomFieldProps) & {
+  visibilityToggleLabel?: string;
+};
 
-const SensitiveInput = ({ as = 'input', ...props }: SensitiveInputProps) => {
+const SensitiveInput = ({
+  as = 'input',
+  visibilityToggleLabel,
+  ...props
+}: SensitiveInputProps) => {
   const [isHidden, setHidden] = useState(true);
   const Component = as === 'input' ? 'input' : Field;
   const componentProps =
@@ -53,6 +59,7 @@ const SensitiveInput = ({ as = 'input', ...props }: SensitiveInputProps) => {
         }}
         type="button"
         className="input-action"
+        aria-label={visibilityToggleLabel}
       >
         {isHidden ? <EyeSlashIcon /> : <EyeIcon />}
       </button>
