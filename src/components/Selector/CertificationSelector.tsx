@@ -1,6 +1,6 @@
 import { SmallLoadingSpinner } from '@app/components/Common/LoadingSpinner';
+import Tooltip from '@app/components/Common/Tooltip';
 import defineMessages from '@app/utils/defineMessages';
-import type { Region } from '@server/lib/settings';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import AsyncSelect from 'react-select/async';
@@ -21,6 +21,7 @@ interface CertificationResponse {
 interface CertificationOption {
   value: string;
   label: string;
+  meaning?: string;
 }
 
 interface CertificationSelectorProps {
@@ -53,31 +54,39 @@ const CertificationSelector: React.FC<CertificationSelectorProps> = ({
     isLoading: certificationLoading,
   } = useSWR<CertificationResponse>(`/api/v1/certifications/${type}`);
 
-  const { data: regionsData } = useSWR<Region[]>('/api/v1/regions');
-
   // Get the country name from its code
   const getCountryName = useCallback(
     (countryCode: string): string => {
-      const region = regionsData?.find(
-        (region) => region.iso_3166_1 === countryCode
-      );
-      return region?.name || countryCode;
+      const [base, subdivision] = countryCode.split('-');
+      try {
+        const baseName =
+          intl.formatDisplayName(base, { type: 'region', fallback: 'none' }) ??
+          base;
+        return subdivision ? `${baseName} (${subdivision})` : baseName;
+      } catch {
+        return countryCode;
+      }
     },
-    [regionsData]
+    [intl]
   );
   const allOptions = useCallback((): CertificationOption[] => {
     if (!certificationData) return [];
-    return Object.entries(certificationData.certifications).flatMap(
-      ([countryCode, certificationValue]) =>
+    return Object.entries(certificationData.certifications)
+      .flatMap(([countryCode, certificationValue]) =>
         certificationValue
           .filter((c) => c.certification)
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
           .map((c) => ({
             value: `${countryCode}:${c.certification}`,
-            label: `${getCountryName(countryCode)} - ${c.certification}${
-              c.meaning ? ` (${c.meaning})` : ''
-            }`,
+            label: `${getCountryName(countryCode)} - ${c.certification}`,
+            meaning: c.meaning,
           }))
-    );
+      )
+      .sort((a, b) =>
+        getCountryName(a.value.split(':')[0]).localeCompare(
+          getCountryName(b.value.split(':')[0])
+        )
+      );
   }, [certificationData, getCountryName]);
 
   useEffect(() => {
@@ -119,26 +128,37 @@ const CertificationSelector: React.FC<CertificationSelectorProps> = ({
   };
 
   return (
-    <div className="space-y-2">
-      <AsyncSelect
-        className="react-select-container"
-        classNamePrefix="react-select"
-        isMulti
-        isDisabled={isDisabled}
-        cacheOptions
-        defaultOptions
-        loadOptions={loadCertificationOptions}
-        value={selectedValues}
-        onChange={handleChange}
-        placeholder={intl.formatMessage(messages.selectCertification)}
-        isClearable
-        noOptionsMessage={({ inputValue }) =>
-          inputValue === ''
-            ? intl.formatMessage(messages.starttyping)
-            : intl.formatMessage(messages.noOptions)
-        }
-      />
-    </div>
+    <AsyncSelect
+      key={`certification-select-${type}`}
+      className="react-select-container"
+      classNamePrefix="react-select"
+      isMulti
+      isDisabled={isDisabled}
+      cacheOptions
+      defaultOptions
+      loadOptions={loadCertificationOptions}
+      value={selectedValues}
+      onChange={handleChange}
+      formatOptionLabel={(option, { context }) =>
+        context === 'menu' && option.meaning ? (
+          <Tooltip
+            content={option.meaning}
+            className="max-w-md whitespace-normal"
+          >
+            <span className="block w-full">{option.label}</span>
+          </Tooltip>
+        ) : (
+          option.label
+        )
+      }
+      placeholder={intl.formatMessage(messages.selectCertification)}
+      isClearable
+      noOptionsMessage={({ inputValue }) =>
+        inputValue === ''
+          ? intl.formatMessage(messages.starttyping)
+          : intl.formatMessage(messages.noOptions)
+      }
+    />
   );
 };
 export default CertificationSelector;

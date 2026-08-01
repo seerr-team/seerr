@@ -233,11 +233,20 @@ const OverrideRuleTiles = ({
                     {rule.certification.split(',').map((entry) => {
                       const [countryCode, certificationValue] =
                         entry.split(':');
-                      const countryName =
-                        intl.formatDisplayName(countryCode, {
-                          type: 'region',
-                          fallback: 'none',
-                        }) ?? countryCode;
+                      const [base, subdivision] = countryCode.split('-');
+                      let countryName: string;
+                      try {
+                        const baseName =
+                          intl.formatDisplayName(base, {
+                            type: 'region',
+                            fallback: 'none',
+                          }) ?? base;
+                        countryName = subdivision
+                          ? `${baseName} (${subdivision})`
+                          : baseName;
+                      } catch {
+                        countryName = countryCode;
+                      }
                       return (
                         <span>{`${countryName}: ${certificationValue}`}</span>
                       );
