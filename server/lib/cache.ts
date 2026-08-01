@@ -10,6 +10,8 @@ export type AvailableCacheIds =
   | 'plexguid'
   | 'plextv'
   | 'plexwatchlist'
+  | 'trakt-media'
+  | 'trakt-watch-status'
   | 'tvdb';
 
 const DEFAULT_TTL = 300;
@@ -71,6 +73,15 @@ class CacheManager {
       checkPeriod: 60,
     }),
     plexwatchlist: new Cache('plexwatchlist', 'Plex Watchlist'),
+    'trakt-media': new Cache('trakt-media', 'Trakt Media Mapping', {
+      stdTtl: 86_400,
+      checkPeriod: 300,
+    }),
+    'trakt-watch-status': new Cache(
+      'trakt-watch-status',
+      'Trakt Watch Status',
+      { stdTtl: 300, checkPeriod: 120 }
+    ),
     tvdb: new Cache('tvdb', 'The TVDB API', {
       stdTtl: 21600,
       checkPeriod: 60 * 30,
