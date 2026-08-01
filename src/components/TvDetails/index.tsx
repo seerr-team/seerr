@@ -98,6 +98,7 @@ const messages = defineMessages('components.TvDetails', {
   seasonstitle: 'Seasons',
   traktWatched: 'Watched',
   traktWatchedCount: 'Watched {watched}/{total}',
+  traktWatchedBy: 'Show who watched this season',
   episodeCount: '{episodeCount, plural, one {# Episode} other {# Episodes}}',
   seasonnumber: 'Season {seasonNumber}',
   status4k: '4K {status}',
@@ -913,8 +914,30 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                                   ))}
                                 </ul>
                               }
+                              tooltipConfig={{
+                                trigger: ['hover', 'click'],
+                                followCursor: false,
+                              }}
                             >
-                              <div className="flex">
+                              {/* The badge sits inside the season toggle, so a tap
+                                  that opens the tooltip must not also collapse it. */}
+                              <span
+                                className="flex"
+                                role="button"
+                                tabIndex={0}
+                                aria-label={intl.formatMessage(
+                                  messages.traktWatchedBy
+                                )}
+                                onClick={(event) => event.stopPropagation()}
+                                onKeyDown={(event) => {
+                                  if (
+                                    event.key === 'Enter' ||
+                                    event.key === ' '
+                                  ) {
+                                    event.stopPropagation();
+                                  }
+                                }}
+                              >
                                 <div className="hidden md:flex">
                                   <Badge badgeType="success">
                                     {traktHouseholdSize > 1
@@ -938,7 +961,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                                     )}
                                   />
                                 </div>
-                              </div>
+                              </span>
                             </Tooltip>
                           )}
                           {traktWatchers.length === 0 &&

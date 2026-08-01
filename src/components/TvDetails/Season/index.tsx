@@ -80,6 +80,10 @@ const Season = ({ seasonNumber, tvId, traktEpisodes }: SeasonProps) => {
                               ))}
                             </ul>
                           }
+                          tooltipConfig={{
+                            trigger: ['hover', 'click'],
+                            followCursor: false,
+                          }}
                         >
                           <span className="flex items-center gap-1 text-green-500">
                             <CheckCircleIcon
