@@ -1,4 +1,15 @@
 describe('TV Details', () => {
+  it('loads a tv details page', () => {
+    cy.loginAsAdmin();
+    // Try to load stranger things
+    cy.visit('/tv/66732');
+
+    cy.get('[data-testid=media-title]').should(
+      'contain',
+      'Stranger Things (2016)'
+    );
+  });
+
   it('shows successful and temporarily unavailable household rows', () => {
     cy.loginAsAdmin();
     cy.intercept('GET', '/api/v1/trakt/watchstatus/tv/66732', {
@@ -28,10 +39,6 @@ describe('TV Details', () => {
     cy.visit('/tv/66732');
     cy.wait('@tvWatchStatus');
 
-    cy.get('[data-testid=media-title]').should(
-      'contain',
-      'Stranger Things (2016)'
-    );
     cy.get('[data-testid=trakt-watch-status-item]').should('have.length', 2);
     cy.get('[data-testid=trakt-watch-status]').within(() => {
       cy.contains('admin').should('be.visible');
