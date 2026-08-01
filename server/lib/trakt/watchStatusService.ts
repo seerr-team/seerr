@@ -152,8 +152,7 @@ export class TraktWatchStatusService {
       })
     );
 
-    // With every lookup failed there is nothing to distinguish "nobody watched this" from
-    // "we could not ask", so report it as unavailable rather than as an empty result.
+    // All-failed is otherwise indistinguishable from nobody having watched anything.
     if (progressByConnection.every((entry) => entry.progress === null)) {
       return { ...response, status: 'temporarily_unavailable', seasons: [] };
     }
@@ -200,9 +199,8 @@ export class TraktWatchStatusService {
       progress: TraktSeasonProgress[] | null;
     }[]
   ): TraktSeasonWatchStatusItem[] {
-    // Members are cached independently, so one can still report the episode count from
-    // before a new episode aired. Completion is judged against the household's highest
-    // count, or a stale member would be credited with a season they have not finished.
+    // Members are cached independently, so a stale one can still report a pre-airing
+    // count. Completion is judged against the household's highest count.
     const airedBySeason = new Map<number, number>();
     for (const { progress } of entries) {
       for (const season of progress ?? []) {

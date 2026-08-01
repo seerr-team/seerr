@@ -51,7 +51,7 @@ class TraktConnectionRepository {
 
   /**
    * Scoped to the version that was read, so an unlink that raced a reconnect cannot
-   * delete the reconnected row. Returns whether the row was removed.
+   * delete the reconnected row.
    */
   public async deleteAtVersion(
     connectionId: number,
