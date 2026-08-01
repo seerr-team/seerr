@@ -1,10 +1,16 @@
 import EmbyLogo from '@app/assets/services/emby-icon-only.svg';
 import JellyfinLogo from '@app/assets/services/jellyfin-icon.svg';
 import PlexLogo from '@app/assets/services/plex.svg';
+import TraktLogo from '@app/assets/services/trakt.svg';
 import Alert from '@app/components/Common/Alert';
+import Badge from '@app/components/Common/Badge';
 import ConfirmButton from '@app/components/Common/ConfirmButton';
 import Dropdown from '@app/components/Common/Dropdown';
+import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
+import TraktConnectionActions, {
+  traktAccountName,
+} from '@app/components/Trakt/TraktConnectionActions';
 import LinkJellyfinQuickConnectModal from '@app/components/UserProfile/UserSettings/UserLinkedAccountsSettings/LinkJellyfinQuickConnectModal';
 import useSettings from '@app/hooks/useSettings';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
@@ -13,6 +19,7 @@ import defineMessages from '@app/utils/defineMessages';
 import PlexOAuth from '@app/utils/plex';
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { MediaServerType } from '@server/constants/server';
+import type { TraktUserSettingsResponse } from '@server/interfaces/api/traktInterfaces';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 import { useMemo, useState } from 'react';
@@ -34,6 +41,13 @@ const messages = defineMessages(
     plexErrorExists: 'This account is already linked to a Plex user',
     errorUnknown: 'An unknown error occurred',
     deleteFailed: 'Unable to delete linked account.',
+    trakt: 'Trakt',
+    traktConfigure:
+      'Ask an administrator to configure Trakt before connecting an account.',
+    traktLoadFailed: 'The Trakt connection could not be loaded.',
+    traktReconnectRequired: 'Reconnect required',
+    traktNotConnected: 'Not connected',
+    traktAccount: 'Trakt account',
   }
 );
 
@@ -62,6 +76,17 @@ const UserLinkedAccountsSettings = () => {
   } = useUser({ id: Number(router.query.userId) });
   const { data: passwordInfo } = useSWR<{ hasPassword: boolean }>(
     user ? `/api/v1/user/${user?.id}/settings/password` : null
+  );
+  const currentUserIsAdmin =
+    ((currentUser?.permissions ?? 0) & Permission.ADMIN) === Permission.ADMIN;
+  const canManageTrakt =
+    !!user && (currentUser?.id === user.id || currentUserIsAdmin);
+  const {
+    data: traktSettings,
+    error: traktError,
+    mutate: revalidateTrakt,
+  } = useSWR<TraktUserSettingsResponse>(
+    canManageTrakt && user ? `/api/v1/user/${user.id}/settings/trakt` : null
   );
   const [showJellyfinModal, setShowJellyfinModal] = useState(false);
   const [showJellyfinQuickConnectModal, setShowJellyfinQuickConnectModal] =
@@ -157,6 +182,72 @@ const UserLinkedAccountsSettings = () => {
     await revalidateUser();
   };
 
+  const traktUnconfiguredForUser =
+    !!traktSettings &&
+    !traktSettings.applicationConfigured &&
+    !currentUserIsAdmin;
+
+  const traktRow =
+    canManageTrakt && user ? (
+      <li
+        className="flex items-center gap-4 overflow-hidden rounded-lg bg-gray-800/50 px-4 py-5 shadow ring-1 ring-gray-700 sm:p-6"
+        data-testid="profile-trakt-section"
+      >
+        <div className="w-12">
+          <div className="flex aspect-square h-full items-center justify-center rounded-full bg-neutral-800">
+            <TraktLogo className="w-9" />
+          </div>
+        </div>
+        <div className="min-w-0">
+          <div className="truncate text-sm font-bold text-gray-300">
+            {intl.formatMessage(messages.trakt)}
+          </div>
+          {!traktSettings && !traktError ? (
+            <LoadingSpinner />
+          ) : (
+            <>
+              <div className="truncate text-xl font-semibold text-white">
+                {traktSettings?.connection
+                  ? (traktAccountName(traktSettings.connection) ??
+                    intl.formatMessage(messages.traktAccount))
+                  : intl.formatMessage(messages.traktNotConnected)}
+              </div>
+              {traktSettings?.connection?.status === 'reconnect_required' && (
+                <Badge badgeType="warning">
+                  {intl.formatMessage(messages.traktReconnectRequired)}
+                </Badge>
+              )}
+            </>
+          )}
+        </div>
+        <div className="flex-grow" />
+        {traktSettings && !traktError && (
+          <TraktConnectionActions
+            targetUserId={user.id}
+            targetUserDisplayName={user.displayName}
+            connection={traktSettings.connection}
+            applicationConfigured={traktSettings.applicationConfigured}
+            showOAuthActions={!traktUnconfiguredForUser}
+            onRefresh={revalidateTrakt}
+            hideIdentity
+          />
+        )}
+      </li>
+    ) : null;
+
+  const traktAlert =
+    canManageTrakt && traktError ? (
+      <Alert
+        title={intl.formatMessage(messages.traktLoadFailed)}
+        type="error"
+      />
+    ) : canManageTrakt && traktUnconfiguredForUser ? (
+      <Alert
+        title={intl.formatMessage(messages.traktConfigure)}
+        type="warning"
+      />
+    ) : null;
+
   if (
     currentUser?.id !== user?.id &&
     hasPermission(Permission.ADMIN) &&
@@ -173,6 +264,8 @@ const UserLinkedAccountsSettings = () => {
           title={intl.formatMessage(messages.noPermissionDescription)}
           type="error"
         />
+        {traktAlert}
+        {traktRow && <ul className="space-y-4">{traktRow}</ul>}
       </>
     );
   }
@@ -212,7 +305,8 @@ const UserLinkedAccountsSettings = () => {
         )}
       </div>
       {error && <Alert title={error} type="error" />}
-      {accounts.length ? (
+      {traktAlert}
+      {accounts.length || traktRow ? (
         <ul className="space-y-4">
           {accounts.map((acct, i) => (
             <li
@@ -254,6 +348,7 @@ const UserLinkedAccountsSettings = () => {
               )}
             </li>
           ))}
+          {traktRow}
         </ul>
       ) : (
         <div className="mt-4 text-center md:py-12">
