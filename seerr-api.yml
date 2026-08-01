@@ -2332,7 +2332,6 @@ paths:
       description: Returns a list of Jellyfin libraries in a JSON array.
       tags:
         - settings
->>>>>>> 95f688fe (revert: undo formatting on seerr-api.yml)
       responses:
         '200':
           description: 'Jellyfin libraries returned'
