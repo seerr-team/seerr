@@ -579,7 +579,8 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
         // seriesType only controls how Sonarr parses/numbers episodes
         // it is sent in the addSeries payload and must not gate anime routing
-        let seriesType: SonarrSeries['seriesType'] = 'standard';
+        let seriesType: SonarrSeries['seriesType'] =
+          sonarrSettings.seriesType ?? 'standard';
 
         if (isAnime) {
           seriesType = sonarrSettings.animeSeriesType ?? 'anime';
