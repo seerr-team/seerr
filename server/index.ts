@@ -19,6 +19,8 @@ import WebhookAgent from '@server/lib/notifications/agents/webhook';
 import WebPushAgent from '@server/lib/notifications/agents/webpush';
 import checkOverseerrMerge from '@server/lib/overseerrMerge';
 import { getSettings } from '@server/lib/settings';
+import { TraktConnectionService } from '@server/lib/trakt/connectionService';
+import { startTraktOAuthCleanup } from '@server/lib/trakt/oauthCleanup';
 import logger from '@server/logger';
 import clearCookies from '@server/middleware/clearcookies';
 import routes from '@server/routes';
@@ -82,6 +84,7 @@ app
     // Load Settings
     const settings = await getSettings().load();
     restartFlag.initializeSettings(settings);
+    startTraktOAuthCleanup(new TraktConnectionService());
 
     initI18n();
 

@@ -48,6 +48,292 @@ servers:
 
 components:
   schemas:
+    TraktPublicSettings:
+      type: object
+      required:
+        - clientId
+        - clientSecretConfigured
+        - callbackUrl
+      properties:
+        clientId:
+          type: string
+        clientSecretConfigured:
+          type: boolean
+        callbackUrl:
+          type: string
+          format: uri
+          nullable: true
+    TraktSettingsUpdate:
+      type: object
+      required:
+        - clientId
+      properties:
+        clientId:
+          type: string
+        clientSecret:
+          type: string
+          minLength: 1
+          writeOnly: true
+        confirmReconnectAll:
+          type: boolean
+    TraktConnection:
+      type: object
+      required:
+        - userId
+        - traktUserId
+        - traktUsername
+        - traktSlug
+        - displayName
+        - status
+        - connectedByUserId
+        - lastValidatedAt
+        - createdAt
+        - updatedAt
+      properties:
+        userId:
+          type: integer
+        traktUserId:
+          type: string
+        traktUsername:
+          type: string
+          nullable: true
+        traktSlug:
+          type: string
+          nullable: true
+        displayName:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum:
+            - active
+            - reconnect_required
+        connectedByUserId:
+          type: integer
+          nullable: true
+        lastValidatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    TraktUserSettings:
+      type: object
+      required:
+        - applicationConfigured
+        - connection
+      properties:
+        applicationConfigured:
+          type: boolean
+        connection:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/TraktConnection'
+    TraktAuthorization:
+      type: object
+      required:
+        - transactionId
+        - authorizationUrl
+        - callbackOrigin
+        - expiresAt
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+        authorizationUrl:
+          type: string
+          format: uri
+        callbackOrigin:
+          type: string
+          format: uri
+        expiresAt:
+          type: string
+          format: date-time
+    TraktOAuthStatus:
+      type: object
+      required:
+        - status
+        - resultCode
+      properties:
+        status:
+          type: string
+          enum:
+            - pending
+            - succeeded
+            - failed
+        resultCode:
+          type: string
+          nullable: true
+          enum:
+            - access_denied
+            - actor_not_authorized
+            - client_id_changed
+            - confirm_reconnect_all_required
+            - invalid_state
+            - oauth_interrupted
+            - state_expired
+            - state_replayed
+            - target_has_different_trakt_account
+            - target_missing
+            - token_exchange_failed
+            - trakt_account_owned_by_another_user
+            - trakt_application_not_configured
+    TraktWatchStatus:
+      type: object
+      required:
+        - mediaType
+        - tmdbId
+        - items
+      properties:
+        mediaType:
+          type: string
+          enum:
+            - movie
+            - tv
+        tmdbId:
+          type: integer
+          minimum: 1
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TraktWatchStatusItem'
+    TraktSeasonWatchStatus:
+      type: object
+      required:
+        - tmdbId
+        - status
+        - householdSize
+        - seasons
+      properties:
+        tmdbId:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum:
+            - ok
+            - temporarily_unavailable
+        householdSize:
+          type: integer
+          minimum: 0
+        seasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/TraktSeasonWatchStatusItem'
+    TraktWatcher:
+      type: object
+      required:
+        - userId
+        - displayName
+      properties:
+        userId:
+          type: integer
+        displayName:
+          type: string
+    TraktEpisodeWatchStatusItem:
+      type: object
+      required:
+        - episodeNumber
+        - watchedBy
+      properties:
+        episodeNumber:
+          type: integer
+          minimum: 0
+        watchedBy:
+          type: array
+          items:
+            $ref: '#/components/schemas/TraktWatcher'
+    TraktSeasonWatchStatusItem:
+      type: object
+      required:
+        - seasonNumber
+        - airedEpisodes
+        - watchedBy
+        - episodes
+      properties:
+        seasonNumber:
+          type: integer
+          minimum: 0
+        airedEpisodes:
+          type: integer
+          minimum: 0
+        watchedBy:
+          type: array
+          items:
+            $ref: '#/components/schemas/TraktWatcher'
+        episodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TraktEpisodeWatchStatusItem'
+    TraktWatchStatusItem:
+      type: object
+      required:
+        - userId
+        - displayName
+        - traktUsername
+        - watched
+        - watchedAt
+        - status
+      properties:
+        userId:
+          type: integer
+        displayName:
+          type: string
+        traktUsername:
+          type: string
+          nullable: true
+        watched:
+          type: boolean
+        watchedAt:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          enum:
+            - ok
+            - temporarily_unavailable
+    TraktUnlinkResult:
+      type: object
+      required:
+        - remoteRevocationSucceeded
+      properties:
+        remoteRevocationSucceeded:
+          type: boolean
+    TraktConflict:
+      type: object
+      required:
+        - message
+        - code
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+          enum:
+            - target_has_different_trakt_account
+            - trakt_account_owned_by_another_user
+        ownerUserId:
+          type: integer
+          nullable: true
+          description: Present only when the requesting actor has ADMIN.
+    TraktSettingsConflict:
+      type: object
+      required:
+        - message
+        - code
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+          enum:
+            - confirm_reconnect_all_required
     Blocklist:
       type: object
       properties:
@@ -2209,6 +2495,266 @@ paths:
                   appDataPermissions:
                     type: boolean
                     example: true
+  /settings/trakt:
+    get:
+      summary: Get the public Trakt application configuration
+      tags:
+        - settings
+      responses:
+        '200':
+          description: Trakt application configuration returned without secrets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraktPublicSettings'
+    put:
+      summary: Update the Trakt application configuration
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TraktSettingsUpdate'
+      responses:
+        '200':
+          description: Trakt application configuration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraktPublicSettings'
+        '400':
+          description: Invalid credential input
+        '409':
+          description: Reconnect-all confirmation required for a client-ID change
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraktSettingsConflict'
+  /settings/trakt/connections:
+    get:
+      summary: List all Trakt connection summaries
+      tags:
+        - settings
+      responses:
+        '200':
+          description: Redacted Trakt connection summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TraktConnection'
+  /user/{userId}/settings/trakt:
+    parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
+    get:
+      summary: Get a user's Trakt connection
+      tags:
+        - users
+      responses:
+        '200':
+          description: Trakt user settings returned without credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraktUserSettings'
+        '403':
+          description: Only the user or an administrator may access this connection
+    delete:
+      summary: Unlink a user's Trakt connection
+      tags:
+        - users
+      responses:
+        '200':
+          description: The local Trakt connection was removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraktUnlinkResult'
+        '403':
+          description: Only the user or an administrator may unlink this connection
+        '404':
+          description: Trakt connection not found
+  /user/{userId}/settings/trakt/auth:
+    parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
+    post:
+      summary: Start a Trakt OAuth transaction
+      tags:
+        - users
+      parameters:
+        - in: header
+          name: Origin
+          required: true
+          description: >-
+            Must be an allowed initiating origin. The allowlist is deployment
+            configuration and is enforced by the server, which rejects anything
+            else with 400.
+          schema:
+            type: string
+            format: uri
+      responses:
+        '200':
+          description: Trakt OAuth transaction started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraktAuthorization'
+        '400':
+          description: Missing or disallowed Origin, or application not configured
+        '403':
+          description: Only the user or an administrator may start this transaction
+  /trakt/oauth/{transactionId}/status:
+    get:
+      summary: Poll a Trakt OAuth transaction started by the current actor
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: transactionId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Safe Trakt OAuth status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraktOAuthStatus'
+        '404':
+          description: Transaction not found for this actor
+        '409':
+          description: A distinct Trakt account conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraktConflict'
+  /trakt/watchstatus/{mediaType}/{tmdbId}:
+    get:
+      summary: Get household Trakt watch status for a TMDB title
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: mediaType
+          required: true
+          schema:
+            type: string
+            enum:
+              - movie
+              - tv
+        - in: path
+          name: tmdbId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Visible household watch status with partial failures
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraktWatchStatus'
+        '400':
+          description: Invalid media type or TMDB ID
+        '401':
+          description: Authentication required
+  /trakt/watchstatus/tv/{tmdbId}/seasons:
+    get:
+      summary: Get the requesting user's Trakt watched progress per season
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: tmdbId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Per-season watched progress for the requesting user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraktSeasonWatchStatus'
+        '400':
+          description: Invalid TMDB ID
+        '401':
+          description: Authentication required
+  /auth/trakt/callback:
+    get:
+      summary: Complete a Trakt OAuth redirect
+      tags:
+        - public
+      security: []
+      parameters:
+        - in: query
+          name: state
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: code
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: error
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: error_description
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: iss
+          required: false
+          description: >-
+            Issuer identifier returned by Trakt (RFC 9207). Accepted and ignored;
+            the transaction is identified by `state`.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Trakt OAuth completion page
+          content:
+            text/html:
+              schema:
+                type: string
+        '400':
+          description: Safe invalid, expired, denied, or replayed OAuth completion page
+          content:
+            text/html:
+              schema:
+                type: string
+        '409':
+          description: Safe conflicting Trakt account completion page
+          content:
+            text/html:
+              schema:
+                type: string
+        '500':
+          description: Safe generic Trakt completion failure page
+          content:
+            text/html:
+              schema:
+                type: string
   /settings/main:
     get:
       summary: Get main settings

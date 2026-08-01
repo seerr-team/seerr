@@ -43,6 +43,7 @@ import metadataRoutes from './metadata';
 import notificationRoutes from './notifications';
 import radarrRoutes from './radarr';
 import sonarrRoutes from './sonarr';
+import traktSettingsRoutes from './trakt';
 
 const settingsRoutes = Router();
 
@@ -51,6 +52,7 @@ settingsRoutes.use('/radarr', radarrRoutes);
 settingsRoutes.use('/sonarr', sonarrRoutes);
 settingsRoutes.use('/discover', discoverSettingRoutes);
 settingsRoutes.use('/metadatas', metadataRoutes);
+settingsRoutes.use('/trakt', traktSettingsRoutes);
 
 const filteredMainSettings = (
   user: User,
