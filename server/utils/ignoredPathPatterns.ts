@@ -1,7 +1,8 @@
 import safeRegex from 'safe-regex';
 
-// safe-regex is a heuristic, not a guarantee; the length cap bounds the
-// complexity of anything it lets through.
+// safe-regex is a heuristic with known false negatives, and the length cap
+// only limits pattern size, not matching complexity. Patterns are
+// admin-configured, so a pathological pattern is a self-inflicted risk.
 const MAX_PATTERN_LENGTH = 256;
 
 export function compileIgnoredPathPattern(pattern: string): RegExp | null {
