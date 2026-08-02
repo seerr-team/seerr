@@ -16,11 +16,12 @@ const movieRoutes = Router();
 movieRoutes.get('/:id', async (req, res, next) => {
   const tmdb = new TheMovieDb();
   const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
+  const requestedLanguage = (req.query.language as string) || mediaLocale;
 
   try {
     const tmdbMovie = await tmdb.getMovie({
       movieId: Number(req.params.id),
-      language: (req.query.language as string) || mediaLocale,
+      language: requestedLanguage,
     });
 
     const media = await Media.getMedia(tmdbMovie.id, MediaType.MOVIE);
@@ -41,10 +42,21 @@ movieRoutes.get('/:id', async (req, res, next) => {
       onUserWatchlist
     );
 
-    // TMDB issue where it doesnt fallback to English when no overview is available in requested locale.
+    // TMDB falls title back to original_title when a locale has no translation, but leaves
+    // overview empty.
     if (!data.overview) {
-      const tvEnglish = await tmdb.getMovie({ movieId: Number(req.params.id) });
-      data.overview = tvEnglish.overview;
+      const fallbackLanguage =
+        !req.locale || requestedLanguage === req.locale ? 'en' : req.locale;
+
+      if (fallbackLanguage !== requestedLanguage) {
+        const movieFallback = await tmdb.getMovie({
+          movieId: Number(req.params.id),
+          language: fallbackLanguage,
+        });
+        data.overview = movieFallback.overview;
+        data.title = movieFallback.title;
+        data.tagline = movieFallback.tagline;
+      }
     }
 
     return res.status(200).json(data);

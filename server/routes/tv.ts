@@ -17,6 +17,7 @@ const tvRoutes = Router();
 tvRoutes.get('/:id', async (req, res, next) => {
   const tmdb = new TheMovieDb();
   const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
+  const requestedLanguage = (req.query.language as string) || mediaLocale;
 
   try {
     const tmdbTv = await tmdb.getTvShow({
@@ -29,7 +30,7 @@ tvRoutes.get('/:id', async (req, res, next) => {
       : await getMetadataProvider('tv');
     const tv = await metadataProvider.getTvShow({
       tvId: Number(req.params.id),
-      language: (req.query.language as string) || mediaLocale,
+      language: requestedLanguage,
     });
     const media = await Media.getMedia(tv.id, MediaType.TV);
 
@@ -45,12 +46,21 @@ tvRoutes.get('/:id', async (req, res, next) => {
 
     const data = mapTvDetails(tv, media?.filter(req.user), onUserWatchlist);
 
-    // TMDB issue where it doesnt fallback to English when no overview is available in requested locale.
+    // TMDB falls name back to original_name when a locale has no translation, but leaves
+    // overview empty.
     if (!data.overview) {
-      const tvEnglish = await metadataProvider.getTvShow({
-        tvId: Number(req.params.id),
-      });
-      data.overview = tvEnglish.overview;
+      const fallbackLanguage =
+        !req.locale || requestedLanguage === req.locale ? 'en' : req.locale;
+
+      if (fallbackLanguage !== requestedLanguage) {
+        const tvFallback = await metadataProvider.getTvShow({
+          tvId: Number(req.params.id),
+          language: fallbackLanguage,
+        });
+        data.overview = tvFallback.overview;
+        data.name = tvFallback.name;
+        data.tagline = tvFallback.tagline;
+      }
     }
 
     return res.status(200).json(data);
