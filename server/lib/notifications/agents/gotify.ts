@@ -104,7 +104,7 @@ class GotifyAgent
     }
 
     if (embedPoster && payload.image) {
-      message += `\n\n![${payload.subject}](${payload.image})  `;
+      message += `\n\n![](${payload.image})  `;
     }
 
     if (applicationUrl && payload.media) {
@@ -119,6 +119,13 @@ class GotifyAgent
         'client::display': {
           contentType: 'text/markdown',
         },
+        ...(embedPoster && payload.image
+          ? {
+              'client::notification': {
+                bigImageUrl: payload.image,
+              },
+            }
+          : {}),
       },
       title,
       message,
