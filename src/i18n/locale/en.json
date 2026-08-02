@@ -641,6 +641,7 @@
   "components.Selector.showmore": "Show More",
   "components.Selector.starttyping": "Starting typing to search.",
   "components.Settings.Notifications.NotificationsGotify.agentenabled": "Enable Agent",
+  "components.Settings.Notifications.NotificationsGotify.embedPoster": "Embed Poster",
   "components.Settings.Notifications.NotificationsGotify.gotifysettingsfailed": "Gotify notification settings failed to save.",
   "components.Settings.Notifications.NotificationsGotify.gotifysettingssaved": "Gotify notification settings saved successfully!",
   "components.Settings.Notifications.NotificationsGotify.priority": "Priority",
