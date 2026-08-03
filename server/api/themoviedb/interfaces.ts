@@ -87,6 +87,23 @@ export interface TmdbExternalIdResponse {
   person_results: TmdbPersonResult[];
 }
 
+/**
+ * Response shape of `GET /3/list/{listId}`.
+ *
+ * The v3 endpoint serves both classic v3 lists and the newer v4 lists. v4 lists
+ * can hold both movies and series, so every item carries its own `media_type`.
+ */
+export interface TmdbListResponse extends TmdbPaginatedResponse {
+  id: number;
+  name: string;
+  description?: string;
+  created_by?: string;
+  iso_639_1?: string;
+  poster_path?: string;
+  item_count: number;
+  items: (TmdbMovieResult | TmdbTvResult)[];
+}
+
 export interface TmdbCreditCast {
   cast_id: number;
   character: string;

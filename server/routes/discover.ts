@@ -11,6 +11,8 @@ import type {
   GenreSliderItem,
   WatchlistResponse,
 } from '@server/interfaces/api/discoverInterfaces';
+import { getMediaListPage, getMediaListProvider } from '@server/lib/medialists';
+import type { MediaListResponse } from '@server/lib/medialists/types';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { mapProductionCompany } from '@server/models/Movie';
@@ -782,6 +784,45 @@ discoverRoutes.get('/trending', async (req, res, next) => {
     });
   }
 });
+
+discoverRoutes.get<{ listId: string }, MediaListResponse>(
+  '/list/:listId',
+  async (req, res, next) => {
+    // TMDB is currently the only supported list source. Additional providers
+    // can be registered in `server/lib/medialists`.
+    const provider = getMediaListProvider('tmdb');
+
+    if (!provider) {
+      return next({ status: 404, message: 'List provider not found.' });
+    }
+
+    if (!provider.validateListId(req.params.listId)) {
+      return next({ status: 400, message: 'Invalid list ID.' });
+    }
+
+    try {
+      const data = await getMediaListPage({
+        provider,
+        listId: req.params.listId,
+        page: Number(req.query.page) || 1,
+        language: (req.query.language as string) ?? req.locale,
+        user: req.user,
+      });
+
+      return res.status(200).json(data);
+    } catch (e) {
+      logger.debug('Something went wrong retrieving a media list', {
+        label: 'API',
+        errorMessage: e.message,
+        listId: req.params.listId,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to retrieve media list.',
+      });
+    }
+  }
+);
 
 discoverRoutes.get<{ keywordId: string }>(
   '/keyword/:keywordId/movies',

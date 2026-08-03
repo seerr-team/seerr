@@ -6257,6 +6257,73 @@ paths:
                         - $ref: '#/components/schemas/MovieResult'
                         - $ref: '#/components/schemas/TvResult'
                         - $ref: '#/components/schemas/PersonResult'
+  /discover/list/{listId}:
+    get:
+      summary: Get the contents of a TMDB list
+      description: >-
+        Returns a page of the movies and series contained in a public TMDB list,
+        in the order defined by the list owner, in a JSON object.
+      tags:
+        - search
+      parameters:
+        - in: path
+          name: listId
+          required: true
+          description: Numeric ID of a public TMDB list.
+          schema:
+            type: string
+            example: '8542986'
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  list:
+                    type: object
+                    properties:
+                      providerId:
+                        type: string
+                        example: tmdb
+                      listId:
+                        type: string
+                        example: '8542986'
+                      name:
+                        type: string
+                        example: My Watchlist
+                      description:
+                        type: string
+                        example: Movies and series I want to watch
+                  results:
+                    type: array
+                    items:
+                      anyOf:
+                        - $ref: '#/components/schemas/MovieResult'
+                        - $ref: '#/components/schemas/TvResult'
+        '400':
+          description: Invalid list ID
   /discover/keyword/{keywordId}/movies:
     get:
       summary: Get movies from keyword

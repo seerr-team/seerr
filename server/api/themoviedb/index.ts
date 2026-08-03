@@ -12,6 +12,7 @@ import type {
   TmdbKeyword,
   TmdbKeywordSearchResponse,
   TmdbLanguage,
+  TmdbListResponse,
   TmdbMovieDetails,
   TmdbNetwork,
   TmdbPersonCombinedCredits,
@@ -1058,6 +1059,40 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
       return data;
     } catch (e) {
       throw new Error(`[TMDB] Failed to fetch TV network: ${e.message}`, {
+        cause: e,
+      });
+    }
+  }
+
+  /**
+   * Fetches a single page of a TMDB list.
+   *
+   * The v3 `/list/{listId}` endpoint reads both classic v3 lists and lists
+   * created through the v4 API (as long as they are public), so no v4 read
+   * token is required. Returns `null` when the list does not exist or is not
+   * publicly readable.
+   */
+  public async getList({
+    listId,
+    page = 1,
+    language = this.locale,
+  }: {
+    listId: number;
+    page?: number;
+    language?: string;
+  }): Promise<TmdbListResponse | null> {
+    try {
+      const data = await this.get<TmdbListResponse>(`/list/${listId}`, {
+        params: { page, language },
+      });
+
+      return data;
+    } catch (e) {
+      // 401 is returned for private lists, 404 for lists that do not exist
+      if (e.response?.status === 401 || e.response?.status === 404) {
+        return null;
+      }
+      throw new Error(`[TMDB] Failed to fetch list: ${e.message}`, {
         cause: e,
       });
     }

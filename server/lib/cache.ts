@@ -10,7 +10,8 @@ export type AvailableCacheIds =
   | 'plexguid'
   | 'plextv'
   | 'plexwatchlist'
-  | 'tvdb';
+  | 'tvdb'
+  | 'medialist';
 
 const DEFAULT_TTL = 300;
 const DEFAULT_CHECK_PERIOD = 120;
@@ -73,6 +74,13 @@ class CacheManager {
     plexwatchlist: new Cache('plexwatchlist', 'Plex Watchlist'),
     tvdb: new Cache('tvdb', 'The TVDB API', {
       stdTtl: 21600,
+      checkPeriod: 60 * 30,
+    }),
+    // Entries stay resident for 48 hours so that a stale list can still be
+    // served when the upstream provider is unreachable. Freshness is tracked
+    // separately by the media list service.
+    medialist: new Cache('medialist', 'Media Lists', {
+      stdTtl: 86400 * 2,
       checkPeriod: 60 * 30,
     }),
   };

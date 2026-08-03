@@ -1,5 +1,9 @@
 import type DiscoverSlider from '@server/entity/DiscoverSlider';
 
+/**
+ * These values are persisted in the database. Only ever append new members to
+ * this enum; never reorder or remove existing ones.
+ */
 export enum DiscoverSliderType {
   RECENTLY_ADDED = 1,
   RECENT_REQUESTS,
@@ -22,6 +26,7 @@ export enum DiscoverSliderType {
   TMDB_NETWORK,
   TMDB_MOVIE_STREAMING_SERVICES,
   TMDB_TV_STREAMING_SERVICES,
+  TMDB_LIST,
 }
 
 export const defaultSliders: Partial<DiscoverSlider>[] = [

@@ -31,6 +31,7 @@ const messages = defineMessages('components.Discover.CreateSlider', {
   providetmdbsearch: 'Provide a search query',
   providetmdbstudio: 'Provide TMDB Studio ID',
   providetmdbnetwork: 'Provide TMDB Network ID',
+  providetmdblist: 'Provide TMDB List ID',
   addsuccess: 'Created new slider and saved discover customization settings.',
   addfail: 'Failed to create new slider.',
   editsuccess: 'Edited slider and saved discover customization settings.',
@@ -38,6 +39,7 @@ const messages = defineMessages('components.Discover.CreateSlider', {
   needresults: 'You need to have at least 1 result.',
   validationDatarequired: 'You must provide a data value.',
   validationTitlerequired: 'You must provide a title.',
+  validationListidnumeric: 'The TMDB list ID must be a number.',
   addcustomslider: 'Create Custom Slider',
   searchKeywords: 'Search keywords…',
   searchGenres: 'Search genres…',
@@ -158,9 +160,17 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
     title: Yup.string().required(
       intl.formatMessage(messages.validationTitlerequired)
     ),
-    data: Yup.string().required(
-      intl.formatMessage(messages.validationDatarequired)
-    ),
+    data: Yup.string()
+      .required(intl.formatMessage(messages.validationDatarequired))
+      .when('sliderType', {
+        is: (sliderType: DiscoverSliderType | string) =>
+          Number(sliderType) === DiscoverSliderType.TMDB_LIST,
+        then: (schema) =>
+          schema.matches(
+            /^[1-9]\d*$/,
+            intl.formatMessage(messages.validationListidnumeric)
+          ),
+      }),
   });
 
   const updateResultCount = useCallback(
@@ -272,6 +282,13 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
       dataUrl: '/api/v1/discover/tv/network/$value',
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
       dataPlaceholderText: intl.formatMessage(messages.providetmdbnetwork),
+    },
+    {
+      type: DiscoverSliderType.TMDB_LIST,
+      title: intl.formatMessage(sliderTitles.tmdblist),
+      dataUrl: '/api/v1/discover/list/$value',
+      titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
+      dataPlaceholderText: intl.formatMessage(messages.providetmdblist),
     },
     {
       type: DiscoverSliderType.TMDB_SEARCH,
