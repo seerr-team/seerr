@@ -6262,7 +6262,12 @@ paths:
       summary: Get the contents of a TMDB list
       description: >-
         Returns a page of the movies and series contained in a public TMDB list,
-        in the order defined by the list owner, in a JSON object.
+        in the order defined by the list owner, in a JSON object. Only the
+        requested page is fetched upstream; totalPages and totalResults describe
+        the whole list. The language is resolved server-side from the requesting
+        user's locale and cannot be overridden. When the list has been deleted or
+        is no longer public, the response is a 200 with an empty results array
+        and list.unavailable set to true.
       tags:
         - search
       parameters:
@@ -6272,18 +6277,15 @@ paths:
           description: Numeric ID of a public TMDB list.
           schema:
             type: string
+            pattern: '^[1-9]\d{0,11}$'
             example: '8542986'
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
+            minimum: 1
             example: 1
             default: 1
-        - in: query
-          name: language
-          schema:
-            type: string
-            example: en
       responses:
         '200':
           description: Results
@@ -6291,6 +6293,12 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - page
+                  - totalPages
+                  - totalResults
+                  - list
+                  - results
                 properties:
                   page:
                     type: number
@@ -6303,6 +6311,9 @@ paths:
                     example: 200
                   list:
                     type: object
+                    required:
+                      - providerId
+                      - listId
                     properties:
                       providerId:
                         type: string
@@ -6316,6 +6327,12 @@ paths:
                       description:
                         type: string
                         example: Movies and series I want to watch
+                      unavailable:
+                        type: boolean
+                        description: >-
+                          Present and true when the list itself could not be
+                          read, which is distinct from a list with no entries.
+                        example: true
                   results:
                     type: array
                     items:
@@ -6323,7 +6340,11 @@ paths:
                         - $ref: '#/components/schemas/MovieResult'
                         - $ref: '#/components/schemas/TvResult'
         '400':
-          description: Invalid list ID
+          description: Invalid list ID or page
+        '403':
+          description: Unauthenticated
+        '500':
+          description: Unable to retrieve the list from the upstream provider
   /discover/keyword/{keywordId}/movies:
     get:
       summary: Get movies from keyword
