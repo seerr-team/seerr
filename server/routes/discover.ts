@@ -801,9 +801,15 @@ discoverRoutes.get<{ listId: string }, MediaListResponse>(
     }
 
     // Parsed once, and strictly: the page number is part of the cache key.
+    // The OpenAPI request validator may have already coerced the value to a
+    // number, so both string and number inputs are accepted here.
     const rawPage = req.query.page;
 
-    if (rawPage !== undefined && typeof rawPage !== 'string') {
+    if (
+      rawPage !== undefined &&
+      typeof rawPage !== 'string' &&
+      typeof rawPage !== 'number'
+    ) {
       return next({ status: 400, message: 'Invalid page.' });
     }
 
