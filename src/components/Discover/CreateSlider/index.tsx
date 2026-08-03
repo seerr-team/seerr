@@ -84,8 +84,13 @@ const TmdbListPreview = ({
   );
 
   useEffect(() => {
+    // Until the debounce settles the row below still shows the previous list,
+    // so the count it reported has to be dropped straight away: another
+    // well-formed id would otherwise keep the Add button enabled on the
+    // strength of a preview belonging to a different list.
+    onNewTitles(0);
     setListId(listId);
-  }, [listId, setListId]);
+  }, [listId, onNewTitles, setListId]);
 
   const isValidListId = TMDB_LIST_ID_REGEX.test(debouncedListId);
 
