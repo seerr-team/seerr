@@ -50,6 +50,8 @@
   "components.Discover.CreateSlider.validationListidnumeric": "The TMDB list ID must be a number.",
   "components.Discover.CreateSlider.validationTitlerequired": "You must provide a title.",
   "components.Discover.DiscoverList.listTitle": "TMDB List",
+  "components.Discover.DiscoverList.listunavailable": "This list is no longer available",
+  "components.Discover.DiscoverList.listunavailabledescription": "It may have been deleted, or it may no longer be public on TMDB.",
   "components.Discover.DiscoverMovieGenre.genreMovies": "{genre} Movies",
   "components.Discover.DiscoverMovieKeyword.keywordMovies": "{keywordTitle} Movies",
   "components.Discover.DiscoverMovieLanguage.languageMovies": "{language} Movies",

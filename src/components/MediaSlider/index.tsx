@@ -98,7 +98,9 @@ const MediaSlider = ({
     }
   }, [titles, setSize, size, data, onNewTitles]);
 
-  if (hideWhenEmpty && (data?.[0].results ?? []).length === 0) {
+  // Only once we know what the row holds: while `data` is undefined the row has
+  // not answered yet, and hiding it early would keep it from ever loading.
+  if (hideWhenEmpty && data && (data[0]?.results ?? []).length === 0) {
     return null;
   }
 
@@ -192,7 +194,7 @@ const MediaSlider = ({
       <Slider
         sliderKey={sliderKey}
         isLoading={!data && !error}
-        isEmpty={false}
+        isEmpty={!!data && finalTitles.length === 0}
         items={finalTitles}
       />
     </>

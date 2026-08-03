@@ -12,6 +12,9 @@ import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.Discover.DiscoverList', {
   listTitle: 'TMDB List',
+  listunavailable: 'This list is no longer available',
+  listunavailabledescription:
+    'It may have been deleted, or it may no longer be public on TMDB.',
 });
 
 const DiscoverList = () => {
@@ -35,6 +38,10 @@ const DiscoverList = () => {
     return <ErrorPage statusCode={500} />;
   }
 
+  // A list that could not be read at all is a different story from a list that
+  // is simply empty, and deserves more than the generic "No results." grid.
+  const isUnavailable = !!firstResultData?.list.unavailable;
+
   const title = isLoadingInitialData
     ? intl.formatMessage(globalMessages.loading)
     : (firstResultData?.list.name ?? intl.formatMessage(messages.listTitle));
@@ -45,15 +52,26 @@ const DiscoverList = () => {
       <div className="mb-5 mt-1">
         <Header>{title}</Header>
       </div>
-      <ListView
-        items={titles}
-        isEmpty={isEmpty}
-        isLoading={
-          isLoadingInitialData || (isLoadingMore && (titles?.length ?? 0) > 0)
-        }
-        isReachingEnd={isReachingEnd}
-        onScrollBottom={fetchMore}
-      />
+      {isUnavailable ? (
+        <div className="mt-64 w-full text-center text-gray-400">
+          <p className="text-2xl">
+            {intl.formatMessage(messages.listunavailable)}
+          </p>
+          <p className="mt-2 text-sm">
+            {intl.formatMessage(messages.listunavailabledescription)}
+          </p>
+        </div>
+      ) : (
+        <ListView
+          items={titles}
+          isEmpty={isEmpty}
+          isLoading={
+            isLoadingInitialData || (isLoadingMore && (titles?.length ?? 0) > 0)
+          }
+          isReachingEnd={isReachingEnd}
+          onScrollBottom={fetchMore}
+        />
+      )}
     </>
   );
 };

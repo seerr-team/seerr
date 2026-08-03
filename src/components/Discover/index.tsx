@@ -362,6 +362,9 @@ const Discover = () => {
                 title={slider.title ?? ''}
                 url={`/api/v1/discover/list/${slider.data}`}
                 linkUrl={`/discover/list/${slider.data}`}
+                // A list that was deleted or made private would otherwise leave
+                // a bare heading over an empty strip on everyone's Discover.
+                hideWhenEmpty
               />
             );
             break;
