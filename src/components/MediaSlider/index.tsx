@@ -13,8 +13,11 @@ import type {
   TvResult,
 } from '@server/models/Search';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import useSWRInfinite from 'swr/infinite';
+
+/** How early a row starts loading, relative to the viewport. */
+const LAZY_MOUNT_ROOT_MARGIN = '600px 0px';
 
 interface MixedResult {
   page: number;
@@ -31,6 +34,12 @@ interface MediaSliderProps {
   hideWhenEmpty?: boolean;
   extraParams?: string;
   onNewTitles?: (titleCount: number) => void;
+  /**
+   * Rows hold off fetching until they are near the viewport. Set to false for a
+   * row that must load even if it is never scrolled to, such as a preview whose
+   * result count gates a form.
+   */
+  lazy?: boolean;
 }
 
 const MediaSlider = ({
@@ -41,11 +50,46 @@ const MediaSlider = ({
   sliderKey,
   hideWhenEmpty = false,
   onNewTitles,
+  lazy = true,
 }: MediaSliderProps) => {
   const settings = useSettings();
   const { hasPermission } = useUser();
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [shouldFetch, setShouldFetch] = useState(!lazy);
+
+  // A Discover page can hold a dozen rows; without this they would all fetch at
+  // once on mount, most of them for posters nobody scrolls down to.
+  useEffect(() => {
+    if (shouldFetch) {
+      return;
+    }
+
+    if (!headerRef.current || typeof IntersectionObserver === 'undefined') {
+      setShouldFetch(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldFetch(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: LAZY_MOUNT_ROOT_MARGIN }
+    );
+
+    observer.observe(headerRef.current);
+
+    return () => observer.disconnect();
+  }, [shouldFetch]);
+
   const { data, error, setSize, size } = useSWRInfinite<MixedResult>(
     (pageIndex: number, previousPageData: MixedResult | null) => {
+      if (!shouldFetch) {
+        return null;
+      }
+
       if (previousPageData && pageIndex + 1 > previousPageData.totalPages) {
         return null;
       }
@@ -179,7 +223,7 @@ const MediaSlider = ({
 
   return (
     <>
-      <div className="slider-header">
+      <div className="slider-header" ref={headerRef}>
         {linkUrl ? (
           <Link href={linkUrl} className="slider-title min-w-0 pr-16">
             <span className="truncate">{title}</span>

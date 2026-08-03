@@ -120,6 +120,8 @@ const TmdbListPreview = ({
       title={title}
       url={`/api/v1/discover/list/${debouncedListId}`}
       onNewTitles={onNewTitles}
+      // The Add button is gated on this row's result count, so it must load.
+      lazy={false}
     />
   );
 };
@@ -674,6 +676,8 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                           )
                     }
                     onNewTitles={updateResultCount}
+                    // The Add button is gated on this row's result count.
+                    lazy={false}
                   />
                 </div>
               )}
