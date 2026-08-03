@@ -88,10 +88,20 @@ export interface TmdbExternalIdResponse {
 }
 
 /**
+ * A single entry of a TMDB list.
+ *
+ * v4 lists can hold both movies and series, so their items carry their own
+ * `media_type`. Classic v3 lists are movie-only and omit the field entirely,
+ * which is why it is optional here: a missing `media_type` means a movie.
+ */
+export type TmdbListItem =
+  | TmdbTvResult
+  | (Omit<TmdbMovieResult, 'media_type'> & { media_type?: 'movie' });
+
+/**
  * Response shape of `GET /3/list/{listId}`.
  *
- * The v3 endpoint serves both classic v3 lists and the newer v4 lists. v4 lists
- * can hold both movies and series, so every item carries its own `media_type`.
+ * The v3 endpoint serves both classic v3 lists and the newer v4 lists.
  */
 export interface TmdbListResponse extends TmdbPaginatedResponse {
   id: number;
@@ -101,7 +111,7 @@ export interface TmdbListResponse extends TmdbPaginatedResponse {
   iso_639_1?: string;
   poster_path?: string;
   item_count: number;
-  items: (TmdbMovieResult | TmdbTvResult)[];
+  items: TmdbListItem[];
 }
 
 export interface TmdbCreditCast {

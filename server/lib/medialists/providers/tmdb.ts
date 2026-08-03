@@ -95,10 +95,16 @@ export class TmdbListProvider implements MediaListProvider {
         );
       }
 
-      if (item.media_type === 'movie') {
-        acc.push({ mediaType: 'movie', tmdbId: item.id, tmdbResult: item });
-      } else if (item.media_type === 'tv') {
+      if (item.media_type === 'tv') {
         acc.push({ mediaType: 'tv', tmdbId: item.id, tmdbResult: item });
+      } else if (item.media_type === 'movie' || item.media_type === undefined) {
+        // Classic v3 lists hold movies only and leave media_type out entirely,
+        // so an absent discriminator is a movie rather than a broken payload.
+        acc.push({
+          mediaType: 'movie',
+          tmdbId: item.id,
+          tmdbResult: { ...item, media_type: 'movie' },
+        });
       } else {
         throw new MalformedListResponseError(
           `unsupported item media_type "${
