@@ -3,6 +3,7 @@ import Tooltip from '@app/components/Common/Tooltip';
 import { sliderTitles } from '@app/components/Discover/constants';
 import MediaSlider from '@app/components/MediaSlider';
 import { WatchProviderSelector } from '@app/components/Selector';
+import useDebouncedState from '@app/hooks/useDebouncedState';
 import { encodeURIExtraParams } from '@app/hooks/useDiscover';
 import useToasts from '@app/hooks/useToasts';
 import defineMessages from '@app/utils/defineMessages';
@@ -14,12 +15,14 @@ import type {
 import { DiscoverSliderType } from '@server/constants/discover';
 import type DiscoverSlider from '@server/entity/DiscoverSlider';
 import type { GenreSliderItem } from '@server/interfaces/api/discoverInterfaces';
+import type { MediaListResponse } from '@server/lib/medialists/types';
 import type { Keyword, ProductionCompany } from '@server/models/common';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import AsyncSelect from 'react-select/async';
+import useSWR from 'swr';
 import * as Yup from 'yup';
 
 const messages = defineMessages('components.Discover.CreateSlider', {
@@ -39,14 +42,87 @@ const messages = defineMessages('components.Discover.CreateSlider', {
   needresults: 'You need to have at least 1 result.',
   validationDatarequired: 'You must provide a data value.',
   validationTitlerequired: 'You must provide a title.',
-  validationListidnumeric: 'The TMDB list ID must be a number.',
+  validationListidnumeric:
+    'The TMDB list ID must be a number of at most 12 digits.',
   addcustomslider: 'Create Custom Slider',
   searchKeywords: 'Search keywords…',
   searchGenres: 'Search genres…',
   searchStudios: 'Search studios…',
   starttyping: 'Starting typing to search.',
   nooptions: 'No results.',
+  helptmdblist:
+    'The number at the end of the list URL, e.g. 8677608 for themoviedb.org/list/8677608.',
+  listpreviewfailed:
+    'This list could not be loaded. Check that the ID is correct and that the list is public on TMDB.',
 });
+
+/** Mirrors the pattern the server validates list ids against. */
+const TMDB_LIST_ID_REGEX = /^[1-9]\d{0,11}$/;
+
+/** Long enough that typing an 8 digit id does not fire eight requests. */
+const LIST_PREVIEW_DEBOUNCE_MS = 400;
+
+/**
+ * Preview row for the TMDB list slider. Unlike the other slider types, an id
+ * typed by hand is regularly wrong, so the preview waits for the typing to
+ * settle, only asks for well-formed ids, and says so when the list cannot be
+ * read instead of silently leaving the Add button disabled.
+ */
+const TmdbListPreview = ({
+  title,
+  listId,
+  onNewTitles,
+}: {
+  title: string;
+  listId: string;
+  onNewTitles: (count: number) => void;
+}) => {
+  const intl = useIntl();
+  const [, debouncedListId, setListId] = useDebouncedState(
+    listId,
+    LIST_PREVIEW_DEBOUNCE_MS
+  );
+
+  useEffect(() => {
+    setListId(listId);
+  }, [listId, setListId]);
+
+  const isValidListId = TMDB_LIST_ID_REGEX.test(debouncedListId);
+
+  // Same key as the slider below, so SWR serves both from one request.
+  const { data, error } = useSWR<MediaListResponse>(
+    isValidListId ? `/api/v1/discover/list/${debouncedListId}?page=1` : null
+  );
+
+  const hasFailed = !!error || !!data?.list.unavailable;
+
+  useEffect(() => {
+    if (!isValidListId || hasFailed) {
+      onNewTitles(0);
+    }
+  }, [isValidListId, hasFailed, onNewTitles]);
+
+  if (!isValidListId) {
+    return null;
+  }
+
+  if (hasFailed) {
+    return (
+      <div className="error">
+        {intl.formatMessage(messages.listpreviewfailed)}
+      </div>
+    );
+  }
+
+  return (
+    <MediaSlider
+      sliderKey={`preview-${debouncedListId}`}
+      title={title}
+      url={`/api/v1/discover/list/${debouncedListId}`}
+      onNewTitles={onNewTitles}
+    />
+  );
+};
 
 type CreateSliderProps = {
   onCreate: () => void;
@@ -167,7 +243,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
           Number(sliderType) === DiscoverSliderType.TMDB_LIST,
         then: (schema) =>
           schema.matches(
-            /^[1-9]\d*$/,
+            TMDB_LIST_ID_REGEX,
             intl.formatMessage(messages.validationListidnumeric)
           ),
       }),
@@ -520,6 +596,11 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                   <div className="error">{errors.title}</div>
                 )}
               {dataInput}
+              {activeOption?.type === DiscoverSliderType.TMDB_LIST && (
+                <div className="text-xs text-gray-400">
+                  {intl.formatMessage(messages.helptmdblist)}
+                </div>
+              )}
               {errors.data &&
                 touched.data &&
                 typeof errors.data === 'string' && (
@@ -549,38 +630,53 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
               )}
             </div>
 
-            {activeOption && values.title && values.data && (
-              <div className="relative py-4">
-                <MediaSlider
-                  sliderKey={`preview-${values.title}`}
-                  title={values.title}
-                  url={activeOption?.dataUrl.replace(
-                    '$value',
-                    encodeURIExtraParams(values.data)
-                  )}
-                  extraParams={
-                    activeOption.type ===
-                      DiscoverSliderType.TMDB_MOVIE_STREAMING_SERVICES ||
-                    activeOption.type ===
-                      DiscoverSliderType.TMDB_TV_STREAMING_SERVICES
-                      ? activeOption.params
-                          ?.replace(
-                            '$regionValue',
-                            encodeURIExtraParams(values?.data.split(',')[0])
+            {activeOption?.type === DiscoverSliderType.TMDB_LIST &&
+              values.title &&
+              values.data && (
+                <div className="relative py-4">
+                  <TmdbListPreview
+                    title={values.title}
+                    listId={values.data}
+                    onNewTitles={updateResultCount}
+                  />
+                </div>
+              )}
+
+            {activeOption &&
+              activeOption.type !== DiscoverSliderType.TMDB_LIST &&
+              values.title &&
+              values.data && (
+                <div className="relative py-4">
+                  <MediaSlider
+                    sliderKey={`preview-${values.title}`}
+                    title={values.title}
+                    url={activeOption?.dataUrl.replace(
+                      '$value',
+                      encodeURIExtraParams(values.data)
+                    )}
+                    extraParams={
+                      activeOption.type ===
+                        DiscoverSliderType.TMDB_MOVIE_STREAMING_SERVICES ||
+                      activeOption.type ===
+                        DiscoverSliderType.TMDB_TV_STREAMING_SERVICES
+                        ? activeOption.params
+                            ?.replace(
+                              '$regionValue',
+                              encodeURIExtraParams(values?.data.split(',')[0])
+                            )
+                            .replace(
+                              '$providersValue',
+                              encodeURIExtraParams(values?.data.split(',')[1])
+                            )
+                        : activeOption.params?.replace(
+                            '$value',
+                            encodeURIExtraParams(values.data)
                           )
-                          .replace(
-                            '$providersValue',
-                            encodeURIExtraParams(values?.data.split(',')[1])
-                          )
-                      : activeOption.params?.replace(
-                          '$value',
-                          encodeURIExtraParams(values.data)
-                        )
-                  }
-                  onNewTitles={updateResultCount}
-                />
-              </div>
-            )}
+                    }
+                    onNewTitles={updateResultCount}
+                  />
+                </div>
+              )}
           </Form>
         );
       }}
