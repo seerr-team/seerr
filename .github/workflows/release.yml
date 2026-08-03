@@ -291,12 +291,12 @@ jobs:
               cosign verify-attestation "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}" \
                 --type cyclonedx \
                 --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
-                --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+                --certificate-oidc-issuer "https://token.actions.githubusercontent.com" > /dev/null
 
                 cosign verify-attestation "${{ env.DOCKER_HUB }}@${{ needs.publish.outputs.image_digest }}" \
                 --type cyclonedx \
                 --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
-                --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+                --certificate-oidc-issuer "https://token.actions.githubusercontent.com" > /dev/null
 
   publish-release:
     name: Publish release
