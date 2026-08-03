@@ -76,9 +76,10 @@ class CacheManager {
       stdTtl: 21600,
       checkPeriod: 60 * 30,
     }),
-    // Entries stay resident for 48 hours so that a stale list can still be
-    // served when the upstream provider is unreachable. Freshness is tracked
-    // separately by the media list service.
+    // Holds one entry per list page. Entries stay resident for 48 hours so that
+    // a stale page can still be served when the upstream provider is
+    // unreachable. Freshness, single-flight and the entry ceiling are handled
+    // by the media list service.
     medialist: new Cache('medialist', 'Media Lists', {
       stdTtl: 86400 * 2,
       checkPeriod: 60 * 30,

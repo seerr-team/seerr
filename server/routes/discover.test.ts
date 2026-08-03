@@ -8,6 +8,8 @@ import { MediaStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import cacheManager from '@server/lib/cache';
+import { getMediaListPage, getMediaListProvider } from '@server/lib/medialists';
+import type { MediaListProvider } from '@server/lib/medialists/types';
 import { setupTestDb } from '@server/test/db';
 import type { Express } from 'express';
 import express from 'express';
@@ -18,7 +20,7 @@ import discoverRoutes from './discover';
 import discoverSettingRoutes from './settings/discover';
 
 import { getSettings } from '@server/lib/settings';
-import { checkUser } from '@server/middleware/auth';
+import { checkUser, isAuthenticated } from '@server/middleware/auth';
 
 const MOVIE_ITEM = {
   id: 603,
@@ -70,11 +72,49 @@ const listResponse = (
   ...overrides,
 });
 
+const LIST_ID = '8542986';
+
+interface Deferred<T> {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (reason: unknown) => void;
+}
+
+const createDeferred = <T>(): Deferred<T> => {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+
+  // Keep an unhandled rejection from taking the test process down before the
+  // assertion that awaits it runs.
+  promise.catch(() => undefined);
+
+  return { promise, resolve, reject };
+};
+
+const flushMicrotasks = () => new Promise((resolve) => setImmediate(resolve));
+
+const tmdbProvider = (): MediaListProvider => {
+  const provider = getMediaListProvider('tmdb');
+  assert.ok(provider);
+  return provider;
+};
+
+const cachedListKeys = () => cacheManager.getCache('medialist').data.keys();
+
 let getListMock: ReturnType<typeof mock.method>['mock'];
 let app: Express;
 
-function createApp() {
+function createApp(queryParser?: 'simple' | 'extended') {
   const app = express();
+
+  if (queryParser) {
+    app.set('query parser', queryParser);
+  }
+
   app.use(express.json());
   app.use(
     session({
@@ -85,7 +125,8 @@ function createApp() {
   );
   app.use(checkUser);
   app.use('/auth', authRoutes);
-  app.use('/discover', discoverRoutes);
+  // Mirrors how the router mounts discover in production.
+  app.use('/discover', isAuthenticated(), discoverRoutes);
   app.use('/settings/discover', discoverSettingRoutes);
   app.use(
     (
@@ -118,13 +159,13 @@ beforeEach(() => {
 
 setupTestDb();
 
-async function loginAsAdmin() {
+async function loginAsAdmin(target: Express = app) {
   const settings = getSettings();
   const priorLocalLogin = settings.main.localLogin;
   settings.main.localLogin = true;
 
   try {
-    const agent = request.agent(app);
+    const agent = request.agent(target);
     const res = await agent
       .post('/auth/local')
       .send({ email: 'admin@seerr.dev', password: 'test1234' });
@@ -136,16 +177,24 @@ async function loginAsAdmin() {
 }
 
 describe('GET /discover/list/:listId', () => {
+  it('rejects an unauthenticated request', async () => {
+    const res = await request(app).get(`/discover/list/${LIST_ID}`);
+
+    assert.strictEqual(res.status, 403);
+    assert.strictEqual(getListMock.callCount(), 0);
+  });
+
   it('returns mixed movie/tv results in list order', async () => {
     const agent = await loginAsAdmin();
-    const res = await agent.get('/discover/list/8542986');
+    const res = await agent.get(`/discover/list/${LIST_ID}`);
 
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.totalResults, 2);
     assert.strictEqual(res.body.totalPages, 1);
     assert.strictEqual(res.body.list.providerId, 'tmdb');
-    assert.strictEqual(res.body.list.listId, '8542986');
+    assert.strictEqual(res.body.list.listId, LIST_ID);
     assert.strictEqual(res.body.list.name, 'My Mixed List');
+    assert.strictEqual(res.body.list.unavailable, undefined);
 
     assert.deepStrictEqual(
       res.body.results.map((r: { id: number; mediaType: string }) => [
@@ -170,7 +219,7 @@ describe('GET /discover/list/:listId', () => {
     );
 
     const agent = await loginAsAdmin();
-    const res = await agent.get('/discover/list/8542986');
+    const res = await agent.get(`/discover/list/${LIST_ID}`);
 
     assert.strictEqual(res.status, 200);
     const movie = res.body.results.find(
@@ -179,7 +228,7 @@ describe('GET /discover/list/:listId', () => {
     assert.strictEqual(movie.mediaInfo.status, MediaStatus.AVAILABLE);
   });
 
-  it('rejects a non-numeric list id without contacting the provider', async () => {
+  it('rejects a malformed list id without contacting the provider', async () => {
     const agent = await loginAsAdmin();
 
     for (const listId of [
@@ -188,6 +237,7 @@ describe('GET /discover/list/:listId', () => {
       'http:%2F%2Fevil.test',
       '0',
       '1a',
+      '1234567890123',
     ]) {
       const res = await agent.get(`/discover/list/${listId}`);
       assert.strictEqual(res.status, 400, `expected 400 for "${listId}"`);
@@ -196,89 +246,301 @@ describe('GET /discover/list/:listId', () => {
     assert.strictEqual(getListMock.callCount(), 0);
   });
 
-  it('paginates a long list without refetching it', async () => {
-    const items = Array.from({ length: 45 }, (_, i) => ({
-      ...MOVIE_ITEM,
-      id: 1000 + i,
-    }));
+  it('rejects a malformed page without contacting the provider', async () => {
+    const agent = await loginAsAdmin();
 
-    getListMock.mockImplementation(async ({ page }: { page: number }) => {
-      const start = (page - 1) * 20;
-      return listResponse({
-        item_count: items.length,
-        total_pages: 3,
-        total_results: items.length,
+    const queries = [
+      'page=0',
+      'page=-1',
+      'page=1.5',
+      'page=Infinity',
+      'page=abc',
+      'page=',
+      'page=99999999999999999999',
+      // Repeated keys make `req.query.page` an array under every query parser.
+      'page=1&page=2',
+    ];
+
+    for (const query of queries) {
+      const res = await agent.get(`/discover/list/${LIST_ID}?${query}`);
+      assert.strictEqual(res.status, 400, `expected 400 for "${query}"`);
+    }
+
+    assert.strictEqual(getListMock.callCount(), 0);
+  });
+
+  it('rejects array and object page values under an extended query parser', async () => {
+    const agent = await loginAsAdmin(createApp('extended'));
+
+    for (const query of ['page[]=1', 'page[foo]=1']) {
+      const res = await agent.get(`/discover/list/${LIST_ID}?${query}`);
+      assert.strictEqual(res.status, 400, `expected 400 for "${query}"`);
+    }
+
+    assert.strictEqual(getListMock.callCount(), 0);
+  });
+
+  it('fetches only the requested page and reports upstream totals', async () => {
+    getListMock.mockImplementation(async ({ page }: { page: number }) =>
+      listResponse({
         page,
-        items: items.slice(start, start + 20),
-      });
-    });
+        item_count: 812,
+        total_pages: 41,
+        total_results: 812,
+        items: [MOVIE_ITEM],
+      })
+    );
+
+    const agent = await loginAsAdmin();
+    const res = await agent.get(`/discover/list/${LIST_ID}?page=7`);
+
+    assert.strictEqual(res.status, 200);
+    // Totals come from the upstream response, not from a truncated array.
+    assert.strictEqual(res.body.totalResults, 812);
+    assert.strictEqual(res.body.totalPages, 41);
+    assert.strictEqual(res.body.page, 7);
+
+    assert.strictEqual(getListMock.callCount(), 1);
+    assert.strictEqual(
+      (getListMock.calls[0].arguments[0] as { page: number }).page,
+      7
+    );
+  });
+
+  it('caches each page separately and serves repeats from the cache', async () => {
+    getListMock.mockImplementation(async ({ page }: { page: number }) =>
+      listResponse({ page, total_pages: 3, total_results: 45 })
+    );
 
     const agent = await loginAsAdmin();
 
-    const first = await agent.get('/discover/list/8542986?page=1');
-    assert.strictEqual(first.status, 200);
-    assert.strictEqual(first.body.totalResults, 45);
-    assert.strictEqual(first.body.totalPages, 3);
-    assert.strictEqual(first.body.results.length, 20);
-    assert.strictEqual(first.body.results[0].id, 1000);
+    await agent.get(`/discover/list/${LIST_ID}?page=1`);
+    await agent.get(`/discover/list/${LIST_ID}?page=2`);
+    assert.strictEqual(getListMock.callCount(), 2);
 
-    // The provider is paged through once to build the cached list
-    const callsAfterFirstRequest = getListMock.callCount();
-    assert.strictEqual(callsAfterFirstRequest, 3);
-
-    const third = await agent.get('/discover/list/8542986?page=3');
-    assert.strictEqual(third.status, 200);
-    assert.strictEqual(third.body.results.length, 5);
-    assert.strictEqual(third.body.results[0].id, 1040);
-
-    // Subsequent pages are served from the cache
-    assert.strictEqual(getListMock.callCount(), callsAfterFirstRequest);
+    await agent.get(`/discover/list/${LIST_ID}?page=1`);
+    await agent.get(`/discover/list/${LIST_ID}?page=2`);
+    assert.strictEqual(getListMock.callCount(), 2);
+    assert.strictEqual(cachedListKeys().length, 2);
   });
 
-  it('serves repeat requests from the cache', async () => {
+  it('does not fetch the whole list to serve one page', async () => {
+    getListMock.mockImplementation(async ({ page }: { page: number }) =>
+      listResponse({ page, total_pages: 100, total_results: 2000 })
+    );
+
     const agent = await loginAsAdmin();
+    await agent.get(`/discover/list/${LIST_ID}?page=1`);
 
-    await agent.get('/discover/list/8542986');
-    assert.strictEqual(getListMock.callCount(), 1);
-
-    await agent.get('/discover/list/8542986');
     assert.strictEqual(getListMock.callCount(), 1);
   });
 
-  it('collapses concurrent requests into a single upstream fetch', async () => {
-    const agent = await loginAsAdmin();
-
-    const [a, b, c] = await Promise.all([
-      agent.get('/discover/list/8542986'),
-      agent.get('/discover/list/8542986'),
-      agent.get('/discover/list/8542986'),
-    ]);
-
-    assert.strictEqual(a.status, 200);
-    assert.strictEqual(b.status, 200);
-    assert.strictEqual(c.status, 200);
-    assert.strictEqual(getListMock.callCount(), 1);
-  });
-
-  it('renders empty and does not crash when the list is missing or private', async () => {
+  it('reports an unavailable list without failing the page', async () => {
     getListMock.mockImplementation(async () => null);
 
     const agent = await loginAsAdmin();
-    const res = await agent.get('/discover/list/8542986');
+    const res = await agent.get(`/discover/list/${LIST_ID}`);
 
     assert.strictEqual(res.status, 200);
     assert.deepStrictEqual(res.body.results, []);
     assert.strictEqual(res.body.totalResults, 0);
     assert.strictEqual(res.body.totalPages, 1);
+    assert.strictEqual(res.body.list.unavailable, true);
+  });
+
+  it('returns 500 when the provider fails and nothing is cached', async () => {
+    getListMock.mockImplementation(async () => {
+      throw new Error('TMDB is down');
+    });
+
+    const agent = await loginAsAdmin();
+    const res = await agent.get(`/discover/list/${LIST_ID}`);
+
+    assert.strictEqual(res.status, 500);
+  });
+});
+
+describe('media list caching', () => {
+  const ageCacheEntry = (ms: number) => {
+    const cache = cacheManager.getCache('medialist').data;
+    const [cacheKey] = cache.keys();
+    const entry = cache.get<{ fetchedAt: number }>(cacheKey);
+    assert.ok(entry);
+    cache.set(cacheKey, { ...entry, fetchedAt: Date.now() - ms });
+    return cacheKey;
+  };
+
+  it('collapses concurrent requests into a single upstream fetch', async () => {
+    const gate = createDeferred<TmdbListResponse>();
+    getListMock.mockImplementation(async () => gate.promise);
+
+    // Every caller is started before anything resolves, so the assertion below
+    // can only hold if they genuinely share one in-flight fetch.
+    const pending = [1, 2, 3].map(() =>
+      getMediaListPage({ provider: tmdbProvider(), listId: LIST_ID })
+    );
+
+    await flushMicrotasks();
+    assert.strictEqual(getListMock.callCount(), 1);
+
+    gate.resolve(listResponse());
+    const results = await Promise.all(pending);
+
+    assert.strictEqual(getListMock.callCount(), 1);
+    results.forEach((result) => assert.strictEqual(result.totalResults, 2));
+  });
+
+  it('drops a rejected in-flight fetch so the next request retries', async () => {
+    const gate = createDeferred<TmdbListResponse>();
+    getListMock.mockImplementation(async () => gate.promise);
+
+    const failing = getMediaListPage({
+      provider: tmdbProvider(),
+      listId: LIST_ID,
+    });
+
+    await flushMicrotasks();
+    gate.reject(new Error('TMDB is down'));
+    await assert.rejects(failing);
+
+    getListMock.mockImplementation(async () => listResponse());
+    const retried = await getMediaListPage({
+      provider: tmdbProvider(),
+      listId: LIST_ID,
+    });
+
+    assert.strictEqual(retried.totalResults, 2);
+    assert.strictEqual(getListMock.callCount(), 2);
+  });
+
+  it('refreshes and replaces the content once the entry is no longer fresh', async () => {
+    const agent = await loginAsAdmin();
+
+    const fresh = await agent.get(`/discover/list/${LIST_ID}`);
+    assert.strictEqual(fresh.body.list.name, 'My Mixed List');
+
+    ageCacheEntry(7 * 60 * 60 * 1000);
+
+    getListMock.mockImplementation(async () =>
+      listResponse({
+        name: 'Renamed List',
+        item_count: 1,
+        total_results: 1,
+        items: [MOVIE_ITEM],
+      })
+    );
+
+    const refreshed = await agent.get(`/discover/list/${LIST_ID}`);
+    assert.strictEqual(refreshed.body.list.name, 'Renamed List');
+    assert.strictEqual(refreshed.body.totalResults, 1);
+    assert.strictEqual(getListMock.callCount(), 2);
   });
 
   it('serves stale data when the provider fails after the entry goes stale', async () => {
     const agent = await loginAsAdmin();
 
-    const fresh = await agent.get('/discover/list/8542986');
+    const fresh = await agent.get(`/discover/list/${LIST_ID}`);
     assert.strictEqual(fresh.body.totalResults, 2);
 
-    // Age the cache entry past the 6 hour freshness window
+    ageCacheEntry(7 * 60 * 60 * 1000);
+
+    getListMock.mockImplementation(async () => {
+      throw new Error('TMDB is down');
+    });
+
+    const stale = await agent.get(`/discover/list/${LIST_ID}`);
+    assert.strictEqual(stale.status, 200);
+    assert.strictEqual(stale.body.totalResults, 2);
+    assert.strictEqual(getListMock.callCount(), 2);
+  });
+
+  it('does not serve an entry that has outlived its residency window', async () => {
+    const agent = await loginAsAdmin();
+    await agent.get(`/discover/list/${LIST_ID}`);
+
+    // Expire the entry the same way node-cache would once the 48h TTL elapses.
+    const cache = cacheManager.getCache('medialist').data;
+    const [cacheKey] = cache.keys();
+    cache.set(cacheKey, cache.get(cacheKey), -1);
+    assert.strictEqual(cache.get(cacheKey), undefined);
+
+    getListMock.mockImplementation(async () => {
+      throw new Error('TMDB is down');
+    });
+
+    const res = await agent.get(`/discover/list/${LIST_ID}`);
+    assert.strictEqual(res.status, 500);
+  });
+
+  it('shares one failed refresh between concurrent stale callers', async () => {
+    await getMediaListPage({ provider: tmdbProvider(), listId: LIST_ID });
+    assert.strictEqual(getListMock.callCount(), 1);
+
+    ageCacheEntry(7 * 60 * 60 * 1000);
+
+    const gate = createDeferred<TmdbListResponse>();
+    getListMock.mockImplementation(async () => gate.promise);
+
+    const pending = [1, 2, 3].map(() =>
+      getMediaListPage({ provider: tmdbProvider(), listId: LIST_ID })
+    );
+
+    await flushMicrotasks();
+    assert.strictEqual(getListMock.callCount(), 2);
+
+    gate.reject(new Error('TMDB is down'));
+    const results = await Promise.all(pending);
+
+    // One shared refresh, and every caller gets the stale copy.
+    assert.strictEqual(getListMock.callCount(), 2);
+    results.forEach((result) => assert.strictEqual(result.totalResults, 2));
+  });
+});
+
+describe('media list payload validation', () => {
+  const malformedPayloads: [string, Partial<TmdbListResponse>][] = [
+    ['a null item', { items: [null] } as unknown as Partial<TmdbListResponse>],
+    [
+      'a non-array items field',
+      { items: 'nope' } as unknown as Partial<TmdbListResponse>,
+    ],
+    [
+      'an unsupported media_type',
+      {
+        items: [{ ...MOVIE_ITEM, media_type: 'person' }],
+      } as unknown as Partial<TmdbListResponse>,
+    ],
+    [
+      'a non-numeric item id',
+      {
+        items: [{ ...MOVIE_ITEM, id: '603' }],
+      } as unknown as Partial<TmdbListResponse>,
+    ],
+    ['a missing page', { page: undefined }],
+    [
+      'non-numeric pagination fields',
+      { total_pages: 'many' } as unknown as Partial<TmdbListResponse>,
+    ],
+  ];
+
+  for (const [label, overrides] of malformedPayloads) {
+    it(`returns 500 and caches nothing for ${label}`, async () => {
+      getListMock.mockImplementation(async () => listResponse(overrides));
+
+      const agent = await loginAsAdmin();
+      const res = await agent.get(`/discover/list/${LIST_ID}`);
+
+      assert.strictEqual(res.status, 500);
+      assert.strictEqual(cachedListKeys().length, 0);
+    });
+  }
+
+  it('serves the stale copy rather than a malformed refresh', async () => {
+    const agent = await loginAsAdmin();
+
+    const fresh = await agent.get(`/discover/list/${LIST_ID}`);
+    assert.strictEqual(fresh.body.totalResults, 2);
+
     const cache = cacheManager.getCache('medialist').data;
     const [cacheKey] = cache.keys();
     const entry = cache.get<{ fetchedAt: number }>(cacheKey);
@@ -288,25 +550,14 @@ describe('GET /discover/list/:listId', () => {
       fetchedAt: Date.now() - 7 * 60 * 60 * 1000,
     });
 
-    getListMock.mockImplementation(async () => {
-      throw new Error('TMDB is down');
-    });
+    getListMock.mockImplementation(async () =>
+      listResponse({ items: [null] } as unknown as Partial<TmdbListResponse>)
+    );
 
-    const stale = await agent.get('/discover/list/8542986');
+    const stale = await agent.get(`/discover/list/${LIST_ID}`);
     assert.strictEqual(stale.status, 200);
     assert.strictEqual(stale.body.totalResults, 2);
-    assert.strictEqual(getListMock.callCount(), 2);
-  });
-
-  it('returns 500 when the provider fails and nothing is cached', async () => {
-    getListMock.mockImplementation(async () => {
-      throw new Error('TMDB is down');
-    });
-
-    const agent = await loginAsAdmin();
-    const res = await agent.get('/discover/list/8542986');
-
-    assert.strictEqual(res.status, 500);
+    assert.strictEqual(stale.body.results.length, 2);
   });
 });
 
@@ -329,11 +580,11 @@ describe('TMDB list slider validation', () => {
     const res = await agent.post('/settings/discover/add').send({
       type: DiscoverSliderType.TMDB_LIST,
       title: 'My list',
-      data: '8542986',
+      data: LIST_ID,
     });
 
     assert.strictEqual(res.status, 200);
-    assert.strictEqual(res.body.data, '8542986');
+    assert.strictEqual(res.body.data, LIST_ID);
   });
 
   it('rejects an invalid list id when updating an existing slider', async () => {
@@ -342,7 +593,7 @@ describe('TMDB list slider validation', () => {
     const created = await agent.post('/settings/discover/add').send({
       type: DiscoverSliderType.TMDB_LIST,
       title: 'My list',
-      data: '8542986',
+      data: LIST_ID,
     });
     assert.strictEqual(created.status, 200);
 

@@ -1,7 +1,8 @@
 import TheMovieDb from '@server/api/themoviedb';
+import type { TmdbListResponse } from '@server/api/themoviedb/interfaces';
 import type {
-  MediaList,
   MediaListItem,
+  MediaListPage,
   MediaListProvider,
 } from '@server/lib/medialists/types';
 
@@ -12,11 +13,18 @@ import type {
  */
 const TMDB_LIST_ID_REGEX = /^[1-9]\d{0,11}$/;
 
-/**
- * TMDB serves lists 20 items at a time. We cap how far we page to keep a single
- * cold cache fill bounded; sliders only ever surface the first handful of pages.
- */
-const MAX_PAGES = 25;
+const isCount = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value >= 0;
+
+const isTmdbId = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
+
+class MalformedListResponseError extends Error {
+  constructor(reason: string) {
+    super(`[TMDB] Malformed list response: ${reason}`);
+    this.name = 'MalformedListResponseError';
+  }
+}
 
 export class TmdbListProvider implements MediaListProvider {
   public readonly id = 'tmdb';
@@ -25,65 +33,96 @@ export class TmdbListProvider implements MediaListProvider {
     return TMDB_LIST_ID_REGEX.test(listId);
   }
 
-  public async fetchList(
+  public async fetchListPage(
     listId: string,
-    { language }: { language?: string } = {}
-  ): Promise<MediaList | null> {
+    { page, language }: { page: number; language?: string }
+  ): Promise<MediaListPage | null> {
     if (!this.validateListId(listId)) {
       return null;
     }
 
     const tmdb = new TheMovieDb();
-    const numericListId = Number(listId);
 
-    const firstPage = await tmdb.getList({
-      listId: numericListId,
-      page: 1,
+    const response = await tmdb.getList({
+      listId: Number(listId),
+      page,
       language,
     });
 
-    if (!firstPage) {
+    if (!response) {
       return null;
     }
 
-    const pages = [firstPage];
-    const totalPages = Math.min(firstPage.total_pages ?? 1, MAX_PAGES);
+    return this.mapResponse(listId, response);
+  }
 
-    for (let page = 2; page <= totalPages; page++) {
-      const nextPage = await tmdb.getList({
-        listId: numericListId,
-        page,
-        language,
-      });
+  /**
+   * Validates the upstream payload before it is allowed anywhere near the cache.
+   * A response that does not match the documented shape is treated as an
+   * upstream failure (thrown), never as an empty or partially usable list.
+   */
+  private mapResponse(
+    listId: string,
+    response: TmdbListResponse
+  ): MediaListPage {
+    if (typeof response !== 'object') {
+      throw new MalformedListResponseError('response is not an object');
+    }
 
-      if (!nextPage) {
-        break;
+    // `page` is 1-based; `total_pages`/`total_results` are 0 for an empty list.
+    if (!isTmdbId(response.page)) {
+      throw new MalformedListResponseError('page is not a positive integer');
+    }
+
+    if (!isCount(response.total_pages) || !isCount(response.total_results)) {
+      throw new MalformedListResponseError(
+        'total_pages/total_results are not counts'
+      );
+    }
+
+    if (!Array.isArray(response.items)) {
+      throw new MalformedListResponseError('items is not an array');
+    }
+
+    const items = response.items.reduce<MediaListItem[]>((acc, item) => {
+      if (typeof item !== 'object' || item === null) {
+        throw new MalformedListResponseError('item is not an object');
       }
 
-      pages.push(nextPage);
-    }
+      if (!isTmdbId(item.id)) {
+        throw new MalformedListResponseError(
+          'item id is not a positive integer'
+        );
+      }
+
+      if (item.media_type === 'movie') {
+        acc.push({ mediaType: 'movie', tmdbId: item.id, tmdbResult: item });
+      } else if (item.media_type === 'tv') {
+        acc.push({ mediaType: 'tv', tmdbId: item.id, tmdbResult: item });
+      } else {
+        throw new MalformedListResponseError(
+          `unsupported item media_type "${
+            (item as { media_type?: unknown }).media_type
+          }"`
+        );
+      }
+
+      return acc;
+    }, []);
 
     return {
       providerId: this.id,
       listId,
-      name: firstPage.name,
-      description: firstPage.description || undefined,
+      name: typeof response.name === 'string' ? response.name : undefined,
+      description:
+        typeof response.description === 'string' && response.description
+          ? response.description
+          : undefined,
+      page: response.page,
+      totalPages: response.total_pages,
+      totalResults: response.total_results,
       // TMDB returns the items in the order defined by the list owner; we keep it.
-      items: pages
-        .flatMap((page) => page.items ?? [])
-        .reduce<MediaListItem[]>((acc, item) => {
-          if (item.media_type === 'movie') {
-            acc.push({
-              mediaType: 'movie',
-              tmdbId: item.id,
-              tmdbResult: item,
-            });
-          } else if (item.media_type === 'tv') {
-            acc.push({ mediaType: 'tv', tmdbId: item.id, tmdbResult: item });
-          }
-
-          return acc;
-        }, []),
+      items,
     };
   }
 }

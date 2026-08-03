@@ -800,12 +800,27 @@ discoverRoutes.get<{ listId: string }, MediaListResponse>(
       return next({ status: 400, message: 'Invalid list ID.' });
     }
 
+    // Parsed once, and strictly: the page number is part of the cache key.
+    const rawPage = req.query.page;
+
+    if (rawPage !== undefined && typeof rawPage !== 'string') {
+      return next({ status: 400, message: 'Invalid page.' });
+    }
+
+    const page = rawPage === undefined ? 1 : Number(rawPage);
+
+    if (!Number.isSafeInteger(page) || page < 1) {
+      return next({ status: 400, message: 'Invalid page.' });
+    }
+
     try {
       const data = await getMediaListPage({
         provider,
         listId: req.params.listId,
-        page: Number(req.query.page) || 1,
-        language: (req.query.language as string) ?? req.locale,
+        page,
+        // Deliberately not read from the query string: the language is part of
+        // the cache key, so it is pinned to the locale resolved server-side.
+        language: req.locale,
         user: req.user,
       });
 

@@ -23,16 +23,25 @@ export type HydratedMediaListItem =
   | { mediaType: 'movie'; tmdbId: number; tmdbResult: TmdbMovieResult }
   | { mediaType: 'tv'; tmdbId: number; tmdbResult: TmdbTvResult };
 
-/** A provider list, in the order defined by the list owner. */
-export interface MediaList<TItem extends MediaListItem = MediaListItem> {
+/**
+ * One page of a provider list, in the order defined by the list owner.
+ *
+ * `totalPages` and `totalResults` describe the whole list and are reported by
+ * the provider; `items` only ever holds the entries of `page`.
+ */
+export interface MediaListPage<TItem extends MediaListItem = MediaListItem> {
   providerId: string;
   listId: string;
   name?: string;
   description?: string;
+  /** 1-based index of the page `items` was taken from. */
+  page: number;
+  totalPages: number;
+  totalResults: number;
   items: TItem[];
 }
 
-export type HydratedMediaList = MediaList<HydratedMediaListItem>;
+export type HydratedMediaListPage = MediaListPage<HydratedMediaListItem>;
 
 /**
  * A source of media lists. Implement this interface to add support for other
@@ -47,13 +56,19 @@ export interface MediaListProvider {
   validateListId(listId: string): boolean;
 
   /**
-   * Resolves the complete, ordered list. Returns `null` when the list does not
-   * exist or is not publicly readable.
+   * Resolves a *single page* of the list, never the whole list: implementations
+   * must request only `page` upstream and report the list-wide `totalPages` and
+   * `totalResults` from the upstream response.
+   *
+   * Returns `null` when the list does not exist or is not publicly readable.
+   * Throws when the upstream request fails or answers with a payload that does
+   * not match the documented shape, so that callers can fall back to a stale
+   * copy instead of caching garbage.
    */
-  fetchList(
+  fetchListPage(
     listId: string,
-    options?: { language?: string }
-  ): Promise<MediaList | null>;
+    options: { page: number; language?: string }
+  ): Promise<MediaListPage | null>;
 }
 
 /** A page of a media list, shaped for consumption by `MediaSlider`. */
@@ -66,6 +81,11 @@ export interface MediaListResponse {
     listId: string;
     name?: string;
     description?: string;
+    /**
+     * Set when the list itself could not be read (deleted, or no longer
+     * public). Distinguishes that case from a list that simply has no entries.
+     */
+    unavailable?: boolean;
   };
   results: (MovieResult | TvResult)[];
 }

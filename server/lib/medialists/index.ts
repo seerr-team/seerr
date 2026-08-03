@@ -4,8 +4,8 @@ import type { User } from '@server/entity/User';
 import cacheManager from '@server/lib/cache';
 import { TmdbListProvider } from '@server/lib/medialists/providers/tmdb';
 import type {
-  HydratedMediaList,
   HydratedMediaListItem,
+  HydratedMediaListPage,
   MediaListItem,
   MediaListProvider,
   MediaListResponse,
@@ -18,14 +18,21 @@ import {
   mapTvResult,
 } from '@server/models/Search';
 
-/** Serve the cached list without refetching for this long. */
+/** Serve the cached page without refetching for this long. */
 const FRESH_TTL_MS = 6 * 60 * 60 * 1000;
-
-/** Number of items returned per page, matching TMDB's discover endpoints. */
-export const MEDIA_LIST_PAGE_SIZE = 20;
 
 /** How many missing TMDB payloads we resolve concurrently during hydration. */
 const HYDRATION_CONCURRENCY = 10;
+
+/**
+ * Upper bound on the number of cached list pages. The cache is keyed partly by
+ * request-controlled values (list id, page), so it needs a ceiling; the oldest
+ * entries are dropped first.
+ */
+const MAX_CACHE_ENTRIES = 500;
+
+/** Well-formed BCP-47-ish tags, which is all TMDB accepts. */
+const LANGUAGE_REGEX = /^([a-z]{2,3})(?:-([a-z]{2}))?$/i;
 
 const providers: Record<string, MediaListProvider> = {
   tmdb: new TmdbListProvider(),
@@ -35,21 +42,39 @@ export const getMediaListProvider = (
   providerId: string
 ): MediaListProvider | undefined => providers[providerId];
 
+/**
+ * Reduces a locale to a canonical form so that the cache key can only ever take
+ * one of a small number of values. Anything unrecognised collapses to the empty
+ * string, which lets the TMDB client fall back to its configured locale.
+ */
+export const normalizeMediaListLanguage = (language?: string): string => {
+  const match = LANGUAGE_REGEX.exec((language ?? '').trim());
+
+  if (!match) {
+    return '';
+  }
+
+  return match[2]
+    ? `${match[1].toLowerCase()}-${match[2].toUpperCase()}`
+    : match[1].toLowerCase();
+};
+
 export const getMediaListCacheKey = (
   providerId: string,
   listId: string,
-  language?: string
-): string => `${providerId}:${listId}:${language ?? ''}`;
+  language: string,
+  page: number
+): string => `${providerId}:${listId}:${language}:${page}`;
 
-interface CachedMediaList {
+interface CachedMediaListPage {
   /** `null` records a list that is missing or private, so we stop hammering. */
-  list: HydratedMediaList | null;
+  page: HydratedMediaListPage | null;
   fetchedAt: number;
   /** Set once we have logged the unavailability, to keep the log to one line. */
   loggedUnavailable?: boolean;
 }
 
-const inFlight = new Map<string, Promise<CachedMediaList>>();
+const inFlight = new Map<string, Promise<CachedMediaListPage>>();
 
 /**
  * Fills in the TMDB payload for any item a provider could only resolve to an
@@ -121,34 +146,64 @@ const hydrateItems = async (
   }, []);
 };
 
+/**
+ * Keeps the cache under `MAX_CACHE_ENTRIES` by dropping the least recently
+ * fetched pages, so that a burst of distinct list/page combinations cannot grow
+ * it without bound.
+ */
+const evictOverflow = (reservedKey: string): void => {
+  const cache = cacheManager.getCache('medialist').data;
+  const keys = cache.keys().filter((key) => key !== reservedKey);
+
+  const overflow = keys.length - (MAX_CACHE_ENTRIES - 1);
+
+  if (overflow <= 0) {
+    return;
+  }
+
+  keys
+    .map((key) => ({
+      key,
+      fetchedAt: cache.get<CachedMediaListPage>(key)?.fetchedAt ?? 0,
+    }))
+    .sort((a, b) => a.fetchedAt - b.fetchedAt)
+    .slice(0, overflow)
+    .forEach(({ key }) => cache.del(key));
+};
+
 const fetchAndCache = async (
   provider: MediaListProvider,
   listId: string,
-  language: string | undefined,
+  page: number,
+  language: string,
   cacheKey: string,
-  stale: CachedMediaList | undefined
-): Promise<CachedMediaList> => {
+  stale: CachedMediaListPage | undefined
+): Promise<CachedMediaListPage> => {
   const cache = cacheManager.getCache('medialist').data;
 
   try {
-    const list = await provider.fetchList(listId, { language });
+    const listPage = await provider.fetchListPage(listId, {
+      page,
+      language: language || undefined,
+    });
 
-    const entry: CachedMediaList = {
-      list: list
-        ? { ...list, items: await hydrateItems(list.items, language) }
+    const entry: CachedMediaListPage = {
+      page: listPage
+        ? { ...listPage, items: await hydrateItems(listPage.items, language) }
         : null,
       fetchedAt: Date.now(),
       loggedUnavailable: stale?.loggedUnavailable,
     };
 
-    if (!list && !entry.loggedUnavailable) {
+    if (!listPage && !entry.loggedUnavailable) {
       logger.warn(
-        'Media list is unavailable; it may have been deleted or made private. The slider will render empty.',
+        'Media list is unavailable; it may have been deleted or made private. The slider will be hidden.',
         { label: 'Media List', provider: provider.id, listId }
       );
       entry.loggedUnavailable = true;
     }
 
+    evictOverflow(cacheKey);
     cache.set(cacheKey, entry);
     return entry;
   } catch (e) {
@@ -158,6 +213,7 @@ const fetchAndCache = async (
         label: 'Media List',
         provider: provider.id,
         listId,
+        page,
         errorMessage: e.message,
       });
       return stale;
@@ -167,28 +223,30 @@ const fetchAndCache = async (
   }
 };
 
-const getMediaList = async (
+const getCachedListPage = async (
   provider: MediaListProvider,
   listId: string,
-  language?: string
-): Promise<HydratedMediaList | null> => {
-  const cacheKey = getMediaListCacheKey(provider.id, listId, language);
+  page: number,
+  language: string
+): Promise<HydratedMediaListPage | null> => {
+  const cacheKey = getMediaListCacheKey(provider.id, listId, language, page);
   const cache = cacheManager.getCache('medialist').data;
-  const cached = cache.get<CachedMediaList>(cacheKey);
+  const cached = cache.get<CachedMediaListPage>(cacheKey);
 
   if (cached && Date.now() - cached.fetchedAt < FRESH_TTL_MS) {
-    return cached.list;
+    return cached.page;
   }
 
-  // Single-flight: concurrent requests for the same list share one fetch.
+  // Single-flight: concurrent requests for the same page share one fetch.
   const existing = inFlight.get(cacheKey);
   if (existing) {
-    return (await existing).list;
+    return (await existing).page;
   }
 
   const pending = fetchAndCache(
     provider,
     listId,
+    page,
     language,
     cacheKey,
     cached
@@ -198,15 +256,16 @@ const getMediaList = async (
 
   inFlight.set(cacheKey, pending);
 
-  return (await pending).list;
+  return (await pending).page;
 };
 
 /**
  * Resolves a single page of a provider list, mapped into the same shape the
  * discover endpoints return so that `MediaSlider` can consume it directly.
  *
- * The list itself is cached per provider/list/language; the local availability
- * of each title is resolved per request because it depends on the user.
+ * Only the requested page is fetched from, and cached for, the provider; the
+ * local availability of each title is resolved per request because it depends
+ * on the user.
  */
 export const getMediaListPage = async ({
   provider,
@@ -221,32 +280,35 @@ export const getMediaListPage = async ({
   language?: string;
   user?: User;
 }): Promise<MediaListResponse> => {
-  const list = await getMediaList(provider, listId, language);
-  const items = list?.items ?? [];
-
-  const currentPage = Math.max(1, page);
-  const offset = (currentPage - 1) * MEDIA_LIST_PAGE_SIZE;
-  const pageItems = items.slice(offset, offset + MEDIA_LIST_PAGE_SIZE);
+  const normalizedLanguage = normalizeMediaListLanguage(language);
+  const listPage = await getCachedListPage(
+    provider,
+    listId,
+    page,
+    normalizedLanguage
+  );
+  const items = listPage?.items ?? [];
 
   const media = await Media.getRelatedMedia(
     user,
-    pageItems.map((item) => ({
+    items.map((item) => ({
       tmdbId: item.tmdbId,
       mediaType: item.mediaType,
     }))
   );
 
   return {
-    page: currentPage,
-    totalPages: Math.max(1, Math.ceil(items.length / MEDIA_LIST_PAGE_SIZE)),
-    totalResults: items.length,
+    page: listPage?.page ?? page,
+    totalPages: Math.max(1, listPage?.totalPages ?? 1),
+    totalResults: listPage?.totalResults ?? 0,
     list: {
       providerId: provider.id,
       listId,
-      name: list?.name,
-      description: list?.description,
+      name: listPage?.name,
+      description: listPage?.description,
+      ...(listPage ? {} : { unavailable: true }),
     },
-    results: pageItems.map((item) => {
+    results: items.map((item) => {
       const relatedMedia = media.find(
         (m) => m.tmdbId === item.tmdbId && m.mediaType === item.mediaType
       );
