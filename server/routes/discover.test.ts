@@ -8,7 +8,13 @@ import { MediaStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import cacheManager from '@server/lib/cache';
-import { getMediaListPage, getMediaListProvider } from '@server/lib/medialists';
+import {
+  MAX_MEDIA_LIST_CACHE_ENTRIES,
+  getMediaListCacheKey,
+  getMediaListPage,
+  getMediaListProvider,
+  normalizeMediaListLanguage,
+} from '@server/lib/medialists';
 import type { MediaListProvider } from '@server/lib/medialists/types';
 import { setupTestDb } from '@server/test/db';
 import type { Express } from 'express';
@@ -206,6 +212,27 @@ describe('GET /discover/list/:listId', () => {
         ['movie', 603],
       ]
     );
+  });
+
+  it('reads a classic v3 list whose items carry no media_type', async () => {
+    const movieWithoutMediaType: Record<string, unknown> = { ...MOVIE_ITEM };
+    delete movieWithoutMediaType.media_type;
+
+    getListMock.mockImplementation(async () =>
+      listResponse({
+        item_count: 1,
+        total_results: 1,
+        items: [movieWithoutMediaType],
+      } as unknown as Partial<TmdbListResponse>)
+    );
+
+    const agent = await loginAsAdmin();
+    const res = await agent.get(`/discover/list/${LIST_ID}`);
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.results.length, 1);
+    assert.strictEqual(res.body.results[0].mediaType, 'movie');
+    assert.strictEqual(res.body.results[0].id, 603);
   });
 
   it('attaches local media info to results', async () => {
@@ -494,6 +521,110 @@ describe('media list caching', () => {
     // One shared refresh, and every caller gets the stale copy.
     assert.strictEqual(getListMock.callCount(), 2);
     results.forEach((result) => assert.strictEqual(result.totalResults, 2));
+  });
+});
+
+describe('media list cache bounds', () => {
+  it('canonicalises the language before it reaches the cache key', () => {
+    for (const [input, expected] of [
+      ['en', 'en'],
+      ['EN', 'en'],
+      ['  en  ', 'en'],
+      ['fil', 'fil'],
+      ['en-us', 'en-US'],
+      ['EN-US', 'en-US'],
+      ['pt-BR', 'pt-BR'],
+    ] as [string, string][]) {
+      assert.strictEqual(
+        normalizeMediaListLanguage(input),
+        expected,
+        `expected "${input}" to normalize to "${expected}"`
+      );
+    }
+
+    // Anything unrecognised collapses to one key rather than minting its own.
+    for (const junk of [
+      undefined,
+      '',
+      'not-a-locale',
+      '../../etc',
+      'en_US',
+      'en-USA',
+      'e'.repeat(200),
+    ]) {
+      assert.strictEqual(
+        normalizeMediaListLanguage(junk),
+        '',
+        `expected "${junk}" to normalize to ""`
+      );
+    }
+  });
+
+  it('gives locales that differ only in case or padding one cache entry', async () => {
+    const provider = tmdbProvider();
+
+    for (const language of ['en', 'EN', '  en  ']) {
+      await getMediaListPage({ provider, listId: LIST_ID, language });
+    }
+
+    assert.strictEqual(getListMock.callCount(), 1);
+    assert.deepStrictEqual(cachedListKeys(), [
+      getMediaListCacheKey('tmdb', LIST_ID, 'en', 1),
+    ]);
+
+    // A genuinely different locale is a different list, and an unusable one
+    // falls back to the single empty-language key.
+    await getMediaListPage({ provider, listId: LIST_ID, language: 'en-us' });
+    await getMediaListPage({ provider, listId: LIST_ID, language: 'nonsense' });
+    await getMediaListPage({ provider, listId: LIST_ID, language: '!!!' });
+
+    assert.strictEqual(getListMock.callCount(), 3);
+    assert.deepStrictEqual(
+      cachedListKeys().sort(),
+      [
+        getMediaListCacheKey('tmdb', LIST_ID, '', 1),
+        getMediaListCacheKey('tmdb', LIST_ID, 'en', 1),
+        getMediaListCacheKey('tmdb', LIST_ID, 'en-US', 1),
+      ].sort()
+    );
+  });
+
+  it('caps the cache and evicts the least recently fetched page', async () => {
+    const provider = tmdbProvider();
+    getListMock.mockImplementation(async ({ page }: { page: number }) =>
+      listResponse({ page, total_pages: 100000, total_results: 2000000 })
+    );
+
+    for (let page = 1; page <= MAX_MEDIA_LIST_CACHE_ENTRIES; page++) {
+      await getMediaListPage({ provider, listId: LIST_ID, page });
+    }
+
+    const oldestKey = getMediaListCacheKey('tmdb', LIST_ID, '', 1);
+    assert.strictEqual(
+      cachedListKeys().length,
+      MAX_MEDIA_LIST_CACHE_ENTRIES,
+      'the cache should have filled to exactly the cap'
+    );
+    assert.ok(cachedListKeys().includes(oldestKey));
+
+    const overflowPage = MAX_MEDIA_LIST_CACHE_ENTRIES + 1;
+    await getMediaListPage({ provider, listId: LIST_ID, page: overflowPage });
+
+    assert.strictEqual(
+      cachedListKeys().length,
+      MAX_MEDIA_LIST_CACHE_ENTRIES,
+      'the cap should hold once it is exceeded'
+    );
+    assert.ok(
+      !cachedListKeys().includes(oldestKey),
+      'the least recently fetched page should have been evicted'
+    );
+    assert.ok(
+      cachedListKeys().includes(
+        getMediaListCacheKey('tmdb', LIST_ID, '', overflowPage)
+      ),
+      'the page that overflowed the cache should be cached'
+    );
   });
 });
 

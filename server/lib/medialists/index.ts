@@ -29,7 +29,7 @@ const HYDRATION_CONCURRENCY = 10;
  * request-controlled values (list id, page), so it needs a ceiling; the oldest
  * entries are dropped first.
  */
-const MAX_CACHE_ENTRIES = 500;
+export const MAX_MEDIA_LIST_CACHE_ENTRIES = 500;
 
 /** Well-formed BCP-47-ish tags, which is all TMDB accepts. */
 const LANGUAGE_REGEX = /^([a-z]{2,3})(?:-([a-z]{2}))?$/i;
@@ -147,7 +147,7 @@ const hydrateItems = async (
 };
 
 /**
- * Keeps the cache under `MAX_CACHE_ENTRIES` by dropping the least recently
+ * Keeps the cache under `MAX_MEDIA_LIST_CACHE_ENTRIES` by dropping the least recently
  * fetched pages, so that a burst of distinct list/page combinations cannot grow
  * it without bound.
  */
@@ -155,7 +155,7 @@ const evictOverflow = (reservedKey: string): void => {
   const cache = cacheManager.getCache('medialist').data;
   const keys = cache.keys().filter((key) => key !== reservedKey);
 
-  const overflow = keys.length - (MAX_CACHE_ENTRIES - 1);
+  const overflow = keys.length - (MAX_MEDIA_LIST_CACHE_ENTRIES - 1);
 
   if (overflow <= 0) {
     return;
