@@ -1,10 +1,16 @@
 import TitleCard from '@app/components/TitleCard';
 import globalMessages from '@app/i18n/globalMessages';
+import defineMessages from '@app/utils/defineMessages';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useSpring } from '@react-spring/web';
 import { debounce } from 'lodash';
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { useIntl } from 'react-intl';
+
+const messages = defineMessages('components.Slider', {
+  previous: 'Scroll backward',
+  next: 'Scroll forward',
+});
 
 interface SliderProps {
   sliderKey: string;
@@ -153,6 +159,7 @@ const Slider = ({
           onClick={() => slide(Direction.LEFT)}
           disabled={scrollPos.isStart}
           type="button"
+          aria-label={intl.formatMessage(messages.previous)}
         >
           <ChevronLeftIcon className="h-6 w-6" />
         </button>
@@ -163,6 +170,7 @@ const Slider = ({
           onClick={() => slide(Direction.RIGHT)}
           disabled={scrollPos.isEnd}
           type="button"
+          aria-label={intl.formatMessage(messages.next)}
         >
           <ChevronRightIcon className="h-6 w-6" />
         </button>

@@ -1345,6 +1345,8 @@
   "components.Setup.signinWithPlex": "Enter your Plex details",
   "components.Setup.subtitle": "Get started by choosing your media server",
   "components.Setup.welcome": "Welcome to Seerr",
+  "components.Slider.next": "Scroll forward",
+  "components.Slider.previous": "Scroll backward",
   "components.StatusBadge.managemedia": "Manage {mediaType}",
   "components.StatusBadge.openinarr": "Open in {arr}",
   "components.StatusBadge.playonplex": "Play on {mediaServerName}",
