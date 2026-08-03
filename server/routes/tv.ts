@@ -58,8 +58,12 @@ tvRoutes.get('/:id', async (req, res, next) => {
           language: fallbackLanguage,
         });
         data.overview = tvFallback.overview;
-        data.name = tvFallback.name;
-        data.tagline = tvFallback.tagline;
+        if (data.name === data.originalName) {
+          data.name = tvFallback.name;
+        }
+        if (!data.tagline) {
+          data.tagline = tvFallback.tagline;
+        }
       }
     }
 

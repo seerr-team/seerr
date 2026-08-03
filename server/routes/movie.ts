@@ -54,8 +54,12 @@ movieRoutes.get('/:id', async (req, res, next) => {
           language: fallbackLanguage,
         });
         data.overview = movieFallback.overview;
-        data.title = movieFallback.title;
-        data.tagline = movieFallback.tagline;
+        if (data.title === data.originalTitle) {
+          data.title = movieFallback.title;
+        }
+        if (!data.tagline) {
+          data.tagline = movieFallback.tagline;
+        }
       }
     }
 
