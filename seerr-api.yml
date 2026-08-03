@@ -2,6 +2,9 @@ openapi: '3.0.2'
 info:
   title: 'Seerr API'
   version: '1.0.0'
+  license:
+    name: MIT
+    url: https://opensource.org/license/mit
   description: |
     This is the documentation for the Seerr API backend.
 
@@ -54,6 +57,11 @@ components:
         tmdbId:
           type: number
           example: 1
+        mediaType:
+          type: string
+          enum:
+            - movie
+            - tv
         title:
           type: string
         media:
@@ -61,6 +69,27 @@ components:
         userId:
           type: number
           example: 1
+      required:
+        - tmdbId
+        - mediaType
+    WatchlistCreate:
+      type: object
+      properties:
+        tmdbId:
+          type: number
+          example: 1
+        mediaType:
+          type: string
+          enum:
+            - movie
+            - tv
+        ratingKey:
+          type: string
+        title:
+          type: string
+      required:
+        - tmdbId
+        - mediaType
     Watchlist:
       type: object
       properties:
@@ -73,7 +102,7 @@ components:
           example: 1
         ratingKey:
           type: string
-        type:
+        mediaType:
           type: string
         title:
           type: string
@@ -89,6 +118,13 @@ components:
           readOnly: true
         requestedBy:
           $ref: '#/components/schemas/User'
+    UserUpdatePayload:
+      type: object
+      properties:
+        username:
+          type: string
+        permissions:
+          type: number
     User:
       type: object
       properties:
@@ -129,15 +165,63 @@ components:
           type: string
           example: '2020-09-02T05:02:23.000Z'
           readOnly: true
+        settings:
+          allOf:
+            - $ref: '#/components/schemas/UserSettings'
         requestCount:
           type: number
           example: 5
           readOnly: true
+        displayName:
+          type: string
+          readOnly: true
+        jellyfinUsername:
+          type: string
+          nullable: true
+          readOnly: true
+        jellyfinUserId:
+          type: string
+          nullable: true
+          readOnly: true
+        plexId:
+          type: integer
+          nullable: true
+          readOnly: true
+        warnings:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        recoveryLinkExpirationDate:
+          type: string
+          nullable: true
+          readOnly: true
+        avatarETag:
+          type: string
+          nullable: true
+          readOnly: true
+        avatarVersion:
+          type: string
+          nullable: true
+          readOnly: true
+        movieQuotaLimit:
+          type: number
+          nullable: true
+          readOnly: true
+        movieQuotaDays:
+          type: number
+          nullable: true
+          readOnly: true
+        tvQuotaLimit:
+          type: number
+          nullable: true
+          readOnly: true
+        tvQuotaDays:
+          type: number
+          nullable: true
+          readOnly: true
       required:
         - id
-        - email
-        - createdAt
-        - updatedAt
     UserSettings:
       type: object
       properties:
@@ -694,15 +778,6 @@ components:
         - is4k
         - enableSeasonFolders
         - isDefault
-    ServarrTag:
-      type: object
-      properties:
-        id:
-          type: number
-          example: 1
-        label:
-          type: string
-          example: A Label
     PublicSettings:
       type: object
       required:
@@ -1274,6 +1349,32 @@ components:
           type: boolean
           example: false
           description: If true, this request will not count against the user's quota. Requires MANAGE_REQUESTS permission.
+        type:
+          type: string
+          example: 'movie'
+          description: 'Type of the request (movie or tv)'
+          readOnly: true
+        languageProfileId:
+          type: number
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: number
+        isAutoRequest:
+          type: boolean
+        seasons:
+          type: array
+          items:
+            type: object
+        seasonCount:
+          type: number
+        profileName:
+          type: string
+          nullable: true
+        canRemove:
+          type: boolean
+      additionalProperties: true
       required:
         - id
         - status
@@ -1290,10 +1391,19 @@ components:
           type: number
           readOnly: true
           nullable: true
+        imdbId:
+          type: string
+          nullable: true
+          readOnly: true
+        mediaType:
+          type: string
+          readOnly: true
         status:
           type: number
           example: 0
           description: Availability of the media. 1 = `UNKNOWN`, 2 = `PENDING`, 3 = `PROCESSING`, 4 = `PARTIALLY_AVAILABLE`, 5 = `AVAILABLE`, 6 = `DELETED`
+        status4k:
+          type: number
         requests:
           type: array
           readOnly: true
@@ -1307,6 +1417,57 @@ components:
           type: string
           example: '2020-09-12T10:00:27.000Z'
           readOnly: true
+        lastSeasonChange:
+          type: string
+          nullable: true
+        mediaAddedAt:
+          type: string
+          nullable: true
+        serviceId:
+          type: number
+          nullable: true
+        serviceId4k:
+          type: number
+          nullable: true
+        externalServiceId:
+          type: number
+          nullable: true
+        externalServiceId4k:
+          type: number
+          nullable: true
+        externalServiceSlug:
+          type: string
+          nullable: true
+        externalServiceSlug4k:
+          type: string
+          nullable: true
+        ratingKey:
+          type: string
+          nullable: true
+        ratingKey4k:
+          type: string
+          nullable: true
+        jellyfinMediaId:
+          type: string
+          nullable: true
+        jellyfinMediaId4k:
+          type: string
+          nullable: true
+        serviceUrl:
+          type: string
+          nullable: true
+        downloadStatus:
+          type: array
+          items:
+            type: object
+        downloadStatus4k:
+          type: array
+          items:
+            type: object
+        mediaUrl:
+          type: string
+          nullable: true
+      additionalProperties: true
     Cast:
       type: object
       properties:
@@ -1639,8 +1800,12 @@ components:
           example: 1
         name:
           type: string
+        birthday:
+          type: string
+          nullable: true
         deathday:
           type: string
+          nullable: true
         knownForDepartment:
           type: string
         alsoKnownAs:
@@ -1648,21 +1813,25 @@ components:
           items:
             type: string
         gender:
-          type: string
+          type: number
         biography:
           type: string
         popularity:
-          type: string
+          type: number
         placeOfBirth:
           type: string
+          nullable: true
         profilePath:
           type: string
+          nullable: true
         adult:
           type: boolean
         imdbId:
           type: string
+          nullable: true
         homepage:
           type: string
+          nullable: true
     CreditCast:
       type: object
       properties:
@@ -2010,21 +2179,20 @@ components:
         webpush:
           type: number
     WatchProviders:
-      type: array
-      items:
-        type: object
-        properties:
-          iso_3166_1:
-            type: string
-          link:
-            type: string
-          buy:
-            type: array
-            items:
-              $ref: '#/components/schemas/WatchProviderDetails'
-          flatrate:
-            items:
-              $ref: '#/components/schemas/WatchProviderDetails'
+      type: object
+      properties:
+        iso_3166_1:
+          type: string
+        link:
+          type: string
+        buy:
+          type: array
+          items:
+            $ref: '#/components/schemas/WatchProviderDetails'
+        flatrate:
+          type: array
+          items:
+            $ref: '#/components/schemas/WatchProviderDetails'
     WatchProviderDetails:
       type: object
       properties:
@@ -2040,6 +2208,9 @@ components:
       type: object
       properties:
         id:
+          type: number
+          example: 1
+        status:
           type: number
           example: 1
         issueType:
@@ -2104,7 +2275,71 @@ components:
       type: object
       properties:
         id:
+          type: number
+          example: 1
+        users:
           type: string
+          nullable: true
+        genre:
+          type: string
+          nullable: true
+        language:
+          type: string
+          nullable: true
+        keywords:
+          type: string
+          nullable: true
+        profileId:
+          type: number
+          nullable: true
+        rootFolder:
+          type: string
+          nullable: true
+        tags:
+          type: string
+          nullable: true
+        radarrServiceId:
+          type: number
+          nullable: true
+        sonarrServiceId:
+          type: number
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    OverrideRulePayload:
+      type: object
+      properties:
+        users:
+          type: string
+          nullable: true
+        genre:
+          type: string
+          nullable: true
+        language:
+          type: string
+          nullable: true
+        keywords:
+          type: string
+          nullable: true
+        profileId:
+          type: number
+          nullable: true
+        rootFolder:
+          type: string
+          nullable: true
+        tags:
+          type: string
+          nullable: true
+        radarrServiceId:
+          type: number
+          nullable: true
+        sonarrServiceId:
+          type: number
+          nullable: true
     Certification:
       type: object
       properties:
@@ -2153,6 +2388,7 @@ components:
 paths:
   /status:
     get:
+      operationId: getStatus
       summary: Get Seerr status
       description: Returns the current Seerr status in a JSON object. updateAvailable and commitsBehind are omitted when checkUpdateAvailable is false.
       security: []
@@ -2167,6 +2403,8 @@ paths:
           schema:
             type: boolean
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned status
           content:
@@ -2187,12 +2425,15 @@ paths:
                     type: boolean
   /status/appdata:
     get:
+      operationId: getStatusAppdata
       summary: Get application data volume status
       description: For Docker installs, returns whether or not the volume mount was configured properly. Always returns true for non-Docker installs.
       security: []
       tags:
         - public
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Application data volume status and path
           content:
@@ -2211,11 +2452,14 @@ paths:
                     example: true
   /settings/main:
     get:
+      operationId: getSettingsMain
       summary: Get main settings
       description: Retrieves all main settings in a JSON object.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: OK
           content:
@@ -2223,6 +2467,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/MainSettings'
     post:
+      operationId: postSettingsMain
       summary: Update main settings
       description: Updates main settings with the provided values.
       tags:
@@ -2234,6 +2479,8 @@ paths:
             schema:
               $ref: '#/components/schemas/MainSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were sucessfully updated'
           content:
@@ -2242,11 +2489,14 @@ paths:
                 $ref: '#/components/schemas/MainSettings'
   /settings/network:
     get:
+      operationId: getSettingsNetwork
       summary: Get network settings
       description: Retrieves all network settings in a JSON object.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: OK
           content:
@@ -2254,6 +2504,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/MainSettings'
     post:
+      operationId: postSettingsNetwork
       summary: Update network settings
       description: Updates network settings with the provided values.
       tags:
@@ -2265,6 +2516,8 @@ paths:
             schema:
               $ref: '#/components/schemas/NetworkSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were sucessfully updated'
           content:
@@ -2273,11 +2526,14 @@ paths:
                 $ref: '#/components/schemas/NetworkSettings'
   /settings/main/regenerate:
     post:
+      operationId: postSettingsMainRegenerate
       summary: Get main settings with newly-generated API key
       description: Returns main settings in a JSON object, using the new API key.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: OK
           content:
@@ -2286,11 +2542,14 @@ paths:
                 $ref: '#/components/schemas/MainSettings'
   /settings/jellyfin:
     get:
+      operationId: getSettingsJellyfin
       summary: Get Jellyfin settings
       description: Retrieves current Jellyfin settings.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: OK
           content:
@@ -2298,6 +2557,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/JellyfinSettings'
     post:
+      operationId: postSettingsJellyfin
       summary: Update Jellyfin settings
       description: Updates Jellyfin settings with the provided values.
       tags:
@@ -2309,6 +2569,8 @@ paths:
             schema:
               $ref: '#/components/schemas/JellyfinSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were successfully updated'
           content:
@@ -2317,6 +2579,7 @@ paths:
                 $ref: '#/components/schemas/JellyfinSettings'
   /settings/jellyfin/library:
     get:
+      operationId: getSettingsJellyfinLibrary
       summary: Get Jellyfin libraries
       description: Returns a list of Jellyfin libraries in a JSON array.
       tags:
@@ -2337,6 +2600,8 @@ paths:
             type: string
             nullable: true
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Jellyfin libraries returned'
           content:
@@ -2347,12 +2612,15 @@ paths:
                   $ref: '#/components/schemas/JellyfinLibrary'
   /settings/jellyfin/users:
     get:
+      operationId: getSettingsJellyfinUsers
       summary: Get Jellyfin Users
       description: Returns a list of Jellyfin Users in a JSON array.
       tags:
         - settings
         - users
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Jellyfin users returned
           content:
@@ -2372,11 +2640,14 @@ paths:
                       type: string
   /settings/jellyfin/sync:
     get:
+      operationId: getSettingsJellyfinSync
       summary: Get status of full Jellyfin library sync
       description: Returns sync progress in a JSON array.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Status of Jellyfin sync
           content:
@@ -2400,6 +2671,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/JellyfinLibrary'
     post:
+      operationId: postSettingsJellyfinSync
       summary: Start full Jellyfin library sync
       description: Runs a full Jellyfin library sync and returns the progress in a JSON array.
       tags:
@@ -2417,6 +2689,8 @@ paths:
                   type: boolean
                   example: false
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Status of Jellyfin sync
           content:
@@ -2441,11 +2715,14 @@ paths:
                       $ref: '#/components/schemas/JellyfinLibrary'
   /settings/plex:
     get:
+      operationId: getSettingsPlex
       summary: Get Plex settings
       description: Retrieves current Plex settings.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: OK
           content:
@@ -2453,6 +2730,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PlexSettings'
     post:
+      operationId: postSettingsPlex
       summary: Update Plex settings
       description: Updates Plex settings with the provided values.
       tags:
@@ -2464,6 +2742,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PlexSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were successfully updated'
           content:
@@ -2472,6 +2752,7 @@ paths:
                 $ref: '#/components/schemas/PlexSettings'
   /settings/plex/library:
     get:
+      operationId: getSettingsPlexLibrary
       summary: Get Plex libraries
       description: Returns a list of Plex libraries in a JSON array.
       tags:
@@ -2492,6 +2773,8 @@ paths:
             type: string
             nullable: true
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Plex libraries returned'
           content:
@@ -2502,11 +2785,14 @@ paths:
                   $ref: '#/components/schemas/PlexLibrary'
   /settings/plex/sync:
     get:
+      operationId: getSettingsPlexSync
       summary: Get status of full Plex library scan
       description: Returns scan progress in a JSON array.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Status of Plex scan
           content:
@@ -2530,6 +2816,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/PlexLibrary'
     post:
+      operationId: postSettingsPlexSync
       summary: Start full Plex library scan
       description: Runs a full Plex library scan and returns the progress in a JSON array.
       tags:
@@ -2547,6 +2834,8 @@ paths:
                   type: boolean
                   example: false
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Status of Plex scan
           content:
@@ -2571,11 +2860,14 @@ paths:
                       $ref: '#/components/schemas/PlexLibrary'
   /settings/plex/devices/servers:
     get:
+      operationId: getSettingsPlexDevicesServers
       summary: Gets the user's available Plex servers
       description: Returns a list of available Plex servers and their connectivity state
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: OK
           content:
@@ -2586,6 +2878,7 @@ paths:
                   $ref: '#/components/schemas/PlexDevice'
   /settings/plex/users:
     get:
+      operationId: getSettingsPlexUsers
       summary: Get Plex users
       description: |
         Returns a list of Plex users in a JSON array.
@@ -2595,6 +2888,8 @@ paths:
         - settings
         - users
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Plex users
           content:
@@ -2616,11 +2911,14 @@ paths:
                       type: string
   /settings/metadatas:
     get:
+      operationId: getSettingsMetadatas
       summary: Get Metadata settings
       description: Retrieves current Metadata settings.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: OK
           content:
@@ -2628,6 +2926,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/MetadataSettings'
     put:
+      operationId: putSettingsMetadatas
       summary: Update Metadata settings
       description: Updates Metadata settings with the provided values.
       tags:
@@ -2639,6 +2938,8 @@ paths:
             schema:
               $ref: '#/components/schemas/MetadataSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were successfully updated'
           content:
@@ -2647,6 +2948,7 @@ paths:
                 $ref: '#/components/schemas/MetadataSettings'
   /settings/metadatas/test:
     post:
+      operationId: postSettingsMetadatasTest
       summary: Test Provider configuration
       description: Tests if the TVDB configuration is valid. Returns a list of available languages on success.
       tags:
@@ -2665,6 +2967,8 @@ paths:
                   type: boolean
                   example: true
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Succesfully connected to TVDB
           content:
@@ -2677,11 +2981,14 @@ paths:
                     example: 'Successfully connected to TVDB'
   /settings/tautulli:
     get:
+      operationId: getSettingsTautulli
       summary: Get Tautulli settings
       description: Retrieves current Tautulli settings.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: OK
           content:
@@ -2689,6 +2996,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/TautulliSettings'
     post:
+      operationId: postSettingsTautulli
       summary: Update Tautulli settings
       description: Updates Tautulli settings with the provided values.
       tags:
@@ -2700,6 +3008,8 @@ paths:
             schema:
               $ref: '#/components/schemas/TautulliSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were successfully updated'
           content:
@@ -2708,11 +3018,14 @@ paths:
                 $ref: '#/components/schemas/TautulliSettings'
   /settings/radarr:
     get:
+      operationId: getSettingsRadarr
       summary: Get Radarr settings
       description: Returns all Radarr settings in a JSON array.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were returned'
           content:
@@ -2722,6 +3035,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/RadarrSettings'
     post:
+      operationId: postSettingsRadarr
       summary: Create Radarr instance
       description: Creates a new Radarr instance from the request body.
       tags:
@@ -2733,6 +3047,8 @@ paths:
             schema:
               $ref: '#/components/schemas/RadarrSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '201':
           description: 'New Radarr instance created'
           content:
@@ -2741,6 +3057,7 @@ paths:
                 $ref: '#/components/schemas/RadarrSettings'
   /settings/radarr/test:
     post:
+      operationId: postSettingsRadarrTest
       summary: Test Radarr configuration
       description: Tests if the Radarr configuration is valid. Returns profiles and root folders on success.
       tags:
@@ -2772,6 +3089,8 @@ paths:
                 - apiKey
                 - useSsl
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Succesfully connected to Radarr instance
           content:
@@ -2785,6 +3104,7 @@ paths:
                       $ref: '#/components/schemas/ServiceProfile'
   /settings/radarr/{radarrId}:
     put:
+      operationId: putSettingsRadarrByradarrId
       summary: Update Radarr instance
       description: Updates an existing Radarr instance with the provided values.
       tags:
@@ -2803,6 +3123,8 @@ paths:
             schema:
               $ref: '#/components/schemas/RadarrSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Radarr instance updated'
           content:
@@ -2810,6 +3132,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RadarrSettings'
     delete:
+      operationId: deleteSettingsRadarrByradarrId
       summary: Delete Radarr instance
       description: Deletes an existing Radarr instance based on the radarrId parameter.
       tags:
@@ -2822,6 +3145,8 @@ paths:
             type: integer
           description: Radarr instance ID
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Radarr instance updated'
           content:
@@ -2830,6 +3155,7 @@ paths:
                 $ref: '#/components/schemas/RadarrSettings'
   /settings/radarr/{radarrId}/profiles:
     get:
+      operationId: getSettingsRadarrByradarrIdProfiles
       summary: Get available Radarr profiles
       description: Returns a list of profiles available on the Radarr server instance in a JSON array.
       tags:
@@ -2842,6 +3168,8 @@ paths:
             type: integer
           description: Radarr instance ID
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned list of profiles
           content:
@@ -2852,11 +3180,14 @@ paths:
                   $ref: '#/components/schemas/ServiceProfile'
   /settings/sonarr:
     get:
+      operationId: getSettingsSonarr
       summary: Get Sonarr settings
       description: Returns all Sonarr settings in a JSON array.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were returned'
           content:
@@ -2866,6 +3197,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/SonarrSettings'
     post:
+      operationId: postSettingsSonarr
       summary: Create Sonarr instance
       description: Creates a new Sonarr instance from the request body.
       tags:
@@ -2877,6 +3209,8 @@ paths:
             schema:
               $ref: '#/components/schemas/SonarrSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '201':
           description: 'New Sonarr instance created'
           content:
@@ -2885,6 +3219,7 @@ paths:
                 $ref: '#/components/schemas/SonarrSettings'
   /settings/sonarr/test:
     post:
+      operationId: postSettingsSonarrTest
       summary: Test Sonarr configuration
       description: Tests if the Sonarr configuration is valid. Returns profiles and root folders on success.
       tags:
@@ -2916,6 +3251,8 @@ paths:
                 - apiKey
                 - useSsl
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Succesfully connected to Sonarr instance
           content:
@@ -2929,6 +3266,7 @@ paths:
                       $ref: '#/components/schemas/ServiceProfile'
   /settings/sonarr/{sonarrId}:
     put:
+      operationId: putSettingsSonarrBysonarrId
       summary: Update Sonarr instance
       description: Updates an existing Sonarr instance with the provided values.
       tags:
@@ -2947,6 +3285,8 @@ paths:
             schema:
               $ref: '#/components/schemas/SonarrSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Sonarr instance updated'
           content:
@@ -2954,6 +3294,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SonarrSettings'
     delete:
+      operationId: deleteSettingsSonarrBysonarrId
       summary: Delete Sonarr instance
       description: Deletes an existing Sonarr instance based on the sonarrId parameter.
       tags:
@@ -2966,6 +3307,8 @@ paths:
             type: integer
           description: Sonarr instance ID
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Sonarr instance updated'
           content:
@@ -2974,12 +3317,15 @@ paths:
                 $ref: '#/components/schemas/SonarrSettings'
   /settings/public:
     get:
+      operationId: getSettingsPublic
       summary: Get public settings
       security: []
       description: Returns settings that are not protected or sensitive. Mainly used to determine if the application has been configured for the first time.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Public settings returned
           content:
@@ -2988,11 +3334,14 @@ paths:
                 $ref: '#/components/schemas/PublicSettings'
   /settings/initialize:
     post:
+      operationId: postSettingsInitialize
       summary: Initialize application
       description: Sets the app as initialized, allowing the user to navigate to pages other than the setup page.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Public settings returned
           content:
@@ -3001,11 +3350,14 @@ paths:
                 $ref: '#/components/schemas/PublicSettings'
   /settings/jobs:
     get:
+      operationId: getSettingsJobs
       summary: Get scheduled jobs
       description: Returns list of all scheduled jobs and details about their next execution time in a JSON array.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Scheduled jobs returned
           content:
@@ -3016,6 +3368,7 @@ paths:
                   $ref: '#/components/schemas/Job'
   /settings/jobs/{jobId}/run:
     post:
+      operationId: postSettingsJobsByjobIdRun
       summary: Invoke a specific job
       description: Invokes a specific job to run. Will return the new job status in JSON format.
       tags:
@@ -3027,6 +3380,8 @@ paths:
           schema:
             type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Invoked job returned
           content:
@@ -3035,6 +3390,7 @@ paths:
                 $ref: '#/components/schemas/Job'
   /settings/jobs/{jobId}/cancel:
     post:
+      operationId: postSettingsJobsByjobIdCancel
       summary: Cancel a specific job
       description: Cancels a specific job. Will return the new job status in JSON format.
       tags:
@@ -3046,6 +3402,8 @@ paths:
           schema:
             type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Canceled job returned
           content:
@@ -3054,6 +3412,7 @@ paths:
                 $ref: '#/components/schemas/Job'
   /settings/jobs/{jobId}/schedule:
     post:
+      operationId: postSettingsJobsByjobIdSchedule
       summary: Modify job schedule
       description: Re-registers the job with the schedule specified. Will return the job in JSON format.
       tags:
@@ -3075,6 +3434,8 @@ paths:
                   type: string
                   example: '0 */5 * * * *'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Rescheduled job
           content:
@@ -3083,11 +3444,14 @@ paths:
                 $ref: '#/components/schemas/Job'
   /settings/cache:
     get:
+      operationId: getSettingsCache
       summary: Get a list of active caches
       description: Retrieves a list of all active caches and their current stats.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Caches returned
           content:
@@ -3204,6 +3568,7 @@ paths:
                               type: number
   /settings/cache/{cacheId}/flush:
     post:
+      operationId: postSettingsCacheBycacheIdFlush
       summary: Flush a specific cache
       description: Flushes all data from the cache ID provided
       tags:
@@ -3215,10 +3580,13 @@ paths:
           schema:
             type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: 'Flushed cache'
   /settings/cache/dns/{dnsEntry}/flush:
     post:
+      operationId: postSettingsCacheDnsBydnsEntryFlush
       summary: Flush a specific DNS cache entry
       description: Flushes a specific DNS cache entry
       tags:
@@ -3230,10 +3598,13 @@ paths:
           schema:
             type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: 'Flushed dns cache'
   /settings/logs:
     get:
+      operationId: getSettingsLogs
       summary: Returns logs
       description: Returns list of all log items and details
       tags:
@@ -3265,6 +3636,8 @@ paths:
             nullable: true
             example: plex
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Server log returned
           content:
@@ -3288,11 +3661,14 @@ paths:
                       example: '2020-12-15T16:20:00.069Z'
   /settings/notifications/email:
     get:
+      operationId: getSettingsNotificationsEmail
       summary: Get email notification settings
       description: Returns current email notification settings in a JSON object.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned email settings
           content:
@@ -3300,6 +3676,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotificationEmailSettings'
     post:
+      operationId: postSettingsNotificationsEmail
       summary: Update email notification settings
       description: Updates email notification settings with provided values
       tags:
@@ -3311,6 +3688,8 @@ paths:
             schema:
               $ref: '#/components/schemas/NotificationEmailSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were sucessfully updated'
           content:
@@ -3319,6 +3698,7 @@ paths:
                 $ref: '#/components/schemas/NotificationEmailSettings'
   /settings/notifications/email/test:
     post:
+      operationId: postSettingsNotificationsEmailTest
       summary: Test email settings
       description: Sends a test notification to the email agent.
       tags:
@@ -3330,15 +3710,20 @@ paths:
             schema:
               $ref: '#/components/schemas/NotificationEmailSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Test notification attempted
   /settings/notifications/discord:
     get:
+      operationId: getSettingsNotificationsDiscord
       summary: Get Discord notification settings
       description: Returns current Discord notification settings in a JSON object.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned Discord settings
           content:
@@ -3346,6 +3731,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DiscordSettings'
     post:
+      operationId: postSettingsNotificationsDiscord
       summary: Update Discord notification settings
       description: Updates Discord notification settings with the provided values.
       tags:
@@ -3357,6 +3743,8 @@ paths:
             schema:
               $ref: '#/components/schemas/DiscordSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were sucessfully updated'
           content:
@@ -3365,6 +3753,7 @@ paths:
                 $ref: '#/components/schemas/DiscordSettings'
   /settings/notifications/discord/test:
     post:
+      operationId: postSettingsNotificationsDiscordTest
       summary: Test Discord settings
       description: Sends a test notification to the Discord agent.
       tags:
@@ -3376,15 +3765,20 @@ paths:
             schema:
               $ref: '#/components/schemas/DiscordSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Test notification attempted
   /settings/notifications/pushbullet:
     get:
+      operationId: getSettingsNotificationsPushbullet
       summary: Get Pushbullet notification settings
       description: Returns current Pushbullet notification settings in a JSON object.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned Pushbullet settings
           content:
@@ -3392,6 +3786,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PushbulletSettings'
     post:
+      operationId: postSettingsNotificationsPushbullet
       summary: Update Pushbullet notification settings
       description: Update Pushbullet notification settings with the provided values.
       tags:
@@ -3403,6 +3798,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PushbulletSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were sucessfully updated'
           content:
@@ -3411,6 +3808,7 @@ paths:
                 $ref: '#/components/schemas/PushbulletSettings'
   /settings/notifications/pushbullet/test:
     post:
+      operationId: postSettingsNotificationsPushbulletTest
       summary: Test Pushbullet settings
       description: Sends a test notification to the Pushbullet agent.
       tags:
@@ -3422,15 +3820,20 @@ paths:
             schema:
               $ref: '#/components/schemas/PushbulletSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Test notification attempted
   /settings/notifications/pushover:
     get:
+      operationId: getSettingsNotificationsPushover
       summary: Get Pushover notification settings
       description: Returns current Pushover notification settings in a JSON object.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned Pushover settings
           content:
@@ -3438,6 +3841,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PushoverSettings'
     post:
+      operationId: postSettingsNotificationsPushover
       summary: Update Pushover notification settings
       description: Update Pushover notification settings with the provided values.
       tags:
@@ -3449,6 +3853,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PushoverSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were sucessfully updated'
           content:
@@ -3457,6 +3863,7 @@ paths:
                 $ref: '#/components/schemas/PushoverSettings'
   /settings/notifications/pushover/test:
     post:
+      operationId: postSettingsNotificationsPushoverTest
       summary: Test Pushover settings
       description: Sends a test notification to the Pushover agent.
       tags:
@@ -3468,10 +3875,13 @@ paths:
             schema:
               $ref: '#/components/schemas/PushoverSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Test notification attempted
   /settings/notifications/pushover/sounds:
     get:
+      operationId: getSettingsNotificationsPushoverSounds
       summary: Get Pushover sounds
       description: Returns valid Pushover sound options in a JSON array.
       tags:
@@ -3484,6 +3894,8 @@ paths:
             type: string
             nullable: false
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned Pushover settings
           content:
@@ -3499,11 +3911,14 @@ paths:
                       type: string
   /settings/notifications/gotify:
     get:
+      operationId: getSettingsNotificationsGotify
       summary: Get Gotify notification settings
       description: Returns current Gotify notification settings in a JSON object.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned Gotify settings
           content:
@@ -3511,6 +3926,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/GotifySettings'
     post:
+      operationId: postSettingsNotificationsGotify
       summary: Update Gotify notification settings
       description: Update Gotify notification settings with the provided values.
       tags:
@@ -3522,6 +3938,8 @@ paths:
             schema:
               $ref: '#/components/schemas/GotifySettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were sucessfully updated'
           content:
@@ -3530,6 +3948,7 @@ paths:
                 $ref: '#/components/schemas/GotifySettings'
   /settings/notifications/gotify/test:
     post:
+      operationId: postSettingsNotificationsGotifyTest
       summary: Test Gotify settings
       description: Sends a test notification to the Gotify agent.
       tags:
@@ -3541,15 +3960,20 @@ paths:
             schema:
               $ref: '#/components/schemas/GotifySettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Test notification attempted
   /settings/notifications/ntfy:
     get:
+      operationId: getSettingsNotificationsNtfy
       summary: Get ntfy.sh notification settings
       description: Returns current ntfy.sh notification settings in a JSON object.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned ntfy.sh settings
           content:
@@ -3557,6 +3981,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/NtfySettings'
     post:
+      operationId: postSettingsNotificationsNtfy
       summary: Update ntfy.sh notification settings
       description: Update ntfy.sh notification settings with the provided values.
       tags:
@@ -3568,6 +3993,8 @@ paths:
             schema:
               $ref: '#/components/schemas/NtfySettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were sucessfully updated'
           content:
@@ -3576,6 +4003,7 @@ paths:
                 $ref: '#/components/schemas/NtfySettings'
   /settings/notifications/ntfy/test:
     post:
+      operationId: postSettingsNotificationsNtfyTest
       summary: Test ntfy.sh settings
       description: Sends a test notification to the ntfy.sh agent.
       tags:
@@ -3587,15 +4015,20 @@ paths:
             schema:
               $ref: '#/components/schemas/NtfySettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Test notification attempted
   /settings/notifications/slack:
     get:
+      operationId: getSettingsNotificationsSlack
       summary: Get Slack notification settings
       description: Returns current Slack notification settings in a JSON object.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned slack settings
           content:
@@ -3603,6 +4036,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SlackSettings'
     post:
+      operationId: postSettingsNotificationsSlack
       summary: Update Slack notification settings
       description: Updates Slack notification settings with the provided values.
       tags:
@@ -3614,6 +4048,8 @@ paths:
             schema:
               $ref: '#/components/schemas/SlackSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were sucessfully updated'
           content:
@@ -3622,6 +4058,7 @@ paths:
                 $ref: '#/components/schemas/SlackSettings'
   /settings/notifications/slack/test:
     post:
+      operationId: postSettingsNotificationsSlackTest
       summary: Test Slack settings
       description: Sends a test notification to the Slack agent.
       tags:
@@ -3633,15 +4070,20 @@ paths:
             schema:
               $ref: '#/components/schemas/SlackSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Test notification attempted
   /settings/notifications/telegram:
     get:
+      operationId: getSettingsNotificationsTelegram
       summary: Get Telegram notification settings
       description: Returns current Telegram notification settings in a JSON object.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned Telegram settings
           content:
@@ -3649,6 +4091,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/TelegramSettings'
     post:
+      operationId: postSettingsNotificationsTelegram
       summary: Update Telegram notification settings
       description: Update Telegram notification settings with the provided values.
       tags:
@@ -3660,6 +4103,8 @@ paths:
             schema:
               $ref: '#/components/schemas/TelegramSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were sucessfully updated'
           content:
@@ -3668,6 +4113,7 @@ paths:
                 $ref: '#/components/schemas/TelegramSettings'
   /settings/notifications/telegram/test:
     post:
+      operationId: postSettingsNotificationsTelegramTest
       summary: Test Telegram settings
       description: Sends a test notification to the Telegram agent.
       tags:
@@ -3679,15 +4125,20 @@ paths:
             schema:
               $ref: '#/components/schemas/TelegramSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Test notification attempted
   /settings/notifications/webpush:
     get:
+      operationId: getSettingsNotificationsWebpush
       summary: Get Web Push notification settings
       description: Returns current Web Push notification settings in a JSON object.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned web push settings
           content:
@@ -3695,6 +4146,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/WebPushSettings'
     post:
+      operationId: postSettingsNotificationsWebpush
       summary: Update Web Push notification settings
       description: Updates Web Push notification settings with the provided values.
       tags:
@@ -3706,6 +4158,8 @@ paths:
             schema:
               $ref: '#/components/schemas/WebPushSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were sucessfully updated'
           content:
@@ -3714,6 +4168,7 @@ paths:
                 $ref: '#/components/schemas/WebPushSettings'
   /settings/notifications/webpush/test:
     post:
+      operationId: postSettingsNotificationsWebpushTest
       summary: Test Web Push settings
       description: Sends a test notification to the Web Push agent.
       tags:
@@ -3725,15 +4180,20 @@ paths:
             schema:
               $ref: '#/components/schemas/WebPushSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Test notification attempted
   /settings/notifications/webhook:
     get:
+      operationId: getSettingsNotificationsWebhook
       summary: Get webhook notification settings
       description: Returns current webhook notification settings in a JSON object.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned webhook settings
           content:
@@ -3741,6 +4201,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/WebhookSettings'
     post:
+      operationId: postSettingsNotificationsWebhook
       summary: Update webhook notification settings
       description: Updates webhook notification settings with the provided values.
       tags:
@@ -3752,6 +4213,8 @@ paths:
             schema:
               $ref: '#/components/schemas/WebhookSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were sucessfully updated'
           content:
@@ -3760,6 +4223,7 @@ paths:
                 $ref: '#/components/schemas/WebhookSettings'
   /settings/notifications/webhook/test:
     post:
+      operationId: postSettingsNotificationsWebhookTest
       summary: Test webhook settings
       description: Sends a test notification to the webhook agent.
       tags:
@@ -3771,15 +4235,20 @@ paths:
             schema:
               $ref: '#/components/schemas/WebhookSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Test notification attempted
   /settings/discover:
     get:
+      operationId: getSettingsDiscover
       summary: Get all discover sliders
       description: Returns all discovery sliders. Built-in and custom made.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned all discovery sliders
           content:
@@ -3789,6 +4258,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/DiscoverSlider'
     post:
+      operationId: postSettingsDiscover
       summary: Batch update all sliders.
       description: |
         Batch update all sliders at once. Should also be used for creation. Will only update sliders provided
@@ -3805,6 +4275,8 @@ paths:
               items:
                 $ref: '#/components/schemas/DiscoverSlider'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned all newly updated discovery sliders
           content:
@@ -3815,6 +4287,7 @@ paths:
                   $ref: '#/components/schemas/DiscoverSlider'
   /settings/discover/{sliderId}:
     put:
+      operationId: putSettingsDiscoverBysliderId
       summary: Update a single slider
       description: |
         Updates a single slider and return the newly updated slider. Requires the `ADMIN` permission.
@@ -3843,6 +4316,8 @@ paths:
                   type: string
                   example: '1'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returns newly added discovery slider
           content:
@@ -3850,6 +4325,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DiscoverSlider'
     delete:
+      operationId: deleteSettingsDiscoverBysliderId
       summary: Delete slider by ID
       description: Deletes the slider with the provided sliderId. Requires the `ADMIN` permission.
       tags:
@@ -3861,6 +4337,8 @@ paths:
           schema:
             type: number
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Slider successfully deleted
           content:
@@ -3869,6 +4347,7 @@ paths:
                 $ref: '#/components/schemas/DiscoverSlider'
   /settings/discover/add:
     post:
+      operationId: postSettingsDiscoverAdd
       summary: Add a new slider
       description: |
         Add a single slider and return the newly created slider. Requires the `ADMIN` permission.
@@ -3891,6 +4370,8 @@ paths:
                   type: string
                   example: '1'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returns newly added discovery slider
           content:
@@ -3899,20 +4380,26 @@ paths:
                 $ref: '#/components/schemas/DiscoverSlider'
   /settings/discover/reset:
     get:
+      operationId: getSettingsDiscoverReset
       summary: Reset all discover sliders
       description: Resets all discovery sliders to the default values. Requires the `ADMIN` permission.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: All sliders reset to defaults
   /settings/about:
     get:
+      operationId: getSettingsAbout
       summary: Get server stats
       description: Returns current server stats in a JSON object.
       tags:
         - settings
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned about settings
           content:
@@ -3938,12 +4425,15 @@ paths:
                     example: /app/config
   /auth/me:
     get:
+      operationId: getAuthMe
       summary: Get logged-in user
       description: Returns the currently logged-in user.
       tags:
         - auth
         - users
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Object containing the logged-in user in JSON
           content:
@@ -3952,12 +4442,15 @@ paths:
                 $ref: '#/components/schemas/User'
   /auth/plex:
     post:
+      operationId: postAuthPlex
       summary: Sign in using a Plex token
       description: Takes an `authToken` (Plex token) to log the user in. Generates a session cookie for use in further requests. If the user does not exist, and there are no other users, then a user will be created with full admin privileges. If a user logs in with access to the main Plex server, they will also have an account created, but without any permissions.
       security: []
       tags:
         - auth
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: OK
           content:
@@ -3977,12 +4470,15 @@ paths:
                 - authToken
   /auth/jellyfin:
     post:
+      operationId: postAuthJellyfin
       summary: Sign in using a Jellyfin username and password
       description: Takes the user's username and password to log the user in. Generates a session cookie for use in further requests. If the user does not exist, and there are no other users, then a user will be created with full admin privileges. If a user logs in with access to the Jellyfin server, they will also have an account created, but without any permissions.
       security: []
       tags:
         - auth
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: OK
           content:
@@ -4011,12 +4507,15 @@ paths:
                 - password
   /auth/jellyfin/quickconnect/initiate:
     post:
+      operationId: postAuthJellyfinQuickconnectInitiate
       summary: Initiate Jellyfin Quick Connect
       description: Initiates a Quick Connect session and returns a code for the user to authorize on their Jellyfin server.
       security: []
       tags:
         - auth
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Quick Connect session initiated
           content:
@@ -4034,6 +4533,7 @@ paths:
           description: Failed to initiate Quick Connect
   /auth/jellyfin/quickconnect/check:
     get:
+      operationId: getAuthJellyfinQuickconnectCheck
       summary: Check Quick Connect authorization status
       description: Checks if the Quick Connect code has been authorized by the user.
       security: []
@@ -4061,6 +4561,7 @@ paths:
           description: Quick Connect session not found or expired
   /auth/jellyfin/quickconnect/authenticate:
     post:
+      operationId: postAuthJellyfinQuickconnectAuthenticate
       summary: Authenticate with Quick Connect
       description: Completes the Quick Connect authentication flow and creates a user session.
       security: []
@@ -4090,12 +4591,15 @@ paths:
           description: Authentication failed
   /auth/local:
     post:
+      operationId: postAuthLocal
       summary: Sign in using a local account
       description: Takes an `email` and a `password` to log the user in. Generates a session cookie for use in further requests.
       security: []
       tags:
         - auth
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: OK
           content:
@@ -4118,11 +4622,14 @@ paths:
                 - password
   /auth/logout:
     post:
+      operationId: postAuthLogout
       summary: Sign out and clear session cookie
       description: Completely clear the session cookie and associated values, effectively signing the user out.
       tags:
         - auth
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: OK
           content:
@@ -4135,12 +4642,15 @@ paths:
                     example: 'ok'
   /auth/reset-password:
     post:
+      operationId: postAuthResetPassword
       summary: Send a reset password email
       description: Sends a reset password email to the email if the user exists
       security: []
       tags:
         - users
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: OK
           content:
@@ -4164,6 +4674,7 @@ paths:
                 - email
   /auth/reset-password/{guid}:
     post:
+      operationId: postAuthResetPasswordByguid
       summary: Reset the password for a user
       description: Resets the password for a user if the given guid is connected to a user
       security: []
@@ -4177,6 +4688,8 @@ paths:
             type: string
             example: '9afef5a7-ec89-4d5f-9397-261e96970b50'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: OK
           content:
@@ -4200,6 +4713,7 @@ paths:
                 - password
   /user:
     get:
+      operationId: getUser
       summary: Get all users
       description: Returns all users in a JSON object.
       tags:
@@ -4242,6 +4756,8 @@ paths:
           schema:
             type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: A JSON array of all users
           content:
@@ -4256,6 +4772,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/User'
     post:
+      operationId: postUser
       summary: Create new user
       description: |
         Creates a new user. Requires the `MANAGE_USERS` permission.
@@ -4276,6 +4793,8 @@ paths:
                 permissions:
                   type: number
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '201':
           description: The created user
           content:
@@ -4283,6 +4802,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
     put:
+      operationId: putUser
       summary: Update batch of users
       description: |
         Update users with given IDs with provided values in request `body.settings`. You cannot update users' Plex tokens through this request.
@@ -4304,6 +4824,8 @@ paths:
                 permissions:
                   type: integer
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Successfully updated user details
           content:
@@ -4314,6 +4836,7 @@ paths:
                   $ref: '#/components/schemas/User'
   /user/import-from-plex:
     post:
+      operationId: postUserImportFromPlex
       summary: Import all users from Plex
       description: |
         Fetches and imports users from the Plex server. If a list of Plex IDs is provided in the request body, only the specified users will be imported. Otherwise, all users will be imported.
@@ -4333,6 +4856,8 @@ paths:
                   items:
                     type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '201':
           description: A list of the newly created users
           content:
@@ -4343,6 +4868,7 @@ paths:
                   $ref: '#/components/schemas/User'
   /user/import-from-jellyfin:
     post:
+      operationId: postUserImportFromJellyfin
       summary: Import all users from Jellyfin
       description: |
         Fetches and imports users from the Jellyfin server.
@@ -4362,6 +4888,8 @@ paths:
                   items:
                     type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '201':
           description: A list of the newly created users
           content:
@@ -4372,6 +4900,7 @@ paths:
                   $ref: '#/components/schemas/User'
   /user/registerPushSubscription:
     post:
+      operationId: postUserRegisterPushSubscription
       summary: Register a web push /user/registerPushSubscription
       description: Registers a web push subscription for the logged-in user
       tags:
@@ -4396,10 +4925,13 @@ paths:
                 - auth
                 - p256dh
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Successfully registered push subscription
   /user/{userId}/pushSubscriptions:
     get:
+      operationId: getUserByuserIdPushSubscriptions
       summary: Get all web push notification settings for a user
       description: |
         Returns all web push notification settings for a user in a JSON object.
@@ -4412,6 +4944,8 @@ paths:
           schema:
             type: number
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: User web push notification settings in JSON
           content:
@@ -4429,6 +4963,7 @@ paths:
                     type: string
   /user/{userId}/pushSubscription/{endpoint}:
     get:
+      operationId: getUserByuserIdPushSubscriptionByendpoint
       summary: Get web push notification settings for a user
       description: |
         Returns web push notification settings for a user in a JSON object.
@@ -4446,6 +4981,8 @@ paths:
           schema:
             type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: User web push notification settings in JSON
           content:
@@ -4462,6 +4999,7 @@ paths:
                   userAgent:
                     type: string
     delete:
+      operationId: deleteUserByuserIdPushSubscriptionByendpoint
       summary: Delete user push subscription by key
       description: Deletes the user push subscription with the provided key.
       tags:
@@ -4478,10 +5016,13 @@ paths:
           schema:
             type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Successfully removed user push subscription
   /user/{userId}:
     get:
+      operationId: getUserByuserId
       summary: Get user by ID
       description: |
         Retrieves user details in a JSON object. Requires the `MANAGE_USERS` permission.
@@ -4494,6 +5035,8 @@ paths:
           schema:
             type: number
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Users details in JSON
           content:
@@ -4501,6 +5044,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
     put:
+      operationId: putUserByuserId
       summary: Update a user by user ID
       description: |
         Update a user with the provided values. You cannot update a user's Plex token through this request.
@@ -4519,8 +5063,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/UserUpdatePayload'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Successfully updated user details
           content:
@@ -4528,6 +5074,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
     delete:
+      operationId: deleteUserByuserId
       summary: Delete user by ID
       description: Deletes the user with the provided userId. Requires the `MANAGE_USERS` permission.
       tags:
@@ -4539,6 +5086,8 @@ paths:
           schema:
             type: number
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: User successfully deleted
           content:
@@ -4547,6 +5096,7 @@ paths:
                 $ref: '#/components/schemas/User'
   /user/jellyfin/{jellyfinUserId}:
     get:
+      operationId: getUserJellyfinByjellyfinUserId
       summary: Get user by Jellyfin user ID
       description: |
         Retrieves user details by Jellyfin user ID in a JSON object. Returns filtered data based on the caller's permissions.
@@ -4570,6 +5120,7 @@ paths:
           description: User not found
   /user/{userId}/requests:
     get:
+      operationId: getUserByuserIdRequests
       summary: Get requests for a specific user
       description: |
         Retrieves a user's requests in a JSON object.
@@ -4594,6 +5145,8 @@ paths:
             nullable: true
             example: 0
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: User's requests returned
           content:
@@ -4609,6 +5162,7 @@ paths:
                       $ref: '#/components/schemas/MediaRequest'
   /user/{userId}/quota:
     get:
+      operationId: getUserByuserIdQuota
       summary: Get quotas for a specific user
       description: |
         Returns quota details for a user in a JSON object. Requires `MANAGE_USERS` permission if viewing other users.
@@ -4621,6 +5175,8 @@ paths:
           schema:
             type: number
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: User quota details in JSON
           content:
@@ -4666,6 +5222,7 @@ paths:
                         example: false
   /blocklist:
     get:
+      operationId: getBlocklist
       summary: Returns blocklisted items
       description: Returns list of all blocklisted media
       tags:
@@ -4696,6 +5253,8 @@ paths:
             enum: [all, manual, blocklistedTags]
             default: manual
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Blocklisted items returned
           content:
@@ -4728,6 +5287,7 @@ paths:
                           type: number
                           example: 438631
     post:
+      operationId: postBlocklist
       summary: Add media to blocklist
       tags:
         - blocklist
@@ -4744,6 +5304,7 @@ paths:
           description: Item has already been blocklisted
   /blocklist/{tmdbId}:
     get:
+      operationId: getBlocklistBytmdbId
       summary: Get media from blocklist
       tags:
         - blocklist
@@ -4764,9 +5325,12 @@ paths:
               - movie
               - tv
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Blocklist details in JSON
     delete:
+      operationId: deleteBlocklistBytmdbId
       summary: Remove media from blocklist
       tags:
         - blocklist
@@ -4787,10 +5351,13 @@ paths:
               - movie
               - tv
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Succesfully removed media item
   /blacklist:
     get:
+      operationId: getBlacklist
       summary: Returns blocklisted items
       description: |
         **DEPRECATED**: Use `/blocklist` instead. This endpoint will be deprecated soon.
@@ -4823,6 +5390,8 @@ paths:
             enum: [all, manual, blocklistedTags]
             default: manual
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Blocklisted items returned
           content:
@@ -4855,6 +5424,7 @@ paths:
                           type: number
                           example: 438631
     post:
+      operationId: postBlacklist
       summary: Add media to blocklist
       description: |
         **DEPRECATED**: Use `/blocklist` instead. This endpoint will be deprecated soon.
@@ -4874,6 +5444,7 @@ paths:
           description: Item has already been blocklisted
   /blacklist/{tmdbId}:
     get:
+      operationId: getBlacklistBytmdbId
       summary: Get media from blocklist
       description: |
         **DEPRECATED**: Use `/blocklist/{tmdbId}` instead. This endpoint will be deprecated soon.
@@ -4897,9 +5468,12 @@ paths:
               - movie
               - tv
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Blocklist details in JSON
     delete:
+      operationId: deleteBlacklistBytmdbId
       summary: Remove media from blocklist
       description: |
         **DEPRECATED**: Use `/blocklist/{tmdbId}` instead. This endpoint will be deprecated soon.
@@ -4923,10 +5497,13 @@ paths:
               - movie
               - tv
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Succesfully removed media item
   /blocklist/collection/{collectionId}:
     post:
+      operationId: postBlocklistCollectionBycollectionId
       summary: Add collection to blocklist
       description: Adds all movies in a collection to the blocklist
       tags:
@@ -4946,11 +5523,14 @@ paths:
             schema:
               type: object
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '201':
           description: Successfully added collection to blocklist
         '500':
           description: Error adding collection to blocklist
     delete:
+      operationId: deleteBlocklistCollectionBycollectionId
       summary: Remove collection from blocklist
       description: Removes all movies in a collection from the blocklist
       tags:
@@ -4964,12 +5544,15 @@ paths:
           schema:
             type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Successfully removed collection from blocklist
         '500':
           description: Error removing collection from blocklist
   /watchlist:
     post:
+      operationId: postWatchlist
       summary: Add media to watchlist
       tags:
         - watchlist
@@ -4978,9 +5561,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Watchlist'
+              $ref: '#/components/schemas/WatchlistCreate'
       responses:
-        '200':
+        '400':
+          description: Invalid request parameters or body.
+        '201':
           description: Watchlist data returned
           content:
             application/json:
@@ -4988,6 +5573,7 @@ paths:
                 $ref: '#/components/schemas/Watchlist'
   /watchlist/{tmdbId}:
     delete:
+      operationId: deleteWatchlistBytmdbId
       summary: Delete watchlist item
       description: Removes a watchlist item.
       tags:
@@ -5009,10 +5595,13 @@ paths:
               - movie
               - tv
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
-          description: Succesfully removed watchlist item
+          description: Successfully removed watchlist item
   /user/{userId}/watchlist:
     get:
+      operationId: getUserByuserIdWatchlist
       summary: Get the Plex watchlist for a specific user
       description: |
         Retrieves a user's Plex Watchlist in a JSON object.
@@ -5032,6 +5621,8 @@ paths:
             example: 1
             default: 1
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Watchlist data returned
           content:
@@ -5055,12 +5646,13 @@ paths:
                           example: 1
                         ratingKey:
                           type: string
-                        type:
+                        mediaType:
                           type: string
                         title:
                           type: string
   /user/{userId}/settings/main:
     get:
+      operationId: getUserByuserIdSettingsMain
       summary: Get general settings for a user
       description: Returns general settings for a specific user. Requires `MANAGE_USERS` permission if viewing other users.
       tags:
@@ -5072,6 +5664,8 @@ paths:
           schema:
             type: number
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: User general settings returned
           content:
@@ -5079,6 +5673,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserSettings'
     post:
+      operationId: postUserByuserIdSettingsMain
       summary: Update general settings for a user
       description: Updates and returns general settings for a specific user. Requires `MANAGE_USERS` permission if editing other users.
       tags:
@@ -5096,6 +5691,8 @@ paths:
             schema:
               $ref: '#/components/schemas/UserSettings'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Updated user general settings returned
           content:
@@ -5104,6 +5701,7 @@ paths:
                 $ref: '#/components/schemas/UserSettings'
   /user/{userId}/settings/password:
     get:
+      operationId: getUserByuserIdSettingsPassword
       summary: Get password page informatiom
       description: Returns important data for the password page to function correctly. Requires `MANAGE_USERS` permission if viewing other users.
       tags:
@@ -5115,6 +5713,8 @@ paths:
           schema:
             type: number
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: User password page information returned
           content:
@@ -5126,6 +5726,7 @@ paths:
                     type: boolean
                     example: true
     post:
+      operationId: postUserByuserIdSettingsPassword
       summary: Update password for a user
       description: Updates a user's password. Requires `MANAGE_USERS` permission if editing other users.
       tags:
@@ -5151,10 +5752,13 @@ paths:
               required:
                 - newPassword
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: User password updated
   /user/{userId}/settings/linked-accounts/plex:
     post:
+      operationId: postUserByuserIdSettingsLinkedAccountsPlex
       summary: Link the provided Plex account to the current user
       description: Logs in to Plex with the provided auth token, then links the associated Plex account with the user's account. Users can only link external accounts to their own account.
       tags:
@@ -5184,6 +5788,7 @@ paths:
         '422':
           description: Account already linked to a user
     delete:
+      operationId: deleteUserByuserIdSettingsLinkedAccountsPlex
       summary: Remove the linked Plex account for a user
       description: Removes the linked Plex account for a specific user. Requires `MANAGE_USERS` permission if editing other users.
       tags:
@@ -5203,6 +5808,7 @@ paths:
           description: User does not exist
   /user/{userId}/settings/linked-accounts/jellyfin:
     post:
+      operationId: postUserByuserIdSettingsLinkedAccountsJellyfin
       summary: Link the provided Jellyfin account to the current user
       description: Logs in to Jellyfin with the provided credentials, then links the associated Jellyfin account with the user's account. Users can only link external accounts to their own account.
       tags:
@@ -5234,6 +5840,7 @@ paths:
         '422':
           description: Account already linked to a user
     delete:
+      operationId: deleteUserByuserIdSettingsLinkedAccountsJellyfin
       summary: Remove the linked Jellyfin account for a user
       description: Removes the linked Jellyfin account for a specific user. Requires `MANAGE_USERS` permission if editing other users.
       tags:
@@ -5253,6 +5860,7 @@ paths:
           description: User does not exist
   /user/{userId}/settings/linked-accounts/jellyfin/quickconnect:
     post:
+      operationId: postUserByuserIdSettingsLinkedAccountsJellyfinQuickconnect
       summary: Link Jellyfin/Emby account with Quick Connect
       description: Links a Jellyfin/Emby account to the user's profile using Quick Connect authentication
       tags:
@@ -5287,6 +5895,7 @@ paths:
           description: Server error
   /user/{userId}/settings/notifications:
     get:
+      operationId: getUserByuserIdSettingsNotifications
       summary: Get notification settings for a user
       description: Returns notification settings for a specific user. Requires `MANAGE_USERS` permission if viewing other users.
       tags:
@@ -5298,6 +5907,8 @@ paths:
           schema:
             type: number
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: User notification settings returned
           content:
@@ -5305,6 +5916,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserSettingsNotifications'
     post:
+      operationId: postUserByuserIdSettingsNotifications
       summary: Update notification settings for a user
       description: Updates and returns notification settings for a specific user. Requires `MANAGE_USERS` permission if editing other users.
       tags:
@@ -5322,6 +5934,8 @@ paths:
             schema:
               $ref: '#/components/schemas/UserSettingsNotifications'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Updated user notification settings returned
           content:
@@ -5330,6 +5944,7 @@ paths:
                 $ref: '#/components/schemas/UserSettingsNotifications'
   /user/{userId}/settings/permissions:
     get:
+      operationId: getUserByuserIdSettingsPermissions
       summary: Get permission settings for a user
       description: Returns permission settings for a specific user. Requires `MANAGE_USERS` permission if viewing other users.
       tags:
@@ -5341,6 +5956,8 @@ paths:
           schema:
             type: number
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: User permission settings returned
           content:
@@ -5352,6 +5969,7 @@ paths:
                     type: number
                     example: 2
     post:
+      operationId: postUserByuserIdSettingsPermissions
       summary: Update permission settings for a user
       description: Updates and returns permission settings for a specific user. Requires `MANAGE_USERS` permission if editing other users.
       tags:
@@ -5374,6 +5992,8 @@ paths:
               required:
                 - permissions
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Updated user general settings returned
           content:
@@ -5386,6 +6006,7 @@ paths:
                     example: 2
   /user/{userId}/watch_data:
     get:
+      operationId: getUserByuserIdWatchData
       summary: Get watch data
       description: |
         Returns play count, play duration, and recently watched media.
@@ -5400,6 +6021,8 @@ paths:
           schema:
             type: number
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Users
           content:
@@ -5415,6 +6038,7 @@ paths:
                     type: number
   /search:
     get:
+      operationId: getSearch
       summary: Search for movies, TV shows, or people
       description: Returns a list of movies, TV shows, or people a JSON object.
       tags:
@@ -5438,6 +6062,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -5463,6 +6089,7 @@ paths:
                         - $ref: '#/components/schemas/PersonResult'
   /search/keyword:
     get:
+      operationId: getSearchKeyword
       summary: Search for keywords
       description: Returns a list of TMDB keywords matching the search query
       tags:
@@ -5481,6 +6108,8 @@ paths:
             example: 1
             default: 1
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -5503,6 +6132,7 @@ paths:
                       $ref: '#/components/schemas/Keyword'
   /search/company:
     get:
+      operationId: getSearchCompany
       summary: Search for companies
       description: Returns a list of TMDB companies matching the search query. (Will not return origin country)
       tags:
@@ -5521,6 +6151,8 @@ paths:
             example: 1
             default: 1
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -5543,6 +6175,7 @@ paths:
                       $ref: '#/components/schemas/Company'
   /discover/movies:
     get:
+      operationId: getDiscoverMovies
       summary: Discover movies
       description: Returns a list of movies in a JSON object.
       tags:
@@ -5563,7 +6196,7 @@ paths:
           name: genre
           schema:
             type: string
-            example: 18
+            example: '18'
         - in: query
           name: studio
           schema:
@@ -5667,6 +6300,8 @@ paths:
             example: exact
           description: Determines whether to use exact certification matching or a certification range (internal use only, not sent to TMDB API)
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -5689,6 +6324,7 @@ paths:
                       $ref: '#/components/schemas/MovieResult'
   /discover/movies/genre/{genreId}:
     get:
+      operationId: getDiscoverMoviesGenreBygenreId
       summary: Discover movies by genre
       description: Returns a list of movies based on the provided genre ID in a JSON object.
       tags:
@@ -5712,6 +6348,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -5736,6 +6374,7 @@ paths:
                       $ref: '#/components/schemas/MovieResult'
   /discover/movies/language/{language}:
     get:
+      operationId: getDiscoverMoviesLanguageBylanguage
       summary: Discover movies by original language
       description: Returns a list of movies based on the provided ISO 639-1 language code in a JSON object.
       tags:
@@ -5759,6 +6398,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -5783,6 +6424,7 @@ paths:
                       $ref: '#/components/schemas/MovieResult'
   /discover/movies/studio/{studioId}:
     get:
+      operationId: getDiscoverMoviesStudioBystudioId
       summary: Discover movies by studio
       description: Returns a list of movies based on the provided studio ID in a JSON object.
       tags:
@@ -5806,6 +6448,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -5830,6 +6474,7 @@ paths:
                       $ref: '#/components/schemas/MovieResult'
   /discover/movies/upcoming:
     get:
+      operationId: getDiscoverMoviesUpcoming
       summary: Upcoming movies
       description: Returns a list of movies in a JSON object.
       tags:
@@ -5847,6 +6492,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -5869,6 +6516,7 @@ paths:
                       $ref: '#/components/schemas/MovieResult'
   /discover/tv:
     get:
+      operationId: getDiscoverTv
       summary: Discover TV shows
       description: Returns a list of TV shows in a JSON object.
       tags:
@@ -5889,7 +6537,7 @@ paths:
           name: genre
           schema:
             type: string
-            example: 18
+            example: '18'
         - in: query
           name: network
           schema:
@@ -5998,6 +6646,8 @@ paths:
             example: exact
           description: Determines whether to use exact certification matching or a certification range (internal use only, not sent to TMDB API)
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -6020,6 +6670,7 @@ paths:
                       $ref: '#/components/schemas/TvResult'
   /discover/tv/language/{language}:
     get:
+      operationId: getDiscoverTvLanguageBylanguage
       summary: Discover TV shows by original language
       description: Returns a list of TV shows based on the provided ISO 639-1 language code in a JSON object.
       tags:
@@ -6043,6 +6694,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -6067,6 +6720,7 @@ paths:
                       $ref: '#/components/schemas/TvResult'
   /discover/tv/genre/{genreId}:
     get:
+      operationId: getDiscoverTvGenreBygenreId
       summary: Discover TV shows by genre
       description: Returns a list of TV shows based on the provided genre ID in a JSON object.
       tags:
@@ -6090,6 +6744,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -6114,6 +6770,7 @@ paths:
                       $ref: '#/components/schemas/TvResult'
   /discover/tv/network/{networkId}:
     get:
+      operationId: getDiscoverTvNetworkBynetworkId
       summary: Discover TV shows by network
       description: Returns a list of TV shows based on the provided network ID in a JSON object.
       tags:
@@ -6137,6 +6794,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -6161,6 +6820,7 @@ paths:
                       $ref: '#/components/schemas/TvResult'
   /discover/tv/upcoming:
     get:
+      operationId: getDiscoverTvUpcoming
       summary: Discover Upcoming TV shows
       description: Returns a list of upcoming TV shows in a JSON object.
       tags:
@@ -6178,6 +6838,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -6200,6 +6862,7 @@ paths:
                       $ref: '#/components/schemas/TvResult'
   /discover/trending:
     get:
+      operationId: getDiscoverTrending
       summary: Trending movies and TV
       description: Returns a list of movies and TV shows in a JSON object.
       tags:
@@ -6234,6 +6897,8 @@ paths:
               - week
             default: day
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -6259,6 +6924,7 @@ paths:
                         - $ref: '#/components/schemas/PersonResult'
   /discover/keyword/{keywordId}/movies:
     get:
+      operationId: getDiscoverKeywordBykeywordIdMovies
       summary: Get movies from keyword
       description: Returns list of movies based on the provided keyword ID a JSON object.
       tags:
@@ -6282,6 +6948,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: List of movies
           content:
@@ -6304,6 +6972,7 @@ paths:
                       $ref: '#/components/schemas/MovieResult'
   /discover/genreslider/movie:
     get:
+      operationId: getDiscoverGenresliderMovie
       summary: Get genre slider data for movies
       description: Returns a list of genres with backdrops attached
       tags:
@@ -6315,6 +6984,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Genre slider data returned
           content:
@@ -6336,6 +7007,7 @@ paths:
                       example: Genre Name
   /discover/genreslider/tv:
     get:
+      operationId: getDiscoverGenresliderTv
       summary: Get genre slider data for TV series
       description: Returns a list of genres with backdrops attached
       tags:
@@ -6347,6 +7019,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Genre slider data returned
           content:
@@ -6368,6 +7042,7 @@ paths:
                       example: Genre Name
   /discover/watchlist:
     get:
+      operationId: getDiscoverWatchlist
       summary: Get the Plex watchlist.
       tags:
         - search
@@ -6379,6 +7054,8 @@ paths:
             example: 1
             default: 1
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Watchlist data returned
           content:
@@ -6402,12 +7079,13 @@ paths:
                           example: 1
                         ratingKey:
                           type: string
-                        type:
+                        mediaType:
                           type: string
                         title:
                           type: string
   /request:
     get:
+      operationId: getRequest
       summary: Get all requests
       description: |
         Returns all requests if the user has the `ADMIN` or `MANAGE_REQUESTS` permissions. Otherwise, only the logged-in user's requests are returned.
@@ -6472,6 +7150,8 @@ paths:
             nullable: true
             default: all
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Requests returned
           content:
@@ -6486,6 +7166,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/MediaRequest'
     post:
+      operationId: postRequest
       summary: Create new request
       description: |
         Creates a new request with the provided media ID and type. The `REQUEST` permission is required.
@@ -6540,6 +7221,8 @@ paths:
                 - mediaType
                 - mediaId
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '201':
           description: Succesfully created the request
           content:
@@ -6548,12 +7231,15 @@ paths:
                 $ref: '#/components/schemas/MediaRequest'
   /request/count:
     get:
+      operationId: getRequestCount
       summary: Gets request counts
       description: |
         Returns the number of requests by status including pending, approved, available, and completed requests.
       tags:
         - request
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Request counts returned
           content:
@@ -6581,6 +7267,7 @@ paths:
                     type: number
   /request/{requestId}:
     get:
+      operationId: getRequestByrequestId
       summary: Get MediaRequest
       description: Returns a specific MediaRequest in a JSON object.
       tags:
@@ -6594,6 +7281,8 @@ paths:
           schema:
             type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Succesfully returns request
           content:
@@ -6601,6 +7290,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/MediaRequest'
     put:
+      operationId: putRequestByrequestId
       summary: Update MediaRequest
       description: Updates a specific media request and returns the request in a JSON object. Requires the `MANAGE_REQUESTS` permission.
       tags:
@@ -6645,6 +7335,8 @@ paths:
               required:
                 - mediaType
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Succesfully updated request
           content:
@@ -6652,6 +7344,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/MediaRequest'
     delete:
+      operationId: deleteRequestByrequestId
       summary: Delete request
       description: Removes a request. If the user has the `MANAGE_REQUESTS` permission, any request can be removed. Otherwise, only pending requests can be removed.
       tags:
@@ -6665,10 +7358,13 @@ paths:
           schema:
             type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Succesfully removed request
   /request/{requestId}/retry:
     post:
+      operationId: postRequestByrequestIdRetry
       summary: Retry failed request
       description: |
         Retries a request by resending requests to Sonarr or Radarr.
@@ -6685,6 +7381,8 @@ paths:
             type: string
             example: '1'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Retry triggered
           content:
@@ -6693,6 +7391,7 @@ paths:
                 $ref: '#/components/schemas/MediaRequest'
   /request/{requestId}/{status}:
     post:
+      operationId: postRequestByrequestIdBystatus
       summary: Update a request's status
       description: |
         Updates a request's status to approved or declined. Also returns the request in a JSON object.
@@ -6716,6 +7415,8 @@ paths:
             type: string
             enum: [approve, decline]
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Request status changed
           content:
@@ -6724,6 +7425,7 @@ paths:
                 $ref: '#/components/schemas/MediaRequest'
   /movie/{movieId}:
     get:
+      operationId: getMovieBymovieId
       summary: Get movie details
       description: Returns full movie details in a JSON object.
       tags:
@@ -6741,6 +7443,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Movie details
           content:
@@ -6749,6 +7453,7 @@ paths:
                 $ref: '#/components/schemas/MovieDetails'
   /movie/{movieId}/recommendations:
     get:
+      operationId: getMovieBymovieIdRecommendations
       summary: Get recommended movies
       description: Returns list of recommended movies based on provided movie ID in a JSON object.
       tags:
@@ -6772,6 +7477,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: List of movies
           content:
@@ -6794,6 +7501,7 @@ paths:
                       $ref: '#/components/schemas/MovieResult'
   /movie/{movieId}/similar:
     get:
+      operationId: getMovieBymovieIdSimilar
       summary: Get similar movies
       description: Returns list of similar movies based on the provided movieId in a JSON object.
       tags:
@@ -6817,6 +7525,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: List of movies
           content:
@@ -6839,6 +7549,7 @@ paths:
                       $ref: '#/components/schemas/MovieResult'
   /movie/{movieId}/ratings:
     get:
+      operationId: getMovieBymovieIdRatings
       summary: Get movie ratings
       description: Returns ratings based on the provided movieId in a JSON object.
       tags:
@@ -6851,6 +7562,8 @@ paths:
             type: number
             example: 337401
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Ratings returned
           content:
@@ -6881,6 +7594,7 @@ paths:
                     enum: ['Spilled', 'Upright']
   /movie/{movieId}/ratingscombined:
     get:
+      operationId: getMovieBymovieIdRatingscombined
       summary: Get RT and IMDB movie ratings combined
       description: Returns ratings from RottenTomatoes and IMDB based on the provided movieId in a JSON object.
       tags:
@@ -6893,6 +7607,8 @@ paths:
             type: number
             example: 337401
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Ratings returned
           content:
@@ -6938,6 +7654,7 @@ paths:
                         example: 6.5
   /tv/{tvId}:
     get:
+      operationId: getTvBytvId
       summary: Get TV details
       description: Returns full TV details in a JSON object.
       tags:
@@ -6955,6 +7672,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: TV details
           content:
@@ -6963,6 +7682,7 @@ paths:
                 $ref: '#/components/schemas/TvDetails'
   /tv/{tvId}/season/{seasonNumber}:
     get:
+      operationId: getTvBytvIdSeasonByseasonNumber
       summary: Get season details and episode list
       description: Returns season details with a list of episodes in a JSON object.
       tags:
@@ -6986,6 +7706,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: TV details
           content:
@@ -6994,6 +7716,7 @@ paths:
                 $ref: '#/components/schemas/Season'
   /tv/{tvId}/recommendations:
     get:
+      operationId: getTvBytvIdRecommendations
       summary: Get recommended TV series
       description: Returns list of recommended TV series based on the provided tvId in a JSON object.
       tags:
@@ -7017,6 +7740,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: List of TV series
           content:
@@ -7039,6 +7764,7 @@ paths:
                       $ref: '#/components/schemas/TvResult'
   /tv/{tvId}/similar:
     get:
+      operationId: getTvBytvIdSimilar
       summary: Get similar TV series
       description: Returns list of similar TV series based on the provided tvId in a JSON object.
       tags:
@@ -7062,6 +7788,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: List of TV series
           content:
@@ -7084,6 +7812,7 @@ paths:
                       $ref: '#/components/schemas/TvResult'
   /tv/{tvId}/ratings:
     get:
+      operationId: getTvBytvIdRatings
       summary: Get TV ratings
       description: Returns ratings based on provided tvId in a JSON object.
       tags:
@@ -7096,6 +7825,8 @@ paths:
             type: number
             example: 76479
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Ratings returned
           content:
@@ -7120,6 +7851,7 @@ paths:
                     enum: ['Rotten', 'Fresh']
   /person/{personId}:
     get:
+      operationId: getPersonBypersonId
       summary: Get person details
       description: Returns person details based on provided personId in a JSON object.
       tags:
@@ -7137,6 +7869,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned person
           content:
@@ -7145,6 +7879,7 @@ paths:
                 $ref: '#/components/schemas/PersonDetails'
   /person/{personId}/combined_credits:
     get:
+      operationId: getPersonBypersonIdCombinedCredits
       summary: Get combined credits
       description: Returns the person's combined credits based on the provided personId in a JSON object.
       tags:
@@ -7162,6 +7897,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned combined credits
           content:
@@ -7181,6 +7918,7 @@ paths:
                     type: number
   /media:
     get:
+      operationId: getMedia
       summary: Get media
       description: Returns all media (can be filtered and limited) in a JSON object.
       tags:
@@ -7220,6 +7958,8 @@ paths:
             enum: [added, modified, mediaAdded]
             default: added
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned media
           content:
@@ -7235,6 +7975,7 @@ paths:
                       $ref: '#/components/schemas/MediaInfo'
   /media/{mediaId}:
     delete:
+      operationId: deleteMediaBymediaId
       summary: Delete media item
       description: Removes a media item. The `MANAGE_REQUESTS` permission is required to perform this action.
       tags:
@@ -7248,10 +7989,13 @@ paths:
           schema:
             type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Succesfully removed media item
   /media/{mediaId}/file:
     delete:
+      operationId: deleteMediaBymediaIdFile
       summary: Delete media file
       description: Removes a media file from radarr/sonarr. The `ADMIN` permission is required to perform this action.
       tags:
@@ -7272,10 +8016,13 @@ paths:
           schema:
             type: boolean
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Successfully removed media item
   /media/{mediaId}/{status}:
     post:
+      operationId: postMediaBymediaIdBystatus
       summary: Update media status
       description: Updates a media item's status and returns the media in JSON format
       tags:
@@ -7310,6 +8057,8 @@ paths:
                     When false or not provided, updates the regular status field (status).
                     This applies to all status values (available, partial, processing, pending, unknown).
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Returned media
           content:
@@ -7318,6 +8067,7 @@ paths:
                 $ref: '#/components/schemas/MediaInfo'
   /media/{mediaId}/watch_data:
     get:
+      operationId: getMediaBymediaIdWatchData
       summary: Get watch data
       description: |
         Returns play count, play duration, and users who have watched the media.
@@ -7334,6 +8084,8 @@ paths:
           schema:
             type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Users
           content:
@@ -7369,6 +8121,7 @@ paths:
                           $ref: '#/components/schemas/User'
   /collection/{collectionId}:
     get:
+      operationId: getCollectionBycollectionId
       summary: Get collection details
       description: Returns full collection details in a JSON object.
       tags:
@@ -7386,6 +8139,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Collection details
           content:
@@ -7394,11 +8149,14 @@ paths:
                 $ref: '#/components/schemas/Collection'
   /service/radarr:
     get:
+      operationId: getServiceRadarr
       summary: Get non-sensitive Radarr server list
       description: Returns a list of Radarr server IDs and names in a JSON object.
       tags:
         - service
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Request successful
           content:
@@ -7409,6 +8167,7 @@ paths:
                   $ref: '#/components/schemas/RadarrSettings'
   /service/radarr/{radarrId}:
     get:
+      operationId: getServiceRadarrByradarrId
       summary: Get Radarr server quality profiles and root folders
       description: Returns a Radarr server's quality profile and root folder details in a JSON object.
       tags:
@@ -7421,6 +8180,8 @@ paths:
             type: number
             example: 0
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Request successful
           content:
@@ -7434,11 +8195,14 @@ paths:
                     $ref: '#/components/schemas/ServiceProfile'
   /service/sonarr:
     get:
+      operationId: getServiceSonarr
       summary: Get non-sensitive Sonarr server list
       description: Returns a list of Sonarr server IDs and names in a JSON object.
       tags:
         - service
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Request successful
           content:
@@ -7449,6 +8213,7 @@ paths:
                   $ref: '#/components/schemas/SonarrSettings'
   /service/sonarr/{sonarrId}:
     get:
+      operationId: getServiceSonarrBysonarrId
       summary: Get Sonarr server quality profiles and root folders
       description: Returns a Sonarr server's quality profile and root folder details in a JSON object.
       tags:
@@ -7461,6 +8226,8 @@ paths:
             type: number
             example: 0
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Request successful
           content:
@@ -7474,6 +8241,7 @@ paths:
                     $ref: '#/components/schemas/ServiceProfile'
   /service/sonarr/lookup/{tmdbId}:
     get:
+      operationId: getServiceSonarrLookupBytmdbId
       summary: Get series from Sonarr
       description: Returns a list of series returned by searching for the name in Sonarr.
       tags:
@@ -7486,6 +8254,8 @@ paths:
             type: number
             example: 0
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Request successful
           content:
@@ -7496,11 +8266,14 @@ paths:
                   $ref: '#/components/schemas/SonarrSeries'
   /regions:
     get:
+      operationId: getRegions
       summary: Regions supported by TMDB
       description: Returns a list of regions in a JSON object.
       tags:
         - tmdb
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -7518,11 +8291,14 @@ paths:
                       example: United States of America
   /languages:
     get:
+      operationId: getLanguages
       summary: Languages supported by TMDB
       description: Returns a list of languages in a JSON object.
       tags:
         - tmdb
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -7543,6 +8319,7 @@ paths:
                       example: English
   /studio/{studioId}:
     get:
+      operationId: getStudioBystudioId
       summary: Get movie studio details
       description: Returns movie studio details in a JSON object.
       tags:
@@ -7555,6 +8332,8 @@ paths:
             type: number
             example: 2
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Movie studio details
           content:
@@ -7563,6 +8342,7 @@ paths:
                 $ref: '#/components/schemas/ProductionCompany'
   /network/{networkId}:
     get:
+      operationId: getNetworkBynetworkId
       summary: Get TV network details
       description: Returns TV network details in a JSON object.
       tags:
@@ -7575,6 +8355,8 @@ paths:
             type: number
             example: 1
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: TV network details
           content:
@@ -7583,6 +8365,7 @@ paths:
                 $ref: '#/components/schemas/ProductionCompany'
   /genres/movie:
     get:
+      operationId: getGenresMovie
       summary: Get list of official TMDB movie genres
       description: Returns a list of genres in a JSON array.
       tags:
@@ -7594,6 +8377,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -7611,6 +8396,7 @@ paths:
                       example: Family
   /genres/tv:
     get:
+      operationId: getGenresTv
       summary: Get list of official TMDB movie genres
       description: Returns a list of genres in a JSON array.
       tags:
@@ -7622,6 +8408,8 @@ paths:
             type: string
             example: en
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -7639,12 +8427,15 @@ paths:
                       example: Drama
   /backdrops:
     get:
+      operationId: getBackdrops
       summary: Get backdrops of trending items
       description: Returns a list of backdrop image paths in a JSON array.
       security: []
       tags:
         - tmdb
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Results
           content:
@@ -7655,6 +8446,7 @@ paths:
                   type: string
   /issue:
     get:
+      operationId: getIssue
       summary: Get all issues
       description: |
         Returns a list of issues in JSON format.
@@ -7692,6 +8484,8 @@ paths:
             nullable: true
             example: 1
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Issues returned
           content:
@@ -7706,6 +8500,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/Issue'
     post:
+      operationId: postIssue
       summary: Create new issue
       description: |
         Creates a new issue
@@ -7728,6 +8523,8 @@ paths:
                   type: number
                   nullable: true
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '201':
           description: Succesfully created the issue
           content:
@@ -7737,12 +8534,15 @@ paths:
 
   /issue/count:
     get:
+      operationId: getIssueCount
       summary: Gets issue counts
       description: |
         Returns the number of open and closed issues, as well as the number of issues of each type.
       tags:
         - issue
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Issue counts returned
           content:
@@ -7766,6 +8566,7 @@ paths:
                     type: number
   /issue/{issueId}:
     get:
+      operationId: getIssueByissueId
       summary: Get issue
       description: |
         Returns a single issue in JSON format.
@@ -7779,6 +8580,8 @@ paths:
             type: number
             example: 1
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Issues returned
           content:
@@ -7786,6 +8589,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Issue'
     delete:
+      operationId: deleteIssueByissueId
       summary: Delete issue
       description: Removes an issue. If the user has the `MANAGE_ISSUES` permission, any issue can be removed. Otherwise, only a users own issues can be removed.
       tags:
@@ -7799,10 +8603,13 @@ paths:
           schema:
             type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Succesfully removed issue
   /issue/{issueId}/comment:
     post:
+      operationId: postIssueByissueIdComment
       summary: Create a comment
       description: |
         Creates a comment and returns associated issue in JSON format.
@@ -7827,6 +8634,8 @@ paths:
               required:
                 - message
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Issue returned with new comment
           content:
@@ -7835,6 +8644,7 @@ paths:
                 $ref: '#/components/schemas/Issue'
   /issueComment/{commentId}:
     get:
+      operationId: getIssueCommentBycommentId
       summary: Get issue comment
       description: |
         Returns a single issue comment in JSON format.
@@ -7846,8 +8656,10 @@ paths:
           required: true
           schema:
             type: string
-            example: 1
+            example: '1'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Comment returned
           content:
@@ -7855,6 +8667,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/IssueComment'
     put:
+      operationId: putIssueCommentBycommentId
       summary: Update issue comment
       description: |
         Updates and returns a single issue comment in JSON format.
@@ -7866,7 +8679,7 @@ paths:
           required: true
           schema:
             type: string
-            example: 1
+            example: '1'
       requestBody:
         required: true
         content:
@@ -7877,6 +8690,8 @@ paths:
                 message:
                   type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Comment updated
           content:
@@ -7884,6 +8699,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/IssueComment'
     delete:
+      operationId: deleteIssueCommentBycommentId
       summary: Delete issue comment
       description: |
         Deletes an issue comment. Only users with `MANAGE_ISSUES` or the user who created the comment can perform this action.
@@ -7898,10 +8714,13 @@ paths:
           schema:
             type: string
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '204':
           description: Succesfully removed issue comment
   /issue/{issueId}/{status}:
     post:
+      operationId: postIssueByissueIdBystatus
       summary: Update an issue's status
       description: |
         Updates an issue's status to approved or declined. Also returns the issue in a JSON object.
@@ -7925,6 +8744,8 @@ paths:
             type: string
             enum: [open, resolved]
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Issue status changed
           content:
@@ -7933,6 +8754,7 @@ paths:
                 $ref: '#/components/schemas/Issue'
   /keyword/{keywordId}:
     get:
+      operationId: getKeywordBykeywordId
       summary: Get keyword
       description: |
         Returns a single keyword in JSON format.
@@ -7946,6 +8768,8 @@ paths:
             type: number
             example: 1
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Keyword returned (null if not found)
           content:
@@ -7965,12 +8789,15 @@ paths:
                     example: 'Unable to retrieve keyword data.'
   /watchproviders/regions:
     get:
+      operationId: getWatchprovidersRegions
       summary: Get watch provider regions
       description: |
         Returns a list of all available watch provider regions.
       tags:
         - other
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Watch provider regions returned
           content:
@@ -7981,6 +8808,7 @@ paths:
                   $ref: '#/components/schemas/WatchProviderRegion'
   /watchproviders/movies:
     get:
+      operationId: getWatchprovidersMovies
       summary: Get watch provider movies
       description: |
         Returns a list of all available watch providers for movies.
@@ -7994,6 +8822,8 @@ paths:
             type: string
             example: US
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Watch providers for movies returned
           content:
@@ -8004,6 +8834,7 @@ paths:
                   $ref: '#/components/schemas/WatchProviderDetails'
   /watchproviders/tv:
     get:
+      operationId: getWatchprovidersTv
       summary: Get watch provider series
       description: |
         Returns a list of all available watch providers for series.
@@ -8017,6 +8848,8 @@ paths:
             type: string
             example: US
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Watch providers for series returned
           content:
@@ -8027,6 +8860,7 @@ paths:
                   $ref: '#/components/schemas/WatchProviderDetails'
   /certifications/movie:
     get:
+      operationId: getCertificationsMovie
       summary: Get movie certifications
       description: Returns list of movie certifications from TMDB.
       tags:
@@ -8035,6 +8869,8 @@ paths:
         - cookieAuth: []
         - apiKey: []
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Movie certifications returned
           content:
@@ -8056,6 +8892,7 @@ paths:
                     example: Unable to retrieve movie certifications.
   /certifications/tv:
     get:
+      operationId: getCertificationsTv
       summary: Get TV certifications
       description: Returns list of TV show certifications from TMDB.
       tags:
@@ -8064,6 +8901,8 @@ paths:
         - cookieAuth: []
         - apiKey: []
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: TV certifications returned
           content:
@@ -8085,35 +8924,44 @@ paths:
                     example: Unable to retrieve TV certifications.
   /overrideRule:
     get:
+      operationId: getOverrideRule
       summary: Get override rules
       description: Returns a list of all override rules with their conditions and settings
       tags:
         - overriderule
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Override rules returned
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/OverrideRule'
+                $ref: '#/components/schemas/OverrideRule'
     post:
+      operationId: postOverrideRule
       summary: Create override rule
       description: Creates a new Override Rule from the request body.
       tags:
         - overriderule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OverrideRulePayload'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were successfully created'
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/OverrideRule'
+                $ref: '#/components/schemas/OverrideRule'
   /overrideRule/{ruleId}:
     put:
+      operationId: putOverrideRuleByruleId
       summary: Update override rule
       description: Updates an Override Rule from the request body.
       tags:
@@ -8124,16 +8972,23 @@ paths:
           required: true
           schema:
             type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OverrideRulePayload'
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: 'Values were successfully updated'
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/OverrideRule'
+                $ref: '#/components/schemas/OverrideRule'
     delete:
+      operationId: deleteOverrideRuleByruleId
       summary: Delete override rule by ID
       description: Deletes the override rule with the provided ruleId.
       tags:
@@ -8145,6 +9000,8 @@ paths:
           schema:
             type: number
       responses:
+        '400':
+          description: Invalid request parameters or body.
         '200':
           description: Override rule successfully deleted
           content:
