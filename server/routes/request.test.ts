@@ -265,3 +265,273 @@ describe('POST /request/:requestId/retry', () => {
     assert.ok(persisted.updatedAt > failed.updatedAt);
   });
 });
+
+describe('DELETE /request/:requestId, deleted media status restoration', () => {
+  async function seedDeletedMediaScenario() {
+    const userRepo = getRepository(User);
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+
+    const admin = await userRepo.findOneOrFail({
+      where: { email: 'admin@seerr.dev' },
+    });
+
+    const media = await mediaRepo.save(
+      new Media({
+        mediaType: MediaType.MOVIE,
+        tmdbId: 99001,
+        status: MediaStatus.DELETED,
+        status4k: MediaStatus.UNKNOWN,
+      })
+    );
+
+    const staleRequest = await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.COMPLETED,
+        media,
+        requestedBy: admin,
+        is4k: false,
+        isAutoRequest: true,
+      })
+    );
+
+    media.status = MediaStatus.PENDING;
+    await mediaRepo.save(media);
+
+    const newRequest = await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.APPROVED,
+        media,
+        requestedBy: admin,
+        is4k: false,
+      })
+    );
+
+    return { media, staleRequest, newRequest, admin };
+  }
+
+  it('restores media status to DELETED when the re-request is deleted and a stale completed request remains', async () => {
+    const mediaRepo = getRepository(Media);
+    const { media, newRequest } = await seedDeletedMediaScenario();
+
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+    const res = await agent.delete(`/request/${newRequest.id}`);
+
+    assert.strictEqual(res.status, 204);
+
+    const updated = await mediaRepo.findOneOrFail({ where: { id: media.id } });
+    assert.strictEqual(updated.status, MediaStatus.DELETED);
+  });
+
+  it('restores media status4k to DELETED when the re-request is deleted and a stale completed request remains', async () => {
+    const userRepo = getRepository(User);
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+
+    const admin = await userRepo.findOneOrFail({
+      where: { email: 'admin@seerr.dev' },
+    });
+
+    const media = await mediaRepo.save(
+      new Media({
+        mediaType: MediaType.MOVIE,
+        tmdbId: 99003,
+        status: MediaStatus.UNKNOWN,
+        status4k: MediaStatus.DELETED,
+      })
+    );
+
+    await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.COMPLETED,
+        media,
+        requestedBy: admin,
+        is4k: true,
+        isAutoRequest: true,
+      })
+    );
+
+    media.status4k = MediaStatus.PENDING;
+    await mediaRepo.save(media);
+
+    const newRequest = await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.APPROVED,
+        media,
+        requestedBy: admin,
+        is4k: true,
+      })
+    );
+
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+    const res = await agent.delete(`/request/${newRequest.id}`);
+
+    assert.strictEqual(res.status, 204);
+
+    const updated = await mediaRepo.findOneOrFail({ where: { id: media.id } });
+    assert.strictEqual(updated.status4k, MediaStatus.DELETED);
+  });
+
+  it('resets media status to UNKNOWN when the stale completed request is also deleted', async () => {
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+    const { media, newRequest, staleRequest } =
+      await seedDeletedMediaScenario();
+
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+
+    await agent.delete(`/request/${newRequest.id}`);
+
+    const res = await agent.delete(`/request/${staleRequest.id}`);
+    assert.strictEqual(res.status, 204);
+
+    const updated = await mediaRepo.findOneOrFail({ where: { id: media.id } });
+    assert.strictEqual(updated.status, MediaStatus.UNKNOWN);
+
+    const remaining = await requestRepo.find({
+      where: { media: { id: media.id } },
+    });
+    assert.strictEqual(remaining.length, 0);
+  });
+
+  it('resets media status4k to UNKNOWN when the stale completed 4K request is also deleted', async () => {
+    const userRepo = getRepository(User);
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+
+    const admin = await userRepo.findOneOrFail({
+      where: { email: 'admin@seerr.dev' },
+    });
+
+    const media = await mediaRepo.save(
+      new Media({
+        mediaType: MediaType.MOVIE,
+        tmdbId: 99004,
+        status: MediaStatus.UNKNOWN,
+        status4k: MediaStatus.DELETED,
+      })
+    );
+
+    const staleRequest = await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.COMPLETED,
+        media,
+        requestedBy: admin,
+        is4k: true,
+        isAutoRequest: true,
+      })
+    );
+
+    media.status4k = MediaStatus.PENDING;
+    await mediaRepo.save(media);
+
+    const newRequest = await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.APPROVED,
+        media,
+        requestedBy: admin,
+        is4k: true,
+      })
+    );
+
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+
+    await agent.delete(`/request/${newRequest.id}`);
+
+    const res = await agent.delete(`/request/${staleRequest.id}`);
+    assert.strictEqual(res.status, 204);
+
+    const updated = await mediaRepo.findOneOrFail({ where: { id: media.id } });
+    assert.strictEqual(updated.status4k, MediaStatus.UNKNOWN);
+  });
+
+  it('does not reset media status when other active requests still exist', async () => {
+    const userRepo = getRepository(User);
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+
+    const admin = await userRepo.findOneOrFail({
+      where: { email: 'admin@seerr.dev' },
+    });
+
+    const media = await mediaRepo.save(
+      new Media({
+        mediaType: MediaType.MOVIE,
+        tmdbId: 99002,
+        status: MediaStatus.PENDING,
+        status4k: MediaStatus.UNKNOWN,
+      })
+    );
+
+    const req1 = await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.PENDING,
+        media,
+        requestedBy: admin,
+        is4k: false,
+      })
+    );
+
+    await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.PENDING,
+        media,
+        requestedBy: admin,
+        is4k: false,
+      })
+    );
+
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+    const res = await agent.delete(`/request/${req1.id}`);
+
+    assert.strictEqual(res.status, 204);
+
+    const updated = await mediaRepo.findOneOrFail({ where: { id: media.id } });
+    assert.strictEqual(updated.status, MediaStatus.PENDING);
+  });
+
+  it('does not reset media status when status is PARTIALLY_AVAILABLE and only completed requests remain', async () => {
+    const userRepo = getRepository(User);
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+
+    const admin = await userRepo.findOneOrFail({
+      where: { email: 'admin@seerr.dev' },
+    });
+
+    const media = await mediaRepo.save(
+      new Media({
+        mediaType: MediaType.MOVIE,
+        tmdbId: 99005,
+        status: MediaStatus.PARTIALLY_AVAILABLE,
+        status4k: MediaStatus.UNKNOWN,
+      })
+    );
+
+    const completedRequest = await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        status: MediaRequestStatus.COMPLETED,
+        media,
+        requestedBy: admin,
+        is4k: false,
+      })
+    );
+
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+    const res = await agent.delete(`/request/${completedRequest.id}`);
+
+    assert.strictEqual(res.status, 204);
+
+    const updated = await mediaRepo.findOneOrFail({ where: { id: media.id } });
+    assert.strictEqual(updated.status, MediaStatus.PARTIALLY_AVAILABLE);
+  });
+});

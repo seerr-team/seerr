@@ -118,9 +118,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   const router = useRouter();
   const intl = useIntl();
   const { locale } = useLocale();
-  const [showManager, setShowManager] = useState(
-    router.query.manage == '1' ? true : false
-  );
+  const [showManager, setShowManager] = useState(false);
   const minStudios = 3;
   const [showMoreStudios, setShowMoreStudios] = useState(false);
   const [showIssueModal, setShowIssueModal] = useState(false);
@@ -158,8 +156,14 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   );
 
   useEffect(() => {
-    setShowManager(router.query.manage == '1' ? true : false);
-  }, [router.query.manage]);
+    if (router.query.manage === '1') {
+      setShowManager(true);
+      router.replace({
+        pathname: router.pathname,
+        query: { movieId: router.query.movieId },
+      });
+    }
+  }, [router, router.query.manage]);
 
   const closeBlocklistModal = useCallback(
     () => setShowBlocklistModal(false),
@@ -469,7 +473,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
         mediaType="movie"
         onClose={() => {
           setShowManager(false);
-          router.push({
+          router.replace({
             pathname: router.pathname,
             query: { movieId: router.query.movieId },
           });

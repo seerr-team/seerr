@@ -14,6 +14,7 @@ import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
+import { quickConnectSecret } from '@server/routes/auth';
 import { ApiError } from '@server/types/error';
 import { getHostname } from '@server/utils/getHostname';
 import {
@@ -48,7 +49,6 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
       return res.status(200).json({
         username: user.username,
         email: user.email,
-        discordId: user.settings?.discordId,
         locale: user.settings?.locale,
         discoverRegion: user.settings?.discoverRegion,
         streamingRegion: user.settings?.streamingRegion,
@@ -122,7 +122,6 @@ userSettingsRoutes.post<
     if (!user.settings) {
       user.settings = new UserSettings({
         user: req.user,
-        discordId: req.body.discordId,
         locale: req.body.locale,
         discoverRegion: req.body.discoverRegion,
         streamingRegion: req.body.streamingRegion,
@@ -131,7 +130,6 @@ userSettingsRoutes.post<
         watchlistSyncTv: req.body.watchlistSyncTv,
       });
     } else {
-      user.settings.discordId = req.body.discordId;
       user.settings.locale = req.body.locale;
       user.settings.discoverRegion = req.body.discoverRegion;
       user.settings.streamingRegion = req.body.streamingRegion;
@@ -144,7 +142,6 @@ userSettingsRoutes.post<
 
     return res.status(200).json({
       username: savedUser.username,
-      discordId: savedUser.settings?.discordId,
       locale: savedUser.settings?.locale,
       discoverRegion: savedUser.settings?.discoverRegion,
       streamingRegion: savedUser.settings?.streamingRegion,
@@ -518,6 +515,78 @@ userSettingsRoutes.delete<{ id: string }>(
   }
 );
 
+userSettingsRoutes.post<{ secret: string }>(
+  '/linked-accounts/jellyfin/quickconnect',
+  isOwnProfile(),
+  async (req, res) => {
+    const settings = getSettings();
+    const userRepository = getRepository(User);
+
+    if (!req.user) {
+      return res.status(401).json({ code: ApiErrorCode.Unauthorized });
+    }
+
+    const result = quickConnectSecret.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ message: 'Invalid secret format' });
+    }
+
+    const { secret } = result.data;
+
+    if (
+      settings.main.mediaServerType !== MediaServerType.JELLYFIN &&
+      settings.main.mediaServerType !== MediaServerType.EMBY
+    ) {
+      return res
+        .status(500)
+        .json({ message: 'Jellyfin/Emby login is disabled' });
+    }
+
+    const hostname = getHostname();
+    const jellyfinServer = new JellyfinAPI(hostname);
+
+    try {
+      const account = await jellyfinServer.authenticateQuickConnect(secret);
+
+      if (
+        await userRepository.exist({
+          where: { jellyfinUserId: account.User.Id },
+        })
+      ) {
+        return res.status(422).json({
+          message: 'The specified account is already linked to a Seerr user',
+        });
+      }
+
+      const user = req.user;
+      const deviceId = Buffer.from(
+        user.id === 1 ? 'BOT_seerr' : `BOT_seerr_${user.username ?? ''}`
+      ).toString('base64');
+
+      user.userType =
+        settings.main.mediaServerType === MediaServerType.EMBY
+          ? UserType.EMBY
+          : UserType.JELLYFIN;
+      user.jellyfinUserId = account.User.Id;
+      user.jellyfinUsername = account.User.Name;
+      user.jellyfinAuthToken = account.AccessToken;
+      user.jellyfinDeviceId = deviceId;
+      await userRepository.save(user);
+
+      return res.status(204).send();
+    } catch (e) {
+      logger.error('Failed to link account with Quick Connect.', {
+        label: 'API',
+        ip: req.ip,
+        error: e,
+      });
+
+      const status = e instanceof ApiError ? e.statusCode : 500;
+      return res.status(status).send();
+    }
+  }
+);
+
 userSettingsRoutes.get<{ id: string }, UserSettingsNotificationsResponse>(
   '/notifications',
   isOwnProfileOrAdmin(),
@@ -543,7 +612,7 @@ userSettingsRoutes.get<{ id: string }, UserSettingsNotificationsResponse>(
           settings?.discord.enabled && settings.discord.options.enableMentions
             ? settings.discord.types
             : 0,
-        discordId: user.settings?.discordId,
+        discordIds: user.settings?.discordIds ?? [],
         pushbulletAccessToken: user.settings?.pushbulletAccessToken,
         pushoverApplicationToken: user.settings?.pushoverApplicationToken,
         pushoverUserKey: user.settings?.pushoverUserKey,
@@ -585,11 +654,14 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
         });
       }
 
+      const discordIds =
+        req.body.discordIds?.filter((id: string) => id !== '') ?? [];
+
       if (!user.settings) {
         user.settings = new UserSettings({
           user: req.user,
           pgpKey: req.body.pgpKey,
-          discordId: req.body.discordId,
+          discordIds,
           pushbulletAccessToken: req.body.pushbulletAccessToken,
           pushoverApplicationToken: req.body.pushoverApplicationToken,
           pushoverUserKey: req.body.pushoverUserKey,
@@ -600,7 +672,7 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
         });
       } else {
         user.settings.pgpKey = req.body.pgpKey;
-        user.settings.discordId = req.body.discordId;
+        user.settings.discordIds = discordIds;
         user.settings.pushbulletAccessToken = req.body.pushbulletAccessToken;
         user.settings.pushoverApplicationToken =
           req.body.pushoverApplicationToken;
@@ -621,7 +693,7 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
 
       return res.status(200).json({
         pgpKey: user.settings.pgpKey,
-        discordId: user.settings.discordId,
+        discordIds: user.settings.discordIds ?? [],
         pushbulletAccessToken: user.settings.pushbulletAccessToken,
         pushoverApplicationToken: user.settings.pushoverApplicationToken,
         pushoverUserKey: user.settings.pushoverUserKey,

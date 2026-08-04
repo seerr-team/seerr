@@ -573,37 +573,38 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           throw new Error('TVDB ID not found');
         }
 
-        let seriesType: SonarrSeries['seriesType'] = 'standard';
+        const isAnime = series.keywords.results.some(
+          (keyword) => keyword.id === ANIME_KEYWORD_ID
+        );
 
-        // Change series type to anime if the anime keyword is present on tmdb
-        if (
-          series.keywords.results.some(
-            (keyword) => keyword.id === ANIME_KEYWORD_ID
-          )
-        ) {
+        // seriesType only controls how Sonarr parses/numbers episodes
+        // it is sent in the addSeries payload and must not gate anime routing
+        let seriesType: SonarrSeries['seriesType'] =
+          sonarrSettings.seriesType ?? 'standard';
+
+        if (isAnime) {
           seriesType = sonarrSettings.animeSeriesType ?? 'anime';
         }
 
         let rootFolder =
-          seriesType === 'anime' && sonarrSettings.activeAnimeDirectory
+          isAnime && sonarrSettings.activeAnimeDirectory
             ? sonarrSettings.activeAnimeDirectory
             : sonarrSettings.activeDirectory;
         let qualityProfile =
-          seriesType === 'anime' && sonarrSettings.activeAnimeProfileId
+          isAnime && sonarrSettings.activeAnimeProfileId
             ? sonarrSettings.activeAnimeProfileId
             : sonarrSettings.activeProfileId;
         let languageProfile =
-          seriesType === 'anime' && sonarrSettings.activeAnimeLanguageProfileId
+          isAnime && sonarrSettings.activeAnimeLanguageProfileId
             ? sonarrSettings.activeAnimeLanguageProfileId
             : sonarrSettings.activeLanguageProfileId;
-        let tags =
-          seriesType === 'anime'
-            ? sonarrSettings.animeTags
-              ? [...sonarrSettings.animeTags]
-              : []
-            : sonarrSettings.tags
-              ? [...sonarrSettings.tags]
-              : [];
+        let tags = isAnime
+          ? sonarrSettings.animeTags
+            ? [...sonarrSettings.animeTags]
+            : []
+          : sonarrSettings.tags
+            ? [...sonarrSettings.tags]
+            : [];
 
         if (
           entity.rootFolder &&
@@ -952,13 +953,28 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       relations: { requests: true },
     });
 
+    const hasActive = fullMedia.requests.some(
+      (request) =>
+        !request.is4k &&
+        request.status !== MediaRequestStatus.COMPLETED &&
+        request.status !== MediaRequestStatus.DECLINED
+    );
+    const hasActive4k = fullMedia.requests.some(
+      (request) =>
+        request.is4k &&
+        request.status !== MediaRequestStatus.COMPLETED &&
+        request.status !== MediaRequestStatus.DECLINED
+    );
+
     const needsStatusUpdate =
-      !fullMedia.requests.some((request) => !request.is4k) &&
-      fullMedia.status !== MediaStatus.AVAILABLE;
+      !hasActive &&
+      fullMedia.status !== MediaStatus.AVAILABLE &&
+      fullMedia.status !== MediaStatus.PARTIALLY_AVAILABLE;
 
     const needs4kStatusUpdate =
-      !fullMedia.requests.some((request) => request.is4k) &&
-      fullMedia.status4k !== MediaStatus.AVAILABLE;
+      !hasActive4k &&
+      fullMedia.status4k !== MediaStatus.AVAILABLE &&
+      fullMedia.status4k !== MediaStatus.PARTIALLY_AVAILABLE;
 
     if (needsStatusUpdate || needs4kStatusUpdate) {
       // Re-fetch WITHOUT requests to avoid cascade issues on save
@@ -967,10 +983,21 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       });
 
       if (needsStatusUpdate) {
-        cleanMedia.status = MediaStatus.UNKNOWN;
+        const hadCompleted = fullMedia.requests.some(
+          (r) => !r.is4k && r.status === MediaRequestStatus.COMPLETED
+        );
+        cleanMedia.status = hadCompleted
+          ? MediaStatus.DELETED
+          : MediaStatus.UNKNOWN;
       }
+
       if (needs4kStatusUpdate) {
-        cleanMedia.status4k = MediaStatus.UNKNOWN;
+        const hadCompleted4k = fullMedia.requests.some(
+          (r) => r.is4k && r.status === MediaRequestStatus.COMPLETED
+        );
+        cleanMedia.status4k = hadCompleted4k
+          ? MediaStatus.DELETED
+          : MediaStatus.UNKNOWN;
       }
 
       await manager.save(cleanMedia);

@@ -1,10 +1,10 @@
 import logger from '@server/logger';
-import { requestInterceptorFunction } from '@server/utils/customProxyAgent';
+import { proxyRequestInterceptor } from '@server/utils/customProxyAgent';
 import axios, { type AxiosInstance } from 'axios';
 import rateLimit, { type rateLimitOptions } from 'axios-rate-limit';
 import { createHash } from 'crypto';
 import { promises } from 'fs';
-import mime from 'mime/lite';
+import mime from 'mime';
 import path, { join } from 'path';
 
 type ImageResponse = {
@@ -147,7 +147,7 @@ class ImageProxy {
       baseURL: baseUrl,
       headers: options.headers,
     });
-    this.axios.interceptors.request.use(requestInterceptorFunction);
+    this.axios.interceptors.request.use(proxyRequestInterceptor);
 
     if (options.rateLimitOptions) {
       this.axios = rateLimit(this.axios, options.rateLimitOptions);
@@ -270,7 +270,10 @@ class ImageProxy {
       const buffer = Buffer.from(response.data, 'binary');
 
       const contentType = response.headers['content-type'] || '';
-      const extension = mime.getExtension(contentType) || '';
+      const extension = (mime.getExtension(contentType) || '').replace(
+        /[^\w-]/g,
+        ''
+      );
 
       let maxAge = Number(
         (response.headers['cache-control'] ?? '0').split('=')[1]
@@ -278,7 +281,7 @@ class ImageProxy {
 
       if (!maxAge) maxAge = 86400;
       const expireAt = Date.now() + maxAge * 1000;
-      const etag = (response.headers.etag ?? '').replace(/"/g, '');
+      const etag = (response.headers.etag ?? '').replace(/[^\w-]/g, '');
 
       await this.writeToCacheDir(
         directory,

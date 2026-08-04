@@ -36,6 +36,8 @@ const globalMessages = defineMessages('i18n', {
   saving: 'Saving…',
   import: 'Import',
   importing: 'Importing…',
+  sync: 'Sync',
+  syncing: 'Syncing…',
   close: 'Close',
   edit: 'Edit',
   areyousure: 'Are you sure?',
