@@ -486,12 +486,12 @@ const TvRequestModal = ({
         ) &&
         getAllRequestedSeasons().length < getAllSeasons().length &&
         !editRequest && (
-          <p className="mt-6">
+          <div className="mt-6">
             <Alert
               title={intl.formatMessage(messages.requestadmin)}
               type="info"
             />
-          </p>
+          </div>
         )}
       {(quota?.tv.limit ?? 0) > 0 && (
         <QuotaDisplay

@@ -67,6 +67,31 @@ securityContext:
   seccompProfile:
     type: RuntimeDefault
 
+# -- Set a DNS policy, likely not needed unless seerr only interacts with external services.
+# -- docs: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
+dnsPolicy: ''
+
+# -- Set DNS config options
+# -- Setting ndots lower can prevent queries like `raw.githubusercontent.com.seerr.svc.cluster.local.`
+# -- docs: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-config
+dnsConfig: {}
+# nameservers:
+#   - 1.2.3.4
+# searches:
+#   - ns1.svc.cluster-domain.example
+#   - my.dns.search.suffix
+# options:
+#   - name: ndots
+#     value: "2"
+
+# -- Set to false to run in an idmaped user namespace for additional isolation
+# -- requires cluster support, and PV support of idmaped volumes.
+# -- docs: https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/
+hostUsers: true
+
+# -- Specify a priorityclass, or use default if unset.
+priorityClassName: null
+
 service:
   type: ClusterIP
   port: 80

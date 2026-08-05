@@ -573,37 +573,38 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           throw new Error('TVDB ID not found');
         }
 
-        let seriesType: SonarrSeries['seriesType'] = 'standard';
+        const isAnime = series.keywords.results.some(
+          (keyword) => keyword.id === ANIME_KEYWORD_ID
+        );
 
-        // Change series type to anime if the anime keyword is present on tmdb
-        if (
-          series.keywords.results.some(
-            (keyword) => keyword.id === ANIME_KEYWORD_ID
-          )
-        ) {
+        // seriesType only controls how Sonarr parses/numbers episodes
+        // it is sent in the addSeries payload and must not gate anime routing
+        let seriesType: SonarrSeries['seriesType'] =
+          sonarrSettings.seriesType ?? 'standard';
+
+        if (isAnime) {
           seriesType = sonarrSettings.animeSeriesType ?? 'anime';
         }
 
         let rootFolder =
-          seriesType === 'anime' && sonarrSettings.activeAnimeDirectory
+          isAnime && sonarrSettings.activeAnimeDirectory
             ? sonarrSettings.activeAnimeDirectory
             : sonarrSettings.activeDirectory;
         let qualityProfile =
-          seriesType === 'anime' && sonarrSettings.activeAnimeProfileId
+          isAnime && sonarrSettings.activeAnimeProfileId
             ? sonarrSettings.activeAnimeProfileId
             : sonarrSettings.activeProfileId;
         let languageProfile =
-          seriesType === 'anime' && sonarrSettings.activeAnimeLanguageProfileId
+          isAnime && sonarrSettings.activeAnimeLanguageProfileId
             ? sonarrSettings.activeAnimeLanguageProfileId
             : sonarrSettings.activeLanguageProfileId;
-        let tags =
-          seriesType === 'anime'
-            ? sonarrSettings.animeTags
-              ? [...sonarrSettings.animeTags]
-              : []
-            : sonarrSettings.tags
-              ? [...sonarrSettings.tags]
-              : [];
+        let tags = isAnime
+          ? sonarrSettings.animeTags
+            ? [...sonarrSettings.animeTags]
+            : []
+          : sonarrSettings.tags
+            ? [...sonarrSettings.tags]
+            : [];
 
         if (
           entity.rootFolder &&
