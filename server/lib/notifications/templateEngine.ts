@@ -148,13 +148,13 @@ export class TemplateEngine {
    *
    * @throws if the template contains invalid Liquid syntax
    */
-  static render(
+  static async render(
     template: string,
     payload: NotificationPayload,
     type: Notification
-  ): string {
+  ): Promise<string> {
     const context = this.buildContext(payload, type);
-    // parseAndRenderSync is typed `any`; coerce to honor the `string` return.
-    return String(this.getEngine().parseAndRenderSync(template, context));
+    // parseAndRender is typed `Promise<any>`; coerce to honor the `string` return.
+    return String(await this.getEngine().parseAndRender(template, context));
   }
 }

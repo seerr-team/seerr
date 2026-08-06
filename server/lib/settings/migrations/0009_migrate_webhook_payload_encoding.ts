@@ -1,8 +1,10 @@
 import type { AllSettings } from '@server/lib/settings';
 
-// Webhook payloads used to be stored as base64(JSON.stringify(template)); they
-// are now stored as base64(template). Unwrap the JSON envelope on existing
-// settings so the stored value is the raw (Liquid) template string.
+// The POST /settings/notifications/webhook route used to store the payload as
+// base64(JSON.stringify(template)); it now stores base64(template). Unwrap the
+// JSON envelope on existing settings so the stored value is the raw (Liquid)
+// template string — otherwise the agent would decode a quoted JSON string
+// literal and post a string body instead of the rendered object.
 const migrateWebhookPayloadEncoding = (settings: any): AllSettings => {
   if (
     Array.isArray(settings.migrations) &&
@@ -13,7 +15,11 @@ const migrateWebhookPayloadEncoding = (settings: any): AllSettings => {
 
   const options = settings.notifications?.agents?.webhook?.options;
 
-  if (options && typeof options.jsonPayload === 'string' && options.jsonPayload) {
+  if (
+    options &&
+    typeof options.jsonPayload === 'string' &&
+    options.jsonPayload
+  ) {
     try {
       const decoded = Buffer.from(options.jsonPayload, 'base64').toString(
         'utf8'

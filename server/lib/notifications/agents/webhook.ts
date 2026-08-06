@@ -21,12 +21,12 @@ class WebhookAgent
     return settings.notifications.agents.webhook;
   }
 
-  private buildPayload(type: Notification, payload: NotificationPayload) {
+  private async buildPayload(type: Notification, payload: NotificationPayload) {
     const template = Buffer.from(
       this.getSettings().options.jsonPayload,
       'base64'
     ).toString('utf8');
-    const rendered = TemplateEngine.render(template, payload, type);
+    const rendered = await TemplateEngine.render(template, payload, type);
 
     return JSON.parse(rendered);
   }
@@ -64,7 +64,7 @@ class WebhookAgent
 
     if (settings.options.supportVariables) {
       try {
-        webhookUrl = TemplateEngine.render(webhookUrl, payload, type);
+        webhookUrl = await TemplateEngine.render(webhookUrl, payload, type);
       } catch (error) {
         logger.error('Failed to render webhook URL template', {
           label: 'Notifications',
@@ -80,7 +80,7 @@ class WebhookAgent
 
     let body: unknown;
     try {
-      body = this.buildPayload(type, payload);
+      body = await this.buildPayload(type, payload);
     } catch (error) {
       logger.error('Failed to render webhook payload template', {
         label: 'Notifications',

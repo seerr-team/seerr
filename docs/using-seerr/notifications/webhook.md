@@ -35,7 +35,7 @@ You cannot configure both the **Authorization Header** field and a custom `Autho
 
 ### JSON Payload
 
-Customize the JSON payload to suit your needs. The payload is a [Liquid](https://liquidjs.com/) template that is rendered when a notification is triggered and then sent as the request body. Seerr exposes a set of [template variables](#template-variables), plus the full `media`, `request`, `issue`, and `comment` objects, for use in [conditionals and filters](#template-syntax).
+Customize the JSON payload to suit your needs. The payload is a [Liquid](https://liquidjs.com/) template that is rendered when a notification is triggered and then sent as the request body. Seerr exposes a set of [template variables](#template-variables), plus the full `media`, `request`, `issue`, and `comment` objects, for use in [conditionals and filters](#template-syntax). If you are new to Liquid, see the [introduction to Liquid tutorial](https://liquidjs.com/tutorials/intro-to-liquid.html).
 
 The template only needs to _render_ to valid JSON — it does not need to be valid JSON itself (for example, optional sections can be wrapped in `{% if %}` blocks). Use the **Test** button to confirm your template renders correctly; template errors are also written to the server logs.
 
