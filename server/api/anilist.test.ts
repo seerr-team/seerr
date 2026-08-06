@@ -4,22 +4,29 @@ import {
   dedupeByTmdbId,
   extractTmdbTvMapping,
   getCurrentAnimeSeason,
+  getMalIdFromTmdb,
+  mapWithConcurrency,
   pickCanonicalMalId,
   pickTvSearchResult,
 } from '@server/api/anilist';
+import cacheManager from '@server/lib/cache';
+import axios from 'axios';
 import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+import { afterEach, describe, it, mock } from 'node:test';
+
+afterEach(() => mock.restoreAll());
 
 const makeMedia = (
   romaji: string | null,
-  english: string | null = null
+  english: string | null = null,
+  year: number | null = null
 ): AniListMedia => ({
   id: 1,
   idMal: null,
   title: { romaji, english },
   format: 'TV',
   episodes: null,
-  startDate: { year: null, month: null, day: null },
+  startDate: { year, month: null, day: null },
   coverImage: { large: null },
 });
 
@@ -45,6 +52,13 @@ describe('getCurrentAnimeSeason', () => {
       season: 'FALL',
       year: 2026,
     });
+    assert.deepEqual(
+      getCurrentAnimeSeason(new Date('2026-03-31T23:30:00.000Z')),
+      {
+        season: 'WINTER',
+        year: 2026,
+      }
+    );
   });
 });
 
@@ -140,8 +154,17 @@ describe('pickTvSearchResult', () => {
   const result = (
     id: number,
     original_language: string,
-    genre_ids: number[]
-  ) => ({ id, original_language, genre_ids });
+    genre_ids: number[],
+    name = `Result ${id}`,
+    first_air_date = '2026-01-01'
+  ) => ({
+    id,
+    original_language,
+    genre_ids,
+    name,
+    original_name: name,
+    first_air_date,
+  });
 
   it('prefers japanese animation results', () => {
     const picked = pickTvSearchResult([
@@ -162,6 +185,141 @@ describe('pickTvSearchResult', () => {
 
   it('returns undefined without japanese results', () => {
     assert.equal(pickTvSearchResult([result(1, 'en', [16])]), undefined);
+  });
+
+  it('requires a strong title match for anime fallback searches', () => {
+    const picked = pickTvSearchResult(
+      [
+        result(1, 'ja', [16], 'Unrelated Anime'),
+        result(2, 'ja', [16], 'Target Anime'),
+      ],
+      makeMedia('Target Anime', null, 2026)
+    );
+
+    assert.equal(picked?.id, 2);
+  });
+
+  it('rejects a matching title from the wrong release year', () => {
+    assert.equal(
+      pickTvSearchResult(
+        [result(1, 'ja', [16], 'Target Anime', '2025-01-01')],
+        makeMedia('Target Anime', null, 2026)
+      ),
+      undefined
+    );
+  });
+
+  it('allows sequels when TMDB reports the parent series year', () => {
+    assert.equal(
+      pickTvSearchResult(
+        [result(1, 'ja', [16], 'Target Anime', '2020-01-01')],
+        makeMedia('Target Anime 2nd Season', null, 2026)
+      )?.id,
+      1
+    );
+  });
+
+  it('rejects ambiguous equally strong matches', () => {
+    assert.equal(
+      pickTvSearchResult(
+        [
+          result(1, 'ja', [16], 'Target Anime'),
+          result(2, 'ja', [16], 'Target Anime'),
+        ],
+        makeMedia('Target Anime', null, 2026)
+      ),
+      undefined
+    );
+  });
+});
+
+describe('mapWithConcurrency', () => {
+  it('keeps concurrent work below the configured limit', async () => {
+    let active = 0;
+    let maximumActive = 0;
+
+    const results = await mapWithConcurrency(
+      [1, 2, 3, 4, 5],
+      2,
+      async (value) => {
+        active++;
+        maximumActive = Math.max(maximumActive, active);
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        active--;
+        return value * 2;
+      }
+    );
+
+    assert.equal(maximumActive, 2);
+    assert.deepEqual(results, [2, 4, 6, 8, 10]);
+  });
+
+  it('rejects invalid concurrency limits', async () => {
+    await assert.rejects(
+      mapWithConcurrency([1], 0, async (value) => value),
+      /positive integer/
+    );
+  });
+});
+
+describe('Fribb mappings', () => {
+  it('shares one in-flight mapping request', async () => {
+    const cache = cacheManager.getCache('anilist').data;
+    cache.flushAll();
+    const get = mock.method(axios, 'get', async () => ({
+      data: [
+        {
+          anilist_id: 1,
+          mal_id: 100,
+          themoviedb_id: { tv: 10 },
+          season: { tmdb: 1 },
+          type: 'TV',
+        },
+      ],
+    }));
+
+    try {
+      const results = await Promise.all([
+        getMalIdFromTmdb(10),
+        getMalIdFromTmdb(10),
+      ]);
+
+      assert.deepEqual(results, [100, 100]);
+      assert.equal(get.mock.calls.length, 1);
+    } finally {
+      cache.flushAll();
+    }
+  });
+
+  it('keeps the last good mapping after an empty refresh', async () => {
+    const cache = cacheManager.getCache('anilist').data;
+    cache.flushAll();
+    let now = Date.now();
+    mock.method(Date, 'now', () => now);
+    let requestCount = 0;
+    const get = mock.method(axios, 'get', async () => ({
+      data:
+        requestCount++ === 0
+          ? [
+              {
+                anilist_id: 1,
+                mal_id: 100,
+                themoviedb_id: { tv: 10 },
+                season: { tmdb: 1 },
+                type: 'TV',
+              },
+            ]
+          : [],
+    }));
+
+    try {
+      assert.equal(await getMalIdFromTmdb(10), 100);
+      now += 86400001;
+      assert.equal(await getMalIdFromTmdb(10), 100);
+      assert.equal(get.mock.callCount(), 2);
+    } finally {
+      cache.flushAll();
+    }
   });
 });
 

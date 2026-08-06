@@ -96,6 +96,12 @@ export type FilterOptions = z.infer<typeof QueryFilterOptions>;
 const ApiQuerySchema = QueryFilterOptions.omit({
   certificationMode: true,
 });
+const AnimeQuerySchema = ApiQuerySchema.extend({
+  page: z.coerce.number().int().min(1).default(1),
+});
+const SeasonalAnimeQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+});
 
 discoverRoutes.get('/movies', async (req, res, next) => {
   const tmdb = createTmdbWithRegionLanguage(req.user);
@@ -495,11 +501,11 @@ discoverRoutes.get('/anime', async (req, res, next) => {
   const tmdb = createTmdbWithRegionLanguage(req.user);
 
   try {
-    const query = ApiQuerySchema.parse(req.query);
+    const query = AnimeQuerySchema.parse(req.query);
     const keywords = query.keywords;
     const excludeKeywords = query.excludeKeywords;
     const data = await tmdb.getDiscoverTv({
-      page: Number(query.page),
+      page: query.page,
       sortBy: query.sortBy as SortOptions,
       language: req.locale ?? query.language,
       genre: query.genre,
@@ -569,6 +575,10 @@ discoverRoutes.get('/anime', async (req, res, next) => {
       ),
     });
   } catch (e) {
+    if (e instanceof z.ZodError) {
+      return next({ status: 400, message: 'Invalid query parameters.' });
+    }
+
     logger.debug('Something went wrong retrieving anime series', {
       label: 'API',
       errorMessage: e.message,
@@ -1015,10 +1025,10 @@ discoverRoutes.get<Record<string, unknown>, SeasonalAnimeResponse>(
   '/seasonal-anime',
   async (req, res, next) => {
     const itemsPerPage = 20;
-    const page = req.query.page ? Number(req.query.page) : 1;
-    const offset = (page - 1) * itemsPerPage;
 
     try {
+      const { page } = SeasonalAnimeQuerySchema.parse(req.query);
+      const offset = (page - 1) * itemsPerPage;
       const items = await getSeasonalAnimeList();
 
       return res.status(200).json({
@@ -1034,6 +1044,10 @@ discoverRoutes.get<Record<string, unknown>, SeasonalAnimeResponse>(
         })),
       });
     } catch (e) {
+      if (e instanceof z.ZodError) {
+        return next({ status: 400, message: 'Invalid query parameters.' });
+      }
+
       logger.debug('Something went wrong retrieving seasonal anime', {
         label: 'API',
         errorMessage: e.message,

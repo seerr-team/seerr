@@ -6028,7 +6028,8 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
+            minimum: 1
             example: 1
             default: 1
         - in: query
@@ -6072,6 +6073,10 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/TvResult'
+        '400':
+          description: Invalid query parameters
+        '500':
+          description: Unable to retrieve anime series
   /discover/tv/language/{language}:
     get:
       summary: Discover TV shows by original language
@@ -6470,7 +6475,8 @@ paths:
         - in: query
           name: page
           schema:
-            type: number
+            type: integer
+            minimum: 1
             example: 1
             default: 1
       responses:
@@ -6505,6 +6511,10 @@ paths:
                           example: tv
                         title:
                           type: string
+        '400':
+          description: Invalid query parameters
+        '500':
+          description: Unable to retrieve seasonal anime
   /request:
     get:
       summary: Get all requests

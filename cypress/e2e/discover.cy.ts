@@ -16,6 +16,31 @@ const clickFirstTitleCardInSlider = (sliderTitle: string): void => {
     });
 };
 
+const seasonalAnimeResponse = {
+  page: 1,
+  totalPages: 1,
+  totalResults: 1,
+  results: [
+    {
+      id: 123,
+      ratingKey: 'seasonal-anime-123',
+      tmdbId: 123,
+      mediaType: 'tv',
+      title: 'Seasonal Test Anime',
+    },
+  ],
+};
+
+const seasonalAnimeDetails = {
+  id: 123,
+  name: 'Seasonal Test Anime',
+  overview: 'A seasonal anime used by the Discover frontend test.',
+  posterPath: null,
+  voteAverage: 8,
+  firstAirDate: '2026-01-01',
+  mediaInfo: { watchlists: [] },
+};
+
 describe('Discover', () => {
   beforeEach(() => {
     cy.loginAsAdmin();
@@ -210,5 +235,75 @@ describe('Discover', () => {
           .click();
         cy.get('[data-testid=media-title]').should('contain', text);
       });
+  });
+
+  it('does not treat seasonal anime as watchlisted', () => {
+    const localUserType = 2;
+
+    cy.intercept('GET', '/api/v1/auth/me', (request) => {
+      request.continue((response) => {
+        response.body.userType = localUserType;
+      });
+    });
+    cy.intercept('GET', '/api/v1/discover/anime*').as('getAnimeDiscover');
+    cy.intercept('GET', '/api/v1/discover/seasonal-anime*', {
+      body: seasonalAnimeResponse,
+    }).as('getSeasonalAnime');
+    cy.intercept('GET', '/api/v1/tv/123', {
+      body: seasonalAnimeDetails,
+    }).as('getSeasonalAnimeDetails');
+    cy.intercept('POST', '/api/v1/watchlist', {
+      statusCode: 201,
+      body: {},
+    }).as('addSeasonalAnimeToWatchlist');
+    cy.intercept('DELETE', '/api/v1/watchlist/123?mediaType=tv').as(
+      'deleteSeasonalAnimeFromWatchlist'
+    );
+
+    cy.visit('/discover/anime?seasonal=true');
+    cy.wait('@getSeasonalAnime');
+    cy.get('@getSeasonalAnime.all').should('have.length', 1);
+    cy.get('@getAnimeDiscover.all').should('have.length', 0);
+    cy.get('[data-testid=title-card]')
+      .should('have.length', 1)
+      .first()
+      .scrollIntoView()
+      .trigger('mouseover');
+    cy.wait('@getSeasonalAnimeDetails');
+    cy.get('[data-testid=title-card]').first().trigger('mouseover');
+    cy.get('[data-testid=title-card]').first().find('button').first().click();
+
+    cy.wait('@addSeasonalAnimeToWatchlist');
+    cy.get('@deleteSeasonalAnimeFromWatchlist.all').should('have.length', 0);
+  });
+
+  it('allows retrying a failed seasonal anime request', () => {
+    let allowSeasonalAnimeRequest = false;
+
+    cy.intercept('GET', '/api/v1/discover/seasonal-anime*', (request) => {
+      if (!allowSeasonalAnimeRequest) {
+        request.reply({
+          statusCode: 500,
+          body: { message: 'Seasonal anime unavailable' },
+        });
+      } else {
+        request.reply({ body: seasonalAnimeResponse });
+      }
+    }).as('getSeasonalAnime');
+    cy.intercept('GET', '/api/v1/tv/123', {
+      body: seasonalAnimeDetails,
+    }).as('getSeasonalAnimeDetails');
+
+    cy.visit('/discover/anime?seasonal=true');
+    cy.wait('@getSeasonalAnime');
+    cy.get('[data-testid=discover-anime-error]')
+      .should('be.visible')
+      .then(() => {
+        allowSeasonalAnimeRequest = true;
+      });
+    cy.get('[data-testid=discover-anime-retry]').click();
+    cy.wait('@getSeasonalAnime');
+    cy.wait('@getSeasonalAnimeDetails');
+    cy.get('[data-testid=title-card]').should('exist');
   });
 });

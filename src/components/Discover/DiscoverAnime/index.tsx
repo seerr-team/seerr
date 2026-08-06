@@ -1,16 +1,21 @@
 import Button from '@app/components/Common/Button';
 import Header from '@app/components/Common/Header';
 import ListView from '@app/components/Common/ListView';
+import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import SlideCheckbox from '@app/components/Common/SlideCheckbox';
+import FilterSlideover from '@app/components/Discover/FilterSlideover';
 import type { FilterOptions } from '@app/components/Discover/constants';
 import {
   countActiveFilters,
   prepareFilterValues,
 } from '@app/components/Discover/constants';
-import FilterSlideover from '@app/components/Discover/FilterSlideover';
+import TitleCard from '@app/components/TitleCard';
+import TmdbTitleCard from '@app/components/TitleCard/TmdbTitleCard';
 import useDiscover from '@app/hooks/useDiscover';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
+import useVerticalScroll from '@app/hooks/useVerticalScroll';
+import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import { BarsArrowDownIcon, FunnelIcon } from '@heroicons/react/24/solid';
@@ -47,6 +52,77 @@ const SortOptions: Record<string, TMDBSortOptions> = {
   TitleDesc: 'original_title.desc',
 } as const;
 
+const AnimeError = ({ onRetry }: { onRetry: () => void }) => {
+  const intl = useIntl();
+
+  return (
+    <div data-testid="discover-anime-error">
+      <ErrorPage statusCode={500} />
+      <div className="mt-4 flex justify-center">
+        <Button
+          onClick={onRetry}
+          data-testid="discover-anime-retry"
+          type="button"
+        >
+          {intl.formatMessage(globalMessages.retry)}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+interface SeasonalAnimeListViewProps {
+  titles: SeasonalAnimeResult[];
+  isEmpty: boolean;
+  isLoading: boolean;
+  isReachingEnd: boolean;
+  fetchMore: () => void;
+  mutate?: () => void;
+}
+
+const SeasonalAnimeListView = ({
+  titles,
+  isEmpty,
+  isLoading,
+  isReachingEnd,
+  fetchMore,
+  mutate,
+}: SeasonalAnimeListViewProps) => {
+  const intl = useIntl();
+
+  useVerticalScroll(fetchMore, !isLoading && !isEmpty && !isReachingEnd);
+
+  return (
+    <>
+      {isEmpty && (
+        <div className="mt-64 w-full text-center text-2xl text-gray-400">
+          {intl.formatMessage(globalMessages.noresults)}
+        </div>
+      )}
+      <ul className="cards-vertical">
+        {titles.map((title, index) => (
+          <li key={`${title.ratingKey}-${index}`}>
+            <TmdbTitleCard
+              id={title.tmdbId}
+              tmdbId={title.tmdbId}
+              type={title.mediaType}
+              canExpand
+              mutateParent={mutate}
+            />
+          </li>
+        ))}
+        {isLoading &&
+          !isReachingEnd &&
+          [...Array(20)].map((_item, index) => (
+            <li key={`placeholder-${index}`}>
+              <TitleCard.Placeholder canExpand />
+            </li>
+          ))}
+      </ul>
+    </>
+  );
+};
+
 const AnimeList = ({ filters }: { filters: FilterOptions }) => {
   const {
     isLoadingInitialData,
@@ -56,12 +132,13 @@ const AnimeList = ({ filters }: { filters: FilterOptions }) => {
     titles,
     fetchMore,
     error,
+    mutate,
   } = useDiscover<TvResult, never, FilterOptions>('/api/v1/discover/anime', {
     ...filters,
   });
 
   if (error) {
-    return <ErrorPage statusCode={500} />;
+    return <AnimeError onRetry={() => mutate?.()} />;
   }
 
   return (
@@ -87,22 +164,26 @@ const SeasonalAnimeList = () => {
     fetchMore,
     error,
     mutate,
-  } = useDiscover<SeasonalAnimeResult>('/api/v1/discover/seasonal-anime');
+  } = useDiscover<SeasonalAnimeResult>(
+    '/api/v1/discover/seasonal-anime',
+    undefined,
+    { initialSize: 1 }
+  );
 
   if (error) {
-    return <ErrorPage statusCode={500} />;
+    return <AnimeError onRetry={() => mutate?.()} />;
   }
 
   return (
-    <ListView
-      plexItems={titles}
+    <SeasonalAnimeListView
+      titles={titles}
       isEmpty={isEmpty}
       isReachingEnd={isReachingEnd}
       isLoading={
         isLoadingInitialData || (isLoadingMore && (titles?.length ?? 0) > 0)
       }
-      onScrollBottom={fetchMore}
-      mutateParent={mutate}
+      fetchMore={fetchMore}
+      mutate={mutate}
     />
   );
 };
@@ -194,7 +275,9 @@ const DiscoverAnime = () => {
           )}
         </div>
       </div>
-      {seasonal ? (
+      {!router.isReady ? (
+        <LoadingSpinner />
+      ) : seasonal ? (
         <SeasonalAnimeList />
       ) : (
         <AnimeList filters={preparedFilters} />
