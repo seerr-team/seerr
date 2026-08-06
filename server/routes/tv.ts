@@ -6,6 +6,7 @@ import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
 import { MediaStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
+import Season from '@server/entity/Season';
 import { Watchlist } from '@server/entity/Watchlist';
 import { MetadataProviderType, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -96,47 +97,53 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
     if (shouldTrackEpisodes) {
       availableMap = {};
 
-      const media = await Media.getMedia(Number(req.params.id), MediaType.TV);
+      const dbSeason = await getRepository(Season).findOne({
+        where: {
+          seasonNumber: Number(req.params.seasonNumber),
+          media: {
+            tmdbId: Number(req.params.id),
+            mediaType: MediaType.TV,
+          },
+        },
+        relations: {
+          episodes: true,
+        },
+      });
 
-      if (media?.seasons) {
-        const dbSeason = media.seasons.find(
-          (s) => s.seasonNumber === Number(req.params.seasonNumber)
-        );
-        if (dbSeason) {
-          if (dbSeason.status === MediaStatus.AVAILABLE) {
-            for (const episode of season.episodes) {
-              availableMap[episode.episode_number] = true;
-            }
-          } else if (dbSeason.status === MediaStatus.PARTIALLY_AVAILABLE) {
-            if (dbSeason.episodes) {
-              const metadataEpisodeNumbers = new Set(
-                season.episodes.map((episode) => episode.episode_number)
-              );
-              const hasEpisodeNumberMismatch =
-                metadataEpisodeNumbers.size !== dbSeason.episodes.length ||
-                dbSeason.episodes.some(
-                  (episode) =>
-                    !metadataEpisodeNumbers.has(episode.episodeNumber)
-                );
+      if (dbSeason) {
+        if (dbSeason.status === MediaStatus.AVAILABLE) {
+          for (const episode of season.episodes) {
+            availableMap[episode.episode_number] = true;
+          }
+        } else if (
+          dbSeason.status === MediaStatus.PARTIALLY_AVAILABLE &&
+          dbSeason.episodes
+        ) {
+          const metadataEpisodeNumbers = new Set(
+            season.episodes.map((episode) => episode.episode_number)
+          );
+          const hasEpisodeNumberMismatch =
+            metadataEpisodeNumbers.size !== dbSeason.episodes.length ||
+            dbSeason.episodes.some(
+              (episode) => !metadataEpisodeNumbers.has(episode.episodeNumber)
+            );
 
-              if (hasEpisodeNumberMismatch) {
-                logger.warn(
-                  'Skipping episode availability due to episode number mismatch',
-                  {
-                    label: 'API',
-                    tvId: req.params.id,
-                    seasonNumber: req.params.seasonNumber,
-                    metadataEpisodeCount: metadataEpisodeNumbers.size,
-                    trackedEpisodeCount: dbSeason.episodes.length,
-                  }
-                );
-                availableMap = undefined;
-              } else {
-                for (const episode of dbSeason.episodes) {
-                  availableMap[episode.episodeNumber] =
-                    episode.status === MediaStatus.AVAILABLE;
-                }
+          if (hasEpisodeNumberMismatch) {
+            logger.warn(
+              'Skipping episode availability due to episode number mismatch',
+              {
+                label: 'API',
+                tvId: req.params.id,
+                seasonNumber: req.params.seasonNumber,
+                metadataEpisodeCount: metadataEpisodeNumbers.size,
+                trackedEpisodeCount: dbSeason.episodes.length,
               }
+            );
+            availableMap = undefined;
+          } else {
+            for (const episode of dbSeason.episodes) {
+              availableMap[episode.episodeNumber] =
+                episode.status === MediaStatus.AVAILABLE;
             }
           }
         }
