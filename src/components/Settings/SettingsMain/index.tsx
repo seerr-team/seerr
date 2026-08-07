@@ -64,7 +64,7 @@ const messages = defineMessages('components.Settings.SettingsMain', {
     'Hide available media from the discover pages but not search results',
   releaseDateRestrictionEnabled: 'Enable Release Date Restrictions',
   releaseDateRestrictionEnabledTip:
-    'Prevent users from requesting movies before a worldwide Digital release or TV seasons before their air date. Users with Manage Requests can bypass this restriction.',
+    'Prevent users from requesting movies before a Digital release in any region or TV seasons before their air date. Users with Manage Requests can bypass this restriction.',
   cacheImages: 'Enable Image Caching',
   cacheImagesTip:
     'Cache externally sourced images (requires a significant amount of disk space)',
