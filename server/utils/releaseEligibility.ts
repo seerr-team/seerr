@@ -29,7 +29,9 @@ export interface ReleaseRestrictionDecision {
   blockedEligibility?: ReleaseEligibility;
 }
 
-const validTimestamp = (value?: string | null): number | undefined => {
+const validCalendarDateTimestamp = (
+  value?: string | null
+): number | undefined => {
   if (!value) {
     return undefined;
   }
@@ -55,10 +57,13 @@ const validTimestamp = (value?: string | null): number | undefined => {
     return undefined;
   }
 
-  const timestamp = Date.parse(value);
+  const parsedTimestamp = Date.parse(value);
 
-  return Number.isNaN(timestamp) ? undefined : timestamp;
+  return Number.isNaN(parsedTimestamp) ? undefined : calendarDate.getTime();
 };
+
+const getUtcCalendarDateTimestamp = (date: Date): number =>
+  Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 
 export const getMovieReleaseEligibility = (
   releases?: MovieReleaseResult,
@@ -69,14 +74,16 @@ export const getMovieReleaseEligibility = (
     .filter((release) => release.type === 4)
     .map((release) => ({
       releaseDate: release.release_date,
-      timestamp: validTimestamp(release.release_date),
+      timestamp: validCalendarDateTimestamp(release.release_date),
     }))
     .filter(
       (release): release is { releaseDate: string; timestamp: number } =>
         release.timestamp !== undefined
     );
 
-  if (digitalReleases.some((release) => release.timestamp <= now.getTime())) {
+  const today = getUtcCalendarDateTimestamp(now);
+
+  if (digitalReleases.some((release) => release.timestamp <= today)) {
     return { status: 'released' };
   }
 
@@ -93,13 +100,13 @@ export const getTvSeasonReleaseEligibility = (
   airDate?: string | null,
   now = new Date()
 ): ReleaseEligibility => {
-  const timestamp = validTimestamp(airDate);
+  const timestamp = validCalendarDateTimestamp(airDate);
 
   if (timestamp === undefined) {
     return { status: 'unknown' };
   }
 
-  return timestamp <= now.getTime()
+  return timestamp <= getUtcCalendarDateTimestamp(now)
     ? { status: 'released' }
     : { status: 'future', releaseDate: airDate ?? undefined };
 };
@@ -128,8 +135,10 @@ export const evaluateReleaseRestriction = (
       )
       .sort(
         (first, second) =>
-          (validTimestamp(first.releaseDate) ?? Number.MAX_SAFE_INTEGER) -
-          (validTimestamp(second.releaseDate) ?? Number.MAX_SAFE_INTEGER)
+          (validCalendarDateTimestamp(first.releaseDate) ??
+            Number.MAX_SAFE_INTEGER) -
+          (validCalendarDateTimestamp(second.releaseDate) ??
+            Number.MAX_SAFE_INTEGER)
       )[0] ?? blockedEligibilities[0];
 
   if (!blockedEligibility) {

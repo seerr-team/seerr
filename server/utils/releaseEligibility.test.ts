@@ -29,6 +29,15 @@ describe('getMovieReleaseEligibility', () => {
     assert.deepStrictEqual(eligibility, { status: 'released' });
   });
 
+  it('treats a Digital release later today as released', () => {
+    const eligibility = getMovieReleaseEligibility(
+      movieReleases([[{ release_date: '2026-08-07T23:00:00.000Z', type: 4 }]]),
+      now
+    );
+
+    assert.deepStrictEqual(eligibility, { status: 'released' });
+  });
+
   it('returns the earliest future Digital release across regions', () => {
     const eligibility = getMovieReleaseEligibility(
       movieReleases([
