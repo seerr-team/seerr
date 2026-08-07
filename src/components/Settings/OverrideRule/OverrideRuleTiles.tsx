@@ -248,7 +248,9 @@ const OverrideRuleTiles = ({
                         countryName = countryCode;
                       }
                       return (
-                        <span>{`${countryName}: ${certificationValue}`}</span>
+                        <span
+                          key={entry}
+                        >{`${countryName}: ${certificationValue}`}</span>
                       );
                     })}
                   </div>
