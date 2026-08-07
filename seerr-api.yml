@@ -232,6 +232,10 @@ components:
         hideAvailable:
           type: boolean
           example: false
+        releaseDateRestrictionEnabled:
+          type: boolean
+          default: false
+          description: Prevent non-managers from requesting movies before a Digital release or TV seasons before their air date.
         partialRequestsEnabled:
           type: boolean
           example: false
@@ -708,6 +712,7 @@ components:
       required:
         - initialized
         - plexClientIdentifier
+        - releaseDateRestrictionEnabled
       properties:
         initialized:
           type: boolean
@@ -717,6 +722,9 @@ components:
           format: uuid
           description: Instance Plex OAuth client identifier
           example: 6919275e-142a-48d8-be6b-93594cbd4626
+        releaseDateRestrictionEnabled:
+          type: boolean
+          default: false
     MovieResult:
       type: object
       required:
@@ -6622,6 +6630,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MediaRequest'
+        '403':
+          description: The request is forbidden, including when release date restrictions block it.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    description: Release restriction failures use MEDIA_NOT_RELEASED.
+              example:
+                message: MEDIA_NOT_RELEASED
   /request/count:
     get:
       summary: Gets request counts
@@ -6727,6 +6749,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MediaRequest'
+        '403':
+          description: The update is forbidden, including when newly added TV seasons are blocked by release date restrictions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    description: Release restriction failures use MEDIA_NOT_RELEASED.
+              example:
+                message: MEDIA_NOT_RELEASED
         '409':
           description: Only pending requests can be modified
     delete:

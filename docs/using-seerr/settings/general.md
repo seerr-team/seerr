@@ -71,6 +71,15 @@ When enabled, media that has been blocklisted will not appear on the "Discover" 
 
 This setting is **disabled** by default.
 
+## Release Date Restrictions
+
+Enable **Release Date Restrictions** to prevent ordinary users from requesting media before it is released:
+
+- A movie becomes requestable once TMDB lists a Digital release (release type 4) dated today or earlier in any region. Theatrical and physical releases do not make a movie eligible.
+- A TV season becomes requestable on its TMDB air date.
+
+Users with the **Manage Requests** permission can bypass the restriction. Media with no valid Digital release date or season air date remains requestable. Release date restrictions are disabled by default and do not change existing requests.
+
 ## Allow Partial Series Requests
 
 When enabled, users will be able to submit requests for specific seasons of TV series. If disabled, users will only be able to submit requests for all unavailable seasons.

@@ -4,8 +4,10 @@ import { before, beforeEach, describe, it, mock } from 'node:test';
 import TheMovieDb from '@server/api/themoviedb';
 import type {
   TmdbMovieDetails,
+  TmdbMovieReleaseResult,
   TmdbTvDetails,
 } from '@server/api/themoviedb/interfaces';
+import { ApiErrorCode } from '@server/constants/error';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -18,6 +20,7 @@ import OverrideRule from '@server/entity/OverrideRule';
 import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
+import { Permission } from '@server/lib/permissions';
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { checkUser } from '@server/middleware/auth';
@@ -35,53 +38,70 @@ const sendNotificationMock = mock.method(
   async () => undefined
 ).mock;
 
-const getMovieImpl: (args: {
-  movieId: number;
-  language?: string;
-}) => Promise<TmdbMovieDetails> = async ({ movieId }) => fakeTmdbMovie(movieId);
+const digitalRelease = (releaseDate?: string): TmdbMovieReleaseResult => ({
+  results: releaseDate
+    ? [
+        {
+          iso_3166_1: 'US',
+          rating: '',
+          release_dates: [
+            {
+              certification: '',
+              release_date: releaseDate,
+              type: 4,
+            },
+          ],
+        },
+      ]
+    : [],
+});
+
+const movieDetails = (
+  id: number,
+  releaseDates: TmdbMovieReleaseResult
+): TmdbMovieDetails =>
+  ({
+    id,
+    external_ids: {},
+    genres: [],
+    keywords: { keywords: [] },
+    original_language: 'en',
+    release_dates: releaseDates,
+  }) as unknown as TmdbMovieDetails;
+
+const tvDetails = (
+  id: number,
+  seasons: { season_number: number; air_date?: string | null }[]
+): TmdbTvDetails =>
+  ({
+    id,
+    external_ids: { tvdb_id: id * 10 },
+    genres: [],
+    keywords: { results: [] },
+    original_language: 'en',
+    seasons,
+  }) as unknown as TmdbTvDetails;
+
+let getMovieImpl = async (movieId: number): Promise<TmdbMovieDetails> =>
+  movieDetails(movieId, digitalRelease('2000-01-01T00:00:00.000Z'));
+let getTvShowImpl = async (tvId: number): Promise<TmdbTvDetails> =>
+  tvDetails(tvId, [{ season_number: 1, air_date: '2000-01-01' }]);
 
 Object.defineProperty(TheMovieDb.prototype, 'getMovie', {
   get() {
-    return async (args: { movieId: number; language?: string }) =>
-      getMovieImpl(args);
+    return async ({ movieId }: { movieId: number }) => getMovieImpl(movieId);
   },
   set() {},
   configurable: true,
 });
-
-const getTvShowImpl: (args: {
-  tvId: number;
-  language?: string;
-}) => Promise<TmdbTvDetails> = async ({ tvId }) => fakeTmdbShow(tvId);
 
 Object.defineProperty(TheMovieDb.prototype, 'getTvShow', {
   get() {
-    return async (args: { tvId: number; language?: string }) =>
-      getTvShowImpl(args);
+    return async ({ tvId }: { tvId: number }) => getTvShowImpl(tvId);
   },
   set() {},
   configurable: true,
 });
-
-function fakeTmdbMovie(tmdbId: number): TmdbMovieDetails {
-  return {
-    id: tmdbId,
-    genres: [],
-    original_language: 'en',
-    keywords: { keywords: [] },
-    external_ids: {},
-  } as unknown as TmdbMovieDetails;
-}
-
-function fakeTmdbShow(tmdbId: number): TmdbTvDetails {
-  return {
-    id: tmdbId,
-    genres: [],
-    original_language: 'en',
-    keywords: { results: [] },
-    external_ids: {},
-  } as unknown as TmdbTvDetails;
-}
 
 function configureRadarr(overrides: Partial<RadarrSettings>[]): void {
   const settings = getSettings();
@@ -168,6 +188,10 @@ before(async () => {
 
 beforeEach(() => {
   sendNotificationMock.resetCalls();
+  getMovieImpl = async (movieId) =>
+    movieDetails(movieId, digitalRelease('2000-01-01T00:00:00.000Z'));
+  getTvShowImpl = async (tvId) =>
+    tvDetails(tvId, [{ season_number: 1, air_date: '2000-01-01' }]);
 });
 
 setupTestDb();
@@ -221,6 +245,331 @@ async function seedRequest(status = MediaRequestStatus.PENDING) {
     relations: { requestedBy: true, modifiedBy: true },
   });
 }
+
+async function withReleaseRestriction<T>(
+  enabled: boolean,
+  callback: () => Promise<T>
+): Promise<T> {
+  const settings = getSettings();
+  const previousEnabled = settings.main.releaseDateRestrictionEnabled;
+
+  settings.main.releaseDateRestrictionEnabled = enabled;
+
+  try {
+    return await callback();
+  } finally {
+    settings.main.releaseDateRestrictionEnabled = previousEnabled;
+  }
+}
+
+describe('POST /request release date restrictions', () => {
+  it('rejects a future movie for an ordinary user without database mutation', async () => {
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+    const mediaCount = await mediaRepo.count();
+    const requestCount = await requestRepo.count();
+    getMovieImpl = async (movieId) =>
+      movieDetails(movieId, digitalRelease('2999-01-01T00:00:00.000Z'));
+
+    await withReleaseRestriction(true, async () => {
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent.post('/request').send({
+        mediaType: MediaType.MOVIE,
+        mediaId: 81001,
+        is4k: false,
+      });
+
+      assert.strictEqual(res.status, 403);
+      assert.strictEqual(res.body.message, ApiErrorCode.MediaNotReleased);
+    });
+
+    assert.strictEqual(await mediaRepo.count(), mediaCount);
+    assert.strictEqual(await requestRepo.count(), requestCount);
+  });
+
+  it('allows requests when the release date is unknown', async () => {
+    getMovieImpl = async (movieId) => movieDetails(movieId, digitalRelease());
+
+    await withReleaseRestriction(true, async () => {
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent.post('/request').send({
+        mediaType: MediaType.MOVIE,
+        mediaId: 81003,
+        is4k: false,
+      });
+
+      assert.strictEqual(res.status, 201);
+    });
+  });
+
+  it('does not gate requests when the restriction is disabled', async () => {
+    getMovieImpl = async (movieId) =>
+      movieDetails(movieId, digitalRelease('2999-01-01T00:00:00.000Z'));
+
+    await withReleaseRestriction(false, async () => {
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent.post('/request').send({
+        mediaType: MediaType.MOVIE,
+        mediaId: 81004,
+        is4k: false,
+      });
+
+      assert.strictEqual(res.status, 201);
+    });
+  });
+
+  it('accepts a Digital release from any TMDB region', async () => {
+    getMovieImpl = async (movieId) =>
+      movieDetails(movieId, {
+        results: [
+          {
+            iso_3166_1: 'US',
+            rating: '',
+            release_dates: [
+              {
+                certification: '',
+                release_date: '2999-01-01T00:00:00.000Z',
+                type: 4,
+              },
+            ],
+          },
+          {
+            iso_3166_1: 'DE',
+            rating: '',
+            release_dates: [
+              {
+                certification: '',
+                release_date: '2000-01-01T00:00:00.000Z',
+                type: 4,
+              },
+            ],
+          },
+        ],
+      });
+
+    await withReleaseRestriction(true, async () => {
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent.post('/request').send({
+        mediaType: MediaType.MOVIE,
+        mediaId: 81005,
+        is4k: false,
+      });
+
+      assert.strictEqual(res.status, 201);
+    });
+  });
+
+  it('allows a manager to bypass the restriction when requesting on behalf of a user', async () => {
+    const friend = await getRepository(User).findOneOrFail({
+      where: { email: 'friend@seerr.dev' },
+    });
+    getMovieImpl = async (movieId) =>
+      movieDetails(movieId, digitalRelease('2999-01-01T00:00:00.000Z'));
+
+    await withReleaseRestriction(true, async () => {
+      const agent = await loginAs('admin@seerr.dev', 'test1234');
+      const res = await agent.post('/request').send({
+        mediaType: MediaType.MOVIE,
+        mediaId: 81006,
+        userId: friend.id,
+        is4k: false,
+      });
+
+      assert.strictEqual(res.status, 201);
+
+      const saved = await getRepository(MediaRequest).findOneOrFail({
+        where: { id: res.body.id },
+        relations: { requestedBy: true },
+      });
+      assert.strictEqual(saved.requestedBy.id, friend.id);
+    });
+  });
+
+  it('also rejects future 4K movie requests', async () => {
+    const userRepo = getRepository(User);
+    const friend = await userRepo.findOneOrFail({
+      where: { email: 'friend@seerr.dev' },
+    });
+    friend.permissions |= Permission.REQUEST_4K;
+    await userRepo.save(friend);
+    getMovieImpl = async (movieId) =>
+      movieDetails(movieId, digitalRelease('2999-01-01T00:00:00.000Z'));
+
+    await withReleaseRestriction(true, async () => {
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent.post('/request').send({
+        mediaType: MediaType.MOVIE,
+        mediaId: 81007,
+        is4k: true,
+      });
+
+      assert.strictEqual(res.status, 403);
+      assert.strictEqual(res.body.message, ApiErrorCode.MediaNotReleased);
+    });
+  });
+
+  it('rejects an explicit mixed TV season request in full', async () => {
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+    const mediaCount = await mediaRepo.count();
+    const requestCount = await requestRepo.count();
+    getTvShowImpl = async (tvId) =>
+      tvDetails(tvId, [
+        { season_number: 1, air_date: '2000-01-01' },
+        { season_number: 2, air_date: '2999-01-01' },
+      ]);
+
+    await withReleaseRestriction(true, async () => {
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent.post('/request').send({
+        mediaType: MediaType.TV,
+        mediaId: 82001,
+        seasons: [1, 2],
+        is4k: false,
+      });
+
+      assert.strictEqual(res.status, 403);
+      assert.strictEqual(res.body.message, ApiErrorCode.MediaNotReleased);
+    });
+
+    assert.strictEqual(await mediaRepo.count(), mediaCount);
+    assert.strictEqual(await requestRepo.count(), requestCount);
+  });
+
+  it('rejects a seasons: all TV request when any new season is blocked', async () => {
+    getTvShowImpl = async (tvId) =>
+      tvDetails(tvId, [
+        { season_number: 1, air_date: '2000-01-01' },
+        { season_number: 2, air_date: '2999-01-01' },
+      ]);
+
+    await withReleaseRestriction(true, async () => {
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent.post('/request').send({
+        mediaType: MediaType.TV,
+        mediaId: 82002,
+        seasons: 'all',
+        is4k: false,
+      });
+
+      assert.strictEqual(res.status, 403);
+      assert.strictEqual(res.body.message, ApiErrorCode.MediaNotReleased);
+    });
+  });
+});
+
+describe('PUT /request/:requestId TV release date restrictions', () => {
+  async function seedTvRequest(
+    availableSeasons: number[] = []
+  ): Promise<MediaRequest> {
+    const requestedBy = await getRepository(User).findOneOrFail({
+      where: { email: 'friend@seerr.dev' },
+    });
+    const media = await getRepository(Media).save(
+      new Media({
+        mediaType: MediaType.TV,
+        tmdbId: 83001,
+        tvdbId: 830010,
+        status: MediaStatus.PENDING,
+        status4k: MediaStatus.UNKNOWN,
+        seasons: availableSeasons.map(
+          (seasonNumber) =>
+            new Season({
+              seasonNumber,
+              status: MediaStatus.AVAILABLE,
+              status4k: MediaStatus.UNKNOWN,
+            })
+        ),
+      })
+    );
+
+    return getRepository(MediaRequest).save(
+      new MediaRequest({
+        type: MediaType.TV,
+        status: MediaRequestStatus.PENDING,
+        media,
+        requestedBy,
+        is4k: false,
+        seasons: [
+          new SeasonRequest({
+            seasonNumber: 1,
+            status: MediaRequestStatus.PENDING,
+          }),
+        ],
+      })
+    );
+  }
+
+  it('rejects a newly added future season and leaves the request unchanged', async () => {
+    const mediaRequest = await seedTvRequest();
+    getTvShowImpl = async (tvId) =>
+      tvDetails(tvId, [
+        { season_number: 1, air_date: '2000-01-01' },
+        { season_number: 2, air_date: '2999-01-01' },
+      ]);
+
+    await withReleaseRestriction(true, async () => {
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent.put(`/request/${mediaRequest.id}`).send({
+        mediaType: MediaType.TV,
+        seasons: [1, 2],
+      });
+
+      assert.strictEqual(res.status, 403);
+      assert.strictEqual(res.body.message, ApiErrorCode.MediaNotReleased);
+    });
+
+    const saved = await getRepository(MediaRequest).findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.deepStrictEqual(
+      saved.seasons.map((season) => season.seasonNumber),
+      [1]
+    );
+  });
+
+  it('does not revalidate seasons already on the request', async () => {
+    const mediaRequest = await seedTvRequest();
+    getTvShowImpl = async () => {
+      throw new Error('TMDB should not be called');
+    };
+
+    await withReleaseRestriction(true, async () => {
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent.put(`/request/${mediaRequest.id}`).send({
+        mediaType: MediaType.TV,
+        seasons: [1],
+      });
+
+      assert.strictEqual(res.status, 200);
+    });
+  });
+
+  it('does not validate or add a season that is already available', async () => {
+    const mediaRequest = await seedTvRequest([2]);
+    getTvShowImpl = async () => {
+      throw new Error('TMDB should not be called');
+    };
+
+    await withReleaseRestriction(true, async () => {
+      const agent = await loginAs('friend@seerr.dev', 'test1234');
+      const res = await agent.put(`/request/${mediaRequest.id}`).send({
+        mediaType: MediaType.TV,
+        seasons: [1, 2],
+      });
+
+      assert.strictEqual(res.status, 200);
+    });
+
+    const saved = await getRepository(MediaRequest).findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.deepStrictEqual(
+      saved.seasons.map((season) => season.seasonNumber),
+      [1]
+    );
+  });
+});
 
 describe('DELETE /request/:requestId', () => {
   it('allows the owner to delete their own pending request', async () => {
