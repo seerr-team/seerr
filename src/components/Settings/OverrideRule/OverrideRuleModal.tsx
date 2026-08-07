@@ -258,6 +258,7 @@ const OverrideRuleModal = ({
                           if (e.target.value.startsWith('radarr-')) {
                             setFieldValue('radarrServiceId', id);
                             setFieldValue('sonarrServiceId', null);
+                            setFieldValue('certification', null);
                             const match = radarrServices.find(
                               (s) => s.id === id
                             );
@@ -267,6 +268,7 @@ const OverrideRuleModal = ({
                           } else if (e.target.value.startsWith('sonarr-')) {
                             setFieldValue('radarrServiceId', null);
                             setFieldValue('sonarrServiceId', id);
+                            setFieldValue('certification', null);
                             const match = sonarrServices.find(
                               (s) => s.id === id
                             );
@@ -276,6 +278,7 @@ const OverrideRuleModal = ({
                           } else {
                             setFieldValue('radarrServiceId', null);
                             setFieldValue('sonarrServiceId', null);
+                            setFieldValue('certification', null);
                             setIsValidated(false);
                           }
                         }}
