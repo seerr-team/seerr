@@ -537,6 +537,7 @@
   "components.RequestList.RequestItem.tmdbid": "TMDB ID",
   "components.RequestList.RequestItem.tvdbid": "TheTVDB ID",
   "components.RequestList.RequestItem.unknowntitle": "Unknown Title",
+  "components.RequestList.allusers": "All Users",
   "components.RequestList.requests": "Requests",
   "components.RequestList.showallrequests": "Show All Requests",
   "components.RequestList.sortAdded": "Most Recent",

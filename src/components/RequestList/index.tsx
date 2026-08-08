@@ -17,8 +17,10 @@ import {
   ChevronRightIcon,
   CircleStackIcon,
   FunnelIcon,
+  UsersIcon,
 } from '@heroicons/react/24/solid';
 import type { RequestResultsResponse } from '@server/interfaces/api/requestInterfaces';
+import type { UserResultsResponse } from '@server/interfaces/api/userInterfaces';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -28,6 +30,7 @@ import useSWR from 'swr';
 const messages = defineMessages('components.RequestList', {
   requests: 'Requests',
   showallrequests: 'Show All Requests',
+  allusers: 'All Users',
   sortAdded: 'Most Recent',
   sortModified: 'Last Modified',
   sortDirection: 'Toggle Sort Direction',
@@ -66,10 +69,29 @@ const RequestList = () => {
   const [currentSortDirection, setCurrentSortDirection] =
     useState<SortDirection>('desc');
   const [currentPageSize, setCurrentPageSize] = useState<number>(10);
+  const [currentRequestedBy, setCurrentRequestedBy] = useState<number | 'all'>(
+    'all'
+  );
 
   const page = router.query.page ? Number(router.query.page) : 1;
   const pageIndex = page - 1;
   const updateQueryParams = useUpdateQueryParams({ page: page.toString() });
+
+  // The profile and per-user pages are already scoped to a single user, so the
+  // user filter only applies on the main /requests page.
+  const canFilterByUser =
+    !router.pathname.startsWith('/profile') &&
+    !router.query.userId &&
+    hasPermission([Permission.MANAGE_REQUESTS, Permission.REQUEST_VIEW], {
+      type: 'or',
+    });
+
+  const { data: userData } = useSWR<UserResultsResponse>(
+    canFilterByUser ? '/api/v1/user?take=1000&sort=displayname' : null
+  );
+
+  // Hide the filter when there is only a single user to choose from
+  const showUserFilter = canFilterByUser && (userData?.results.length ?? 0) > 1;
 
   const {
     data,
@@ -83,7 +105,9 @@ const RequestList = () => {
         ? `&requestedBy=${currentUser?.id}`
         : router.query.userId
           ? `&requestedBy=${router.query.userId}`
-          : ''
+          : currentRequestedBy !== 'all'
+            ? `&requestedBy=${currentRequestedBy}`
+            : ''
     }`
   );
 
@@ -166,6 +190,40 @@ const RequestList = () => {
           {intl.formatMessage(messages.requests)}
         </Header>
         <div className="mt-2 flex flex-grow flex-col sm:flex-row lg:flex-grow-0">
+          {showUserFilter && (
+            <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
+              <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
+                <UsersIcon className="h-6 w-6" />
+              </span>
+              <select
+                id="requestedBy"
+                name="requestedBy"
+                onChange={(e) => {
+                  setCurrentRequestedBy(
+                    e.target.value === 'all' ? 'all' : Number(e.target.value)
+                  );
+                  router.push({
+                    pathname: router.pathname,
+                    query: {},
+                  });
+                }}
+                value={currentRequestedBy}
+                className="rounded-r-only"
+              >
+                <option value="all">
+                  {intl.formatMessage(messages.allusers)}
+                </option>
+                {userData?.results.map((filterUser) => (
+                  <option
+                    value={filterUser.id}
+                    key={`request-user-filter-${filterUser.id}`}
+                  >
+                    {filterUser.displayName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
             <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
               <CircleStackIcon className="h-6 w-6" />
@@ -327,13 +385,15 @@ const RequestList = () => {
             {intl.formatMessage(globalMessages.noresults)}
           </span>
           {(currentFilter !== Filter.ALL ||
-            currentMediaType !== Filter.ALL) && (
+            currentMediaType !== Filter.ALL ||
+            currentRequestedBy !== 'all') && (
             <div className="mt-4">
               <Button
                 buttonType="primary"
                 onClick={() => {
                   setCurrentFilter(Filter.ALL);
                   setCurrentMediaType(Filter.ALL);
+                  setCurrentRequestedBy('all');
                 }}
               >
                 {intl.formatMessage(messages.showallrequests)}
