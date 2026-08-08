@@ -660,6 +660,8 @@
   "components.Settings.Notifications.NotificationsNtfy.ntfysettingssaved": "Ntfy notification settings saved successfully!",
   "components.Settings.Notifications.NotificationsNtfy.password": "Password",
   "components.Settings.Notifications.NotificationsNtfy.priority": "Priority",
+  "components.Settings.Notifications.NotificationsNtfy.tags": "Tags",
+  "components.Settings.Notifications.NotificationsNtfy.tagsPlaceholder": "eyes,warning",
   "components.Settings.Notifications.NotificationsNtfy.toastNtfyTestFailed": "Ntfy test notification failed to send.",
   "components.Settings.Notifications.NotificationsNtfy.toastNtfyTestSending": "Sending ntfy test notification…",
   "components.Settings.Notifications.NotificationsNtfy.toastNtfyTestSuccess": "Ntfy test notification sent!",
