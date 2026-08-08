@@ -74,9 +74,10 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
     const tmdbTv = await tmdb.getTvShow({
       tvId: Number(req.params.id),
     });
-    const metadataProvider = tmdbTv.keywords.results.some(
+    const isAnime = tmdbTv.keywords.results.some(
       (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
-    )
+    );
+    const metadataProvider = isAnime
       ? await getMetadataProvider('anime')
       : await getMetadataProvider('tv');
 
@@ -91,8 +92,9 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
     const settings = getSettings();
     const shouldTrackEpisodes =
       settings.main.enableEpisodeAvailability &&
-      (settings.metadataSettings.tv === MetadataProviderType.TVDB ||
-        settings.metadataSettings.anime === MetadataProviderType.TVDB);
+      (isAnime
+        ? settings.metadataSettings.anime === MetadataProviderType.TVDB
+        : settings.metadataSettings.tv === MetadataProviderType.TVDB);
 
     if (shouldTrackEpisodes) {
       availableMap = {};

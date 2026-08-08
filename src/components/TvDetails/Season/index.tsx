@@ -2,7 +2,6 @@ import AirDateBadge from '@app/components/AirDateBadge';
 import Badge from '@app/components/Common/Badge';
 import CachedImage from '@app/components/Common/CachedImage';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
-import { MetadataProviderType } from '@app/components/MetadataSelector';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -36,11 +35,7 @@ const Season = ({ seasonNumber, tvId }: SeasonProps) => {
   }
 
   const showEpisodeAvailability =
-    settings.currentSettings.enableEpisodeAvailability &&
-    (settings.currentSettings.metadataSettings.tv ===
-      MetadataProviderType.TVDB ||
-      settings.currentSettings.metadataSettings.anime ===
-        MetadataProviderType.TVDB);
+    settings.currentSettings.enableEpisodeAvailability;
 
   return (
     <div className="flex flex-col justify-center divide-y divide-gray-700">
