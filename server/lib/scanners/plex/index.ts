@@ -7,6 +7,7 @@ import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import type {
   TmdbKeyword,
   TmdbTvDetails,
+  TmdbTvScanDetails,
 } from '@server/api/themoviedb/interfaces';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
@@ -264,15 +265,15 @@ class PlexScanner
   }: {
     tmdbId?: number;
     tvdbId?: number;
-  }): Promise<TmdbTvDetails> {
+  }): Promise<TmdbTvScanDetails | TmdbTvDetails> {
     let tvShow;
 
     if (tmdbId) {
-      tvShow = await this.tmdb.getTvShow({
+      tvShow = await this.tmdb.getTvShowForScan({
         tvId: Number(tmdbId),
       });
     } else if (tvdbId) {
-      tvShow = await this.tmdb.getShowByTvdbId({
+      tvShow = await this.tmdb.getShowByTvdbIdForScan({
         tvdbId: Number(tvdbId),
       });
     } else {
@@ -435,7 +436,7 @@ class PlexScanner
       }
 
       if (mediaIds.tvdbId && !mediaIds.tmdbId) {
-        const show = await this.tmdb.getShowByTvdbId({
+        const show = await this.tmdb.getShowByTvdbIdForScan({
           tvdbId: mediaIds.tvdbId,
         });
         mediaIds.tmdbId = show.id;
@@ -464,9 +465,9 @@ class PlexScanner
     } else if (plexitem.guid.match(tvdbRegex)) {
       const matchedtvdb = plexitem.guid.match(tvdbRegex);
 
-      // If we can find a tvdb Id, use it to get the full tmdb show details
+      // If we can find a tvdb Id, use it to resolve the tmdb id
       if (matchedtvdb) {
-        const show = await this.tmdb.getShowByTvdbId({
+        const show = await this.tmdb.getShowByTvdbIdForScan({
           tvdbId: Number(matchedtvdb[1]),
         });
 
@@ -484,7 +485,7 @@ class PlexScanner
       const matchedtvdb = plexitem.guid.match(hamaTvdbRegex);
 
       if (matchedtvdb) {
-        const show = await this.tmdb.getShowByTvdbId({
+        const show = await this.tmdb.getShowByTvdbIdForScan({
           tvdbId: Number(matchedtvdb[1]),
         });
 
@@ -506,7 +507,7 @@ class PlexScanner
       } else if (matchedhama) {
         const anidbId = Number(matchedhama[1]);
         const result = animeList.getFromAnidbId(anidbId);
-        let tvShow: TmdbTvDetails | null = null;
+        let tvShow: TmdbTvScanDetails | TmdbTvDetails | null = null;
 
         // Set isHama to true, so we can know to add special processing to this item
         mediaIds.isHama = true;
@@ -518,7 +519,7 @@ class PlexScanner
             type: 'tvdb',
           });
           if (extResponse.tv_results[0]) {
-            tvShow = await this.tmdb.getTvShow({
+            tvShow = await this.tmdb.getTvShowForScan({
               tvId: extResponse.tv_results[0].id,
             });
             mediaIds.tvdbId = result.tvdbId;
