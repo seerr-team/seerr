@@ -18,7 +18,7 @@ Set this to the topic you want to send notifications to.
 
 ### Tags (optional)
 
-Set this to a comma-separated list of ntfy tags to apply to notifications (for example, `eyes` or `eyes,warning`).
+Set this to a comma-separated list of [ntfy tags](https://docs.ntfy.sh/publish/#tags-emojis) to apply to notifications (for example, `eyes` or `eyes,warning`).
 
 ### Username + Password authentication (optional)
 
