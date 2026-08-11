@@ -66,7 +66,7 @@ const messages = defineMessages('components.Settings', {
   validationPortRequired: 'You must provide a valid port number',
   webAppUrl: '<WebAppLink>Web App</WebAppLink> URL',
   webAppUrlTip:
-    'Optionally direct users to the web app on your server instead of the "hosted" web app',
+    'Optionally direct users to the web app on your server instead of https://app.plex.tv/desktop',
   tautulliSettings: 'Tautulli Settings',
   tautulliSettingsDescription:
     'Optionally configure the settings for your Tautulli server. Seerr fetches watch history data for your Plex media from Tautulli.',
@@ -597,7 +597,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                       inputMode="url"
                       id="webAppUrl"
                       name="webAppUrl"
-                      placeholder="https://app.plex.tv/desktop"
+                      placeholder="https://your-server-fqdn.com/web/index.html"
                     />
                   </div>
                   {errors.webAppUrl &&
