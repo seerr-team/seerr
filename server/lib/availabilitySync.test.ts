@@ -152,7 +152,7 @@ let getShowByTvdbIdImpl: (args: {
   language?: string;
 }) => Promise<TmdbTvDetails> = async () => fakeTmdbShow(1);
 
-Object.defineProperty(TheMovieDb.prototype, 'getTvShow', {
+Object.defineProperty(TheMovieDb.prototype, 'getTvShowForScan', {
   get() {
     return async (args: { tvId: number; language?: string }) =>
       getTvShowImpl(args);
@@ -161,7 +161,7 @@ Object.defineProperty(TheMovieDb.prototype, 'getTvShow', {
   configurable: true,
 });
 
-Object.defineProperty(TheMovieDb.prototype, 'getShowByTvdbId', {
+Object.defineProperty(TheMovieDb.prototype, 'getShowByTvdbIdForScan', {
   get() {
     return async (args: { tvdbId: number; language?: string }) =>
       getShowByTvdbIdImpl(args);

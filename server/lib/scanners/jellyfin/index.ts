@@ -74,10 +74,9 @@ class JellyfinScanner
     }
 
     if (imdbId && !tmdbId) {
-      const tmdbMovie = await this.tmdb.getMediaByImdbId({
+      tmdbId = await this.tmdb.resolveImdbIdForScan({
         imdbId: imdbId,
       });
-      tmdbId = tmdbMovie.id;
     }
 
     if (!tmdbId) {

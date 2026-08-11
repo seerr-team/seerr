@@ -429,10 +429,9 @@ class PlexScanner
 
       // If we got an IMDb ID, but no TMDB ID, lookup the TMDB ID with the IMDb ID
       if (mediaIds.imdbId && !mediaIds.tmdbId) {
-        const tmdbMedia = await this.tmdb.getMediaByImdbId({
+        mediaIds.tmdbId = await this.tmdb.resolveImdbIdForScan({
           imdbId: mediaIds.imdbId,
         });
-        mediaIds.tmdbId = tmdbMedia.id;
       }
 
       if (mediaIds.tvdbId && !mediaIds.tmdbId) {
@@ -450,10 +449,9 @@ class PlexScanner
       const imdbMatch = plexitem.guid.match(imdbRegex);
       if (imdbMatch) {
         mediaIds.imdbId = imdbMatch[1];
-        const tmdbMedia = await this.tmdb.getMediaByImdbId({
+        mediaIds.tmdbId = await this.tmdb.resolveImdbIdForScan({
           imdbId: mediaIds.imdbId,
         });
-        mediaIds.tmdbId = tmdbMedia.id;
       }
       // Check if the agent is TMDB
     } else if (plexitem.guid.match(tmdbRegex)) {
@@ -514,7 +512,7 @@ class PlexScanner
 
         // First try to lookup the show by TVDb ID
         if (result?.tvdbId) {
-          const extResponse = await this.tmdb.getByExternalId({
+          const extResponse = await this.tmdb.getByExternalIdForScan({
             externalId: result.tvdbId,
             type: 'tvdb',
           });
@@ -538,10 +536,9 @@ class PlexScanner
             mediaIds.tmdbId = result.tmdbId;
             mediaIds.imdbId = result?.imdbId;
           } else if (result?.imdbId) {
-            const tmdbMovie = await this.tmdb.getMediaByImdbId({
+            mediaIds.tmdbId = await this.tmdb.resolveImdbIdForScan({
               imdbId: result.imdbId,
             });
-            mediaIds.tmdbId = tmdbMovie.id;
             mediaIds.imdbId = result.imdbId;
           }
         }
@@ -587,10 +584,10 @@ class PlexScanner
             if (special.tmdbId) {
               await this.processPlexMovieByTmdbId(episode, special.tmdbId);
             } else if (special.imdbId) {
-              const tmdbMovie = await this.tmdb.getMediaByImdbId({
+              const tmdbId = await this.tmdb.resolveImdbIdForScan({
                 imdbId: special.imdbId,
               });
-              await this.processPlexMovieByTmdbId(episode, tmdbMovie.id);
+              await this.processPlexMovieByTmdbId(episode, tmdbId);
             }
           }
         }
