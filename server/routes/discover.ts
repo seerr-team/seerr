@@ -11,6 +11,7 @@ import type {
   GenreSliderItem,
   WatchlistResponse,
 } from '@server/interfaces/api/discoverInterfaces';
+import { getExternalDiscoverItems } from '@server/lib/externalDiscover';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { mapProductionCompany } from '@server/models/Movie';
@@ -979,6 +980,50 @@ discoverRoutes.get<Record<string, unknown>, WatchlistResponse>(
         tmdbId: item.tmdbId,
       })),
     });
+  }
+);
+
+discoverRoutes.get<{ providerId: string }>(
+  '/external/:providerId',
+  async (req, res, next) => {
+    try {
+      const providerId = Number(req.params.providerId);
+
+      if (!Number.isInteger(providerId) || providerId <= 0) {
+        return next({
+          status: 400,
+          message: 'Invalid external provider ID.',
+        });
+      }
+
+      const page = Number(req.query.page ?? 1);
+
+      if (!Number.isInteger(page) || page <= 0) {
+        return next({
+          status: 400,
+          message: 'Invalid page.',
+        });
+      }
+
+      const data = await getExternalDiscoverItems(
+        providerId,
+        req.user,
+        (req.query.language as string) ?? req.locale,
+        page
+      );
+
+      return res.status(200).json(data);
+    } catch (e) {
+      logger.error('Something went wrong retrieving external discover items.', {
+        label: 'API',
+        errorMessage: e instanceof Error ? e.message : String(e),
+      });
+
+      return next({
+        status: 500,
+        message: 'Unable to retrieve external discover items.',
+      });
+    }
   }
 );
 

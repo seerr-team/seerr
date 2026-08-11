@@ -19,6 +19,7 @@ const messages = defineMessages('components.Settings', {
   menuJobs: 'Jobs & Cache',
   menuAbout: 'About',
   menuMetadataProviders: 'Metadata Providers',
+  menuExternalProviders: 'External Providers',
 });
 
 type SettingsLayoutProps = {
@@ -79,6 +80,11 @@ const SettingsLayout = ({ children }: SettingsLayoutProps) => {
       text: intl.formatMessage(messages.menuJobs),
       route: '/settings/jobs',
       regex: /^\/settings\/jobs/,
+    },
+    {
+      text: intl.formatMessage(messages.menuExternalProviders),
+      route: '/settings/external-providers',
+      regex: /^\/settings\/external-providers/,
     },
     {
       text: intl.formatMessage(messages.menuAbout),
