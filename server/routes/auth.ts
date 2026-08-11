@@ -606,6 +606,15 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
 });
 
 authRoutes.post('/jellyfin/quickconnect/initiate', async (req, res, next) => {
+  const settings = getSettings();
+
+  if (settings.main.mediaServerType !== MediaServerType.JELLYFIN) {
+    return next({
+      status: 403,
+      message: 'Quick Connect is only supported by Jellyfin.',
+    });
+  }
+
   try {
     const hostname = getHostname();
     const jellyfinServer = new JellyfinAPI(
@@ -633,6 +642,15 @@ authRoutes.post('/jellyfin/quickconnect/initiate', async (req, res, next) => {
 });
 
 authRoutes.get('/jellyfin/quickconnect/check', async (req, res, next) => {
+  const settings = getSettings();
+
+  if (settings.main.mediaServerType !== MediaServerType.JELLYFIN) {
+    return next({
+      status: 403,
+      message: 'Quick Connect is only supported by Jellyfin.',
+    });
+  }
+
   const result = quickConnectSecret.safeParse(req.query);
   if (!result.success) {
     return next({
@@ -684,6 +702,13 @@ authRoutes.post(
       return next({
         status: 403,
         message: 'Quick Connect is not available during initial setup.',
+      });
+    }
+
+    if (settings.main.mediaServerType !== MediaServerType.JELLYFIN) {
+      return next({
+        status: 403,
+        message: 'Quick Connect is only supported by Jellyfin.',
       });
     }
 
@@ -747,10 +772,7 @@ authRoutes.post(
           jellyfinUserId: account.User.Id,
           jellyfinDeviceId: deviceId,
           permissions: settings.main.defaultPermissions,
-          userType:
-            settings.main.mediaServerType === MediaServerType.JELLYFIN
-              ? UserType.JELLYFIN
-              : UserType.EMBY,
+          userType: UserType.JELLYFIN,
         });
         user.avatar = getUserAvatarUrl(user);
         await userRepository.save(user);

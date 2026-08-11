@@ -549,6 +549,12 @@ userSettingsRoutes.post<{ secret: string }>(
         .json({ message: 'Jellyfin/Emby login is disabled' });
     }
 
+    if (settings.main.mediaServerType !== MediaServerType.JELLYFIN) {
+      return res
+        .status(403)
+        .json({ message: 'Quick Connect is only supported by Jellyfin.' });
+    }
+
     const hostname = getHostname();
     const jellyfinServer = new JellyfinAPI(hostname);
 
@@ -570,10 +576,7 @@ userSettingsRoutes.post<{ secret: string }>(
         user.id === 1 ? 'BOT_seerr' : `BOT_seerr_${user.username ?? ''}`
       ).toString('base64');
 
-      user.userType =
-        settings.main.mediaServerType === MediaServerType.EMBY
-          ? UserType.EMBY
-          : UserType.JELLYFIN;
+      user.userType = UserType.JELLYFIN;
       user.jellyfinUserId = account.User.Id;
       user.jellyfinUsername = account.User.Name;
       user.jellyfinAuthToken = account.AccessToken;
