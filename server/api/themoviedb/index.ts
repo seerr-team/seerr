@@ -963,12 +963,14 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
   public async getByExternalIdForScan(
     lookup: ExternalIdLookup
   ): Promise<TmdbExternalIdResponse> {
-    return this.findByExternalId(lookup, this.scanCache);
+    return this.findByExternalId(lookup, this.scanCache, SCAN_TTL);
   }
 
+  // Omitting ttl here silently falls back to DEFAULT_TTL, regardless of tier.
   private async findByExternalId(
     { externalId, type, language = this.locale }: ExternalIdLookup,
-    cache?: CacheStore
+    cache?: CacheStore,
+    ttl?: number
   ): Promise<TmdbExternalIdResponse> {
     try {
       return await this.get<TmdbExternalIdResponse>(
@@ -979,7 +981,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
             language,
           },
         },
-        undefined,
+        ttl,
         { cache }
       );
     } catch (e) {
@@ -998,7 +1000,8 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     try {
       const extResponse = await this.findByExternalId(
         { externalId: imdbId, type: 'imdb' },
-        this.scanCache
+        this.scanCache,
+        SCAN_TTL
       );
 
       if (extResponse.movie_results[0]) {
@@ -1037,11 +1040,13 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
 
   private async resolveTvdbId(
     tvdbId: number,
-    cache?: CacheStore
+    cache?: CacheStore,
+    ttl?: number
   ): Promise<number> {
     const extResponse = await this.findByExternalId(
       { externalId: tvdbId, type: 'tvdb' },
-      cache
+      cache,
+      ttl
     );
 
     if (!extResponse.tv_results[0]) {
@@ -1080,7 +1085,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
   }): Promise<TmdbTvScanDetails> {
     try {
       return await this.getTvShowForScan({
-        tvId: await this.resolveTvdbId(tvdbId, this.scanCache),
+        tvId: await this.resolveTvdbId(tvdbId, this.scanCache, SCAN_TTL),
         language,
       });
     } catch (e) {
