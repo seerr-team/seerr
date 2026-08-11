@@ -4,10 +4,13 @@ import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
+import { LinkedAccount } from '@server/entity/LinkedAccount';
 import { User } from '@server/entity/User';
 import { UserSettings } from '@server/entity/UserSettings';
 import type {
   UserSettingsGeneralResponse,
+  UserSettingsLinkedAccount,
+  UserSettingsLinkedAccountResponse,
   UserSettingsNotificationsResponse,
 } from '@server/interfaces/api/userSettingsInterfaces';
 import { Permission } from '@server/lib/permissions';
@@ -23,7 +26,7 @@ import {
 } from '@server/utils/profileMiddleware';
 import { Router } from 'express';
 import net from 'net';
-import { Not } from 'typeorm';
+import { Not, type FindOptionsWhere } from 'typeorm';
 import { canMakePermissionsChange } from '.';
 
 const userSettingsRoutes = Router({ mergeParams: true });
@@ -325,6 +328,7 @@ userSettingsRoutes.delete<{ id: string }>(
       const user = await userRepository
         .createQueryBuilder('user')
         .addSelect('user.password')
+        .leftJoinAndSelect('user.linkedAccounts', 'linkedAccounts')
         .where({
           id: Number(req.params.id),
         })
@@ -341,9 +345,10 @@ userSettingsRoutes.delete<{ id: string }>(
         });
       }
 
-      if (!user.email || !user.password) {
+      if (!user.password && user.getActiveLinkedAccounts().length === 0) {
         return res.status(400).json({
-          message: 'User does not have a local email or password set.',
+          message:
+            'User does not have a local password or other linked account.',
         });
       }
 
@@ -479,6 +484,7 @@ userSettingsRoutes.delete<{ id: string }>(
       const user = await userRepository
         .createQueryBuilder('user')
         .addSelect('user.password')
+        .leftJoinAndSelect('user.linkedAccounts', 'linkedAccounts')
         .where({
           id: Number(req.params.id),
         })
@@ -495,9 +501,10 @@ userSettingsRoutes.delete<{ id: string }>(
         });
       }
 
-      if (!user.email || !user.password) {
+      if (!user.password && user.getActiveLinkedAccounts().length === 0) {
         return res.status(400).json({
-          message: 'User does not have a local email or password set.',
+          message:
+            'User does not have a local password or other linked account.',
         });
       }
 
@@ -583,6 +590,95 @@ userSettingsRoutes.post<{ secret: string }>(
 
       const status = e instanceof ApiError ? e.statusCode : 500;
       return res.status(status).send();
+    }
+  }
+);
+
+userSettingsRoutes.get<{ id: string }, UserSettingsLinkedAccountResponse>(
+  '/linked-accounts',
+  isOwnProfileOrAdmin(),
+  async (req, res) => {
+    const settings = getSettings();
+    const userRepository = getRepository(User);
+
+    const user = await userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.linkedAccounts', 'linkedAccounts')
+      .where({ id: Number(req.params.id) })
+      .getOne();
+
+    if (!user) {
+      return res.status(404).send();
+    }
+
+    const linkedAccountInfo = user.getActiveLinkedAccounts().map((acc) => {
+      const provider = settings.oidc.providers.find(
+        (p) => p.slug === acc.provider
+      )!;
+
+      return {
+        id: acc.id,
+        username: acc.username,
+        provider: {
+          slug: provider.slug,
+          name: provider.name,
+          logo: provider.logo,
+        },
+      } satisfies UserSettingsLinkedAccount;
+    });
+
+    return res.status(200).json(linkedAccountInfo);
+  }
+);
+
+userSettingsRoutes.delete<{ id: string; acctId: string }>(
+  '/linked-accounts/:acctId',
+  isOwnProfileOrAdmin(),
+  async (req, res) => {
+    const settings = getSettings();
+    const userRepository = getRepository(User);
+    const linkedAccountsRepository = getRepository(LinkedAccount);
+    const acctId = Number(req.params.acctId);
+
+    const user = await userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.password')
+      .leftJoinAndSelect('user.linkedAccounts', 'linkedAccounts')
+      .where({ id: Number(req.params.id) })
+      .getOne();
+
+    if (!user) {
+      return res.status(404).send();
+    }
+
+    const remainingOidcCount = user
+      .getActiveLinkedAccounts()
+      .filter((a) => a.id !== acctId).length;
+    const hasMediaServer =
+      (settings.main.mediaServerType === MediaServerType.PLEX &&
+        !!user.plexId) ||
+      ([MediaServerType.JELLYFIN, MediaServerType.EMBY].includes(
+        settings.main.mediaServerType
+      ) &&
+        !!user.jellyfinUserId);
+    if (!user.password && remainingOidcCount === 0 && !hasMediaServer) {
+      return res.status(400).json({
+        message: 'User does not have a local password or other linked account.',
+      });
+    }
+
+    const condition: FindOptionsWhere<LinkedAccount> = {
+      id: acctId,
+      user: {
+        id: Number(req.params.id),
+      },
+    };
+
+    if (await linkedAccountsRepository.exists({ where: condition })) {
+      await linkedAccountsRepository.delete(condition);
+      return res.status(204).send();
+    } else {
+      return res.status(404).send();
     }
   }
 );

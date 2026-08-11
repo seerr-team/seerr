@@ -1703,5 +1703,11 @@
   "pages.pagenotfound": "Page Not Found",
   "pages.returnHome": "Return Home",
   "pages.serviceunavailable": "Service Unavailable",
-  "pages.somethingwentwrong": "Something Went Wrong"
+  "pages.somethingwentwrong": "Something Went Wrong",
+  "utils.oidc.oidcAccountAlreadyLinked": "This {provider} account is already linked to another user.",
+  "utils.oidc.oidcAuthorizationFailed": "Authorization with {provider} failed. Please try again.",
+  "utils.oidc.oidcLoginError": "An error occurred while logging in with {provider}.",
+  "utils.oidc.oidcMissingEmail": "Unable to create account. No email address was provided by {provider}.",
+  "utils.oidc.oidcProviderDiscoveryFailed": "Failed to connect to {provider}. Please try again later.",
+  "utils.oidc.oidcUnauthorized": "You do not have permission to sign in with {provider}."
 }
