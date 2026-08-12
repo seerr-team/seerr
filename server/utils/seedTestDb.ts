@@ -8,12 +8,24 @@ export interface SeedDbOptions {
   preserveDb?: boolean;
   /** If true, runs migrations instead of synchronizing schema */
   withMigrations?: boolean;
+  /** If true, permits seeding while NODE_ENV is not test */
+  allowOutsideTest?: boolean;
 }
 
 // Precomputed bcrypt hash of 'test1234'. We precompute this to avoid
 // having to hash the password every time we seed the database.
 const TEST_USER_PASSWORD_HASH =
   '$2b$12$Z5V2P5HZgmx4/AnWFMZN1.aD5AM1NucNi.mhNTSQ9oVtmdzu7Le/a';
+
+function assertTestDatabase(operation: string, allowOutsideTest = false): void {
+  if (allowOutsideTest || process.env.NODE_ENV === 'test') {
+    return;
+  }
+
+  throw new Error(
+    `Refusing to ${operation} while NODE_ENV is not test: this drops every table and seeds accounts with a known password.`
+  );
+}
 
 /**
  * Seeds test users into the database.
@@ -68,6 +80,8 @@ async function seedTestUsers(): Promise<void> {
  * Used by both Cypress tests and Vitest unit tests.
  */
 export async function seedTestDb(options: SeedDbOptions = {}): Promise<void> {
+  assertTestDatabase('seed the test database', options.allowOutsideTest);
+
   const dbConnection = dataSource.isInitialized
     ? dataSource
     : await dataSource.initialize();
@@ -91,6 +105,8 @@ export async function seedTestDb(options: SeedDbOptions = {}): Promise<void> {
  * Assumes DB has been initialized.
  */
 export async function resetTestDb(): Promise<void> {
+  assertTestDatabase('reset the test database');
+
   await dataSource.synchronize(true);
   await seedTestUsers();
 }
