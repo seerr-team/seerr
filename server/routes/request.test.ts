@@ -394,7 +394,7 @@ describe('PUT /request/:requestId (tv)', () => {
       where: { id: mediaRequest.id },
     });
     assert.deepStrictEqual(
-      saved.seasons.map((s) => s.seasonNumber).sort(),
+      saved.seasons.map((s) => s.seasonNumber).sort((a, b) => a - b),
       [1, 2]
     );
 
