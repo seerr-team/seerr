@@ -198,16 +198,19 @@ volumeMounts: []
 #   mountPath: "/etc/foo"
 #   readOnly: true
 
-# -- Extra manifests to deploy with the release. 
+# -- Extra manifests to deploy with the release. Entries are YAML objects or
+# strings, both rendered through `tpl`. Objects are parsed as YAML first, so
+# quote their template expressions. Use the string form to inject keys.
 extraManifests: []
 # - apiVersion: networking.k8s.io/v1
 #   kind: NetworkPolicy
 #   metadata:
-#     name: {{ include "seerr.fullname" . }}-allow-dns
+#     name: '{{ include "seerr.fullname" . }}-allow-dns'
 #   spec:
 #     podSelector:
 #       matchLabels:
-#         {{- include "seerr.selectorLabels" . | nindent 8 }}
+#         app.kubernetes.io/name: '{{ include "seerr.name" . }}'
+#         app.kubernetes.io/instance: '{{ .Release.Name }}'
 #     policyTypes:
 #       - Egress
 # - |
@@ -215,6 +218,8 @@ extraManifests: []
 #   kind: ConfigMap
 #   metadata:
 #     name: {{ include "seerr.fullname" . }}-extra
+#     labels:
+#       {{- include "seerr.labels" . | nindent 4 }}
 #   data:
 #     hostname: {{ (first .Values.route.main.hostnames) | quote }}
 
