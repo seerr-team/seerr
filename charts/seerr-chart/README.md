@@ -1,6 +1,6 @@
 # seerr-chart
 
-![Version: 3.9.1](https://img.shields.io/badge/Version-3.9.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v3.4.1](https://img.shields.io/badge/AppVersion-v3.4.1-informational?style=flat-square)
+![Version: 3.10.0](https://img.shields.io/badge/Version-3.10.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v3.4.1](https://img.shields.io/badge/AppVersion-v3.4.1-informational?style=flat-square)
 
 Seerr helm chart for Kubernetes
 
@@ -57,7 +57,7 @@ If `replicaCount` value was used - remove it. Helm update should work fine after
 | dnsPolicy | string | `""` | docs: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy |
 | extraEnv | list | `[]` | Environment variables to add to the seerr pods |
 | extraEnvFrom | list | `[]` | Environment variables from secrets or configmaps to add to the seerr pods |
-| extraManifests | list | `[]` | Extra manifests to deploy with the release. Either a list or a map; each entry may be a YAML object or a string, and both are passed through `tpl`, so they can reference values and the chart's named templates. Use it for objects the chart does not render (NetworkPolicy, Gateway API policies, ExternalSecret, ServiceMonitor, ...) so the release owns and prunes them. |
+| extraManifests | list | `[]` | Extra manifests to deploy with the release.  |
 | fullnameOverride | string | `""` |  |
 | hostUsers | bool | `true` | docs: https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/ |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
