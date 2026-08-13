@@ -198,6 +198,30 @@ volumeMounts: []
 #   mountPath: "/etc/foo"
 #   readOnly: true
 
+# -- Extra manifests to deploy with the release. Either a list or a map; each
+# entry may be a YAML object or a string, and both are passed through `tpl`, so
+# they can reference values and the chart's named templates. Use it for objects
+# the chart does not render (NetworkPolicy, Gateway API policies, ExternalSecret,
+# ServiceMonitor, ...) so the release owns and prunes them.
+extraManifests: []
+# - apiVersion: networking.k8s.io/v1
+#   kind: NetworkPolicy
+#   metadata:
+#     name: {{ include "seerr.fullname" . }}-allow-dns
+#   spec:
+#     podSelector:
+#       matchLabels:
+#         {{- include "seerr.selectorLabels" . | nindent 8 }}
+#     policyTypes:
+#       - Egress
+# - |
+#   apiVersion: v1
+#   kind: ConfigMap
+#   metadata:
+#     name: {{ include "seerr.fullname" . }}-extra
+#   data:
+#     hostname: {{ (first .Values.route.main.hostnames) | quote }}
+
 nodeSelector: {}
 
 tolerations: []
