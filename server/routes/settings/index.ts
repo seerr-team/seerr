@@ -11,6 +11,7 @@ import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import { Session } from '@server/entity/Session';
 import { User } from '@server/entity/User';
+import { UserSettings } from '@server/entity/UserSettings';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { PlexConnection } from '@server/interfaces/api/plexInterfaces';
 import type {
@@ -627,6 +628,23 @@ settingsRoutes.post(
           { ratingKey: Not('') },
           { ratingKey: '' }
         );
+        await getRepository(UserSettings).update(
+          {},
+          { watchlistSyncMovies: false, watchlistSyncTv: false }
+        );
+        const plexAutoRequestPermissions =
+          Permission.AUTO_REQUEST |
+          Permission.AUTO_REQUEST_MOVIE |
+          Permission.AUTO_REQUEST_TV;
+        await getRepository(User)
+          .createQueryBuilder()
+          .update(User)
+          .set({
+            permissions: () => `permissions & ~${plexAutoRequestPermissions}`,
+          })
+          .execute();
+        settings.main.defaultPermissions =
+          settings.main.defaultPermissions & ~plexAutoRequestPermissions;
         await settings.save();
         await getRepository(Session)
           .createQueryBuilder()
