@@ -6,11 +6,13 @@ import {
   Index,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 import Season from './Season';
 
 @Entity()
+@Unique(['season', 'episodeNumber'])
 class Episode {
   @PrimaryGeneratedColumn()
   public id: number;
@@ -27,9 +29,8 @@ class Episode {
   @Index()
   @ManyToOne(() => Season, (season: Season) => season.episodes, {
     onDelete: 'CASCADE',
-    nullable: true,
   })
-  public season?: Promise<Season>;
+  public season: Promise<Season>;
 
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
