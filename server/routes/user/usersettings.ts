@@ -671,7 +671,7 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
 
       if (!user.settings) {
         user.settings = new UserSettings({
-          user: req.user,
+          user,
           pgpKey: req.body.pgpKey,
           discordIds,
           slackIds,

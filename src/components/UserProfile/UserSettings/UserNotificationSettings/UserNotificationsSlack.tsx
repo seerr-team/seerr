@@ -24,7 +24,7 @@ const messages = defineMessages(
   'components.UserProfile.UserSettings.UserNotificationSettings',
   {
     slackNotificationsNotEnabled:
-      'The server owner has not enabled Slack notifications. This information will only be used if the server owner configures an external service.',
+      'The server owner has not enabled Slack mentions. This information will only be used if the server owner configures an external service.',
     slacksettingssaved: 'Slack notification settings saved successfully!',
     slacksettingsfailed: 'Slack notification settings failed to save.',
     slackId: 'Member IDs',
