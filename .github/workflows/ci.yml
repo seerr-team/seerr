@@ -15,7 +15,6 @@ permissions:
   contents: read
 
 env:
-  DOCKER_HUB: seerr/seerr
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -250,7 +249,6 @@ jobs:
         uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6
         with:
           images: |
-            ${{ env.DOCKER_HUB }}
             ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=develop
