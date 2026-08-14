@@ -95,8 +95,6 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
       !(metadataProvider instanceof TheMovieDb);
 
     if (shouldTrackEpisodes) {
-      availableMap = {};
-
       const dbSeason = await getRepository(Season).findOne({
         where: {
           seasonNumber: Number(req.params.seasonNumber),
@@ -112,6 +110,7 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
 
       if (dbSeason) {
         if (dbSeason.status === MediaStatus.AVAILABLE) {
+          availableMap = {};
           for (const episode of season.episodes) {
             availableMap[episode.episode_number] = true;
           }
@@ -139,8 +138,8 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
                 trackedEpisodeCount: dbSeason.episodes.length,
               }
             );
-            availableMap = undefined;
           } else {
+            availableMap = {};
             for (const episode of dbSeason.episodes) {
               availableMap[episode.episodeNumber] =
                 episode.status === MediaStatus.AVAILABLE;
