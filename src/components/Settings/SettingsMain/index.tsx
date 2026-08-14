@@ -10,7 +10,6 @@ import CopyButton from '@app/components/Settings/CopyButton';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
 import { availableLanguages } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
-import useSettings from '@app/hooks/useSettings';
 import useToasts from '@app/hooks/useToasts';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
@@ -19,7 +18,11 @@ import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import { ArrowPathIcon } from '@heroicons/react/24/solid';
 import type { UserSettingsGeneralResponse } from '@server/interfaces/api/userSettingsInterfaces';
-import type { MainSettings } from '@server/lib/settings';
+import {
+  MetadataProviderType,
+  type MainSettings,
+  type MetadataSettings,
+} from '@server/lib/settings';
 import type { AvailableLocale } from '@server/types/languages';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
@@ -95,12 +98,15 @@ const SettingsMain = () => {
   const { user: currentUser, hasPermission: userHasPermission } = useUser();
   const intl = useIntl();
   const { setLocale } = useLocale();
-  const { currentSettings } = useSettings();
   const {
     data,
     error,
     mutate: revalidate,
   } = useSWR<MainSettings>('/api/v1/settings/main');
+
+  const { data: metadataSettings } = useSWR<MetadataSettings>(
+    '/api/v1/settings/metadatas'
+  );
 
   const { data: userData } = useSWR<UserSettingsGeneralResponse>(
     currentUser ? `/api/v1/user/${currentUser.id}/settings/main` : null
@@ -652,8 +658,9 @@ const SettingsMain = () => {
                     />
                   </div>
                   {values.enableEpisodeAvailability &&
-                    currentSettings.metadataSettings?.tv !== 'tvdb' &&
-                    currentSettings.metadataSettings?.anime !== 'tvdb' && (
+                    metadataSettings &&
+                    metadataSettings.tv !== MetadataProviderType.TVDB &&
+                    metadataSettings.anime !== MetadataProviderType.TVDB && (
                       <div className="sm:col-span-3">
                         <Alert type="warning">
                           {intl.formatMessage(

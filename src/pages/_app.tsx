@@ -264,10 +264,6 @@ CoreApp.getInitialProps = async (initialProps) => {
     newPlexLogin: true,
     youtubeUrl: '',
     versionCheck: true,
-    metadataSettings: {
-      tv: 'tmdb',
-      anime: 'tmdb',
-    },
     plexClientIdentifier: '',
   };
 
