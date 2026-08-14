@@ -13,6 +13,8 @@ on:
 
 permissions:
   contents: read
+  packages: write
+  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
