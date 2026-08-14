@@ -22,6 +22,8 @@ Simply [create a webhook](https://my.slack.com/services/new/incoming-webhook/) a
 
 When enabled, users who have configured their Slack member ID(s) will be mentioned in notifications relevant to their requests.
 
+Slack surfaces mentions in the Activity feed even for muted channels, so users can mute the notification channel in Slack and still catch updates to their own requests.
+
 :::info
 Please refer to the [Slack API documentation](https://api.slack.com/messaging/webhooks) for more details on configuring these notifications.
 :::
