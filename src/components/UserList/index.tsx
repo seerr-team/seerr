@@ -37,7 +37,7 @@ import { Field, Form, Formik } from 'formik';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { useIntl } from 'react-intl';
+import { FormattedMessage, useIntl } from 'react-intl';
 import useSWR from 'swr';
 import validator from 'validator';
 import * as Yup from 'yup';
@@ -93,6 +93,10 @@ const messages = defineMessages('components.UserList', {
   descending: 'descending',
   localLoginDisabled:
     'The <strong>Enable Local Sign-In</strong> setting is currently disabled.',
+  linkedToPlex: 'Plex linked',
+  linkedToJellyfinEmby: 'Jellyfin/Emby linked',
+  switchMediaServerTip:
+    'Only users linked to the target media server (for example, users with the "Plex linked" badge when switching to Plex) can sign in after you switch media server in {generalSettings}.',
 });
 
 type Sort =
@@ -694,6 +698,29 @@ const UserList = () => {
           </div>
         </div>
       </div>
+      {(settings.currentSettings.mediaServerType === MediaServerType.PLEX ||
+        settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN ||
+        settings.currentSettings.mediaServerType === MediaServerType.EMBY) && (
+        <p className="mb-4 text-sm text-gray-400">
+          <FormattedMessage
+            id="components.UserList.switchMediaServerTip"
+            defaultMessage={messages.switchMediaServerTip.defaultMessage}
+            values={{
+              generalSettings: (
+                <Link
+                  href="/settings/main"
+                  className="font-medium text-indigo-400 hover:text-indigo-300 hover:underline"
+                >
+                  <FormattedMessage
+                    id="components.UserList.generalSettingsLinkText"
+                    defaultMessage="General"
+                  />
+                </Link>
+              ),
+            }}
+          />
+        </p>
+      )}
       <Table>
         <thead>
           <tr>
@@ -838,27 +865,48 @@ const UserList = () => {
                 )}
               </Table.TD>
               <Table.TD>
-                {user.userType === UserType.PLEX ? (
-                  <Badge badgeType="warning">
-                    {intl.formatMessage(messages.plexuser)}
-                  </Badge>
-                ) : user.userType === UserType.LOCAL ? (
-                  <Badge badgeType="default">
-                    {intl.formatMessage(messages.localuser)}
-                  </Badge>
-                ) : user.userType === UserType.EMBY ? (
-                  <Badge badgeType="success">
-                    {intl.formatMessage(messages.mediaServerUser, {
-                      mediaServerName: 'Emby',
-                    })}
-                  </Badge>
-                ) : user.userType === UserType.JELLYFIN ? (
-                  <Badge badgeType="default">
-                    {intl.formatMessage(messages.mediaServerUser, {
-                      mediaServerName: 'Jellyfin',
-                    })}
-                  </Badge>
-                ) : null}
+                <div className="flex flex-wrap items-center gap-1">
+                  {user.userType === UserType.PLEX ? (
+                    <Badge badgeType="warning">
+                      {intl.formatMessage(messages.plexuser)}
+                    </Badge>
+                  ) : user.userType === UserType.LOCAL ? (
+                    <Badge badgeType="default">
+                      {intl.formatMessage(messages.localuser)}
+                    </Badge>
+                  ) : user.userType === UserType.EMBY ? (
+                    <Badge badgeType="success">
+                      {intl.formatMessage(messages.mediaServerUser, {
+                        mediaServerName: 'Emby',
+                      })}
+                    </Badge>
+                  ) : user.userType === UserType.JELLYFIN ? (
+                    <Badge badgeType="default">
+                      {intl.formatMessage(messages.mediaServerUser, {
+                        mediaServerName: 'Jellyfin',
+                      })}
+                    </Badge>
+                  ) : null}
+                  {settings.currentSettings.mediaServerType ===
+                    MediaServerType.PLEX &&
+                    'jellyfinUserId' in user &&
+                    (user as { jellyfinUserId?: string | null })
+                      .jellyfinUserId && (
+                      <Badge badgeType="success">
+                        {intl.formatMessage(messages.linkedToJellyfinEmby)}
+                      </Badge>
+                    )}
+                  {(settings.currentSettings.mediaServerType ===
+                    MediaServerType.JELLYFIN ||
+                    settings.currentSettings.mediaServerType ===
+                      MediaServerType.EMBY) &&
+                    'plexId' in user &&
+                    (user as { plexId?: number | null }).plexId != null && (
+                      <Badge badgeType="success">
+                        {intl.formatMessage(messages.linkedToPlex)}
+                      </Badge>
+                    )}
+                </div>
               </Table.TD>
               <Table.TD>
                 {user.id === 1

@@ -717,6 +717,10 @@ components:
           format: uuid
           description: Instance Plex OAuth client identifier
           example: 6919275e-142a-48d8-be6b-93594cbd4626
+        jellyfinConfigured:
+          type: boolean
+          description: Whether a Jellyfin/Emby connection is configured.
+          example: true
     MovieResult:
       type: object
       required:
@@ -2315,6 +2319,47 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JellyfinSettings'
+  /settings/switch-media-server:
+    post:
+      summary: Switch media server
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                targetServerType:
+                  type: string
+                  enum: [jellyfin, emby, plex]
+                  description: Target media server type. Required when switching from Plex (jellyfin or emby) or from Jellyfin/Emby (plex, jellyfin, or emby).
+              required:
+                - targetServerType
+      responses:
+        '200':
+          description: Media server cleared
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Media server cleared. Restart or reload to configure a new server.'
+        '400':
+          description: No media server is configured
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: 'No media server is configured.'
+        '500':
+          description: Failed to switch media server
   /settings/jellyfin/library:
     get:
       summary: Get Jellyfin libraries
@@ -5251,6 +5296,44 @@ paths:
           description: Unlink request invalid
         '404':
           description: User does not exist
+  /user/{userId}/settings/linked-accounts/jellyfin/map:
+    post:
+      summary: Map a Jellyfin/Emby account to a user
+      description: Uses the configured Jellyfin/Emby connection to verify the selected server user, then maps that identity to the Seerr user without authenticating as the Jellyfin/Emby user or storing a user auth token. Requires administrator permissions.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                jellyfinUserId:
+                  type: string
+                  description: Jellyfin/Emby user ID selected from the configured server user list.
+                  example: '0123456789abcdef0123456789abcdef'
+              required:
+                - jellyfinUserId
+      responses:
+        '204':
+          description: Mapping account succeeded
+        '400':
+          description: Mapping request invalid or Jellyfin/Emby connection is not configured
+        '403':
+          description: User does not have permission to map this account
+        '404':
+          description: Seerr user or Jellyfin/Emby user does not exist
+        '422':
+          description: Account already linked to a user
+        '500':
+          description: Unable to map account
   /user/{userId}/settings/linked-accounts/jellyfin/quickconnect:
     post:
       summary: Link Jellyfin/Emby account with Quick Connect
