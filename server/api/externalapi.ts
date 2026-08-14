@@ -1,4 +1,5 @@
 import { proxyRequestInterceptor } from '@server/utils/customProxyAgent';
+import { userAgentRequestInterceptor } from '@server/utils/userAgent';
 import type { AxiosInstance, AxiosRequestConfig } from 'axios';
 import axios from 'axios';
 import rateLimit from 'axios-rate-limit';
@@ -41,6 +42,7 @@ class ExternalAPI {
       },
     });
     this.axios.interceptors.request.use(proxyRequestInterceptor);
+    this.axios.interceptors.request.use(userAgentRequestInterceptor);
 
     if (options.rateLimit) {
       this.axios = rateLimit(this.axios, {

@@ -31,6 +31,7 @@ import createCustomProxyAgent, {
 } from '@server/utils/customProxyAgent';
 import { initializeDnsCache } from '@server/utils/dnsCache';
 import restartFlag from '@server/utils/restartFlag';
+import '@server/utils/userAgent';
 import { getClientIp } from '@supercharge/request-ip';
 import { TypeormStore } from 'connect-typeorm/out';
 import cookieParser from 'cookie-parser';
