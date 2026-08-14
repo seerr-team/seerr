@@ -8,7 +8,7 @@ import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import Season from '@server/entity/Season';
 import { Watchlist } from '@server/entity/Watchlist';
-import { MetadataProviderType, getSettings } from '@server/lib/settings';
+import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { mapTvResult } from '@server/models/Search';
 import { mapSeasonWithEpisodes, mapTvDetails } from '@server/models/Tv';
@@ -92,9 +92,7 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
     const settings = getSettings();
     const shouldTrackEpisodes =
       settings.main.enableEpisodeAvailability &&
-      (isAnime
-        ? settings.metadataSettings.anime === MetadataProviderType.TVDB
-        : settings.metadataSettings.tv === MetadataProviderType.TVDB);
+      !(metadataProvider instanceof TheMovieDb);
 
     if (shouldTrackEpisodes) {
       availableMap = {};
