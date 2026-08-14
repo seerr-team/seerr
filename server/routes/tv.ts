@@ -110,11 +110,11 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
 
       if (dbSeason) {
         const trackedEpisodes = dbSeason.episodes ?? [];
+        const metadataEpisodeNumbers = new Set(
+          season.episodes.map((episode) => episode.episode_number)
+        );
 
-        if (trackedEpisodes.length > 0) {
-          const metadataEpisodeNumbers = new Set(
-            season.episodes.map((episode) => episode.episode_number)
-          );
+        if (trackedEpisodes.length > 0 && metadataEpisodeNumbers.size > 0) {
           const hasEpisodeNumberMismatch =
             metadataEpisodeNumbers.size !== trackedEpisodes.length ||
             trackedEpisodes.some(
@@ -122,7 +122,7 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
             );
 
           if (hasEpisodeNumberMismatch) {
-            logger.warn(
+            logger.debug(
               'Skipping episode availability due to episode number mismatch',
               {
                 label: 'API',
@@ -141,8 +141,9 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
             }
           }
         } else if (
-          dbSeason.status === MediaStatus.AVAILABLE ||
-          dbSeason.status4k === MediaStatus.AVAILABLE
+          trackedEpisodes.length === 0 &&
+          (dbSeason.status === MediaStatus.AVAILABLE ||
+            dbSeason.status4k === MediaStatus.AVAILABLE)
         ) {
           availableMap = {};
           for (const episode of season.episodes) {
