@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 env:
   DOCKER_HUB: seerr/seerr
@@ -102,23 +103,11 @@ jobs:
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}
       - name: Commit timestamp
         id: ts
         run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6
-        with:
-          images: |
-            ghcr.io/${{ github.repository }}
-          tags: |
-            type=raw,value=preview-${{ steps.ver.outputs.version }}
-          labels: |
-            org.opencontainers.image.version=preview-${{ steps.ver.outputs.version }}
-            org.opencontainers.image.created=${{ steps.ts.outputs.TIMESTAMP }}
 
       - name: Build & Push (multi-arch, single tag)
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
@@ -131,8 +120,9 @@ jobs:
             COMMIT_TAG=${{ github.sha }}
             BUILD_VERSION=${{ steps.ver.outputs.version }}
             SOURCE_DATE_EPOCH=${{ steps.ts.outputs.TIMESTAMP }}
-          labels: ${{ steps.meta.outputs.labels }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ghcr.io/${{ github.repository }}:preview-${{ steps.ver.outputs.version }}
+            ghcr.io/${{ github.repository }}:preview-${{ github.sha }}
           cache-from: |
             type=gha,scope=linux/amd64
             type=gha,scope=linux/arm64
