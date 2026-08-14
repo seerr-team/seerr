@@ -11,7 +11,7 @@ import {
   PlusIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
-import { DISCORD_SNOWFLAKE_REGEX } from '@server/constants/discord';
+import { SLACK_USER_ID_REGEX } from '@server/constants/slack';
 import type { UserSettingsNotificationsResponse } from '@server/interfaces/api/userSettingsInterfaces';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
@@ -23,21 +23,21 @@ import * as Yup from 'yup';
 const messages = defineMessages(
   'components.UserProfile.UserSettings.UserNotificationSettings',
   {
-    discordNotificationsNotEnabled:
-      'The server owner has not enabled Discord notifications. This information will only be used if the server owner configures an external service.',
-    discordsettingssaved: 'Discord notification settings saved successfully!',
-    discordsettingsfailed: 'Discord notification settings failed to save.',
-    discordId: 'User IDs',
-    discordIdTip:
-      'The <FindDiscordIdLink>multi-digit ID number</FindDiscordIdLink> associated with your user account. For multiple household accounts you can add more than one Discord user ID.',
-    discordIdPlaceholder: 'Discord User ID',
-    discordIdAdd: 'Add User ID',
-    discordIdRemove: 'Remove',
-    validationDiscordId: 'Each ID must be a valid Discord user ID',
+    slackNotificationsNotEnabled:
+      'The server owner has not enabled Slack notifications. This information will only be used if the server owner configures an external service.',
+    slacksettingssaved: 'Slack notification settings saved successfully!',
+    slacksettingsfailed: 'Slack notification settings failed to save.',
+    slackId: 'Member IDs',
+    slackIdTip:
+      'The <FindSlackIdLink>member ID</FindSlackIdLink> associated with your Slack account. For multiple household accounts you can add more than one Slack member ID.',
+    slackIdPlaceholder: 'Slack Member ID',
+    slackIdAdd: 'Add Member ID',
+    slackIdRemove: 'Remove',
+    validationSlackId: 'Each ID must be a valid Slack member ID',
   }
 );
 
-const UserNotificationsDiscord = () => {
+const UserNotificationsSlack = () => {
   const intl = useIntl();
   const { addToast } = useToasts();
   const router = useRouter();
@@ -51,11 +51,11 @@ const UserNotificationsDiscord = () => {
     user ? `/api/v1/user/${user?.id}/settings/notifications` : null
   );
 
-  const UserNotificationsDiscordSchema = Yup.object().shape({
-    discordIds: Yup.array()
+  const UserNotificationsSlackSchema = Yup.object().shape({
+    slackIds: Yup.array()
       .of(
-        Yup.string().matches(DISCORD_SNOWFLAKE_REGEX, {
-          message: intl.formatMessage(messages.validationDiscordId),
+        Yup.string().matches(SLACK_USER_ID_REGEX, {
+          message: intl.formatMessage(messages.validationSlackId),
           excludeEmptyString: true,
         })
       )
@@ -64,7 +64,7 @@ const UserNotificationsDiscord = () => {
         then: (schema) =>
           schema
             .compact((value) => value === '')
-            .min(1, intl.formatMessage(messages.validationDiscordId)),
+            .min(1, intl.formatMessage(messages.validationSlackId)),
       }),
   });
 
@@ -75,34 +75,33 @@ const UserNotificationsDiscord = () => {
   return (
     <Formik
       initialValues={{
-        discordIds: data?.discordIds ?? [''],
+        slackIds: data?.slackIds ?? [''],
         types:
-          (data?.discordEnabledTypes ?? 0) &
-          (data?.notificationTypes.discord ?? 0),
+          (data?.slackEnabledTypes ?? 0) & (data?.notificationTypes.slack ?? 0),
       }}
-      validationSchema={UserNotificationsDiscordSchema}
+      validationSchema={UserNotificationsSlackSchema}
       enableReinitialize
       onSubmit={async (values) => {
         try {
           await axios.post(`/api/v1/user/${user?.id}/settings/notifications`, {
             pgpKey: data?.pgpKey,
-            discordIds: values.discordIds,
-            slackIds: data?.slackIds,
+            discordIds: data?.discordIds,
+            slackIds: values.slackIds,
             pushbulletAccessToken: data?.pushbulletAccessToken,
             pushoverApplicationToken: data?.pushoverApplicationToken,
             pushoverUserKey: data?.pushoverUserKey,
             telegramChatId: data?.telegramChatId,
             telegramSendSilently: data?.telegramSendSilently,
             notificationTypes: {
-              discord: values.types,
+              slack: values.types,
             },
           });
-          addToast(intl.formatMessage(messages.discordsettingssaved), {
+          addToast(intl.formatMessage(messages.slacksettingssaved), {
             appearance: 'success',
             autoDismiss: true,
           });
         } catch {
-          addToast(intl.formatMessage(messages.discordsettingsfailed), {
+          addToast(intl.formatMessage(messages.slacksettingsfailed), {
             appearance: 'error',
             autoDismiss: true,
           });
@@ -122,26 +121,26 @@ const UserNotificationsDiscord = () => {
       }) => {
         return (
           <Form className="section">
-            {!(data?.discordEnabledTypes ?? 0) && (
+            {!(data?.slackEnabledTypes ?? 0) && (
               <Alert
                 type="warning"
                 title={intl.formatMessage(
-                  messages.discordNotificationsNotEnabled
+                  messages.slackNotificationsNotEnabled
                 )}
               />
             )}
             <div className="form-row">
               <label className="text-label">
-                {intl.formatMessage(messages.discordId)}
-                {!!data?.discordEnabledTypes && (
+                {intl.formatMessage(messages.slackId)}
+                {!!data?.slackEnabledTypes && (
                   <span className="label-required">*</span>
                 )}
                 {currentUser?.id === user?.id && (
                   <span className="label-tip">
-                    {intl.formatMessage(messages.discordIdTip, {
-                      FindDiscordIdLink: (msg: React.ReactNode) => (
+                    {intl.formatMessage(messages.slackIdTip, {
+                      FindSlackIdLink: (msg: React.ReactNode) => (
                         <a
-                          href="https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-"
+                          href="https://slack.com/help/articles/221769328-Locate-your-Slack-URL-or-ID"
                           target="_blank"
                           rel="noreferrer"
                         >
@@ -154,40 +153,40 @@ const UserNotificationsDiscord = () => {
               </label>
               <div className="form-input-area">
                 <div className="space-y-2">
-                  {values.discordIds.map((_id: string, index: number) => (
+                  {values.slackIds.map((_id: string, index: number) => (
                     <div key={index} className="flex gap-2">
                       <div className="flex-1">
                         <div className="form-input-field">
                           <Field
-                            name={`discordIds.${index}`}
+                            name={`slackIds.${index}`}
                             type="text"
                             placeholder={intl.formatMessage(
-                              messages.discordIdPlaceholder
+                              messages.slackIdPlaceholder
                             )}
                           />
                         </div>
-                        {Array.isArray(errors.discordIds) &&
-                          errors.discordIds[index] &&
-                          Array.isArray(touched.discordIds) &&
-                          touched.discordIds[index] && (
+                        {Array.isArray(errors.slackIds) &&
+                          errors.slackIds[index] &&
+                          Array.isArray(touched.slackIds) &&
+                          touched.slackIds[index] && (
                             <div className="error">
-                              {errors.discordIds[index]}
+                              {errors.slackIds[index]}
                             </div>
                           )}
                       </div>
-                      {values.discordIds.length > 1 && (
+                      {values.slackIds.length > 1 && (
                         <div className="flex items-center">
                           <Button
                             buttonType="danger"
                             buttonSize="sm"
                             onClick={(event) => {
                               event.preventDefault();
-                              const newIds = values.discordIds.filter(
+                              const newIds = values.slackIds.filter(
                                 (_: string, idx: number) => idx !== index
                               );
-                              setFieldValue('discordIds', newIds);
+                              setFieldValue('slackIds', newIds);
                             }}
-                            title={intl.formatMessage(messages.discordIdRemove)}
+                            title={intl.formatMessage(messages.slackIdRemove)}
                           >
                             <TrashIcon />
                           </Button>
@@ -200,23 +199,23 @@ const UserNotificationsDiscord = () => {
                     buttonSize="sm"
                     onClick={(event) => {
                       event.preventDefault();
-                      setFieldValue('discordIds', [...values.discordIds, '']);
+                      setFieldValue('slackIds', [...values.slackIds, '']);
                     }}
                   >
                     <PlusIcon />
-                    <span>{intl.formatMessage(messages.discordIdAdd)}</span>
+                    <span>{intl.formatMessage(messages.slackIdAdd)}</span>
                   </Button>
                 </div>
-                {errors.discordIds &&
-                  touched.discordIds &&
-                  typeof errors.discordIds === 'string' && (
-                    <div className="error">{errors.discordIds}</div>
+                {errors.slackIds &&
+                  touched.slackIds &&
+                  typeof errors.slackIds === 'string' && (
+                    <div className="error">{errors.slackIds}</div>
                   )}
               </div>
             </div>
             <NotificationTypeSelector
               user={user}
-              enabledTypes={data?.discordEnabledTypes ?? 0}
+              enabledTypes={data?.slackEnabledTypes ?? 0}
               currentTypes={values.types}
               onUpdate={(newTypes) => {
                 setFieldValue('types', newTypes);
@@ -253,4 +252,4 @@ const UserNotificationsDiscord = () => {
   );
 };
 
-export default UserNotificationsDiscord;
+export default UserNotificationsSlack;

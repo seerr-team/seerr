@@ -620,6 +620,13 @@ userSettingsRoutes.get<{ id: string }, UserSettingsNotificationsResponse>(
         pushoverApplicationToken: user.settings?.pushoverApplicationToken,
         pushoverUserKey: user.settings?.pushoverUserKey,
         pushoverSound: user.settings?.pushoverSound,
+        slackEnabled:
+          settings?.slack.enabled && settings.slack.options.enableMentions,
+        slackEnabledTypes:
+          settings?.slack.enabled && settings.slack.options.enableMentions
+            ? settings.slack.types
+            : 0,
+        slackIds: user.settings?.slackIds ?? [],
         telegramEnabled: settings.telegram.enabled,
         telegramBotUsername: settings.telegram.options.botUsername,
         telegramChatId: user.settings?.telegramChatId,
@@ -659,12 +666,15 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
 
       const discordIds =
         req.body.discordIds?.filter((id: string) => id !== '') ?? [];
+      const slackIds =
+        req.body.slackIds?.filter((id: string) => id !== '') ?? [];
 
       if (!user.settings) {
         user.settings = new UserSettings({
           user: req.user,
           pgpKey: req.body.pgpKey,
           discordIds,
+          slackIds,
           pushbulletAccessToken: req.body.pushbulletAccessToken,
           pushoverApplicationToken: req.body.pushoverApplicationToken,
           pushoverUserKey: req.body.pushoverUserKey,
@@ -676,6 +686,7 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
       } else {
         user.settings.pgpKey = req.body.pgpKey;
         user.settings.discordIds = discordIds;
+        user.settings.slackIds = slackIds;
         user.settings.pushbulletAccessToken = req.body.pushbulletAccessToken;
         user.settings.pushoverApplicationToken =
           req.body.pushoverApplicationToken;
@@ -697,6 +708,7 @@ userSettingsRoutes.post<{ id: string }, UserSettingsNotificationsResponse>(
       return res.status(200).json({
         pgpKey: user.settings.pgpKey,
         discordIds: user.settings.discordIds ?? [],
+        slackIds: user.settings.slackIds ?? [],
         pushbulletAccessToken: user.settings.pushbulletAccessToken,
         pushoverApplicationToken: user.settings.pushoverApplicationToken,
         pushoverUserKey: user.settings.pushoverUserKey,
