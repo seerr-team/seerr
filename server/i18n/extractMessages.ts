@@ -43,7 +43,13 @@ async function extractMessages(
 
 async function processMessages(dir: string): Promise<string> {
   const files = await getFiles(dir);
-  const tsFiles = files.filter((f) => /\.tsx?$/.test(f));
+  const tsFiles = files
+    .filter((f) => /\.tsx?$/.test(f))
+    .sort((a, b) => {
+      const left = a.replace(/\\/g, '/');
+      const right = b.replace(/\\/g, '/');
+      return left < right ? -1 : left > right ? 1 : 0;
+    });
   const extractedMessagesGroups = await Promise.all(
     tsFiles.map(extractMessages)
   );
