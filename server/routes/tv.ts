@@ -90,9 +90,7 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
     let availableMap: Record<number, boolean> | undefined;
 
     const settings = getSettings();
-    const shouldTrackEpisodes =
-      settings.main.enableEpisodeAvailability &&
-      !(metadataProvider instanceof TheMovieDb);
+    const shouldTrackEpisodes = settings.main.enableEpisodeAvailability;
 
     if (shouldTrackEpisodes) {
       const dbSeason = await getRepository(Season).findOne({
@@ -115,11 +113,9 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
         );
 
         if (trackedEpisodes.length > 0 && metadataEpisodeNumbers.size > 0) {
-          const hasEpisodeNumberMismatch =
-            metadataEpisodeNumbers.size !== trackedEpisodes.length ||
-            trackedEpisodes.some(
-              (episode) => !metadataEpisodeNumbers.has(episode.episodeNumber)
-            );
+          const hasEpisodeNumberMismatch = trackedEpisodes.some(
+            (episode) => !metadataEpisodeNumbers.has(episode.episodeNumber)
+          );
 
           if (hasEpisodeNumberMismatch) {
             logger.debug(
