@@ -1,5 +1,4 @@
 import BlocklistedTagsSelector from '@app/components/BlocklistedTagsSelector';
-import Alert from '@app/components/Common/Alert';
 import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
@@ -18,11 +17,7 @@ import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import { ArrowPathIcon } from '@heroicons/react/24/solid';
 import type { UserSettingsGeneralResponse } from '@server/interfaces/api/userSettingsInterfaces';
-import {
-  MetadataProviderType,
-  type MainSettings,
-  type MetadataSettings,
-} from '@server/lib/settings';
+import type { MainSettings } from '@server/lib/settings';
 import type { AvailableLocale } from '@server/types/languages';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
@@ -80,9 +75,7 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   enableSpecialEpisodes: 'Allow Special Episodes Requests',
   enableEpisodeAvailability: 'Enable Episode Availability Tracking',
   enableEpisodeAvailabilityTip:
-    'Track individual episode availability status (requires TVDB as metadata provider for either TV shows or anime)',
-  enableEpisodeAvailabilityNoTvdbWarning:
-    'This setting has no effect because neither TV shows nor anime use TVDB as the metadata provider.',
+    "Track individual episode availability. Match Seerr's metadata provider to your library agent (TMDB or TVDB).",
   locale: 'Display Language',
   youtubeUrl: 'YouTube URL',
   youtubeUrlTip:
@@ -103,10 +96,6 @@ const SettingsMain = () => {
     error,
     mutate: revalidate,
   } = useSWR<MainSettings>('/api/v1/settings/main');
-
-  const { data: metadataSettings } = useSWR<MetadataSettings>(
-    '/api/v1/settings/metadatas'
-  );
 
   const { data: userData } = useSWR<UserSettingsGeneralResponse>(
     currentUser ? `/api/v1/user/${currentUser.id}/settings/main` : null
@@ -657,18 +646,6 @@ const SettingsMain = () => {
                       }}
                     />
                   </div>
-                  {values.enableEpisodeAvailability &&
-                    metadataSettings &&
-                    metadataSettings.tv !== MetadataProviderType.TVDB &&
-                    metadataSettings.anime !== MetadataProviderType.TVDB && (
-                      <div className="sm:col-span-3">
-                        <Alert type="warning">
-                          {intl.formatMessage(
-                            messages.enableEpisodeAvailabilityNoTvdbWarning
-                          )}
-                        </Alert>
-                      </div>
-                    )}
                 </div>
                 <div className="form-row">
                   <label htmlFor="youtubeUrl" className="text-label">
