@@ -13,6 +13,7 @@ import SettingsServices from '@app/components/Settings/SettingsServices';
 import SetupSteps from '@app/components/Setup/SetupSteps';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
+import { withBasePath } from '@app/utils/basePath';
 import defineMessages from '@app/utils/defineMessages';
 import { MediaServerType } from '@server/constants/server';
 import type { Library } from '@server/lib/settings';
@@ -130,7 +131,7 @@ const Setup = () => {
       </div>
       <div className="relative z-40 px-4 sm:mx-auto sm:w-full sm:max-w-4xl">
         <div className="relative mb-10 h-48 max-w-full sm:mx-auto sm:h-64 sm:max-w-md">
-          <Image src="/logo_stacked.svg" alt="Logo" fill />
+          <Image src={withBasePath('/logo_stacked.svg')} alt="Logo" fill />
         </div>
         <AppDataWarning />
         <nav className="relative z-50">

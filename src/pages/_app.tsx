@@ -10,6 +10,7 @@ import { UserContext } from '@app/context/UserContext';
 import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
 import '@app/styles/globals.css';
+import { basePath, withBasePath } from '@app/utils/basePath';
 import { polyfillIntl } from '@app/utils/polyfillIntl';
 import { getHostAndPort } from '@app/utils/urlHelper';
 import '@fontsource-variable/inter';
@@ -24,6 +25,10 @@ import { useEffect, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { IntlProvider } from 'react-intl';
 import { SWRConfig } from 'swr';
+
+if (typeof window !== 'undefined' && basePath) {
+  axios.defaults.baseURL = basePath;
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const loadLocaleData = (locale: AvailableLocale): Promise<any> => {
@@ -268,7 +273,7 @@ CoreApp.getInitialProps = async (initialProps) => {
   if (ctx.res) {
     // Check if app is initialized and redirect if necessary
     const response = await axios.get<PublicSettingsResponse>(
-      `http://${getHostAndPort()}/api/v1/settings/public`
+      `http://${getHostAndPort()}${withBasePath('/api/v1/settings/public')}`
     );
 
     currentSettings = response.data;
@@ -278,7 +283,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     if (!initialized) {
       if (!router.pathname.match(/(setup|login\/plex)/)) {
         ctx.res.writeHead(307, {
-          Location: '/setup',
+          Location: withBasePath('/setup'),
         });
         ctx.res.end();
       }
@@ -286,7 +291,7 @@ CoreApp.getInitialProps = async (initialProps) => {
       try {
         // Attempt to get the user by running a request to the local api
         const response = await axios.get<User>(
-          `http://${getHostAndPort()}/api/v1/auth/me`,
+          `http://${getHostAndPort()}${withBasePath('/api/v1/auth/me')}`,
           {
             headers:
               ctx.req && ctx.req.headers.cookie
@@ -298,7 +303,7 @@ CoreApp.getInitialProps = async (initialProps) => {
 
         if (router.pathname.match(/(setup|login)/)) {
           ctx.res.writeHead(307, {
-            Location: '/',
+            Location: withBasePath('/'),
           });
           ctx.res.end();
         }
@@ -308,7 +313,7 @@ CoreApp.getInitialProps = async (initialProps) => {
         // before anything actually renders
         if (!router.pathname.match(/(login|setup|resetpassword)/)) {
           ctx.res.writeHead(307, {
-            Location: '/login',
+            Location: withBasePath('/login'),
           });
           ctx.res.end();
         }

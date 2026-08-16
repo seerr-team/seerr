@@ -2,6 +2,7 @@ import Button from '@app/components/Common/Button';
 import ImageFader from '@app/components/Common/ImageFader';
 import PageTitle from '@app/components/Common/PageTitle';
 import LanguagePicker from '@app/components/Layout/LanguagePicker';
+import { withBasePath } from '@app/utils/basePath';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowLeftIcon, EnvelopeIcon } from '@heroicons/react/24/solid';
 import axios from 'axios';
@@ -44,12 +45,12 @@ const ResetPassword = () => {
       <ImageFader
         forceOptimize
         backgroundImages={[
-          '/images/rotate1.jpg',
-          '/images/rotate2.jpg',
-          '/images/rotate3.jpg',
-          '/images/rotate4.jpg',
-          '/images/rotate5.jpg',
-          '/images/rotate6.jpg',
+          withBasePath('/images/rotate1.jpg'),
+          withBasePath('/images/rotate2.jpg'),
+          withBasePath('/images/rotate3.jpg'),
+          withBasePath('/images/rotate4.jpg'),
+          withBasePath('/images/rotate5.jpg'),
+          withBasePath('/images/rotate6.jpg'),
         ]}
       />
       <div className="absolute right-4 top-4 z-50">
@@ -57,7 +58,7 @@ const ResetPassword = () => {
       </div>
       <div className="relative z-40 mt-10 flex flex-col items-center px-4 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="relative h-48 w-full max-w-full">
-          <Image src="/logo_stacked.svg" alt="Logo" fill />
+          <Image src={withBasePath('/logo_stacked.svg')} alt="Logo" fill />
         </div>
         <h2 className="mt-12 text-center text-3xl font-extrabold leading-9 text-gray-100">
           {intl.formatMessage(messages.resetpassword)}

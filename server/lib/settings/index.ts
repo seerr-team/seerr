@@ -177,6 +177,7 @@ export interface DnsCacheSettings {
 }
 
 export interface NetworkSettings {
+  basePath: string;
   csrfProtection: boolean;
   forceIpv4First: boolean;
   trustProxy: boolean;
@@ -611,6 +612,7 @@ class Settings {
         },
       },
       network: {
+        basePath: '',
         csrfProtection: false,
         forceIpv4First: false,
         trustProxy: false,

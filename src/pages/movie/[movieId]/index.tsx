@@ -1,8 +1,9 @@
 import MovieDetails from '@app/components/MovieDetails';
+import { withBasePath } from '@app/utils/basePath';
 import { getHostAndPort } from '@app/utils/urlHelper';
 import type { MovieDetails as MovieDetailsType } from '@server/models/Movie';
 import axios from 'axios';
-import type { GetServerSideProps, NextPage } from 'next';
+import type { NextPage } from 'next';
 
 interface MoviePageProps {
   movie?: MovieDetailsType;
@@ -12,11 +13,10 @@ const MoviePage: NextPage<MoviePageProps> = ({ movie }) => {
   return <MovieDetails movie={movie} />;
 };
 
-export const getServerSideProps: GetServerSideProps<MoviePageProps> = async (
-  ctx
-) => {
+MoviePage.getInitialProps = async (ctx) => {
+  const apiPath = `/api/v1/movie/${ctx.query.movieId}`;
   const response = await axios.get<MovieDetailsType>(
-    `http://${getHostAndPort()}/api/v1/movie/${ctx.query.movieId}`,
+    ctx.req ? `http://${getHostAndPort()}${withBasePath(apiPath)}` : apiPath,
     {
       headers: ctx.req?.headers?.cookie
         ? { cookie: ctx.req.headers.cookie }
@@ -25,9 +25,7 @@ export const getServerSideProps: GetServerSideProps<MoviePageProps> = async (
   );
 
   return {
-    props: {
-      movie: response.data,
-    },
+    movie: response.data,
   };
 };
 

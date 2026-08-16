@@ -3,10 +3,24 @@
 // previously cached resources to be updated from the network.
 // This variable is intentionally declared and unused.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const OFFLINE_VERSION = 5;
+const OFFLINE_VERSION = 6;
 const CACHE_NAME = 'offline';
+const BASE_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, '');
+const withBasePath = (path) => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+
+  if (
+    !BASE_PATH ||
+    normalizedPath === BASE_PATH ||
+    normalizedPath.startsWith(`${BASE_PATH}/`)
+  ) {
+    return normalizedPath;
+  }
+
+  return `${BASE_PATH}${normalizedPath}`;
+};
 // Customize this with a different URL if needed.
-const OFFLINE_URL = '/offline.html';
+const OFFLINE_URL = withBasePath('/offline.html');
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -75,8 +89,10 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: payload.message,
-    badge: 'badge-128x128.png',
-    icon: payload.image ? payload.image : 'android-chrome-192x192.png',
+    badge: withBasePath('/badge-128x128.png'),
+    icon: payload.image
+      ? payload.image
+      : withBasePath('/android-chrome-192x192.png'),
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
@@ -137,17 +153,26 @@ self.addEventListener(
     event.notification.close();
 
     if (event.action === 'approve') {
-      fetch(`/api/v1/request/${notificationData.requestId}/approve`, {
-        method: 'POST',
-      });
+      fetch(
+        withBasePath(`/api/v1/request/${notificationData.requestId}/approve`),
+        {
+          method: 'POST',
+        }
+      );
     } else if (event.action === 'decline') {
-      fetch(`/api/v1/request/${notificationData.requestId}/decline`, {
-        method: 'POST',
-      });
+      fetch(
+        withBasePath(`/api/v1/request/${notificationData.requestId}/decline`),
+        {
+          method: 'POST',
+        }
+      );
     }
 
     if (notificationData.actionUrl) {
-      clients.openWindow(notificationData.actionUrl);
+      const actionUrl = notificationData.actionUrl.startsWith('/')
+        ? withBasePath(notificationData.actionUrl)
+        : notificationData.actionUrl;
+      clients.openWindow(actionUrl);
     }
   },
   false

@@ -26,6 +26,7 @@ import avatarproxy from '@server/routes/avatarproxy';
 import imageproxy from '@server/routes/imageproxy';
 import { appDataPermissions } from '@server/utils/appDataVolume';
 import { getAppVersion } from '@server/utils/appVersion';
+import { getRuntimeBasePath } from '@server/utils/basePath';
 import createCustomProxyAgent, {
   setForceIpv4First,
 } from '@server/utils/customProxyAgent';
@@ -46,8 +47,17 @@ import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 
 const API_SPEC_PATH = path.join(__dirname, '../seerr-api.yml');
+const basePath = getRuntimeBasePath();
+const cookiePath = basePath || '/';
+
+// Expose the resolved value to server-rendered application code without
+// compiling the user-facing setting into the browser bundle.
+process.env.SEERR_RUNTIME_BASE_PATH = basePath;
 
 logger.info(`Starting Seerr version ${getAppVersion()}`);
+if (basePath) {
+  logger.info(`Using base path ${basePath}`, { label: 'Server' });
+}
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
@@ -61,6 +71,11 @@ if (!appDataPermissions()) {
 app
   .prepare()
   .then(async () => {
+    // Next.js basePath is build-time only, but assetPrefix can be changed after
+    // the production build has been loaded. Express strips the runtime prefix
+    // before handing requests to Next.js below.
+    app.setAssetPrefix(basePath);
+
     // Run Overseerr to Seerr migration
     await checkOverseerrMerge();
 
@@ -197,7 +212,7 @@ app
             sameSite: true,
             secure: !dev,
             key: '_csrf',
-            path: '/',
+            path: cookiePath,
           },
         })
       );
@@ -205,14 +220,18 @@ app
         res.cookie('XSRF-TOKEN', req.csrfToken(), {
           sameSite: true,
           secure: !dev,
+          path: cookiePath,
         });
         next();
       });
     }
 
+    // Mount Seerr-owned HTTP routes below the configured application base path.
+    const appRouter = express.Router();
+
     // Set up sessions
     const sessionRespository = getRepository(Session);
-    server.use(
+    appRouter.use(
       '/api',
       session({
         secret: settings.sessionSecret,
@@ -223,6 +242,7 @@ app
           httpOnly: true,
           sameSite: settings.network.csrfProtection ? 'strict' : 'lax',
           secure: 'auto',
+          path: cookiePath,
         },
         store: new TypeormStore({
           cleanupLimit: 2,
@@ -232,8 +252,8 @@ app
     );
     const apiSpecContent = await fs.readFile(API_SPEC_PATH, 'utf-8');
     const apiDocs = yaml.load(apiSpecContent) as Record<string, unknown>;
-    server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(apiDocs));
-    server.use(
+    appRouter.use('/api-docs', swaggerUi.serve, swaggerUi.setup(apiDocs));
+    appRouter.use(
       OpenApiValidator.middleware({
         apiSpec: API_SPEC_PATH,
         validateRequests: true,
@@ -244,20 +264,24 @@ app
      * OpenAPI validator. Otherwise, they are treated as objects instead of strings
      * and response validation will fail
      */
-    server.use((_req, res, next) => {
+    appRouter.use((_req, res, next) => {
       const original = res.json;
       res.json = function jsonp(json) {
         return original.call(this, JSON.parse(JSON.stringify(json)));
       };
       next();
     });
-    server.use('/api/v1', routes);
+    appRouter.use('/api/v1', routes);
 
     // Do not set cookies so CDNs can cache them
-    server.use('/imageproxy', clearCookies, imageproxy);
-    server.use('/avatarproxy', clearCookies, avatarproxy);
+    appRouter.use('/imageproxy', clearCookies, imageproxy);
+    appRouter.use('/avatarproxy', clearCookies, avatarproxy);
 
-    server.get('*path', (req, res) => handle(req, res));
+    server.use(basePath || '/', appRouter);
+
+    // Express removes the mount path from req.url while this middleware runs,
+    // allowing one root-built Next.js bundle to serve any configured URL base.
+    server.use(basePath || '/', (req, res) => handle(req, res));
     server.use(
       (
         err: { status: number; message: string; errors: string[] },

@@ -1,3 +1,4 @@
+import { withBasePath } from '@app/utils/basePath';
 import axios from 'axios';
 import Bowser from 'bowser';
 
@@ -203,7 +204,7 @@ class PlexOAuth {
 
     //Set url to login/plex/loading so browser doesn't block popup
     const newWindow = window.open(
-      '/login/plex/loading',
+      withBasePath('/login/plex/loading'),
       title,
       'scrollbars=yes, width=' +
         w +

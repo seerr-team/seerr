@@ -1,4 +1,5 @@
 import useSettings from '@app/hooks/useSettings';
+import { withBasePath } from '@app/utils/basePath';
 import type { ImageLoader, ImageProps } from 'next/image';
 import Image from 'next/image';
 
@@ -37,6 +38,10 @@ const CachedImage = ({ src, type, ...props }: CachedImageProps) => {
     imageUrl = src;
   } else {
     return null;
+  }
+
+  if (imageUrl.startsWith('/')) {
+    imageUrl = withBasePath(imageUrl);
   }
 
   return <Image unoptimized loader={imageLoader} src={imageUrl} {...props} />;

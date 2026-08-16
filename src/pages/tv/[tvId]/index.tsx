@@ -1,8 +1,9 @@
 import TvDetails from '@app/components/TvDetails';
+import { withBasePath } from '@app/utils/basePath';
 import { getHostAndPort } from '@app/utils/urlHelper';
 import type { TvDetails as TvDetailsType } from '@server/models/Tv';
 import axios from 'axios';
-import type { GetServerSideProps, NextPage } from 'next';
+import type { NextPage } from 'next';
 
 interface TvPageProps {
   tv?: TvDetailsType;
@@ -12,11 +13,10 @@ const TvPage: NextPage<TvPageProps> = ({ tv }) => {
   return <TvDetails tv={tv} />;
 };
 
-export const getServerSideProps: GetServerSideProps<TvPageProps> = async (
-  ctx
-) => {
+TvPage.getInitialProps = async (ctx) => {
+  const apiPath = `/api/v1/tv/${ctx.query.tvId}`;
   const response = await axios.get<TvDetailsType>(
-    `http://${getHostAndPort()}/api/v1/tv/${ctx.query.tvId}`,
+    ctx.req ? `http://${getHostAndPort()}${withBasePath(apiPath)}` : apiPath,
     {
       headers: ctx.req?.headers?.cookie
         ? { cookie: ctx.req.headers.cookie }
@@ -25,9 +25,7 @@ export const getServerSideProps: GetServerSideProps<TvPageProps> = async (
   );
 
   return {
-    props: {
-      tv: response.data,
-    },
+    tv: response.data,
   };
 };
 

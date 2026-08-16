@@ -8,7 +8,7 @@
     "postinstall": "next telemetry disable",
     "dev": "nodemon -e ts,json,yml --watch server --watch seerr-api.yml --exec 'ts-node -r tsconfig-paths/register --files --project server/tsconfig.json server/index.ts'",
     "build:server": "tsc --project server/tsconfig.json && copyfiles -u 2 server/templates/**/*.{html,pug} dist/templates && copyfiles -u 2 \"server/i18n/locale/*.json\" dist/i18n && tsc-alias -p server/tsconfig.json",
-    "build:next": "next build",
+    "build:next": "next build --webpack",
     "build": "pnpm build:next && pnpm build:server",
     "lint": "eslint \"./server/**/*.{ts,tsx}\" \"./src/**/*.{ts,tsx}\" --cache",
     "lintfix": "eslint \"./server/**/*.{ts,tsx}\" \"./src/**/*.{ts,tsx}\" --fix",

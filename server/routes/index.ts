@@ -12,6 +12,7 @@ import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { checkUser, isAuthenticated } from '@server/middleware/auth';
+import validateNetworkBasePath from '@server/middleware/basePath';
 import deprecatedRoute from '@server/middleware/deprecation';
 import { mapProductionCompany } from '@server/models/Movie';
 import { mapNetwork } from '@server/models/Tv';
@@ -153,7 +154,12 @@ router.get(
     }
   }
 );
-router.use('/settings', isAuthenticated(Permission.ADMIN), settingsRoutes);
+router.use(
+  '/settings',
+  isAuthenticated(Permission.ADMIN),
+  validateNetworkBasePath,
+  settingsRoutes
+);
 router.use('/search', isAuthenticated(), searchRoutes);
 router.use('/discover', isAuthenticated(), discoverRoutes);
 router.use('/request', isAuthenticated(), requestRoutes);
