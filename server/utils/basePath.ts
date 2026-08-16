@@ -12,7 +12,9 @@ export const normalizeBasePath = (value?: string): string => {
 };
 
 export const isValidBasePath = (value: unknown): value is string =>
-  typeof value === 'string' && BASE_PATH_PATTERN.test(value);
+  typeof value === 'string' &&
+  BASE_PATH_PATTERN.test(value) &&
+  !value.split('/').some((segment) => segment === '.' || segment === '..');
 
 const getStoredBasePath = (): string => {
   try {
@@ -32,7 +34,9 @@ export const getRuntimeBasePath = (): string => {
     'SEERR_BASE_PATH'
   );
 
-  return normalizeBasePath(
+  const basePath = normalizeBasePath(
     hasEnvironmentOverride ? process.env.SEERR_BASE_PATH : getStoredBasePath()
   );
+
+  return isValidBasePath(basePath) ? basePath : '';
 };
