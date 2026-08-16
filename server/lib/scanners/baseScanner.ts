@@ -59,8 +59,8 @@ export interface ProcessableSeason {
 }
 
 class BaseScanner<T> {
-  protected bundleSize;
-  protected updateRate;
+  private bundleSize;
+  private updateRate;
   protected progress = 0;
   protected items: T[] = [];
   protected totalSize?: number = 0;
@@ -791,18 +791,6 @@ class BaseScanner<T> {
 
   get protectedBundleSize(): number {
     return this.bundleSize;
-  }
-
-  /**
-   * Test-only override to reduce scan delay in unit tests.
-   * Sets updateRate and/or bundleSize for the next run.
-   */
-  public setTestOverrides(opts: {
-    updateRate?: number;
-    bundleSize?: number;
-  }): void {
-    if (opts.updateRate !== undefined) this.updateRate = opts.updateRate;
-    if (opts.bundleSize !== undefined) this.bundleSize = opts.bundleSize;
   }
 }
 

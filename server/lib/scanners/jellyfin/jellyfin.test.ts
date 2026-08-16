@@ -18,6 +18,7 @@ import { User } from '@server/entity/User';
 import type { Library } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { setupTestDb } from '@server/test/db';
+import { runWithMockTimers } from '@server/test/runWithMockTimers';
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 
@@ -223,8 +224,6 @@ function configureJellyfinWithLibrary(
 
 describe('Jellyfin Scanner', () => {
   beforeEach(async () => {
-    jellyfinFullScanner.setTestOverrides({ updateRate: 0 });
-
     getLibraryContentsImpl = async () => [];
     getItemDataImpl = async () => undefined;
     getSeasonsImpl = async () => [];
@@ -335,7 +334,7 @@ describe('Jellyfin Scanner', () => {
         return [];
       };
 
-      await jellyfinFullScanner.run();
+      await runWithMockTimers(jellyfinFullScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 5000 },
@@ -413,7 +412,7 @@ describe('Jellyfin Scanner', () => {
         return [];
       };
 
-      await jellyfinFullScanner.run();
+      await runWithMockTimers(jellyfinFullScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 5001 },
@@ -490,7 +489,7 @@ describe('Jellyfin Scanner', () => {
         return [];
       };
 
-      await jellyfinFullScanner.run();
+      await runWithMockTimers(jellyfinFullScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 5002 },
