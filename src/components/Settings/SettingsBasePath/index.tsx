@@ -68,7 +68,7 @@ const SettingsBasePath = () => {
               basePath: normalizeBasePath(values.basePath),
             });
             await revalidate();
-            mutate('/api/v1/status');
+            mutate('/api/v1/status?checkUpdateAvailable=false');
 
             addToast(intl.formatMessage(messages.toastSettingsSuccess), {
               autoDismiss: true,
