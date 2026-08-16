@@ -232,6 +232,9 @@ components:
         hideAvailable:
           type: boolean
           example: false
+        merge4kAvailability:
+          type: boolean
+          example: false
         partialRequestsEnabled:
           type: boolean
           example: false

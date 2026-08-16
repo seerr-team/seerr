@@ -13,6 +13,7 @@ const defaultSettings = {
   applicationTitle: 'Seerr',
   applicationUrl: '',
   hideAvailable: false,
+  merge4kAvailability: false,
   hideBlocklisted: false,
   localLogin: true,
   mediaServerLogin: true,

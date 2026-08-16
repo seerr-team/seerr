@@ -8,6 +8,7 @@ import RequestModal from '@app/components/RequestModal';
 import ErrorCard from '@app/components/TitleCard/ErrorCard';
 import Placeholder from '@app/components/TitleCard/Placeholder';
 import { useIsTouch } from '@app/hooks/useIsTouch';
+import useSettings from '@app/hooks/useSettings';
 import useToasts from '@app/hooks/useToasts';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
@@ -39,6 +40,7 @@ interface TitleCardProps {
   userScore?: number;
   mediaType: MediaType;
   status?: MediaStatus;
+  status4k?: MediaStatus;
   canExpand?: boolean;
   inProgress?: boolean;
   isAddedToWatchlist?: number | boolean;
@@ -62,6 +64,7 @@ const TitleCard = ({
   year,
   title,
   status,
+  status4k,
   mediaType,
   isAddedToWatchlist = false,
   inProgress = false,
@@ -71,8 +74,40 @@ const TitleCard = ({
   const isTouch = useIsTouch();
   const intl = useIntl();
   const { user, hasPermission } = useUser();
+  const settings = useSettings();
   const [isUpdating, setIsUpdating] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState(status);
+
+  const has4kPermission =
+    mediaType === 'movie'
+      ? settings.currentSettings.movie4kEnabled &&
+        hasPermission(
+          [
+            Permission.MANAGE_REQUESTS,
+            Permission.REQUEST_4K,
+            Permission.REQUEST_4K_MOVIE,
+          ],
+          { type: 'or' }
+        )
+      : settings.currentSettings.series4kEnabled &&
+        hasPermission(
+          [
+            Permission.MANAGE_REQUESTS,
+            Permission.REQUEST_4K,
+            Permission.REQUEST_4K_TV,
+          ],
+          { type: 'or' }
+        );
+  const showAs4k =
+    settings.currentSettings.merge4kAvailability &&
+    has4kPermission &&
+    (!status ||
+      status === MediaStatus.UNKNOWN ||
+      status === MediaStatus.DELETED) &&
+    (status4k === MediaStatus.AVAILABLE ||
+      status4k === MediaStatus.PARTIALLY_AVAILABLE);
+  const displayStatus = showAs4k ? status4k : status;
+
+  const [currentStatus, setCurrentStatus] = useState(displayStatus);
   const [showDetail, setShowDetail] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const { addToast } = useToasts();
@@ -87,8 +122,8 @@ const TitleCard = ({
   }
 
   useEffect(() => {
-    setCurrentStatus(status);
-  }, [status]);
+    setCurrentStatus(displayStatus);
+  }, [displayStatus]);
 
   const requestComplete = useCallback((newStatus: MediaStatus) => {
     setCurrentStatus(newStatus);
@@ -461,6 +496,7 @@ const TitleCard = ({
                 <div className="pointer-events-none z-40 flex">
                   <StatusBadgeMini
                     status={currentStatus}
+                    is4k={showAs4k}
                     inProgress={inProgress}
                     shrink
                   />

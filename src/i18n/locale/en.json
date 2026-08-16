@@ -1036,6 +1036,8 @@
   "components.Settings.SettingsMain.hideBlocklisted": "Hide Blocklisted Items",
   "components.Settings.SettingsMain.hideBlocklistedTip": "Hide blocklisted items from discover pages for all users with the \"Manage Blocklist\" permission",
   "components.Settings.SettingsMain.locale": "Display Language",
+  "components.Settings.SettingsMain.merge4kAvailability": "Display 4K Availability on Title Cards",
+  "components.Settings.SettingsMain.merge4kAvailabilityTip": "Show titles that are only available in 4K as available on discover cards",
   "components.Settings.SettingsMain.originallanguage": "Discover Language",
   "components.Settings.SettingsMain.originallanguageTip": "Filter content by original language",
   "components.Settings.SettingsMain.partialRequestsEnabled": "Allow Partial Series Requests",
