@@ -69,6 +69,7 @@ const SettingsBasePath = () => {
             });
             await revalidate();
             mutate('/api/v1/status?checkUpdateAvailable=false');
+            mutate('/api/v1/status?checkUpdateAvailable=true');
 
             addToast(intl.formatMessage(messages.toastSettingsSuccess), {
               autoDismiss: true,
