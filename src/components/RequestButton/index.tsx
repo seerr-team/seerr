@@ -15,7 +15,7 @@ import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type Media from '@server/entity/Media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import axios from 'axios';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { mutate } from 'swr';
 
@@ -74,8 +74,14 @@ const RequestButton = ({
   // Movies skip the confirmation modal entirely — one click submits the
   // request with default server/profile settings. TV keeps the modal since
   // season selection is a real choice, not just a confirmation step.
-  const [isSubmittingMovieRequest, setIsSubmittingMovieRequest] =
-    useState(false);
+  // Tracked per-quality and kept true across the POST *and* the gap until
+  // `media.requests` (refreshed via onUpdate()) actually reflects the new
+  // request — otherwise the button goes clickable again first and a second
+  // click fires a duplicate POST that comes back as a misleading error toast.
+  const [pendingMovieRequest, setPendingMovieRequest] = useState<{
+    standard: boolean;
+    is4k: boolean;
+  }>({ standard: false, is4k: false });
 
   // All pending requests
   const activeRequests = media?.requests.filter(
@@ -100,6 +106,20 @@ const RequestButton = ({
         ) ?? active4kRequests[0])
       : undefined;
   }, [active4kRequests, user]);
+
+  // Clear the local "just submitted" flag once the refreshed `media.requests`
+  // prop actually contains the pending request — not before.
+  useEffect(() => {
+    if (pendingMovieRequest.standard && activeRequest) {
+      setPendingMovieRequest((prev) => ({ ...prev, standard: false }));
+    }
+  }, [activeRequest, pendingMovieRequest.standard]);
+
+  useEffect(() => {
+    if (pendingMovieRequest.is4k && active4kRequest) {
+      setPendingMovieRequest((prev) => ({ ...prev, is4k: false }));
+    }
+  }, [active4kRequest, pendingMovieRequest.is4k]);
 
   const modifyRequest = async (
     request: MediaRequest,
@@ -132,11 +152,14 @@ const RequestButton = ({
   };
 
   const submitMovieRequest = async (is4k: boolean) => {
-    if (isSubmittingMovieRequest) {
+    if (is4k ? pendingMovieRequest.is4k : pendingMovieRequest.standard) {
       return;
     }
 
-    setIsSubmittingMovieRequest(true);
+    setPendingMovieRequest((prev) => ({
+      ...prev,
+      [is4k ? 'is4k' : 'standard']: true,
+    }));
 
     try {
       const response = await axios.post<MediaRequest>('/api/v1/request', {
@@ -146,6 +169,8 @@ const RequestButton = ({
       });
 
       if (response.data) {
+        // Deliberately not cleared here — stays pending until the
+        // useEffect above sees it reflected in refreshed request data.
         onUpdate();
         mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
         mutate('/api/v1/request/count');
@@ -155,12 +180,14 @@ const RequestButton = ({
         });
       }
     } catch {
+      setPendingMovieRequest((prev) => ({
+        ...prev,
+        [is4k ? 'is4k' : 'standard']: false,
+      }));
       addToast(intl.formatMessage(messages.moviequickrequesterror), {
         appearance: 'error',
         autoDismiss: true,
       });
-    } finally {
-      setIsSubmittingMovieRequest(false);
     }
   };
 
@@ -327,7 +354,7 @@ const RequestButton = ({
     buttons.push({
       id: 'request',
       text: intl.formatMessage(
-        mediaType === 'movie' && isSubmittingMovieRequest
+        mediaType === 'movie' && pendingMovieRequest.standard
           ? globalMessages.requesting
           : globalMessages.request
       ),
@@ -381,7 +408,7 @@ const RequestButton = ({
     buttons.push({
       id: 'request4k',
       text: intl.formatMessage(
-        mediaType === 'movie' && isSubmittingMovieRequest
+        mediaType === 'movie' && pendingMovieRequest.is4k
           ? globalMessages.requesting
           : globalMessages.request4k
       ),
@@ -456,7 +483,10 @@ const RequestButton = ({
         }
         onClick={buttonOne.action}
         className="ml-2"
-        disabled={mediaType === 'movie' && isSubmittingMovieRequest}
+        disabled={
+          mediaType === 'movie' &&
+          (pendingMovieRequest.standard || pendingMovieRequest.is4k)
+        }
       >
         {others && others.length > 0
           ? others.map((button) => (
