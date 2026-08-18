@@ -136,15 +136,6 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
                 episode.status4k === MediaStatus.AVAILABLE;
             }
           }
-        } else if (
-          trackedEpisodes.length === 0 &&
-          (dbSeason.status === MediaStatus.AVAILABLE ||
-            dbSeason.status4k === MediaStatus.AVAILABLE)
-        ) {
-          availableMap = {};
-          for (const episode of season.episodes) {
-            availableMap[episode.episode_number] = true;
-          }
         }
       }
     }
