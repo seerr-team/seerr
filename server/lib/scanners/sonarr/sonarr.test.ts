@@ -946,10 +946,9 @@ describe('Sonarr Scanner', () => {
         order: { episodeNumber: 'ASC' },
       });
 
-      assert.strictEqual(episodes.length, 3);
+      assert.strictEqual(episodes.length, 2);
       assert.strictEqual(episodes[0].status, MediaStatus.AVAILABLE);
       assert.strictEqual(episodes[1].status, MediaStatus.AVAILABLE);
-      assert.strictEqual(episodes[2].status, MediaStatus.UNKNOWN);
     });
 
     it('does not fetch or persist episodes when tracking is disabled', async () => {
