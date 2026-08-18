@@ -17,9 +17,8 @@ import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
-import { clearLibrarySharingCache } from '@server/lib/librarysharing';
+import { grantLibraryAccessForRequest } from '@server/lib/librarysharing';
 import notificationManager, { Notification } from '@server/lib/notifications';
-import { grantLabelAccess } from '@server/lib/plexsharing';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { withNestedTransaction } from '@server/utils/nestedTransaction';
@@ -183,48 +182,6 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     }
   }
 
-  /**
-   * Grants the requester access to media the library already holds, when the
-   * owner opted into it.
-   *
-   * A restricted user only sees such media as unavailable because the media
-   * server hides it from them, so the request is legitimate even though nothing
-   * has to be downloaded. Plex only, since it relies on labels.
-   */
-  private async grantLibraryAccessIfEnabled(
-    entity: MediaRequest,
-    media: Media
-  ): Promise<void> {
-    const settings = getSettings();
-    const ratingKey = entity.is4k ? media.ratingKey4k : media.ratingKey;
-
-    if (
-      !settings.plex.grantLabelOnApproval ||
-      !ratingKey ||
-      !entity.requestedBy
-    ) {
-      return;
-    }
-
-    try {
-      const granted = await grantLabelAccess(entity.requestedBy, {
-        ratingKey,
-        type: entity.type === MediaType.MOVIE ? 'movie' : 'show',
-      });
-
-      if (granted) {
-        // The user's visible set just changed, so drop the cached copy.
-        clearLibrarySharingCache(entity.requestedBy.id);
-      }
-    } catch (e) {
-      logger.error('Failed to grant media server library access for request', {
-        label: 'Media Request',
-        requestId: entity.id,
-        errorMessage: e.message,
-      });
-    }
-  }
-
   public async sendToRadarr(
     entity: MediaRequest,
     manager: EntityManager
@@ -265,7 +222,12 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
           // The requester may only be seeing this as unavailable because the
           // media server hides it from them, so optionally grant them access.
-          await this.grantLibraryAccessIfEnabled(entity, media);
+          await grantLibraryAccessForRequest(
+            entity.requestedBy,
+            entity.is4k ? media.ratingKey4k : media.ratingKey,
+            entity.type,
+            entity.id
+          );
 
           const requestRepository = manager.getRepository(MediaRequest);
           entity.status = MediaRequestStatus.COMPLETED;
@@ -565,7 +527,12 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
           // The requester may only be seeing this as unavailable because the
           // media server hides it from them, so optionally grant them access.
-          await this.grantLibraryAccessIfEnabled(entity, media);
+          await grantLibraryAccessForRequest(
+            entity.requestedBy,
+            entity.is4k ? media.ratingKey4k : media.ratingKey,
+            entity.type,
+            entity.id
+          );
 
           const requestRepository = manager.getRepository(MediaRequest);
           entity.status = MediaRequestStatus.COMPLETED;

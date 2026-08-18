@@ -1,8 +1,12 @@
+import { MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import type Media from '@server/entity/Media';
 import type { User } from '@server/entity/User';
 import { resolveVisibleJellyfinItemIds } from '@server/lib/jellyfinsharing';
-import { resolveVisiblePlexRatingKeys } from '@server/lib/plexsharing';
+import {
+  grantLabelAccess,
+  resolveVisiblePlexRatingKeys,
+} from '@server/lib/plexsharing';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 
@@ -104,4 +108,45 @@ export const getMediaServerItemIds = (
   }
 
   return { id: media.jellyfinMediaId, id4k: media.jellyfinMediaId4k };
+};
+
+/**
+ * Grants the requester access to media that has just become available, when the
+ * owner opted into it.
+ *
+ * Both routes a request can take end up here: the library already held the
+ * media, or a download landed and the scanner made it available. Granting from
+ * only one of them leaves the requester without access on the other, which is
+ * the more common case since most requests are downloaded rather than already
+ * present.
+ *
+ * Never throws: a failed grant must not hold up the request it belongs to.
+ */
+export const grantLibraryAccessForRequest = async (
+  user: User | null | undefined,
+  ratingKey: string | null | undefined,
+  mediaType: MediaType,
+  requestId: number
+): Promise<void> => {
+  if (!getSettings().plex.grantLabelOnApproval || !user || !ratingKey) {
+    return;
+  }
+
+  try {
+    const granted = await grantLabelAccess(user, {
+      ratingKey,
+      type: mediaType === MediaType.MOVIE ? 'movie' : 'show',
+    });
+
+    if (granted) {
+      // The user's visible set just changed, so drop the cached copy.
+      clearLibrarySharingCache(user.id);
+    }
+  } catch (e) {
+    logger.error('Failed to grant media server library access for request', {
+      label: 'Media Request',
+      requestId,
+      errorMessage: e instanceof Error ? e.message : String(e),
+    });
+  }
 };
