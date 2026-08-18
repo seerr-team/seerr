@@ -22,6 +22,7 @@ import {
   StarIcon,
 } from '@heroicons/react/24/outline';
 import { MediaStatus } from '@server/constants/media';
+import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { Watchlist } from '@server/entity/Watchlist';
 import type { MediaType } from '@server/models/Search';
 import axios from 'axios';
@@ -53,6 +54,8 @@ const messages = defineMessages('components.TitleCard', {
     '<strong>{title}</strong> Removed from watchlist  successfully!',
   watchlistCancel: 'watchlist for <strong>{title}</strong> canceled.',
   watchlistError: 'Something went wrong. Please try again.',
+  moviequickrequestsuccess: '<strong>{title}</strong> requested successfully!',
+  moviequickrequesterror: 'Something went wrong while submitting the request.',
 });
 
 const TitleCard = ({
@@ -75,6 +78,13 @@ const TitleCard = ({
   const [currentStatus, setCurrentStatus] = useState(status);
   const [showDetail, setShowDetail] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
+  // Movies skip the confirmation modal entirely — one click submits the
+  // request with default server/profile settings. TV/collections keep the
+  // modal since season/collection selection is a real choice, not just a
+  // confirmation step. Kept separate from isUpdating so this button's own
+  // in-flight state doesn't bleed into the watchlist/blocklist buttons.
+  const [isSubmittingMovieRequest, setIsSubmittingMovieRequest] =
+    useState(false);
   const { addToast } = useToasts();
   const [toggleWatchlist, setToggleWatchlist] =
     useState<boolean>(!isAddedToWatchlist);
@@ -299,6 +309,47 @@ const TitleCard = ({
   };
 
   const closeModal = useCallback(() => setShowRequestModal(false), []);
+
+  const submitMovieRequest = async (is4k: boolean): Promise<void> => {
+    if (isSubmittingMovieRequest) {
+      return;
+    }
+
+    setIsSubmittingMovieRequest(true);
+
+    try {
+      const response = await axios.post<MediaRequest>('/api/v1/request', {
+        mediaId: id,
+        mediaType: 'movie',
+        is4k,
+      });
+
+      if (response.data) {
+        setCurrentStatus(MediaStatus.PENDING);
+        mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
+        mutate('/api/v1/request/count');
+        if (mutateParent) {
+          mutateParent();
+        }
+        addToast(
+          <span>
+            {intl.formatMessage(messages.moviequickrequestsuccess, {
+              title,
+              strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
+            })}
+          </span>,
+          { appearance: 'success', autoDismiss: true }
+        );
+      }
+    } catch {
+      addToast(intl.formatMessage(messages.moviequickrequesterror), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    } finally {
+      setIsSubmittingMovieRequest(false);
+    }
+  };
 
   const showRequestButton = hasPermission(
     [
@@ -566,12 +617,25 @@ const TitleCard = ({
                       buttonSize="sm"
                       onClick={(e) => {
                         e.preventDefault();
-                        setShowRequestModal(true);
+                        if (mediaType === 'movie') {
+                          submitMovieRequest(false);
+                        } else {
+                          setShowRequestModal(true);
+                        }
                       }}
+                      disabled={
+                        mediaType === 'movie' && isSubmittingMovieRequest
+                      }
                       className="h-7 w-full"
                     >
                       <ArrowDownTrayIcon />
-                      <span>{intl.formatMessage(globalMessages.request)}</span>
+                      <span>
+                        {intl.formatMessage(
+                          mediaType === 'movie' && isSubmittingMovieRequest
+                            ? globalMessages.requesting
+                            : globalMessages.request
+                        )}
+                      </span>
                     </Button>
                   )}
               </div>

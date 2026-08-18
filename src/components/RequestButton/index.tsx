@@ -1,6 +1,7 @@
 import ButtonWithDropdown from '@app/components/Common/ButtonWithDropdown';
 import RequestModal from '@app/components/RequestModal';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -35,6 +36,8 @@ const messages = defineMessages('components.RequestButton', {
     'Approve {requestCount, plural, one {4K Request} other {{requestCount} 4K Requests}}',
   decline4krequests:
     'Decline {requestCount, plural, one {4K Request} other {{requestCount} 4K Requests}}',
+  moviequickrequestsuccess: 'Requested successfully!',
+  moviequickrequesterror: 'Something went wrong while submitting the request.',
 });
 
 interface ButtonOption {
@@ -63,10 +66,16 @@ const RequestButton = ({
 }: RequestButtonProps) => {
   const intl = useIntl();
   const settings = useSettings();
+  const { addToast } = useToasts();
   const { user, hasPermission } = useUser();
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showRequest4kModal, setShowRequest4kModal] = useState(false);
   const [editRequest, setEditRequest] = useState(false);
+  // Movies skip the confirmation modal entirely — one click submits the
+  // request with default server/profile settings. TV keeps the modal since
+  // season selection is a real choice, not just a confirmation step.
+  const [isSubmittingMovieRequest, setIsSubmittingMovieRequest] =
+    useState(false);
 
   // All pending requests
   const activeRequests = media?.requests.filter(
@@ -120,6 +129,39 @@ const RequestButton = ({
 
     onUpdate();
     mutate('/api/v1/request/count');
+  };
+
+  const submitMovieRequest = async (is4k: boolean) => {
+    if (isSubmittingMovieRequest) {
+      return;
+    }
+
+    setIsSubmittingMovieRequest(true);
+
+    try {
+      const response = await axios.post<MediaRequest>('/api/v1/request', {
+        mediaId: tmdbId,
+        mediaType: 'movie',
+        is4k,
+      });
+
+      if (response.data) {
+        onUpdate();
+        mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
+        mutate('/api/v1/request/count');
+        addToast(intl.formatMessage(messages.moviequickrequestsuccess), {
+          appearance: 'success',
+          autoDismiss: true,
+        });
+      }
+    } catch {
+      addToast(intl.formatMessage(messages.moviequickrequesterror), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    } finally {
+      setIsSubmittingMovieRequest(false);
+    }
   };
 
   const buttons: ButtonOption[] = [];
@@ -284,11 +326,18 @@ const RequestButton = ({
   ) {
     buttons.push({
       id: 'request',
-      text: intl.formatMessage(globalMessages.request),
-      action: () => {
-        setEditRequest(false);
-        setShowRequestModal(true);
-      },
+      text: intl.formatMessage(
+        mediaType === 'movie' && isSubmittingMovieRequest
+          ? globalMessages.requesting
+          : globalMessages.request
+      ),
+      action:
+        mediaType === 'movie'
+          ? () => submitMovieRequest(false)
+          : () => {
+              setEditRequest(false);
+              setShowRequestModal(true);
+            },
       svg: <ArrowDownTrayIcon />,
     });
   } else if (
@@ -331,11 +380,18 @@ const RequestButton = ({
   ) {
     buttons.push({
       id: 'request4k',
-      text: intl.formatMessage(globalMessages.request4k),
-      action: () => {
-        setEditRequest(false);
-        setShowRequest4kModal(true);
-      },
+      text: intl.formatMessage(
+        mediaType === 'movie' && isSubmittingMovieRequest
+          ? globalMessages.requesting
+          : globalMessages.request4k
+      ),
+      action:
+        mediaType === 'movie'
+          ? () => submitMovieRequest(true)
+          : () => {
+              setEditRequest(false);
+              setShowRequest4kModal(true);
+            },
       svg: <ArrowDownTrayIcon />,
     });
   } else if (
@@ -400,6 +456,7 @@ const RequestButton = ({
         }
         onClick={buttonOne.action}
         className="ml-2"
+        disabled={mediaType === 'movie' && isSubmittingMovieRequest}
       >
         {others && others.length > 0
           ? others.map((button) => (
