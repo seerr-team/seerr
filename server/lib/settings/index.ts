@@ -44,8 +44,9 @@ export interface PlexSettings {
   webAppUrl?: string;
   /**
    * When a user restricted by Plex labels requests media that already exists in
-   * the library, automatically add one of their allowed labels to it so they
-   * gain access, instead of leaving the request for the owner to handle.
+   * the library, automatically add the label named after them to it so they gain
+   * access, instead of leaving the request for the owner to handle. Nothing is
+   * added when they are allowed no such label.
    *
    * Disabled by default: granting library access is the owner's decision.
    */

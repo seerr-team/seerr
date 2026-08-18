@@ -26,21 +26,24 @@ export interface PlexItemRef {
  *
  * A label is a shared bucket rather than a per-user permission: applying one
  * that other restricted users are also allowed to see hands them the item too.
- * So the label the fewest other users can see wins, and a label named after the
- * user breaks ties, since naming a label after its user is the usual
- * convention. Ordering is otherwise stable, to keep the choice predictable.
+ * Only a label named after the user is therefore ever applied, since that is the
+ * usual convention for a label meant for a single person, and nothing is granted
+ * when the user has no such label: a shared bucket is the owner's to hand out,
+ * not Seerr's.
  *
  * `sharedWithCount` maps a lowercased label to the number of *other* restricted
  * users allowed to see it. Unrestricted users are not counted: they already see
- * the item whatever label it carries.
+ * the item whatever label it carries. It no longer drives the choice, only the
+ * least shared of several name matches and the count reported to the owner,
+ * since even a label named after the user may be allowed to others.
  */
 export const pickGrantLabel = (
   candidates: string[],
-  preferredNames: string[],
+  userNames: string[],
   sharedWithCount: Map<string, number>
 ): { label: string; alsoVisibleTo: number } | null => {
   const names = new Set(
-    preferredNames.filter(Boolean).map((name) => name.toLowerCase())
+    userNames.filter(Boolean).map((name) => name.toLowerCase())
   );
 
   const ranked = candidates
@@ -48,14 +51,10 @@ export const pickGrantLabel = (
       label,
       index,
       alsoVisibleTo: sharedWithCount.get(label.toLowerCase()) ?? 0,
-      matchesName: names.has(label.toLowerCase()),
     }))
-    .sort(
-      (a, b) =>
-        a.alsoVisibleTo - b.alsoVisibleTo ||
-        Number(b.matchesName) - Number(a.matchesName) ||
-        a.index - b.index
-    );
+    .filter(({ label }) => names.has(label.toLowerCase()))
+    // Ordering is stable, to keep the choice predictable.
+    .sort((a, b) => a.alsoVisibleTo - b.alsoVisibleTo || a.index - b.index);
 
   const best = ranked[0];
 
@@ -205,8 +204,9 @@ const getSectionRatingKeys = async (
  * adding one of the labels they are allowed to see.
  *
  * Returns the label that was applied, or `null` when nothing had to be done:
- * the user is unrestricted, already has access, or has no allow list to draw a
- * label from (a deny-only restriction cannot be satisfied this way).
+ * the user is unrestricted, already has access, has no allow list to draw a
+ * label from (a deny-only restriction cannot be satisfied this way), or is
+ * allowed no label named after them.
  */
 export const grantLabelAccess = async (
   user: User,
@@ -253,7 +253,7 @@ export const grantLabelAccess = async (
   );
 
   // How many other restricted users each candidate label would also expose the
-  // item to, so the most exclusive one can be preferred.
+  // item to, which is reported to the owner along with the granted label.
   const sharedWithCount = new Map<string, number>();
 
   for (const [plexUserId, otherRules] of rulesByPlexUserId) {
@@ -282,6 +282,18 @@ export const grantLabelAccess = async (
   );
 
   if (!picked) {
+    // Worth surfacing: the owner enabled the grant and nothing happened, which
+    // from the outside is indistinguishable from a failure.
+    logger.info(
+      'No Plex label named after the user to grant, leaving the item untouched',
+      {
+        label: 'Plex Sharing',
+        userId: user.id,
+        ratingKey,
+        allowedLabels: candidates,
+      }
+    );
+
     return null;
   }
 
