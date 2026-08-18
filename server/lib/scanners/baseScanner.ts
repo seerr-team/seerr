@@ -716,19 +716,11 @@ class BaseScanner<T> {
               MediaStatus.AVAILABLE;
             toSave.push(existingEpisode);
           }
-        } else {
+        } else if (episodeDetail.hasFile) {
           const newEpisode = new Episode({
             episodeNumber: episodeDetail.episodeNumber,
-            status: is4k
-              ? MediaStatus.UNKNOWN
-              : episodeDetail.hasFile
-                ? MediaStatus.AVAILABLE
-                : MediaStatus.UNKNOWN,
-            status4k: is4k
-              ? episodeDetail.hasFile
-                ? MediaStatus.AVAILABLE
-                : MediaStatus.UNKNOWN
-              : MediaStatus.UNKNOWN,
+            status: is4k ? MediaStatus.UNKNOWN : MediaStatus.AVAILABLE,
+            status4k: is4k ? MediaStatus.AVAILABLE : MediaStatus.UNKNOWN,
             season: Promise.resolve(dbSeason),
           });
           toSave.push(newEpisode);
