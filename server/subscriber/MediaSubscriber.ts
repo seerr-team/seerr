@@ -133,28 +133,50 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
 
       await requestRepository.save(completedRequests);
 
-      // The other half of the grant done when the library already held the
-      // media: most requests are downloaded rather than already present, and
-      // without this a restricted user still cannot see what they requested.
-      // The rating key is read from the entity being saved, since the scanner
-      // sets it in the same write that makes the media available.
-      // A request also completes when the media is marked deleted, and the
-      // rating key survives that for as long as a request is still active, so
-      // that case is skipped rather than left to fail against Plex.
-      if ((is4k ? event.status4k : event.status) !== MediaStatus.DELETED) {
-        const ratingKey = is4k
-          ? (event.ratingKey4k ?? databaseEvent.ratingKey4k)
-          : (event.ratingKey ?? databaseEvent.ratingKey);
+      return completedRequests;
+    }
 
-        for (const request of completedRequests) {
-          await grantLibraryAccessForRequest(
-            request.requestedBy,
-            ratingKey,
-            request.type,
-            request.id
-          );
-        }
-      }
+    return [];
+  }
+
+  /**
+   * Grants the requester access to the media their request was just completed
+   * by, when the owner opted into it.
+   *
+   * The other half of the grant done when the library already held the media:
+   * most requests are downloaded rather than already present, and without this
+   * a restricted user still cannot see what they requested.
+   *
+   * Deliberately run outside the transaction that completed the requests, since
+   * granting talks to plex.tv and to the media server, which must not happen
+   * with a write lock held.
+   */
+  private async grantLibraryAccessForCompleted(
+    completedRequests: MediaRequest[],
+    event: Media,
+    databaseEvent: Media,
+    is4k: boolean
+  ): Promise<void> {
+    // A request also completes when the media is marked deleted, and the rating
+    // key survives that for as long as a request is still active, so that case
+    // is skipped rather than left to fail against Plex.
+    if ((is4k ? event.status4k : event.status) === MediaStatus.DELETED) {
+      return;
+    }
+
+    // Read from the entity being saved, since the scanner sets the rating key
+    // in the same write that makes the media available.
+    const ratingKey = is4k
+      ? (event.ratingKey4k ?? databaseEvent.ratingKey4k)
+      : (event.ratingKey ?? databaseEvent.ratingKey);
+
+    for (const request of completedRequests) {
+      await grantLibraryAccessForRequest(
+        request.requestedBy,
+        ratingKey,
+        request.type,
+        request.id
+      );
     }
   }
 
@@ -254,14 +276,23 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
             seasonStatusCheck(false))) &&
         validStatuses.includes(event.entity.status)
       ) {
-        await withNestedTransaction(event.manager, async (manager) => {
-          await this.updateRelatedMediaRequest(
-            manager,
-            event.entity as Media,
-            event.databaseEntity as Media,
-            false
-          );
-        });
+        const completedRequests = await withNestedTransaction(
+          event.manager,
+          async (manager) =>
+            this.updateRelatedMediaRequest(
+              manager,
+              event.entity as Media,
+              event.databaseEntity as Media,
+              false
+            )
+        );
+
+        await this.grantLibraryAccessForCompleted(
+          completedRequests,
+          event.entity as Media,
+          event.databaseEntity as Media,
+          false
+        );
       }
     } catch (e) {
       logger.error(
@@ -282,14 +313,23 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
             seasonStatusCheck(true))) &&
         validStatuses.includes(event.entity.status4k)
       ) {
-        await withNestedTransaction(event.manager, async (manager) => {
-          await this.updateRelatedMediaRequest(
-            manager,
-            event.entity as Media,
-            event.databaseEntity as Media,
-            true
-          );
-        });
+        const completedRequests = await withNestedTransaction(
+          event.manager,
+          async (manager) =>
+            this.updateRelatedMediaRequest(
+              manager,
+              event.entity as Media,
+              event.databaseEntity as Media,
+              true
+            )
+        );
+
+        await this.grantLibraryAccessForCompleted(
+          completedRequests,
+          event.entity as Media,
+          event.databaseEntity as Media,
+          true
+        );
       }
     } catch (e) {
       logger.error(
