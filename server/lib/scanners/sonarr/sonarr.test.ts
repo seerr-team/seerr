@@ -1,4 +1,4 @@
-import type { SonarrSeries } from '@server/api/servarr/sonarr';
+import type { EpisodeResult, SonarrSeries } from '@server/api/servarr/sonarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import TheMovieDb from '@server/api/themoviedb';
 import type {
@@ -11,13 +11,14 @@ import {
   MediaType,
 } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
+import Episode from '@server/entity/Episode';
 import Media from '@server/entity/Media';
 import MediaRequest from '@server/entity/MediaRequest';
 import Season from '@server/entity/Season';
 import { User } from '@server/entity/User';
 import { sonarrScanner } from '@server/lib/scanners/sonarr';
 import type { SonarrSettings } from '@server/lib/settings';
-import { getSettings } from '@server/lib/settings';
+import { MetadataProviderType, getSettings } from '@server/lib/settings';
 import { setupTestDb } from '@server/test/db';
 import { runWithMockTimers } from '@server/test/runWithMockTimers';
 import assert from 'node:assert/strict';
@@ -39,6 +40,17 @@ Object.defineProperty(SonarrAPI.prototype, 'getLibrarySeriesByTvdbId', {
   set() {},
   get() {
     return async (tvdbId: number) => getLibrarySeriesByTvdbIdImpl(tvdbId);
+  },
+  configurable: true,
+});
+
+let getEpisodesImpl: (
+  seriesId: number
+) => Promise<EpisodeResult[]> = async () => [];
+Object.defineProperty(SonarrAPI.prototype, 'getEpisodes', {
+  set() {},
+  get() {
+    return async (seriesId: number) => getEpisodesImpl(seriesId);
   },
   configurable: true,
 });
@@ -200,8 +212,15 @@ describe('Sonarr Scanner', () => {
   beforeEach(() => {
     getSeriesImpl = async () => [];
     getLibrarySeriesByTvdbIdImpl = async () => [];
+    getEpisodesImpl = async () => [];
     getShowByTvdbIdImpl = async () => fakeTmdbShow(1);
     getTvShowImpl = async () => fakeTmdbShow(1);
+    const settings = getSettings();
+    settings.main.enableEpisodeAvailability = false;
+    settings.metadataSettings = {
+      tv: MetadataProviderType.TMDB,
+      anime: MetadataProviderType.TMDB,
+    };
   });
 
   describe('orphaned show cleanup', () => {
@@ -929,6 +948,124 @@ describe('Sonarr Scanner', () => {
       assert.strictEqual(updatedMedia.status4k, MediaStatus.UNKNOWN);
       assert.strictEqual(updatedStandard.status, MediaRequestStatus.APPROVED);
       assert.strictEqual(updated4k.status, MediaRequestStatus.DECLINED);
+    });
+  });
+
+  describe('episode availability tracking', () => {
+    it('persists AVAILABLE episodes when tracking is enabled with TVDB', async () => {
+      const mediaRepository = getRepository(Media);
+      const episodeRepository = getRepository(Episode);
+      const settings = getSettings();
+      settings.main.enableEpisodeAvailability = true;
+      settings.metadataSettings = {
+        tv: MetadataProviderType.TVDB,
+        anime: MetadataProviderType.TMDB,
+      };
+
+      configureSonarr([{ syncEnabled: true }]);
+      getSeriesImpl = async () => [
+        fakeSonarrSeries({
+          tvdbId: 700,
+          id: 42,
+          seasons: [
+            {
+              seasonNumber: 1,
+              monitored: true,
+              statistics: {
+                episodeFileCount: 2,
+                totalEpisodeCount: 2,
+                episodeCount: 2,
+                percentOfEpisodes: 100,
+                sizeOnDisk: 0,
+                previousAiring: undefined,
+              },
+            },
+          ],
+        }),
+      ];
+      getEpisodesImpl = async () =>
+        [
+          {
+            seriesId: 42,
+            seasonNumber: 1,
+            episodeNumber: 1,
+            hasFile: true,
+          },
+          {
+            seriesId: 42,
+            seasonNumber: 1,
+            episodeNumber: 2,
+            hasFile: true,
+          },
+          {
+            seriesId: 42,
+            seasonNumber: 1,
+            episodeNumber: 3,
+            hasFile: false,
+          },
+        ] as EpisodeResult[];
+
+      getShowByTvdbIdImpl = async () =>
+        fakeTmdbShow(3001, [
+          {
+            id: 1,
+            air_date: '2024-01-01',
+            episode_count: 3,
+            name: 'Season 1',
+            overview: '',
+            season_number: 1,
+          },
+        ]);
+      getTvShowImpl = async () =>
+        fakeTmdbShow(3001, [
+          {
+            id: 1,
+            air_date: '2024-01-01',
+            episode_count: 3,
+            name: 'Season 1',
+            overview: '',
+            season_number: 1,
+          },
+        ]);
+
+      await sonarrScanner.run();
+
+      const media = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 3001 },
+        relations: ['seasons'],
+      });
+      const season = media.seasons.find((s) => s.seasonNumber === 1);
+      assert.ok(season);
+
+      const episodes = await episodeRepository.find({
+        where: { season: { id: season.id } },
+        order: { episodeNumber: 'ASC' },
+      });
+
+      assert.strictEqual(episodes.length, 3);
+      assert.strictEqual(episodes[0].status, MediaStatus.AVAILABLE);
+      assert.strictEqual(episodes[1].status, MediaStatus.AVAILABLE);
+      assert.strictEqual(episodes[2].status, MediaStatus.UNKNOWN);
+    });
+
+    it('does not fetch or persist episodes when tracking is disabled', async () => {
+      const episodeRepository = getRepository(Episode);
+      let getEpisodesCalled = false;
+      getEpisodesImpl = async () => {
+        getEpisodesCalled = true;
+        return [];
+      };
+
+      configureSonarr([{ syncEnabled: true }]);
+      getSeriesImpl = async () => [fakeSonarrSeries({ tvdbId: 701, id: 43 })];
+      getShowByTvdbIdImpl = async () => fakeTmdbShow(3002);
+      getTvShowImpl = async () => fakeTmdbShow(3002);
+
+      await sonarrScanner.run();
+
+      assert.strictEqual(getEpisodesCalled, false);
+      const episodeCount = await episodeRepository.count();
+      assert.strictEqual(episodeCount, 0);
     });
   });
 });
