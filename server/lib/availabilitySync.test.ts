@@ -2481,7 +2481,7 @@ describe('AvailabilitySync', () => {
       assert.strictEqual(season2Episodes[0]?.status, MediaStatus.AVAILABLE);
     });
 
-    it('should mark an episode DELETED when Sonarr reports hasFile false or omits it', async () => {
+    it('should soft-delete episodes without a file and hard-delete omitted numbers', async () => {
       configurePlex();
       configureSonarr([{ syncEnabled: true }]);
       enableEpisodeTracking();
@@ -2610,9 +2610,11 @@ describe('AvailabilitySync', () => {
         order: { episodeNumber: 'ASC' },
       });
 
+      assert.strictEqual(episodes.length, 2);
+      assert.strictEqual(episodes[0]?.episodeNumber, 1);
       assert.strictEqual(episodes[0]?.status, MediaStatus.AVAILABLE);
+      assert.strictEqual(episodes[1]?.episodeNumber, 2);
       assert.strictEqual(episodes[1]?.status, MediaStatus.DELETED);
-      assert.strictEqual(episodes[2]?.status, MediaStatus.DELETED);
     });
 
     it('should still mark Sonarr episodes DELETED when TMDB show lookup fails', async () => {
