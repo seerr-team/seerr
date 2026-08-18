@@ -54,6 +54,7 @@ interface ProcessOptions {
 export interface ProcessableEpisode {
   episodeNumber: number;
   hasFile: boolean;
+  hasFile4k?: boolean;
 }
 
 export interface ProcessableSeason {
@@ -711,16 +712,56 @@ class BaseScanner<T> {
         const existingEpisode = existingBySeasonAndNumber.get(key);
 
         if (existingEpisode) {
+          let changed = false;
+          const statusField = is4k ? 'status4k' : 'status';
+          const currentStatus = existingEpisode[statusField];
+
           if (episodeDetail.hasFile) {
-            existingEpisode[is4k ? 'status4k' : 'status'] =
-              MediaStatus.AVAILABLE;
+            existingEpisode[statusField] = MediaStatus.AVAILABLE;
+            changed = true;
+          } else if (
+            currentStatus !== MediaStatus.DELETED &&
+            currentStatus !== MediaStatus.UNKNOWN
+          ) {
+            existingEpisode[statusField] = MediaStatus.DELETED;
+            changed = true;
+          }
+
+          if (this.enable4kShow && episodeDetail.hasFile4k != null && !is4k) {
+            const currentStatus4k = existingEpisode.status4k;
+            if (episodeDetail.hasFile4k) {
+              existingEpisode.status4k = MediaStatus.AVAILABLE;
+              changed = true;
+            } else if (
+              currentStatus4k !== MediaStatus.DELETED &&
+              currentStatus4k !== MediaStatus.UNKNOWN
+            ) {
+              existingEpisode.status4k = MediaStatus.DELETED;
+              changed = true;
+            }
+          }
+
+          if (changed) {
             toSave.push(existingEpisode);
           }
-        } else if (episodeDetail.hasFile) {
+        } else if (
+          episodeDetail.hasFile ||
+          (this.enable4kShow && episodeDetail.hasFile4k)
+        ) {
+          // Only persist episodes that have a file on at least one tier.
           const newEpisode = new Episode({
             episodeNumber: episodeDetail.episodeNumber,
-            status: is4k ? MediaStatus.UNKNOWN : MediaStatus.AVAILABLE,
-            status4k: is4k ? MediaStatus.AVAILABLE : MediaStatus.UNKNOWN,
+            status: episodeDetail.hasFile
+              ? is4k
+                ? MediaStatus.UNKNOWN
+                : MediaStatus.AVAILABLE
+              : MediaStatus.UNKNOWN,
+            status4k:
+              this.enable4kShow && episodeDetail.hasFile4k
+                ? MediaStatus.AVAILABLE
+                : is4k && episodeDetail.hasFile
+                  ? MediaStatus.AVAILABLE
+                  : MediaStatus.UNKNOWN,
             season: Promise.resolve(dbSeason),
           });
           toSave.push(newEpisode);

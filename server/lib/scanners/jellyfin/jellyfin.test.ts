@@ -12,10 +12,11 @@ import type {
 import { MediaStatus, MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
+import Episode from '@server/entity/Episode';
 import Media from '@server/entity/Media';
 import Season from '@server/entity/Season';
 import { User } from '@server/entity/User';
-import type { Library } from '@server/lib/settings';
+import type { Library, SonarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { setupTestDb } from '@server/test/db';
 import assert from 'node:assert/strict';
@@ -216,6 +217,44 @@ function fakeJellyfinEpisodes(count: number): JellyfinLibraryItem[] {
   }));
 }
 
+function fakeJellyfinEpisode(
+  episodeNumber: number,
+  widths: number[] = []
+): JellyfinLibraryItem {
+  return {
+    Name: `Episode ${episodeNumber}`,
+    Id: `ep-${episodeNumber}`,
+    IndexNumber: episodeNumber,
+    Type: 'Episode' as const,
+    HasSubtitles: false,
+    LocationType: 'FileSystem' as const,
+    MediaType: 'Video',
+    ...(widths.length
+      ? {
+          MediaSources: widths.map((width, i) => ({
+            Protocol: 'File',
+            Id: `src-${episodeNumber}-${i}`,
+            Path: `/ep-${episodeNumber}-${width}.mkv`,
+            Type: 'Default',
+            VideoType: 'VideoFile',
+            MediaStreams: [
+              {
+                Codec: 'h264',
+                Type: 'Video' as const,
+                Width: width,
+                DisplayTitle: `${width}p`,
+              },
+            ],
+          })),
+        }
+      : {}),
+  } as JellyfinLibraryItem;
+}
+
+function enable4kShowDetection(): void {
+  getSettings().sonarr = [{ is4k: true } as SonarrSettings];
+}
+
 function configureJellyfinWithLibrary(
   libraries: Library[] = [
     { id: 'test-library-id', name: 'TV Shows', enabled: true, type: 'show' },
@@ -237,6 +276,9 @@ describe('Jellyfin Scanner', () => {
     getSeasonsImpl = async () => [];
     getEpisodesImpl = async () => [];
     getTvShowImpl = async () => fakeTmdbShow(1);
+
+    getSettings().main.enableEpisodeAvailability = false;
+    getSettings().sonarr = [];
 
     const userRepository = getRepository(User);
     const existingAdmin = await userRepository.findOne({ where: { id: 1 } });
@@ -509,6 +551,253 @@ describe('Jellyfin Scanner', () => {
         MediaStatus.PARTIALLY_AVAILABLE,
         'Show should stay PARTIALLY_AVAILABLE when a DELETED season is missing from the metadata provider'
       );
+    });
+  });
+
+  describe('episode availability tracking', () => {
+    it('persists AVAILABLE episodes when tracking is enabled with TMDB', async () => {
+      const mediaRepository = getRepository(Media);
+      const episodeRepository = getRepository(Episode);
+      const settings = getSettings();
+      settings.main.enableEpisodeAvailability = true;
+
+      configureJellyfinWithLibrary();
+
+      getTvShowImpl = async () =>
+        fakeTmdbShow(6000, [
+          {
+            id: 1,
+            air_date: '2024-01-01',
+            episode_count: 3,
+            name: 'Season 1',
+            overview: '',
+            season_number: 1,
+          },
+        ]);
+
+      getLibraryContentsImpl = async (id: string) => {
+        if (id === 'test-library-id') {
+          return [fakeJellyfinSeriesItem('jf-ep-show-id')];
+        }
+        return [];
+      };
+
+      getItemDataImpl = async (id: string) => {
+        if (id === 'jf-ep-show-id') {
+          return fakeJellyfinShowMetadata('jf-ep-show-id', '6000');
+        }
+        return undefined;
+      };
+
+      getSeasonsImpl = async (seriesID: string) => {
+        if (seriesID === 'jf-ep-show-id') {
+          return [fakeJellyfinSeason(1, 'jf-ep-s1-id')];
+        }
+        return [];
+      };
+
+      getEpisodesImpl = async (_seriesID: string, seasonID: string) => {
+        if (seasonID === 'jf-ep-s1-id') {
+          return fakeJellyfinEpisodes(2);
+        }
+        return [];
+      };
+
+      await jellyfinFullScanner.run();
+
+      const media = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 6000 },
+        relations: ['seasons'],
+      });
+      const season = media.seasons.find((s) => s.seasonNumber === 1);
+      assert.ok(season);
+
+      const episodes = await episodeRepository.find({
+        where: { season: { id: season.id } },
+        order: { episodeNumber: 'ASC' },
+      });
+
+      assert.strictEqual(episodes.length, 2);
+      assert.strictEqual(episodes[0].status, MediaStatus.AVAILABLE);
+      assert.strictEqual(episodes[1].status, MediaStatus.AVAILABLE);
+    });
+
+    it('expands combined Jellyfin episode ranges', async () => {
+      const episodeRepository = getRepository(Episode);
+      getSettings().main.enableEpisodeAvailability = true;
+      configureJellyfinWithLibrary();
+
+      getTvShowImpl = async () =>
+        fakeTmdbShow(6001, [
+          {
+            id: 1,
+            air_date: '2024-01-01',
+            episode_count: 2,
+            name: 'Season 1',
+            overview: '',
+            season_number: 1,
+          },
+        ]);
+
+      getLibraryContentsImpl = async (id: string) => {
+        if (id === 'test-library-id') {
+          return [fakeJellyfinSeriesItem('jf-range-show-id')];
+        }
+        return [];
+      };
+      getItemDataImpl = async (id: string) => {
+        if (id === 'jf-range-show-id') {
+          return fakeJellyfinShowMetadata('jf-range-show-id', '6001');
+        }
+        return undefined;
+      };
+      getSeasonsImpl = async (seriesID: string) => {
+        if (seriesID === 'jf-range-show-id') {
+          return [fakeJellyfinSeason(1, 'jf-range-s1-id')];
+        }
+        return [];
+      };
+      getEpisodesImpl = async (_seriesID: string, seasonID: string) => {
+        if (seasonID === 'jf-range-s1-id') {
+          return [
+            {
+              Name: 'Episodes 1-2',
+              Id: 'ep-range',
+              IndexNumber: 1,
+              IndexNumberEnd: 2,
+              Type: 'Episode' as const,
+              HasSubtitles: false,
+              LocationType: 'FileSystem' as const,
+              MediaType: 'Video',
+            },
+          ];
+        }
+        return [];
+      };
+
+      await jellyfinFullScanner.run();
+
+      const media = await getRepository(Media).findOneOrFail({
+        where: { tmdbId: 6001 },
+        relations: ['seasons'],
+      });
+      const season = media.seasons.find((s) => s.seasonNumber === 1);
+      assert.ok(season);
+
+      const episodes = await episodeRepository.find({
+        where: { season: { id: season.id } },
+        order: { episodeNumber: 'ASC' },
+      });
+
+      assert.strictEqual(episodes.length, 2);
+      assert.strictEqual(episodes[0].episodeNumber, 1);
+      assert.strictEqual(episodes[1].episodeNumber, 2);
+      assert.strictEqual(episodes[0].status, MediaStatus.AVAILABLE);
+      assert.strictEqual(episodes[1].status, MediaStatus.AVAILABLE);
+    });
+
+    it('does not persist episodes when tracking is disabled', async () => {
+      const episodeRepository = getRepository(Episode);
+      configureJellyfinWithLibrary();
+
+      getTvShowImpl = async () => fakeTmdbShow(6002);
+      getLibraryContentsImpl = async (id: string) => {
+        if (id === 'test-library-id') {
+          return [fakeJellyfinSeriesItem('jf-off-show-id')];
+        }
+        return [];
+      };
+      getItemDataImpl = async (id: string) => {
+        if (id === 'jf-off-show-id') {
+          return fakeJellyfinShowMetadata('jf-off-show-id', '6002');
+        }
+        return undefined;
+      };
+      getSeasonsImpl = async (seriesID: string) => {
+        if (seriesID === 'jf-off-show-id') {
+          return [fakeJellyfinSeason(1, 'jf-off-s1-id')];
+        }
+        return [];
+      };
+      getEpisodesImpl = async (_seriesID: string, seasonID: string) => {
+        if (seasonID === 'jf-off-s1-id') return fakeJellyfinEpisodes(2);
+        return [];
+      };
+
+      await jellyfinFullScanner.run();
+
+      const episodeCount = await episodeRepository.count();
+      assert.strictEqual(episodeCount, 0);
+    });
+
+    it('splits standard and 4K episode availability when 4K detection is enabled', async () => {
+      const episodeRepository = getRepository(Episode);
+      getSettings().main.enableEpisodeAvailability = true;
+      enable4kShowDetection();
+      configureJellyfinWithLibrary();
+
+      getTvShowImpl = async () =>
+        fakeTmdbShow(6003, [
+          {
+            id: 1,
+            air_date: '2024-01-01',
+            episode_count: 3,
+            name: 'Season 1',
+            overview: '',
+            season_number: 1,
+          },
+        ]);
+
+      getLibraryContentsImpl = async (id: string) => {
+        if (id === 'test-library-id') {
+          return [fakeJellyfinSeriesItem('jf-4k-show-id')];
+        }
+        return [];
+      };
+      getItemDataImpl = async (id: string) => {
+        if (id === 'jf-4k-show-id') {
+          return fakeJellyfinShowMetadata('jf-4k-show-id', '6003');
+        }
+        return undefined;
+      };
+      getSeasonsImpl = async (seriesID: string) => {
+        if (seriesID === 'jf-4k-show-id') {
+          return [fakeJellyfinSeason(1, 'jf-4k-s1-id')];
+        }
+        return [];
+      };
+      getEpisodesImpl = async (_seriesID: string, seasonID: string) => {
+        if (seasonID === 'jf-4k-s1-id') {
+          return [
+            fakeJellyfinEpisode(1, [1920]),
+            fakeJellyfinEpisode(2, [3840]),
+            fakeJellyfinEpisode(3, [1920, 3840]),
+          ];
+        }
+        return [];
+      };
+
+      await jellyfinFullScanner.run();
+
+      const media = await getRepository(Media).findOneOrFail({
+        where: { tmdbId: 6003 },
+        relations: ['seasons'],
+      });
+      const season = media.seasons.find((s) => s.seasonNumber === 1);
+      assert.ok(season);
+
+      const episodes = await episodeRepository.find({
+        where: { season: { id: season.id } },
+        order: { episodeNumber: 'ASC' },
+      });
+
+      assert.strictEqual(episodes.length, 3);
+      assert.strictEqual(episodes[0].status, MediaStatus.AVAILABLE);
+      assert.strictEqual(episodes[0].status4k, MediaStatus.UNKNOWN);
+      assert.strictEqual(episodes[1].status, MediaStatus.UNKNOWN);
+      assert.strictEqual(episodes[1].status4k, MediaStatus.AVAILABLE);
+      assert.strictEqual(episodes[2].status, MediaStatus.AVAILABLE);
+      assert.strictEqual(episodes[2].status4k, MediaStatus.AVAILABLE);
     });
   });
 });

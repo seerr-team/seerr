@@ -13,6 +13,7 @@ import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import type {
   MediaIds,
+  ProcessableEpisode,
   ProcessableSeason,
   RunnableScanner,
   StatusBase,
@@ -340,25 +341,48 @@ class PlexScanner
         const episodes = await this.plexClient.getChildrenMetadata(
           matchedPlexSeason.ratingKey
         );
-        // Total episodes that are in standard definition (not 4k)
-        const totalStandard = episodes.filter((episode) =>
-          !this.enable4kShow
-            ? true
-            : episode.Media.some((media) => media.videoResolution !== '4k')
-        ).length;
+        let totalStandard = 0;
+        let total4k = 0;
+        const episodeDetails: ProcessableEpisode[] | undefined = settings.main
+          .enableEpisodeAvailability
+          ? []
+          : undefined;
 
-        // Total episodes that are in 4k
-        const total4k = this.enable4kShow
-          ? episodes.filter((episode) =>
-              episode.Media.some((media) => media.videoResolution === '4k')
-            ).length
-          : 0;
+        for (const episode of episodes) {
+          const versions = episode.Media ?? [];
+          const hasStandard = this.enable4kShow
+            ? versions.some((media) => media.videoResolution !== '4k')
+            : true;
+          const has4k =
+            this.enable4kShow &&
+            versions.some((media) => media.videoResolution === '4k');
+
+          if (hasStandard) {
+            totalStandard += 1;
+          }
+          if (has4k) {
+            total4k += 1;
+          }
+
+          if (
+            episodeDetails &&
+            episode.index != null &&
+            (hasStandard || has4k)
+          ) {
+            episodeDetails.push({
+              episodeNumber: episode.index,
+              hasFile: hasStandard,
+              hasFile4k: has4k,
+            });
+          }
+        }
 
         processableSeasons.push({
           seasonNumber: season.season_number,
           episodes: totalStandard,
           episodes4k: total4k,
           totalEpisodes: season.episode_count,
+          episodeDetails,
         });
       } else {
         processableSeasons.push({
