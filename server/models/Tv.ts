@@ -39,6 +39,7 @@ interface Episode {
   voteAverage: number;
   voteCount: number;
   available?: boolean;
+  available4k?: boolean;
 }
 
 interface Season {
@@ -117,7 +118,8 @@ export interface TvDetails {
 
 const mapEpisodeResult = (
   episode: TmdbTvEpisodeResult,
-  availableMap?: Record<number, boolean>
+  availableMap?: Record<number, boolean>,
+  available4kMap?: Record<number, boolean>
 ): Episode => ({
   id: episode.id,
   airDate: episode.air_date,
@@ -133,6 +135,9 @@ const mapEpisodeResult = (
   available: availableMap
     ? (availableMap[episode.episode_number] ?? false)
     : undefined,
+  available4k: available4kMap
+    ? (available4kMap[episode.episode_number] ?? false)
+    : undefined,
 });
 
 const mapSeasonResult = (season: TmdbTvSeasonResult): Season => ({
@@ -147,11 +152,12 @@ const mapSeasonResult = (season: TmdbTvSeasonResult): Season => ({
 
 export const mapSeasonWithEpisodes = (
   season: TmdbSeasonWithEpisodes,
-  availableMap?: Record<number, boolean>
+  availableMap?: Record<number, boolean>,
+  available4kMap?: Record<number, boolean>
 ): SeasonWithEpisodes => ({
   airDate: season.air_date,
   episodes: season.episodes.map((episode) =>
-    mapEpisodeResult(episode, availableMap)
+    mapEpisodeResult(episode, availableMap, available4kMap)
   ),
   externalIds: mapExternalIds(season.external_ids),
   id: season.id,
