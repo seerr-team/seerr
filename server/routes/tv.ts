@@ -88,6 +88,7 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
     });
 
     let availableMap: Record<number, boolean> | undefined;
+    let available4kMap: Record<number, boolean> | undefined;
 
     const settings = getSettings();
     const shouldTrackEpisodes = settings.main.enableEpisodeAvailability;
@@ -130,16 +131,21 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
             );
           } else {
             availableMap = {};
+            available4kMap = {};
             for (const episode of trackedEpisodes) {
               availableMap[episode.episodeNumber] =
                 episode.status === MediaStatus.AVAILABLE;
+              available4kMap[episode.episodeNumber] =
+                episode.status4k === MediaStatus.AVAILABLE;
             }
           }
         }
       }
     }
 
-    return res.status(200).json(mapSeasonWithEpisodes(season, availableMap));
+    return res
+      .status(200)
+      .json(mapSeasonWithEpisodes(season, availableMap, available4kMap));
   } catch (e) {
     logger.debug('Something went wrong retrieving season', {
       label: 'API',
