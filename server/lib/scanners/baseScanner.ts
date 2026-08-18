@@ -5,6 +5,7 @@ import {
   MediaType,
 } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
+import Episode from '@server/entity/Episode';
 import Media from '@server/entity/Media';
 import MediaRequest from '@server/entity/MediaRequest';
 import Season from '@server/entity/Season';
@@ -12,6 +13,7 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import AsyncLock from '@server/utils/asyncLock';
 import { randomUUID } from 'crypto';
+import { In } from 'typeorm';
 
 // Default scan rates (can be overidden)
 const BUNDLE_SIZE = 20;
@@ -49,6 +51,11 @@ interface ProcessOptions {
   hasFile?: boolean;
 }
 
+export interface ProcessableEpisode {
+  episodeNumber: number;
+  hasFile: boolean;
+}
+
 export interface ProcessableSeason {
   seasonNumber: number;
   totalEpisodes: number;
@@ -56,6 +63,7 @@ export interface ProcessableSeason {
   episodes4k: number;
   is4kOverride?: boolean;
   processing?: boolean;
+  episodeDetails?: ProcessableEpisode[];
 }
 
 class BaseScanner<T> {
@@ -547,6 +555,7 @@ class BaseScanner<T> {
                   ? MediaStatus.DELETED
                   : MediaStatus.UNKNOWN;
         await mediaRepository.save(media);
+        await this.syncEpisodeDetails(seasons, media.seasons, is4k);
         this.log(`Updating existing title: ${title}`);
       } else {
         // For new media, check actual newSeasons objects instead of scanner
@@ -644,9 +653,93 @@ class BaseScanner<T> {
                   : MediaStatus.UNKNOWN,
         });
         await mediaRepository.save(newMedia);
+        await this.syncEpisodeDetails(seasons, newMedia.seasons, is4k);
         this.log(`Saved ${title}`);
       }
     });
+  }
+
+  private async syncEpisodeDetails(
+    seasons: ProcessableSeason[],
+    dbSeasons: Season[],
+    is4k: boolean
+  ): Promise<void> {
+    const seasonsWithDetails = seasons.filter(
+      (season) => season.episodeDetails && season.episodeDetails.length > 0
+    );
+    if (seasonsWithDetails.length === 0) {
+      return;
+    }
+
+    const seasonByNumber = new Map(
+      dbSeasons.map((season) => [season.seasonNumber, season])
+    );
+    const targetSeasonIds = seasonsWithDetails
+      .map((season) => seasonByNumber.get(season.seasonNumber)?.id)
+      .filter((id): id is number => id != null);
+    if (targetSeasonIds.length === 0) {
+      return;
+    }
+
+    const episodeRepository = getRepository(Episode);
+    const existingEpisodes = await episodeRepository.find({
+      where: { season: { id: In(targetSeasonIds) } },
+      relations: ['season'],
+    });
+
+    const existingBySeasonAndNumber = new Map<string, Episode>();
+    for (const episode of existingEpisodes) {
+      const episodeSeason = await episode.season;
+      if (!episodeSeason) {
+        continue;
+      }
+      existingBySeasonAndNumber.set(
+        `${episodeSeason.id}-${episode.episodeNumber}`,
+        episode
+      );
+    }
+
+    const toSave: Episode[] = [];
+    for (const season of seasonsWithDetails) {
+      const dbSeason = seasonByNumber.get(season.seasonNumber);
+      if (!dbSeason?.id || !season.episodeDetails) {
+        continue;
+      }
+
+      for (const episodeDetail of season.episodeDetails) {
+        const key = `${dbSeason.id}-${episodeDetail.episodeNumber}`;
+        const existingEpisode = existingBySeasonAndNumber.get(key);
+
+        if (existingEpisode) {
+          if (episodeDetail.hasFile) {
+            existingEpisode[is4k ? 'status4k' : 'status'] =
+              MediaStatus.AVAILABLE;
+            toSave.push(existingEpisode);
+          }
+        } else {
+          const newEpisode = new Episode({
+            episodeNumber: episodeDetail.episodeNumber,
+            status: is4k
+              ? MediaStatus.UNKNOWN
+              : episodeDetail.hasFile
+                ? MediaStatus.AVAILABLE
+                : MediaStatus.UNKNOWN,
+            status4k: is4k
+              ? episodeDetail.hasFile
+                ? MediaStatus.AVAILABLE
+                : MediaStatus.UNKNOWN
+              : MediaStatus.UNKNOWN,
+            season: Promise.resolve(dbSeason),
+          });
+          toSave.push(newEpisode);
+          existingBySeasonAndNumber.set(key, newEpisode);
+        }
+      }
+    }
+
+    if (toSave.length > 0) {
+      await episodeRepository.save(toSave);
+    }
   }
 
   /**

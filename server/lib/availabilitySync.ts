@@ -3,9 +3,14 @@ import JellyfinAPI from '@server/api/jellyfin';
 import type { PlexMetadata } from '@server/api/plexapi';
 import PlexAPI from '@server/api/plexapi';
 import RadarrAPI, { type RadarrMovie } from '@server/api/servarr/radarr';
-import type { SonarrSeason, SonarrSeries } from '@server/api/servarr/sonarr';
+import type {
+  EpisodeResult,
+  SonarrSeason,
+  SonarrSeries,
+} from '@server/api/servarr/sonarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import TheMovieDb from '@server/api/themoviedb';
+import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import type {
   TmdbTvDetails,
   TmdbTvScanDetails,
@@ -13,14 +18,16 @@ import type {
 import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
+import Episode from '@server/entity/Episode';
 import Media from '@server/entity/Media';
 import MediaRequest from '@server/entity/MediaRequest';
 import type Season from '@server/entity/Season';
 import { User } from '@server/entity/User';
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
-import { getSettings } from '@server/lib/settings';
+import { MetadataProviderType, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { getHostname } from '@server/utils/getHostname';
+import { In } from 'typeorm';
 
 class AvailabilitySync {
   public running = false;
@@ -33,6 +40,7 @@ class AvailabilitySync {
   private jellyfinEpisodeExistsCache: Record<string, boolean>;
 
   private sonarrSeasonsCache: Record<string, SonarrSeason[]>;
+  private sonarrEpisodesCache: Record<string, EpisodeResult[]>;
   private radarrServers: RadarrSettings[];
   private sonarrServers: SonarrSettings[];
   private enable4kMovie: boolean;
@@ -49,10 +57,12 @@ class AvailabilitySync {
     this.jellyfinSeasonsCache = {};
     this.jellyfinEpisodeExistsCache = {};
     this.sonarrSeasonsCache = {};
+    this.sonarrEpisodesCache = {};
     this.radarrServers = settings.radarr;
     this.sonarrServers = settings.sonarr;
     this.enable4kMovie = this.radarrServers.some((server) => server.is4k);
     this.enable4kShow = this.sonarrServers.some((server) => server.is4k);
+    const episodeTrackingEnabled = settings.main.enableEpisodeAvailability;
 
     try {
       logger.info(`Starting availability sync...`, {
@@ -248,6 +258,15 @@ class AvailabilitySync {
 
           //plex
 
+          const isAnime = !!tvShow?.keywords.results.some(
+            (keyword) => keyword.id === ANIME_KEYWORD_ID
+          );
+          const shouldTrackEpisodes =
+            episodeTrackingEnabled &&
+            (isAnime
+              ? settings.metadataSettings.anime === MetadataProviderType.TVDB
+              : settings.metadataSettings.tv === MetadataProviderType.TVDB);
+
           const { existsInPlex, seasonsMap: plexSeasonsMap = new Map() } =
             await this.mediaExistsInPlex(media, false);
           const {
@@ -266,11 +285,11 @@ class AvailabilitySync {
           } = await this.mediaExistsInJellyfin(media, true);
 
           const { existsInSonarr, seasonsMap: sonarrSeasonsMap } =
-            await this.mediaExistsInSonarr(media, false);
+            await this.mediaExistsInSonarr(media, false, shouldTrackEpisodes);
           const {
             existsInSonarr: existsInSonarr4k,
             seasonsMap: sonarrSeasonsMap4k,
-          } = await this.mediaExistsInSonarr(media, true);
+          } = await this.mediaExistsInSonarr(media, true, shouldTrackEpisodes);
 
           //plex
           if (mediaServerType === MediaServerType.PLEX) {
@@ -612,6 +631,8 @@ class AvailabilitySync {
     const nonSpecialSeasonKeys = seasonKeys.filter((key) => key !== 0);
 
     try {
+      const deletedSeasonIds: number[] = [];
+
       for (const mediaSeason of media.seasons) {
         if (
           seasonsPendingRemoval.has(mediaSeason.seasonNumber) &&
@@ -621,6 +642,35 @@ class AvailabilitySync {
               MediaStatus.PARTIALLY_AVAILABLE)
         ) {
           mediaSeason[is4k ? 'status4k' : 'status'] = MediaStatus.DELETED;
+          deletedSeasonIds.push(mediaSeason.id);
+        }
+      }
+
+      if (deletedSeasonIds.length > 0) {
+        try {
+          const existingEpisodes = await getRepository(Episode).find({
+            where: { season: { id: In(deletedSeasonIds) } },
+          });
+          const toSave: Episode[] = [];
+
+          for (const existingEpisode of existingEpisodes) {
+            const currentStatus = existingEpisode[is4k ? 'status4k' : 'status'];
+
+            if (
+              currentStatus !== MediaStatus.DELETED &&
+              currentStatus !== MediaStatus.UNKNOWN
+            ) {
+              existingEpisode[is4k ? 'status4k' : 'status'] =
+                MediaStatus.DELETED;
+              toSave.push(existingEpisode);
+            }
+          }
+
+          if (toSave.length > 0) {
+            await getRepository(Episode).save(toSave);
+          }
+        } catch {
+          // Keep season deletion even if episode cleanup fails
         }
       }
 
@@ -739,7 +789,8 @@ class AvailabilitySync {
 
   private async mediaExistsInSonarr(
     media: Media,
-    is4k: boolean
+    is4k: boolean,
+    shouldTrackEpisodes: boolean
   ): Promise<{ existsInSonarr: boolean; seasonsMap: Map<number, boolean> }> {
     let existsInSonarr = false;
     let preventSeasonSearch = false;
@@ -776,6 +827,22 @@ class AvailabilitySync {
           this.sonarrSeasonsCache[`${server.id}-${externalServiceId}`] =
             sonarr.seasons;
 
+          if (shouldTrackEpisodes && externalServiceId) {
+            try {
+              const episodes = await sonarrAPI.getEpisodes(externalServiceId);
+              this.sonarrEpisodesCache[`${server.id}-${externalServiceId}`] =
+                episodes;
+            } catch (e) {
+              logger.error(
+                `Failed to fetch episodes for show [TMDB ID ${media.tmdbId}] from Sonarr.`,
+                {
+                  errorMessage: e.message,
+                  label: 'AvailabilitySync',
+                }
+              );
+            }
+          }
+
           if (sonarr.statistics.episodeFileCount > 0) {
             existsInSonarr = true;
           }
@@ -810,11 +877,46 @@ class AvailabilitySync {
             MediaStatus.PARTIALLY_AVAILABLE
       );
 
+      const dbEpisodesBySeasonId = new Map<number, Episode[]>();
+      if (shouldTrackEpisodes && filteredSeasons.length > 0) {
+        try {
+          const existingEpisodes = await getRepository(Episode).find({
+            where: {
+              season: { id: In(filteredSeasons.map((season) => season.id)) },
+            },
+            relations: ['season'],
+          });
+
+          for (const episode of existingEpisodes) {
+            const episodeSeason = await episode.season;
+            if (!episodeSeason) {
+              continue;
+            }
+            const seasonEpisodes = dbEpisodesBySeasonId.get(episodeSeason.id);
+            if (seasonEpisodes) {
+              seasonEpisodes.push(episode);
+            } else {
+              dbEpisodesBySeasonId.set(episodeSeason.id, [episode]);
+            }
+          }
+        } catch (e) {
+          logger.error(
+            `Failed to load episodes for show [TMDB ID ${media.tmdbId}].`,
+            {
+              errorMessage: e.message,
+              label: 'AvailabilitySync',
+            }
+          );
+        }
+      }
+
       for (const season of filteredSeasons) {
         const seasonExists = await this.seasonExistsInSonarr(
           media,
           season,
-          is4k
+          is4k,
+          shouldTrackEpisodes,
+          dbEpisodesBySeasonId
         );
 
         if (seasonExists) {
@@ -829,9 +931,13 @@ class AvailabilitySync {
   private async seasonExistsInSonarr(
     media: Media,
     season: Season,
-    is4k: boolean
+    is4k: boolean,
+    shouldTrackEpisodes: boolean,
+    dbEpisodesBySeasonId: Map<number, Episode[]>
   ): Promise<boolean> {
     let seasonExists = false;
+    const episodeHasFileByNumber = new Map<number, boolean>();
+    let hasEpisodeCache = false;
 
     // Check each sonarr instance to see if the media still exists
     // If found, we will assume the media exists and prevent removal
@@ -840,15 +946,20 @@ class AvailabilitySync {
       (server) => server.is4k === is4k
     )) {
       let sonarrSeasons: SonarrSeason[] | undefined;
+      let sonarrEpisodes: EpisodeResult[] | undefined;
 
       if (media.externalServiceId && !is4k) {
         sonarrSeasons =
           this.sonarrSeasonsCache[`${server.id}-${media.externalServiceId}`];
+        sonarrEpisodes =
+          this.sonarrEpisodesCache[`${server.id}-${media.externalServiceId}`];
       }
 
       if (media.externalServiceId4k && is4k) {
         sonarrSeasons =
           this.sonarrSeasonsCache[`${server.id}-${media.externalServiceId4k}`];
+        sonarrEpisodes =
+          this.sonarrEpisodesCache[`${server.id}-${media.externalServiceId4k}`];
       }
 
       const seasonIsAvailable = sonarrSeasons?.find(
@@ -860,6 +971,56 @@ class AvailabilitySync {
 
       if (seasonIsAvailable && sonarrSeasons) {
         seasonExists = true;
+      }
+
+      if (shouldTrackEpisodes && sonarrEpisodes) {
+        hasEpisodeCache = true;
+        for (const episode of sonarrEpisodes) {
+          if (episode.seasonNumber !== season.seasonNumber) {
+            continue;
+          }
+
+          if (episode.hasFile) {
+            episodeHasFileByNumber.set(episode.episodeNumber, true);
+          } else if (!episodeHasFileByNumber.has(episode.episodeNumber)) {
+            episodeHasFileByNumber.set(episode.episodeNumber, false);
+          }
+        }
+      }
+    }
+
+    if (shouldTrackEpisodes && hasEpisodeCache) {
+      const existingEpisodes = dbEpisodesBySeasonId.get(season.id) ?? [];
+      const toSave: Episode[] = [];
+
+      for (const existingEpisode of existingEpisodes) {
+        const hasFile = episodeHasFileByNumber.get(
+          existingEpisode.episodeNumber
+        );
+        const currentStatus = existingEpisode[is4k ? 'status4k' : 'status'];
+
+        if (
+          hasFile !== true &&
+          currentStatus !== MediaStatus.DELETED &&
+          currentStatus !== MediaStatus.UNKNOWN
+        ) {
+          existingEpisode[is4k ? 'status4k' : 'status'] = MediaStatus.DELETED;
+          toSave.push(existingEpisode);
+        }
+      }
+
+      if (toSave.length > 0) {
+        try {
+          await getRepository(Episode).save(toSave);
+        } catch (e) {
+          logger.error(
+            `Failed to soft-remove episodes for show [TMDB ID ${media.tmdbId}] season ${season.seasonNumber}.`,
+            {
+              errorMessage: e.message,
+              label: 'AvailabilitySync',
+            }
+          );
+        }
       }
     }
 
