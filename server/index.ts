@@ -26,11 +26,12 @@ import avatarproxy from '@server/routes/avatarproxy';
 import imageproxy from '@server/routes/imageproxy';
 import { appDataPermissions } from '@server/utils/appDataVolume';
 import { getAppVersion } from '@server/utils/appVersion';
-import createCustomProxyAgent from '@server/utils/customProxyAgent';
+import createCustomProxyAgent, {
+  setForceIpv4First,
+} from '@server/utils/customProxyAgent';
 import { initializeDnsCache } from '@server/utils/dnsCache';
 import restartFlag from '@server/utils/restartFlag';
 import { getClientIp } from '@supercharge/request-ip';
-import axios from 'axios';
 import { TypeormStore } from 'connect-typeorm/out';
 import cookieParser from 'cookie-parser';
 import type { NextFunction, Request, Response } from 'express';
@@ -39,8 +40,6 @@ import * as OpenApiValidator from 'express-openapi-validator';
 import type { Store } from 'express-session';
 import session from 'express-session';
 import fs from 'fs/promises';
-import http from 'http';
-import https from 'https';
 import yaml from 'js-yaml';
 import next from 'next';
 import path from 'path';
@@ -86,10 +85,7 @@ app
 
     initI18n();
 
-    if (settings.network.forceIpv4First) {
-      axios.defaults.httpAgent = new http.Agent({ family: 4 });
-      axios.defaults.httpsAgent = new https.Agent({ family: 4 });
-    }
+    setForceIpv4First(settings.network.forceIpv4First);
 
     // Add DNS caching
     if (settings.network.dnsCache?.enabled) {
@@ -124,7 +120,17 @@ app
         });
 
         const plexapi = new PlexAPI({ plexToken: admin.plexToken });
-        await plexapi.syncLibraries();
+
+        try {
+          await plexapi.syncLibraries();
+        } catch {
+          // Leave the existing libraries untouched so the migration retries on
+          // the next startup instead of discarding the user's configuration
+          logger.warn(
+            'Failed to migrate Plex libraries; will retry on next startup',
+            { label: 'Settings' }
+          );
+        }
       }
     }
 
@@ -271,19 +277,27 @@ app
 
     const port = Number(process.env.PORT) || 5055;
     const host = process.env.HOST;
+    let httpServer;
     if (host) {
-      server.listen(port, host, () => {
+      httpServer = server.listen(port, host, () => {
         logger.info(`Server ready on ${host} port ${port}`, {
           label: 'Server',
         });
       });
     } else {
-      server.listen(port, () => {
+      httpServer = server.listen(port, () => {
         logger.info(`Server ready on port ${port}`, {
           label: 'Server',
         });
       });
     }
+    httpServer.on('error', (err) => {
+      logger.error('Failed to start server', {
+        label: 'Server',
+        message: err.message,
+      });
+      process.exit(1);
+    });
   })
   .catch((err) => {
     logger.error(err.stack);

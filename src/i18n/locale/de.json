@@ -1663,5 +1663,10 @@
   "components.UserProfile.UserSettings.UserPasswordChange.localPasswordDescription": "Dieses Passwort wird für die lokale Anmeldung bei {applicationTitle} verwendet. Es ist unabhängig von deinem Medienserver-Passwort.",
   "i18n.error": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
   "i18n.notificationLocale": "Benachrichtigungssprache",
-  "i18n.partiallyblocklisted": "Teilweise blockiert"
+  "i18n.partiallyblocklisted": "Teilweise blockiert",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdAdd": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdPlaceholder": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdRemove": "",
+  "components.Settings.Notifications.usePublicLogo": "",
+  "components.Settings.Notifications.usePublicLogoTip": ""
 }

@@ -672,6 +672,7 @@ router.post(
 
       const plexUsersResponse = await mainPlexTv.getUsers();
       const createdUsers: User[] = [];
+      let refreshedUsers = 0;
       for (const rawUser of plexUsersResponse.MediaContainer.User) {
         const account = rawUser.$;
 
@@ -696,6 +697,7 @@ router.post(
               user.plexId = parseInt(account.id);
             }
             await userRepository.save(user);
+            refreshedUsers += 1;
           } else if (!body || body.plexIds.includes(account.id)) {
             if (await mainPlexTv.checkUserAccess(parseInt(account.id))) {
               const newUser = new User({
@@ -714,7 +716,10 @@ router.post(
         }
       }
 
-      return res.status(201).json(User.filterMany(createdUsers));
+      return res.status(201).json({
+        createdUsers: User.filterMany(createdUsers),
+        refreshedUsers,
+      });
     } catch (e) {
       next({ status: 500, message: e.message });
     }

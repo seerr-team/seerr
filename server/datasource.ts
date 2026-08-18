@@ -97,6 +97,8 @@ const postgresDevConfig: DataSourceOptions = {
   database: process.env.DB_NAME ?? 'seerr',
   ssl: buildSslConfig(),
   poolSize: intFromEnv('DB_POOL_SIZE'),
+  // Bounds pool acquisition waits so exhaustion surfaces as errors instead of a silent hang
+  connectTimeoutMS: intFromEnv('DB_CONNECT_TIMEOUT_MS', 30000),
   synchronize: false,
   migrationsRun: true,
   logging: boolFromEnv('DB_LOG_QUERIES'),
@@ -116,6 +118,8 @@ const postgresProdConfig: DataSourceOptions = {
   database: process.env.DB_NAME ?? 'seerr',
   ssl: buildSslConfig(),
   poolSize: intFromEnv('DB_POOL_SIZE'),
+  // Bounds pool acquisition waits so exhaustion surfaces as errors instead of a silent hang
+  connectTimeoutMS: intFromEnv('DB_CONNECT_TIMEOUT_MS', 30000),
   synchronize: false,
   migrationsRun: false,
   logging: boolFromEnv('DB_LOG_QUERIES'),

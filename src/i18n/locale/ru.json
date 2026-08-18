@@ -1665,5 +1665,12 @@
   "components.UserProfile.UserSettings.UserPasswordChange.localPasswordDescription": "Этот пароль будет использоваться для локального входа в {applicationTitle}. Он не связан с паролем от вашего медиа сервера.",
   "i18n.notificationLocale": "Язык уведомлений",
   "components.Settings.Notifications.usePublicLogo": "Использовать логотип Seerr вместо пользовательского логотипа",
-  "components.Settings.Notifications.usePublicLogoTip": "Если ваш экземпляр Seerr не доступен публично, включите эту опцию, чтобы клиенты электронной почты вне домашней сети могли отобразить изображение. Изображение будет взято из публичного GitHub репозитория."
+  "components.Settings.Notifications.usePublicLogoTip": "Если ваш экземпляр Seerr не доступен публично, включите эту опцию, чтобы клиенты электронной почты вне домашней сети могли отобразить изображение. Изображение будет взято из публичного GitHub репозитория.",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdAdd": "Добавить ID пользователя",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdPlaceholder": "ID пользователя Discord",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdRemove": "Удалить",
+  "components.Settings.Notifications.validationWebhookThreadId": "Вы должны указать действительный ID треда Discord",
+  "components.Settings.Notifications.webhookThreadId": "ID треда",
+  "components.Settings.Notifications.webhookThreadIdTip": "ID канала треда, в который будут отправляться уведомления. Оставьте пустым, чтобы отправлять в канал вебхука",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordNotificationsNotEnabled": "Владелец сервера не включил уведомления Discord. Эта информация будет использована только в том случае, если владелец сервера настроит внешнюю службу."
 }

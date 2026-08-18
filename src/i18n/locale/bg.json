@@ -1663,5 +1663,10 @@
   "i18n.notificationLocale": "Език на известията",
   "i18n.partiallyblocklisted": "Частично блокирано",
   "i18n.removeFromBlocklistSuccess": "<strong>{title}</strong> беше успешно премахнато от списъка с блокирани.",
-  "i18n.removefromBlocklist": "Премахване от списъка с блокирани"
+  "i18n.removefromBlocklist": "Премахване от списъка с блокирани",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdAdd": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdPlaceholder": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdRemove": "",
+  "components.Settings.Notifications.usePublicLogo": "",
+  "components.Settings.Notifications.usePublicLogoTip": ""
 }

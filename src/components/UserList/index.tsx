@@ -750,12 +750,12 @@ const UserList = () => {
             >
               {intl.formatMessage(messages.created)}
             </SortableColumnHeader>
-            <Table.TH className="w-1/12 whitespace-nowrap text-right">
+            <Table.TH className="w-1/12 min-w-[12rem] whitespace-nowrap text-right">
               {(data.results ?? []).length > 1 && (
                 <div className="flex justify-end">
                   <Button
                     buttonType="warning"
-                    className="w-full sm:min-w-[12rem]"
+                    className="w-full"
                     onClick={() => setShowBulkEditModal(true)}
                     disabled={selectedUsers.length === 0}
                   >
@@ -874,33 +874,32 @@ const UserList = () => {
                   day: 'numeric',
                 })}
               </Table.TD>
-              <Table.TD
-                alignText="right"
-                className="grid grid-cols-1 gap-1 sm:grid-cols-2 sm:gap-2"
-              >
-                <Button
-                  buttonType="warning"
-                  disabled={user.id === 1 && currentUser?.id !== 1}
-                  onClick={() =>
-                    router.push(
-                      '/users/[userId]/settings',
-                      `/users/${user.id}/settings`
-                    )
-                  }
-                >
-                  {intl.formatMessage(globalMessages.edit)}
-                </Button>
-                <Button
-                  buttonType="danger"
-                  disabled={
-                    user.id === 1 ||
-                    (currentUser?.id !== 1 &&
-                      hasPermission(Permission.ADMIN, user.permissions))
-                  }
-                  onClick={() => setDeleteModal({ isOpen: true, user })}
-                >
-                  {intl.formatMessage(globalMessages.delete)}
-                </Button>
+              <Table.TD alignText="right">
+                <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 sm:gap-2">
+                  <Button
+                    buttonType="warning"
+                    disabled={user.id === 1 && currentUser?.id !== 1}
+                    onClick={() =>
+                      router.push(
+                        '/users/[userId]/settings',
+                        `/users/${user.id}/settings`
+                      )
+                    }
+                  >
+                    {intl.formatMessage(globalMessages.edit)}
+                  </Button>
+                  <Button
+                    buttonType="danger"
+                    disabled={
+                      user.id === 1 ||
+                      (currentUser?.id !== 1 &&
+                        hasPermission(Permission.ADMIN, user.permissions))
+                    }
+                    onClick={() => setDeleteModal({ isOpen: true, user })}
+                  >
+                    {intl.formatMessage(globalMessages.delete)}
+                  </Button>
+                </div>
               </Table.TD>
             </tr>
           ))}

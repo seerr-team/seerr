@@ -1,9 +1,11 @@
 import Alert from '@app/components/Common/Alert';
+import Button from '@app/components/Common/Button';
 import Modal from '@app/components/Common/Modal';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
+import { QrCodeIcon } from '@heroicons/react/24/outline';
 import { MediaServerType } from '@server/constants/server';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
@@ -27,6 +29,7 @@ const messages = defineMessages(
       'Unable to connect to {mediaServerName} using your credentials',
     errorExists: 'This account is already linked to a {applicationName} user',
     errorUnknown: 'An unknown error occurred',
+    quickConnect: 'Use Quick Connect',
   }
 );
 
@@ -34,13 +37,15 @@ interface LinkJellyfinModalProps {
   show: boolean;
   onClose: () => void;
   onSave: () => void;
+  onSwitchToQuickConnect: () => void;
 }
 
-const LinkJellyfinModal: React.FC<LinkJellyfinModalProps> = ({
+const LinkJellyfinModal = ({
   show,
   onClose,
   onSave,
-}) => {
+  onSwitchToQuickConnect,
+}: LinkJellyfinModalProps) => {
   const intl = useIntl();
   const settings = useSettings();
   const { user } = useUser();
@@ -167,6 +172,23 @@ const LinkJellyfinModal: React.FC<LinkJellyfinModalProps> = ({
                     <div className="error">{errors.password}</div>
                   )}
                 </div>
+                {settings.currentSettings.mediaServerType ===
+                  MediaServerType.JELLYFIN && (
+                  <div className="mt-4">
+                    <Button
+                      buttonType="ghost"
+                      type="button"
+                      onClick={() => {
+                        setError(null);
+                        onSwitchToQuickConnect();
+                      }}
+                      className="w-full gap-2"
+                    >
+                      <QrCodeIcon />
+                      <span>{intl.formatMessage(messages.quickConnect)}</span>
+                    </Button>
+                  </div>
+                )}
               </Form>
             </Modal>
           );

@@ -1,7 +1,12 @@
 import TheMovieDb from '@server/api/themoviedb';
-import { MediaStatus, MediaType } from '@server/constants/media';
+import {
+  MediaRequestStatus,
+  MediaStatus,
+  MediaType,
+} from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
+import MediaRequest from '@server/entity/MediaRequest';
 import Season from '@server/entity/Season';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -635,6 +640,43 @@ class BaseScanner<T> {
         this.log(`Saved ${title}`);
       }
     });
+  }
+
+  /**
+   * Declines APPROVED requests bound to media that has been orphaned before completion.
+   * DECLINED clears the duplicate-request guard so the user can re-request it.
+   * Callers must load the requests relation on the media.
+   */
+  protected async declineOrphanedRequests(
+    media: Media,
+    is4k: boolean
+  ): Promise<void> {
+    if (media.requests === undefined) {
+      throw new Error(
+        `declineOrphanedRequests called for media ${media.id} without the 'requests' relation loaded`
+      );
+    }
+
+    const requestRepository = getRepository(MediaRequest);
+
+    const orphanedRequests = (media.requests ?? []).filter(
+      (request) =>
+        request.is4k === is4k && request.status === MediaRequestStatus.APPROVED
+    );
+
+    for (const request of orphanedRequests) {
+      request.status = MediaRequestStatus.DECLINED;
+      // Ensure that the media relation is set so the AfterUpdate
+      // notification hook can resolve it
+      request.media = media;
+      await requestRepository.save(request);
+      this.log(
+        `Declined orphaned ${
+          media.mediaType === MediaType.MOVIE ? 'movie' : 'series'
+        } request ${request.id} for ${media.tmdbId} not found in any Sonarr/Radarr server.`,
+        'info'
+      );
+    }
   }
 
   /**

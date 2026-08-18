@@ -1,7 +1,9 @@
 import ExternalAPI from '@server/api/externalapi';
+import { ApiErrorCode } from '@server/constants/error';
 import type { Library, PlexSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import { ApiError } from '@server/types/error';
 
 interface PlexStatusResponse {
   MediaContainer: {
@@ -148,7 +150,7 @@ class PlexAPI extends ExternalAPI {
         .filter((library) => library.agent !== 'com.plexapp.agents.none')
         .map((library) => {
           const existing = settings.plex.libraries.find(
-            (l) => l.id === library.key && l.name === library.title
+            (l) => l.id === library.key
           );
 
           return {
@@ -167,7 +169,11 @@ class PlexAPI extends ExternalAPI {
         message: e.message,
       });
 
-      settings.plex.libraries = [];
+      if (!e.response) {
+        throw new ApiError(502, ApiErrorCode.ConnectionError);
+      }
+
+      throw new ApiError(e.response.status, ApiErrorCode.Unknown);
     }
 
     await settings.save();

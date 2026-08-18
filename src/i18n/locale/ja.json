@@ -1448,7 +1448,7 @@
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.webpushsettingssaved": "Webプッシュ通知設定が保存されました！",
   "components.UserProfile.UserSettings.UserNotificationSettings.deviceDefault": "デバイスのデフォルト",
   "components.UserProfile.UserSettings.UserNotificationSettings.discordId": "ユーザーID",
-  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdTip": "自分のユーザーアカウントに関連付けられた<FindDiscordIdLink>複数桁のID番号</FindDiscordIdLink>",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdTip": "アカウントに関連付けられた<FindDiscordIdLink>複数桁のID番号</FindDiscordIdLink>。家族など複数のアカウントがある場合は、複数のDiscordユーザーIDを追加できます。",
   "components.UserProfile.UserSettings.UserNotificationSettings.email": "メール",
   "components.UserProfile.UserSettings.UserNotificationSettings.notifications": "通知",
   "components.UserProfile.UserSettings.UserNotificationSettings.notificationsettings": "通知設定",
@@ -1470,7 +1470,7 @@
   "components.UserProfile.UserSettings.UserNotificationSettings.telegramChatIdTipLong": "<TelegramBotLink>チャットを開始</TelegramBotLink>し、<GetIdBotLink>@get_id_bot</GetIdBotLink>を追加して<code>/my_id</code>コマンドを実行してください",
   "components.UserProfile.UserSettings.UserNotificationSettings.telegramMessageThreadId": "スレッド/トピック ID",
   "components.UserProfile.UserSettings.UserNotificationSettings.telegramMessageThreadIdTip": "グループチャットでトピックが有効になっている場合ここでスレッド/トピックのIDを指定できます",
-  "components.UserProfile.UserSettings.UserNotificationSettings.validationDiscordId": "有効なユーザーIDを指定してください",
+  "components.UserProfile.UserSettings.UserNotificationSettings.validationDiscordId": "有効なDiscordユーザーIDを指定してください",
   "components.UserProfile.UserSettings.UserNotificationSettings.validationPgpPublicKey": "有効なPGP公開キーを指定してください",
   "components.UserProfile.UserSettings.UserNotificationSettings.validationPushbulletAccessToken": "アクセストークンを指定してください",
   "components.UserProfile.UserSettings.UserNotificationSettings.validationPushoverApplicationToken": "有効なアプリケーショントークンを指定してください",
@@ -1665,5 +1665,12 @@
   "components.UserProfile.UserSettings.UserPasswordChange.localPasswordDescription": "このパスワードは{applicationTitle}のローカルログインフォームでサインインする際に使用します。メディアサーバーのパスワードとは別のものです。",
   "i18n.notificationLocale": "通知言語",
   "components.Settings.Notifications.usePublicLogo": "インスタンスロゴの代わりに公開されているSeerrロゴを使用する",
-  "components.Settings.Notifications.usePublicLogoTip": "Seerrインスタンスが一般公開されていない場合は、このオプションを有効にすることでネットワーク外のメールクライアントから画像を表示できるようになります。画像は公開されているGitHubリポジトリから取得されます。"
+  "components.Settings.Notifications.usePublicLogoTip": "Seerrインスタンスが一般公開されていない場合は、このオプションを有効にすることでネットワーク外のメールクライアントから画像を表示できるようになります。画像は公開されているGitHubリポジトリから取得されます。",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdRemove": "取り除く",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdAdd": "ユーザーIDを追加",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdPlaceholder": "DiscordユーザーID",
+  "components.Settings.Notifications.validationWebhookThreadId": "有効なDiscordのスレッドIDを入力してください",
+  "components.Settings.Notifications.webhookThreadId": "スレッドID",
+  "components.Settings.Notifications.webhookThreadIdTip": "通知を投稿するスレッドチャンネルのID。空欄の場合Webhookチャンネルに投稿されます",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordNotificationsNotEnabled": "サーバー所有者はDiscord通知を有効にしていません。この情報は、サーバー所有者が外部サービスを設定した場合にのみ使用されます。"
 }

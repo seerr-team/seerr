@@ -1665,5 +1665,8 @@
   "components.UserProfile.UserSettings.UserPasswordChange.localPasswordDescription": "See parool on mõeldud sisselogimiseks {applicationTitle} lokaalse sisselogimise kaudu. See ei ole sama mis sinu meediaserveri parool.",
   "i18n.notificationLocale": "Teavituste keel",
   "components.Settings.Notifications.usePublicLogo": "Kasuta avalikku Seerri logo instantsi logo asemel",
-  "components.Settings.Notifications.usePublicLogoTip": "Kui sinu Seerri instants ei ole avalikult ligipääsetav, luba see valik, et sinu võrgust väljas olevad e-posti kliendid saaksid pilti kuvada. Pilt laaditakse avalikust GitHubi repositooriumist."
+  "components.Settings.Notifications.usePublicLogoTip": "Kui sinu Seerri instants ei ole avalikult ligipääsetav, luba see valik, et sinu võrgust väljas olevad e-posti kliendid saaksid pilti kuvada. Pilt laaditakse avalikust GitHubi repositooriumist.",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdAdd": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdPlaceholder": "",
+  "components.UserProfile.UserSettings.UserNotificationSettings.discordIdRemove": ""
 }
