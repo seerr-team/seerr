@@ -1368,6 +1368,7 @@
   "components.TitleCard.watchlistSuccess": "<strong>{title}</strong> added to watchlist  successfully!",
   "components.TvDetails.Season.noepisodes": "Episode list unavailable.",
   "components.TvDetails.Season.somethingwentwrong": "Something went wrong while retrieving season data.",
+  "components.TvDetails.Season.status4k": "4K {status}",
   "components.TvDetails.TvCast.fullseriescast": "Full Series Cast",
   "components.TvDetails.TvCrew.fullseriescrew": "Full Series Crew",
   "components.TvDetails.addtowatchlist": "Add To Watchlist",

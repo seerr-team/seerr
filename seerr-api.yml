@@ -1077,6 +1077,8 @@ components:
           type: number
         available:
           type: boolean
+        available4k:
+          type: boolean
     Season:
       type: object
       properties:
