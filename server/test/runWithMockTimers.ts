@@ -12,10 +12,15 @@ export async function runWithMockTimers<T>(
       .finally(() => {
         settled = true;
       });
-    let guard = 0;
-    while (!settled && guard++ < 100000) {
+    const maxTicks = 100000;
+    for (let i = 0; i < maxTicks && !settled; i++) {
       await new Promise((resolve) => setImmediate(resolve));
       mock.timers.tick(tickMs);
+    }
+    if (!settled) {
+      throw new Error(
+        `runWithMockTimers: promise did not settle after ${maxTicks} ticks`
+      );
     }
     return await runPromise;
   } finally {
