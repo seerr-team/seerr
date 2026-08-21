@@ -2323,21 +2323,6 @@ paths:
       description: Returns a list of Jellyfin libraries in a JSON array.
       tags:
         - settings
-      parameters:
-        - in: query
-          name: sync
-          description: Syncs the current libraries with the current Jellyfin server
-          schema:
-            type: string
-            nullable: true
-        - in: query
-          name: enable
-          explode: false
-          allowReserved: true
-          description: Comma separated list of libraries to enable. Any libraries not passed will be disabled!
-          schema:
-            type: string
-            nullable: true
       responses:
         '200':
           description: 'Jellyfin libraries returned'
@@ -2347,6 +2332,60 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/JellyfinLibrary'
+  /settings/jellyfin/library/{libraryId}:
+    put:
+      summary: Update a single Jellyfin library
+      description: Updates a single Jellyfin library with the provided values.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: libraryId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - enabled
+              properties:
+                enabled:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: 'Jellyfin library returned'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JellyfinLibrary'
+        '400':
+          description: 'Invalid request body'
+        '404':
+          description: 'Library does not exist'
+  /settings/jellyfin/library/sync:
+    post:
+      summary: Sync Jellyfin libraries
+      description: Syncs the current libraries with the current Jellyfin server. Enabled flags are preserved.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: 'Jellyfin libraries returned'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JellyfinLibrary'
+        '404':
+          description: 'No libraries found'
+        '501':
+          description: 'Automatic library grouping is not supported'
   /settings/jellyfin/users:
     get:
       summary: Get Jellyfin Users
@@ -2478,21 +2517,56 @@ paths:
       description: Returns a list of Plex libraries in a JSON array.
       tags:
         - settings
+      responses:
+        '200':
+          description: 'Plex libraries returned'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlexLibrary'
+  /settings/plex/library/{libraryId}:
+    put:
+      summary: Update a single Plex library
+      description: Updates a single Plex library with the provided values.
+      tags:
+        - settings
       parameters:
-        - in: query
-          name: sync
-          description: Syncs the current libraries with the current Plex server
+        - in: path
+          name: libraryId
+          required: true
           schema:
             type: string
-            nullable: true
-        - in: query
-          name: enable
-          explode: false
-          allowReserved: true
-          description: Comma separated list of libraries to enable. Any libraries not passed will be disabled!
-          schema:
-            type: string
-            nullable: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - enabled
+              properties:
+                enabled:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: 'Plex library returned'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlexLibrary'
+        '400':
+          description: 'Invalid request body'
+        '404':
+          description: 'Library does not exist'
+  /settings/plex/library/sync:
+    post:
+      summary: Sync Plex libraries
+      description: Syncs the current libraries with the current Plex server. Enabled flags are preserved.
+      tags:
+        - settings
       responses:
         '200':
           description: 'Plex libraries returned'
