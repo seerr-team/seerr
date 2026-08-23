@@ -3,6 +3,11 @@ describe('General Settings', () => {
     cy.loginAsAdmin();
   });
 
+  // A mid-test failure skips the in-test revert, leaving the restart modal up for every later spec.
+  afterEach(() => {
+    cy.request('POST', '/api/v1/settings/network', { trustProxy: false });
+  });
+
   it('opens the settings page from the home page', () => {
     cy.visit('/');
 
