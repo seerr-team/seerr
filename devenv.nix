@@ -8,6 +8,7 @@
   packages = [
     pkgs.prettier
     pkgs.husky
+    pkgs.helm-docs
   ];
 
   languages.javascript = {

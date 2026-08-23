@@ -120,7 +120,17 @@ app
         });
 
         const plexapi = new PlexAPI({ plexToken: admin.plexToken });
-        await plexapi.syncLibraries();
+
+        try {
+          await plexapi.syncLibraries();
+        } catch {
+          // Leave the existing libraries untouched so the migration retries on
+          // the next startup instead of discarding the user's configuration
+          logger.warn(
+            'Failed to migrate Plex libraries; will retry on next startup',
+            { label: 'Settings' }
+          );
+        }
       }
     }
 
@@ -267,19 +277,27 @@ app
 
     const port = Number(process.env.PORT) || 5055;
     const host = process.env.HOST;
+    let httpServer;
     if (host) {
-      server.listen(port, host, () => {
+      httpServer = server.listen(port, host, () => {
         logger.info(`Server ready on ${host} port ${port}`, {
           label: 'Server',
         });
       });
     } else {
-      server.listen(port, () => {
+      httpServer = server.listen(port, () => {
         logger.info(`Server ready on port ${port}`, {
           label: 'Server',
         });
       });
     }
+    httpServer.on('error', (err) => {
+      logger.error('Failed to start server', {
+        label: 'Server',
+        message: err.message,
+      });
+      process.exit(1);
+    });
   })
   .catch((err) => {
     logger.error(err.stack);

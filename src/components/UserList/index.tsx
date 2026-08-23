@@ -805,12 +805,12 @@ const UserList = () => {
             >
               {intl.formatMessage(messages.created)}
             </SortableColumnHeader>
-            <Table.TH className="min-w-[14rem] whitespace-nowrap text-right">
+            <Table.TH className="w-1/12 min-w-[12rem] whitespace-nowrap text-right">
               {(data.results ?? []).length > 1 && (
                 <div className="flex justify-end">
                   <Button
                     buttonType="warning"
-                    className="w-full sm:min-w-[12rem]"
+                    className="w-full"
                     onClick={() => setShowBulkEditModal(true)}
                     disabled={selectedUsers.length === 0}
                   >
@@ -930,7 +930,7 @@ const UserList = () => {
                 })}
               </Table.TD>
               <Table.TD alignText="right">
-                <div className="flex flex-col gap-2 sm:flex-row sm:justify-end sm:gap-2">
+                <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 sm:gap-2">
                   <Button
                     buttonType="warning"
                     disabled={user.id === 1 && currentUser?.id !== 1}

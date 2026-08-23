@@ -75,17 +75,18 @@ jobs:
     env:
       VERSION: ${{ github.ref_name }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          persist-credentials: false
+      - parallel:
+          - name: Checkout
+            uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+            with:
+              persist-credentials: false
+
+          - name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4
 
       - name: Commit timestamp
         id: ts
         run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4
 
       - name: Warm cache [${{ matrix.platform }}]
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
@@ -114,17 +115,14 @@ jobs:
     env:
       VERSION: ${{ github.ref_name }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          persist-credentials: false
+      - parallel:
+          - name: Checkout
+            uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+            with:
+              persist-credentials: false
 
-      - name: Commit timestamp
-        id: ts
-        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4
+          - name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4
 
       - name: Log in to Docker Hub
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
@@ -138,6 +136,10 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit timestamp
+        id: ts
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
 
       - name: Extract metadata
         id: meta
@@ -172,23 +174,24 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: false
 
-      - name: Resolve manifest digest
-        id: digests
-        run: |
-          DIGEST=$(docker buildx imagetools inspect "${{ env.DOCKER_HUB }}:${{ env.VERSION }}" --format '{{json .Manifest.Digest}}' | tr -d '"')
-          echo "IMAGE_DIGEST=$DIGEST" >> $GITHUB_OUTPUT
+      - parallel:
+          - name: Resolve manifest digest
+            id: digests
+            run: |
+              DIGEST=$(docker buildx imagetools inspect "${{ env.DOCKER_HUB }}:${{ env.VERSION }}" --format '{{json .Manifest.Digest}}' | tr -d '"')
+              echo "IMAGE_DIGEST=$DIGEST" >> $GITHUB_OUTPUT
 
-      - name: Also tag :latest (non-pre-release only)
-        shell: bash
-        if: ${{ !contains(env.VERSION, '-') }}
-        run: |
-          docker buildx imagetools create \
-            -t ${{ env.DOCKER_HUB }}:latest \
-            ${{ env.DOCKER_HUB }}:${{ env.VERSION }}
+          - name: Also tag :latest (non-pre-release only)
+            shell: bash
+            if: ${{ !contains(env.VERSION, '-') }}
+            run: |
+              docker buildx imagetools create \
+                -t ${{ env.DOCKER_HUB }}:latest \
+                ${{ env.DOCKER_HUB }}:${{ env.VERSION }}
 
-          docker buildx imagetools create \
-            -t ghcr.io/${{ github.repository }}:latest \
-            ghcr.io/${{ github.repository }}:${{ env.VERSION }}
+              docker buildx imagetools create \
+                -t ghcr.io/${{ github.repository }}:latest \
+                ghcr.io/${{ github.repository }}:${{ env.VERSION }}
 
   sign:
     name: Sign images and create SBOM attestations
@@ -202,16 +205,17 @@ jobs:
       VERSION: ${{ github.ref_name }}
       COSIGN_YES: 'true'
     steps:
-      - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          persist-credentials: false
+      - parallel:
+          - name: Checkout
+            uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+            with:
+              persist-credentials: false
 
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+          - name: Install Cosign
+            uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
-      - name: Install Trivy
-        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
+          - name: Install Trivy
+            uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
 
       - name: Log in to Docker Hub
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
@@ -271,27 +275,28 @@ jobs:
       - name: Install Cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
-      - name: Verify signatures
-        run: |
-          cosign verify "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}" \
-            --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
-            --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+      - parallel:
+          - name: Verify signatures
+            run: |
+              cosign verify "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}" \
+                --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
+                --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
 
-          cosign verify "${{ env.DOCKER_HUB }}@${{ needs.publish.outputs.image_digest }}" \
-            --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
-            --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+              cosign verify "${{ env.DOCKER_HUB }}@${{ needs.publish.outputs.image_digest }}" \
+                --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
+                --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
 
-      # - name: Verify attestations
-      #   run: |
-      #     cosign verify-attestation "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}" \
-      #       --type cyclonedx \
-      #       --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
-      #       --certificate-oidc-issuer "https://token.actions.githubusercontent.com" > /dev/null
+          - name: Verify attestations
+            run: |
+              cosign verify-attestation "ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.image_digest }}" \
+                --type cyclonedx \
+                --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
+                --certificate-oidc-issuer "https://token.actions.githubusercontent.com" > /dev/null
 
-      #     cosign verify-attestation "${{ env.DOCKER_HUB }}@${{ needs.publish.outputs.image_digest }}" \
-      #       --type cyclonedx \
-      #       --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
-      #       --certificate-oidc-issuer "https://token.actions.githubusercontent.com" > /dev/null
+                cosign verify-attestation "${{ env.DOCKER_HUB }}@${{ needs.publish.outputs.image_digest }}" \
+                --type cyclonedx \
+                --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
+                --certificate-oidc-issuer "https://token.actions.githubusercontent.com" > /dev/null
 
   publish-release:
     name: Publish release

@@ -8,6 +8,7 @@
 .gitconfig
 .github
 .gitignore
+.pnpm-store
 .husky
 .next
 .prettierignore

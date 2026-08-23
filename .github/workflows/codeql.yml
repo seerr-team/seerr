@@ -36,16 +36,17 @@ jobs:
       matrix:
         language: [actions, javascript]
     steps:
-      - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          persist-credentials: false
+      - parallel:
+          - name: Checkout
+            uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+            with:
+              persist-credentials: false
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@87557b9c84dde89fdd9b10e88954ac2f4248e463 # v4.36.1
-        with:
-          languages: ${{ matrix.language }}
-          queries: +security-and-quality
+          - name: Initialize CodeQL
+            uses: github/codeql-action/init@87557b9c84dde89fdd9b10e88954ac2f4248e463 # v4.36.1
+            with:
+              languages: ${{ matrix.language }}
+              queries: +security-and-quality
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@87557b9c84dde89fdd9b10e88954ac2f4248e463 # v4.36.1

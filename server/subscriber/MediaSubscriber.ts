@@ -3,18 +3,27 @@ import {
   MediaStatus,
   MediaType,
 } from '@server/constants/media';
-import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
-import type { EntitySubscriberInterface, UpdateEvent } from 'typeorm';
+import logger from '@server/logger';
+import { withNestedTransaction } from '@server/utils/nestedTransaction';
+import type {
+  EntityManager,
+  EntitySubscriberInterface,
+  UpdateEvent,
+} from 'typeorm';
 import { EventSubscriber, In } from 'typeorm';
 
 @EventSubscriber()
 export class MediaSubscriber implements EntitySubscriberInterface<Media> {
-  private async updateChildRequestStatus(event: Media, is4k: boolean) {
-    const requestRepository = getRepository(MediaRequest);
+  private async updateChildRequestStatus(
+    manager: EntityManager,
+    event: Media,
+    is4k: boolean
+  ) {
+    const requestRepository = manager.getRepository(MediaRequest);
 
     const requests = await requestRepository.find({
       where: { media: { id: event.id } },
@@ -32,12 +41,13 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
   }
 
   private async updateRelatedMediaRequest(
+    manager: EntityManager,
     event: Media,
     databaseEvent: Media,
     is4k: boolean
   ) {
-    const requestRepository = getRepository(MediaRequest);
-    const seasonRequestRepository = getRepository(SeasonRequest);
+    const requestRepository = manager.getRepository(MediaRequest);
+    const seasonRequestRepository = manager.getRepository(SeasonRequest);
 
     const relatedRequests = await requestRepository.find({
       relations: {
@@ -67,45 +77,48 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
         ) {
           shouldComplete = true;
         } else if (event.mediaType === 'tv') {
-          const allSeasonResults = await Promise.all(
-            request.seasons.map(async (requestSeason) => {
-              const matchingSeason = event.seasons.find(
-                (mediaSeason) =>
-                  mediaSeason.seasonNumber === requestSeason.seasonNumber
-              );
-              const matchingOldSeason = databaseEvent.seasons.find(
-                (oldSeason) =>
-                  oldSeason.seasonNumber === requestSeason.seasonNumber
-              );
+          const allSeasonResults: boolean[] = [];
 
-              if (!matchingSeason) {
-                return false;
-              }
+          // Sequential on purpose as these saves share the transaction's connection
+          for (const requestSeason of request.seasons) {
+            const matchingSeason = event.seasons.find(
+              (mediaSeason) =>
+                mediaSeason.seasonNumber === requestSeason.seasonNumber
+            );
+            const matchingOldSeason = databaseEvent.seasons.find(
+              (oldSeason) =>
+                oldSeason.seasonNumber === requestSeason.seasonNumber
+            );
 
-              const currentSeasonStatus =
-                matchingSeason[request.is4k ? 'status4k' : 'status'];
-              const previousSeasonStatus =
-                matchingOldSeason?.[request.is4k ? 'status4k' : 'status'];
+            if (!matchingSeason) {
+              allSeasonResults.push(false);
+              continue;
+            }
 
-              const hasStatusChanged =
-                currentSeasonStatus !== previousSeasonStatus;
+            const currentSeasonStatus =
+              matchingSeason[request.is4k ? 'status4k' : 'status'];
+            const previousSeasonStatus =
+              matchingOldSeason?.[request.is4k ? 'status4k' : 'status'];
 
-              const shouldUpdate =
-                (hasStatusChanged ||
-                  requestSeason.status === MediaRequestStatus.COMPLETED) &&
-                (currentSeasonStatus === MediaStatus.AVAILABLE ||
-                  currentSeasonStatus === MediaStatus.DELETED);
+            const hasStatusChanged =
+              currentSeasonStatus !== previousSeasonStatus;
 
-              if (shouldUpdate) {
-                requestSeason.status = MediaRequestStatus.COMPLETED;
-                await seasonRequestRepository.save(requestSeason);
+            const shouldUpdate =
+              (hasStatusChanged ||
+                requestSeason.status === MediaRequestStatus.COMPLETED) &&
+              (currentSeasonStatus === MediaStatus.AVAILABLE ||
+                currentSeasonStatus === MediaStatus.DELETED);
 
-                return true;
-              }
+            if (shouldUpdate) {
+              requestSeason.status = MediaRequestStatus.COMPLETED;
+              await seasonRequestRepository.save(requestSeason);
 
-              return false;
-            })
-          );
+              allSeasonResults.push(true);
+              continue;
+            }
+
+            allSeasonResults.push(false);
+          }
 
           const allSeasonsReady = allSeasonResults.every((result) => result);
           shouldComplete = allSeasonsReady;
@@ -122,22 +135,58 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
   }
 
   public async beforeUpdate(event: UpdateEvent<Media>): Promise<void> {
-    if (!event.entity) {
+    if (!event.entity || !event.databaseEntity) {
       return;
     }
 
-    if (
-      event.entity.status === MediaStatus.AVAILABLE &&
-      event.databaseEntity.status === MediaStatus.PENDING
-    ) {
-      this.updateChildRequestStatus(event.entity as Media, false);
+    try {
+      if (
+        event.entity.status === MediaStatus.AVAILABLE &&
+        event.databaseEntity?.status === MediaStatus.PENDING
+      ) {
+        await withNestedTransaction(event.manager, async (manager) => {
+          await this.updateChildRequestStatus(
+            manager,
+            event.entity as Media,
+            false
+          );
+        });
+      }
+    } catch (e) {
+      logger.error(
+        'Error while updating child request status in beforeUpdate subscriber',
+        {
+          label: 'Media',
+          mediaId: event.entity.id,
+          is4k: false,
+          errorMessage: e instanceof Error ? e.message : String(e),
+        }
+      );
     }
 
-    if (
-      event.entity.status4k === MediaStatus.AVAILABLE &&
-      event.databaseEntity.status4k === MediaStatus.PENDING
-    ) {
-      this.updateChildRequestStatus(event.entity as Media, true);
+    try {
+      if (
+        event.entity.status4k === MediaStatus.AVAILABLE &&
+        event.databaseEntity?.status4k === MediaStatus.PENDING
+      ) {
+        await withNestedTransaction(event.manager, async (manager) => {
+          await this.updateChildRequestStatus(
+            manager,
+            event.entity as Media,
+            true
+          );
+        });
+      }
+    } catch (e) {
+      logger.error(
+        'Error while updating child request status in beforeUpdate subscriber',
+        {
+          label: 'Media',
+          mediaId: event.entity.id,
+          is4k: true,
+          errorMessage: e instanceof Error ? e.message : String(e),
+        }
+      );
     }
 
     // Manually load related seasons into databaseEntity
@@ -153,7 +202,7 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
   }
 
   public async afterUpdate(event: UpdateEvent<Media>): Promise<void> {
-    if (!event.entity) {
+    if (!event.entity || !event.databaseEntity) {
       return;
     }
 
@@ -174,28 +223,59 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
       });
     };
 
-    if (
-      (event.entity.status !== event.databaseEntity?.status ||
-        (event.entity.mediaType === MediaType.TV &&
-          seasonStatusCheck(false))) &&
-      validStatuses.includes(event.entity.status)
-    ) {
-      this.updateRelatedMediaRequest(
-        event.entity as Media,
-        event.databaseEntity as Media,
-        false
+    try {
+      if (
+        (event.entity.status !== event.databaseEntity?.status ||
+          (event.entity.mediaType === MediaType.TV &&
+            seasonStatusCheck(false))) &&
+        validStatuses.includes(event.entity.status)
+      ) {
+        await withNestedTransaction(event.manager, async (manager) => {
+          await this.updateRelatedMediaRequest(
+            manager,
+            event.entity as Media,
+            event.databaseEntity as Media,
+            false
+          );
+        });
+      }
+    } catch (e) {
+      logger.error(
+        'Error while updating related requests in afterUpdate subscriber',
+        {
+          label: 'Media',
+          mediaId: event.entity.id,
+          is4k: false,
+          errorMessage: e instanceof Error ? e.message : String(e),
+        }
       );
     }
 
-    if (
-      (event.entity.status4k !== event.databaseEntity?.status4k ||
-        (event.entity.mediaType === MediaType.TV && seasonStatusCheck(true))) &&
-      validStatuses.includes(event.entity.status4k)
-    ) {
-      this.updateRelatedMediaRequest(
-        event.entity as Media,
-        event.databaseEntity as Media,
-        true
+    try {
+      if (
+        (event.entity.status4k !== event.databaseEntity?.status4k ||
+          (event.entity.mediaType === MediaType.TV &&
+            seasonStatusCheck(true))) &&
+        validStatuses.includes(event.entity.status4k)
+      ) {
+        await withNestedTransaction(event.manager, async (manager) => {
+          await this.updateRelatedMediaRequest(
+            manager,
+            event.entity as Media,
+            event.databaseEntity as Media,
+            true
+          );
+        });
+      }
+    } catch (e) {
+      logger.error(
+        'Error while updating related requests in afterUpdate subscriber',
+        {
+          label: 'Media',
+          mediaId: event.entity.id,
+          is4k: true,
+          errorMessage: e instanceof Error ? e.message : String(e),
+        }
       );
     }
   }

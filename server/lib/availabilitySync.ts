@@ -32,6 +32,8 @@ class AvailabilitySync {
   private sonarrSeasonsCache: Record<string, SonarrSeason[]>;
   private radarrServers: RadarrSettings[];
   private sonarrServers: SonarrSettings[];
+  private enable4kMovie: boolean;
+  private enable4kShow: boolean;
 
   readonly tmdb = new TheMovieDb();
 
@@ -44,8 +46,10 @@ class AvailabilitySync {
     this.jellyfinSeasonsCache = {};
     this.jellyfinEpisodeExistsCache = {};
     this.sonarrSeasonsCache = {};
-    this.radarrServers = settings.radarr.filter((server) => server.syncEnabled);
-    this.sonarrServers = settings.sonarr.filter((server) => server.syncEnabled);
+    this.radarrServers = settings.radarr;
+    this.sonarrServers = settings.sonarr;
+    this.enable4kMovie = this.radarrServers.some((server) => server.is4k);
+    this.enable4kShow = this.sonarrServers.some((server) => server.is4k);
 
     try {
       logger.info(`Starting availability sync...`, {
@@ -503,31 +507,29 @@ class AvailabilitySync {
     const mediaRepository = getRepository(Media);
 
     try {
-      // If media type is tv, check if a season is processing
+      // Check if an approved request for this version is still in flight
       // to see if we need to keep the external metadata
       let isMediaProcessing = false;
 
-      if (media.mediaType === 'tv') {
-        const requestRepository = getRepository(MediaRequest);
+      const requestRepository = getRepository(MediaRequest);
 
-        const request = await requestRepository
-          .createQueryBuilder('request')
-          .leftJoinAndSelect('request.media', 'media')
-          .where('(media.id = :id)', {
-            id: media.id,
-          })
-          .andWhere(
-            '(request.is4k = :is4k AND request.status = :requestStatus)',
-            {
-              requestStatus: MediaRequestStatus.APPROVED,
-              is4k: is4k,
-            }
-          )
-          .getOne();
+      const request = await requestRepository
+        .createQueryBuilder('request')
+        .leftJoinAndSelect('request.media', 'media')
+        .where('(media.id = :id)', {
+          id: media.id,
+        })
+        .andWhere(
+          '(request.is4k = :is4k AND request.status = :requestStatus)',
+          {
+            requestStatus: MediaRequestStatus.APPROVED,
+            is4k: is4k,
+          }
+        )
+        .getOne();
 
-        if (request) {
-          isMediaProcessing = true;
-        }
+      if (request) {
+        isMediaProcessing = true;
       }
 
       // Set the non-4K or 4K media to deleted
@@ -885,6 +887,16 @@ class AvailabilitySync {
           this.plexSeasonsCache[ratingKey] =
             await this.plexClient?.getChildrenMetadata(ratingKey);
         }
+
+        if (
+          plexMedia &&
+          media.mediaType === 'movie' &&
+          this.enable4kMovie &&
+          plexMedia.Media?.length &&
+          !plexMedia.Media.some((mediaItem) => (mediaItem.width ?? 0) < 2000)
+        ) {
+          plexMedia = undefined;
+        }
       }
 
       if (ratingKey4k && is4k) {
@@ -896,16 +908,11 @@ class AvailabilitySync {
         }
 
         if (plexMedia) {
-          if (ratingKey === ratingKey4k) {
-            plexMedia = undefined;
-          }
-
           if (
             plexMedia &&
             media.mediaType === 'movie' &&
-            !plexMedia.Media?.some(
-              (mediaItem) => (mediaItem.width ?? 0) >= 2000
-            )
+            plexMedia.Media?.length &&
+            !plexMedia.Media.some((mediaItem) => (mediaItem.width ?? 0) >= 2000)
           ) {
             plexMedia = undefined;
           }
@@ -914,11 +921,15 @@ class AvailabilitySync {
             const cachedSeasons = this.plexSeasonsCache[ratingKey4k];
             if (cachedSeasons?.length) {
               let has4kInAnySeason = false;
+              let verifiedAnySeason = false;
               for (const season of cachedSeasons) {
                 try {
                   const episodes = await this.plexClient?.getChildrenMetadata(
                     season.ratingKey
                   );
+                  if (episodes?.some((episode) => episode.Media?.length)) {
+                    verifiedAnySeason = true;
+                  }
                   const has4kEpisode = episodes?.some((episode) =>
                     episode.Media?.some(
                       (mediaItem) => (mediaItem.width ?? 0) >= 2000
@@ -932,7 +943,7 @@ class AvailabilitySync {
                   // If we can't fetch episodes for a season, continue checking other seasons
                 }
               }
-              if (!has4kInAnySeason) {
+              if (verifiedAnySeason && !has4kInAnySeason) {
                 plexMedia = undefined;
               }
             }
@@ -1016,7 +1027,7 @@ class AvailabilitySync {
     );
 
     if (seasonMeta) {
-      const cacheKey = seasonMeta.ratingKey;
+      const cacheKey = `${is4k ? '4k' : 'std'}-${seasonMeta.ratingKey}`;
 
       if (cacheKey in this.plexEpisodeExistsCache) {
         seasonExistsInPlex = this.plexEpisodeExistsCache[cacheKey];
@@ -1028,8 +1039,20 @@ class AvailabilitySync {
             seasonMeta.ratingKey
           );
 
-          seasonExistsInPlex =
-            episodes?.some((episode) => episode.Media?.length > 0) ?? false;
+          const episodeVersions =
+            episodes?.flatMap((episode) => episode.Media ?? []) ?? [];
+
+          if (is4k) {
+            seasonExistsInPlex = episodeVersions.some(
+              (mediaItem) => (mediaItem.width ?? 0) >= 2000
+            );
+          } else if (this.enable4kShow) {
+            seasonExistsInPlex = episodeVersions.some(
+              (mediaItem) => (mediaItem.width ?? 0) < 2000
+            );
+          } else {
+            seasonExistsInPlex = episodeVersions.length > 0;
+          }
         } catch {
           // If we can't fetch episodes, assume the season exists
           // to avoid false removal
