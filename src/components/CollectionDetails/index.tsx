@@ -179,6 +179,7 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
   if (isCollectionBlocklisted) {
     collectionStatus = MediaStatus.BLOCKLISTED;
   } else if (
+    data.parts.length > 0 &&
     data.parts.every(
       (part) =>
         part.mediaInfo && part.mediaInfo.status === MediaStatus.AVAILABLE
@@ -195,6 +196,7 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
   }
 
   if (
+    data.parts.length > 0 &&
     data.parts.every(
       (part) =>
         part.mediaInfo && part.mediaInfo.status4k === MediaStatus.AVAILABLE
