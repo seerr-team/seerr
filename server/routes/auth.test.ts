@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { before, beforeEach, describe, it, mock } from 'node:test';
 
 import JellyfinAPI from '@server/api/jellyfin';
+import type { PlexProfile } from '@server/api/plextv';
+import PlexTvAPI from '@server/api/plextv';
 import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
@@ -68,6 +70,71 @@ const authenticateQCMock = mock.method(
   async () => ({ ...defaultAuthenticateResponse })
 );
 
+const MAIN_PROFILE_UUID = 'plex-main-uuid';
+const CHILD_PROFILE_UUID = 'plex-child-uuid';
+
+const defaultPlexAccount = {
+  id: 1,
+  uuid: MAIN_PROFILE_UUID,
+  email: 'admin@seerr.dev',
+  joined_at: '2020-01-01',
+  username: 'admin',
+  title: 'admin',
+  thumb: 'https://example.com/admin.png',
+  hasPassword: true,
+  authToken: 'plex-auth-token',
+  subscription: {
+    active: true,
+    status: 'Active',
+    plan: 'plexpass',
+    features: [],
+  },
+  roles: { roles: [] },
+  entitlements: [],
+};
+
+const defaultPlexProfiles: PlexProfile[] = [
+  {
+    id: MAIN_PROFILE_UUID,
+    title: 'admin',
+    username: 'admin',
+    thumb: 'https://example.com/admin.png',
+    isMainUser: true,
+    protected: false,
+  },
+  {
+    id: CHILD_PROFILE_UUID,
+    numericId: 42,
+    title: 'Kids',
+    username: 'Kids',
+    thumb: 'https://example.com/kids.png',
+    isMainUser: false,
+    protected: true,
+  },
+];
+
+const getUserMock = mock.method(PlexTvAPI.prototype, 'getUser', async () => ({
+  ...defaultPlexAccount,
+}));
+
+const getProfilesMock = mock.method(
+  PlexTvAPI.prototype,
+  'getProfiles',
+  async () => defaultPlexProfiles.map((profile) => ({ ...profile }))
+);
+
+const validateProfilePinMock = mock.method(
+  PlexTvAPI.prototype,
+  'validateProfilePin',
+  async () => true
+);
+
+const checkUserAccessMock = mock.method(
+  PlexTvAPI.prototype,
+  'checkUserAccess',
+  async () => true
+);
+
 let app: Express;
 
 function createApp() {
@@ -82,19 +149,28 @@ function createApp() {
   );
   app.use(checkUser);
   app.use('/auth', authRoutes);
-  // Error handler matching how next({ status, message }) calls are handled
+  // Error handler matching how next({ status, message, error }) calls are handled
   app.use(
     (
-      err: { status?: number; message?: string },
+      err: { status?: number; message?: string; error?: string },
       _req: express.Request,
       res: express.Response,
       // We must provide a next function for the function signature here even though its not used
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       _next: express.NextFunction
     ) => {
-      res
-        .status(err.status ?? 500)
-        .json({ status: err.status ?? 500, message: err.message });
+      const body: {
+        status: number;
+        message?: string;
+        error?: string;
+      } = {
+        status: err.status ?? 500,
+        message: err.message,
+      };
+      if (err.error !== undefined) {
+        body.error = err.error;
+      }
+      res.status(err.status ?? 500).json(body);
     }
   );
   return app;
@@ -118,6 +194,15 @@ async function authenticatedAgent(email: string, password: string) {
   return agent;
 }
 
+/** Configure Plex settings for testing profile login */
+function configurePlex() {
+  const settings = getSettings();
+  settings.main.mediaServerType = MediaServerType.PLEX;
+  settings.main.mediaServerLogin = true;
+  settings.main.newPlexLogin = true;
+  settings.plex.machineId = 'test-machine-id';
+}
+
 /** Configure Jellyfin settings for testing QC */
 function configureJellyfin() {
   const settings = getSettings();
@@ -128,6 +213,180 @@ function configureJellyfin() {
   settings.jellyfin.useSsl = false;
   settings.jellyfin.urlBase = '';
 }
+
+describe('POST /auth/plex', () => {
+  beforeEach(async () => {
+    getUserMock.mock.resetCalls();
+    getProfilesMock.mock.resetCalls();
+    validateProfilePinMock.mock.resetCalls();
+    checkUserAccessMock.mock.resetCalls();
+    getUserMock.mock.mockImplementation(async () => ({
+      ...defaultPlexAccount,
+    }));
+    getProfilesMock.mock.mockImplementation(async () =>
+      defaultPlexProfiles.map((profile) => ({ ...profile }))
+    );
+    validateProfilePinMock.mock.mockImplementation(async () => true);
+    checkUserAccessMock.mock.mockImplementation(async () => true);
+    configurePlex();
+
+    // Seed gives both users the same plexId; keep admin uniquely matched.
+    const userRepo = getRepository(User);
+    const friend = await userRepo.findOneOrFail({
+      where: { email: 'friend@seerr.dev' },
+    });
+    friend.plexId = 99;
+    await userRepo.save(friend);
+  });
+
+  it('returns REQUIRES_PROFILE when the account has multiple profiles', async () => {
+    const res = await request(app)
+      .post('/auth/plex')
+      .send({ authToken: 'plex-auth-token' });
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.status, 'REQUIRES_PROFILE');
+    assert.strictEqual(res.body.mainUserId, 1);
+    assert.strictEqual(res.body.profiles.length, 2);
+    assert.strictEqual(getUserMock.mock.callCount(), 1);
+    assert.strictEqual(getProfilesMock.mock.callCount(), 1);
+  });
+
+  it('returns REQUIRES_PROFILE when the main profile is PIN-protected but multiple profiles exist', async () => {
+    getProfilesMock.mock.mockImplementation(async () => [
+      {
+        ...defaultPlexProfiles[0],
+        protected: true,
+      },
+      { ...defaultPlexProfiles[1] },
+    ]);
+
+    const res = await request(app)
+      .post('/auth/plex')
+      .send({ authToken: 'plex-auth-token' });
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.status, 'REQUIRES_PROFILE');
+    assert.strictEqual(res.body.profiles.length, 2);
+    assert.strictEqual(validateProfilePinMock.mock.callCount(), 0);
+  });
+
+  it('returns REQUIRES_PIN when the only profile is PIN-protected', async () => {
+    getProfilesMock.mock.mockImplementation(async () => [
+      {
+        ...defaultPlexProfiles[0],
+        protected: true,
+      },
+    ]);
+
+    const res = await request(app)
+      .post('/auth/plex')
+      .send({ authToken: 'plex-auth-token' });
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.status, 'REQUIRES_PIN');
+    assert.strictEqual(res.body.profileId, MAIN_PROFILE_UUID);
+    assert.strictEqual(res.body.mainUserId, 1);
+    assert.strictEqual(res.body.isProtected, true);
+    assert.strictEqual(validateProfilePinMock.mock.callCount(), 0);
+  });
+
+  it('returns 400 when profileId is sent to /auth/plex', async () => {
+    const res = await request(app).post('/auth/plex').send({
+      authToken: 'plex-auth-token',
+      profileId: CHILD_PROFILE_UUID,
+    });
+
+    assert.strictEqual(res.status, 400);
+    assert.match(res.body.message, /profile\/select/);
+  });
+});
+
+describe('POST /auth/plex/profile/select', () => {
+  beforeEach(async () => {
+    getUserMock.mock.resetCalls();
+    getProfilesMock.mock.resetCalls();
+    validateProfilePinMock.mock.resetCalls();
+    getUserMock.mock.mockImplementation(async () => ({
+      ...defaultPlexAccount,
+    }));
+    getProfilesMock.mock.mockImplementation(async () =>
+      defaultPlexProfiles.map((profile) => ({ ...profile }))
+    );
+    validateProfilePinMock.mock.mockImplementation(async () => true);
+    configurePlex();
+
+    const userRepo = getRepository(User);
+    const friend = await userRepo.findOneOrFail({
+      where: { email: 'friend@seerr.dev' },
+    });
+    friend.plexId = 99;
+    await userRepo.save(friend);
+  });
+
+  it('returns REQUIRES_PIN for a protected profile without a PIN', async () => {
+    const res = await request(app).post('/auth/plex/profile/select').send({
+      authToken: 'plex-auth-token',
+      mainUserId: 1,
+      profileId: CHILD_PROFILE_UUID,
+    });
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.status, 'REQUIRES_PIN');
+    assert.strictEqual(res.body.profileId, CHILD_PROFILE_UUID);
+    assert.strictEqual(res.body.mainUserId, 1);
+    assert.strictEqual(res.body.isProtected, true);
+    assert.strictEqual(validateProfilePinMock.mock.callCount(), 0);
+  });
+
+  it('returns 401 for an invalid profile PIN', async () => {
+    validateProfilePinMock.mock.mockImplementation(async () => false);
+
+    const res = await request(app).post('/auth/plex/profile/select').send({
+      authToken: 'plex-auth-token',
+      mainUserId: 1,
+      profileId: CHILD_PROFILE_UUID,
+      pin: '9999',
+    });
+
+    assert.strictEqual(res.status, 401);
+    assert.strictEqual(res.body.error, ApiErrorCode.InvalidPin);
+    assert.strictEqual(res.body.message, 'Invalid PIN.');
+  });
+
+  it('creates and signs in a profile user with a valid PIN', async () => {
+    const agent = request.agent(app);
+    const res = await agent.post('/auth/plex/profile/select').send({
+      authToken: 'plex-auth-token',
+      mainUserId: 1,
+      profileId: CHILD_PROFILE_UUID,
+      pin: '1234',
+    });
+
+    assert.strictEqual(res.status, 200);
+    assert.ok('id' in res.body);
+    assert.strictEqual(res.body.userType, UserType.PLEX_PROFILE);
+    assert.strictEqual(res.body.plexUsername, 'Kids');
+    assert.strictEqual(validateProfilePinMock.mock.callCount(), 1);
+
+    const meRes = await agent.get('/auth/me');
+    assert.strictEqual(meRes.status, 200);
+    assert.strictEqual(meRes.body.userType, UserType.PLEX_PROFILE);
+    assert.strictEqual(meRes.body.plexUsername, 'Kids');
+  });
+
+  it('signs in the main user when selecting the main profile', async () => {
+    const res = await request(app).post('/auth/plex/profile/select').send({
+      authToken: 'plex-auth-token',
+      mainUserId: 1,
+      profileId: MAIN_PROFILE_UUID,
+    });
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.id, 1);
+    assert.strictEqual(res.body.displayName, 'admin');
+  });
+});
 
 describe('POST /auth/jellyfin/quickconnect/initiate', () => {
   beforeEach(() => {
