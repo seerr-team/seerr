@@ -11,7 +11,6 @@ import type {
 } from '@server/api/themoviedb/interfaces';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
-import cacheManager from '@server/lib/cache';
 import type {
   MediaIds,
   ProcessableSeason,
@@ -384,24 +383,12 @@ class PlexScanner
   }
 
   private async getMediaIds(plexitem: PlexLibraryItem): Promise<MediaIds> {
-    let mediaIds: Partial<MediaIds> = {};
+    const mediaIds: Partial<MediaIds> = {};
     // Check if item is using new plex movie/tv agent
     if (
       plexitem.guid.match(plexRegex) ||
       plexitem.guid.match(plexCustomProviderRegex)
     ) {
-      const guidCache = cacheManager.getCache('plexguid');
-
-      const cachedGuids = guidCache.data.get<MediaIds>(plexitem.ratingKey);
-
-      if (cachedGuids) {
-        this.log('GUIDs are cached. Skipping metadata request.', 'debug', {
-          mediaIds: cachedGuids,
-          title: plexitem.title,
-        });
-        mediaIds = cachedGuids;
-      }
-
       const metadata =
         plexitem.Guid && plexitem.Guid.length > 0
           ? plexitem
@@ -440,9 +427,6 @@ class PlexScanner
         });
         mediaIds.tmdbId = show.id;
       }
-
-      // Cache GUIDs
-      guidCache.data.set(plexitem.ratingKey, mediaIds);
 
       // Check if the agent is IMDb
     } else if (plexitem.guid.match(imdbRegex)) {
