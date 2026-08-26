@@ -1,5 +1,4 @@
 import { LRUCache } from 'lru-cache';
-import NodeCache from 'node-cache';
 
 export type AvailableCacheIds =
   | 'tmdb'
@@ -14,7 +13,6 @@ export type AvailableCacheIds =
   | 'tvdb';
 
 const DEFAULT_TTL = 300;
-const DEFAULT_CHECK_PERIOD = 120;
 
 const OBJECT_VALUE_SIZE = 80;
 const PROMISE_VALUE_SIZE = 80;
@@ -25,6 +23,30 @@ const TMDB_MAX_KEYS = 1000;
 
 // Backstop against unbounded growth as the 15 minute TTL is what bounds this tier.
 const TMDB_SCAN_MAX_KEYS = 2000;
+
+// Only the rolling quality profile, root folder and language profile lookups reach
+// these tiers, and keys are prefixed by server url, so this is a few keys per server.
+const RADARR_MAX_KEYS = 64;
+const SONARR_MAX_KEYS = 64;
+
+// One key per searched title, each holding twenty search hits.
+const RT_MAX_KEYS = 500;
+
+// One key per IMDb id, requested from the same endpoint as the RT ratings.
+const IMDB_MAX_KEYS = 500;
+
+// Releases and commits, varying only by page size and branch.
+const GITHUB_MAX_KEYS = 16;
+
+// Watchlist item metadata, shared between users as the token is not part of the key.
+const PLEX_TV_MAX_KEYS = 5000;
+
+// Keyed by auth token, so one key per Plex linked user.
+const PLEX_WATCHLIST_MAX_KEYS = 500;
+
+// Several keys per show, holding the largest payloads of any tier as the extended
+// series lookup carries every episode.
+const TVDB_MAX_KEYS = 500;
 
 export interface CacheStats {
   hits: number;
@@ -101,7 +123,8 @@ class LruCacheStore implements CacheStore {
     });
   }
 
-  // node-cache cloned on read too, and getTvSeason rewrites still_path in place.
+  // Cloned on read because callers mutate what they get back, as getTvSeason
+  // does when it rewrites still_path in place.
   public get<T>(key: string): T | undefined {
     const entry = this.cache.get(key);
 
@@ -121,7 +144,7 @@ class LruCacheStore implements CacheStore {
       vsize: valueLength(value),
     };
 
-    // A ttl of 0 means "never expires" to both node-cache and lru-cache.
+    // A ttl of 0 means the entry never expires.
     this.cache.set(key, entry, { ttl: (ttl ?? this.stdTtl) * 1000 });
 
     this.ksize += entry.ksize;
@@ -141,7 +164,7 @@ class LruCacheStore implements CacheStore {
 
     const remaining = this.cache.getRemainingTTL(key);
 
-    // node-cache reports 0 for a key with no expiry.
+    // Keys with no expiry report 0.
     return remaining === Infinity ? 0 : Date.now() + remaining;
   }
 
@@ -172,19 +195,15 @@ class Cache {
   constructor(
     id: AvailableCacheIds,
     name: string,
-    options: { stdTtl?: number; checkPeriod?: number; max?: number } = {}
+    options: { max: number; stdTtl?: number }
   ) {
     this.id = id;
     this.name = name;
 
-    const stdTtl = options.stdTtl ?? DEFAULT_TTL;
-
-    this.data = options.max
-      ? new LruCacheStore({ max: options.max, stdTtl })
-      : new NodeCache({
-          stdTTL: stdTtl,
-          checkperiod: options.checkPeriod ?? DEFAULT_CHECK_PERIOD,
-        });
+    this.data = new LruCacheStore({
+      max: options.max,
+      stdTtl: options.stdTtl ?? DEFAULT_TTL,
+    });
   }
 
   public getStats() {
@@ -206,28 +225,30 @@ class CacheManager {
       stdTtl: 900,
       max: TMDB_SCAN_MAX_KEYS,
     }),
-    radarr: new Cache('radarr', 'Radarr API'),
-    sonarr: new Cache('sonarr', 'Sonarr API'),
+    radarr: new Cache('radarr', 'Radarr API', { max: RADARR_MAX_KEYS }),
+    sonarr: new Cache('sonarr', 'Sonarr API', { max: SONARR_MAX_KEYS }),
     rt: new Cache('rt', 'Rotten Tomatoes API', {
       stdTtl: 43200,
-      checkPeriod: 60 * 30,
+      max: RT_MAX_KEYS,
     }),
     imdb: new Cache('imdb', 'IMDB Radarr Proxy', {
       stdTtl: 43200,
-      checkPeriod: 60 * 30,
+      max: IMDB_MAX_KEYS,
     }),
     github: new Cache('github', 'GitHub API', {
       stdTtl: 21600,
-      checkPeriod: 60 * 30,
+      max: GITHUB_MAX_KEYS,
     }),
     plextv: new Cache('plextv', 'Plex TV', {
       stdTtl: 86400 * 7, // 1 week cache
-      checkPeriod: 60,
+      max: PLEX_TV_MAX_KEYS,
     }),
-    plexwatchlist: new Cache('plexwatchlist', 'Plex Watchlist'),
+    plexwatchlist: new Cache('plexwatchlist', 'Plex Watchlist', {
+      max: PLEX_WATCHLIST_MAX_KEYS,
+    }),
     tvdb: new Cache('tvdb', 'The TVDB API', {
       stdTtl: 21600,
-      checkPeriod: 60 * 30,
+      max: TVDB_MAX_KEYS,
     }),
   };
 
