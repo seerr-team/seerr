@@ -20,6 +20,8 @@ import type {
   StatusBase,
 } from '@server/lib/scanners/baseScanner';
 import BaseScanner from '@server/lib/scanners/baseScanner';
+import type { ShowInstanceAvailability } from '@server/lib/scanners/serviceAvailabilityChecker';
+import serviceAvailabilityChecker from '@server/lib/scanners/serviceAvailabilityChecker';
 import type { Library } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { getHostname } from '@server/utils/getHostname';
@@ -127,6 +129,57 @@ class JellyfinScanner
 
       const { tmdbId, imdbId, metadata } = extracted;
 
+      const mediaAddedAt = metadata.DateCreated
+        ? new Date(metadata.DateCreated)
+        : undefined;
+
+      if (this.enable4kMovie) {
+        const instanceAvailability =
+          await serviceAvailabilityChecker.checkMovieAvailability(tmdbId);
+
+        if (instanceAvailability.hasStandard || instanceAvailability.has4k) {
+          if (instanceAvailability.hasStandard) {
+            await this.processMovie(tmdbId, {
+              is4k: false,
+              mediaAddedAt,
+              jellyfinMediaId: metadata.Id,
+              imdbId,
+              title: metadata.Name,
+            });
+          }
+
+          if (instanceAvailability.has4k) {
+            await this.processMovie(tmdbId, {
+              is4k: true,
+              mediaAddedAt,
+              jellyfinMediaId: metadata.Id,
+              imdbId,
+              title: metadata.Name,
+            });
+          }
+
+          this.log(
+            `Processed movie with service availability check: ${metadata.Name}`,
+            'debug',
+            {
+              tmdbId,
+              hasStandard: instanceAvailability.hasStandard,
+              has4k: instanceAvailability.has4k,
+            }
+          );
+
+          return;
+        }
+
+        this.log(
+          `Movie not found in any Radarr instance, using resolution-based detection: ${metadata.Name}`,
+          'debug',
+          {
+            tmdbId,
+          }
+        );
+      }
+
       const has4k = metadata.MediaSources?.some((MediaSource) => {
         return MediaSource.MediaStreams.filter(
           (MediaStream) => MediaStream.Type === 'Video'
@@ -142,10 +195,6 @@ class JellyfinScanner
           return (MediaStream.Width ?? 0) <= 2000;
         });
       });
-
-      const mediaAddedAt = metadata.DateCreated
-        ? new Date(metadata.DateCreated)
-        : undefined;
 
       if (hasOtherResolution || (!this.enable4kMovie && has4k)) {
         await this.processMovie(tmdbId, {
@@ -289,6 +338,35 @@ class JellyfinScanner
           ? seasons
           : seasons.filter((sn) => sn.season_number !== 0);
 
+        const tvdbId =
+          (metadata.ProviderIds.Tvdb
+            ? Number(metadata.ProviderIds.Tvdb)
+            : undefined) ?? tvShow.external_ids?.tvdb_id;
+
+        let instanceAvailability: ShowInstanceAvailability | null = null;
+        let useServiceBasedDetection = false;
+
+        if (this.enable4kShow && tvdbId) {
+          instanceAvailability =
+            await serviceAvailabilityChecker.checkShowAvailability(tvdbId);
+
+          useServiceBasedDetection =
+            instanceAvailability.hasStandard || instanceAvailability.has4k;
+
+          if (useServiceBasedDetection) {
+            this.log(
+              `Using service availability check for show: ${tvShow.name}`,
+              'debug',
+              {
+                tvdbId,
+                hasStandard: instanceAvailability.hasStandard,
+                has4k: instanceAvailability.has4k,
+                seasons: instanceAvailability.seasons.length,
+              }
+            );
+          }
+        }
+
         for (const season of filteredSeasons) {
           const matchedJellyfinSeason = jellyfinSeasons.find((md) => {
             if (tvdbSeasonFromAnidb) {
@@ -310,7 +388,16 @@ class JellyfinScanner
             let totalStandard = 0;
             let total4k = 0;
 
-            if (!this.enable4kShow) {
+            if (useServiceBasedDetection && instanceAvailability) {
+              const serviceSeason = instanceAvailability.seasons.find(
+                (s) => s.seasonNumber === season.season_number
+              );
+
+              if (serviceSeason) {
+                totalStandard = serviceSeason.episodesStandard;
+                total4k = serviceSeason.episodes4k;
+              }
+            } else if (!this.enable4kShow) {
               const episodes = await this.jfClient.getEpisodes(
                 Id,
                 matchedJellyfinSeason.Id
@@ -366,14 +453,6 @@ class JellyfinScanner
                   )
                 );
 
-                // Count in both if episode has both versions
-                // TODO: Make this more robust in the future
-                // Currently, this detection is based solely on file resolution, not which
-                // Radarr/Sonarr instance the file came from. If a 4K request results in
-                // 1080p files (no 4K release available yet), those files will be counted
-                // as "standard" even though they're in the 4K library. This can cause
-                // non-4K users to see content as "available" when they can't access it.
-                // See issue https://github.com/seerr-team/seerr/issues/1744 for details.
                 if (hasStandard) totalStandard += episodeCount;
                 if (has4k) total4k += episodeCount;
               }
@@ -411,18 +490,13 @@ class JellyfinScanner
           }
         }
 
-        await this.processShow(
-          tvShow.id,
-          tvShow.external_ids?.tvdb_id,
-          processableSeasons,
-          {
-            mediaAddedAt: metadata.DateCreated
-              ? new Date(metadata.DateCreated)
-              : undefined,
-            jellyfinMediaId: Id,
-            title: tvShow.name,
-          }
-        );
+        await this.processShow(tvShow.id, tvdbId, processableSeasons, {
+          mediaAddedAt: metadata.DateCreated
+            ? new Date(metadata.DateCreated)
+            : undefined,
+          jellyfinMediaId: Id,
+          title: tvShow.name,
+        });
       } else {
         this.log(
           `No information found for the show: ${metadata.Name}`,
@@ -462,6 +536,8 @@ class JellyfinScanner
     }
 
     const sessionId = this.startRun();
+
+    serviceAvailabilityChecker.clearCache();
 
     try {
       const userRepository = getRepository(User);

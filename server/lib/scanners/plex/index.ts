@@ -18,6 +18,8 @@ import type {
   StatusBase,
 } from '@server/lib/scanners/baseScanner';
 import BaseScanner from '@server/lib/scanners/baseScanner';
+import type { ShowInstanceAvailability } from '@server/lib/scanners/serviceAvailabilityChecker';
+import serviceAvailabilityChecker from '@server/lib/scanners/serviceAvailabilityChecker';
 import type { Library } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { uniqWith } from 'lodash';
@@ -68,6 +70,9 @@ class PlexScanner
   public async run(): Promise<void> {
     const settings = getSettings();
     const sessionId = this.startRun();
+
+    serviceAvailabilityChecker.clearCache();
+
     try {
       const userRepository = getRepository(User);
       const admin = await userRepository.findOne({
@@ -227,6 +232,52 @@ class PlexScanner
     }
   }
 
+  private async processMovieWithAvailability(
+    tmdbId: number,
+    has4kResolution: boolean,
+    details: { mediaAddedAt: Date; ratingKey: string; title: string }
+  ) {
+    if (this.enable4kMovie) {
+      const instanceAvailability =
+        await serviceAvailabilityChecker.checkMovieAvailability(tmdbId);
+
+      if (instanceAvailability.hasStandard || instanceAvailability.has4k) {
+        if (instanceAvailability.hasStandard) {
+          await this.processMovie(tmdbId, { is4k: false, ...details });
+        }
+
+        if (instanceAvailability.has4k) {
+          await this.processMovie(tmdbId, { is4k: true, ...details });
+        }
+
+        this.log(
+          `Processed movie with service availability check: ${details.title}`,
+          'debug',
+          {
+            tmdbId,
+            hasStandard: instanceAvailability.hasStandard,
+            has4k: instanceAvailability.has4k,
+          }
+        );
+
+        return;
+      }
+
+      this.log(
+        `Movie not found in any Radarr instance, using resolution-based detection: ${details.title}`,
+        'debug',
+        {
+          tmdbId,
+        }
+      );
+    }
+
+    await this.processMovie(tmdbId, {
+      is4k: has4kResolution && this.enable4kMovie,
+      ...details,
+    });
+  }
+
   private async processPlexMovie(plexitem: PlexLibraryItem) {
     const mediaIds = await this.getMediaIds(plexitem);
 
@@ -234,8 +285,7 @@ class PlexScanner
       (media) => media.videoResolution === '4k'
     );
 
-    await this.processMovie(mediaIds.tmdbId, {
-      is4k: has4k && this.enable4kMovie,
+    await this.processMovieWithAvailability(mediaIds.tmdbId, has4k, {
       mediaAddedAt: new Date(plexitem.addedAt * 1000),
       ratingKey: plexitem.ratingKey,
       title: plexitem.title,
@@ -250,8 +300,7 @@ class PlexScanner
       (media) => media.videoResolution === '4k'
     );
 
-    await this.processMovie(tmdbId, {
-      is4k: has4k && this.enable4kMovie,
+    await this.processMovieWithAvailability(tmdbId, has4k, {
       mediaAddedAt: new Date(plexitem.addedAt * 1000),
       ratingKey: plexitem.ratingKey,
       title: plexitem.title,
@@ -330,44 +379,75 @@ class PlexScanner
       ? seasons
       : seasons.filter((sn) => sn.season_number !== 0);
 
+    const tvdbId = mediaIds.tvdbId ?? tvShow.external_ids?.tvdb_id;
+
+    let instanceAvailability: ShowInstanceAvailability | null = null;
+    let useServiceBasedDetection = false;
+
+    if (this.enable4kShow && tvdbId) {
+      instanceAvailability =
+        await serviceAvailabilityChecker.checkShowAvailability(tvdbId);
+
+      useServiceBasedDetection =
+        instanceAvailability.hasStandard || instanceAvailability.has4k;
+
+      if (useServiceBasedDetection) {
+        this.log(
+          `Using service availability check for show: ${tvShow.name}`,
+          'debug',
+          {
+            tvdbId,
+            hasStandard: instanceAvailability.hasStandard,
+            has4k: instanceAvailability.has4k,
+            seasons: instanceAvailability.seasons.length,
+          }
+        );
+      }
+    }
+
     for (const season of filteredSeasons) {
       const matchedPlexSeason = metadata.Children?.Metadata.find(
         (md) => Number(md.index) === season.season_number
       );
 
-      if (matchedPlexSeason) {
+      let totalStandard = 0;
+      let total4k = 0;
+
+      if (useServiceBasedDetection && instanceAvailability) {
+        const serviceSeason = instanceAvailability.seasons.find(
+          (s) => s.seasonNumber === season.season_number
+        );
+
+        if (serviceSeason) {
+          totalStandard = serviceSeason.episodesStandard;
+          total4k = serviceSeason.episodes4k;
+        }
+      } else if (matchedPlexSeason) {
         // If we have a matched Plex season, get its children metadata so we can check details
         const episodes = await this.plexClient.getChildrenMetadata(
           matchedPlexSeason.ratingKey
         );
         // Total episodes that are in standard definition (not 4k)
-        const totalStandard = episodes.filter((episode) =>
+        totalStandard = episodes.filter((episode) =>
           !this.enable4kShow
             ? true
             : episode.Media.some((media) => media.videoResolution !== '4k')
         ).length;
 
         // Total episodes that are in 4k
-        const total4k = this.enable4kShow
+        total4k = this.enable4kShow
           ? episodes.filter((episode) =>
               episode.Media.some((media) => media.videoResolution === '4k')
             ).length
           : 0;
-
-        processableSeasons.push({
-          seasonNumber: season.season_number,
-          episodes: totalStandard,
-          episodes4k: total4k,
-          totalEpisodes: season.episode_count,
-        });
-      } else {
-        processableSeasons.push({
-          seasonNumber: season.season_number,
-          episodes: 0,
-          episodes4k: 0,
-          totalEpisodes: season.episode_count,
-        });
       }
+
+      processableSeasons.push({
+        seasonNumber: season.season_number,
+        episodes: totalStandard,
+        episodes4k: total4k,
+        totalEpisodes: season.episode_count,
+      });
     }
 
     await this.processShow(
