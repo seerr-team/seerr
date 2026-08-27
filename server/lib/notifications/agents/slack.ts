@@ -1,7 +1,7 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { getIntl } from '@server/i18n';
 import globalMessages from '@server/i18n/globalMessages';
-import type { NotificationAgentSlack } from '@server/lib/settings';
+import type { NotificationAgentSlack } from '@server/interfaces/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';

@@ -1,5 +1,5 @@
 import RadarrAPI from '@server/api/servarr/radarr';
-import type { RadarrSettings } from '@server/lib/settings';
+import type { RadarrSettings } from '@server/interfaces/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { Router } from 'express';
