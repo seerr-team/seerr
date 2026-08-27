@@ -1,5 +1,6 @@
 import ExternalAPI from '@server/api/externalapi';
 import type { TvShowProvider } from '@server/api/provider';
+import type { CacheStore } from '@server/lib/cache';
 import cacheManager from '@server/lib/cache';
 import { getSettings } from '@server/lib/settings';
 import { sortBy } from 'lodash';
@@ -23,6 +24,7 @@ import type {
   TmdbSearchTvResponse,
   TmdbSeasonWithEpisodes,
   TmdbTvDetails,
+  TmdbTvScanDetails,
   TmdbUpcomingMoviesResponse,
   TmdbWatchProviderDetails,
   TmdbWatchProviderRegion,
@@ -124,7 +126,43 @@ interface DiscoverTvOptions {
   certificationCountry?: string;
 }
 
+const TV_DETAILS_TTL = 43200;
+
+// Scan lookups read an entry once and never again.
+const SCAN_TTL = 900;
+
+const TV_DETAILS_APPEND_TO_RESPONSE =
+  'aggregate_credits,credits,external_ids,keywords,videos,content_ratings,watch/providers';
+
+const TV_SCAN_APPEND_TO_RESPONSE = 'keywords,external_ids';
+
+type ExternalIdLookup =
+  | {
+      externalId: string;
+      type: 'imdb';
+      language?: string;
+    }
+  | {
+      externalId: number;
+      type: 'tvdb';
+      language?: string;
+    };
+
+// Nothing anywhere reads aggregate_credits.crew or credits.cast.
+const stripUnreadTvCredits = <T>(data: T): T => {
+  const show = data as {
+    aggregate_credits?: { crew?: unknown };
+    credits?: { cast?: unknown };
+  };
+
+  delete show.aggregate_credits?.crew;
+  delete show.credits?.cast;
+
+  return data;
+};
+
 class TheMovieDb extends ExternalAPI implements TvShowProvider {
+  private scanCache = cacheManager.getCache('tmdbscan').data;
   private locale: string;
   private discoverRegion?: string;
   private originalLanguage?: string;
@@ -341,6 +379,37 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     }
   };
 
+  // The append list is part of the cache key, so full and narrow entries differ.
+  private getTvShowDetails = async <T>({
+    tvId,
+    language,
+    appendToResponse,
+    includeVideoLanguage,
+    ttl,
+    cache,
+  }: {
+    tvId: number;
+    language?: string;
+    appendToResponse: string;
+    includeVideoLanguage?: string;
+    ttl: number;
+    cache?: CacheStore;
+  }): Promise<T> =>
+    this.get<T>(
+      `/tv/${tvId}`,
+      {
+        params: {
+          language,
+          append_to_response: appendToResponse,
+          ...(includeVideoLanguage
+            ? { include_video_language: includeVideoLanguage }
+            : {}),
+        },
+      },
+      ttl,
+      { cache, transform: stripUnreadTvCredits }
+    );
+
   public getTvShow = async ({
     tvId,
     language = this.locale,
@@ -349,35 +418,26 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     language?: string;
   }): Promise<TmdbTvDetails> => {
     try {
-      const data = await this.get<TmdbTvDetails>(
-        `/tv/${tvId}`,
-        {
-          params: {
-            language,
-            append_to_response:
-              'aggregate_credits,credits,external_ids,keywords,videos,content_ratings,watch/providers',
-            include_video_language: language,
-          },
-        },
-        43200
-      );
+      const data = await this.getTvShowDetails<TmdbTvDetails>({
+        tvId,
+        language,
+        appendToResponse: TV_DETAILS_APPEND_TO_RESPONSE,
+        includeVideoLanguage: language,
+        ttl: TV_DETAILS_TTL,
+      });
 
       if (
         (!language || !language.startsWith('en')) &&
         !data.videos?.results?.some((video) => video.type === 'Trailer')
       ) {
         try {
-          const fallback = await this.get<TmdbTvDetails>(
-            `/tv/${tvId}`,
-            {
-              params: {
-                language,
-                append_to_response: 'videos',
-                include_video_language: 'en',
-              },
-            },
-            43200
-          );
+          const fallback = await this.getTvShowDetails<TmdbTvDetails>({
+            tvId,
+            language,
+            appendToResponse: 'videos',
+            includeVideoLanguage: 'en',
+            ttl: TV_DETAILS_TTL,
+          });
 
           const localizedVideos = data.videos?.results ?? [];
           const localizedVideoKeys = new Set(
@@ -405,6 +465,29 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
       throw new Error(`[TMDB] Failed to fetch TV show details: ${e.message}`, {
         cause: e,
       });
+    }
+  };
+
+  public getTvShowForScan = async ({
+    tvId,
+    language = this.locale,
+  }: {
+    tvId: number;
+    language?: string;
+  }): Promise<TmdbTvScanDetails> => {
+    try {
+      return await this.getTvShowDetails<TmdbTvScanDetails>({
+        tvId,
+        language,
+        appendToResponse: TV_SCAN_APPEND_TO_RESPONSE,
+        ttl: SCAN_TTL,
+        cache: this.scanCache,
+      });
+    } catch (e) {
+      throw new Error(
+        `[TMDB] Failed to fetch TV show scan details: ${e.message}`,
+        { cause: e }
+      );
     }
   };
 
@@ -871,33 +954,36 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     }
   };
 
-  public async getByExternalId({
-    externalId,
-    type,
-    language = this.locale,
-  }:
-    | {
-        externalId: string;
-        type: 'imdb';
-        language?: string;
-      }
-    | {
-        externalId: number;
-        type: 'tvdb';
-        language?: string;
-      }): Promise<TmdbExternalIdResponse> {
+  public async getByExternalId(
+    lookup: ExternalIdLookup
+  ): Promise<TmdbExternalIdResponse> {
+    return this.findByExternalId(lookup);
+  }
+
+  public async getByExternalIdForScan(
+    lookup: ExternalIdLookup
+  ): Promise<TmdbExternalIdResponse> {
+    return this.findByExternalId(lookup, this.scanCache, SCAN_TTL);
+  }
+
+  // Omitting ttl here silently falls back to DEFAULT_TTL, regardless of tier.
+  private async findByExternalId(
+    { externalId, type, language = this.locale }: ExternalIdLookup,
+    cache?: CacheStore,
+    ttl?: number
+  ): Promise<TmdbExternalIdResponse> {
     try {
-      const data = await this.get<TmdbExternalIdResponse>(
+      return await this.get<TmdbExternalIdResponse>(
         `/find/${externalId}`,
         {
           params: {
             external_source: type === 'imdb' ? 'imdb_id' : 'tvdb_id',
             language,
           },
-        }
+        },
+        ttl,
+        { cache }
       );
-
-      return data;
     } catch (e) {
       throw new Error(`[TMDB] Failed to find by external ID: ${e.message}`, {
         cause: e,
@@ -905,35 +991,31 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     }
   }
 
-  public async getMediaByImdbId({
+  // A /find hit can be stale, so confirm the matched id still exists.
+  public async resolveImdbIdForScan({
     imdbId,
-    language = this.locale,
   }: {
     imdbId: string;
-    language?: string;
-  }): Promise<TmdbMovieDetails | TmdbTvDetails> {
+  }): Promise<number> {
     try {
-      const extResponse = await this.getByExternalId({
-        externalId: imdbId,
-        type: 'imdb',
-      });
+      const extResponse = await this.findByExternalId(
+        { externalId: imdbId, type: 'imdb' },
+        this.scanCache,
+        SCAN_TTL
+      );
 
       if (extResponse.movie_results[0]) {
-        const movie = await this.getMovie({
-          movieId: extResponse.movie_results[0].id,
-          language,
-        });
-
-        return movie;
+        return await this.assertMovieExistsForScan(
+          extResponse.movie_results[0].id
+        );
       }
 
       if (extResponse.tv_results[0]) {
-        const tvshow = await this.getTvShow({
+        const tvShow = await this.getTvShowForScan({
           tvId: extResponse.tv_results[0].id,
-          language,
         });
 
-        return tvshow;
+        return tvShow.id;
       }
 
       throw new Error(`No movie or show returned from API for ID ${imdbId}`);
@@ -945,6 +1027,35 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     }
   }
 
+  private async assertMovieExistsForScan(movieId: number): Promise<number> {
+    const data = await this.get<{ id: number }>(
+      `/movie/${movieId}`,
+      {},
+      SCAN_TTL,
+      { cache: this.scanCache }
+    );
+
+    return data.id;
+  }
+
+  private async resolveTvdbId(
+    tvdbId: number,
+    cache?: CacheStore,
+    ttl?: number
+  ): Promise<number> {
+    const extResponse = await this.findByExternalId(
+      { externalId: tvdbId, type: 'tvdb' },
+      cache,
+      ttl
+    );
+
+    if (!extResponse.tv_results[0]) {
+      throw new Error(`No show returned from API for ID ${tvdbId}`);
+    }
+
+    return extResponse.tv_results[0].id;
+  }
+
   public async getShowByTvdbId({
     tvdbId,
     language = this.locale,
@@ -953,21 +1064,30 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     language?: string;
   }): Promise<TmdbTvDetails> {
     try {
-      const extResponse = await this.getByExternalId({
-        externalId: tvdbId,
-        type: 'tvdb',
+      return await this.getTvShow({
+        tvId: await this.resolveTvdbId(tvdbId),
+        language,
       });
+    } catch (e) {
+      throw new Error(
+        `[TMDB] Failed to get TV show using the external TVDB ID: ${e.message}`,
+        { cause: e }
+      );
+    }
+  }
 
-      if (extResponse.tv_results[0]) {
-        const tvshow = await this.getTvShow({
-          tvId: extResponse.tv_results[0].id,
-          language,
-        });
-
-        return tvshow;
-      }
-
-      throw new Error(`No show returned from API for ID ${tvdbId}`);
+  public async getShowByTvdbIdForScan({
+    tvdbId,
+    language = this.locale,
+  }: {
+    tvdbId: number;
+    language?: string;
+  }): Promise<TmdbTvScanDetails> {
+    try {
+      return await this.getTvShowForScan({
+        tvId: await this.resolveTvdbId(tvdbId, this.scanCache, SCAN_TTL),
+        language,
+      });
     } catch (e) {
       throw new Error(
         `[TMDB] Failed to get TV show using the external TVDB ID: ${e.message}`,

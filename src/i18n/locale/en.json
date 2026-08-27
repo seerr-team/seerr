@@ -1439,6 +1439,7 @@
   "components.UserList.passwordinfodescription": "Configure an application URL and enable email notifications to allow automatic password generation.",
   "components.UserList.plexuser": "Plex User",
   "components.UserList.role": "Role",
+  "components.UserList.searchUsers": "Search…",
   "components.UserList.sortBy": "Sort by {field}",
   "components.UserList.sortByJoined": "Sort by join date",
   "components.UserList.sortByRequests": "Sort by number of requests",

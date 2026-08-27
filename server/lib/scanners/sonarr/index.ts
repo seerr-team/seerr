@@ -6,6 +6,7 @@ import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import type {
   TmdbKeyword,
   TmdbTvDetails,
+  TmdbTvScanDetails,
 } from '@server/api/themoviedb/interfaces';
 import { MediaStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
@@ -157,18 +158,18 @@ class SonarrScanner
     try {
       const mediaRepository = getRepository(Media);
       const processableSeasons: ProcessableSeason[] = [];
-      let tvShow: TmdbTvDetails;
+      let tvShow: TmdbTvScanDetails | TmdbTvDetails;
 
       const media = await mediaRepository.findOne({
         where: { tvdbId: sonarrSeries.tvdbId },
       });
 
       if (!media || !media.tmdbId) {
-        tvShow = await this.tmdb.getShowByTvdbId({
+        tvShow = await this.tmdb.getShowByTvdbIdForScan({
           tvdbId: sonarrSeries.tvdbId,
         });
       } else {
-        tvShow = await this.tmdb.getTvShow({ tvId: media.tmdbId });
+        tvShow = await this.tmdb.getTvShowForScan({ tvId: media.tmdbId });
       }
 
       const tmdbId = tvShow.id;
