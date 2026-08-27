@@ -136,7 +136,8 @@ discoverRoutes.get('/movies', async (req, res, next) => {
       data.results.map((result) => ({
         tmdbId: result.id,
         mediaType: MediaType.MOVIE,
-      }))
+      })),
+      { includeActiveRequest: true }
     );
 
     let keywordData: TmdbKeyword[] = [];
@@ -208,7 +209,8 @@ discoverRoutes.get<{ language: string }>(
         data.results.map((result) => ({
           tmdbId: result.id,
           mediaType: MediaType.MOVIE,
-        }))
+        })),
+        { includeActiveRequest: true }
       );
 
       return res.status(200).json({
@@ -269,7 +271,8 @@ discoverRoutes.get<{ genreId: string }>(
         data.results.map((result) => ({
           tmdbId: result.id,
           mediaType: MediaType.MOVIE,
-        }))
+        })),
+        { includeActiveRequest: true }
       );
 
       return res.status(200).json({
@@ -320,7 +323,8 @@ discoverRoutes.get<{ studioId: string }>(
         data.results.map((result) => ({
           tmdbId: result.id,
           mediaType: MediaType.MOVIE,
-        }))
+        })),
+        { includeActiveRequest: true }
       );
 
       return res.status(200).json({
@@ -373,7 +377,8 @@ discoverRoutes.get('/movies/upcoming', async (req, res, next) => {
       data.results.map((result) => ({
         tmdbId: result.id,
         mediaType: MediaType.MOVIE,
-      }))
+      })),
+      { includeActiveRequest: true }
     );
 
     return res.status(200).json({
@@ -444,7 +449,8 @@ discoverRoutes.get('/tv', async (req, res, next) => {
       data.results.map((result) => ({
         tmdbId: result.id,
         mediaType: MediaType.TV,
-      }))
+      })),
+      { includeActiveRequest: true }
     );
 
     let keywordData: TmdbKeyword[] = [];
@@ -515,7 +521,8 @@ discoverRoutes.get<{ language: string }>(
         data.results.map((result) => ({
           tmdbId: result.id,
           mediaType: MediaType.TV,
-        }))
+        })),
+        { includeActiveRequest: true }
       );
 
       return res.status(200).json({
@@ -576,7 +583,8 @@ discoverRoutes.get<{ genreId: string }>(
         data.results.map((result) => ({
           tmdbId: result.id,
           mediaType: MediaType.TV,
-        }))
+        })),
+        { includeActiveRequest: true }
       );
 
       return res.status(200).json({
@@ -627,7 +635,8 @@ discoverRoutes.get<{ networkId: string }>(
         data.results.map((result) => ({
           tmdbId: result.id,
           mediaType: MediaType.TV,
-        }))
+        })),
+        { includeActiveRequest: true }
       );
 
       return res.status(200).json({
@@ -680,7 +689,8 @@ discoverRoutes.get('/tv/upcoming', async (req, res, next) => {
       data.results.map((result) => ({
         tmdbId: result.id,
         mediaType: MediaType.TV,
-      }))
+      })),
+      { includeActiveRequest: true }
     );
 
     return res.status(200).json({
@@ -753,7 +763,8 @@ discoverRoutes.get('/trending', async (req, res, next) => {
       data.results.map((result) => ({
         tmdbId: result.id,
         mediaType: isMovie(result) ? MediaType.MOVIE : MediaType.TV,
-      }))
+      })),
+      { includeActiveRequest: true }
     );
 
     return res.status(200).json({
@@ -800,7 +811,8 @@ discoverRoutes.get<{ keywordId: string }>(
         data.results.map((result) => ({
           tmdbId: result.id,
           mediaType: MediaType.MOVIE,
-        }))
+        })),
+        { includeActiveRequest: true }
       );
 
       return res.status(200).json({

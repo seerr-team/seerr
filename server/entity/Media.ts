@@ -35,7 +35,8 @@ import Season from './Season';
 class Media {
   public static async getRelatedMedia(
     user: User | undefined,
-    items: { tmdbId: number; mediaType: string }[]
+    items: { tmdbId: number; mediaType: string }[],
+    { includeActiveRequest = false }: { includeActiveRequest?: boolean } = {}
   ): Promise<Media[]> {
     const mediaRepository = getRepository(Media);
 
@@ -61,7 +62,11 @@ class Media {
         items.some((i) => i.tmdbId === m.tmdbId && i.mediaType === m.mediaType)
       );
 
-      if (getSettings().main.hideRequested && relatedMedia.length > 0) {
+      if (
+        includeActiveRequest &&
+        getSettings().main.hideRequested &&
+        relatedMedia.length > 0
+      ) {
         const activeRequestMediaIds = await mediaRepository
           .createQueryBuilder('media')
           .select('media.id', 'id')
