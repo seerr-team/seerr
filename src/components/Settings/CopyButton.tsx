@@ -12,6 +12,7 @@ type CopyButtonProps = {
 
   tooltipContent?: React.ReactNode;
   tooltipConfig?: Partial<Config>;
+  ariaLabel?: string;
 };
 
 const CopyButton = ({
@@ -20,6 +21,7 @@ const CopyButton = ({
   toastMessage,
   tooltipContent,
   tooltipConfig,
+  ariaLabel,
 }: CopyButtonProps) => {
   const [isCopied, setCopied] = useClipboard(textToCopy, {
     successDuration: 1000,
@@ -45,6 +47,7 @@ const CopyButton = ({
         className="input-action"
         type="button"
         disabled={disabled}
+        aria-label={ariaLabel}
       >
         <ClipboardDocumentIcon />
       </button>

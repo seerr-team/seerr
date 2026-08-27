@@ -1,4 +1,5 @@
 import { MediaServerType } from '@server/constants/server';
+import type { TraktSettingsUpdate } from '@server/interfaces/api/traktInterfaces';
 import { Permission } from '@server/lib/permissions';
 import { runMigrations } from '@server/lib/settings/migrator';
 import type { AvailableLocale } from '@server/types/languages';
@@ -63,6 +64,11 @@ export interface TautulliSettings {
   urlBase?: string;
   apiKey?: string;
   externalUrl?: string;
+}
+
+export interface TraktSettings {
+  clientId: string;
+  clientSecret: string;
 }
 
 export interface DVRSettings {
@@ -380,6 +386,7 @@ export interface AllSettings {
   plex: PlexSettings;
   jellyfin: JellyfinSettings;
   tautulli: TautulliSettings;
+  trakt: TraktSettings;
   radarr: RadarrSettings[];
   sonarr: SonarrSettings[];
   public: PublicSettings;
@@ -453,6 +460,10 @@ class Settings {
         apiKey: '',
       },
       tautulli: {},
+      trakt: {
+        clientId: '',
+        clientSecret: '',
+      },
       metadataSettings: {
         tv: MetadataProviderType.TMDB,
         anime: MetadataProviderType.TMDB,
@@ -668,6 +679,21 @@ class Settings {
 
   set tautulli(data: TautulliSettings) {
     this.data.tautulli = mergeSettings(this.data.tautulli, data);
+  }
+
+  get trakt(): TraktSettings {
+    return this.data.trakt;
+  }
+
+  set trakt(data: TraktSettingsUpdate) {
+    if (data.clientSecret === '') {
+      throw new Error('Trakt client secret must not be empty');
+    }
+
+    this.data.trakt = {
+      clientId: data.clientId,
+      clientSecret: data.clientSecret ?? this.data.trakt.clientSecret,
+    };
   }
 
   get metadataSettings(): MetadataSettings {

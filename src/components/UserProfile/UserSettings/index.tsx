@@ -89,7 +89,32 @@ const UserSettings = ({ children }: UserSettingsProps) => {
     },
   ];
 
-  if (currentUser?.id !== 1 && user.id === 1) {
+  const ownerSettingsRestricted = currentUser?.id !== 1 && user.id === 1;
+  const currentUserIsExactAdmin =
+    ((currentUser?.permissions ?? 0) & Permission.ADMIN) === Permission.ADMIN;
+  const isLinkedAccountsRoute =
+    router.pathname === '/users/[userId]/settings/linked-accounts';
+
+  if (
+    ownerSettingsRestricted &&
+    currentUserIsExactAdmin &&
+    isLinkedAccountsRoute
+  ) {
+    return (
+      <>
+        <PageTitle
+          title={[
+            intl.formatMessage(globalMessages.usersettings),
+            user.displayName,
+          ]}
+        />
+        <ProfileHeader user={user} isSettingsPage />
+        <div className="mt-10 text-white">{children}</div>
+      </>
+    );
+  }
+
+  if (ownerSettingsRestricted) {
     return (
       <>
         <PageTitle

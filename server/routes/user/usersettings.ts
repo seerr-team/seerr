@@ -25,8 +25,11 @@ import { Router } from 'express';
 import net from 'net';
 import { Not } from 'typeorm';
 import { canMakePermissionsChange } from '.';
+import traktUserRoutes from './trakt';
 
 const userSettingsRoutes = Router({ mergeParams: true });
+
+userSettingsRoutes.use('/trakt', traktUserRoutes);
 
 userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
   '/main',

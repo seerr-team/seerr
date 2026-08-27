@@ -53,7 +53,7 @@ const testConfig: DataSourceOptions = {
   synchronize: true,
   dropSchema: true,
   logging: boolFromEnv('DB_LOG_QUERIES'),
-  entities: ['server/entity/**/*.ts'],
+  entities: ['server/entity/**/!(*.test).ts'],
   migrations: ['server/migration/sqlite/**/*.ts'],
   subscribers: ['server/subscriber/**/*.ts'],
 };
@@ -67,7 +67,7 @@ const devConfig: DataSourceOptions = {
   migrationsRun: false,
   logging: boolFromEnv('DB_LOG_QUERIES'),
   enableWAL: true,
-  entities: ['server/entity/**/*.ts'],
+  entities: ['server/entity/**/!(*.test).ts'],
   migrations: ['server/migration/sqlite/**/*.ts'],
   subscribers: ['server/subscriber/**/*.ts'],
 };
@@ -81,7 +81,7 @@ const prodConfig: DataSourceOptions = {
   migrationsRun: false,
   logging: boolFromEnv('DB_LOG_QUERIES'),
   enableWAL: true,
-  entities: ['dist/entity/**/*.js'],
+  entities: ['dist/entity/**/!(*.test).js'],
   migrations: ['dist/migration/sqlite/**/*.js'],
   subscribers: ['dist/subscriber/**/*.js'],
 };
@@ -102,7 +102,7 @@ const postgresDevConfig: DataSourceOptions = {
   synchronize: false,
   migrationsRun: true,
   logging: boolFromEnv('DB_LOG_QUERIES'),
-  entities: ['server/entity/**/*.ts'],
+  entities: ['server/entity/**/!(*.test).ts'],
   migrations: ['server/migration/postgres/**/*.ts'],
   subscribers: ['server/subscriber/**/*.ts'],
 };
@@ -123,7 +123,7 @@ const postgresProdConfig: DataSourceOptions = {
   synchronize: false,
   migrationsRun: false,
   logging: boolFromEnv('DB_LOG_QUERIES'),
-  entities: ['dist/entity/**/*.js'],
+  entities: ['dist/entity/**/!(*.test).js'],
   migrations: ['dist/migration/postgres/**/*.js'],
   subscribers: ['dist/subscriber/**/*.js'],
 };

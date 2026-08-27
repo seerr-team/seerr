@@ -22,6 +22,7 @@ import PersonCard from '@app/components/PersonCard';
 import RequestButton from '@app/components/RequestButton';
 import Slider from '@app/components/Slider';
 import StatusBadge from '@app/components/StatusBadge';
+import TraktWatchStatus from '@app/components/TraktWatchStatus';
 import useDeepLinks from '@app/hooks/useDeepLinks';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
@@ -1091,6 +1092,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                 </span>
               </div>
             )}
+            <TraktWatchStatus mediaType="movie" tmdbId={data.id} />
             <div className="media-fact">
               <ExternalLinkBlock
                 mediaType="movie"

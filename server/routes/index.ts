@@ -29,6 +29,7 @@ import restartFlag from '@server/utils/restartFlag';
 import { isPerson } from '@server/utils/typeHelpers';
 import { Router } from 'express';
 import authRoutes from './auth';
+import traktCallbackRoutes from './auth/trakt';
 import blocklistRoutes from './blocklist';
 import collectionRoutes from './collection';
 import discoverRoutes, { createTmdbWithRegionLanguage } from './discover';
@@ -40,12 +41,26 @@ import personRoutes from './person';
 import requestRoutes from './request';
 import searchRoutes from './search';
 import serviceRoutes from './service';
+import traktRoutes from './trakt';
 import tvRoutes from './tv';
 import user from './user';
 
 const router = Router();
 
 router.use(checkUser);
+
+router.use(
+  ['/settings/trakt', '/user/:id/settings/trakt', '/trakt'],
+  (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        status: 401,
+        error: 'Authentication required',
+      });
+    }
+    return next();
+  }
+);
 
 router.get<unknown, StatusResponse>('/status', async (req, res) => {
   const settings = getSettings();
@@ -110,6 +125,8 @@ router.get('/status/appdata', (_req, res) => {
 });
 
 router.use('/user', isAuthenticated(), user);
+router.use('/auth/trakt', traktCallbackRoutes);
+router.use('/trakt', isAuthenticated(), traktRoutes);
 router.get('/settings/public', async (req, res) => {
   const settings = getSettings();
 

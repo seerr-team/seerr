@@ -24,6 +24,7 @@ import RequestButton from '@app/components/RequestButton';
 import RequestModal from '@app/components/RequestModal';
 import Slider from '@app/components/Slider';
 import StatusBadge from '@app/components/StatusBadge';
+import TraktWatchStatus from '@app/components/TraktWatchStatus';
 import Season from '@app/components/TvDetails/Season';
 import useDeepLinks from '@app/hooks/useDeepLinks';
 import useLocale from '@app/hooks/useLocale';
@@ -41,6 +42,7 @@ import {
   ArrowRightCircleIcon,
   CogIcon,
   ExclamationTriangleIcon,
+  EyeIcon,
   EyeSlashIcon,
   FilmIcon,
   MinusCircleIcon,
@@ -56,6 +58,7 @@ import {
   MediaType,
 } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
+import type { TraktSeasonWatchStatusResponse } from '@server/interfaces/api/traktInterfaces';
 import type { TvDetails as TvDetailsType } from '@server/models/Tv';
 import type { Crew } from '@server/models/common';
 import axios from 'axios';
@@ -93,6 +96,9 @@ const messages = defineMessages('components.TvDetails', {
   reportissue: 'Report an Issue',
   manageseries: 'Manage Series',
   seasonstitle: 'Seasons',
+  traktWatched: 'Watched',
+  traktWatchedCount: 'Watched {watched}/{total}',
+  traktWatchedBy: 'Watched by {names}',
   episodeCount: '{episodeCount, plural, one {# Episode} other {# Episodes}}',
   seasonnumber: 'Season {seasonNumber}',
   status4k: '4K {status}',
@@ -146,6 +152,23 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
 
   const { data: ratingData } = useSWR<RTRating>(
     `/api/v1/tv/${router.query.tvId}/ratings`
+  );
+
+  const { data: traktSeasonStatus } = useSWR<TraktSeasonWatchStatusResponse>(
+    user ? `/api/v1/trakt/watchstatus/tv/${router.query.tvId}/seasons` : null
+  );
+
+  const traktHouseholdSize = traktSeasonStatus?.householdSize ?? 0;
+
+  const traktSeasonsByNumber = useMemo(
+    () =>
+      new Map(
+        (traktSeasonStatus?.seasons ?? []).map((season) => [
+          season.seasonNumber,
+          season,
+        ])
+      ),
+    [traktSeasonStatus]
   );
 
   const sortedCrew = useMemo(
@@ -850,6 +873,11 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                   return null;
                 }
 
+                const traktSeason = traktSeasonsByNumber.get(
+                  season.seasonNumber
+                );
+                const traktWatchers = traktSeason?.watchedBy ?? [];
+
                 return (
                   <Disclosure key={`season-discoslure-${season.seasonNumber}`}>
                     {({ open }) => (
@@ -875,38 +903,97 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                               })}
                             </Badge>
                           </div>
-                          {((!mSeason &&
-                            request?.status === MediaRequestStatus.APPROVED) ||
-                            mSeason?.status === MediaStatus.PROCESSING ||
-                            (request?.status === MediaRequestStatus.APPROVED &&
-                              mSeason?.status === MediaStatus.DELETED)) && (
-                            <>
-                              <div className="hidden md:flex">
-                                <Badge badgeType="primary">
-                                  {intl.formatMessage(globalMessages.requested)}
-                                </Badge>
-                              </div>
-                              <div className="flex md:hidden">
-                                <StatusBadgeMini
-                                  status={MediaStatus.PROCESSING}
-                                />
-                              </div>
-                            </>
+                          {traktWatchers.length > 0 && (
+                            <Tooltip
+                              content={
+                                <ul>
+                                  {traktWatchers.map((watcher) => (
+                                    <li key={watcher.userId}>
+                                      {watcher.displayName}
+                                    </li>
+                                  ))}
+                                </ul>
+                              }
+                              tooltipConfig={{
+                                trigger: ['hover', 'click'],
+                                followCursor: false,
+                              }}
+                            >
+                              {/* Must stay non-focusable: it sits inside the season toggle. */}
+                              <span className="flex">
+                                <span className="sr-only">
+                                  {intl.formatMessage(messages.traktWatchedBy, {
+                                    names: traktWatchers
+                                      .map((watcher) => watcher.displayName)
+                                      .join(', '),
+                                  })}
+                                </span>
+                                <div className="hidden md:flex">
+                                  <Badge badgeType="success">
+                                    {traktHouseholdSize > 1
+                                      ? intl.formatMessage(
+                                          messages.traktWatchedCount,
+                                          {
+                                            watched: traktWatchers.length,
+                                            total: traktHouseholdSize,
+                                          }
+                                        )
+                                      : intl.formatMessage(
+                                          messages.traktWatched
+                                        )}
+                                  </Badge>
+                                </div>
+                                <div className="flex md:hidden">
+                                  <EyeIcon
+                                    className="w-5 rounded-full bg-green-500/80 p-0.5 text-green-100 shadow-md ring-1 ring-green-400"
+                                    aria-label={intl.formatMessage(
+                                      messages.traktWatched
+                                    )}
+                                  />
+                                </div>
+                              </span>
+                            </Tooltip>
                           )}
-                          {((!mSeason &&
-                            request?.status === MediaRequestStatus.PENDING) ||
-                            mSeason?.status === MediaStatus.PENDING) && (
-                            <>
-                              <div className="hidden md:flex">
-                                <Badge badgeType="warning">
-                                  {intl.formatMessage(globalMessages.pending)}
-                                </Badge>
-                              </div>
-                              <div className="flex md:hidden">
-                                <StatusBadgeMini status={MediaStatus.PENDING} />
-                              </div>
-                            </>
-                          )}
+                          {traktWatchers.length === 0 &&
+                            ((!mSeason &&
+                              request?.status ===
+                                MediaRequestStatus.APPROVED) ||
+                              mSeason?.status === MediaStatus.PROCESSING ||
+                              (request?.status ===
+                                MediaRequestStatus.APPROVED &&
+                                mSeason?.status === MediaStatus.DELETED)) && (
+                              <>
+                                <div className="hidden md:flex">
+                                  <Badge badgeType="primary">
+                                    {intl.formatMessage(
+                                      globalMessages.requested
+                                    )}
+                                  </Badge>
+                                </div>
+                                <div className="flex md:hidden">
+                                  <StatusBadgeMini
+                                    status={MediaStatus.PROCESSING}
+                                  />
+                                </div>
+                              </>
+                            )}
+                          {traktWatchers.length === 0 &&
+                            ((!mSeason &&
+                              request?.status === MediaRequestStatus.PENDING) ||
+                              mSeason?.status === MediaStatus.PENDING) && (
+                              <>
+                                <div className="hidden md:flex">
+                                  <Badge badgeType="warning">
+                                    {intl.formatMessage(globalMessages.pending)}
+                                  </Badge>
+                                </div>
+                                <div className="flex md:hidden">
+                                  <StatusBadgeMini
+                                    status={MediaStatus.PENDING}
+                                  />
+                                </div>
+                              </>
+                            )}
                           {mSeason?.status ===
                             MediaStatus.PARTIALLY_AVAILABLE && (
                             <>
@@ -1084,6 +1171,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                             <Season
                               tvId={data.id}
                               seasonNumber={season.seasonNumber}
+                              traktEpisodes={traktSeason?.episodes}
                             />
                           </Disclosure.Panel>
                         </Transition>
@@ -1313,6 +1401,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                 </span>
               </div>
             )}
+            <TraktWatchStatus mediaType="tv" tmdbId={data.id} />
             <div className="media-fact">
               <ExternalLinkBlock
                 mediaType="tv"
