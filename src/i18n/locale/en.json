@@ -1498,6 +1498,7 @@
   "components.UserProfile.UserSettings.UserGeneralSettings.generalsettings": "General Settings",
   "components.UserProfile.UserSettings.UserGeneralSettings.languageDefault": "Default ({language})",
   "components.UserProfile.UserSettings.UserGeneralSettings.localuser": "Local User",
+  "components.UserProfile.UserSettings.UserGeneralSettings.mediaLanguage": "Media Language",
   "components.UserProfile.UserSettings.UserGeneralSettings.mediaServerUser": "{mediaServerName} User",
   "components.UserProfile.UserSettings.UserGeneralSettings.movierequestlimit": "Movie Request Limit",
   "components.UserProfile.UserSettings.UserGeneralSettings.originallanguage": "Discover Language",

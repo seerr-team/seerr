@@ -16,6 +16,8 @@ const tvRoutes = Router();
 
 tvRoutes.get('/:id', async (req, res, next) => {
   const tmdb = new TheMovieDb();
+  const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
+  const requestedLanguage = (req.query.language as string) || mediaLocale;
 
   try {
     const tmdbTv = await tmdb.getTvShow({
@@ -28,7 +30,7 @@ tvRoutes.get('/:id', async (req, res, next) => {
       : await getMetadataProvider('tv');
     const tv = await metadataProvider.getTvShow({
       tvId: Number(req.params.id),
-      language: (req.query.language as string) ?? req.locale,
+      language: requestedLanguage,
     });
     const media = await Media.getMedia(tv.id, MediaType.TV);
 
@@ -44,12 +46,25 @@ tvRoutes.get('/:id', async (req, res, next) => {
 
     const data = mapTvDetails(tv, media, onUserWatchlist);
 
-    // TMDB issue where it doesnt fallback to English when no overview is available in requested locale.
+    // TMDB falls name back to original_name when a locale has no translation, but leaves
+    // overview empty.
     if (!data.overview) {
-      const tvEnglish = await metadataProvider.getTvShow({
-        tvId: Number(req.params.id),
-      });
-      data.overview = tvEnglish.overview;
+      const fallbackLanguage =
+        !req.locale || requestedLanguage === req.locale ? 'en' : req.locale;
+
+      if (fallbackLanguage !== requestedLanguage) {
+        const tvFallback = await metadataProvider.getTvShow({
+          tvId: Number(req.params.id),
+          language: fallbackLanguage,
+        });
+        data.overview = tvFallback.overview;
+        if (data.name === data.originalName) {
+          data.name = tvFallback.name;
+        }
+        if (!data.tagline) {
+          data.tagline = tvFallback.tagline;
+        }
+      }
     }
 
     return res.status(200).json(data);
@@ -67,6 +82,8 @@ tvRoutes.get('/:id', async (req, res, next) => {
 });
 
 tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
+  const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
+
   try {
     const tmdb = new TheMovieDb();
     const tmdbTv = await tmdb.getTvShow({
@@ -81,7 +98,7 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
     const season = await metadataProvider.getTvSeason({
       tvId: Number(req.params.id),
       seasonNumber: Number(req.params.seasonNumber),
-      language: (req.query.language as string) ?? req.locale,
+      language: (req.query.language as string) || mediaLocale,
     });
 
     return res.status(200).json(mapSeasonWithEpisodes(season));
@@ -101,12 +118,13 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
 
 tvRoutes.get('/:id/recommendations', async (req, res, next) => {
   const tmdb = new TheMovieDb();
+  const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
 
   try {
     const results = await tmdb.getTvRecommendations({
       tvId: Number(req.params.id),
       page: Number(req.query.page),
-      language: (req.query.language as string) ?? req.locale,
+      language: (req.query.language as string) || mediaLocale,
     });
 
     const media = await Media.getRelatedMedia(
@@ -145,12 +163,13 @@ tvRoutes.get('/:id/recommendations', async (req, res, next) => {
 
 tvRoutes.get('/:id/similar', async (req, res, next) => {
   const tmdb = new TheMovieDb();
+  const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
 
   try {
     const results = await tmdb.getTvSimilar({
       tvId: Number(req.params.id),
       page: Number(req.query.page),
-      language: (req.query.language as string) ?? req.locale,
+      language: (req.query.language as string) || mediaLocale,
     });
 
     const media = await Media.getRelatedMedia(

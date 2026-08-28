@@ -264,10 +264,11 @@ router.get<{ id: string }>('/network/:id', async (req, res, next) => {
 
 router.get('/genres/movie', isAuthenticated(), async (req, res, next) => {
   const tmdb = new TheMovieDb();
+  const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
 
   try {
     const genres = await tmdb.getMovieGenres({
-      language: (req.query.language as string) ?? req.locale,
+      language: (req.query.language as string) || mediaLocale,
     });
 
     return res.status(200).json(genres);
@@ -285,10 +286,11 @@ router.get('/genres/movie', isAuthenticated(), async (req, res, next) => {
 
 router.get('/genres/tv', isAuthenticated(), async (req, res, next) => {
   const tmdb = new TheMovieDb();
+  const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
 
   try {
     const genres = await tmdb.getTvGenres({
-      language: (req.query.language as string) ?? req.locale,
+      language: (req.query.language as string) || mediaLocale,
     });
 
     return res.status(200).json(genres);

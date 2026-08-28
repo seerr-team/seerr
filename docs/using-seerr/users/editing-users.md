@@ -33,6 +33,12 @@ You cannot leave this field blank.
 
 Users can override the [global display language](/using-seerr/settings/general#display-language) to use Seerr in their preferred language.
 
+### Media Language
+
+Users can choose a separate media language for media metadata (such as titles, overviews, and descriptions), independently from the UI display language.
+
+If no media language is selected, Seerr falls back to the effective display language.
+
 ### Discover Region & Discover Language
 
 Users can override the [global filter settings](/using-seerr/settings/general#discover-region-discover-language--streaming-region) to suit their own preferences.
