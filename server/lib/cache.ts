@@ -10,7 +10,8 @@ export type AvailableCacheIds =
   | 'github'
   | 'plextv'
   | 'plexwatchlist'
-  | 'tvdb';
+  | 'tvdb'
+  | 'anilist';
 
 const DEFAULT_TTL = 300;
 
@@ -249,6 +250,10 @@ class CacheManager {
     tvdb: new Cache('tvdb', 'The TVDB API', {
       stdTtl: 21600,
       max: TVDB_MAX_KEYS,
+    }),
+    anilist: new Cache('anilist', 'AniList API', {
+      stdTtl: 86400,
+      checkPeriod: 60 * 30,
     }),
   };
 
