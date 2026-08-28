@@ -27,6 +27,13 @@ const messages = defineMessages('components.Discover.FilterSlideover', {
   activefilters:
     '{count, plural, one {# Active Filter} other {# Active Filters}}',
   releaseDate: 'Release Date',
+  minimumRelease: 'Minimum Release',
+  anyRelease: 'Any',
+  limitedTheatrical: 'Theatrical (Limited)',
+  theatrical: 'Theatrical',
+  digital: 'Digital',
+  physical: 'Physical',
+  tvRelease: 'TV',
   firstAirDate: 'First Air Date',
   from: 'From',
   to: 'To',
@@ -133,6 +140,49 @@ const FilterSlideover = ({
         </div>
         {type === 'movie' && (
           <>
+            <span className="text-lg font-semibold">
+              {intl.formatMessage(messages.minimumRelease)}
+            </span>
+            <select
+              id="releaseType"
+              name="releaseType"
+              value={currentFilters.releaseType ?? ''}
+              onChange={(e) => {
+                const value = e.target.value || undefined;
+                // with_release_type only filters when paired with a date range,
+                // so default the "To" date to today if the user hasn't set one.
+                if (value && !currentFilters[dateLte]) {
+                  const now = new Date();
+                  const today = `${now.getFullYear()}-${String(
+                    now.getMonth() + 1
+                  ).padStart(2, '0')}-${String(now.getDate()).padStart(
+                    2,
+                    '0'
+                  )}`;
+                  batchUpdateQueryParams({
+                    releaseType: value,
+                    [dateLte]: today,
+                  });
+                } else {
+                  updateQueryParams('releaseType', value);
+                }
+              }}
+            >
+              <option value="">
+                {intl.formatMessage(messages.anyRelease)}
+              </option>
+              <option value="2">
+                {intl.formatMessage(messages.limitedTheatrical)}
+              </option>
+              <option value="3">
+                {intl.formatMessage(messages.theatrical)}
+              </option>
+              <option value="4">{intl.formatMessage(messages.digital)}</option>
+              <option value="5">{intl.formatMessage(messages.physical)}</option>
+              <option value="6">
+                {intl.formatMessage(messages.tvRelease)}
+              </option>
+            </select>
             <span className="text-lg font-semibold">
               {intl.formatMessage(messages.studio)}
             </span>
