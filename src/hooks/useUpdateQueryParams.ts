@@ -67,7 +67,23 @@ export const mergeQueryString = (
   router: NextRouter,
   query: ParsedUrlQuery
 ): MergedQueryString => {
-  const cleanedQuery = filterQueryString(router, router.query);
+  // Use router.asPath instead of router.query so consecutive updates build on
+  // the URL that is already in the address bar. router.query lags behind
+  // pending router.replace/ push calls, which caused rapid filter changes to
+  // overwrite each other instead of merging.
+  const asPathQuery = router.asPath.includes('?')
+    ? router.asPath.split('?')[1].split('#')[0]
+    : '';
+  const currentQuery: ParsedUrlQuery = {};
+
+  if (asPathQuery) {
+    const params = new URLSearchParams(asPathQuery);
+    params.forEach((value, key) => {
+      currentQuery[key] = value;
+    });
+  }
+
+  const cleanedQuery = filterQueryString(router, currentQuery);
 
   const mergedQuery = Object.assign({}, cleanedQuery, query);
 

@@ -13,6 +13,7 @@ import type {
   TmdbKeywordSearchResponse,
 } from '@server/api/themoviedb/interfaces';
 import type { UserResultsResponse } from '@server/interfaces/api/userInterfaces';
+import type { Region } from '@server/lib/settings';
 import type {
   Keyword,
   ProductionCompany,
@@ -36,12 +37,18 @@ const messages = defineMessages('components.Selector', {
   showmore: 'Show More',
   showless: 'Show Less',
   searchStatus: 'Select status...',
+  searchCountries: 'Select countries…',
   returningSeries: 'Returning Series',
   planned: 'Planned',
   inProduction: 'In Production',
   ended: 'Ended',
   canceled: 'Canceled',
   pilot: 'Pilot',
+  allGenres: 'All Genres',
+  allStudios: 'All Studios',
+  allKeywords: '-',
+  allStatuses: 'All Statuses',
+  allCountries: 'All Production Countries',
 });
 
 type SingleVal = {
@@ -134,7 +141,7 @@ export const CompanySelector = ({
           : intl.formatMessage(messages.nooptions)
       }
       loadOptions={loadCompanyOptions}
-      placeholder={intl.formatMessage(messages.searchStudios)}
+      placeholder={intl.formatMessage(messages.allStudios)}
       onChange={(value) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onChange(value as any);
@@ -207,7 +214,7 @@ export const GenreSelector = ({
       isMulti={isMulti}
       isDisabled={isDisabled}
       loadOptions={loadGenreOptions}
-      placeholder={intl.formatMessage(messages.searchGenres)}
+      placeholder={intl.formatMessage(messages.allGenres)}
       onChange={(value) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onChange(value as any);
@@ -278,7 +285,7 @@ export const StatusSelector = ({
       isMulti={isMulti}
       isDisabled={isDisabled}
       loadOptions={loadStatusOptions}
-      placeholder={intl.formatMessage(messages.searchStatus)}
+      placeholder={intl.formatMessage(messages.allStatuses)}
       onChange={(value) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onChange(value as any);
@@ -359,7 +366,7 @@ export const KeywordSelector = ({
       }
       value={selectedValue}
       loadOptions={loadKeywordOptions}
-      placeholder={intl.formatMessage(messages.searchKeywords)}
+      placeholder={intl.formatMessage(messages.allKeywords)}
       onChange={(value) => {
         setSelectedValue(value);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -625,6 +632,78 @@ export const UserSelector = ({
       isDisabled={isDisabled}
       loadOptions={loadUserOptions}
       placeholder={intl.formatMessage(messages.searchUsers)}
+      onChange={(value) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onChange(value as any);
+      }}
+    />
+  );
+};
+
+type CountrySelectorProps = {
+  defaultValue?: string;
+  isMulti?: boolean;
+  isDisabled?: boolean;
+  onChange: (value: MultiValue<SingleVal> | null) => void;
+};
+
+export const CountrySelector = ({
+  defaultValue,
+  isMulti = true,
+  isDisabled,
+  onChange,
+}: CountrySelectorProps) => {
+  const intl = useIntl();
+  const [defaultDataValue, setDefaultDataValue] = useState<
+    { label: string; value: string }[] | null
+  >(null);
+
+  useEffect(() => {
+    const loadDefaultCountries = async (): Promise<void> => {
+      if (!defaultValue) {
+        setDefaultDataValue(null);
+        return;
+      }
+      const codes = defaultValue.split(',').filter(Boolean);
+      if (!codes.length) {
+        setDefaultDataValue(null);
+        return;
+      }
+      const response = await axios.get<Region[]>('/api/v1/regions');
+      const countryData = codes
+        .map((code) => response.data.find((r) => r.iso_3166_1 === code))
+        .filter((r): r is Region => !!r)
+        .map((r) => ({ label: r.english_name, value: r.iso_3166_1 }));
+      setDefaultDataValue(countryData);
+    };
+
+    loadDefaultCountries();
+  }, [defaultValue]);
+
+  const loadCountryOptions = async (inputValue: string) => {
+    const results = await axios.get<Region[]>('/api/v1/regions');
+    return results.data
+      .map((region) => ({
+        label: region.english_name,
+        value: region.iso_3166_1,
+      }))
+      .filter(({ label }) =>
+        label.toLowerCase().includes(inputValue.toLowerCase())
+      );
+  };
+
+  return (
+    <AsyncSelect
+      key={`country-select-${defaultDataValue}`}
+      className="react-select-container"
+      classNamePrefix="react-select"
+      defaultValue={isMulti ? defaultDataValue : defaultDataValue?.[0]}
+      defaultOptions
+      cacheOptions
+      isMulti={isMulti}
+      isDisabled={isDisabled}
+      loadOptions={loadCountryOptions}
+      placeholder={intl.formatMessage(messages.allCountries)}
       onChange={(value) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onChange(value as any);

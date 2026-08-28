@@ -23,6 +23,8 @@ const messages = defineMessages('components.Discover.DiscoverMovies', {
   discovermovies: 'Movies',
   activefilters:
     '{count, plural, one {# Active Filter} other {# Active Filters}}',
+  resultsFilteredHint:
+    'Some results may be hidden by your exclude filters — the total shown is an estimate.',
   sortPopularityAsc: 'Popularity Ascending',
   sortPopularityDesc: 'Popularity Descending',
   sortReleaseDateAsc: 'Release Date Ascending',
@@ -59,6 +61,7 @@ const DiscoverMovies = () => {
     titles,
     fetchMore,
     error,
+    firstResultData,
   } = useDiscover<MovieResult, unknown, FilterOptions>(
     '/api/v1/discover/movies',
     preparedFilters
@@ -132,6 +135,11 @@ const DiscoverMovies = () => {
           </div>
         </div>
       </div>
+      {firstResultData?.paginationIsEstimate && (
+        <div className="mb-4 flex items-center justify-between rounded-md border border-amber-700 bg-amber-900/30 px-4 py-2 text-sm text-amber-200">
+          <span>{intl.formatMessage(messages.resultsFilteredHint)}</span>
+        </div>
+      )}
       <ListView
         items={titles}
         isEmpty={isEmpty}

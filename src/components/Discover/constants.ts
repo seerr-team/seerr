@@ -1,6 +1,7 @@
 import defineMessages from '@app/utils/defineMessages';
+import { DiscoverFilterQuerySchema as QueryFilterOptions } from '@server/discover/schema';
 import type { ParsedUrlQuery } from 'querystring';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 type AvailableColors =
   | 'black'
@@ -90,33 +91,6 @@ export const sliderTitles = defineMessages('components.Discover', {
   tmdbtvstreamingservices: 'TMDB TV Streaming Services',
 });
 
-export const QueryFilterOptions = z.object({
-  sortBy: z.string().optional(),
-  primaryReleaseDateGte: z.string().optional(),
-  primaryReleaseDateLte: z.string().optional(),
-  firstAirDateGte: z.string().optional(),
-  firstAirDateLte: z.string().optional(),
-  studio: z.string().optional(),
-  genre: z.string().optional(),
-  keywords: z.string().optional(),
-  excludeKeywords: z.string().optional(),
-  language: z.string().optional(),
-  withRuntimeGte: z.string().optional(),
-  withRuntimeLte: z.string().optional(),
-  voteAverageGte: z.string().optional(),
-  voteAverageLte: z.string().optional(),
-  voteCountLte: z.string().optional(),
-  voteCountGte: z.string().optional(),
-  watchRegion: z.string().optional(),
-  watchProviders: z.string().optional(),
-  status: z.string().optional(),
-  certification: z.string().optional(),
-  certificationGte: z.string().optional(),
-  certificationLte: z.string().optional(),
-  certificationCountry: z.string().optional(),
-  certificationMode: z.enum(['exact', 'range']).optional(),
-});
-
 export type FilterOptions = z.infer<typeof QueryFilterOptions>;
 
 export const prepareFilterValues = (
@@ -164,6 +138,34 @@ export const prepareFilterValues = (
 
   if (values.excludeKeywords) {
     filterValues.excludeKeywords = values.excludeKeywords;
+  }
+
+  if (values.excludeGenres) {
+    filterValues.excludeGenres = values.excludeGenres;
+  }
+
+  if (values.excludeStudio) {
+    filterValues.excludeStudio = values.excludeStudio;
+  }
+
+  if (values.excludeWatchProviders) {
+    filterValues.excludeWatchProviders = values.excludeWatchProviders;
+  }
+
+  if (values.excludeLanguages) {
+    filterValues.excludeLanguages = values.excludeLanguages;
+  }
+
+  if (values.excludeStatus) {
+    filterValues.excludeStatus = values.excludeStatus;
+  }
+
+  if (values.country) {
+    filterValues.country = values.country;
+  }
+
+  if (values.excludeCountries) {
+    filterValues.excludeCountries = values.excludeCountries;
   }
 
   if (values.language) {

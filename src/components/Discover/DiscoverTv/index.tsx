@@ -23,6 +23,8 @@ const messages = defineMessages('components.Discover.DiscoverTv', {
   discovertv: 'Series',
   activefilters:
     '{count, plural, one {# Active Filter} other {# Active Filters}}',
+  resultsFilteredHint:
+    'Some results may be hidden by your exclude filters — the total shown is an estimate.',
   sortPopularityAsc: 'Popularity Ascending',
   sortPopularityDesc: 'Popularity Descending',
   sortFirstAirDateAsc: 'First Air Date Ascending',
@@ -59,7 +61,8 @@ const DiscoverTv = () => {
     titles,
     fetchMore,
     error,
-  } = useDiscover<TvResult, never, FilterOptions>('/api/v1/discover/tv', {
+    firstResultData,
+  } = useDiscover<TvResult, unknown, FilterOptions>('/api/v1/discover/tv', {
     ...preparedFilters,
   });
 
@@ -130,6 +133,11 @@ const DiscoverTv = () => {
           </div>
         </div>
       </div>
+      {firstResultData?.paginationIsEstimate && (
+        <div className="mb-4 flex items-center justify-between rounded-md border border-amber-700 bg-amber-900/30 px-4 py-2 text-sm text-amber-200">
+          <span>{intl.formatMessage(messages.resultsFilteredHint)}</span>
+        </div>
+      )}
       <ListView
         items={titles}
         isEmpty={isEmpty}
