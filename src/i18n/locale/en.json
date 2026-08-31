@@ -211,6 +211,7 @@
   "components.IssueModal.CreateIssueModal.problemepisode": "Affected Episode",
   "components.IssueModal.CreateIssueModal.problemseason": "Affected Season",
   "components.IssueModal.CreateIssueModal.providedetail": "Please provide a detailed explanation of the issue you encountered.",
+  "components.IssueModal.CreateIssueModal.reportas": "Report As",
   "components.IssueModal.CreateIssueModal.reportissue": "Report an Issue",
   "components.IssueModal.CreateIssueModal.season": "Season {seasonNumber}",
   "components.IssueModal.CreateIssueModal.submitissue": "Submit Issue",

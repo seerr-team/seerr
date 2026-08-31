@@ -1,15 +1,22 @@
 import Button from '@app/components/Common/Button';
+import CachedImage from '@app/components/Common/CachedImage';
 import Modal from '@app/components/Common/Modal';
 import { issueOptions } from '@app/components/IssueModal/constants';
 import useSettings from '@app/hooks/useSettings';
 import useToasts from '@app/hooks/useToasts';
+import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { RadioGroup } from '@headlessui/react';
-import { ArrowRightCircleIcon } from '@heroicons/react/24/solid';
+import { Listbox, RadioGroup, Transition } from '@headlessui/react';
+import {
+  ArrowRightCircleIcon,
+  CheckIcon,
+  ChevronDownIcon,
+} from '@heroicons/react/24/solid';
 import { MediaStatus } from '@server/constants/media';
 import type Issue from '@server/entity/Issue';
+import type { UserResultsResponse } from '@server/interfaces/api/userInterfaces';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
@@ -37,6 +44,7 @@ const messages = defineMessages('components.IssueModal.CreateIssueModal', {
   toastviewissue: 'View Issue',
   reportissue: 'Report an Issue',
   submitissue: 'Submit Issue',
+  reportas: 'Report As',
 });
 
 const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
@@ -60,10 +68,15 @@ const CreateIssueModal = ({
 }: CreateIssueModalProps) => {
   const intl = useIntl();
   const settings = useSettings();
-  const { hasPermission } = useUser();
+  const { user: currentUser, hasPermission } = useUser();
   const { addToast } = useToasts();
   const { data, error } = useSWR<MovieDetails | TvDetails>(
     tmdbId ? `/api/v1/${mediaType}/${tmdbId}` : null
+  );
+  const { data: userData } = useSWR<UserResultsResponse>(
+    hasPermission(Permission.MANAGE_ISSUES)
+      ? '/api/v1/user?take=1000&sort=displayname'
+      : null
   );
 
   if (!tmdbId) {
@@ -97,6 +110,7 @@ const CreateIssueModal = ({
         message: '',
         problemSeason: availableSeasons.length === 1 ? availableSeasons[0] : 0,
         problemEpisode: 0,
+        userId: currentUser?.id,
       }}
       validationSchema={CreateIssueModalSchema}
       onSubmit={async (values) => {
@@ -108,6 +122,9 @@ const CreateIssueModal = ({
             problemSeason: values.problemSeason,
             problemEpisode:
               values.problemSeason > 0 ? values.problemEpisode : 0,
+            ...(hasPermission(Permission.MANAGE_ISSUES) && values.userId
+              ? { userId: values.userId }
+              : {}),
           });
 
           if (data) {
@@ -147,6 +164,9 @@ const CreateIssueModal = ({
       }}
     >
       {({ handleSubmit, values, setFieldValue, errors, touched }) => {
+        const selectedUser: User | undefined =
+          userData?.results.find((u) => u.id === values.userId) ?? currentUser;
+
         return (
           <Modal
             backgroundClickable
@@ -310,6 +330,123 @@ const CreateIssueModal = ({
                   <div className="error">{errors.message}</div>
                 )}
             </div>
+            {hasPermission(Permission.MANAGE_ISSUES) &&
+              selectedUser &&
+              (userData?.results ?? []).length > 1 && (
+                <div className="mt-4">
+                  <Listbox
+                    as="div"
+                    value={selectedUser}
+                    onChange={(value: User) =>
+                      setFieldValue('userId', value.id)
+                    }
+                    className="space-y-1"
+                  >
+                    {({ open }) => (
+                      <>
+                        <Listbox.Label>
+                          {intl.formatMessage(messages.reportas)}
+                        </Listbox.Label>
+                        <div className="relative">
+                          <span className="inline-block w-full rounded-md shadow-sm">
+                            <Listbox.Button className="focus:shadow-outline-blue relative w-full cursor-default rounded-md border border-gray-700 bg-gray-800 py-2 pl-3 pr-10 text-left text-white transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none sm:text-sm sm:leading-5">
+                              <span className="flex items-center">
+                                <CachedImage
+                                  type="avatar"
+                                  src={selectedUser.avatar}
+                                  alt=""
+                                  className="h-6 w-6 flex-shrink-0 rounded-full object-cover"
+                                  width={24}
+                                  height={24}
+                                />
+                                <span className="ml-3 block">
+                                  {selectedUser.displayName}
+                                </span>
+                                {selectedUser.displayName.toLowerCase() !==
+                                  selectedUser.email && (
+                                  <span className="ml-1 truncate text-gray-400">
+                                    ({selectedUser.email})
+                                  </span>
+                                )}
+                              </span>
+                              <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500">
+                                <ChevronDownIcon className="h-5 w-5" />
+                              </span>
+                            </Listbox.Button>
+                          </span>
+
+                          <Transition
+                            show={open}
+                            enter="transition-opacity ease-in duration-300"
+                            enterFrom="opacity-0"
+                            enterTo="opacity-100"
+                            leave="transition-opacity ease-in duration-100"
+                            leaveFrom="opacity-100"
+                            leaveTo="opacity-0"
+                            className="mt-1 w-full rounded-md border border-gray-700 bg-gray-800 shadow-lg"
+                          >
+                            <Listbox.Options
+                              static
+                              className="shadow-xs max-h-60 overflow-auto rounded-md py-1 text-base leading-6 focus:outline-none sm:text-sm sm:leading-5"
+                            >
+                              {userData?.results.map((user) => (
+                                <Listbox.Option key={user.id} value={user}>
+                                  {({ selected, active }) => (
+                                    <div
+                                      className={`${
+                                        active
+                                          ? 'bg-indigo-600 text-white'
+                                          : 'text-gray-300'
+                                      } relative cursor-default select-none py-2 pl-8 pr-4`}
+                                    >
+                                      <span
+                                        className={`${
+                                          selected
+                                            ? 'font-semibold'
+                                            : 'font-normal'
+                                        } flex items-center`}
+                                      >
+                                        <CachedImage
+                                          type="avatar"
+                                          src={user.avatar}
+                                          alt=""
+                                          className="h-6 w-6 flex-shrink-0 rounded-full object-cover"
+                                          width={24}
+                                          height={24}
+                                        />
+                                        <span className="ml-3 block flex-shrink-0">
+                                          {user.displayName}
+                                        </span>
+                                        {user.displayName.toLowerCase() !==
+                                          user.email && (
+                                          <span className="ml-1 truncate text-gray-400">
+                                            ({user.email})
+                                          </span>
+                                        )}
+                                      </span>
+                                      {selected && (
+                                        <span
+                                          className={`${
+                                            active
+                                              ? 'text-white'
+                                              : 'text-indigo-600'
+                                          } absolute inset-y-0 left-0 flex items-center pl-1.5`}
+                                        >
+                                          <CheckIcon className="h-5 w-5" />
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </Listbox.Option>
+                              ))}
+                            </Listbox.Options>
+                          </Transition>
+                        </div>
+                      </>
+                    )}
+                  </Listbox>
+                </div>
+              )}
           </Modal>
         );
       }}
