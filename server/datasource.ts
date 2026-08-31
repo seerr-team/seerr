@@ -16,6 +16,7 @@ import { IssueCommentSubscriber } from '@server/subscriber/IssueCommentSubscribe
 import { IssueSubscriber } from '@server/subscriber/IssueSubscriber';
 import { MediaRequestSubscriber } from '@server/subscriber/MediaRequestSubscriber';
 import { MediaSubscriber } from '@server/subscriber/MediaSubscriber';
+import { isPgsql } from '@server/utils/dbType';
 import fs from 'fs';
 import type { TlsOptions } from 'tls';
 import type { DataSourceOptions, EntityTarget, Repository } from 'typeorm';
@@ -169,8 +170,6 @@ const postgresProdConfig: DataSourceOptions = {
   migrations: ['dist/migration/postgres/**/*.js'],
   subscribers,
 };
-
-export const isPgsql = process.env.DB_TYPE === 'postgres';
 
 function getDataSource(): DataSourceOptions {
   if (process.env.NODE_ENV === 'test') {
