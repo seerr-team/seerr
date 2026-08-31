@@ -1,0 +1,47 @@
+import type { MigrationInterface, QueryRunner } from 'typeorm';
+
+export class AddEpisodeTable1788195151277 implements MigrationInterface {
+  name = 'AddEpisodeTable1788195151277';
+
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `CREATE TABLE "episode" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "episodeNumber" integer NOT NULL, "status" integer NOT NULL DEFAULT (1), "status4k" integer NOT NULL DEFAULT (1), "createdAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "updatedAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "seasonId" integer, CONSTRAINT "UQ_619ebf32ab6d66ecab8cc9ba7b3" UNIQUE ("seasonId", "episodeNumber"))`
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_e73d28c1e5e3c85125163f7c9c" ON "episode" ("seasonId") `
+    );
+    await queryRunner.query(`DROP INDEX "IDX_e73d28c1e5e3c85125163f7c9c"`);
+    await queryRunner.query(
+      `CREATE TABLE "temporary_episode" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "episodeNumber" integer NOT NULL, "status" integer NOT NULL DEFAULT (1), "status4k" integer NOT NULL DEFAULT (1), "createdAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "updatedAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "seasonId" integer, CONSTRAINT "UQ_619ebf32ab6d66ecab8cc9ba7b3" UNIQUE ("seasonId", "episodeNumber"), CONSTRAINT "FK_e73d28c1e5e3c85125163f7c9cd" FOREIGN KEY ("seasonId") REFERENCES "season" ("id") ON DELETE CASCADE ON UPDATE NO ACTION)`
+    );
+    await queryRunner.query(
+      `INSERT INTO "temporary_episode"("id", "episodeNumber", "status", "status4k", "createdAt", "updatedAt", "seasonId") SELECT "id", "episodeNumber", "status", "status4k", "createdAt", "updatedAt", "seasonId" FROM "episode"`
+    );
+    await queryRunner.query(`DROP TABLE "episode"`);
+    await queryRunner.query(
+      `ALTER TABLE "temporary_episode" RENAME TO "episode"`
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_e73d28c1e5e3c85125163f7c9c" ON "episode" ("seasonId") `
+    );
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP INDEX "IDX_e73d28c1e5e3c85125163f7c9c"`);
+    await queryRunner.query(
+      `ALTER TABLE "episode" RENAME TO "temporary_episode"`
+    );
+    await queryRunner.query(
+      `CREATE TABLE "episode" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "episodeNumber" integer NOT NULL, "status" integer NOT NULL DEFAULT (1), "status4k" integer NOT NULL DEFAULT (1), "createdAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "updatedAt" datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP), "seasonId" integer, CONSTRAINT "UQ_619ebf32ab6d66ecab8cc9ba7b3" UNIQUE ("seasonId", "episodeNumber"))`
+    );
+    await queryRunner.query(
+      `INSERT INTO "episode"("id", "episodeNumber", "status", "status4k", "createdAt", "updatedAt", "seasonId") SELECT "id", "episodeNumber", "status", "status4k", "createdAt", "updatedAt", "seasonId" FROM "temporary_episode"`
+    );
+    await queryRunner.query(`DROP TABLE "temporary_episode"`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_e73d28c1e5e3c85125163f7c9c" ON "episode" ("seasonId") `
+    );
+    await queryRunner.query(`DROP INDEX "IDX_e73d28c1e5e3c85125163f7c9c"`);
+    await queryRunner.query(`DROP TABLE "episode"`);
+  }
+}
