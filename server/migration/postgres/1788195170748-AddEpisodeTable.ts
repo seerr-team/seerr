@@ -1,11 +1,11 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddEpisodeTable1780843263648 implements MigrationInterface {
-  name = 'AddEpisodeTable1780843263648';
+export class AddEpisodeTable1788195170748 implements MigrationInterface {
+  name = 'AddEpisodeTable1788195170748';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `CREATE TABLE "episode" ("id" SERIAL NOT NULL, "episodeNumber" integer NOT NULL, "status" integer NOT NULL DEFAULT '1', "status4k" integer NOT NULL DEFAULT '1', "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "seasonId" integer, CONSTRAINT "PK_7258b95d6d2bf7f621845a0e143" PRIMARY KEY ("id"))`
+      `CREATE TABLE "episode" ("id" SERIAL NOT NULL, "episodeNumber" integer NOT NULL, "status" integer NOT NULL DEFAULT '1', "status4k" integer NOT NULL DEFAULT '1', "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "seasonId" integer, CONSTRAINT "UQ_619ebf32ab6d66ecab8cc9ba7b3" UNIQUE ("seasonId", "episodeNumber"), CONSTRAINT "PK_7258b95d6d2bf7f621845a0e143" PRIMARY KEY ("id"))`
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_e73d28c1e5e3c85125163f7c9c" ON "episode" ("seasonId") `
