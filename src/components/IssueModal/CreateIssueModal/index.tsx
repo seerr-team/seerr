@@ -6,7 +6,7 @@ import useToasts from '@app/hooks/useToasts';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { RadioGroup } from '@headlessui/react';
+import { Label, RadioGroup } from '@headlessui/react';
 import { ArrowRightCircleIcon } from '@heroicons/react/24/solid';
 import { MediaStatus } from '@server/constants/media';
 import type Issue from '@server/entity/Issue';
@@ -241,9 +241,7 @@ const CreateIssueModal = ({
               onChange={(issue) => setFieldValue('selectedIssue', issue)}
               className="mt-4"
             >
-              <RadioGroup.Label className="sr-only">
-                Select an Issue
-              </RadioGroup.Label>
+              <Label className="sr-only">Select an Issue</Label>
               <div className="-space-y-px overflow-hidden rounded-md bg-gray-800/30">
                 {issueOptions.map((setting, index) => (
                   <RadioGroup.Option
@@ -277,14 +275,14 @@ const CreateIssueModal = ({
                           <span className="h-1.5 w-1.5 rounded-full bg-white" />
                         </span>
                         <div className="ml-3 flex flex-col">
-                          <RadioGroup.Label
+                          <Label
                             as="span"
                             className={`block text-sm font-medium ${
                               checked ? 'text-indigo-100' : 'text-gray-100'
                             }`}
                           >
                             {intl.formatMessage(setting.name)}
-                          </RadioGroup.Label>
+                          </Label>
                         </div>
                       </>
                     )}
