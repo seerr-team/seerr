@@ -175,6 +175,7 @@ const SettingsNetwork = () => {
                 apiRequestTimeout: Number(values.apiRequestTimeout) * 1000,
               });
               mutate('/api/v1/settings/public');
+              // the key StatusChecker polls on, so the restart modal shows at once
               mutate('/api/v1/status?checkUpdateAvailable=false');
 
               addToast(intl.formatMessage(messages.toastSettingsSuccess), {

@@ -2,13 +2,20 @@ import assert from 'node:assert/strict';
 import { beforeEach, describe, it, mock } from 'node:test';
 
 import ExternalAPI from '@server/api/externalapi';
-import { MediaType } from '@server/constants/media';
+import {
+  MediaRequestStatus,
+  MediaStatus,
+  MediaType,
+} from '@server/constants/media';
 import { getRepository } from '@server/datasource';
+import Media from '@server/entity/Media';
 import {
   DuplicateMediaRequestError,
   MediaRequest,
+  NoSeasonsAvailableError,
   QuotaRestrictedError,
 } from '@server/entity/MediaRequest';
+import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
 import { Permission } from '@server/lib/permissions';
@@ -168,5 +175,257 @@ describe('MediaRequest.request', () => {
       1
     );
     assert.strictEqual(await seasonRequestRepository.count(), 3);
+  });
+
+  it('allows a different user to request a movie once it is already available', async () => {
+    const requestRepository = getRepository(MediaRequest);
+    const mediaRepository = getRepository(Media);
+    const requester = await seedRequester(5);
+    const otherRequester = await createRequester('second@seerr.dev');
+
+    await MediaRequest.request(
+      { mediaId: 77777, mediaType: MediaType.MOVIE, is4k: false },
+      requester
+    );
+
+    const media = await mediaRepository.findOneOrFail({
+      where: { tmdbId: 77777, mediaType: MediaType.MOVIE },
+    });
+    // Use a raw update, not save(), so MediaSubscriber's auto-complete-on-
+    // available cascade doesn't fire and change the first request's status
+    // out from under this test.
+    await mediaRepository.update(media.id, { status: MediaStatus.AVAILABLE });
+
+    const second = await MediaRequest.request(
+      { mediaId: 77777, mediaType: MediaType.MOVIE, is4k: false },
+      otherRequester
+    );
+
+    assert.strictEqual(second.requestedBy.id, otherRequester.id);
+    assert.strictEqual(await requestRepository.count(), 2);
+  });
+
+  it('still blocks the same user from requesting a movie again even once it is available', async () => {
+    const mediaRepository = getRepository(Media);
+    const requester = await seedRequester(5);
+
+    await MediaRequest.request(
+      { mediaId: 88888, mediaType: MediaType.MOVIE, is4k: false },
+      requester
+    );
+
+    const media = await mediaRepository.findOneOrFail({
+      where: { tmdbId: 88888, mediaType: MediaType.MOVIE },
+    });
+    await mediaRepository.update(media.id, { status: MediaStatus.AVAILABLE });
+
+    await assert.rejects(
+      () =>
+        MediaRequest.request(
+          { mediaId: 88888, mediaType: MediaType.MOVIE, is4k: false },
+          requester
+        ),
+      DuplicateMediaRequestError
+    );
+  });
+
+  it('still blocks the same user from requesting a movie again once their own request is COMPLETED and the media is still available', async () => {
+    const requestRepository = getRepository(MediaRequest);
+    const mediaRepository = getRepository(Media);
+    const requester = await seedRequester(5);
+
+    const first = await MediaRequest.request(
+      { mediaId: 77776, mediaType: MediaType.MOVIE, is4k: false },
+      requester
+    );
+    // Raw updates, not save(), so MediaSubscriber's afterUpdate cascade
+    // doesn't fire and interfere with this test's isolated setup.
+    await requestRepository.update(first.id, {
+      status: MediaRequestStatus.COMPLETED,
+    });
+    const media = await mediaRepository.findOneOrFail({
+      where: { tmdbId: 77776, mediaType: MediaType.MOVIE },
+    });
+    await mediaRepository.update(media.id, { status: MediaStatus.AVAILABLE });
+
+    await assert.rejects(
+      () =>
+        MediaRequest.request(
+          { mediaId: 77776, mediaType: MediaType.MOVIE, is4k: false },
+          requester
+        ),
+      DuplicateMediaRequestError
+    );
+  });
+
+  it('allows the same user to re-request a movie once their COMPLETED request no longer has available media (e.g. it was deleted)', async () => {
+    const requestRepository = getRepository(MediaRequest);
+    const mediaRepository = getRepository(Media);
+    const requester = await seedRequester(5);
+
+    const first = await MediaRequest.request(
+      { mediaId: 77775, mediaType: MediaType.MOVIE, is4k: false },
+      requester
+    );
+    await requestRepository.update(first.id, {
+      status: MediaRequestStatus.COMPLETED,
+    });
+    const media = await mediaRepository.findOneOrFail({
+      where: { tmdbId: 77775, mediaType: MediaType.MOVIE },
+    });
+    await mediaRepository.update(media.id, { status: MediaStatus.DELETED });
+
+    const second = await MediaRequest.request(
+      { mediaId: 77775, mediaType: MediaType.MOVIE, is4k: false },
+      requester
+    );
+
+    assert.strictEqual(second.requestedBy.id, requester.id);
+  });
+
+  it('allows a different user to request a season already held by another active request once that season is available', async () => {
+    const seasonRequestRepository = getRepository(SeasonRequest);
+    const mediaRepository = getRepository(Media);
+    const seasonRepository = getRepository(Season);
+    const requester = await seedRequester(5);
+    const otherRequester = await createRequester('second@seerr.dev');
+
+    await MediaRequest.request(
+      { mediaId: 99999, mediaType: MediaType.TV, seasons: [1], is4k: false },
+      requester
+    );
+
+    const media = await mediaRepository.findOneOrFail({
+      where: { tmdbId: 99999, mediaType: MediaType.TV },
+    });
+    await seasonRepository.save(
+      new Season({
+        seasonNumber: 1,
+        status: MediaStatus.AVAILABLE,
+        status4k: MediaStatus.UNKNOWN,
+        media: Promise.resolve(media),
+      })
+    );
+
+    const second = await MediaRequest.request(
+      { mediaId: 99999, mediaType: MediaType.TV, seasons: [1], is4k: false },
+      otherRequester
+    );
+
+    assert.strictEqual(second.requestedBy.id, otherRequester.id);
+    assert.strictEqual(
+      await seasonRequestRepository.count({ where: { seasonNumber: 1 } }),
+      2
+    );
+  });
+
+  it('allows requesting an already-available season that has no existing request at all', async () => {
+    const mediaRepository = getRepository(Media);
+    const seasonRepository = getRepository(Season);
+    const requester = await createRequester('third@seerr.dev');
+
+    // Seed the media/season directly with no prior request, mirroring a
+    // title whose availability was picked up by a library scan rather than
+    // a request.
+    const media = await mediaRepository.save(
+      new Media({
+        mediaType: MediaType.TV,
+        tmdbId: 111111,
+        status: MediaStatus.UNKNOWN,
+        status4k: MediaStatus.UNKNOWN,
+      })
+    );
+    await seasonRepository.save(
+      new Season({
+        seasonNumber: 1,
+        status: MediaStatus.AVAILABLE,
+        status4k: MediaStatus.UNKNOWN,
+        media: Promise.resolve(media),
+      })
+    );
+
+    const request = await MediaRequest.request(
+      { mediaId: 111111, mediaType: MediaType.TV, seasons: [1], is4k: false },
+      requester
+    );
+
+    assert.strictEqual(request.requestedBy.id, requester.id);
+    assert.strictEqual(
+      request.seasons.map((s) => s.seasonNumber).includes(1),
+      true
+    );
+  });
+
+  it('still blocks the same user from requesting a season again once their own request is COMPLETED and the season is still available', async () => {
+    const requestRepository = getRepository(MediaRequest);
+    const mediaRepository = getRepository(Media);
+    const seasonRepository = getRepository(Season);
+    const requester = await seedRequester(5);
+
+    const first = await MediaRequest.request(
+      { mediaId: 111112, mediaType: MediaType.TV, seasons: [1], is4k: false },
+      requester
+    );
+    await requestRepository.update(first.id, {
+      status: MediaRequestStatus.COMPLETED,
+    });
+    const media = await mediaRepository.findOneOrFail({
+      where: { tmdbId: 111112, mediaType: MediaType.TV },
+    });
+    await seasonRepository.save(
+      new Season({
+        seasonNumber: 1,
+        status: MediaStatus.AVAILABLE,
+        status4k: MediaStatus.UNKNOWN,
+        media: Promise.resolve(media),
+      })
+    );
+
+    await assert.rejects(
+      () =>
+        MediaRequest.request(
+          {
+            mediaId: 111112,
+            mediaType: MediaType.TV,
+            seasons: [1],
+            is4k: false,
+          },
+          requester
+        ),
+      NoSeasonsAvailableError
+    );
+  });
+
+  it('allows the same user to re-request a season once their COMPLETED request season is no longer available (e.g. it was deleted)', async () => {
+    const requestRepository = getRepository(MediaRequest);
+    const mediaRepository = getRepository(Media);
+    const seasonRepository = getRepository(Season);
+    const requester = await seedRequester(5);
+
+    const first = await MediaRequest.request(
+      { mediaId: 111113, mediaType: MediaType.TV, seasons: [1], is4k: false },
+      requester
+    );
+    await requestRepository.update(first.id, {
+      status: MediaRequestStatus.COMPLETED,
+    });
+    const media = await mediaRepository.findOneOrFail({
+      where: { tmdbId: 111113, mediaType: MediaType.TV },
+    });
+    await seasonRepository.save(
+      new Season({
+        seasonNumber: 1,
+        status: MediaStatus.DELETED,
+        status4k: MediaStatus.UNKNOWN,
+        media: Promise.resolve(media),
+      })
+    );
+
+    const second = await MediaRequest.request(
+      { mediaId: 111113, mediaType: MediaType.TV, seasons: [1], is4k: false },
+      requester
+    );
+
+    assert.strictEqual(second.requestedBy.id, requester.id);
   });
 });

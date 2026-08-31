@@ -1,5 +1,6 @@
 import logger from '@server/logger';
 import type { AxiosResponse } from 'axios';
+import { isEqual } from 'lodash';
 import ServarrBase from './base';
 
 export interface RadarrMovieOptions {
@@ -124,16 +125,36 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
       const movie = await this.getMovieByTmdbId(options.tmdbId);
 
       if (movie.hasFile) {
+        const { tags: mergedTags, changed } = this.mergeTags(
+          movie.tags,
+          options.tags
+        );
+
+        if (!changed) {
+          logger.info(
+            'Title already exists and is available. Skipping add and returning success',
+            {
+              label: 'Radarr',
+              movie,
+            }
+          );
+          return movie;
+        }
+
+        const response = await this.axios.put<RadarrMovie>(`/movie`, {
+          ...movie,
+          tags: mergedTags,
+        });
         logger.info(
-          'Title already exists and is available. Skipping add and returning success',
+          'Title already exists and is available. Merged requester tag.',
           {
             label: 'Radarr',
-            movie,
+            movieId: response.data.id,
+            movieTitle: response.data.title,
           }
         );
-        return movie;
+        return response.data;
       }
-
       // movie exists in Radarr but is neither downloaded nor monitored
       if (movie.id && !movie.monitored) {
         const response = await this.axios.put<RadarrMovie>(`/movie`, {
@@ -183,27 +204,48 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
 
       if (movie.id) {
         // Movie exists and is already monitored
-        logger.info('Movie is already monitored in Radarr.', {
-          label: 'Radarr',
-          movieId: movie.id,
-          movieTitle: movie.title,
-          hasFile: movie.hasFile,
-        });
+        const { tags: mergedTags, changed: tagsChanged } = this.mergeTags(
+          movie.tags,
+          options.tags
+        );
 
+        let current = movie;
+        if (tagsChanged) {
+          const response = await this.axios.put<RadarrMovie>(`/movie`, {
+            ...movie,
+            tags: mergedTags,
+          });
+          logger.info(
+            'Movie already exists in Radarr and merged requester tag.',
+            {
+              label: 'Radarr',
+              movieId: response.data.id,
+              movieTitle: response.data.title,
+            }
+          );
+          current = response.data;
+        } else {
+          logger.info('Movie is already monitored in Radarr.', {
+            label: 'Radarr',
+            movieId: movie.id,
+            movieTitle: movie.title,
+            hasFile: movie.hasFile,
+          });
+        }
         // If searchNow is requested and movie doesn't have a file, trigger search
         if (options.searchNow && !movie.hasFile) {
           logger.info(
             'Triggering search for existing monitored movie without file',
             {
               label: 'Radarr',
-              movieId: movie.id,
-              movieTitle: movie.title,
+              movieId: current.id,
+              movieTitle: current.title,
             }
           );
-          this.searchMovie(movie.id);
+          this.searchMovie(current.id);
         }
 
-        return movie;
+        return current;
       }
 
       const response = await this.axios.post<RadarrMovie>(`/movie`, {
@@ -249,6 +291,18 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
       throw new Error('Failed to add movie to Radarr', { cause: e });
     }
   };
+
+  private mergeTags(
+    existingTags: number[],
+    incomingTags?: number[]
+  ): { tags: number[]; changed: boolean } {
+    if (!incomingTags) {
+      return { tags: existingTags, changed: false };
+    }
+    const merged = Array.from(new Set([...existingTags, ...incomingTags]));
+    const changed = !isEqual(new Set(merged), new Set(existingTags));
+    return { tags: merged, changed };
+  }
 
   public async searchMovie(movieId: number): Promise<void> {
     logger.info('Executing movie search command', {

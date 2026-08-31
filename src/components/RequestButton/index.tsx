@@ -13,6 +13,7 @@ import {
 import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type Media from '@server/entity/Media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
+import { isRequestStillBlocking } from '@server/lib/requestRules';
 import axios from 'axios';
 import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -92,6 +93,32 @@ const RequestButton = ({
       : undefined;
   }, [active4kRequests, user]);
 
+  const blockingRequest = useMemo(
+    () =>
+      media?.requests.find(
+        (r) =>
+          !r.is4k &&
+          isRequestStillBlocking({
+            requestStatus: r.status,
+            isOwnRequest: r.requestedBy.id === user?.id,
+            targetAvailable: media?.status === MediaStatus.AVAILABLE,
+          })
+      ),
+    [media, user]
+  );
+  const blocking4kRequest = useMemo(
+    () =>
+      media?.requests.find(
+        (r) =>
+          r.is4k &&
+          isRequestStillBlocking({
+            requestStatus: r.status,
+            isOwnRequest: r.requestedBy.id === user?.id,
+            targetAvailable: media?.status4k === MediaStatus.AVAILABLE,
+          })
+      ),
+    [media, user]
+  );
   const modifyRequest = async (
     request: MediaRequest,
     type: 'approve' | 'decline'
@@ -292,14 +319,19 @@ const RequestButton = ({
       svg: <ArrowDownTrayIcon />,
     });
   } else if (
-    mediaType === 'tv' &&
-    (!activeRequest || activeRequest.requestedBy.id !== user?.id) &&
-    hasPermission([Permission.REQUEST, Permission.REQUEST_TV], {
-      type: 'or',
-    }) &&
+    !blockingRequest &&
+    hasPermission(
+      [
+        Permission.REQUEST,
+        mediaType === 'movie'
+          ? Permission.REQUEST_MOVIE
+          : Permission.REQUEST_TV,
+      ],
+      { type: 'or' }
+    ) &&
     media &&
     media.status !== MediaStatus.BLOCKLISTED &&
-    !isShowComplete
+    !(mediaType === 'tv' && isShowComplete)
   ) {
     buttons.push({
       id: 'request-more',
@@ -339,15 +371,21 @@ const RequestButton = ({
       svg: <ArrowDownTrayIcon />,
     });
   } else if (
-    mediaType === 'tv' &&
-    (!active4kRequest || active4kRequest.requestedBy.id !== user?.id) &&
-    hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_TV], {
-      type: 'or',
-    }) &&
+    !blocking4kRequest &&
+    hasPermission(
+      [
+        Permission.REQUEST_4K,
+        mediaType === 'movie'
+          ? Permission.REQUEST_4K_MOVIE
+          : Permission.REQUEST_4K_TV,
+      ],
+      { type: 'or' }
+    ) &&
     media &&
     media.status4k !== MediaStatus.BLOCKLISTED &&
-    !is4kShowComplete &&
-    settings.currentSettings.series4kEnabled
+    !(mediaType === 'tv' && is4kShowComplete) &&
+    ((settings.currentSettings.movie4kEnabled && mediaType === 'movie') ||
+      (settings.currentSettings.series4kEnabled && mediaType === 'tv'))
   ) {
     buttons.push({
       id: 'request-more-4k',
