@@ -89,7 +89,6 @@ const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
 
     return ReactDOM.createPortal(
       <Transition.Child
-        appear
         as="div"
         className="fixed bottom-0 left-0 right-0 top-0 z-50 flex h-full w-full items-center justify-center bg-gray-800/70"
         enter="transition-opacity duration-300"
