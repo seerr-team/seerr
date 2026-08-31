@@ -40,7 +40,7 @@ const SlideOver = ({
       enter="transition-opacity ease-in-out duration-300"
       enterFrom="opacity-0"
       enterTo="opacity-100"
-      leave="transition-opacity ease-in-out duration-300"
+      leave="transition-opacity ease-in-out duration-500 sm:duration-700"
       leaveFrom="opacity-100"
       leaveTo="opacity-0"
     >
