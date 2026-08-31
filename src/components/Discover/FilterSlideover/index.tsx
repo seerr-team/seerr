@@ -67,30 +67,16 @@ const FilterSlideover = ({
   const { currentSettings } = useSettings();
   const updateQueryParams = useUpdateQueryParams({});
   const batchUpdateQueryParams = useBatchUpdateQueryParams({});
-  const {
-    saveFilters,
-    getSavedFilters,
-    removeSavedFilters,
-    updateLocalStorage,
-  } = useSavedFilters(type);
-
-  const savedFilters = getSavedFilters();
+  const { saveFilters, getSavedFilters, removeSavedFilters } =
+    useSavedFilters(type);
 
   useEffect(() => {
-    if (
-      savedFilters &&
-      updateLocalStorage.current &&
-      Object.keys(currentFilters).length === 0
-    ) {
+    const savedFilters = getSavedFilters();
+    if (savedFilters && Object.keys(currentFilters).length === 0) {
       batchUpdateQueryParams(savedFilters);
-      updateLocalStorage.current = false;
     }
-  }, [
-    savedFilters,
-    batchUpdateQueryParams,
-    updateLocalStorage,
-    currentFilters,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const dateGte =
     type === 'movie' ? 'primaryReleaseDateGte' : 'firstAirDateGte';

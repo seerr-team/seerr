@@ -2,7 +2,6 @@ import type { FilterOptions } from '@app/components/Discover/constants';
 import { QueryFilterOptions } from '@app/components/Discover/constants';
 import useToasts from '@app/hooks/useToasts';
 import defineMessages from '@app/utils/defineMessages';
-import { useRef } from 'react';
 import { useIntl } from 'react-intl';
 
 type FilterType = 'movie' | 'tv';
@@ -18,7 +17,6 @@ const useSavedFilters = (type: FilterType) => {
   const intl = useIntl();
   const { addToast } = useToasts();
   const key = storageKey(type);
-  const updateLocalStorage = useRef(true);
 
   const saveFilters = (filters: FilterOptions) => {
     try {
@@ -65,7 +63,6 @@ const useSavedFilters = (type: FilterType) => {
     saveFilters,
     getSavedFilters,
     removeSavedFilters,
-    updateLocalStorage,
   };
 };
 
