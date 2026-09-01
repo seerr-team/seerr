@@ -106,10 +106,11 @@ const RequestCardError = ({ requestData }: RequestCardErrorProps) => {
             </div>
             {requestData && (
               <>
-                {hasPermission(
-                  [Permission.MANAGE_REQUESTS, Permission.REQUEST_VIEW],
-                  { type: 'or' }
-                ) && (
+                {requestData.requestedBy &&
+                  hasPermission(
+                    [Permission.MANAGE_REQUESTS, Permission.REQUEST_VIEW],
+                    { type: 'or' }
+                  ) && (
                   <div className="card-field !hidden sm:!block">
                     <Link
                       href={`/users/${requestData.requestedBy.id}`}
@@ -383,11 +384,12 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
           >
             {isMovie(title) ? title.title : title.name}
           </Link>
-          {hasPermission(
-            [Permission.MANAGE_REQUESTS, Permission.REQUEST_VIEW],
-            { type: 'or' }
-          ) && (
-            <div className="card-field">
+          {requestData.requestedBy &&
+            hasPermission(
+              [Permission.MANAGE_REQUESTS, Permission.REQUEST_VIEW],
+              { type: 'or' }
+            ) && (
+              <div className="card-field">
               <Link
                 href={`/users/${requestData.requestedBy.id}`}
                 className="group flex items-center"
@@ -565,7 +567,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
               )}
             {requestData.status === MediaRequestStatus.PENDING &&
               !hasPermission(Permission.MANAGE_REQUESTS) &&
-              requestData.requestedBy.id === user?.id &&
+              requestData.requestedBy?.id === user?.id &&
               (requestData.type === 'tv' ||
                 hasPermission(Permission.REQUEST_ADVANCED)) && (
                 <div>
@@ -596,7 +598,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
               )}
             {requestData.status === MediaRequestStatus.PENDING &&
               !hasPermission(Permission.MANAGE_REQUESTS) &&
-              requestData.requestedBy.id === user?.id && (
+              requestData.requestedBy?.id === user?.id && (
                 <div>
                   <Button
                     buttonType="danger"

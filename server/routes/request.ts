@@ -429,13 +429,17 @@ requestRoutes.get('/:requestId', async (req, res, next) => {
   const requestRepository = getRepository(MediaRequest);
 
   try {
-    const request = await requestRepository.findOneOrFail({
+    const request = await requestRepository.findOne({
       where: { id: Number(req.params.requestId) },
       relations: { requestedBy: true, modifiedBy: true },
     });
 
+    if (!request) {
+      return next({ status: 404, message: 'Request not found.' });
+    }
+
     if (
-      request.requestedBy.id !== req.user?.id &&
+      request.requestedBy?.id !== req.user?.id &&
       !req.user?.hasPermission(
         [Permission.MANAGE_REQUESTS, Permission.REQUEST_VIEW],
         { type: 'or' }
@@ -474,7 +478,7 @@ requestRoutes.put<{ requestId: string }>(
       }
 
       if (
-        (request.requestedBy.id !== req.user?.id ||
+        (request.requestedBy?.id !== req.user?.id ||
           (req.body.mediaType !== 'tv' &&
             !req.user?.hasPermission(Permission.REQUEST_ADVANCED))) &&
         !req.user?.hasPermission(Permission.MANAGE_REQUESTS)
@@ -496,7 +500,7 @@ requestRoutes.put<{ requestId: string }>(
 
       if (
         req.body.userId &&
-        req.body.userId !== request.requestedBy.id &&
+        req.body.userId !== request.requestedBy?.id &&
         !req.user?.hasPermission([
           Permission.MANAGE_USERS,
           Permission.MANAGE_REQUESTS,
@@ -609,14 +613,18 @@ requestRoutes.delete('/:requestId', async (req, res, next) => {
   const requestRepository = getRepository(MediaRequest);
 
   try {
-    const request = await requestRepository.findOneOrFail({
+    const request = await requestRepository.findOne({
       where: { id: Number(req.params.requestId) },
       relations: { requestedBy: true, modifiedBy: true },
     });
 
+    if (!request) {
+      return next({ status: 404, message: 'Request not found.' });
+    }
+
     if (
       !req.user?.hasPermission(Permission.MANAGE_REQUESTS) &&
-      (request.requestedBy.id !== req.user?.id ||
+      (request.requestedBy?.id !== req.user?.id ||
         request.status !== MediaRequestStatus.PENDING)
     ) {
       return next({
@@ -646,10 +654,14 @@ requestRoutes.post<{
     const requestRepository = getRepository(MediaRequest);
 
     try {
-      const request = await requestRepository.findOneOrFail({
+      const request = await requestRepository.findOne({
         where: { id: Number(req.params.requestId) },
         relations: { requestedBy: true, modifiedBy: true },
       });
+
+      if (!request) {
+        return next({ status: 404, message: 'Request not found.' });
+      }
 
       if (request.status !== MediaRequestStatus.FAILED) {
         return next({
@@ -684,10 +696,14 @@ requestRoutes.post<{
     const requestRepository = getRepository(MediaRequest);
 
     try {
-      const request = await requestRepository.findOneOrFail({
+      const request = await requestRepository.findOne({
         where: { id: Number(req.params.requestId) },
         relations: { requestedBy: true, modifiedBy: true },
       });
+
+      if (!request) {
+        return next({ status: 404, message: 'Request not found.' });
+      }
 
       let newStatus: MediaRequestStatus;
 
