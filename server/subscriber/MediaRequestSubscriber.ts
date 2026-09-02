@@ -964,7 +964,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
   ): Promise<void> {
     const fullMedia = await manager.findOneOrFail(Media, {
       where: { id: entity.media.id },
-      relations: { requests: true },
+      relations: { requests: { seasons: true }, seasons: true },
     });
 
     const hasActive = fullMedia.requests.some(
@@ -1015,6 +1015,40 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       }
 
       await manager.save(cleanMedia);
+    }
+
+    // Reset stale seasons or re-requests fail ("No seasons available to request")
+    if (fullMedia.mediaType === MediaType.TV) {
+      const statusKey = entity.is4k ? 'status4k' : 'status';
+      const removedSeasonNumbers = new Set(
+        entity.seasons.map((s) => s.seasonNumber)
+      );
+      const activeSeasonNumbers = new Set(
+        fullMedia.requests
+          .filter(
+            (request) =>
+              request.is4k === entity.is4k &&
+              request.status !== MediaRequestStatus.COMPLETED &&
+              request.status !== MediaRequestStatus.DECLINED
+          )
+          .flatMap((request) => request.seasons.map((s) => s.seasonNumber))
+      );
+
+      const changedSeasons: Season[] = [];
+      for (const season of fullMedia.seasons) {
+        if (
+          (season[statusKey] === MediaStatus.PENDING ||
+            season[statusKey] === MediaStatus.PROCESSING) &&
+          removedSeasonNumbers.has(season.seasonNumber) &&
+          !activeSeasonNumbers.has(season.seasonNumber)
+        ) {
+          season[statusKey] = MediaStatus.UNKNOWN;
+          changedSeasons.push(season);
+        }
+      }
+      if (changedSeasons.length) {
+        await manager.save(changedSeasons);
+      }
     }
   }
 

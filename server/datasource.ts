@@ -1,9 +1,52 @@
+import { Blocklist } from '@server/entity/Blocklist';
+import DiscoverSlider from '@server/entity/DiscoverSlider';
+import Issue from '@server/entity/Issue';
+import IssueComment from '@server/entity/IssueComment';
+import Media from '@server/entity/Media';
+import { MediaRequest } from '@server/entity/MediaRequest';
+import OverrideRule from '@server/entity/OverrideRule';
+import Season from '@server/entity/Season';
+import SeasonRequest from '@server/entity/SeasonRequest';
+import { Session } from '@server/entity/Session';
+import { User } from '@server/entity/User';
+import { UserPushSubscription } from '@server/entity/UserPushSubscription';
+import { UserSettings } from '@server/entity/UserSettings';
+import { Watchlist } from '@server/entity/Watchlist';
+import { IssueCommentSubscriber } from '@server/subscriber/IssueCommentSubscriber';
+import { IssueSubscriber } from '@server/subscriber/IssueSubscriber';
+import { MediaRequestSubscriber } from '@server/subscriber/MediaRequestSubscriber';
+import { MediaSubscriber } from '@server/subscriber/MediaSubscriber';
+import { isPgsql } from '@server/utils/dbType';
 import fs from 'fs';
 import type { TlsOptions } from 'tls';
 import type { DataSourceOptions, EntityTarget, Repository } from 'typeorm';
 import { DataSource } from 'typeorm';
 
 const DB_SSL_PREFIX = 'DB_SSL_';
+
+const entities = [
+  Blocklist,
+  DiscoverSlider,
+  Issue,
+  IssueComment,
+  Media,
+  MediaRequest,
+  OverrideRule,
+  Season,
+  SeasonRequest,
+  Session,
+  User,
+  UserPushSubscription,
+  UserSettings,
+  Watchlist,
+];
+
+const subscribers = [
+  IssueCommentSubscriber,
+  IssueSubscriber,
+  MediaRequestSubscriber,
+  MediaSubscriber,
+];
 
 function boolFromEnv(envVar: string, defaultVal = false) {
   if (process.env[envVar]) {
@@ -53,9 +96,9 @@ const testConfig: DataSourceOptions = {
   synchronize: true,
   dropSchema: true,
   logging: boolFromEnv('DB_LOG_QUERIES'),
-  entities: ['server/entity/**/*.ts'],
+  entities,
   migrations: ['server/migration/sqlite/**/*.ts'],
-  subscribers: ['server/subscriber/**/*.ts'],
+  subscribers,
 };
 
 const devConfig: DataSourceOptions = {
@@ -67,9 +110,9 @@ const devConfig: DataSourceOptions = {
   migrationsRun: false,
   logging: boolFromEnv('DB_LOG_QUERIES'),
   enableWAL: true,
-  entities: ['server/entity/**/*.ts'],
+  entities,
   migrations: ['server/migration/sqlite/**/*.ts'],
-  subscribers: ['server/subscriber/**/*.ts'],
+  subscribers,
 };
 
 const prodConfig: DataSourceOptions = {
@@ -81,9 +124,9 @@ const prodConfig: DataSourceOptions = {
   migrationsRun: false,
   logging: boolFromEnv('DB_LOG_QUERIES'),
   enableWAL: true,
-  entities: ['dist/entity/**/*.js'],
+  entities,
   migrations: ['dist/migration/sqlite/**/*.js'],
-  subscribers: ['dist/subscriber/**/*.js'],
+  subscribers,
 };
 
 const postgresDevConfig: DataSourceOptions = {
@@ -102,9 +145,9 @@ const postgresDevConfig: DataSourceOptions = {
   synchronize: false,
   migrationsRun: true,
   logging: boolFromEnv('DB_LOG_QUERIES'),
-  entities: ['server/entity/**/*.ts'],
+  entities,
   migrations: ['server/migration/postgres/**/*.ts'],
-  subscribers: ['server/subscriber/**/*.ts'],
+  subscribers,
 };
 
 const postgresProdConfig: DataSourceOptions = {
@@ -123,12 +166,10 @@ const postgresProdConfig: DataSourceOptions = {
   synchronize: false,
   migrationsRun: false,
   logging: boolFromEnv('DB_LOG_QUERIES'),
-  entities: ['dist/entity/**/*.js'],
+  entities,
   migrations: ['dist/migration/postgres/**/*.js'],
-  subscribers: ['dist/subscriber/**/*.js'],
+  subscribers,
 };
-
-export const isPgsql = process.env.DB_TYPE === 'postgres';
 
 function getDataSource(): DataSourceOptions {
   if (process.env.NODE_ENV === 'test') {

@@ -1554,6 +1554,8 @@ components:
               type: string
             topic:
               type: string
+            tags:
+              type: string
             authMethodUsernamePassword:
               type: boolean
             username:
@@ -6725,6 +6727,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MediaRequest'
+        '409':
+          description: Only pending requests can be modified
     delete:
       summary: Delete request
       description: Removes a request. If the user has the `MANAGE_REQUESTS` permission, any request can be removed. Otherwise, only pending requests can be removed.
@@ -6765,6 +6769,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MediaRequest'
+        '409':
+          description: Only failed requests can be retried
   /request/{requestId}/{status}:
     post:
       summary: Update a request's status
@@ -6796,6 +6802,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MediaRequest'
+        '400':
+          description: Status must be approve or decline
+        '409':
+          description: Only pending requests can be approved or declined
   /movie/{movieId}:
     get:
       summary: Get movie details

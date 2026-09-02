@@ -278,19 +278,24 @@ export class MediaRequest {
 
     if (useOverrides) {
       const defaultRadarrId = requestBody.is4k
-        ? settings.radarr.findIndex((r) => r.is4k && r.isDefault)
-        : settings.radarr.findIndex((r) => !r.is4k && r.isDefault);
+        ? settings.radarr.find((r) => r.is4k && r.isDefault)?.id
+        : settings.radarr.find((r) => !r.is4k && r.isDefault)?.id;
       const defaultSonarrId = requestBody.is4k
-        ? settings.sonarr.findIndex((s) => s.is4k && s.isDefault)
-        : settings.sonarr.findIndex((s) => !s.is4k && s.isDefault);
+        ? settings.sonarr.find((s) => s.is4k && s.isDefault)?.id
+        : settings.sonarr.find((s) => !s.is4k && s.isDefault)?.id;
+
+      const [defaultServiceIdField, defaultServiceId] =
+        requestBody.mediaType === MediaType.MOVIE
+          ? (['radarrServiceId', defaultRadarrId] as const)
+          : (['sonarrServiceId', defaultSonarrId] as const);
 
       const overrideRuleRepository = getRepository(OverrideRule);
-      const overrideRules = await overrideRuleRepository.find({
-        where:
-          requestBody.mediaType === MediaType.MOVIE
-            ? { radarrServiceId: defaultRadarrId }
-            : { sonarrServiceId: defaultSonarrId },
-      });
+      const overrideRules =
+        defaultServiceId === undefined
+          ? []
+          : await overrideRuleRepository.find({
+              where: { [defaultServiceIdField]: defaultServiceId },
+            });
 
       const appliedOverrideRules = overrideRules.filter((rule) => {
         const hasAnimeKeyword =
