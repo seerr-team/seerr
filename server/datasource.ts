@@ -1,5 +1,6 @@
 import { Blocklist } from '@server/entity/Blocklist';
 import DiscoverSlider from '@server/entity/DiscoverSlider';
+import Episode from '@server/entity/Episode';
 import Issue from '@server/entity/Issue';
 import IssueComment from '@server/entity/IssueComment';
 import Media from '@server/entity/Media';
@@ -27,6 +28,7 @@ const DB_SSL_PREFIX = 'DB_SSL_';
 const entities = [
   Blocklist,
   DiscoverSlider,
+  Episode,
   Issue,
   IssueComment,
   Media,
