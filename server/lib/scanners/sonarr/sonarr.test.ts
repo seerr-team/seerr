@@ -89,12 +89,25 @@ TheMovieDb.prototype.getShowByTvdbId = async function (args) {
   return getShowByTvdbIdImpl(args);
 };
 
+TheMovieDb.prototype.getShowByTvdbIdForScan = async function (args) {
+  return getShowByTvdbIdImpl(args);
+};
+
 let getTvShowImpl: (args: {
   tvId: number;
   language?: string;
 }) => Promise<TmdbTvDetails> = async () => fakeTmdbShow(1);
 
 Object.defineProperty(TheMovieDb.prototype, 'getTvShow', {
+  set() {},
+  get() {
+    return async (args: { tvId: number; language?: string }) =>
+      getTvShowImpl(args);
+  },
+  configurable: true,
+});
+
+Object.defineProperty(TheMovieDb.prototype, 'getTvShowForScan', {
   set() {},
   get() {
     return async (args: { tvId: number; language?: string }) =>

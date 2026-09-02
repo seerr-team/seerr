@@ -1668,5 +1668,10 @@
   "components.Login.tipEmailHasTrailingWhitespace": "",
   "components.Login.tipUsernameHasTrailingWhitespace": "",
   "i18n.removeFromBlocklistSuccess": "",
-  "i18n.removefromBlocklist": ""
+  "i18n.removefromBlocklist": "",
+  "components.Common.QuickConnectModal.error": "Erro",
+  "components.Common.QuickConnectModal.expired": "Código Expirado",
+  "components.Common.QuickConnectModal.expiredMessage": "Este código de Conexão Rápida expirou. Por favor, tente novamente.",
+  "components.Common.QuickConnectModal.tryAgain": "Tente novamente",
+  "components.Common.QuickConnectModal.waitingForAuth": "Aguardando por autorização..."
 }

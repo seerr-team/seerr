@@ -99,6 +99,15 @@ Object.defineProperty(TheMovieDb.prototype, 'getTvShow', {
   configurable: true,
 });
 
+Object.defineProperty(TheMovieDb.prototype, 'getTvShowForScan', {
+  get() {
+    return async (args: { tvId: number; language?: string }) =>
+      getTvShowImpl(args);
+  },
+  set() {},
+  configurable: true,
+});
+
 import { jellyfinFullScanner } from '@server/lib/scanners/jellyfin';
 
 setupTestDb();

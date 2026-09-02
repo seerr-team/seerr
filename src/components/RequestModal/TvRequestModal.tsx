@@ -418,7 +418,7 @@ const TvRequestModal = ({
             : hasPermission(Permission.MANAGE_REQUESTS)
               ? intl.formatMessage(messages.approve)
               : intl.formatMessage(messages.edit)
-          : getAllRequestedSeasons().length >= getAllSeasons().length
+          : unrequestedSeasons.length === 0
             ? intl.formatMessage(messages.alreadyrequested)
             : !settings.currentSettings.partialRequestsEnabled
               ? intl.formatMessage(
@@ -441,7 +441,7 @@ const TvRequestModal = ({
               unrequestedSeasons.length > quota.tv.limit &&
               !requestOverrides?.ignoreQuota
             ? true
-            : getAllRequestedSeasons().length >= getAllSeasons().length ||
+            : unrequestedSeasons.length === 0 ||
               (settings.currentSettings.partialRequestsEnabled &&
                 selectedSeasons.length === 0)
       }

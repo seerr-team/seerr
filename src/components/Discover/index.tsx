@@ -147,6 +147,7 @@ const Discover = () => {
             </div>
           )}
           <Transition
+            as="div"
             show={!isEditing}
             enter="transition-opacity duration-300"
             enterFrom="opacity-0"
@@ -165,6 +166,7 @@ const Discover = () => {
             </button>
           </Transition>
           <Transition
+            as="div"
             show={isEditing}
             enter="transition duration-300"
             enterFrom="opacity-0 translate-y-6"
