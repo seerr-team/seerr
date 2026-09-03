@@ -14,6 +14,7 @@ import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
+import requestLock from '@server/utils/requestLock';
 import { truncate } from 'lodash';
 import {
   AfterInsert,
@@ -48,6 +49,16 @@ export class MediaRequest {
     requestBody: MediaRequestBody,
     user: User,
     options: MediaRequestOptions = {}
+  ): Promise<MediaRequest> {
+    return requestLock.dispatch(requestBody.userId || user.id, () =>
+      MediaRequest.createRequest(requestBody, user, options)
+    );
+  }
+
+  private static async createRequest(
+    requestBody: MediaRequestBody,
+    user: User,
+    options: MediaRequestOptions
   ): Promise<MediaRequest> {
     const tmdb = new TheMovieDb();
     const mediaRepository = getRepository(Media);
