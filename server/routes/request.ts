@@ -514,19 +514,19 @@ requestRoutes.put<{ requestId: string }>(
 
       if (req.body.mediaType === MediaType.MOVIE) {
         request.serverId = req.body.serverId;
-        request.profileId = req.body.profileId;
-        request.rootFolder = req.body.rootFolder;
-        request.tags = req.body.tags;
+        request.profileId = req.body.profileId ?? null;
+        request.rootFolder = req.body.rootFolder ?? null;
+        request.tags = req.body.tags ?? null;
         request.requestedBy = requestUser as User;
 
         await requestRepository.save(request);
       } else if (req.body.mediaType === MediaType.TV) {
         const mediaRepository = getRepository(Media);
         request.serverId = req.body.serverId;
-        request.profileId = req.body.profileId;
-        request.rootFolder = req.body.rootFolder;
-        request.languageProfileId = req.body.languageProfileId;
-        request.tags = req.body.tags;
+        request.profileId = req.body.profileId ?? null;
+        request.rootFolder = req.body.rootFolder ?? null;
+        request.languageProfileId = req.body.languageProfileId ?? null;
+        request.tags = req.body.tags ?? null;
         request.requestedBy = requestUser as User;
 
         const requestedSeasons = req.body.seasons as number[] | undefined;
