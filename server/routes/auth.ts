@@ -1,3 +1,4 @@
+import type { JellyfinUserResponse } from '@server/api/jellyfin';
 import JellyfinAPI from '@server/api/jellyfin';
 import PlexTvAPI from '@server/api/plextv';
 import { ApiErrorCode } from '@server/constants/error';
@@ -244,6 +245,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     useSsl?: boolean;
     email?: string;
     serverType?: number;
+    accessToken?: string;
   };
 
   //Make sure jellyfin login is enabled, but only if jellyfin && Emby is not already configured
@@ -296,7 +298,11 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     }
 
     // First we need to attempt to log the user in to jellyfin
-    const jellyfinserver = new JellyfinAPI(hostname ?? '', undefined, deviceId);
+    const jellyfinserver = new JellyfinAPI(
+      hostname ?? '',
+      body.accessToken,
+      deviceId
+    );
 
     const ip = req.ip;
     let clientIp;
@@ -309,15 +315,30 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       }
     }
 
-    const account = await jellyfinserver.login(
-      body.username,
-      body.password,
-      clientIp
-    );
+    let accessToken = body.accessToken;
+    let accountUser: JellyfinUserResponse | undefined = undefined;
+
+    // Some admins limit the amount of times a user can be logged in at once.
+    // Reuse an existing accessToken to prevent creating an extra user login /
+    // session in jellyfin.
+    if (accessToken) {
+      accountUser = await jellyfinserver.getUser();
+    }
+
+    if (!accountUser) {
+      const res = await jellyfinserver.login(
+        body.username,
+        body.password,
+        clientIp
+      );
+
+      accountUser = res.User;
+      accessToken = res.AccessToken;
+    }
 
     // Next let's see if the user already exists
     user = await userRepository.findOne({
-      where: { jellyfinUserId: account.User.Id },
+      where: { jellyfinUserId: accountUser.Id },
     });
 
     const missingAdminUser = !user && !(await userRepository.count());
@@ -326,7 +347,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       settings.main.mediaServerType === MediaServerType.NOT_CONFIGURED
     ) {
       // Check if user is admin on jellyfin
-      if (account.User.Policy.IsAdministrator === false) {
+      if (accountUser.Policy.IsAdministrator === false) {
         throw new ApiError(403, ApiErrorCode.NotAdmin);
       }
 
@@ -344,7 +365,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
           {
             label: 'API',
             ip: req.ip,
-            jellyfinUsername: account.User.Name,
+            jellyfinUsername: accountUser.Name,
           }
         );
 
@@ -353,11 +374,11 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
 
         user = new User({
           id: 1,
-          email: body.email || account.User.Name,
-          jellyfinUsername: account.User.Name,
-          jellyfinUserId: account.User.Id,
+          email: body.email || accountUser.Name,
+          jellyfinUsername: accountUser.Name,
+          jellyfinUserId: accountUser.Id,
           jellyfinDeviceId: deviceId,
-          jellyfinAuthToken: account.AccessToken,
+          jellyfinAuthToken: accessToken,
           permissions: Permission.ADMIN,
           userType:
             body.serverType === MediaServerType.JELLYFIN
@@ -373,7 +394,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
           {
             label: 'API',
             ip: req.ip,
-            jellyfinUsername: account.User.Name,
+            jellyfinUsername: accountUser.Name,
           }
         );
 
@@ -385,11 +406,11 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
         if (!user) {
           throw new Error('Unable to find admin user to edit');
         }
-        user.email = body.email || account.User.Name;
-        user.jellyfinUsername = account.User.Name;
-        user.jellyfinUserId = account.User.Id;
+        user.email = body.email || accountUser.Name;
+        user.jellyfinUsername = accountUser.Name;
+        user.jellyfinUserId = accountUser.Id;
         user.jellyfinDeviceId = deviceId;
-        user.jellyfinAuthToken = account.AccessToken;
+        user.jellyfinAuthToken = accessToken;
         user.permissions = Permission.ADMIN;
         user.avatar = getUserAvatarUrl(user);
         user.userType =
@@ -401,17 +422,13 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       }
 
       // Create an API key on Jellyfin from this admin user
-      const jellyfinClient = new JellyfinAPI(
-        hostname,
-        account.AccessToken,
-        deviceId
-      );
+      const jellyfinClient = new JellyfinAPI(hostname, accessToken, deviceId);
       const apiKey = await jellyfinClient.createApiToken('Seerr');
 
       const serverName = await jellyfinserver.getServerName();
 
       settings.jellyfin.name = serverName;
-      settings.jellyfin.serverId = account.User.ServerId;
+      settings.jellyfin.serverId = accountUser.ServerId;
       settings.jellyfin.ip = body.hostname ?? '';
       settings.jellyfin.port = body.port ?? 8096;
       settings.jellyfin.urlBase = body.urlBase ?? '';
@@ -421,7 +438,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       startJobs();
     }
     // User already exists, let's update their information
-    else if (account.User.Id === user?.jellyfinUserId) {
+    else if (accountUser.Id === user?.jellyfinUserId) {
       logger.info(
         `Found matching ${
           settings.main.mediaServerType === MediaServerType.JELLYFIN
@@ -435,13 +452,14 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
         {
           label: 'API',
           ip: req.ip,
-          jellyfinUsername: account.User.Name,
+          jellyfinUsername: accountUser.Name,
         }
       );
       user.avatar = getUserAvatarUrl(user);
-      user.jellyfinUsername = account.User.Name;
+      user.jellyfinUsername = accountUser.Name;
+      user.jellyfinAuthToken = accessToken;
 
-      if (user.username === account.User.Name) {
+      if (user.username === accountUser.Name) {
         user.username = '';
       }
 
@@ -452,8 +470,8 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
         {
           label: 'API',
           ip: req.ip,
-          jellyfinUserId: account.User.Id,
-          jellyfinUsername: account.User.Name,
+          jellyfinUserId: accountUser.Id,
+          jellyfinUsername: accountUser.Name,
         }
       );
       return next({
@@ -466,15 +484,16 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
         {
           label: 'API',
           ip: req.ip,
-          jellyfinUsername: account.User.Name,
+          jellyfinUsername: accountUser.Name,
         }
       );
 
       user = new User({
         email: body.email,
-        jellyfinUsername: account.User.Name,
-        jellyfinUserId: account.User.Id,
+        jellyfinUsername: accountUser.Name,
+        jellyfinUserId: accountUser.Id,
         jellyfinDeviceId: deviceId,
+        jellyfinAuthToken: accessToken,
         permissions: settings.main.defaultPermissions,
         userType:
           settings.main.mediaServerType === MediaServerType.JELLYFIN
