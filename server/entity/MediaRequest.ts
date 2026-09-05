@@ -50,7 +50,14 @@ export class MediaRequest {
     user: User,
     options: MediaRequestOptions = {}
   ): Promise<MediaRequest> {
-    return requestLock.dispatch(requestBody.userId || user.id, () =>
+    // Only a caller allowed to set the request user may queue on their lock
+    const lockUserId =
+      requestBody.userId &&
+      user.hasPermission([Permission.MANAGE_USERS, Permission.MANAGE_REQUESTS])
+        ? requestBody.userId
+        : user.id;
+
+    return requestLock.dispatch(lockUserId, () =>
       MediaRequest.createRequest(requestBody, user, options)
     );
   }
