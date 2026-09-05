@@ -35,6 +35,7 @@ const messages = defineMessages('components.RequestButton', {
     'Approve {requestCount, plural, one {4K Request} other {{requestCount} 4K Requests}}',
   decline4krequests:
     'Decline {requestCount, plural, one {4K Request} other {{requestCount} 4K Requests}}',
+  standardstatus: 'Standard: {status}',
 });
 
 interface ButtonOption {
@@ -360,6 +361,59 @@ const RequestButton = ({
     });
   }
 
+  const has4kRequestAction = buttons.some((button) =>
+    ['request4k', 'request-more-4k'].includes(button.id)
+  );
+
+  const visibleStatusLabel = (() => {
+    if (!media) {
+      return undefined;
+    }
+
+    switch (media.status) {
+      case MediaStatus.PENDING:
+        return intl.formatMessage(globalMessages.pending);
+      case MediaStatus.PROCESSING:
+        return intl.formatMessage(globalMessages.requested);
+      case MediaStatus.PARTIALLY_AVAILABLE:
+        return intl.formatMessage(globalMessages.partiallyavailable);
+      case MediaStatus.AVAILABLE:
+        return intl.formatMessage(globalMessages.available);
+      default:
+        return undefined;
+    }
+  })();
+
+  const visibleStatusClassName = (() => {
+    switch (media?.status) {
+      case MediaStatus.PENDING:
+        return 'border-yellow-500/80 bg-yellow-500/20 text-yellow-100';
+      case MediaStatus.PROCESSING:
+        return 'border-indigo-500/80 bg-indigo-500/20 text-indigo-100';
+      case MediaStatus.PARTIALLY_AVAILABLE:
+      case MediaStatus.AVAILABLE:
+        return 'border-green-500/80 bg-green-500/20 text-green-100';
+      default:
+        return '';
+    }
+  })();
+
+  const visibleStatusPill =
+    has4kRequestAction && visibleStatusLabel ? (
+      <div
+        role="status"
+        aria-live="polite"
+        className={`ml-2 inline-flex min-h-[38px] items-center rounded-md border px-3 py-2 text-sm font-medium ${visibleStatusClassName}`}
+      >
+        <CheckIcon className="mr-2 h-5 w-5" />
+        <span>
+          {intl.formatMessage(messages.standardstatus, {
+            status: visibleStatusLabel,
+          })}
+        </span>
+      </div>
+    ) : null;
+
   const [buttonOne, ...others] = buttons;
 
   if (!buttonOne) {
@@ -391,6 +445,7 @@ const RequestButton = ({
         }}
         onCancel={() => setShowRequest4kModal(false)}
       />
+      {visibleStatusPill}
       <ButtonWithDropdown
         text={
           <>

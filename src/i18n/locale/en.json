@@ -506,6 +506,7 @@
   "components.RequestButton.declinerequests": "Decline {requestCount, plural, one {Request} other {{requestCount} Requests}}",
   "components.RequestButton.requestmore": "Request More",
   "components.RequestButton.requestmore4k": "Request More in 4K",
+  "components.RequestButton.standardstatus": "Standard: {status}",
   "components.RequestButton.viewrequest": "View Request",
   "components.RequestButton.viewrequest4k": "View 4K Request",
   "components.RequestCard.approverequest": "Approve Request",
