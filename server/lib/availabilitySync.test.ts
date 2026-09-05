@@ -387,6 +387,38 @@ function fakePlexEpisodes(count: number): PlexMetadata[] {
   }));
 }
 
+function fakePlex4kEpisodes(count: number): PlexMetadata[] {
+  return Array.from({ length: count }, (_, i) => ({
+    ratingKey: `ep4k-${i}`,
+    guid: `plex://episode/ep4k-${i}`,
+    type: 'movie' as const,
+    title: `Episode ${i + 1}`,
+    Guid: [],
+    index: i + 1,
+    leafCount: 0,
+    viewedLeafCount: 0,
+    addedAt: 0,
+    updatedAt: 0,
+    Media: [
+      {
+        id: i,
+        duration: 2400,
+        bitrate: 20000,
+        width: 3840,
+        height: 2160,
+        aspectRatio: 1.78,
+        audioChannels: 6,
+        audioCodec: 'eac3',
+        videoCodec: 'hevc',
+        videoResolution: '4k',
+        container: 'mkv',
+        videoFrameRate: '24p',
+        videoProfile: 'main 10',
+      },
+    ],
+  }));
+}
+
 function fakePlexShow(ratingKey: string): PlexMetadata {
   return {
     ratingKey,
@@ -1289,6 +1321,176 @@ describe('AvailabilitySync', () => {
         MediaStatus.DELETED,
         'Season 3 should be DELETED'
       );
+
+      assert.strictEqual(
+        updated.status,
+        MediaStatus.PARTIALLY_AVAILABLE,
+        'Show should be PARTIALLY_AVAILABLE after season removal'
+      );
+    });
+
+    it('should not mark seasons DELETED when a show is split across a 1080p and a 4K Plex library', async () => {
+      configurePlex();
+      // No Sonarr configured for this user: only Plex is the source of truth.
+      const settings = getSettings();
+      settings.sonarr = [];
+      settings.radarr = [];
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 2010;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      // Season 1 lives in the 1080p Plex library, S2-S4 live in the 4K
+      // Plex library. Each library has its own show entry with its own
+      // ratingKey.
+      media.ratingKey = 'plex-split-1080p-rk';
+      media.ratingKey4k = 'plex-split-4k-rk';
+      media.seasons = [];
+
+      for (let i = 1; i <= 4; i++) {
+        media.seasons.push(
+          new Season({
+            seasonNumber: i,
+            status: MediaStatus.AVAILABLE,
+            status4k: MediaStatus.UNKNOWN,
+          })
+        );
+      }
+
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'plex-split-1080p-rk') {
+          return fakePlexShow('plex-split-1080p-rk');
+        }
+        if (key === 'plex-split-4k-rk') {
+          return fakePlexShow('plex-split-4k-rk');
+        }
+        throw new Error('404');
+      };
+
+      getChildrenMetadataImpl = async (key: string) => {
+        if (key === 'plex-split-1080p-rk') {
+          return [fakePlexSeason(1, 'plex-split-1080p-s1-rk')];
+        }
+        if (key === 'plex-split-4k-rk') {
+          return [
+            fakePlexSeason(2, 'plex-split-4k-s2-rk'),
+            fakePlexSeason(3, 'plex-split-4k-s3-rk'),
+            fakePlexSeason(4, 'plex-split-4k-s4-rk'),
+          ];
+        }
+        if (key === 'plex-split-1080p-s1-rk') {
+          return fakePlexEpisodes(10);
+        }
+        if (
+          key === 'plex-split-4k-s2-rk' ||
+          key === 'plex-split-4k-s3-rk' ||
+          key === 'plex-split-4k-s4-rk'
+        ) {
+          return fakePlex4kEpisodes(10);
+        }
+        return [];
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 2010 },
+        relations: ['seasons'],
+      });
+
+      for (const season of updated.seasons) {
+        assert.notStrictEqual(
+          season.status,
+          MediaStatus.DELETED,
+          `Season ${season.seasonNumber} should not be DELETED`
+        );
+        assert.strictEqual(
+          season.status,
+          MediaStatus.AVAILABLE,
+          `Season ${season.seasonNumber} should remain AVAILABLE`
+        );
+      }
+
+      assert.strictEqual(
+        updated.status,
+        MediaStatus.AVAILABLE,
+        'Show should remain AVAILABLE'
+      );
+    });
+
+    it('should still mark seasons DELETED when neither rating key contains them (legacy single-ratingKey)', async () => {
+      configurePlex();
+      const settings = getSettings();
+      settings.sonarr = [];
+      settings.radarr = [];
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 2011;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      // Only the primary rating key is set (no ratingKey4k), exercising
+      // the secondary-lookup branch when the fallback has nothing to find.
+      media.ratingKey = 'plex-legacy-rk';
+      media.seasons = [];
+
+      for (let i = 1; i <= 4; i++) {
+        media.seasons.push(
+          new Season({
+            seasonNumber: i,
+            status: MediaStatus.AVAILABLE,
+            status4k: MediaStatus.UNKNOWN,
+          })
+        );
+      }
+
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'plex-legacy-rk') {
+          return fakePlexShow('plex-legacy-rk');
+        }
+        throw new Error('404');
+      };
+
+      getChildrenMetadataImpl = async (key: string) => {
+        if (key === 'plex-legacy-rk') {
+          return [fakePlexSeason(2, 'plex-legacy-s2-rk')];
+        }
+        if (key === 'plex-legacy-s2-rk') {
+          return fakePlexEpisodes(10);
+        }
+        return [];
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 2011 },
+        relations: ['seasons'],
+      });
+
+      const s2 = updated.seasons.find((s) => s.seasonNumber === 2);
+      assert.strictEqual(
+        s2?.status,
+        MediaStatus.AVAILABLE,
+        'Season 2 should remain AVAILABLE'
+      );
+
+      for (const season of updated.seasons) {
+        if (season.seasonNumber !== 2) {
+          assert.strictEqual(
+            season.status,
+            MediaStatus.DELETED,
+            `Season ${season.seasonNumber} should be DELETED`
+          );
+        }
+      }
 
       assert.strictEqual(
         updated.status,

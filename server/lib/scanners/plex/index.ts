@@ -36,6 +36,9 @@ const hamaTvdbRegex = new RegExp(/hama:\/\/tvdb[0-9]?-([0-9]+)/);
 const hamaAnidbRegex = new RegExp(/hama:\/\/anidb[0-9]?-([0-9]+)/);
 const HAMA_AGENT = 'com.plexapp.agents.hama';
 
+const isPlex4kMedia = (m: { videoResolution?: string }): boolean =>
+  m.videoResolution === '4k';
+
 type SyncStatus = StatusBase & {
   currentLibrary: Library;
   libraries: Library[];
@@ -340,25 +343,26 @@ class PlexScanner
         const episodes = await this.plexClient.getChildrenMetadata(
           matchedPlexSeason.ratingKey
         );
-        // Total episodes that are in standard definition (not 4k)
-        const totalStandard = episodes.filter((episode) =>
-          !this.enable4kShow
-            ? true
-            : episode.Media.some((media) => media.videoResolution !== '4k')
+
+        const episode4kCount = episodes.filter((episode) =>
+          episode.Media.some(isPlex4kMedia)
+        ).length;
+        const episodeNon4kCount = episodes.filter((episode) =>
+          episode.Media.some((media) => !isPlex4kMedia(media))
         ).length;
 
-        // Total episodes that are in 4k
-        const total4k = this.enable4kShow
-          ? episodes.filter((episode) =>
-              episode.Media.some((media) => media.videoResolution === '4k')
-            ).length
-          : 0;
+        const totalStandard = this.enable4kShow
+          ? episodeNon4kCount
+          : episodes.length;
+        const total4k = this.enable4kShow ? episode4kCount : 0;
 
         processableSeasons.push({
           seasonNumber: season.season_number,
           episodes: totalStandard,
           episodes4k: total4k,
           totalEpisodes: season.episode_count,
+          hasNon4kContent: episodeNon4kCount > 0,
+          has4kContent: episode4kCount > 0,
         });
       } else {
         processableSeasons.push({

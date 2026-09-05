@@ -1011,23 +1011,37 @@ class AvailabilitySync {
     season: Season,
     is4k: boolean
   ): Promise<boolean> {
-    const ratingKey = media.ratingKey;
-    const ratingKey4k = media.ratingKey4k;
+    const primaryRk = is4k ? media.ratingKey4k : media.ratingKey;
+    const secondaryRk = is4k ? media.ratingKey : media.ratingKey4k;
     let seasonExistsInPlex = false;
 
-    let plexSeasons: PlexMetadata[] | undefined;
+    let plexSeasons: PlexMetadata[] | undefined = primaryRk
+      ? this.plexSeasonsCache[primaryRk]
+      : undefined;
 
-    if (ratingKey && !is4k) {
-      plexSeasons = this.plexSeasonsCache[ratingKey];
-    }
-
-    if (ratingKey4k && is4k) {
-      plexSeasons = this.plexSeasonsCache[ratingKey4k];
-    }
-
-    const seasonMeta = plexSeasons?.find(
+    let seasonMeta = plexSeasons?.find(
       (plexSeason) => plexSeason.index === season.seasonNumber
     );
+
+    // If the season isn't listed under the primary rating key but the show
+    // also exists under the other (4K vs non-4K) rating key, fall back to
+    // checking that one. Plex stores each library's show as a separate
+    // entry, so a series split across a 1080p and a 4K library will only
+    // have any given season listed under one of them.
+    if (!seasonMeta && secondaryRk && secondaryRk !== primaryRk) {
+      if (!(secondaryRk in this.plexSeasonsCache)) {
+        try {
+          this.plexSeasonsCache[secondaryRk] =
+            (await this.plexClient?.getChildrenMetadata(secondaryRk)) ?? [];
+        } catch {
+          this.plexSeasonsCache[secondaryRk] = [];
+        }
+      }
+      plexSeasons = this.plexSeasonsCache[secondaryRk];
+      seasonMeta = plexSeasons?.find(
+        (plexSeason) => plexSeason.index === season.seasonNumber
+      );
+    }
 
     if (seasonMeta) {
       const cacheKey = `${is4k ? '4k' : 'std'}-${seasonMeta.ratingKey}`;
