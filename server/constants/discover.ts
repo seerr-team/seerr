@@ -1,5 +1,11 @@
 import type DiscoverSlider from '@server/entity/DiscoverSlider';
 
+export enum DiscoverAvailabilityFilter {
+  ALL = 'all',
+  AVAILABLE_OR_REQUESTED = 'availableOrRequested',
+  NOT_AVAILABLE_OR_REQUESTED = 'notAvailableOrRequested',
+}
+
 export enum DiscoverSliderType {
   RECENTLY_ADDED = 1,
   RECENT_REQUESTS,

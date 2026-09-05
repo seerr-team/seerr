@@ -115,6 +115,7 @@ export const QueryFilterOptions = z.object({
   certificationLte: z.string().optional(),
   certificationCountry: z.string().optional(),
   certificationMode: z.enum(['exact', 'range']).optional(),
+  availability: z.string().optional(),
 });
 
 export type FilterOptions = z.infer<typeof QueryFilterOptions>;
@@ -224,6 +225,10 @@ export const prepareFilterValues = (
     filterValues.certificationMode = 'exact';
   } else if (values.certificationGte || values.certificationLte) {
     filterValues.certificationMode = 'range';
+  }
+
+  if (values.availability) {
+    filterValues.availability = values.availability;
   }
 
   return filterValues;

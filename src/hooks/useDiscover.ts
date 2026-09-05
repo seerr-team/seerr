@@ -1,5 +1,6 @@
 import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
+import { DiscoverAvailabilityFilter } from '@server/constants/discover';
 import { MediaStatus } from '@server/constants/media';
 import { useEffect } from 'react';
 import { useIntl } from 'react-intl';
@@ -63,6 +64,8 @@ const useDiscover = <
   const settings = useSettings();
   const { hasPermission } = useUser();
   const { addToast } = useToasts();
+  const { availability = DiscoverAvailabilityFilter.ALL, ...tmdbOptions } =
+    options as any;
   const intl = useIntl();
   const { data, error, size, setSize, isValidating, mutate } = useSWRInfinite<
     BaseSearchResult<T> & S
@@ -74,7 +77,7 @@ const useDiscover = <
 
       const params: Record<string, unknown> = {
         page: pageIndex + 1,
-        ...options,
+        ...tmdbOptions,
       };
 
       const finalQueryString = Object.keys(params)
@@ -121,7 +124,11 @@ const useDiscover = <
     return [...a, ...results];
   }, [] as T[]);
 
-  if (settings.currentSettings.hideAvailable && hideAvailable) {
+  if (
+    settings.currentSettings.hideAvailable &&
+    hideAvailable &&
+    availability === DiscoverAvailabilityFilter.ALL
+  ) {
     titles = titles.filter(
       (i) =>
         !(i.mediaType === 'movie' || i.mediaType === 'tv') ||
@@ -139,6 +146,25 @@ const useDiscover = <
       (i) =>
         !(i.mediaType === 'movie' || i.mediaType === 'tv') ||
         i.mediaInfo?.status !== MediaStatus.BLOCKLISTED
+    );
+  }
+
+  if (availability === DiscoverAvailabilityFilter.AVAILABLE_OR_REQUESTED) {
+    titles = titles.filter(
+      (i) =>
+        (i.mediaType === 'movie' || i.mediaType === 'tv') &&
+        (i.mediaInfo?.status === MediaStatus.AVAILABLE ||
+          i.mediaInfo?.status === MediaStatus.PARTIALLY_AVAILABLE ||
+          i.mediaInfo?.status === MediaStatus.PROCESSING ||
+          i.mediaInfo?.status === MediaStatus.PENDING)
+    );
+  } else if (
+    availability === DiscoverAvailabilityFilter.NOT_AVAILABLE_OR_REQUESTED
+  ) {
+    titles = titles.filter(
+      (i) =>
+        (i.mediaType === 'movie' || i.mediaType === 'tv') &&
+        (!i.mediaInfo?.status || i.mediaInfo?.status === MediaStatus.UNKNOWN)
     );
   }
 
