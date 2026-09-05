@@ -69,6 +69,19 @@ export interface Tag {
   label: string;
 }
 
+export interface HistoryRecord {
+  id: number;
+  episodeId?: number;
+  movieId?: number;
+  seriesId?: number;
+  sourceTitle: string;
+  quality: Record<string, unknown>;
+  date: string;
+  // "grabbed" | "downloadFolderImported" | "downloadFailed" | ...
+  eventType: string;
+  data?: Record<string, string>;
+}
+
 interface QueueResponse<QueueItemAppendT> {
   page: number;
   pageSize: number;
@@ -226,6 +239,46 @@ class ServarrBase<QueueItemAppendT> extends ExternalAPI {
       throw new Error(`[${this.apiName}] Failed to rename tag: ${e.message}`, {
         cause: e,
       });
+    }
+  };
+
+  public getHistory = async (params: {
+    movieId?: number;
+    episodeId?: number;
+    seriesId?: number;
+    pageSize?: number;
+  }): Promise<HistoryRecord[]> => {
+    try {
+      const response = await this.axios.get<{ records: HistoryRecord[] }>(
+        '/history',
+        {
+          params: {
+            pageSize: params.pageSize ?? 50,
+            sortKey: 'date',
+            sortDirection: 'descending',
+            movieId: params.movieId,
+            episodeId: params.episodeId,
+            seriesId: params.seriesId,
+          },
+        }
+      );
+      return response.data.records;
+    } catch (e) {
+      throw new Error(
+        `[${this.apiName}] Failed to retrieve history: ${e.message}`,
+        { cause: e }
+      );
+    }
+  };
+
+  public markGrabAsFailed = async (historyId: number): Promise<void> => {
+    try {
+      await this.axios.post(`/history/failed/${historyId}`);
+    } catch (e) {
+      throw new Error(
+        `[${this.apiName}] Failed to mark history ${historyId} as failed: ${e.message}`,
+        { cause: e }
+      );
     }
   };
 

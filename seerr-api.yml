@@ -7917,6 +7917,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Issue'
+  /issue/{issueId}/redownload:
+    post:
+      summary: Mark the issue's media as failed and trigger a redownload
+      description: |
+        Asks Radarr or Sonarr to blocklist the currently grabbed release for
+        the affected media (or season/episode, for TV issues) and kick off a
+        fresh search. The issue is automatically resolved and a system
+        comment is appended recording the action. Requires the `ADMIN`
+        permission.
+      tags:
+        - issue
+      parameters:
+        - in: path
+          name: issueId
+          required: true
+          schema:
+            type: number
+            example: 1
+      responses:
+        '200':
+          description: Redownload triggered; issue resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+        '400':
+          description: Media is not linked to a Radarr/Sonarr service
+        '403':
+          description: User does not have the ADMIN permission
+        '404':
+          description: Issue not found
+        '502':
+          description: Failed to contact Radarr/Sonarr
   /issueComment/{commentId}:
     get:
       summary: Get issue comment
