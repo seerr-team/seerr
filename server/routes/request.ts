@@ -25,7 +25,7 @@ import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
-import requestLock from '@server/utils/requestLock';
+import requestLock, { mediaLock } from '@server/utils/requestLock';
 import { Router } from 'express';
 
 const requestRoutes = Router();
@@ -558,122 +558,135 @@ requestRoutes.put<{ requestId: string }>(
               );
             }
 
-            // Get existing media so we can work with all the requests
-            const media = await mediaRepository.findOneOrFail({
-              where: {
-                tmdbId: request.media.tmdbId,
-                mediaType: MediaType.TV,
-              },
-              relations: { requests: true },
-            });
-
-            // Get all requested seasons that are not part of this request we are editing
-            const existingSeasons = media.requests
-              .filter(
-                (r) =>
-                  r.is4k === request.is4k &&
-                  r.id !== request.id &&
-                  r.status !== MediaRequestStatus.DECLINED &&
-                  r.status !== MediaRequestStatus.COMPLETED
-              )
-              .reduce((seasons, r) => {
-                const combinedSeasons = r.seasons.map(
-                  (season) => season.seasonNumber
-                );
-
-                return [...seasons, ...combinedSeasons];
-              }, [] as number[]);
-
-            const currentSeasons = request.seasons.map((s) => s.seasonNumber);
-
-            // Seasons the media already covers cannot be requested again, while
-            // the ones this request holds stay on it
-            const coveredSeasons = (media.seasons ?? [])
-              .filter(
-                (season) =>
-                  season[request.is4k ? 'status4k' : 'status'] !==
-                    MediaStatus.UNKNOWN &&
-                  season[request.is4k ? 'status4k' : 'status'] !==
-                    MediaStatus.DELETED
-              )
-              .map((season) => season.seasonNumber)
-              .filter((sn) => !currentSeasons.includes(sn));
-
-            const filteredSeasons = requestedSeasons.filter(
-              (rs) => !existingSeasons.includes(rs)
-            );
-
-            const keptSeasons = filteredSeasons.filter((sn) =>
-              currentSeasons.includes(sn)
-            );
-
-            const newSeasons = filteredSeasons.filter(
-              (sn) =>
-                !currentSeasons.includes(sn) && !coveredSeasons.includes(sn)
-            );
-
-            const resultingSeasonCount = keptSeasons.length + newSeasons.length;
-
-            if (resultingSeasonCount === 0) {
-              return next({
-                status: 202,
-                message: 'No seasons available to request',
-              });
-            }
-
-            if (!request.ignoreQuota) {
-              const quotas = await requestUser.getQuota();
-
-              // Only the seasons getQuota already counted for this owner are
-              // paid for, so the edit is charged for everything it left out
-              const quotaWindowStart = new Date();
-              if (quotas.tv.days) {
-                quotaWindowStart.setDate(
-                  quotaWindowStart.getDate() - quotas.tv.days
-                );
-              }
-
-              const countedAlready =
-                !ownerChanging &&
-                (!quotas.tv.days || request.createdAt > quotaWindowStart);
-
-              const priorSeasonCount = countedAlready
-                ? request.seasons.length
-                : 0;
-              const requiredSeasons = resultingSeasonCount - priorSeasonCount;
-
-              if (
-                quotas.tv.limit &&
-                requiredSeasons > (quotas.tv.remaining ?? 0)
-              ) {
-                return next({
-                  status: 403,
-                  message: 'Series Quota exceeded.',
+            // Same key as create, so an edit cannot claim a season that a new
+            // request is taking at the same moment
+            return mediaLock.dispatch(
+              `${MediaType.TV}:${request.media.tmdbId}:${!!request.is4k}`,
+              async () => {
+                // Get existing media so we can work with all the requests
+                const media = await mediaRepository.findOneOrFail({
+                  where: {
+                    tmdbId: request.media.tmdbId,
+                    mediaType: MediaType.TV,
+                  },
+                  relations: { requests: true },
                 });
+
+                // Get all requested seasons that are not part of this request we are editing
+                const existingSeasons = media.requests
+                  .filter(
+                    (r) =>
+                      r.is4k === request.is4k &&
+                      r.id !== request.id &&
+                      r.status !== MediaRequestStatus.DECLINED &&
+                      r.status !== MediaRequestStatus.COMPLETED
+                  )
+                  .reduce((seasons, r) => {
+                    const combinedSeasons = r.seasons.map(
+                      (season) => season.seasonNumber
+                    );
+
+                    return [...seasons, ...combinedSeasons];
+                  }, [] as number[]);
+
+                const currentSeasons = request.seasons.map(
+                  (s) => s.seasonNumber
+                );
+
+                // Seasons the media already covers cannot be requested again, while
+                // the ones this request holds stay on it
+                const coveredSeasons = (media.seasons ?? [])
+                  .filter(
+                    (season) =>
+                      season[request.is4k ? 'status4k' : 'status'] !==
+                        MediaStatus.UNKNOWN &&
+                      season[request.is4k ? 'status4k' : 'status'] !==
+                        MediaStatus.DELETED
+                  )
+                  .map((season) => season.seasonNumber)
+                  .filter((sn) => !currentSeasons.includes(sn));
+
+                const filteredSeasons = requestedSeasons.filter(
+                  (rs) => !existingSeasons.includes(rs)
+                );
+
+                const keptSeasons = filteredSeasons.filter((sn) =>
+                  currentSeasons.includes(sn)
+                );
+
+                const newSeasons = filteredSeasons.filter(
+                  (sn) =>
+                    !currentSeasons.includes(sn) && !coveredSeasons.includes(sn)
+                );
+
+                const resultingSeasonCount =
+                  keptSeasons.length + newSeasons.length;
+
+                if (resultingSeasonCount === 0) {
+                  return next({
+                    status: 202,
+                    message: 'No seasons available to request',
+                  });
+                }
+
+                if (!request.ignoreQuota) {
+                  const quotas = await requestUser.getQuota();
+
+                  // Only the seasons getQuota already counted for this owner are
+                  // paid for, so the edit is charged for everything it left out
+                  const quotaWindowStart = new Date();
+                  if (quotas.tv.days) {
+                    quotaWindowStart.setDate(
+                      quotaWindowStart.getDate() - quotas.tv.days
+                    );
+                  }
+
+                  const countedAlready =
+                    !ownerChanging &&
+                    (!quotas.tv.days || request.createdAt > quotaWindowStart);
+
+                  const priorSeasonCount = countedAlready
+                    ? request.seasons.length
+                    : 0;
+                  const requiredSeasons =
+                    resultingSeasonCount - priorSeasonCount;
+
+                  if (
+                    quotas.tv.limit &&
+                    requiredSeasons > (quotas.tv.remaining ?? 0)
+                  ) {
+                    return next({
+                      status: 403,
+                      message: 'Series Quota exceeded.',
+                    });
+                  }
+                }
+
+                request.seasons = request.seasons.filter((rs) =>
+                  keptSeasons.includes(rs.seasonNumber)
+                );
+
+                if (newSeasons.length > 0) {
+                  logger.debug('Adding new seasons to request', {
+                    label: 'Media Request',
+                    newSeasons,
+                  });
+                  request.seasons.push(
+                    ...newSeasons.map(
+                      (ns) =>
+                        new SeasonRequest({
+                          seasonNumber: ns,
+                          status: MediaRequestStatus.PENDING,
+                        })
+                    )
+                  );
+                }
+
+                await requestRepository.save(request);
+
+                return res.status(200).json(request);
               }
-            }
-
-            request.seasons = request.seasons.filter((rs) =>
-              keptSeasons.includes(rs.seasonNumber)
             );
-
-            if (newSeasons.length > 0) {
-              logger.debug('Adding new seasons to request', {
-                label: 'Media Request',
-                newSeasons,
-              });
-              request.seasons.push(
-                ...newSeasons.map(
-                  (ns) =>
-                    new SeasonRequest({
-                      seasonNumber: ns,
-                      status: MediaRequestStatus.PENDING,
-                    })
-                )
-              );
-            }
-
-            await requestRepository.save(request);
           }
 
           return res.status(200).json(request);

@@ -4,4 +4,7 @@ import AsyncLock from '@server/utils/asyncLock';
 // would block while holding the save's connection.
 const requestLock = new AsyncLock();
 
+// keyed on media. always taken inside requestLock, never around it.
+export const mediaLock = new AsyncLock();
+
 export default requestLock;
