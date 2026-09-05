@@ -21,8 +21,6 @@ import { mutate } from 'swr';
 const messages = defineMessages('components.RequestButton', {
   viewrequest: 'View Request',
   viewrequest4k: 'View 4K Request',
-  requestmore: 'Request More',
-  requestmore4k: 'Request More in 4K',
   approverequest: 'Approve Request',
   approverequest4k: 'Approve 4K Request',
   declinerequest: 'Decline Request',
@@ -303,7 +301,7 @@ const RequestButton = ({
   ) {
     buttons.push({
       id: 'request-more',
-      text: intl.formatMessage(messages.requestmore),
+      text: intl.formatMessage(globalMessages.requestmore),
       action: () => {
         setEditRequest(false);
         setShowRequestModal(true);
@@ -351,7 +349,7 @@ const RequestButton = ({
   ) {
     buttons.push({
       id: 'request-more-4k',
-      text: intl.formatMessage(messages.requestmore4k),
+      text: intl.formatMessage(globalMessages.requestmore4k),
       action: () => {
         setEditRequest(false);
         setShowRequest4kModal(true);
