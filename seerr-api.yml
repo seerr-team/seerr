@@ -61,6 +61,24 @@ components:
         userId:
           type: number
           example: 1
+    WatchlistRequest:
+      type: object
+      required:
+        - tmdbId
+        - mediaType
+      properties:
+        tmdbId:
+          type: number
+          example: 1
+        mediaType:
+          type: string
+          enum:
+            - movie
+            - tv
+        ratingKey:
+          type: string
+        title:
+          type: string
     Watchlist:
       type: object
       properties:
@@ -5054,9 +5072,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Watchlist'
+              $ref: '#/components/schemas/WatchlistRequest'
       responses:
-        '200':
+        '201':
           description: Watchlist data returned
           content:
             application/json:
