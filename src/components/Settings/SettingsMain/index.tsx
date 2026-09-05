@@ -59,6 +59,9 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   toastApiKeyFailure: 'Something went wrong while generating a new API key.',
   toastSettingsSuccess: 'Settings saved successfully!',
   toastSettingsFailure: 'Something went wrong while saving settings.',
+  warnNonReleased: 'Unreleased Media Warnings',
+  warnNonReleasedTip:
+    'Show a warning when requesting movies that have not been released outside theaters or series that have not yet premiered.',
   hideAvailable: 'Hide Available Media',
   hideAvailableTip:
     'Hide available media from the discover pages but not search results',
@@ -173,6 +176,7 @@ const SettingsMain = () => {
             applicationUrl: data?.applicationUrl,
             hideAvailable: data?.hideAvailable,
             hideBlocklisted: data?.hideBlocklisted,
+            warnNonReleased: data?.warnNonReleased,
             locale: data?.locale ?? 'en',
             discoverRegion: data?.discoverRegion,
             originalLanguage: data?.originalLanguage,
@@ -196,6 +200,7 @@ const SettingsMain = () => {
                 applicationUrl: values.applicationUrl,
                 hideAvailable: values.hideAvailable,
                 hideBlocklisted: values.hideBlocklisted,
+                warnNonReleased: values.warnNonReleased,
                 locale: values.locale,
                 discoverRegion: values.discoverRegion,
                 streamingRegion: values.streamingRegion,
@@ -537,6 +542,30 @@ const SettingsMain = () => {
                         setFieldValue(
                           'hideBlocklisted',
                           !values.hideBlocklisted
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="warnNonReleased" className="checkbox-label">
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.warnNonReleased)}
+                    </span>
+                    <SettingsBadge badgeType="experimental" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.warnNonReleasedTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="warnNonReleased"
+                      name="warnNonReleased"
+                      onChange={() => {
+                        setFieldValue(
+                          'warnNonReleased',
+                          !values.warnNonReleased
                         );
                       }}
                     />

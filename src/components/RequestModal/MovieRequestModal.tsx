@@ -3,6 +3,7 @@ import Modal from '@app/components/Common/Modal';
 import type { RequestOverrides } from '@app/components/RequestModal/AdvancedRequester';
 import AdvancedRequester from '@app/components/RequestModal/AdvancedRequester';
 import QuotaDisplay from '@app/components/RequestModal/QuotaDisplay';
+import useSettings from '@app/hooks/useSettings';
 import useToasts from '@app/hooks/useToasts';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
@@ -24,6 +25,7 @@ const messages = defineMessages('components.RequestModal', {
   requestCancel: 'Request for <strong>{title}</strong> canceled.',
   requestmovietitle: 'Request Movie',
   requestmovie4ktitle: 'Request Movie in 4K',
+  requestmovieNotReleased: 'This movie has not been released yet',
   edit: 'Edit Request',
   approve: 'Approve Request',
   cancel: 'Cancel Request',
@@ -61,8 +63,23 @@ const MovieRequestModal = ({
   const { data, error } = useSWR<MovieDetails>(`/api/v1/movie/${tmdbId}`, {
     revalidateOnMount: true,
   });
+
   const intl = useIntl();
   const { user, hasPermission } = useUser();
+  const settings = useSettings();
+
+  const discoverRegion =
+    user?.settings?.discoverRegion ||
+    settings.currentSettings.discoverRegion ||
+    'US';
+  const nonTheatricalReleases = data?.releases.results
+    .find((r) => r.iso_3166_1 === discoverRegion)
+    ?.release_dates?.filter((r) => r.type > 3 && r.type < 6);
+  const now = new Date();
+  const nonTheatricalInTheFuture =
+    (nonTheatricalReleases?.length ?? 0) > 0 &&
+    nonTheatricalReleases?.every((r) => new Date(r.release_date) > now);
+
   const { data: quota } = useSWR<QuotaResponse>(
     user &&
       (!requestOverrides?.user?.id || hasPermission(Permission.MANAGE_USERS))
@@ -339,6 +356,15 @@ const MovieRequestModal = ({
       okButtonType={'primary'}
       backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
     >
+      {settings.currentSettings.warnNonReleased &&
+        (!nonTheatricalReleases?.length || nonTheatricalInTheFuture) && (
+          <div className="mt-6">
+            <Alert
+              title={intl.formatMessage(messages.requestmovieNotReleased)}
+              type="warning"
+            />
+          </div>
+        )}
       {hasAutoApprove && !quota?.movie.restricted && (
         <div className="mt-6">
           <Alert
