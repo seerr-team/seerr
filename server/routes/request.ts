@@ -584,20 +584,42 @@ requestRoutes.put<{ requestId: string }>(
                 return [...seasons, ...combinedSeasons];
               }, [] as number[]);
 
+            const currentSeasons = request.seasons.map((s) => s.seasonNumber);
+
+            // Seasons the media already covers cannot be requested again, while
+            // the ones this request holds stay on it
+            const coveredSeasons = (media.seasons ?? [])
+              .filter(
+                (season) =>
+                  season[request.is4k ? 'status4k' : 'status'] !==
+                    MediaStatus.UNKNOWN &&
+                  season[request.is4k ? 'status4k' : 'status'] !==
+                    MediaStatus.DELETED
+              )
+              .map((season) => season.seasonNumber)
+              .filter((sn) => !currentSeasons.includes(sn));
+
             const filteredSeasons = requestedSeasons.filter(
               (rs) => !existingSeasons.includes(rs)
             );
 
-            if (filteredSeasons.length === 0) {
+            const keptSeasons = filteredSeasons.filter((sn) =>
+              currentSeasons.includes(sn)
+            );
+
+            const newSeasons = filteredSeasons.filter(
+              (sn) =>
+                !currentSeasons.includes(sn) && !coveredSeasons.includes(sn)
+            );
+
+            const resultingSeasonCount = keptSeasons.length + newSeasons.length;
+
+            if (resultingSeasonCount === 0) {
               return next({
                 status: 202,
                 message: 'No seasons available to request',
               });
             }
-
-            const newSeasons = filteredSeasons.filter(
-              (sn) => !request.seasons.map((s) => s.seasonNumber).includes(sn)
-            );
 
             if (!request.ignoreQuota) {
               const quotas = await requestUser.getQuota();
@@ -618,7 +640,7 @@ requestRoutes.put<{ requestId: string }>(
               const priorSeasonCount = countedAlready
                 ? request.seasons.length
                 : 0;
-              const requiredSeasons = filteredSeasons.length - priorSeasonCount;
+              const requiredSeasons = resultingSeasonCount - priorSeasonCount;
 
               if (
                 quotas.tv.limit &&
@@ -632,7 +654,7 @@ requestRoutes.put<{ requestId: string }>(
             }
 
             request.seasons = request.seasons.filter((rs) =>
-              filteredSeasons.includes(rs.seasonNumber)
+              keptSeasons.includes(rs.seasonNumber)
             );
 
             if (newSeasons.length > 0) {
