@@ -85,6 +85,16 @@ export class UserSettings {
   @Column({ nullable: true })
   public watchlistSyncTv?: boolean;
 
+  // Admin-set only; user cannot view or change their own limits.
+  @Column({ type: 'varchar', nullable: true })
+  public maxMovieRating?: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  public maxTvRating?: string | null;
+
+  @Column({ default: false })
+  public blockUnrated?: boolean;
+
   @Column({
     type: 'text',
     nullable: true,

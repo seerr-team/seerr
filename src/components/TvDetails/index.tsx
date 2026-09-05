@@ -185,7 +185,8 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   }
 
   if (!data) {
-    return <ErrorPage statusCode={404} />;
+    const statusCode = error?.response?.status === 403 ? 403 : 404;
+    return <ErrorPage statusCode={statusCode} />;
   }
 
   const mediaLinks: PlayButtonLink[] = [];

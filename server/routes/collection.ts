@@ -1,6 +1,10 @@
 import TheMovieDb from '@server/api/themoviedb';
 import { MediaType } from '@server/constants/media';
 import Media from '@server/entity/Media';
+import {
+  filterMoviesByRating,
+  getUserContentRatingLimits,
+} from '@server/lib/contentRating';
 import logger from '@server/logger';
 import { mapCollection } from '@server/models/Collection';
 import { Router } from 'express';
@@ -16,15 +20,18 @@ collectionRoutes.get<{ id: string }>('/:id', async (req, res, next) => {
       language: (req.query.language as string) ?? req.locale,
     });
 
+    const limits = getUserContentRatingLimits(req.user);
+    const parts = await filterMoviesByRating(collection.parts, limits);
+
     const media = await Media.getRelatedMedia(
       req.user,
-      collection.parts.map((part) => ({
+      parts.map((part) => ({
         tmdbId: part.id,
         mediaType: MediaType.MOVIE,
       }))
     );
 
-    return res.status(200).json(mapCollection(collection, media));
+    return res.status(200).json(mapCollection({ ...collection, parts }, media));
   } catch (e) {
     logger.debug('Something went wrong retrieving collection', {
       label: 'API',

@@ -3,10 +3,16 @@ import RottenTomatoes from '@server/api/rating/rottentomatoes';
 import TheMovieDb from '@server/api/themoviedb';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
+import { shouldFilterTv } from '@server/constants/contentRatings';
 import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { Watchlist } from '@server/entity/Watchlist';
+import {
+  filterTvByRating,
+  getTvCertification,
+  getUserContentRatingLimits,
+} from '@server/lib/contentRating';
 import logger from '@server/logger';
 import { mapTvResult } from '@server/models/Search';
 import { mapSeasonWithEpisodes, mapTvDetails } from '@server/models/Tv';
@@ -21,6 +27,22 @@ tvRoutes.get('/:id', async (req, res, next) => {
     const tmdbTv = await tmdb.getTvShow({
       tvId: Number(req.params.id),
     });
+
+    const limits = getUserContentRatingLimits(req.user);
+    if (
+      limits &&
+      shouldFilterTv(
+        getTvCertification(tmdbTv),
+        limits.maxTvRating,
+        limits.blockUnrated
+      )
+    ) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Content restricted by parental controls.',
+      });
+    }
+
     const metadataProvider = tmdbTv.keywords.results.some(
       (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
     )
@@ -72,6 +94,22 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
     const tmdbTv = await tmdb.getTvShow({
       tvId: Number(req.params.id),
     });
+
+    const limits = getUserContentRatingLimits(req.user);
+    if (
+      limits &&
+      shouldFilterTv(
+        getTvCertification(tmdbTv),
+        limits.maxTvRating,
+        limits.blockUnrated
+      )
+    ) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Content restricted by parental controls.',
+      });
+    }
+
     const metadataProvider = tmdbTv.keywords.results.some(
       (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
     )
@@ -109,9 +147,12 @@ tvRoutes.get('/:id/recommendations', async (req, res, next) => {
       language: (req.query.language as string) ?? req.locale,
     });
 
+    const limits = getUserContentRatingLimits(req.user);
+    const filteredResults = await filterTvByRating(results.results, limits);
+
     const media = await Media.getRelatedMedia(
       req.user,
-      results.results.map((result) => ({
+      filteredResults.map((result) => ({
         tmdbId: result.id,
         mediaType: MediaType.TV,
       }))
@@ -121,7 +162,7 @@ tvRoutes.get('/:id/recommendations', async (req, res, next) => {
       page: results.page,
       totalPages: results.total_pages,
       totalResults: results.total_results,
-      results: results.results.map((result) =>
+      results: filteredResults.map((result) =>
         mapTvResult(
           result,
           media.find(
@@ -153,9 +194,12 @@ tvRoutes.get('/:id/similar', async (req, res, next) => {
       language: (req.query.language as string) ?? req.locale,
     });
 
+    const limits = getUserContentRatingLimits(req.user);
+    const filteredResults = await filterTvByRating(results.results, limits);
+
     const media = await Media.getRelatedMedia(
       req.user,
-      results.results.map((result) => ({
+      filteredResults.map((result) => ({
         tmdbId: result.id,
         mediaType: MediaType.TV,
       }))
@@ -165,7 +209,7 @@ tvRoutes.get('/:id/similar', async (req, res, next) => {
       page: results.page,
       totalPages: results.total_pages,
       totalResults: results.total_results,
-      results: results.results.map((result) =>
+      results: filteredResults.map((result) =>
         mapTvResult(
           result,
           media.find(
@@ -195,6 +239,21 @@ tvRoutes.get('/:id/ratings', async (req, res, next) => {
     const tv = await tmdb.getTvShow({
       tvId: Number(req.params.id),
     });
+
+    const limits = getUserContentRatingLimits(req.user);
+    if (
+      limits &&
+      shouldFilterTv(
+        getTvCertification(tv),
+        limits.maxTvRating,
+        limits.blockUnrated
+      )
+    ) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Content restricted by parental controls.',
+      });
+    }
 
     const rtratings = await rtapi.getTVRatings(
       tv.name,

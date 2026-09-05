@@ -1,5 +1,9 @@
 import ExternalAPI from '@server/api/externalapi';
 import type { TvShowProvider } from '@server/api/provider';
+import {
+  getAllowedRatings,
+  type UserContentRatingLimits,
+} from '@server/constants/contentRatings';
 import type { CacheStore } from '@server/lib/cache';
 import cacheManager from '@server/lib/cache';
 import { getSettings } from '@server/lib/settings';
@@ -178,10 +182,16 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
   private locale: string;
   private discoverRegion?: string;
   private originalLanguage?: string;
+  private contentRatingLimits?: UserContentRatingLimits;
   constructor({
     discoverRegion,
     originalLanguage,
-  }: { discoverRegion?: string; originalLanguage?: string } = {}) {
+    contentRatingLimits,
+  }: {
+    discoverRegion?: string;
+    originalLanguage?: string;
+    contentRatingLimits?: UserContentRatingLimits;
+  } = {}) {
     super(
       'https://api.themoviedb.org/3',
       {
@@ -198,6 +208,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     this.locale = getSettings().main?.locale || 'en';
     this.discoverRegion = discoverRegion;
     this.originalLanguage = originalLanguage;
+    this.contentRatingLimits = contentRatingLimits;
   }
 
   public searchMulti = async ({
@@ -714,6 +725,11 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
         .toISOString()
         .split('T')[0];
 
+      const allowedCertifications = getAllowedRatings(
+        'movie',
+        this.contentRatingLimits ?? {}
+      );
+
       const data = await this.get<TmdbSearchMovieResponse>('/discover/movie', {
         params: {
           sort_by: sortBy,
@@ -750,10 +766,18 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
           'vote_count.lte': voteCountLte,
           watch_region: watchRegion,
           with_watch_providers: watchProviders,
-          certification: certification,
-          'certification.gte': certificationGte,
-          'certification.lte': certificationLte,
-          certification_country: certificationCountry,
+          certification: allowedCertifications
+            ? allowedCertifications.join('|')
+            : certification,
+          'certification.gte': allowedCertifications
+            ? undefined
+            : certificationGte,
+          'certification.lte': allowedCertifications
+            ? undefined
+            : certificationLte,
+          certification_country: allowedCertifications
+            ? 'US'
+            : certificationCountry,
         },
       });
 
@@ -802,6 +826,11 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
         .toISOString()
         .split('T')[0];
 
+      const allowedCertifications = getAllowedRatings(
+        'tv',
+        this.contentRatingLimits ?? {}
+      );
+
       const data = await this.get<TmdbSearchTvResponse>('/discover/tv', {
         params: {
           sort_by: sortBy,
@@ -838,10 +867,18 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
           with_watch_providers: watchProviders,
           watch_region: watchRegion,
           with_status: withStatus,
-          certification: certification,
-          'certification.gte': certificationGte,
-          'certification.lte': certificationLte,
-          certification_country: certificationCountry,
+          certification: allowedCertifications
+            ? allowedCertifications.join('|')
+            : certification,
+          'certification.gte': allowedCertifications
+            ? undefined
+            : certificationGte,
+          'certification.lte': allowedCertifications
+            ? undefined
+            : certificationLte,
+          certification_country: allowedCertifications
+            ? 'US'
+            : certificationCountry,
         },
       });
 
