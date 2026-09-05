@@ -14,6 +14,12 @@ import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
+import {
+  evaluateReleaseRestriction,
+  getMovieReleaseEligibility,
+  getTvSeasonReleaseEligibility,
+  type ReleaseEligibility,
+} from '@server/utils/releaseEligibility';
 import requestLock from '@server/utils/requestLock';
 import { truncate } from 'lodash';
 import {
@@ -38,6 +44,24 @@ export class QuotaRestrictedError extends Error {}
 export class DuplicateMediaRequestError extends Error {}
 export class NoSeasonsAvailableError extends Error {}
 export class BlocklistedMediaError extends Error {}
+export class ReleaseDateRestrictedError extends Error {}
+
+export const assertReleaseRestriction = (
+  eligibilities: ReleaseEligibility[],
+  actingUser: User
+): void => {
+  const settings = getSettings();
+  const decision = evaluateReleaseRestriction(eligibilities, {
+    enabled: settings.main.releaseDateRestrictionEnabled,
+    canBypass: actingUser.hasPermission(Permission.MANAGE_REQUESTS),
+  });
+
+  if (!decision.allowed) {
+    throw new ReleaseDateRestrictedError(
+      'This media has not been released yet.'
+    );
+  }
+};
 
 type MediaRequestOptions = {
   isAutoRequest?: boolean;
@@ -154,6 +178,16 @@ export class MediaRequest {
       requestBody.mediaType === MediaType.MOVIE
         ? await tmdb.getMovie({ movieId: requestBody.mediaId })
         : await tmdb.getTvShow({ tvId: requestBody.mediaId });
+
+    if (
+      requestBody.mediaType === MediaType.MOVIE &&
+      'release_dates' in tmdbMedia
+    ) {
+      assertReleaseRestriction(
+        [getMovieReleaseEligibility(tmdbMedia.release_dates)],
+        user
+      );
+    }
 
     let media = await mediaRepository.findOne({
       where: {
@@ -484,7 +518,20 @@ export class MediaRequest {
 
       if (finalSeasons.length === 0) {
         throw new NoSeasonsAvailableError('No seasons available to request');
-      } else if (
+      }
+
+      assertReleaseRestriction(
+        finalSeasons.map((seasonNumber) =>
+          getTvSeasonReleaseEligibility(
+            tmdbMediaShow.seasons.find(
+              (season) => season.season_number === seasonNumber
+            )?.air_date
+          )
+        ),
+        user
+      );
+
+      if (
         !ignoreQuota &&
         quotas.tv.limit &&
         finalSeasons.length > (quotas.tv.remaining ?? 0)

@@ -1,5 +1,7 @@
 import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
+import TheMovieDb from '@server/api/themoviedb';
+import { ApiErrorCode } from '@server/constants/error';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -13,7 +15,9 @@ import {
   MediaRequest,
   NoSeasonsAvailableError,
   QuotaRestrictedError,
+  ReleaseDateRestrictedError,
   RequestPermissionError,
+  assertReleaseRestriction,
 } from '@server/entity/MediaRequest';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
@@ -25,6 +29,7 @@ import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
+import { getTvSeasonReleaseEligibility } from '@server/utils/releaseEligibility';
 import { Router } from 'express';
 
 const requestRoutes = Router();
@@ -318,6 +323,13 @@ requestRoutes.post<never, MediaRequest, MediaRequestBody>(
         return;
       }
 
+      if (error instanceof ReleaseDateRestrictedError) {
+        return next({
+          status: 403,
+          message: ApiErrorCode.MediaNotReleased,
+        });
+      }
+
       switch (error.constructor) {
         case RequestPermissionError:
         case QuotaRestrictedError:
@@ -571,9 +583,38 @@ requestRoutes.put<{ requestId: string }>(
           });
         }
 
+        const availableSeasons = (media.seasons ?? [])
+          .filter(
+            (season) =>
+              season[request.is4k ? 'status4k' : 'status'] !==
+                MediaStatus.UNKNOWN &&
+              season[request.is4k ? 'status4k' : 'status'] !==
+                MediaStatus.DELETED
+          )
+          .map((season) => season.seasonNumber);
         const newSeasons = filteredSeasons.filter(
-          (sn) => !request.seasons.map((s) => s.seasonNumber).includes(sn)
+          (seasonNumber) =>
+            !request.seasons
+              .map((season) => season.seasonNumber)
+              .includes(seasonNumber) &&
+            !availableSeasons.includes(seasonNumber)
         );
+
+        if (newSeasons.length > 0 && req.user) {
+          const tmdb = new TheMovieDb();
+          const tv = await tmdb.getTvShow({ tvId: media.tmdbId });
+
+          assertReleaseRestriction(
+            newSeasons.map((seasonNumber) =>
+              getTvSeasonReleaseEligibility(
+                tv.seasons.find(
+                  (season) => season.season_number === seasonNumber
+                )?.air_date
+              )
+            ),
+            req.user
+          );
+        }
 
         request.seasons = request.seasons.filter((rs) =>
           filteredSeasons.includes(rs.seasonNumber)
@@ -600,6 +641,13 @@ requestRoutes.put<{ requestId: string }>(
 
       return res.status(200).json(request);
     } catch (e) {
+      if (e instanceof ReleaseDateRestrictedError) {
+        return next({
+          status: 403,
+          message: ApiErrorCode.MediaNotReleased,
+        });
+      }
+
       next({ status: 500, message: e.message });
     }
   }
