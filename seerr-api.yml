@@ -5513,6 +5513,13 @@ paths:
           schema:
             type: string
             example: en
+        - in: query
+          name: searchType
+          schema:
+            type: string
+            enum: ['all', 'movie', 'tv', 'person', 'collection']
+            default: all
+            example: all
       responses:
         '200':
           description: Results
@@ -5537,6 +5544,7 @@ paths:
                         - $ref: '#/components/schemas/MovieResult'
                         - $ref: '#/components/schemas/TvResult'
                         - $ref: '#/components/schemas/PersonResult'
+                        - $ref: '#/components/schemas/CollectionResult'
   /search/keyword:
     get:
       summary: Search for keywords
