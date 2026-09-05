@@ -25,6 +25,17 @@ Object.defineProperty(RadarrAPI.prototype, 'getMovies', {
   configurable: true,
 });
 
+let getLibraryMoviesByTmdbIdImpl: (
+  tmdbId: number
+) => Promise<RadarrMovie[]> = async () => [];
+Object.defineProperty(RadarrAPI.prototype, 'getLibraryMoviesByTmdbId', {
+  set() {},
+  get() {
+    return async (tmdbId: number) => getLibraryMoviesByTmdbIdImpl(tmdbId);
+  },
+  configurable: true,
+});
+
 mock.method(MediaRequest, 'sendNotification', async () => undefined);
 
 setupTestDb();
@@ -76,6 +87,7 @@ function fakeRadarrMovie(overrides: Partial<RadarrMovie> = {}): RadarrMovie {
 describe('Radarr Scanner', () => {
   beforeEach(() => {
     getMoviesImpl = async () => [];
+    getLibraryMoviesByTmdbIdImpl = async () => [];
   });
 
   describe('unmonitored movie handling', () => {
@@ -355,6 +367,76 @@ describe('Radarr Scanner', () => {
         where: { tmdbId: 902 },
       });
       assert.strictEqual(updatedExisting.status, MediaStatus.AVAILABLE);
+    });
+
+    it('does not reset a movie added to Radarr after the scan started', async () => {
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 910;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.PROCESSING;
+      await mediaRepository.save(media);
+
+      configureRadarr([{ syncEnabled: true }]);
+      getMoviesImpl = async () => [fakeRadarrMovie({ tmdbId: 111 })];
+      getLibraryMoviesByTmdbIdImpl = async (tmdbId) => [
+        fakeRadarrMovie({ tmdbId }),
+      ];
+
+      await radarrScanner.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 910 },
+      });
+      assert.strictEqual(updated.status, MediaStatus.PROCESSING);
+    });
+
+    it('does not reset a movie when the server cannot be reached', async () => {
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 911;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.PROCESSING;
+      await mediaRepository.save(media);
+
+      configureRadarr([{ syncEnabled: true }]);
+      getMoviesImpl = async () => [fakeRadarrMovie({ tmdbId: 111 })];
+      getLibraryMoviesByTmdbIdImpl = async () => {
+        throw new Error('connect ECONNREFUSED');
+      };
+
+      await radarrScanner.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 911 },
+      });
+      assert.strictEqual(updated.status, MediaStatus.PROCESSING);
+    });
+
+    it('resets a movie when the server returns no row matching its id', async () => {
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 912;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.PROCESSING;
+      await mediaRepository.save(media);
+
+      configureRadarr([{ syncEnabled: true }]);
+      getMoviesImpl = async () => [fakeRadarrMovie({ tmdbId: 111 })];
+      getLibraryMoviesByTmdbIdImpl = async () => [
+        fakeRadarrMovie({ tmdbId: 111 }),
+        fakeRadarrMovie({ tmdbId: 222 }),
+      ];
+
+      await radarrScanner.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 912 },
+      });
+      assert.strictEqual(updated.status, MediaStatus.UNKNOWN);
     });
   });
 

@@ -31,6 +31,17 @@ Object.defineProperty(SonarrAPI.prototype, 'getSeries', {
   configurable: true,
 });
 
+let getLibrarySeriesByTvdbIdImpl: (
+  tvdbId: number
+) => Promise<SonarrSeries[]> = async () => [];
+Object.defineProperty(SonarrAPI.prototype, 'getLibrarySeriesByTvdbId', {
+  set() {},
+  get() {
+    return async (tvdbId: number) => getLibrarySeriesByTvdbIdImpl(tvdbId);
+  },
+  configurable: true,
+});
+
 function fakeTmdbShow(
   tmdbId: number,
   seasons: TmdbTvSeasonResult[] = [
@@ -177,6 +188,7 @@ function configureSonarr(overrides: Partial<SonarrSettings>[] = [{}]): void {
 describe('Sonarr Scanner', () => {
   beforeEach(() => {
     getSeriesImpl = async () => [];
+    getLibrarySeriesByTvdbIdImpl = async () => [];
     getShowByTvdbIdImpl = async () => fakeTmdbShow(1);
     getTvShowImpl = async () => fakeTmdbShow(1);
   });
@@ -438,6 +450,79 @@ describe('Sonarr Scanner', () => {
         relations: ['seasons'],
       });
       assert.notStrictEqual(updatedExisting.status, MediaStatus.UNKNOWN);
+    });
+
+    it('does not reset a show added to Sonarr after the scan started', async () => {
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 1020;
+      media.tvdbId = 620;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.PROCESSING;
+      await mediaRepository.save(media);
+
+      configureSonarr([{ syncEnabled: true }]);
+      getSeriesImpl = async () => [fakeSonarrSeries({ tvdbId: 111 })];
+      getLibrarySeriesByTvdbIdImpl = async (tvdbId) => [
+        fakeSonarrSeries({ tvdbId }),
+      ];
+
+      await sonarrScanner.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 1020 },
+      });
+      assert.strictEqual(updated.status, MediaStatus.PROCESSING);
+    });
+
+    it('does not reset a show when the server cannot be reached', async () => {
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 1021;
+      media.tvdbId = 621;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.PROCESSING;
+      await mediaRepository.save(media);
+
+      configureSonarr([{ syncEnabled: true }]);
+      getSeriesImpl = async () => [fakeSonarrSeries({ tvdbId: 111 })];
+      getLibrarySeriesByTvdbIdImpl = async () => {
+        throw new Error('connect ECONNREFUSED');
+      };
+
+      await sonarrScanner.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 1021 },
+      });
+      assert.strictEqual(updated.status, MediaStatus.PROCESSING);
+    });
+
+    it('resets a show when the server returns no row matching its id', async () => {
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 1022;
+      media.tvdbId = 622;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.PROCESSING;
+      await mediaRepository.save(media);
+
+      configureSonarr([{ syncEnabled: true }]);
+      getSeriesImpl = async () => [fakeSonarrSeries({ tvdbId: 111 })];
+      getLibrarySeriesByTvdbIdImpl = async () => [
+        fakeSonarrSeries({ tvdbId: 111 }),
+        fakeSonarrSeries({ tvdbId: 222 }),
+      ];
+
+      await sonarrScanner.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 1022 },
+      });
+      assert.strictEqual(updated.status, MediaStatus.UNKNOWN);
     });
 
     it('skips shows without a tvdbId during cleanup', async () => {

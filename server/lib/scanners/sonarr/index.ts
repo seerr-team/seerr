@@ -236,6 +236,39 @@ class SonarrScanner
     }
   }
 
+  private async existsInAnyServer(
+    tvdbId: number,
+    is4k: boolean
+  ): Promise<boolean> {
+    const servers = this.servers.filter(
+      (server) =>
+        server.syncEnabled && (this.enable4kShow && server.is4k) === is4k
+    );
+
+    for (const server of servers) {
+      try {
+        const api = new SonarrAPI({
+          apiKey: server.apiKey,
+          url: SonarrAPI.buildUrl(server, '/api/v3'),
+        });
+        const series = await api.getLibrarySeriesByTvdbId(tvdbId);
+
+        if (series.some((show) => show.tvdbId === tvdbId)) {
+          return true;
+        }
+      } catch (e) {
+        this.log(
+          `Could not confirm series ${tvdbId} against Sonarr server ${server.name}. Skipping cleanup for it.`,
+          'warn',
+          { errorMessage: e.message }
+        );
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   private async cleanupOrphanedShows(): Promise<void> {
     const mediaRepository = getRepository(Media);
 
@@ -247,6 +280,10 @@ class SonarrScanner
 
       for (const media of processingShows) {
         if (media.tvdbId && !this.scannedTvdbIds.has(media.tvdbId)) {
+          if (await this.existsInAnyServer(media.tvdbId, false)) {
+            continue;
+          }
+
           media.status = MediaStatus.UNKNOWN;
           for (const season of media.seasons) {
             if (season.status === MediaStatus.PROCESSING) {
@@ -276,6 +313,10 @@ class SonarrScanner
 
       for (const media of processing4kShows) {
         if (media.tvdbId && !this.scanned4kTvdbIds.has(media.tvdbId)) {
+          if (await this.existsInAnyServer(media.tvdbId, true)) {
+            continue;
+          }
+
           media.status4k = MediaStatus.UNKNOWN;
           for (const season of media.seasons) {
             if (season.status4k === MediaStatus.PROCESSING) {
