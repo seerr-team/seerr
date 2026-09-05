@@ -1,6 +1,6 @@
 import IMDBRadarrProxy from '@server/api/rating/imdbRadarrProxy';
 import RottenTomatoes from '@server/api/rating/rottentomatoes';
-import { type RatingResponse } from '@server/api/ratings';
+import { combineMovieRatingResults } from '@server/api/ratings';
 import TheMovieDb from '@server/api/themoviedb';
 import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
@@ -197,27 +197,50 @@ movieRoutes.get('/:id/ratingscombined', async (req, res, next) => {
       movieId: Number(req.params.id),
     });
 
-    const rtratings = await rtapi.getMovieRatings(
-      movie.title,
-      Number(movie.release_date.slice(0, 4))
+    const [rtResult, imdbResult] = await Promise.allSettled([
+      rtapi.getMovieRatings(
+        movie.title,
+        Number(movie.release_date.slice(0, 4))
+      ),
+      movie.imdb_id
+        ? imdbApi.getMovieRatings(movie.imdb_id)
+        : Promise.resolve(null),
+    ]);
+
+    const providerResults = movie.imdb_id ? [rtResult, imdbResult] : [rtResult];
+
+    providerResults.forEach((result) => {
+      if (result.status === 'rejected') {
+        logger.debug('A movie ratings provider request failed', {
+          label: 'API',
+          errorMessage:
+            result.reason instanceof Error
+              ? result.reason.message
+              : String(result.reason),
+          movieId: req.params.id,
+        });
+      }
+    });
+
+    const { ratings, allProvidersFailed } = combineMovieRatingResults(
+      rtResult,
+      imdbResult,
+      Boolean(movie.imdb_id)
     );
 
-    let imdbRatings;
-    if (movie.imdb_id) {
-      imdbRatings = await imdbApi.getMovieRatings(movie.imdb_id);
-    }
+    if (!ratings.rt && !ratings.imdb) {
+      if (allProvidersFailed) {
+        return next({
+          status: 500,
+          message: 'Unable to retrieve movie ratings.',
+        });
+      }
 
-    if (!rtratings && !imdbRatings) {
       return next({
         status: 404,
         message: 'No ratings found.',
       });
     }
-
-    const ratings: RatingResponse = {
-      ...(rtratings ? { rt: rtratings } : {}),
-      ...(imdbRatings ? { imdb: imdbRatings } : {}),
-    };
 
     return res.status(200).json(ratings);
   } catch (e) {

@@ -7,6 +7,7 @@ import Tooltip from '@app/components/Common/Tooltip';
 import RequestModal from '@app/components/RequestModal';
 import ErrorCard from '@app/components/TitleCard/ErrorCard';
 import Placeholder from '@app/components/TitleCard/Placeholder';
+import TitleCardRatings from '@app/components/TitleCard/TitleCardRatings';
 import { useIsTouch } from '@app/hooks/useIsTouch';
 import useToasts from '@app/hooks/useToasts';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
@@ -62,6 +63,7 @@ const TitleCard = ({
   year,
   title,
   status,
+  userScore,
   mediaType,
   isAddedToWatchlist = false,
   inProgress = false,
@@ -522,7 +524,7 @@ const TitleCard = ({
                     {year && <div className="text-sm font-medium">{year}</div>}
 
                     <h1
-                      className="whitespace-normal text-xl font-bold leading-tight"
+                      className="whitespace-normal text-lg font-bold leading-tight"
                       style={{
                         WebkitLineClamp: 3,
                         display: '-webkit-box',
@@ -552,6 +554,14 @@ const TitleCard = ({
                     >
                       {summary}
                     </div>
+                    {typeof userScore === 'number' && userScore > 0 && (
+                      <TitleCardRatings
+                        id={id}
+                        mediaType={mediaType}
+                        userScore={userScore}
+                        visible={showDetail}
+                      />
+                    )}
                   </div>
                 </div>
               </Link>
