@@ -138,6 +138,14 @@ class PushoverAgent
 
       if (status) {
         message += `<small>\n<b>${intl.formatMessage(globalMessages.requestStatus)}:</b> ${status}</small>`;
+
+        if (
+          type === Notification.MEDIA_DECLINED &&
+          payload.request &&
+          payload.request.declineReason
+        ) {
+          message += `<small>\n\n<b>${intl.formatMessage(globalMessages.declineReason)}:</b> ${payload.request.declineReason}</small>`;
+        }
       }
     } else if (payload.comment) {
       message += `<small>\n\n<b>${intl.formatMessage(globalMessages.commentFrom, { userName: payload.comment.user.displayName })}:</b> ${payload.comment.message}</small>`;

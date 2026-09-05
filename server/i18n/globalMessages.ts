@@ -21,6 +21,7 @@ const globalMessages = defineMessages('notifications.common', {
   series: 'series',
   issue: 'issue',
   issueTypeName: '{type} issue',
+  declineReason: 'Decline Reason',
 });
 
 export default globalMessages;
