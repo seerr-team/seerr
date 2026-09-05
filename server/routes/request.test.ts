@@ -21,6 +21,7 @@ import { User } from '@server/entity/User';
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { checkUser } from '@server/middleware/auth';
+import { MediaRequestSubscriber } from '@server/subscriber/MediaRequestSubscriber';
 import { setupTestDb } from '@server/test/db';
 import type { Express } from 'express';
 import express from 'express';
@@ -290,6 +291,20 @@ describe('DELETE /request/:requestId', () => {
     const res = await agent.delete('/request/99999999');
 
     assert.strictEqual(res.status, 404);
+  });
+
+  it('deletes a request once when two deletes race', async () => {
+    const repo = getRepository(MediaRequest);
+    const mediaRequest = await seedRequest();
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+
+    const results = await Promise.all([
+      admin.delete(`/request/${mediaRequest.id}`),
+      admin.delete(`/request/${mediaRequest.id}`),
+    ]);
+
+    assert.deepStrictEqual(results.map((r) => r.status).sort(), [204, 404]);
+    assert.strictEqual(await repo.count({ where: { id: mediaRequest.id } }), 0);
   });
 });
 
@@ -677,6 +692,27 @@ describe('POST /request/:requestId/:status', () => {
     assert.strictEqual(persisted.status, MediaRequestStatus.APPROVED);
   });
 
+  it('applies only one of a concurrent approve and decline', async () => {
+    const repo = getRepository(MediaRequest);
+    const pending = await seedRequest();
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+
+    const [approve, decline] = await Promise.all([
+      admin.post(`/request/${pending.id}/approve`),
+      admin.post(`/request/${pending.id}/decline`),
+    ]);
+
+    assert.deepStrictEqual([approve.status, decline.status].sort(), [200, 409]);
+
+    const persisted = await repo.findOneOrFail({ where: { id: pending.id } });
+    assert.strictEqual(
+      persisted.status,
+      approve.status === 200
+        ? MediaRequestStatus.APPROVED
+        : MediaRequestStatus.DECLINED
+    );
+  });
+
   it('rejects the removed pending verb even on a non-pending request', async () => {
     const repo = getRepository(MediaRequest);
     const declined = await seedRequest(MediaRequestStatus.DECLINED);
@@ -726,6 +762,29 @@ describe('POST /request/:requestId/retry', () => {
 
     const persisted = await repo.findOneOrFail({ where: { id: pending.id } });
     assert.strictEqual(persisted.status, MediaRequestStatus.PENDING);
+  });
+
+  it('sends a concurrently retried request to *arr once', async (t) => {
+    const repo = getRepository(MediaRequest);
+    const failed = await seedRequest(MediaRequestStatus.FAILED);
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+
+    const sendToRadarr = t.mock.method(
+      MediaRequestSubscriber.prototype,
+      'sendToRadarr',
+      async () => undefined
+    );
+
+    const results = await Promise.all([
+      admin.post(`/request/${failed.id}/retry`),
+      admin.post(`/request/${failed.id}/retry`),
+    ]);
+
+    assert.deepStrictEqual(results.map((r) => r.status).sort(), [200, 409]);
+    assert.strictEqual(sendToRadarr.mock.callCount(), 1);
+
+    const persisted = await repo.findOneOrFail({ where: { id: failed.id } });
+    assert.strictEqual(persisted.status, MediaRequestStatus.APPROVED);
   });
 });
 

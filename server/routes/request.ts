@@ -665,27 +665,30 @@ requestRoutes.put<{ requestId: string }>(
 
 requestRoutes.delete('/:requestId', async (req, res, next) => {
   const requestRepository = getRepository(MediaRequest);
+  const requestId = Number(req.params.requestId);
 
   try {
-    const request = await requestRepository.findOneOrFail({
-      where: { id: Number(req.params.requestId) },
-      relations: { requestedBy: true, modifiedBy: true },
-    });
-
-    if (
-      !req.user?.hasPermission(Permission.MANAGE_REQUESTS) &&
-      (request.requestedBy.id !== req.user?.id ||
-        request.status !== MediaRequestStatus.PENDING)
-    ) {
-      return next({
-        status: 401,
-        message: 'You do not have permission to delete this request.',
+    return await requestLock.dispatch(`request:${requestId}`, async () => {
+      const request = await requestRepository.findOneOrFail({
+        where: { id: requestId },
+        relations: { requestedBy: true, modifiedBy: true },
       });
-    }
 
-    await requestRepository.remove(request);
+      if (
+        !req.user?.hasPermission(Permission.MANAGE_REQUESTS) &&
+        (request.requestedBy.id !== req.user?.id ||
+          request.status !== MediaRequestStatus.PENDING)
+      ) {
+        return next({
+          status: 401,
+          message: 'You do not have permission to delete this request.',
+        });
+      }
 
-    return res.status(204).send();
+      await requestRepository.remove(request);
+
+      return res.status(204).send();
+    });
   } catch (e) {
     logger.error('Something went wrong deleting a request.', {
       label: 'API',
@@ -702,26 +705,29 @@ requestRoutes.post<{
   isAuthenticated(Permission.MANAGE_REQUESTS),
   async (req, res, next) => {
     const requestRepository = getRepository(MediaRequest);
+    const requestId = Number(req.params.requestId);
 
     try {
-      const request = await requestRepository.findOneOrFail({
-        where: { id: Number(req.params.requestId) },
-        relations: { requestedBy: true, modifiedBy: true },
-      });
-
-      if (request.status !== MediaRequestStatus.FAILED) {
-        return next({
-          status: 409,
-          message: 'Only failed requests can be retried.',
+      return await requestLock.dispatch(`request:${requestId}`, async () => {
+        const request = await requestRepository.findOneOrFail({
+          where: { id: requestId },
+          relations: { requestedBy: true, modifiedBy: true },
         });
-      }
 
-      // this also triggers updating the parent media's status & sending to *arr
-      request.status = MediaRequestStatus.APPROVED;
-      request.modifiedBy = req.user;
-      await requestRepository.save(request);
+        if (request.status !== MediaRequestStatus.FAILED) {
+          return next({
+            status: 409,
+            message: 'Only failed requests can be retried.',
+          });
+        }
 
-      return res.status(200).json(request);
+        // this also triggers updating the parent media's status & sending to *arr
+        request.status = MediaRequestStatus.APPROVED;
+        request.modifiedBy = req.user;
+        await requestRepository.save(request);
+
+        return res.status(200).json(request);
+      });
     } catch (e) {
       logger.error('Error processing request retry', {
         label: 'Media Request',
@@ -740,41 +746,44 @@ requestRoutes.post<{
   isAuthenticated(Permission.MANAGE_REQUESTS),
   async (req, res, next) => {
     const requestRepository = getRepository(MediaRequest);
+    const requestId = Number(req.params.requestId);
 
     try {
-      const request = await requestRepository.findOneOrFail({
-        where: { id: Number(req.params.requestId) },
-        relations: { requestedBy: true, modifiedBy: true },
-      });
-
-      let newStatus: MediaRequestStatus;
-
-      switch (req.params.status) {
-        case 'approve':
-          newStatus = MediaRequestStatus.APPROVED;
-          break;
-        case 'decline':
-          newStatus = MediaRequestStatus.DECLINED;
-          break;
-        default:
-          return next({
-            status: 400,
-            message: 'Status must be approve or decline.',
-          });
-      }
-
-      if (request.status !== MediaRequestStatus.PENDING) {
-        return next({
-          status: 409,
-          message: 'Only pending requests can be approved or declined.',
+      return await requestLock.dispatch(`request:${requestId}`, async () => {
+        const request = await requestRepository.findOneOrFail({
+          where: { id: requestId },
+          relations: { requestedBy: true, modifiedBy: true },
         });
-      }
 
-      request.status = newStatus;
-      request.modifiedBy = req.user;
-      await requestRepository.save(request);
+        let newStatus: MediaRequestStatus;
 
-      return res.status(200).json(request);
+        switch (req.params.status) {
+          case 'approve':
+            newStatus = MediaRequestStatus.APPROVED;
+            break;
+          case 'decline':
+            newStatus = MediaRequestStatus.DECLINED;
+            break;
+          default:
+            return next({
+              status: 400,
+              message: 'Status must be approve or decline.',
+            });
+        }
+
+        if (request.status !== MediaRequestStatus.PENDING) {
+          return next({
+            status: 409,
+            message: 'Only pending requests can be approved or declined.',
+          });
+        }
+
+        request.status = newStatus;
+        request.modifiedBy = req.user;
+        await requestRepository.save(request);
+
+        return res.status(200).json(request);
+      });
     } catch (e) {
       logger.error('Error processing request update', {
         label: 'Media Request',
