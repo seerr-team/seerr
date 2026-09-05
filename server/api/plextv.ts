@@ -104,7 +104,28 @@ interface WatchlistResponse {
     Metadata?: {
       ratingKey: string;
     }[];
+    Video?: {
+      ratingKey: string;
+    }[];
   };
+}
+
+function isWatchlistResponse(data: unknown): data is WatchlistResponse {
+  if (
+    typeof data !== 'object' ||
+    data === null ||
+    !('MediaContainer' in data)
+  ) {
+    return false;
+  }
+
+  const { MediaContainer: container } = data as WatchlistResponse;
+  return (
+    typeof container === 'object' &&
+    container !== null &&
+    !Array.isArray(container) &&
+    typeof container.totalSize === 'number'
+  );
 }
 
 type PlexMetadataItem = {
@@ -116,7 +137,7 @@ type PlexMetadataItem = {
   }[];
 };
 interface MetadataResponse {
-  MediaContainer: {
+  MediaContainer?: {
     Metadata?: PlexMetadataItem[];
     Video?: PlexMetadataItem[];
   };
@@ -131,7 +152,7 @@ export interface PlexWatchlistItem {
 }
 
 export interface PlexWatchlistCache {
-  etag: string;
+  etag?: string;
   response: WatchlistResponse;
 }
 
@@ -277,11 +298,18 @@ class PlexTvAPI extends ExternalAPI {
     totalSize: number;
     items: PlexWatchlistItem[];
   }> {
+    const watchlistCache = cacheManager.getCache('plexwatchlist');
+    let cachedWatchlist = watchlistCache.data.get<PlexWatchlistCache>(
+      this.authToken
+    );
+
     try {
-      const watchlistCache = cacheManager.getCache('plexwatchlist');
-      let cachedWatchlist = watchlistCache.data.get<PlexWatchlistCache>(
-        this.authToken
-      );
+      // Drop poisoned entries so we don't send If-None-Match for a body
+      // without MediaContainer (which would 304 and keep failing).
+      if (cachedWatchlist && !isWatchlistResponse(cachedWatchlist.response)) {
+        watchlistCache.data.del(this.authToken);
+        cachedWatchlist = undefined;
+      }
 
       const response = await this.axios.get<WatchlistResponse>(
         '/library/sections/watchlist/all',
@@ -290,16 +318,20 @@ class PlexTvAPI extends ExternalAPI {
             'X-Plex-Container-Start': offset,
             'X-Plex-Container-Size': size,
           },
-          headers: {
-            'If-None-Match': cachedWatchlist?.etag,
-          },
+          headers: cachedWatchlist?.etag
+            ? { 'If-None-Match': cachedWatchlist.etag }
+            : undefined,
           baseURL: 'https://discover.provider.plex.tv',
           validateStatus: (status) => status < 400, // Allow HTTP 304 to return without error
         }
       );
 
       // If we don't recieve HTTP 304, the watchlist has been updated and we need to update the cache.
-      if (response.status >= 200 && response.status <= 299) {
+      if (
+        response.status >= 200 &&
+        response.status <= 299 &&
+        isWatchlistResponse(response.data)
+      ) {
         cachedWatchlist = {
           etag: response.headers.etag,
           response: response.data,
@@ -310,74 +342,6 @@ class PlexTvAPI extends ExternalAPI {
           cachedWatchlist
         );
       }
-
-      const watchlistDetails = await Promise.all(
-        (cachedWatchlist?.response.MediaContainer.Metadata ?? []).map(
-          async (watchlistItem) => {
-            let detailedResponse: MetadataResponse;
-            try {
-              detailedResponse = await this.getRolling<MetadataResponse>(
-                `/library/metadata/${watchlistItem.ratingKey}`,
-                {
-                  baseURL: 'https://discover.provider.plex.tv',
-                }
-              );
-            } catch (e) {
-              if (e.response?.status === 404) {
-                logger.warn(
-                  `Item with ratingKey ${watchlistItem.ratingKey} not found, it may have been removed from the server.`,
-                  { label: 'Plex.TV Metadata API' }
-                );
-                return null;
-              } else {
-                throw e;
-              }
-            }
-
-            const metadata =
-              detailedResponse.MediaContainer.Metadata?.[0] ??
-              detailedResponse.MediaContainer.Video?.[0];
-
-            if (!metadata) {
-              logger.warn(
-                `Item with ratingKey ${watchlistItem.ratingKey} returned no metadata, skipping.`,
-                { label: 'Plex.TV Metadata API' }
-              );
-              return null;
-            }
-
-            const tmdbString = metadata.Guid?.find((guid) =>
-              guid.id.startsWith('tmdb')
-            );
-            const tvdbString = metadata.Guid?.find((guid) =>
-              guid.id.startsWith('tvdb')
-            );
-
-            return {
-              ratingKey: metadata.ratingKey,
-              // This should always be set? But I guess it also cannot be?
-              // We will filter out the 0's afterwards
-              tmdbId: tmdbString ? Number(tmdbString.id.split('//')[1]) : 0,
-              tvdbId: tvdbString
-                ? Number(tvdbString.id.split('//')[1])
-                : undefined,
-              title: metadata.title,
-              type: metadata.type,
-            };
-          }
-        )
-      );
-
-      const filteredList = watchlistDetails.filter(
-        (detail) => detail?.tmdbId
-      ) as PlexWatchlistItem[];
-
-      return {
-        offset,
-        size,
-        totalSize: cachedWatchlist?.response.MediaContainer.totalSize ?? 0,
-        items: filteredList,
-      };
     } catch (e) {
       logger.error('Failed to retrieve watchlist items', {
         label: 'Plex.TV Metadata API',
@@ -390,6 +354,78 @@ class PlexTvAPI extends ExternalAPI {
         items: [],
       };
     }
+
+    const metadata = cachedWatchlist?.response.MediaContainer.Metadata;
+    const video = cachedWatchlist?.response.MediaContainer.Video;
+    const watchlistItems = Array.isArray(metadata)
+      ? metadata
+      : Array.isArray(video)
+        ? video
+        : [];
+
+    const watchlistDetails = await Promise.all(
+      watchlistItems.map(async (watchlistItem) => {
+        let detailedResponse: MetadataResponse;
+        try {
+          detailedResponse = await this.getRolling<MetadataResponse>(
+            `/library/metadata/${watchlistItem.ratingKey}`,
+            {
+              baseURL: 'https://discover.provider.plex.tv',
+            }
+          );
+        } catch (e) {
+          if (e.response?.status === 404) {
+            logger.warn(
+              `Item with ratingKey ${watchlistItem.ratingKey} not found, it may have been removed from the server.`,
+              { label: 'Plex.TV Metadata API' }
+            );
+            return null;
+          } else {
+            throw e;
+          }
+        }
+
+        const metadata =
+          detailedResponse.MediaContainer?.Metadata?.[0] ??
+          detailedResponse.MediaContainer?.Video?.[0];
+
+        if (!metadata) {
+          logger.debug(
+            `Item with ratingKey ${watchlistItem.ratingKey} returned no metadata, skipping.`,
+            { label: 'Plex.TV Metadata API' }
+          );
+          return null;
+        }
+
+        const tmdbString = metadata.Guid?.find((guid) =>
+          guid.id.startsWith('tmdb')
+        );
+        const tvdbString = metadata.Guid?.find((guid) =>
+          guid.id.startsWith('tvdb')
+        );
+
+        return {
+          ratingKey: metadata.ratingKey,
+          // This should always be set? But I guess it also cannot be?
+          // We will filter out the 0's afterwards
+          tmdbId: tmdbString ? Number(tmdbString.id.split('//')[1]) : 0,
+          tvdbId: tvdbString ? Number(tvdbString.id.split('//')[1]) : undefined,
+          title: metadata.title,
+          type: metadata.type,
+        };
+      })
+    );
+
+    const filteredList = watchlistDetails.filter(
+      (detail) => detail?.tmdbId
+    ) as PlexWatchlistItem[];
+
+    return {
+      offset,
+      size,
+      totalSize: cachedWatchlist?.response.MediaContainer.totalSize ?? 0,
+      items: filteredList,
+    };
   }
 
   public async pingToken() {
