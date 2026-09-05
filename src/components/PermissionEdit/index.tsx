@@ -53,6 +53,9 @@ export const messages = defineMessages('components.PermissionEdit', {
   advancedrequest: 'Advanced Requests',
   advancedrequestDescription:
     'Grant permission to modify advanced media request options.',
+  advancedrequestLanguage: 'Advanced Requests: Language Profile',
+  advancedrequestLanguageDescription:
+    'Grant permission to override only the language profile on series requests.',
   autorequest: 'Auto-Request',
   autorequestDescription:
     'Grant permission to automatically submit requests for non-4K media via Plex Watchlist.',
@@ -127,6 +130,16 @@ export const PermissionEdit = ({
           name: intl.formatMessage(messages.advancedrequest),
           description: intl.formatMessage(messages.advancedrequestDescription),
           permission: Permission.REQUEST_ADVANCED,
+          children: [
+            {
+              id: 'advancedrequest-language',
+              name: intl.formatMessage(messages.advancedrequestLanguage),
+              description: intl.formatMessage(
+                messages.advancedrequestLanguageDescription
+              ),
+              permission: Permission.REQUEST_ADVANCED_LANGUAGE,
+            },
+          ],
         },
         {
           id: 'viewrequests',
