@@ -6,6 +6,15 @@ import { randomUUID } from 'node:crypto';
 import xml2js from 'xml2js';
 import ExternalAPI from './externalapi';
 
+// Plex returns seconds, so fall back to a millisecond value if that ever changes.
+const normalizeWatchlistedAt = (value: number | undefined): number | null => {
+  if (value === undefined || value <= 0) {
+    return null;
+  }
+
+  return value > 1e11 ? Math.floor(value / 1000) : value;
+};
+
 interface PlexAccountResponse {
   user: PlexUser;
 }
@@ -119,6 +128,14 @@ interface MetadataResponse {
   MediaContainer: {
     Metadata?: PlexMetadataItem[];
     Video?: PlexMetadataItem[];
+  };
+}
+
+interface UserStateResponse {
+  MediaContainer: {
+    UserState?: {
+      watchlistedAt?: number;
+    }[];
   };
 }
 
@@ -389,6 +406,43 @@ class PlexTvAPI extends ExternalAPI {
         totalSize: 0,
         items: [],
       };
+    }
+  }
+
+  // Deliberately not this.get(), as ExternalAPI's cache key omits the auth token
+  // and would serve one user's watchlist state to another.
+  public async getWatchlistedAt(ratingKey: string): Promise<number | null> {
+    const watchlistCache = cacheManager.getCache('plexwatchlist');
+    const cacheKey = `userstate:${this.authToken}:${ratingKey}`;
+    const cached = watchlistCache.data.get<number | null>(cacheKey);
+
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    try {
+      const response = await this.axios.get<UserStateResponse>(
+        `/library/metadata/${ratingKey}/userState`,
+        {
+          baseURL: 'https://discover.provider.plex.tv',
+        }
+      );
+
+      const watchlistedAt = normalizeWatchlistedAt(
+        response.data.MediaContainer.UserState?.[0]?.watchlistedAt
+      );
+
+      watchlistCache.data.set(cacheKey, watchlistedAt);
+
+      return watchlistedAt;
+    } catch (e) {
+      logger.warn('Failed to retrieve watchlist state for item', {
+        label: 'Plex.TV Metadata API',
+        ratingKey,
+        errorMessage: e.message,
+      });
+
+      return null;
     }
   }
 

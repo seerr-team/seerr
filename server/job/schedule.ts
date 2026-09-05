@@ -104,6 +104,7 @@ export const startJobs = (): void => {
           });
         });
       }),
+      running: () => watchlistSync.running,
     });
   } else if (
     mediaServerType === MediaServerType.JELLYFIN ||
