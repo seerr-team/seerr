@@ -2,6 +2,8 @@ import Header from '@app/components/Common/Header';
 import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
+import useFilterByLanguages from '@app/hooks/useFilterByLanguages';
+import { FilterByLanguage } from '@app/types/filters';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import type { MovieResult } from '@server/models/Search';
@@ -24,6 +26,13 @@ const UpcomingMovies = () => {
     error,
   } = useDiscover<MovieResult>('/api/v1/discover/movies/upcoming');
 
+  const filteredTitles = useFilterByLanguages({
+    titles,
+    movie: true,
+    tv: false,
+    key: FilterByLanguage.UPCOMING_MOVIES,
+  });
+
   if (error) {
     return <ErrorPage statusCode={500} />;
   }
@@ -35,10 +44,11 @@ const UpcomingMovies = () => {
         <Header>{intl.formatMessage(messages.upcomingmovies)}</Header>
       </div>
       <ListView
-        items={titles}
+        items={filteredTitles}
         isEmpty={isEmpty}
         isLoading={
-          isLoadingInitialData || (isLoadingMore && (titles?.length ?? 0) > 0)
+          isLoadingInitialData ||
+          (isLoadingMore && (filteredTitles?.length ?? 0) > 0)
         }
         isReachingEnd={isReachingEnd}
         onScrollBottom={fetchMore}

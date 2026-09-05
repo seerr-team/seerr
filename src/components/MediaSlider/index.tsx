@@ -2,8 +2,10 @@ import ShowMoreCard from '@app/components/MediaSlider/ShowMoreCard';
 import PersonCard from '@app/components/PersonCard';
 import Slider from '@app/components/Slider';
 import TitleCard from '@app/components/TitleCard';
+import useFilterByLanguages from '@app/hooks/useFilterByLanguages';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
+import { FilterByLanguage } from '@app/types/filters';
 import { ArrowRightCircleIcon } from '@heroicons/react/24/outline';
 import { MediaStatus } from '@server/constants/media';
 import { Permission } from '@server/lib/permissions';
@@ -44,15 +46,75 @@ const MediaSlider = ({
 }: MediaSliderProps) => {
   const settings = useSettings();
   const { hasPermission } = useUser();
+
+  let isSeries = url.includes('tv');
+  let isMovies = url.includes('movie');
+
+  const getFilterKey = (): FilterByLanguage | undefined => {
+    if (sliderKey === 'recommendations') {
+      return isMovies
+        ? FilterByLanguage.MOVIE_RECOMMENDATIONS
+        : FilterByLanguage.TV_RECOMMENDATIONS;
+    }
+
+    if (sliderKey === 'similar') {
+      return isMovies
+        ? FilterByLanguage.SIMILAR_MOVIES
+        : FilterByLanguage.SIMILAR_SERIES;
+    }
+
+    if (sliderKey === 'trending') {
+      isMovies = true;
+      isSeries = true;
+      return FilterByLanguage.TRENDING;
+    }
+
+    if (sliderKey === 'popular-movies') {
+      isMovies = true;
+      isSeries = false;
+      return FilterByLanguage.POPULAR_MOVIES;
+    }
+
+    if (sliderKey === 'upcoming') {
+      isMovies = true;
+      isSeries = false;
+      return FilterByLanguage.UPCOMING_MOVIES;
+    }
+
+    if (sliderKey === 'popular-tv') {
+      isMovies = false;
+      isSeries = true;
+      return FilterByLanguage.TV_POPULAR;
+    }
+
+    if (sliderKey === 'upcoming-tv') {
+      isMovies = false;
+      isSeries = true;
+      return FilterByLanguage.TV_UPCOMING;
+    }
+
+    if (sliderKey === 'custom') {
+      isMovies = true;
+      isSeries = true;
+      return FilterByLanguage.CUSTOM_SLIDERS;
+    }
+
+    return undefined;
+  };
+
+  const filterKey = getFilterKey();
+
   const { data, error, setSize, size } = useSWRInfinite<MixedResult>(
     (pageIndex: number, previousPageData: MixedResult | null) => {
       if (previousPageData && pageIndex + 1 > previousPageData.totalPages) {
         return null;
       }
 
-      return `${url}?page=${pageIndex + 1}${
-        extraParams ? `&${extraParams}` : ''
-      }`;
+      let endpoint = `${url}?page=${pageIndex + 1}`;
+      if (extraParams) {
+        endpoint += `&${extraParams}`;
+      }
+      return endpoint;
     },
     {
       initialSize: 2,
@@ -60,13 +122,22 @@ const MediaSlider = ({
     }
   );
 
-  let titles = (data ?? []).reduce(
+  const allTitles = (data ?? []).reduce(
     (a, v) => [...a, ...v.results],
     [] as (MovieResult | TvResult | PersonResult)[]
   );
 
+  const filteredByLanguage = useFilterByLanguages({
+    titles: allTitles,
+    movie: isMovies,
+    tv: isSeries,
+    key: filterKey,
+  });
+
+  let filteredTitles = filteredByLanguage;
+
   if (settings.currentSettings.hideAvailable) {
-    titles = titles.filter(
+    filteredTitles = filteredTitles.filter(
       (i) =>
         !(i.mediaType === 'movie' || i.mediaType === 'tv') ||
         (i.mediaInfo?.status !== MediaStatus.AVAILABLE &&
@@ -75,7 +146,7 @@ const MediaSlider = ({
   }
 
   if (settings.currentSettings.hideBlocklisted) {
-    titles = titles.filter(
+    filteredTitles = filteredTitles.filter(
       (i) =>
         !(i.mediaType === 'movie' || i.mediaType === 'tv') ||
         i.mediaInfo?.status !== MediaStatus.BLOCKLISTED
@@ -84,7 +155,7 @@ const MediaSlider = ({
 
   useEffect(() => {
     if (
-      titles.length < 24 &&
+      filteredTitles.length < 24 &&
       size < 5 &&
       (data?.[0]?.totalResults ?? 0) > size * 20
     ) {
@@ -92,13 +163,11 @@ const MediaSlider = ({
     }
 
     if (onNewTitles) {
-      // We aren't reporting all titles. We just want to know if there are any titles
-      // at all for our purposes.
-      onNewTitles(titles.length);
+      onNewTitles(filteredTitles.length);
     }
-  }, [titles, setSize, size, data, onNewTitles]);
+  }, [filteredTitles, setSize, size, data, onNewTitles]);
 
-  if (hideWhenEmpty && (data?.[0].results ?? []).length === 0) {
+  if (hideWhenEmpty && filteredTitles.length === 0) {
     return null;
   }
 
@@ -107,7 +176,7 @@ const MediaSlider = ({
     { type: 'or' }
   );
 
-  const finalTitles = titles
+  const finalTitles = filteredTitles
     .slice(0, 20)
     .filter((title) => {
       if (!blocklistVisibility)
@@ -154,6 +223,7 @@ const MediaSlider = ({
         case 'person':
           return (
             <PersonCard
+              key={`person-${title.id}`}
               personId={title.id}
               name={title.name}
               profilePath={title.profilePath}
@@ -162,11 +232,11 @@ const MediaSlider = ({
       }
     });
 
-  if (linkUrl && titles.length > 20) {
+  if (linkUrl && filteredTitles.length > 20) {
     finalTitles.push(
       <ShowMoreCard
         url={linkUrl}
-        posters={titles
+        posters={filteredTitles
           .slice(20, 24)
           .map((title) =>
             title.mediaType !== 'person' ? title.posterPath : undefined
