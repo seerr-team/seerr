@@ -72,7 +72,7 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   enableSpecialEpisodes: 'Allow Special Episodes Requests',
   enableEpisodeAvailability: 'Enable Episode Availability Tracking',
   enableEpisodeAvailabilityTip:
-    "Track individual episode availability. Match Seerr's metadata provider to your library agent (TMDB or TVDB).",
+    "Track individual episode availability. Match Seerr's metadata provider to your library agent (TMDB or TVDB). Plex and Jellyfin agents are per-library, so mixed-agent libraries cannot all match a single Seerr provider.",
   locale: 'Display Language',
   youtubeUrl: 'YouTube URL',
   youtubeUrlTip:
