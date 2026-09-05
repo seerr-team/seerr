@@ -250,6 +250,9 @@ components:
         enableSpecialEpisodes:
           type: boolean
           example: false
+        enableEpisodeAvailability:
+          type: boolean
+          example: false
         versionCheck:
           type: boolean
           example: false
@@ -1072,6 +1075,10 @@ components:
           type: number
         voteCount:
           type: number
+        available:
+          type: boolean
+        available4k:
+          type: boolean
     Season:
       type: object
       properties:

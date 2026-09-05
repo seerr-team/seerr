@@ -1,6 +1,8 @@
 import AirDateBadge from '@app/components/AirDateBadge';
+import Badge from '@app/components/Common/Badge';
 import CachedImage from '@app/components/Common/CachedImage';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
+import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import type { SeasonWithEpisodes } from '@server/models/Tv';
 import { useIntl } from 'react-intl';
@@ -9,6 +11,7 @@ import useSWR from 'swr';
 const messages = defineMessages('components.TvDetails.Season', {
   somethingwentwrong: 'Something went wrong while retrieving season data.',
   noepisodes: 'Episode list unavailable.',
+  status4k: '4K {status}',
 });
 
 type SeasonProps = {
@@ -51,6 +54,18 @@ const Season = ({ seasonNumber, tvId }: SeasonProps) => {
                     </h3>
                     {episode.airDate && (
                       <AirDateBadge airDate={episode.airDate} />
+                    )}
+                    {episode.available === true && (
+                      <Badge badgeType="success">
+                        {intl.formatMessage(globalMessages.available)}
+                      </Badge>
+                    )}
+                    {episode.available4k === true && (
+                      <Badge badgeType="success">
+                        {intl.formatMessage(messages.status4k, {
+                          status: intl.formatMessage(globalMessages.available),
+                        })}
+                      </Badge>
                     )}
                   </div>
                   {episode.overview && <p>{episode.overview}</p>}

@@ -154,6 +154,7 @@ export interface MainSettings {
   mediaServerType: number;
   partialRequestsEnabled: boolean;
   enableSpecialEpisodes: boolean;
+  enableEpisodeAvailability: boolean;
   locale: string;
   youtubeUrl: string;
   versionCheck: boolean;
@@ -430,6 +431,7 @@ class Settings {
         mediaServerType: MediaServerType.NOT_CONFIGURED,
         partialRequestsEnabled: true,
         enableSpecialEpisodes: false,
+        enableEpisodeAvailability: false,
         locale: 'en',
         youtubeUrl: '',
         versionCheck: true,

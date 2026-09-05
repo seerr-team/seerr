@@ -227,6 +227,25 @@ class AvailabilitySync {
           let showExists = false;
           let showExists4k = false;
 
+          // Fetch TMDB details once for season enrichment
+          let tvShow: TmdbTvScanDetails | TmdbTvDetails | undefined;
+          try {
+            if (media.tmdbId) {
+              tvShow = await this.tmdb.getTvShowForScan({
+                tvId: Number(media.tmdbId),
+              });
+            } else if (media.tvdbId) {
+              tvShow = await this.tmdb.getShowByTvdbIdForScan({
+                tvdbId: Number(media.tvdbId),
+              });
+            }
+          } catch (e) {
+            logger.debug(
+              `Failed to fetch TMDB data for show [TMDB ID ${media.tmdbId}]. Skipping season enrichment.`,
+              { label: 'AvailabilitySync', errorMessage: e.message }
+            );
+          }
+
           //plex
 
           const { existsInPlex, seasonsMap: plexSeasonsMap = new Map() } =
@@ -363,26 +382,6 @@ class AvailabilitySync {
               ...sonarrSeasonsMap4k,
             ]);
           }
-
-          // We need to fetch from TMDB to get the episode count for each season
-          let tvShow: TmdbTvScanDetails | TmdbTvDetails | undefined;
-          try {
-            if (media.tmdbId) {
-              tvShow = await this.tmdb.getTvShowForScan({
-                tvId: Number(media.tmdbId),
-              });
-            } else if (media.tvdbId) {
-              tvShow = await this.tmdb.getShowByTvdbIdForScan({
-                tvdbId: Number(media.tvdbId),
-              });
-            }
-          } catch (e) {
-            logger.debug(
-              `Failed to fetch TMDB data for show [TMDB ID ${media.tmdbId}]. Skipping season enrichment.`,
-              { label: 'AvailabilitySync', errorMessage: e.message }
-            );
-          }
-
           if (tvShow) {
             // fill the finalSeasons and finalSeasons4k maps with false for missing seasons
             media.seasons.forEach((season) => {
