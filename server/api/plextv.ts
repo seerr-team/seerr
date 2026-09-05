@@ -2,10 +2,10 @@ import type { PlexDevice } from '@server/interfaces/api/plexInterfaces';
 import cacheManager from '@server/lib/cache';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import axios from 'axios';
 import { randomUUID } from 'node:crypto';
 import xml2js from 'xml2js';
 import ExternalAPI from './externalapi';
-
 interface PlexAccountResponse {
   user: PlexUser;
 }
@@ -30,6 +30,38 @@ interface PlexUser {
     roles: string[];
   };
   entitlements: string[];
+}
+interface PlexHomeUser {
+  $: {
+    id: string;
+    uuid: string;
+    title: string;
+    username?: string;
+    email?: string;
+    thumb: string;
+    protected?: string;
+    hasPassword?: string;
+    admin?: string;
+    guest?: string;
+    restricted?: string;
+  };
+}
+
+interface PlexHomeUsersResponse {
+  MediaContainer: {
+    protected?: string;
+    User?: PlexHomeUser | PlexHomeUser[];
+  };
+}
+
+export interface PlexProfile {
+  id: string;
+  numericId?: number;
+  title: string;
+  username?: string;
+  thumb: string;
+  isMainUser?: boolean;
+  protected?: boolean;
 }
 
 interface ConnectionResponse {
@@ -227,6 +259,134 @@ class PlexTvAPI extends ExternalAPI {
     }
   }
 
+  public async getProfiles(): Promise<PlexProfile[]> {
+    try {
+      const mainUser = await this.getUser();
+
+      const profiles: PlexProfile[] = [
+        {
+          id: mainUser.uuid,
+          title: mainUser.username,
+          username: mainUser.username,
+          thumb: mainUser.thumb,
+          isMainUser: true,
+          protected: undefined, // Unknown until Plex Home data is fetched
+        },
+      ];
+
+      // Fetch all profiles including PIN protection status
+      const response = await axios.get(
+        'https://clients.plex.tv/api/home/users',
+        {
+          timeout: 10000,
+          headers: {
+            Accept: 'application/xml',
+            'X-Plex-Token': this.authToken,
+            'X-Plex-Client-Identifier': randomUUID(),
+          },
+        }
+      );
+
+      const parsedXML = await xml2js.parseStringPromise(response.data, {
+        explicitArray: false,
+      });
+
+      const container = (parsedXML as PlexHomeUsersResponse).MediaContainer;
+      const rawUsers = container?.User;
+
+      if (rawUsers) {
+        const users: PlexHomeUser[] = Array.isArray(rawUsers)
+          ? rawUsers
+          : [rawUsers];
+
+        const mainUserInXml = users.find(
+          (user) => user.$.uuid === mainUser.uuid
+        );
+        if (mainUserInXml) {
+          profiles[0].protected = mainUserInXml.$.protected === '1';
+          const mainNumericId = Number.parseInt(mainUserInXml.$.id, 10);
+          if (Number.isFinite(mainNumericId)) {
+            profiles[0].numericId = mainNumericId;
+          }
+        }
+
+        const managedProfiles = users
+          .filter((user) => {
+            const { uuid, title, username } = user.$;
+            const isValid = Boolean(uuid && (title || username));
+
+            if (!isValid) {
+              logger.warn('Skipping invalid Plex profile entry', {
+                label: 'Plex.tv API',
+                uuid,
+                title,
+                username,
+              });
+            }
+
+            return isValid && uuid !== mainUser.uuid;
+          })
+          .map((user) => {
+            const numericId = Number.parseInt(user.$.id, 10);
+
+            return {
+              id: user.$.uuid,
+              ...(Number.isFinite(numericId) ? { numericId } : {}),
+              title: user.$.title ?? 'Unknown',
+              username: user.$.username || user.$.title || 'Unknown',
+              thumb: user.$.thumb ?? '',
+              protected: user.$.protected === '1',
+              isMainUser: false,
+            };
+          });
+
+        profiles.push(...managedProfiles);
+      }
+
+      return profiles;
+    } catch (e) {
+      logger.error('Failed to retrieve Plex profiles', {
+        label: 'Plex.tv API',
+        errorMessage: e.message,
+      });
+      throw new Error('Unable to retrieve Plex profile metadata', { cause: e });
+    }
+  }
+
+  public async switchProfile(
+    profileId: string,
+    pin?: string
+  ): Promise<boolean> {
+    const urlPath = `/api/v2/home/users/${encodeURIComponent(profileId)}/switch`;
+    try {
+      const response = await axios.post(urlPath, pin ? { pin } : {}, {
+        baseURL: 'https://clients.plex.tv',
+        timeout: 10000,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-Plex-Token': this.authToken,
+          'X-Plex-Client-Identifier': randomUUID(),
+        },
+      });
+      return response.status >= 200 && response.status < 300;
+    } catch (e) {
+      logger.warn('Failed to switch Plex profile', {
+        label: 'Plex.TV Metadata API',
+        errorMessage: e.message,
+        profileId,
+      });
+      return false;
+    }
+  }
+
+  public async validateProfilePin(
+    profileId: string,
+    pin: string
+  ): Promise<boolean> {
+    return this.switchProfile(profileId, pin);
+  }
+
   public async checkUserAccess(userId: number): Promise<boolean> {
     const settings = getSettings();
 
@@ -258,6 +418,7 @@ class PlexTvAPI extends ExternalAPI {
 
   public async getUsers(): Promise<UsersResponse> {
     const response = await this.axios.get('/api/users', {
+      timeout: 10000,
       transformResponse: [],
       responseType: 'text',
     });

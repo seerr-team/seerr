@@ -114,6 +114,7 @@ components:
         userType:
           type: integer
           example: 1
+          description: 'User type - 1=PLEX, 2=LOCAL, 3=JELLYFIN, 4=EMBY, 5=PLEX_PROFILE'
           readOnly: true
         permissions:
           type: number
@@ -132,6 +133,21 @@ components:
         requestCount:
           type: number
           example: 5
+          readOnly: true
+        plexProfileId:
+          type: string
+          nullable: true
+          example: '12345'
+          readOnly: true
+        plexProfileNumericId:
+          type: number
+          nullable: true
+          example: 12345
+          readOnly: true
+        mainPlexUserId:
+          type: number
+          nullable: true
+          example: 1
           readOnly: true
       required:
         - id
@@ -304,6 +320,30 @@ components:
             forceMaxTtl:
               type: number
               example: -1
+    PlexProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '12345'
+        numericId:
+          type: number
+          example: 12345
+        title:
+          type: string
+          example: 'Family Member'
+        username:
+          type: string
+          example: 'family_member'
+        thumb:
+          type: string
+          example: 'https://plex.tv/users/avatar.jpg'
+        isMainUser:
+          type: boolean
+          example: false
+        protected:
+          type: boolean
+          example: true
     PlexLibrary:
       type: object
       properties:
