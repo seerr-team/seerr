@@ -145,7 +145,7 @@ describe('Discover', () => {
           requestedBy: {
             permissions: 4194336,
             id: 18,
-            email: 'friend@seerr.dev',
+            email: 'demo@seerr.dev',
             plexUsername: null,
             username: '',
             recoveryLinkExpirationDate: null,
@@ -159,7 +159,7 @@ describe('Discover', () => {
             createdAt: '2022-08-17T04:55:28.000Z',
             updatedAt: '2022-08-17T04:55:28.000Z',
             requestCount: 1,
-            displayName: 'friend@seerr.dev',
+            displayName: 'demo@seerr.dev',
           },
           seasonCount: 0,
         },

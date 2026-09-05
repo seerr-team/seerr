@@ -9,7 +9,7 @@ export default defineConfig({
   env: {
     ADMIN_EMAIL: 'admin@seerr.dev',
     ADMIN_PASSWORD: 'test1234',
-    USER_EMAIL: 'friend@seerr.dev',
+    USER_EMAIL: 'demo@seerr.dev',
     USER_PASSWORD: 'test1234',
   },
   retries: {

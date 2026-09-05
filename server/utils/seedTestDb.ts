@@ -31,7 +31,7 @@ function assertTestDatabase(operation: string, allowOutsideTest = false): void {
  * Seeds test users into the database.
  * Assumes the database schema is already set up.
  */
-async function seedTestUsers(): Promise<void> {
+export async function seedTestUsers(): Promise<void> {
   const userRepository = getRepository(User);
 
   const admin = await userRepository.findOne({
@@ -58,17 +58,17 @@ async function seedTestUsers(): Promise<void> {
   // Create the other user
   const otherUser =
     (await userRepository.findOne({
-      where: { email: 'friend@seerr.dev' },
+      where: { email: 'demo@seerr.dev' },
     })) ?? new User();
   otherUser.plexId = admin?.plexId ?? 1;
   otherUser.plexToken = '1234';
   otherUser.plexUsername = 'friend';
   otherUser.username = 'friend';
-  otherUser.email = 'friend@seerr.dev';
+  otherUser.email = 'demo@seerr.dev';
   otherUser.userType = UserType.PLEX;
   otherUser.password = TEST_USER_PASSWORD_HASH;
   otherUser.permissions = 32;
-  otherUser.avatar = gravatarUrl('friend@seerr.dev', {
+  otherUser.avatar = gravatarUrl('demo@seerr.dev', {
     default: 'mm',
     size: 200,
   });
