@@ -16,6 +16,7 @@ const defaultSettings = {
   hideBlocklisted: false,
   localLogin: true,
   mediaServerLogin: true,
+  quickConnectOnly: false,
   movie4kEnabled: false,
   series4kEnabled: false,
   discoverRegion: '',

@@ -241,6 +241,9 @@ components:
         mediaServerType:
           type: number
           example: 1
+        quickConnectOnly:
+          type: boolean
+          example: false
         newPlexLogin:
           type: boolean
           example: true
