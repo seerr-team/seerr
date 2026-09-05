@@ -21,7 +21,9 @@ import type {
   ServiceCommonServerWithDetails,
 } from '@server/interfaces/api/serviceInterfaces';
 import type { UserResultsResponse } from '@server/interfaces/api/userInterfaces';
+import type { OverrideRulesResult } from '@server/lib/overrideRules';
 import { hasPermission } from '@server/lib/permissions';
+import axios from 'axios';
 import { isEqual } from 'lodash';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -63,6 +65,7 @@ export type RequestOverrides = {
 
 interface AdvancedRequesterProps {
   type: 'movie' | 'tv';
+  tmdbId?: number;
   is4k: boolean;
   isAnime?: boolean;
   defaultOverrides?: RequestOverrides;
@@ -73,6 +76,7 @@ interface AdvancedRequesterProps {
 
 const AdvancedRequester = ({
   type,
+  tmdbId,
   is4k = false,
   isAnime = false,
   defaultOverrides,
@@ -328,6 +332,46 @@ const AdvancedRequester = ({
     selectedTags,
     ignoreQuota,
     isIgnoreQuotaVisible,
+  ]);
+
+  useEffect(() => {
+    (async () => {
+      if (tmdbId && serverData?.server.id === selectedServer) {
+        try {
+          const { data: override } = await axios.post<OverrideRulesResult>(
+            '/api/v1/overrideRule/advancedRequest',
+            {
+              mediaType: type,
+              is4k,
+              requestUser:
+                selectedUser?.id ?? requestUser?.id ?? currentUser?.id,
+              tmdbId,
+              serviceId: selectedServer ?? undefined,
+            }
+          );
+          if (override.rootFolder) {
+            setSelectedFolder(override.rootFolder);
+          }
+          if (override.profileId) {
+            setSelectedProfile(override.profileId);
+          }
+          if (override.tags) {
+            setSelectedTags(override.tags);
+          }
+        } catch {
+          /* empty */
+        }
+      }
+    })();
+  }, [
+    tmdbId,
+    type,
+    is4k,
+    serverData?.server.id,
+    selectedServer,
+    selectedUserId,
+    requestUser?.id,
+    currentUser?.id,
   ]);
 
   if (!data && !error) {
