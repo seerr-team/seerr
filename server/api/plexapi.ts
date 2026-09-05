@@ -93,6 +93,17 @@ interface PlexMetadataResponse {
   };
 }
 
+interface PlexLabelResponse {
+  MediaContainer: {
+    Metadata?: {
+      librarySectionID?: number | string;
+      Label?: {
+        tag: string;
+      }[];
+    }[];
+  };
+}
+
 class PlexAPI extends ExternalAPI {
   constructor({
     plexToken,
@@ -196,6 +207,101 @@ class PlexAPI extends ExternalAPI {
     return {
       totalSize: response.MediaContainer.totalSize,
       items: response.MediaContainer.Metadata ?? [],
+    };
+  }
+
+  /**
+   * Returns the rating keys of every item in a library section carrying the
+   * given label.
+   *
+   * Plex never returns labels in bulk library listings, whatever the requested
+   * fields, but it does support filtering by label. Resolving one request per
+   * label is therefore far cheaper than fetching metadata item by item.
+   */
+  public async getRatingKeysByLabel(
+    sectionId: string,
+    label: string
+  ): Promise<string[]> {
+    const ratingKeys: string[] = [];
+    const size = 500;
+    let offset = 0;
+    let totalSize = 0;
+
+    do {
+      const response = await this.get<PlexLibraryResponse>(
+        `/library/sections/${sectionId}/all?label=${encodeURIComponent(label)}`,
+        {
+          headers: {
+            'X-Plex-Container-Start': `${offset}`,
+            'X-Plex-Container-Size': `${size}`,
+          },
+        }
+      );
+
+      totalSize = response.MediaContainer.totalSize ?? 0;
+      ratingKeys.push(
+        ...(response.MediaContainer.Metadata ?? []).map(
+          (item) => item.ratingKey
+        )
+      );
+      offset += size;
+    } while (offset < totalSize);
+
+    return ratingKeys;
+  }
+
+  /**
+   * Adds a label to a library item.
+   *
+   * Plex merges the labels sent with the ones already set, so the existing set
+   * is never read back and replayed: two concurrent grants on the same item
+   * cannot drop each other's label.
+   */
+  public async addLabel(
+    ratingKey: string,
+    type: 'movie' | 'show',
+    label: string
+  ): Promise<void> {
+    const { sectionId, labels: existing } = await this.getItemLabels(ratingKey);
+
+    if (!sectionId) {
+      throw new Error(
+        `Unable to resolve the library section of Plex item ${ratingKey}`
+      );
+    }
+
+    if (existing.some((l) => l.toLowerCase() === label.toLowerCase())) {
+      return;
+    }
+
+    const params = new URLSearchParams({
+      type: type === 'show' ? '2' : '1',
+      id: ratingKey,
+      'label[0].tag.tag': label,
+      'label.locked': '1',
+    });
+
+    await this.put(`/library/sections/${sectionId}/all?${params.toString()}`);
+  }
+
+  /**
+   * Returns the labels currently set on a library item, along with the section
+   * it belongs to, which is required to write labels back.
+   */
+  public async getItemLabels(
+    ratingKey: string
+  ): Promise<{ sectionId?: string; labels: string[] }> {
+    const response = await this.get<PlexLabelResponse>(
+      `/library/metadata/${ratingKey}`
+    );
+
+    const metadata = response.MediaContainer.Metadata?.[0];
+
+    return {
+      sectionId: metadata?.librarySectionID
+        ? `${metadata.librarySectionID}`
+        : undefined,
+      labels: (metadata?.Label ?? []).map((label) => label.tag),
     };
   }
 

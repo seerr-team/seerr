@@ -29,6 +29,31 @@ import { Router } from 'express';
 
 const requestRoutes = Router();
 
+/**
+ * Applies the requesting user's media server restrictions to the media carried
+ * by requests.
+ *
+ * Requests load their media eagerly, which bypasses the filtering done by the
+ * `Media` finders, so it has to be applied here as well. Without this the
+ * requests list reports media hidden from the user as available, and hands them
+ * a deep link they cannot open.
+ */
+const hideRestrictedMedia = async (
+  user: User | undefined,
+  requests: MediaRequest[]
+): Promise<void> => {
+  if (!user) {
+    return;
+  }
+
+  await Media.applySharingRestrictions(
+    user,
+    requests
+      .map((request) => request.media)
+      .filter((media): media is Media => !!media)
+  );
+};
+
 requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
   '/',
   async (req, res, next) => {
@@ -180,6 +205,8 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
         .take(pageSize)
         .skip(skip)
         .getManyAndCount();
+
+      await hideRestrictedMedia(req.user, requests);
 
       const settings = getSettings();
 
@@ -446,6 +473,8 @@ requestRoutes.get('/:requestId', async (req, res, next) => {
         message: 'You do not have permission to view this request.',
       });
     }
+
+    await hideRestrictedMedia(req.user, [request]);
 
     return res.status(200).json(request);
   } catch (e) {

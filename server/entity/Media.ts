@@ -8,6 +8,10 @@ import type { User } from '@server/entity/User';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { DownloadingItem } from '@server/lib/downloadtracker';
 import downloadTracker from '@server/lib/downloadtracker';
+import {
+  getMediaServerItemIds,
+  getVisibleMediaIds,
+} from '@server/lib/librarysharing';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
@@ -31,7 +35,12 @@ import Season from './Season';
 class Media {
   public static async getRelatedMedia(
     user: User | undefined,
-    items: { tmdbId: number; mediaType: string }[]
+    items: { tmdbId: number; mediaType: string }[],
+    // Background jobs work from the library's point of view, not a user's, so
+    // they opt out to avoid acting on an artificially downgraded status.
+    {
+      applySharingRestrictions = true,
+    }: { applySharingRestrictions?: boolean } = {}
   ): Promise<Media[]> {
     const mediaRepository = getRepository(Media);
 
@@ -53,18 +62,99 @@ class Media {
         .where(' media.tmdbId in (:...finalIds)', { finalIds })
         .getMany();
 
-      return media.filter((m) =>
+      const relatedMedia = media.filter((m) =>
         items.some((i) => i.tmdbId === m.tmdbId && i.mediaType === m.mediaType)
       );
+
+      if (!user || !applySharingRestrictions) {
+        return relatedMedia;
+      }
+
+      return await Media.applySharingRestrictions(user, relatedMedia);
     } catch (e) {
       logger.error(e.message);
       return [];
     }
   }
 
+  /**
+   * Hides availability of media the user has no access to on the media server.
+   *
+   * Media servers let the owner restrict a shared user to specific libraries,
+   * and Plex additionally to specific labels, but availability is otherwise
+   * computed for the whole library. Without this, a restricted user is told a
+   * title is available and then cannot play it.
+   *
+   * The status is downgraded rather than the item removed, so the user can
+   * still request it and be granted access.
+   */
+  public static async applySharingRestrictions(
+    user: User,
+    media: Media[]
+  ): Promise<Media[]> {
+    const visibleIds = await getVisibleMediaIds(user);
+
+    // `null` means the user is unrestricted, the common case.
+    if (!visibleIds) {
+      return media;
+    }
+
+    const isHidden = (itemId?: string | null): boolean =>
+      !itemId || !visibleIds.has(itemId);
+
+    const isAvailable = (status: MediaStatus): boolean =>
+      status === MediaStatus.AVAILABLE ||
+      status === MediaStatus.PARTIALLY_AVAILABLE;
+
+    for (const item of media) {
+      const { id, id4k } = getMediaServerItemIds(item);
+      const hidden = isHidden(id);
+      const hidden4k = isHidden(id4k);
+
+      if (hidden) {
+        if (isAvailable(item.status)) {
+          item.status = MediaStatus.UNKNOWN;
+        }
+
+        // Deep links are built from the media server id regardless of status,
+        // so they have to be dropped as well: a restricted user must not be
+        // handed a working "play" link to media they cannot open.
+        item.mediaUrl = undefined;
+        item.iOSPlexUrl = undefined;
+      }
+
+      if (hidden4k) {
+        if (isAvailable(item.status4k)) {
+          item.status4k = MediaStatus.UNKNOWN;
+        }
+
+        item.mediaUrl4k = undefined;
+        item.iOSPlexUrl4k = undefined;
+      }
+
+      // Seasons carry their own status, which the UI displays independently of
+      // the show's, so they have to be downgraded as well. Access is granted at
+      // show level, hence the show's own visibility is used.
+      for (const season of item.seasons ?? []) {
+        if (isAvailable(season.status) && hidden) {
+          season.status = MediaStatus.UNKNOWN;
+        }
+
+        if (isAvailable(season.status4k) && hidden4k) {
+          season.status4k = MediaStatus.UNKNOWN;
+        }
+      }
+    }
+
+    return media;
+  }
+
   public static async getMedia(
     id: number,
-    mediaType: MediaType
+    mediaType: MediaType,
+    // Passing the requesting user hides availability of media they have no
+    // access to on the media server.
+    user?: User
   ): Promise<Media | undefined> {
     const mediaRepository = getRepository(Media);
 
@@ -74,7 +164,17 @@ class Media {
         relations: { requests: true, issues: true },
       });
 
-      return media ?? undefined;
+      if (!media) {
+        return undefined;
+      }
+
+      if (!user) {
+        return media;
+      }
+
+      const [restricted] = await Media.applySharingRestrictions(user, [media]);
+
+      return restricted;
     } catch (e) {
       logger.error(e.message);
       return undefined;
