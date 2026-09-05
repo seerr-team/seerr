@@ -1,3 +1,4 @@
+import Alert from '@app/components/Common/Alert';
 import Button from '@app/components/Common/Button';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import useSettings from '@app/hooks/useSettings';
@@ -88,6 +89,10 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                     appName: settings.currentSettings.applicationTitle,
                   })}
                 </h2>
+
+                {process.env.loginMessage && (
+                  <Alert type="info">{process.env.loginMessage}</Alert>
+                )}
 
                 <div className="mb-4 mt-1">
                   <div className="form-input-field">
