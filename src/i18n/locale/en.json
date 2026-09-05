@@ -26,6 +26,8 @@
   "components.Common.QuickConnectModal.expiredMessage": "This Quick Connect code has expired. Please try again.",
   "components.Common.QuickConnectModal.tryAgain": "Try Again",
   "components.Common.QuickConnectModal.waitingForAuth": "Waiting for authorization...",
+  "components.DetailsKeywordTags.hidekeywords": "Hide Keywords",
+  "components.DetailsKeywordTags.showkeywords": "Show Keywords",
   "components.Discover.CreateSlider.addSlider": "Add Slider",
   "components.Discover.CreateSlider.addcustomslider": "Create Custom Slider",
   "components.Discover.CreateSlider.addfail": "Failed to create new slider.",
