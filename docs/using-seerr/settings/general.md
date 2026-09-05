@@ -76,3 +76,24 @@ This setting is **disabled** by default.
 When enabled, users will be able to submit requests for specific seasons of TV series. If disabled, users will only be able to submit requests for all unavailable seasons.
 
 This setting is **enabled** by default.
+
+## Ignored Path Patterns
+
+:::warning
+**This is an advanced setting.** An incorrect pattern could cause wanted media to be excluded from scans.
+:::
+
+Media whose file paths match any of the configured patterns will be skipped during library scans and availability checks, for both Plex and Jellyfin.
+
+If an item has multiple files or versions, only the matching ones are excluded. The item is only skipped entirely when every one of its files matches a pattern.
+
+Patterns are case-insensitive regular expressions matched against the full file path. Path separators are normalized to forward slashes, so patterns work across operating systems. To add a pattern, type it into the input field and press **Enter**. Invalid regex patterns are rejected with a warning and will not be saved.
+
+**Examples:**
+
+| Pattern         | Effect                                              |
+| --------------- | --------------------------------------------------- |
+| `placeholders/` | Ignores all files inside a `placeholders` directory |
+| `.*trailers/.*` | Ignores all files inside any `trailers` directory   |
+
+This setting is empty by default (no paths are ignored).

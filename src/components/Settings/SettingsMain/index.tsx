@@ -19,11 +19,18 @@ import { ArrowPathIcon } from '@heroicons/react/24/solid';
 import type { UserSettingsGeneralResponse } from '@server/interfaces/api/userSettingsInterfaces';
 import type { MainSettings } from '@server/lib/settings';
 import type { AvailableLocale } from '@server/types/languages';
+import { compileIgnoredPathPattern } from '@server/utils/ignoredPathPatterns';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useIntl } from 'react-intl';
+import CreatableSelect from 'react-select/creatable';
 import useSWR, { mutate } from 'swr';
 import * as Yup from 'yup';
+
+type TagOption = {
+  label: string;
+  value: string;
+};
 
 const messages = defineMessages('components.Settings.SettingsMain', {
   general: 'General',
@@ -78,6 +85,12 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   versionCheckTip: 'Automatically check for new versions on GitHub.',
   validationUrl: 'You must provide a valid URL',
   validationUrlTrailingSlash: 'URL must not end in a trailing slash',
+  ignoredPathPatterns: 'Ignored Path Patterns',
+  ignoredPathPatternsTip:
+    'Case-insensitive regular expressions matched against media file paths, e.g. "placeholders/" or ".*trailers/.*"',
+  ignoredPathPatternsPlaceholder: 'Type a regex pattern and press Enter…',
+  ignoredPathPatternsInvalidRegex:
+    'The regex pattern "{pattern}" is invalid or unsafe and was not added.',
 });
 
 const SettingsMain = () => {
@@ -186,6 +199,7 @@ const SettingsMain = () => {
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
             versionCheck: data?.versionCheck,
+            ignoredPathPatterns: data?.ignoredPathPatterns ?? [],
           }}
           enableReinitialize
           validationSchema={MainSettingsSchema}
@@ -209,8 +223,16 @@ const SettingsMain = () => {
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
                 versionCheck: values?.versionCheck,
+                ignoredPathPatterns: [
+                  ...new Set(
+                    (values.ignoredPathPatterns ?? [])
+                      .map((s) => s.trim())
+                      .filter((s) => s.length > 0)
+                  ),
+                ],
               });
               mutate('/api/v1/settings/public');
+              mutate('/api/v1/status');
               mutate('/api/v1/status?checkUpdateAvailable=false');
 
               if (setLocale) {
@@ -586,6 +608,56 @@ const SettingsMain = () => {
                         );
                       }}
                     />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="ignoredPathPatterns" className="text-label">
+                    {intl.formatMessage(messages.ignoredPathPatterns)}
+                    <SettingsBadge badgeType="advanced" className="ml-2" />
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.ignoredPathPatternsTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field relative z-10">
+                      <CreatableSelect<TagOption, true>
+                        inputId="ignoredPathPatterns"
+                        components={{ DropdownIndicator: null }}
+                        isClearable
+                        isMulti
+                        noOptionsMessage={() => null}
+                        className="react-select-container"
+                        classNamePrefix="react-select"
+                        placeholder={intl.formatMessage(
+                          messages.ignoredPathPatternsPlaceholder
+                        )}
+                        value={(values.ignoredPathPatterns ?? []).map((p) => ({
+                          label: p,
+                          value: p,
+                        }))}
+                        onChange={(newValue) => {
+                          const valid: string[] = [];
+                          const seen = new Set<string>();
+                          for (const v of newValue) {
+                            const trimmed = v.value.trim();
+                            if (!trimmed || seen.has(trimmed)) continue;
+                            seen.add(trimmed);
+                            if (compileIgnoredPathPattern(trimmed)) {
+                              valid.push(trimmed);
+                            } else {
+                              addToast(
+                                intl.formatMessage(
+                                  messages.ignoredPathPatternsInvalidRegex,
+                                  { pattern: trimmed }
+                                ),
+                                { autoDismiss: true, appearance: 'error' }
+                              );
+                            }
+                          }
+                          setFieldValue('ignoredPathPatterns', valid);
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="form-row">

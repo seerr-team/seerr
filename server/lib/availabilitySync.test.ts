@@ -4,6 +4,7 @@ import { beforeEach, describe, it } from 'node:test';
 import type {
   JellyfinLibraryItem,
   JellyfinLibraryItemExtended,
+  JellyfinMediaSource,
 } from '@server/api/jellyfin';
 import JellyfinAPI from '@server/api/jellyfin';
 import type { PlexMetadata } from '@server/api/plexapi';
@@ -44,7 +45,8 @@ let getSeasonsImpl: (
 ) => Promise<JellyfinLibraryItem[]> = async () => [];
 let getEpisodesImpl: (
   seriesID: string,
-  seasonID: string
+  seasonID: string,
+  options?: { includeMediaInfo?: boolean }
 ) => Promise<JellyfinLibraryItem[]> = async () => [];
 
 Object.defineProperty(JellyfinAPI.prototype, 'getSystemInfo', {
@@ -73,8 +75,11 @@ Object.defineProperty(JellyfinAPI.prototype, 'getSeasons', {
 
 Object.defineProperty(JellyfinAPI.prototype, 'getEpisodes', {
   get() {
-    return async (seriesID: string, seasonID: string) =>
-      getEpisodesImpl(seriesID, seasonID);
+    return async (
+      seriesID: string,
+      seasonID: string,
+      options?: { includeMediaInfo?: boolean }
+    ) => getEpisodesImpl(seriesID, seasonID, options);
   },
   set() {},
   configurable: true,
@@ -338,6 +343,23 @@ function fakeJellyfinShow(
   };
 }
 
+function fakeJellyfinMovie(
+  id: string,
+  tmdbId: string,
+  mediaSources?: JellyfinMediaSource[]
+): JellyfinLibraryItemExtended {
+  return {
+    Name: 'Test Movie',
+    Id: id,
+    Type: 'Movie',
+    HasSubtitles: false,
+    LocationType: 'FileSystem',
+    MediaType: 'Video',
+    ProviderIds: { Tmdb: tmdbId },
+    MediaSources: mediaSources,
+  };
+}
+
 // --- Plex helpers ---
 function fakePlexSeason(seasonNumber: number, ratingKey: string): PlexMetadata {
   return {
@@ -403,6 +425,70 @@ function fakePlexShow(ratingKey: string): PlexMetadata {
   };
 }
 
+function fakePlexMovie(
+  ratingKey: string,
+  media: PlexMetadata['Media']
+): PlexMetadata {
+  return {
+    ratingKey,
+    guid: `plex://movie/${ratingKey}`,
+    type: 'movie',
+    title: 'Test Movie',
+    Guid: [],
+    index: 1,
+    leafCount: 0,
+    viewedLeafCount: 0,
+    addedAt: 0,
+    updatedAt: 0,
+    Media: media,
+  };
+}
+
+function fakePlexMedia(
+  file: string,
+  width: number,
+  videoResolution: string
+): PlexMetadata['Media'][number] {
+  return {
+    id: width,
+    duration: 2400,
+    bitrate: 4000,
+    width,
+    height: width >= 2000 ? 2160 : 1080,
+    aspectRatio: 1.78,
+    audioChannels: 2,
+    audioCodec: 'aac',
+    videoCodec: 'h264',
+    videoResolution,
+    container: 'mkv',
+    videoFrameRate: '24p',
+    videoProfile: 'high',
+    Part: [{ file }],
+  };
+}
+
+function fakeJellyfinMediaSource(
+  path: string,
+  width: number
+): JellyfinMediaSource {
+  return {
+    Protocol: 'File',
+    Id: `${path}-${width}`,
+    Path: path,
+    Type: 'Default',
+    VideoType: 'VideoFile',
+    MediaStreams: [
+      {
+        Codec: 'h264',
+        Type: 'Video',
+        Width: width,
+        Height: width >= 2000 ? 2160 : 1080,
+        DisplayTitle: `${width}p`,
+      },
+    ],
+  };
+}
+
 // --- Sonarr helpers ---
 function fakeSonarrSeasons(
   totalSeasons: number,
@@ -462,6 +548,7 @@ describe('AvailabilitySync', () => {
           season_number: i + 1,
         }))
       );
+    getSettings().main.ignoredPathPatterns = [];
 
     const userRepository = getRepository(User);
     const existingAdmin = await userRepository.findOne({ where: { id: 1 } });
@@ -2306,6 +2393,534 @@ describe('AvailabilitySync', () => {
         MediaStatus.AVAILABLE,
         'Show should stay AVAILABLE when only specials were removed'
       );
+    });
+  });
+
+  describe('ignored 4K path handling', () => {
+    it('removes stale Plex 4K movie availability when only ignored 4K media remains', async () => {
+      configurePlex();
+      getSettings().main.ignoredPathPatterns = ['placeholders/'];
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 3000;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.UNKNOWN;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey4k = 'plex-mixed-movie-rk';
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'plex-mixed-movie-rk') {
+          return fakePlexMovie('plex-mixed-movie-rk', [
+            fakePlexMedia(
+              '/library/movies/Test Movie (2024)/movie.mkv',
+              1920,
+              '1080'
+            ),
+            fakePlexMedia(
+              '/library/movies/placeholders/Test Movie (2024)-4k.mkv',
+              3840,
+              '4k'
+            ),
+          ]);
+        }
+
+        throw new Error('404');
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 3000 },
+      });
+
+      assert.strictEqual(updated.status4k, MediaStatus.DELETED);
+      assert.strictEqual(updated.ratingKey4k, null);
+    });
+
+    it('removes stale Plex 4K season availability when only ignored 4K media remains', async () => {
+      configurePlex();
+      getSettings().main.ignoredPathPatterns = ['placeholders/'];
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 3004;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.UNKNOWN;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey4k = 'plex-mixed-show-rk';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.UNKNOWN,
+          status4k: MediaStatus.AVAILABLE,
+        }),
+      ];
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'plex-mixed-show-rk') {
+          return fakePlexShow('plex-mixed-show-rk');
+        }
+
+        throw new Error('404');
+      };
+
+      getChildrenMetadataImpl = async (key: string) => {
+        if (key === 'plex-mixed-show-rk') {
+          return [fakePlexSeason(1, 'plex-mixed-show-s1-rk')];
+        }
+
+        if (key === 'plex-mixed-show-s1-rk') {
+          return [
+            {
+              ratingKey: 'plex-mixed-show-s1-e1-rk',
+              guid: 'plex://episode/plex-mixed-show-s1-e1-rk',
+              type: 'movie' as const,
+              title: 'Episode 1',
+              Guid: [],
+              index: 1,
+              leafCount: 0,
+              viewedLeafCount: 0,
+              addedAt: 0,
+              updatedAt: 0,
+              Media: [
+                fakePlexMedia(
+                  '/library/shows/Test Show/Season 01/S01E01.mkv',
+                  1920,
+                  '1080'
+                ),
+                fakePlexMedia(
+                  '/library/shows/placeholders/Test Show/Season 01/S01E01-4k.mkv',
+                  3840,
+                  '4k'
+                ),
+              ],
+            },
+          ];
+        }
+
+        return [];
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 3004 },
+        relations: ['seasons'],
+      });
+
+      assert.strictEqual(updated.status4k, MediaStatus.DELETED);
+      assert.strictEqual(updated.ratingKey4k, null);
+      assert.strictEqual(updated.seasons[0].status4k, MediaStatus.DELETED);
+    });
+
+    it('keeps Plex 4K show availability when another season lookup fails during 4K validation', async () => {
+      configurePlex();
+      getSettings().main.ignoredPathPatterns = ['placeholders/'];
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 3005;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.UNKNOWN;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey4k = 'plex-4k-fallback-rk';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.UNKNOWN,
+          status4k: MediaStatus.AVAILABLE,
+        }),
+      ];
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'plex-4k-fallback-rk') {
+          return fakePlexShow('plex-4k-fallback-rk');
+        }
+
+        throw new Error('404');
+      };
+
+      getChildrenMetadataImpl = async (key: string) => {
+        if (key === 'plex-4k-fallback-rk') {
+          return [
+            fakePlexSeason(1, 'plex-4k-fallback-s1-rk'),
+            fakePlexSeason(2, 'plex-4k-fallback-s2-rk'),
+          ];
+        }
+
+        if (key === 'plex-4k-fallback-s1-rk') {
+          throw new Error('Connection refused');
+        }
+
+        if (key === 'plex-4k-fallback-s2-rk') {
+          return [
+            {
+              ratingKey: 'plex-4k-fallback-s2-e1-rk',
+              guid: 'plex://episode/plex-4k-fallback-s2-e1-rk',
+              type: 'movie' as const,
+              title: 'Episode 1',
+              Guid: [],
+              index: 1,
+              leafCount: 0,
+              viewedLeafCount: 0,
+              addedAt: 0,
+              updatedAt: 0,
+              Media: [
+                fakePlexMedia(
+                  '/library/shows/Test Show/Season 02/S02E01.mkv',
+                  1920,
+                  '1080'
+                ),
+              ],
+            },
+          ];
+        }
+
+        return [];
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 3005 },
+        relations: ['seasons'],
+      });
+
+      assert.strictEqual(updated.status4k, MediaStatus.AVAILABLE);
+      assert.strictEqual(updated.ratingKey4k, 'plex-4k-fallback-rk');
+      assert.strictEqual(updated.seasons[0].status4k, MediaStatus.AVAILABLE);
+    });
+
+    it('removes stale Jellyfin 4K movie availability when only ignored 4K sources remain', async () => {
+      configureJellyfin();
+      getSettings().main.ignoredPathPatterns = ['placeholders/'];
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 3003;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.UNKNOWN;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.jellyfinMediaId4k = 'jellyfin-mixed-movie-id';
+      await mediaRepository.save(media);
+
+      getItemDataImpl = async (id: string) => {
+        if (id === 'jellyfin-mixed-movie-id') {
+          return fakeJellyfinMovie('jellyfin-mixed-movie-id', '3003', [
+            fakeJellyfinMediaSource(
+              '/library/movies/Test Movie (2024)/movie.mkv',
+              1920
+            ),
+            fakeJellyfinMediaSource(
+              '/library/movies/placeholders/Test Movie (2024)-4k.mkv',
+              3840
+            ),
+          ]);
+        }
+
+        return undefined;
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 3003 },
+      });
+
+      assert.strictEqual(updated.status4k, MediaStatus.DELETED);
+      assert.strictEqual(updated.jellyfinMediaId4k, null);
+    });
+
+    it('removes stale Jellyfin 4K season availability when only ignored 4K sources remain', async () => {
+      configureJellyfin();
+      getSettings().main.ignoredPathPatterns = ['placeholders/'];
+      let includeMediaInfoRequested = false;
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 3001;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.jellyfinMediaId = 'jellyfin-mixed-show-id';
+      media.jellyfinMediaId4k = 'jellyfin-mixed-show-id';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.AVAILABLE,
+        }),
+      ];
+      await mediaRepository.save(media);
+
+      getItemDataImpl = async (id: string) => {
+        if (id === 'jellyfin-mixed-show-id') {
+          return fakeJellyfinShow('jellyfin-mixed-show-id', '3001');
+        }
+
+        return undefined;
+      };
+
+      getSeasonsImpl = async (seriesID: string) => {
+        if (seriesID === 'jellyfin-mixed-show-id') {
+          return [fakeJellyfinSeason(1, 'jellyfin-mixed-show-s1-id')];
+        }
+
+        return [];
+      };
+
+      getEpisodesImpl = async (
+        _seriesID: string,
+        seasonID: string,
+        options?: { includeMediaInfo?: boolean }
+      ) => {
+        if (seasonID === 'jellyfin-mixed-show-s1-id') {
+          includeMediaInfoRequested = options?.includeMediaInfo === true;
+
+          return [
+            {
+              Name: 'Episode 1',
+              Id: 'jellyfin-mixed-show-s1-e1-id',
+              IndexNumber: 1,
+              Type: 'Episode' as const,
+              HasSubtitles: false,
+              LocationType: 'FileSystem' as const,
+              MediaType: 'Video',
+              MediaSources: [
+                fakeJellyfinMediaSource(
+                  '/library/shows/Test Show/Season 01/S01E01.mkv',
+                  1920
+                ),
+                fakeJellyfinMediaSource(
+                  '/library/shows/placeholders/Test Show/Season 01/S01E01-4k.mkv',
+                  3840
+                ),
+              ],
+            } as JellyfinLibraryItemExtended,
+          ];
+        }
+
+        return [];
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 3001 },
+        relations: ['seasons'],
+      });
+
+      assert.strictEqual(updated.status, MediaStatus.AVAILABLE);
+      assert.strictEqual(updated.status4k, MediaStatus.DELETED);
+      assert.strictEqual(updated.jellyfinMediaId4k, null);
+      assert.strictEqual(updated.seasons[0].status, MediaStatus.AVAILABLE);
+      assert.strictEqual(updated.seasons[0].status4k, MediaStatus.DELETED);
+      assert.strictEqual(includeMediaInfoRequested, true);
+    });
+
+    it('keeps Jellyfin 4K season availability when an unignored 4K source remains', async () => {
+      configureJellyfin();
+      getSettings().main.ignoredPathPatterns = ['placeholders/'];
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 3002;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.jellyfinMediaId = 'jellyfin-4k-show-id';
+      media.jellyfinMediaId4k = 'jellyfin-4k-show-id';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.AVAILABLE,
+        }),
+      ];
+      await mediaRepository.save(media);
+
+      getItemDataImpl = async (id: string) => {
+        if (id === 'jellyfin-4k-show-id') {
+          return fakeJellyfinShow('jellyfin-4k-show-id', '3002');
+        }
+
+        return undefined;
+      };
+
+      getSeasonsImpl = async (seriesID: string) => {
+        if (seriesID === 'jellyfin-4k-show-id') {
+          return [fakeJellyfinSeason(1, 'jellyfin-4k-show-s1-id')];
+        }
+
+        return [];
+      };
+
+      getEpisodesImpl = async (_seriesID: string, seasonID: string) => {
+        if (seasonID === 'jellyfin-4k-show-s1-id') {
+          return [
+            {
+              Name: 'Episode 1',
+              Id: 'jellyfin-4k-show-s1-e1-id',
+              IndexNumber: 1,
+              Type: 'Episode' as const,
+              HasSubtitles: false,
+              LocationType: 'FileSystem' as const,
+              MediaType: 'Video',
+              MediaSources: [
+                fakeJellyfinMediaSource(
+                  '/library/shows/Test Show/Season 01/S01E01-4k.mkv',
+                  3840
+                ),
+                fakeJellyfinMediaSource(
+                  '/library/shows/placeholders/Test Show/Season 01/S01E01-placeholder.mkv',
+                  1920
+                ),
+              ],
+            } as JellyfinLibraryItemExtended,
+          ];
+        }
+
+        return [];
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 3002 },
+        relations: ['seasons'],
+      });
+
+      assert.strictEqual(updated.status, MediaStatus.AVAILABLE);
+      assert.strictEqual(updated.status4k, MediaStatus.AVAILABLE);
+      assert.strictEqual(updated.jellyfinMediaId4k, 'jellyfin-4k-show-id');
+      assert.strictEqual(updated.seasons[0].status, MediaStatus.AVAILABLE);
+      assert.strictEqual(updated.seasons[0].status4k, MediaStatus.AVAILABLE);
+    });
+  });
+
+  describe('season listing ambiguity handling', () => {
+    it('keeps Plex show existence when season metadata is non-empty but non-matching', async () => {
+      configurePlex();
+
+      const media = new Media();
+      media.tmdbId = 4000;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.ratingKey = 'plex-ambiguous-show-rk';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+      ];
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'plex-ambiguous-show-rk') {
+          return fakePlexShow('plex-ambiguous-show-rk');
+        }
+
+        throw new Error('404');
+      };
+
+      getChildrenMetadataImpl = async (key: string) => {
+        if (key === 'plex-ambiguous-show-rk') {
+          return [fakePlexSeason(2, 'plex-ambiguous-show-s2-rk')];
+        }
+
+        return [];
+      };
+
+      const sync = availabilitySync as unknown as {
+        plexClient: PlexAPI;
+        plexSeasonsCache: Record<string, PlexMetadata[]>;
+        plexEpisodeExistsCache: Record<string, boolean>;
+        mediaExistsInPlex: (
+          media: Media,
+          is4k: boolean
+        ) => Promise<{
+          existsInPlex: boolean;
+          seasonsMap?: Map<number, boolean>;
+        }>;
+      };
+
+      sync.plexClient = new PlexAPI({ plexToken: 'test-plex-token' });
+      sync.plexSeasonsCache = {};
+      sync.plexEpisodeExistsCache = {};
+
+      const result = await sync.mediaExistsInPlex(media, false);
+
+      assert.strictEqual(result.existsInPlex, true);
+      assert.strictEqual(result.seasonsMap?.size ?? 0, 0);
+    });
+
+    it('keeps Jellyfin show existence when season metadata is non-empty but non-matching', async () => {
+      configureJellyfin();
+
+      const media = new Media();
+      media.tmdbId = 4001;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.jellyfinMediaId = 'jellyfin-ambiguous-show-id';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+      ];
+
+      getItemDataImpl = async (id: string) => {
+        if (id === 'jellyfin-ambiguous-show-id') {
+          return fakeJellyfinShow('jellyfin-ambiguous-show-id', '4001');
+        }
+
+        return undefined;
+      };
+
+      getSeasonsImpl = async (seriesID: string) => {
+        if (seriesID === 'jellyfin-ambiguous-show-id') {
+          return [fakeJellyfinSeason(2, 'jellyfin-ambiguous-show-s2-id')];
+        }
+
+        return [];
+      };
+
+      const sync = availabilitySync as unknown as {
+        jellyfinClient: JellyfinAPI;
+        jellyfinSeasonsCache: Record<string, JellyfinLibraryItem[]>;
+        jellyfinEpisodeExistsCache: Record<string, boolean>;
+        mediaExistsInJellyfin: (
+          media: Media,
+          is4k: boolean
+        ) => Promise<{
+          existsInJellyfin: boolean;
+          seasonsMap?: Map<number, boolean>;
+        }>;
+      };
+
+      sync.jellyfinClient = new JellyfinAPI(
+        'http://localhost',
+        'test-api-key',
+        'test-device-id'
+      );
+      sync.jellyfinSeasonsCache = {};
+      sync.jellyfinEpisodeExistsCache = {};
+
+      const result = await sync.mediaExistsInJellyfin(media, false);
+
+      assert.strictEqual(result.existsInJellyfin, true);
+      assert.strictEqual(result.seasonsMap?.size ?? 0, 0);
     });
   });
 });
