@@ -19,6 +19,7 @@ interface BaseMedia {
   mediaType: string;
   mediaInfo?: {
     status: MediaStatus;
+    hasActiveRequest?: boolean;
   };
 }
 
@@ -58,7 +59,7 @@ const useDiscover = <
 >(
   endpoint: string,
   options?: O,
-  { hideAvailable = true, hideBlocklisted = true } = {}
+  { hideAvailable = true, hideBlocklisted = true, hideRequested = true } = {}
 ): DiscoverResult<T, S> => {
   const settings = useSettings();
   const { hasPermission } = useUser();
@@ -140,6 +141,16 @@ const useDiscover = <
         !(i.mediaType === 'movie' || i.mediaType === 'tv') ||
         i.mediaInfo?.status !== MediaStatus.BLOCKLISTED
     );
+  }
+
+  if (settings.currentSettings.hideRequested && hideRequested) {
+    titles = titles.filter((i) => {
+      if (i.mediaType !== 'movie' && i.mediaType !== 'tv') {
+        return true;
+      }
+
+      return !i.mediaInfo?.hasActiveRequest;
+    });
   }
 
   const isEmpty = !isLoadingInitialData && titles?.length === 0;

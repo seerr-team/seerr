@@ -82,6 +82,16 @@ const MediaSlider = ({
     );
   }
 
+  if (settings.currentSettings.hideRequested) {
+    titles = titles.filter((i) => {
+      if (i.mediaType !== 'movie' && i.mediaType !== 'tv') {
+        return true;
+      }
+
+      return !i.mediaInfo?.hasActiveRequest;
+    });
+  }
+
   useEffect(() => {
     if (
       titles.length < 24 &&
