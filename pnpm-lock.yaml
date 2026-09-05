@@ -116,6 +116,9 @@ importers:
       js-yaml:
         specifier: ^4.1.1
         version: 4.1.1
+      liquidjs:
+        specifier: ^10.27.0
+        version: 10.27.0
       lodash:
         specifier: 4.18.1
         version: 4.18.1
@@ -3504,6 +3507,10 @@ packages:
   comma-separated-tokens@2.0.3:
     resolution: {integrity: sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg==}
 
+  commander@10.0.1:
+    resolution: {integrity: sha512-y4Mg2tXshplEbSGzx7amzPwKKOCGuoSRP/CjEdwwk0FOGlUbq6lKuoyDZTNZkmxHdJtp54hdfY/JUrdL7Xfdug==}
+    engines: {node: '>=14'}
+
   commander@12.1.0:
     resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
     engines: {node: '>=18'}
@@ -5424,6 +5431,11 @@ packages:
   lint-staged@16.4.0:
     resolution: {integrity: sha512-lBWt8hujh/Cjysw5GYVmZpFHXDCgZzhrOm8vbcUdobADZNOK/bRshr2kM3DfgrrtR1DQhfupW9gnIXOfiFi+bw==}
     engines: {node: '>=20.17'}
+    hasBin: true
+
+  liquidjs@10.27.0:
+    resolution: {integrity: sha512-tw/OA59K7aIBlMKIrKlumr37fiZUheShVHXY8cVctWisgY1p9mc5hreOvlreoS0wTiwlWk14Ya7305c2a/Cg5w==}
+    engines: {node: '>=16'}
     hasBin: true
 
   listr2@3.14.0:
@@ -11522,6 +11534,8 @@ snapshots:
 
   comma-separated-tokens@2.0.3: {}
 
+  commander@10.0.1: {}
+
   commander@12.1.0: {}
 
   commander@14.0.3: {}
@@ -14085,6 +14099,10 @@ snapshots:
       string-argv: 0.3.2
       tinyexec: 1.1.1
       yaml: 2.8.3
+
+  liquidjs@10.27.0:
+    dependencies:
+      commander: 10.0.1
 
   listr2@3.14.0(enquirer@2.4.1):
     dependencies:

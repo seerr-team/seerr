@@ -395,6 +395,57 @@ const SETTINGS_PATH = process.env.CONFIG_DIRECTORY
   ? `${process.env.CONFIG_DIRECTORY}/settings.json`
   : path.join(__dirname, '../../../config/settings.json');
 
+// Default webhook payload, rendered through the LiquidJS template engine.
+// Optional sections use `{% if %}…{% else %}null{% endif %}` so they render as
+// null (not omitted) when absent, and free-text values use the `json` filter to
+// quote/escape themselves. Keep this byte-identical to the frontend
+// `defaultPayload` in
+// src/components/Settings/Notifications/NotificationsWebhook/index.tsx.
+const DEFAULT_WEBHOOK_JSON_PAYLOAD = `{
+  "notification_type": "{{ notification_type }}",
+  "event": "{{ event }}",
+  "subject": {{ subject | json }},
+  "message": {{ message | json }},
+  "image": "{{ image }}",
+  "media": {% if media %}{
+    "media_type": "{{ media_type }}",
+    "imdbId": "{{ media_imdbid }}",
+    "tmdbId": "{{ media_tmdbid }}",
+    "tvdbId": "{{ media_tvdbid }}",
+    "jellyfinMediaId": "{{ media_jellyfinMediaId }}",
+    "status": "{{ media_status }}",
+    "status4k": "{{ media_status4k }}"
+  }{% else %}null{% endif %},
+  "request": {% if request %}{
+    "request_id": "{{ request_id }}",
+    "requestedBy_email": "{{ requestedBy_email }}",
+    "requestedBy_username": {{ requestedBy_username | json }},
+    "requestedBy_avatar": "{{ requestedBy_avatar }}",
+    "requestedBy_jellyfinUserId": "{{ requestedBy_jellyfinUserId }}",
+    "requestedBy_settings_discordIds": "{{ requestedBy_settings_discordIds | join: ',' }}",
+    "requestedBy_settings_telegramChatId": "{{ requestedBy_settings_telegramChatId }}"
+  }{% else %}null{% endif %},
+  "issue": {% if issue %}{
+    "issue_id": "{{ issue_id }}",
+    "issue_type": "{{ issue_type }}",
+    "issue_status": "{{ issue_status }}",
+    "reportedBy_email": "{{ reportedBy_email }}",
+    "reportedBy_username": {{ reportedBy_username | json }},
+    "reportedBy_avatar": "{{ reportedBy_avatar }}",
+    "reportedBy_settings_discordIds": "{{ reportedBy_settings_discordIds | join: ',' }}",
+    "reportedBy_settings_telegramChatId": "{{ reportedBy_settings_telegramChatId }}"
+  }{% else %}null{% endif %},
+  "comment": {% if comment %}{
+    "comment_message": {{ comment_message | json }},
+    "commentedBy_email": "{{ commentedBy_email }}",
+    "commentedBy_username": {{ commentedBy_username | json }},
+    "commentedBy_avatar": "{{ commentedBy_avatar }}",
+    "commentedBy_settings_discordIds": "{{ commentedBy_settings_discordIds | join: ',' }}",
+    "commentedBy_settings_telegramChatId": "{{ commentedBy_settings_telegramChatId }}"
+  }{% else %}null{% endif %},
+  "extra": {{ extra | json }}
+}`;
+
 class Settings {
   private data: AllSettings;
   private saveLock: Promise<void> = Promise.resolve();
@@ -537,8 +588,9 @@ class Settings {
             types: 0,
             options: {
               webhookUrl: '',
-              jsonPayload:
-                'IntcbiAgXCJub3RpZmljYXRpb25fdHlwZVwiOiBcInt7bm90aWZpY2F0aW9uX3R5cGV9fVwiLFxuICBcImV2ZW50XCI6IFwie3tldmVudH19XCIsXG4gIFwic3ViamVjdFwiOiBcInt7c3ViamVjdH19XCIsXG4gIFwibWVzc2FnZVwiOiBcInt7bWVzc2FnZX19XCIsXG4gIFwiaW1hZ2VcIjogXCJ7e2ltYWdlfX1cIixcbiAgXCJ7e21lZGlhfX1cIjoge1xuICAgIFwibWVkaWFfdHlwZVwiOiBcInt7bWVkaWFfdHlwZX19XCIsXG4gICAgXCJ0bWRiSWRcIjogXCJ7e21lZGlhX3RtZGJpZH19XCIsXG4gICAgXCJ0dmRiSWRcIjogXCJ7e21lZGlhX3R2ZGJpZH19XCIsXG4gICAgXCJzdGF0dXNcIjogXCJ7e21lZGlhX3N0YXR1c319XCIsXG4gICAgXCJzdGF0dXM0a1wiOiBcInt7bWVkaWFfc3RhdHVzNGt9fVwiXG4gIH0sXG4gIFwie3tyZXF1ZXN0fX1cIjoge1xuICAgIFwicmVxdWVzdF9pZFwiOiBcInt7cmVxdWVzdF9pZH19XCIsXG4gICAgXCJyZXF1ZXN0ZWRCeV9lbWFpbFwiOiBcInt7cmVxdWVzdGVkQnlfZW1haWx9fVwiLFxuICAgIFwicmVxdWVzdGVkQnlfdXNlcm5hbWVcIjogXCJ7e3JlcXVlc3RlZEJ5X3VzZXJuYW1lfX1cIixcbiAgICBcInJlcXVlc3RlZEJ5X2F2YXRhclwiOiBcInt7cmVxdWVzdGVkQnlfYXZhdGFyfX1cIixcbiAgICBcInJlcXVlc3RlZEJ5X3NldHRpbmdzX2Rpc2NvcmRJZFwiOiBcInt7cmVxdWVzdGVkQnlfc2V0dGluZ3NfZGlzY29yZElkfX1cIixcbiAgICBcInJlcXVlc3RlZEJ5X3NldHRpbmdzX3RlbGVncmFtQ2hhdElkXCI6IFwie3tyZXF1ZXN0ZWRCeV9zZXR0aW5nc190ZWxlZ3JhbUNoYXRJZH19XCJcbiAgfSxcbiAgXCJ7e2lzc3VlfX1cIjoge1xuICAgIFwiaXNzdWVfaWRcIjogXCJ7e2lzc3VlX2lkfX1cIixcbiAgICBcImlzc3VlX3R5cGVcIjogXCJ7e2lzc3VlX3R5cGV9fVwiLFxuICAgIFwiaXNzdWVfc3RhdHVzXCI6IFwie3tpc3N1ZV9zdGF0dXN9fVwiLFxuICAgIFwicmVwb3J0ZWRCeV9lbWFpbFwiOiBcInt7cmVwb3J0ZWRCeV9lbWFpbH19XCIsXG4gICAgXCJyZXBvcnRlZEJ5X3VzZXJuYW1lXCI6IFwie3tyZXBvcnRlZEJ5X3VzZXJuYW1lfX1cIixcbiAgICBcInJlcG9ydGVkQnlfYXZhdGFyXCI6IFwie3tyZXBvcnRlZEJ5X2F2YXRhcn19XCIsXG4gICAgXCJyZXBvcnRlZEJ5X3NldHRpbmdzX2Rpc2NvcmRJZFwiOiBcInt7cmVwb3J0ZWRCeV9zZXR0aW5nc19kaXNjb3JkSWR9fVwiLFxuICAgIFwicmVwb3J0ZWRCeV9zZXR0aW5nc190ZWxlZ3JhbUNoYXRJZFwiOiBcInt7cmVwb3J0ZWRCeV9zZXR0aW5nc190ZWxlZ3JhbUNoYXRJZH19XCJcbiAgfSxcbiAgXCJ7e2NvbW1lbnR9fVwiOiB7XG4gICAgXCJjb21tZW50X21lc3NhZ2VcIjogXCJ7e2NvbW1lbnRfbWVzc2FnZX19XCIsXG4gICAgXCJjb21tZW50ZWRCeV9lbWFpbFwiOiBcInt7Y29tbWVudGVkQnlfZW1haWx9fVwiLFxuICAgIFwiY29tbWVudGVkQnlfdXNlcm5hbWVcIjogXCJ7e2NvbW1lbnRlZEJ5X3VzZXJuYW1lfX1cIixcbiAgICBcImNvbW1lbnRlZEJ5X2F2YXRhclwiOiBcInt7Y29tbWVudGVkQnlfYXZhdGFyfX1cIixcbiAgICBcImNvbW1lbnRlZEJ5X3NldHRpbmdzX2Rpc2NvcmRJZFwiOiBcInt7Y29tbWVudGVkQnlfc2V0dGluZ3NfZGlzY29yZElkfX1cIixcbiAgICBcImNvbW1lbnRlZEJ5X3NldHRpbmdzX3RlbGVncmFtQ2hhdElkXCI6IFwie3tjb21tZW50ZWRCeV9zZXR0aW5nc190ZWxlZ3JhbUNoYXRJZH19XCJcbiAgfSxcbiAgXCJ7e2V4dHJhfX1cIjogW11cbn0i',
+              jsonPayload: Buffer.from(DEFAULT_WEBHOOK_JSON_PAYLOAD).toString(
+                'base64'
+              ),
             },
           },
           webpush: {
