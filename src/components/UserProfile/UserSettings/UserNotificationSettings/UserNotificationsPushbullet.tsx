@@ -71,6 +71,7 @@ const UserPushbulletSettings = () => {
           await axios.post(`/api/v1/user/${user?.id}/settings/notifications`, {
             pgpKey: data?.pgpKey,
             discordIds: data?.discordIds,
+            slackIds: data?.slackIds,
             pushbulletAccessToken: values.pushbulletAccessToken,
             pushoverApplicationToken: data?.pushoverApplicationToken,
             pushoverUserKey: data?.pushoverUserKey,

@@ -1,6 +1,7 @@
 import DiscordLogo from '@app/assets/extlogos/discord.svg';
 import PushbulletLogo from '@app/assets/extlogos/pushbullet.svg';
 import PushoverLogo from '@app/assets/extlogos/pushover.svg';
+import SlackLogo from '@app/assets/extlogos/slack.svg';
 import TelegramLogo from '@app/assets/extlogos/telegram.svg';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
@@ -97,6 +98,17 @@ const UserNotificationSettings = ({
       ),
       route: '/settings/notifications/pushover',
       regex: /\/settings\/notifications\/pushover/,
+    },
+    {
+      text: 'Slack',
+      content: (
+        <span className="flex items-center">
+          <SlackLogo className="mr-2 h-4" />
+          Slack
+        </span>
+      ),
+      route: '/settings/notifications/slack',
+      regex: /\/settings\/notifications\/slack/,
     },
     {
       text: 'Telegram',

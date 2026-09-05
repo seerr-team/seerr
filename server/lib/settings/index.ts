@@ -241,6 +241,7 @@ export interface NotificationAgentDiscord extends NotificationAgentConfig {
 export interface NotificationAgentSlack extends NotificationAgentConfig {
   options: {
     webhookUrl: string;
+    enableMentions: boolean;
     locale: AvailableLocale;
   };
 }
@@ -499,6 +500,7 @@ class Settings {
             types: 0,
             options: {
               webhookUrl: '',
+              enableMentions: true,
               locale: 'en',
             },
           },
