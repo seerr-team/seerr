@@ -428,7 +428,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
         tmdbId={request.media.tmdbId}
         type={request.type}
         is4k={request.is4k}
-        editRequest={request}
+        editRequest={requestData}
         onCancel={() => setShowEditModal(false)}
         onComplete={() => {
           revalidateList();
@@ -754,23 +754,25 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                 </span>
               </div>
             )}
-          {requestData.status === MediaRequestStatus.PENDING &&
+          {((requestData.status === MediaRequestStatus.PENDING &&
             (hasPermission(Permission.MANAGE_REQUESTS) ||
               (requestData.requestedBy.id === user?.id &&
                 (requestData.type === 'tv' ||
-                  hasPermission(Permission.REQUEST_ADVANCED)))) && (
-              <span className="w-full">
-                <Button
-                  className="w-full"
-                  buttonType="primary"
-                  onClick={() => setShowEditModal(true)}
-                  disabled={updatingType !== null}
-                >
-                  <PencilIcon />
-                  <span>{intl.formatMessage(messages.editrequest)}</span>
-                </Button>
-              </span>
-            )}
+                  hasPermission(Permission.REQUEST_ADVANCED))))) ||
+            (requestData.status === MediaRequestStatus.FAILED &&
+              hasPermission(Permission.MANAGE_REQUESTS))) && (
+            <span className="w-full">
+              <Button
+                className="w-full"
+                buttonType="primary"
+                onClick={() => setShowEditModal(true)}
+                disabled={updatingType !== null || isRetrying}
+              >
+                <PencilIcon />
+                <span>{intl.formatMessage(messages.editrequest)}</span>
+              </Button>
+            </span>
+          )}
           {requestData.status === MediaRequestStatus.PENDING &&
             !hasPermission(Permission.MANAGE_REQUESTS) &&
             requestData.requestedBy.id === user?.id && (

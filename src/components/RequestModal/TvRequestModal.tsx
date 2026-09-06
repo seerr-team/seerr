@@ -46,6 +46,8 @@ const messages = defineMessages('components.RequestModal', {
   errorediting: 'Something went wrong while editing the request.',
   requestedited: 'Request for <strong>{title}</strong> edited successfully!',
   requestApproved: 'Request for <strong>{title}</strong> approved!',
+  requestRetried:
+    'Request for <strong>{title}</strong> updated and resubmitted.',
   requestcancelled: 'Request for <strong>{title}</strong> canceled.',
   autoapproval: 'Automatic Approval',
   requesterror: 'Something went wrong while submitting the request.',
@@ -110,6 +112,9 @@ const TvRequestModal = ({
       mutate('/api/v1/request/count');
     }
 
+    // The PUT resubmits a failed request itself; /approve would 409 on it.
+    const isFailedResubmit = editRequest.status === MediaRequestStatus.FAILED;
+
     try {
       if (selectedSeasons.length > 0) {
         await axios.put(`/api/v1/request/${editRequest.id}`, {
@@ -123,7 +128,7 @@ const TvRequestModal = ({
           seasons: selectedSeasons.sort((a, b) => a - b),
         });
 
-        if (alsoApproveRequest) {
+        if (alsoApproveRequest && !isFailedResubmit) {
           await axios.post(`/api/v1/request/${editRequest.id}/approve`);
         }
       } else {
@@ -136,9 +141,11 @@ const TvRequestModal = ({
         <span>
           {selectedSeasons.length > 0
             ? intl.formatMessage(
-                alsoApproveRequest
-                  ? messages.requestApproved
-                  : messages.requestedited,
+                isFailedResubmit
+                  ? messages.requestRetried
+                  : alsoApproveRequest
+                    ? messages.requestApproved
+                    : messages.requestedited,
                 {
                   title: data?.name,
                   strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
