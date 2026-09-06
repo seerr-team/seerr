@@ -180,6 +180,56 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       });
     }
   }
+  /**
+   * When a request's target *arr server cannot be resolved: if the request
+   * carried an explicit `serverId` that no longer exists, mark it FAILED and
+   * notify the requester; otherwise (no override and no default configured)
+   * log and return, preserving the previous silent-skip behaviour.
+   */
+  private async handleUnresolvedServer(
+    entity: MediaRequest,
+    manager: EntityManager,
+    service: 'Radarr' | 'Sonarr'
+  ): Promise<void> {
+    const tier = entity.is4k ? '4K ' : '';
+    const hasExplicitServer = entity.serverId !== null && entity.serverId >= 0;
+
+    if (!hasExplicitServer) {
+      logger.warn(
+        `There is no default ${tier}${service} server configured. Did you set one of your ${tier}${service} servers as default?`,
+        {
+          label: 'Media Request',
+          requestId: entity.id,
+          mediaId: entity.media.id,
+        }
+      );
+      return;
+    }
+
+    const media = await manager.getRepository(Media).findOne({
+      where: { id: entity.media.id },
+    });
+    if (!media) {
+      return;
+    }
+
+    logger.warn(
+      `Unable to resolve a ${tier}${service} server for this request; marking it as FAILED. The ${tier}${service} server this request was configured for (id ${entity.serverId}) no longer exists; recreate the request to route it to a configured server.`,
+      {
+        label: 'Media Request',
+        requestId: entity.id,
+        mediaId: entity.media.id,
+        serverId: entity.serverId,
+        is4k: entity.is4k,
+      }
+    );
+
+    if (entity.status !== MediaRequestStatus.FAILED) {
+      entity.status = MediaRequestStatus.FAILED;
+      await manager.getRepository(MediaRequest).save(entity);
+      MediaRequest.sendNotification(entity, media, Notification.MEDIA_FAILED);
+    }
+  }
 
   public async sendToRadarr(
     entity: MediaRequest,
@@ -227,18 +277,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         }
 
         if (!radarrSettings) {
-          logger.warn(
-            `There is no default ${
-              entity.is4k ? '4K ' : ''
-            }Radarr server configured. Did you set any of your ${
-              entity.is4k ? '4K ' : ''
-            }Radarr servers as default?`,
-            {
-              label: 'Media Request',
-              requestId: entity.id,
-              mediaId: entity.media.id,
-            }
-          );
+          await this.handleUnresolvedServer(entity, manager, 'Radarr');
           return;
         }
 
@@ -526,18 +565,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         }
 
         if (!sonarrSettings) {
-          logger.warn(
-            `There is no default ${
-              entity.is4k ? '4K ' : ''
-            }Sonarr server configured. Did you set any of your ${
-              entity.is4k ? '4K ' : ''
-            }Sonarr servers as default?`,
-            {
-              label: 'Media Request',
-              requestId: entity.id,
-              mediaId: entity.media.id,
-            }
-          );
+          await this.handleUnresolvedServer(entity, manager, 'Sonarr');
           return;
         }
 
