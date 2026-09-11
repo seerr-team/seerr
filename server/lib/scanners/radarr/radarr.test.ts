@@ -798,7 +798,6 @@ describe('Radarr Scanner', () => {
           media,
           requestedBy,
           is4k: false,
-          serverId,
         })
       );
     }
