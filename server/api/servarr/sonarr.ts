@@ -356,6 +356,57 @@ class SonarrAPI extends ServarrBase<{
     }
   }
 
+  public async searchSeason(
+    seriesId: number,
+    seasonNumber: number
+  ): Promise<void> {
+    logger.info('Executing season search command.', {
+      label: 'Sonarr API',
+      seriesId,
+      seasonNumber,
+    });
+    try {
+      await this.runCommand('SeasonSearch', { seriesId, seasonNumber });
+    } catch (e) {
+      logger.error(
+        'Something went wrong while executing Sonarr season search.',
+        {
+          label: 'Sonarr API',
+          errorMessage: e.message,
+          seriesId,
+          seasonNumber,
+        }
+      );
+      throw new Error(
+        `[Sonarr] Failed to execute season search for series ${seriesId}, season ${seasonNumber}: ${e.message}`,
+        { cause: e }
+      );
+    }
+  }
+
+  public async searchEpisodes(episodeIds: number[]): Promise<void> {
+    logger.info('Executing episode search command.', {
+      label: 'Sonarr API',
+      episodeIds,
+    });
+    try {
+      await this.runCommand('EpisodeSearch', { episodeIds });
+    } catch (e) {
+      logger.error(
+        'Something went wrong while executing Sonarr episode search.',
+        {
+          label: 'Sonarr API',
+          errorMessage: e.message,
+          episodeIds,
+        }
+      );
+      throw new Error(
+        `[Sonarr] Failed to execute episode search for episode IDs ${episodeIds.join(', ')}: ${e.message}`,
+        { cause: e }
+      );
+    }
+  }
+
   public async getEpisodes(seriesId: number): Promise<EpisodeResult[]> {
     try {
       const response = await this.axios.get<EpisodeResult[]>('/episode', {
@@ -369,6 +420,21 @@ class SonarrAPI extends ServarrBase<{
         seriesId,
       });
       throw new Error('Failed to get episodes', { cause: e });
+    }
+  }
+
+  public async deleteEpisodeFile(episodeFileId: number): Promise<void> {
+    try {
+      await this.axios.delete(`/episodeFile/${episodeFileId}`);
+      logger.info('Deleted Sonarr episode file.', {
+        label: 'Sonarr API',
+        episodeFileId,
+      });
+    } catch (e) {
+      throw new Error(
+        `[Sonarr] Failed to delete episode file ${episodeFileId}: ${e.message}`,
+        { cause: e }
+      );
     }
   }
 
