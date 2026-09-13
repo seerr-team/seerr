@@ -1030,7 +1030,7 @@
   "components.Settings.SettingsMain.discoverRegion": "Discover Region",
   "components.Settings.SettingsMain.discoverRegionTip": "Filter content by regional availability",
   "components.Settings.SettingsMain.enableEpisodeAvailability": "Enable Episode Availability Tracking",
-  "components.Settings.SettingsMain.enableEpisodeAvailabilityTip": "Track individual episode availability. Match Seerr's metadata provider to your library agent (TMDB or TVDB).",
+  "components.Settings.SettingsMain.enableEpisodeAvailabilityTip": "Track individual episode availability. Match Seerr's metadata provider to your library agent (TMDB or TVDB). Plex and Jellyfin agents are per-library, so mixed-agent libraries cannot all match a single Seerr provider.",
   "components.Settings.SettingsMain.enableSpecialEpisodes": "Allow Special Episodes Requests",
   "components.Settings.SettingsMain.general": "General",
   "components.Settings.SettingsMain.generalsettings": "General Settings",
