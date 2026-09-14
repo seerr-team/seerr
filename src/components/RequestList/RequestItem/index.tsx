@@ -3,6 +3,7 @@ import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import ConfirmButton from '@app/components/Common/ConfirmButton';
+import Tooltip from '@app/components/Common/Tooltip';
 import RequestModal from '@app/components/RequestModal';
 import StatusBadge from '@app/components/StatusBadge';
 import useDeepLinks from '@app/hooks/useDeepLinks';
@@ -15,8 +16,14 @@ import {
   refreshIntervalHelper,
 } from '@app/utils/refreshIntervalHelper';
 import {
+  canRetryRequest,
+  canSearchAnotherListing,
+  formatFailureReason,
+} from '@app/utils/requestFailureHelpers';
+import {
   ArrowPathIcon,
   CheckIcon,
+  MagnifyingGlassIcon,
   PencilIcon,
   TrashIcon,
   XMarkIcon,
@@ -139,11 +146,19 @@ const RequestItemError = ({
                 </span>
                 {requestData.status === MediaRequestStatus.DECLINED ||
                 requestData.status === MediaRequestStatus.FAILED ? (
-                  <Badge badgeType="danger">
-                    {requestData.status === MediaRequestStatus.DECLINED
-                      ? intl.formatMessage(globalMessages.declined)
-                      : intl.formatMessage(globalMessages.failed)}
-                  </Badge>
+                  <Tooltip
+                    content={formatFailureReason(
+                      intl,
+                      requestData.type,
+                      requestData.failureReason
+                    )}
+                  >
+                    <Badge badgeType="danger">
+                      {requestData.status === MediaRequestStatus.DECLINED
+                        ? intl.formatMessage(globalMessages.declined)
+                        : intl.formatMessage(globalMessages.failed)}
+                    </Badge>
+                  </Tooltip>
                 ) : (
                   <StatusBadge
                     status={
@@ -527,12 +542,20 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                   {intl.formatMessage(globalMessages.declined)}
                 </Badge>
               ) : requestData.status === MediaRequestStatus.FAILED ? (
-                <Badge
-                  badgeType="danger"
-                  href={`/${requestData.type}/${requestData.media.tmdbId}?manage=1`}
+                <Tooltip
+                  content={formatFailureReason(
+                    intl,
+                    requestData.type,
+                    requestData.failureReason
+                  )}
                 >
-                  {intl.formatMessage(globalMessages.failed)}
-                </Badge>
+                  <Badge
+                    badgeType="danger"
+                    href={`/${requestData.type}/${requestData.media.tmdbId}?manage=1`}
+                  >
+                    {intl.formatMessage(globalMessages.failed)}
+                  </Badge>
+                </Tooltip>
               ) : requestData.status === MediaRequestStatus.PENDING &&
                 requestData.media[requestData.is4k ? 'status4k' : 'status'] ===
                   MediaStatus.DELETED ? (
@@ -683,22 +706,50 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
         <div className="z-10 mt-4 flex w-full flex-col justify-center space-y-2 pl-4 pr-4 xl:mt-0 xl:w-96 xl:items-end xl:pl-0">
           {requestData.status === MediaRequestStatus.FAILED &&
             hasPermission(Permission.MANAGE_REQUESTS) && (
-              <Button
-                className="w-full"
-                buttonType="primary"
-                disabled={isRetrying}
-                onClick={() => retryRequest()}
+              <Tooltip
+                content={
+                  canRetryRequest(requestData.failureReason)
+                    ? undefined
+                    : intl.formatMessage(globalMessages.retryunavailable)
+                }
               >
-                <ArrowPathIcon
-                  className={isRetrying ? 'animate-spin' : ''}
-                  style={{ animationDirection: 'reverse' }}
-                />
-                <span>
-                  {intl.formatMessage(
-                    isRetrying ? globalMessages.retrying : globalMessages.retry
-                  )}
-                </span>
-              </Button>
+                <Button
+                  className="w-full"
+                  buttonType="primary"
+                  disabled={
+                    isRetrying || !canRetryRequest(requestData.failureReason)
+                  }
+                  onClick={() => retryRequest()}
+                >
+                  <ArrowPathIcon
+                    className={isRetrying ? 'animate-spin' : ''}
+                    style={{ animationDirection: 'reverse' }}
+                  />
+                  <span>
+                    {intl.formatMessage(
+                      isRetrying
+                        ? globalMessages.retrying
+                        : globalMessages.retry
+                    )}
+                  </span>
+                </Button>
+              </Tooltip>
+            )}
+          {requestData.status === MediaRequestStatus.FAILED &&
+            canSearchAnotherListing(requestData.failureReason) &&
+            title && (
+              <Link
+                href={`/search?query=${encodeURIComponent(
+                  isMovie(title) ? title.title : title.name
+                )}`}
+                passHref
+                legacyBehavior
+              >
+                <Button as="a" className="w-full" buttonType="default">
+                  <MagnifyingGlassIcon />
+                  <span>{intl.formatMessage(globalMessages.findlisting)}</span>
+                </Button>
+              </Link>
             )}
           {requestData.status !== MediaRequestStatus.PENDING &&
             hasPermission(Permission.MANAGE_REQUESTS) && (

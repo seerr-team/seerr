@@ -7,6 +7,7 @@ import useRequestOverride from '@app/hooks/useRequestOverride';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import { formatFailureReason } from '@app/utils/requestFailureHelpers';
 import {
   CalendarIcon,
   CheckIcon,
@@ -225,9 +226,17 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
                 </Badge>
               )}
               {request.status === MediaRequestStatus.FAILED && (
-                <Badge badgeType="danger">
-                  {intl.formatMessage(globalMessages.failed)}
-                </Badge>
+                <Tooltip
+                  content={formatFailureReason(
+                    intl,
+                    request.type,
+                    request.failureReason
+                  )}
+                >
+                  <Badge badgeType="danger">
+                    {intl.formatMessage(globalMessages.failed)}
+                  </Badge>
+                </Tooltip>
               )}
               {request.status === MediaRequestStatus.COMPLETED && (
                 <Badge badgeType="success">
