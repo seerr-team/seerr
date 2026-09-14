@@ -10,12 +10,23 @@ import useSettings from '@app/hooks/useSettings';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import {
+  clearOidcProviderSlug,
+  getOidcErrorMessage,
+  getOidcProviderSlug,
+  initiateOidcLogin,
+  processOidcCallback,
+} from '@app/utils/oidc';
 import PlexOAuth from '@app/utils/plex';
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { MediaServerType } from '@server/constants/server';
+import type {
+  UserSettingsLinkedAccount,
+  UserSettingsLinkedAccountResponse,
+} from '@server/interfaces/api/userSettingsInterfaces';
 import axios from 'axios';
 import { useRouter } from 'next/router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
 import LinkJellyfinModal from './LinkJellyfinModal';
@@ -43,12 +54,20 @@ enum LinkedAccountType {
   Plex = 'Plex',
   Jellyfin = 'Jellyfin',
   Emby = 'Emby',
+  OpenIdConnect = 'oidc',
 }
 
-type LinkedAccount = {
-  type: LinkedAccountType;
-  username: string;
-};
+type LinkedAccount =
+  | {
+      type:
+        | LinkedAccountType.Plex
+        | LinkedAccountType.Emby
+        | LinkedAccountType.Jellyfin;
+      username: string;
+    }
+  | ({
+      type: LinkedAccountType.OpenIdConnect;
+    } & UserSettingsLinkedAccount);
 
 const UserLinkedAccountsSettings = () => {
   const intl = useIntl();
@@ -63,15 +82,53 @@ const UserLinkedAccountsSettings = () => {
   const { data: passwordInfo } = useSWR<{ hasPassword: boolean }>(
     user ? `/api/v1/user/${user?.id}/settings/password` : null
   );
+  const { data: linkedOidcAccounts, mutate: revalidateLinkedAccounts } =
+    useSWR<UserSettingsLinkedAccountResponse>(
+      user ? `/api/v1/user/${user?.id}/settings/linked-accounts` : null
+    );
   const [showJellyfinModal, setShowJellyfinModal] = useState(false);
   const [showJellyfinQuickConnectModal, setShowJellyfinQuickConnectModal] =
     useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Handle OIDC callback when the provider redirects back to this page
+  useEffect(() => {
+    if (!router.isReady) return;
+    const code = router.query.code;
+    const error = router.query.error;
+    const providerSlug = getOidcProviderSlug();
+    if (
+      (typeof code !== 'string' && typeof error !== 'string') ||
+      providerSlug == null
+    )
+      return;
+    clearOidcProviderSlug();
+
+    // Strip the OIDC params from the URL immediately
+    router.replace(router.pathname, undefined, { shallow: true });
+
+    processOidcCallback(providerSlug).then(async (result) => {
+      if (result.type === 'success') {
+        await revalidateLinkedAccounts();
+      } else {
+        const providerName =
+          settings.currentSettings.openIdProviders.find(
+            (p) => p.slug === providerSlug
+          )?.name ?? providerSlug;
+        setError(getOidcErrorMessage(result.errorCode, providerName, intl));
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady]);
+
   const applicationName = settings.currentSettings.applicationTitle;
 
   const accounts: LinkedAccount[] = useMemo(() => {
-    const accounts: LinkedAccount[] = [];
+    const accounts: LinkedAccount[] =
+      linkedOidcAccounts?.map((a) => ({
+        type: LinkedAccountType.OpenIdConnect,
+        ...a,
+      })) ?? [];
     if (!user) return accounts;
     if (user.userType === UserType.PLEX && user.plexUsername)
       accounts.push({
@@ -89,7 +146,7 @@ const UserLinkedAccountsSettings = () => {
         username: user.jellyfinUsername,
       });
     return accounts;
-  }, [user]);
+  }, [user, linkedOidcAccounts]);
 
   const linkPlexAccount = async () => {
     setError(null);
@@ -143,6 +200,24 @@ const UserLinkedAccountsSettings = () => {
         settings.currentSettings.mediaServerType !== MediaServerType.EMBY ||
         accounts.some((a) => a.type === LinkedAccountType.Emby),
     },
+    ...settings.currentSettings.openIdProviders.map((p) => ({
+      name: p.name,
+      action: async () => {
+        try {
+          await initiateOidcLogin(
+            p.slug,
+            new URL(window.location.pathname, window.location.origin).toString()
+          );
+        } catch {
+          setError(intl.formatMessage(messages.errorUnknown));
+        }
+      },
+      hide: accounts.some(
+        (a) =>
+          a.type === LinkedAccountType.OpenIdConnect &&
+          a.provider.slug === p.slug
+      ),
+    })),
   ].filter((l) => !l.hide);
 
   const deleteRequest = async (account: string) => {
@@ -155,6 +230,7 @@ const UserLinkedAccountsSettings = () => {
     }
 
     await revalidateUser();
+    await revalidateLinkedAccounts();
   };
 
   if (
@@ -177,7 +253,9 @@ const UserLinkedAccountsSettings = () => {
     );
   }
 
-  const enableMediaServerUnlink = user?.id !== 1 && passwordInfo?.hasPassword;
+  const canUnlink = !!passwordInfo?.hasPassword || accounts.length > 1;
+  // primary admin cannot unlink their media server account
+  const canUnlinkMediaServer = canUnlink && user?.id !== 1;
 
   return (
     <>
@@ -203,7 +281,7 @@ const UserLinkedAccountsSettings = () => {
           <div>
             <Dropdown text="Link Account" buttonType="ghost">
               {linkable.map(({ name, action }) => (
-                <Dropdown.Item key={name} onClick={action}>
+                <Dropdown.Item key={name} onClick={action} buttonType="ghost">
                   {name}
                 </Dropdown.Item>
               ))}
@@ -226,24 +304,38 @@ const UserLinkedAccountsSettings = () => {
                   </div>
                 ) : acct.type === LinkedAccountType.Emby ? (
                   <EmbyLogo />
-                ) : (
+                ) : acct.type === LinkedAccountType.Jellyfin ? (
                   <JellyfinLogo />
-                )}
+                ) : acct.type === LinkedAccountType.OpenIdConnect ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={acct.provider.logo || '/images/openid.svg'}
+                    alt={acct.provider.name}
+                  />
+                ) : null}
               </div>
               <div>
                 <div className="truncate text-sm font-bold text-gray-300">
-                  {acct.type}
+                  {acct.type === LinkedAccountType.OpenIdConnect
+                    ? acct.provider.name
+                    : acct.type}
                 </div>
                 <div className="text-xl font-semibold text-white">
                   {acct.username}
                 </div>
               </div>
               <div className="flex-grow" />
-              {enableMediaServerUnlink && (
+              {(acct.type === LinkedAccountType.OpenIdConnect
+                ? canUnlink
+                : canUnlinkMediaServer) && (
                 <ConfirmButton
                   onClick={() => {
                     deleteRequest(
-                      acct.type === LinkedAccountType.Plex ? 'plex' : 'jellyfin'
+                      acct.type === LinkedAccountType.OpenIdConnect
+                        ? String(acct.id)
+                        : acct.type === LinkedAccountType.Plex
+                          ? 'plex'
+                          : 'jellyfin'
                     );
                   }}
                   confirmText={intl.formatMessage(globalMessages.areyousure)}

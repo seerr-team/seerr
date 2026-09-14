@@ -2,6 +2,7 @@ import { Blocklist } from '@server/entity/Blocklist';
 import DiscoverSlider from '@server/entity/DiscoverSlider';
 import Issue from '@server/entity/Issue';
 import IssueComment from '@server/entity/IssueComment';
+import { LinkedAccount } from '@server/entity/LinkedAccount';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import OverrideRule from '@server/entity/OverrideRule';
@@ -29,6 +30,7 @@ const entities = [
   DiscoverSlider,
   Issue,
   IssueComment,
+  LinkedAccount,
   Media,
   MediaRequest,
   OverrideRule,

@@ -170,7 +170,7 @@ app
     if (settings.network.trustProxy) {
       server.enable('trust proxy');
     }
-    server.use(cookieParser());
+    server.use(cookieParser(settings.sessionSecret));
     server.use(express.json());
     server.use(express.urlencoded({ extended: true }));
     server.use((req, _res, next) => {
@@ -262,7 +262,12 @@ app
     server.get('*path', (req, res) => handle(req, res));
     server.use(
       (
-        err: { status: number; message: string; errors: string[] },
+        err: {
+          status: number;
+          message: string;
+          errors: string[];
+          error?: string;
+        },
         _req: Request,
         res: Response,
         next: NextFunction
@@ -274,6 +279,7 @@ app
         res.status(err.status || 500).json({
           message: err.message,
           errors: err.errors,
+          ...(err.error && { error: err.error }),
         });
       }
     );
