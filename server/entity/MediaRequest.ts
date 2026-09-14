@@ -12,7 +12,7 @@ import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
-import requestLock from '@server/utils/requestLock';
+import requestLock, { userKey } from '@server/utils/requestLock';
 import { truncate } from 'lodash';
 import {
   AfterInsert,
@@ -55,7 +55,7 @@ export class MediaRequest {
         ? requestBody.userId
         : user.id;
 
-    return requestLock.dispatch(lockUserId, () =>
+    return requestLock.dispatch(userKey(lockUserId), () =>
       MediaRequest.createRequest(requestBody, user, options)
     );
   }

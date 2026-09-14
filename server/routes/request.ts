@@ -25,7 +25,7 @@ import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
-import requestLock from '@server/utils/requestLock';
+import requestLock, { requestKey, userKey } from '@server/utils/requestLock';
 import { Router } from 'express';
 
 const requestRoutes = Router();
@@ -466,7 +466,7 @@ requestRoutes.put<{ requestId: string }>(
     const requestId = Number(req.params.requestId);
     try {
       // Ordering is request then owner here, user then media on create, so no cycle
-      return await requestLock.dispatch(`request:${requestId}`, async () => {
+      return await requestLock.dispatch(requestKey(requestId), async () => {
         const request = await requestRepository.findOne({
           where: {
             id: requestId,
@@ -521,7 +521,7 @@ requestRoutes.put<{ requestId: string }>(
         // quota, so it is charged in full rather than as a delta
         const ownerChanging = requestUser.id !== previousOwnerId;
 
-        return requestLock.dispatch(requestUser.id, async () => {
+        return requestLock.dispatch(userKey(requestUser.id), async () => {
           if (req.body.mediaType === MediaType.MOVIE) {
             if (ownerChanging && !request.ignoreQuota) {
               const quotas = await requestUser.getQuota();
@@ -668,7 +668,7 @@ requestRoutes.delete('/:requestId', async (req, res, next) => {
   const requestId = Number(req.params.requestId);
 
   try {
-    return await requestLock.dispatch(`request:${requestId}`, async () => {
+    return await requestLock.dispatch(requestKey(requestId), async () => {
       const request = await requestRepository.findOneOrFail({
         where: { id: requestId },
         relations: { requestedBy: true, modifiedBy: true },
@@ -708,7 +708,7 @@ requestRoutes.post<{
     const requestId = Number(req.params.requestId);
 
     try {
-      return await requestLock.dispatch(`request:${requestId}`, async () => {
+      return await requestLock.dispatch(requestKey(requestId), async () => {
         const request = await requestRepository.findOneOrFail({
           where: { id: requestId },
           relations: { requestedBy: true, modifiedBy: true },
@@ -749,7 +749,7 @@ requestRoutes.post<{
     const requestId = Number(req.params.requestId);
 
     try {
-      return await requestLock.dispatch(`request:${requestId}`, async () => {
+      return await requestLock.dispatch(requestKey(requestId), async () => {
         const request = await requestRepository.findOneOrFail({
           where: { id: requestId },
           relations: { requestedBy: true, modifiedBy: true },
