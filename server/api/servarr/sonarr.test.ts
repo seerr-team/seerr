@@ -117,3 +117,38 @@ describe('SonarrAPI getSeriesByTvdbId', () => {
     });
   });
 });
+
+describe('SonarrAPI getSeriesByTmdbId', () => {
+  afterEach(() => mock.restoreAll());
+
+  it('looks the series up by its tmdb term', async () => {
+    const sonarr = buildSonarr();
+    const get = mock.method(getAxios(sonarr), 'get', async () => ({
+      data: [{ id: 9, tvdbId: 184871, title: 'The Great British Bake Off' }],
+    }));
+
+    const series = await sonarr.getSeriesByTmdbId(87012);
+
+    assert.strictEqual(series?.tvdbId, 184871);
+    assert.strictEqual(get.mock.calls[0].arguments[0], '/series/lookup');
+    assert.deepStrictEqual(get.mock.calls[0].arguments[1], {
+      params: { term: 'tmdb:87012' },
+    });
+  });
+
+  it('returns null when the lookup finds nothing', async () => {
+    const sonarr = buildSonarr();
+    mock.method(getAxios(sonarr), 'get', async () => ({ data: [] }));
+
+    assert.strictEqual(await sonarr.getSeriesByTmdbId(87012), null);
+  });
+
+  it('returns null instead of throwing when the lookup fails', async () => {
+    const sonarr = buildSonarr();
+    mock.method(getAxios(sonarr), 'get', async () => {
+      throw new Error('connect ECONNREFUSED');
+    });
+
+    assert.strictEqual(await sonarr.getSeriesByTmdbId(87012), null);
+  });
+});
