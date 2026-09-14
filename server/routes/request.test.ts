@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { before, beforeEach, describe, it, mock } from 'node:test';
+import { afterEach, before, beforeEach, describe, it, mock } from 'node:test';
 
 import TheMovieDb from '@server/api/themoviedb';
 import type {
@@ -18,6 +18,7 @@ import OverrideRule from '@server/entity/OverrideRule';
 import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
+import { Notification } from '@server/lib/notifications';
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { checkUser } from '@server/middleware/auth';
@@ -187,7 +188,10 @@ async function loginAs(email: string, password: string) {
   }
 }
 
-async function seedRequest(status = MediaRequestStatus.PENDING) {
+async function seedRequest(
+  status = MediaRequestStatus.PENDING,
+  overrides: Partial<MediaRequest> = {}
+) {
   const userRepo = getRepository(User);
   const mediaRepo = getRepository(Media);
   const requestRepo = getRepository(MediaRequest);
@@ -213,12 +217,58 @@ async function seedRequest(status = MediaRequestStatus.PENDING) {
       requestedBy,
       is4k: false,
       updatedAt: new Date('2025-03-01T00:00:00.000Z'),
+      ...overrides,
     })
   );
 
   return requestRepo.findOneOrFail({
     where: { id: created.id },
-    relations: { requestedBy: true, modifiedBy: true },
+    relations: { requestedBy: true, modifiedBy: true, media: true },
+  });
+}
+
+async function seedTvRequest(
+  status = MediaRequestStatus.PENDING,
+  overrides: Partial<MediaRequest> = {}
+) {
+  const userRepo = getRepository(User);
+  const mediaRepo = getRepository(Media);
+  const requestRepo = getRepository(MediaRequest);
+
+  const requestedBy = await userRepo.findOneOrFail({
+    where: { email: 'friend@seerr.dev' },
+  });
+
+  const media = await mediaRepo.save(
+    new Media({
+      mediaType: MediaType.TV,
+      tmdbId: 67890,
+      status: MediaStatus.UNKNOWN,
+      status4k: MediaStatus.UNKNOWN,
+    })
+  );
+
+  const created = await requestRepo.save(
+    new MediaRequest({
+      type: MediaType.TV,
+      status,
+      media,
+      requestedBy,
+      is4k: false,
+      seasons: [new SeasonRequest({ seasonNumber: 1, status })],
+      updatedAt: new Date('2025-03-01T00:00:00.000Z'),
+      ...overrides,
+    })
+  );
+
+  return requestRepo.findOneOrFail({
+    where: { id: created.id },
+    relations: {
+      requestedBy: true,
+      modifiedBy: true,
+      media: true,
+      seasons: true,
+    },
   });
 }
 
@@ -518,6 +568,101 @@ describe('POST /request/:requestId/retry', () => {
 
     const persisted = await repo.findOneOrFail({ where: { id: pending.id } });
     assert.strictEqual(persisted.status, MediaRequestStatus.PENDING);
+  });
+});
+
+describe('POST /request/:requestId/:status, unresolved *arr server', () => {
+  afterEach(() => {
+    // configureRadarr/configureSonarr mutate the shared settings singleton and
+    // nothing else resets it; clear it so later suites start clean.
+    const settings = getSettings();
+    settings.radarr = [];
+    settings.sonarr = [];
+  });
+
+  function failedNotificationSent(): boolean {
+    return sendNotificationMock.calls.some(
+      (call) => call.arguments[2] === Notification.MEDIA_FAILED
+    );
+  }
+
+  it('fails a movie request whose serverId no longer exists instead of silently abandoning it', async () => {
+    configureRadarr([{ id: 0, isDefault: true, is4k: false }]);
+    getSettings().sonarr = [];
+
+    const pending = await seedRequest(MediaRequestStatus.PENDING, {
+      serverId: 999,
+    });
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+
+    const res = await admin.post(`/request/${pending.id}/approve`);
+    assert.strictEqual(res.status, 200);
+
+    const persisted = await getRepository(MediaRequest).findOneOrFail({
+      where: { id: pending.id },
+    });
+    assert.strictEqual(persisted.status, MediaRequestStatus.FAILED);
+
+    const media = await getRepository(Media).findOneOrFail({
+      where: { id: pending.media.id },
+    });
+    assert.strictEqual(media.status, MediaStatus.UNKNOWN);
+
+    assert.ok(failedNotificationSent());
+  });
+
+  it('does not fail a movie request when no default Radarr server is configured (silent skip preserved)', async () => {
+    configureRadarr([{ isDefault: false, is4k: false }]);
+    getSettings().sonarr = [];
+
+    const pending = await seedRequest();
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+
+    const res = await admin.post(`/request/${pending.id}/approve`);
+    assert.strictEqual(res.status, 200);
+
+    const persisted = await getRepository(MediaRequest).findOneOrFail({
+      where: { id: pending.id },
+    });
+    assert.strictEqual(persisted.status, MediaRequestStatus.APPROVED);
+    assert.strictEqual(failedNotificationSent(), false);
+  });
+
+  it('fails a series request whose serverId no longer exists', async () => {
+    configureSonarr([{ id: 0, isDefault: true, is4k: false }]);
+    getSettings().radarr = [];
+
+    const pending = await seedTvRequest(MediaRequestStatus.PENDING, {
+      serverId: 999,
+    });
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+
+    const res = await admin.post(`/request/${pending.id}/approve`);
+    assert.strictEqual(res.status, 200);
+
+    const persisted = await getRepository(MediaRequest).findOneOrFail({
+      where: { id: pending.id },
+    });
+    assert.strictEqual(persisted.status, MediaRequestStatus.FAILED);
+
+    assert.ok(failedNotificationSent());
+  });
+
+  it('does not fail a series request when no default Sonarr server is configured (silent skip preserved)', async () => {
+    configureSonarr([{ isDefault: false, is4k: false }]);
+    getSettings().radarr = [];
+
+    const pending = await seedTvRequest();
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+
+    const res = await admin.post(`/request/${pending.id}/approve`);
+    assert.strictEqual(res.status, 200);
+
+    const persisted = await getRepository(MediaRequest).findOneOrFail({
+      where: { id: pending.id },
+    });
+    assert.strictEqual(persisted.status, MediaRequestStatus.APPROVED);
+    assert.strictEqual(failedNotificationSent(), false);
   });
 });
 
