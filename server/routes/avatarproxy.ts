@@ -4,7 +4,6 @@ import { User } from '@server/entity/User';
 import ImageProxy from '@server/lib/imageproxy';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import { getAppVersion } from '@server/utils/appVersion';
 import { getHostname } from '@server/utils/getHostname';
 import axios from 'axios';
 import { Router } from 'express';
@@ -15,25 +14,9 @@ const router = Router();
 
 let _avatarImageProxy: ImageProxy | null = null;
 
-async function initAvatarImageProxy() {
+function initAvatarImageProxy() {
   if (!_avatarImageProxy) {
-    const userRepository = getRepository(User);
-    const admin = await userRepository.findOne({
-      where: { id: 1 },
-      select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
-      order: { id: 'ASC' },
-    });
-    const deviceId = admin?.jellyfinDeviceId || 'BOT_seerr';
-    const authToken = getSettings().jellyfin.apiKey;
-    _avatarImageProxy = new ImageProxy('avatar', '', {
-      headers: {
-        'X-Emby-Authorization': `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="${deviceId}", Version="${
-          getSettings().main.mediaServerType === MediaServerType.EMBY
-            ? '1.0.0'
-            : getAppVersion()
-        }", Token="${authToken}"`,
-      },
-    });
+    _avatarImageProxy = new ImageProxy('avatar', '');
   }
   return _avatarImageProxy;
 }
@@ -88,7 +71,7 @@ export async function checkAvatarChanged(
       return { changed: false, etag: user.avatarETag ?? undefined };
     }
 
-    const avatarImageCache = await initAvatarImageProxy();
+    const avatarImageCache = initAvatarImageProxy();
     await avatarImageCache.clearCachedImage(jellyfinAvatarUrl);
     const imageData = await avatarImageCache.getImage(
       jellyfinAvatarUrl,
@@ -126,7 +109,7 @@ router.get('/:jellyfinUserId', async (req, res, next) => {
     });
   }
   try {
-    const avatarImageCache = await initAvatarImageProxy();
+    const avatarImageCache = initAvatarImageProxy();
 
     const userEtag = req.headers['if-none-match'];
 
