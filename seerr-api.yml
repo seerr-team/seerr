@@ -4413,18 +4413,23 @@ paths:
                     type: string
       responses:
         '201':
-          description: A list of the newly created users
+          description: The newly created users and a count of existing users that were refreshed
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
+                type: object
+                properties:
+                  createdUsers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  refreshedUsers:
+                    type: number
   /user/import-from-jellyfin:
     post:
       summary: Import all users from Jellyfin
       description: |
-        Fetches and imports users from the Jellyfin server.
+        Fetches and imports users from the Jellyfin/Emby server. If a list of Jellyfin user IDs is provided in the request body, only the specified users will be created as new accounts. Otherwise, all users will be imported.
 
         Requires the `MANAGE_USERS` permission.
       tags:
@@ -4442,13 +4447,18 @@ paths:
                     type: string
       responses:
         '201':
-          description: A list of the newly created users
+          description: The newly created users and a count of existing users that were refreshed
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
+                type: object
+                properties:
+                  createdUsers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  refreshedUsers:
+                    type: number
   /user/registerPushSubscription:
     post:
       summary: Register a web push /user/registerPushSubscription
