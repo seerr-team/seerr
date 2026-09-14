@@ -8,6 +8,7 @@ import type { TmdbTvDetails } from '@server/api/themoviedb/interfaces';
 import Tvdb from '@server/api/tvdb';
 import type { TvdbOfficialSeason } from '@server/api/tvdb/interfaces';
 import {
+  MediaRequestFailureReason,
   MediaRequestStatus,
   MediaStatus,
   MediaType,
@@ -271,6 +272,10 @@ describe('MediaRequestSubscriber sendToSonarr, TVDB ID resolution', () => {
       sendNotification.calls[0].arguments[2],
       Notification.MEDIA_FAILED
     );
+    assert.strictEqual(
+      entity.failureReason,
+      MediaRequestFailureReason.TVDB_ID_UNRESOLVED
+    );
     await assert.doesNotReject(() => storedMedia(media.id));
     await assert.doesNotReject(() =>
       getRepository(MediaRequest).findOneOrFail({ where: { id: entity.id } })
@@ -316,6 +321,10 @@ describe('MediaRequestSubscriber sendToSonarr, season guard', () => {
     await run(entity);
 
     assert.strictEqual(entity.status, MediaRequestStatus.FAILED);
+    assert.strictEqual(
+      entity.failureReason,
+      MediaRequestFailureReason.SEASON_NUMBERING_MISMATCH
+    );
     assert.strictEqual(addSeries.callCount(), 0);
     assert.strictEqual(
       sendNotification.calls[0].arguments[2],
@@ -374,6 +383,10 @@ describe('MediaRequestSubscriber sendToSonarr, season guard', () => {
     await run(entity);
 
     assert.strictEqual(entity.status, MediaRequestStatus.FAILED);
+    assert.strictEqual(
+      entity.failureReason,
+      MediaRequestFailureReason.SEASON_NUMBERING_UNVERIFIED
+    );
     assert.strictEqual(addSeries.callCount(), 0);
     assert.strictEqual(
       sendNotification.calls[0].arguments[2],

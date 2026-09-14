@@ -1,6 +1,7 @@
 import TheMovieDb from '@server/api/themoviedb';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
+import type { MediaRequestFailureReason } from '@server/constants/media';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -665,6 +666,9 @@ export class MediaRequest {
   @Column({ type: 'integer' })
   @Index()
   public status: MediaRequestStatus;
+
+  @Column({ type: 'integer', nullable: true })
+  public failureReason?: MediaRequestFailureReason | null;
 
   @ManyToOne(() => Media, (media) => media.requests, {
     eager: true,
