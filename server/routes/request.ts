@@ -15,6 +15,7 @@ import {
   QuotaRestrictedError,
   RequestPermissionError,
 } from '@server/entity/MediaRequest';
+import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
 import type {
@@ -656,6 +657,62 @@ requestRoutes.post<{
           status: 409,
           message: 'Only failed requests can be retried.',
         });
+      }
+
+      const { tvdbId, seasonOverrides } = (req.body ?? {}) as {
+        tvdbId?: number;
+        seasonOverrides?: {
+          seasonNumber: number;
+          dispatchedSeasonNumber: number;
+        }[];
+      };
+
+      // aliases must land before the status flip, since saving the request is
+      // what triggers dispatch
+      if (seasonOverrides?.length) {
+        const requestedSeasons = request.seasons.map(
+          (season) => season.seasonNumber
+        );
+
+        // an alias is stored against the show, so accepting one for a season
+        // outside this request would affect media nobody asked about
+        if (
+          seasonOverrides.some(
+            (override) => !requestedSeasons.includes(override.seasonNumber)
+          )
+        ) {
+          return next({
+            status: 400,
+            message: 'Season overrides must refer to seasons in this request.',
+          });
+        }
+
+        for (const override of seasonOverrides) {
+          const season = request.media.seasons.find(
+            (s) => s.seasonNumber === override.seasonNumber
+          );
+
+          if (season) {
+            season.dispatchedSeasonNumber = override.dispatchedSeasonNumber;
+          } else {
+            // a request only creates SeasonRequest rows, so a show that was
+            // never scanned has nothing here to carry the alias
+            request.media.seasons.push(
+              new Season({
+                seasonNumber: override.seasonNumber,
+                dispatchedSeasonNumber: override.dispatchedSeasonNumber,
+                status: MediaStatus.UNKNOWN,
+                status4k: MediaStatus.UNKNOWN,
+              })
+            );
+          }
+        }
+
+        await getRepository(Media).save(request.media);
+      }
+
+      if (tvdbId) {
+        request.overrideTvdbId = tvdbId;
       }
 
       // this also triggers updating the parent media's status & sending to *arr

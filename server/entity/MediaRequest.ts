@@ -670,6 +670,10 @@ export class MediaRequest {
   @Column({ type: 'integer', nullable: true })
   public failureReason?: MediaRequestFailureReason | null;
 
+  // cannot live on Media, whose tvdbId is unique and may be held by a sibling
+  @Column({ type: 'integer', nullable: true })
+  public overrideTvdbId?: number | null;
+
   @ManyToOne(() => Media, (media) => media.requests, {
     eager: true,
     onDelete: 'CASCADE',
