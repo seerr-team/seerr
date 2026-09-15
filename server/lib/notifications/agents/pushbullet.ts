@@ -84,6 +84,13 @@ class PushbulletAgent
 
       if (status) {
         body += `\n${intl.formatMessage(globalMessages.requestStatus)}: ${status}`;
+        if (
+          type === Notification.MEDIA_DECLINED &&
+          payload.request &&
+          payload.request.declineReason
+        ) {
+          body += `\n${intl.formatMessage(globalMessages.declineReason)}: ${payload.request.declineReason}`;
+        }
       }
     } else if (payload.comment) {
       body += `\n\n${intl.formatMessage(globalMessages.commentFrom, { userName: payload.comment.user.displayName })}:\n${payload.comment.message}`;
