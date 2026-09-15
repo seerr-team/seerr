@@ -714,8 +714,14 @@ const TvRequestModal = ({
           </div>
         </div>
       </div>
-      {(hasPermission(Permission.REQUEST_ADVANCED) ||
-        hasPermission(Permission.MANAGE_REQUESTS)) && (
+      {hasPermission(
+        [
+          Permission.MANAGE_REQUESTS,
+          Permission.REQUEST_ADVANCED,
+          Permission.REQUEST_ADVANCED_LANGUAGE,
+        ],
+        { type: 'or' }
+      ) && (
         <AdvancedRequester
           type="tv"
           is4k={is4k}
