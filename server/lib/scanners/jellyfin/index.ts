@@ -24,6 +24,11 @@ import BaseScanner from '@server/lib/scanners/baseScanner';
 import type { Library } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { getHostname } from '@server/utils/getHostname';
+import {
+  getJellyfinFilePaths,
+  getUnignoredJellyfinMediaSources,
+  isPathIgnored,
+} from '@server/utils/mediaFilter';
 import { uniqWith } from 'lodash';
 
 interface JellyfinSyncStatus extends StatusBase {
@@ -127,7 +132,18 @@ class JellyfinScanner
 
       const { tmdbId, imdbId, metadata } = extracted;
 
-      const has4k = metadata.MediaSources?.some((MediaSource) => {
+      const filteredSources = getUnignoredJellyfinMediaSources(
+        metadata.MediaSources
+      );
+
+      if (filteredSources.length === 0) {
+        this.log(
+          `Skipping movie ${metadata.Name} (file path matched ignore pattern)`
+        );
+        return;
+      }
+
+      const has4k = filteredSources.some((MediaSource) => {
         return MediaSource.MediaStreams.filter(
           (MediaStream) => MediaStream.Type === 'Video'
         ).some((MediaStream) => {
@@ -135,7 +151,7 @@ class JellyfinScanner
         });
       });
 
-      const hasOtherResolution = metadata.MediaSources?.some((MediaSource) => {
+      const hasOtherResolution = filteredSources.some((MediaSource) => {
         return MediaSource.MediaStreams.filter(
           (MediaStream) => MediaStream.Type === 'Video'
         ).some((MediaStream) => {
@@ -288,6 +304,9 @@ class JellyfinScanner
         const filteredSeasons = settings.main.enableSpecialEpisodes
           ? seasons
           : seasons.filter((sn) => sn.season_number !== 0);
+        const hasIgnoredPatterns =
+          (settings.main.ignoredPathPatterns ?? []).length > 0;
+        const needMediaInfo = this.enable4kShow || hasIgnoredPatterns;
 
         for (const season of filteredSeasons) {
           const matchedJellyfinSeason = jellyfinSeasons.find((md) => {
@@ -310,47 +329,40 @@ class JellyfinScanner
             let totalStandard = 0;
             let total4k = 0;
 
-            if (!this.enable4kShow) {
-              const episodes = await this.jfClient.getEpisodes(
-                Id,
-                matchedJellyfinSeason.Id
-              );
+            const allEpisodes = await this.jfClient.getEpisodes(
+              Id,
+              matchedJellyfinSeason.Id,
+              needMediaInfo ? { includeMediaInfo: true } : undefined
+            );
 
-              for (const episode of episodes) {
-                let episodeCount = 1;
+            const episodes = allEpisodes.filter((episode) => {
+              const paths =
+                'MediaSources' in episode
+                  ? getJellyfinFilePaths(episode.MediaSources)
+                  : [];
+              return !isPathIgnored(paths);
+            });
 
-                // count number of combined episodes
-                if (
-                  episode.IndexNumber !== undefined &&
-                  episode.IndexNumberEnd !== undefined
-                ) {
-                  episodeCount =
-                    episode.IndexNumberEnd - episode.IndexNumber + 1;
-                }
+            for (const episode of episodes) {
+              let episodeCount = 1;
 
-                totalStandard += episodeCount;
+              if (
+                episode.IndexNumber !== undefined &&
+                episode.IndexNumberEnd !== undefined
+              ) {
+                episodeCount = episode.IndexNumberEnd - episode.IndexNumber + 1;
               }
-            } else {
-              // 4K detection enabled - request media info to check resolution
-              const episodes = await this.jfClient.getEpisodes(
-                Id,
-                matchedJellyfinSeason.Id,
-                { includeMediaInfo: true }
-              );
 
-              for (const episode of episodes) {
-                let episodeCount = 1;
+              if (!this.enable4kShow) {
+                totalStandard += episodeCount;
+              } else {
+                const extEpisode = episode as JellyfinLibraryItemExtended;
 
-                // count number of combined episodes
-                if (
-                  episode.IndexNumber !== undefined &&
-                  episode.IndexNumberEnd !== undefined
-                ) {
-                  episodeCount =
-                    episode.IndexNumberEnd - episode.IndexNumber + 1;
-                }
+                const episodeFilteredSources = getUnignoredJellyfinMediaSources(
+                  extEpisode.MediaSources
+                );
 
-                const has4k = episode.MediaSources?.some((MediaSource) =>
+                const has4k = episodeFilteredSources.some((MediaSource) =>
                   MediaSource.MediaStreams.some(
                     (MediaStream) =>
                       MediaStream.Type === 'Video' &&
@@ -358,7 +370,7 @@ class JellyfinScanner
                   )
                 );
 
-                const hasStandard = episode.MediaSources?.some((MediaSource) =>
+                const hasStandard = episodeFilteredSources.some((MediaSource) =>
                   MediaSource.MediaStreams.some(
                     (MediaStream) =>
                       MediaStream.Type === 'Video' &&
@@ -411,18 +423,24 @@ class JellyfinScanner
           }
         }
 
-        await this.processShow(
-          tvShow.id,
-          tvShow.external_ids?.tvdb_id,
-          processableSeasons,
-          {
-            mediaAddedAt: metadata.DateCreated
-              ? new Date(metadata.DateCreated)
-              : undefined,
-            jellyfinMediaId: Id,
-            title: tvShow.name,
-          }
+        const hasAnyEpisodes = processableSeasons.some(
+          (s) => s.episodes > 0 || s.episodes4k > 0
         );
+
+        if (hasAnyEpisodes || !hasIgnoredPatterns) {
+          await this.processShow(
+            tvShow.id,
+            tvShow.external_ids?.tvdb_id,
+            processableSeasons,
+            {
+              mediaAddedAt: metadata.DateCreated
+                ? new Date(metadata.DateCreated)
+                : undefined,
+              jellyfinMediaId: Id,
+              title: tvShow.name,
+            }
+          );
+        }
       } else {
         this.log(
           `No information found for the show: ${metadata.Name}`,
