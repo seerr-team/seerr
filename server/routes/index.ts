@@ -178,11 +178,7 @@ router.use('/service', isAuthenticated(), serviceRoutes);
 router.use('/issue', isAuthenticated(), issueRoutes);
 router.use('/issueComment', isAuthenticated(), issueCommentRoutes);
 router.use('/auth', authRoutes);
-router.use(
-  '/overrideRule',
-  isAuthenticated(Permission.ADMIN),
-  overrideRuleRoutes
-);
+router.use('/overrideRule', isAuthenticated(), overrideRuleRoutes);
 
 router.get('/regions', isAuthenticated(), async (req, res, next) => {
   const tmdb = new TheMovieDb();
