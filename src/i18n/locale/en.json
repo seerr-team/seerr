@@ -256,6 +256,7 @@
   "components.Login.adminerror": "You must use an admin account to sign in.",
   "components.Login.back": "Go back",
   "components.Login.credentialerror": "The username or password is incorrect.",
+  "components.Login.demoModeInfo": "Demo mode is enabled. Use the demo credentials to sign in.",
   "components.Login.description": "Add a valid email address to complete your profile. This will be used for notifications and local sign-in.",
   "components.Login.email": "Email Address",
   "components.Login.emailAlreadyTaken": "This email is already in use.",

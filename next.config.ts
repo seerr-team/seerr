@@ -3,6 +3,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   env: {
     commitTag: process.env.COMMIT_TAG || 'local',
+    unsafeDoNotUseDemo: process.env.UNSAFE_DO_NOT_USE_DEMO,
   },
   images: {
     remotePatterns: [

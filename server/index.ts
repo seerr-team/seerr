@@ -30,6 +30,7 @@ import createCustomProxyAgent, {
   setForceIpv4First,
 } from '@server/utils/customProxyAgent';
 import { isPgsql } from '@server/utils/dbType';
+import { initDemoData } from '@server/utils/demoMode';
 import { initializeDnsCache } from '@server/utils/dnsCache';
 import restartFlag from '@server/utils/restartFlag';
 import '@server/utils/userAgent';
@@ -253,6 +254,13 @@ app
       };
       next();
     });
+
+    // Init demo mode and catch some API routes
+    if (process.env.UNSAFE_DO_NOT_USE_DEMO === 'true') {
+      logger.info('Demo mode enabled, seeding database with demo data');
+      await initDemoData(server);
+    }
+
     server.use('/api/v1', routes);
 
     // Do not set cookies so CDNs can cache them
