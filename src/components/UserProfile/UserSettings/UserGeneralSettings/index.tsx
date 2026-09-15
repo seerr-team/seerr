@@ -13,6 +13,7 @@ import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
+import { PHONE_REGEX } from '@app/utils/numberHelpers';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import { ApiErrorCode } from '@server/constants/error';
 import type { UserSettingsGeneralResponse } from '@server/interfaces/api/userSettingsInterfaces';
@@ -33,6 +34,7 @@ const messages = defineMessages(
     generalsettings: 'General Settings',
     displayName: 'Display Name',
     email: 'Email',
+    phoneNumber: 'Phone number',
     save: 'Save Changes',
     saving: 'Saving…',
     mediaServerUser: '{mediaServerName} User',
@@ -63,6 +65,7 @@ const messages = defineMessages(
     languageDefault: 'Default ({language})',
     validationemailrequired: 'Email required',
     validationemailformat: 'Valid email required',
+    validationPhoneNumber: 'Invalid phone number',
     plexwatchlistsyncmovies: 'Auto-Request Movies',
     plexwatchlistsyncmoviestip:
       'Automatically request movies on your <PlexWatchlistSupportLink>Plex Watchlist</PlexWatchlistSupportLink>',
@@ -115,6 +118,10 @@ const UserGeneralSettings = () => {
             (value) =>
               !value || validator.isEmail(value, { require_tld: false })
           ),
+    phoneNumber: Yup.string().matches(PHONE_REGEX, {
+      message: intl.formatMessage(messages.validationPhoneNumber),
+      excludeEmptyString: true,
+    }),
   });
 
   useEffect(() => {
@@ -151,6 +158,7 @@ const UserGeneralSettings = () => {
         initialValues={{
           displayName: data?.username !== user?.email ? data?.username : '',
           email: data?.email?.includes('@') ? data.email : '',
+          phoneNumber: data?.phoneNumber ?? '',
           locale: data?.locale,
           discoverRegion: data?.discoverRegion,
           streamingRegion: data?.streamingRegion,
@@ -170,6 +178,7 @@ const UserGeneralSettings = () => {
               username: values.displayName,
               email:
                 values.email || user?.jellyfinUsername || user?.plexUsername,
+              phoneNumber: values.phoneNumber,
               locale: values.locale,
               discoverRegion: values.discoverRegion,
               streamingRegion: values.streamingRegion,
@@ -329,6 +338,19 @@ const UserGeneralSettings = () => {
                   </div>
                   {errors.email && touched.email && (
                     <div className="error">{errors.email}</div>
+                  )}
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="phoneNumber" className="text-label">
+                  {intl.formatMessage(messages.phoneNumber)}
+                </label>
+                <div className="form-input-area">
+                  <div className="form-input-field">
+                    <Field id="phoneNumber" name="phoneNumber" type="tel" />
+                  </div>
+                  {errors.phoneNumber && touched.phoneNumber && (
+                    <div className="error">{errors.phoneNumber}</div>
                   )}
                 </div>
               </div>
