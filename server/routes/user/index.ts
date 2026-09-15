@@ -21,6 +21,7 @@ import { Permission, hasPermission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
+import { checkAvatarChanged } from '@server/routes/avatarproxy';
 import { getHostname } from '@server/utils/getHostname';
 import { normalizeJellyfinGuid } from '@server/utils/jellyfin';
 import { isOwnProfileOrAdmin } from '@server/utils/profileMiddleware';
@@ -679,7 +680,7 @@ router.post(
         if (account.email) {
           const user = await userRepository
             .createQueryBuilder('user')
-            .where('user.plexId = :id', { id: account.id })
+            .where('user.plexId = :id', { id: parseInt(account.id) })
             .orWhere('user.email = :email', {
               email: account.email.toLowerCase(),
             })
@@ -733,7 +734,7 @@ router.post(
     try {
       const settings = getSettings();
       const userRepository = getRepository(User);
-      const body = req.body as { jellyfinUserIds: string[] };
+      const body = req.body as { jellyfinUserIds: string[] } | undefined;
 
       // taken from auth.ts
       const admin = await userRepository.findOneOrFail({
@@ -750,10 +751,9 @@ router.post(
       );
       jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
 
-      //const jellyfinUsersResponse = await jellyfinClient.getUsers();
       const createdUsers: User[] = [];
+      let refreshedUsers = 0;
 
-      jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
       const jellyfinUsers = await jellyfinClient.getUsers();
 
       const jellyfinUsersById = new Map(
@@ -763,29 +763,51 @@ router.post(
         ])
       );
 
-      for (const rawJellyfinUserId of body.jellyfinUserIds) {
-        const jellyfinUserId = normalizeJellyfinGuid(rawJellyfinUserId);
+      for (const [jellyfinUserId, jellyfinUser] of jellyfinUsersById) {
         if (!jellyfinUserId) {
           continue;
         }
 
-        const jellyfinUser = jellyfinUsersById.get(jellyfinUserId);
+        const user = await userRepository
+          .createQueryBuilder('user')
+          .select([
+            'user.id',
+            'user.jellyfinUserId',
+            'user.avatarVersion',
+            'user.avatarETag',
+            'user.email',
+          ])
+          .where(
+            "LOWER(REPLACE(user.jellyfinUserId, '-', '')) = :jellyfinUserId",
+            {
+              jellyfinUserId,
+            }
+          )
+          .getOne();
 
-        const user = await userRepository.findOne({
-          select: ['id', 'jellyfinUserId'],
-          where: { jellyfinUserId: jellyfinUserId },
-        });
-
-        if (!user) {
+        if (user) {
+          await checkAvatarChanged(user);
+          await userRepository.update(user.id, {
+            jellyfinUsername: jellyfinUser.Name,
+            avatar: `/avatarproxy/${user.jellyfinUserId}?v=${user.avatarVersion}`,
+          });
+          refreshedUsers += 1;
+        } else if (
+          !body ||
+          !body.jellyfinUserIds ||
+          body.jellyfinUserIds.some(
+            (id) => normalizeJellyfinGuid(id) === jellyfinUserId
+          )
+        ) {
           const newUser = new User({
-            jellyfinUsername: jellyfinUser?.Name,
-            jellyfinUserId: jellyfinUser?.Id,
+            jellyfinUsername: jellyfinUser.Name,
+            jellyfinUserId: jellyfinUserId,
             jellyfinDeviceId: Buffer.from(
-              `BOT_seerr_${jellyfinUser?.Name ?? ''}`
+              `BOT_seerr_${jellyfinUser.Name ?? ''}`
             ).toString('base64'),
-            email: jellyfinUser?.Name,
+            email: jellyfinUser.Name,
             permissions: settings.main.defaultPermissions,
-            avatar: `/avatarproxy/${jellyfinUser?.Id}`,
+            avatar: `/avatarproxy/${jellyfinUserId}`,
             userType:
               settings.main.mediaServerType === MediaServerType.JELLYFIN
                 ? UserType.JELLYFIN
@@ -796,7 +818,10 @@ router.post(
           createdUsers.push(newUser);
         }
       }
-      return res.status(201).json(User.filterMany(createdUsers));
+      return res.status(201).json({
+        createdUsers: User.filterMany(createdUsers),
+        refreshedUsers,
+      });
     } catch (e) {
       next({ status: 500, message: e.message });
     }

@@ -31,6 +31,7 @@ import { appDataPath } from '@server/utils/appDataVolume';
 import { getAppVersion } from '@server/utils/appVersion';
 import { dnsCache } from '@server/utils/dnsCache';
 import { getHostname } from '@server/utils/getHostname';
+import { normalizeJellyfinGuid } from '@server/utils/jellyfin';
 import type { DnsEntries, DnsStats } from 'dns-caching';
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
@@ -472,14 +473,37 @@ settingsRoutes.get('/jellyfin/users', async (req, res) => {
 
   jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
   const resp = await jellyfinClient.getUsers();
-  const users = resp.users.map((user) => ({
-    username: user.Name,
-    id: user.Id,
-    thumb: `/avatarproxy/${user.Id}`,
-    email: user.Name,
-  }));
 
-  return res.status(200).json(users);
+  const jellyfinUserIds = resp.users
+    .map((user) => normalizeJellyfinGuid(user.Id))
+    .filter((id): id is string => !!id);
+
+  const existingUsers = jellyfinUserIds.length
+    ? await userRepository
+        .createQueryBuilder('user')
+        .select(['user.jellyfinUserId'])
+        .where(
+          "LOWER(REPLACE(user.jellyfinUserId, '-', '')) IN (:...jellyfinUserIds)",
+          { jellyfinUserIds }
+        )
+        .getMany()
+    : [];
+  const existingUserIds = new Set(
+    existingUsers
+      .map((user) => normalizeJellyfinGuid(user.jellyfinUserId))
+      .filter((id): id is string => !!id)
+  );
+
+  const unimportedUsers = resp.users
+    .filter((user) => !existingUserIds.has(normalizeJellyfinGuid(user.Id)))
+    .map((user) => ({
+      username: user.Name,
+      id: user.Id,
+      thumb: `/avatarproxy/${user.Id}`,
+      email: user.Name,
+    }));
+
+  return res.status(200).json(unimportedUsers);
 });
 
 settingsRoutes.get('/jellyfin/sync', (_req, res) => {
