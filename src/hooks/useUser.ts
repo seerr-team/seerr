@@ -2,6 +2,7 @@ import { UserType } from '@server/constants/user';
 import type { PermissionCheckOptions } from '@server/lib/permissions';
 import { hasPermission, Permission } from '@server/lib/permissions';
 import type { NotificationAgentKey } from '@server/lib/settings';
+import type { AxiosError } from 'axios';
 import { useRouter } from 'next/router';
 import type { MutatorCallback } from 'swr';
 import useSWR from 'swr';
@@ -41,7 +42,7 @@ export interface UserSettings {
 interface UserHookResponse {
   user?: User;
   loading: boolean;
-  error: string;
+  error?: AxiosError;
   revalidate: (
     data?: User | Promise<User> | MutatorCallback<User> | undefined,
     shouldRevalidate?: boolean | undefined
