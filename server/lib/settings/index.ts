@@ -2,6 +2,7 @@ import { MediaServerType } from '@server/constants/server';
 import { Permission } from '@server/lib/permissions';
 import { runMigrations } from '@server/lib/settings/migrator';
 import type { AvailableLocale } from '@server/types/languages';
+import { stringOrReadFileFromEnv } from '@server/utils/env';
 import { randomBytes, randomUUID } from 'crypto';
 import fs from 'fs/promises';
 import { mergeWith } from 'lodash';
@@ -802,12 +803,15 @@ class Settings {
     return this.main;
   }
 
+  private resolveApiKeyFromEnvOrCredential(): string | undefined {
+    return stringOrReadFileFromEnv('API_KEY', { credential: 'api-key' });
+  }
+
   private generateApiKey(): string {
-    if (process.env.API_KEY) {
-      return process.env.API_KEY;
-    } else {
-      return Buffer.from(`${Date.now()}${randomUUID()}`).toString('base64');
-    }
+    return (
+      this.resolveApiKeyFromEnvOrCredential() ||
+      Buffer.from(`${Date.now()}${randomUUID()}`).toString('base64')
+    );
   }
 
   /**
@@ -854,9 +858,10 @@ class Settings {
     if (!this.data.main.apiKey) {
       this.data.main.apiKey = this.generateApiKey();
       change = true;
-    } else if (process.env.API_KEY) {
-      if (this.main.apiKey != process.env.API_KEY) {
-        this.main.apiKey = process.env.API_KEY;
+    } else {
+      const apiKey = this.resolveApiKeyFromEnvOrCredential();
+      if (apiKey && this.main.apiKey != apiKey) {
+        this.main.apiKey = apiKey;
       }
     }
     if (!this.data.clientId) {
