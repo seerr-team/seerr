@@ -205,6 +205,7 @@ const FilterSlideover = ({
           setFieldValue={(_key, value) => {
             updateQueryParams('language', value);
           }}
+          isDisabled={!!currentSettings.originalLanguage}
         />
         <span className="text-lg font-semibold">
           {intl.formatMessage(messages.certification)}
