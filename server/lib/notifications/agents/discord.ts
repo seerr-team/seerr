@@ -6,6 +6,7 @@ import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import { getIntl } from '@server/i18n';
+import { formatEvent } from '@server/i18n/eventMessages';
 import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentDiscord } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
@@ -95,6 +96,7 @@ class DiscordAgent
     locale?: AvailableLocale
   ): DiscordRichEmbed {
     const intl = getIntl(locale);
+    const event = formatEvent(payload.eventMessage, locale) ?? payload.event;
     const settings = getSettings();
     const { applicationUrl } = settings.main;
     const { embedPoster } = settings.notifications.agents.discord;
@@ -204,9 +206,7 @@ class DiscordAgent
       : undefined;
 
     return {
-      title: payload.event
-        ? `${payload.event}: ${payload.subject}`
-        : payload.subject,
+      title: event ? `${event}: ${payload.subject}` : payload.subject,
       url,
       description: payload.message,
       color,

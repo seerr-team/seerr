@@ -1,5 +1,6 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { getIntl } from '@server/i18n';
+import { formatEvent } from '@server/i18n/eventMessages';
 import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentGotify } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
@@ -51,13 +52,14 @@ class GotifyAgent
   ): GotifyPayload {
     const settings = this.getSettings();
     const intl = getIntl(settings.options.locale);
+    const event =
+      formatEvent(payload.eventMessage, settings.options.locale) ??
+      payload.event;
     const { applicationUrl, applicationTitle } = getSettings().main;
     const embedPoster = settings.embedPoster;
     const priority = settings.options.priority ?? 1;
 
-    const title = payload.event
-      ? `${payload.event} - ${payload.subject}`
-      : payload.subject;
+    const title = event ? `${event} - ${payload.subject}` : payload.subject;
 
     let message = payload.message ? `${payload.message}  \n\n` : '';
 

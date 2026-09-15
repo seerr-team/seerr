@@ -1,5 +1,6 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { getIntl } from '@server/i18n';
+import { formatEvent } from '@server/i18n/eventMessages';
 import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentSlack } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
@@ -67,6 +68,9 @@ class SlackAgent
   ): SlackBlockEmbed {
     const settings = this.getSettings();
     const intl = getIntl(settings.options.locale);
+    const event =
+      formatEvent(payload.eventMessage, settings.options.locale) ??
+      payload.event;
     const { applicationUrl, applicationTitle } = getSettings().main;
     const embedPoster = settings.embedPoster;
 
@@ -139,13 +143,13 @@ class SlackAgent
 
     const blocks: EmbedBlock[] = [];
 
-    if (payload.event) {
+    if (event) {
       blocks.push({
         type: 'context',
         elements: [
           {
             type: 'mrkdwn',
-            text: `*${payload.event}*`,
+            text: `*${event}*`,
           },
         ],
       });
@@ -215,7 +219,7 @@ class SlackAgent
     }
 
     return {
-      text: payload.event ?? payload.subject,
+      text: event ?? payload.subject,
       blocks,
     };
   }

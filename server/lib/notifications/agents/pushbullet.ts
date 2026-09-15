@@ -3,6 +3,7 @@ import { MediaStatus } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import { getIntl } from '@server/i18n';
+import { formatEvent } from '@server/i18n/eventMessages';
 import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentPushbullet } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
@@ -48,9 +49,8 @@ class PushbulletAgent
     locale?: AvailableLocale
   ): PushbulletPayload {
     const intl = getIntl(locale);
-    const title = payload.event
-      ? `${payload.event} - ${payload.subject}`
-      : payload.subject;
+    const event = formatEvent(payload.eventMessage, locale) ?? payload.event;
+    const title = event ? `${event} - ${payload.subject}` : payload.subject;
     let body = payload.message ?? '';
 
     if (payload.request) {

@@ -3,6 +3,7 @@ import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import { defineMessages, getIntl } from '@server/i18n';
+import { formatEvent } from '@server/i18n/eventMessages';
 import globalMessages from '@server/i18n/globalMessages';
 import PreparedEmail from '@server/lib/email';
 import type { NotificationAgentEmail } from '@server/lib/settings';
@@ -96,6 +97,7 @@ class EmailAgent
     locale?: AvailableLocale
   ): EmailOptions | undefined {
     const intl = getIntl(locale);
+    const event = formatEvent(payload.eventMessage, locale) ?? payload.event;
     const settings = getSettings();
     const { applicationUrl, applicationTitle } = settings.main;
     const { embedPoster } = settings.notifications.agents.email;
@@ -193,7 +195,7 @@ class EmailAgent
           to: recipientEmail,
         },
         locals: {
-          event: payload.event,
+          event,
           body,
           mediaName: payload.subject,
           mediaExtra: payload.extra ?? [],
@@ -261,7 +263,7 @@ class EmailAgent
           to: recipientEmail,
         },
         locals: {
-          event: payload.event,
+          event,
           body,
           issueDescription: payload.message,
           issueComment: payload.comment?.message,

@@ -1,5 +1,6 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { getIntl } from '@server/i18n';
+import { formatEvent } from '@server/i18n/eventMessages';
 import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentNtfy } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
@@ -31,6 +32,11 @@ class NtfyAgent
   private buildPayload(type: Notification, payload: NotificationPayload) {
     const settings = this.getSettings();
     const intl = getIntl(settings.options.locale as AvailableLocale);
+    const event =
+      formatEvent(
+        payload.eventMessage,
+        settings.options.locale as AvailableLocale
+      ) ?? payload.event;
     const { applicationUrl } = getSettings().main;
     const embedPoster = settings.embedPoster;
 
@@ -41,9 +47,7 @@ class NtfyAgent
       .filter((tag) => tag.length > 0);
     const priority = settings.options.priority ?? 3;
 
-    const title = payload.event
-      ? `${payload.event} - ${payload.subject}`
-      : payload.subject;
+    const title = event ? `${event} - ${payload.subject}` : payload.subject;
     let message = payload.message ?? '';
 
     if (payload.request) {

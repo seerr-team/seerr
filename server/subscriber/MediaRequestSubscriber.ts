@@ -17,6 +17,7 @@ import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
+import eventMessages from '@server/i18n/eventMessages';
 import notificationManager, { Notification } from '@server/lib/notifications';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -77,7 +78,11 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       });
 
       notificationManager.sendNotification(Notification.MEDIA_AVAILABLE, {
-        event: `${entity.is4k ? '4K ' : ''}Movie Request Now Available`,
+        eventMessage: {
+          descriptor: eventMessages.mediaRequestNowAvailable,
+          is4k: entity.is4k,
+          mediaType: MediaType.MOVIE,
+        },
         notifyAdmin: false,
         notifySystem: true,
         notifyUser: entity.requestedBy,
@@ -148,7 +153,11 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       const tv = await tmdb.getTvShow({ tvId: entity.media.tmdbId });
 
       notificationManager.sendNotification(Notification.MEDIA_AVAILABLE, {
-        event: `${entity.is4k ? '4K ' : ''}Series Request Now Available`,
+        eventMessage: {
+          descriptor: eventMessages.mediaRequestNowAvailable,
+          is4k: entity.is4k,
+          mediaType: MediaType.TV,
+        },
         subject: `${tv.name}${
           tv.first_air_date ? ` (${tv.first_air_date.slice(0, 4)})` : ''
         }`,

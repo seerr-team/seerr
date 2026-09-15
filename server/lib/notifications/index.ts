@@ -1,4 +1,5 @@
 import type { User } from '@server/entity/User';
+import { formatEvent } from '@server/i18n/eventMessages';
 import { Permission } from '@server/lib/permissions';
 import logger from '@server/logger';
 import type { NotificationAgent, NotificationPayload } from './agents/agent';
@@ -105,6 +106,13 @@ class NotificationManager {
       label: 'Notifications',
       subject: payload.subject,
     });
+
+    // Agents render the event line in their recipient's language; `event` keeps
+    // the English wording that the webhook payload has always exposed.
+    payload = {
+      ...payload,
+      event: payload.event ?? formatEvent(payload.eventMessage, 'en'),
+    };
 
     this.activeAgents.forEach((agent) => {
       if (agent.shouldSend()) {

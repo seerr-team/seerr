@@ -3,6 +3,7 @@ import { MediaStatus } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import { getIntl } from '@server/i18n';
+import { formatEvent } from '@server/i18n/eventMessages';
 import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentPushover } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
@@ -93,12 +94,13 @@ class PushoverAgent
     locale?: AvailableLocale
   ): Promise<Partial<PushoverPayload>> {
     const intl = getIntl(locale);
+    const event = formatEvent(payload.eventMessage, locale) ?? payload.event;
     const settings = getSettings();
     const { applicationUrl, applicationTitle } = settings.main;
     const { embedPoster } = settings.notifications.agents.pushover;
 
-    const title = payload.event ?? payload.subject;
-    let message = payload.event ? `<b>${payload.subject}</b>` : '';
+    const title = event ?? payload.subject;
+    let message = event ? `<b>${payload.subject}</b>` : '';
     let priority = 0;
 
     if (payload.message) {

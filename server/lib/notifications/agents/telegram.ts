@@ -3,6 +3,7 @@ import { MediaStatus } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import { getIntl } from '@server/i18n';
+import { formatEvent } from '@server/i18n/eventMessages';
 import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentTelegram } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
@@ -70,13 +71,14 @@ class TelegramAgent
     locale?: AvailableLocale
   ): Partial<TelegramMessagePayload | TelegramPhotoPayload> {
     const intl = getIntl(locale);
+    const event = formatEvent(payload.eventMessage, locale) ?? payload.event;
     const settings = getSettings();
     const { applicationUrl, applicationTitle } = settings.main;
     const { embedPoster } = settings.notifications.agents.telegram;
 
     /* eslint-disable no-useless-escape */
     let message = `\*${this.escapeText(
-      payload.event ? `${payload.event} - ${payload.subject}` : payload.subject
+      event ? `${event} - ${payload.subject}` : payload.subject
     )}\*`;
     if (payload.message) {
       message += `\n${this.escapeText(payload.message)}`;
