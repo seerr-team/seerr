@@ -1,6 +1,8 @@
 import JellyfinAPI from '@server/api/jellyfin';
 import PlexTvAPI from '@server/api/plextv';
 import TautulliAPI from '@server/api/tautulli';
+import type { MovieRating, TvRating } from '@server/constants/contentRatings';
+import { MOVIE_RATINGS, TV_RATINGS } from '@server/constants/contentRatings';
 import { MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
@@ -9,6 +11,7 @@ import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import { User } from '@server/entity/User';
 import { UserPushSubscription } from '@server/entity/UserPushSubscription';
+import { UserSettings } from '@server/entity/UserSettings';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { WatchlistResponse } from '@server/interfaces/api/discoverInterfaces';
 import type {
@@ -510,10 +513,42 @@ export const canMakePermissionsChange = (
   // Only let the owner grant admin privileges
   !(hasPermission(Permission.ADMIN, permissions) && user?.id !== 1);
 
+export const validateBulkParentalControlFields = (body: {
+  maxMovieRating?: string;
+  maxTvRating?: string;
+  blockUnrated?: boolean;
+}): string | null => {
+  if (
+    body.maxMovieRating &&
+    !MOVIE_RATINGS.includes(body.maxMovieRating as MovieRating)
+  ) {
+    return `Invalid movie rating: ${body.maxMovieRating}`;
+  }
+  if (
+    body.maxTvRating &&
+    !TV_RATINGS.includes(body.maxTvRating as TvRating)
+  ) {
+    return `Invalid TV rating: ${body.maxTvRating}`;
+  }
+  if (
+    body.blockUnrated !== undefined &&
+    typeof body.blockUnrated !== 'boolean'
+  ) {
+    return 'blockUnrated must be a boolean.';
+  }
+  return null;
+};
+
 router.put<
   Record<string, never>,
   Partial<User>[],
-  { ids: string[]; permissions: number }
+  {
+    ids: string[];
+    permissions: number;
+    maxMovieRating?: string;
+    maxTvRating?: string;
+    blockUnrated?: boolean;
+  }
 >('/', isAuthenticated(Permission.MANAGE_USERS), async (req, res, next) => {
   try {
     const isOwner = req.user?.id === 1;
@@ -523,6 +558,11 @@ router.put<
         status: 403,
         message: 'You do not have permission to grant this level of access',
       });
+    }
+
+    const validationError = validateBulkParentalControlFields(req.body);
+    if (validationError) {
+      return next({ status: 400, message: validationError });
     }
 
     const userRepository = getRepository(User);
@@ -535,12 +575,38 @@ router.put<
       },
     });
 
+    // Only write parental-control fields that were explicitly provided.
+    const hasParentalControlFields =
+      req.body.maxMovieRating !== undefined ||
+      req.body.maxTvRating !== undefined ||
+      req.body.blockUnrated !== undefined;
+
     const updatedUsers = await Promise.all(
       users.map(async (user) => {
-        return userRepository.save(<User>{
-          ...user,
-          ...{ permissions: req.body.permissions },
-        });
+        user.permissions = req.body.permissions;
+
+        // Skip the owner and other MANAGE_USERS holders, same as the
+        // single-user parental-controls endpoint.
+        if (
+          hasParentalControlFields &&
+          user.id !== 1 &&
+          !hasPermission(Permission.MANAGE_USERS, user.permissions)
+        ) {
+          if (!user.settings) {
+            user.settings = new UserSettings({ user });
+          }
+          if (req.body.maxMovieRating !== undefined) {
+            user.settings.maxMovieRating = req.body.maxMovieRating || null;
+          }
+          if (req.body.maxTvRating !== undefined) {
+            user.settings.maxTvRating = req.body.maxTvRating || null;
+          }
+          if (req.body.blockUnrated !== undefined) {
+            user.settings.blockUnrated = req.body.blockUnrated;
+          }
+        }
+
+        return userRepository.save(user);
       })
     );
 

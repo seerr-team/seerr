@@ -9,6 +9,7 @@ import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import {
   BlocklistedMediaError,
+  ContentRatingRestrictedError,
   DuplicateMediaRequestError,
   MediaRequest,
   NoSeasonsAvailableError,
@@ -327,6 +328,7 @@ requestRoutes.post<never, MediaRequest, MediaRequestBody>(
         case NoSeasonsAvailableError:
           return next({ status: 202, message: error.message });
         case BlocklistedMediaError:
+        case ContentRatingRestrictedError:
           return next({ status: 403, message: error.message });
         default:
           return next({ status: 500, message: error.message });

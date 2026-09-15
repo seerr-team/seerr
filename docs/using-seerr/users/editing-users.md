@@ -8,7 +8,7 @@ sidebar_position: 3
 
 From the **User List**, you can click the **Edit** button to modify a particular user's settings.
 
-You can also click the check boxes and click the **Bulk Edit** button to set user permissions for multiple users at once.
+You can also click the check boxes and click the **Bulk Edit** button to set user permissions or parental controls for multiple users at once.
 
 ## General
 
@@ -60,3 +60,15 @@ Users can configure their personal notification settings here. Please see [Notif
 ## Permissions
 
 Users cannot modify their own permissions. Users with the **Manage Users** permission can manage permissions of other users, except those of users with the **Admin** permission.
+
+## Parental Controls
+
+Users with the **Manage Users** permission can set content rating limits for other users. Rating limits use the US rating systems: MPAA ratings for movies and the TV Parental Guidelines for series.
+
+When a limit is set, content above it is hidden from Discover, search, and recommendations for that user, its detail pages are blocked, and requests for it are rejected. **Block Unrated Content** additionally hides titles that have no US rating.
+
+:::note
+Setting a series rating limit hides shows that have no US TV rating. Most popular shows are rated, but much of the wider catalog is not.
+:::
+
+Parental controls cannot be set for the server owner or for users with the **Manage Users** permission, and users cannot see or change their own limits.
