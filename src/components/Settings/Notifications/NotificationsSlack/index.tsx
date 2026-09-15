@@ -18,6 +18,7 @@ const messages = defineMessages(
   {
     agentenabled: 'Enable Agent',
     embedPoster: 'Embed Poster',
+    enableMentions: 'Enable Mentions',
     webhookUrl: 'Webhook URL',
     webhookUrlTip:
       'Create an <WebhookLink>Incoming Webhook</WebhookLink> integration',
@@ -65,6 +66,7 @@ const NotificationsSlack = () => {
         embedPoster: data.embedPoster,
         types: data.types,
         webhookUrl: data.options.webhookUrl,
+        enableMentions: data?.options.enableMentions,
         locale: data?.options.locale ?? 'en',
       }}
       validationSchema={NotificationsSlackSchema}
@@ -76,6 +78,7 @@ const NotificationsSlack = () => {
             types: values.types,
             options: {
               webhookUrl: values.webhookUrl,
+              enableMentions: values.enableMentions,
               locale: values.locale,
             },
           });
@@ -122,6 +125,7 @@ const NotificationsSlack = () => {
               types: values.types,
               options: {
                 webhookUrl: values.webhookUrl,
+                enableMentions: values.enableMentions,
                 locale: values.locale,
               },
             });
@@ -198,6 +202,18 @@ const NotificationsSlack = () => {
                   typeof errors.webhookUrl === 'string' && (
                     <div className="error">{errors.webhookUrl}</div>
                   )}
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="enableMentions" className="checkbox-label">
+                {intl.formatMessage(messages.enableMentions)}
+              </label>
+              <div className="form-input-area">
+                <Field
+                  type="checkbox"
+                  id="enableMentions"
+                  name="enableMentions"
+                />
               </div>
             </div>
             <div className="form-row">
