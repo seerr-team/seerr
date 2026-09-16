@@ -29,6 +29,9 @@ class OverrideRule {
   @Column({ nullable: true })
   public keywords?: string;
 
+  @Column({ nullable: true })
+  public certification?: string;
+
   @Column({ type: 'int', nullable: true })
   public profileId?: number;
 
