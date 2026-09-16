@@ -29,6 +29,17 @@ import { Router } from 'express';
 
 const requestRoutes = Router();
 
+const arrServerConfigured = (
+  serverId: number | null | undefined,
+  type: MediaType,
+  settings = getSettings()
+): boolean =>
+  serverId == null ||
+  serverId < 0 ||
+  (type === MediaType.MOVIE ? settings.radarr : settings.sonarr).some(
+    (server) => server.id === serverId
+  );
+
 requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
   '/',
   async (req, res, next) => {
@@ -485,10 +496,23 @@ requestRoutes.put<{ requestId: string }>(
         });
       }
 
-      if (request.status !== MediaRequestStatus.PENDING) {
+      if (
+        request.status !== MediaRequestStatus.PENDING &&
+        request.status !== MediaRequestStatus.FAILED
+      ) {
         return next({
           status: 409,
-          message: 'Only pending requests can be modified.',
+          message: 'Only pending or failed requests can be modified.',
+        });
+      }
+
+      if (
+        request.status === MediaRequestStatus.FAILED &&
+        !req.user?.hasPermission(Permission.MANAGE_REQUESTS)
+      ) {
+        return next({
+          status: 403,
+          message: 'Only request managers can modify a failed request.',
         });
       }
 
@@ -510,6 +534,19 @@ requestRoutes.put<{ requestId: string }>(
         requestUser = await userRepository.findOneOrFail({
           where: { id: req.body.userId },
         });
+      }
+
+      const resubmitAfterEdit = request.status === MediaRequestStatus.FAILED;
+      if (resubmitAfterEdit) {
+        if (!arrServerConfigured(req.body.serverId, req.body.mediaType)) {
+          return next({
+            status: 400,
+            message:
+              'The selected server is not configured. Choose a valid server before resubmitting.',
+          });
+        }
+        request.status = MediaRequestStatus.APPROVED;
+        request.modifiedBy = req.user as User;
       }
 
       if (req.body.mediaType === MediaType.MOVIE) {
@@ -655,6 +692,17 @@ requestRoutes.post<{
         return next({
           status: 409,
           message: 'Only failed requests can be retried.',
+        });
+      }
+
+      if (!arrServerConfigured(request.serverId, request.type)) {
+        return next({
+          status: 409,
+          message:
+            `This request's ${
+              request.type === MediaType.MOVIE ? 'Radarr' : 'Sonarr'
+            } server (id ${request.serverId}) no longer exists. ` +
+            `Edit the request to select a valid server, then retry.`,
         });
       }
 
