@@ -118,6 +118,7 @@ The following special variables are only included in request-related notificatio
 | `{{request_id}}`                          | The request ID                                                                 |
 | `{{requestedBy_username}}`                | The requesting user's username                                                 |
 | `{{requestedBy_email}}`                   | The requesting user's email address                                            |
+| `{{requestedBy_phoneNumber}}`             | The requesting user's phone number                                            |
 | `{{requestedBy_avatar}}`                  | The requesting user's avatar URL                                               |
 | `{{requestedBy_jellyfinUserId}}`          | The requesting user's Jellyfin User ID                                         |
 | `{{requestedBy_settings_discordIds}}`     | The requesting user's Discord ID(s) as a JSON array (if set)                   |
@@ -134,6 +135,7 @@ The following special variables are only included in issue-related notifications
 | `{{issue_id}}`                           | The issue ID                                                                   |
 | `{{reportedBy_username}}`                | The requesting user's username                                                 |
 | `{{reportedBy_email}}`                   | The requesting user's email address                                            |
+| `{{reportedBy_phoneNumber}}`             | The requesting user's phone number                                            |
 | `{{reportedBy_avatar}}`                  | The requesting user's avatar URL                                               |
 | `{{reportedBy_settings_discordIds}}`     | The reporting user's Discord ID(s) as a JSON array (if set)                    |
 | `{{reportedBy_settings_telegramChatId}}` | The requesting user's Telegram Chat ID (if set)                                |
@@ -149,6 +151,7 @@ The following special variables are only included in issue comment-related notif
 | `{{comment_message}}`                     | The comment message                                                            |
 | `{{commentedBy_username}}`                | The commenting user's username                                                 |
 | `{{commentedBy_email}}`                   | The commenting user's email address                                            |
+| `{{commentedBy_phoneNumber}}`             | The commenting user's phone number                                            |
 | `{{commentedBy_avatar}}`                  | The commenting user's avatar URL                                               |
 | `{{commentedBy_settings_discordIds}}`     | The commenting user's Discord ID(s) as a JSON array (if set)                   |
 | `{{commentedBy_settings_telegramChatId}}` | The commenting user's Telegram Chat ID (if set)                                |
