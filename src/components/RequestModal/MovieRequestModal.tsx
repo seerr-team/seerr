@@ -285,12 +285,16 @@ const MovieRequestModal = ({
           : intl.formatMessage(messages.requestfrom, {
               username: editRequest.requestedBy.displayName,
             })}
-        {(hasPermission(Permission.REQUEST_ADVANCED) ||
-          hasPermission(Permission.MANAGE_REQUESTS)) && (
+        {hasPermission(
+          [Permission.REQUEST_ADVANCED, Permission.MANAGE_REQUESTS],
+          { type: 'or' }
+        ) && (
           <AdvancedRequester
             type="movie"
+            tmdbId={tmdbId}
             is4k={is4k}
             requestUser={editRequest.requestedBy}
+            requestId={editRequest.id}
             defaultOverrides={{
               folder: editRequest.rootFolder,
               profile: editRequest.profileId,
@@ -358,9 +362,12 @@ const MovieRequestModal = ({
           }
         />
       )}
-      {(hasPermission(Permission.REQUEST_ADVANCED) ||
-        hasPermission(Permission.MANAGE_REQUESTS)) && (
+      {hasPermission(
+        [Permission.REQUEST_ADVANCED, Permission.MANAGE_REQUESTS],
+        { type: 'or' }
+      ) && (
         <AdvancedRequester
+          tmdbId={tmdbId}
           type="movie"
           is4k={is4k}
           quota={quota}
