@@ -376,10 +376,14 @@ const Discover = () => {
                 url="/api/v1/discover/movies"
                 extraParams={`watchRegion=${
                   slider.data?.split(',')[0]
-                }&watchProviders=${slider.data?.split(',')[1]}`}
+                }&watchProviders=${
+                  slider.data?.split(',')[1]
+                }&excludeWatchProviders=${slider.data?.split(',')[2] ?? ''}`}
                 linkUrl={`/discover/movies?watchRegion=${
                   slider.data?.split(',')[0]
-                }&watchProviders=${slider.data?.split(',')[1]}`}
+                }&watchProviders=${
+                  slider.data?.split(',')[1]
+                }&excludeWatchProviders=${slider.data?.split(',')[2] ?? ''}`}
               />
             );
             break;
@@ -391,10 +395,14 @@ const Discover = () => {
                 url="/api/v1/discover/tv"
                 extraParams={`watchRegion=${
                   slider.data?.split(',')[0]
-                }&watchProviders=${slider.data?.split(',')[1]}`}
+                }&watchProviders=${
+                  slider.data?.split(',')[1]
+                }&excludeWatchProviders=${slider.data?.split(',')[2] ?? ''}`}
                 linkUrl={`/discover/tv?watchRegion=${
                   slider.data?.split(',')[0]
-                }&watchProviders=${slider.data?.split(',')[1]}`}
+                }&watchProviders=${
+                  slider.data?.split(',')[1]
+                }&excludeWatchProviders=${slider.data?.split(',')[2] ?? ''}`}
               />
             );
             break;

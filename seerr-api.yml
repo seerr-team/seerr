@@ -5715,6 +5715,11 @@ paths:
             type: string
             example: 8|9
         - in: query
+          name: excludeWatchProviders
+          schema:
+            type: string
+            example: 8|9
+        - in: query
           name: certification
           schema:
             type: string
@@ -6037,6 +6042,11 @@ paths:
             example: US
         - in: query
           name: watchProviders
+          schema:
+            type: string
+            example: 8|9
+        - in: query
+          name: excludeWatchProviders
           schema:
             type: string
             example: 8|9
