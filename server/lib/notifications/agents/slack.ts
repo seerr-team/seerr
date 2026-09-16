@@ -103,6 +103,17 @@ class SlackAgent
           type: 'mrkdwn',
           text: `*${intl.formatMessage(globalMessages.requestStatus)}*\n${status}`,
         });
+
+        if (
+          type === Notification.MEDIA_DECLINED &&
+          payload.request &&
+          payload.request.declineReason
+        ) {
+          fields.push({
+            type: 'mrkdwn',
+            text: `*${intl.formatMessage(globalMessages.declineReason)}*\n${payload.request.declineReason}`,
+          });
+        }
       }
     } else if (payload.comment) {
       fields.push({
