@@ -1093,3 +1093,84 @@ describe('DELETE /request/:requestId, orphaned season status reset', () => {
     assert.strictEqual(updated.seasons[0].status4k, MediaStatus.PROCESSING);
   });
 });
+
+describe('POST /request (tv), TVDB ID backfill', () => {
+  async function seedUntrackedShow(tmdbId: number, tvdbId?: number) {
+    return getRepository(Media).save(
+      new Media({
+        mediaType: MediaType.TV,
+        tmdbId,
+        tvdbId,
+        status: MediaStatus.UNKNOWN,
+        status4k: MediaStatus.UNKNOWN,
+      })
+    );
+  }
+
+  it('stores a manually supplied TVDB ID on already-tracked media', async () => {
+    getSettings().radarr = [];
+    getSettings().sonarr = [];
+
+    const media = await seedUntrackedShow(88010);
+
+    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const res = await agent.post('/request').send({
+      mediaType: MediaType.TV,
+      mediaId: 88010,
+      seasons: [1],
+      tvdbId: 184871,
+    });
+
+    assert.strictEqual(res.status, 201);
+
+    const updated = await getRepository(Media).findOneOrFail({
+      where: { id: media.id },
+    });
+    assert.strictEqual(updated.tvdbId, 184871);
+  });
+
+  it('creates untracked media without the TVDB ID when another row owns it', async () => {
+    getSettings().radarr = [];
+    getSettings().sonarr = [];
+
+    await seedUntrackedShow(87012, 184871);
+
+    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const res = await agent.post('/request').send({
+      mediaType: MediaType.TV,
+      mediaId: 34549,
+      seasons: [1],
+      tvdbId: 184871,
+    });
+
+    assert.strictEqual(res.status, 201);
+
+    const created = await getRepository(Media).findOneOrFail({
+      where: { tmdbId: 34549 },
+    });
+    assert.strictEqual(created.tvdbId, null);
+  });
+
+  it('skips the backfill when another media row already owns the TVDB ID', async () => {
+    getSettings().radarr = [];
+    getSettings().sonarr = [];
+
+    await seedUntrackedShow(88011, 184871);
+    const media = await seedUntrackedShow(88012);
+
+    const agent = await loginAs('friend@seerr.dev', 'test1234');
+    const res = await agent.post('/request').send({
+      mediaType: MediaType.TV,
+      mediaId: 88012,
+      seasons: [1],
+      tvdbId: 184871,
+    });
+
+    assert.strictEqual(res.status, 201);
+
+    const updated = await getRepository(Media).findOneOrFail({
+      where: { id: media.id },
+    });
+    assert.strictEqual(updated.tvdbId, null);
+  });
+});
