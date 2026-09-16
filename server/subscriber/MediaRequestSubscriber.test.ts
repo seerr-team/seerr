@@ -16,6 +16,7 @@ import {
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
+import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
 import { Notification } from '@server/lib/notifications';
@@ -126,7 +127,8 @@ function stubProviders({
 async function seedApprovedRequest(
   tmdbId: number,
   seasonNumbers: number[],
-  tvdbId?: number
+  tvdbId?: number,
+  seasonAliases?: Record<number, number>
 ) {
   const requester = await getRepository(User).findOneOrFail({
     where: { email: 'friend@seerr.dev' },
@@ -139,6 +141,21 @@ async function seedApprovedRequest(
       tvdbId,
       status: MediaStatus.PENDING,
       status4k: MediaStatus.UNKNOWN,
+      // only seeded when aliases are under test, so every other case keeps
+      // an empty seasons relation
+      ...(seasonAliases
+        ? {
+            seasons: seasonNumbers.map(
+              (seasonNumber) =>
+                new Season({
+                  seasonNumber,
+                  dispatchedSeasonNumber: seasonAliases[seasonNumber] ?? null,
+                  status: MediaStatus.PENDING,
+                  status4k: MediaStatus.UNKNOWN,
+                })
+            ),
+          }
+        : {}),
     })
   );
 
@@ -435,6 +452,55 @@ describe('MediaRequestSubscriber sendToSonarr, season guard', () => {
 
     assert.strictEqual(addSeries.callCount(), 1);
     assert.strictEqual(entity.status, MediaRequestStatus.APPROVED);
+  });
+
+  it('dispatches the mapped number for an overridden season', async () => {
+    tvShow = fakeShow(90020, [
+      { season_number: 8, air_date: '2024-09-24' },
+      { season_number: 9, air_date: '2025-09-02' },
+    ]);
+    const addSeries = stubProviders({
+      resolveTvdbId: 184871,
+      officialSeasons: [
+        { seasonNumber: 9, year: 2025 },
+        { seasonNumber: 15, year: 2024 },
+      ],
+    });
+
+    const { entity } = await seedApprovedRequest(90020, [8, 9], undefined, {
+      8: 15,
+    });
+    await run(entity);
+
+    assert.strictEqual(addSeries.callCount(), 1);
+
+    const options = addSeries.calls[0].arguments[0] as { seasons: number[] };
+    assert.deepStrictEqual(
+      options.seasons.sort((a, b) => a - b),
+      [9, 15]
+    );
+  });
+
+  it('still fails the request when an unmapped season does not match', async () => {
+    tvShow = fakeShow(90021, [
+      { season_number: 8, air_date: '2024-09-24' },
+      { season_number: 9, air_date: '2025-09-02' },
+    ]);
+    const addSeries = stubProviders({
+      resolveTvdbId: 184871,
+      officialSeasons: [
+        { seasonNumber: 9, year: 2019 },
+        { seasonNumber: 15, year: 2024 },
+      ],
+    });
+
+    const { entity } = await seedApprovedRequest(90021, [8, 9], undefined, {
+      8: 15,
+    });
+    await run(entity);
+
+    assert.strictEqual(entity.status, MediaRequestStatus.FAILED);
+    assert.strictEqual(addSeries.callCount(), 0);
   });
 
   it('does not guard shows TMDB already has a TVDB ID for', async () => {
