@@ -2,7 +2,7 @@
   "name": "seerr",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@10.24.0",
+  "packageManager": "pnpm@11.24.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "postinstall": "next telemetry disable",
@@ -66,13 +66,13 @@
     "http-proxy-agent": "^7.0.2",
     "https-proxy-agent": "^7.0.6",
     "humanize-duration": "^3.33.2",
+    "ip-address": "^10.2.0",
     "js-yaml": "^4.1.1",
     "lodash": "4.18.1",
     "lru-cache": "11.2.1",
     "mime": "^4.1.0",
     "nanoid": "^5.1.7",
     "next": "16.2.6",
-    "ip-address": "^10.2.0",
     "node-gyp": "12.2.0",
     "node-schedule": "2.1.1",
     "nodemailer": "8.0.5",
@@ -181,7 +181,7 @@
   },
   "engines": {
     "node": "^22.19.0",
-    "pnpm": "^10.0.0"
+    "pnpm": "^11.0.0"
   },
   "config": {
     "commitizen": {
@@ -201,21 +201,6 @@
     "extends": [
       "@commitlint/config-conventional"
     ]
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@swc/core",
-      "bcrypt",
-      "cypress",
-      "sharp",
-      "sqlite3"
-    ],
-    "overrides": {
-      "sqlite3>node-gyp": "8.4.1",
-      "@types/express-session": "1.18.2",
-      "@types/react": "19.2.14",
-      "@types/react-dom": "19.2.3"
-    }
   },
   "scarfSettings": {
     "enabled": false
