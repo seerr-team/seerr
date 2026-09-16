@@ -633,19 +633,6 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
             media.tmdbId,
             sonarr
           );
-
-          if (resolvedTvdbId) {
-            const conflict = await mediaRepository.findOne({
-              where: { tvdbId: resolvedTvdbId },
-            });
-
-            // deliberately uncaught: a unique violation would abort the request
-            // transaction on Postgres and break the FAILED save below
-            if (!conflict) {
-              media.tvdbId = resolvedTvdbId;
-              await mediaRepository.save(media);
-            }
-          }
         }
 
         if (!resolvedTvdbId) {
@@ -673,6 +660,13 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         }
 
         const tvdbId = resolvedTvdbId;
+
+        // every resolution path converges here, and a row without the ID is
+        // invisible to the scanner lookup that finds it by TVDB ID
+        if (media.tvdbId !== tvdbId) {
+          media.tvdbId = tvdbId;
+          await mediaRepository.save(media);
+        }
 
         // shows TMDB has no TVDB ID for are the ones whose season numbering
         // can diverge from Sonarr's

@@ -155,14 +155,32 @@ class SonarrScanner
       this.scannedTvdbIds.add(sonarrSeries.tvdbId);
     }
 
+    const mediaRepository = getRepository(Media);
+
+    // one Sonarr series can back several TMDB entries, each with its own
+    // season aliases, so every matching row is processed on its own terms
+    const rows = await mediaRepository.find({
+      where: { tvdbId: sonarrSeries.tvdbId },
+    });
+
+    if (!rows.length) {
+      await this.processSeriesForMedia(sonarrSeries, server4k, undefined);
+      return;
+    }
+
+    for (const media of rows) {
+      await this.processSeriesForMedia(sonarrSeries, server4k, media);
+    }
+  }
+
+  private async processSeriesForMedia(
+    sonarrSeries: SonarrSeries,
+    server4k: boolean,
+    media: Media | undefined
+  ) {
     try {
-      const mediaRepository = getRepository(Media);
       const processableSeasons: ProcessableSeason[] = [];
       let tvShow: TmdbTvScanDetails | TmdbTvDetails;
-
-      const media = await mediaRepository.findOne({
-        where: { tvdbId: sonarrSeries.tvdbId },
-      });
 
       if (!media || !media.tmdbId) {
         tvShow = await this.tmdb.getShowByTvdbIdForScan({
@@ -230,9 +248,11 @@ class SonarrScanner
         is4k: server4k,
       });
     } catch (e) {
+      // scoped per row so one failure cannot skip the sibling entries
       this.log('Failed to process Sonarr media', 'error', {
         errorMessage: e.message,
         title: sonarrSeries.title,
+        tmdbId: media?.tmdbId,
       });
     }
   }

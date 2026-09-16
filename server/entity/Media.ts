@@ -123,7 +123,8 @@ class Media {
   @Index()
   public tmdbId: number;
 
-  @Column({ unique: true, nullable: true })
+  // several TMDB entries can map to one TVDB series, so this is not unique
+  @Column({ nullable: true })
   @Index()
   public tvdbId?: number;
 
