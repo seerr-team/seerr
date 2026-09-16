@@ -8,7 +8,7 @@ import TitleCard from '@app/components/TitleCard';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
-import { CircleStackIcon } from '@heroicons/react/24/solid';
+import { BarsArrowDownIcon, CircleStackIcon } from '@heroicons/react/24/solid';
 import type { PersonCombinedCreditsResponse } from '@server/interfaces/api/personInterfaces';
 import type { PersonDetails as PersonDetailsType } from '@server/models/Person';
 import { groupBy } from 'lodash';
@@ -25,7 +25,33 @@ const messages = defineMessages('components.PersonDetails', {
   appearsin: 'Appearances',
   crewmember: 'Crew',
   ascharacter: 'as {character}',
+  sortAppearances: 'Sort Appearances',
+  sortPopularityAsc: 'Popularity Ascending',
+  sortPopularityDesc: 'Popularity Descending',
+  sortReleaseDateAsc: 'Release Date Ascending',
+  sortReleaseDateDesc: 'Release Date Descending',
+  sortTmdbRatingAsc: 'TMDB Rating Ascending',
+  sortTmdbRatingDesc: 'TMDB Rating Descending',
+  sortTitleAsc: 'Title (A-Z) Ascending',
+  sortTitleDesc: 'Title (Z-A) Descending',
+  sortVoteCountAsc: 'TMDB Rating Count Ascending',
+  sortVoteCountDesc: 'TMDB Rating Count Descending',
 });
+
+const SortOptions: Record<string, string> = {
+  PopularityAsc: 'popularity.asc',
+  PopularityDesc: 'popularity.desc',
+  ReleaseDateAsc: 'release_date.asc',
+  ReleaseDateDesc: 'release_date.desc',
+  TmdbRatingAsc: 'vote_average.asc',
+  TmdbRatingDesc: 'vote_average.desc',
+  TitleAsc: 'original_title.asc',
+  TitleDesc: 'original_title.desc',
+  VoteCountAsc: 'voteCount.asc',
+  VoteCountDesc: 'voteCount.desc',
+} as const;
+
+const DEFAULT_SORT_OPTION = SortOptions.VoteCountDesc;
 
 type MediaType = 'all' | 'movie' | 'tv';
 
@@ -37,6 +63,53 @@ const PersonDetails = () => {
     `/api/v1/person/${router.query.personId}`
   );
   const [showBio, setShowBio] = useState(false);
+  const [sortBy, setSortBy] = useState<string>(DEFAULT_SORT_OPTION);
+
+  const sortPicker = (
+    <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
+      <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-gray-100 sm:text-sm">
+        <BarsArrowDownIcon className="h-6 w-6" />
+      </span>
+      <select
+        name="sortBy"
+        aria-label={intl.formatMessage(messages.sortAppearances)}
+        className="rounded-r-only"
+        value={sortBy}
+        onChange={(e) => setSortBy(e.target.value as string)}
+      >
+        <option value={SortOptions.VoteCountDesc}>
+          {intl.formatMessage(messages.sortVoteCountDesc)}
+        </option>
+        <option value={SortOptions.VoteCountAsc}>
+          {intl.formatMessage(messages.sortVoteCountAsc)}
+        </option>
+        <option value={SortOptions.PopularityDesc}>
+          {intl.formatMessage(messages.sortPopularityDesc)}
+        </option>
+        <option value={SortOptions.PopularityAsc}>
+          {intl.formatMessage(messages.sortPopularityAsc)}
+        </option>
+        <option value={SortOptions.ReleaseDateDesc}>
+          {intl.formatMessage(messages.sortReleaseDateDesc)}
+        </option>
+        <option value={SortOptions.ReleaseDateAsc}>
+          {intl.formatMessage(messages.sortReleaseDateAsc)}
+        </option>
+        <option value={SortOptions.TmdbRatingDesc}>
+          {intl.formatMessage(messages.sortTmdbRatingDesc)}
+        </option>
+        <option value={SortOptions.TmdbRatingAsc}>
+          {intl.formatMessage(messages.sortTmdbRatingAsc)}
+        </option>
+        <option value={SortOptions.TitleAsc}>
+          {intl.formatMessage(messages.sortTitleAsc)}
+        </option>
+        <option value={SortOptions.TitleDesc}>
+          {intl.formatMessage(messages.sortTitleDesc)}
+        </option>
+      </select>
+    </div>
+  );
 
   const { data: combinedCredits, error: errorCombinedCredits } =
     useSWR<PersonCombinedCreditsResponse>(
@@ -56,14 +129,55 @@ const PersonDetails = () => {
     }));
 
     return reduced.sort((a, b) => {
+      // rating
+      if (sortBy === SortOptions.TmdbRatingAsc) {
+        return (a.voteAverage ?? 0) - (b.voteAverage ?? 0);
+      } else if (sortBy === SortOptions.TmdbRatingDesc) {
+        return (b.voteAverage ?? 0) - (a.voteAverage ?? 0);
+      }
+      // popularity
+      else if (sortBy === SortOptions.PopularityAsc) {
+        return (a.popularity ?? 0) - (b.popularity ?? 0);
+      } else if (sortBy === SortOptions.PopularityDesc) {
+        return (b.popularity ?? 0) - (a.popularity ?? 0);
+      }
+      // date
+      else if (sortBy === SortOptions.ReleaseDateAsc) {
+        const dateA = a.mediaType === 'movie' ? a.releaseDate : a.firstAirDate;
+        const dateB = b.mediaType === 'movie' ? b.releaseDate : b.firstAirDate;
+        return new Date(dateA).getTime() - new Date(dateB).getTime();
+      } else if (sortBy === SortOptions.ReleaseDateDesc) {
+        const dateA = a.mediaType === 'movie' ? a.releaseDate : a.firstAirDate;
+        const dateB = b.mediaType === 'movie' ? b.releaseDate : b.firstAirDate;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      }
+      // title
+      else if (sortBy === SortOptions.TitleAsc) {
+        const titleA = a.mediaType === 'movie' ? a.title : a.name;
+        const titleB = b.mediaType === 'movie' ? b.title : b.name;
+        return titleA.localeCompare(titleB);
+      } else if (sortBy === SortOptions.TitleDesc) {
+        const titleA = a.mediaType === 'movie' ? a.title : a.name;
+        const titleB = b.mediaType === 'movie' ? b.title : b.name;
+        return titleB.localeCompare(titleA);
+      }
+      // vote count
+      else if (sortBy === SortOptions.VoteCountAsc) {
+        const aVotes = a.voteCount ?? 0;
+        const bVotes = b.voteCount ?? 0;
+        return aVotes - bVotes;
+      } else if (sortBy !== SortOptions.VoteCountDesc) {
+        console.error(
+          `unknown sort option: ${sortBy}\ndefaulting to ${SortOptions.VoteCountDesc}`
+        );
+      }
+
+      // default
       const aVotes = a.voteCount ?? 0;
       const bVotes = b.voteCount ?? 0;
-      if (aVotes > bVotes) {
-        return -1;
-      }
-      return 1;
+      return bVotes - aVotes;
     });
-  }, [combinedCredits, currentMediaType]);
+  }, [combinedCredits, currentMediaType, sortBy]);
 
   const sortedCrew = useMemo(() => {
     const filtered = (combinedCredits?.crew ?? []).filter(
@@ -275,7 +389,14 @@ const PersonDetails = () => {
           <div className="flex w-full items-center justify-center lg:justify-between">
             <h1 className="text-3xl text-white lg:text-4xl">{data.name}</h1>
             <div className="hidden flex-shrink-0 lg:block">
-              {mediaTypePicker}
+              <div className="mb-4 flex flex-col justify-between lg:flex-row lg:items-end">
+                <div className="mt-2 flex flex-grow flex-col sm:flex-row lg:flex-grow-0">
+                  {mediaTypePicker}
+                </div>
+                <div className="mt-2 flex flex-grow flex-col sm:flex-row lg:flex-grow-0">
+                  {sortPicker}
+                </div>
+              </div>
             </div>
           </div>
           <div className="flex w-full items-center justify-center lg:justify-between">
@@ -302,7 +423,16 @@ const PersonDetails = () => {
               </div>
             )}
           </div>
-          <div className="lg:hidden">{mediaTypePicker}</div>
+          <div className="lg:hidden">
+            <div className="mb-4 flex flex-col justify-between lg:flex-row lg:items-end">
+              <div className="mt-2 flex flex-grow flex-col sm:flex-row lg:flex-grow-0">
+                {mediaTypePicker}
+              </div>
+              <div className="mt-2 flex flex-grow flex-col sm:flex-row lg:flex-grow-0">
+                {sortPicker}
+              </div>
+            </div>
+          </div>
           {data.biography && (
             <div className="relative text-left">
               {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
