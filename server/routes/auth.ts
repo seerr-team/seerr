@@ -258,6 +258,12 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     return res.status(500).json({ error: 'Jellyfin login is disabled' });
   }
 
+  if (settings.main.quickConnectOnly) {
+    return res.status(403).json({
+      error: 'Jellyfin login can only be used with Quick Connect.',
+    });
+  }
+
   if (!body.username) {
     return res.status(500).json({ error: 'You must provide an username' });
   } else if (settings.jellyfin.ip !== '' && body.hostname) {
