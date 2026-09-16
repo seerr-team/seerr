@@ -30,6 +30,9 @@ export interface UserSettingsNotificationsResponse {
   pushoverApplicationToken?: string;
   pushoverUserKey?: string;
   pushoverSound?: string;
+  slackEnabled?: boolean;
+  slackEnabledTypes?: number;
+  slackIds?: string[];
   telegramEnabled?: boolean;
   telegramBotUsername?: string;
   telegramChatId?: string;

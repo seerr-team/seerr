@@ -1438,6 +1438,8 @@ components:
           properties:
             webhookUrl:
               type: string
+            enableMentions:
+              type: boolean
     WebPushSettings:
       type: object
       properties:
@@ -1980,6 +1982,16 @@ components:
           nullable: true
         pushoverSound:
           type: string
+          nullable: true
+        slackEnabled:
+          type: boolean
+        slackEnabledTypes:
+          type: number
+          nullable: true
+        slackIds:
+          type: array
+          items:
+            type: string
           nullable: true
         telegramEnabled:
           type: boolean
