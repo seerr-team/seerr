@@ -6,6 +6,14 @@ export enum MediaRequestStatus {
   COMPLETED,
 }
 
+export enum MediaRequestFailureReason {
+  SERVICE_UNREACHABLE = 1,
+  DISPATCH_FAILED,
+  TVDB_ID_UNRESOLVED,
+  SEASON_NUMBERING_UNVERIFIED,
+  SEASON_NUMBERING_MISMATCH,
+}
+
 export enum MediaType {
   MOVIE = 'movie',
   TV = 'tv',
