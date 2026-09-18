@@ -239,6 +239,25 @@ class AvailabilitySync {
           let showExists = false;
           let showExists4k = false;
 
+          // We need to fetch from TMDB for anime detection and season enrichment
+          let tvShow: TmdbTvScanDetails | TmdbTvDetails | undefined;
+          try {
+            if (media.tmdbId) {
+              tvShow = await this.tmdb.getTvShowForScan({
+                tvId: Number(media.tmdbId),
+              });
+            } else if (media.tvdbId) {
+              tvShow = await this.tmdb.getShowByTvdbIdForScan({
+                tvdbId: Number(media.tvdbId),
+              });
+            }
+          } catch (e) {
+            logger.debug(
+              `Failed to fetch TMDB data for show [TMDB ID ${media.tmdbId}]. Skipping season enrichment.`,
+              { label: 'AvailabilitySync', errorMessage: e.message }
+            );
+          }
+
           //plex
 
           const isAnime = !!tvShow?.keywords.results.some(
@@ -383,25 +402,6 @@ class AvailabilitySync {
               ...jellyfinSeasonsMap4k,
               ...sonarrSeasonsMap4k,
             ]);
-          }
-
-          // We need to fetch from TMDB to get the episode count for each season
-          let tvShow: TmdbTvScanDetails | TmdbTvDetails | undefined;
-          try {
-            if (media.tmdbId) {
-              tvShow = await this.tmdb.getTvShowForScan({
-                tvId: Number(media.tmdbId),
-              });
-            } else if (media.tvdbId) {
-              tvShow = await this.tmdb.getShowByTvdbIdForScan({
-                tvdbId: Number(media.tvdbId),
-              });
-            }
-          } catch (e) {
-            logger.debug(
-              `Failed to fetch TMDB data for show [TMDB ID ${media.tmdbId}]. Skipping season enrichment.`,
-              { label: 'AvailabilitySync', errorMessage: e.message }
-            );
           }
 
           if (tvShow) {
