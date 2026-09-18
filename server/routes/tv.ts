@@ -74,10 +74,9 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
     const tmdbTv = await tmdb.getTvShow({
       tvId: Number(req.params.id),
     });
-    const isAnime = tmdbTv.keywords.results.some(
+    const metadataProvider = tmdbTv.keywords.results.some(
       (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
-    );
-    const metadataProvider = isAnime
+    )
       ? await getMetadataProvider('anime')
       : await getMetadataProvider('tv');
 
@@ -119,7 +118,7 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
           );
 
           if (hasEpisodeNumberMismatch) {
-            logger.debug(
+            logger.warn(
               'Skipping episode availability due to episode number mismatch',
               {
                 label: 'API',
