@@ -717,26 +717,15 @@ class BaseScanner<T> {
           const currentStatus = existingEpisode[statusField];
 
           if (episodeDetail.hasFile) {
-            existingEpisode[statusField] = MediaStatus.AVAILABLE;
-            changed = true;
-          } else if (
-            currentStatus !== MediaStatus.DELETED &&
-            currentStatus !== MediaStatus.UNKNOWN
-          ) {
-            existingEpisode[statusField] = MediaStatus.DELETED;
-            changed = true;
+            if (currentStatus !== MediaStatus.AVAILABLE) {
+              existingEpisode[statusField] = MediaStatus.AVAILABLE;
+              changed = true;
+            }
           }
 
-          if (this.enable4kShow && episodeDetail.hasFile4k != null && !is4k) {
-            const currentStatus4k = existingEpisode.status4k;
-            if (episodeDetail.hasFile4k) {
+          if (this.enable4kShow && episodeDetail.hasFile4k && !is4k) {
+            if (existingEpisode.status4k !== MediaStatus.AVAILABLE) {
               existingEpisode.status4k = MediaStatus.AVAILABLE;
-              changed = true;
-            } else if (
-              currentStatus4k !== MediaStatus.DELETED &&
-              currentStatus4k !== MediaStatus.UNKNOWN
-            ) {
-              existingEpisode.status4k = MediaStatus.DELETED;
               changed = true;
             }
           }
