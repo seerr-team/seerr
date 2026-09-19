@@ -73,6 +73,9 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   validationApplicationUrlTrailingSlash: 'URL must not end in a trailing slash',
   partialRequestsEnabled: 'Allow Partial Series Requests',
   enableSpecialEpisodes: 'Allow Special Episodes Requests',
+  enableEpisodeAvailability: 'Enable Episode Availability Tracking',
+  enableEpisodeAvailabilityTip:
+    "Track individual episode availability. Match Seerr's metadata provider to your library agent (TMDB or TVDB).",
   locale: 'Display Language',
   youtubeUrl: 'YouTube URL',
   youtubeUrlTip:
@@ -93,6 +96,7 @@ const SettingsMain = () => {
     error,
     mutate: revalidate,
   } = useSWR<MainSettings>('/api/v1/settings/main');
+
   const { data: userData } = useSWR<UserSettingsGeneralResponse>(
     currentUser ? `/api/v1/user/${currentUser.id}/settings/main` : null
   );
@@ -187,6 +191,7 @@ const SettingsMain = () => {
             blocklistedTagsLimit: data?.blocklistedTagsLimit || 50,
             partialRequestsEnabled: data?.partialRequestsEnabled,
             enableSpecialEpisodes: data?.enableSpecialEpisodes,
+            enableEpisodeAvailability: data?.enableEpisodeAvailability,
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
             versionCheck: data?.versionCheck,
@@ -211,6 +216,7 @@ const SettingsMain = () => {
                 blocklistedTagsLimit: values.blocklistedTagsLimit,
                 partialRequestsEnabled: values.partialRequestsEnabled,
                 enableSpecialEpisodes: values.enableSpecialEpisodes,
+                enableEpisodeAvailability: values.enableEpisodeAvailability,
                 cacheImages: values.cacheImages,
                 youtubeUrl: values.youtubeUrl,
                 versionCheck: values?.versionCheck,
@@ -608,6 +614,34 @@ const SettingsMain = () => {
                         setFieldValue(
                           'enableSpecialEpisodes',
                           !values.enableSpecialEpisodes
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="enableEpisodeAvailability"
+                    className="checkbox-label"
+                  >
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.enableEpisodeAvailability)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(
+                        messages.enableEpisodeAvailabilityTip
+                      )}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="enableEpisodeAvailability"
+                      name="enableEpisodeAvailability"
+                      onChange={() => {
+                        setFieldValue(
+                          'enableEpisodeAvailability',
+                          !values.enableEpisodeAvailability
                         );
                       }}
                     />
