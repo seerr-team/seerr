@@ -41,3 +41,5 @@ When enabled, notifications will be sent in the language of the user who trigger
 ### Notification Language
 
 Sets the language for all notifications sent to this Discord channel. This option is only available when **Use Notification Recipient Locale** is disabled.
+
+The thread must belong to the webhook's channel. A thread from a different channel will cause the request to fail and the notification will not be delivered.
