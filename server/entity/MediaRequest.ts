@@ -235,7 +235,7 @@ export class MediaRequest {
       if (
         existing.find(
           (r) =>
-            r.requestedBy.id === requestUser.id &&
+            r.requestedBy?.id === requestUser.id &&
             r.isAutoRequest &&
             r.media?.[statusKey] !== MediaStatus.DELETED
         )
