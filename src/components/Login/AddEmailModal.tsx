@@ -46,6 +46,7 @@ const AddEmailModal: React.FC<AddEmailModalProps> = ({ onClose, onSave }) => {
 
   return (
     <Transition
+      as="div"
       appear
       show
       enter="transition ease-in-out duration-300 transform opacity-0"

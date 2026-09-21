@@ -68,11 +68,12 @@ const LinkJellyfinModal = ({
 
   return (
     <Transition
+      as="div"
       appear
       show={show}
       enter="transition ease-in-out duration-300 transform opacity-0"
       enterFrom="opacity-0"
-      enterTo="opacuty-100"
+      enterTo="opacity-100"
       leave="transition ease-in-out duration-300 transform opacity-100"
       leaveFrom="opacity-100"
       leaveTo="opacity-0"

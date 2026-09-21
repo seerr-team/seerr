@@ -14,6 +14,7 @@ const defaultSettings = {
   applicationUrl: '',
   hideAvailable: false,
   hideBlocklisted: false,
+  hideRequested: false,
   localLogin: true,
   mediaServerLogin: true,
   movie4kEnabled: false,

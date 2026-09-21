@@ -7,10 +7,10 @@ import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import type {
   TmdbKeyword,
   TmdbTvDetails,
+  TmdbTvScanDetails,
 } from '@server/api/themoviedb/interfaces';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
-import cacheManager from '@server/lib/cache';
 import type {
   MediaIds,
   ProcessableSeason,
@@ -264,15 +264,15 @@ class PlexScanner
   }: {
     tmdbId?: number;
     tvdbId?: number;
-  }): Promise<TmdbTvDetails> {
+  }): Promise<TmdbTvScanDetails | TmdbTvDetails> {
     let tvShow;
 
     if (tmdbId) {
-      tvShow = await this.tmdb.getTvShow({
+      tvShow = await this.tmdb.getTvShowForScan({
         tvId: Number(tmdbId),
       });
     } else if (tvdbId) {
-      tvShow = await this.tmdb.getShowByTvdbId({
+      tvShow = await this.tmdb.getShowByTvdbIdForScan({
         tvdbId: Number(tvdbId),
       });
     } else {
@@ -383,24 +383,12 @@ class PlexScanner
   }
 
   private async getMediaIds(plexitem: PlexLibraryItem): Promise<MediaIds> {
-    let mediaIds: Partial<MediaIds> = {};
+    const mediaIds: Partial<MediaIds> = {};
     // Check if item is using new plex movie/tv agent
     if (
       plexitem.guid.match(plexRegex) ||
       plexitem.guid.match(plexCustomProviderRegex)
     ) {
-      const guidCache = cacheManager.getCache('plexguid');
-
-      const cachedGuids = guidCache.data.get<MediaIds>(plexitem.ratingKey);
-
-      if (cachedGuids) {
-        this.log('GUIDs are cached. Skipping metadata request.', 'debug', {
-          mediaIds: cachedGuids,
-          title: plexitem.title,
-        });
-        mediaIds = cachedGuids;
-      }
-
       const metadata =
         plexitem.Guid && plexitem.Guid.length > 0
           ? plexitem
@@ -428,31 +416,26 @@ class PlexScanner
 
       // If we got an IMDb ID, but no TMDB ID, lookup the TMDB ID with the IMDb ID
       if (mediaIds.imdbId && !mediaIds.tmdbId) {
-        const tmdbMedia = await this.tmdb.getMediaByImdbId({
+        mediaIds.tmdbId = await this.tmdb.resolveImdbIdForScan({
           imdbId: mediaIds.imdbId,
         });
-        mediaIds.tmdbId = tmdbMedia.id;
       }
 
       if (mediaIds.tvdbId && !mediaIds.tmdbId) {
-        const show = await this.tmdb.getShowByTvdbId({
+        const show = await this.tmdb.getShowByTvdbIdForScan({
           tvdbId: mediaIds.tvdbId,
         });
         mediaIds.tmdbId = show.id;
       }
-
-      // Cache GUIDs
-      guidCache.data.set(plexitem.ratingKey, mediaIds);
 
       // Check if the agent is IMDb
     } else if (plexitem.guid.match(imdbRegex)) {
       const imdbMatch = plexitem.guid.match(imdbRegex);
       if (imdbMatch) {
         mediaIds.imdbId = imdbMatch[1];
-        const tmdbMedia = await this.tmdb.getMediaByImdbId({
+        mediaIds.tmdbId = await this.tmdb.resolveImdbIdForScan({
           imdbId: mediaIds.imdbId,
         });
-        mediaIds.tmdbId = tmdbMedia.id;
       }
       // Check if the agent is TMDB
     } else if (plexitem.guid.match(tmdbRegex)) {
@@ -464,9 +447,9 @@ class PlexScanner
     } else if (plexitem.guid.match(tvdbRegex)) {
       const matchedtvdb = plexitem.guid.match(tvdbRegex);
 
-      // If we can find a tvdb Id, use it to get the full tmdb show details
+      // If we can find a tvdb Id, use it to resolve the tmdb id
       if (matchedtvdb) {
-        const show = await this.tmdb.getShowByTvdbId({
+        const show = await this.tmdb.getShowByTvdbIdForScan({
           tvdbId: Number(matchedtvdb[1]),
         });
 
@@ -484,7 +467,7 @@ class PlexScanner
       const matchedtvdb = plexitem.guid.match(hamaTvdbRegex);
 
       if (matchedtvdb) {
-        const show = await this.tmdb.getShowByTvdbId({
+        const show = await this.tmdb.getShowByTvdbIdForScan({
           tvdbId: Number(matchedtvdb[1]),
         });
 
@@ -506,19 +489,19 @@ class PlexScanner
       } else if (matchedhama) {
         const anidbId = Number(matchedhama[1]);
         const result = animeList.getFromAnidbId(anidbId);
-        let tvShow: TmdbTvDetails | null = null;
+        let tvShow: TmdbTvScanDetails | TmdbTvDetails | null = null;
 
         // Set isHama to true, so we can know to add special processing to this item
         mediaIds.isHama = true;
 
         // First try to lookup the show by TVDb ID
         if (result?.tvdbId) {
-          const extResponse = await this.tmdb.getByExternalId({
+          const extResponse = await this.tmdb.getByExternalIdForScan({
             externalId: result.tvdbId,
             type: 'tvdb',
           });
           if (extResponse.tv_results[0]) {
-            tvShow = await this.tmdb.getTvShow({
+            tvShow = await this.tmdb.getTvShowForScan({
               tvId: extResponse.tv_results[0].id,
             });
             mediaIds.tvdbId = result.tvdbId;
@@ -537,10 +520,9 @@ class PlexScanner
             mediaIds.tmdbId = result.tmdbId;
             mediaIds.imdbId = result?.imdbId;
           } else if (result?.imdbId) {
-            const tmdbMovie = await this.tmdb.getMediaByImdbId({
+            mediaIds.tmdbId = await this.tmdb.resolveImdbIdForScan({
               imdbId: result.imdbId,
             });
-            mediaIds.tmdbId = tmdbMovie.id;
             mediaIds.imdbId = result.imdbId;
           }
         }
@@ -586,10 +568,10 @@ class PlexScanner
             if (special.tmdbId) {
               await this.processPlexMovieByTmdbId(episode, special.tmdbId);
             } else if (special.imdbId) {
-              const tmdbMovie = await this.tmdb.getMediaByImdbId({
+              const tmdbId = await this.tmdb.resolveImdbIdForScan({
                 imdbId: special.imdbId,
               });
-              await this.processPlexMovieByTmdbId(episode, tmdbMovie.id);
+              await this.processPlexMovieByTmdbId(episode, tmdbId);
             }
           }
         }

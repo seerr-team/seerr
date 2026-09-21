@@ -8,10 +8,12 @@ import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import PreparedEmail from '@server/lib/email';
+import ImageProxy from '@server/lib/imageproxy';
 import { getSettings } from '@server/lib/settings';
 import { checkUser } from '@server/middleware/auth';
 import { setupTestDb } from '@server/test/db';
 import { ApiError } from '@server/types/error';
+import axios from 'axios';
 import type { Express } from 'express';
 import express from 'express';
 import session from 'express-session';
@@ -66,6 +68,35 @@ const authenticateQCMock = mock.method(
   JellyfinAPI.prototype,
   'authenticateQuickConnect',
   async () => ({ ...defaultAuthenticateResponse })
+);
+const fakeAvatarBuffer = Buffer.from('fake-quickconnect-avatar-bytes');
+
+const axiosHeadMock = mock.method(axios, 'head', async () => ({
+  status: 200,
+  headers: { 'last-modified': 'Wed, 01 Jan 2025 00:00:00 GMT' },
+}));
+
+const clearCachedImageMock = mock.method(
+  ImageProxy.prototype,
+  'clearCachedImage',
+  async () => undefined
+);
+
+const getImageMock = mock.method(
+  ImageProxy.prototype,
+  'getImage',
+  async () => ({
+    imageBuffer: fakeAvatarBuffer,
+    meta: {
+      revalidateAfter: 3600,
+      curRevalidate: 3600,
+      isStale: false,
+      etag: 'mock-meta-etag',
+      extension: 'jpg',
+      cacheKey: 'mock-cache-key',
+      cacheMiss: true,
+    },
+  })
 );
 
 let app: Express;
@@ -278,6 +309,9 @@ describe('POST /auth/jellyfin/quickconnect/authenticate', () => {
     authenticateQCMock.mock.mockImplementation(async () => ({
       ...defaultAuthenticateResponse,
     }));
+    axiosHeadMock.mock.resetCalls();
+    clearCachedImageMock.mock.resetCalls();
+    getImageMock.mock.resetCalls();
     configureJellyfin();
   });
 
@@ -379,6 +413,39 @@ describe('POST /auth/jellyfin/quickconnect/authenticate', () => {
     });
     assert.strictEqual(updatedUser.jellyfinAuthToken, 'fake-qc-access-token');
     assert.notStrictEqual(updatedUser.jellyfinDeviceId, 'old-device-id');
+  });
+
+  it('refreshes avatarVersion/avatarETag when the remote avatar has changed', async () => {
+    const userRepo = getRepository(User);
+    const existingUser = new User({
+      email: 'qc-avatar-change@seerr.dev',
+      jellyfinUsername: 'quickconnectuser',
+      jellyfinUserId: 'jf-qc-user-001',
+      jellyfinDeviceId: 'old-device-id',
+      permissions: 0,
+      avatar: '/avatarproxy/jf-qc-user-001?v=old',
+      avatarVersion: 'old-version',
+      avatarETag: 'old-etag',
+      userType: UserType.JELLYFIN,
+    });
+    await userRepo.save(existingUser);
+
+    const agent = request.agent(app);
+    const res = await agent
+      .post('/auth/jellyfin/quickconnect/authenticate')
+      .send({ secret: 'abc123def456abc123def456' });
+
+    assert.strictEqual(res.status, 200);
+
+    const updatedUser = await userRepo.findOneOrFail({
+      where: { jellyfinUserId: 'jf-qc-user-001' },
+    });
+    assert.notStrictEqual(updatedUser.avatarVersion, 'old-version');
+    assert.notStrictEqual(updatedUser.avatarETag, 'old-etag');
+    assert.notStrictEqual(
+      updatedUser.avatar,
+      '/avatarproxy/jf-qc-user-001?v=old'
+    );
   });
 
   it('creates a new user when newPlexLogin is enabled and user does not exist', async () => {
@@ -625,7 +692,7 @@ describe('POST /auth/local', () => {
   it('allows the non-admin user to log in', async () => {
     const res = await request(app)
       .post('/auth/local')
-      .send({ email: 'friend@seerr.dev', password: 'test1234' });
+      .send({ email: 'demo@seerr.dev', password: 'test1234' });
 
     assert.strictEqual(res.status, 200);
     assert.ok('id' in res.body);

@@ -10,6 +10,7 @@ import SensitiveInput from '@app/components/Common/SensitiveInput';
 import Table from '@app/components/Common/Table';
 import BulkEditModal from '@app/components/UserList/BulkEditModal';
 import PlexImportModal from '@app/components/UserList/PlexImportModal';
+import useDebouncedState from '@app/hooks/useDebouncedState';
 import useSettings from '@app/hooks/useSettings';
 import useToasts from '@app/hooks/useToasts';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
@@ -26,6 +27,7 @@ import {
   ChevronRightIcon,
   ChevronUpIcon,
   InboxArrowDownIcon,
+  MagnifyingGlassIcon,
   PencilIcon,
   UserPlusIcon,
 } from '@heroicons/react/24/solid';
@@ -36,7 +38,7 @@ import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
 import validator from 'validator';
@@ -91,6 +93,7 @@ const messages = defineMessages('components.UserList', {
   toggleSortDirectionAria: 'Toggle sort direction',
   ascending: 'ascending',
   descending: 'descending',
+  searchUsers: 'Search…',
   localLoginDisabled:
     'The <strong>Enable Local Sign-In</strong> setting is currently disabled.',
 });
@@ -112,10 +115,17 @@ const UserList = () => {
   const { user: currentUser, hasPermission: currentHasPermission } = useUser();
   const [currentSort, setCurrentSort] = useState<Sort>('created');
   const [currentPageSize, setCurrentPageSize] = useState<number>(10);
+  const [searchInput, searchQuery, setSearchInput] = useDebouncedState<string>(
+    '',
+    300
+  );
 
   const page = router.query.page ? Number(router.query.page) : 1;
   const pageIndex = page - 1;
   const updateQueryParams = useUpdateQueryParams({ page: page.toString() });
+  const previousSearchQueryRef = useRef<string | undefined>(undefined);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const isSearchFocusedRef = useRef(false);
 
   const defaultSortDirection = (sortKey: Sort): SortDirection =>
     sortKey === 'requests' || sortKey === 'updated' ? 'desc' : 'asc';
@@ -131,7 +141,10 @@ const UserList = () => {
   } = useSWR<UserResultsResponse>(
     `/api/v1/user?take=${currentPageSize}&skip=${
       pageIndex * currentPageSize
-    }&sort=${currentSort}&sortDirection=${sortDirection}`
+    }&sort=${currentSort}&sortDirection=${sortDirection}${
+      searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ''
+    }`,
+    { keepPreviousData: true }
   );
 
   const handleSortChange = (sortKey: Sort) => {
@@ -248,6 +261,23 @@ const UserList = () => {
       </Table.TH>
     );
   };
+
+  useEffect(() => {
+    if (
+      previousSearchQueryRef.current !== undefined &&
+      previousSearchQueryRef.current !== searchQuery &&
+      page > 1
+    ) {
+      updateQueryParams('page', '1');
+    }
+    previousSearchQueryRef.current = searchQuery;
+  }, [searchQuery, page, updateQueryParams]);
+
+  useEffect(() => {
+    if (isSearchFocusedRef.current) {
+      searchInputRef.current?.focus();
+    }
+  }, [data]);
 
   const isUserPermsEditable = (userId: number) =>
     userId !== 1 && userId !== currentUser?.id;
@@ -648,49 +678,74 @@ const UserList = () => {
               </span>
             </Button>
           </div>
-
-          <div className="mb-2 flex flex-grow lg:mb-0 lg:flex-grow-0">
-            <button
-              type="button"
-              className="inline-flex cursor-pointer items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100"
-              onClick={() => {
-                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-                updateQueryParams('page', '1');
-              }}
-              aria-label={intl.formatMessage(messages.toggleSortDirectionAria)}
-              title={
-                sortDirection === 'asc'
-                  ? intl.formatMessage(messages.descending)
-                  : intl.formatMessage(messages.ascending)
-              }
-            >
-              {sortDirection === 'asc' ? (
-                <BarsArrowUpIcon className="h-6 w-6" />
-              ) : (
-                <BarsArrowDownIcon className="h-6 w-6" />
-              )}
-            </button>
-            <select
-              id="sort"
-              name="sort"
-              onChange={(e) => handleSortChange(e.target.value as Sort)}
-              value={currentSort}
-              className="rounded-r-only"
-            >
-              <option value="displayname">
-                {intl.formatMessage(messages.username)}
-              </option>
-              <option value="requests">
-                {intl.formatMessage(messages.totalrequests)}
-              </option>
-              <option value="usertype">
-                {intl.formatMessage(messages.accounttype)}
-              </option>
-              <option value="role">{intl.formatMessage(messages.role)}</option>
-              <option value="created">
-                {intl.formatMessage(messages.created)}
-              </option>
-            </select>
+          <div className="mb-2 flex flex-grow flex-col gap-2 sm:flex-row lg:mb-0 lg:flex-grow-0">
+            <div className="flex flex-grow lg:flex-grow-0">
+              <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
+                <MagnifyingGlassIcon className="h-6 w-6" />
+              </span>
+              <input
+                ref={searchInputRef}
+                type="text"
+                className="rounded-r-only min-w-48"
+                placeholder={intl.formatMessage(messages.searchUsers)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onFocus={() => {
+                  isSearchFocusedRef.current = true;
+                }}
+                onBlur={() => {
+                  isSearchFocusedRef.current = false;
+                }}
+                aria-label={intl.formatMessage(messages.searchUsers)}
+              />
+            </div>
+            <div className="flex flex-grow lg:flex-grow-0">
+              <button
+                type="button"
+                className="inline-flex cursor-pointer items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100"
+                onClick={() => {
+                  setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                  updateQueryParams('page', '1');
+                }}
+                aria-label={intl.formatMessage(
+                  messages.toggleSortDirectionAria
+                )}
+                title={
+                  sortDirection === 'asc'
+                    ? intl.formatMessage(messages.descending)
+                    : intl.formatMessage(messages.ascending)
+                }
+              >
+                {sortDirection === 'asc' ? (
+                  <BarsArrowUpIcon className="h-6 w-6" />
+                ) : (
+                  <BarsArrowDownIcon className="h-6 w-6" />
+                )}
+              </button>
+              <select
+                id="sort"
+                name="sort"
+                onChange={(e) => handleSortChange(e.target.value as Sort)}
+                value={currentSort}
+                className="rounded-r-only"
+              >
+                <option value="displayname">
+                  {intl.formatMessage(messages.username)}
+                </option>
+                <option value="requests">
+                  {intl.formatMessage(messages.totalrequests)}
+                </option>
+                <option value="usertype">
+                  {intl.formatMessage(messages.accounttype)}
+                </option>
+                <option value="role">
+                  {intl.formatMessage(messages.role)}
+                </option>
+                <option value="created">
+                  {intl.formatMessage(messages.created)}
+                </option>
+              </select>
+            </div>
           </div>
         </div>
       </div>

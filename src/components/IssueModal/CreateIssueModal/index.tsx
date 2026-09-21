@@ -6,7 +6,7 @@ import useToasts from '@app/hooks/useToasts';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { RadioGroup } from '@headlessui/react';
+import { Label, Radio, RadioGroup } from '@headlessui/react';
 import { ArrowRightCircleIcon } from '@heroicons/react/24/solid';
 import { MediaStatus } from '@server/constants/media';
 import type Issue from '@server/entity/Issue';
@@ -241,13 +241,12 @@ const CreateIssueModal = ({
               onChange={(issue) => setFieldValue('selectedIssue', issue)}
               className="mt-4"
             >
-              <RadioGroup.Label className="sr-only">
-                Select an Issue
-              </RadioGroup.Label>
+              <Label className="sr-only">Select an Issue</Label>
               <div className="-space-y-px overflow-hidden rounded-md bg-gray-800/30">
                 {issueOptions.map((setting, index) => (
-                  <RadioGroup.Option
+                  <Radio
                     key={`issue-type-${setting.issueType}`}
+                    as="div"
                     value={setting}
                     className={({ checked }) =>
                       classNames(
@@ -262,7 +261,7 @@ const CreateIssueModal = ({
                       )
                     }
                   >
-                    {({ active, checked }) => (
+                    {({ focus, checked }) => (
                       <>
                         <span
                           className={`${
@@ -270,25 +269,25 @@ const CreateIssueModal = ({
                               ? 'border-transparent bg-indigo-600'
                               : 'border-gray-300 bg-white'
                           } ${
-                            active ? 'ring-2 ring-indigo-300 ring-offset-2' : ''
+                            focus ? 'ring-2 ring-indigo-300 ring-offset-2' : ''
                           } mt-0.5 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full border`}
                           aria-hidden="true"
                         >
                           <span className="h-1.5 w-1.5 rounded-full bg-white" />
                         </span>
                         <div className="ml-3 flex flex-col">
-                          <RadioGroup.Label
+                          <Label
                             as="span"
                             className={`block text-sm font-medium ${
                               checked ? 'text-indigo-100' : 'text-gray-100'
                             }`}
                           >
                             {intl.formatMessage(setting.name)}
-                          </RadioGroup.Label>
+                          </Label>
                         </div>
                       </>
                     )}
-                  </RadioGroup.Option>
+                  </Radio>
                 ))}
               </div>
             </RadioGroup>

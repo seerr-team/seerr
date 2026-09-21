@@ -13,7 +13,7 @@ import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import { BarsArrowDownIcon, FunnelIcon } from '@heroicons/react/24/solid';
-import type { SortOptions as TMDBSortOptions } from '@server/api/themoviedb';
+import type { TvSortOptions as TMDBSortOptions } from '@server/api/themoviedb';
 import type { TvResult } from '@server/models/Search';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
@@ -40,8 +40,8 @@ const SortOptions: Record<string, TMDBSortOptions> = {
   FirstAirDateDesc: 'first_air_date.desc',
   TmdbRatingAsc: 'vote_average.asc',
   TmdbRatingDesc: 'vote_average.desc',
-  TitleAsc: 'original_title.asc',
-  TitleDesc: 'original_title.desc',
+  TitleAsc: 'original_name.asc',
+  TitleDesc: 'original_name.desc',
 } as const;
 
 const DiscoverTv = () => {

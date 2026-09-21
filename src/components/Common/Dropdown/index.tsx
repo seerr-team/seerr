@@ -1,5 +1,11 @@
 import { withProperties } from '@app/utils/typeHelpers';
-import { Menu, Transition } from '@headlessui/react';
+import {
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuItems,
+  Transition,
+} from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/24/solid';
 import {
   Fragment,
@@ -19,7 +25,7 @@ const DropdownItem = ({
   ...props
 }: DropdownItemProps) => {
   return (
-    <Menu.Item>
+    <MenuItem>
       <a
         className={[
           'button-md flex cursor-pointer items-center rounded px-4 py-2 text-sm leading-5 text-white focus:text-white focus:outline-none',
@@ -31,7 +37,7 @@ const DropdownItem = ({
       >
         {children}
       </a>
-    </Menu.Item>
+    </MenuItem>
   );
 };
 
@@ -55,7 +61,7 @@ const DropdownItems = ({
       leaveFrom="opacity-100 scale-100"
       leaveTo="opacity-0 scale-95"
     >
-      <Menu.Items
+      <MenuItems
         className={[
           'absolute right-0 z-40 -mr-1 mt-2 w-56 origin-top-right rounded-md p-1 shadow-lg',
           dropdownType === 'ghost'
@@ -66,7 +72,7 @@ const DropdownItems = ({
         {...props}
       >
         <div className="py-1">{children}</div>
-      </Menu.Items>
+      </MenuItems>
     </Transition>
   );
 };
@@ -89,7 +95,7 @@ const Dropdown = ({
 
   return (
     <Menu as="div" className="relative z-10">
-      <Menu.Button
+      <MenuButton
         type="button"
         className={[
           'button-md inline-flex h-full items-center space-x-2 rounded-md border px-4 py-2 text-sm font-medium leading-5 text-white transition duration-150 ease-in-out hover:z-20 focus:z-20 focus:outline-none',
@@ -104,7 +110,7 @@ const Dropdown = ({
       >
         <span>{text}</span>
         {children && (dropdownIcon ? dropdownIcon : <ChevronDownIcon />)}
-      </Menu.Button>
+      </MenuButton>
       {children && (
         <DropdownItems dropdownType={buttonType}>{children}</DropdownItems>
       )}

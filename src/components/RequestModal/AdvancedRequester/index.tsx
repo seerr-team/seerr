@@ -7,7 +7,14 @@ import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { formatBytes } from '@app/utils/numberHelpers';
-import { Listbox, Transition } from '@headlessui/react';
+import {
+  Label,
+  Listbox,
+  ListboxButton,
+  ListboxOption,
+  ListboxOptions,
+  Transition,
+} from '@headlessui/react';
 import { CheckIcon, ChevronDownIcon } from '@heroicons/react/24/solid';
 import type {
   ServiceCommonServer,
@@ -619,12 +626,10 @@ const AdvancedRequester = ({
             >
               {({ open }) => (
                 <>
-                  <Listbox.Label>
-                    {intl.formatMessage(messages.requestas)}
-                  </Listbox.Label>
+                  <Label>{intl.formatMessage(messages.requestas)}</Label>
                   <div className="relative">
                     <span className="inline-block w-full rounded-md shadow-sm">
-                      <Listbox.Button className="focus:shadow-outline-blue relative w-full cursor-default rounded-md border border-gray-700 bg-gray-800 py-2 pl-3 pr-10 text-left text-white transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none sm:text-sm sm:leading-5">
+                      <ListboxButton className="focus:shadow-outline-blue relative w-full cursor-default rounded-md border border-gray-700 bg-gray-800 py-2 pl-3 pr-10 text-left text-white transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none sm:text-sm sm:leading-5">
                         <span className="flex items-center">
                           <CachedImage
                             type="avatar"
@@ -647,10 +652,11 @@ const AdvancedRequester = ({
                         <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500">
                           <ChevronDownIcon className="h-5 w-5" />
                         </span>
-                      </Listbox.Button>
+                      </ListboxButton>
                     </span>
 
                     <Transition
+                      as="div"
                       show={open}
                       enter="transition-opacity ease-in duration-300"
                       enterFrom="opacity-0"
@@ -660,12 +666,12 @@ const AdvancedRequester = ({
                       leaveTo="opacity-0"
                       className="mt-1 w-full rounded-md border border-gray-700 bg-gray-800 shadow-lg"
                     >
-                      <Listbox.Options
+                      <ListboxOptions
                         static
                         className="shadow-xs max-h-60 overflow-auto rounded-md py-1 text-base leading-6 focus:outline-none sm:text-sm sm:leading-5"
                       >
                         {filteredUserData?.map((user) => (
-                          <Listbox.Option key={user.id} value={user}>
+                          <ListboxOption key={user.id} value={user}>
                             {({ selected, active }) => (
                               <div
                                 className={`${
@@ -708,9 +714,9 @@ const AdvancedRequester = ({
                                 )}
                               </div>
                             )}
-                          </Listbox.Option>
+                          </ListboxOption>
                         ))}
-                      </Listbox.Options>
+                      </ListboxOptions>
                     </Transition>
                   </div>
                 </>

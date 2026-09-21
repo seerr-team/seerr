@@ -13,6 +13,7 @@ import { radarrScanner } from '@server/lib/scanners/radarr';
 import type { RadarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { setupTestDb } from '@server/test/db';
+import { runWithMockTimers } from '@server/test/runWithMockTimers';
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it, mock } from 'node:test';
 
@@ -21,6 +22,17 @@ Object.defineProperty(RadarrAPI.prototype, 'getMovies', {
   set() {},
   get() {
     return async () => getMoviesImpl();
+  },
+  configurable: true,
+});
+
+let getLibraryMoviesByTmdbIdImpl: (
+  tmdbId: number
+) => Promise<RadarrMovie[]> = async () => [];
+Object.defineProperty(RadarrAPI.prototype, 'getLibraryMoviesByTmdbId', {
+  set() {},
+  get() {
+    return async (tmdbId: number) => getLibraryMoviesByTmdbIdImpl(tmdbId);
   },
   configurable: true,
 });
@@ -76,6 +88,7 @@ function fakeRadarrMovie(overrides: Partial<RadarrMovie> = {}): RadarrMovie {
 describe('Radarr Scanner', () => {
   beforeEach(() => {
     getMoviesImpl = async () => [];
+    getLibraryMoviesByTmdbIdImpl = async () => [];
   });
 
   describe('unmonitored movie handling', () => {
@@ -93,7 +106,7 @@ describe('Radarr Scanner', () => {
         fakeRadarrMovie({ monitored: false, hasFile: false }),
       ];
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 550 },
@@ -109,7 +122,7 @@ describe('Radarr Scanner', () => {
         fakeRadarrMovie({ tmdbId: 777, monitored: false, hasFile: false }),
       ];
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const media = await mediaRepository.findOne({
         where: { tmdbId: 777 },
@@ -131,7 +144,7 @@ describe('Radarr Scanner', () => {
         fakeRadarrMovie({ tmdbId: 551, monitored: true, hasFile: true }),
       ];
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 551 },
@@ -153,7 +166,7 @@ describe('Radarr Scanner', () => {
         fakeRadarrMovie({ tmdbId: 552, monitored: true, hasFile: false }),
       ];
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 552 },
@@ -175,7 +188,7 @@ describe('Radarr Scanner', () => {
         fakeRadarrMovie({ tmdbId: 553, monitored: true, hasFile: false }),
       ];
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 553 },
@@ -197,7 +210,7 @@ describe('Radarr Scanner', () => {
         fakeRadarrMovie({ tmdbId: 554, monitored: false, hasFile: true }),
       ];
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 554 },
@@ -223,7 +236,7 @@ describe('Radarr Scanner', () => {
 
       getMoviesImpl = async () => [];
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 950 },
@@ -243,7 +256,7 @@ describe('Radarr Scanner', () => {
       configureRadarr([{ syncEnabled: true }]);
       getMoviesImpl = async () => [fakeRadarrMovie({ tmdbId: 1, id: 99 })];
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 999 },
@@ -263,7 +276,7 @@ describe('Radarr Scanner', () => {
       configureRadarr([{ syncEnabled: true }]);
       getMoviesImpl = async () => [];
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 888 },
@@ -285,7 +298,7 @@ describe('Radarr Scanner', () => {
         fakeRadarrMovie({ tmdbId: 700, monitored: true, hasFile: false }),
       ];
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 700 },
@@ -306,7 +319,7 @@ describe('Radarr Scanner', () => {
       configureRadarr([{ syncEnabled: true }]);
       getMoviesImpl = async () => [];
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 800 },
@@ -344,7 +357,7 @@ describe('Radarr Scanner', () => {
         return [fakeRadarrMovie({ tmdbId: 903, id: 11 })];
       };
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updatedOrphan = await mediaRepository.findOneOrFail({
         where: { tmdbId: 901 },
@@ -355,6 +368,76 @@ describe('Radarr Scanner', () => {
         where: { tmdbId: 902 },
       });
       assert.strictEqual(updatedExisting.status, MediaStatus.AVAILABLE);
+    });
+
+    it('does not reset a movie added to Radarr after the scan started', async () => {
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 910;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.PROCESSING;
+      await mediaRepository.save(media);
+
+      configureRadarr([{ syncEnabled: true }]);
+      getMoviesImpl = async () => [fakeRadarrMovie({ tmdbId: 111 })];
+      getLibraryMoviesByTmdbIdImpl = async (tmdbId) => [
+        fakeRadarrMovie({ tmdbId }),
+      ];
+
+      await radarrScanner.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 910 },
+      });
+      assert.strictEqual(updated.status, MediaStatus.PROCESSING);
+    });
+
+    it('does not reset a movie when the server cannot be reached', async () => {
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 911;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.PROCESSING;
+      await mediaRepository.save(media);
+
+      configureRadarr([{ syncEnabled: true }]);
+      getMoviesImpl = async () => [fakeRadarrMovie({ tmdbId: 111 })];
+      getLibraryMoviesByTmdbIdImpl = async () => {
+        throw new Error('connect ECONNREFUSED');
+      };
+
+      await radarrScanner.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 911 },
+      });
+      assert.strictEqual(updated.status, MediaStatus.PROCESSING);
+    });
+
+    it('resets a movie when the server returns no row matching its id', async () => {
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 912;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.PROCESSING;
+      await mediaRepository.save(media);
+
+      configureRadarr([{ syncEnabled: true }]);
+      getMoviesImpl = async () => [fakeRadarrMovie({ tmdbId: 111 })];
+      getLibraryMoviesByTmdbIdImpl = async () => [
+        fakeRadarrMovie({ tmdbId: 111 }),
+        fakeRadarrMovie({ tmdbId: 222 }),
+      ];
+
+      await radarrScanner.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 912 },
+      });
+      assert.strictEqual(updated.status, MediaStatus.UNKNOWN);
     });
   });
 
@@ -372,7 +455,7 @@ describe('Radarr Scanner', () => {
       configureRadarr([{ syncEnabled: true, is4k: true }]);
       getMoviesImpl = async () => [fakeRadarrMovie({ tmdbId: 1, id: 99 })];
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 960 },
@@ -393,7 +476,7 @@ describe('Radarr Scanner', () => {
       configureRadarr([{ syncEnabled: true, is4k: true }]);
       getMoviesImpl = async () => [];
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 961 },
@@ -436,7 +519,7 @@ describe('Radarr Scanner', () => {
       configureRadarr([{ syncEnabled: true }]);
       getMoviesImpl = async () => [fakeRadarrMovie({ tmdbId: 1, id: 99 })];
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updatedMedia = await mediaRepository.findOneOrFail({
         where: { tmdbId: 1003596 },
@@ -484,7 +567,7 @@ describe('Radarr Scanner', () => {
         fakeRadarrMovie({ tmdbId: 700, monitored: true, hasFile: false }),
       ];
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updatedRequest = await requestRepository.findOneOrFail({
         where: { id: request.id },
@@ -525,7 +608,7 @@ describe('Radarr Scanner', () => {
       configureRadarr([{ syncEnabled: true }]);
       getMoviesImpl = async () => [];
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updatedMedia = await mediaRepository.findOneOrFail({
         where: { tmdbId: 1234 },
@@ -621,7 +704,7 @@ describe('Radarr Scanner', () => {
         return [fakeRadarrMovie({ tmdbId: 2, id: 88 })];
       };
 
-      await radarrScanner.run();
+      await runWithMockTimers(() => radarrScanner.run());
 
       const updatedMedia = await mediaRepository.findOneOrFail({
         where: { tmdbId: 1003598 },

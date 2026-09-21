@@ -10,6 +10,7 @@ import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import type {
   TmdbKeyword,
   TmdbTvDetails,
+  TmdbTvScanDetails,
 } from '@server/api/themoviedb/interfaces';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
@@ -73,10 +74,9 @@ class JellyfinScanner
     }
 
     if (imdbId && !tmdbId) {
-      const tmdbMovie = await this.tmdb.getMediaByImdbId({
+      tmdbId = await this.tmdb.resolveImdbIdForScan({
         imdbId: imdbId,
       });
-      tmdbId = tmdbMovie.id;
     }
 
     if (!tmdbId) {
@@ -184,15 +184,15 @@ class JellyfinScanner
   }: {
     tmdbId?: number;
     tvdbId?: number;
-  }): Promise<TmdbTvDetails> {
+  }): Promise<TmdbTvScanDetails | TmdbTvDetails> {
     let tvShow;
 
     if (tmdbId) {
-      tvShow = await this.tmdb.getTvShow({
+      tvShow = await this.tmdb.getTvShowForScan({
         tvId: Number(tmdbId),
       });
     } else if (tvdbId) {
-      tvShow = await this.tmdb.getShowByTvdbId({
+      tvShow = await this.tmdb.getShowByTvdbIdForScan({
         tvdbId: Number(tvdbId),
       });
     } else {
@@ -215,7 +215,7 @@ class JellyfinScanner
   }
 
   private async processJellyfinShow(jellyfinitem: JellyfinLibraryItem) {
-    let tvShow: TmdbTvDetails | null = null;
+    let tvShow: TmdbTvScanDetails | TmdbTvDetails | null = null;
 
     try {
       const Id =
@@ -262,7 +262,7 @@ class JellyfinScanner
         tvdbSeasonFromAnidb = result?.tvdbSeason;
         if (result?.tvdbId) {
           try {
-            tvShow = await this.tmdb.getShowByTvdbId({
+            tvShow = await this.tmdb.getShowByTvdbIdForScan({
               tvdbId: result.tvdbId,
             });
           } catch {

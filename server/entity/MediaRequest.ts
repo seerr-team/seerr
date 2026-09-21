@@ -14,6 +14,7 @@ import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
+import requestLock from '@server/utils/requestLock';
 import { truncate } from 'lodash';
 import {
   AfterInsert,
@@ -48,6 +49,16 @@ export class MediaRequest {
     requestBody: MediaRequestBody,
     user: User,
     options: MediaRequestOptions = {}
+  ): Promise<MediaRequest> {
+    return requestLock.dispatch(requestBody.userId || user.id, () =>
+      MediaRequest.createRequest(requestBody, user, options)
+    );
+  }
+
+  private static async createRequest(
+    requestBody: MediaRequestBody,
+    user: User,
+    options: MediaRequestOptions
   ): Promise<MediaRequest> {
     const tmdb = new TheMovieDb();
     const mediaRepository = getRepository(Media);
@@ -246,19 +257,24 @@ export class MediaRequest {
 
     if (useOverrides) {
       const defaultRadarrId = requestBody.is4k
-        ? settings.radarr.findIndex((r) => r.is4k && r.isDefault)
-        : settings.radarr.findIndex((r) => !r.is4k && r.isDefault);
+        ? settings.radarr.find((r) => r.is4k && r.isDefault)?.id
+        : settings.radarr.find((r) => !r.is4k && r.isDefault)?.id;
       const defaultSonarrId = requestBody.is4k
-        ? settings.sonarr.findIndex((s) => s.is4k && s.isDefault)
-        : settings.sonarr.findIndex((s) => !s.is4k && s.isDefault);
+        ? settings.sonarr.find((s) => s.is4k && s.isDefault)?.id
+        : settings.sonarr.find((s) => !s.is4k && s.isDefault)?.id;
+
+      const [defaultServiceIdField, defaultServiceId] =
+        requestBody.mediaType === MediaType.MOVIE
+          ? (['radarrServiceId', defaultRadarrId] as const)
+          : (['sonarrServiceId', defaultSonarrId] as const);
 
       const overrideRuleRepository = getRepository(OverrideRule);
-      const overrideRules = await overrideRuleRepository.find({
-        where:
-          requestBody.mediaType === MediaType.MOVIE
-            ? { radarrServiceId: defaultRadarrId }
-            : { sonarrServiceId: defaultSonarrId },
-      });
+      const overrideRules =
+        defaultServiceId === undefined
+          ? []
+          : await overrideRuleRepository.find({
+              where: { [defaultServiceIdField]: defaultServiceId },
+            });
 
       const appliedOverrideRules = overrideRules.filter((rule) => {
         const hasAnimeKeyword =
@@ -417,7 +433,10 @@ export class MediaRequest {
       let requestedSeasons =
         requestBody.seasons === 'all'
           ? tmdbMediaShow.seasons
-              .filter((season) => season.season_number !== 0)
+              .filter(
+                (season) =>
+                  season.season_number !== 0 && season.episode_count > 0
+              )
               .map((season) => season.season_number)
           : (requestBody.seasons as number[]);
       if (!settings.main.enableSpecialEpisodes) {

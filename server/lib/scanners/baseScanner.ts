@@ -306,7 +306,14 @@ class BaseScanner<T> {
         ) ?? []
       ).length;
 
-      for (const season of seasons) {
+      for (const rawSeason of seasons) {
+        // Files can't promote a season the provider reports as empty.
+        // Zeroing the counts leaves any existing status for availabilitySync to judge.
+        const season =
+          rawSeason.totalEpisodes > 0
+            ? rawSeason
+            : { ...rawSeason, episodes: 0, episodes4k: 0 };
+
         const existingSeason = media?.seasons.find(
           (es) => es.seasonNumber === season.seasonNumber
         );

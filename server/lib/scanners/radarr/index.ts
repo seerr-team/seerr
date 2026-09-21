@@ -164,6 +164,39 @@ class RadarrScanner
     }
   }
 
+  private async existsInAnyServer(
+    tmdbId: number,
+    is4k: boolean
+  ): Promise<boolean> {
+    const servers = this.servers.filter(
+      (server) =>
+        server.syncEnabled && (this.enable4kMovie && server.is4k) === is4k
+    );
+
+    for (const server of servers) {
+      try {
+        const api = new RadarrAPI({
+          apiKey: server.apiKey,
+          url: RadarrAPI.buildUrl(server, '/api/v3'),
+        });
+        const movies = await api.getLibraryMoviesByTmdbId(tmdbId);
+
+        if (movies.some((movie) => movie.tmdbId === tmdbId)) {
+          return true;
+        }
+      } catch (e) {
+        this.log(
+          `Could not confirm movie ${tmdbId} against Radarr server ${server.name}. Skipping cleanup for it.`,
+          'warn',
+          { errorMessage: e.message }
+        );
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   private async cleanupOrphanedMovies(): Promise<void> {
     const mediaRepository = getRepository(Media);
 
@@ -175,6 +208,10 @@ class RadarrScanner
 
       for (const media of processingMovies) {
         if (!this.scannedTmdbIds.has(media.tmdbId)) {
+          if (await this.existsInAnyServer(media.tmdbId, false)) {
+            continue;
+          }
+
           media.status = MediaStatus.UNKNOWN;
           await mediaRepository.save(media);
           await this.declineOrphanedRequests(media, false);
@@ -202,6 +239,10 @@ class RadarrScanner
 
       for (const media of processing4kMovies) {
         if (!this.scanned4kTmdbIds.has(media.tmdbId)) {
+          if (await this.existsInAnyServer(media.tmdbId, true)) {
+            continue;
+          }
+
           media.status4k = MediaStatus.UNKNOWN;
           await mediaRepository.save(media);
           await this.declineOrphanedRequests(media, true);
