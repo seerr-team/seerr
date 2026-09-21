@@ -341,13 +341,41 @@ export class MediaRequest {
         ) {
           return false;
         }
+        if (
+          rule.certification &&
+          !rule.certification.split(',').some((entry) => {
+            const [countryCode, certificationValue] = entry.split(':');
+
+            if ('release_dates' in tmdbMedia) {
+              const countryReleases = tmdbMedia.release_dates.results.find(
+                (r) => r.iso_3166_1 === countryCode
+              );
+              return countryReleases?.release_dates.some(
+                (rd) => rd.certification === certificationValue
+              );
+            } else if ('content_ratings' in tmdbMedia) {
+              const countryRating = tmdbMedia.content_ratings.results.find(
+                (r) => r.iso_3166_1 === countryCode
+              );
+              return countryRating?.rating === certificationValue;
+            }
+            return false;
+          })
+        ) {
+          return false;
+        }
         return true;
       });
 
       // hacky way to prioritize rules
       // TODO: make this better
       const prioritizedRule = appliedOverrideRules.sort((a, b) => {
-        const keys: (keyof OverrideRule)[] = ['genre', 'language', 'keywords'];
+        const keys: (keyof OverrideRule)[] = [
+          'genre',
+          'language',
+          'keywords',
+          'certification',
+        ];
 
         const aSpecificity = keys.filter((key) => a[key] !== null).length;
         const bSpecificity = keys.filter((key) => b[key] !== null).length;
