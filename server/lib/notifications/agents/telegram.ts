@@ -117,6 +117,16 @@ class TelegramAgent
         message += `\n\*${this.escapeText(
           intl.formatMessage(globalMessages.requestStatus)
         )}:\* ${this.escapeText(status)}`;
+
+        if (
+          type === Notification.MEDIA_DECLINED &&
+          payload.request &&
+          payload.request.declineReason
+        ) {
+          message += `\n\n\*${this.escapeText(
+            intl.formatMessage(globalMessages.declineReason)
+          )}:\* ${this.escapeText(payload.request.declineReason)}`;
+        }
       }
     } else if (payload.comment) {
       message += `\n\n\*${this.escapeText(
